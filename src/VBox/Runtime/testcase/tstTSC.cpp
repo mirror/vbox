@@ -111,7 +111,7 @@ static DECLCALLBACK(int) ThreadFunction(RTTHREAD Thread, void *pvUser)
                 if (    ApicId1 == ApicId2 
                     &&  ApicId1 == ApicId3
                     &&  ApicId1 == ApicId4
-                    &&  TSC3 - TSC1 < 1750 /* WARNING: This is just a guess, increase if it doesn't work for you. */
+                    &&  TSC3 - TSC1 < 2250 /* WARNING: This is just a guess, increase if it doesn't work for you. */
                     &&  TSC2 - TSC1 < TSC3 - TSC1
                     )
                 {
@@ -187,7 +187,7 @@ int main()
      */
     for (unsigned cTries = 0; ; cTries++)
     {
-        if (cTries > 1024)
+        if (cTries > 10240)
         {
             RTPrintf("tstTSC: FAILURE - %d attempts, giving.\n", cTries);
             break;
@@ -264,7 +264,7 @@ int main()
             &&  ApicId1 == ApicId4
             &&  ApicId1 == ApicId5
             &&  ApicId1 == ApicId6
-            &&  TSC5 - TSC1 < 2000  /* WARNING: This is just a guess, increase if it doesn't work for you. */
+            &&  TSC5 - TSC1 < 2750  /* WARNING: This is just a guess, increase if it doesn't work for you. */
             &&  TSC4 - TSC1 < TSC5 - TSC1
             &&  TSC3 - TSC1 < TSC4 - TSC1
             &&  TSC2 - TSC1 < TSC3 - TSC1
