@@ -107,6 +107,7 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                 "         VBoxManage internalcommands listpartitions\n"
                 "\n"
                 : "",
+#ifdef RT_OS_WINDOWS
             (u64Cmd & USAGE_MODINSTALL) ?
                 "  modinstall\n"
                 "       Installs the neccessary driver for the host OS\n"
@@ -117,6 +118,10 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                 "       Deinstalls the driver\n"
                 "\n"
                 : ""
+#else
+                "",
+                ""
+#endif
              );
 }
 
