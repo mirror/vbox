@@ -15,12 +15,12 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/assert.h>
+#include <iprt/string.h>
 
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxDev.h>
 #include <VBox/log.h>
 
-#include <string.h>
 
 /* Move this to a header { */
 
@@ -32,28 +32,25 @@ extern int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData);
  * Tell the host that we support (or no longer support) seamless mode.
  *
  * @returns IPRT status value
- * @param   bState whether or not we support seamless mode
+ * @param   fState whether or not we support seamless mode
  *
  * @todo    Currently this will trample over any other capabilities the guest may have.
  *          This will have to be fixed when more capabilities are added at the latest.
  */
-VBGLR3DECL(int) VbglR3SeamlessSetCap(bool bState)
+VBGLR3DECL(int) VbglR3SeamlessSetCap(bool fState)
 {
-    VMMDevReqGuestCapabilities vmmreqGuestCaps = { {0} };
+    VMMDevReqGuestCapabilities vmmreqGuestCaps;
     int rc = VINF_SUCCESS;
 
+    memset(&vmmreqGuestCaps, 0, sizeof(vmmreqGuestCaps));
     vmmdevInitRequest(&vmmreqGuestCaps.header, VMMDevReq_ReportGuestCapabilities);
-    vmmreqGuestCaps.caps = bState ? VMMDEV_GUEST_SUPPORTS_SEAMLESS : 0;
+    vmmreqGuestCaps.caps = fState ? VMMDEV_GUEST_SUPPORTS_SEAMLESS : 0;
     rc = VbglR3GRPerform(&vmmreqGuestCaps.header);
 #ifdef DEBUG
     if (RT_SUCCESS(rc))
-    {
         LogRel(("Successfully enabled seamless mode on the host.\n"));
-    }
     else
-    {
-        LogRel(("Failed to enabled seamless mode on the host, rc = %Vrc.\n", rc));
-    }
+        LogRel(("Failed to enabled seamless mode on the host, rc = %Rrc.\n", rc));
 #endif
     return rc;
 }
@@ -70,7 +67,7 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
     VBoxGuestWaitEventInfo waitEvent;
     int rc;
 
-    AssertReturn(pMode != 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pMode, VERR_INVALID_PARAMETER);
     waitEvent.u32TimeoutIn = 0;
     waitEvent.u32EventMaskIn = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
     rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
@@ -113,24 +110,22 @@ VBGLR3DECL(int) VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects)
     VMMDevVideoSetVisibleRegion *req;
     int rc;
 
-    rc = VbglR3GRAlloc ((VMMDevRequestHeader **)&req,
-                      sizeof (VMMDevVideoSetVisibleRegion) + (cRects-1)*sizeof(RTRECT),
-                      VMMDevReq_VideoSetVisibleRegion);
+    rc = VbglR3GRAlloc((VMMDevRequestHeader **)&req,
+                       sizeof(VMMDevVideoSetVisibleRegion) + (cRects - 1) * sizeof(RTRECT),
+                       VMMDevReq_VideoSetVisibleRegion);
     if (RT_SUCCESS(rc))
     {
         req->cRect = cRects;
-        memcpy(&req->Rect, pRects, cRects*sizeof(RTRECT));
-        rc = VbglR3GRPerform (&req->header);
+        memcpy(&req->Rect, pRects, cRects * sizeof(RTRECT));
+        rc = VbglR3GRPerform(&req->header);
         VbglR3GRFree(&req->header);
         if (RT_SUCCESS(rc))
         {
             if (RT_SUCCESS(req->header.rc))
-            {
                 return VINF_SUCCESS;
-            }
-            else
-                rc = req->header.rc;
+            rc = req->header.rc;
         }
     }
     return rc;
 }
+
