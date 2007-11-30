@@ -4,7 +4,7 @@
 
 ;
 ;  Copyright (C) 2006-2007 innotek GmbH
-; 
+;
 ;  This file is part of VirtualBox Open Source Edition (OSE), as
 ;  available from http://www.virtualbox.org. This file is free software;
 ;  you can redistribute it and/or modify it under the terms of the GNU
@@ -33,7 +33,7 @@ BEGINPROC_EXPORTED ASMBitFirstClear
 
         ;if (cBits)
         or      edx, edx
-        jz      short @failed
+        jz      short .failed
         ;{
         push    rdi
 
@@ -45,7 +45,7 @@ BEGINPROC_EXPORTED ASMBitFirstClear
         mov     rdx, rdi                ; rdx = saved pvBitmap
         mov     eax, 0ffffffffh
         repe    scasd                   ; Scan for the first dword with any clear bit.
-        je      @failed_restore
+        je      .failed_restore
 
         ; find the bit in question
         lea     rdi, [rdi - 4]          ; one step back.
@@ -65,10 +65,10 @@ BEGINPROC_EXPORTED ASMBitFirstClear
         ; failure
         ;}
         ;return -1;
-@failed_restore:
+.failed_restore:
         pop     rdi
         ret
-@failed:
+.failed:
         mov     eax, 0ffffffffh
         ret
 ENDPROC ASMBitFirstClear
