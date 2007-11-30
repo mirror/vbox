@@ -39,6 +39,7 @@
 #include <VBox/err.h>
 
 #include <VBox/VBoxHDD.h>
+#include <VBox/sup.h>
 
 #include "VBoxManage.h"
 
@@ -61,7 +62,7 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
              "\n"
              "Commands:\n"
              "\n"
-             "%s%s%s%s%s"
+             "%s%s%s%s%s%s%s"
              "WARNING: This is a development tool and shall only be used to analyse\n"
              "         problems. It is completely unsupported and will change in\n"
              "         incompatible ways without warning.\n",
@@ -104,6 +105,16 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                 "       Optionally the created image can be immediately registered.\n"
                 "       The necessary partition numbers can be queried with\n"
                 "         VBoxManage internalcommands listpartitions\n"
+                "\n"
+                : "",
+            (u64Cmd & USAGE_MODINSTALL) ?
+                "  modinstall\n"
+                "       Installs the neccessary driver for the host OS\n"
+                "\n"
+                : "",
+            (u64Cmd & USAGE_MODUNINSTALL) ?
+                "  moduninstall\n"
+                "       Deinstalls the driver\n"
                 "\n"
                 : ""
              );
@@ -394,6 +405,42 @@ static int handleSetVDIUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
 }
 
 /**
+ * Unloads the neccessary driver.
+ *
+ * @returns VBox status code
+ */
+int CmdModUninstall(void)
+{
+    int rc = SUPUninstall();
+
+    rc = SUPInstall();
+    if (VBOX_SUCCESS(rc))
+        return 0;
+    else if (rc == VERR_NOT_IMPLEMENTED)
+        return 0;
+    else
+        return E_FAIL;
+}
+
+/**
+ * Loads the neccessary driver.
+ *
+ * @returns VBox status code
+ */
+int CmdModInstall(void)
+{
+    int rc = SUPInstall();
+
+    rc = SUPInstall();
+    if (VBOX_SUCCESS(rc))
+        return 0;
+    else if (rc == VERR_NOT_IMPLEMENTED)
+        return 0;
+    else
+        return E_FAIL;
+}
+
+/**
  * Wrapper for handling internal commands
  */
 int handleInternalCommands(int argc, char *argv[],
@@ -421,6 +468,11 @@ int handleInternalCommands(int argc, char *argv[],
     if (!strcmp(pszCmd, "createrawvmdk"))
         return CmdCreateRawVMDK(argc - 1, &argv[1], aVirtualBox, aSession);
 #endif /* !VBOX_OSE */
+
+    if (!strcmp(pszCmd, "modinstall"))
+        return CmdModInstall();
+    if (!strcmp(pszCmd, "moduninstall"))
+        return CmdModUninstall();
 
     /* default: */
     return errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(argv[0]).raw());
