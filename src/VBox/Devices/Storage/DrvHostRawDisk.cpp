@@ -37,7 +37,13 @@
 #include <unistd.h>
 #include <linux/hdreg.h>
 #include <linux/fs.h>
-#endif /* !RT_OS_WINDOWS && !RT_OS_LINUX */
+#elif RT_OS_SOLARIS
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/dkio.h>
+#include <stropts.h>
+#include <errno.h>
+#endif /* !RT_OS_WINDOWS && !RT_OS_LINUX && !RT_OS_SOLARIS */
 
 #include "Builtins.h"
 
@@ -371,6 +377,28 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
                     long cBlocks;
                     if (!ioctl(pThis->HostDiskFile, BLKGETSIZE, &cBlocks))
                         pThis->cbSize = (uint64_t)cBlocks * 512;
+                    else
+                        rc = RTErrConvertFromErrno(errno);
+                }
+            }
+            else
+                rc = RTErrConvertFromErrno(errno);
+        }
+#elif defined(RT_OS_SOLARIS)
+        struct stat DevStat;
+        if (!fstat(pThis->HostDiskFile, &DevStat) && S_ISBLK(DevStat.st_mode))
+        {
+            struct dk_geom DriveGeo;
+            if (!ioctl(pThis->HostDiskFile, DKIOCGGEOM, &DriveGeo))
+            {
+                pThis->cCylinders = DriveGeo.dkg_ncyl;
+                pThis->cHeads = DriveGeo.dkg_nhead;
+                pThis->cSectors = DriveGeo.dkg_nsect;
+                if (!pThis->cbSize)
+                {
+                    struct dk_minfo DriveInfo;
+                    if (!ioctl(pThis->HostDiskFile, DKIOCGMEDIAINFO, &DriveInfo))
+                        pThis->cbSize = (uint64_t)DriveInfo.dki_lbsize * DriveInfo.dki_capacity;
                     else
                         rc = RTErrConvertFromErrno(errno);
                 }
