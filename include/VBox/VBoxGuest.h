@@ -1137,13 +1137,12 @@ typedef struct
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)        ((unsigned char)(Function))
 
 #elif defined(RT_OS_LINUX)
-/* Note that we can't use the Linux header IOCtl macros directly, as they expect a "type"
-   argument, whereas we provide "sizeof(type)". */
-/** @todo r=bird: That's not true. You can use _IOC just like SUPDRVIOC.h does (include linux/ioctl.h). That should work back to 2.0.x. */
+# include <linux/ioctl.h>
+/* Note that we can't use the Linux header _IOWR macro directly, as it expects
+   a "type" argument, whereas we provide "sizeof(type)". */
 /* VBOXGUEST_IOCTL_CODE(Function, sizeof(type)) == _IOWR('V', (Function) | VBOXGUEST_IOCTL_FLAG, (type)) */
-# define VBOXGUEST_IOCTL_CODE(Function, Size)   ( (3 << 30) | ('V' << 8) | (Function) | VBOXGUEST_IOCTL_FLAG | (Size << 16) )
-/* VBOXGUEST_IOCTL_CODE_FAST(Function) == _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG) */
-# define VBOXGUEST_IOCTL_CODE_FAST(Function)    ( 'V' << 8 | (Function) | VBOXGUEST_IOCTL_FLAG)
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOC(_IOC_READ|_IOC_WRITE, 'V', Function, Size)
+# define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 
 #elif 0 /* BSD style - needs some adjusting _IORW takes a type and not a size. */
 # include <sys/ioccom.h>
