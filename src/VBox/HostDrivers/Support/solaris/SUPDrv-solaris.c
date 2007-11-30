@@ -805,7 +805,7 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     va_end(args);
 
     szMsg[sizeof(szMsg) - 1] = '\0';
-#if 1
+#if 0
     uprintf("SUPR0Printf: %s", szMsg);
 #endif
 #if 1
