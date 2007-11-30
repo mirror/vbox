@@ -22,6 +22,7 @@
 
 #include "vboxmod.h"
 #include "waitcompat.h"
+
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -371,7 +372,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
             size_t cbVanillaRequestSize;
             int rc;
 
-            compiler_assert(sizeof(VMMDevRequestHeader) == _IOC_SIZE(IOCTL_VBOXGUEST_VMMREQUEST));
+            AssertCompiler((sizeof(VMMDevRequestHeader) == _IOC_SIZE(IOCTL_VBOXGUEST_VMMREQUEST)));
             if (copy_from_user(&reqHeader, (void*)arg, _IOC_SIZE(cmd)))
             {
                 LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: copy_from_user failed for vmm request!\n"));
