@@ -266,6 +266,18 @@ static void show_usage()
              "   -vrdpport <port>         Port number the VRDP server will bind to\n"
              "   -vrdpaddress <ip>        Interface IP the VRDP will bind to \n"
 #endif
+#ifdef VBOX_FFMPEG
+             "   -capture                 Record the VM screen output to a file\n"
+             "\n"
+             "When recording, the following optional environment variables are also\n"
+             "recognized:\n"
+             "\n"
+             "   VBOX_CAPTUREWIDTH        Frame width\n"
+             "   VBOX_CAPTUREHEIGHT       Frame height\n"
+             "   VBOX_CAPTUREBITRATE      Recording bit rate\n"
+             "   VBOX_CAPTUREBITRATE      Recording bit rate\n"
+             "   VBOX_CAPTUREFILE         Specify a file name\n"
+#endif
              "\n");
 }
 
