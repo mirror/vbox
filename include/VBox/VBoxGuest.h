@@ -1096,31 +1096,26 @@ typedef struct
  * to indicate exactly how owns them seems to have been lost somewhere along 
  * the way), I've introduced a VBOXGUEST_IOCTL_CODE for defining generic IN/OUT
  * IOCtls on new ports of the additions.
- * 
- * @remark  When creating new IOCtl interfaces keep in mind that not all OSes supports
+ *
+ * @remarks When creating new IOCtl interfaces keep in mind that not all OSes supports
  *          reporting back the output size. (This got messed up a little bit in VBoxDrv.)
  * 
- *          OS/2 restricts the in/out data size to 64KB, while Linux, BSD and Darwin are 
- *          limited by a 14 bits size field (16KB). So, special considerations need to
- *          be taken if more input/output needs to be passed around.
+ *          The request size is also a little bit tricky as it's passed as part of the
+ *          request code on unix. The size field is 14 bits on Linux, 12 bits on *BSD,
+ *          13 bits Darwin, and 8-bits on Solaris. All the BSDs and Darwin kernels 
+ *          will make use of the size field, while Linux and Solaris will not. We're of
+ *          course using the size to validate and/or map/lock the request, so it has 
+ *          to be valid.
  * 
- *          When passing variable sized input/output special care need to be taken on 
- *          Unix platforms (if we're going to play by the rules) since the size is 
- *          passed as part of the IOCtl code there. IIRC Darwin will use the size to 
- *          perform locking and in/out copying, I don't quite know about linux and *BSD.
- *          
- * @remark  If adding interfaces that only has input or only has output, some new macros
+ *          For Solaris we will have to do something special though, 255 isn't 
+ *          sufficent for all we need. A 4KB restriction (BSD) is probably not 
+ *          too problematic (yet) as a general one.
+ * 
+ *          More info can be found in SUPDRVIOC.h and related sources.
+ *
+ * @remarks If adding interfaces that only has input or only has output, some new macros
  *          needs to be created so the most efficient IOCtl data buffering method can be
  *          used.
- *
- * @remark  On Linux (at least), things are not as grim as portrayed above.  The IOCtl
- *          numbering system is pure convention designed in order to simplify error checking.
- *          The numbers only have meaning to the driver which implements the IOCtl, and are
- *          completely ignored by the system.  In fact, the oldest IOCtls still in use today
- *          predate the current numbering system, and several of the ones implemented since
- *          then implement it wrongly.  See 'man ioctl_list' for more information.
- *            -Michael
- * 
  * @{
  */
 #ifdef RT_ARCH_AMD64
@@ -1144,6 +1139,7 @@ typedef struct
 #elif defined(RT_OS_LINUX)
 /* Note that we can't use the Linux header IOCtl macros directly, as they expect a "type"
    argument, whereas we provide "sizeof(type)". */
+/** @todo r=bird: That's not true. You can use _IOC just like SUPDRVIOC.h does (include linux/ioctl.h). That should work back to 2.0.x. */
 /* VBOXGUEST_IOCTL_CODE(Function, sizeof(type)) == _IOWR('V', (Function) | VBOXGUEST_IOCTL_FLAG, (type)) */
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   ( (3 << 30) | ('V' << 8) | (Function) | VBOXGUEST_IOCTL_FLAG | (Size << 16) )
 /* VBOXGUEST_IOCTL_CODE_FAST(Function) == _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG) */
