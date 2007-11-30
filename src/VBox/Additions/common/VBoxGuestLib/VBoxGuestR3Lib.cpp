@@ -35,6 +35,7 @@
 /** The VBoxGuest device handle. */
 static RTFILE g_File = NIL_RTFILE;
 
+
 VBGLR3DECL(int) VbglR3Init(void)
 {
     if (g_File != NIL_RTFILE)
@@ -166,48 +167,44 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 #endif
 }
 
+
 VBGLR3DECL(int) VbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cbSize,
-                              VMMDevRequestType reqType)
+                              VMMDevRequestType enmReqType)
 {
     VMMDevRequestHeader *pReq;
-    int rc = VINF_SUCCESS;
 
-    if (!ppReq || cbSize < sizeof (VMMDevRequestHeader))
-    {
-        AssertMsgFailed(("VbglR3GRAlloc: Invalid parameter: ppReq = %p, cbSize = %d\n",
-                         ppReq, cbSize));
-        return VERR_INVALID_PARAMETER;
-    }
-    pReq = (VMMDevRequestHeader *)RTMemTmpAlloc (cbSize);
-    if (!pReq)
-    {
-        AssertMsgFailed(("VbglR3GRAlloc: no memory\n"));
-        rc = VERR_NO_MEMORY;
-    }
-    else
-    {
-        pReq->size        = cbSize;
-        pReq->version     = VMMDEV_REQUEST_HEADER_VERSION;
-        pReq->requestType = reqType;
-        pReq->rc          = VERR_GENERAL_FAILURE;
-        pReq->reserved1   = 0;
-        pReq->reserved2   = 0;
+    AssertPtrReturn(ppReq, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cb >= sizeof(VMMDevRequestHeader), ("%#x vs %#zx\n", cb, sizeof(VMMDevRequestHeader)), 
+                    VERR_INVALID_PARAMETER);
 
-        *ppReq = pReq;
-    }
+    pReq = (VMMDevRequestHeader *)RTMemTmpAlloc(cb);
+    if (RT_UNLIKELY(!pReq))
+        return VERR_NO_MEMORY;
 
-    return rc;
+    pReq->size        = cbSize;
+    pReq->version     = VMMDEV_REQUEST_HEADER_VERSION;
+    pReq->requestType = enmReqType;
+    pReq->rc          = VERR_GENERAL_FAILURE;
+    pReq->reserved1   = 0;
+    pReq->reserved2   = 0;
+
+    *ppReq = pReq;
+
+    return VINF_SUCCESS;
 }
+
 
 VBGLR3DECL(int) VbglR3GRPerform(VMMDevRequestHeader *pReq)
 {
     return vbglR3DoIOCtl(VBOXGUEST_IOCTL_VMMREQUEST(pReq->size), pReq, pReq->size);
 }
 
-VBGLR3DECL(void) VbglR3GRFree (VMMDevRequestHeader *pReq)
+
+VBGLR3DECL(void) VbglR3GRFree(VMMDevRequestHeader *pReq)
 {
-    RTMemTmpFree((void *)pReq);
+    RTMemTmpFree(pReq);
 }
+
 
 VBGLR3DECL(int) VbglR3GetHostTime(PRTTIMESPEC pTime)
 {
@@ -220,10 +217,13 @@ VBGLR3DECL(int) VbglR3GetHostTime(PRTTIMESPEC pTime)
     return rc;
 }
 
+
 /**
- * Cause any pending WaitEvent calls (VBOXGUEST_IOCTL_WAITEVENT) to return with a
- * VERR_INTERRUPTED error.  Can be used in combination with a termination flag variable for
- * interrupting event loops.  Avoiding race conditions is the responsibility of the caller.
+ * Cause any pending WaitEvent calls (VBOXGUEST_IOCTL_WAITEVENT) to return 
+ * with a VERR_INTERRUPTED status.
+ * 
+ * Can be used in combination with a termination flag variable for interrupting 
+ * event loops. Avoiding race conditions is the responsibility of the caller.
  *
  * @returns IPRT status code
  */
