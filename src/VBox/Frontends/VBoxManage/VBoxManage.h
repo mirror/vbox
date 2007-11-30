@@ -68,6 +68,8 @@
 #endif /* !VBOX_OSE */
 #define USAGE_VM_STATISTICS         RT_BIT_64(35)
 #define USAGE_ADOPTSTATE            RT_BIT_64(36)
+#define USAGE_MODINSTALL            RT_BIT_64(37)
+#define USAGE_MODUNINSTALL          RT_BIT_64(38)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
