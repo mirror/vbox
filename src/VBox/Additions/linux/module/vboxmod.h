@@ -66,16 +66,6 @@ extern int vboxadd_verbosity;
 #define vlog(n, ...) \
 if (n >= vboxadd_verbosity) printk (KERN_DEBUG "vboxadd: " __VA_ARGS__)
 
-#define compiler_assert(val) \
-do { \
-switch(0) { \
-case 0: \
-case (val): \
-default: \
-break; \
-} \
-} while(0);
-
 extern int vboxadd_cmc_init (void);
 extern void vboxadd_cmc_fini (void);
 DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
