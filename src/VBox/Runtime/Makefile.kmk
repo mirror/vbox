@@ -1074,16 +1074,28 @@ endif
 $(PATH_TARGET)/errmsgdata.h: common/err/errmsg.sed $(DEPTH)/include/iprt/err.h $(DEPTH)/include/VBox/err.h
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
+ifdef KMK_USE_REDIRECT
+	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
+else
 	$(QUIET)$(SED) -f $< $(filter %.h,$^) > $@
+endif
 ## @todo r=bird: rename this to indicate that it's not only COM errors, but all win32/64 errors.
 $(PATH_TARGET)/errmsgcomdata.h: common/err/errmsgcom.sed $(PATH_SDK_WINPSDK_INC)/WinError.h
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
+ifdef KMK_USE_REDIRECT
+	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
+else
 	$(QUIET)$(SED) -f $< $(filter %.h,$^) > $@
+endif
 $(PATH_TARGET)/errmsgxpcomdata.h: common/err/errmsgxpcom.sed $(DEPTH)/src/libs/xpcom18a4/xpcom/base/nsError.h
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
+ifdef KMK_USE_REDIRECT
+	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
+else
 	$(QUIET)$(SED) -f $< $(filter %.h,$^) > $@
+endif
 
 
 #
