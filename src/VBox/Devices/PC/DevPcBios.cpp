@@ -607,7 +607,7 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
         }
         else
         {
-            if (pData->iMsg >= sizeof(pData->szMsg))
+            if (pData->iMsg >= sizeof(pData->szMsg)-1)
             {
                 pData->szMsg[pData->iMsg] = '\0';
                 Log(("pcbios: %s\n", pData->szMsg));
