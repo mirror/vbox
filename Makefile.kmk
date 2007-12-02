@@ -197,7 +197,11 @@ $(PATH_TARGET)/docs.Core: \
 		| $(call DIRDEP, $(PATH_TARGET)) \
 		  $(call DIRDEP, $(PATH_OUT)/docs/Core)
 	$(RM) -f $(wildcard $(PATH_OUT)/docs/Core/html/*)
+ifdef KMK_USE_REDIRECT
+	$(REDIRECT) -E 'PATH_OUT=$(PATH_OUT)' -E 'PATH_TARGET=$(PATH_TARGET)' -- doxygen Doxyfile.Core
+else
 	PATH_OUT="$(PATH_OUT)" PATH_TARGET="$(PATH_TARGET)" doxygen Doxyfile.Core
+endif
 
 $(call DIRDEP, $(PATH_OUT)/docs/Core):
 	$(MKDIR) -p $@
