@@ -30,6 +30,7 @@ using std::endl;
 #include <sys/types.h>
 #include <sys/stat.h>     /* For umask */
 #include <fcntl.h>        /* For open */
+#include <stdlib.h>       /* For exit */
 #include <unistd.h>
 #include <getopt.h>
 
@@ -69,7 +70,7 @@ void vboxDaemonise(void)
            standard files and hope. */
         rlim.rlim_cur = 3;
     }
-    for (int i = 0; i < rlim.rlim_cur; ++i)
+    for (unsigned int i = 0; i < rlim.rlim_cur; ++i)
     {
         close(i);
     }
