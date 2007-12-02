@@ -76,6 +76,10 @@
 #include <iprt/path.h>
 #include <iprt/env.h>
 
+#if defined (Q_WS_X11)
+#include <iprt/mem.h>
+#endif
+
 #if defined (VBOX_GUI_DEBUG)
 uint64_t VMCPUTimer::ticks_per_msec = (uint64_t) -1LL; // declared in VBoxDefs.h
 #endif
@@ -1721,10 +1725,10 @@ bool VBoxGlobal::showVirtualBoxLicense()
 {
     /* get the apps doc path */
     int size = 256;
-    char *buffer = (char*) malloc (size);
+    char *buffer = (char*) RTMemTmpAlloc (size);
     RTPathAppDocs (buffer, size);
     QString path (buffer);
-    free (buffer);
+    RTMemTmpFree (buffer);
     QDir docDir (path);
     docDir.setFilter (QDir::Files);
     docDir.setNameFilter ("License-*.html");

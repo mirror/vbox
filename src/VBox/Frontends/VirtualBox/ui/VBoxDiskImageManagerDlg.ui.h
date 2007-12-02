@@ -1759,8 +1759,8 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
         CHardDisk hd = aItem->getMedia().disk;
         QUuid machineId = hd.GetMachineId();
         if (machineId.isNull() ||
-            vbox.GetMachine (machineId).GetState() != CEnums::PoweredOff &&
-            vbox.GetMachine (machineId).GetState() != CEnums::Aborted)
+            (vbox.GetMachine (machineId).GetState() != CEnums::PoweredOff &&
+             vbox.GetMachine (machineId).GetState() != CEnums::Aborted))
             return false;
     }
     else if (parentList == cdsView)
@@ -1789,7 +1789,7 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
                                              CEnums::TemporaryUsage));
         if (!tempMachines.isEmpty())
             return false;
-        /* only permamently mounted .iso could be released */
+        /* only permamently mounted floppies could be released */
         QStringList permMachines =
             QStringList::split (' ', vbox.GetFloppyImageUsage (itemId,
                                              CEnums::PermanentUsage));
