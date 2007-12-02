@@ -33,6 +33,10 @@ ifdef VBOX_WITH_TESTCASES
  SYSMODS   += tstMicroGC
 endif # VBOX_WITH_TESTCASES
 
+ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+PROGRAMS += tstPDMAsyncCompletion
+endif
+
 #
 # We setup two 'other' targets for executing the two structure & alignment
 # validation testcases. Perhaps a bit hackish, but extremely useful.
@@ -177,8 +181,11 @@ tstMicroGC_LIBS        += \
 endif
 tstMicroGC_SOURCES.win = tstMicroGC.def
 
-
-
+ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+tstPDMAsyncCompletion_TEMPLATE         = VBOXR3EXE
+tstPDMAsyncCompletion_SOURCES          = tstPDMAsyncCompletion.cpp
+tstPDMAsyncCompletion_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+endif
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
