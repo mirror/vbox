@@ -528,9 +528,9 @@ STDMETHODIMP VBoxSDLFB::VideoModeSupported(ULONG width, ULONG height, ULONG bpp,
 
     /* are constraints set? */
     if (   (   (mMaxScreenWidth != ~(uint32_t)0)
-            && (width > mMaxScreenWidth)
+            && (width > mMaxScreenWidth))
         || (   (mMaxScreenHeight != ~(uint32_t)0)
-            && (height > mMaxScreenHeight))))
+            && (height > mMaxScreenHeight)))
     {
         /* nope, we don't want that (but still don't freak out if it is set) */
 #ifdef DEBUG
