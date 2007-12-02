@@ -2300,7 +2300,7 @@ static void pcnetPollRxTx(PCNetState *pData)
         if (HOST_IS_OWNER(CSR_CRST(pData)))     /* Only poll RDTEs if none available */
             pcnetRdtePoll(pData);
 
-    if (CSR_TDMD(pData) || CSR_TXON(pData) && !CSR_DPOLL(pData))
+    if (CSR_TDMD(pData) || (CSR_TXON(pData) && !CSR_DPOLL(pData)))
         pcnetTransmit(pData);
 }
 
