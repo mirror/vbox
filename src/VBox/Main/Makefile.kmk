@@ -85,7 +85,12 @@ $(PATH_TARGET)/docs.Main: \
 		  $(call DIRDEP, $(PATH_OUT)/docs/Main)
 	$(RM) -f $(wildcard $(PATH_OUT)/docs/Main/html/*)
 	$(VBOX_XSLTPROC) -o $(PATH_TARGET)/VirtualBox.idl idl/doxygen.xsl idl/VirtualBox.xidl
+ifdef KMK_USE_REDIRECT
+	$(REDIRECT) -E 'PATH_OUT=$(PATH_OUT)' -E 'PATH_TARGET=$(PATH_TARGET)' -E 'PATH_CHM=$(subst /,\,$(PATH_BIN)/VirtualBoxAPI.chm)' \
+		-- doxygen Doxyfile.Main
+else
 	PATH_OUT="$(PATH_OUT)" PATH_TARGET="$(PATH_TARGET)" PATH_CHM="$(subst /,\\,$(PATH_BIN)/VirtualBoxAPI.chm)" doxygen Doxyfile.Main
+endif
 	-$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe $(subst /,\\,$(PATH_OUT)/docs/Main/html/index.hhp)
 	$(APPEND) $(PATH_TARGET)/docs.Main
 
