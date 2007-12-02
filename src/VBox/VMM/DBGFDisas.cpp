@@ -284,7 +284,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
         SelInfo.GCPtrBase           = pHiddenSel->u32Base;
         SelInfo.cbLimit             = pHiddenSel->u32Limit;
         SelInfo.fHyper              = false;
-        SelInfo.fRealMode           = !!(pCtxCore && pCtxCore->eflags.Bits.u1VM || enmMode == PGMMODE_REAL);
+        SelInfo.fRealMode           = !!((pCtxCore && pCtxCore->eflags.Bits.u1VM) || enmMode == PGMMODE_REAL);
         SelInfo.Raw.au32[0]         = 0;
         SelInfo.Raw.au32[1]         = 0;
         SelInfo.Raw.Gen.u16LimitLow = ~0;
