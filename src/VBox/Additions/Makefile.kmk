@@ -172,7 +172,7 @@ endif
 
 
 # build the Linux installer on a remote machine
-# TODO: Move the VBOX_REMOTE_LINUX32_ADDITIONS_BUILD stuff into LocaleConfig.kmk on the x86 box.
+# TODO: Move the VBOX_REMOTE_LINUX32_ADDITIONS_BUILD stuff into LocalConfig.kmk on the x86 box.
 VBOX_REMOTE_LINUX32_ADDITIONS_BUILD ?= ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions build-linux32-additions BUILD_TYPE=release"
 $(LINUXINSTALLER_CROSS):
 	$(VBOX_REMOTE_LINUX32_ADDITIONS_BUILD)
