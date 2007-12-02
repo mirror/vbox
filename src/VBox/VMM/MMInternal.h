@@ -548,7 +548,7 @@ typedef enum MMLOOKUPHYPERTYPE
     /** Dynamic mapping area (MMR3HyperReserve).
      * A conversion will require to check what's in the page table for the pages. */
     MMLOOKUPHYPERTYPE_DYNAMIC
-};
+} MMLOOKUPHYPERTYPE;
 
 /**
  * Lookup record for the hypervisor memory area.
