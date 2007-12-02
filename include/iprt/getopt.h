@@ -154,7 +154,7 @@ typedef RTOPTIONUNION *PRTOPTIONUNION;
  * @param pValueUnion   union with value; in the event of an error, psz member points to erroneous parameter; otherwise, for options
  *                      that require an argument, this contains the value of that argument, depending on the type that is required.
  */
-RTDECL(int) RTGetOpt(int argc, const char *argv[], PCRTOPTIONDEF paOptions, size_t cOptions, int *piThis, PRTOPTIONUNION pValueUnion);
+RTDECL(int) RTGetOpt(int argc, char *argv[], PCRTOPTIONDEF paOptions, size_t cOptions, int *piThis, PRTOPTIONUNION pValueUnion);
 
 /** @} */
 
