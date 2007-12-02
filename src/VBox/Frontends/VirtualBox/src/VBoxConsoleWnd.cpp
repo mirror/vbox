@@ -1927,11 +1927,11 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
     AssertReturn (console, false);
     AssertReturn ((hidden_children.isEmpty() == aOn), false);
-    AssertReturn (aSeamless && mIsSeamless != aOn ||
-                  !aSeamless && mIsFullscreen != aOn, false);
+    AssertReturn ((aSeamless && mIsSeamless != aOn) ||
+                  (!aSeamless && mIsFullscreen != aOn), false);
     if (aOn)
-        AssertReturn (aSeamless && !mIsFullscreen ||
-                      !aSeamless && !mIsSeamless, false);
+        AssertReturn ((aSeamless && !mIsFullscreen) ||
+                      (!aSeamless && !mIsSeamless), false);
 
     if (aOn)
     {
