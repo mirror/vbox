@@ -51,7 +51,7 @@ int main()
         { "--quiet",            384, RTGETOPT_REQ_NOTHING },
     };
 
-    char *argv2[] = 
+    const char *argv2[] = 
     {
         "-s",               "string1",
         "--optwithstring",  "string2",

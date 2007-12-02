@@ -25,7 +25,7 @@
 
 
 
-RTDECL(int) RTGetOpt(int argc, char *argv[], PCRTOPTIONDEF paOptions, size_t cOptions, int *piThis, PRTOPTIONUNION pValueUnion)
+RTDECL(int) RTGetOpt(int argc, const char *argv[], PCRTOPTIONDEF paOptions, size_t cOptions, int *piThis, PRTOPTIONUNION pValueUnion)
 {
     pValueUnion->pDef = NULL;
 
