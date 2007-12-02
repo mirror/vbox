@@ -182,18 +182,24 @@ PDMR3DECL(int) PDMR3Init(PVM pVM)
                 rc = pdmR3DevInit(pVM);
                 if (VBOX_SUCCESS(rc))
                 {
-                    /*
-                     * Register the saved state data unit.
-                     */
-                    rc = SSMR3RegisterInternal(pVM, "pdm", 1, PDM_SAVED_STATE_VERSION, 128,
-                                               NULL, pdmR3Save, NULL,
-                                               pdmR3LoadPrep, pdmR3Load, NULL);
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+                    rc = pdmR3AsyncCompletionInit(pVM);
                     if (VBOX_SUCCESS(rc))
+#endif
                     {
-                        LogFlow(("PDM: Successfully initialized\n"));
-                        return rc;
-                    }
+                        /*
+                         * Register the saved state data unit.
+                         */
+                        rc = SSMR3RegisterInternal(pVM, "pdm", 1, PDM_SAVED_STATE_VERSION, 128,
+                                                   NULL, pdmR3Save, NULL,
+                                                   pdmR3LoadPrep, pdmR3Load, NULL);
+                        if (VBOX_SUCCESS(rc))
+                        {
+                            LogFlow(("PDM: Successfully initialized\n"));
+                            return rc;
+                        }
 
+                    }
                 }
             }
         }
@@ -408,6 +414,13 @@ PDMR3DECL(int) PDMR3Term(PVM pVM)
      * Destroy all threads.
      */
     pdmR3ThreadDestroyAll(pVM);
+
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+    /*
+     * Free async completion managers.
+     */
+    pdmR3AsyncCompletionTerm(pVM);
+#endif
 
     /*
      * Free modules.

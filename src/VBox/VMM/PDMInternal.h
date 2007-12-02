@@ -921,6 +921,10 @@ void        pdmR3ThreadDestroyAll(PVM pVM);
 int         pdmR3ThreadResumeAll(PVM pVM);
 int         pdmR3ThreadSuspendAll(PVM pVM);
 
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+int         pdmR3AsyncCompletionInit(PVM pVM);
+int         pdmR3AsyncCompletionTerm(PVM pVM);
+#endif
 
 #endif /* IN_RING3 */
 
