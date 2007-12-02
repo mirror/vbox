@@ -291,7 +291,7 @@ int vbox_ioctl_hgcm_call(unsigned long arg, VBoxDevice *vboxDev)
     uint8_t *pu8PointerData;
     int rc;
 
-    AssertCompiler((_IOC_SIZE(IOCTL_VBOXGUEST_HGCM_CALL) == sizeof(VBoxGuestHGCMCallInfo)));
+    AssertCompile((_IOC_SIZE(IOCTL_VBOXGUEST_HGCM_CALL) == sizeof(VBoxGuestHGCMCallInfo)));
     /* Get the call header from user space to see how many call parameters there are. */
     if (copy_from_user(&callHeader, (void*)arg, sizeof(callHeader)))
     {
