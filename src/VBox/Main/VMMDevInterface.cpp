@@ -162,7 +162,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestVersion(PPDMIVMMDEVCONNECTOR pInterface, VBo
         return;
 
     char version[20];
-    sprintf(version, "%d", guestInfo->additionsVersion);
+    RTStrPrintf(version, sizeof(version), "%d", guestInfo->additionsVersion);
     guest->setAdditionsVersion(Bstr(version));
 
     /*
