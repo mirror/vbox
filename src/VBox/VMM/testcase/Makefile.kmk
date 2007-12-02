@@ -228,7 +228,11 @@ $(PATH_TARGET)/tstAsmStructsAsm.mac: \
 	$(call MSG_GENERATE,tstVMStructSize,$@,$<)
 ifndef DONT_USE_YASM
 	$(QUIET)$(TOOL_YASM_AS) $(MY_ASA_ASM_STUFF) -o $@.o -l $@.lst $<
+ifdef KMK_NEW_SED
+	$(SED) -f $(VBOX_PATH_VMM_SRC)/testcase/tstAsmStructsAsm-lst.sed --output $@ $@.lst
+else
 	$(SED) -f $(VBOX_PATH_VMM_SRC)/testcase/tstAsmStructsAsm-lst.sed $@.lst > $@
+endif
 else
 	$(QUIET)$(TOOL_NASM_AS) -g $(MY_ASA_ASM_STUFF) -o $@.o -l $@.lst $<
 	$(VBOX_NM) $@.o | $(SED) \
@@ -254,21 +258,38 @@ endif
 $(PATH_TARGET)/tstAsmStructsHC.h: $(PATH_TARGET)/tstAsmStructsAsm.o
 	$(call MSG_GENERATE,tstVMStructSize,$@,$<)
 	$(QUIET)$(RM) -f $@ $@.dump $@.tmp
+ifdef KMK_USE_REDIRECT
+	$(QUIET)$(REDIRECT) -wo $@.dump -- $(VBOX_NM) $<
+else
 	$(VBOX_NM) $< > $@.dump
+endif
+ifdef KMK_NEW_SED
+	$(QUIET)$(SED) -e '/STAMPROFILEADV/d' \
+	       -e '/00[0-9a-fA-F]* [aA] [^_.]*\./!d'       -e 's/\(00[0-9a-fA-F]*\) [aA] \([^.]*\)\.\(.*$$\)/    CHECK_OFF(\2, 0x0\1, \3);/' \
+	       --output $@.tmp $@.dump 
+	$(QUIET)$(SED) -e '/VM_size$$/d' \
+	       -e '/00[0-9a-fA-F]* [aA] [^_.]*_size$$/!d'  -e 's/\(00[0-9a-fA-F]*\) [aA] \([^_.]*\)_size/    CHECK_SIZE(\2, 0x0\1);/' \
+	       --append $@.tmp $@.dump
+else
 	$(QUIET)$(SED) -e '/STAMPROFILEADV/d' \
 	       -e '/00[0-9a-fA-F]* [aA] [^_.]*\./!d'       -e 's/\(00[0-9a-fA-F]*\) [aA] \([^.]*\)\.\(.*$$\)/    CHECK_OFF(\2, 0x0\1, \3);/' \
 	       $@.dump >  $@.tmp
 	$(QUIET)$(SED) -e '/VM_size$$/d' \
 	       -e '/00[0-9a-fA-F]* [aA] [^_.]*_size$$/!d'  -e 's/\(00[0-9a-fA-F]*\) [aA] \([^_.]*\)_size/    CHECK_SIZE(\2, 0x0\1);/' \
 	       $@.dump >> $@.tmp
+endif
 	$(QUIET)$(MV) -f $@.tmp $@
 	$(QUIET)$(RM) -f $@.dump
 
 # 3. transform the HC header into a GC one by omitting some HC only structures.
 $(PATH_TARGET)/tstAsmStructsGC.h: $(PATH_TARGET)/tstAsmStructsHC.h
 	$(call MSG_GENERATE,tstVMStructSize,$@,$<)
+ifdef KMK_NEW_SED
+	$(QUIET)$(SED) -e '/VMMSWITCHERDEF/d' --output $@ $^
+else
 	$(QUIET)$(SED) -e '/VMMSWITCHERDEF/d' \
 		$^ > $@
+endif
 
 ## @todo make this default kBuild behaviour.
 .SECONDEXPANSION:
@@ -289,7 +310,11 @@ $(PATH_TARGET)/tstAsmStructs.run: $$(INSTARGET_tstAsmStructs) $$(INSTARGET_tstAs
 # 1. Manually dump selected structures and members.
 $(PATH_TARGET)/tstVMStructGC.h: $$(INSTARGET_tstVMStructGC)
 	$(call MSG_GENERATE,tstVMStructSize,$@)
+ifdef KMK_USE_REDIRECT
+	$(QUIET)$(REDIRECT) -wo $@ -- $(INSTARGET_tstVMStructGC)
+else
 	$(QUIET)$(INSTARGET_tstVMStructGC) > $@
+endif
 
 # 2. run it.
 $(PATH_TARGET)/tstVMStructSize.run: $$(INSTARGET_tstVMStructSize)

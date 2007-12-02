@@ -66,12 +66,20 @@ $(PATH_TARGET)/VgaBiosBin.c: $(PATH_TARGET)/vgabios.bin $(VBOX_BIN2C)
 
 # 1. create vbetables.h
 $(PATH_TARGET)/vbetables.h: $(MAKEFILE_CURRENT)
+ifdef KMK_USE_REDIRECT
+	$(QUIET)$(REDIRECT) -wo $@ -- $(TARGET_vbetables-gen)
+else
 	$(QUIET)$(TARGET_vbetables-gen) > $@
+endif
 
 # 2. precompile
 $(PATH_TARGET)/_vgabios_.c: $(addprefix $(PATH_SUB_CURRENT)/,vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe.c clext.c) $(PATH_TARGET)/vbetables.h
 	$(call MSG_TOOL,cpp,VgaBiosBin,$<,$@)
+ifdef KMK_USE_REDIRECT
+	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -P -DVBOX -DVBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" -DVBE -DVGABIOS_DATE="''" $(addprefix -D,$(DEFS) $(DEFS.$(BUILD_TYPE))) -o $@ $<
+else
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -DVBOX -DVBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" -E -P $< -DVBE -DVGABIOS_DATE="''" $(addprefix -D,$(DEFS) $(DEFS.$(BUILD_TYPE))) > $@
+endif
 
 # 3. compile - tempfile clashes, so make sure it's built in solitude.
 .NOTPARALLEL: $(PATH_TARGET)/vgabios0.s
@@ -82,12 +90,20 @@ $(PATH_TARGET)/vgabios0.s: $(PATH_TARGET)/_vgabios_.c
 # 4. preprocess intermediate assembly.
 $(PATH_TARGET)/vgabios1.s: $(PATH_TARGET)/vgabios0.s
 	$(call MSG_TOOL,Adjusting BCC Assembly,VgaBiosBin,$<,$@)
+ifdef KMK_NEW_SED
+	$(QUIET)$(SED) -e 's/^\.text//' -e 's/^\.data//' --output $@ $^
+else
 	$(QUIET)$(SED) -e 's/^\.text//' -e 's/^\.data//' $^ > $@
+endif
 
 # 5. assemble
 $(PATH_TARGET)/vgabios.tmp $(PATH_TARGET)/vgabios.lst: $(PATH_TARGET)/vgabios1.s
 	$(call MSG_COMPILE,VgaBiosBin,$<,$@,AS)
+ifdef KMK_USE_REDIRECT
+	$(QUIET)$(REDIRECT) -ri $^ -- $(VBOX_AS86) -b $(PATH_TARGET)/vgabios.tmp -u- -w- -g -0 -j -O -l $(PATH_TARGET)/vgabios.lst
+else
 	$(QUIET)$(VBOX_AS86) -b $(PATH_TARGET)/vgabios.tmp -u- -w- -g -0 -j -O -l $(PATH_TARGET)/vgabios.lst < $^
+endif
 
 # 6. checksums
 $(PATH_TARGET)/vgabios.bin: $(PATH_TARGET)/vgabios.tmp $$(TARGET_vgabiossums)
