@@ -395,8 +395,8 @@ private slots:
     {
         bool upEnabled   = aItem && aItem->isSelected() && aItem->itemAbove();
         bool downEnabled = aItem && aItem->isSelected() && aItem->itemBelow();
-        if (mBtnUp->hasFocus() && !upEnabled ||
-            mBtnDown->hasFocus() && !downEnabled)
+        if ((mBtnUp->hasFocus() && !upEnabled) ||
+            (mBtnDown->hasFocus() && !downEnabled))
             mBootTable->setFocus();
         mBtnUp->setEnabled (upEnabled);
         mBtnDown->setEnabled (downEnabled);
