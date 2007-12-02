@@ -86,7 +86,11 @@ tstDeviceStructSize.cpp_DEPS = $(PATH_TARGET)/tstDeviceStructSizeGC.h
 # 1&2. Manually dump selected structures and members.
 $(PATH_TARGET)/tstDeviceStructSizeGC.h: $$(INSTARGET_tstDeviceStructSizeGC)
 	$(call MSG_GENERATE,,$@)
+ifdef KMK_USE_REDIRECT
+	$(QUIET)$(REDIRECT) -wo $@ -- $(INSTARGET_tstDeviceStructSizeGC)
+else
 	$(QUIET)$(INSTARGET_tstDeviceStructSizeGC) > $@
+endif
 
 # 3. run it.
 $(PATH_TARGET)/tstDeviceStructSize.run: $$(INSTARGET_tstDeviceStructSize)

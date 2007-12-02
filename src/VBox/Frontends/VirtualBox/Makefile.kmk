@@ -328,12 +328,21 @@ VirtualBoxVM.app_SYMLINKS = \
 $(PATH_TARGET)/VM-Info.plist: src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
 	$(QUIET)$(RM) -f $@
+ifdef KMK_NEW_SED
+	$(QUIET)$(SED) \
+		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		--output $@ $<
+else
 	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
 		$< > $@
+endif
 
 #
 # Translation installation
@@ -531,9 +540,8 @@ $(foreach src,$(VirtualBox_SOURCES),$(eval $(def_wrapper_deps)))
 # static images imported from VBoxUI.pro as VirtualBox_QT_IMAGES
 
 $(PATH_VirtualBox)/ui/vbox_image_collection.txt: VBoxUI.pro $(VirtualBox_QT_IMAGES)
-	@echo " \
-	$(VirtualBox_QT_IMAGES) \
-    " > $@
+	$(RM) -f $@
+	$(APPEND) $@ -v VirtualBox_QT_IMAGES
 
 $(PATH_VirtualBox)/ui/vbox_image_collection.cpp: $(PATH_VirtualBox)/ui/vbox_image_collection.txt
 	$(call MSG_TOOL,uic,VirtualBox,$<,$@)
