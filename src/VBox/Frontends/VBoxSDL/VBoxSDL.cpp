@@ -2114,8 +2114,8 @@ int main(int argc, char *argv[])
                         {
                             if (   event.type == SDL_KEYDOWN
                                 && ksym != SDLK_UNKNOWN
-                                && (   enmHKeyState == HKEYSTATE_DOWN_1ST && ksym == gHostKeySym2
-                                    || enmHKeyState == HKEYSTATE_DOWN_2ND && ksym == gHostKeySym1))
+                                && (   (enmHKeyState == HKEYSTATE_DOWN_1ST && ksym == gHostKeySym2)
+                                    || (enmHKeyState == HKEYSTATE_DOWN_2ND && ksym == gHostKeySym1)))
                             {
                                 EvHKeyDown2  = event;
                                 enmHKeyState = HKEYSTATE_DOWN;
