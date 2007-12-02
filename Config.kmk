@@ -934,6 +934,13 @@ ifneq ($(VBOX_GCC_TOOL),$(VBOX_GCC32_TOOL))
  include $(PATH_KBUILD)/tools/$(VBOX_GCC32_TOOL).kmk
 endif
 
+# These tests never worked on Windows because of /dev/null, so, there
+# can be no harm in just dropping them until cygwin is mp safe.
+ifeq ($(BUILD_PLATFORM),win)
+VBOX_GCC_CHECK_CC = $(2)
+VBOX_GCC_CHECK_CXX = $(2)
+VBOX_GCC32_CHECK_CXX = $(2)
+else
 VBOX_GCC_CHECK_CC = $(shell \
    if $(TOOL_$(VBOX_GCC_TOOL)_CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
    then echo "$(1)"; \
@@ -948,11 +955,18 @@ VBOX_GCC32_CHECK_CXX = $(shell \
    if $(TOOL_$(VBOX_GCC32_TOOL)_CXX) $(1) -S -o /dev/null -xc++ /dev/null > /dev/null 2>&1; \
    then echo "$(1)"; \
    else echo "$(2)"; fi; )
+endif
 
+ifeq ($(BUILD_PLATFORM),win)
+# This isn't important (yet) on windows, so cook the result until
+# cygwin is feeling better.
+VBOX_GCC_VERSION := $(int-add $(int-mul 10000, 3), $(int-mul 100, 3), 3)
+else
 # This is kind of bad, the returned string needs to be re-evaluated before use.
 # The reason for this hack is that the windows kmk_ash cannot deal with $((1+1)).
 VBOX_GCC_VERSION = $(shell \
   $(1) -dumpversion | $(SED_EXT) 's|\([0-9]\)\.\([0-9]\)\.\([0-9]\)|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, \2), \3)|' )
+endif
 
 # No $(QUIET) here as it's interesting to see what goes into the file.
 $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
@@ -960,7 +974,7 @@ $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
 	$(QUIET)$(RM) -f '$@'
 	$(QUIET)$(MKDIR) -p $(@D)
 
-	@# HC compiler switch detection.
+# HC compiler switch detection.
 	$(APPEND) '$@' 'VBOX_GCC_VERSION_CC            ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CC))'
 	$(APPEND) '$@' 'VBOX_GCC_VERSION_CXX           ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CXX))'
 	$(APPEND) '$@' 'VBOX_GCC_LIBGCC                ?= $(shell $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-libgcc-file-name)'
@@ -969,11 +983,11 @@ $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
 	$(APPEND) '$@' 'VBOX_GCC_Wno-invalid-offsetof  ?= $(call VBOX_GCC_CHECK_CXX,-Wno-invalid-offsetof,)'
 	$(APPEND) '$@' 'VBOX_GCC_Wno-extra             ?= $(call VBOX_GCC_CHECK_CXX,-Wno-extra)'
 	$(APPEND) '$@' 'VBOX_GCC_fno-stack-protector   ?= $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)'
-	@# Produce code optimized for the most common IA32/AMD64/EM64T processors. Introduced with gcc version 4.2.
+# Produce code optimized for the most common IA32/AMD64/EM64T processors. Introduced with gcc version 4.2.
 	$(APPEND) '$@' 'VBOX_GCC_mtune-generic         ?= $(call VBOX_GCC_CHECK_CC,-mtune=generic,)'
 ifneq ($(BUILD_TARGET),l4)
-	@# Set default attribute for ELF and MACH-O symbols to ``hidden'' to reduce the number
-	@# of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
+# Set default attribute for ELF and MACH-O symbols to ``hidden'' to reduce the number
+# of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
 	$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CC),)'
 	$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CC),40000),)'
 	$(APPEND) '$@' '  VBOX_GCC_fvisibility-hidden  ?= $(call VBOX_GCC_CHECK_CC,-fvisibility=hidden -DVBOX_HAVE_VISIBILITY_HIDDEN,)'
@@ -981,19 +995,23 @@ ifneq ($(BUILD_TARGET),l4)
 	$(APPEND) '$@' 'endif'
 endif
 ifneq ($(BUILD_TARGET),l4)
-	@# Set default attribute for inline functions to ``hidden'' to reduce the number
-	@# of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
+# Set default attribute for inline functions to ``hidden'' to reduce the number
+# of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
 	$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CXX),)'
 	$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40000),)'
 	$(APPEND) '$@' '  VBOX_GCC_fvisibility-inlines-hidden ?= $(call VBOX_GCC_CHECK_CXX,-fvisibility-inlines-hidden,)'
 	$(APPEND) '$@' ' endif'
 	$(APPEND) '$@' 'endif'
 endif
-	@# Find the compiler includes for IPRT no-crt.
-	@# Note that `$(dir $(gcc -print-libgcc-file-name))/include does not work for a 64-bit cross build on a 32-bit build host.
+# Find the compiler includes for IPRT no-crt.
+# Note that `$(dir $(gcc -print-libgcc-file-name))/include does not work for a 64-bit cross build on a 32-bit build host.
+ifeq ($(BUILD_PLATFORM),win)
+# With the cygwin issues and gcc on windows returning a useless path, just skip this on windows.
+	$(APPEND) '$@' 'VBOX_PATH_GCC_INCS             ?= '
+else
 	$(APPEND) '$@' 'VBOX_PATH_GCC_INCS             ?= $(shell LC_ALL=C $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-search-dirs|$(SED_EXT) -ne 's+^install: \(.*[^/][^/]*\)/+\1+p')/include'
-
-	@# 32-bit (GC) compiler switch detection.
+endif
+# 32-bit (GC) compiler switch detection.
 	$(APPEND) '$@' 'VBOX_GCC32_VERSION_CC          ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC32_TOOL)_CC))'
 	$(APPEND) '$@' 'VBOX_GCC32_VERSION_CXX         ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC32_TOOL)_CXX))'
 	$(APPEND) '$@' 'VBOX_GCC32_LIBGCC              ?= $(shell $(TOOL_$(VBOX_GCC32_TOOL)_CC) -print-libgcc-file-name)'
@@ -2605,8 +2623,8 @@ VBOX_VERSION_MK     = $(PATH_OUT)/version-generated.mk
 $(VBOX_VERSION_STAMP): | $(PATH_ROOT)/Config.kmk
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(RM) -f $(filter-out $@,$(wildcard $(PATH_OUT)/version-stamp-*))
-	$(QUIET)$(ECHO_EXT) > $@
+	$(QUIET)$(RM) -f $(wildcard $(PATH_OUT)/version-stamp-*)
+	$(QUIET)$(APPEND) $@ $(VBOX_VERSION_STRING)
 
 $(VBOX_VERSION_HEADER): $(VBOX_VERSION_STAMP)
 	$(call MSG_GENERATE,,$@)
@@ -2639,6 +2657,8 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 ifndef VBOX_OSE
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # linux only, yea, right.
 VBOX_LICENSE_SRC := $(PATH_ROOT)/doc/License.html
+## @todo this can be done by sed alone. Why do we have to do this $(shell ) stuff in *all* make
+# files btw? If this is really necessary, then just do it once for <insert deity of choice>'s sake.
 VBOX_LICENSE_VER := $(shell grep Version $(VBOX_LICENSE_SRC)|sed -e 's/.*Version \([0-9.]*\),.*/\1/g')
 VBOX_LICENSE_BIN := $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html
 
@@ -2651,6 +2671,7 @@ endif
 
 # Force building of the version header file as the first thing anywhere in
 # the tree. This eliminates the need for manual dependencies on it.
+## @todo there gotta be a better way of doing this.
 Makefile.kmk: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK)
 Makefile: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK)
 makefile: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK)
@@ -2668,8 +2689,27 @@ VBOX_SVN_REV_KMK        = $(PATH_OUT)/revision.kmk
 ifndef VBOX_SVN_REV
  VBOX_SVN_REV_FALLBACK := $(patsubst %:,,  $Rev$  )
  VBOX_SVN_DEP          := $(wildcard $(PATH_ROOT)/.svn/entries)
+ifeq ($(KBUILD_VERSION_PATCH),2) ## tmp, remove later.
+ ifeq ($(which (SVN)),)
+  VBOX_SVN_DEP         :=
+ endif
+
+# Rule for generating a timestamp and updating the real thing on change.
+$(VBOX_SVN_REV_KMK).ts +| $(VBOX_SVN_REV_KMK): $(if $(VBOX_SVN_DEP), $(VBOX_SVN_DEP), $(PATH_ROOT)/Config.kmk)
+	$(call MSG_GENERATE,,$(VBOX_SVN_REV_KMK))
+	$(QUIET)$(RM) -f $@ $@.tmp
+	$(QUIET)$(MKDIR) -p $(@D)
+ ifneq ($(VBOX_SVN_DEP),)
+	$(REDIRECT) -E 'LC_ALL=C' -- $(SVN) info $(PATH_ROOT) $@.tmp
+	$(SED) -e '/^Revision/!d'  -e 's/Revision\: */export VBOX_SVN_REV=/' --output $@ $@.tmp
+	$(QUIET)$(RM) -f $@.tmp
+ else
+	$(QUIET)$(APPEND) $@ 'export VBOX_SVN_REV=$(VBOX_SVN_REV_FALLBACK)'
+ endif
+	$(QUIET)$(CP) --changed -fv $@ $(VBOX_SVN_REV_KMK)
+
+else ## tmp, remove later.
  ifneq ($(USERNAME),bird) # Wastes nearly half a second on windows, very annoying. TODO: $(which ).
-  ## @todo with 0.1.2: ifeq ($(which (SVN)),)
   ifneq ($(shell $(SVN) --version > /dev/null 2>&1 || echo 'svn not installed'),)
    VBOX_SVN_DEP         :=
   endif
@@ -2677,10 +2717,8 @@ ifndef VBOX_SVN_REV
 
 # Rule for generating a timestamp and updating the real thing on change.
  ifneq ($(VBOX_SVN_DEP),)
-# fixed in svn - $(VBOX_SVN_REV_KMK).ts +| $(VBOX_SVN_REV_KMK): $(VBOX_SVN_DEP)
 $(VBOX_SVN_REV_KMK).ts: $(VBOX_SVN_DEP)
  else
-# fixed in svn - $(VBOX_SVN_REV_KMK).ts +| $(VBOX_SVN_REV_KMK): $(PATH_ROOT)/Config.kmk
 $(VBOX_SVN_REV_KMK).ts: $(PATH_ROOT)/Config.kmk
  endif
 	$(call MSG_GENERATE,,$(VBOX_SVN_REV_KMK))
@@ -2692,7 +2730,6 @@ $(VBOX_SVN_REV_KMK).ts: $(PATH_ROOT)/Config.kmk
  else
 	$(QUIET)$(APPEND) $@ 'export VBOX_SVN_REV=$(VBOX_SVN_REV_FALLBACK)'
  endif
-## @todo When --update is implemented, replace with: $(QUIET)$(CP) --update -fv $@ $(VBOX_SVN_REV_KMK)
 	$(QUIET)if test ! -f $(VBOX_SVN_REV_KMK) \
 	|| test ! "`$(CAT_EXT) $@`" = "`$(CAT_EXT) $(VBOX_SVN_REV_KMK)`"; \
 	then \
@@ -2705,6 +2742,7 @@ $(VBOX_SVN_REV_KMK).ts: $(PATH_ROOT)/Config.kmk
 	$(QUIET)$(CAT) $(VBOX_SVN_REV_KMK)
 
 $(VBOX_SVN_REV_KMK): $(VBOX_SVN_REV_KMK).ts # remove when kBuild is updated.
+endif ## tmp, remove later
 
  include $(VBOX_SVN_REV_KMK)
 else
