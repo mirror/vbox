@@ -494,7 +494,7 @@ void VBoxSnapshotsWgt::listView_currentChanged (QListViewItem *item)
         item && mCurSnapshotItem && item == mCurSnapshotItem->firstChild());
 
     /* the Take Snapshot action is always enabled for the current state */
-    takeSnapshotAction->setEnabled (!busy && curStateActionGroup->isEnabled() ||
+    takeSnapshotAction->setEnabled ((!busy && curStateActionGroup->isEnabled()) ||
                                     (item && !mCurSnapshotItem));
 
     mContextMenuDirty = true;
