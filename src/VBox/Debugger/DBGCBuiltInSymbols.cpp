@@ -92,22 +92,22 @@ static const DBGCSYM    g_aSyms[] =
     { "eax",    dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, eax)      | SYMREG_SIZE_4 },
     { "ax",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, eax)      | SYMREG_SIZE_2 },
     { "al",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, eax)      | SYMREG_SIZE_1 },
-    { "ah",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, eax) + 1  | SYMREG_SIZE_1 },
+    { "ah",     dbgcSymGetReg,          dbgcSymSetReg,      (offsetof(CPUMCTX, eax) + 1)| SYMREG_SIZE_1 },
 
     { "ebx",    dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ebx)      | SYMREG_SIZE_4 },
     { "bx",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ebx)      | SYMREG_SIZE_2 },
     { "bl",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ebx)      | SYMREG_SIZE_1 },
-    { "bh",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ebx) + 1  | SYMREG_SIZE_1 },
+    { "bh",     dbgcSymGetReg,          dbgcSymSetReg,      (offsetof(CPUMCTX, ebx) + 1)| SYMREG_SIZE_1 },
 
     { "ecx",    dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ecx)      | SYMREG_SIZE_4 },
     { "cx",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ecx)      | SYMREG_SIZE_2 },
     { "cl",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ecx)      | SYMREG_SIZE_1 },
-    { "ch",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ecx) + 1  | SYMREG_SIZE_1 },
+    { "ch",     dbgcSymGetReg,          dbgcSymSetReg,      (offsetof(CPUMCTX, ecx) + 1)| SYMREG_SIZE_1 },
 
     { "edx",    dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edx)      | SYMREG_SIZE_4 },
     { "dx",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edx)      | SYMREG_SIZE_2 },
     { "dl",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edx)      | SYMREG_SIZE_1 },
-    { "dh",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edx) + 1  | SYMREG_SIZE_1 },
+    { "dh",     dbgcSymGetReg,          dbgcSymSetReg,      (offsetof(CPUMCTX, edx) + 1)| SYMREG_SIZE_1 },
 
     { "edi",    dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edi)      | SYMREG_SIZE_4 },
     { "di",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edi)      | SYMREG_SIZE_2 },
@@ -157,22 +157,22 @@ static const DBGCSYM    g_aSyms[] =
     {".eax",    dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, eax)      | SYMREG_SIZE_4 | SYMREG_FLAGS_HYPER },
     {".ax",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, eax)      | SYMREG_SIZE_2 | SYMREG_FLAGS_HYPER },
     {".al",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, eax)      | SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
-    {".ah",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, eax) + 1  | SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
+    {".ah",     dbgcSymGetReg,          dbgcSymSetReg,      (offsetof(CPUMCTX, eax) + 1)| SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
 
     {".ebx",    dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ebx)      | SYMREG_SIZE_4 | SYMREG_FLAGS_HYPER },
     {".bx",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ebx)      | SYMREG_SIZE_2 | SYMREG_FLAGS_HYPER },
     {".bl",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ebx)      | SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
-    {".bh",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ebx) + 1  | SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
+    {".bh",     dbgcSymGetReg,          dbgcSymSetReg,      (offsetof(CPUMCTX, ebx) + 1)| SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
 
     {".ecx",    dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ecx)      | SYMREG_SIZE_4 | SYMREG_FLAGS_HYPER },
     {".cx",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ecx)      | SYMREG_SIZE_2 | SYMREG_FLAGS_HYPER },
     {".cl",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ecx)      | SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
-    {".ch",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, ecx) + 1  | SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
+    {".ch",     dbgcSymGetReg,          dbgcSymSetReg,      (offsetof(CPUMCTX, ecx) + 1)| SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
 
     {".edx",    dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edx)      | SYMREG_SIZE_4 | SYMREG_FLAGS_HYPER },
     {".dx",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edx)      | SYMREG_SIZE_2 | SYMREG_FLAGS_HYPER },
     {".dl",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edx)      | SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
-    {".dh",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edx) + 1  | SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
+    {".dh",     dbgcSymGetReg,          dbgcSymSetReg,      (offsetof(CPUMCTX, edx) + 1)| SYMREG_SIZE_1 | SYMREG_FLAGS_HYPER },
 
     {".edi",    dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edi)      | SYMREG_SIZE_4 | SYMREG_FLAGS_HYPER },
     {".di",     dbgcSymGetReg,          dbgcSymSetReg,      offsetof(CPUMCTX, edi)      | SYMREG_SIZE_2 | SYMREG_FLAGS_HYPER },
