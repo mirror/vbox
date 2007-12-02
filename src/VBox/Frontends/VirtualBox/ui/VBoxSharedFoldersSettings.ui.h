@@ -719,7 +719,7 @@ void VBoxSharedFoldersSettings::processCurrentChanged (QListViewItem *aItem)
         listView->setSelected (aItem, true);
     bool addEnabled = aItem &&
                       (isEditable (aItem->text (2)) ||
-                       aItem->parent() && isEditable (aItem->parent()->text (2)));
+                       (aItem->parent() && isEditable (aItem->parent()->text (2))));
     bool removeEnabled = aItem && aItem->parent() &&
                          isEditable (aItem->parent()->text (2));
     tbAdd->setEnabled (addEnabled);
