@@ -6041,7 +6041,7 @@ HRESULT Machine::saveSnapshotSettingsWorker (CFGNODE aMachineNode,
             break;
         }
 
-        Assert (op == SaveSS_UpdateAttrsOp && !recreateWholeTree ||
+        Assert ((op == SaveSS_UpdateAttrsOp && !recreateWholeTree) ||
                 op == SaveSS_UpdateAllOp);
 
         CFGNODE snapshotsNode = 0;
