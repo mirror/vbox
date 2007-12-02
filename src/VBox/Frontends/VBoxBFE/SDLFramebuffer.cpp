@@ -239,7 +239,7 @@ HRESULT SDLFramebuffer::NotifyUpdate(ULONG x, ULONG y,
     event.type = SDL_USEREVENT;
     event.user.type  = SDL_USER_EVENT_UPDATERECT;
     // 16 bit is enough for coordinates
-    event.user.data1 = (void*)(x << 16 | y + mTopOffset);
+    event.user.data1 = (void*)(x << 16 | (y + mTopOffset));
     event.user.data2 = (void*)(w << 16 | h);
 
     int rc = SDL_PushEvent(&event);
