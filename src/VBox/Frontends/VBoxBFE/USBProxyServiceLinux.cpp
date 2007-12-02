@@ -859,8 +859,8 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                             rc = usbReadStr (pszValue, &If.pszDriver);
                             if (   If.pszDriver
                                 && (    !strcmp (If.pszDriver, "(none)")
-                                    ||  !strcmp (If.pszDriver, "(no driver)"))
-                                    ||  !*If.pszDriver)
+                                    ||  !strcmp (If.pszDriver, "(no driver)")
+                                    ||  !*If.pszDriver))
                             {
                                 RTStrFree ((char *)If.pszDriver);
                                 If.pszDriver = NULL;
