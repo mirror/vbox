@@ -1,10 +1,9 @@
 #!/bin/bash
-
-# VirtualBox VNIC terminate script for Solaris hosts with Crossbow.
-# usage: ./vnicterm.sh vnicname
+# innotek VirtualBox
+# Copyright (C) 2007 innotek GmbH
 #
-# format of VNIC interface names MUST be like [name][number]
-# example: vnic1, vnic2, vnic900 etc.
+# VirtualBox VNIC terminate script for Solaris hosts with Crossbow.
+#
 
 if [ -z "$1" ]; then
     echo "Missing VNIC interface name."

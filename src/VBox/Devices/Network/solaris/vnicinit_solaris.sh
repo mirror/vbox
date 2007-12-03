@@ -1,6 +1,9 @@
 #!/bin/bash
-
+# innotek VirtualBox
+# Copyright (C) 2007 innotek GmbH
+#
 # VirtualBox VNIC setup script for Solaris hosts with Crossbow.
+#
 
 if [ -z "$1" ]; then
     echo "Missing MAC address."
