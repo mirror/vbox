@@ -1859,6 +1859,7 @@ static int vmr3AtResetRegister(PVM pVM, void *pvUser, const char *pszDesc, PVMAT
         *pVM->vm.s.ppAtResetNext = pNew;
         pVM->vm.s.ppAtResetNext = &pNew->pNext;
 
+        *ppNew = pNew;
         return VINF_SUCCESS;
     }
     return VERR_NO_MEMORY;
