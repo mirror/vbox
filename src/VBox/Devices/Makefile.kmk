@@ -194,10 +194,7 @@ VBoxDD2_LDFLAGS.l4      = -Wl,--no-undefined
 DevicesR3_TEMPLATE      = VBOXR3
 DevicesR3_SDKS.win      = WINPSDK W2K3DDK
 DevicesR3_INCS         := \
-	$(PATH_SUB_CURRENT) \
-	Network/lwip/src/include \
-	Network/lwip/src/include/ipv4 \
-	Network/lwip/vbox/include
+	$(PATH_SUB_CURRENT)
 DevicesR3_SOURCES       = \
 	Input/DevPS2.cpp \
 	Bus/DevPCI.cpp \
@@ -219,6 +216,10 @@ DevicesR3_SOURCES       = \
 	Parallel/DevParallel.cpp
 
 ifndef VBOX_OSE
+DevicesR3_INCS         += \
+	Network/lwip/src/include \
+	Network/lwip/src/include/ipv4 \
+	Network/lwip/vbox/include
 DevicesR3_SOURCES      += \
 	Network/DevE1000.cpp \
 	Network/DevE1000Phy.cpp \
@@ -581,6 +582,10 @@ ifdef VBOX_WITH_ISCSI
 	Storage/DrvISCSI.cpp \
 	Storage/DrvISCSITransportTCP.cpp
  Drivers_DEFS         += VBOX_WITH_ISCSI
+ Storage/DrvISCSITransportTCP.cpp_INCS = \
+	Network/lwip/src/include \
+	Network/lwip/src/include/ipv4 \
+	Network/lwip/vbox/include
 endif # VBOX_WITH_ISCSI
 
 ifdef VBOX_WITH_ALSA
