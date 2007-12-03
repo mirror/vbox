@@ -92,7 +92,7 @@ public:
     PCRTUUID raw() const { return &uuid; }
 
     // to pass instances to RTUuid*() as a constant argument
-    operator const RTUUID * const () const { return &uuid; }
+    operator const RTUUID * () const { return &uuid; }
 
 #if defined(RT_OS_WINDOWS)
 
