@@ -211,7 +211,7 @@ GVMMR0DECL(int) GVMMR0Init(void)
             pGVMM->aHandles[0].iNext = 0;
 
             /* the tail */
-            unsigned i = RT_ELEMENTS(pGVMM->aHandles);
+            unsigned i = RT_ELEMENTS(pGVMM->aHandles) - 1;
             pGVMM->aHandles[i].iSelf = i;
             pGVMM->aHandles[i].iNext = 0; /* nil */
 
