@@ -361,7 +361,7 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             RTSemFastMutexRelease(g_DevExt.mtxGip);
             return DDI_SUCCESS;
         }
-        
+
         default:
             return DDI_FAILURE;
     }
