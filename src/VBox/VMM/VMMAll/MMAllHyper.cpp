@@ -552,7 +552,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
      */
     PMMHYPERCHUNKFREE pFree = (PMMHYPERCHUNKFREE)((char *)CTXSUFF(pHeap->pbHeap) + pHeap->offFreeTail);
     ASSERT_CHUNK_FREE(pHeap, pFree);
-    if (    (((uintptr_t)(&pFree->core + 1) + pFree->cb) & PAGE_OFFSET_MASK - 1)
+    if (    (((uintptr_t)(&pFree->core + 1) + pFree->cb) & (PAGE_OFFSET_MASK - 1))
         ||  pFree->cb + sizeof(MMHYPERCHUNK) < cb)
     {
         Log3(("mmHyperAllocPages: Not enough/no page aligned memory!\n"));
