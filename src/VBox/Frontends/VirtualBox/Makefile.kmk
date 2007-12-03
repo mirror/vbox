@@ -541,7 +541,7 @@ $(foreach src,$(VirtualBox_SOURCES),$(eval $(def_wrapper_deps)))
 
 $(PATH_VirtualBox)/ui/vbox_image_collection.txt: VBoxUI.pro $(VirtualBox_QT_IMAGES)
 	$(RM) -f $@
-	$(APPEND) -v VirtualBox_QT_IMAGES $@
+	$(APPEND) -v $@ VirtualBox_QT_IMAGES
 
 $(PATH_VirtualBox)/ui/vbox_image_collection.cpp: $(PATH_VirtualBox)/ui/vbox_image_collection.txt
 	$(call MSG_TOOL,uic,VirtualBox,$<,$@)
