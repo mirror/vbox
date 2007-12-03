@@ -5927,14 +5927,14 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0IRQDelay\0R0Enabled\0PIIX4\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("PIIX3 configuration error: unknown option specified."));
+                                N_("PIIX3 configuration error: unknown option specified"));
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fGCEnabled = true;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 configuration error: failed to read GCEnabled as boolean."));
+                                N_("PIIX3 configuration error: failed to read GCEnabled as boolean"));
     Log(("%s: fGCEnabled=%d\n", __FUNCTION__, fGCEnabled));
 
     rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
@@ -5942,7 +5942,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         fR0Enabled = true;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 configuration error: failed to read R0Enabled as boolean."));
+                                N_("PIIX3 configuration error: failed to read R0Enabled as boolean"));
     Log(("%s: fR0Enabled=%d\n", __FUNCTION__, fR0Enabled));
 
     rc = CFGMR3QueryU32(pCfgHandle, "IRQDelay", &DelayIRQMillies);
@@ -5950,7 +5950,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         DelayIRQMillies = 0;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 configuration error: failed to read IRQDelay as integer."));
+                                N_("PIIX3 configuration error: failed to read IRQDelay as integer"));
     Log(("%s: DelayIRQMillies=%d\n", __FUNCTION__, DelayIRQMillies));
     Assert(DelayIRQMillies < 50);
 
@@ -5959,7 +5959,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pData->fPIIX4 = false;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 configuration error: failed to read PIIX4 as boolean."));
+                                N_("PIIX3 configuration error: failed to read PIIX4 as boolean"));
     Log(("%s: fPIIX4=%d\n", __FUNCTION__, pData->fPIIX4));
 
     /*
@@ -6030,12 +6030,12 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpPCIRegister(pDevIns, &pData->dev);
     if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 cannot register PCI device."));
+                                N_("PIIX3 cannot register PCI device"));
     AssertMsg(pData->dev.devfn == 9 || iInstance != 0, ("pData->dev.devfn=%d\n", pData->dev.devfn));
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 4, 0x10, PCI_ADDRESS_SPACE_IO, ataBMDMAIORangeMap);
     if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 cannot register PCI I/O region for BMDMA."));
+                                N_("PIIX3 cannot register PCI I/O region for BMDMA"));
 
     /*
      * Register the I/O ports.
@@ -6046,14 +6046,14 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         rc = PDMDevHlpIOPortRegister(pDevIns, pData->aCts[i].IOPortBase1, 8, (RTHCPTR)i,
                                      ataIOPortWrite1, ataIOPortRead1, ataIOPortWriteStr1, ataIOPortReadStr1, "ATA I/O Base 1");
         if (VBOX_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register I/O handlers."));
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register I/O handlers"));
 
         if (fGCEnabled)
         {
             rc = PDMDevHlpIOPortRegisterGC(pDevIns, pData->aCts[i].IOPortBase1, 8, (RTGCPTR)i,
                                            "ataIOPortWrite1", "ataIOPortRead1", "ataIOPortWriteStr1", "ataIOPortReadStr1", "ATA I/O Base 1");
             if (VBOX_FAILURE(rc))
-                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register I/O handlers (GC)."));
+                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register I/O handlers (GC)"));
         }
 
         if (fR0Enabled)
@@ -6072,21 +6072,21 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         rc = PDMDevHlpIOPortRegister(pDevIns, pData->aCts[i].IOPortBase2, 1, (RTHCPTR)i,
                                      ataIOPortWrite2, ataIOPortRead2, NULL, NULL, "ATA I/O Base 2");
         if (VBOX_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers."));
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers"));
 
         if (fGCEnabled)
         {
             rc = PDMDevHlpIOPortRegisterGC(pDevIns, pData->aCts[i].IOPortBase2, 1, (RTGCPTR)i,
                                            "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
             if (VBOX_FAILURE(rc))
-                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (GC)."));
+                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (GC)"));
         }
         if (fR0Enabled)
         {
             rc = PDMDevHlpIOPortRegisterR0(pDevIns, pData->aCts[i].IOPortBase2, 1, (RTR0PTR)i,
                                            "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
             if (VBOX_FAILURE(rc))
-                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (R0)."));
+                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (R0)"));
         }
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pData->aCts[i].aIfs); j++)
@@ -6119,7 +6119,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         RTStrPrintf(szName, sizeof(szName), "ATA%d", i);
         rc = PDMDevHlpCritSectInit(pDevIns, &pData->aCts[i].lock, szName);
         if (VBOX_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot initialize critical section."));
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot initialize critical section"));
     }
 
     /*
@@ -6131,7 +6131,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
         AssertMsgFailed(("Failed to attach to status driver. rc=%Vrc\n", rc));
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot attach to status driver."));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot attach to status driver"));
     }
 
     /*
@@ -6193,8 +6193,9 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                         /* Error already catched by DrvHostBase */
                         return rc;
                     default:
-                        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_(
-                               "PIIX3 cannot attach drive to the %s"), s_apszDescs[i][j]);
+                        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                                   N_("PIIX3 cannot attach drive to the %s"),
+                                                   s_apszDescs[i][j]);
                 }
             }
             cbTotalBuffer += pIf->cbIOBuffer;
@@ -6206,7 +6207,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                               ataSaveLoadPrep, ataSaveExec, NULL,
                               ataSaveLoadPrep, ataLoadExec, NULL);
     if (VBOX_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register save state handlers."));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register save state handlers"));
 
     /*
      * Initialize the device state.
