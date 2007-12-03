@@ -769,13 +769,13 @@ RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, unsigned cMillies)
 
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT)
-        rc = select(FD_SETSIZE, &fdsetR, NULL, &fdsetE, NULL);
+        rc = select(Sock + 1, &fdsetR, NULL, &fdsetE, NULL);
     else
     {
         struct timeval timeout;
         timeout.tv_sec = cMillies / 1000;
         timeout.tv_usec = (cMillies % 1000) * 1000;
-        rc = select(FD_SETSIZE, &fdsetR, NULL, &fdsetE, &timeout);
+        rc = select(Sock + 1, &fdsetR, NULL, &fdsetE, &timeout);
     }
     if (rc > 0)
         return VINF_SUCCESS;
@@ -830,7 +830,7 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
     /*
      * Create the socket and connect.
      */
-    RTSOCKET Sock = socket(AF_INET, SOCK_STREAM, 0);
+    RTSOCKET Sock = socket(PF_INET, SOCK_STREAM, 0);
     if (Sock != -1)
     {
         struct sockaddr_in InAddr = {0};
