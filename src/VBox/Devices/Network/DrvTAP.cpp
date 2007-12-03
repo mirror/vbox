@@ -707,13 +707,13 @@ static int SolarisDLPIErr2VBoxErr(int rc)
         case DLPI_EVERNOTSUP:
         case DLPI_EMODENOTSUP:
         case DLPI_ERAWNOTSUP:
-        case DLPI_ENOTENOTSUP:
+        /* case DLPI_ENOTENOTSUP: */
         case DLPI_EUNAVAILSAP:      return VERR_NOT_SUPPORTED;
 
         /*  Define VBox error codes for these, if really needed. */
         case DLPI_ENOLINK:
         case DLPI_EBADLINK:
-        case DLPI_ENOTEIDINVAL:
+        /* case DLPI_ENOTEIDINVAL: */
         case DLPI_EBADMSG:
         case DLPI_ENOTSTYLE2:       return VERR_GENERAL_FAILURE;
     }
