@@ -560,7 +560,8 @@ Drivers_SOURCES.solaris = \
 	Audio/solaudio.c \
 	Network/DrvTAP.cpp \
 	Storage/DrvHostBase.cpp \
-	Storage/DrvHostDVD.cpp
+	Storage/DrvHostDVD.cpp \
+	Storage/DrvHostRawDisk.cpp
  ifdef VBOX_WITH_CROSSBOW
   Drivers_DEFS += VBOX_WITH_CROSSBOW
  endif
