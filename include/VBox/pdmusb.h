@@ -312,6 +312,11 @@ typedef struct PDMUSBREG
      * Queues an URB for processing.
      *
      * @returns VBox status code.
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_VUSB_DEVICE_NOT_ATTACHED if the device has been disconnected.
+     * @retval  VERR_VUSB_FAILED_TO_QUEUE_URB as a general failure kind of thing.
+     * @retval  TBD - document new stuff!
+     *
      * @param   pUsbIns             The USB device instance.
      * @param   pUrb                The URB to process.
      * @remarks Mandatory.
@@ -593,9 +598,9 @@ typedef struct PDMUSBINS
     /** Pointer to device instance data. */
     R3PTRTYPE(void *)           pvInstanceDataR3;
     /** Pointer to the VUSB Device structure.
-     * The constructor sets this.
-     * @todo Integrate VUSBDEV into this structure. */
-    R3PTRTYPE(void *)           pvVUsbDev;
+     * Internal to VUSB, don't touch.
+     * @todo Moved this to PDMUSBINSINT. */
+    R3PTRTYPE(void *)           pvVUsbDev2;
     /** Device name for using when logging.
      * The constructor sets this and the destructor frees it. */
     R3PTRTYPE(char *)           pszName;
