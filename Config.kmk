@@ -26,26 +26,14 @@
 # tmp hacks.
 KMK_NEW_SED = 1
 KMK_NEW_CP = 1
-#KMK_USE_REDIRECT = 1
+KMK_USE_REDIRECT = 1
 #KMK_USE_TEST = 1
 
 # Enable automatic installation of what's built.
 KBUILD_DO_AUTO_INSTALL := 1
-# Add the GPLExport pass.
 PASSES := $(filter-out PACKING,$(PASSES)) PACKING # temporary hack
-PASSES               += GPLEXPORT
 # Modify the order of the INSTALLS and OTHERS passes.
 DEFAULT_PASSES       := BLDPROGS LIBRARIES DLLS BINARIES INSTALLS OTHERS
-
-## PASS: gplexport
-# This pass processes custom gplexport rules listed in
-# the GPLEXPORTS variable.
-PASS_GPLEXPORT      := GPL and LGPL source export
-PASS_GPLEXPORT_trgs :=
-PASS_GPLEXPORT_vars := GPLEXPORTS
-PASS_GPLEXPORT_pass := gplexport
-#alias
-gplexport: pass_gplexport
 
 # Install paths.
 PATH_INS            := $(PATH_OUT)
