@@ -27,7 +27,7 @@
 KMK_NEW_SED = 1
 KMK_NEW_CP = 1
 KMK_USE_REDIRECT = 1
-#KMK_USE_TEST = 1
+KMK_USE_TEST = 1
 
 # Enable automatic installation of what's built.
 KBUILD_DO_AUTO_INSTALL := 1
