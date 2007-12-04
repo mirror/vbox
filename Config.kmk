@@ -1095,19 +1095,11 @@ endif
 ## Edit an inf file an x86 target.
 # @param    1   The inf file to edit.
 # @param    2   The output file.
-ifdef KMK_NEW_SED
 VBOX_EDIT_INF32_FN = $(SED) $(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d') -e 's/^;x86  *//' -e '/^;amd64 /d' --output $(2) $(1)
-else
-VBOX_EDIT_INF32_FN = $(SED) $(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d') -e 's/^;x86  *//' -e '/^;amd64 /d' $(1) > $(2)
-endif
 ## Edit an inf file an x86 target.
 # @param    1   The inf file to edit.
 # @param    2   The output file.
-ifdef KMK_NEW_SED
 VBOX_EDIT_INF64_FN = $(SED) $(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d') -e 's/^;amd64  *//' -e '/^;x86 /d' --output $(2) $(1)
-else
-VBOX_EDIT_INF64_FN = $(SED) $(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d') -e 's/^;amd64  *//' -e '/^;x86 /d' $(1) > $(2)
-endif
 
 #
 # Default prefixes and suffixes.
@@ -2683,8 +2675,7 @@ VBOX_SVN_REV_KMK        = $(PATH_OUT)/revision.kmk
 ifndef VBOX_SVN_REV
  VBOX_SVN_REV_FALLBACK := $(patsubst %:,,  $Rev$  )
  VBOX_SVN_DEP          := $(wildcard $(PATH_ROOT)/.svn/entries)
-ifeq ($(KBUILD_VERSION_PATCH),2) ## tmp, remove later.
- ifeq ($(which (SVN)),)
+ ifeq ($(which $(SVN)),)
   VBOX_SVN_DEP         :=
  endif
 
@@ -2701,42 +2692,6 @@ $(VBOX_SVN_REV_KMK).ts +| $(VBOX_SVN_REV_KMK): $(if $(VBOX_SVN_DEP), $(VBOX_SVN_
 	$(QUIET)$(APPEND) $@ 'export VBOX_SVN_REV=$(VBOX_SVN_REV_FALLBACK)'
  endif
 	$(QUIET)$(CP) --changed -fv $@ $(VBOX_SVN_REV_KMK)
-
-else ## tmp, remove later.
- ifneq ($(USERNAME),bird) # Wastes nearly half a second on windows, very annoying. TODO: $(which ).
-  ifneq ($(shell $(SVN) --version > /dev/null 2>&1 || echo 'svn not installed'),)
-   VBOX_SVN_DEP         :=
-  endif
- endif
-
-# Rule for generating a timestamp and updating the real thing on change.
- ifneq ($(VBOX_SVN_DEP),)
-$(VBOX_SVN_REV_KMK).ts: $(VBOX_SVN_DEP)
- else
-$(VBOX_SVN_REV_KMK).ts: $(PATH_ROOT)/Config.kmk
- endif
-	$(call MSG_GENERATE,,$(VBOX_SVN_REV_KMK))
-	$(QUIET)$(RM) -f $@
-	$(QUIET)$(MKDIR) -p $(@D)
- ifneq ($(VBOX_SVN_DEP),)
-#	$(QUIET)$(APPEND) $@ 'export VBOX_SVN_REV=$(shell LC_ALL=C $(SVN) info $(PATH_ROOT) | $(SED) -e '/^Last Changed Rev/!d'  -e "s/Last Changed Rev\: *//")'
-	$(QUIET)$(APPEND) $@ 'export VBOX_SVN_REV=$(shell LC_ALL=C $(SVN) info $(PATH_ROOT) | $(SED) -e '/^Revision/!d'  -e "s/Revision\: *//")'
- else
-	$(QUIET)$(APPEND) $@ 'export VBOX_SVN_REV=$(VBOX_SVN_REV_FALLBACK)'
- endif
-	$(QUIET)if test ! -f $(VBOX_SVN_REV_KMK) \
-	|| test ! "`$(CAT_EXT) $@`" = "`$(CAT_EXT) $(VBOX_SVN_REV_KMK)`"; \
-	then \
-		$(RM_EXT) -f $(VBOX_SVN_REV_KMK); \
-		$(CP_EXT) -f $@ $(VBOX_SVN_REV_KMK) || exit 1; \
-		echo '* $(VBOX_SVN_REV_KMK) was updated:'; \
-	else \
-		echo '* $(VBOX_SVN_REV_KMK) was not changed:'; \
-	fi
-	$(QUIET)$(CAT) $(VBOX_SVN_REV_KMK)
-
-$(VBOX_SVN_REV_KMK): $(VBOX_SVN_REV_KMK).ts # remove when kBuild is updated.
-endif ## tmp, remove later
 
  include $(VBOX_SVN_REV_KMK)
 else
