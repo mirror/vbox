@@ -37,6 +37,31 @@ __BEGIN_DECLS
  * @{
  */
 
+/**
+ * USB descriptor cache.
+ *
+ * This structure is owned by the USB device but provided to the PDM/VUSB layer
+ * thru the PDMUSBREG::pfnGetDescriptorCache method. PDM/VUSB will use the
+ * information here to map addresses to endpoints, perform SET_CONFIGURATION
+ * requests, and optionally perform GET_DESCRIPTOR requests (see flag).
+ *
+ * Currently, only device and configuration descriptors are cached.
+ */
+typedef struct PDMUSBDESCCACHE
+{
+    /** USB device descriptor */
+    PCVUSBDESCDEVICE    pDevice;
+    /** USB Descriptor arrays (pDev->bNumConfigurations) */
+    PCVUSBDESCCONFIGEX  paConfigs;
+    /** Use the cached descriptors for GET_DESCRIPTOR requests. */
+    bool                fUseCachedDescriptors;
+} PDMUSBDESCCACHE;
+/** Pointer to an USB descriptor cache. */
+typedef PDMUSBDESCCACHE *PPDMUSBDESCCACHE;
+/** Pointer to a const USB descriptor cache. */
+typedef const PDMUSBDESCCACHE *PCPDMUSBDESCCACHE;
+
+
 
 /** PDM USB Device Registration Structure,
  *
@@ -210,7 +235,7 @@ typedef struct PDMUSBREG
     /**
      * Requests the USB device to reset.
      *
-     * @returns VBox stauts code.
+     * @returns VBox status code.
      * @param   pUsbIns         The USB device instance.
      * @param   fResetOnLinux   A hint to the usb proxy.
      *                          Don't use this unless you're the linux proxy device.
@@ -220,9 +245,19 @@ typedef struct PDMUSBREG
     DECLR3CALLBACKMEMBER(int, pfnUsbReset,(PPDMUSBINS pUsbIns, bool fResetOnLinux));
 
     /**
+     * Query device and configuration descriptors for the caching and servicing
+     * relevant GET_DESCRIPTOR requests.
+     *
+     * @returns Pointer to the descriptor cache (read-only).
+     * @param   pUsbIns             The USB device instance.
+     * @remarks Mandatory.
+     */
+    DECLR3CALLBACKMEMBER(PCPDMUSBDESCCACHE, pfnUsbGetDescriptorCache,(PPDMUSBINS pUsbIns));
+
+    /**
      * SET_CONFIGURATION request.
      *
-     * @returns VBox stauts code.
+     * @returns VBox status code.
      * @param   pUsbIns             The USB device instance.
      * @param   bConfigurationValue The bConfigurationValue of the new configuration.
      * @param   pvOldCfgDesc        Internal - for the device proxy.
@@ -236,7 +271,7 @@ typedef struct PDMUSBREG
     /**
      * SET_INTERFACE request.
      *
-     * @returns VBox stauts code.
+     * @returns VBox status code.
      * @param   pUsbIns             The USB device instance.
      * @param   bInterfaceNumber    The interface number.
      * @param   bAlternateSetting   The alternate setting.
@@ -250,7 +285,7 @@ typedef struct PDMUSBREG
      * This called when VUSB sees a CLEAR_FEATURE(ENDPOINT_HALT) on request
      * on the zero pipe.
      *
-     * @returns VBox stauts code.
+     * @returns VBox status code.
      * @param   pUsbIns             The USB device instance.
      * @param   uEndpoint           The endpoint to clear.
      * @remarks Optional.
@@ -262,7 +297,7 @@ typedef struct PDMUSBREG
      *
      * This can be used to make use of shared user/kernel mode buffers.
      *
-     * @returns VBox stauts code.
+     * @returns VBox status code.
      * @param   pUsbIns             The USB device instance.
      * @param   cbData              The size of the data buffer.
      * @param   cTds                The number of TDs.
@@ -276,7 +311,7 @@ typedef struct PDMUSBREG
     /**
      * Queues an URB for processing.
      *
-     * @returns VBox stauts code.
+     * @returns VBox status code.
      * @param   pUsbIns             The USB device instance.
      * @param   pUrb                The URB to process.
      * @remarks Mandatory.
@@ -286,7 +321,7 @@ typedef struct PDMUSBREG
     /**
      * Cancels an URB.
      *
-     * @returns VBox stauts code.
+     * @returns VBox status code.
      * @param   pUsbIns             The USB device instance.
      * @param   pUrb                The URB to cancel.
      * @remarks Mandatory.
