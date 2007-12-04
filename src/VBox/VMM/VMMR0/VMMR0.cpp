@@ -506,7 +506,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
                     if (!s_fHaveWarned)
                     {
                          s_fHaveWarned = true;
-                         //RTLogPrintf("VMMR0.r0: The compiler can't find the stack frame!\n"); -- @todo export me!
+                         RTLogPrintf("VMMR0.r0: The compiler can't find the stack frame!\n");
                          RTLogComPrintf("VMMR0.r0: The compiler can't find the stack frame!\n");
                     }
 # endif
