@@ -43,7 +43,7 @@
  */
 CPUMR0DECL(int) CPUMR0Init(PVM pVM)
 {
-    LogComFlow(("CPUMR0Init: %p\n", pVM));
+    LogFlow(("CPUMR0Init: %p\n", pVM));
 
     /*
      * Check CR0 & CR4 flags.
@@ -51,7 +51,7 @@ CPUMR0DECL(int) CPUMR0Init(PVM pVM)
     uint32_t    u32CR0 = ASMGetCR0();
     if ((u32CR0 & (X86_CR0_PE | X86_CR0_PG)) != (X86_CR0_PE | X86_CR0_PG)) /* a bit paranoid perhaps.. */
     {
-        LogCom(("CPUMR0Init: PE or PG not set. cr0=%#x\n", u32CR0));
+        Log(("CPUMR0Init: PE or PG not set. cr0=%#x\n", u32CR0));
         return VERR_UNSUPPORTED_CPU_MODE;
     }
 
@@ -82,7 +82,7 @@ CPUMR0DECL(int) CPUMR0Init(PVM pVM)
             if (u32)
             {
                 pVM->cpum.s.fUseFlags |= CPUM_USE_SYSENTER;
-                LogCom(("CPUMR0Init: host uses sysenter cs=%08x%08x\n", ASMRdMsr_High(MSR_IA32_SYSENTER_CS), u32));
+                Log(("CPUMR0Init: host uses sysenter cs=%08x%08x\n", ASMRdMsr_High(MSR_IA32_SYSENTER_CS), u32));
             }
         }
 
@@ -97,7 +97,7 @@ CPUMR0DECL(int) CPUMR0Init(PVM pVM)
     if (u32DR7 & X86_DR7_ENABLED_MASK)
     {
         pVM->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HOST;
-        LogCom(("CPUMR0Init: host uses debug registers (dr7=%x)\n", u32DR7));
+        Log(("CPUMR0Init: host uses debug registers (dr7=%x)\n", u32DR7));
     }
 
     return VINF_SUCCESS;
