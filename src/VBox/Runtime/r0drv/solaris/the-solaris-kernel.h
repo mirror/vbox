@@ -30,6 +30,7 @@
 #include <sys/sysmacros.h>
 #include <sys/vmsystm.h>
 #include <sys/cyclic.h>
+#include <sys/class.h>
 #include <vm/hat.h>
 #include <vm/seg_vn.h>
 #include <vm/seg_kmem.h>

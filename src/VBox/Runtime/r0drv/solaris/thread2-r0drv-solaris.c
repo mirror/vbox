@@ -87,10 +87,8 @@ static void rtThreadNativeMain(void *pvThreadInt)
 int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
     int rc;
-    /** @todo Passing hardcoded priority of 52, Find correct default priority */
-    /* We know its from 0 to 127 priority, but what's the default?? */
     kthread_t* pKernThread = thread_create(NULL, NULL, rtThreadNativeMain, pThreadInt, 0,
-                                           curproc, LMS_USER, 52);
+                                           curproc, LMS_USER, minclsyspri);
     if (pKernThread)
     {
         *pNativeThread = (RTNATIVETHREAD)pKernThread;
