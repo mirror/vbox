@@ -33,7 +33,7 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 
 RTDECL(int) RTThreadSleep(unsigned cMillies)
 {
-    int cTicks;
+    clock_t cTicks;
     unsigned long timeout;
     
     if (!cMillies)
