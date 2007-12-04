@@ -1056,7 +1056,14 @@ void vrdpBitBlt (
 
                 DISPDBG((1, "VRDP::vrdpBitBlt: MEMBLT.\n"));
                 if (   (psoSrc->fjBitmap & BMF_DONTCACHE) != 0
-                    || psoSrc->iUniq == 0)
+                    || psoSrc->iUniq == 0
+                       /* Bitmaps with hdev == 0 seems to have different RGB layout for 16BPP modes.
+                        * Just do not cache these bitmaps and report the dirty display area instead.
+                        */
+                    || (   psoSrc->hdev == 0
+                        && !(psoSrc->iBitmapFormat == BMF_24BPP || psoSrc->iBitmapFormat == BMF_32BPP)
+                       )
+                   )
                 {
                     DISPDBG((1, "MEMBLT: non cachable bitmap.\n"));
                     cacheResult = VRDPBMP_RC_NOT_CACHED;
