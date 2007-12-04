@@ -2721,6 +2721,9 @@ endif
 up update::
 	$(SVN) up
 
+up2 update2::
+	$(SVN) up --ignore-externals
+
 st stat status:
 	$(SVN) status
 

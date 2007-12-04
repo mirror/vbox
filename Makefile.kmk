@@ -301,6 +301,14 @@ else
 	$(MAKE) -C tools -f Makefile-ose.kmk fetch
 endif
 
+up2 update2::
+	$(SVN) up src/lib/kStuff
+if1of ($(BUILD_PLATFORM),win os2)
+	$(ECHO) This may fail if kmk.exe is updated.
+endif
+	$(SVN) up kBuild
+
+
 #
 # Generate VirtualBox-OSE-x.x.x.tar.bz2 tarballs for distribution
 #
