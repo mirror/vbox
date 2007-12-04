@@ -884,6 +884,9 @@ typedef struct VUSBURB
         PVUSBURB       *ppPrev;
         /** Pointer to the original for control messages. */
         PVUSBURB        pCtrlUrb;
+        /** Pointer to the VUSB device.
+         * This may be NULL if the destination address is invalid. */
+        struct VUSBDEV *pDev;
         /** Sepcific to the pfnFree function. */
         void           *pvFreeCtx;
         /**
@@ -932,9 +935,9 @@ typedef struct VUSBURB
         void           *pvProxyUrb;
     } Dev;
 
-    /** The device - NULL until a submit has been is attempted.
-     * This is set when allocating the URB. */
-    struct VUSBDEV *pDev;
+    /** The USB device instance this belongs to.
+     * This is NULL if the device address is invalid, in which case this belongs to the hub. */
+    PPDMUSBINS      pUsbIns;
     /** The device address.
      * This is set at allocation time. */
     uint8_t         DstAddress;
