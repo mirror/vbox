@@ -168,7 +168,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
          */
         if (cMillies != RT_INDEFINITE_WAIT)
         {
-            int cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
+            clock_t cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
             clock_t timeout = ddi_get_lbolt();
             timeout += cTicks;
             if (fInterruptible)
