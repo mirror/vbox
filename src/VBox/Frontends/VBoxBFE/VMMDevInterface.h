@@ -24,17 +24,27 @@
 class VMMDev
 {
 public:
-    VMMDev() : mpDrv(NULL) {};
+    VMMDev();
+    ~VMMDev();
     static const PDMDRVREG  DrvReg;
 
     /** Pointer to the associated VMMDev driver. */
     struct DRVMAINVMMDEV *mpDrv;
+
+    bool fSharedFolderActive;
+    bool isShFlActive()
+    {
+        return fSharedFolderActive;
+    }
 
     PPDMIVMMDEVPORT getVMMDevPort();
 
     void QueryMouseCapabilities(uint32_t *pMouseCaps);
     int  SetMouseCapabilities(uint32_t mouseCaps);
     int  SetAbsoluteMouse(uint32_t mouseXAbs, uint32_t mouseYAbs);
+
+    int hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary);
+    int hgcmHostCall (const char *pszServiceName, uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms);
 
 private:
     static DECLCALLBACK(void)   UpdateGuestVersion(PPDMIVMMDEVCONNECTOR pInterface, VBoxGuestInfo *guestInfo);

@@ -37,6 +37,9 @@
 #include "MouseImpl.h"
 #include "DisplayImpl.h"
 #include "ConsoleImpl.h"
+#ifdef VBOX_HGCM
+#include "HGCM.h"
+#endif
 
 #ifdef RT_OS_L4
 #include <l4/util/util.h> /* for l4_sleep */
@@ -54,10 +57,40 @@ typedef struct DRVMAINVMMDEV
     PPDMIVMMDEVPORT             pUpPort;
     /** Our VMM device connector interface. */
     PDMIVMMDEVCONNECTOR         Connector;
+
+#ifdef VBOX_HGCM
+    /** Pointer to the HGCM port interface of the driver/device above us. */
+    PPDMIHGCMPORT               pHGCMPort;
+    /** Our HGCM connector interface. */
+    PDMIHGCMCONNECTOR           HGCMConnector;
+#endif
 } DRVMAINVMMDEV, *PDRVMAINVMMDEV;
 
 /** Converts PDMIVMMDEVCONNECTOR pointer to a DRVMAINVMMDEV pointer. */
 #define PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface) ( (PDRVMAINVMMDEV) ((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINVMMDEV, Connector)) )
+
+#ifdef VBOX_HGCM
+/** Converts PDMIHGCMCONNECTOR pointer to a DRVMAINVMMDEV pointer. */
+#define PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface) ( (PDRVMAINVMMDEV) ((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINVMMDEV, HGCMConnector)) )
+#endif
+
+VMMDev::VMMDev() : mpDrv(NULL)
+{
+#ifdef VBOX_HGCM
+    int rc = VINF_SUCCESS;
+    if (fActivateHGCM())
+        rc = HGCMHostInit();
+    AssertRC(rc);
+#endif
+}
+
+VMMDev::~VMMDev()
+{
+#ifdef VBOX_HGCM
+    if (fActivateHGCM())
+        HGCMHostShutdown ();
+#endif /* VBOX_HGCM */
+}
 
 
 PPDMIVMMDEVPORT VMMDev::getVMMDevPort()
@@ -215,6 +248,89 @@ DECLCALLBACK(int) VMMDev::GetHeightReduction(PPDMIVMMDEVCONNECTOR pInterface, ui
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_HGCM
+
+/* HGCM connector interface */
+
+static DECLCALLBACK(int) iface_hgcmConnect (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, PHGCMSERVICELOCATION pServiceLocation, uint32_t *pu32ClientID)
+{
+    LogSunlover(("Enter\n"));
+
+    PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
+    
+    if (    !pServiceLocation
+        || (   pServiceLocation->type != VMMDevHGCMLoc_LocalHost
+            && pServiceLocation->type != VMMDevHGCMLoc_LocalHost_Existing))
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
+    return HGCMGuestConnect (pDrv->pHGCMPort, pCmd, pServiceLocation->u.host.achName, pu32ClientID);
+}
+
+static DECLCALLBACK(int) iface_hgcmDisconnect (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID)
+{
+    LogSunlover(("Enter\n"));
+
+    PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
+
+    return HGCMGuestDisconnect (pDrv->pHGCMPort, pCmd, u32ClientID);
+}
+
+static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID, uint32_t u32Function,
+                                         uint32_t cParms, PVBOXHGCMSVCPARM paParms)
+{
+    LogSunlover(("Enter\n"));
+
+    PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
+
+    return HGCMGuestCall (pDrv->pHGCMPort, pCmd, u32ClientID, u32Function, cParms, paParms);
+}
+
+/**
+ * Execute state save operation.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns         Driver instance of the driver which registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ */
+static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    LogSunlover(("Enter\n"));
+    return HGCMHostSaveState (pSSM);
+}
+
+
+/**
+ * Execute state load operation.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns         Driver instance of the driver which registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ * @param   u32Version      Data layout version.
+ */
+static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    LogFlowFunc(("Enter\n"));
+
+    if (u32Version != HGCM_SSM_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    return HGCMHostLoadState (pSSM);
+}
+
+int VMMDev::hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary)
+{
+    return HGCMHostLoad (pszServiceName, pszServiceLibrary);
+}
+
+int VMMDev::hgcmHostCall (const char *pszServiceName, uint32_t u32Function,
+                          uint32_t cParms, PVBOXHGCMSVCPARM paParms)
+{
+    return HGCMHostCall (pszServiceName, u32Function, cParms, paParms);
+}
+#endif /* HGCM */
+
 /**
  * Queries an interface to the driver.
  *
@@ -233,6 +349,13 @@ DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFAC
             return &pDrvIns->IBase;
         case PDMINTERFACE_VMMDEV_CONNECTOR:
             return &pDrv->Connector;
+#ifdef VBOX_HGCM
+        case PDMINTERFACE_HGCM_CONNECTOR:
+            if (fActivateHGCM())
+                return &pDrv->HGCMConnector;
+            else
+                return NULL;
+#endif
         default:
             return NULL;
     }
@@ -296,6 +419,15 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->Connector.pfnSetVisibleRegion        = iface_SetVisibleRegion;
     pData->Connector.pfnQueryVisibleRegion      = iface_QueryVisibleRegion;
 
+#ifdef VBOX_HGCM
+    if (fActivateHGCM())
+    {
+        pData->HGCMConnector.pfnConnect         = iface_hgcmConnect;
+        pData->HGCMConnector.pfnDisconnect      = iface_hgcmDisconnect;
+        pData->HGCMConnector.pfnCall            = iface_hgcmCall;
+    }
+#endif
+
     /*
      * Get the IVMMDevPort interface of the above driver/device.
      */
@@ -305,6 +437,18 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         AssertMsgFailed(("Configuration error: No VMMDev port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
+
+#ifdef VBOX_HGCM
+    if (fActivateHGCM())
+    {
+        pData->pHGCMPort = (PPDMIHGCMPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_HGCM_PORT);
+        if (!pData->pHGCMPort)
+        {
+            AssertMsgFailed(("Configuration error: No HGCM port interface above!\n"));
+            return VERR_PDM_MISSING_INTERFACE_ABOVE;
+        }
+    }
+#endif
 
     /*
      * Get the VMMDev object pointer and update the mpDrv member.
@@ -319,6 +463,21 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 
     pData->pVMMDev = (VMMDev*)pv;        /** @todo Check this cast! */
     pData->pVMMDev->mpDrv = pData;
+
+#ifdef VBOX_HGCM
+    if (fActivateHGCM())
+    {
+        rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedFolders", "VBoxSharedFolders");
+        pData->pVMMDev->fSharedFolderActive = VBOX_SUCCESS(rc);
+        if (VBOX_SUCCESS(rc))
+            LogRel(("Shared Folders service loaded.\n"));
+        else
+            LogRel(("Failed to load Shared Folders service %Vrc\n", rc));
+
+        pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, "HGCM", 0, HGCM_SSM_VERSION, 4096/* bad guess */, NULL, iface_hgcmSave, NULL, NULL, iface_hgcmLoad, NULL);
+    }
+#endif /* VBOX_HGCM */
+    
     return VINF_SUCCESS;
 }
 

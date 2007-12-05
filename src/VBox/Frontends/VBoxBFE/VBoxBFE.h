@@ -24,8 +24,11 @@
 /** Enables the rawr[0|3], patm, and casm options. */
 #define VBOXSDL_ADVANCED_OPTIONS
 
-/** @todo fix this */
-#define NetworkAdapterCount    4
+enum
+{
+ NetworkAdapterCount = 4,
+ MaxSharedFolders = 16,
+};
 
 
 /** The user.code field of the SDL_USER_EVENT_TERMINATE event.
@@ -37,10 +40,18 @@
 #define VBOXSDL_TERM_ABEND              1
 /** @} */
 
-extern VMSTATE machineState;
-extern PVM pVM;
-extern int gHostKey;
-extern int gHostKeySym;
-extern bool gfAllowFullscreenToggle;
+extern VMSTATE     machineState;
+extern PVM         pVM;
+extern int         gHostKey;
+extern int         gHostKeySym;
+extern bool        gfAllowFullscreenToggle;
+extern const char *g_pszStateFile;
+extern const char *g_pszProgressString;
+extern unsigned    g_uProgressPercent;
+
+void   startProgressInfo(const char *pszStr);
+void   callProgressInfo(PVM pVM, unsigned uPercent, void *pvUser);
+void   endProgressInfo();
+bool   fActivateHGCM();
 
 #endif // __H_VBOXBFE

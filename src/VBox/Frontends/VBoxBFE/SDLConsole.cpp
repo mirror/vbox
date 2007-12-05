@@ -63,9 +63,11 @@
 #include "VMMDevInterface.h"
 #include "Framebuffer.h"
 #include "MachineDebuggerImpl.h"
+#include "VMControl.h"
 
 #include "ConsoleImpl.h"
 #include "SDLConsole.h"
+#include "Ico64x01.h"
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -75,12 +77,13 @@ SDLConsole::SDLConsole() : Console()
 {
     int rc;
 
-    fInputGrab       = false;
+    mfInputGrab      = false;
     gpDefaultCursor  = NULL;
     gpCustomCursor   = NULL;
     /** Custom window manager cursor? */
     gpCustomWMcursor = NULL;
     mfInitialized    = false;
+    mWMIcon          = NULL;
 
     memset(gaModifiersState, 0, sizeof(gaModifiersState));
 
@@ -110,6 +113,17 @@ SDLConsole::SDLConsole() : Console()
     }
 #endif
 
+    if (12320 == g_cbIco64x01)
+    {
+        mWMIcon = SDL_AllocSurface(SDL_SWSURFACE, 64, 64, 24, 0xff, 0xff00, 0xff0000, 0);
+        /** @todo make it as simple as possible. No PNM interpreter here... */
+        if (mWMIcon)
+        {
+            memcpy(mWMIcon->pixels, g_abIco64x01+32, g_cbIco64x01-32);
+            SDL_WM_SetIcon(mWMIcon, NULL);
+        }
+    }
+
     /*
      * Enable keyboard repeats
      */
@@ -119,8 +133,13 @@ SDLConsole::SDLConsole() : Console()
 
 SDLConsole::~SDLConsole()
 {
-    if (fInputGrab)
+    if (mfInputGrab)
         inputGrabEnd();
+    if (mWMIcon)
+    {
+        SDL_FreeSurface(mWMIcon);
+        mWMIcon = NULL;
+    }
 }
 
 CONEVENT SDLConsole::eventWait()
@@ -128,9 +147,7 @@ CONEVENT SDLConsole::eventWait()
     SDL_Event *ev = &ev1;
 
     if (SDL_WaitEvent(ev) != 1)
-      {
         return CONEVENT_QUIT;
-      }
 
     switch (ev->type)
     {
@@ -187,14 +204,10 @@ CONEVENT SDLConsole::eventWait()
                         if (ev->key.keysym.sym == gHostKeySym)
                         {
                             /* toggle grabbing state */
-                            if (!fInputGrab)
-                            {
+                            if (!mfInputGrab)
                                 inputGrabStart();
-                            }
                             else
-                            {
                                 inputGrabEnd();
-                            }
 
                             /* SDL doesn't always reset the keystates, correct it */
                             resetKeys();
@@ -257,10 +270,8 @@ CONEVENT SDLConsole::eventWait()
          */
         case SDL_MOUSEMOTION:
         {
-            if (fInputGrab || gMouse->getAbsoluteCoordinates())
-            {
+            if (mfInputGrab || gMouse->getAbsoluteCoordinates())
                 mouseSendEvent(0);
-            }
             break;
         }
 
@@ -271,7 +282,7 @@ CONEVENT SDLConsole::eventWait()
         case SDL_MOUSEBUTTONUP:
         {
             SDL_MouseButtonEvent *bev = &ev->button;
-            if (!fInputGrab && !gMouse->getAbsoluteCoordinates())
+            if (!mfInputGrab && !gMouse->getAbsoluteCoordinates())
             {
                 if (ev->type == SDL_MOUSEBUTTONDOWN && (bev->state & SDL_BUTTON_LMASK))
                 {
@@ -300,7 +311,7 @@ CONEVENT SDLConsole::eventWait()
          */
         case SDL_ACTIVEEVENT:
         {
-            if (fInputGrab && (SDL_GetAppState() & SDL_ACTIVEEVENTMASK) == 0)
+            if (mfInputGrab && (SDL_GetAppState() & SDL_ACTIVEEVENTMASK) == 0)
             {
                 inputGrabEnd();
             }
@@ -389,6 +400,12 @@ CONEVENT SDLConsole::eventWait()
             break;
         }
 
+        case SDL_VIDEORESIZE:
+        {
+            /* ignore this */
+            break;
+        }
+
         default:
         {
 	  printf("%s:%d unknown SDL event %d\n",__FILE__,__LINE__,ev->type);
@@ -402,13 +419,19 @@ CONEVENT SDLConsole::eventWait()
 /**
  * Push the exit event forcing the main event loop to terminate.
  */
-void SDLConsole::eventQuit()
+void SDLConsole::doEventQuit()
 {
     SDL_Event event;
 
     event.type = SDL_USEREVENT;
-    event.user.type  = SDL_USER_EVENT_TERMINATE;
+    event.user.type = SDL_USER_EVENT_TERMINATE;
+    event.user.code = VBOXSDL_TERM_NORMAL;
     SDL_PushEvent(&event);
+}
+
+void SDLConsole::eventQuit()
+{
+    doEventQuit();
 }
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
@@ -1115,7 +1138,7 @@ void SDLConsole::inputGrabStart()
     SDL_WM_GrabInput(SDL_GRAB_ON);
     // dummy read to avoid moving the mouse
     SDL_GetRelativeMouseState(NULL, NULL);
-    fInputGrab = 1;
+    mfInputGrab = true;
     updateTitlebar();
 }
 
@@ -1130,7 +1153,7 @@ void SDLConsole::inputGrabEnd()
 #ifdef RT_OS_DARWIN
     DisableGlobalHotKeys(false);
 #endif
-    fInputGrab = 0;
+    mfInputGrab = false;
     updateTitlebar();
 }
 
@@ -1148,7 +1171,7 @@ void SDLConsole::mouseSendEvent(int dz)
     int x, y, state, buttons;
     bool abs;
 
-    abs = (gMouse->getAbsoluteCoordinates() && !fInputGrab) || gMouse->getNeedsHostCursor();
+    abs = (gMouse->getAbsoluteCoordinates() && !mfInputGrab) || gMouse->getNeedsHostCursor();
 
     state = abs ? SDL_GetMouseState(&x, &y) : SDL_GetRelativeMouseState(&x, &y);
 
@@ -1219,20 +1242,33 @@ void SDLConsole::onMousePointerShapeChange(bool fVisible,
         delete data;
 }
 
+void SDLConsole::progressInfo(PVM pVM, unsigned uPercent, void *pvUser)
+{
+    if (uPercent != g_uProgressPercent)
+    {
+        SDL_Event event = {0};
+        event.type = SDL_USEREVENT;
+        event.user.type  = SDL_USER_EVENT_UPDATE_TITLEBAR;
+        SDL_PushEvent(&event);
+        g_uProgressPercent = uPercent;
+    }
+}
+
 /**
  * Build the titlebar string
  */
 void SDLConsole::updateTitlebar()
 {
-    char title[1024];
+    char pszTitle[1024];
 
-    strcpy(title, "innotek VirtualBox");
+    RTStrPrintf(pszTitle, sizeof(pszTitle),
+                "innotek VirtualBox%s%s",
+                g_uProgressPercent == ~0U && machineState == VMSTATE_SUSPENDED ? " - [Paused]" : "",
+                mfInputGrab                                                    ? " - [Input captured]": "");
 
-    if (machineState == VMSTATE_SUSPENDED)
-        strcat(title, " - [Paused]");
-
-    if (fInputGrab)
-        strcat(title, " - [Input captured]");
+    if (g_uProgressPercent != ~0U)
+        RTStrPrintf(pszTitle + strlen(pszTitle), sizeof(pszTitle) - strlen(pszTitle),
+                    " - %s: %u%%", g_pszProgressString, g_uProgressPercent);
 
 #if defined(VBOXSDL_ADVANCED_OPTIONS) && defined(DEBUG)
     // do we have a debugger interface
@@ -1251,25 +1287,25 @@ void SDLConsole::updateTitlebar()
         gMachineDebugger->COMGETTER(Singlestep)(&singlestepEnabled);
         PRTLOGGER pLogger = RTLogDefaultInstance();
         bool fEnabled = (pLogger && !(pLogger->fFlags & RTLOGFLAGS_DISABLED));
-        RTStrPrintf(title + strlen(title), sizeof(title) - strlen(title),
+        RTStrPrintf(pszTitle + strlen(pszTitle), sizeof(pszTitle) - strlen(pszTitle),
                     " [STEP=%d CS=%d PAT=%d RR0=%d RR3=%d LOG=%d]",
                     singlestepEnabled == TRUE, csamEnabled == TRUE, patmEnabled == TRUE,
                     recompileSupervisor == FALSE, recompileUser == FALSE, fEnabled == TRUE);
     }
 #endif /* DEBUG */
 
-    SDL_WM_SetCaption(title, "innotek VirtualBox");
+    SDL_WM_SetCaption(pszTitle, "innotek VirtualBox");
 }
 
 /**
  * Updates the title bar while saving the state.
  * @param   iPercent    Percentage.
  */
-void SDLConsole::updateTitlebarSave(int iPercent)
+void SDLConsole::updateTitlebarProgress(const char *pszStr, int iPercent)
 {
     char szTitle[256];
     AssertMsg(iPercent >= 0 && iPercent <= 100, ("%d\n", iPercent));
-    RTStrPrintf(szTitle, sizeof(szTitle), "innotek VirtualBox - Saving %d%%...", iPercent);
+    RTStrPrintf(szTitle, sizeof(szTitle), "innotek VirtualBox - %s %d%%...", pszStr, iPercent);
     SDL_WM_SetCaption(szTitle, "innotek VirtualBox");
 }
 
@@ -1525,16 +1561,7 @@ int SDLConsole::handleHostKey(const SDL_KeyboardEvent *pEv)
          */
         case SDLK_f:
         {
-            if (gfAllowFullscreenToggle)
-            {
-                gFramebuffer->setFullscreen(!gFramebuffer->getFullscreen());
-
-                /*
-                 * We have switched from/to fullscreen, so request a full
-                 * screen repaint, just to be sure.
-                 */
-                gDisplay->InvalidateAndUpdate();
-            }
+            VMCtrlToggleFullscreen();
             break;
         }
 
@@ -1544,33 +1571,9 @@ int SDLConsole::handleHostKey(const SDL_KeyboardEvent *pEv)
         case SDLK_p:
         {
             if (machineState == VMSTATE_RUNNING)
-            {
-                if (fInputGrab)
-                    inputGrabEnd();
-
-                PVMREQ pReq;
-                int rcVBox = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT,
-                                         (PFNRT)VMR3Suspend, 1, pVM);
-                AssertRC(rcVBox);
-                if (VBOX_SUCCESS(rcVBox))
-                {
-                    rcVBox = pReq->iStatus;
-                    VMR3ReqFree(pReq);
-                }
-            }
+                VMCtrlPause();
             else
-            if (machineState == VMSTATE_SUSPENDED)
-            {
-                PVMREQ pReq;
-                int rcVBox = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT,
-                                         (PFNRT)VMR3Resume, 1, pVM);
-                AssertRC(rcVBox);
-                if (VBOX_SUCCESS(rcVBox))
-                {
-                    rcVBox = pReq->iStatus;
-                    VMR3ReqFree(pReq);
-                }
-            }
+                VMCtrlResume();
             updateTitlebar();
             break;
         }
@@ -1580,15 +1583,7 @@ int SDLConsole::handleHostKey(const SDL_KeyboardEvent *pEv)
          */
         case SDLK_r:
         {
-            PVMREQ pReq;
-            int rcVBox = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT,
-                                     (PFNRT)VMR3Reset, 1, pVM);
-            AssertRC(rcVBox);
-            if (VBOX_SUCCESS(rcVBox))
-            {
-                rcVBox = pReq->iStatus;
-                VMR3ReqFree(pReq);
-            }
+            VMCtrlReset();
             break;
         }
 
@@ -1606,85 +1601,19 @@ int SDLConsole::handleHostKey(const SDL_KeyboardEvent *pEv)
          */
         case SDLK_h:
         {
-            PPDMIBASE pBase;
-            int vrc = PDMR3QueryDeviceLun (pVM, "acpi", 0, 0, &pBase);
-            if (VBOX_SUCCESS (vrc))
-            {
-                Assert (pBase);
-                PPDMIACPIPORT pPort =
-                    (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
-                vrc = pPort ? pPort->pfnPowerButtonPress(pPort) : VERR_INVALID_POINTER;
-            }
+            VMCtrlACPIButton();
             break;
         }
 
-#if 0
         /*
          * Save the machine's state and exit
          */
         case SDLK_s:
         {
-            resetKeys();
-            RTThreadYield();
-            if (fInputGrab)
-                inputGrabEnd();
-            RTThreadYield();
-            updateTitlebarSave(0);
-            gProgress = NULL;
-            int rc = gConsole->SaveState(gProgress.asOutParam());
-            if (rc != S_OK)
-            {
-                RTPrintf("Error saving state! rc = 0x%x\n", rc);
-                return VINF_EM_TERMINATE;
-            }
-            Assert(gProgress);
-
-            /*
-             * Wait for the operation to be completed and work
-             * the title bar in the mean while.
-             */
-            LONG    cPercent = 0;
-            for (;;)
-            {
-                BOOL    fCompleted;
-                rc = gProgress->COMGETTER(Completed)(&fCompleted);
-                if (FAILED(rc) || fCompleted)
-                    break;
-                LONG cPercentNow;
-                rc = gProgress->COMGETTER(Percent)(&cPercentNow);
-                if (FAILED(rc))
-                    break;
-                if (cPercentNow != cPercent)
-                {
-                    UpdateTitlebarSave(cPercent);
-                    cPercent = cPercentNow;
-                }
-
-                /* wait */
-                rc = gProgress->WaitForCompletion(100);
-                if (FAILED(rc))
-                    break;
-                /// @todo process gui events.
-            }
-
-            /*
-             * What's the result of the operation?
-             */
-            HRESULT lrc;
-            rc = gProgress->COMGETTER(ResultCode)(&lrc);
-            if (FAILED(rc))
-                lrc = ~0;
-            if (!lrc)
-            {
-                UpdateTitlebarSave(100);
-                RTThreadYield();
-                RTPrintf("Saved the state successfully.\n");
-            }
-            else
-                RTPrintf("Error saving state, lrc=%d (%#x)\n", lrc, lrc);
-            return VINF_EM_TERMINATE;
+            VMCtrlSave(doEventQuit);
+            break;
         }
-#endif
+
         /*
          * Not a host key combination.
          * Indicate this by returning false.

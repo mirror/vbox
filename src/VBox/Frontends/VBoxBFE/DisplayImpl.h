@@ -56,6 +56,8 @@ public:
 
     void resetFramebuffer();
 
+    void setRunning(void) { mfMachineRunning = true; };
+
 
 private:
 
