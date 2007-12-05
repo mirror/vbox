@@ -77,14 +77,6 @@
 #define GC_ARCH_BITS
 #endif /* __DOXYGEN__ */
 
-/* A temporary hack. */
-#ifndef RT_OS_LINUX
-# ifdef __LINUX__
-#  define RT_OS_LINUX
-#  warning "__LINUX__ without RT_OS_LINUX!"
-# endif
-#endif
-
 /** @def RT_ARCH_X86
  * Indicates that we're compiling for the X86 architecture.
  */
