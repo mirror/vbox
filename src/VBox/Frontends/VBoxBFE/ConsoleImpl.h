@@ -102,14 +102,16 @@ public:
     {
         enmHKeyState  = HKEYSTATE_NORMAL;
         mfInitialized = false;
+        mfInputGrab   = false;
     }
     virtual ~Console() {}
 
     virtual void     updateTitlebar() = 0;
-    virtual void     updateTitlebarSave(int iPercent) = 0;
+    virtual void     updateTitlebarProgress(const char *pszStr, int iPercent) = 0;
 
     virtual void     inputGrabStart() = 0;
     virtual void     inputGrabEnd() = 0;
+    virtual bool     inputGrabbed() { return mfInputGrab; }
     virtual void     resetCursor() {}
 
     virtual void     mouseSendEvent(int dz) = 0;
@@ -121,10 +123,13 @@ public:
     virtual CONEVENT eventWait() = 0;
     virtual void     eventQuit() = 0;
             bool     initialized() { return mfInitialized; }
+    virtual void     progressInfo(PVM pVM, unsigned uPercent, void *pvUser) = 0;
+    virtual void     resetKeys(void) = 0;
 
 protected:
     HKEYSTATE enmHKeyState;
     bool      mfInitialized;
+    bool      mfInputGrab;
 };
 
 extern Console *gConsole;

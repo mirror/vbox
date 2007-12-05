@@ -34,24 +34,27 @@ using namespace com;
 
 #include <VBox/types.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
 #include <VBox/param.h>
 #include <VBox/pdm.h>
 #include <VBox/version.h>
 #ifdef VBOXBFE_WITH_USB
 # include <VBox/vusb.h>
 #endif
-#include <VBox/log.h>
-#include <iprt/path.h>
-#include <iprt/string.h>
-#include <iprt/runtime.h>
+#ifdef VBOX_HGCM
+# include <VBox/shflsvc.h>
+#endif
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
+#include <iprt/file.h>
+#include <iprt/path.h>
+#include <iprt/runtime.h>
 #include <iprt/semaphore.h>
 #include <iprt/stream.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
-#include <iprt/file.h>
-#include <iprt/alloca.h>
-#include <iprt/ctype.h>
 
 #include "VBoxBFE.h"
 
@@ -64,10 +67,6 @@ using namespace com;
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <linux/if_tun.h>
-#endif
-
-#ifndef RT_OS_L4
-#include <vector>
 #endif
 
 #include "ConsoleImpl.h"
@@ -90,12 +89,11 @@ using namespace com;
 #ifdef RT_OS_L4
 #include "L4Console.h"
 #include "L4Framebuffer.h"
+#include "L4IDLInterface.h"
 #endif
 
 #ifdef RT_OS_L4
-# ifndef L4API_l4v2onv4
-#  include <l4/sys/ktrace.h>
-# endif
+# include <l4/sys/ktrace.h>
 # include <l4/vboxserver/file.h>
 #endif
 
@@ -121,63 +119,69 @@ static DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser);
 *   Global Variables                                                           *
 *******************************************************************************/
 
-PVM              pVM              = NULL;
-Mouse           *gMouse           = NULL;
-VMDisplay       *gDisplay         = NULL;
-Keyboard        *gKeyboard        = NULL;
-VMMDev          *gVMMDev          = NULL;
-Framebuffer     *gFramebuffer     = NULL;
-MachineDebugger *gMachineDebugger = NULL;
-VMStatus        *gStatus          = NULL;
-Console         *gConsole         = NULL;
+PVM                pVM              = NULL;
+Mouse             *gMouse           = NULL;
+VMDisplay         *gDisplay         = NULL;
+Keyboard          *gKeyboard        = NULL;
+VMMDev            *gVMMDev          = NULL;
+Framebuffer       *gFramebuffer     = NULL;
+MachineDebugger   *gMachineDebugger = NULL;
+VMStatus          *gStatus          = NULL;
+Console           *gConsole         = NULL;
 #ifdef VBOXBFE_WITH_USB
-HostUSB         *gHostUSB         = NULL;
+HostUSB           *gHostUSB         = NULL;
 #endif
 
 VMSTATE machineState = VMSTATE_CREATING;
 
-PPDMLED     mapFDLeds[2]      = {0};
-PPDMLED     mapIDELeds[4]     = {0};
+static PPDMLED     mapFDLeds[2]   = {0};
 
 /** flag whether keyboard/mouse events are grabbed */
 #ifdef RT_OS_L4
 /** see <l4/input/macros.h> for key definitions */
-int gHostKey; /* not used */
-int gHostKeySym = KEY_RIGHTCTRL;
+int                gHostKey; /* not used */
+int                gHostKeySym = KEY_RIGHTCTRL;
 #elif defined (DEBUG_dmik)
 // my mini kbd doesn't have RCTRL...
-int gHostKey    = KMOD_RSHIFT;
-int gHostKeySym = SDLK_RSHIFT;
+int                gHostKey    = KMOD_RSHIFT;
+int                gHostKeySym = SDLK_RSHIFT;
 #else
-int gHostKey    = KMOD_RCTRL;
-int gHostKeySym = SDLK_RCTRL;
+int                gHostKey    = KMOD_RCTRL;
+int                gHostKeySym = SDLK_RCTRL;
 #endif
 bool gfAllowFullscreenToggle = true;
 
-static bool g_fIOAPIC = false;
-static bool g_fACPI   = true;
-static bool g_fAudio  = false;
+static bool        g_fIOAPIC = false;
+static bool        g_fACPI   = true;
+static bool        g_fAudio  = false;
 #ifdef VBOXBFE_WITH_USB
-static bool g_fUSB    = false;
+static bool        g_fUSB    = false;
 #endif
-static char *g_pszHdaFile   = NULL;
-static bool g_fHdaSpf = false;
-static char *g_pszHdbFile   = NULL;
-static bool g_fHdbSpf = false;
-static char *g_pszCdromFile = NULL;
-static char *g_pszFdaFile   = NULL;
-static const char *pszBootDevice = "IDE";
-static uint32_t g_u32MemorySizeMB = 128;
-static uint32_t g_u32VRamSize = 4 * _1M;
+static char       *g_pszHdaFile   = NULL;
+static bool        g_fHdaSpf = false;
+static char       *g_pszHdbFile   = NULL;
+static bool        g_fHdbSpf = false;
+static char       *g_pszCdromFile = NULL;
+static char       *g_pszFdaFile   = NULL;
+       const char *g_pszStateFile = NULL;
+static const char *g_pszBootDevice = "IDE";
+static uint32_t    g_u32MemorySizeMB = 128;
+static uint32_t    g_u32VRamSize = 4 * _1M;
 #ifdef VBOXSDL_ADVANCED_OPTIONS
-static bool g_fRawR0 = true;
-static bool g_fRawR3 = true;
-static bool g_fPATM  = true;
-static bool g_fCSAM  = true;
+static bool        g_fRawR0 = true;
+static bool        g_fRawR3 = true;
+static bool        g_fPATM  = true;
+static bool        g_fCSAM  = true;
 #endif
-static bool g_fPreAllocRam = false;
-static int  g_iBootMenu = 2;
-static bool g_fReleaseLog = true; /**< Set if we should open the release. */
+static bool        g_fRestoreState = false;
+static const char *g_pszShareDir[MaxSharedFolders];
+static const char *g_pszShareName[MaxSharedFolders];
+static unsigned    g_uNumShares;
+static bool        g_fPreAllocRam = false;
+static int         g_iBootMenu = 2;
+static bool        g_fReleaseLog = true; /**< Set if we should open the release. */
+       const char *g_pszProgressString;
+       unsigned    g_uProgressPercent = ~0U;
 
 
 /**
@@ -215,6 +219,13 @@ static char szError[512];
 
 
 /**
+ */
+bool fActivateHGCM()
+{
+    return !!(g_uNumShares > 0);
+}
+
+/**
  * Converts the passed in network option
  *
  * @returns Index into g_aNetDevs on success. (positive)
@@ -239,7 +250,6 @@ static int networkArg2Index(const char *pszArg, int cchRoot)
     }
     return n;
 }
-
 
 /**
  *  Generates a new unique MAC address based on our vendor ID and
@@ -268,7 +278,6 @@ int GenerateMACAddress(char pszAddress[MAC_STRING_LEN + 1])
     LogFlowFunc(("generated MAC: '%s'\n", pszAddress));
     return VINF_SUCCESS;
 }
-
 
 /**
  * Print a syntax error.
@@ -305,6 +314,32 @@ static int FatalError(const char *pszMsg, ...)
     return 1;
 }
 
+/**
+ * Start progress display.
+ */
+void startProgressInfo(const char *pszStr)
+{
+    g_pszProgressString = pszStr;
+    g_uProgressPercent = 0;
+}
+
+/**
+ * Update progress display.
+ */
+void callProgressInfo(PVM pVM, unsigned uPercent, void *pvUser)
+{
+    if (gConsole)
+        gConsole->progressInfo(pVM, uPercent, pvUser);
+}
+
+/**
+ * End progress display.
+ */
+void endProgressInfo(void)
+{
+    g_uProgressPercent = ~0U;
+}
+
 
 /**
  * Print program usage.
@@ -322,7 +357,10 @@ static void show_usage()
              "  -vram <size>       Set size of video memory in megabytes\n"
              "  -prealloc          Force RAM pre-allocation\n"
              "  -fullscreen        Start VM in fullscreen mode\n"
+             "  -statefile <file>  Define the file name for VM save/restore\n"
+             "  -restore           Restore the VM if the statefile exists, normal start otherwise\n"
              "  -nofstoggle        Forbid switching to/from fullscreen mode\n"
+             "  -share <dir><name> Share directory <dir> as name <name>\n"
              "  -nohostkey         Disable hostkey\n"
              "  -[no]acpi          Enable or disable ACPI (default: enabled)\n"
              "  -[no]ioapic        Enable or disable the IO-APIC (default: disabled)\n"
@@ -437,19 +475,19 @@ int main(int argc, char **argv)
             {
                 case 'a':
                 {
-                    pszBootDevice = "FLOPPY";
+                    g_pszBootDevice = "FLOPPY";
                     break;
                 }
 
                 case 'c':
                 {
-                    pszBootDevice = "IDE";
+                    g_pszBootDevice = "IDE";
                     break;
                 }
 
                 case 'd':
                 {
-                    pszBootDevice = "DVD";
+                    g_pszBootDevice = "DVD";
                     break;
                 }
 
@@ -485,6 +523,26 @@ int main(int argc, char **argv)
             if (VBOX_FAILURE(rc))
                 return SyntaxError("bad video ram size: %s (error %Vrc)\n",
                                    argv[curArg], rc);
+        }
+        else if (strcmp(pszArg, "-statefile") == 0)
+        {
+            if (++curArg >= argc)
+                return SyntaxError("missing argument for restore!\n");
+            g_pszStateFile = argv[curArg];
+        }
+        else if (strcmp(pszArg, "-restore") == 0)
+            g_fRestoreState = true;
+        else if (strcmp(pszArg, "-share") == 0)
+        {
+            if (g_uNumShares >= MaxSharedFolders)
+                return SyntaxError("too many shared folders specified!\n");
+            if (++curArg >= argc)
+                return SyntaxError("missing 1s argument for share!\n");
+            g_pszShareDir[g_uNumShares] = argv[curArg];
+            if (++curArg >= argc)
+                return SyntaxError("missing 2nd argument for share!\n");
+            g_pszShareName[g_uNumShares] = argv[curArg];
+            g_uNumShares++;
         }
         else if (strcmp(pszArg, "-fullscreen") == 0)
             fFullscreen = true;
@@ -777,6 +835,11 @@ int main(int argc, char **argv)
         return -1;
     }
 
+#ifdef RT_OS_L4
+    /* Start the external IDL interface */
+    L4CtrlInit();
+#endif
+
     /* loop until the powerup processing is done */
     do
     {
@@ -793,6 +856,10 @@ int main(int argc, char **argv)
                 gFramebuffer->resize();
                 /* notify the display that the resize has been completed */
                 gDisplay->ResizeCompleted();
+                break;
+
+            case CONEVENT_USR_TITLEBARUPDATE:
+                gConsole->updateTitlebar();
                 break;
 
             case CONEVENT_USR_QUIT:
@@ -825,11 +892,12 @@ int main(int argc, char **argv)
                        * gFramebuffer->getHostYres()
                        * (gDisplay->getBitsPerPixel() / 8))
         gDisplay->SetVideoModeHint(gFramebuffer->getHostXres(), gFramebuffer->getHostYres(), 0, 0);
+
     /* Limit the VRAM of the guest to the amount of memory we got actually
      * mapped from the L4 console. */
     u32MaxVRAM = (gFramebuffer->getHostYres() + 18) /* don't omit the status bar */
                * gFramebuffer->getHostXres()
-               * (gDisplay->getBitsPerPixel() / 8);
+               * (gFramebuffer->getHostBitsPerPixel() / 8);
     if (g_u32VRamSize > u32MaxVRAM)
     {
         RTPrintf("Limiting the video memory to %u bytes\n", u32MaxVRAM);
@@ -1095,6 +1163,61 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         goto failure;
     }
 
+#ifdef VBOX_HGCM
+    /*
+     * Add shared folders to the VM
+     */
+    if (fActivateHGCM() && gVMMDev->isShFlActive())
+    {
+        for (unsigned i=0; i<g_uNumShares; i++)
+        {
+            VBOXHGCMSVCPARM  parms[2];
+            SHFLSTRING      *pFolderName, *pMapName;
+            int              cbString;
+            PRTUCS2          aHostPath, aMapName;
+            int              rc;
+
+            rc = RTStrUtf8ToUcs2(&aHostPath, g_pszShareDir[i]);
+            AssertRC(rc);
+            rc = RTStrUtf8ToUcs2(&aMapName, g_pszShareName[i]);
+            AssertRC(rc);
+
+            cbString = (RTStrUcs2Len (aHostPath) + 1) * sizeof (RTUCS2);
+            pFolderName = (SHFLSTRING *) RTMemAllocZ (sizeof (SHFLSTRING) + cbString);
+            Assert (pFolderName);
+            memcpy (pFolderName->String.ucs2, aHostPath, cbString);
+
+            pFolderName->u16Size   = cbString;
+            pFolderName->u16Length = cbString - sizeof(RTUCS2);
+
+            parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[0].u.pointer.addr = pFolderName;
+            parms[0].u.pointer.size = sizeof (SHFLSTRING) + cbString;
+
+            cbString = (RTStrUcs2Len (aMapName) + 1) * sizeof (RTUCS2);
+            pMapName = (SHFLSTRING *) RTMemAllocZ (sizeof(SHFLSTRING) + cbString);
+            Assert (pMapName);
+            memcpy (pMapName->String.ucs2, aMapName, cbString);
+
+            pMapName->u16Size   = cbString;
+            pMapName->u16Length = cbString - sizeof (RTUCS2);
+
+            parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[1].u.pointer.addr = pMapName;
+            parms[1].u.pointer.size = sizeof (SHFLSTRING) + cbString;
+
+            rc = gVMMDev->hgcmHostCall ("VBoxSharedFolders",
+                                        SHFL_FN_ADD_MAPPING, 2, &parms[0]);
+            AssertRC(rc);
+            LogRel(("Added share %s: (%s)\n", g_pszShareName[i], g_pszShareDir[i]));
+            RTMemFree (pFolderName);
+            RTMemFree (pMapName);
+            RTStrUcs2Free (aHostPath);
+            RTStrUcs2Free (aMapName);
+        }
+    }
+#endif
+
 #ifdef VBOXBFE_WITH_USB
     /*
      * Capture USB devices.
@@ -1119,15 +1242,43 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     if (VBOX_SUCCESS(rc))
     {
         PVMREQ pReq;
-        rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOn, 1, pVM);
-        if (VBOX_SUCCESS(rc))
+
+        if (   g_fRestoreState
+            && g_pszStateFile
+            && *g_pszStateFile
+            && RTPathExists(g_pszStateFile))
         {
-            rc = pReq->iStatus;
-            AssertRC(rc);
-            VMR3ReqFree(pReq);
+            startProgressInfo("Restoring");
+            rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT,
+                             (PFNRT)VMR3Load, 4, pVM, g_pszStateFile, &callProgressInfo, NULL);
+            endProgressInfo();
+            if (VBOX_SUCCESS(rc))
+            {
+                VMR3ReqFree(pReq);
+                rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT,
+                                 (PFNRT)VMR3Resume, 1, pVM);
+                if (VBOX_SUCCESS(rc))
+                {
+                    rc = pReq->iStatus;
+                    VMR3ReqFree(pReq);
+                }
+                gDisplay->setRunning();
+            }
+            else
+                AssertMsgFailed(("VMR3Load failed, rc=%Vrc\n", rc));
         }
         else
-            AssertMsgFailed(("VMR3PowerOn failed, rc=%Vrc\n", rc));
+        {
+            rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOn, 1, pVM);
+            if (VBOX_SUCCESS(rc))
+            {
+                rc = pReq->iStatus;
+                AssertRC(rc);
+                VMR3ReqFree(pReq);
+            }
+            else
+                AssertMsgFailed(("VMR3PowerOn failed, rc=%Vrc\n", rc));
+        }
     }
 
     /*
@@ -1260,7 +1411,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATE_RC();
     rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
     rc = CFGMR3InsertInteger(pCfg,  "RamSize",        g_u32MemorySizeMB * _1M);     UPDATE_RC();
-    rc = CFGMR3InsertString(pCfg,   "BootDevice0",    pszBootDevice);               UPDATE_RC();
+    rc = CFGMR3InsertString(pCfg,   "BootDevice0",    g_pszBootDevice);             UPDATE_RC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice1",    "NONE");                      UPDATE_RC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice2",    "NONE");                      UPDATE_RC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice3",    "NONE");                      UPDATE_RC();

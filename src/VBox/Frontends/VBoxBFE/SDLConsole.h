@@ -94,7 +94,7 @@ public:
     ~SDLConsole();
 
     virtual void     updateTitlebar();
-    virtual void     updateTitlebarSave(int iPercent);
+    virtual void     updateTitlebarProgress(const char *pszStr, int iPercent);
 
     virtual void     inputGrabStart();
     virtual void     inputGrabEnd();
@@ -104,10 +104,12 @@ public:
                                  bool fAlpha, uint32_t xHot,
                                  uint32_t yHot, uint32_t width,
                                  uint32_t height, void *pShape);
+    virtual void     progressInfo(PVM pVM, unsigned uPercent, void *pvUser);
 
     virtual CONEVENT eventWait();
     virtual void     eventQuit();
     virtual void     resetCursor();
+    virtual void     resetKeys(void);
 
 private:
 
@@ -115,11 +117,7 @@ private:
     uint8_t keyEventToKeyCode(const SDL_KeyboardEvent *ev);
     void    processKey(SDL_KeyboardEvent *ev);
     void    setPointerShape (const PointerShapeChangeData *data);
-
-    void    resetKeys(void);
-
-    /** flag whether keyboard/mouse events are grabbed */
-    bool fInputGrab;
+    static void doEventQuit(void);
 
     /** modifier keypress status (scancode as index) */
     uint8_t gaModifiersState[256];
@@ -128,6 +126,8 @@ private:
     SDL_Cursor *gpCustomCursor;
     /** Custom window manager cursor? */
     WMcursor *gpCustomWMcursor;
+    /** the application Icon */
+    SDL_Surface *mWMIcon;
 #ifdef VBOXBFE_WITH_X11
     SDL_SysWMinfo gSdlInfo;
 #endif

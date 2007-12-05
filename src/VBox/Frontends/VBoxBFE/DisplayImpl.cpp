@@ -248,6 +248,12 @@ void VMDisplay::handleDisplayUpdate (int x, int y, int w, int h)
 
     checkCoordBounds (&x, &y, &w, &h, mpDrv->Connector.cx, mpDrv->Connector.cy);
 
+    if (w == 0 || h == 0)
+    {
+        mFramebuffer->Unlock();
+        return;
+    }
+
     // special processing for the internal Framebuffer
     if (mInternalFramebuffer)
     {
@@ -488,6 +494,10 @@ DECLCALLBACK(void) VMDisplay::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
         pDisplay->handleResizeCompletedEMT ();
         /* Continue with normal processing because the status here is ResizeStatus_Void. */
         Assert (pDisplay->mu32ResizeStatus == ResizeStatus_Void);
+        /* Repaint the display because VM continued to run during the framebuffer resize. */
+        pDrv->pUpPort->pfnUpdateDisplayAll(pDrv->pUpPort);
+        /* Ignore the refresh to replay the logic. */
+        return;
     }
     else if (u32ResizeStatus == ResizeStatus_InProgress)
     {

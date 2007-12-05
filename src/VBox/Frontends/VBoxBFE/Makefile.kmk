@@ -51,7 +51,16 @@ VBoxBFE_SOURCES = \
 	MouseImpl.cpp \
 	KeyboardImpl.cpp \
 	StatusImpl.cpp \
-	MachineDebuggerImpl.cpp
+	MachineDebuggerImpl.cpp \
+	VMControl.cpp
+
+ifdef VBOX_WITH_HGCM
+VBoxBFE_DEFS += VBOX_HGCM
+VBoxBFE_SOURCES += \
+	HGCM.cpp \
+	HGCMThread.cpp \
+	HGCMObjects.cpp
+endif
 
 VBoxBFE_SOURCES.darwin = \
 	VBoxBFEMain-darwin.m
@@ -59,6 +68,7 @@ VBoxBFE_SOURCES.darwin = \
 VBoxBFE_SOURCES.l4 = \
 	L4Console.cpp \
 	L4Framebuffer.cpp \
+	L4IDLInterface.cpp \
 	EmulCpp.cpp
 
 # SDL
@@ -93,9 +103,6 @@ endif
 VBoxBFE_INCS.freebsd = \
 	/usr/include \
 	/usr/local/include
-VBoxBFE_INCS.linux = \
-	$(PATH_BIN)/sdk/include \
-	$(VBOX_XPCOM_INCS)
 
 VBoxBFE_LIBS = \
 	$(LIB_RUNTIME) \
@@ -118,14 +125,11 @@ endif
 VBoxBFE_LIBS.l4 = \
 	$(L4_LIBDIR)/libl4con-idl.a \
 	$(L4_LIBDIR)/libconstream-server.a \
+	$(L4_LIBDIR)/libvboxctrl-server.a \
 	$(L4_LIBDIR)/libl4sys.a
 VBoxBFE_LIBS.darwin = \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 VBoxBFE_LDFLAGS.darwin = -framework Foundation -framework AppKit
-
-VBoxBFE_LIBPATH.linux = \
-	$(LIBPATH_XPCOM) ## why?
-
 
 VBoxBFE_CXXFLAGS.win = \
 	-EHsc
@@ -136,6 +140,12 @@ VBoxBFE_CXXFLAGS.l4 += -fno-rtti -nostdinc -Wno-non-virtual-dtor \
 	$(addprefix -I,$(VBOX_L4_GCC3_INCS) $(L4_INCDIR))
 VBoxBFE_CFLAGS.linux += -O ## @todo what's this good for?
 
+VBoxBFE_SDLConsole.cpp_DEPS = $(PATH_VBoxBFE)/Ico64x01.h
+
 
 include $(PATH_KBUILD)/footer.kmk
 
+# Convert the pnm-file to a byte array.
+$(PATH_VBoxBFE)/Ico64x01.h: ico64x01.pnm $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_VBoxBFE))
+	$(call MSG_TOOL,bin2c,VBoxBFE,$<,$@)
+	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
