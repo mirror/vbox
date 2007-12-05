@@ -262,7 +262,7 @@ public:
     NS_PRECONDITION(0 != mRefCntIPC, "dup release");
     nsrefcnt count = PR_AtomicDecrement((PRInt32 *)&mRefCntIPC);
     if (0 == count) {
-      // If the last IPC reference is releaed, remove this instance from the map.
+      // If the last IPC reference is released, remove this instance from the map.
       // ipcDConnectService is guaranteed to still exist here
       // (DConnectInstance lifetime is bound to ipcDConnectService)
       nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
