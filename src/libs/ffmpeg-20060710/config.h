@@ -2,12 +2,12 @@
 
 /* Modified, despite above warnings. */
 
-#if defined(CONFIG_WIN32) || defined(__DARWIN__)
+#if defined(CONFIG_WIN32) || defined(RT_OS_DARWIN)
 # define FFMPEG_CONFIGURATION " --enable-memalign-hack "
 #else
 # define FFMPEG_CONFIGURATION " "
 #endif
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 # define ARCH_X86_64 1
 #else
 # define ARCH_X86 1
@@ -16,7 +16,7 @@
 #define HAVE_MMX 1
 #define __CPU__ 586
 #define HAVE_BUILTIN_VECTOR 1
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 # define HAVE_MM3DNOW 1
 #endif 
 #ifndef CONFIG_WIN32
@@ -38,7 +38,7 @@
 #  define __MINGW32__ 1
 # endif
 #else
-# ifdef __LINUX__
+# ifdef RT_OS_LINUX
 #  define CONFIG_VIDEO4LINUX 1
 #  define CONFIG_VIDEO4LINUX2 1
 #  define CONFIG_DV1394 1
@@ -50,12 +50,12 @@
 # define CONFIG_IPV6 1
 # define CONFIG_ZLIB 1
 #endif
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 # undef HAVE_MALLOC_H
 #else
 # define HAVE_MALLOC_H 1
 #endif 
-#if defined(CONFIG_WIN32) || defined(__DARWIN__)
+#if defined(CONFIG_WIN32) || defined(RT_OS_DARWIN)
 # undef HAVE_MEMALIGN
 # define MEMALIGN_HACK 1
 #else
