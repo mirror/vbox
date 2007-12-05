@@ -557,7 +557,7 @@ Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHost% \
 	, $(Drivers_SOURCES))
 Drivers_SOURCES.solaris = \
-	Audio/solaudio.c \
+	# Audio/solaudio.c \
 	Network/DrvTAP.cpp \
 	Storage/DrvHostBase.cpp \
 	Storage/DrvHostDVD.cpp \
