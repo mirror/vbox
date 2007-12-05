@@ -595,8 +595,8 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
                                   VBoxDefs::RenderMode rm,
                                   QWidget *parent, const char *name, WFlags f)
     : QScrollView (parent, name, f | WStaticContents | WNoAutoErase)
-    , mainwnd (mainWnd)
-    , cconsole (console)
+    , mMainWnd (mainWnd)
+    , mConsole (console)
     , gs (vboxGlobal().settings())
     , attached (false)
     , kbd_captured (false)
@@ -625,10 +625,10 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mDarwinKeyModifiers (0)
 #endif
 {
-    Assert (!cconsole.isNull() &&
-            !cconsole.GetDisplay().isNull() &&
-            !cconsole.GetKeyboard().isNull() &&
-            !cconsole.GetMouse().isNull());
+    Assert (!mConsole.isNull() &&
+            !mConsole.GetDisplay().isNull() &&
+            !mConsole.GetKeyboard().isNull() &&
+            !mConsole.GetMouse().isNull());
 
     /* enable MouseMove events */
     viewport()->setMouseTracking (true);
@@ -640,10 +640,10 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     viewport()->installEventFilter (this);
 
     /* to fix some focus issues */
-    mainwnd->menuBar()->installEventFilter (this);
+    mMainWnd->menuBar()->installEventFilter (this);
 
     /* we want to be notified on some parent's events */
-    mainwnd->installEventFilter (this);
+    mMainWnd->installEventFilter (this);
 
 #ifdef Q_WS_X11
     /* initialize the X keyboard subsystem */
@@ -662,7 +662,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
     /* setup rendering */
 
-    CDisplay display = cconsole.GetDisplay();
+    CDisplay display = mConsole.GetDisplay();
     Assert (!display.isNull());
 
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
@@ -726,8 +726,8 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
     /* setup the callback */
     mCallback = CConsoleCallback (new VBoxConsoleCallback (this));
-    cconsole.RegisterCallback (mCallback);
-    AssertWrapperOk (cconsole);
+    mConsole.RegisterCallback (mCallback);
+    AssertWrapperOk (mConsole);
 
     viewport()->setEraseColor (black);
 
@@ -766,14 +766,14 @@ VBoxConsoleView::~VBoxConsoleView()
     if (mFrameBuf)
     {
         /* detach our framebuffer from Display */
-        CDisplay display = cconsole.GetDisplay();
+        CDisplay display = mConsole.GetDisplay();
         Assert (!display.isNull());
         display.SetupInternalFramebuffer (0);
         /* release the reference */
         mFrameBuf->Release();
     }
 
-    cconsole.UnregisterCallback (mCallback);
+    mConsole.UnregisterCallback (mCallback);
 }
 
 //
@@ -785,7 +785,7 @@ QSize VBoxConsoleView::sizeHint() const
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
     if (mode == VBoxDefs::TimerMode)
     {
-        CDisplay display = cconsole.GetDisplay();
+        CDisplay display = mConsole.GetDisplay();
         return QSize (display.GetWidth() + frameWidth() * 2,
                       display.GetHeight() + frameWidth() * 2);
     }
@@ -846,7 +846,7 @@ void VBoxConsoleView::normalizeGeometry (bool adjustPosition /* = false */)
 {
     /* Make no normalizeGeometry in case we are in manual resize
      * mode or main window is maximized */
-    if (mainwnd->isMaximized() || mainwnd->isFullScreen())
+    if (mMainWnd->isMaximized() || mMainWnd->isFullScreen())
         return;
 
     QWidget *tlw = topLevelWidget();
@@ -895,17 +895,17 @@ bool VBoxConsoleView::pause (bool on)
         return true;
 
     if (on)
-        cconsole.Pause();
+        mConsole.Pause();
     else
-        cconsole.Resume();
+        mConsole.Resume();
 
-    bool ok = cconsole.isOk();
+    bool ok = mConsole.isOk();
     if (!ok)
     {
         if (on)
-            vboxProblem().cannotPauseMachine (cconsole);
+            vboxProblem().cannotPauseMachine (mConsole);
         else
-            vboxProblem().cannotResumeMachine (cconsole);
+            vboxProblem().cannotResumeMachine (mConsole);
     }
 
     return ok;
@@ -999,6 +999,12 @@ bool VBoxConsoleView::event (QEvent *e)
             {
                 if (isRunning())
                     focusEvent (false);
+                else
+                {
+                    /* release the host key even when paused */
+                    mIsHostkeyPressed = false;
+                    emitKeyboardStateChanged();
+                }
                 break;
             }
 
@@ -1041,7 +1047,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 normalizeGeometry (true /* adjustPosition */);
 
                 /* report to the VM thread that we finished resizing */
-                cconsole.GetDisplay().ResizeCompleted (0);
+                mConsole.GetDisplay().ResizeCompleted (0);
 
                 mIgnoreMainwndResize = oldIgnoreMainwndResize;
 
@@ -1049,7 +1055,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 emit resizeHintDone();
 
                 /* update geometry after entering fullscreen | seamless */
-                if (mainwnd->isTrueFullscreen() || mainwnd->isTrueSeamless())
+                if (mMainWnd->isTrueFullscreen() || mMainWnd->isTrueSeamless())
                     updateGeometry();
 
                 return true;
@@ -1063,7 +1069,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 viewport()->repaint (re->x() - contentsX(),
                                      re->y() - contentsY(),
                                      re->width(), re->height(), false);
-                /*cconsole.GetDisplay().UpdateCompleted(); - the event was acked already */
+                /* mConsole.GetDisplay().UpdateCompleted(); - the event was acked already */
                 return true;
             }
 #endif
@@ -1071,14 +1077,14 @@ bool VBoxConsoleView::event (QEvent *e)
             case VBoxDefs::SetRegionEventType:
             {
                 VBoxSetRegionEvent *sre = (VBoxSetRegionEvent*) e;
-                if (mainwnd->isTrueSeamless() &&
+                if (mMainWnd->isTrueSeamless() &&
                     sre->region() != mLastVisibleRegion)
                 {
                     mLastVisibleRegion = sre->region();
-                    mainwnd->setMask (sre->region());
+                    mMainWnd->setMask (sre->region());
                 }
                 else if (!mLastVisibleRegion.isNull() &&
-                         !mainwnd->isTrueSeamless())
+                         !mMainWnd->isTrueSeamless())
                     mLastVisibleRegion = QRegion();
                 return true;
             }
@@ -1103,7 +1109,7 @@ bool VBoxConsoleView::event (QEvent *e)
                      * to the default shape if necessary */
                     if (mouse_absolute)
                     {
-                        CMouse mouse = cconsole.GetMouse();
+                        CMouse mouse = mConsole.GetMouse();
                         mouse.PutMouseEventAbsolute (-1, -1, 0, 0);
                         captureMouse (false, false);
                     }
@@ -1113,7 +1119,7 @@ bool VBoxConsoleView::event (QEvent *e)
                     vboxProblem().remindAboutMouseIntegration (mouse_absolute);
                 }
                 if (me->needsHostCursor())
-                    mainwnd->setMouseIntegrationLocked (false);
+                    mMainWnd->setMouseIntegrationLocked (false);
                 return true;
             }
 
@@ -1176,10 +1182,10 @@ bool VBoxConsoleView::event (QEvent *e)
                  *  destroyed widgets.
                  */
                 QWidgetList *list = QApplication::topLevelWidgets ();
-                bool destroyed = list->find (mainwnd) < 0;
+                bool destroyed = list->find (mMainWnd) < 0;
                 delete list;
-                if (!destroyed && mainwnd->statusBar())
-                    mainwnd->statusBar()->clear();
+                if (!destroyed && mMainWnd->statusBar())
+                    mMainWnd->statusBar()->clear();
 
                 return true;
             }
@@ -1208,11 +1214,11 @@ bool VBoxConsoleView::event (QEvent *e)
                 {
                     if (ue->attached())
                         vboxProblem().cannotAttachUSBDevice (
-                            cconsole,
+                            mConsole,
                             vboxGlobal().details (ue->device()), ue->error());
                     else
                         vboxProblem().cannotDetachUSBDevice (
-                            cconsole,
+                            mConsole,
                             vboxGlobal().details (ue->device()), ue->error());
                 }
 
@@ -1230,7 +1236,7 @@ bool VBoxConsoleView::event (QEvent *e)
             case VBoxDefs::RuntimeErrorEventType:
             {
                 RuntimeErrorEvent *ee = (RuntimeErrorEvent *) e;
-                vboxProblem().showRuntimeError (cconsole, ee->fatal(),
+                vboxProblem().showRuntimeError (mConsole, ee->fatal(),
                                                 ee->errorID(), ee->message());
                 return true;
             }
@@ -1261,24 +1267,24 @@ bool VBoxConsoleView::event (QEvent *e)
                         else
                             Assert (0);
 
-                        CKeyboard keyboard = cconsole.GetKeyboard();
+                        CKeyboard keyboard = mConsole.GetKeyboard();
                         Assert (!keyboard.isNull());
                         keyboard.PutScancodes (combo, 6);
                     }
                     else if (ke->key() == Key_Home)
                     {
                         /* activate the main menu */
-                        if (mainwnd->isTrueSeamless() || mainwnd->isTrueFullscreen())
-                            mainwnd->popupMainMenu (mouse_captured);
+                        if (mMainWnd->isTrueSeamless() || mMainWnd->isTrueFullscreen())
+                            mMainWnd->popupMainMenu (mouse_captured);
                         else
-                            mainwnd->menuBar()->setFocus();
+                            mMainWnd->menuBar()->setFocus();
                     }
                     else
                     {
                         /* process hot keys not processed in keyEvent()
                          * (as in case of non-alphanumeric keys) */
                         processHotKey (QKeySequence (ke->key()),
-                                       mainwnd->menuBar());
+                                       mMainWnd->menuBar());
                     }
                 }
                 else
@@ -1358,7 +1364,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                 break;
         }
     }
-    else if (watched == mainwnd)
+    else if (watched == mMainWnd)
     {
         switch (e->type())
         {
@@ -1421,7 +1427,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                 break;
         }
     }
-    else if (watched == mainwnd->menuBar())
+    else if (watched == mMainWnd->menuBar())
     {
         /*
          *  sometimes when we press ESC in the menu it brings the
@@ -1441,7 +1447,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             {
                 QKeyEvent *ke = (QKeyEvent *) e;
                 if (ke->key() == Key_Escape && !(ke->state() & KeyButtonMask))
-                    if (mainwnd->menuBar()->hasFocus())
+                    if (mMainWnd->menuBar()->hasFocus())
                         setFocus();
                 break;
             }
@@ -1468,7 +1474,7 @@ bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &even
     char buf [256];
     sprintf (buf, "### vkCode=%08X, scanCode=%08X, flags=%08X, dwExtraInfo=%08X",
              event.vkCode, event.scanCode, event.flags, event.dwExtraInfo);
-    mainwnd->statusBar()->message (buf);
+    mMainWnd->statusBar()->message (buf);
 #endif
 
     /* Sometimes it happens that Win inserts additional events on some key
@@ -1540,7 +1546,7 @@ bool VBoxConsoleView::winEvent (MSG *msg)
              ((msg->lParam >> 29) & 0x1),
              ((msg->lParam >> 30) & 0x1),
              ((msg->lParam >> 31) & 0x1));
-    mainwnd->statusBar()->message (buf);
+    mMainWnd->statusBar()->message (buf);
     LogFlow (("%s\n", buf));
 #endif
 
@@ -1642,7 +1648,7 @@ bool VBoxConsoleView::pmEvent (QMSG *aMsg)
                  SHORT1FROMMP (aMsg->mp1), CHAR3FROMMP (aMsg->mp1),
                  CHAR4FROMMP (aMsg->mp1), SHORT1FROMMP (aMsg->mp2),
                  SHORT2FROMMP (aMsg->mp2));
-        mainwnd->statusBar()->message (buf);
+        mMainWnd->statusBar()->message (buf);
         LogFlow (("%s\n", buf));
     }
 #endif
@@ -1751,7 +1757,7 @@ bool VBoxConsoleView::x11Event (XEvent *event)
     sprintf (buf, "pr=%d kc=%08X st=%08X fl=%08lX scan=%04X",
              event->type == XKeyPress ? 1 : 0, event->xkey.keycode,
              event->xkey.state, wineKeyboardInfo.dwFlags, wineKeyboardInfo.wScan);
-    mainwnd->statusBar()->message (buf);
+    mMainWnd->statusBar()->message (buf);
     LogFlow (("### %s\n", buf));
 #endif
 
@@ -1948,9 +1954,12 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
  *  Called on every focus change and also to forcibly capture/uncapture the
  *  input in situations similar to gaining or losing focus.
  *
- *  @param aHasFocus True if the window got focus and false otherwise.
+ *  @param aHasFocus        true if the window got focus and false otherwise.
+ *  @param aReleaseHostKey  true to release the host key (used only when
+ *                          @a aHasFocus is false.
  */
-void VBoxConsoleView::focusEvent (bool aHasFocus)
+void VBoxConsoleView::focusEvent (bool aHasFocus,
+                                  bool aReleaseHostKey /* = true */)
 {
     if (aHasFocus)
     {
@@ -1979,7 +1988,7 @@ void VBoxConsoleView::focusEvent (bool aHasFocus)
     {
         captureMouse (false);
         captureKbd (false, false);
-        releaseAllPressedKeys (!aHasFocus);
+        releaseAllPressedKeys (aReleaseHostKey);
     }
 }
 
@@ -2072,7 +2081,7 @@ void VBoxConsoleView::toggleFSMode()
     if (mIsAdditionsActive && mAutoresizeGuest)
     {
         QSize newSize = QSize();
-        if (mainwnd->isTrueFullscreen() || mainwnd->isTrueSeamless())
+        if (mMainWnd->isTrueFullscreen() || mMainWnd->isTrueSeamless())
         {
             mNormalSize = frameSize();
             newSize = maximumSize();
@@ -2102,7 +2111,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
         char buf [256];
         sprintf (buf, "aKey=%08X aScan=%02X aFlags=%08X",
                  aKey, aScan, aFlags);
-        mainwnd->statusBar()->message (buf);
+        mMainWnd->statusBar()->message (buf);
     }
 #endif
 
@@ -2300,7 +2309,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
             if (ch)
                 processed = processHotKey (QKeySequence (UNICODE_ACCEL +
                                                 QChar (ch).upper().unicode()),
-                                           mainwnd->menuBar());
+                                           mMainWnd->menuBar());
         }
         delete[] list;
 #elif defined (Q_WS_X11)
@@ -2320,14 +2329,14 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                 QChar c = QString::fromLocal8Bit (&ch, 1) [0];
                 processed = processHotKey (QKeySequence (UNICODE_ACCEL +
                                                 c.upper().unicode()),
-                                           mainwnd->menuBar());
+                                           mMainWnd->menuBar());
             }
         }
 #elif defined (Q_WS_MAC)
         if (aUniKey && aUniKey [0] && !aUniKey [1])
             processed = processHotKey (QKeySequence (UNICODE_ACCEL +
                                                      QChar (aUniKey [0]).upper().unicode()),
-                                       mainwnd->menuBar());
+                                       mMainWnd->menuBar());
 
         /* Don't consider the hot key as pressed since the guest never saw
          * it. (probably a generic thing) */
@@ -2348,7 +2357,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
         return isHostKey;
     }
 
-    CKeyboard keyboard = cconsole.GetKeyboard();
+    CKeyboard keyboard = mConsole.GetKeyboard();
     Assert (!keyboard.isNull());
 
 #if defined (Q_WS_WIN32)
@@ -2362,7 +2371,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
         sprintf (buf, "*** SCANS: ");
         for (uint i = 0; i < count; ++ i)
             sprintf (buf + strlen (buf), "%02X ", codes [i]);
-        mainwnd->statusBar()->message (buf);
+        mMainWnd->statusBar()->message (buf);
         LogFlow (("%s\n", buf));
     }
 #endif
@@ -2390,7 +2399,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
              "wdelta=%03d wdir=%03d",
              aType, aPos.x(), aPos.y(), aButton, aState, aStateAfter,
              aWheelDelta, aWheelDir);
-    mainwnd->statusBar()->message (buf);
+    mMainWnd->statusBar()->message (buf);
 #else
     Q_UNUSED (aButton);
     Q_UNUSED (aState);
@@ -2420,7 +2429,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
         ::UpdateWindow (viewport()->winId());
 #endif
 
-        CMouse mouse = cconsole.GetMouse();
+        CMouse mouse = mConsole.GetMouse();
         mouse.PutMouseEvent (aGlobalPos.x() - last_pos.x(),
                              aGlobalPos.y() - last_pos.y(),
                              wheel, state);
@@ -2521,7 +2530,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
         if (!DarwinCursorIsNull (&mDarwinCursor))
             DarwinCursorSet (&mDarwinCursor);
 #endif
-        if (mainwnd->isTrueFullscreen())
+        if (mMainWnd->isTrueFullscreen())
         {
             if (mode != VBoxDefs::SDLMode)
             {
@@ -2570,7 +2579,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
             if (cpnt.y() < 0) cpnt.setY (0);
             else if (cpnt.y() >= ch) cpnt.setY (ch - 1);
 
-            CMouse mouse = cconsole.GetMouse();
+            CMouse mouse = mConsole.GetMouse();
             mouse.PutMouseEventAbsolute (cpnt.x() + 1, cpnt.y() + 1,
                                          wheel, state);
             return true; /* stop further event handling */
@@ -2627,7 +2636,7 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
                  *  needs a 32bpp image
                  */
                 QImage shot = QImage (mFrameBuf->width(), mFrameBuf->height(), 32, 0);
-                CDisplay dsp = cconsole.GetDisplay();
+                CDisplay dsp = mConsole.GetDisplay();
                 dsp.TakeScreenShot (shot.bits(), shot.width(), shot.height());
                 /*
                  *  TakeScreenShot() may fail if, e.g. the Paused notification
@@ -2648,7 +2657,7 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
         {
             /* reuse the focus event handler to uncapture everything */
             if (hasFocus())
-                focusEvent (false);
+                focusEvent (false /* aHasFocus*/, false /* aReleaseHostKey */);
             break;
         }
         case CEnums::Running:
@@ -2663,13 +2672,13 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
                      *  ask for full guest display update (it will also update
                      *  the viewport through IFramebuffer::NotifyUpdate)
                      */
-                    CDisplay dsp = cconsole.GetDisplay();
+                    CDisplay dsp = mConsole.GetDisplay();
                     dsp.InvalidateAndUpdate();
                 }
             }
             /* reuse the focus event handler to capture input */
             if (hasFocus())
-                focusEvent (true);
+                focusEvent (true /* aHasFocus */);
             break;
         }
         default:
@@ -2682,32 +2691,37 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
 void VBoxConsoleView::doRefresh()
 {
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
-    if ( mode == VBoxDefs::TimerMode ) {
-        FRAMEBUF_DEBUG_START( xxx );
+    if (mode == VBoxDefs::TimerMode)
+    {
+        FRAMEBUF_DEBUG_START (xxx);
         QSize last_sz = pm.size();
-        bool rc = display_to_pixmap( cconsole, pm );
-        if ( rc ) {
-            if ( pm.size() != last_sz ) {
+        bool rc = display_to_pixmap (mConsole, pm);
+        if (rc)
+        {
+            if (pm.size() != last_sz)
+            {
                 int pw = pm.width(), ph = pm.height();
-                resizeContents( pw, ph );
+                resizeContents (pw, ph);
                 updateGeometry();
-                setMaximumSize( sizeHint() );
-                // let our toplevel widget calculate its sizeHint properly
-                QApplication::sendPostedEvents( 0, QEvent::LayoutHint );
+                setMaximumSize (sizeHint());
+                /* let our toplevel widget calculate its sizeHint properly */
+                QApplication::sendPostedEvents (0, QEvent::LayoutHint);
                 normalizeGeometry();
-            } else {
-                // the alternative is to update, so we will be repainted
-                // on the next event loop iteration. currently disabled.
-                //updateContents();
-                repaintContents( false );
+            }
+            else
+            {
+                /* the alternative is to update, so we will be repainted
+                 * on the next event loop iteration. currently disabled.
+                 * updateContents(); */
+                repaintContents (false);
             }
         }
-        if ( rc )
-            FRAMEBUF_DEBUG_STOP( xxx, pm.width(), pm.height() );
+        if (rc)
+            FRAMEBUF_DEBUG_STOP (xxx, pm.width(), pm.height());
     }
     else
 #endif
-        repaintContents( false );
+        repaintContents (false);
 }
 
 void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
@@ -2849,7 +2863,7 @@ void VBoxConsoleView::captureMouse (bool capture, bool emit_signal)
         viewport()->releaseMouse();
 #endif
         /* release mouse buttons */
-        CMouse mouse = cconsole.GetMouse();
+        CMouse mouse = mConsole.GetMouse();
         mouse.PutMouseEvent (0, 0, 0, 0);
     }
 
@@ -2914,20 +2928,25 @@ bool VBoxConsoleView::processHotKey (const QKeySequence &key,  QMenuData *data)
     return false;
 }
 
-void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostkey)
+/** 
+ * Send the KEY BREAK code to the VM for all currently pressed keys.
+ * 
+ * @param aReleaseHostKey @c true to set the host key state to unpressed.
+ */
+void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostKey)
 {
     AssertMsg (attached, ("Console must be attached"));
 
-    CKeyboard keyboard = cconsole.GetKeyboard();
+    CKeyboard keyboard = mConsole.GetKeyboard();
     bool fSentRESEND = false;
 
-    // send a dummy scan code (RESEND) to prevent the guest OS from recognizing
-    // a single key click (for ex., Alt) and performing an unwanted action
-    // (for ex., activating the menu) when we release all pressed keys below.
-    // Note, that it's just a guess that sending RESEND will give the desired
-    // effect :), but at least it works with NT and W2k guests.
+    /* send a dummy scan code (RESEND) to prevent the guest OS from recognizing
+     * a single key click (for ex., Alt) and performing an unwanted action
+     * (for ex., activating the menu) when we release all pressed keys below.
+     * Note, that it's just a guess that sending RESEND will give the desired
+     * effect :), but at least it works with NT and W2k guests. */
 
-    // @TODO Sending 0xFE is responsible for the warning
+    /// @todo Sending 0xFE is responsible for the warning
     //
     //         ``atkbd.c: Spurious NAK on isa0060/serio0. Some program might
     //           be trying access hardware directly''
@@ -2935,6 +2954,7 @@ void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostkey)
     //       on Linux guests (#1944). It might also be responsible for #1949. Don't
     //       send this command unless we really have to release any key modifier.
     //                                                                    --frank
+
     for (uint i = 0; i < SIZEOF_ARRAY (mPressedKeys); i++)
     {
         if (mPressedKeys [i] & IsKeyPressed)
@@ -2961,7 +2981,7 @@ void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostkey)
         mPressedKeys [i] = 0;
     }
 
-    if (aReleaseHostkey)
+    if (aReleaseHostKey)
         mIsHostkeyPressed = false;
 
 #ifdef Q_WS_MAC
@@ -2985,7 +3005,7 @@ void VBoxConsoleView::sendChangedKeyStates()
     AssertMsg (attached, ("Console must be attached"));
 
     LONG codes [2];
-    CKeyboard keyboard = cconsole.GetKeyboard();
+    CKeyboard keyboard = mConsole.GetKeyboard();
     for (uint i = 0; i < SIZEOF_ARRAY (mPressedKeys); ++ i)
     {
         uint8_t os = mPressedKeysCopy [i];
@@ -3325,12 +3345,12 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
          * otherwise get the available size for the guest display.
          * We assume here that the centralWidget() contains this view only
          * and gives it all available space. */
-        QSize sz (aToSize.isValid() ? aToSize : mainwnd->centralWidget()->size());
+        QSize sz (aToSize.isValid() ? aToSize : mMainWnd->centralWidget()->size());
         if (!aToSize.isValid())
             sz -= QSize (frameWidth() * 2, frameWidth() * 2);
         LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
-        cconsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
+        mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
     }
 }
 

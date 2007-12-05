@@ -74,7 +74,7 @@ public:
     void refresh() { doRefresh(); }
     void normalizeGeometry (bool adjustPosition = false);
 
-    CConsole &console() { return cconsole; }
+    CConsole &console() { return mConsole; }
 
     bool pause (bool on);
 
@@ -134,7 +134,7 @@ private:
         KeyPrint = 0x08,
     };
 
-    void focusEvent (bool aHasFocus);
+    void focusEvent (bool aHasFocus, bool aReleaseHostKey = true);
     bool keyEvent (int aKey, uint8_t aScan, int aFlags,
                    wchar_t *aUniKey = NULL);
     bool mouseEvent (int aType, const QPoint &aPos, const QPoint &aGlobalPos,
@@ -171,7 +171,7 @@ private:
     bool processHotKey (const QKeySequence &key, QMenuData *data);
     void updateModifiers (bool fNumLock, bool fCapsLock, bool fScrollLock);
 
-    void releaseAllPressedKeys (bool aReleaseHostkey = true);
+    void releaseAllPressedKeys (bool aReleaseHostKey = true);
     void saveKeyStates();
     void sendChangedKeyStates();
     void updateMouseClipping();
@@ -191,9 +191,9 @@ private:
 
     void maybeRestrictMinimumSize();
 
-    VBoxConsoleWnd *mainwnd;
+    VBoxConsoleWnd *mMainWnd;
 
-    CConsole cconsole;
+    CConsole mConsole;
 
     const VBoxGlobalSettings &gs;
 
