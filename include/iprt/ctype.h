@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - ctype.h wrapper.
+ * innotek Portable Runtime - ctype.h wrapper and ascii variants.
  */
 
 /*
@@ -17,12 +17,14 @@
 #ifndef ___iprt_ctype_h
 #define ___iprt_ctype_h
 
+#ifdef IN_RING3
 #include <ctype.h>
 
-#if defined(_MSC_VER) && !defined(isblank)
+# if defined(_MSC_VER) && !defined(isblank)
 /* isblank for MSC */
-# define isblank(ch)  ( (ch) == ' ' || (ch) == '\t' )
-#endif
+#  define isblank(ch)  ( (ch) == ' ' || (ch) == '\t' )
+# endif
+#endif /* IN_RING3 */
 
 #endif
 
