@@ -17,6 +17,8 @@
 #ifndef ___VBox_scsi_h
 #define ___VBox_scsi_h
 
+#include <iprt/assert.h>
+
 
 /**
  * SCSI command opcode identifiers.
@@ -384,5 +386,63 @@ static const char * const g_apszSCSICmdNames[256] =
 #define SCSI_ASC_SAVING_PARAMETERS_NOT_SUPPORTED    0x39
 #define SCSI_ASC_MEDIA_LOAD_OR_EJECT_FAILED         0x53
 
+
+/** @name SCSI_INQUIRY
+ * @{
+ */
+#pragma pack(1)
+typedef struct SCSIINQUIRYCDB
+{
+    unsigned u8Cmd : 8;
+    unsigned fEVPD : 1;
+    unsigned u4Reserved : 4;
+    unsigned u3LUN : 3;
+    unsigned u8PageCode : 8;
+    unsigned u8Reserved : 8;
+    uint8_t cbAlloc;
+    uint8_t u8Control;
+} SCSIINQUIRYCDB;
+#pragma pack()
+AssertCompileSize(SCSIINQUIRYCDB, 6);
+typedef SCSIINQUIRYCDB PSCSIINQUIRYCDB;
+typedef const SCSIINQUIRYCDB *PCSCSIINQUIRYCDB;
+
+#pragma pack(1)
+typedef struct SCSIINQUIRYDATA
+{
+    unsigned u5PeripherialDeviceType : 5;   /**< 0x00 / 00 */
+    unsigned u3PeripherialQualifier : 3;
+    unsigned u6DeviceTypeModifier : 7;      /**< 0x01 */
+    unsigned fRMB : 1;
+    unsigned u3AnsiVersion : 3;             /**< 0x02 */
+    unsigned u3EcmaVersion : 3;
+    unsigned u2IsoVersion : 2;
+    unsigned u4ResponseDataFormat : 4;      /**< 0x03 */
+    unsigned u2Reserved0 : 2;
+    unsigned fTrmlOP : 1;
+    unsigned fAEC : 1;
+    unsigned cbAdditional : 8;              /**< 0x04 */
+    unsigned u8Reserved1 : 8;               /**< 0x05 */
+    unsigned u8Reserved2 : 8;               /**< 0x06 */
+    unsigned fSftRe : 1;                    /**< 0x07 */
+    unsigned fCmdQue : 1;
+    unsigned fReserved3 : 1;
+    unsigned fLinked : 1;
+    unsigned fSync : 1;
+    unsigned fWBus16 : 1;
+    unsigned fWBus32 : 1;
+    unsigned fRelAdr : 1;
+    int8_t achVendorId[8];                  /**< 0x08 */
+    int8_t achProductId[16];                /**< 0x10 */
+    int8_t achProductLevel[4];              /**< 0x20 */
+    uint8_t abVendorSpecific[20];           /**< 0x24/36 - Optional it seems. */
+    uint8_t abReserved4[40];
+    uint8_t abVendorSpecificParameters[1];  /**< 0x60/96 - Variable size. */
+} SCSIINQUIRYDATA;
+#pragma pack()
+AssertCompileSize(SCSIINQUIRYDATA, 97);
+typedef SCSIINQUIRYDATA PSCSIINQUIRYDATA;
+typedef const SCSIINQUIRYDATA *PCSCSIINQUIRYDATA;
+/** @} */
 
 #endif
