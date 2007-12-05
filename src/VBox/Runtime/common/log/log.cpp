@@ -38,21 +38,11 @@
 
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
+#include <iprt/ctype.h>
 #ifdef IN_RING3
-# include <iprt/ctype.h>
 # include <iprt/alloca.h>
 # include <stdio.h>
-#else
-# define isspace(ch) ( (ch) == ' ' || (ch) == '\t' )
 #endif
-
-
-
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-/** Ascii to lower macro. */
-#define CHLOWER(ch)     (((unsigned char)(ch) < (unsigned char)'A') || ((unsigned char)(ch) > (unsigned char)'Z') ? (ch) : (ch) + ('a' - 'A'))
 
 
 /*******************************************************************************
@@ -273,7 +263,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
                     while (*pszVar)
                     {
                         /* skip blanks. */
-                        while (isspace(*pszVar) || *pszVar == '\n' || *pszVar == '\r')
+                        while (RT_C_IS_SPACE(*pszVar))
                             pszVar++;
                         if (!*pszVar)
                             break;
@@ -316,7 +306,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
                                 pszVar += cchInstr;
 
                                 /* check for value. */
-                                while (isspace(*pszVar) || *pszVar == '\n' || *pszVar == '\r')
+                                while (RT_C_IS_SPACE(*pszVar))
                                     pszVar++;
                                 if (*pszVar == '=' || *pszVar == ':')
                                 {
@@ -365,7 +355,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
                         }
 
                         /* skip blanks and delimiters. */
-                        while (isspace(*pszVar) || *pszVar == '\n' || *pszVar == '\r' || *pszVar == ';')
+                        while (RT_C_IS_SPACE(*pszVar) || *pszVar == ';')
                             pszVar++;
                     } /* while more environment variable value left */
                 }
@@ -887,7 +877,7 @@ static bool rtlogIsGroupMatching(const char *pszGrp, const char **ppachMask, uns
     const char *pachMask = *ppachMask;
     for (;;)
     {
-        if (CHLOWER(*pszGrp) != CHLOWER(*pachMask))
+        if (RT_C_TO_LOWER(*pszGrp) != RT_C_TO_LOWER(*pachMask))
         {
             /*
              * Check for wildcard and do a minimal match if found.
@@ -906,9 +896,12 @@ static bool rtlogIsGroupMatching(const char *pszGrp, const char **ppachMask, uns
                 break; /* we're good */
 
             /* do extremely minimal matching (fixme) */
-            pszGrp = strchr(pszGrp, *pachMask);
-            if (!pszGrp)
+            const char *pszTmp = strchr(pszGrp, RT_C_TO_LOWER(*pachMask));
+            if (!pszTmp)
+                pszTmp = strchr(pszGrp, RT_C_TO_UPPER(*pachMask));
+            if (!pszTmp)
                 return false;
+            pszGrp = pszTmp;
             continue;
         }
 
@@ -1103,7 +1096,7 @@ static unsigned rtlogGroupFlags(const char *psz)
         {
             const char *psz1 = aFlags[i].pszFlag;
             const char *psz2 = psz;
-            while (*psz1 == CHLOWER(*psz2))
+            while (*psz1 == RT_C_TO_LOWER(*psz2))
             {
                 psz1++;
                 psz2++;
@@ -1169,7 +1162,7 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
     while (*pszVar)
     {
         /* skip blanks. */
-        while (isspace(*pszVar) || *pszVar == '\n' || *pszVar == '\r')
+        while (RT_C_IS_SPACE(*pszVar))
             pszVar++;
         if (!*pszVar)
             return rc;
@@ -1253,7 +1246,7 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
         }
 
         /* skip blanks and delimiters. */
-        while (isspace(*pszVar) || *pszVar == '\n' || *pszVar == '\r' || *pszVar == ';')
+        while (RT_C_IS_SPACE(*pszVar) || *pszVar == ';')
             pszVar++;
     } /* while more environment variable value left */
 
