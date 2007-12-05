@@ -876,7 +876,34 @@ static int stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg)
     stamR3SnapshotPrintf(pThis, " name=\"%s\"", pDesc->pszName);
 
     if (pThis->fWithDesc && pDesc->pszDesc)
-        return stamR3SnapshotPrintf(pThis, " desc=\"%s\"/>\n", pDesc->pszDesc);
+    {
+        /*
+         * The description is a bit tricky as it may include chars that
+         * xml requires to be escaped.
+         */
+        const char *pszBadChar = strpbrk(pDesc->pszDesc, "&<>\"'");
+        if (!pszBadChar)
+            return stamR3SnapshotPrintf(pThis, " desc=\"%s\"/>\n", pDesc->pszDesc);
+
+        stamR3SnapshotPrintf(pThis, " desc=\"");
+        const char *pszCur = pDesc->pszDesc;
+        do
+        {
+            stamR3SnapshotPrintf(pThis, "%.*s", pszBadChar - pszCur, pszCur);
+            switch (*pszBadChar)
+            {
+                case '&':   stamR3SnapshotPrintf(pThis, "&amp;");   break;
+                case '<':   stamR3SnapshotPrintf(pThis, "&lt;");    break;
+                case '>':   stamR3SnapshotPrintf(pThis, "&gt;");    break;
+                case '"':   stamR3SnapshotPrintf(pThis, "&quot;");  break;
+                case '\'':  stamR3SnapshotPrintf(pThis, "&apos;");  break;
+                default:    AssertMsgFailed(("%c", *pszBadChar));    break;
+            }
+            pszCur = pszBadChar + 1;
+            pszBadChar = strpbrk(pszCur, "&<>\"'");
+        } while (pszBadChar);
+        return stamR3SnapshotPrintf(pThis, "%s\"/>\n", pszCur);
+    }
     return stamR3SnapshotPrintf(pThis, "/>\n");
 }
 
