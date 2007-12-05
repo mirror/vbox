@@ -188,7 +188,7 @@ public:
     const nsInt64&          GetSize()      const {return mSize;}
     const nsInt64&          GetDate()      const {return mDate;}
     const char*             GetName()      const {return mName;}
-    const PRUint32          GetDirectory() const {return mDirectory;}
+    /*const*/ PRUint32      GetDirectory() const {return mDirectory;}
           xptiTypelibGuts*  GetGuts()            {return mGuts;}
 
     xptiFile();
