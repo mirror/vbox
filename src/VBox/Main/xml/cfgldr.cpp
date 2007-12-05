@@ -59,7 +59,7 @@
 #include <iprt/time.h>
 #include <iprt/alloc.h>
 
-/// @todo (dmik) until RTTimeImplode and friends are done
+/// @todo (dmik) until RTTimeNormalize and friends are done
 #include <time.h>
 
 #include <xercesc/util/PlatformUtils.hpp>
@@ -2798,7 +2798,7 @@ CFGLDRR3DECL(int) CFGLDRQueryDateTime(CFGNODE hnode, const char *pszName, int64_
         return VERR_INVALID_POINTER;
     }
 
-    // query as UTF8 string
+    /* query as UTF8 string */
     unsigned size = 0;
     int rc = CFGLDRQueryString(hnode, pszName, NULL, 0, &size);
     if (rc != VERR_BUFFER_OVERFLOW)
@@ -2809,9 +2809,9 @@ CFGLDRR3DECL(int) CFGLDRQueryDateTime(CFGNODE hnode, const char *pszName, int64_
     rc = CFGLDRQueryString(hnode, pszName, pszValue, size, &size);
     if (VBOX_SUCCESS(rc)) do
     {
-        // Parse xsd:dateTime. The format is:
-        // '-'? yyyy '-' mm '-' dd 'T' hh ':' mm ':' ss ('.' s+)? (zzzzzz)?
-        // where zzzzzz is: (('+' | '-') hh ':' mm) | 'Z'
+        /* Parse xsd:dateTime. The format is:
+         * '-'? yyyy '-' mm '-' dd 'T' hh ':' mm ':' ss ('.' s+)? (zzzzzz)?
+         * where zzzzzz is: (('+' | '-') hh ':' mm) | 'Z' */
         uint32_t yyyy = 0;
         uint16_t mm = 0, dd = 0, hh = 0, mi = 0, ss = 0;
         if (sscanf(pszValue, "%d-%hu-%huT%hu:%hu:%hu%s",
@@ -2821,28 +2821,29 @@ CFGLDRR3DECL(int) CFGLDRQueryDateTime(CFGNODE hnode, const char *pszName, int64_
             break;
         }
 
-        // currently, we accept only the UTC timezone ('Z'),
-        // ignoring fractional seconds, if present
+        /* currently, we accept only the UTC timezone ('Z'),
+         * ignoring fractional seconds, if present */
         if (pszBuf[0] == 'Z' ||
             (pszBuf[0] == '.' && pszBuf[strlen(pszBuf)-1] == 'Z'))
         {
-            // start with an error
+            /* start with an error */
             rc = VERR_PARSE_ERROR;
 
 #if 0
-            RTTIME time = { yyyy, mm, 0, 0, dd, hh, mm, ss, 0,
+            RTTIME time = { yyyy, (uint8_t) mm, 0, 0, (uint8_t) dd,
+                            (uint8_t) hh, (uint8_t) mm, (uint8_t) ss, 0,
                             RTTIME_FLAGS_TYPE_UTC };
-            if (RTTimeNormalize(&time))
+            if (RTTimeNormalize (&time))
             {
                 RTTIMESPEC timeSpec;
-                if (RTTimeImplode(&time, &timeSpec))
+                if (RTTimeImplode (&timeSpec, &time))
                 {
-                    *pi64Value = RTTimeSpecGetMilli(&timeSpec);
+                    *pi64Value = RTTimeSpecGetMilli (&timeSpec);
                     rc = VINF_SUCCESS;
                 }
             }
 #else
-            /// @todo (dmik) until RTTimeImplode and friends are done
+            /// @todo (dmik) until RTTimeNormalize and friends are done
             int isdst = 0;
             {
                 time_t dummyt = time(NULL);
@@ -2859,14 +2860,19 @@ CFGLDRR3DECL(int) CFGLDRQueryDateTime(CFGNODE hnode, const char *pszName, int64_
             time.tm_yday = 0;   /* Day of year (0 - 365) */
             time.tm_year = yyyy - 1900;   /* Year less 1900 */
             time_t t = mktime(&time);
-            // mktime expects local time, but we supply it UTC,
-            // do a trick to get the right time value
+            /* mktime expects local time, but we supply it UTC, do a dirty
+             * trick to get the right time value. Note that the trick doesn't
+             * work when UTC + timezone_offset goes before midnight, 1.1.1970
+             * (gmtime() will return NULL on failure) */
             tm *dummytm = gmtime(&t);
-            dummytm->tm_isdst = isdst;
-            time_t delta = t - mktime(dummytm);
-            *pi64Value = t + delta;
-            *pi64Value *= 1000;
-            rc = VINF_SUCCESS;
+            if (dummytm)
+            {
+                dummytm->tm_isdst = isdst;
+                time_t delta = t - mktime(dummytm);
+                *pi64Value = t + delta;
+                *pi64Value *= 1000;
+                rc = VINF_SUCCESS;
+            }
 #endif
         }
         else
@@ -2893,7 +2899,7 @@ CFGLDRR3DECL(int) CFGLDRSetDateTime(CFGNODE hnode, const char *pszName, int64_t 
     RTTIME time;
     RTTimeExplode(&time, &timeSpec);
 #else
-    /// @todo (dmik) until RTTimeImplode and friends are done
+    /// @todo (dmik) until RTTimeNormalize and friends are done
     time_t t = (time_t)(i64Value / 1000);
     tm *ptm = gmtime(&t);
     if (!ptm)
@@ -2913,7 +2919,7 @@ CFGLDRR3DECL(int) CFGLDRSetDateTime(CFGNODE hnode, const char *pszName, int64_t 
                 time.i32Year, (uint16_t) time.u8Month, (uint16_t) time.u8MonthDay,
                 (uint16_t) time.u8Hour, (uint16_t) time.u8Minute, (uint16_t) time.u8Second);
 #else
-                /// @todo (dmik) until RTTimeImplode and friends are done
+                /// @todo (dmik) until RTTimeNormalize and friends are done
                 time.tm_year, time.tm_mon, time.tm_mday,
                 time.tm_hour, time.tm_min, time.tm_sec);
 #endif
