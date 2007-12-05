@@ -66,6 +66,8 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdarg>
+#include <cctype>
+#include <locale>
 #include <assert.h>
 
 #include <string>
@@ -92,6 +94,19 @@ const char* GetWinsockErrorString( int err );
 //---------------------------------------------------------------------
 
 
+/*
+ * See: http://gcc.gnu.org/onlinedocs/libstdc++/22_locale/howto.html#7
+ */
+struct ToLower
+{
+    ToLower(std::locale const& l) : loc(l) {}
+    char operator() (char c) const
+    {
+        return std::tolower(c,loc);
+    }
+  private:
+    std::locale const& loc;
+};
 
 void BailOnSocketError( const char* context )
 {
@@ -537,6 +552,8 @@ Response::Response( const char* method, Connection& conn ) :
 
 const char* Response::getheader( const char* name ) const
 {
+    ToLower tolower(std::locale::classic());
+
     std::string lname( name );
     std::transform( lname.begin(), lname.end(), lname.begin(), tolower );
 
