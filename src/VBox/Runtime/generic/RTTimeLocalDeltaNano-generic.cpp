@@ -1,4 +1,4 @@
-/* $Id: RTAssertDoBreakpoint-generic.cpp 18670 2007-02-15 19:49:19Z bird $ */
+/* $Id$ */
 /** @file
  * innotek Portable Runtime - Time, generic RTTimeLocalDeltaNano.
  */

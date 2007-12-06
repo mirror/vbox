@@ -292,7 +292,7 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
     pTime->u8Hour        = i32Rem;
 
     /* weekday - 1970-01-01 was a Thursday (3) */
-    pTime->u8WeekDay     = (uint32_t)(i32Div + 3) % 7;
+    pTime->u8WeekDay     = ((int)(i32Div % 7) + 3 + 7) % 7;
 
     /*
      * We've now got a number of days relative to 1970-01-01.
@@ -331,6 +331,9 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
     pTime->u8Month       = iMonth + 1;
     i32Div -= paiDayOfYear[iMonth];
     pTime->u8MonthDay    = i32Div + 1;
+
+    /* This is for UTC timespecs, so, no offset. */
+    pTime->offUTC        = 0;
 
     return pTime;
 }
@@ -388,20 +391,254 @@ RTDECL(PRTTIMESPEC) RTTimeImplode(PRTTIMESPEC pTimeSpec, PCRTTIME pTime)
 
 
 /**
- * Normalizes the fields of a timestructure.
+ * Internal worker for RTTimeNormalize and RTTimeLocalNormalize.
+ * It doesn't adjust the UCT offset but leaves that for RTTimeLocalNormalize.
+ */
+PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
+{
+    /*
+     * Fix the YearDay and Month/MonthDay.
+     */
+    bool fLeapYear = rtTimeIsLeapYear(pTime->i32Year);
+    if (!pTime->u16YearDay)
+    {
+        /*
+         * The Month+MonthDay must present, overflow adjust them and calc the year day.
+         */
+        AssertMsgReturn(    pTime->u8Month
+                        &&  pTime->u8MonthDay,
+                        ("date=%d-%d-%d\n", pTime->i32Year, pTime->u8Month, pTime->u8MonthDay),
+                        NULL);
+        while (pTime->u8Month > 12)
+        {
+            pTime->u8Month -= 12;
+            pTime->i32Year++;
+            fLeapYear = rtTimeIsLeapYear(pTime->i32Year);
+            pTime->fFlags &= ~(RTTIME_FLAGS_COMMON_YEAR | RTTIME_FLAGS_LEAP_YEAR);
+        }
+
+        for (;;)
+        {
+            unsigned cDaysInMonth = fLeapYear
+                                  ? g_acDaysInMonthsLeap[pTime->u8Month - 1]
+                                  : g_acDaysInMonthsLeap[pTime->u8Month - 1];
+            if (pTime->u8MonthDay <= cDaysInMonth)
+                break;
+            pTime->u8MonthDay -= cDaysInMonth;
+            if (pTime->u8Month != 12)
+                pTime->u8Month++;
+            else
+            {
+                pTime->u8Month = 1;
+                pTime->i32Year++;
+                fLeapYear = rtTimeIsLeapYear(pTime->i32Year);
+                pTime->fFlags &= ~(RTTIME_FLAGS_COMMON_YEAR | RTTIME_FLAGS_LEAP_YEAR);
+            }
+        }
+
+        pTime->u16YearDay  = pTime->u8MonthDay - 1
+                           + (fLeapYear
+                              ? g_aiDayOfYearLeap[pTime->u8Month - 1]
+                              : g_aiDayOfYear[pTime->u8Month - 1]);
+    }
+    else
+    {
+        /*
+         * Are both YearDay and Month/MonthDay valid?
+         * Check that they don't overflow and match, if not use YearDay (simpler).
+         */
+        bool fRecalc = true;
+        if (    pTime->u8Month
+            &&  pTime->u8MonthDay)
+        {
+            do
+            {
+                /* If you change one, zero the other to make clear what you mean. */
+                AssertBreak(pTime->u8Month <= 12,);
+                AssertBreak(pTime->u8MonthDay <= (fLeapYear
+                                                  ? g_acDaysInMonthsLeap[pTime->u8Month - 1]
+                                                  : g_acDaysInMonths[pTime->u8Month - 1]),);
+                uint16_t u16YearDay = pTime->u8MonthDay - 1
+                                    + (fLeapYear
+                                       ? g_aiDayOfYearLeap[pTime->u8Month - 1]
+                                       : g_aiDayOfYear[pTime->u8Month - 1]);
+                AssertBreak(u16YearDay == pTime->u16YearDay, );
+                fRecalc = false;
+            } while (0);
+        }
+        if (fRecalc)
+        {
+            /* overflow adjust YearDay */
+            while (pTime->u16YearDay > (fLeapYear ? 366 : 365))
+            {
+                pTime->u16YearDay -= fLeapYear ? 366 : 365;
+                pTime->i32Year++;
+                fLeapYear = rtTimeIsLeapYear(pTime->i32Year);
+                pTime->fFlags &= ~(RTTIME_FLAGS_COMMON_YEAR | RTTIME_FLAGS_LEAP_YEAR);
+            }
+
+            /* calc Month and MonthDay */
+            const uint16_t *paiDayOfYear = fLeapYear
+                                         ? &g_aiDayOfYearLeap[0]
+                                         : &g_aiDayOfYear[0];
+            pTime->u8Month = 1;
+            while (pTime->u16YearDay > paiDayOfYear[pTime->u8Month])
+                pTime->u8Month++;
+            Assert(pTime->u8Month >= 1 && pTime->u8Month <= 12);
+            pTime->u8MonthDay = pTime->u16YearDay - paiDayOfYear[pTime->u8Month - 1] + 1;
+        }
+    }
+
+    /*
+     * Fixup time overflows.
+     * Use unsigned int values internally to avoid overflows.
+     */
+    unsigned uSecond = pTime->u8Second;
+    unsigned uMinute = pTime->u8Minute;
+    unsigned uHour   = pTime->u8Hour;
+
+    while (pTime->u32Nanosecond >= 1000000000)
+    {
+        pTime->u32Nanosecond -= 1000000000;
+        uSecond++;
+    }
+
+    while (uSecond >= 60)
+    {
+        uSecond -= 60;
+        uMinute++;
+    }
+
+    while (uMinute >= 60)
+    {
+        uMinute -= 60;
+        uHour++;
+    }
+
+    while (uHour >= 24)
+    {
+        uHour -= 24;
+
+        /* This is really a RTTimeIncDay kind of thing... */
+        if (pTime->u16YearDay + 1 != (fLeapYear ? g_aiDayOfYearLeap[pTime->u8Month] : g_aiDayOfYear[pTime->u8Month]))
+        {
+            pTime->u16YearDay++;
+            pTime->u8MonthDay++;
+        }
+        else if (pTime->u8Month != 12)
+        {
+            pTime->u16YearDay++;
+            pTime->u8Month++;
+            pTime->u8MonthDay = 1;
+        }
+        else
+        {
+            pTime->i32Year++;
+            fLeapYear = rtTimeIsLeapYear(pTime->i32Year);
+            pTime->fFlags &= ~(RTTIME_FLAGS_COMMON_YEAR | RTTIME_FLAGS_LEAP_YEAR);
+            pTime->u16YearDay = 1;
+            pTime->u8Month = 1;
+            pTime->u8MonthDay = 1;
+        }
+    }
+
+    pTime->u8Second = uSecond;
+    pTime->u8Minute = uMinute;
+    pTime->u8Hour = uHour;
+
+    /*
+     * Correct the leap year flag.
+     * Assert if it's wrong, but ignore if unset.
+     */
+    if (fLeapYear)
+    {
+        Assert(!(pTime->fFlags & RTTIME_FLAGS_COMMON_YEAR));
+        pTime->fFlags &= ~RTTIME_FLAGS_COMMON_YEAR;
+        pTime->fFlags |= RTTIME_FLAGS_LEAP_YEAR;
+    }
+    else
+    {
+        Assert(!(pTime->fFlags & RTTIME_FLAGS_LEAP_YEAR));
+        pTime->fFlags &= ~RTTIME_FLAGS_LEAP_YEAR;
+        pTime->fFlags |= RTTIME_FLAGS_COMMON_YEAR;
+    }
+
+
+    /*
+     * Calc week day.
+     *
+     * 1970-01-01 was a Thursday (3), so find the number of days relative to
+     * that point. We use the table when possible and a slow+stupid+brute-force
+     * algorithm for points outside it. Feel free to optimize the latter by
+     * using some clever formula.
+     */
+#if 1
+    if (    pTime->i32Year >= OFF_YEAR_IDX_0_YEAR
+        &&  pTime->i32Year <  OFF_YEAR_IDX_0_YEAR + RT_ELEMENTS(g_aoffYear))
+    {
+        int32_t offDays = g_aoffYear[pTime->i32Year - OFF_YEAR_IDX_0_YEAR]
+                        + pTime->u16YearDay -1;
+        pTime->u8WeekDay = ((offDays % 7) + 3 + 7) % 7;
+    }
+    else
+#endif
+    {
+        int32_t i32Year = pTime->i32Year;
+        if (i32Year >= 1970)
+        {
+            uint64_t offDays = pTime->u16YearDay - 1;
+            while (--i32Year >= 1970)
+                offDays += rtTimeIsLeapYear(i32Year) ? 366 : 365;
+            pTime->u8WeekDay = (uint8_t)((offDays + 3) % 7);
+        }
+        else
+        {
+            int64_t offDays = (fLeapYear ? -366 - 1 : -365 - 1) + pTime->u16YearDay;
+            while (++i32Year < 1970)
+                offDays -= rtTimeIsLeapYear(i32Year) ? 366 : 365;
+            pTime->u8WeekDay = ((int)(offDays % 7) + 3 + 7) % 7;
+        }
+    }
+    return pTime;
+}
+
+
+/**
+ * Normalizes the fields of a time structure.
  *
- * It is possible to calculate month/day fields in some
- * combinations. It's also possible to overflow other
- * fields, and these overflows will be adjusted for.
+ * It is possible to calculate year-day from month/day and vice
+ * versa. If you adjust any of of these, make sure to zero the
+ * other so you make it clear which of the fields to use. If
+ * it's ambiguous, the year-day field is used (and you get
+ * assertions in debug builds).
+ *
+ * All the time fields and the year-day or month/day fields will
+ * be adjusted for overflows. (Since all fields are unsigned, there
+ * is no underflows.) It is possible to exploit this for simple
+ * date math, though the recommended way of doing that to implode
+ * the time into a timespec and do the math on that.
  *
  * @returns pTime on success.
  * @returns NULL if the data is invalid.
+ *
  * @param   pTime       The time structure to normalize.
+ *
+ * @remarks This function doesn't work with local time, only with UTC time.
  */
 RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime)
 {
-    /** @todo  */
-    return NULL;
+    /*
+     * Validate that we've got the minium of stuff handy.
+     */
+    AssertReturn(VALID_PTR(pTime), NULL);
+    AssertMsgReturn(!(pTime->fFlags & ~RTTIME_FLAGS_MASK), ("%#x\n", pTime->fFlags), NULL);
+    AssertMsgReturn((pTime->fFlags & RTTIME_FLAGS_TYPE_MASK) != RTTIME_FLAGS_TYPE_LOCAL, ("Use RTTimeLocalNormalize!\n"), NULL);
+    AssertMsgReturn(pTime->offUTC == 0, ("%d; Use RTTimeLocalNormalize!\n", pTime->offUTC), NULL);
+
+    pTime = rtTimeNormalizeInternal(pTime);
+    if (pTime)
+        pTime->fFlags |= RTTIME_FLAGS_TYPE_UTC;
+    return pTime;
 }
 
 
@@ -416,12 +653,40 @@ RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime)
  */
 RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb)
 {
-    size_t cch = RTStrPrintf(psz, cb, "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32Z",
-                             pTime->i32Year, pTime->u8Month, pTime->u8MonthDay,
-                             pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond);
-    if (    cch <= 1 
-        ||  psz[cch - 1] != 'Z')
-        return NULL;
+    /* (Default to UTC if not specified) */
+    if (    (pTime->fFlags & RTTIME_FLAGS_TYPE_MASK) == RTTIME_FLAGS_TYPE_LOCAL
+        &&  pTime->offUTC)
+    {
+        Assert(pTime->offUTC <= 840 && pTime->offUTC >= -840);
+        int32_t offUTCHour   = pTime->offUTC / 60;
+        int32_t offUTCMinute = pTime->offUTC % 60;
+        char chSign;
+        if (pTime->offUTC >= 0)
+            chSign = '+';
+        else
+        {
+            chSign = '-';
+            offUTCMinute = -offUTCMinute;
+            offUTCHour = -offUTCHour;
+        }
+        size_t cch = RTStrPrintf(psz, cb,
+                                 "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32%c%02%02",
+                                 pTime->i32Year, pTime->u8Month, pTime->u8MonthDay,
+                                 pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond,
+                                 chSign, offUTCHour, offUTCMinute);
+        if (    cch <= 15
+            ||  psz[cch - 5] != chSign)
+            return NULL;
+    }
+    else
+    {
+        size_t cch = RTStrPrintf(psz, cb, "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32Z",
+                                 pTime->i32Year, pTime->u8Month, pTime->u8MonthDay,
+                                 pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond);
+        if (    cch <= 15
+            ||  psz[cch - 1] != 'Z')
+            return NULL;
+    }
     return psz;
 }
 
