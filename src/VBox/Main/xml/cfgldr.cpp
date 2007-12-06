@@ -59,9 +59,6 @@
 #include <iprt/time.h>
 #include <iprt/alloc.h>
 
-/// @todo (dmik) until RTTimeNormalize and friends are done
-#include <time.h>
-
 #include <xercesc/util/PlatformUtils.hpp>
 
 #include <xercesc/dom/DOM.hpp>
@@ -2829,9 +2826,8 @@ CFGLDRR3DECL(int) CFGLDRQueryDateTime(CFGNODE hnode, const char *pszName, int64_
             /* start with an error */
             rc = VERR_PARSE_ERROR;
 
-#if 0
             RTTIME time = { yyyy, (uint8_t) mm, 0, 0, (uint8_t) dd,
-                            (uint8_t) hh, (uint8_t) mm, (uint8_t) ss, 0,
+                            (uint8_t) hh, (uint8_t) mi, (uint8_t) ss, 0,
                             RTTIME_FLAGS_TYPE_UTC };
             if (RTTimeNormalize (&time))
             {
@@ -2842,38 +2838,6 @@ CFGLDRR3DECL(int) CFGLDRQueryDateTime(CFGNODE hnode, const char *pszName, int64_
                     rc = VINF_SUCCESS;
                 }
             }
-#else
-            /// @todo (dmik) until RTTimeNormalize and friends are done
-            int isdst = 0;
-            {
-                time_t dummyt = time(NULL);
-                isdst = localtime(&dummyt)->tm_isdst;
-            }
-            tm time;
-            time.tm_hour = hh;   /* hour (0 - 23) */
-            time.tm_isdst = isdst;  /* daylight saving time enabled/disabled */
-            time.tm_mday = dd;   /* day of month (1 - 31) */
-            time.tm_min = mi;    /* minutes (0 - 59) */
-            time.tm_mon = mm - 1;    /* month (0 - 11 : 0 = January) */
-            time.tm_sec = ss;    /* seconds (0 - 59) */
-            time.tm_wday = 0;   /* Day of week (0 - 6 : 0 = Sunday) */
-            time.tm_yday = 0;   /* Day of year (0 - 365) */
-            time.tm_year = yyyy - 1900;   /* Year less 1900 */
-            time_t t = mktime(&time);
-            /* mktime expects local time, but we supply it UTC, do a dirty
-             * trick to get the right time value. Note that the trick doesn't
-             * work when UTC + timezone_offset goes before midnight, 1.1.1970
-             * (gmtime() will return NULL on failure) */
-            tm *dummytm = gmtime(&t);
-            if (dummytm)
-            {
-                dummytm->tm_isdst = isdst;
-                time_t delta = t - mktime(dummytm);
-                *pi64Value = t + delta;
-                *pi64Value *= 1000;
-                rc = VINF_SUCCESS;
-            }
-#endif
         }
         else
             rc = VERR_PARSE_ERROR;
@@ -2893,36 +2857,20 @@ CFGLDRR3DECL(int) CFGLDRSetDateTime(CFGNODE hnode, const char *pszName, int64_t 
         return VERR_INVALID_HANDLE;
     }
 
-#if 0
     RTTIMESPEC timeSpec;
-    RTTimeSpecSetMilli(&timeSpec, i64Value);
+    RTTimeSpecSetMilli (&timeSpec, i64Value);
     RTTIME time;
-    RTTimeExplode(&time, &timeSpec);
-#else
-    /// @todo (dmik) until RTTimeNormalize and friends are done
-    time_t t = (time_t)(i64Value / 1000);
-    tm *ptm = gmtime(&t);
-    if (!ptm)
+    if (!RTTimeExplode (&time, &timeSpec))
         return VERR_PARSE_ERROR;
-    tm time = *ptm;
-    time.tm_year += 1900;
-    time.tm_mon += 1;
-#endif
 
-    // Store xsd:dateTime. The format is:
-    // '-'? yyyy '-' mm '-' dd 'T' hh ':' mm ':' ss ('.' s+)? (zzzzzz)?
-    // where zzzzzz is: (('+' | '-') hh ':' mm) | 'Z'
+    /* Store xsd:dateTime. The format is:
+     * '-'? yyyy '-' mm '-' dd 'T' hh ':' mm ':' ss ('.' s+)? (zzzzzz)?
+     * where zzzzzz is: (('+' | '-') hh ':' mm) | 'Z' */
     char aszBuf [256];
     RTStrPrintf(aszBuf, sizeof(aszBuf),
                 "%04ld-%02hd-%02hdT%02hd:%02hd:%02hdZ",
-#if 0
                 time.i32Year, (uint16_t) time.u8Month, (uint16_t) time.u8MonthDay,
                 (uint16_t) time.u8Hour, (uint16_t) time.u8Minute, (uint16_t) time.u8Second);
-#else
-                /// @todo (dmik) until RTTimeNormalize and friends are done
-                time.tm_year, time.tm_mon, time.tm_mday,
-                time.tm_hour, time.tm_min, time.tm_sec);
-#endif
 
     return hnode->SetString (pszName, aszBuf, strlen (aszBuf), false);
 }
