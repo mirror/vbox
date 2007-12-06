@@ -389,11 +389,15 @@ sf_reg_mmap (struct file *file, struct vm_area_struct *vma)
 }
 
 struct file_operations sf_reg_fops = {
-        .read    = sf_reg_read,
-        .open    = sf_reg_open,
-        .write   = sf_reg_write,
-        .release = sf_reg_release,
-        .mmap    = sf_reg_mmap
+        .read     = sf_reg_read,
+        .open     = sf_reg_open,
+        .write    = sf_reg_write,
+        .release  = sf_reg_release,
+        .mmap     = sf_reg_mmap,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
+        .sendfile = generic_file_sendfile,
+        .fsync    = simple_sync_file,
+#endif
 };
 
 

@@ -23,6 +23,35 @@
 
 /* #define USE_VMALLOC */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
+/*
+ * sf_aops and sf_backing_dev_info are just quick implementations to make
+ * sendfile work. For more information have a look at
+ *
+ *   http://us1.samba.org/samba/ftp/cifs-cvs/ols2006-fs-tutorial-smf.odp
+ *
+ * and the sample implementation
+ *
+ *   http://pserver.samba.org/samba/ftp/cifs-cvs/samplefs.tar.gz
+ */
+static struct address_space_operations sf_aops = {
+        .readpage      = simple_readpage,
+        .prepare_write = simple_prepare_write,
+        .commit_write  = simple_commit_write,
+};
+
+static struct backing_dev_info sf_backing_dev_info = {
+        .ra_pages      = 0, /* No readahead */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 12)
+        .capabilities  = BDI_CAP_MAP_DIRECT    /* MAP_SHARED */
+                       | BDI_CAP_MAP_COPY      /* MAP_PRIVATE */
+                       | BDI_CAP_READ_MAP      /* can be mapped for reading */
+                       | BDI_CAP_WRITE_MAP     /* can be mapped for writing */
+                       | BDI_CAP_EXEC_MAP,     /* can be mapped for execution */
+# endif
+};
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0) */
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
 static void
 sf_ftime_from_timespec (time_t *time, RTTIMESPEC *ts)
@@ -76,6 +105,11 @@ sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
         mode |= mode_set (IXOTH);
 #undef mode_set
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
+        inode->i_mapping->a_ops = &sf_aops;
+        inode->i_mapping->backing_dev_info = &sf_backing_dev_info;
+#endif
+
         if (is_dir) {
                 inode->i_mode = S_IFDIR | mode;
                 inode->i_op = &sf_dir_iops;
@@ -94,10 +128,10 @@ sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
         inode->i_uid = sf_g->uid;
         inode->i_gid = sf_g->gid;
         inode->i_size = info->cbObject;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19) && !defined(KERNEL_FC6)
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 19) && !defined(KERNEL_FC6)
         inode->i_blksize = 4096;
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,11)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 11)
         inode->i_blkbits = 12;
 #endif
         inode->i_blocks = (info->cbObject + 4095) / 4096;
