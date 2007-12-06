@@ -639,7 +639,7 @@ nmi_activated:
                 {
                     dprintf(("VBoxDrv::ModuleInit returning %#x\n", rc));
                     printk(KERN_INFO DEVICE_NAME ": Successfully loaded version "
-                           VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ")\n");
+                           VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
                     return rc;
                 }
 
