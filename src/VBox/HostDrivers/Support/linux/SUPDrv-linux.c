@@ -239,6 +239,8 @@ extern int nmi_active;
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 
+#define xstr(s) str(s)
+#define str(s) #s
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -636,6 +638,8 @@ nmi_activated:
                 if (!rc)
                 {
                     dprintf(("VBoxDrv::ModuleInit returning %#x\n", rc));
+                    printk(KERN_INFO DEVICE_NAME ": Successfully loaded version "
+                           VBOX_VERSION_STRING " (" xstr(SUPDRVIOC_VERSION) ")\n");
                     return rc;
                 }
 
@@ -1420,7 +1424,5 @@ MODULE_AUTHOR("innotek GmbH");
 MODULE_DESCRIPTION("VirtualBox Support Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
-#define xstr(s) str(s)
-#define str(s) #s
 MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(SUPDRVIOC_VERSION) ")");
 #endif
