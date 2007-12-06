@@ -846,6 +846,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackFramebufferUnlock (void *pvCal
     }
 }
 
+#ifdef VBOX_VRDP
 static void fixKbdLockStatus (VRDPInputSynch *pInputSynch, IKeyboard *pKeyboard)
 {
     if (   pInputSynch->cGuestNumLockAdaptions
@@ -863,9 +864,11 @@ static void fixKbdLockStatus (VRDPInputSynch *pInputSynch, IKeyboard *pKeyboard)
         pKeyboard->PutScancode(0x3a | 0x80);
     }
 }
+#endif /* VBOX_VRDP */
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput (void *pvCallback, int type, const void *pvInput, unsigned cbInput)
 {
+#ifdef VBOX_VRDP
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
     Console *pConsole = server->mConsole;
 
@@ -991,6 +994,12 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput (void *pvCallback, int t
         default:
             break;
     }
+#else
+    NOREF(pvCallback);
+    NOREF(type);
+    NOREF(pvInput);
+    NOREF(cbInput);
+#endif /* VBOX_VRDP */
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint (void *pvCallback, unsigned cWidth, unsigned cHeight, unsigned cBitsPerPixel, unsigned uScreenId)
