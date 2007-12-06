@@ -240,7 +240,7 @@ static void solaudio_fini_out (HWVoiceOut *hw)
 {
     solaudioVoiceOut *sol = (solaudioVoiceOut *) hw;
     solaudio_stop (sol);
-    LogFlow((LOG_ERR, "solaudio: fini_out done.\n"));
+    LogFlow(("solaudio: fini_out done.\n"));
 }
 
 
