@@ -1053,6 +1053,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
 {
     Stop ();
 
+#ifdef VBOX_VRDP
     if (mConsoleCallback)
     {
         mConsole->UnregisterCallback(mConsoleCallback);
@@ -1060,7 +1061,6 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
         mConsoleCallback = NULL;
     }
 
-#ifdef VBOX_VRDP
     unsigned i;
     for (i = 0; i < ELEMENTS(maFramebuffers); i++)
     {
