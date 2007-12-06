@@ -573,7 +573,7 @@ PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
      * using some clever formula.
      */
     if (    pTime->i32Year >= OFF_YEAR_IDX_0_YEAR
-        &&  pTime->i32Year <  OFF_YEAR_IDX_0_YEAR + RT_ELEMENTS(g_aoffYear))
+        &&  pTime->i32Year <  OFF_YEAR_IDX_0_YEAR + (int32_t)RT_ELEMENTS(g_aoffYear))
     {
         int32_t offDays = g_aoffYear[pTime->i32Year - OFF_YEAR_IDX_0_YEAR]
                         + pTime->u16YearDay -1;
