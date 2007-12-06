@@ -30,6 +30,7 @@
 // ConsoleVRDPServer
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifdef VBOX_VRDP
 typedef struct _VRDPInputSynch
 {
     int cGuestNumLockAdaptions;
@@ -43,6 +44,7 @@ typedef struct _VRDPInputSynch
     bool fClientCapsLock;
     bool fClientScrollLock;
 } VRDPInputSynch;
+#endif /* VBOX_VRDP */        
 
 /* Member of Console. Helper class for VRDP server management. Not a COM class. */
 class ConsoleVRDPServer
@@ -55,11 +57,16 @@ public:
 
     void NotifyAbsoluteMouse (bool fGuestWantsAbsolute)
     {
+#ifdef VBOX_VRDP
         m_fGuestWantsAbsolute = fGuestWantsAbsolute;
+#else
+        NOREF(fGuestWantsAbsolute);
+#endif /* VBOX_VRDP */        
     }
 
     void NotifyKeyboardLedsChange (BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
     {
+#ifdef VBOX_VRDP
         bool fGuestNumLock    = (fNumLock != FALSE);
         bool fGuestCapsLock   = (fCapsLock != FALSE);
         bool fGuestScrollLock = (fScrollLock != FALSE);
@@ -78,6 +85,11 @@ public:
         m_InputSynch.fGuestNumLock    = fGuestNumLock;
         m_InputSynch.fGuestCapsLock   = fGuestCapsLock;
         m_InputSynch.fGuestScrollLock = fGuestScrollLock;
+#else
+        NOREF(fNumLock);
+        NOREF(fCapsLock);
+        NOREF(fScrollLock);
+#endif /* VBOX_VRDP */        
     }
 
     void EnableConnections (void);
