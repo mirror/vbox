@@ -117,7 +117,7 @@ int sf_get_volume_info(struct super_block *sb,STRUCT_STATFS *stat);
 #define SET_GLOB_INFO(sb, sf_g) (sb)->s_fs_info = sf_g
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19) || defined(KERNEL_FC6)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 19) || defined(KERNEL_FC6)
 /* FC6 kernel 2.6.18, vanilla kernel 2.6.19+ */
 #define GET_INODE_INFO(i) ((struct sf_inode_info *) (i)->i_private)
 #define SET_INODE_INFO(i, sf_i) (i)->i_private = sf_i
