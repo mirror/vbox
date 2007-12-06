@@ -549,7 +549,9 @@ typedef struct RTTIME
     uint32_t    u32Nanosecond;
     /** Flags, of the RTTIME_FLAGS_* \#defines. */
     uint32_t    fFlags;
-/** @todo we need a UTC offset field. */
+    /** UCT time offset in minutes (-840-840).
+     * @remarks The implementation of RTTimeLocal* isn't quite there yet, so this might not be 100% correct. */
+    int32_t     offUTC;
 } RTTIME;
 #pragma pack()
 /** Pointer to a exploded time structure. */
@@ -577,6 +579,8 @@ typedef const RTTIME *PCRTTIME;
 /** Set if the year is a common year.
  * This is mutual exclusiv with RTTIME_FLAGS_LEAP_YEAR. */
 #define RTTIME_FLAGS_COMMON_YEAR    RT_BIT(7)
+/** The mask of valid flags. */
+#define RTTIME_FLAGS_MASK           UINT32_C(0xff)
 /** @} */
 
 
@@ -614,15 +618,26 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec);
 RTDECL(PRTTIMESPEC) RTTimeImplode(PRTTIMESPEC pTimeSpec, PCRTTIME pTime);
 
 /**
- * Normalizes the fields of a timestructure.
+ * Normalizes the fields of a time structure.
  *
- * It is possible to calculate month/day fields in some
- * combinations. It's also possible to overflow other
- * fields, and these overflows will be adjusted for.
+ * It is possible to calculate year-day from month/day and vice
+ * versa. If you adjust any of of these, make sure to zero the
+ * other so you make it clear which of the fields to use. If
+ * it's ambiguous, the year-day field is used (and you get
+ * assertions in debug builds).
+ *
+ * All the time fields and the year-day or month/day fields will
+ * be adjusted for overflows. (Since all fields are unsigned, there
+ * is no underflows.) It is possible to exploit this for simple
+ * date math, though the recommended way of doing that to implode
+ * the time into a timespec and do the math on that.
  *
  * @returns pTime on success.
  * @returns NULL if the data is invalid.
+ *
  * @param   pTime       The time structure to normalize.
+ *
+ * @remarks This function doesn't work with local time, only with UTC time.
  */
 RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime);
 
@@ -654,6 +669,17 @@ RTDECL(int64_t) RTTimeLocalDeltaNano(void);
  * @param   pTimeSpec   The time spec to exploded (UTC).
  */
 RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec);
+
+/**
+ * Normalizes the fields of a time structure containing local time.
+ *
+ * See RTTimeNormalize for details.
+ *
+ * @returns pTime on success.
+ * @returns NULL if the data is invalid.
+ * @param   pTime       The time structure to normalize.
+ */
+RTDECL(PRTTIME) RTTimeLocalNormalize(PRTTIME pTime);
 
 /**
  * Converts a time spec to a ISO date string.
