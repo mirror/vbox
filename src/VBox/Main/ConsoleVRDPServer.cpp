@@ -593,7 +593,6 @@ VRDPCALLBACKS_1 ConsoleVRDPServer::mCallbacks =
     ConsoleVRDPServer::VRDPCallbackInput,
     ConsoleVRDPServer::VRDPCallbackVideoModeHint
 };
-#endif /* VBOX_VRDP */
 
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallback, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut)
 {
@@ -846,7 +845,6 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackFramebufferUnlock (void *pvCal
     }
 }
 
-#ifdef VBOX_VRDP
 static void fixKbdLockStatus (VRDPInputSynch *pInputSynch, IKeyboard *pKeyboard)
 {
     if (   pInputSynch->cGuestNumLockAdaptions
@@ -864,11 +862,9 @@ static void fixKbdLockStatus (VRDPInputSynch *pInputSynch, IKeyboard *pKeyboard)
         pKeyboard->PutScancode(0x3a | 0x80);
     }
 }
-#endif /* VBOX_VRDP */
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput (void *pvCallback, int type, const void *pvInput, unsigned cbInput)
 {
-#ifdef VBOX_VRDP
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
     Console *pConsole = server->mConsole;
 
@@ -994,12 +990,6 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput (void *pvCallback, int t
         default:
             break;
     }
-#else
-    NOREF(pvCallback);
-    NOREF(type);
-    NOREF(pvInput);
-    NOREF(cbInput);
-#endif /* VBOX_VRDP */
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint (void *pvCallback, unsigned cWidth, unsigned cHeight, unsigned cBitsPerPixel, unsigned uScreenId)
@@ -1008,6 +998,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint (void *pvCallbac
 
     server->mConsole->getDisplay ()->SetVideoModeHint(cWidth, cHeight, cBitsPerPixel, uScreenId);
 }
+#endif /* VBOX_VRDP */
 
 ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
 {
@@ -1067,6 +1058,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
         mConsoleCallback = NULL;
     }
 
+#ifdef VBOX_VRDP
     unsigned i;
     for (i = 0; i < ELEMENTS(maFramebuffers); i++)
     {
@@ -1076,6 +1068,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
             maFramebuffers[i] = NULL;
         }
     }
+#endif /* VBOX_VRDP */
 
     if (RTCritSectIsInitialized (&mCritSect))
     {
