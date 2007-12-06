@@ -28,7 +28,9 @@
 #include <iprt/alloca.h>
 
 #include <VBox/err.h>
+#ifdef VBOX_VRDP
 #include <VBox/VRDPOrders.h>
+#endif /* VBOX_VRDP */
 
 class VRDPConsoleCallback : public IConsoleCallback
 {
