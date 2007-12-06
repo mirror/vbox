@@ -21,6 +21,7 @@
 #include "driver.h"
 #include "vrdpbmp.h"
 #include <iprt/crc64.h>
+#include <VBox/VRDPOrders.h>
 
 /*
  * Cache has a fixed number of preallocated entries. Entries are linked in the MRU

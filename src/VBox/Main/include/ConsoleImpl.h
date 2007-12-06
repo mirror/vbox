@@ -179,16 +179,12 @@ public:
     VMMDev *getVMMDev() { return mVMMDev; }
     AudioSniffer *getAudioSniffer () { return mAudioSniffer; }
 
-#ifdef VRDP_NO_COM
     int VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
     void VRDPClientConnect (uint32_t u32ClientId);
     void VRDPClientDisconnect (uint32_t u32ClientId, uint32_t fu32Intercepted);
     void VRDPInterceptAudio (uint32_t u32ClientId);
     void VRDPInterceptUSB (uint32_t u32ClientId, void **ppvIntercept);
     void VRDPInterceptClipboard (uint32_t u32ClientId);
-#else
-    static VRDPSERVERCALLBACK *getVrdpServerCallback () { return &sVrdpServerCallback; };
-#endif /* VRDP_NO_COM */
 
     void processRemoteUSBDevices (uint32_t u32ClientId, VRDPUSBDEVICEDESC *pDevList, uint32_t cbDevList);
 
@@ -440,18 +436,6 @@ private:
 
     int mcAudioRefs;
     volatile uint32_t mcVRDPClients;
-
-#ifdef VRDP_NO_COM
-#else
-    static DECLCALLBACK(int)    vrdp_ClientLogon (void *pvUser, uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
-    static DECLCALLBACK(void)   vrdp_ClientConnect (void *pvUser, uint32_t u32ClientId);
-    static DECLCALLBACK(void)   vrdp_ClientDisconnect (void *pvUser, uint32_t u32ClientId, uint32_t fu32Intercepted);
-    static DECLCALLBACK(void)   vrdp_InterceptAudio (void *pvUser, uint32_t u32ClientId);
-    static DECLCALLBACK(void)   vrdp_InterceptUSB (void *pvUser, uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
-    static DECLCALLBACK(void)   vrdp_InterceptClipboard (void *pvUser, uint32_t u32ClientId, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv);
-
-    static VRDPSERVERCALLBACK   sVrdpServerCallback;
-#endif /* VRDP_NO_COM */
 
     static const char *sSSMConsoleUnit;
     static uint32_t sSSMConsoleVer;

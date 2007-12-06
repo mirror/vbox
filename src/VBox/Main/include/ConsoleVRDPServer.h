@@ -25,14 +25,11 @@
 
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
-#ifdef VRDP_NO_COM
 #include "SchemaDefs.h"
-#endif /* VRDP_NO_COM */
 
 // ConsoleVRDPServer
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef VRDP_NO_COM
 typedef struct _VRDPInputSynch
 {
     int cGuestNumLockAdaptions;
@@ -46,7 +43,6 @@ typedef struct _VRDPInputSynch
     bool fClientCapsLock;
     bool fClientScrollLock;
 } VRDPInputSynch;
-#endif /* VRDP_NO_COM */
 
 /* Member of Console. Helper class for VRDP server management. Not a COM class. */
 class ConsoleVRDPServer
@@ -56,7 +52,7 @@ public:
     ~ConsoleVRDPServer ();
 
     int Launch (void);
-#ifdef VRDP_NO_COM
+
     void NotifyAbsoluteMouse (bool fGuestWantsAbsolute)
     {
         m_fGuestWantsAbsolute = fGuestWantsAbsolute;
@@ -87,9 +83,7 @@ public:
     void EnableConnections (void);
     void MousePointerUpdate (const VRDPCOLORPOINTER *pPointer);
     void MousePointerHide (void);
-#else
-    void SetCallback (void);
-#endif /* VRDP_NO_COM */
+
     void Stop (void);
 
     VRDPAuthResult Authenticate (const Guid &uuid, VRDPAuthGuestJudgement guestJudgement,
@@ -98,11 +92,7 @@ public:
 
     void AuthDisconnect (const Guid &uuid, uint32_t u32ClientId);
 
-#ifdef VRDP_NO_COM
     void USBBackendCreate (uint32_t u32ClientId, void **ppvIntercept);
-#else
-    void USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
-#endif /* VRDP_NO_COM */
     void USBBackendDelete (uint32_t u32ClientId);
     
     void *USBBackendRequestPointer (uint32_t u32ClientId, const Guid *pGuid);
@@ -118,11 +108,7 @@ public:
     bool isRemoteUSBThreadRunning (void);
     void waitRemoteUSBThreadEvent (unsigned cMillies);
     
-#ifdef VRDP_NO_COM
     void ClipboardCreate (uint32_t u32ClientId);
-#else
-    void ClipboardCreate (uint32_t u32ClientId, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv);
-#endif /* VRDP_NO_COM */
     void ClipboardDelete (uint32_t u32ClientId);
 
     /*
@@ -131,10 +117,6 @@ public:
     void SendUpdate (unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate) const;
     void SendResize (void) const;
     void SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const;
-#ifdef VRDP_NO_COM
-#else
-    void SetFramebuffer (IFramebuffer *framebuffer, uint32_t fFlags) const;
-#endif /* VRDP_NO_COM */
 
     void SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format) const;
     void SendAudioVolume (uint16_t left, uint16_t right) const;
@@ -156,7 +138,6 @@ private:
     /** Static because will never load this more than once! */
     static RTLDRMOD mVRDPLibrary;
 
-#ifdef VRDP_NO_COM
     static PFNVRDPCREATESERVER mpfnVRDPCreateServer;
     
     static VRDPENTRYPOINTS_1 *mpEntryPoints;
@@ -184,21 +165,6 @@ private:
     IConsoleCallback *mConsoleCallback;
 
     VRDPInputSynch m_InputSynch;
-#else
-    // VRDP API function pointers
-    static int  (VBOXCALL *mpfnVRDPStartServer)     (IConsole *pConsole, IVRDPServer *pVRDPServer, HVRDPSERVER *phServer);
-    static int  (VBOXCALL *mpfnVRDPSetFramebuffer)  (HVRDPSERVER hServer, IFramebuffer *pFramebuffer, uint32_t fFlags);
-    static void (VBOXCALL *mpfnVRDPSetCallback)     (HVRDPSERVER hServer, VRDPSERVERCALLBACK *pcallback, void *pvUser);
-    static void (VBOXCALL *mpfnVRDPShutdownServer)  (HVRDPSERVER hServer);
-    static void (VBOXCALL *mpfnVRDPSendUpdateBitmap)(HVRDPSERVER hServer, unsigned uScreenId, unsigned x, unsigned y, unsigned w, unsigned h);
-    static void (VBOXCALL *mpfnVRDPSendResize)      (HVRDPSERVER hServer);
-    static void (VBOXCALL *mpfnVRDPSendAudioSamples)(HVRDPSERVER hserver, void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format);
-    static void (VBOXCALL *mpfnVRDPSendAudioVolume) (HVRDPSERVER hserver, uint16_t left, uint16_t right);
-    static void (VBOXCALL *mpfnVRDPSendUSBRequest)  (HVRDPSERVER hserver, uint32_t u32ClientId, void *pvParms, uint32_t cbParms);
-    static void (VBOXCALL *mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate);
-    static void (VBOXCALL *mpfnVRDPQueryInfo)       (HVRDPSERVER hserver, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
-    static void (VBOXCALL *mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData, uint32_t *pcbActualRead);
-#endif /* VRDP_NO_COM */
 #endif /* VBOX_VRDP */
 
     RTCRITSECT mCritSect;

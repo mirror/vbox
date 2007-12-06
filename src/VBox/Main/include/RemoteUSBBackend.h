@@ -33,9 +33,7 @@
 class Console;
 class ConsoleVRDPServer;
 
-#ifdef VRDP_NO_COM
 DECLCALLBACK(int) USBClientResponseCallback (void *pv, uint32_t u32ClientId, uint8_t code, const void *pvRet, uint32_t cbRet);
-#endif /* VRDP_NO_COM */
 
 
 /* How many remote devices can be attached to a remote client. 
@@ -63,11 +61,6 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
         
         void AddRef (void);
         void Release (void);
-        
-#ifdef VRDP_NO_COM
-#else
-        void QueryVRDPCallbackPointer (PFNVRDPUSBCALLBACK *ppfn, void **ppv);
-#endif /* VRDP_NO_COM */
         
         REMOTEUSBCALLBACK *GetBackendCallbackPointer (void) { return &mCallback; }
         

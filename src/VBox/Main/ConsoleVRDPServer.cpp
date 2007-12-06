@@ -18,11 +18,8 @@
 #include "ConsoleVRDPServer.h"
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
-#ifdef VRDP_NO_COM
 #include "KeyboardImpl.h"
 #include "MouseImpl.h"
-#include <VBox/VRDPOrders.h>
-#endif /* VRDP_NO_COM */
 
 #include "Logging.h"
 
@@ -31,8 +28,8 @@
 #include <iprt/alloca.h>
 
 #include <VBox/err.h>
+#include <VBox/VRDPOrders.h>
 
-#ifdef VRDP_NO_COM
 class VRDPConsoleCallback : public IConsoleCallback
 {
 public:
@@ -568,7 +565,6 @@ STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL 
 
     return S_OK;
 }
-#endif /* VRDP_NO_COM */
 
 
 // ConsoleVRDPServer
@@ -577,7 +573,6 @@ STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL 
 #ifdef VBOX_VRDP
 RTLDRMOD ConsoleVRDPServer::mVRDPLibrary;
 
-#ifdef VRDP_NO_COM
 PFNVRDPCREATESERVER ConsoleVRDPServer::mpfnVRDPCreateServer = NULL;
 
 VRDPENTRYPOINTS_1 *ConsoleVRDPServer::mpEntryPoints = NULL;
@@ -598,23 +593,8 @@ VRDPCALLBACKS_1 ConsoleVRDPServer::mCallbacks =
     ConsoleVRDPServer::VRDPCallbackInput,
     ConsoleVRDPServer::VRDPCallbackVideoModeHint
 };
-#else
-int  (VBOXCALL *ConsoleVRDPServer::mpfnVRDPStartServer)     (IConsole *pConsole, IVRDPServer *pVRDPServer, HVRDPSERVER *phServer);
-int  (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSetFramebuffer)  (HVRDPSERVER hServer, IFramebuffer *pFramebuffer, uint32_t fFlags);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSetCallback)     (HVRDPSERVER hServer, VRDPSERVERCALLBACK *pcallback, void *pvUser);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPShutdownServer)  (HVRDPSERVER hServer);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUpdateBitmap)(HVRDPSERVER hServer, unsigned uScreenId, unsigned x, unsigned y, unsigned w, unsigned h);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendResize)      (HVRDPSERVER hServer);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendAudioSamples)(HVRDPSERVER hserver, void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendAudioVolume) (HVRDPSERVER hserver, uint16_t left, uint16_t right);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUSBRequest)  (HVRDPSERVER hserver, uint32_t u32ClientId, void *pvParms, uint32_t cbParms);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPQueryInfo)       (HVRDPSERVER hserver, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData, uint32_t *pcbActualRead);
-#endif /* VRDP_NO_COM */
 #endif /* VBOX_VRDP */
 
-#ifdef VRDP_NO_COM
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallback, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut)
 {
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
@@ -1019,7 +999,6 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint (void *pvCallbac
 
     server->mConsole->getDisplay ()->SetVideoModeHint(cWidth, cHeight, cBitsPerPixel, uScreenId);
 }
-#endif /* VRDP_NO_COM */
 
 ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
 {
@@ -1043,7 +1022,6 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
 #ifdef VBOX_VRDP
     mhServer = 0;
 
-#ifdef VRDP_NO_COM
     m_fGuestWantsAbsolute = false;
     m_mousex = 0;
     m_mousey = 0;
@@ -1064,7 +1042,6 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
     mConsoleCallback = new VRDPConsoleCallback(this);
     mConsoleCallback->AddRef();
     console->RegisterCallback(mConsoleCallback);
-#endif /* VRDP_NO_COM */
 #endif /* VBOX_VRDP */
 
     mAuthLibrary = 0;
@@ -1074,7 +1051,6 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
 {
     Stop ();
 
-#ifdef VRDP_NO_COM
     if (mConsoleCallback)
     {
         mConsole->UnregisterCallback(mConsoleCallback);
@@ -1091,7 +1067,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
             maFramebuffers[i] = NULL;
         }
     }
-#endif /* VRDP_NO_COM */
+
     if (RTCritSectIsInitialized (&mCritSect))
     {
         RTCritSectDelete (&mCritSect);
@@ -1115,11 +1091,7 @@ int ConsoleVRDPServer::Launch (void)
         && vrdpEnabled
         && loadVRDPLibrary ())
     {
-#ifdef VRDP_NO_COM
         rc = mpfnVRDPCreateServer (&mCallbacks.header, this, (VRDPINTERFACEHDR **)&mpEntryPoints, &mhServer);
-#else
-        rc = mpfnVRDPStartServer(mConsole, vrdpserver, &mhServer);
-#endif /* VRDP_NO_COM */
 
         if (VBOX_SUCCESS(rc))
         {
@@ -1137,7 +1109,6 @@ int ConsoleVRDPServer::Launch (void)
     return rc;
 }
 
-#ifdef VRDP_NO_COM
 void ConsoleVRDPServer::EnableConnections (void)
 {
 #ifdef VBOX_VRDP
@@ -1167,18 +1138,6 @@ void ConsoleVRDPServer::MousePointerHide (void)
     }
 #endif /* VBOX_VRDP */
 }
-#else
-void ConsoleVRDPServer::SetCallback (void)
-{
-#ifdef VBOX_VRDP
-    /* This is called after VM is created and allows the server to accept client connection. */
-    if (mhServer && mpfnVRDPSetCallback)
-    {
-        mpfnVRDPSetCallback (mhServer, mConsole->getVrdpServerCallback (), mConsole);
-    }
-#endif /* VBOX_VRDP */
-}
-#endif /* VRDP_NO_COM */
 
 void ConsoleVRDPServer::Stop (void)
 {
@@ -1192,14 +1151,10 @@ void ConsoleVRDPServer::Stop (void)
         /* Reset the handle to avoid further calls to the server. */
         mhServer = 0;
 
-#ifdef VRDP_NO_COM
         if (mpEntryPoints && hServer)
         {
             mpEntryPoints->VRDPDestroy (hServer);
         }
-#else
-        mpfnVRDPShutdownServer (hServer);
-#endif /* VRDP_NO_COM */
     }
 #endif /* VBOX_VRDP */
 
@@ -1542,7 +1497,6 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
         case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
         {
             /* The guest announces clipboard formats. This must be delivered to all clients. */
-#ifdef VRDP_NO_COM
             if (mpEntryPoints && pServer->mhServer)
             {
                 mpEntryPoints->VRDPClipboard (pServer->mhServer,
@@ -1552,17 +1506,6 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
                                               0,
                                               NULL);
             }
-#else
-            if (mpfnVRDPClipboard)
-            {
-                mpfnVRDPClipboard (pServer->mhServer,
-                                   VRDP_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE,
-                                   pParms->u32Format,
-                                   NULL,
-                                   0,
-                                   NULL);
-            }
-#endif /* VRDP_NO_COM */
         } break;
 
         case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
@@ -1571,7 +1514,6 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
              * with clipboard data. The server returns the data from the client that
              * announced the requested format most recently.
              */
-#ifdef VRDP_NO_COM
             if (mpEntryPoints && pServer->mhServer)
             {
                 mpEntryPoints->VRDPClipboard (pServer->mhServer,
@@ -1581,22 +1523,10 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
                                               pParms->cbData,
                                               &pParms->cbData);
             }
-#else
-            if (mpfnVRDPClipboard)
-            {
-                mpfnVRDPClipboard (pServer->mhServer,
-                                   VRDP_CLIPBOARD_FUNCTION_DATA_READ,
-                                   pParms->u32Format,
-                                   pParms->pvData,
-                                   pParms->cbData,
-                                   &pParms->cbData);
-            }
-#endif /* VRDP_NO_COM */
         } break;
 
         case VBOX_CLIPBOARD_EXT_FN_DATA_WRITE:
         {
-#ifdef VRDP_NO_COM
             if (mpEntryPoints && pServer->mhServer)
             {
                 mpEntryPoints->VRDPClipboard (pServer->mhServer,
@@ -1606,17 +1536,6 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
                                               pParms->cbData,
                                               NULL);
             }
-#else
-            if (mpfnVRDPClipboard)
-            {
-                mpfnVRDPClipboard (pServer->mhServer,
-                                   VRDP_CLIPBOARD_FUNCTION_DATA_WRITE,
-                                   pParms->u32Format,
-                                   pParms->pvData,
-                                   pParms->cbData,
-                                   NULL);
-            }
-#endif /* VRDP_NO_COM */
         } break;
 
         default:
@@ -1627,11 +1546,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
     return rc;
 }
 
-#ifdef VRDP_NO_COM
 void ConsoleVRDPServer::ClipboardCreate (uint32_t u32ClientId)
-#else
-void ConsoleVRDPServer::ClipboardCreate (uint32_t u32ClientId, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv)
-#endif /* VRDP_NO_COM */
 {
     int rc = lockConsoleVRDPServer ();
 
@@ -1646,15 +1561,6 @@ void ConsoleVRDPServer::ClipboardCreate (uint32_t u32ClientId, PFNVRDPCLIPBOARDC
                 mcClipboardRefs++;
             }
         }
-
-#ifdef VRDP_NO_COM
-#else
-        if (VBOX_SUCCESS (rc))
-        {
-            *ppfn = ClipboardCallback;
-            *ppv = this;
-        }
-#endif /* VRDP_NO_COM */
 
         unlockConsoleVRDPServer ();
     }
@@ -1680,11 +1586,7 @@ void ConsoleVRDPServer::ClipboardDelete (uint32_t u32ClientId)
 /* That is called on INPUT thread of the VRDP server.
  * The ConsoleVRDPServer keeps a list of created backend instances.
  */
-#ifdef VRDP_NO_COM
 void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, void **ppvIntercept)
-#else
-void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv)
-#endif /* VRDP_NO_COM */
 {
 #ifdef VBOX_WITH_USB
     LogFlow(("ConsoleVRDPServer::USBBackendCreate: u32ClientId = %d\n", u32ClientId));
@@ -1715,14 +1617,10 @@ void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBA
 
             unlockConsoleVRDPServer ();
 
-#ifdef VRDP_NO_COM
             if (ppvIntercept)
             {
                 *ppvIntercept = pRemoteUSBBackend;
             }
-#else
-            pRemoteUSBBackend->QueryVRDPCallbackPointer (ppfn, ppv);
-#endif /* VRDP_NO_COM */
         }
 
         if (VBOX_FAILURE (rc))
@@ -1944,37 +1842,26 @@ void ConsoleVRDPServer::usbBackendRemoveFromList (RemoteUSBBackend *pRemoteUSBBa
 void ConsoleVRDPServer::SendUpdate (unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate) const
 {
 #ifdef VBOX_VRDP
-#ifdef VRDP_NO_COM
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPUpdate (mhServer, uScreenId, pvUpdate, cbUpdate);
     }
-#else
-    if (mpfnVRDPSendUpdate)
-        mpfnVRDPSendUpdate (mhServer, uScreenId, pvUpdate, cbUpdate);
-#endif /* VRDP_NO_COM */
 #endif
 }
 
 void ConsoleVRDPServer::SendResize (void) const
 {
 #ifdef VBOX_VRDP
-#ifdef VRDP_NO_COM
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPResize (mhServer);
     }
-#else
-    if (mpfnVRDPSendResize)
-        mpfnVRDPSendResize (mhServer);
-#endif /* VRDP_NO_COM */
 #endif
 }
 
 void ConsoleVRDPServer::SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const
 {
 #ifdef VBOX_VRDP
-#ifdef VRDP_NO_COM
     VRDPORDERHDR update;
     update.x = x;
     update.y = y;
@@ -1984,81 +1871,46 @@ void ConsoleVRDPServer::SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32
     {
         mpEntryPoints->VRDPUpdate (mhServer, uScreenId, &update, sizeof (update));
     }
-#else
-    if (mpfnVRDPSendUpdateBitmap)
-        mpfnVRDPSendUpdateBitmap (mhServer, uScreenId, x, y, w, h);
-#endif /* VRDP_NO_COM */
 #endif
 }
-
-#ifdef VRDP_NO_COM
-#else
-void ConsoleVRDPServer::SetFramebuffer (IFramebuffer *framebuffer, uint32_t fFlags) const
-{
-#ifdef VBOX_VRDP
-    if (mpfnVRDPSetFramebuffer)
-        mpfnVRDPSetFramebuffer (mhServer, framebuffer, fFlags);
-#endif
-}
-#endif /* VRDP_NO_COM */
 
 void ConsoleVRDPServer::SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format) const
 {
 #ifdef VBOX_VRDP
-#ifdef VRDP_NO_COM
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPAudioSamples (mhServer, pvSamples, cSamples, format);
     }
-#else
-    if (mpfnVRDPSendAudioSamples)
-        mpfnVRDPSendAudioSamples (mhServer, pvSamples, cSamples, format);
-#endif /* VRDP_NO_COM */
 #endif
 }
 
 void ConsoleVRDPServer::SendAudioVolume (uint16_t left, uint16_t right) const
 {
 #ifdef VBOX_VRDP
-#ifdef VRDP_NO_COM
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPAudioVolume (mhServer, left, right);
     }
-#else
-    if (mpfnVRDPSendAudioVolume)
-        mpfnVRDPSendAudioVolume (mhServer, left, right);
-#endif /* VRDP_NO_COM */
 #endif
 }
 
 void ConsoleVRDPServer::SendUSBRequest (uint32_t u32ClientId, void *pvParms, uint32_t cbParms) const
 {
 #ifdef VBOX_VRDP
-#ifdef VRDP_NO_COM
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPUSBRequest (mhServer, u32ClientId, pvParms, cbParms);
     }
-#else
-    if (mpfnVRDPSendUSBRequest)
-        mpfnVRDPSendUSBRequest (mhServer, u32ClientId, pvParms, cbParms);
-#endif /* VRDP_NO_COM */
 #endif
 }
 
 void ConsoleVRDPServer::QueryInfo (uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut) const
 {
 #ifdef VBOX_VRDP
-#ifdef VRDP_NO_COM
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPQueryInfo (mhServer, index, pvBuffer, cbBuffer, pcbOut);
     }
-#else
-    if (mpfnVRDPQueryInfo)
-        mpfnVRDPQueryInfo (mhServer, index, pvBuffer, cbBuffer, pcbOut);
-#endif /* VRDP_NO_COM */
 #endif
 }
 
@@ -2084,27 +1936,10 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
 
             #define DEFSYMENTRY(a) { #a, (void**)&mpfn##a }
 
-#ifdef VRDP_NO_COM
             static const struct SymbolEntry symbols[] =
             {
                 DEFSYMENTRY(VRDPCreateServer)
             };
-#else
-            static const struct SymbolEntry symbols[] =
-            {
-                DEFSYMENTRY(VRDPStartServer),
-                DEFSYMENTRY(VRDPSetCallback),
-                DEFSYMENTRY(VRDPShutdownServer),
-                DEFSYMENTRY(VRDPSendUpdate),
-                DEFSYMENTRY(VRDPSendUpdateBitmap),
-                DEFSYMENTRY(VRDPSendResize),
-                DEFSYMENTRY(VRDPSendAudioSamples),
-                DEFSYMENTRY(VRDPSendAudioVolume),
-                DEFSYMENTRY(VRDPSendUSBRequest),
-                DEFSYMENTRY(VRDPQueryInfo),
-                DEFSYMENTRY(VRDPClipboard)
-            };
-#endif /* VRDP_NO_COM */
 
             #undef DEFSYMENTRY
 

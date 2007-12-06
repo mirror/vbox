@@ -456,27 +456,12 @@ void Console::uninit()
     LogFlowThisFuncLeave();
 }
 
-#ifdef VRDP_NO_COM
 int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain)
-#else
-DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
-                                             uint32_t u32ClientId,
-                                             const char *pszUser,
-                                             const char *pszPassword,
-                                             const char *pszDomain)
-#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
     LogFlowFunc (("%d, %s, %s, %s\n", u32ClientId, pszUser, pszPassword, pszDomain));
 
-#ifdef VRDP_NO_COM
-    Console *console = this;
-#else
-    Console *console = static_cast <Console *> (pvUser);
-#endif /* VRDP_NO_COM */
-    AssertReturn (console, VERR_INVALID_POINTER);
-
-    AutoCaller autoCaller (console);
+    AutoCaller autoCaller (this);
     if (!autoCaller.isOk())
     {
         /* Console has been already uninitialized, deny request */
@@ -486,15 +471,15 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
     }
 
     Guid uuid;
-    HRESULT hrc = console->mMachine->COMGETTER (Id) (uuid.asOutParam());
+    HRESULT hrc = mMachine->COMGETTER (Id) (uuid.asOutParam());
     AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
 
     VRDPAuthType_T authType = VRDPAuthType_VRDPAuthNull;
-    hrc = console->mVRDPServer->COMGETTER(AuthType) (&authType);
+    hrc = mVRDPServer->COMGETTER(AuthType) (&authType);
     AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
 
     ULONG authTimeout = 0;
-    hrc = console->mVRDPServer->COMGETTER(AuthTimeout) (&authTimeout);
+    hrc = mVRDPServer->COMGETTER(AuthTimeout) (&authTimeout);
     AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
 
     VRDPAuthResult result = VRDPAuthAccessDenied;
@@ -517,10 +502,10 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
 
     /* Multiconnection check. */
     BOOL allowMultiConnection = FALSE;
-    hrc = console->mVRDPServer->COMGETTER(AllowMultiConnection) (&allowMultiConnection);
+    hrc = mVRDPServer->COMGETTER(AllowMultiConnection) (&allowMultiConnection);
     AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
 
-    LogFlowFunc(("allowMultiConnection %d, console->mcVRDPClients = %d\n", allowMultiConnection, console->mcVRDPClients));
+    LogFlowFunc(("allowMultiConnection %d, mcVRDPClients = %d\n", allowMultiConnection, mcVRDPClients));
 
     if (allowMultiConnection == FALSE)
     {
@@ -528,7 +513,7 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
          * is successfully connected, that is after the ClientLogon callback. Therefore the mcVRDPClients
          * value is 0 for first client.
          */
-        if (console->mcVRDPClients > 0)
+        if (mcVRDPClients > 0)
         {
             /* Reject. */
             LogRel(("VRDPAUTH: Multiple connections are not enabled. Access denied.\n"));
@@ -547,7 +532,7 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
         case VRDPAuthType_VRDPAuthExternal:
         {
             /* Call the external library. */
-            result = console->mConsoleVRDPServer->Authenticate (uuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId);
+            result = mConsoleVRDPServer->Authenticate (uuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId);
 
             if (result != VRDPAuthDelegateToGuest)
             {
@@ -563,20 +548,20 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
         {
             guestJudgement = VRDPAuthGuestNotReacted;
 
-            if (console->mVMMDev)
+            if (mVMMDev)
             {
                 /* Issue the request to guest. Assume that the call does not require EMT. It should not. */
 
                 /* Ask the guest to judge these credentials. */
                 uint32_t u32GuestFlags = VMMDEV_SETCREDENTIALS_JUDGE;
 
-                int rc = console->mVMMDev->getVMMDevPort()->pfnSetCredentials (console->mVMMDev->getVMMDevPort(),
+                int rc = mVMMDev->getVMMDevPort()->pfnSetCredentials (mVMMDev->getVMMDevPort(),
                              pszUser, pszPassword, pszDomain, u32GuestFlags);
 
                 if (VBOX_SUCCESS (rc))
                 {
                     /* Wait for guest. */
-                    rc = console->mVMMDev->WaitCredentialsJudgement (authTimeout, &u32GuestFlags);
+                    rc = mVMMDev->WaitCredentialsJudgement (authTimeout, &u32GuestFlags);
 
                     if (VBOX_SUCCESS (rc))
                     {
@@ -606,7 +591,7 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
             {
                 LogRel(("VRDPAUTH: Guest judgement %d.\n", guestJudgement));
                 LogFlowFunc (("External auth called again with guest judgement = %d\n", guestJudgement));
-                result = console->mConsoleVRDPServer->Authenticate (uuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId);
+                result = mConsoleVRDPServer->Authenticate (uuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId);
             }
             else
             {
@@ -640,99 +625,74 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
     return VERR_ACCESS_DENIED;
 }
 
-#ifdef VRDP_NO_COM
 void Console::VRDPClientConnect (uint32_t u32ClientId)
-#else
-DECLCALLBACK(void) Console::vrdp_ClientConnect (void *pvUser,
-                                                uint32_t u32ClientId)
-#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
 
-#ifdef VRDP_NO_COM
-    Console *console = this;
-#else
-    Console *console = static_cast <Console *> (pvUser);
-#endif /* VRDP_NO_COM */
-    AssertReturnVoid (console);
-
-    AutoCaller autoCaller (console);
+    AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
 #ifdef VBOX_VRDP
-    uint32_t u32Clients = ASMAtomicIncU32(&console->mcVRDPClients);
+    uint32_t u32Clients = ASMAtomicIncU32(&mcVRDPClients);
 
     if (u32Clients == 1)
     {
-        console->getVMMDev()->getVMMDevPort()->
-            pfnVRDPChange (console->getVMMDev()->getVMMDevPort(),
+        getVMMDev()->getVMMDevPort()->
+            pfnVRDPChange (getVMMDev()->getVMMDevPort(),
                            true, VRDP_EXPERIENCE_LEVEL_FULL); // @todo configurable
     }
 
     NOREF(u32ClientId);
-    console->mDisplay->VideoAccelVRDP (true);
+    mDisplay->VideoAccelVRDP (true);
 #endif /* VBOX_VRDP */
 
     LogFlowFuncLeave();
     return;
 }
 
-#ifdef VRDP_NO_COM
 void Console::VRDPClientDisconnect (uint32_t u32ClientId,
                                     uint32_t fu32Intercepted)
-#else
-DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser,
-                                                   uint32_t u32ClientId,
-                                                   uint32_t fu32Intercepted)
-#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
 
-#ifdef VRDP_NO_COM
-    Console *console = this;
-#else
-    Console *console = static_cast <Console *> (pvUser);
-#endif /* VRDP_NO_COM */
-    AssertReturnVoid (console);
-
-    AutoCaller autoCaller (console);
+    AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AssertReturnVoid (console->mConsoleVRDPServer);
+    AssertReturnVoid (mConsoleVRDPServer);
 
 #ifdef VBOX_VRDP
-    uint32_t u32Clients = ASMAtomicDecU32(&console->mcVRDPClients);
+    uint32_t u32Clients = ASMAtomicDecU32(&mcVRDPClients);
 
     if (u32Clients == 0)
     {
-        console->getVMMDev()->getVMMDevPort()->
-            pfnVRDPChange (console->getVMMDev()->getVMMDevPort(),
+        getVMMDev()->getVMMDevPort()->
+            pfnVRDPChange (getVMMDev()->getVMMDevPort(),
                            false, 0);
     }
 
-    console->mDisplay->VideoAccelVRDP (false);
+    mDisplay->VideoAccelVRDP (false);
 #endif /* VBOX_VRDP */
 
     if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_USB)
     {
-        console->mConsoleVRDPServer->USBBackendDelete (u32ClientId);
+        mConsoleVRDPServer->USBBackendDelete (u32ClientId);
     }
 
 #ifdef VBOX_VRDP
     if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_CLIPBOARD)
     {
-        console->mConsoleVRDPServer->ClipboardDelete (u32ClientId);
+        mConsoleVRDPServer->ClipboardDelete (u32ClientId);
     }
 
     if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_AUDIO)
     {
-        console->mcAudioRefs--;
+        mcAudioRefs--;
 
-        if (console->mcAudioRefs <= 0)
+        if (mcAudioRefs <= 0)
         {
-            if (console->mAudioSniffer)
+            if (mAudioSniffer)
             {
-                PPDMIAUDIOSNIFFERPORT port = console->mAudioSniffer->getAudioSnifferPort();
+                PPDMIAUDIOSNIFFERPORT port = mAudioSniffer->getAudioSnifferPort();
                 if (port)
                 {
                     port->pfnSetup (port, false, false);
@@ -743,51 +703,39 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser,
 #endif /* VBOX_VRDP */
 
     Guid uuid;
-    HRESULT hrc = console->mMachine->COMGETTER (Id) (uuid.asOutParam());
+    HRESULT hrc = mMachine->COMGETTER (Id) (uuid.asOutParam());
     AssertComRC (hrc);
 
     VRDPAuthType_T authType = VRDPAuthType_VRDPAuthNull;
-    hrc = console->mVRDPServer->COMGETTER(AuthType) (&authType);
+    hrc = mVRDPServer->COMGETTER(AuthType) (&authType);
     AssertComRC (hrc);
 
     if (authType == VRDPAuthType_VRDPAuthExternal)
-        console->mConsoleVRDPServer->AuthDisconnect (uuid, u32ClientId);
+        mConsoleVRDPServer->AuthDisconnect (uuid, u32ClientId);
 
     LogFlowFuncLeave();
     return;
 }
 
-#ifdef VRDP_NO_COM
 void Console::VRDPInterceptAudio (uint32_t u32ClientId)
-#else
-DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser,
-                                                 uint32_t u32ClientId)
-#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
 
-#ifdef VRDP_NO_COM
-    Console *console = this;
-#else
-    Console *console = static_cast <Console *> (pvUser);
-#endif /* VRDP_NO_COM */
-    AssertReturnVoid (console);
-
-    AutoCaller autoCaller (console);
+    AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     LogFlowFunc (("mAudioSniffer %p, u32ClientId %d.\n",
-                  console->mAudioSniffer, u32ClientId));
+                  mAudioSniffer, u32ClientId));
     NOREF(u32ClientId);
 
 #ifdef VBOX_VRDP
-    console->mcAudioRefs++;
+    mcAudioRefs++;
 
-    if (console->mcAudioRefs == 1)
+    if (mcAudioRefs == 1)
     {
-        if (console->mAudioSniffer)
+        if (mAudioSniffer)
         {
-            PPDMIAUDIOSNIFFERPORT port = console->mAudioSniffer->getAudioSnifferPort();
+            PPDMIAUDIOSNIFFERPORT port = mAudioSniffer->getAudioSnifferPort();
             if (port)
             {
                 port->pfnSetup (port, true, true);
@@ -800,88 +748,38 @@ DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser,
     return;
 }
 
-#ifdef VRDP_NO_COM
 void Console::VRDPInterceptUSB (uint32_t u32ClientId, void **ppvIntercept)
-#else
-DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser,
-                                               uint32_t u32ClientId,
-                                               PFNVRDPUSBCALLBACK *ppfn,
-                                               void **ppv)
-#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
 
-#ifdef VRDP_NO_COM
-    Console *console = this;
-#else
-    Console *console = static_cast <Console *> (pvUser);
-#endif /* VRDP_NO_COM */
-    AssertReturnVoid (console);
-
-    AutoCaller autoCaller (console);
+    AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AssertReturnVoid (console->mConsoleVRDPServer);
+    AssertReturnVoid (mConsoleVRDPServer);
 
-#ifdef VRDP_NO_COM
     mConsoleVRDPServer->USBBackendCreate (u32ClientId, ppvIntercept);
-#else
-    console->mConsoleVRDPServer->USBBackendCreate (u32ClientId, ppfn, ppv);
-#endif /* VRDP_NO_COM */
 
     LogFlowFuncLeave();
     return;
 }
 
-#ifdef VRDP_NO_COM
 void Console::VRDPInterceptClipboard (uint32_t u32ClientId)
-#else
-DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
-                                                     uint32_t u32ClientId,
-                                                     PFNVRDPCLIPBOARDCALLBACK *ppfn,
-                                                     void **ppv)
-#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
 
-#ifdef VRDP_NO_COM
-    Console *console = this;
-#else
-    Console *console = static_cast <Console *> (pvUser);
-#endif /* VRDP_NO_COM */
-    AssertReturnVoid (console);
-
-    AutoCaller autoCaller (console);
+    AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AssertReturnVoid (console->mConsoleVRDPServer);
+    AssertReturnVoid (mConsoleVRDPServer);
 
 #ifdef VBOX_VRDP
-#ifdef VRDP_NO_COM
     mConsoleVRDPServer->ClipboardCreate (u32ClientId);
-#else
-    console->mConsoleVRDPServer->ClipboardCreate (u32ClientId, ppfn, ppv);
-#endif /* VRDP_NO_COM */
 #endif /* VBOX_VRDP */
 
     LogFlowFuncLeave();
     return;
 }
 
-
-#ifdef VRDP_NO_COM
-#else
-// static
-VRDPSERVERCALLBACK Console::sVrdpServerCallback =
-{
-    vrdp_ClientLogon,
-    vrdp_ClientConnect,
-    vrdp_ClientDisconnect,
-    vrdp_InterceptAudio,
-    vrdp_InterceptUSB,
-    vrdp_InterceptClipboard
-};
-#endif /* VRDP_NO_COM */
 
 //static
 const char *Console::sSSMConsoleUnit = "ConsoleData";
@@ -3274,11 +3172,7 @@ HRESULT Console::onVRDPServerChange()
             }
             else
             {
-#ifdef VRDP_NO_COM
                 mConsoleVRDPServer->EnableConnections ();
-#else
-                mConsoleVRDPServer->SetCallback ();
-#endif /* VRDP_NO_COM */
             }
         }
         else
@@ -5881,15 +5775,8 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
         alock.enter();
 
 #ifdef VBOX_VRDP
-        {
-            /* Enable client connections to the server. */
-            ConsoleVRDPServer *server = console->consoleVRDPServer();
-#ifdef VRDP_NO_COM
-            server->EnableConnections ();
-#else
-            server->SetCallback ();
-#endif /* VRDP_NO_COM */
-        }
+        /* Enable client connections to the server. */
+        console->consoleVRDPServer()->EnableConnections ();
 #endif /* VBOX_VRDP */
 
         if (VBOX_SUCCESS (vrc))
