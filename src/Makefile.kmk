@@ -18,18 +18,20 @@
 DEPTH  = ..
 include $(PATH_KBUILD)/header.kmk
 
-# build Runtime first when IPC logging is on because it depends on Runtime
-ifdef VBOX_IPC_RELEASE_LOG
- SUBDIRS = VBox/Runtime
-else ifneq ($(BUILD_TYPE),release)
- SUBDIRS = VBox/Runtime
-else
- SUBDIRS =
-endif
+ifdef VBOX_ONLY_ADDITIONS
+ SUBDIRS = VBox
 
-SUBDIRS += bldprogs libs VBox
-ifndef VBOX_ONLY_ADDITIONS
- SUBDIRS += recompiler
+else  # !VBOX_ONLY_ADDITIONS
+ # build Runtime first when IPC logging is on because it depends on Runtime
+ ifdef VBOX_IPC_RELEASE_LOG
+  SUBDIRS = VBox/Runtime
+ else ifneq ($(BUILD_TYPE),release)
+  SUBDIRS = VBox/Runtime
+ else
+  SUBDIRS =
+ endif
+
+ SUBDIRS += bldprogs libs VBox recompiler
  ifneq ($(wildcard apps),)
   SUBDIRS += apps
  endif
