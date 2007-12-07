@@ -125,6 +125,10 @@ VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION
 #
 # The VirtualBox Configuration Defaults.
 #
+# We try to document all the build configuration options here, thing which
+# aren't enabled by default is left commented out just to show that they
+# exist and which value they should (usually 1, but anyway).
+#
 
 # Build linux / win32 additions.
 ifeq ($(BUILD_TARGET),linux)
@@ -150,6 +154,10 @@ endif
 VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS = 1
 # Take the binaries of the OS/2 Additions
 VBOX_WITH_OS2_ADDITIONS_BIN = 1
+# Use additions from the build server.
+#VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER = 1
+# Only build the additions (for the build server).
+#VBOX_ONLY_ADDITIONS = 1
 
 # build the installer
 VBOX_WITH_INSTALLER = 1
