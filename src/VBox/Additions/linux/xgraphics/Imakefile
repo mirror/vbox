@@ -9,10 +9,11 @@ XCOMM
 XCOMM  This file is part of VirtualBox Open Source Edition (OSE), as
 XCOMM  available from http://www.virtualbox.org. This file is free software;
 XCOMM  you can redistribute it and/or modify it under the terms of the GNU
-XCOMM  General Public License as published by the Free Software Foundation,
-XCOMM  in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
-XCOMM  distribution. VirtualBox OSE is distributed in the hope that it will
-XCOMM  be useful, but WITHOUT ANY WARRANTY of any kind.
+XCOMM  General Public License (GPL) as published by the Free Software
+XCOMM  Foundation, in version 2 as it comes in the "COPYING" file of the
+XCOMM  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+XCOMM  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+XCOMM 
 
 
 #define IHaveModules
