@@ -39,7 +39,7 @@ VBoxDisp_SOURCES     = \
 	pointer.c \
 	screen.c \
 	drv.c \
-        dd.c \
+	dd.c \
 	vbva.c \
 	vrdp.c \
 	vrdpbmp.c \
@@ -53,7 +53,7 @@ VBoxDisp_LIBS        = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
 ifndef VBOX_USE_VCC80
 VBoxDisp_LIBS       += \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/libcmt.lib 
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/libcmt.lib
 endif
 
 
