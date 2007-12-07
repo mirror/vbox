@@ -27,16 +27,19 @@ else
  SUBDIRS =
 endif
 
-SUBDIRS += bldprogs libs VBox recompiler
-ifneq ($(wildcard apps),)
- SUBDIRS += apps
-endif
-ifdef VBOX_WITH_TESTSUITE
- SUBDIRS +=  tests
-endif
-ifdef VBOX_WITH_TESTCASES
- SUBDIRS +=  testcase
-endif
+SUBDIRS += bldprogs libs VBox
+ifndef VBOX_ONLY_ADDITIONS
+ SUBDIRS += recompiler
+ ifneq ($(wildcard apps),)
+  SUBDIRS += apps
+ endif
+ ifdef VBOX_WITH_TESTSUITE
+  SUBDIRS +=  tests
+ endif
+ ifdef VBOX_WITH_TESTCASES
+  SUBDIRS +=  testcase
+ endif
+endif # !VBOX_ONLY_ADDITIONS
 
 include $(PATH_KBUILD)/footer.kmk
 
