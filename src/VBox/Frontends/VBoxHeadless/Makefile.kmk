@@ -4,10 +4,11 @@
 #
 
 #
-#  Copyright (C) 2006-2007 innotek GmbH
-# 
-#  innotek GmbH confidential
-#  All rights reserved
+# Copyright (C) 2006-2007 innotek GmbH
+#
+# innotek GmbH confidential
+# All rights reserved
+#
 
 DEPTH = ../../../..
 include $(PATH_KBUILD)/header.kmk
