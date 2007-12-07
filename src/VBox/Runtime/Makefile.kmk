@@ -28,14 +28,34 @@
 DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
-ifdef VBOX_ADDITIONS_LINUX_ONLY
+ifdef VBOX_ONLY_ADDITIONS
+ #
+ # Only build the additions, sort out the legacy names first.
+ #
+ ifeq ($(TARGET),linux)
+  LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3
+ else ifeq ($(TARGET),os2)
+  LIBRARIES  = RuntimeOS2GuestR0 RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
+ else ifeq ($(TARGET),win)
+  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
+ else
+  LIBRARIES = RuntimeGuestR0 RuntimeGuestR3
+ endif
+
+ #
+ # Remote cross building... Will be removed unless somebody speaks up!
+ #
+else ifdef VBOX_ADDITIONS_LINUX_ONLY
  LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3
 else ifdef VBOX_ADDITIONS_WIN32_ONLY
  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
 else ifdef VBOX_ADDITIONS_OS2_ONLY
  LIBRARIES += RuntimeOS2GuestR0 RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
 else
+
+ #
  # Build everything.
+ #
  BLDPROGS   = uniread
  LIBRARIES  = RuntimeR3 RuntimeR0 RuntimeGC RuntimeEFCPP RuntimeR3NoCRTGCC
  ifdef VBOX_WITH_VBOXDRV
