@@ -654,11 +654,45 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     CMachine cmachine = csession.GetMachine();
 
-    show();
-
     /* restore the position of the window and some options */
     {
-        QString str = cmachine.GetExtraData (VBoxDefs::GUI_Fullscreen);
+        QString str = cmachine.GetExtraData (VBoxDefs::GUI_LastWindowPosition);
+
+        QRect ar = QApplication::desktop()->availableGeometry (this);
+        bool ok = false, max = false;
+        int x = 0, y = 0, w = 0, h = 0;
+        x = str.section (',', 0, 0).toInt (&ok);
+        if (ok)
+            y = str.section (',', 1, 1).toInt (&ok);
+        if (ok)
+            w = str.section (',', 2, 2).toInt (&ok);
+        if (ok)
+            h = str.section (',', 3, 3).toInt (&ok);
+        if (ok)
+            max = str.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
+        if (ok)
+        {
+            normal_pos = QPoint (x, y);
+            normal_size = QSize (w, h);
+
+            move (normal_pos);
+            resize (normal_size);
+        }
+        else
+        {
+            normal_pos = QPoint();
+            normal_size = QSize();
+        }
+        /* normalize to the optimal size */
+        console->normalizeGeometry (true /* adjustPosition */);
+        /* maximize if needed */
+        if (max)
+            setWindowState (windowState() | WindowMaximized);
+        was_max = max;
+
+        show();
+
+        str = cmachine.GetExtraData (VBoxDefs::GUI_Fullscreen);
         if (str == "on")
             vmFullscreenAction->setOn (true);
 
@@ -680,52 +714,6 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         str = cmachine.GetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime);
         if (str == "no")
             mIsAutoSaveMedia = false;
-
-        str = cmachine.GetExtraData (VBoxDefs::GUI_LastWindowPosition);
-
-        QRect ar = QApplication::desktop()->availableGeometry (this);
-        bool ok = false, max = false;
-        int x = 0, y = 0, w = 0, h = 0;
-        x = str.section (',', 0, 0).toInt (&ok);
-        if (ok)
-            y = str.section (',', 1, 1).toInt (&ok);
-        if (ok)
-            w = str.section (',', 2, 2).toInt (&ok);
-        if (ok)
-            h = str.section (',', 3, 3).toInt (&ok);
-        if (ok)
-            max = str.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
-        if (ok)
-        {
-            normal_pos = QPoint (x, y);
-            normal_size = QSize (w, h);
-            if (!mIsFullscreen && !vmSeamlessAction->isOn())
-            {
-                move (normal_pos);
-                resize (normal_size);
-                /* normalize to the optimal size */
-                console->normalizeGeometry (true /* adjustPosition */);
-                /* maximize if needed */
-                if (max)
-                    setWindowState (windowState() | WindowMaximized);
-            }
-            else
-                was_max = max;
-        }
-        else
-        {
-            normal_pos = QPoint();
-            normal_size = QSize();
-            if (!mIsFullscreen && !vmSeamlessAction->isOn())
-            {
-                console->normalizeGeometry (true /* adjustPosition */);
-                /* maximize if needed */
-                if (max)
-                    setWindowState (windowState() | WindowMaximized);
-            }
-            else
-                was_max = max;
-        }
     }
 
     /* initialize usb stuff */
