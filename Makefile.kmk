@@ -19,7 +19,9 @@ DEPTH = .
 include $(PATH_KBUILD)/header.kmk
 
 ifdef VBOX_WITH_DOCS
- SUBDIRS = doc/manual
+ ifndef VBOX_ONLY_ADDITIONS
+  SUBDIRS = doc/manual
+ endif
 endif
 SUBDIRS += src
 
