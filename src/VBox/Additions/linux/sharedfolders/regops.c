@@ -395,7 +395,11 @@ struct file_operations sf_reg_fops = {
         .release  = sf_reg_release,
         .mmap     = sf_reg_mmap,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 23)
+        .splice_read = generic_file_splice_read,
+# else
         .sendfile = generic_file_sendfile,
+# endif
         .fsync    = simple_sync_file,
 #endif
 };
