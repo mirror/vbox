@@ -2513,7 +2513,7 @@ DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile *pu32, uint32_t u32)
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; orl %1, %0\n\t"
                          : "=m" (*pu32)
-                         : "r" (u32));
+                         : "ir" (u32));
 # else
     __asm
     {
@@ -2560,7 +2560,7 @@ DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile *pu32, uint32_t u32)
 # elif RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("lock; andl %1, %0\n\t"
                          : "=m" (*pu32)
-                         : "r" (u32));
+                         : "ir" (u32));
 # else
     __asm
     {
