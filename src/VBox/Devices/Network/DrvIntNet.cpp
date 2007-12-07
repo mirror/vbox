@@ -86,6 +86,8 @@ typedef struct DRVINTNET
     /** Set if the link is down.
      * When the link is down all incoming packets will be dropped. */
     bool volatile           fLinkDown;
+    /** Set if data transmission should start immediately. */
+    bool                    fActivateEarly;
 
 #ifdef VBOX_WITH_STATISTICS
     /** Profiling packet transmit runs. */
@@ -628,8 +630,11 @@ static DECLCALLBACK(void) drvIntNetPowerOn(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvIntNetPowerOn\n"));
     PDRVINTNET pThis = PDMINS2DATA(pDrvIns, PDRVINTNET);
-    ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
-    RTSemEventSignal(pThis->EventSuspended);
+    if (!pThis->fActivateEarly)
+    {
+        ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
+        RTSemEventSignal(pThis->EventSuspended);
+    }
 }
 
 
@@ -717,6 +722,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pThis->EventSuspended               = NIL_RTSEMEVENT;
     pThis->EventOutOfSpace              = NIL_RTSEMEVENT;
     pThis->enmState                     = ASYNCSTATE_SUSPENDED;
+    pThis->fActivateEarly               = false;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvIntNetQueryInterface;
     /* INetwork */
@@ -728,7 +734,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Network\0ReceiveBufferSize\0SendBufferSize\0RestrictAccess\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Network\0ReceiveBufferSize\0SendBufferSize\0RestrictAccess\0IsService\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     /*
@@ -790,6 +796,13 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"RestrictAccess\" value"));
+
+    rc = CFGMR3QueryBool(pCfgHandle, "IsService", &pThis->fActivateEarly);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pThis->fActivateEarly = false;
+    else if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"IsService\" value"));
 
     /*
      * Create the event semaphores
@@ -862,6 +875,15 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/Transmit",       pDrvIns->iInstance);
     pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->StatTransmit,            STAMTYPE_PROFILE, szStatName,   STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.");
 #endif
+
+    /*
+     * Activate data transmission as early as possible
+     */
+    if (pThis->fActivateEarly)
+    {
+        ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
+        RTSemEventSignal(pThis->EventSuspended);
+    }
 
     LogRel(("IntNet#%u: cbRecv=%u cbSend=%u fRestrictAccess=%d\n", pDrvIns->iInstance, OpenReq.cbRecv, OpenReq.cbSend, OpenReq.fRestrictAccess));
 
