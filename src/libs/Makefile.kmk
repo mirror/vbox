@@ -25,12 +25,12 @@ ifdef IPRT_WITH_KSTUFF
 endif
 ifndef VBOX_OSE
  ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)
-  subdirs += zlib-1.2.1 libpng-1.2.8
+  subdirs += zlib-1.2.1
  endif
  ifeq ($(SDK_VBOX_LIBPNG_INCS),$(PATH_ROOT)/src/libs/libpng-1.2.8)
   subdirs += libpng-1.2.8
  endif
-endif
+endif # !VBOX_OSE
 ifdef VBOX_WITH_VRDP
  ifeq ($(SDK_VBOX_OPENSSL_INCS),$(PATH_ROOT)/src/libs/openssl-0.9.7e/include)
   subdirs += openssl-0.9.7e
