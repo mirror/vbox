@@ -54,26 +54,28 @@ else ifdef VBOX_ADDITIONS_OS2_ONLY
 else
 
  #
- # Build everything.
+ # Normal build.
  #
  BLDPROGS   = uniread
  LIBRARIES  = RuntimeR3 RuntimeR0 RuntimeGC RuntimeEFCPP RuntimeR3NoCRTGCC
  ifdef VBOX_WITH_VBOXDRV
   LIBRARIES += RuntimeR0Drv
  endif
- ifdef VBOX_WITH_WIN32_ADDITIONS
-  LIBRARIES += RuntimeW32GuestR0   RuntimeW32GuestR3 RuntimeW32NT4GuestR0
- endif
- ifdef VBOX_WITH_LINUX_ADDITIONS
-  LIBRARIES += RuntimeLnx32GuestR3
-  ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
-   LIBRARIES += RuntimeLnx32GuestR0
+ ifndef VBOX_WITHOUT_ADDITIONS
+  ifdef VBOX_WITH_WIN32_ADDITIONS
+   LIBRARIES += RuntimeW32GuestR0   RuntimeW32GuestR3 RuntimeW32NT4GuestR0
   endif
- endif
- ifdef VBOX_WITH_OS2_ADDITIONS
-  LIBRARIES += RuntimeOS2GuestR0 RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
- endif
- LIBRARIES.l4= RuntimeR3L4
+  ifdef VBOX_WITH_LINUX_ADDITIONS
+   LIBRARIES += RuntimeLnx32GuestR3
+   ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
+    LIBRARIES += RuntimeLnx32GuestR0
+   endif
+  endif
+  ifdef VBOX_WITH_OS2_ADDITIONS
+   LIBRARIES += RuntimeOS2GuestR0 RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
+  endif
+ endif # !VBOX_WITHOUT_ADDITIONS
+ LIBRARIES.l4 = RuntimeR3L4
  DLLS = VBoxRT
  OTHER_CLEAN = \
 	$(PATH_TARGET)/errmsgdata.h \

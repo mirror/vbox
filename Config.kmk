@@ -156,6 +156,8 @@ VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS = 1
 VBOX_WITH_OS2_ADDITIONS_BIN = 1
 # Use additions from the build server.
 #VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER = 1
+# Don't bother with additions.
+#VBOX_WITHOUT_ADDITIONS = 1
 # Only build the additions (for the build server).
 #VBOX_ONLY_ADDITIONS = 1
 
