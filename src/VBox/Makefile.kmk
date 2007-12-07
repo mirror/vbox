@@ -1,5 +1,5 @@
 # $Id$
-## @file 
+## @file
 # Top-level makefile for src/VBox.
 #
 
@@ -18,35 +18,42 @@
 DEPTH = ../..
 include $(PATH_KBUILD)/header.kmk
 
-SUBDIRS_BLDPROGS = Devices
+ifdef VBOX_ONLY_ADDITIONS
+ SUBDIRS = \
+	Runtime \
+	Additions
 
-SUBDIRS = \
+else  # !VBOX_ONLY_ADDITIONS
+ SUBDIRS_BLDPROGS = Devices
+
+ SUBDIRS = \
 	Runtime \
 	HostDrivers \
 	VMM \
 	Devices \
 	Disassembler \
-        HostServices \
-	Debugger 
+	HostServices \
+	Debugger
 
-ifdef VBOX_WITH_MAIN
-SUBDIRS += Main
-endif
+ ifdef VBOX_WITH_MAIN
+  SUBDIRS += Main
+ endif
 
-ifdef VBOX_WITH_VRDP
-SUBDIRS += RDP
-endif
+ ifdef VBOX_WITH_VRDP
+  SUBDIRS += RDP
+ endif
 
-ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
-SUBDIRS += Additions
-endif
+ ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
+  SUBDIRS += Additions
+ endif
 
-SUBDIRS += Frontends
+ SUBDIRS += Frontends
 
-# This must be the last one.
-ifdef VBOX_WITH_INSTALLER
-SUBDIRS += Installer
-endif
+ # This must be the last one.
+ ifdef VBOX_WITH_INSTALLER
+  SUBDIRS += Installer
+ endif
+endif # !VBOX_ONLY_ADDITIONS
 
 include $(PATH_KBUILD)/footer.kmk
 

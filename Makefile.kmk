@@ -23,6 +23,7 @@ ifdef VBOX_WITH_DOCS
 endif
 SUBDIRS += src
 
+ifndef VBOX_ONLY_ADDITIONS
 #
 # Install external binaries (mostly redistributable parts of tools we use).
 # This must be done *before* we build the manual.
@@ -174,6 +175,7 @@ ifneq ($(filter-out linux win l4, $(BUILD_TARGET)),)
 
 endif
 
+endif # !VBOX_ONLY_ADDITIONS
 
 
 include $(PATH_KBUILD)/footer.kmk
