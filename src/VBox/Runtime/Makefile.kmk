@@ -32,15 +32,15 @@ ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
  #
- ifeq ($(BUILD_TARGET),linux)
-  LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3
- else ifeq ($(BUILD_TARGET),os2)
-  LIBRARIES  = RuntimeOS2GuestR0 RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
- else ifeq ($(BUILD_TARGET),win)
-  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
- else
+# ifeq ($(BUILD_TARGET),linux)
+#  LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3
+# else ifeq ($(BUILD_TARGET),os2)
+#  LIBRARIES  = RuntimeOS2GuestR0 RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
+# else ifeq ($(BUILD_TARGET),win)
+#  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
+# else
   LIBRARIES = RuntimeGuestR0 RuntimeGuestR3
- endif
+# endif
 
  #
  # Remote cross building... Will be removed unless somebody speaks up!
@@ -447,7 +447,6 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/utf8-posix.cpp \
 	r3/solaris/alloc-solaris.cpp
 
-
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
 
@@ -492,6 +491,27 @@ RuntimeR3L4_SOURCES = \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp
+
+
+#
+# RuntimeGuestR3 - Guest Additions Runtime (static).
+#
+RuntimeGuestR3_TEMPLATE             := VBOXGUESTR3LIB
+RuntimeGuestR3_SDKS.win             := $(RuntimeR3_SDKS.win)
+RuntimeGuestR3_DEFS                 := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS))
+RuntimeGuestR3_DEFS.$(BUILD_TARGET) := $(RuntimeR3_DEFS.$(BUILD_TARGET))
+RuntimeGuestR3_INCS                 := $(RuntimeR3_INCS)
+RuntimeGuestR3_INCS.$(BUILD_TARGET) := $(RuntimeR3_INCS.$(BUILD_TARGET))
+RuntimeGuestR3_SOURCES              := $(filter-out \
+	common/time/timesupref.cpp \
+	common/time/timesupA.asm \
+	common/time/timesup.cpp \
+	, $(RuntimeR3_SOURCES))
+RuntimeGuestR3_SOURCES              += \
+	common/time/timesysalias.cpp
+RuntimeGuestR3_SOURCES.$(BUILD_TARGET) := $(RuntimeR3_SOURCES.$(BUILD_TARGET))
+RuntimeGuestR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
+
 
 #
 # RuntimeW32GuestR3 - Win32 guest program runtime.
@@ -930,8 +950,36 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/solaris/time-r0drv-solaris.c \
 	r0drv/solaris/timer-r0drv-solaris.c
 
-
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
+
+
+#
+# RuntimeGuestR0 - Guest driver runtime.
+#                  This is almost the same as the RuntimeR0Drv, the main difference
+#                  is in the backdoor logging and the lack of sup.h (which should be
+#                  made irrelevant even for RuntimeR0Rdrv).
+#
+# TODO: RuntimeGuestR0_EXTENDS = RuntimeR0Drv (kBuild)
+#
+RuntimeGuestR0_TEMPLATE                := VBOXGUESTR0LIB
+RuntimeGuestR0_SDKS.win                := W2K3DDKX86 WINPSDKINCS
+RuntimeGuestR0_DEFS                    := $(RuntimeR0Drv_DEFS)
+RuntimeGuestR0_DEFS.$(BUILD_TARGET)    := $(RuntimeR0Drv_DEFS.$(BUILD_TARGET))
+RuntimeGuestR0_INCS                    := $(PATH_SUB_CURRENT)
+RuntimeGuestR0_INCS.$(BUILD_TARGET)    := $(RuntimeR0Drv_INCS.$(BUILD_TARGET))
+RuntimeGuestR0_SOURCES                 := $(filter-out generic/RTLogWriteUser-generic.cpp, $(RuntimeR0Drv_SOURCES))
+RuntimeGuestR0_SOURCES                 += VBox/logbackdoor.cpp
+RuntimeGuestR0_SOURCES.$(BUILD_TARGET) := $(RuntimeR0Drv_SOURCES.$(BUILD_TARGET))
+RuntimeGuestR0_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR0Drv_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
+ifdef VBOX_USE_VCC80
+RuntimeGuestR0_SOURCES.win += \
+	common/string/memchr.cpp \
+	common/string/memcmp.cpp \
+	common/string/memcpy.cpp \
+	common/string/memset.cpp \
+	common/string/strlen.cpp
+endif
+
 
 #
 # RuntimeW32GuestR0 - Win32 guest driver runtime.
@@ -939,7 +987,8 @@ RuntimeR0Drv_SOURCES.solaris = \
 RuntimeW32GuestR0_TEMPLATE      = VBOXW32GUESTR0LIB
 RuntimeW32GuestR0_SDKS          = W2K3DDKX86 WINPSDKINCS
 RuntimeW32GuestR0_INCS         := $(PATH_SUB_CURRENT)
-RuntimeW32GuestR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS  IN_SUP_R0
+RuntimeW32GuestR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS IN_SUP_R0
+RuntimeW32GuestR0_DEFS.$(BUILD_TARGET) =
 RuntimeW32GuestR0_SOURCES       = \
 	$(filter-out generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
 	$(RuntimeR0Drv_SOURCES.win) \
