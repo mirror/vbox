@@ -2606,6 +2606,39 @@ endif # VBOX_WITH_OS2_ADDITIONS
 
 
 #
+# Template for building R3 programs for the guest additions.
+#
+TEMPLATE_VBOXGUESTR3EXE = VBox Guest Program
+TEMPLATE_VBOXGUESTR3EXE_EXTENDS = VBOXR3EXE
+TEMPLATE_VBOXGUESTR3EXE_INST    = $(INST_ADDITIONS)
+TEMPLATE_VBOXGUESTR3EXE_DEFS    = $(TEMPLATE_VBOXR3EXE_DEFS) IN_GUEST IN_GUEST_R3
+
+#
+# Template for building R3 (static) libraries for the guest additions.
+#
+TEMPLATE_VBOXGUESTR3LIB         = VBox Guest User Libraries
+TEMPLATE_VBOXGUESTR3LIB_EXTENDS = VBOXGUESTR3EXE
+TEMPLATE_VBOXGUESTR3LIB_INST    = $(INST_ADDITIONS_LIB)
+
+#
+# Template for building R0 drivers for the guest additions.
+#
+TEMPLATE_VBOXGUESTR0            = VBox Guest Driver
+TEMPLATE_VBOXGUESTR0_EXTENDS    = VBOXR0DRV
+TEMPLATE_VBOXGUESTR0_INST       = $(INST_ADDITIONS)
+TEMPLATE_VBOXGUESTR0_DEFS       = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
+
+#
+# Template for building R0 libraries for the guest additions.
+#
+TEMPLATE_VBOXGUESTR0LIB         = VBox Guest Driver Libraries
+TEMPLATE_VBOXGUESTR0LIB_EXTENDS = VBOXGUESTR0
+TEMPLATE_VBOXGUESTR0LIB_INST    = $(INST_ADDITIONS_LIB)
+
+## @todo X11?
+
+
+#
 # Two targets to coordinate version number changes properly. Note that the
 # only way to get a really consistent build is to run 'kmk' in the top-level
 # directory. If you don't run it there, you get a consistent sub-tree only.
