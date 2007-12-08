@@ -41,6 +41,8 @@ ifdef VBOX_ONLY_ADDITIONS
 # else
   LIBRARIES = RuntimeGuestR0 RuntimeGuestR3
 # endif
+  #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
+  LIBRARIES.win = RuntimeW32NT4GuestR0
 
  #
  # Remote cross building... Will be removed unless somebody speaks up!
