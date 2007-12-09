@@ -125,7 +125,7 @@ struct SerialState
     /** The base interface. */
     R3PTRTYPE(PDMIBASE)             IBase;
     /** The character port interface. */
-    R3PTRTYPE(PDMICHARPORT)         ICharPort;
+    PDMICHARPORT                    ICharPort;
     /** Pointer to the attached base driver. */
     R3PTRTYPE(PPDMIBASE)            pDrvBase;
     /** Pointer to the attached character driver. */
