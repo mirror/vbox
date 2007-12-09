@@ -150,6 +150,9 @@ ifdef VBOX_WITH_LINUX_ADDITIONS
   VBOX_WITH_LINUX_ADDITIONS_32BIT_R0 = 1
  endif
 endif
+ifeq ($(BUILD_TARGET),solaris)
+ VBOX_WITH_SOLARIS_ADDITIONS = 1
+endif
 # Enable the building of shared folders in the windows additions.
 VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS = 1
 # Take the binaries of the OS/2 Additions

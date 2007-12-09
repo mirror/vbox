@@ -16,11 +16,12 @@
 #
 
 DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+include	$(PATH_KBUILD)/subheader.kmk
 
 #
 # VBoxGuest.sys - The OS/2 driver.
 #
+ifeq ($(BUILD_PLATFORM),os2)
 SYSMODS.os2 += VBoxGuest
 VBoxGuest_TEMPLATE      = VBOXOS2GUESTR0
 VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
@@ -51,6 +52,22 @@ VBoxGuestLib_INCS      := \
 VBoxGuestLib_SOURCES    = \
 	VBoxGuest-os2.cpp \
 	VBoxGuest.cpp
+endif
 
-include	$(PATH_KBUILD)/footer.kmk
+#
+# vboxadd.o - The Solaris Guest Driver.
+#
+ifeq ($(BUILD_PLATFORM),solaris)
+SYSMODS.solaris += vboxadd
+
+vboxadd_TEMPLATE      = VBOXGUESTR0
+vboxadd_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
+vboxadd_INCS         := $(PATH_SUB_CURRENT) \
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris
+vboxadd_SOURCES       = \
+	VBoxGuest-solaris.c \
+	VBoxGuest.cpp
+endif
+
+include	$(PATH_KBUILD)/subfooter.kmk
 
