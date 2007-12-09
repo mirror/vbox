@@ -79,10 +79,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <unistd.h>
-#include <errno.h>
-#include <time.h>
-#include <sys/time.h>
+#ifdef RT_OS_WINDOWS
+#else
+# include <unistd.h>
+# include <errno.h>
+# include <time.h>
+# include <sys/time.h>
+#endif
 
 #include <iprt/thread.h>
 #include <iprt/string.h>
@@ -228,8 +231,14 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                      * If we've got adjtime around, try that first - most
                      * *NIX systems have it. Fall back on settimeofday.
                      */
+#ifdef RT_OS_WINDOWS
+                    /* just make sure it compiles for now, but later:
+                     SetSystemTimeAdjustment and fall back on SetSystemTime.
+                     */
+                    AssertFatalFailed();
+#else
                     struct timeval tv;
-#if !defined(RT_OS_OS2) /* PORTME */
+# if !defined(RT_OS_OS2) /* PORTME */
                     RTTimeSpecGetTimeval(Drift, &tv);
                     if (adjtime(&tv, NULL) == 0)
                     {
@@ -238,7 +247,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                         cErrors = 0;
                     }
                     else
-#endif
+# endif
                     {
                         errno = 0;
                         if (!gettimeofday(&tv, NULL))
@@ -250,11 +259,11 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                                 if (g_cVerbosity >= 1)
                                     VBoxServiceVerbose(1, "settimeofday to %s\n",
                                                        RTTimeToString(RTTimeExplode(&Time, &Tmp), sz, sizeof(sz)));
-#ifdef DEBUG
+# ifdef DEBUG
                                 if (g_cVerbosity >= 3)
                                     VBoxServiceVerbose(2, "       new time %s\n",
                                                        RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&Tmp)), sz, sizeof(sz)));
-#endif
+# endif
                                 cErrors = 0;
                             }
                             else if (cErrors++ < 10)
@@ -263,6 +272,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                         else if (cErrors++ < 10)
                             VBoxServiceError("gettimeofday failed; errno=%d: %s\n", errno, strerror(errno));
                     }
+#endif /* !RT_OS_WINDOWS */
                 }
                 break;
             }
