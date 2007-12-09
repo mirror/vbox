@@ -105,6 +105,7 @@ GUESTADDITIONS_WIN32_DEPS += \
 	$(PATH_BIN)/additions/VBoxSF.sys
 endif
 
+## @todo We're missing the .cat files and using the wrong .inf files here.
 GUESTADDITIONS_WIN32_FILESPEC = \
 	driver/VBoxGuest/VBoxGuest.sys=$(PATH_BIN)/additions/VBoxGuest.sys \
 	driver/VBoxGuest/VBoxGuest.inf=./WINNT/VBoxGuest/VBoxGuest.inf \
