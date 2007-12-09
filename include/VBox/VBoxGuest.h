@@ -113,7 +113,7 @@ typedef uint32_t vmmDevHypPhys;
  * Additions are allowed to work only if
  * additions_major == vmmdev_current && additions_minor <= vmmdev_current.
  * Additions version is reported to host (VMMDev) by VMMDevReq_ReportGuestInfo.
- * 
+ *
  * @remark  These defines also live in the 16-bit and assembly versions of this header.
  */
 #define VMMDEV_VERSION_MAJOR (0x1)
@@ -475,7 +475,7 @@ typedef struct
     uint32_t            u32StatInterval; /* interval in seconds */
     uint32_t            eventAck;
 } VMMDevGetStatisticsChangeRequest;
- 
+
 /** display change request structure */
 typedef struct
 {
@@ -894,48 +894,48 @@ typedef struct
 
 /**
  * VBoxGuest IOCTL codes and structures.
- * 
+ *
  * The range 0..15 is for basic driver communication.
  * The range 16..31 is for HGCM communcation.
  * The range 32..47 is reserved for future use.
  * The range 48..63 is for OS specific communcation.
  * The 7th bit is reserved for future hacks.
- * The 8th bit is reserved for distinguishing between 32-bit and 64-bit 
- * processes in future 64-bit guest additions. 
- * 
- * While windows IOCTL function number has to start at 2048 and stop at 4096 there 
- * never was any need to do this for everyone. A simple ((Function) | 0x800) would 
- * have sufficed. On Linux we're now intruding upon the type field. Fortunately 
- * this hasn't caused any trouble because the FILE_DEVICE_UNKNOWN value was set 
- * to 0x22 (if it were 0x2C it would not have worked soo smoothly). The situation 
- * would've been the same for *BSD and Darwin since they seems to share common 
+ * The 8th bit is reserved for distinguishing between 32-bit and 64-bit
+ * processes in future 64-bit guest additions.
+ *
+ * While windows IOCTL function number has to start at 2048 and stop at 4096 there
+ * never was any need to do this for everyone. A simple ((Function) | 0x800) would
+ * have sufficed. On Linux we're now intruding upon the type field. Fortunately
+ * this hasn't caused any trouble because the FILE_DEVICE_UNKNOWN value was set
+ * to 0x22 (if it were 0x2C it would not have worked soo smoothly). The situation
+ * would've been the same for *BSD and Darwin since they seems to share common
  * _IOC() heritage.
- * 
- * However, on good old OS/2 we only have 8-bit handy for the function number. The 
+ *
+ * However, on good old OS/2 we only have 8-bit handy for the function number. The
  * result from using the old IOCTL function numbers her would've been overlapping
- * between the two ranges. 
- * 
- * To fix this problem and get rid of all the unnecessary windowsy crap that I 
- * bet was copied from my SUPDRVIOC.h once upon a time (although the concept of 
- * prefixing macros with the purpose of avoid clashes with system stuff and 
- * to indicate exactly how owns them seems to have been lost somewhere along 
+ * between the two ranges.
+ *
+ * To fix this problem and get rid of all the unnecessary windowsy crap that I
+ * bet was copied from my SUPDRVIOC.h once upon a time (although the concept of
+ * prefixing macros with the purpose of avoid clashes with system stuff and
+ * to indicate exactly how owns them seems to have been lost somewhere along
  * the way), I've introduced a VBOXGUEST_IOCTL_CODE for defining generic IN/OUT
  * IOCtls on new ports of the additions.
  *
  * @remarks When creating new IOCtl interfaces keep in mind that not all OSes supports
  *          reporting back the output size. (This got messed up a little bit in VBoxDrv.)
- * 
+ *
  *          The request size is also a little bit tricky as it's passed as part of the
  *          request code on unix. The size field is 14 bits on Linux, 12 bits on *BSD,
- *          13 bits Darwin, and 8-bits on Solaris. All the BSDs and Darwin kernels 
+ *          13 bits Darwin, and 8-bits on Solaris. All the BSDs and Darwin kernels
  *          will make use of the size field, while Linux and Solaris will not. We're of
- *          course using the size to validate and/or map/lock the request, so it has 
+ *          course using the size to validate and/or map/lock the request, so it has
  *          to be valid.
- * 
- *          For Solaris we will have to do something special though, 255 isn't 
- *          sufficent for all we need. A 4KB restriction (BSD) is probably not 
+ *
+ *          For Solaris we will have to do something special though, 255 isn't
+ *          sufficent for all we need. A 4KB restriction (BSD) is probably not
  *          too problematic (yet) as a general one.
- * 
+ *
  *          More info can be found in SUPDRVIOC.h and related sources.
  *
  * @remarks If adding interfaces that only has input or only has output, some new macros
@@ -989,7 +989,7 @@ typedef struct
 # define IOCTL_VBOXGUEST_GETVMMDEVPORT  VBOXGUEST_IOCTL_GETVMMDEVPORT
 #else
 # define IOCTL_VBOXGUEST_GETVMMDEVPORT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestPortInfo))
-#endif 
+#endif
 
 #pragma pack(4)
 typedef struct _VBoxGuestPortInfo
@@ -1011,7 +1011,7 @@ typedef struct _VBoxGuestPortInfo
 # define IOCTL_VBOXGUEST_WAITEVENT_INTERRUPT_ALL \
                                         IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2051, METHOD_BUFFERED, \
                                         FILE_WRITE_ACCESS, 0)
-#endif 
+#endif
 
 /**
  * Result codes for VBoxGuestWaitEventInfo::u32Result
@@ -1048,7 +1048,7 @@ typedef struct _VBoxGuestWaitEventInfo
 # define IOCTL_VBOXGUEST_VMMREQUEST         VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevRequestHeader))
 #else
 # define IOCTL_VBOXGUEST_VMMREQUEST IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2050, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VMMDevRequestHeader))
-#endif 
+#endif
 
 /** Input and output buffer layout of the IOCTL_VBOXGUEST_CTL_FILTER_MASK. */
 typedef struct _VBoxGuestFilterMaskInfo
@@ -1064,7 +1064,7 @@ typedef struct _VBoxGuestFilterMaskInfo
 # define IOCTL_VBOXGUEST_CTL_FILTER_MASK    VBOXGUEST_IOCTL_CTL_FILTER_MASK
 #else
 # define IOCTL_VBOXGUEST_CTL_FILTER_MASK IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2051, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof (VBoxGuestFilterMaskInfo))
-#endif 
+#endif
 
 /** IOCTL to VBoxGuest to check memory ballooning */
 #ifdef VBOXGUEST_IOCTL_CODE
@@ -1072,7 +1072,7 @@ typedef struct _VBoxGuestFilterMaskInfo
 # define IOCTL_VBOXGUEST_CTL_CHECK_BALLOON          VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK
 #else
 # define IOCTL_VBOXGUEST_CTL_CHECK_BALLOON          IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2052, METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
-#endif 
+#endif
 
 #ifdef VBOX_HGCM
 /* These structures are shared between the driver and other binaries,
@@ -1116,7 +1116,7 @@ typedef struct _VBoxGuestHGCMCallInfo
 # define IOCTL_VBOXGUEST_HGCM_DISCONNECT   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3073, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMDisconnectInfo))
 # define IOCTL_VBOXGUEST_HGCM_CALL         IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3074, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMCallInfo))
 # define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3075, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(uint32_t))
-#endif 
+#endif
 
 #define VBOXGUEST_HGCM_CALL_PARMS(a) ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
 
@@ -1261,10 +1261,10 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
 
 #ifdef RT_OS_OS2
 
-/** 
+/**
  * The data buffer layout for the IDC entry point (AttachDD).
- * 
- * @remark  This is defined in multiple 16-bit headers / sources. 
+ *
+ * @remark  This is defined in multiple 16-bit headers / sources.
  *          Some places it's called VBGOS2IDC to short things a bit.
  */
 typedef struct VBOXGUESTOS2IDCCONNECT
@@ -1276,8 +1276,8 @@ typedef struct VBOXGUESTOS2IDCCONNECT
 
     /**
      * The 32-bit service entry point.
-     * 
-     * @returns VBox status code.   
+     *
+     * @returns VBox status code.
      * @param   u32Session          The above session handle.
      * @param   iFunction           The requested function.
      * @param   pvData              The input/output data buffer. The caller ensures that this
@@ -1290,26 +1290,26 @@ typedef struct VBOXGUESTOS2IDCCONNECT
      */
     DECLCALLBACKMEMBER(int, pfnServiceEP)(uint32_t u32Session, unsigned iFunction, void *pvData, size_t cbData, size_t *pcbDataReturned);
 
-    /** The 16-bit service entry point for C code (cdecl). 
-     * 
-     * It's the same as the 32-bit entry point, but the types has 
+    /** The 16-bit service entry point for C code (cdecl).
+     *
+     * It's the same as the 32-bit entry point, but the types has
      * changed to 16-bit equivalents.
-     * 
+     *
      * @code
-     * int far cdecl 
-     * VBoxGuestOs2IDCService16(uint32_t u32Session, uint16_t iFunction, 
+     * int far cdecl
+     * VBoxGuestOs2IDCService16(uint32_t u32Session, uint16_t iFunction,
      *                          void far *fpvData, uint16_t cbData, uint16_t far *pcbDataReturned);
      * @endcode
      */
     RTFAR16 fpfnServiceEP;
 
-    /** The 16-bit service entry point for Assembly code (register). 
-     * 
+    /** The 16-bit service entry point for Assembly code (register).
+     *
      * This is just a wrapper around fpfnServiceEP to simplify calls
      * from 16-bit assembly code.
      *
      * @returns (e)ax: VBox status code; cx: The amount of data returned.
-     *            
+     *
      * @param   u32Session          eax   - The above session handle.
      * @param   iFunction           dl    - The requested function.
      * @param   pvData              es:bx - The input/output data buffer.
@@ -1321,9 +1321,9 @@ typedef struct VBOXGUESTOS2IDCCONNECT
 typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 
 /** OS/2 specific: IDC client disconnect request.
- * 
- * This takes no input and it doesn't return anything. Obviously this 
- * is only recognized if it arrives thru the IDC service EP. 
+ *
+ * This takes no input and it doesn't return anything. Obviously this
+ * is only recognized if it arrives thru the IDC service EP.
  */
 #define VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT  VBOXGUEST_IOCTL_CODE(48, sizeof(uint32_t))
 
@@ -1349,9 +1349,9 @@ VBGLR3DECL(int)     VbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cbSize,
                                   VMMDevRequestType reqType);
 VBGLR3DECL(int)     VbglR3GRPerform(VMMDevRequestHeader *pReq);
 VBGLR3DECL(void)    VbglR3GRFree(VMMDevRequestHeader *pReq);
-# ifdef __iprt_time_h__
+# ifdef ___iprt_time_h
 VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
-# endif 
+# endif
 VBGLR3DECL(int)     VbglR3InterruptEventWaits(void);
 
 /* Shared clipboard */
