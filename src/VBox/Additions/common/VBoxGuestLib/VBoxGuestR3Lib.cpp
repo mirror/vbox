@@ -154,7 +154,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
         return vrc;
     return RTErrConvertFromOS2(rc);
 
-#elif defined(RT_OS_LINUX)
+#elif defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
     int rc2 = VERR_INTERNAL_ERROR;
     int rc = RTFileIoCtl(g_File, (int)iFunction, pvData, cbData, &rc2);
     if (RT_SUCCESS(rc))

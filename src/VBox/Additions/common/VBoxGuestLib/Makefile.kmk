@@ -44,6 +44,12 @@ ifdef VBOX_WITH_OS2_ADDITIONS
 	VBoxGuestR0LibBaseOS2 \
 	VBoxGuestR3LibOS2
 endif
+ifdef VBOX_WITH_SOLARIS_ADDITIONS
+ LIBRARIES += \
+	VBoxGuestR0LibSolaris \
+	VBoxGuestR0LibBaseSolaris \
+	VBoxGuestR3LibSolaris 
+endif
 
 SOURCES_GUESTLIBBASE = \
 	GenericRequest.cpp \
@@ -140,6 +146,30 @@ VBoxGuestR0LibBaseOS2_DEFS     = VBOX_HGCM VBGL_VBOXGUEST
 VBoxGuestR3LibOS2_TEMPLATE = VBOXOS2GUESTR3LIB
 VBoxGuestR3LibOS2_SOURCES  = VBoxGuestR3Lib.cpp VBoxGuestR3LibClipboard.cpp
 VBoxGuestR3LibOS2_DEFS     = VBOX_HGCM
+
+
+#
+# VBoxGuestR0LibSolaris
+#
+VBoxGuestR0LibSolaris_TEMPLATE     = VBOXGUESTR0
+VBoxGuestR0LibSolaris_SOURCES      = $(SOURCES_GUESTLIB)
+VBoxGuestR0LibSolaris_INCS         = $(VBoxGuestLib_INCS)
+VBoxGuestR0LibSolaris_DEFS         = VBOX_HGCM
+
+#
+# VBoxGuestR0LibBaseSolaris
+#
+VBoxGuestR0LibBaseSolaris_TEMPLATE = VBOXGUESTR0LIB
+VBoxGuestR0LibBaseSolaris_SOURCES  = $(SOURCES_GUESTLIBBASE)
+VBoxGuestR0LibBaseSolaris_INCS     = $(VBoxGuestLib_INCS)
+VBoxGuestR0LibBaseSolaris_DEFS     = VBOX_HGCM VBGL_VBOXGUEST
+
+#
+# VBoxGuestR3LibBaseSolaris
+#
+VBoxGuestR3LibSolaris_TEMPLATE    = VBOXGUESTR3LIB
+VBoxGuestR3LibSolaris_SOURCES     = VBoxGuestR3Lib.cpp VBoxGuestR3LibClipboard.cpp
+VBoxGuestR3LibSolaris_DEFS        = VBOX_HGCM
 
 
 include	$(PATH_KBUILD)/subfooter.kmk

@@ -124,7 +124,7 @@ typedef struct VBOXGUESTSESSION *PVBOXGUESTSESSION;
  */
 typedef struct VBOXGUESTSESSION
 {
-#if defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_OS2) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
     /** Pointer to the next session with the same hash. */
     PVBOXGUESTSESSION           pNextHash;
 #endif

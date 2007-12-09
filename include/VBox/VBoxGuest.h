@@ -51,6 +51,10 @@ typedef uint32_t vmmDevHypPhys;
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "\\Dev\\VBoxGst$"
 
+#elif defined(RT_OS_SOLARIS)
+/** The support device name. */
+# define VBOXGUEST_DEVICE_NAME        "/devices/pseudo/vboxadd@0:vboxadd"
+
 #elif defined(RT_OS_WINDOWS)
 /** The support service name. */
 # define VBOXGUEST_SERVICE_NAME       "VBoxGuest"
@@ -963,6 +967,11 @@ typedef struct
    a "type" argument, whereas we provide "sizeof(type)". */
 /* VBOXGUEST_IOCTL_CODE(Function, sizeof(type)) == _IOWR('V', (Function) | VBOXGUEST_IOCTL_FLAG, (type)) */
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOC(_IOC_READ|_IOC_WRITE, 'V', Function, Size)
+# define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
+
+#elif defined(RT_OS_SOLARIS)
+# include <sys/ioccom.h>
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWR('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 
 #elif 0 /* BSD style - needs some adjusting _IORW takes a type and not a size. */

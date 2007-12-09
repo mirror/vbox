@@ -131,6 +131,13 @@ extern VBOXGUESTOS2IDCCONNECT g_VBoxGuestIDC;
 __END_DECLS
 #endif
 
+#ifdef RT_OS_SOLARIS
+__BEGIN_DECLS
+extern DECLVBGL(void *) VBoxGuestSolarisServiceOpen (uint32_t *pu32Version);
+extern DECLVBGL(void) VBoxGuestSolarisServiceClose (void *pvOpaque);
+extern DECLVBGL(int) VBoxGuestSolarisServiceCall (void *pvOpaque, unsigned int iCmd, void *pvData, size_t cbSize, size_t *pcbReturn);
+__END_DECLS
+#endif
 
 int vbglDriverOpen (VBGLDRIVER *pDriver)
 {
@@ -178,6 +185,16 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
         return VINF_SUCCESS;
     }
     pDriver->u32Session = UINT32_MAX;
+    Log(("vbglDriverOpen: failed\n"));
+    return VERR_FILE_NOT_FOUND;
+
+#elif defined (RT_OS_SOLARIS)
+    uint32_t u32VMMDevVersion;
+    pDriver->pvOpaque = VBoxGuestSolarisServiceOpen(&u32VMMDevVersion);
+    if (    pDriver->pvOpaque
+        &&  u32VMMDevVersion == VMMDEV_VERSION)
+        return VINF_SUCCESS;
+
     Log(("vbglDriverOpen: failed\n"));
     return VERR_FILE_NOT_FOUND;
 
@@ -239,6 +256,9 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
     Log(("vbglDriverIOCtl: No connection\n"));
     return VERR_WRONG_ORDER;
 
+#elif defined (RT_OS_SOLARIS)
+    return VBoxGuestSolarisServiceCall(pDriver->pvOpaque, u32Function, pvData, cbData, NULL);
+
 #else
 # error "Port me"
 #endif
@@ -255,6 +275,9 @@ void vbglDriverClose (VBGLDRIVER *pDriver)
 
 #elif defined (RT_OS_OS2)
     pDriver->u32Session = 0;
+
+#elif defined (RT_OS_SOLARIS)
+    VBoxGuestSolarisServiceClose (pDriver->pvOpaque);
 
 #else
 # error "Port me"
