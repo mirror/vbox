@@ -265,6 +265,19 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
     return VINF_SUCCESS;
 }
 
+/**
+ * Set the modem lines.
+ *
+ * @returns VBox status code
+ * @param pInterface        Pointer to the interface structure.
+ * @param RequestToSend     Set to 1 if this control line should be made active.
+ * @param DataTerminalReady Set to 1 if this control line should be made active.
+ */
+static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHAR pInterface, unsigned RequestToSend, unsigned DataTerminalReady)
+{
+    /* Nothing to do here. */
+    return VINF_SUCCESS;
+}
 
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
@@ -295,6 +308,7 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     /* IChar. */
     pData->IChar.pfnWrite                   = drvCharWrite;
     pData->IChar.pfnSetParameters           = drvCharSetParameters;
+    pData->IChar.pfnSetModemLines           = drvCharSetModemLines;
 
     /*
      * Get the ICharPort interface of the above driver/device.
