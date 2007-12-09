@@ -20,7 +20,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <unistd.h> 
+#ifndef _MSC_VER
+# include <unistd.h>
+#endif
 #include <errno.h>
 
 #include <iprt/thread.h>
@@ -48,7 +50,7 @@ bool volatile g_fShutdown;
 /**
  * The details of the services that has been compiled in.
  */
-static struct 
+static struct
 {
     /** Pointer to the service descriptor. */
     PCVBOXSERVICE   pDesc;
@@ -62,23 +64,23 @@ static struct
     bool            fStarted;
     /** Whether the service is enabled or not. */
     bool            fEnabled;
-} g_aServices[] = 
+} g_aServices[] =
 {
 #ifdef VBOXSERVICE_CONTROL
     { &g_Control,   NIL_RTTHREAD, false, false, false, true },
-#endif 
+#endif
 #ifdef VBOXSERVICE_TIMESYNC
     { &g_TimeSync,  NIL_RTTHREAD, false, false, false, true },
-#endif 
+#endif
 #ifdef VBOXSERVICE_CLIPBOARD
     { &g_Clipboard, NIL_RTTHREAD, false, false, false, true },
-#endif 
+#endif
 };
 
 
 /**
  * Displays the program usage message.
- * 
+ *
  * @returns 1.
  */
 static int VBoxServiceUsage(void)
@@ -108,7 +110,7 @@ static int VBoxServiceUsage(void)
 
 /**
  * Displays a syntax error message.
- * 
+ *
  * @returns 1
  * @param   pszFormat   The message text.
  * @param   ...         Format arguments.
@@ -128,7 +130,7 @@ int VBoxServiceSyntax(const char *pszFormat, ...)
 
 /**
  * Displays an error message.
- * 
+ *
  * @returns 1
  * @param   pszFormat   The message text.
  * @param   ...         Format arguments.
@@ -148,7 +150,7 @@ int VBoxServiceError(const char *pszFormat, ...)
 
 /**
  * Displays a verbose message.
- * 
+ *
  * @returns 1
  * @param   pszFormat   The message text.
  * @param   ...         Format arguments.
@@ -194,7 +196,7 @@ int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32
     if (RT_FAILURE(rc) || *pszNext)
         return VBoxServiceSyntax("Failed to convert interval '%s' to a number.\n", psz);
     if (*pu32 < u32Min || *pu32 > u32Max)
-        return VBoxServiceSyntax("The timesync interval of %RU32 secconds is out of range [%RU32..%RU32].\n", 
+        return VBoxServiceSyntax("The timesync interval of %RU32 secconds is out of range [%RU32..%RU32].\n",
                                  *pu32, u32Min, u32Max);
     return 0;
 }
@@ -202,7 +204,7 @@ int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32
 
 /**
  * The service thread.
- * 
+ *
  * @returns Whatever the worker function returns.
  * @param   ThreadSelf      My thread handle.
  * @param   pvUser          The service index.
@@ -301,7 +303,7 @@ int main(int argc, char **argv)
             switch (*psz)
             {
                 case 'i':
-                    rc = VBoxServiceArgUInt32(argc, argv, psz + 1, &i, 
+                    rc = VBoxServiceArgUInt32(argc, argv, psz + 1, &i,
                                               &g_DefaultInterval, 1, (UINT32_MAX / 1000) - 1);
                     if (rc)
                         return rc;
@@ -390,11 +392,11 @@ int main(int argc, char **argv)
      */
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
     {
-        if (    !g_aServices[j].fEnabled 
+        if (    !g_aServices[j].fEnabled
             ||  j == iMain)
             continue;
 
-        rc = RTThreadCreate(&g_aServices[j].Thread, VBoxServiceThread, (void *)(uintptr_t)j, 0, 
+        rc = RTThreadCreate(&g_aServices[j].Thread, VBoxServiceThread, (void *)(uintptr_t)j, 0,
                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, g_aServices[j].pDesc->pszName);
         if (RT_FAILURE(rc))
         {
