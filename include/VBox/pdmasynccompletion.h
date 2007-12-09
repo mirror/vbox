@@ -263,7 +263,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionCreateSocket(PPPDMASYNCCOMPLETION ppTask, PPD
 PDMR3DECL(int) PDMR3AsyncCompletionModifySocket(PPDMASYNCCOMPLETION pTask, bool fReadable, bool fWriteable, bool fXcpt);
 
 
-#if defined(RT_OS_LINUX) && defined(_AIO_H)
+#if defined(RT_OS_LINUX) /*&& defined(_AIO_H)*/
 /**
  * Creates a completion task for an AIO operation on Linux.
  *
