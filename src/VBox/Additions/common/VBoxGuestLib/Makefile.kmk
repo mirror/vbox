@@ -19,47 +19,54 @@ DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
 include	$(PATH_KBUILD)/subheader.kmk
 
-# As we build Windows Additions on Linux as well, we need a
-# separate Linux target for each library so that both platforms
-# are built.
-ifdef VBOX_WITH_WIN32_ADDITIONS
- ifndef VBOX_ADDITIONS_LINUX_ONLY
+if1of ($(BUILD_TARGET),solaris)
+ LIBRARIES += \
+	VBoxGuestR0Lib \
+	VBoxGuestR0LibBase
+ ifneq ($(BUILD_TARGET),win)
   LIBRARIES += \
-	VBoxGuestLib \
-	VBoxGuestLibBase
+	VBoxGuestR3Lib
+ endif
+else
+ # As we build Windows Additions on Linux as well, we need a
+ # separate Linux target for each library so that both platforms
+ # are built.
+ # NOTE: This is going to be obsoleted before long, everyone is going to
+ #       use VBoxGuestR0Lib* and VBoxGuestR3Lib.
+ ifdef VBOX_WITH_WIN32_ADDITIONS
+  ifndef VBOX_ADDITIONS_LINUX_ONLY
+   LIBRARIES += \
+ 	VBoxGuestLib \
+ 	VBoxGuestLibBase
+  endif
+ endif
+ ifdef VBOX_WITH_LINUX_ADDITIONS
+  ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
+   LIBRARIES += \
+  	VBoxGuestLibLinux \
+  	VBoxGuestLibBaseLinux
+  endif
+   LIBRARIES += \
+  	VBoxGuestR3LibLinux
+ endif
+ ifdef VBOX_WITH_OS2_ADDITIONS
+  LIBRARIES += \
+ 	VBoxGuestR0LibOS2 \
+ 	VBoxGuestR0LibBaseOS2 \
+ 	VBoxGuestR3LibOS2
  endif
 endif
-ifdef VBOX_WITH_LINUX_ADDITIONS
- ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
-  LIBRARIES += \
- 	VBoxGuestLibLinux \
- 	VBoxGuestLibBaseLinux
- endif
-  LIBRARIES += \
- 	VBoxGuestR3LibLinux
-endif
-ifdef VBOX_WITH_OS2_ADDITIONS
- LIBRARIES += \
-	VBoxGuestR0LibOS2 \
-	VBoxGuestR0LibBaseOS2 \
-	VBoxGuestR3LibOS2
-endif
-ifdef VBOX_WITH_SOLARIS_ADDITIONS
- LIBRARIES += \
-	VBoxGuestR0LibSolaris \
-	VBoxGuestR0LibBaseSolaris \
-	VBoxGuestR3LibSolaris 
-endif
 
-SOURCES_GUESTLIBBASE = \
-	GenericRequest.cpp \
-	SysHlp.cpp \
-	PhysHeap.cpp \
-	Init.cpp \
-	VMMDev.cpp \
-	HGCMInternal.cpp
-
-SOURCES_GUESTLIB = \
+#
+# VBoxGuestR0Lib
+#
+VBoxGuestR0Lib_TEMPLATE     = VBOXGUESTR0
+VBoxGuestR0Lib_DEFS         = VBOX_HGCM
+VBoxGuestR0Lib_INCS         = \
+	$(PATH_VBoxGuestLib)
+VBoxGuestR0Lib_INCS.win     = \
+	$(PATH_SUB_ROOT)/WINNT/SharedFolders/include
+VBoxGuestR0Lib_SOURCES      = \
 	GenericRequest.cpp \
 	SysHlp.cpp \
 	PhysHeap.cpp \
@@ -69,12 +76,35 @@ SOURCES_GUESTLIB = \
 	VBoxCalls.c
 
 #
-# VBoxGuestLib
+# VBoxGuestR0LibBase
+#
+VBoxGuestR0LibBase_TEMPLATE = VBOXGUESTR0LIB
+VBoxGuestR0LibBase_DEFS     = VBOX_HGCM VBGL_VBOXGUEST
+VBoxGuestR0LibBase_INCS     = $(VBoxGuestR0Lib_INCS)
+VBoxGuestR0LibBase_INCS.win = $(VBoxGuestR0Lib_INCS.win)
+VBoxGuestR0LibBase_SOURCES  = \
+	GenericRequest.cpp \
+	SysHlp.cpp \
+	PhysHeap.cpp \
+	Init.cpp \
+	VMMDev.cpp \
+	HGCMInternal.cpp
+
+#
+# VBoxGuestR3LibBase
+#
+VBoxGuestR3Lib_TEMPLATE    = VBOXGUESTR3LIB
+VBoxGuestR3Lib_DEFS        = VBOX_HGCM
+VBoxGuestR3Lib_SOURCES     = VBoxGuestR3Lib.cpp VBoxGuestR3LibClipboard.cpp
+
+
+
+#
+# VBoxGuestLib (Windows)
 #
 VBoxGuestLib_TEMPLATE    = VBOXW32GUESTR0LIB
 VBoxGuestLib_SDKS.win    = W2K3DDKX86 WIN32SDK
-VBoxGuestLib_SOURCES     = \
-	$(SOURCES_GUESTLIB)
+VBoxGuestLib_SOURCES     = $(VBoxGuestR0Lib_SOURCES)
 VBoxGuestLib_INCS        = \
 	$(PATH_VBoxGuestLib)
 VBoxGuestLib_INCS.win    = \
@@ -84,11 +114,11 @@ VBoxGuestLib_DEFS = IN_RING0 IN_RT_R0 VBOX_HGCM LOG_TO_BACKDOOR
 
 
 #
-# VBoxGuestLibBase
+# VBoxGuestLibBase (Windows)
 #
 VBoxGuestLibBase_TEMPLATE   = VBOXW32GUESTR0LIB
 VBoxGuestLibBase_SDKS.win   = $(VBoxGuestLib_SDKS.win)
-VBoxGuestLibBase_SOURCES    = $(SOURCES_GUESTLIBBASE)
+VBoxGuestLibBase_SOURCES    = $(VBoxGuestR0LibBase_SOURCES)
 VBoxGuestLibBase_INCS       = $(VBoxGuestLib_INCS)
 VBoxGuestLibBase_INCS.win   = $(VBoxGuestLib_INCS.win)
 VBoxGuestLibBase_DEFS       = $(VBoxGuestLib_DEFS) VBGL_VBOXGUEST
@@ -100,7 +130,7 @@ VBoxGuestLibBase_DEFS.win   = $(VBoxGuestLib_DEFS.win)
 # VBoxGuestLibLinux
 #
 VBoxGuestLibLinux_TEMPLATE  = VBOXLNX32GUESTR0
-VBoxGuestLibLinux_SOURCES   = $(SOURCES_GUESTLIB)
+VBoxGuestLibLinux_SOURCES   = $(VBoxGuestR0Lib_SOURCES)
 VBoxGuestLibLinux_INCS      = $(VBoxGuestLib_INCS)
 VBoxGuestLibLinux_DEFS      = VBOX_HGCM LOG_TO_BACKDOOR
 
@@ -109,7 +139,7 @@ VBoxGuestLibLinux_DEFS      = VBOX_HGCM LOG_TO_BACKDOOR
 # VBoxGuestLibBaseLinux
 #
 VBoxGuestLibBaseLinux_TEMPLATE = VBOXLNX32GUESTR0
-VBoxGuestLibBaseLinux_SOURCES  = $(SOURCES_GUESTLIBBASE)
+VBoxGuestLibBaseLinux_SOURCES  = $(VBoxGuestR0LibBase_SOURCES)
 VBoxGuestLibBaseLinux_INCS     = $(VBoxGuestLib_INCS)
 VBoxGuestLibBaseLinux_DEFS     = VBOX_HGCM VBGL_VBOXGUEST LOG_TO_BACKDOOR
 
@@ -128,7 +158,7 @@ VBoxGuestR3LibLinux_DEFS     = VBOX_HGCM
 # VBoxGuestR0LibOS2
 #
 VBoxGuestR0LibOS2_TEMPLATE  = VBOXOS2GUESTR0LIB
-VBoxGuestR0LibOS2_SOURCES   = $(SOURCES_GUESTLIB)
+VBoxGuestR0LibOS2_SOURCES   = $(VBoxGuestR0Lib_SOURCES)
 VBoxGuestR0LibOS2_INCS      = $(VBoxGuestLib_INCS)
 VBoxGuestR0LibOS2_DEFS      = VBOX_HGCM
 
@@ -136,7 +166,7 @@ VBoxGuestR0LibOS2_DEFS      = VBOX_HGCM
 # VBoxGuestR0LibBaseOS2
 #
 VBoxGuestR0LibBaseOS2_TEMPLATE = VBOXOS2GUESTR0LIB
-VBoxGuestR0LibBaseOS2_SOURCES  = $(SOURCES_GUESTLIBBASE)
+VBoxGuestR0LibBaseOS2_SOURCES  = $(VBoxGuestR0LibBase_SOURCES)
 VBoxGuestR0LibBaseOS2_INCS     = $(VBoxGuestLib_INCS)
 VBoxGuestR0LibBaseOS2_DEFS     = VBOX_HGCM VBGL_VBOXGUEST
 
@@ -146,30 +176,6 @@ VBoxGuestR0LibBaseOS2_DEFS     = VBOX_HGCM VBGL_VBOXGUEST
 VBoxGuestR3LibOS2_TEMPLATE = VBOXOS2GUESTR3LIB
 VBoxGuestR3LibOS2_SOURCES  = VBoxGuestR3Lib.cpp VBoxGuestR3LibClipboard.cpp
 VBoxGuestR3LibOS2_DEFS     = VBOX_HGCM
-
-
-#
-# VBoxGuestR0LibSolaris
-#
-VBoxGuestR0LibSolaris_TEMPLATE     = VBOXGUESTR0
-VBoxGuestR0LibSolaris_SOURCES      = $(SOURCES_GUESTLIB)
-VBoxGuestR0LibSolaris_INCS         = $(VBoxGuestLib_INCS)
-VBoxGuestR0LibSolaris_DEFS         = VBOX_HGCM
-
-#
-# VBoxGuestR0LibBaseSolaris
-#
-VBoxGuestR0LibBaseSolaris_TEMPLATE = VBOXGUESTR0LIB
-VBoxGuestR0LibBaseSolaris_SOURCES  = $(SOURCES_GUESTLIBBASE)
-VBoxGuestR0LibBaseSolaris_INCS     = $(VBoxGuestLib_INCS)
-VBoxGuestR0LibBaseSolaris_DEFS     = VBOX_HGCM VBGL_VBOXGUEST
-
-#
-# VBoxGuestR3LibBaseSolaris
-#
-VBoxGuestR3LibSolaris_TEMPLATE    = VBOXGUESTR3LIB
-VBoxGuestR3LibSolaris_SOURCES     = VBoxGuestR3Lib.cpp VBoxGuestR3LibClipboard.cpp
-VBoxGuestR3LibSolaris_DEFS        = VBOX_HGCM
 
 
 include	$(PATH_KBUILD)/subfooter.kmk
