@@ -15,7 +15,8 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../../..
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
 include	$(PATH_KBUILD)/subheader.kmk
 
 #
@@ -59,7 +60,6 @@ endif
 #
 ifeq ($(BUILD_PLATFORM),solaris)
 SYSMODS.solaris += vboxadd
-
 vboxadd_TEMPLATE      = VBOXGUESTR0
 vboxadd_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
 vboxadd_INCS         := $(PATH_SUB_CURRENT) \
