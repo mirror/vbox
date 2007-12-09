@@ -290,6 +290,11 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         break;
     case 4:
         s->mcr = val & 0x1f;
+        if (RT_LIKELY(s->pDrvChar))
+        {
+            int rc = s->pDrvChar->pfnSetModemLines(s->pDrvChar, (s->mcr & UART_MCR_RTS), (s->mcr & UART_MCR_DTR));
+            AssertRC(rc);
+        }
         break;
     case 5:
         break;
@@ -367,6 +372,8 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
             ret |= (s->mcr & 0x01) << 5;
         } else {
             ret = s->msr;
+            /** Reset delta bits. */
+            s->msr &= ~UART_MSR_ANY_DELTA;
         }
         break;
     case 7:
@@ -412,6 +419,42 @@ static DECLCALLBACK(int) serialNotifyRead(PPDMICHARPORT pInterface, const void *
 
     return rc;
 }
+
+static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface, PDMICHARSTATUSLINES newStatusLines)
+{
+    SerialState *pData = PDMICHARPORT_2_SERIALSTATE(pInterface);
+    uint8_t newMsr = 0;
+
+    PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+
+    /** Set new states. */
+    if (newStatusLines & PDM_ICHAR_STATUS_LINES_DCD)
+        newMsr |= UART_MSR_DCD;
+    if (newStatusLines & PDM_ICHAR_STATUS_LINES_RI)
+        newMsr |= UART_MSR_RI;
+    if (newStatusLines & PDM_ICHAR_STATUS_LINES_DSR)
+        newMsr |= UART_MSR_DSR;
+    if (newStatusLines & PDM_ICHAR_STATUS_LINES_CTS)
+        newMsr |= UART_MSR_CTS;
+
+    /** Compare the old and the new states and set the delta bits accordingly. */
+    if ((newMsr & UART_MSR_DCD) != (pData->msr & UART_MSR_DCD))
+        newMsr |= UART_MSR_DDCD;
+    if ((newMsr & UART_MSR_RI) == 1 && (pData->msr & UART_MSR_RI) == 0)
+        newMsr |= UART_MSR_TERI;
+    if ((newMsr & UART_MSR_DSR) != (pData->msr & UART_MSR_DSR))
+        newMsr |= UART_MSR_DDSR;
+    if ((newMsr & UART_MSR_CTS) != (pData->msr & UART_MSR_CTS))
+        newMsr |= UART_MSR_DCTS;
+
+    pData->msr = newMsr;
+    serial_update_irq(pData);
+
+    PDMCritSectLeave(&pData->CritSect);
+
+    return VINF_SUCCESS;
+}
+
 #endif /* IN_RING3 */
 
 /**
@@ -690,6 +733,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
 
     /* ICharPort */
     pData->ICharPort.pfnNotifyRead = serialNotifyRead;
+    pData->ICharPort.pfnNotifyStatusLinesChanged = serialNotifyStatusLinesChanged;
 
     rc = RTSemEventCreate(&pData->ReceiveSem);
     AssertRC(rc);
