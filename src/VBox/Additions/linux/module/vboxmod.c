@@ -27,11 +27,14 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 
+#define xstr(s) str(s)
+#define str(s) #s
+
 MODULE_DESCRIPTION("VirtualBox Guest Additions for Linux Module");
 MODULE_AUTHOR("innotek GmbH");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
-MODULE_VERSION(VBOX_VERSION_STRING);
+MODULE_VERSION(VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")");
 #endif
 
 /*****************************************************************************
@@ -738,8 +741,6 @@ static __init int init(void)
     struct pci_dev *pcidev = NULL;
     VMMDevReportGuestInfo *infoReq = NULL;
 
-    printk(KERN_INFO "vboxadd: initializing version %s\n", VBOX_VERSION_STRING);
-
     if (vboxadd_cmc_init ())
     {
         printk (KERN_ERR "vboxadd: could not init cmc.\n");
@@ -909,20 +910,23 @@ static __init int init(void)
 
     init_waitqueue_head (&vboxDev->eventq);
 
-    /* some useful information for the user */
-    printk(KERN_INFO
-           "vboxadd: major code: %d, using irq %d, "
-           "io port 0x%x, memory at 0x%x (size %d bytes), "
-           "hypervisor window at 0x%p (size 0x%x bytes)\n",
+    /* some useful information for the user but don't show this on the console */
+    printk(KERN_DEBUG
+           "vboxadd: major %d, IRQ %d, "
+           "I/O port 0x%x, memory at 0x%x (size 0x%x), "
+           "hypervisor window at 0x%p (size 0x%x)\n",
            vbox_major, vboxDev->irq, vboxDev->io_port,
            vboxDev->vmmdevmem, vboxDev->vmmdevmem_size,
            vboxDev->hypervisorStart, vboxDev->hypervisorSize);
-    LogRelFunc(("major code: %d, using irq %d, "
-                "io port 0x%x, memory at 0x%x (size %d bytes), "
-                "hypervisor window at 0x%p (size 0x%x bytes)\n",
+    LogRelFunc(("major %d, IRQ %d, "
+                "I/O port 0x%x, MMIO at 0x%x (size 0x%x), "
+                "hypervisor window at 0x%p (size 0x%x)\n",
                 vbox_major, vboxDev->irq, vboxDev->io_port,
                 vboxDev->vmmdevmem, vboxDev->vmmdevmem_size,
                 vboxDev->hypervisorStart, vboxDev->hypervisorSize));
+    printk(KERN_DEBUG
+           "vboxadd: Successfully loaded version "
+           VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")\n");
 
     /* successful return */
     PCI_DEV_PUT(pcidev);
