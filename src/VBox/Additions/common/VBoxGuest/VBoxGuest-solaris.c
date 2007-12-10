@@ -36,6 +36,7 @@
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <iprt/process.h>
+#include <iprt/mem.h>
 
 
 /*******************************************************************************
@@ -59,7 +60,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred);
 static int VBoxAddSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred);
 static int VBoxAddSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred);
 static int VBoxAddSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred);
-static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArgs, int mode, cred_t *pCred, int *pVal);
+static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int mode, cred_t *pCred, int *pVal);
 
 static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 static int VBoxAddSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
@@ -304,7 +305,7 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                 rc = ddi_regs_map_setup(pDip, 0, &baseAddr, 0, cbIOSize, &deviceAttr, &pState->PciHandle);
                                 if (rc == DDI_SUCCESS)
                                 {
-                                    pState->uIOPortBase = (uintptr_t)baseAddr;
+                                    pState->uIOPortBase = (uint16_t)*baseAddr;
                                     rc = ddi_regs_map_setup(pDip, 1, &baseAddr, 0, pState->cbMMIO, &deviceAttr, &pState->PciHandle);
                                     if (rc == DDI_SUCCESS)
                                     {
@@ -527,6 +528,13 @@ static int VBoxAddSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
     return DDI_SUCCESS;
 }
 
+/** @def IOCPARM_LEN
+ * Gets the length from the ioctl number.
+ * This is normally defined by sys/ioccom.h on BSD systems...
+ */
+#ifndef IOCPARM_LEN
+# define IOCPARM_LEN(x)     ( ((x) >> 16) & IOCPARM_MASK )
+#endif
 
 /**
  * Driver ioctl, an alternate entry point for this character driver.
@@ -540,10 +548,127 @@ static int VBoxAddSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
  *
  * @return  corresponding solaris error code.
  */
-static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cred_t *pCred, int *pVal)
+static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCred, int *pVal)
 {
     VBA_LOGCONT("VBoxAddSolarisIOCtl\n");
-    return DDI_SUCCESS;
+
+    /** @todo use the faster way to find pSession (using the soft state) */
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
+    const RTPROCESS     Process = RTProcSelf();
+    const unsigned      iHash = SESSION_HASH(Process);
+    PVBOXGUESTSESSION   pSession;
+
+    /*
+     * Find the session.
+     */
+    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    pSession = g_apSessionHashTab[iHash];
+    if (pSession && pSession->Process != Process)
+    {
+        do pSession = pSession->pNextHash;
+        while (pSession && pSession->Process != Process);
+    }
+    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    if (!pSession)
+    {
+        VBA_LOGNOTE("VBoxAddSolarisIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n",
+                    (int)Process, Cmd);
+        return EINVAL;
+    }
+
+    /** @todo I'll remove this size check after testing. */
+    uint32_t cbBuf = 0;
+    if (    Cmd >= VBOXGUEST_IOCTL_VMMREQUEST(0)
+        &&  Cmd <= VBOXGUEST_IOCTL_VMMREQUEST(0xfff))
+        cbBuf = sizeof(VMMDevRequestHeader);
+#ifdef VBOX_HGCM
+    else if (   Cmd >= VBOXGUEST_IOCTL_HGCM_CALL(0)
+             && Cmd <= VBOXGUEST_IOCTL_HGCM_CALL(0xfff))
+        cbBuf = sizeof(VBoxGuestHGCMCallInfo);
+#endif /* VBOX_HGCM */
+    else
+    {
+        switch (Cmd)
+        {
+            case VBOXGUEST_IOCTL_GETVMMDEVPORT:
+                cbBuf = sizeof(VBoxGuestPortInfo);
+                break;
+
+            case VBOXGUEST_IOCTL_WAITEVENT:
+                cbBuf = sizeof(VBoxGuestWaitEventInfo);
+                break;
+
+            case VBOXGUEST_IOCTL_CTL_FILTER_MASK:
+                cbBuf = sizeof(VBoxGuestFilterMaskInfo);
+                break;
+
+#ifdef VBOX_HGCM
+            case VBOXGUEST_IOCTL_HGCM_CONNECT:
+                cbBuf = sizeof(VBoxGuestHGCMConnectInfo);
+                break;
+
+            case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
+                cbBuf = sizeof(VBoxGuestHGCMDisconnectInfo);
+                break;
+
+            case VBOXGUEST_IOCTL_CLIPBOARD_CONNECT:
+                cbBuf = sizeof(uint32_t);
+                break;
+#endif /* VBOX_HGCM */
+
+            default:
+            {
+                VBA_LOGNOTE("VBoxAddSolarisIOCtl: Unkown request %d\n", Cmd);
+                return VERR_NOT_SUPPORTED;
+            }
+        }
+    }
+
+    if (RT_UNLIKELY(cbBuf != IOCPARM_LEN(Cmd)))
+    {
+        VBA_LOGNOTE("VBoxAddSolarisIOCtl: buffer size mismatch. size=%d expected=%d.\n", IOCPARM_LEN(Cmd), cbBuf);
+        return EINVAL;
+    }
+
+    void *pvBuf = RTMemTmpAlloc(cbBuf);
+    if (RT_UNLIKELY(!pvBuf))
+    {
+        VBA_LOGNOTE("VBoxAddSolarisIOCtl: buffer size mismatch size=%d expected=%d.\n", IOCPARM_LEN(Cmd), cbBuf);
+        return ENOMEM;
+    }
+
+    int rc = ddi_copyin((void *)pArg, pvBuf, cbBuf, Mode);
+    if (RT_UNLIKELY(rc))
+    {
+        RTMemTmpFree(pvBuf);
+        VBA_LOGNOTE("VBoxAddSolarisIOCtl: ddi_copyin failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc);
+        return EFAULT;
+    }
+
+    size_t cbDataReturned;
+    rc = VBoxGuestCommonIOCtl(Cmd, &g_DevExt, pSession, pvBuf, cbBuf, &cbDataReturned);
+    if (RT_LIKELY(!rc))
+    {
+        if (RT_UNLIKELY(cbDataReturned > cbBuf))
+        {
+            VBA_LOGNOTE("VBoxAddSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, cbBuf);
+            cbDataReturned = cbBuf;
+        }
+        rc = ddi_copyout(pvBuf, (void *)pArg, cbDataReturned, Mode);
+        if (RT_UNLIKELY(rc))
+        {
+            VBA_LOGNOTE("VBoxAddSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc);
+            rc = EFAULT;
+        }
+    }
+    else
+    {
+        VBA_LOGNOTE("VBoxAddSolarisIOCtl: VBoxGuestCommonIOCtl failed. rc=%d\n", rc);
+        rc = EFAULT;
+    }
+    *pVal = rc;
+    RTMemTmpFree(pvBuf);
+    return rc;
 }
 
 
