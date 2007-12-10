@@ -36,8 +36,13 @@
  */
 static struct address_space_operations sf_aops = {
         .readpage      = simple_readpage,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 24)
+        .write_begin   = simple_write_begin,
+        .write_end     = simple_write_end,
+#else
         .prepare_write = simple_prepare_write,
         .commit_write  = simple_commit_write,
+#endif
 };
 
 static struct backing_dev_info sf_backing_dev_info = {
