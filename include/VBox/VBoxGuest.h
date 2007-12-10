@@ -116,9 +116,9 @@ typedef uint32_t vmmDevHypPhys;
  *
  * @remark  These defines also live in the 16-bit and assembly versions of this header.
  */
-#define VMMDEV_VERSION_MAJOR (0x1)
-#define VMMDEV_VERSION_MINOR (0x4)
-#define VMMDEV_VERSION ((VMMDEV_VERSION_MAJOR << 16) | VMMDEV_VERSION_MINOR)
+#define VMMDEV_VERSION       0x00010004
+#define VMMDEV_VERSION_MAJOR (VMMDEV_VERSION >> 16)
+#define VMMDEV_VERSION_MINOR (VMMDEV_VERSION & 0xffff)
 
 /* Maximum request packet size */
 #define VMMDEV_MAX_VMMDEVREQ_SIZE           _1M

@@ -42,11 +42,14 @@
 
 // #define wchar_t linux_wchar_t
 
+#define xstr(s) str(s)
+#define str(s) #s
+
 MODULE_DESCRIPTION ("Host file system access VFS for VirtualBox");
 MODULE_AUTHOR ("innotek GmbH");
 MODULE_LICENSE ("GPL");
 #ifdef MODULE_VERSION
-MODULE_VERSION(VBOX_VERSION_STRING);
+MODULE_VERSION(VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")");
 #endif
 
 /* globals */
@@ -429,6 +432,10 @@ init (void)
                 LogRelFunc (("vboxCallSetUtf8 failed, rc=%d\n", rc));
                 goto fail2;
         }
+
+        printk(KERN_DEBUG
+               "vboxvfs: Successfully loaded version " VBOX_VERSION_STRING
+               " (interface " xstr(VMMDEV_VERSION) ")\n");
 
         return 0;
 
