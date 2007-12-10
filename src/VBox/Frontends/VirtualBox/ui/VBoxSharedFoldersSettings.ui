@@ -145,10 +145,10 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
                                 <string></string>
                             </property>
                             <property name="accel">
-                                <string>Space</string>
+                                <string>Ctrl+Space</string>
                             </property>
                             <property name="textLabel">
-                                <string>Edit the selected shared folder (Space)</string>
+                                <string>Edit the selected shared folder (Ctrl+Space)</string>
                             </property>
                             <property name="autoRaise">
                                 <bool>true</bool>

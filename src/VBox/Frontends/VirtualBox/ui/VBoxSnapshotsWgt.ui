@@ -185,7 +185,7 @@
             <string>S&amp;how Details</string>
         </property>
         <property name="accel">
-            <string>Space</string>
+            <string>Ctrl+Space</string>
         </property>
         <property name="statusTip">
             <string>Show details of the selected snapshot</string>
