@@ -154,8 +154,6 @@ typedef struct
     uint32_t                uPhysMMIOBase;
     /** Size of the MMIO region. */
     off_t                   cbMMIO;
-    /** Kernel session. */
-    PVBOXGUESTSESSION       pKernelSession;
     /** VMMDev Version. */
     uint32_t                u32Version;
 } VBoxAddDevState;
@@ -634,7 +632,7 @@ DECLVBGL(int) VBoxGuestSolarisServiceCall(void *pvSession, unsigned iCmd, void *
     AssertMsgReturn(pSession->pDevExt == &g_DevExt,
                     ("SC: %p != %p\n", pSession->pDevExt, &g_DevExt), VERR_INVALID_HANDLE);
 
-    return VBoxGuestCommonIOCtl(iCmd, &g_DevExt, pState->pKernelSession, pvData, cbData, pcbDataReturned);
+    return VBoxGuestCommonIOCtl(iCmd, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
 }
 
 
