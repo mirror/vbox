@@ -19,9 +19,17 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "the-solaris-kernel.h" /** @todo r=bird: no need to do like linux here, solaris is stable. */
-#include "VBoxGuestInternal.h"
+#include <sys/conf.h>
+#include <sys/cmn_err.h>
+#include <sys/modctl.h>
+#include <sys/mutex.h>
+#include <sys/pci.h>
+#include <sys/stat.h>
+#include <sys/ddi.h>
+#include <sys/sunddi.h>
+#undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
+#include "VBoxGuestInternal.h"
 #include <VBox/log.h>
 #include <VBox/VBoxGuest.h>
 #include <iprt/asm.h>
@@ -60,9 +68,9 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState);
 static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState);
 static uint_t VBoxGuestSolarisISR(caddr_t Arg);
 
-DECLVBGL(int) VBoxGuestSolarisServiceCall(void *pvState, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned);
+DECLVBGL(int) VBoxGuestSolarisServiceCall(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned);
 DECLVBGL(void *) VBoxGuestSolarisServiceOpen(uint32_t *pu32Version);
-DECLVBGL(void) VBoxGuestSolarisServiceClose(void *pvState);
+DECLVBGL(int) VBoxGuestSolarisServiceClose(void *pvSession);
 
 
 /*******************************************************************************
@@ -175,10 +183,9 @@ unsigned __gxx_personality_v0 = 0xdecea5ed;
  */
 int _init(void)
 {
-    int rc;
-
     VBA_LOGCONT("_init\n");
-    rc = ddi_soft_state_init(&g_pVBoxAddSolarisState, sizeof(VBoxAddDevState), 1);
+
+    int rc = ddi_soft_state_init(&g_pVBoxAddSolarisState, sizeof(VBoxAddDevState), 1);
     if (!rc)
     {
         rc = mod_install(&g_VBoxAddSolarisModLinkage);
@@ -191,10 +198,9 @@ int _init(void)
 
 int _fini(void)
 {
-    int rc;
-
     VBA_LOGCONT("_fini\n");
-    rc = mod_remove(&g_VBoxAddSolarisModLinkage);
+
+    int rc = mod_remove(&g_VBoxAddSolarisModLinkage);
     if (!rc)
         ddi_soft_state_fini(&g_pVBoxAddSolarisState);
     return rc;
@@ -312,36 +318,25 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                         if (rc == DDI_SUCCESS)
                                         {
                                             /*
-                                             * Create kernel session.
+                                             * Call the common device extension initializer.
                                              */
-                                            /** @todo this should be done *each* time the device is opened by a client kernel module. */
-                                            rc = VBoxGuestCreateKernelSession(&g_DevExt, &pState->pKernelSession);
-                                            pState->u32Version = VMMDEV_VERSION;
+                                            rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, NULL, 0, OSTypeSolaris);
                                             if (RT_SUCCESS(rc))
                                             {
-                                                /*
-                                                 * Call the common device extension initializer.
-                                                 */
-                                                rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, NULL, 0, OSTypeSolaris);
-                                                if (RT_SUCCESS(rc))
+                                                rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);
+                                                if (rc == DDI_SUCCESS)
                                                 {
-                                                    rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);
-                                                    if (rc == DDI_SUCCESS)
-                                                    {
-                                                        g_pDip = pDip;
-                                                        ddi_set_driver_private(pDip, pState);
-                                                        pci_config_teardown(&pState->PciHandle);
-                                                        ddi_report_dev(pDip);
-                                                        return DDI_SUCCESS;
-                                                    }
-
-                                                    VBA_LOGNOTE("ddi_create_minor_node failed.\n");
+                                                    g_pDip = pDip;
+                                                    ddi_set_driver_private(pDip, pState);
+                                                    pci_config_teardown(&pState->PciHandle);
+                                                    ddi_report_dev(pDip);
+                                                    return DDI_SUCCESS;
                                                 }
-                                                else
-                                                    VBA_LOGNOTE("VBoxGuestInitDevExt failed.\n");
+
+                                                VBA_LOGNOTE("ddi_create_minor_node failed.\n");
                                             }
                                             else
-                                                VBA_LOGNOTE("VBoxGuestCreateKernelSession failed.\n");
+                                                VBA_LOGNOTE("VBoxGuestInitDevExt failed.\n");
                                             VBoxGuestSolarisRemoveIRQ(pDip, pState);
                                         }
                                         else
@@ -624,21 +619,20 @@ static uint_t VBoxGuestSolarisISR(caddr_t Arg)
  * VBoxGuest Common ioctl wrapper from VBoxGuestLib.
  *
  * @returns VBox error code.
- * @param   pvState             Opaque pointer to the state info structure.
+ * @param   pvSession           Opaque pointer to the session.
  * @param   iCmd                Requested function.
  * @param   pvData              IO data buffer.
  * @param   cbData              Size of the data buffer.
  * @param   pcbDataReturned     Where to store the amount of returned data.
  */
-DECLVBGL(int) VBoxGuestSolarisServiceCall(void *pvState, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned)
+DECLVBGL(int) VBoxGuestSolarisServiceCall(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned)
 {
     VBA_LOGCONT("VBoxGuestSolarisServiceCall\n");
 
-    VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
-    AssertPtrReturn(pState, VERR_INVALID_POINTER);
-    AssertPtrReturn(pState->pKernelSession, VERR_INVALID_POINTER);
-    AssertMsgReturn(pState->pKernelSession->pDevExt == &g_DevExt,
-                    ("SC: %p != %p\n", pState->pKernelSession->pDevExt, &g_DevExt), VERR_INVALID_HANDLE);
+    PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertMsgReturn(pSession->pDevExt == &g_DevExt,
+                    ("SC: %p != %p\n", pSession->pDevExt, &g_DevExt), VERR_INVALID_HANDLE);
 
     return VBoxGuestCommonIOCtl(iCmd, &g_DevExt, pState->pKernelSession, pvData, cbData, pcbDataReturned);
 }
@@ -647,23 +641,22 @@ DECLVBGL(int) VBoxGuestSolarisServiceCall(void *pvState, unsigned iCmd, void *pv
 /**
  * Solaris Guest service open.
  *
- * @returns Opaque pointer to driver state info structure.
+ * @returns Opaque pointer to session object.
  * @param   pu32Version         Where to store VMMDev version.
  */
 DECLVBGL(void *) VBoxGuestSolarisServiceOpen(uint32_t *pu32Version)
 {
     VBA_LOGCONT("VBoxGuestSolarisServiceOpen\n");
 
-    /** @todo See the comment where pKernelSession is initialized.
-     * This is the same call as VBoxGuestOS2IDCConnect */
-    VBoxAddDevState *pState = ddi_get_driver_private(g_pDip);
-    AssertPtrReturn(pState, NULL);
-
-    if (pState)
+    AssertPtrReturn(pu32Version, NULL);
+    PVBOXGUESTSESSION pSession;
+    int rc = VBoxGuestCreateKernelSession(&g_DevExt, &pSession);
+    if (RT_SUCCESS(rc))
     {
         *pu32Version = VMMDEV_VERSION;
-        return pState;
+        return pSession;
     }
+    VBA_LOGNOTE("VBoxGuestCreateKernelSession failed. rc=%d\n", rc);
     return NULL;
 }
 
@@ -671,13 +664,21 @@ DECLVBGL(void *) VBoxGuestSolarisServiceOpen(uint32_t *pu32Version)
 /**
  * Solaris Guest service close.
  *
- * @param   pvState             Opaque pointer to the state info structure.
+ * @returns VBox error code.
+ * @param   pvState             Opaque pointer to the session object.
  */
-DECLVBGL(void) VBoxGuestSolarisServiceClose(void *pvState)
+DECLVBGL(int) VBoxGuestSolarisServiceClose(void *pvSession)
 {
-    /** @todo Must close the session created above.
-     * This is the same call as VBoxGuestOS2IDCService / case VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT. */
-    VBA_LOGCONT("VBoxGuestSolarisServiceClosel\n");
-    NOREF(pvState);
+    VBA_LOGCONT("VBoxGuestSolarisServiceClose\n");
+
+    PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    if (pSession)
+    {
+        VBoxGuestCloseSession(&g_DevExt, pSession);
+        return VINF_SUCCESS;
+    }
+    VBA_LOGNOTE("Invalid pSession.\n");
+    return VERR_INVALID_HANDLE;
 }
 

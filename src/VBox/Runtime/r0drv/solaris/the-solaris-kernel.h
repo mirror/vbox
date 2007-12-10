@@ -46,14 +46,6 @@
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
 
-#ifdef VBGL_VBOXGUEST
-/* Additionally headers needed by the solaris Guest Driver */
-# include <sys/conf.h>
-# include <sys/pci.h>
-# include <sys/stat.h>
-# include <sys/modctl.h>
-#endif
-
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
 #include <iprt/cdefs.h>

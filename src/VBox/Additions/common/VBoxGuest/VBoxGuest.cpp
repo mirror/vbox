@@ -191,7 +191,6 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
         Log(("VBoxGuestInitDevExt: failed to spinlock, rc=%d!\n", rc));
         if (pDevExt->WaitSpinlock != NIL_RTSPINLOCK)
             RTSpinlockDestroy(pDevExt->WaitSpinlock);
-        rc2 = RTR0MemObjFree(pDevExt->MemObjMMIO, true); AssertRC(rc2);
         return rc;
     }
 
