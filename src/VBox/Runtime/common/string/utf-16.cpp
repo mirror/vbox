@@ -509,6 +509,24 @@ RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz
 }
 
 
+RTDECL(size_t) RTUtf16CalcUtf8Len(PCRTUTF16 pwsz)
+{
+    size_t cch;
+    int rc = rtUtf16CalcUtf8Length(pwsz, RTSTR_MAX, &cch);
+    return RT_SUCCESS(rc) ? cch : 0;
+}
+
+
+RTDECL(int) RTUtf16CalcUtf8LenEx(PCRTUTF16 pwsz, size_t cwc, size_t *pcch)
+{
+    size_t cch;
+    int rc = rtUtf16CalcUtf8Length(pwsz, cwc, &cch);
+    if (pcch)
+        *pcch = RT_SUCCESS(rc) ? cch : ~(size_t)0;
+    return rc;
+}
+
+
 RTDECL(RTUNICP) RTUtf16GetCpInternal(PCRTUTF16 pwsz)
 {
     const RTUTF16 wc = *pwsz;
