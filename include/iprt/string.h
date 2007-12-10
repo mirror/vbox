@@ -1310,6 +1310,33 @@ RTDECL(int)  RTUtf16ToUtf8(PCRTUTF16 pwszString, char **ppszString);
  */
 RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch);
 
+/**
+ * Calculates the length of the UTF-16 string in UTF-8 chars (bytes).
+ *
+ * This function will validate the string, and incorrectly encoded UTF-16
+ * strings will be rejected. The primary purpose of this function is to
+ * help allocate buffers for RTUtf16ToUtf8() of the correct size. For most
+ * other puroses RTUtf16ToUtf8Ex() should be used.
+ *
+ * @returns Number of char (bytes).
+ * @returns 0 if the string was incorrectly encoded.
+ * @param   pwsz        The UTF-16 string.
+ */
+RTDECL(size_t) RTUtf16CalcUtf8Len(PCRTUTF16 pwsz);
+
+/**
+ * Calculates the length of the UTF-16 string in UTF-8 chars (bytes).
+ *
+ * This function will validate the string, and incorrectly encoded UTF-16
+ * strings will be rejected.
+ *
+ * @returns iprt status code.
+ * @param   pwsz        The string.
+ * @param   cwc         The max string length. Use RTSTR_MAX to process the entire string.
+ * @param   pcch        Where to store the string length (in bytes). Optional.
+ *                      This is undefined on failure.
+ */
+RTDECL(int) RTUtf16CalcUtf8LenEx(PCRTUTF16 pwsz, size_t cwc, size_t *pcch);
 
 /**
  * Allocates tmp buffer, translates pwszString from UCS-2 to UTF8.
