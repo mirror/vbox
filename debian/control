@@ -3,9 +3,10 @@ Section: misc
 Priority: optional
 Maintainer: innotek GmbH <info@virtualbox.org>
 Standards-Version: 3.2.1
-Build-Depends: libz-dev, libssl-dev, libqt3-headers, qt3-dev-tools, libsdl1.2-dev,
+Build-Depends: debhelper (>= 5), libz-dev, libssl-dev, libqt3-headers, qt3-dev-tools, libsdl1.2-dev,
   uuid-dev, libxalan110-dev, libxerces27-dev, libxcursor-dev, libidl-dev, libpam0g-dev,
-  bcc, iasl, xsltproc, linux-headers-generic, wine, java2-runtime, lsb-release
+  bcc, iasl, xsltproc, linux-headers-generic, wine, java2-runtime, lsb-release, g++-multilib [amd64],
+  libc6-dev-i386 [amd64], ia32-libs [amd64]
 
 Package: virtualbox-ose
 Architecture: i386 amd64
