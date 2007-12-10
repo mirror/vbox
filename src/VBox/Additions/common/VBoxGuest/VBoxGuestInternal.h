@@ -144,7 +144,7 @@ typedef struct VBOXGUESTSESSION
 
 __BEGIN_DECLS
 
-int  VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, RTCCPHYS PhysMMIOBase, uint32_t cbMMIO, VBOXOSTYPE enmOSType);
+int  VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO, VBOXOSTYPE enmOSType);
 void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt);
 bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt);
 
