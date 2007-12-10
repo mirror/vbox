@@ -322,10 +322,7 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                 /*
                                                  * Call the common device extension initializer.
                                                  */
-                                                /** @todo the interface here is probably flawed, the MMIO-base should be a virtual
-                                                 * mapping instead physical. please fix by moving the current code into the OS/2 sources. */
-                                                rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase,
-                                                                         pState->uPhysMMIOBase, OSTypeSolaris);
+                                                rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, NULL, 0, OSTypeSolaris);
                                                 if (RT_SUCCESS(rc))
                                                 {
                                                     rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);

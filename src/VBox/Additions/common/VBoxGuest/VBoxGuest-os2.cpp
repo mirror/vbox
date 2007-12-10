@@ -67,6 +67,11 @@
  * Device extention & session data association structure.
  */
 static VBOXGUESTDEVEXT      g_DevExt;
+/** The memory object for the MMIO memory.  */
+static RTR0MEMOBJ           g_MemObjMMIO = NIL_RTR0MEMOBJ;
+/** The memory mapping object the MMIO memory. */
+static RTR0MEMOBJ           g_MemMapMMIO = NIL_RTR0MEMOBJ;
+
 /** Spinlock protecting g_apSessionHashTab. */
 static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
 /** Hash table */
@@ -101,6 +106,7 @@ __END_DECLS
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+static int vboxGuestOS2MapMemory(void);
 static VBOXOSTYPE vboxGuestOS2DetectVersion(void);
 
 /* in VBoxGuestA-os2.asm */
@@ -109,7 +115,7 @@ DECLASM(int) VBoxGuestOS2SetIRQ(uint8_t bIRQ);
 
 /**
  * 32-bit Ring-0 initialization.
- * 
+ *
  * This is called from VBoxGuestA-os2.asm upon the first open call to the vboxgst$ device.
  *
  * @returns 0 on success, non-zero on failure.
@@ -117,9 +123,8 @@ DECLASM(int) VBoxGuestOS2SetIRQ(uint8_t bIRQ);
  */
 DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
 {
-    Log(("VBoxGuestOS2Init: pszArgs='%s' MMIO=0x%RX32 IOPort=0x%RX16 Int=%#x Bus=%#x Dev=%#x Fun=%d\n", 
+    Log(("VBoxGuestOS2Init: pszArgs='%s' MMIO=0x%RX32 IOPort=0x%RX16 Int=%#x Bus=%#x Dev=%#x Fun=%d\n",
          pszArgs, g_PhysMMIOBase, g_IOPortBase, g_bInterruptLine, g_bPciBusNo, g_bPciDevFunNo >> 3, g_bPciDevFunNo & 7));
-
 
     /*
      * Initialize the runtime.
@@ -133,55 +138,74 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
         bool fVerbose = true;
 
         /*
-         * Initialize the device extension.
+         * Map the MMIO memory if found.
          */
-        rc = VBoxGuestInitDevExt(&g_DevExt, g_IOPortBase, g_PhysMMIOBase, vboxGuestOS2DetectVersion());
+        rc = vboxGuestOS2MapMemory();
         if (RT_SUCCESS(rc))
         {
             /*
-             * Initialize the session hash table.
+             * Initialize the device extension.
              */
-            rc = RTSpinlockCreate(&g_Spinlock);
+            if (g_MemMapMMIO != NIL_RTR0MEMOBJ)
+                rc = VBoxGuestInitDevExt(&g_DevExt, g_IOPortBase,
+                                         RTR0MemObjAddress(g_MemMapMMIO),
+                                         RTR0MemObjSize(g_MemMapMMIO),
+                                         vboxGuestOS2DetectVersion());
+            else
+                rc = VBoxGuestInitDevExt(&g_DevExt, g_IOPortBase, NULL, 0,
+                                         vboxGuestOS2DetectVersion());
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Configure the interrupt handler.
+                 * Initialize the session hash table.
                  */
-                if (g_bInterruptLine)
-                {
-                    rc = VBoxGuestOS2SetIRQ(g_bInterruptLine);
-                    if (rc)
-                    {
-                        Log(("VBoxGuestOS2SetIRQ(%d) -> %d\n", g_bInterruptLine, rc));
-                        rc = RTErrConvertFromOS2(rc);
-                    }
-                }
+                rc = RTSpinlockCreate(&g_Spinlock);
                 if (RT_SUCCESS(rc))
                 {
                     /*
-                     * Success
+                     * Configure the interrupt handler.
                      */
-                    if (fVerbose)
+                    if (g_bInterruptLine)
                     {
-                        strcpy(&g_szInitText[0],
-                               "\r\n"
-                               "VirtualBox Guest Additions Driver for OS/2 version " VBOX_VERSION_STRING "\r\n"
-                               "Copyright (C) 2007 innotek GmbH\r\n");
-                        g_cchInitText = strlen(&g_szInitText[0]);
+                        rc = VBoxGuestOS2SetIRQ(g_bInterruptLine);
+                        if (rc)
+                        {
+                            Log(("VBoxGuestOS2SetIRQ(%d) -> %d\n", g_bInterruptLine, rc));
+                            rc = RTErrConvertFromOS2(rc);
+                        }
                     }
-                    Log(("VBoxGuestOS2Init: Successfully loaded\n%s", g_szInitText));
-                    return VINF_SUCCESS;
-                }
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Success
+                         */
+                        if (fVerbose)
+                        {
+                            strcpy(&g_szInitText[0],
+                                   "\r\n"
+                                   "VirtualBox Guest Additions Driver for OS/2 version " VBOX_VERSION_STRING "\r\n"
+                                   "Copyright (C) 2007 innotek GmbH\r\n");
+                            g_cchInitText = strlen(&g_szInitText[0]);
+                        }
+                        Log(("VBoxGuestOS2Init: Successfully loaded\n%s", g_szInitText));
+                        return VINF_SUCCESS;
+                    }
 
-                g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: SetIrq failed for IRQ %#d, rc=%Vrc\n",
-                                            g_bInterruptLine, rc);
+                    g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: SetIrq failed for IRQ %#d, rc=%Vrc\n",
+                                                g_bInterruptLine, rc);
+                }
+                else
+                    g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: RTSpinlockCreate failed, rc=%Vrc\n", rc);
+                VBoxGuestDeleteDevExt(&g_DevExt);
             }
             else
-                g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: RTSpinlockCreate failed, rc=%Vrc\n", rc);
-            VBoxGuestDeleteDevExt(&g_DevExt);
+                g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: VBoxGuestOS2InitDevExt failed, rc=%Vrc\n", rc);
+
+            rc2 = RTR0MemObjFree(g_MemObjMMIO, true /* fFreeMappings */); AssertRC(rc2);
+            g_MemObjMMIO = g_MemMapMMIO = NIL_RTR0MEMOBJ;
         }
         else
-            g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: VBoxGuestOS2InitDevExt failed, rc=%Vrc\n", rc);
+            g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: VBoxGuestOS2MapMMIO failed, rc=%Vrc\n", rc);
         RTR0Term();
     }
     else
@@ -193,8 +217,115 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
 
 
 /**
+ * Maps the VMMDev memory.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_VERSION_MISMATCH       The VMMDev memory didn't meet our expectations.
+ *
+ * @param   pDevExt     The device extension.
+ */
+static int vboxGuestOS2MapMemory(void)
+{
+    const RTCCPHYS PhysMMIOBase = g_PhysMMIOBase;
+
+    /*
+     * Did we find any MMIO region (0 or NIL)?
+     */
+    if (    !PhysMMIOBase
+        ||  PhysMMIOBase == NIL_RTCCPHYS)
+    {
+        Assert(g_MemMapMMIO != NIL_RTR0MEMOBJ);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Create a physical memory object for it.
+     *
+     * Since we don't know the actual size (OS/2 doesn't at least), we make
+     * a qualified guess using the VMMDEV_RAM_SIZE.
+     */
+    size_t cb = RT_ALIGN_Z(VMMDEV_RAM_SIZE, PAGE_SIZE);
+    int rc = RTR0MemObjEnterPhys(&g_MemObjMMIO, PhysMMIOBase, cb);
+    if (RT_FAILURE(rc))
+    {
+        cb = _4K;
+        rc = RTR0MemObjEnterPhys(&g_MemObjMMIO, PhysMMIOBase, cb);
+    }
+    if (RT_FAILURE(rc))
+    {
+        Log(("vboxGuestOS2MapMemory: RTR0MemObjEnterPhys(,%RCp,%zx) -> %Rrc\n",
+             PhysMMIOBase, cb, rc));
+        return rc;
+    }
+
+    /*
+     * Map the object into kernel space.
+     *
+     * We want a normal mapping with normal caching, which good in two ways. First
+     * since the API doesn't have any flags indicating how the mapping should be cached.
+     * And second, because PGM doesn't necessarily respect the cache/writethru bits
+     * anyway for normal RAM.
+     */
+    rc = RTR0MemObjMapKernel(&g_MemMapMMIO, g_MemObjMMIO, (void *)-1, 0,
+                             RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Validate the VMM memory.
+         */
+        VMMDevMemory *pVMMDev = (VMMDevMemory *)RTR0MemObjAddress(g_MemMapMMIO);
+        Assert(pVMMDev);
+        if (    pVMMDev->u32Version == VMMDEV_MEMORY_VERSION
+            &&  pVMMDev->u32Size >= 32 /* just for checking sanity */)
+        {
+            /*
+             * Did we hit the the correct size? If not we'll have to
+             * redo the mapping using the correct size.
+             */
+            if (RT_ALIGN_32(pVMMDev->u32Size, PAGE_SIZE) == cb)
+                return VINF_SUCCESS;
+
+            Log(("vboxGuestOS2MapMemory: Actual size %#RX32 (tried %#zx)\n", pVMMDev->u32Size, cb));
+            cb = RT_ALIGN_32(pVMMDev->u32Size, PAGE_SIZE);
+
+            rc = RTR0MemObjFree(g_MemObjMMIO, true); AssertRC(rc);
+            g_MemObjMMIO = g_MemMapMMIO = NIL_RTR0MEMOBJ;
+
+            rc = RTR0MemObjEnterPhys(&g_MemObjMMIO, PhysMMIOBase, cb);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTR0MemObjMapKernel(&g_MemMapMMIO, g_MemObjMMIO, (void *)-1, 0,
+                                         RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                if (RT_SUCCESS(rc))
+                    return VINF_SUCCESS;
+
+                Log(("vboxGuestOS2MapMemory: RTR0MemObjMapKernel [%RCp,%zx] -> %Rrc (2nd)\n",
+                     PhysMMIOBase, cb, rc));
+            }
+            else
+                Log(("vboxGuestOS2MapMemory: RTR0MemObjEnterPhys(,%RCp,%zx) -> %Rrc (2nd)\n",
+                     PhysMMIOBase, cb, rc));
+        }
+        else
+        {
+            rc = VERR_VERSION_MISMATCH;
+            LogRel(("vboxGuestOS2MapMemory: Bogus VMMDev memory; u32Version=%RX32 (expected %RX32) u32Size=%RX32\n",
+                    pVMMDev->u32Version, VMMDEV_MEMORY_VERSION, pVMMDev->u32Size));
+        }
+    }
+    else
+        Log(("vboxGuestOS2MapMemory: RTR0MemObjMapKernel [%RCp,%zx] -> %Rrc\n",
+             PhysMMIOBase, cb, rc));
+
+    int rc2 = RTR0MemObjFree(g_MemObjMMIO, true /* fFreeMappings */); AssertRC(rc2);
+    g_MemObjMMIO = g_MemMapMMIO = NIL_RTR0MEMOBJ;
+    return rc;
+}
+
+
+/**
  * Called fromn VBoxGuestOS2Init to determin which OS/2 version this is.
- * 
+ *
  * @returns VBox OS/2 type.
  */
 static VBOXOSTYPE vboxGuestOS2DetectVersion(void)
@@ -212,7 +343,7 @@ static VBOXOSTYPE vboxGuestOS2DetectVersion(void)
         else if (uMinor >= 45 && uMinor < 50)
             enmOSType = OSTypeOS2Warp45;
     }
-#endif 
+#endif
     return enmOSType;
 }
 
@@ -339,7 +470,7 @@ DECLASM(int) VBoxGuestOS2IOCtlFast(uint16_t sfn, uint8_t iFunction, int32_t *prc
 
 /**
  * 32-bit IDC service routine.
- * 
+ *
  * @returns VBox status code.
  * @param   u32Session          The session handle (PVBOXGUESTSESSION).
  * @param   iFunction           The requested function.
@@ -350,7 +481,7 @@ DECLASM(int) VBoxGuestOS2IOCtlFast(uint16_t sfn, uint8_t iFunction, int32_t *prc
  * @param   cbData              The size of the data buffer.
  * @param   pcbDataReturned     Where to store the amount of data that's returned.
  *                              This can be NULL if pvData is NULL.
- * 
+ *
  * @remark  This is called from the 16-bit thunker as well as directly from the 32-bit clients.
  */
 DECLASM(int) VBoxGuestOS2IDCService(uint32_t u32Session, unsigned iFunction, void *pvData, size_t cbData, size_t *pcbDataReturned)
@@ -379,7 +510,7 @@ DECLASM(int) VBoxGuestOS2IDCService(uint32_t u32Session, unsigned iFunction, voi
 
 /**
  * Worker for VBoxGuestOS2IDC, it creates the kernel session.
- * 
+ *
  * @returns Pointer to the session.
  */
 DECLASM(PVBOXGUESTSESSION) VBoxGuestOS2IDCConnect(void)
@@ -424,11 +555,11 @@ DECLASM(int) VBoxGuestOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, vo
     /*
      * Verify the category and dispatch the IOCtl.
      *
-     * The IOCtl call uses the parameter buffer as generic data input/output 
+     * The IOCtl call uses the parameter buffer as generic data input/output
      * buffer similar to the one unix ioctl buffer argument. While the data
-     * buffer is used for passing the VBox status code back to the caller 
+     * buffer is used for passing the VBox status code back to the caller
      * since the status codes that OS/2 accepts thru the DosDevIOCtl API is
-     * severely restricted. 
+     * severely restricted.
      */
     if (RT_LIKELY(iCat == VBOXGUEST_IOCTL_CATEGORY))
     {
@@ -438,7 +569,7 @@ DECLASM(int) VBoxGuestOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, vo
         Assert(*pcbData == sizeof(int32_t)); /* the return code */
 
         /*
-         * Lock the buffers. 
+         * Lock the buffers.
          */
         int32_t rc;
         KernVMLock_t ParmLock;
@@ -465,10 +596,10 @@ DECLASM(int) VBoxGuestOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, vo
 #endif
 
         /*
-         * Process the IOCtl. 
+         * Process the IOCtl.
          */
         size_t cbDataReturned = 0;
-        rc = VBoxGuestCommonIOCtl(iFunction, &g_DevExt, pSession, 
+        rc = VBoxGuestCommonIOCtl(iFunction, &g_DevExt, pSession,
                                   pvParm, *pcbParm, &cbDataReturned);
 
         /*
@@ -499,9 +630,9 @@ DECLASM(int) VBoxGuestOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, vo
 }
 
 
-/** 
+/**
  * 32-bit ISR, called by 16-bit assembly thunker in VBoxGuestA-os2.asm.
- * 
+ *
  * @returns true if it's our interrupt, false it isn't.
  */
 DECLASM(bool) VBoxGuestOS2ISR(void)
