@@ -232,7 +232,10 @@ VBOX_WITH_TESTCASES = 1
 # Enabled internal networking.
 VBOX_WITH_INTERNAL_NETWORKING = 1
 # Enables the ffmpeg module for recording test runs.
-#VBOX_WITH_FFMPEG = 1
+# Enable this for non-Linux builds later.
+ifeq ($(BUILD_TARGET),linux)
+  VBOX_WITH_FFMPEG = 1
+endif
 # Enable OpenGL service
 VBOX_WITH_OGL = 1
 # Enable shared folders
