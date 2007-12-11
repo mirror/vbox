@@ -51,6 +51,12 @@ else ifdef VBOX_ADDITIONS_WIN32_ONLY
  VBOX_REMOTE_WIN32_ADDITIONS_BUILD =
  VBOX_WITH_LINUX_ADDITIONS =
 endif
+ifdef VBOX_WITH_WIN32_ADDITIONS
+ VBOX_WITH_ADDITIONS_ISO.win.x86 = 1
+endif
+ifneq ($(VBOX_WITH_LINUX_ADDITIONS)$(VBOX_ADDITIONS_LINUX_CROSS),)
+ VBOX_WITH_ADDITIONS_ISO.linux.x86 = 1
+endif
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/common/Makefile.kmk
@@ -61,80 +67,82 @@ ifdef VBOX_WITH_WIN32_ADDITIONS
 endif
 
 ifdef VBOX_WITH_LINUX_ADDITIONS
- SUBDIRS      += linux
- LINUXINSTALLER = $(PATH_BIN)/additions/VBoxLinuxAdditions.run
+ SUBDIRS += linux
+ LINUXINSTALLER = $(VBOX_PATH_ADDITIONS)/VBoxLinuxAdditions.run
 endif
-LINUXINSTALLER_CROSS = $(PATH_ROOT)/out/linux.x86/$(BUILD_TYPE)/bin/additions/VBoxLinuxAdditions.run
+LINUXINSTALLER_CROSS = $(PATH_OUT_BASE)/linux.x86/$(BUILD_TYPE)/bin/additions/VBoxLinuxAdditions.run
 ifdef VBOX_ADDITIONS_LINUX_CROSS
  OTHER_CLEAN   += $(LINUXINSTALLER_CROSS)
  LINUXINSTALLER = $(LINUXINSTALLER_CROSS)
 endif
 
 # The packing target rule, but only if we're on the local build box.
-ifndef VBOX_ADDITIONS_XYZ_ONLY
- ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
-  PACKING += $(if $(VBOX_OSE),,$(PATH_BIN)/additions/VBoxGuestAdditions.iso)
+ifndef VBOX_WITHOUT_ADDITIONS_ISO
+ ifndef VBOX_ADDITIONS_XYZ_ONLY
+  ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
+   PACKING += $(if $(VBOX_OSE),,$(PATH_BIN)/additions/VBoxGuestAdditions.iso)
+  endif
  endif
 endif
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
 
-ifdef VBOX_WITH_WIN32_ADDITIONS
-GUESTADDITIONS_WIN32_DEPS = $(PATH_BIN)/additions/VBoxGuest.sys \
-	./WINNT/VBoxGuest/VBoxGuest.inf \
-	$(PATH_BIN)/additions/VBoxService.exe \
-	$(PATH_BIN)/additions/VBoxHook.dll \
-	$(PATH_BIN)/additions/VBoxControl.exe \
-	$(PATH_BIN)/additions/VBCoInst.dll \
-	$(PATH_BIN)/additions/VBoxMouse.sys \
-	./WINNT/MouseFilter/VBoxMouse.inf \
-	$(PATH_BIN)/additions/VBoxVideo.sys \
-	./WINNT/Graphics/Miniport/VBoxVideo.inf \
-	$(PATH_BIN)/additions/VBoxDisp.dll \
-	$(PATH_BIN)/additions/VBoxGINA.dll \
-	$(PATH_BIN)/additions/VBoxGuestAdditions.exe \
-	./WINNT/Installer/AUTORUN.INF \
-	./WINNT/Network/AMD/netamd.inf \
-	./WINNT/Network/AMD/pcntpci5.cat \
-	./WINNT/Network/AMD/PCNTPCI5.sys
-
-ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
-GUESTADDITIONS_WIN32_DEPS += \
-	$(PATH_BIN)/additions/VBoxMRXNP.dll \
-	$(PATH_BIN)/additions/VBoxSF.sys
-endif
-
-## @todo We're missing the .cat files and using the wrong .inf files here.
-GUESTADDITIONS_WIN32_FILESPEC = \
-	driver/VBoxGuest/VBoxGuest.sys=$(PATH_BIN)/additions/VBoxGuest.sys \
+#
+# The x86 Windows .iso file spec.
+#
+ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
+ ifdef VBOX_ONLY_ADDITIONS
+  VBOX_PATH_ADDITIONS.win.x86 = $(PATH_OUT_BASE)/win.x86/$(BUILD_TYPE)/bin/additions
+ else
+  VBOX_PATH_ADDITIONS.win.x86 = $(VBOX_PATH_ADDITIONS)
+ endif
+ ## @todo We're missing the .cat files and using the wrong .inf files here.
+ GUESTADDITIONS_FILESPEC.win.x86 = \
+	driver/VBoxGuest/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.sys \
 	driver/VBoxGuest/VBoxGuest.inf=./WINNT/VBoxGuest/VBoxGuest.inf \
-	driver/VBoxGuest/VBoxService.exe=$(PATH_BIN)/additions/VBoxService.exe \
-	driver/VBoxGuest/VBoxHook.dll=$(PATH_BIN)/additions/VBoxHook.dll \
-	driver/VBoxGuest/VBoxControl.exe=$(PATH_BIN)/additions/VBoxControl.exe \
-	driver/VBoxGuest/VBCoInst.dll=$(PATH_BIN)/additions/VBCoInst.dll \
-	driver/VBoxGuest/VBoxMouse.sys=$(PATH_BIN)/additions/VBoxMouse.sys \
+	driver/VBoxGuest/VBoxService.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxService.exe \
+	driver/VBoxGuest/VBoxHook.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxHook.dll \
+	driver/VBoxGuest/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxControl.exe \
+	driver/VBoxGuest/VBCoInst.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBCoInst.dll \
+	driver/VBoxGuest/VBoxMouse.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.sys \
 	driver/VBoxGuest/VBoxMouse.inf=./WINNT/MouseFilter/VBoxMouse.inf \
-	driver/VBoxVideo/VBoxVideo.sys=$(PATH_BIN)/additions/VBoxVideo.sys \
+	driver/VBoxVideo/VBoxVideo.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxVideo.sys \
 	driver/VBoxVideo/VBoxVideo.inf=./WINNT/Graphics/Miniport/VBoxVideo.inf \
-	driver/VBoxVideo/VBoxDisp.dll=$(PATH_BIN)/additions/VBoxDisp.dll \
-	driver/VBoxSF/VBoxSF.sys=$(PATH_BIN)/additions/VBoxSF.sys \
-	driver/VBoxSF/VBoxMRXNP.dll=$(PATH_BIN)/additions/VBoxMRXNP.dll \
-	gina/VBoxGINA.dll=$(PATH_BIN)/additions/VBoxGINA.dll \
+	driver/VBoxVideo/VBoxDisp.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxDisp.dll \
+	gina/VBoxGINA.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGINA.dll \
 	AMD_PCnet/netamd.inf=./WINNT/Network/AMD/netamd.inf \
 	AMD_PCnet/pcntpci5.cat=./WINNT/Network/AMD/pcntpci5.cat \
 	AMD_PCnet/PCNTPCI5.sys=./WINNT/Network/AMD/PCNTPCI5.sys \
-	VBoxGuestAdditions.exe=$(PATH_BIN)/additions/VBoxGuestAdditions.exe \
+	VBoxGuestAdditions.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuestAdditions.exe \
 	AUTORUN.INF=./WINNT/Installer/AUTORUN.INF
+ ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
+  GUESTADDITIONS_FILESPEC.win.x86 += \
+	driver/VBoxSF/VBoxSF.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxSF.sys \
+	driver/VBoxSF/VBoxMRXNP.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMRXNP.dll
+ endif
+ ## @todo remove GUESTADDITIONS_WIN32_DEPS when cleaning up later.
+ GUESTADDITIONS_WIN32_DEPS := $(filter-out %=deleteme=,,$(subst =,=deleteme= ,$(GUESTADDITIONS_FILESPEC.win.x86)))
 endif
 
-ifdef LINUXINSTALLER
-GUESTADDITIONS_LINUX_DEPS = $(LINUXINSTALLER)
-GUESTADDITIONS_LINUX_FILESPEC = VBoxLinuxAdditions.run=$(LINUXINSTALLER)
-endif
-
-ifdef VBOX_WITH_OS2_ADDITIONS_BIN
-GUESTADDITIONS_OS2_FILESPEC = \
+#
+# The OS/2 .iso file spec.
+#
+ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
+ ifdef VBOX_ONLY_ADDITIONS
+  VBOX_PATH_ADDITIONS.os2.x86 = $(PATH_OUT_BASE)/os2.x86/$(BUILD_TYPE)/bin/additions
+ else
+  VBOX_PATH_ADDITIONS.os2.x86 = $(VBOX_PATH_ADDITIONS)
+ endif
+ GUESTADDITIONS_FILESPEC.os2.x86 = \
+	os2/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxGuest.sys \
+	os2/VBoxService.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxService.exe \
+	os2/gengradd.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/gengradd.dll \
+	os2/libc063.dll=./os2/Bin/libc063.dll \
+	os2/readme.txt=./os2/Bin/readme.txt \
+	os2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/vboxmouse.sys
+else ifdef VBOX_WITH_OS2_ADDITIONS_BIN
+ GUESTADDITIONS_FILESPEC.os2.x86 = \
 	os2/VBoxGuest.sys=./os2/Bin/VBoxGuest.sys \
 	os2/VBoxService.exe=./os2/Bin/VBoxService.exe \
 	os2/gengradd.dll=./os2/Bin/gengradd.dll \
@@ -144,17 +152,45 @@ GUESTADDITIONS_OS2_FILESPEC = \
 endif
 
 #
-# Build the Guest Additions ISO image.
+# The x86 Linux .iso file spec.
 #
-$(PATH_BIN)/additions/VBoxGuestAdditions.iso: \
-		$(GUESTADDITIONS_WIN32_DEPS) $(GUESTADDITIONS_LINUX_DEPS) $(VBOX_SVN_REV_KMK) \
-		Makefile.kmk
-	$(call MSG_TOOL,mkisofs,,$@)
-	$(QUIET)$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 4 -volid "VBOXADDITIONS_$(VBOX_VERSION_STRING)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
-		$(GUESTADDITIONS_WIN32_FILESPEC) $(GUESTADDITIONS_LINUX_FILESPEC) $(GUESTADDITIONS_OS2_FILESPEC)
+ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
+ ifneq ($(VBOX_ONLY_ADDITIONS)$(VBOX_ADDITIONS_LINUX_CROSS),)
+  VBOX_PATH_ADDITIONS.linux.x86 = $(PATH_OUT_BASE)/linux.x86/$(BUILD_TYPE)/bin/additions
+ else
+  VBOX_PATH_ADDITIONS.linux.x86 = $(VBOX_PATH_ADDITIONS)
+ endif
+ GUESTADDITIONS_FILESPEC.linux.x86 = \
+ 	VBoxLinuxAdditions.run=$(VBOX_PATH_ADDITIONS.linux.x86)/VBoxLinuxAdditions.run
+endif
+
 
 #
-# Remote building.
+# Build the Guest Additions ISO image.
+#
+ifndef VBOX_WITHOUT_ADDITIONS_ISO
+$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
+		$(filter-out %=deleteme=,\
+			$(subst =,=deleteme= ,\
+				$(GUESTADDITIONS_FILESPEC.win.x86) \
+				$(GUESTADDITIONS_FILESPEC.linux.x86) \
+				$(GUESTADDITIONS_FILESPEC.os2.x86) \
+			)\
+		) \
+		$(VBOX_SVN_REV_KMK) \
+		Makefile.kmk
+	$(call MSG_TOOL,mkisofs,,$@)
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 4 \
+		-volid "VBOXADDITIONS_$(VBOX_VERSION_STRING)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
+		$(GUESTADDITIONS_FILESPEC.win.x86) \
+		$(GUESTADDITIONS_FILESPEC.linux.x86) \
+		$(GUESTADDITIONS_FILESPEC.os2.x86)
+endif
+
+
+#
+# Remote building (to be obsoleted).
 #
 ifdef VBOX_REMOTE_WIN32_ADDITIONS_BUILD
 OTHER_CLEAN += $(PATH_TARGET)/ts-remote-build-win32-additions
