@@ -234,7 +234,7 @@ VBOX_WITH_INTERNAL_NETWORKING = 1
 # Enables the ffmpeg module for recording test runs.
 # Enable this for non-Linux builds later.
 ifeq ($(BUILD_TARGET),linux)
-  VBOX_WITH_FFMPEG = 1
+#  VBOX_WITH_FFMPEG = 1
 endif
 # Enable OpenGL service
 VBOX_WITH_OGL = 1
