@@ -313,6 +313,67 @@ if1of ($(BUILD_PLATFORM),win os2)
 endif
 	$(SVN) up kBuild
 
+#
+# Build the additions, all of them.
+#
+# This is currently tailored (hardcoded) for the additions 
+# build box. Can make it pretty and configurable later.
+#
+# The fetching must be done in serial fashion, while the building
+# should be more flexible wrt to -jN.
+#
+additions-fetch:
+	+ $(KMK) -C tools fetch
+	+ $(KMK) -C tools fetch BUILD_TARGET_ARCH=x86 BUILD_TARGET=linux
+#	+ $(KMK) -C tools fetch BUILD_TARGET_ARCH=x86 BUILD_TARGET=os2
+	+ $(KMK) -C tools fetch BUILD_TARGET_ARCH=x86 BUILD_TARGET=solaris
+	+ $(KMK) -C tools fetch BUILD_TARGET_ARCH=x86 BUILD_TARGET=win
+
+
+additions-build: \
+	additions-build-win.x86 \
+	additions-build-solaris.x86 \
+	additions-build-os2.x86 \
+	additions-build-linux.x86
+
+VBOX_ADDITIONS_BUILD = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 BUILD_TYPE=$(BUILD_TYPE) all packing
+
+additions-build-win.x86:
+ifeq ($(BUILD_TARGET),win)
+	+ $(KMK) BUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD)
+else
+	ssh vbox@192.168.27.5 " cd c:/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD) "
+endif
+	
+additions-build-solaris.x86:
+#ifeq ($(BUILD_TARGET),solaris)
+#	+ $(KMK) BUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD)
+#else
+#	ssh vbox@192.168.27.4 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD) "
+#endif
+
+additions-build-os2.x86:
+#ifeq ($(BUILD_TARGET),os2)
+#	+ $(KMK) BUILD_TARGET_ARCH=x86
+#else
+#	ssh vbox@192.168.27.3 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD) "
+#endif
+
+additions-build-linux.x86:
+ifeq ($(BUILD_TARGET),linux)
+	+ $(KMK) BUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_LINUX_ONLY=1 $(VBOX_ADDITIONS_BUILD)
+else
+	ssh vbox@192.168.27.2 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_LINUX_ONLY=1 $(VBOX_ADDITIONS_BUILD) "
+endif
+
+
+additions-packing:
+	+ $(KMK) VBOX_ONLY_ADDITIONS=1 \
+		VBOX_WITH_ADDITIONS_ISO.win.x86=1 \
+		VBOX_WITH_ADDITIONS_ISO.linux.x86=1 \
+		-C src/VBox/Additions \
+		$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso
+
 
 #
 # Generate VirtualBox-OSE-x.x.x.tar.bz2 tarballs for distribution
