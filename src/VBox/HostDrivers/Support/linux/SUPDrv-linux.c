@@ -482,7 +482,7 @@ static int __init VBoxDrvLinuxInit(void)
 #   ifdef DO_DISABLE_NMI
     if (nmi_atomic_read(&nmi_active) > 0)
     {
-        printk(KERN_INFO DEVICE_NAME ": Trying to deactivate the NMI watchdog...\n");
+        printk(KERN_DEBUG DEVICE_NAME ": Trying to deactivate the NMI watchdog...\n");
 
         switch (nmi_watchdog)
         {
@@ -497,10 +497,10 @@ static int __init VBoxDrvLinuxInit(void)
         if (nmi_atomic_read(&nmi_active) == 0)
         {
             nmi_shutdown();
-            printk(KERN_INFO DEVICE_NAME ": Successfully done.\n");
+            printk(KERN_DEBUG DEVICE_NAME ": Successfully done.\n");
         }
         else
-            printk(KERN_INFO DEVICE_NAME ": Failed!\n");
+            printk(KERN_DEBUG DEVICE_NAME ": Failed!\n");
     }
 #   endif /* DO_DISABLE_NMI */
 
@@ -522,7 +522,7 @@ static int __init VBoxDrvLinuxInit(void)
      * See arch/i386/kernel/nmi.c on >= 2.6.19: -1 means it can never enabled again
      */
     nmi_atomic_set(&nmi_active, -1);
-    printk(KERN_INFO DEVICE_NAME ": Trying to deactivate the NMI watchdog permanently...\n");
+    printk(KERN_DEBUG DEVICE_NAME ": Trying to deactivate the NMI watchdog permanently...\n");
 
     /*
      * Now fall through and see if it actually was enabled before. If so, fail
@@ -577,7 +577,7 @@ nmi_activated:
         }
     }
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
-    printk(KERN_INFO DEVICE_NAME ": Successfully done.\n");
+    printk(KERN_DEBUG DEVICE_NAME ": Successfully done.\n");
 # endif /* >= 2.6.19 */
 #endif /* CONFIG_X86_LOCAL_APIC */
 
@@ -647,7 +647,7 @@ nmi_activated:
                 if (!rc)
                 {
                     dprintf(("VBoxDrv::ModuleInit returning %#x\n", rc));
-                    printk(KERN_INFO DEVICE_NAME ": Successfully loaded version "
+                    printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
                            VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
                     return rc;
                 }
