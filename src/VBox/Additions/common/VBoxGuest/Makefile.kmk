@@ -67,6 +67,10 @@ vboxadd_INCS         := $(PATH_SUB_CURRENT) \
 vboxadd_SOURCES       = \
 	VBoxGuest-solaris.c \
 	VBoxGuest.cpp
+vboxadd_LIBS          = \
+	$(PATH_LIB)/additions/VBoxGuestR0Lib$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxGuestR0LibBase$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/RuntimeGuestR0$(VBOX_SUFF_LIB)
 endif
 
 include	$(PATH_KBUILD)/subfooter.kmk
