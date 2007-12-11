@@ -633,7 +633,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     void *pvBuf = RTMemTmpAlloc(cbBuf);
     if (RT_UNLIKELY(!pvBuf))
     {
-        VBA_LOGNOTE("VBoxAddSolarisIOCtl: buffer size mismatch size=%d expected=%d.\n", IOCPARM_LEN(Cmd), cbBuf);
+        VBA_LOGNOTE("VBoxAddSolarisIOCtl: RTMemTmpAlloc failed to alloc %d bytes.\n", cbBuf);
         return ENOMEM;
     }
 
