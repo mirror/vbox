@@ -62,6 +62,7 @@ static int VBoxAddSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred);
 static int VBoxAddSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred);
 static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int mode, cred_t *pCred, int *pVal);
 
+static int VBoxAddSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
 static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 static int VBoxAddSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
 
@@ -107,7 +108,7 @@ static struct dev_ops g_VBoxAddSolarisDevOps =
 {
     DEVO_REV,               /* driver build revision */
     0,                      /* ref count */
-    nulldev,                /* get info */
+    VBoxAddSolarisGetInfo,
     nulldev,                /* identify */
     nulldev,                /* probe */
     VBoxAddSolarisAttach,
@@ -145,6 +146,10 @@ typedef struct
 {
     /** PCI handle of VMMDev. */
     ddi_acc_handle_t        PciHandle;
+    /** IO port handle. */
+    ddi_acc_handle_t        PciIOHandle;
+    /** MMIO handle. */
+    ddi_acc_handle_t        PciMMIOHandle;
     /** Interrupt block cookie. */
     ddi_iblock_cookie_t     BlockCookie;
     /** Driver Mutex. */
@@ -302,11 +307,11 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                 deviceAttr.devacc_attr_endian_flags = DDI_NEVERSWAP_ACC;
                                 deviceAttr.devacc_attr_dataorder = DDI_STRICTORDER_ACC;
                                 deviceAttr.devacc_attr_access = DDI_DEFAULT_ACC;
-                                rc = ddi_regs_map_setup(pDip, 0, &baseAddr, 0, cbIOSize, &deviceAttr, &pState->PciHandle);
+                                rc = ddi_regs_map_setup(pDip, 0, &baseAddr, 0, cbIOSize, &deviceAttr, &pState->PciIOHandle);
                                 if (rc == DDI_SUCCESS)
                                 {
                                     pState->uIOPortBase = (uint16_t)*baseAddr;
-                                    rc = ddi_regs_map_setup(pDip, 1, &baseAddr, 0, pState->cbMMIO, &deviceAttr, &pState->PciHandle);
+                                    rc = ddi_regs_map_setup(pDip, 1, &baseAddr, 0, pState->cbMMIO, &deviceAttr, &pState->PciMMIOHandle);
                                     if (rc == DDI_SUCCESS)
                                     {
                                         /*
@@ -340,10 +345,11 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                         }
                                         else
                                             VBA_LOGNOTE("VBoxGuestSolarisAddIRQ failed.\n");
+                                        ddi_regs_map_free(&pState->PciMMIOHandle);
                                     }
                                     else
                                         VBA_LOGNOTE("ddi_regs_map_setup for MMIO region failed.\n");
-                                    ddi_regs_map_free(&pState->PciHandle);
+                                    ddi_regs_map_free(&pState->PciIOHandle);
                                 }
                                 else
                                     VBA_LOGNOTE("ddi_regs_map_setup for IOport failed.\n");
@@ -359,7 +365,7 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                     pci_config_teardown(&pState->PciHandle);
                 }
                 else
-                    VBA_LOGNOTE("pci_config_setup failed.\n");
+                    VBA_LOGNOTE("pci_config_setup failed rc=%d.\n", rc);
                 RTSpinlockDestroy(g_Spinlock);
                 g_Spinlock = NIL_RTSPINLOCK;
             }
@@ -423,6 +429,39 @@ static int VBoxAddSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
         default:
             return DDI_FAILURE;
     }
+}
+
+
+/**
+ * Info entry point, called by solaris kernel for obtaining driver info.
+ *
+ * @param   pDip            The module structure instance (do not use).
+ * @param   enmCmd          Information request type.
+ * @param   pArg            Type specific argument.
+ * @param   ppResult        Where to store the requested info.
+ *
+ * @return  corresponding solaris error code.
+ */
+static int VBoxAddSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult)
+{
+    VBA_LOGCONT("VBoxAddSolarisGetInfo\n");
+
+    int rc = DDI_SUCCESS;
+    switch (enmCmd)
+    {
+        case DDI_INFO_DEVT2DEVINFO:
+            *ppResult = (void *)g_pDip;
+            break;
+
+        case DDI_INFO_DEVT2INSTANCE:
+            *ppResult = (void *)ddi_get_instance(g_pDip);
+            break;
+
+        default:
+            rc = DDI_FAILURE;
+            break;
+    }
+    return rc;
 }
 
 
