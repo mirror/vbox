@@ -127,7 +127,6 @@
 #define IN_VMM_GC
 #define IN_VMM_R0
 #define IN_VMM_R3
-#define IN_VRDP_R3
 /** @todo fixme */
 #endif
 
@@ -1380,15 +1379,6 @@
 #endif
 
 
-/** @def IN_VRDP_R3(type)
- * Used to indicate whether we're inside the same link module as the
- * VRDP server.
- */
-#ifdef IN_VRDP_R3
-# define VRDPR3DECL(type)   DECLEXPORT(type) VBOXCALL
-#else
-# define VRDPR3DECL(type)   DECLIMPORT(type) VBOXCALL
-#endif
 
 
 #endif
