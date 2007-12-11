@@ -60,7 +60,7 @@ endif
 #
 # VBoxGuestR0Lib
 #
-VBoxGuestR0Lib_TEMPLATE     = VBOXGUESTR0
+VBoxGuestR0Lib_TEMPLATE     = VBOXGUESTR0LIB
 VBoxGuestR0Lib_DEFS         = VBOX_HGCM
 VBoxGuestR0Lib_INCS         = \
 	$(PATH_VBoxGuestLib)
