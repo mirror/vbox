@@ -389,10 +389,8 @@ sf_reg_mmap (struct file *file, struct vm_area_struct *vma)
 
 struct file_operations sf_reg_fops = {
         .read        = sf_reg_read,
-        .aio_read    = generic_file_aio_read,
         .open        = sf_reg_open,
         .write       = sf_reg_write,
-        .aio_write   = generic_file_aio_write,
         .release     = sf_reg_release,
         .mmap        = sf_reg_mmap,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
@@ -401,6 +399,8 @@ struct file_operations sf_reg_fops = {
 # else
         .sendfile    = generic_file_sendfile,
 # endif
+        .aio_read    = generic_file_aio_read,
+        .aio_write   = generic_file_aio_write,
         .fsync       = simple_sync_file,
         .llseek      = generic_file_llseek,
 #endif
