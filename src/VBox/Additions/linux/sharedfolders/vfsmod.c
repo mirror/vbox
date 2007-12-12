@@ -392,7 +392,8 @@ vboxadd_cmc_ctl_guest_filter_mask (uint32_t or_mask, uint32_t not_mask);
 static int __init
 init (void)
 {
-        int rc;
+        int rcVBox;
+        int rcRet = 0;
         int err;
 
         TRACE ();
@@ -403,6 +404,7 @@ init (void)
                         "Must be less than or equal to %lu\n",
                         sizeof (struct vbsf_mount_info),
                         PAGE_SIZE);
+                return -EINVAL;
         }
 
         err = register_filesystem (&vboxsf_fs_type);
@@ -412,24 +414,28 @@ init (void)
         }
 
         if (vboxadd_cmc_ctl_guest_filter_mask (VMMDEV_EVENT_HGCM, 0)) {
+                rcRet = -EINVAL;
                 goto fail0;
         }
 
-        rc = vboxInit ();
-        if (VBOX_FAILURE (rc)) {
-                LogRelFunc (("vboxInit failed, rc=%d\n", rc));
+        rcVBox = vboxInit ();
+        if (VBOX_FAILURE (rcVBox)) {
+                LogRelFunc (("vboxInit failed, rc=%d\n", rcVBox));
+                rcRet = -EPROTO;
                 goto fail0;
         }
 
-        rc = vboxConnect (&client_handle);
-        if (VBOX_FAILURE (rc)) {
-                LogRelFunc (("vboxConnect failed, rc=%d\n", rc));
+        rcVBox = vboxConnect (&client_handle);
+        if (VBOX_FAILURE (rcVBox)) {
+                LogRelFunc (("vboxConnect failed, rc=%d\n", rcVBox));
+                rcRet = -EPROTO;
                 goto fail1;
         }
 
-        rc = vboxCallSetUtf8 (&client_handle);
-        if (VBOX_FAILURE (rc)) {
-                LogRelFunc (("vboxCallSetUtf8 failed, rc=%d\n", rc));
+        rcVBox = vboxCallSetUtf8 (&client_handle);
+        if (VBOX_FAILURE (rcVBox)) {
+                LogRelFunc (("vboxCallSetUtf8 failed, rc=%d\n", rcVBox));
+                rcRet = -EPROTO;
                 goto fail2;
         }
 
@@ -446,7 +452,7 @@ init (void)
  fail0:
         vboxadd_cmc_ctl_guest_filter_mask (0, VMMDEV_EVENT_HGCM);
         unregister_filesystem (&vboxsf_fs_type);
-        return -1;
+        return rcRet;
 }
 
 static void __exit

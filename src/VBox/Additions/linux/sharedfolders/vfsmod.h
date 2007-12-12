@@ -58,11 +58,12 @@ struct sf_reg_info {
 extern VBSFCLIENT client_handle;
 
 /* forward declarations */
-extern struct inode_operations  sf_dir_iops;
-extern struct inode_operations  sf_reg_iops;
-extern struct file_operations   sf_dir_fops;
-extern struct file_operations   sf_reg_fops;
-extern struct dentry_operations sf_dentry_ops;
+extern struct inode_operations         sf_dir_iops;
+extern struct inode_operations         sf_reg_iops;
+extern struct file_operations          sf_dir_fops;
+extern struct file_operations          sf_reg_fops;
+extern struct dentry_operations        sf_dentry_ops;
+extern struct address_space_operations sf_reg_aops;
 
 extern void
 sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,

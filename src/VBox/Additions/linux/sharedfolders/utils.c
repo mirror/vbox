@@ -25,7 +25,7 @@
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
 /*
- * sf_aops and sf_backing_dev_info are just quick implementations to make
+ * sf_reg_aops and sf_backing_dev_info are just quick implementations to make
  * sendfile work. For more information have a look at
  *
  *   http://us1.samba.org/samba/ftp/cifs-cvs/ols2006-fs-tutorial-smf.odp
@@ -34,16 +34,6 @@
  *
  *   http://pserver.samba.org/samba/ftp/cifs-cvs/samplefs.tar.gz
  */
-static struct address_space_operations sf_aops = {
-        .readpage      = simple_readpage,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 24)
-        .write_begin   = simple_write_begin,
-        .write_end     = simple_write_end,
-#else
-        .prepare_write = simple_prepare_write,
-        .commit_write  = simple_commit_write,
-#endif
-};
 
 static struct backing_dev_info sf_backing_dev_info = {
         .ra_pages      = 0, /* No readahead */
@@ -111,7 +101,7 @@ sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
 #undef mode_set
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
-        inode->i_mapping->a_ops = &sf_aops;
+        inode->i_mapping->a_ops = &sf_reg_aops;
         inode->i_mapping->backing_dev_info = &sf_backing_dev_info;
 #endif
 
