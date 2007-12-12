@@ -93,6 +93,7 @@
         <xsd:enumeration value="null"/>
         <xsd:enumeration value="oss"/>
         <xsd:enumeration value="alsa"/>
+        <xsd:enumeration value="pulse"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>

@@ -1328,6 +1328,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             }
 # endif
+# ifdef VBOX_WITH_PULSE
+            case AudioDriverType_PulseAudioDriver:
+            {
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "pulse");                  RC_CHECK();
+                break;
+            }
+# endif
 #endif /* RT_OS_LINUX */
 #ifdef RT_OS_DARWIN
             case AudioDriverType_CoreAudioDriver:
