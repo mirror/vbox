@@ -4826,12 +4826,19 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
         else if (driver == L"oss")
             audioDriver = AudioDriverType_OSSAudioDriver;
         else if (driver == L"alsa")
-#ifdef VBOX_WITH_ALSA
+# ifdef VBOX_WITH_ALSA
             audioDriver = AudioDriverType_ALSAAudioDriver;
-#else
+# else
             /* fall back to OSS */
             audioDriver = AudioDriverType_OSSAudioDriver;
-#endif
+# endif
+        else if (driver == L"pulse")
+# ifdef VBOX_WITH_PULSE
+            audioDriver = AudioDriverType_PulseAudioDriver;
+# else
+            /* fall back to OSS */
+            audioDriver = AudioDriverType_OSSAudioDriver;
+# endif
 #endif // RT_OS_LINUX
 #ifdef RT_OS_DARWIN
         else if (driver == L"coreaudio")
@@ -6696,6 +6703,13 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
 # ifdef VBOX_WITH_ALSA
             {
                 CFGLDRSetString (adapterNode, "driver", "alsa");
+                break;
+            }
+# endif
+# ifdef VBOX_WITH_PULSE
+            case AudioDriverType_PulseAudioDriver:
+            {
+                CFGLDRSetString (adapterNode, "driver", "pulse");
                 break;
             }
 # endif

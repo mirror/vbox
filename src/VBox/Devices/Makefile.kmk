@@ -597,6 +597,13 @@ ifdef VBOX_WITH_ALSA
 # VBoxDD_LIBS.linux    += asound
 endif
 
+ifdef VBOX_WITH_PULSE
+ Drivers_DEFS.linux   += VBOX_WITH_PULSE
+ Drivers_SOURCES.linux+= \
+	Audio/pulseaudio.c
+ VBoxDD_LIBS.linux    += pulse
+endif
+
 ifdef VBOX_WITH_USB
  Drivers_DEFS         += VBOX_WITH_USB IN_USB_R3
  Drivers_SOURCES      += \

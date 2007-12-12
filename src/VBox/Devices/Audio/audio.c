@@ -67,6 +67,9 @@ static struct audio_driver *drvtab[] = {
 #ifdef VBOX_WITH_ALSA
     &alsa_audio_driver,
 #endif
+#ifdef VBOX_WITH_PULSE
+    &pulse_audio_driver,
+#endif
 #endif
 #ifdef RT_OS_DARWIN
     &coreaudio_audio_driver,
@@ -257,11 +260,17 @@ static const char *audio_audfmt_to_string (audfmt_e fmt)
     case AUD_FMT_U16:
         return "U16";
 
+    case AUD_FMT_U32:
+        return "U32";
+
     case AUD_FMT_S8:
         return "S8";
 
     case AUD_FMT_S16:
         return "S16";
+
+    case AUD_FMT_S32:
+        return "S32";
     }
 
     dolog ("Bogus audfmt %d returning S16\n", fmt);
@@ -279,6 +288,10 @@ static audfmt_e audio_string_to_audfmt (const char *s, audfmt_e defval,
         *defaultp = 0;
         return AUD_FMT_U16;
     }
+    else if (!strcasecmp (s, "u32")) {
+        *defaultp = 0;
+        return AUD_FMT_U32;
+    }
     else if (!strcasecmp (s, "s8")) {
         *defaultp = 0;
         return AUD_FMT_S8;
@@ -286,6 +299,10 @@ static audfmt_e audio_string_to_audfmt (const char *s, audfmt_e defval,
     else if (!strcasecmp (s, "s16")) {
         *defaultp = 0;
         return AUD_FMT_S16;
+    }
+    else if (!strcasecmp (s, "s32")) {
+        *defaultp = 0;
+        return AUD_FMT_S32;
     }
     else {
         dolog ("Bogus audio format `%s' using %s\n",
@@ -497,6 +514,8 @@ static int audio_validate_settings (audsettings_t *as)
     case AUD_FMT_U8:
     case AUD_FMT_S16:
     case AUD_FMT_U16:
+    case AUD_FMT_S32:
+    case AUD_FMT_U32:
         break;
     default:
         invalid = 1;
@@ -522,6 +541,12 @@ static int audio_pcm_info_eq (struct audio_pcm_info *info, audsettings_t *as)
     case AUD_FMT_U16:
         bits = 16;
         break;
+
+    case AUD_FMT_S32:
+        sign = 1;
+    case AUD_FMT_U32:
+        bits = 32;
+        break;
     }
     return info->freq == as->freq
         && info->nchannels == as->nchannels
@@ -544,6 +569,12 @@ void audio_pcm_init_info (struct audio_pcm_info *info, audsettings_t *as)
         sign = 1;
     case AUD_FMT_U16:
         bits = 16;
+        break;
+
+    case AUD_FMT_S32:
+        sign = 1;
+    case AUD_FMT_U32:
+        bits = 32;
         break;
     }
 

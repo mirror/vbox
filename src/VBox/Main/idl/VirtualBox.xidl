@@ -8606,6 +8606,7 @@
     <const name="DSOUNDAudioDriver" value="4"/>
     <const name="CoreAudioDriver"   value="5"/>
     <const name="MMPMAudioDriver"   value="6"/>
+    <const name="PulseAudioDriver"  value="7"/>
   </enum>
 
   <interface

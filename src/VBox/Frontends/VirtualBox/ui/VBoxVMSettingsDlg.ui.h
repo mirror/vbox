@@ -859,14 +859,17 @@ void VBoxVMSettingsDlg::init()
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::NullAudioDriver));
 #if defined Q_WS_WIN32
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::DSOUNDAudioDriver));
-#ifdef VBOX_WITH_WINMM
+# ifdef VBOX_WITH_WINMM
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::WINMMAudioDriver));
-#endif
+# endif
 #elif defined Q_OS_LINUX
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::OSSAudioDriver));
-#ifdef VBOX_WITH_ALSA
+# ifdef VBOX_WITH_ALSA
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::ALSAAudioDriver));
-#endif
+# endif
+# ifdef VBOX_WITH_PULSE
+    cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::PulseAudioDriver));
+# endif
 #elif defined Q_OS_MACX
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::CoreAudioDriver));
 #endif

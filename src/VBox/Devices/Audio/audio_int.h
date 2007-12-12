@@ -212,6 +212,7 @@ extern struct audio_driver sdl_audio_driver;
 extern struct audio_driver wav_audio_driver;
 extern struct audio_driver fmod_audio_driver;
 extern struct audio_driver alsa_audio_driver;
+extern struct audio_driver pulse_audio_driver;
 extern struct audio_driver coreaudio_audio_driver;
 extern struct audio_driver dsound_audio_driver;
 extern struct audio_driver solaudio_audio_driver;

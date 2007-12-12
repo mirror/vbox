@@ -2180,6 +2180,8 @@ void VBoxGlobal::languageChange()
         tr ("Windows DirectSound", "AudioDriverType");
     audioDriverTypes [CEnums::CoreAudioDriver] =
         tr ("CoreAudio", "AudioDriverType");
+    audioDriverTypes [CEnums::PulseAudioDriver] =
+        tr ("PulseAudio", "AudioDriverType");
 
     networkAttachmentTypes [CEnums::NoNetworkAttachment] =
         tr ("Not attached", "NetworkAttachmentType");
