@@ -344,7 +344,6 @@ sf_reg_nopage (struct vm_area_struct *vma, unsigned long vaddr, int *type)
 
         buf = kmap (page);
         off = (vaddr - vma->vm_start) + (vma->vm_pgoff << PAGE_SHIFT);
-
         err = sf_reg_read_aux (__func__, sf_g, sf_r, buf, &nread, off);
         if (err) {
                 kunmap (page);
@@ -389,23 +388,24 @@ sf_reg_mmap (struct file *file, struct vm_area_struct *vma)
 }
 
 struct file_operations sf_reg_fops = {
-        .read     = sf_reg_read,
-        .open     = sf_reg_open,
-        .write    = sf_reg_write,
-        .release  = sf_reg_release,
-        .mmap     = sf_reg_mmap,
+        .read        = sf_reg_read,
+        .aio_read    = generic_file_aio_read,
+        .open        = sf_reg_open,
+        .write       = sf_reg_write,
+        .aio_write   = generic_file_aio_write,
+        .release     = sf_reg_release,
+        .mmap        = sf_reg_mmap,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 23)
         .splice_read = generic_file_splice_read,
 # else
-        .sendfile = generic_file_sendfile,
+        .sendfile    = generic_file_sendfile,
 # endif
-        .fsync    = simple_sync_file,
+        .fsync       = simple_sync_file,
+        .llseek      = generic_file_llseek,
 #endif
 };
 
-
-/* iops */
 
 struct inode_operations sf_reg_iops = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
@@ -414,3 +414,43 @@ struct inode_operations sf_reg_iops = {
         .getattr    = sf_getattr
 #endif
 };
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
+static int
+sf_readpage(struct file *file, struct page *page)
+{
+        char *buf = kmap(page);
+        struct inode *inode = file->f_dentry->d_inode;
+        struct sf_glob_info *sf_g = GET_GLOB_INFO (inode->i_sb);
+        struct sf_reg_info *sf_r = file->private_data;
+        uint32_t nread = PAGE_SIZE;
+        loff_t off = page->index << PAGE_SHIFT;
+        int ret;
+
+        TRACE ();
+
+        ret = sf_reg_read_aux (__func__, sf_g, sf_r, buf, &nread, off);
+        if (ret) {
+            kunmap (page);
+            return ret;
+        }
+        flush_dcache_page (page);
+        kunmap (page);
+        SetPageUptodate(page);
+        if (PageLocked(page))
+            unlock_page(page);
+        return 0;
+}
+
+struct address_space_operations sf_reg_aops = {
+        .readpage      = sf_readpage,
+# if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 24)
+        .write_begin   = simple_write_begin,
+        .write_end     = simple_write_end,
+# else
+        .prepare_write = simple_prepare_write,
+        .commit_write  = simple_commit_write,
+# endif
+};
+#endif
