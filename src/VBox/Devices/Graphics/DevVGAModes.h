@@ -49,10 +49,13 @@
 #define VBE_VESA_MODE_1280X1024X1555                     0x119
 #define VBE_VESA_MODE_1280X1024X565                      0x11A
 #define VBE_VESA_MODE_1280X1024X888                      0x11B
+
+#if 0 /* Ubuntu fails with this */
 #define VBE_VESA_MODE_1600X1200X8                        0x11C
 #define VBE_VESA_MODE_1600X1200X1555                     0x11D
 #define VBE_VESA_MODE_1600X1200X565                      0x11E
 #define VBE_VESA_MODE_1600X1200X888                      0x11F
+#endif
 
 /* BOCHS/PLEX86 'own' mode numbers */
 #define VBE_OWN_MODE_320X200X8888                        0x120
