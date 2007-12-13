@@ -613,6 +613,39 @@ EOF
 }
 
 #
+# Check for libxml2, needed by xpcom
+#
+check_libxml2()
+{
+  test_header libxml2
+
+  if which_wrapper pkg-config > /dev/null; then
+    libxml2_ver=`pkg-config libxml-2.0 --modversion 2>> $LOG`
+    if [ $? -ne 0 ]; then
+      log_failure "not found"
+      fail
+    else
+      log_success "found version $libxml2_ver"
+      cnf_append "SDK_VBOX_LIBXML2_CFLAGS" "`pkg-config libxml-2.0 --cflags`"
+      cnf_append "SDK_VBOX_LIBXML2_LIBS"   "`pkg-config libxml-2.0 --libs`"
+    fi
+  elif which_wrapper xml2-config; then
+    libxml2_ver=`xml2-config --version`
+    if [ $? -ne 0 ]; then
+      log_failure "not found"
+      fail
+    else
+      log_success "found version $libxml2_ver"
+      cnf_append "SDK_VBOX_LIBXML2_CFLAGS" "`pkg-config libxml-2.0 --cflags`"
+      cnf_append "SDK_VBOX_LIBXML2_LIBS"   "`pkg-config libxml-2.0 --libs`"
+    fi
+  else
+    log_failure "neither pkg-config nor xml2-config found"
+    fail
+  fi
+}
+
+#
 # Check for libIDL, needed by xpcom
 #
 check_libidl()
@@ -1484,6 +1517,7 @@ check_gcc
 [ "$OS" != "darwin"  ] && check_pthread
 [ $WITH_XPCOM  -eq 1 ] && check_xalan
 [ $WITH_XPCOM  -eq 1 ] && check_xerces
+[ $WITH_XPCOM  -eq 1 ] && check_libxml2
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
 [ $OSE -eq 0         ] && check_ssl
 [ "$OS" != "darwin"  ] && check_z
