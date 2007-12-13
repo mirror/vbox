@@ -3057,7 +3057,10 @@ static void ataResetDevice(ATADevState *s)
 static bool ataExecuteDeviceDiagnosticSS(ATADevState *s)
 {
     ataSetSignature(s);
-    ataSetStatusValue(s, 0); /* NOTE: READY is _not_ set */
+    if (s->fATAPI)
+        ataSetStatusValue(s, 0); /* NOTE: READY is _not_ set */
+    else
+        ataSetStatusValue(s, ATA_STAT_READY);
     s->uATARegError = 0x01;
     return false;
 }
