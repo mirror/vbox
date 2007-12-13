@@ -687,6 +687,11 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
 #if defined (VBOX_GUI_USE_SDL)
         case VBoxDefs::SDLMode:
+# ifdef Q_WS_X11
+            /* This is somehow necessary to prevent strange X11 warnings on
+             * i386 and segfaults on x86_64. */
+            XFlush(this->x11Display());
+# endif
             mFrameBuf = new VBoxSDLFrameBuffer (this);
             /*
              *  disable scrollbars because we cannot correctly draw in a
