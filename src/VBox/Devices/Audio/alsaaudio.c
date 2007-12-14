@@ -1067,7 +1067,7 @@ static void *alsa_audio_init (void)
 
     rc = audioLoadAlsaLib();
     if (RT_FAILURE(rc)) {
-        LogRelFunc(("Failed to load the ALSA shared library!  Error %Rrc\n", rc));
+        LogRel(("ALSA: Failed to load the ALSA shared library!  Error %Rrc\n", rc));
         return NULL;
     }
     snd_lib_error_set_handler (alsa_error_handler);
