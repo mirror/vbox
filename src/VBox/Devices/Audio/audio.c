@@ -1641,6 +1641,12 @@ int AUD_init_null(void)
 {
     AudioState *s = &glob_audio_state;
 
+#ifdef VBOX
+    if (s->drv)
+        s->drv->fini (s->drv_opaque);
+#endif
+
+    LogRel(("Audio: Using NULL audio driver\n"));
     return audio_driver_init (s, &no_audio_driver);
 }
 
