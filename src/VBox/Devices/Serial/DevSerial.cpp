@@ -123,7 +123,7 @@ struct SerialState
     RTGCPTR                         Alignment0;
 #endif
     /** The base interface. */
-    R3PTRTYPE(PDMIBASE)             IBase;
+    PDMIBASE                        IBase;
     /** The character port interface. */
     PDMICHARPORT                    ICharPort;
     /** Pointer to the attached base driver. */
