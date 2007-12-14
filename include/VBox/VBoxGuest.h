@@ -53,7 +53,7 @@ typedef uint32_t vmmDevHypPhys;
 
 #elif defined(RT_OS_SOLARIS)
 /** The support device name. */
-# define VBOXGUEST_DEVICE_NAME        "/devices/pseudo/vboxadd@0:vboxadd"
+# define VBOXGUEST_DEVICE_NAME        "/devices/pci@0:0/pci80ee,cafe@4:vboxadd"
 
 #elif defined(RT_OS_WINDOWS)
 /** The support service name. */
