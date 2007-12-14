@@ -1089,16 +1089,20 @@ typedef struct PDMIISCSITRANSPORT
     DECLR3CALLBACKMEMBER(int, pfnClose,(PPDMIISCSITRANSPORT pTransport));
 } PDMIISCSITRANSPORT;
 
-/** Status line type. */
+/** Status line type.
+ * @todo r=bird: These are just flags, so just use a uint8_t (or better an uint32_t / unsigned). no need for a type here. */
 typedef uint8_t PDMICHARSTATUSLINES;
 /** pointer to a PDMICHARSTATUSLINES type. */
 typedef PDMICHARSTATUSLINES *PPDMICHARSTATUSLINES;
- 
-/** Bit mask definitions for status line type*/
-#define PDM_ICHAR_STATUS_LINES_DCD RT_BIT(0)
-#define PDM_ICHAR_STATUS_LINES_RI  RT_BIT(1)
-#define PDM_ICHAR_STATUS_LINES_DSR RT_BIT(2)
-#define PDM_ICHAR_STATUS_LINES_CTS RT_BIT(3)
+
+/** @name Bit mask definitions for status line type
+ * @{ */
+#define PDM_ICHAR_STATUS_LINES_DCD  RT_BIT(0)
+#define PDM_ICHAR_STATUS_LINES_RI   RT_BIT(1)
+#define PDM_ICHAR_STATUS_LINES_DSR  RT_BIT(2)
+#define PDM_ICHAR_STATUS_LINES_CTS  RT_BIT(3)
+/** @} */
+
 
 /** Pointer to a char port interface. */
 typedef struct PDMICHARPORT *PPDMICHARPORT;
@@ -1124,10 +1128,10 @@ typedef struct PDMICHARPORT
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   newStatusLine   New state of the status line pins.
+     * @param   fNewStatusLine   New state of the status line pins.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnNotifyStatusLinesChanged,(PPDMICHARPORT pInterface, PDMICHARSTATUSLINES newStatusLines));
+    DECLR3CALLBACKMEMBER(int, pfnNotifyStatusLinesChanged,(PPDMICHARPORT pInterface, PDMICHARSTATUSLINES fNewStatusLines));
 } PDMICHARPORT;
 
 /** Pointer to a char interface. */
@@ -1166,12 +1170,13 @@ typedef struct PDMICHAR
      * Set the state of the modem lines.
      *
      * @returns VBox status code.
-     * @param   pInterface        Pointer to the interface structure containing the called function pointer.
-     * @param   RequestToSend     Set to 1 to make the Request to Send line active otherwise to 0.
-     * @param   DataTerminalReady Set to 1 to make the Data Terminal Ready line active otherwise 0.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   fRequestToSend      Set to 1 to make the Request to Send line active otherwise to 0.
+     * @param   fDataTerminalReady  Set to 1 to make the Data Terminal Ready line active otherwise 0.
      * @thread  Any thread.
+     * @todo r=bird: Use booleans for 0/1 kind of values + make the code follow the descriptions (foo & const -> const/0), or fix the description.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetModemLines,(PPDMICHAR pInterface, unsigned RequestToSend, unsigned DataTerminalReady));
+    DECLR3CALLBACKMEMBER(int, pfnSetModemLines,(PPDMICHAR pInterface, unsigned fRequestToSend, unsigned fDataTerminalReady));
 
 } PDMICHAR;
 
