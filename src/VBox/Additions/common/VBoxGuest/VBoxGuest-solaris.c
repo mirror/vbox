@@ -156,8 +156,8 @@ typedef struct
     kmutex_t                Mtx;
     /** IO Port. */
     uint16_t                uIOPortBase;
-    /** Physical address of the MMIO region.*/
-    uint32_t                uPhysMMIOBase;
+    /** Address of the MMIO region.*/
+    caddr_t                 pMMIOBase;
     /** Size of the MMIO region. */
     off_t                   cbMMIO;
     /** VMMDev Version. */
@@ -292,39 +292,39 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                             && uSubClass == PCI_PERIPH_OTHER)
                         {
                             /*
-                             * Get register sizes 0 (IO Port) and 1 (MMIO).
+                             * Map the register address space.
                              */
-                            off_t cbIOSize;
-                            if (   ddi_dev_regsize(pDip, 0, &cbIOSize) == DDI_SUCCESS
-                                && ddi_dev_regsize(pDip, 1, &pState->cbMMIO) == DDI_SUCCESS)
+                            caddr_t baseAddr;
+                            ddi_device_acc_attr_t deviceAttr;
+                            deviceAttr.devacc_attr_version = DDI_DEVICE_ATTR_V0;
+                            deviceAttr.devacc_attr_endian_flags = DDI_NEVERSWAP_ACC;
+                            deviceAttr.devacc_attr_dataorder = DDI_STRICTORDER_ACC;
+                            deviceAttr.devacc_attr_access = DDI_DEFAULT_ACC;
+                            rc = ddi_regs_map_setup(pDip, 1, &baseAddr, 0, 0, &deviceAttr, &pState->PciIOHandle);
+                            if (rc == DDI_SUCCESS)
                             {
                                 /*
-                                 * Map the register address space.
+                                 * Read size of the MMIO region.
                                  */
-                                caddr_t baseAddr;
-                                ddi_device_acc_attr_t deviceAttr;
-                                deviceAttr.devacc_attr_version = DDI_DEVICE_ATTR_V0;
-                                deviceAttr.devacc_attr_endian_flags = DDI_NEVERSWAP_ACC;
-                                deviceAttr.devacc_attr_dataorder = DDI_STRICTORDER_ACC;
-                                deviceAttr.devacc_attr_access = DDI_DEFAULT_ACC;
-                                rc = ddi_regs_map_setup(pDip, 0, &baseAddr, 0, cbIOSize, &deviceAttr, &pState->PciIOHandle);
+                                pState->uIOPortBase = (uintptr_t)baseAddr;
+                                rc = ddi_dev_regsize(pDip, 2, &pState->cbMMIO);
                                 if (rc == DDI_SUCCESS)
                                 {
-                                    pState->uIOPortBase = (uint16_t)*baseAddr;
-                                    rc = ddi_regs_map_setup(pDip, 1, &baseAddr, 0, pState->cbMMIO, &deviceAttr, &pState->PciMMIOHandle);
+                                    rc = ddi_regs_map_setup(pDip, 2, &pState->pMMIOBase, 0, pState->cbMMIO, &deviceAttr,
+                                                &pState->PciMMIOHandle);
                                     if (rc == DDI_SUCCESS)
                                     {
                                         /*
                                          * Add IRQ of VMMDev.
                                          */
-                                        pState->uPhysMMIOBase = (uint32_t)baseAddr;
                                         rc = VBoxGuestSolarisAddIRQ(pDip, pState);
                                         if (rc == DDI_SUCCESS)
                                         {
                                             /*
                                              * Call the common device extension initializer.
                                              */
-                                            rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, NULL, 0, OSTypeSolaris);
+                                            rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, pState->pMMIOBase,
+                                                        pState->cbMMIO, OSTypeSolaris);
                                             if (RT_SUCCESS(rc))
                                             {
                                                 rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);
@@ -349,13 +349,13 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                     }
                                     else
                                         VBA_LOGNOTE("ddi_regs_map_setup for MMIO region failed.\n");
-                                    ddi_regs_map_free(&pState->PciIOHandle);
                                 }
                                 else
-                                    VBA_LOGNOTE("ddi_regs_map_setup for IOport failed.\n");
+                                    VBA_LOGNOTE("ddi_dev_regsize for MMIO region failed.\n");
+                                    ddi_regs_map_free(&pState->PciIOHandle);
                             }
                             else
-                                VBA_LOGNOTE("ddi_dev_regsize failed.\n");
+                                VBA_LOGNOTE("ddi_regs_map_setup for IOport failed.\n");
                         }
                         else
                             VBA_LOGNOTE("PCI class/sub-class does not match.\n");
@@ -405,19 +405,24 @@ static int VBoxAddSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
         {
             int rc;
             int instance = ddi_get_instance(pDip);
-            VBoxAddDevState *pState = ddi_get_soft_state(pDip, instance);
+            VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, instance);
+            if (pState)
+            {
+                VBoxGuestSolarisRemoveIRQ(pDip, pState);
+                ddi_regs_map_free(&pState->PciIOHandle);
+                ddi_regs_map_free(&pState->PciMMIOHandle);
+                ddi_remove_minor_node(pDip, NULL);
+                ddi_soft_state_free(g_pVBoxAddSolarisState, instance);
 
-            VBoxGuestSolarisRemoveIRQ(pDip, pState);
-            ddi_regs_map_free(&pState->PciHandle);
-            ddi_remove_minor_node(pDip, NULL);
-            ddi_soft_state_free(g_pVBoxAddSolarisState, instance);
+                rc = RTSpinlockDestroy(g_Spinlock);
+                AssertRC(rc);
+                g_Spinlock = NIL_RTSPINLOCK;
 
-            rc = RTSpinlockDestroy(g_Spinlock);
-            AssertRC(rc);
-            g_Spinlock = NIL_RTSPINLOCK;
-
-            RTR0Term();
-            return DDI_SUCCESS;
+                RTR0Term();
+                return DDI_SUCCESS;
+            }
+            VBA_LOGNOTE("ddi_get_soft_state failed. Cannot detach instance %d\n", instance);
+            return DDI_FAILURE;
         }
 
         case DDI_SUSPEND:
