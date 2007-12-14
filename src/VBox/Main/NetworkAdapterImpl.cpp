@@ -936,6 +936,210 @@ STDMETHODIMP NetworkAdapter::Detach()
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ *  Loads settings from the given adapter node.
+ *  May be called once right after this object creation.
+ * 
+ *  @param aAdapterNode <Adapter> node.
+ * 
+ *  @note Locks this object for writing. 
+ */
+HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aAdapterNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    /* Note: we assume that the default values for attributes of optional
+     * nodes are assigned in the Data::Data() constructor and don't do it
+     * here. It implies that this method may only be called after constructing
+     * a new BIOSSettings object while all its data fields are in the default
+     * values. Exceptions are fields whose creation time defaults don't match
+     * values that should be applied when these fields are not explicitly set
+     * in the settings file (for backwards compatibility reasons). This takes
+     * place when a setting of a newly created object must default to A while
+     * the same setting of an object loaded from the old settings file must
+     * default to B. */ 
+
+    HRESULT rc = S_OK;
+
+    /* type (optional, defaults to Am79C970A) */
+    const char *adapterType = aAdapterNode.stringValue ("type");
+
+    if (strcmp (adapterType, "Am79C970A") == 0)
+        mData->mAdapterType = NetworkAdapterType_NetworkAdapterAm79C970A;
+    else if (strcmp (adapterType, "Am79C973") == 0)
+        mData->mAdapterType = NetworkAdapterType_NetworkAdapterAm79C973;
+    else
+        ComAssertMsgFailedRet (("Invalid adapter type '%s'", adapterType),
+                               E_FAIL);
+
+    /* enabled (required) */
+    mData->mEnabled = aAdapterNode.value <bool> ("enabled");
+    /* MAC address (can be null) */
+    rc = COMSETTER(MACAddress) (Bstr (aAdapterNode.stringValue ("MACAddress")));
+    CheckComRCReturnRC (rc);
+    /* cable (required) */
+    mData->mCableConnected = aAdapterNode.value <bool> ("cable");
+    /* line speed (defaults to 100 Mbps) */
+    mData->mLineSpeed = aAdapterNode.value <ULONG> ("speed");
+    /* tracing (defaults to false) */
+    mData->mTraceEnabled = aAdapterNode.value <bool> ("trace");
+    mData->mTraceFile = aAdapterNode.stringValue ("tracefile");
+
+    /* One of NAT, HostInerface, Internal or nothing */
+    Key attachmentNode;
+
+    if (!(attachmentNode = aAdapterNode.findKey ("NAT")).isNull())
+    {
+        /* NAT */
+
+        rc = AttachToNAT();
+        CheckComRCReturnRC (rc);
+    }
+    else
+    if (!(attachmentNode = aAdapterNode.findKey ("HostInerface")).isNull())
+    {
+        /* Host Interface Networking */
+
+        Bstr name = attachmentNode.stringValue ("name");
+#ifdef RT_OS_WINDOWS
+        /* name can be empty on Win32, but not null */
+        ComAssertRet (!name.isNull(), E_FAIL);
+#endif
+        rc = COMSETTER(HostInterface) (name);
+        CheckComRCReturnRC (rc);
+
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
+        /* optopnal */
+        mData->mTAPSetupApplication = attachmentNode.stringValue ("TAPSetup");
+        mData->mTAPTerminateApplication = attachmentNode.stringValue ("TAPTerminate");
+#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
+
+        rc = AttachToHostInterface();
+        CheckComRCReturnRC (rc);
+    }
+    else
+    if (!(attachmentNode = aAdapterNode.findKey ("InternalNetwork")).isNull())
+    {
+        /* Internal Networking */
+
+        /* required */
+        mData->mInternalNetwork = attachmentNode.stringValue ("name");
+
+        rc = AttachToInternalNetwork();
+        CheckComRCReturnRC (rc);
+    }
+    else
+    {
+        /* Adapter has no children */
+        rc = Detach();
+        CheckComRCReturnRC (rc);
+    }
+
+    return S_OK;
+}
+
+/** 
+ *  Saves settings to the given adapter node.
+ * 
+ *  Note that the given Adapter node is comletely empty on input.
+ *
+ *  @param aAdapterNode <Adapter> node.
+ * 
+ *  @note Locks this object for reading. 
+ */
+HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aAdapterNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    aAdapterNode.setValue <bool> ("enabled", !!mData->mEnabled);
+    aAdapterNode.setValue <Bstr> ("MACAddress", mData->mMACAddress);
+    aAdapterNode.setValue <bool> ("cable", !!mData->mCableConnected);
+
+    aAdapterNode.setValue <ULONG> ("speed", mData->mLineSpeed);
+
+    if (mData->mTraceEnabled)
+        aAdapterNode.setValue <bool> ("trace", true);
+
+    aAdapterNode.setValueOr <Bstr> ("tracefile", mData->mTraceFile, Bstr::Null);
+
+    const char *typeStr = NULL;
+    switch (mData->mAdapterType)
+    {
+        case NetworkAdapterType_NetworkAdapterAm79C970A:
+            typeStr = "Am79C970A";
+            break;
+        case NetworkAdapterType_NetworkAdapterAm79C973:
+            typeStr = "Am79C973";
+            break;
+        default:
+            ComAssertMsgFailedRet (("Invalid network adapter type: %d\n",
+                                    mData->mAdapterType),
+                                   E_FAIL);
+    }
+    aAdapterNode.setStringValue ("type", typeStr);
+
+    switch (mData->mAttachmentType)
+    {
+        case NetworkAttachmentType_NoNetworkAttachment:
+        {
+            /* do nothing -- empty content */
+            break;
+        }
+        case NetworkAttachmentType_NATNetworkAttachment:
+        {
+            Key attachmentNode = aAdapterNode.createKey ("NAT");
+            break;
+        }
+        case NetworkAttachmentType_HostInterfaceNetworkAttachment:
+        {
+            Key attachmentNode = aAdapterNode.createKey ("HostInterface");
+#ifdef RT_OS_WINDOWS
+            Assert (!mData->mHostInterface.isNull());
+#endif
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
+            if (!mData->mHostInterface.isEmpty())
+#endif
+                attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
+            if (!mData->mTAPSetupApplication.isEmpty())
+                attachmentNode.setValue <Bstr> ("TAPSetup",
+                                                mData->mTAPSetupApplication);
+            if (!mData->mTAPTerminateApplication.isEmpty())
+                attachmentNode.setValue <Bstr> ("TAPTerminate",
+                                                mData->mTAPTerminateApplication);
+#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
+            break;
+        }
+        case NetworkAttachmentType_InternalNetworkAttachment:
+        {
+            Key attachmentNode = aAdapterNode.createKey ("InternalNetwork");
+            Assert (!mData->mInternalNetwork.isNull());
+            attachmentNode.setValue <Bstr> ("name", mData->mInternalNetwork);
+            break;
+        }
+        default:
+        {
+            ComAssertFailedRet (E_FAIL);
+        }
+    }
+
+    return S_OK;
+}
+
+/**
  *  @note Locks this object for writing.
  */
 bool NetworkAdapter::rollback()

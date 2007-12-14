@@ -1186,65 +1186,51 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
  *  settings file and registered.
  *
  *  @param aHDNode      <HardDisk> node when #isDifferencing() = false, or
- *                      <DiffHardDisk> node otherwise
+ *                      <DiffHardDisk> node otherwise.
  *
  *  @note
  *      Must be called from under the object's lock
  */
-HRESULT HardDisk::loadSettings (CFGNODE aHDNode)
+HRESULT HardDisk::loadSettings (const settings::Key &aHDNode)
 {
-    AssertReturn (aHDNode, E_FAIL);
+    using namespace settings;
 
-    Guid uuid; /* uuid (required) */
-    CFGLDRQueryUUID (aHDNode, "uuid", uuid.ptr());
-    mId = uuid;
+    AssertReturn (!aHDNode.isNull(), E_FAIL);
+
+    /* required */
+    mId = aHDNode.value <Guid> ("uuid");
 
     if (!isDifferencing())
     {
-        Bstr type; /* type (required for <HardDisk> nodes only) */
-        CFGLDRQueryBSTR (aHDNode, "type", type.asOutParam());
-        if (type == L"normal")
+        /* type required for <HardDisk> nodes only */
+        const char *type = aHDNode.stringValue ("type");
+        if (strcmp (type, "normal") == 0)
             mType = HardDiskType_NormalHardDisk;
-        else if (type == L"immutable")
+        else if (strcmp (type, "immutable") == 0)
             mType = HardDiskType_ImmutableHardDisk;
-        else if (type == L"writethrough")
+        else if (strcmp (type, "writethrough") == 0)
             mType = HardDiskType_WritethroughHardDisk;
         else
-            ComAssertMsgFailedRet (("Invalid hard disk type '%ls'\n", type.raw()),
+            ComAssertMsgFailedRet (("Invalid hard disk type '%s'\n", type),
                                    E_FAIL);
     }
     else
         mType = HardDiskType_NormalHardDisk;
 
     HRESULT rc = mVirtualBox->registerHardDisk (this, VirtualBox::RHD_OnStartUp);
-    if (FAILED (rc))
-        return rc;
+    CheckComRCReturnRC (rc);
 
     /* load all children */
-    unsigned count = 0;
-    CFGLDRCountChildren (aHDNode, "DiffHardDisk", &count);
-    for (unsigned i = 0; i < count && SUCCEEDED (rc); ++ i)
+    Key::List children = aHDNode.keys ("DiffHardDisk");
+    for (Key::List::const_iterator it = children.begin();
+         it != children.end(); ++ it)
     {
-        CFGNODE hdNode = 0;
+        Key vdiNode = (*it).key ("VirtualDiskImage");
 
-        CFGLDRGetChildNode (aHDNode, "DiffHardDisk", i, &hdNode);
-        ComAssertBreak (hdNode, rc = E_FAIL);
-
-        do
-        {
-            CFGNODE vdiNode = 0;
-            CFGLDRGetChildNode (hdNode, "VirtualDiskImage", 0, &vdiNode);
-            ComAssertBreak (vdiNode, rc = E_FAIL);
-
-            ComObjPtr <HVirtualDiskImage> vdi;
-            vdi.createObject();
-            rc = vdi->init (mVirtualBox, this, hdNode, vdiNode);
-
-            CFGLDRReleaseNode (vdiNode);
-        }
-        while (0);
-
-        CFGLDRReleaseNode (hdNode);
+        ComObjPtr <HVirtualDiskImage> vdi;
+        vdi.createObject();
+        rc = vdi->init (mVirtualBox, this, (*it), vdiNode);
+        CheckComRCBreakRC (rc);
     }
 
     return rc;
@@ -1258,17 +1244,19 @@ HRESULT HardDisk::loadSettings (CFGNODE aHDNode)
  *  in order to be properly saved to the settings file.
  *
  *  @param aHDNode      <HardDisk> node when #isDifferencing() = false, or
- *                      <DiffHardDisk> node otherwise
+ *                      <DiffHardDisk> node otherwise.
  *
  *  @note
  *      Must be called from under the object's lock
  */
-HRESULT HardDisk::saveSettings (CFGNODE aHDNode)
+HRESULT HardDisk::saveSettings (settings::Key &aHDNode)
 {
-    AssertReturn (aHDNode, E_FAIL);
+    using namespace settings;
+
+    AssertReturn (!aHDNode.isNull(), E_FAIL);
 
     /* uuid (required) */
-    CFGLDRSetUUID (aHDNode, "uuid", mId.ptr());
+    aHDNode.setValue <Guid> ("uuid", mId);
 
     if (!isDifferencing())
     {
@@ -1286,40 +1274,28 @@ HRESULT HardDisk::saveSettings (CFGNODE aHDNode)
                 type = "writethrough";
                 break;
         }
-        CFGLDRSetString (aHDNode, "type", type);
+        aHDNode.setStringValue ("type", type);
     }
-
-    HRESULT rc = S_OK;
 
     /* save all children */
     AutoLock chLock (childrenLock());
     for (HardDiskList::const_iterator it = children().begin();
-         it != children().end() && SUCCEEDED (rc);
+         it != children().end();
          ++ it)
     {
         ComObjPtr <HardDisk> child = *it;
         AutoLock childLock (child);
 
-        CFGNODE hdNode = 0;
-        CFGLDRAppendChildNode (aHDNode, "DiffHardDisk", &hdNode);
-        ComAssertBreak (hdNode, rc = E_FAIL);
+        Key hdNode = aHDNode.appendKey ("DiffHardDisk");
 
-        do
         {
-            CFGNODE vdiNode = 0;
-            CFGLDRAppendChildNode (hdNode, "VirtualDiskImage", &vdiNode);
-            ComAssertBreak (vdiNode, rc = E_FAIL);
-
-            rc = child->saveSettings (hdNode, vdiNode);
-
-            CFGLDRReleaseNode (vdiNode);
+            Key vdiNode = hdNode.createKey ("VirtualDiskImage");
+            HRESULT rc = child->saveSettings (hdNode, vdiNode);
+            CheckComRCReturnRC (rc);
         }
-        while (0);
-
-        CFGLDRReleaseNode (hdNode);
     }
 
-    return rc;
+    return S_OK;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1362,15 +1338,18 @@ void HVirtualDiskImage::FinalRelease()
  *  the given configuration node. The created hard disk will be marked as
  *  registered on success.
  *
- *  @param aHDNode      <HardDisk> node
- *  @param aVDINode     <VirtualDiskImage> node
+ *  @param aHDNode      <HardDisk> or <DiffHardDisk> node.
+ *  @param aVDINode     <VirtualDiskImage> node.
  */
 HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
-                                 CFGNODE aHDNode, CFGNODE aVDINode)
+                                 const settings::Key &aHDNode,
+                                 const settings::Key &aVDINode)
 {
-    LogFlowThisFunc (("aHDNode=%p, aVDINode=%p\n", aHDNode, aVDINode));
+    using namespace settings;
 
-    AssertReturn (aHDNode && aVDINode, E_FAIL);
+    LogFlowThisFunc (("\n"));
+
+    AssertReturn (!aHDNode.isNull() && !aVDINode.isNull(), E_FAIL);
 
     AutoLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
@@ -1388,9 +1367,7 @@ HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         setReady (true);
 
         /* filePath (required) */
-        Bstr filePath;
-        CFGLDRQueryBSTR (aVDINode, "filePath", filePath.asOutParam());
-
+        Bstr filePath = aVDINode.stringValue ("filePath");
         rc = setFilePath (filePath);
         CheckComRCBreakRC (rc);
 
@@ -1767,20 +1744,21 @@ HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
  *  Saves hard disk settings to the specified storage node and saves
  *  all children to the specified hard disk node
  *
- *  @param aHDNode      <HardDisk> or <DiffHardDisk> node
- *  @param aStorageNode <VirtualDiskImage> node
+ *  @param aHDNode      <HardDisk> or <DiffHardDisk> node.
+ *  @param aStorageNode <VirtualDiskImage> node.
  */
-HRESULT HVirtualDiskImage::saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode)
+HRESULT HVirtualDiskImage::saveSettings (settings::Key &aHDNode,
+                                         settings::Key &aStorageNode)
 {
-    AssertReturn (aHDNode && aStorageNode, E_FAIL);
+    AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
     AutoLock alock (this);
     CHECK_READY();
 
-    // filePath (required)
-    CFGLDRSetBSTR (aStorageNode, "filePath", mFilePath);
+    /* filePath (required) */
+    aStorageNode.setValue <Bstr> ("filePath", mFilePath);
 
-    // save basic settings and children
+    /* save basic settings and children */
     return HardDisk::saveSettings (aHDNode);
 }
 
@@ -2833,15 +2811,18 @@ void HISCSIHardDisk::FinalRelease()
  *  the given configuration node. The created hard disk will be marked as
  *  registered on success.
  *
- *  @param aHDNode      <HardDisk> node
- *  @param aVDINod      <ISCSIHardDisk> node
+ *  @param aHDNode      <HardDisk> node.
+ *  @param aVDINod      <ISCSIHardDisk> node.
  */
 HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox,
-                              CFGNODE aHDNode, CFGNODE aISCSINode)
+                              const settings::Key &aHDNode,
+                              const settings::Key &aISCSINode)
 {
-    LogFlowThisFunc (("aHDNode=%p, aISCSINode=%p\n", aHDNode, aISCSINode));
+    using namespace settings;
 
-    AssertReturn (aHDNode && aISCSINode, E_FAIL);
+    LogFlowThisFunc (("\n"));
+
+    AssertReturn (!aHDNode.isNull() && !aISCSINode.isNull(), E_FAIL);
 
     AutoLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
@@ -2859,18 +2840,18 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox,
         setReady (true);
 
         /* server (required) */
-        CFGLDRQueryBSTR (aISCSINode, "server", mServer.asOutParam());
+        mServer = aISCSINode.stringValue ("server");
         /* target (required) */
-        CFGLDRQueryBSTR (aISCSINode, "target", mTarget.asOutParam());
+        mTarget = aISCSINode.stringValue ("target");
 
         /* port (optional) */
-        CFGLDRQueryUInt16 (aISCSINode, "port", &mPort);
+        mPort = aISCSINode.value <USHORT> ("port");
         /* lun (optional) */
-        CFGLDRQueryUInt64 (aISCSINode, "lun", &mLun);
+        mLun = aISCSINode.value <ULONG64> ("lun");
         /* userName (optional) */
-        CFGLDRQueryBSTR (aISCSINode, "userName", mUserName.asOutParam());
+        mUserName = aISCSINode.stringValue ("userName");
         /* password (optional) */
-        CFGLDRQueryBSTR (aISCSINode, "password", mPassword.asOutParam());
+        mPassword = aISCSINode.stringValue ("password");
 
         LogFlowThisFunc (("'iscsi:%ls:%hu@%ls/%ls:%llu'\n",
                           mServer.raw(), mPort, mUserName.raw(), mTarget.raw(),
@@ -3236,41 +3217,30 @@ HRESULT HISCSIHardDisk::getAccessible (Bstr &aAccessError)
  *  Saves hard disk settings to the specified storage node and saves
  *  all children to the specified hard disk node
  *
- *  @param aHDNode      <HardDisk>
- *  @param aStorageNode <ISCSIHardDisk> node
+ *  @param aHDNode      <HardDisk>.
+ *  @param aStorageNode <ISCSIHardDisk> node.
  */
-HRESULT HISCSIHardDisk::saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode)
+HRESULT HISCSIHardDisk::saveSettings (settings::Key &aHDNode,
+                                      settings::Key &aStorageNode)
 {
-    AssertReturn (aHDNode && aStorageNode, E_FAIL);
+    AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
     AutoLock alock (this);
     CHECK_READY();
 
     /* server (required) */
-    CFGLDRSetBSTR (aStorageNode, "server", mServer);
+    aStorageNode.setValue <Bstr> ("server", mServer);
     /* target (required) */
-    CFGLDRSetBSTR (aStorageNode, "target", mTarget);
+    aStorageNode.setValue <Bstr> ("target", mTarget);
 
-    /* port (optional) */
-    if (mPort != 0)
-        CFGLDRSetUInt16 (aStorageNode, "port", mPort);
-    else
-        CFGLDRDeleteAttribute (aStorageNode, "port");
+    /* port (optional, defaults to 0) */
+    aStorageNode.setValueOr <USHORT> ("port", mPort, 0);
     /* lun (optional, force 0x format to coform to XML Schema!) */
-    if (mLun != 0)
-        CFGLDRSetUInt64Ex (aStorageNode, "lun", mLun, 16);
-    else
-        CFGLDRDeleteAttribute (aStorageNode, "lun");
+    aStorageNode.setValueOr <ULONG64> ("lun", mLun, 0, 16);
     /* userName (optional) */
-    if (!mUserName.isNull())
-        CFGLDRSetBSTR (aStorageNode, "userName", mUserName);
-    else
-        CFGLDRDeleteAttribute (aStorageNode, "userName");
+    aStorageNode.setValueOr <Bstr> ("userName", mUserName, Bstr::Null);
     /* password (optional) */
-    if (!mPassword.isNull())
-        CFGLDRSetBSTR (aStorageNode, "password", mPassword);
-    else
-        CFGLDRDeleteAttribute (aStorageNode, "password");
+    aStorageNode.setValueOr <Bstr> ("password", mPassword, Bstr::Null);
 
     /* save basic settings and children */
     return HardDisk::saveSettings (aHDNode);
@@ -3421,15 +3391,18 @@ void HVMDKImage::FinalRelease()
  *  the given configuration node. The created hard disk will be marked as
  *  registered on success.
  *
- *  @param aHDNode      <HardDisk> node
- *  @param aVMDKNode    <VirtualDiskImage> node
+ *  @param aHDNode      <HardDisk> node.
+ *  @param aVMDKNode    <VirtualDiskImage> node.
  */
 HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
-                          CFGNODE aHDNode, CFGNODE aVMDKNode)
+                          const settings::Key &aHDNode, 
+                          const settings::Key &aVMDKNode)
 {
-    LogFlowThisFunc (("aHDNode=%p, aVMDKNode=%p\n", aHDNode, aVMDKNode));
+    using namespace settings;
 
-    AssertReturn (aHDNode && aVMDKNode, E_FAIL);
+    LogFlowThisFunc (("\n"));
+
+    AssertReturn (!aHDNode.isNull() && !aVMDKNode.isNull(), E_FAIL);
 
     AutoLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
@@ -3447,9 +3420,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         setReady (true);
 
         /* filePath (required) */
-        Bstr filePath;
-        CFGLDRQueryBSTR (aVMDKNode, "filePath", filePath.asOutParam());
-
+        Bstr filePath = aVMDKNode.stringValue ("filePath");
         rc = setFilePath (filePath);
         CheckComRCBreakRC (rc);
 
@@ -3857,18 +3828,19 @@ HRESULT HVMDKImage::getAccessible (Bstr &aAccessError)
  *  Saves hard disk settings to the specified storage node and saves
  *  all children to the specified hard disk node
  *
- *  @param aHDNode      <HardDisk> or <DiffHardDisk> node
- *  @param aStorageNode <VirtualDiskImage> node
+ *  @param aHDNode      <HardDisk> or <DiffHardDisk> node.
+ *  @param aStorageNode <VirtualDiskImage> node.
  */
-HRESULT HVMDKImage::saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode)
+HRESULT HVMDKImage::saveSettings (settings::Key &aHDNode,
+                                  settings::Key &aStorageNode)
 {
-    AssertReturn (aHDNode && aStorageNode, E_FAIL);
+    AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
     AutoLock alock (this);
     CHECK_READY();
 
     /* filePath (required) */
-    CFGLDRSetBSTR (aStorageNode, "filePath", mFilePath);
+    aStorageNode.setValue <Bstr> ("filePath", mFilePath);
 
     /* save basic settings and children */
     return HardDisk::saveSettings (aHDNode);
@@ -4290,15 +4262,18 @@ void HCustomHardDisk::FinalRelease()
  *  the given configuration node. The created hard disk will be marked as
  *  registered on success.
  *
- *  @param aHDNode      <HardDisk> node
- *  @param aCustomNode  <VirtualDiskImage> node
+ *  @param aHDNode      <HardDisk> node.
+ *  @param aCustomNode  <VirtualDiskImage> node.
  */
 HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
-                          CFGNODE aHDNode, CFGNODE aCustomNode)
+                               const settings::Key &aHDNode,
+                               const settings::Key &aCustomNode)
 {
-    LogFlowThisFunc (("aHDNode=%p, aCustomNode=%p\n", aHDNode, aCustomNode));
+    using namespace settings;
 
-    AssertReturn (aHDNode && aCustomNode, E_FAIL);
+    LogFlowThisFunc (("\n"));
+
+    AssertReturn (!aHDNode.isNull() && !aCustomNode.isNull(), E_FAIL);
 
     AutoLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
@@ -4316,16 +4291,14 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         setReady (true);
 
         /* location (required) */
-        Bstr location;
-        CFGLDRQueryBSTR (aCustomNode, "location", location.asOutParam());
-
+        Bstr location = aCustomNode.stringValue ("location");
         rc = setLocation (location);
         CheckComRCBreakRC (rc);
 
         LogFlowThisFunc (("'%ls'\n", mLocationFull.raw()));
 
         /* format (required) */
-        CFGLDRQueryBSTR (aCustomNode, "format", mFormat.asOutParam());
+        mFormat = aCustomNode.stringValue ("format");
 
         /* initialize the container */
         vrc = VDCreate (Utf8Str (mFormat), VDError, this, &mContainer);
@@ -4731,21 +4704,22 @@ HRESULT HCustomHardDisk::getAccessible (Bstr &aAccessError)
  *  Saves hard disk settings to the specified storage node and saves
  *  all children to the specified hard disk node
  *
- *  @param aHDNode      <HardDisk> or <DiffHardDisk> node
- *  @param aStorageNode <VirtualDiskImage> node
+ *  @param aHDNode      <HardDisk> or <DiffHardDisk> node.
+ *  @param aStorageNode <VirtualDiskImage> node.
  */
-HRESULT HCustomHardDisk::saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode)
+HRESULT HCustomHardDisk::saveSettings (settings::Key &aHDNode,
+                                       settings::Key &aStorageNode)
 {
-    AssertReturn (aHDNode && aStorageNode, E_FAIL);
+    AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
     AutoLock alock (this);
     CHECK_READY();
 
     /* location (required) */
-    CFGLDRSetBSTR (aStorageNode, "location", mLocationFull);
+    aStorageNode.setValue <Bstr> ("location", mLocationFull);
 
     /* format (required) */
-    CFGLDRSetBSTR (aStorageNode, "format", mFormat);
+    aStorageNode.setValue <Bstr> ("format", mFormat);
 
     /* save basic settings and children */
     return HardDisk::saveSettings (aHDNode);

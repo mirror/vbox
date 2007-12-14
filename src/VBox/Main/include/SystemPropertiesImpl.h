@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -19,8 +21,6 @@
 #define ____H_SYSTEMPROPERTIESIMPL
 
 #include "VirtualBoxBase.h"
-
-#include <VBox/cfgldr.h>
 
 class VirtualBox;
 
@@ -76,8 +76,8 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings (CFGNODE aGlobal);
-    HRESULT saveSettings (CFGNODE aGlobal);
+    HRESULT loadSettings (const settings::Key &aGlobal);
+    HRESULT saveSettings (settings::Key &aGlobal);
 
     /** Default VDI path (as is, not full). Not thread safe (use object lock). */
     const Bstr &defaultVDIFolder() { return mDefaultVDIFolder; }

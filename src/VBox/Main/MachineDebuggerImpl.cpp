@@ -172,7 +172,8 @@ STDMETHODIMP MachineDebugger::GetStats(INPTR BSTR aPattern, BOOL aWithDescriptio
         return E_FAIL;
 
     char *pszSnapshot;
-    int vrc = STAMR3Snapshot(pVM, Utf8Str(aPattern).raw(), &pszSnapshot, NULL, aWithDescriptions);
+    int vrc = STAMR3Snapshot(pVM, Utf8Str(aPattern).raw(), &pszSnapshot, NULL,
+                             !!aWithDescriptions);
     if (RT_FAILURE(vrc))
         return vrc == VERR_NO_MEMORY ? E_OUTOFMEMORY : E_FAIL;
 

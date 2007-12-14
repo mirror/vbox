@@ -83,7 +83,7 @@
 </xsd:complexType>
 
 <xsd:complexType name="TAudioAdapter">
-  <xsd:attribute name="enabled" type="xsd:boolean"/>
+  <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
   <xsd:attribute name="driver" use="required">
     <!--- @todo (dmik) capitalize enum values on next format change! -->
     <xsd:simpleType>

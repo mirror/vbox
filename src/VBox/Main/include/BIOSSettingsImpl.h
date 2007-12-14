@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -114,6 +116,9 @@ public:
     STDMETHOD(COMSETTER)(TimeOffset)(LONG64 offset);
 
     // public methods only for internal purposes
+
+    HRESULT loadSettings (const settings::Key &aMachineNode);
+    HRESULT saveSettings (settings::Key &aMachineNode);
 
     const Backupable <Data> &data() const { return mData; }
 

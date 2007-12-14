@@ -1247,6 +1247,42 @@
 
 #ifdef __cplusplus
 
+/** @def DECLEXPORT_CLASS
+ * How to declare an exported class. Place this macro after the 'class'
+ * keyword in the declaration of every class you want to export.
+ *
+ * @note It is necessary to use this macro even for inner classes declared
+ * inside the already exported classes. This is a GCC specific requirement,
+ * but it seems not to harm other compilers.
+ */
+#if defined(_MSC_VER) || defined(RT_OS_OS2)
+# define DECLEXPORT_CLASS       __declspec(dllexport)
+#else
+# ifdef VBOX_HAVE_VISIBILITY_HIDDEN
+#  define DECLEXPORT_CLASS      __attribute__((visibility("default")))
+# else
+#  define DECLEXPORT_CLASS
+# endif
+#endif
+
+/** @def DECLIMPORT_CLASS
+ * How to declare an imported class Place this macro after the 'class'
+ * keyword in the declaration of every class you want to export.
+ *
+ * @note It is necessary to use this macro even for inner classes declared
+ * inside the already exported classes. This is a GCC specific requirement,
+ * but it seems not to harm other compilers.
+ */
+#if defined(_MSC_VER) || (defined(RT_OS_OS2) && !defined(__IBMC__) && !defined(__IBMCPP__))
+# define DECLIMPORT_CLASS       __declspec(dllimport)
+#else
+# ifdef VBOX_HAVE_VISIBILITY_HIDDEN
+#  define DECLIMPORT_CLASS      __attribute__((visibility("default")))
+# else
+#  define DECLIMPORT_CLASS
+# endif
+#endif
+
 /** @def WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP
  * Macro to work around error C2593 of the not-so-smart MSVC 7.x ambiguity
  * resolver. The following snippet clearly demonstrates the code causing this

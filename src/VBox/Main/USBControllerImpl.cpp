@@ -480,67 +480,65 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- *  Loads settings from the configuration node.
- *
- *  @note Locks objects for writing!
+/** 
+ *  Loads settings from the given machine node.
+ *  May be called once right after this object creation.
+ * 
+ *  @param aMachineNode <Machine> node.
+ * 
+ *  @note Locks this object for writing. 
  */
-HRESULT USBController::loadSettings (CFGNODE aMachine)
+HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
 {
-    AssertReturn (aMachine, E_FAIL);
+    using namespace settings;
+
+    AssertReturn (!aMachineNode.isNull(), E_FAIL);
 
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
     AutoLock alock (this);
 
-    CFGNODE controller = NULL;
-    CFGLDRGetChildNode (aMachine, "USBController", 0, &controller);
-    Assert (controller);
+    /* Note: we assume that the default values for attributes of optional
+     * nodes are assigned in the Data::Data() constructor and don't do it
+     * here. It implies that this method may only be called after constructing
+     * a new BIOSSettings object while all its data fields are in the default
+     * values. Exceptions are fields whose creation time defaults don't match
+     * values that should be applied when these fields are not explicitly set
+     * in the settings file (for backwards compatibility reasons). This takes
+     * place when a setting of a newly created object must default to A while
+     * the same setting of an object loaded from the old settings file must
+     * default to B. */ 
 
-    /* enabled */
-    bool enabled;
-    CFGLDRQueryBool (controller, "enabled", &enabled);
-    mData->mEnabled = enabled;
+    /* USB Controller node (required) */
+    Key controller = aMachineNode.key ("USBController");
 
-    /* enabledEhci */
-    CFGLDRQueryBool (controller, "enabledEhci", &enabled);
-    mData->mEnabledEhci = enabled;
+    /* enabled (required) */
+    mData->mEnabled = controller.value <bool> ("enabled");
+
+    /* enabledEhci (optiona, defaults to false) */
+    mData->mEnabledEhci = controller.value <bool> ("enabledEhci");
 
     HRESULT rc = S_OK;
 
-    unsigned filterCount = 0;
-    CFGLDRCountChildren (controller, "DeviceFilter", &filterCount);
-    for (unsigned i = 0; i < filterCount && SUCCEEDED (rc); i++)
+    Key::List children = controller.keys ("DeviceFilter");
+    for (Key::List::const_iterator it = children.begin();
+         it != children.end(); ++ it)
     {
-        CFGNODE filter = NULL;
-        CFGLDRGetChildNode (controller, "DeviceFilter", i, &filter);
-        Assert (filter);
+        /* required */
+        Bstr name = (*it).stringValue ("name");
+        bool active = (*it).value <bool> ("active");
 
-        Bstr name;
-        CFGLDRQueryBSTR (filter, "name", name.asOutParam());
-        bool active;
-        CFGLDRQueryBool (filter, "active", &active);
-
-        Bstr vendorId;
-        CFGLDRQueryBSTR (filter, "vendorid", vendorId.asOutParam());
-        Bstr productId;
-        CFGLDRQueryBSTR (filter, "productid", productId.asOutParam());
-        Bstr revision;
-        CFGLDRQueryBSTR (filter, "revision", revision.asOutParam());
-        Bstr manufacturer;
-        CFGLDRQueryBSTR (filter, "manufacturer", manufacturer.asOutParam());
-        Bstr product;
-        CFGLDRQueryBSTR (filter, "product", product.asOutParam());
-        Bstr serialNumber;
-        CFGLDRQueryBSTR (filter, "serialnumber", serialNumber.asOutParam());
-        Bstr port;
-        CFGLDRQueryBSTR (filter, "port", port.asOutParam());
-        Bstr remote;
-        CFGLDRQueryBSTR (filter, "remote", remote.asOutParam());
-        uint32_t maskedIfs;
-        if (RT_FAILURE(CFGLDRQueryUInt32 (filter, "maskedInterfaces", &maskedIfs)))
-            maskedIfs = 0;
+        /* optional */
+        Bstr vendorId = (*it).stringValue ("vendorid");
+        Bstr productId = (*it).stringValue ("productid");
+        Bstr revision = (*it).stringValue ("revision");
+        Bstr manufacturer = (*it).stringValue ("manufacturer");
+        Bstr product = (*it).stringValue ("product");
+        Bstr serialNumber = (*it).stringValue ("serialnumber");
+        Bstr port = (*it).stringValue ("port");
+        Bstr remote = (*it).stringValue ("remote");
+        ULONG maskedIfs = (*it).value <ULONG> ("maskedInterfaces");
 
         ComObjPtr <USBDeviceFilter> filterObj;
         filterObj.createObject();
@@ -549,28 +547,27 @@ HRESULT USBController::loadSettings (CFGNODE aMachine)
                               manufacturer, product, serialNumber,
                               port, remote, maskedIfs);
         /* error info is set by init() when appropriate */
-        if (SUCCEEDED (rc))
-        {
-            mDeviceFilters->push_back (filterObj);
-            filterObj->mInList = true;
-        }
+        CheckComRCReturnRC (rc);
 
-        CFGLDRReleaseNode (filter);
+        mDeviceFilters->push_back (filterObj);
+        filterObj->mInList = true;
     }
 
-    CFGLDRReleaseNode (controller);
-
-    return rc;
+    return S_OK;
 }
 
-/**
- *  Saves settings to the configuration node.
- *
- *  @note Locks objects for reading!
+/** 
+ *  Saves settings to the given machine node.
+ * 
+ *  @param aMachineNode <Machine> node.
+ * 
+ *  @note Locks this object for reading.
  */
-HRESULT USBController::saveSettings (CFGNODE aMachine)
+HRESULT USBController::saveSettings (settings::Key &aMachineNode)
 {
-    AssertReturn (aMachine, E_FAIL);
+    using namespace settings;
+
+    AssertReturn (!aMachineNode.isNull(), E_FAIL);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -578,22 +575,17 @@ HRESULT USBController::saveSettings (CFGNODE aMachine)
     AutoReaderLock alock (this);
 
     /* first, delete the entry */
-    CFGNODE controller = NULL;
-    int vrc = CFGLDRGetChildNode (aMachine, "USBController", 0, &controller);
-    if (VBOX_SUCCESS (vrc))
-    {
-        vrc = CFGLDRDeleteNode (controller);
-        ComAssertRCRet (vrc, E_FAIL);
-    }
+    Key controller = aMachineNode.findKey ("USBController");
+    if (!controller.isNull())
+        controller.zap();
     /* then, recreate it */
-    vrc = CFGLDRCreateChildNode (aMachine, "USBController", &controller);
-    ComAssertRCRet (vrc, E_FAIL);
+    controller = aMachineNode.createKey ("USBController");
 
     /* enabled */
-    CFGLDRSetBool (controller, "enabled", !!mData->mEnabled);
+    controller.setValue <bool> ("enabled", !!mData->mEnabled);
 
     /* enabledEhci */
-    CFGLDRSetBool (controller, "enabledEhci", !!mData->mEnabledEhci);
+    controller.setValue <bool> ("enabledEhci", !!mData->mEnabledEhci);
 
     DeviceFilterList::const_iterator it = mDeviceFilters->begin();
     while (it != mDeviceFilters->end())
@@ -601,74 +593,72 @@ HRESULT USBController::saveSettings (CFGNODE aMachine)
         AutoLock filterLock (*it);
         const USBDeviceFilter::Data &data = (*it)->data();
 
-        CFGNODE filter = NULL;
-        CFGLDRAppendChildNode (controller, "DeviceFilter",  &filter);
+        Key filter = controller.appendKey ("DeviceFilter");
 
-        CFGLDRSetBSTR (filter, "name", data.mName);
-        CFGLDRSetBool (filter, "active", !!data.mActive);
+        filter.setValue <Bstr> ("name", data.mName);
+        filter.setValue <bool> ("active", !!data.mActive);
 
         /* all are optional */
 #ifndef VBOX_WITH_USBFILTER
+
         if (data.mVendorId.string())
-            CFGLDRSetBSTR (filter, "vendorid", data.mVendorId.string());
+            filter.setValue <Bstr> ("vendorid", data.mVendorId.string());
         if (data.mProductId.string())
-            CFGLDRSetBSTR (filter, "productid", data.mProductId.string());
+            filter.setValue <Bstr> ("productid", data.mProductId.string());
         if (data.mRevision.string())
-            CFGLDRSetBSTR (filter, "revision", data.mRevision.string());
+            filter.setValue <Bstr> ("revision", data.mRevision.string());
         if (data.mManufacturer.string())
-            CFGLDRSetBSTR (filter, "manufacturer", data.mManufacturer.string());
+            filter.setValue <Bstr> ("manufacturer", data.mManufacturer.string());
         if (data.mProduct.string())
-            CFGLDRSetBSTR (filter, "product", data.mProduct.string());
+            filter.setValue <Bstr> ("product", data.mProduct.string());
         if (data.mSerialNumber.string())
-            CFGLDRSetBSTR (filter, "serialnumber", data.mSerialNumber.string());
+            filter.setValue <Bstr> ("serialnumber", data.mSerialNumber.string());
         if (data.mPort.string())
-            CFGLDRSetBSTR (filter, "port", data.mPort.string());
+            filter.setValue <Bstr> ("port", data.mPort.string());
         if (data.mRemote.string())
-            CFGLDRSetBSTR (filter, "remote", data.mRemote.string());
+            filter.setValue <Bstr> ("remote", data.mRemote.string());
 
 #else  /* VBOX_WITH_USBFILTER */
+
         Bstr str;
         (*it)->COMGETTER (VendorId) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "vendorid", str);
+            filter.setValue <Bstr> ("vendorid", str);
 
         (*it)->COMGETTER (ProductId) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "productid", str);
+            filter.setValue <Bstr> ("productid", str);
 
         (*it)->COMGETTER (Revision) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "revision", str);
+            filter.setValue <Bstr> ("revision", str);
 
         (*it)->COMGETTER (Manufacturer) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "manufacturer", str);
+            filter.setValue <Bstr> ("manufacturer", str);
 
         (*it)->COMGETTER (Product) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "product", str);
+            filter.setValue <Bstr> ("product", str);
 
         (*it)->COMGETTER (SerialNumber) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "serialnumber", str);
+            filter.setValue <Bstr> ("serialnumber", str);
 
         (*it)->COMGETTER (Port) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "port", str);
+            filter.setValue <Bstr> ("port", str);
 
         if (data.mRemote.string())
-            CFGLDRSetBSTR (filter, "remote", data.mRemote.string());
+            filter.setValue <Bstr> ("remote", data.mRemote.string());
+
 #endif /* VBOX_WITH_USBFILTER */
 
         if (data.mMaskedIfs)
-            CFGLDRSetUInt32 (filter, "maskedInterfaces", data.mMaskedIfs);
-
-        CFGLDRReleaseNode (filter);
+            filter.setValue <ULONG> ("maskedInterfaces", data.mMaskedIfs);
 
         ++ it;
     }
-
-    CFGLDRReleaseNode (controller);
 
     return S_OK;
 }

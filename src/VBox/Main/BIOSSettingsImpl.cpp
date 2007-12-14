@@ -488,6 +488,220 @@ STDMETHODIMP BIOSSettings::COMSETTER(TimeOffset)(LONG64 offset)
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
+/** 
+ *  Loads settings from the given machine node.
+ *  May be called once right after this object creation.
+ * 
+ *  @param aMachineNode <Machine> node.
+ * 
+ *  @note Locks this object for writing. 
+ */
+HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    /* Note: we assume that the default values for attributes of optional
+     * nodes are assigned in the Data::Data() constructor and don't do it
+     * here. It implies that this method may only be called after constructing
+     * a new BIOSSettings object while all its data fields are in the default
+     * values. Exceptions are fields whose creation time defaults don't match
+     * values that should be applied when these fields are not explicitly set
+     * in the settings file (for backwards compatibility reasons). This takes
+     * place when a setting of a newly created object must default to A while
+     * the same setting of an object loaded from the old settings file must
+     * default to B. */ 
+
+    /* BIOS node (required) */
+    Key biosNode = aMachineNode.key ("BIOS");
+
+    /* ACPI (required) */
+    {
+        Key acpiNode = biosNode.key ("ACPI");
+
+        mData->mACPIEnabled = acpiNode.value <bool> ("enabled");
+    }
+
+    /* IOAPIC (optional) */
+    {
+        Key ioapicNode = biosNode.findKey ("IOAPIC");
+        if (!ioapicNode.isNull())
+            mData->mIOAPICEnabled = ioapicNode.value <bool> ("enabled");
+    }
+
+    /* Logo (optional) */
+    {
+        Key logoNode = biosNode.findKey ("Logo");
+        if (!logoNode.isNull())
+        {
+            mData->mLogoFadeIn = logoNode.value <bool> ("fadeIn");
+            mData->mLogoFadeOut = logoNode.value <bool> ("fadeOut");
+            mData->mLogoDisplayTime = logoNode.value <ULONG> ("displayTime");
+            mData->mLogoImagePath = logoNode.stringValue ("imagePath");
+        }
+    }
+
+    /* boot menu (optional) */
+    {
+        Key bootMenuNode = biosNode.findKey ("BootMenu");
+        if (!bootMenuNode.isNull())
+        {
+            mData->mBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
+            const char *modeStr = bootMenuNode.stringValue ("mode");
+
+            if (strcmp (modeStr, "disabled") == 0)
+                mData->mBootMenuMode = BIOSBootMenuMode_Disabled;
+            else if (strcmp (modeStr, "menuonly") == 0)
+                mData->mBootMenuMode = BIOSBootMenuMode_MenuOnly;
+            else if (strcmp (modeStr, "messageandmenu") == 0)
+                mData->mBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
+            else
+                ComAssertMsgFailedRet (("Invalid boot menu mode '%s'\n", modeStr),
+                                       E_FAIL);
+        }
+    }
+
+    /* PXE debug logging (optional) */
+    {
+        Key pxedebugNode = biosNode.findKey ("PXEDebug");
+        if (!pxedebugNode.isNull())
+            mData->mPXEDebugEnabled = pxedebugNode.value <bool> ("enabled");
+    }
+
+    /* time offset (optional) */
+    {
+        Key timeOffsetNode = biosNode.findKey ("TimeOffset");
+        if (!timeOffsetNode.isNull())
+            mData->mTimeOffset = timeOffsetNode.value <LONG64> ("value");
+    }
+
+    /* IDE controller type (optional, for old machines that lack this node,
+     * defaults to PIIX3) */
+    {
+        mData->mIDEControllerType = IDEControllerType_IDEControllerPIIX3;
+
+        Key ideControllerNode = biosNode.findKey ("IDEController");
+        if (!ideControllerNode.isNull())
+        {
+            const char *typeStr = ideControllerNode.stringValue ("type");
+            if (strcmp (typeStr, "PIIX3") == 0)
+                mData->mIDEControllerType = IDEControllerType_IDEControllerPIIX3;
+            else if (strcmp (typeStr, "PIIX4") == 0)
+                mData->mIDEControllerType = IDEControllerType_IDEControllerPIIX4;
+            else
+                ComAssertMsgFailedRet (("Invalid boot menu mode '%s'\n", typeStr),
+                                       E_FAIL);
+        }
+    }
+
+    return S_OK;
+}
+
+/** 
+ *  Saves settings to the given machine node.
+ * 
+ *  @param aMachineNode <Machine> node.
+ * 
+ *  @note Locks this object for reading. 
+ */
+HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    Key biosNode = aMachineNode.createKey ("BIOS");
+
+    /* ACPI */
+    {
+        Key acpiNode = biosNode.createKey ("ACPI");
+        acpiNode.setValue <bool> ("enabled", !!mData->mACPIEnabled);
+    }
+
+    /* IOAPIC */
+    {
+        Key ioapicNode = biosNode.createKey ("IOAPIC");
+        ioapicNode.setValue <bool> ("enabled", !!mData->mIOAPICEnabled);
+    }
+
+    /* BIOS logo (optional) **/
+    {
+        Key logoNode = biosNode.createKey ("Logo");
+        logoNode.setValue <bool> ("fadeIn", !!mData->mLogoFadeIn);
+        logoNode.setValue <bool> ("fadeOut", !!mData->mLogoFadeOut);
+        logoNode.setValue <ULONG> ("displayTime", mData->mLogoDisplayTime);
+        logoNode.setValueOr <Bstr> ("imagePath", mData->mLogoImagePath, Bstr::Null);
+    }
+
+    /* boot menu (optional) */
+    {
+        Key bootMenuNode = biosNode.createKey ("BootMenu");
+        const char *modeStr = NULL;
+        switch (mData->mBootMenuMode)
+        {
+            case BIOSBootMenuMode_Disabled:
+                modeStr = "disabled";
+                break;
+            case BIOSBootMenuMode_MenuOnly:
+                modeStr = "menuonly";
+                break;
+            case BIOSBootMenuMode_MessageAndMenu:
+                modeStr = "messageandmenu";
+                break;
+            default:
+                ComAssertMsgFailedRet (("Invalid boot menu type: %d\n",
+                                        mData->mBootMenuMode),
+                                       E_FAIL);
+        }
+        bootMenuNode.setStringValue ("mode", modeStr);
+    }
+
+    /* time offset (optional) */
+    {
+        Key timeOffsetNode = biosNode.createKey ("TimeOffset");
+        timeOffsetNode.setValue <LONG64> ("value", mData->mTimeOffset);
+    }
+
+    /* PXE debug flag (optional) */
+    {
+        Key pxedebugNode = biosNode.createKey ("PXEDebug");
+        pxedebugNode.setValue <bool> ("enabled", !!mData->mPXEDebugEnabled);
+    }
+
+    /* IDE controller type */
+    {
+        Key ideControllerNode = biosNode.createKey ("IDEController");
+        const char *ideControllerTypeStr = NULL;
+        switch (mData->mIDEControllerType)
+        {
+            case IDEControllerType_IDEControllerPIIX3:
+                ideControllerTypeStr = "PIIX3";
+                break;
+            case IDEControllerType_IDEControllerPIIX4:
+                ideControllerTypeStr = "PIIX4";
+                break;
+            default:
+                ComAssertMsgFailedRet (("Invalid IDE Controller type: %d\n",
+                                        mData->mIDEControllerType),
+                                       E_FAIL);
+        }
+        ideControllerNode.setStringValue ("type", ideControllerTypeStr);
+    }
+
+    return S_OK;
+}
+
 void BIOSSettings::commit()
 {
     AutoLock alock (this);

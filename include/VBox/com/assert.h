@@ -78,6 +78,16 @@
     if (1) { AssertComRC (rc); if (!SUCCEEDED (rc)) { eval; break; } } else do {} while (0)
 
 /**
+ *  A special version of AssertComRC that evaluates the given expression and
+ *  throws it if the result code is failed.
+ *
+ *  @param rc   COM result code
+ *  @param eval the expression to evaluate
+ */
+#define AssertComRCThrow(rc, eval)      \
+    if (1) { AssertComRC (rc); if (!SUCCEEDED (rc)) { throw (eval); } } else do {} while (0)
+
+/**
  *  A special version of AssertComRC that just breaks if the result code is
  *  failed.
  *
@@ -85,6 +95,15 @@
  */
 #define AssertComRCBreakRC(rc)          \
     if (1) { AssertComRC (rc); if (!SUCCEEDED (rc)) { break; } } else do {} while (0)
+
+/**
+ *  A special version of AssertComRC that just throws @a rc if the result code is
+ *  failed.
+ *
+ *  @param rc   COM result code
+ */
+#define AssertComRCThrowRC(rc)          \
+    if (1) { AssertComRC (rc); if (!SUCCEEDED (rc)) { throw rc; } } else do {} while (0)
 
 /**
  *  Checks whether the given COM result code is successful.
@@ -103,6 +122,15 @@
  */
 #define CheckComRCBreakRC(rc)      \
     if (1) { if (!SUCCEEDED (rc)) { break; } } else do {} while (0)
+
+/**
+ *  Checks whether the given COM result code is successful.
+ *  If not, throws the given COM result.
+ *
+ *  @param rc   COM result code
+ */
+#define CheckComRCThrowRC(rc)      \
+    if (1) { if (!SUCCEEDED (rc)) { throw rc; } } else do {} while (0)
 
 /*
  * A section of helpful macros for error output

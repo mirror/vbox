@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * MS COM / XPCOM Abstraction Layer:
@@ -18,8 +20,16 @@
 
 #include "VBox/com/string.h"
 
+#include <iprt/err.h>
+
 namespace com
 {
+
+/* static */
+const Bstr Bstr::Null; /* default ctor is OK */ 
+
+/* static */
+const Utf8Str Utf8Str::Null; /* default ctor is OK */
 
 struct FormatData
 {
@@ -85,4 +95,3 @@ DECLCALLBACK(size_t) Utf8StrFmt::strOutput (void *pvArg, const char *pachChars,
 }
 
 } /* namespace com */
-

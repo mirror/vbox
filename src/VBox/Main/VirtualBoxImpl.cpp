@@ -25,9 +25,11 @@
 #include "HostImpl.h"
 #include "USBControllerImpl.h"
 #include "SystemPropertiesImpl.h"
-#include "Logging.h"
-
 #include "GuestOSTypeImpl.h"
+
+#include "VirtualBoxXMLUtil.h"
+
+#include "Logging.h"
 
 #ifdef RT_OS_WINDOWS
 #include "win32/svchlp.h"
@@ -58,6 +60,8 @@
 #include <algorithm>
 #include <set>
 #include <memory> // for auto_ptr
+
+#include <typeinfo>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
@@ -186,87 +190,71 @@ HRESULT VirtualBox::init()
         }
     }
 
-    /* initialize our Xerces XML subsystem */
     if (SUCCEEDED (rc))
     {
-        int vrc = CFGLDRInitialize();
-        if (VBOX_FAILURE (vrc))
-            rc = setError (E_FAIL, tr ("Could not initialize the XML parser (%Vrc)"),
-                                   vrc);
-    }
-
-    if (SUCCEEDED (rc))
-    {
-        CFGHANDLE configLoader = NULL;
-        char *loaderError = NULL;
-
-        /* load the config file */
-        int vrc = CFGLDRLoad (&configLoader, vboxConfigFile, mData.mCfgFile.mHandle,
-                              XmlSchemaNS, true, cfgLdrEntityResolver,
-                              &loaderError);
-        if (VBOX_SUCCESS (vrc))
+        try
         {
-            CFGNODE global = NULL;
-            CFGLDRGetNode (configLoader, "VirtualBox/Global", 0, &global);
-            Assert (global);
+            using namespace settings;
 
-            do
-            {
-                /* create the host object early, machines will need it */
-                unconst (mData.mHost).createObject();
-                rc = mData.mHost->init (this);
-                ComAssertComRCBreak (rc, rc = rc);
+            File file (File::ReadWrite, mData.mCfgFile.mHandle, vboxConfigFile);
+            XmlTreeBackend tree;
 
-                unconst (mData.mSystemProperties).createObject();
-                rc = mData.mSystemProperties->init (this);
-                ComAssertComRCBreak (rc, rc = rc);
+            rc = VirtualBox::loadSettingsTree_FirstTime (tree, file);
+            CheckComRCThrowRC (rc);
 
-                rc = loadDisks (global);
-                CheckComRCBreakRC ((rc));
+            Key global = tree.rootKey().key ("Global");
 
-                /* guest OS type objects, needed by the machines */
-                rc = registerGuestOSTypes();
-                ComAssertComRCBreak (rc, rc = rc);
+            /* create the host object early, machines will need it */
+            unconst (mData.mHost).createObject();
+            rc = mData.mHost->init (this);
+            ComAssertComRCThrowRC (rc);
 
-                /* machines */
-                rc = loadMachines (global);
-                CheckComRCBreakRC ((rc));
+            rc = mData.mHost->loadSettings (global);
+            CheckComRCThrowRC (rc);
 
-                /* host data (USB filters) */
-                rc = mData.mHost->loadSettings (global);
-                CheckComRCBreakRC ((rc));
+            /* create the system properties object */
+            unconst (mData.mSystemProperties).createObject();
+            rc = mData.mSystemProperties->init (this);
+            ComAssertComRCThrowRC (rc);
 
-                rc = mData.mSystemProperties->loadSettings (global);
-                CheckComRCBreakRC ((rc));
+            rc = mData.mSystemProperties->loadSettings (global);
+            CheckComRCThrowRC (rc);
 
-                /* check hard disk consistency */
+            /* guest OS type objects, needed by machines */
+            rc = registerGuestOSTypes();
+            ComAssertComRCThrowRC (rc);
+
+            /* hard disks, needed by machines */
+            rc = loadDisks (global);
+            CheckComRCThrowRC (rc);
+
+            /* machines */
+            rc = loadMachines (global);
+            CheckComRCThrowRC (rc);
+
+            /* check hard disk consistency */
 /// @todo (r=dmik) add IVirtualBox::cleanupHardDisks() instead or similar
-//                for (HardDiskList::const_iterator it = mData.mHardDisks.begin();
-//                     it != mData.mHardDisks.end() && SUCCEEDED (rc);
-//                     ++ it)
-//                {
-//                    rc = (*it)->checkConsistency();
-//                }
-//                CheckComRCBreakRC ((rc));
-            }
-            while (0);
+//            for (HardDiskList::const_iterator it = mData.mHardDisks.begin();
+//                 it != mData.mHardDisks.end() && SUCCEEDED (rc);
+//                 ++ it)
+//            {
+//                rc = (*it)->checkConsistency();
+//            }
+//            CheckComRCBreakRC ((rc));
 
             /// @todo (dmik) if successful, check for orphan (unused) diffs
-            //  that might be left because of the server crash, and remove them.
-
-            CFGLDRReleaseNode (global);
-            CFGLDRFree(configLoader);
+            //  that might be left because of the server crash, and remove
+            //  Hmm, is it the same remark as above?..
         }
-        else
+        catch (HRESULT err)
         {
-            rc = setError (E_FAIL,
-                tr ("Could not load the settings file '%ls' (%Vrc)%s%s"),
-                mData.mCfgFile.mName.raw(), vrc,
-                loaderError ? ".\n" : "", loaderError ? loaderError : "");
+            /* we assume that error info is set by the thrower */
+            rc = err;
         }
-
-        if (loaderError)
-            RTMemTmpFree (loaderError);
+        catch (...)
+        {
+            rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+        }
     }
 
     if (SUCCEEDED (rc))
@@ -434,9 +422,6 @@ void VirtualBox::uninit()
 #else
 # error "Port me!"
 #endif
-
-    /* uninitialize the Xerces XML subsystem */
-    CFGLDRShutdown();
 
     LogFlowThisFuncLeave();
     LogFlow (("===========================================================\n"));
@@ -913,7 +898,7 @@ STDMETHODIMP VirtualBox::UnregisterMachine (INPTR GUIDPARAM aId,
     mData.mMachines.remove (machine);
 
     /* save the global registry */
-    rc = saveConfig();
+    rc = saveSettings();
 
     /* return the unregistered machine to the caller */
     machine.queryInterfaceTo (aMachine);
@@ -1364,7 +1349,7 @@ STDMETHODIMP VirtualBox::UnregisterDVDImage (INPTR GUIDPARAM aId,
         mData.mDVDImages.remove (dvd);
 
         /* save the global config file */
-        rc = saveConfig();
+        rc = saveSettings();
 
         if (SUCCEEDED (rc))
         {
@@ -1533,7 +1518,7 @@ STDMETHODIMP VirtualBox::UnregisterFloppyImage (INPTR GUIDPARAM aId,
         mData.mFloppyImages.remove (floppy);
 
         /* save the global config file */
-        rc = saveConfig();
+        rc = saveSettings();
         if (SUCCEEDED (rc))
         {
             rc = floppy.queryInterfaceTo (aFloppyImage);
@@ -1603,7 +1588,9 @@ STDMETHODIMP VirtualBox::RemoveSharedFolder (INPTR BSTR aName)
     return setError (E_NOTIMPL, "Not yet implemented");
 }
 
-/** @note Locks this object for reading. */
+/**
+ *  @note Locks this object for reading.
+ */
 STDMETHODIMP VirtualBox::
 GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 {
@@ -1615,87 +1602,97 @@ GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 
     /* start with nothing found */
     *aNextKey = NULL;
+    if (aNextValue)
+        *aNextValue = NULL;
 
     HRESULT rc = S_OK;
 
-    /* serialize file access */
+    /* serialize config file access */
     AutoReaderLock alock (this);
 
-    CFGHANDLE configLoader;
-
-    /* load the config file */
-    int vrc = CFGLDRLoad (&configLoader, Utf8Str (mData.mCfgFile.mName),
-                          mData.mCfgFile.mHandle,
-                          XmlSchemaNS, true, cfgLdrEntityResolver, NULL);
-    ComAssertRCRet (vrc, E_FAIL);
-
-    CFGNODE extraDataNode;
-
-    /* navigate to the right position */
-    if (VBOX_SUCCESS (CFGLDRGetNode (configLoader,
-                                     "VirtualBox/Global/ExtraData", 0,
-                                     &extraDataNode)))
+    try
     {
-        /* check if it exists */
-        bool found = false;
-        unsigned count;
-        CFGNODE extraDataItemNode;
-        CFGLDRCountChildren (extraDataNode, "ExtraDataItem", &count);
-        for (unsigned i = 0; (i < count) && (found == false); i++)
-        {
-            Bstr name;
-            CFGLDRGetChildNode (extraDataNode, "ExtraDataItem", i, &extraDataItemNode);
-            CFGLDRQueryBSTR (extraDataItemNode, "name", name.asOutParam());
+        using namespace settings;
 
-            /* if we're supposed to return the first one */
-            if (aKey == NULL)
+        /* load the config file */
+        File file (File::ReadWrite, mData.mCfgFile.mHandle,
+                   Utf8Str (mData.mCfgFile.mName));
+        XmlTreeBackend tree;
+
+        rc = VirtualBox::loadSettingsTree_Again (tree, file);
+        CheckComRCReturnRC (rc);
+
+        Key globalNode = tree.rootKey().key ("Global");
+        Key extraDataNode = tree.rootKey().findKey ("ExtraData");
+
+        if (!extraDataNode.isNull())
+        {
+            Key::List items = extraDataNode.keys ("ExtraDataItem");
+            if (items.size())
             {
-                name.cloneTo (aNextKey);
-                if (aNextValue)
-                    CFGLDRQueryBSTR (extraDataItemNode, "value", aNextValue);
-                found = true;
-            }
-            /* did we find the key we're looking for? */
-            else if (name == aKey)
-            {
-                found = true;
-                /* is there another item? */
-                if (i + 1 < count)
+                for (Key::List::const_iterator it = items.begin();
+                     it != items.end(); ++ it)
                 {
-                    CFGLDRGetChildNode (extraDataNode, "ExtraDataItem", i + 1,
-                                        &extraDataItemNode);
-                    CFGLDRQueryBSTR (extraDataItemNode, "name", name.asOutParam());
-                    name.cloneTo (aNextKey);
-                    if (aNextValue)
-                        CFGLDRQueryBSTR (extraDataItemNode, "value", aNextValue);
-                    found = true;
-                }
-                else
-                {
-                    /* it's the last one */
-                    *aNextKey = NULL;
+                    Bstr key = (*it).stringValue ("name");
+
+                    /* if we're supposed to return the first one */
+                    if (aKey == NULL)
+                    {
+                        key.cloneTo (aNextKey);
+                        if (aNextValue)
+                        {
+                            Bstr val = (*it).stringValue ("value");
+                            val.cloneTo (aNextValue);
+                        }
+                        return S_OK;
+                    }
+
+                    /* did we find the key we're looking for? */
+                    if (key == aKey)
+                    {
+                        ++ it;
+                        /* is there another item? */
+                        if (it != items.end())
+                        {
+                            Bstr key = (*it).stringValue ("name");
+                            key.cloneTo (aNextKey);
+                            if (aNextValue)
+                            {
+                                Bstr val = (*it).stringValue ("value");
+                                val.cloneTo (aNextValue);
+                            }
+                        }
+                        /* else it's the last one, arguments are already NULL */
+                        return S_OK;
+                    }
                 }
             }
-            CFGLDRReleaseNode (extraDataItemNode);
         }
 
-        /* if we haven't found the key, it's an error */
-        if (!found)
-            rc = setError (E_FAIL,
-                tr ("Could not find extra data key '%ls'"), aKey);
+        /* Here we are when a) there are no items at all or b) there are items
+         * but none of them equals to the requested non-NULL key. b) is an
+         * error as well as a) if the key is non-NULL. When the key is NULL
+         * (which is the case only when there are no items), we just fall
+         * through to return NULLs and S_OK. */
 
-        CFGLDRReleaseNode (extraDataNode);
+        if (aKey != NULL)
+            return setError (E_FAIL,
+                tr ("Could not find the extra data key '%ls'"), aKey);
     }
-
-    CFGLDRFree (configLoader);
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+    }
 
     return rc;
 }
 
-/** @note Locks this object for reading. */
+/**
+ *  @note Locks this object for reading.
+ */
 STDMETHODIMP VirtualBox::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
 {
-    if (!aKey || !(*aKey))
+    if (!aKey)
         return E_INVALIDARG;
     if (!aValue)
         return E_POINTER;
@@ -1711,52 +1708,54 @@ STDMETHODIMP VirtualBox::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
     /* serialize file access */
     AutoReaderLock alock (this);
 
-    CFGHANDLE configLoader;
-
-    /* load the config file */
-    int vrc = CFGLDRLoad (&configLoader, Utf8Str (mData.mCfgFile.mName),
-                          mData.mCfgFile.mHandle,
-                          XmlSchemaNS, true, cfgLdrEntityResolver, NULL);
-    ComAssertRCRet (vrc, E_FAIL);
-
-    CFGNODE extraDataNode;
-
-    /* navigate to the right position */
-    if (VBOX_SUCCESS (CFGLDRGetNode (configLoader,
-                                     "VirtualBox/Global/ExtraData", 0,
-                                     &extraDataNode)))
+    try
     {
-        /* check if it exists */
-        bool found = false;
-        unsigned count;
-        CFGNODE extraDataItemNode;
-        CFGLDRCountChildren (extraDataNode, "ExtraDataItem", &count);
-        for (unsigned i = 0; (i < count) && (found == false); i++)
+        using namespace settings;
+
+        /* load the config file */
+        File file (File::ReadWrite, mData.mCfgFile.mHandle,
+                   Utf8Str (mData.mCfgFile.mName));
+        XmlTreeBackend tree;
+
+        rc = VirtualBox::loadSettingsTree_Again (tree, file);
+        CheckComRCReturnRC (rc);
+
+        const Utf8Str key = aKey;
+
+        Key globalNode = tree.rootKey().key ("Global");
+        Key extraDataNode = globalNode.findKey ("ExtraData");
+
+        if (!extraDataNode.isNull())
         {
-            Bstr name;
-            CFGLDRGetChildNode (extraDataNode, "ExtraDataItem", i, &extraDataItemNode);
-            CFGLDRQueryBSTR (extraDataItemNode, "name", name.asOutParam());
-            if (name == aKey)
+            /* check if the key exists */
+            Key::List items = extraDataNode.keys ("ExtraDataItem");
+            for (Key::List::const_iterator it = items.begin();
+                 it != items.end(); ++ it)
             {
-                found = true;
-                CFGLDRQueryBSTR (extraDataItemNode, "value", aValue);
+                if (key == (*it).stringValue ("name"))
+                {
+                    Bstr val = (*it).stringValue ("value");
+                    val.cloneTo (aValue);
+                    break;
+                }
             }
-            CFGLDRReleaseNode (extraDataItemNode);
         }
-
-        CFGLDRReleaseNode (extraDataNode);
     }
-
-    CFGLDRFree (configLoader);
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+    }
 
     return rc;
 }
 
-/** @note Locks this object for writing. */
-STDMETHODIMP VirtualBox::SetExtraData(INPTR BSTR aKey, INPTR BSTR aValue)
+/**
+ *  @note Locks this object for writing.
+ */
+STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
 {
     if (!aKey)
-        return E_POINTER;
+        return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1769,115 +1768,87 @@ STDMETHODIMP VirtualBox::SetExtraData(INPTR BSTR aKey, INPTR BSTR aValue)
     /* serialize file access */
     AutoLock alock (this);
 
-    CFGHANDLE configLoader;
-
-    /* load the config file */
-    int vrc = CFGLDRLoad (&configLoader, Utf8Str (mData.mCfgFile.mName),
-                          mData.mCfgFile.mHandle,
-                          XmlSchemaNS, true, cfgLdrEntityResolver, NULL);
-    ComAssertRCRet (vrc, E_FAIL);
-
-    CFGNODE extraDataNode = 0;
-
-    vrc = CFGLDRGetNode (configLoader, "VirtualBox/Global/ExtraData", 0,
-                         &extraDataNode);
-    if (VBOX_FAILURE (vrc) && aValue)
-        vrc = CFGLDRCreateNode (configLoader, "VirtualBox/Global/ExtraData",
-                                &extraDataNode);
-
-    if (extraDataNode)
+    try
     {
-        CFGNODE extraDataItemNode = 0;
+        using namespace settings;
+
+        /* load the config file */
+        File file (File::ReadWrite, mData.mCfgFile.mHandle,
+                   Utf8Str (mData.mCfgFile.mName));
+        XmlTreeBackend tree;
+
+        rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
+        CheckComRCReturnRC (rc);
+
+        const Utf8Str key = aKey;
         Bstr oldVal;
 
-        unsigned count;
-        CFGLDRCountChildren (extraDataNode, "ExtraDataItem", &count);
+        Key globalNode = tree.rootKey().key ("Global");
+        Key extraDataNode = globalNode.createKey ("ExtraData");
+        Key extraDataItemNode;
 
-        for (unsigned i = 0; i < count; i++)
+        Key::List items = extraDataNode.keys ("ExtraDataItem");
+        for (Key::List::const_iterator it = items.begin();
+             it != items.end(); ++ it)
         {
-            CFGLDRGetChildNode (extraDataNode, "ExtraDataItem", i, &extraDataItemNode);
-            Bstr name;
-            CFGLDRQueryBSTR (extraDataItemNode, "name", name.asOutParam());
-            if (name == aKey)
+            if (key == (*it).stringValue ("name"))
             {
-                CFGLDRQueryBSTR (extraDataItemNode, "value", oldVal.asOutParam());
+                extraDataItemNode = *it;
+                oldVal = (*it).stringValue ("value");
                 break;
             }
-            CFGLDRReleaseNode (extraDataItemNode);
-            extraDataItemNode = 0;
         }
 
-        /*
-         *  When no key is found, oldVal is null. Note:
-         *  1. when oldVal is null, |oldVal == (BSTR) NULL| is true
-         *  2. we cannot do |oldVal != value| because it will compare
-         *  BSTR pointers instead of strings (due to type conversion ops)
-         */
-        changed = !(oldVal == aValue);
+        /* When no key is found, oldVal is null */
+        changed = oldVal != aValue;
 
         if (changed)
         {
             /* ask for permission from all listeners */
             Bstr error;
-            if (!onExtraDataCanChange (emptyGuid, aKey, aValue, error))
+            if (!onExtraDataCanChange (Guid::Empty, aKey, aValue, error))
             {
                 const char *sep = error.isEmpty() ? "" : ": ";
                 const BSTR err = error.isNull() ? (const BSTR) L"" : error.raw();
                 LogWarningFunc (("Someone vetoed! Change refused%s%ls\n",
                                  sep, err));
-                rc = setError (E_ACCESSDENIED,
+                return setError (E_ACCESSDENIED,
                     tr ("Could not set extra data because someone refused "
                         "the requested change of '%ls' to '%ls'%s%ls"),
                     aKey, aValue, sep, err);
             }
+
+            if (aValue != NULL)
+            {
+                if (extraDataItemNode.isNull())
+                {
+                    extraDataItemNode = extraDataNode.appendKey ("ExtraDataItem");
+                    extraDataItemNode.setStringValue ("name", key);
+                }
+                extraDataItemNode.setStringValue ("value", Utf8Str (aValue));
+            }
             else
             {
-                if (aValue)
-                {
-                    if (!extraDataItemNode)
-                    {
-                        /* create a new item */
-                        CFGLDRAppendChildNode (extraDataNode, "ExtraDataItem",
-                                               &extraDataItemNode);
-                        CFGLDRSetBSTR (extraDataItemNode, "name", aKey);
-                    }
-                    CFGLDRSetBSTR (extraDataItemNode, "value", aValue);
-                }
-                else
-                {
-                    /* an old value does for sure exist here */
-                    CFGLDRDeleteNode (extraDataItemNode);
-                    extraDataItemNode = 0;
-                }
+                /* an old value does for sure exist here (XML schema
+                 * guarantees that "value" may not absent in the
+                 * <ExtraDataItem> element) */
+                Assert (!extraDataItemNode.isNull());
+                extraDataItemNode.zap();
             }
-        }
 
-        if (extraDataItemNode)
-            CFGLDRReleaseNode (extraDataItemNode);
-
-        CFGLDRReleaseNode (extraDataNode);
-
-        if (SUCCEEDED (rc) && changed)
-        {
-            char *loaderError = NULL;
-            vrc = CFGLDRSave (configLoader, &loaderError);
-            if (VBOX_FAILURE (vrc))
-            {
-                rc = setError (E_FAIL,
-                    tr ("Could not save the settings file '%ls' (%Vrc)%s%s"),
-                    mData.mCfgFile.mName.raw(), vrc,
-                    loaderError ? ".\n" : "", loaderError ? loaderError : "");
-                if (loaderError)
-                    RTMemTmpFree (loaderError);
-            }
+            /* save settings on success */
+            rc = VirtualBox::saveSettingsTree (tree, file);
+            CheckComRCReturnRC (rc);
         }
     }
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+    }
 
-    CFGLDRFree (configLoader);
-
-    /* notification handling */
+    /* fire a notification */
     if (SUCCEEDED (rc) && changed)
-        onExtraDataChange (emptyGuid, aKey, aValue);
+        onExtraDataChange (Guid::Empty, aKey, aValue);
 
     return rc;
 }
@@ -3397,34 +3368,30 @@ HRESULT VirtualBox::checkMediaForConflicts (HardDisk *aHardDisk,
  *  Reads in the machine definitions from the configuration loader
  *  and creates the relevant objects.
  *
+ *  @param aGlobal  <Global> node.
+ *
  *  @note Can be called only from #init().
  *  @note Doesn't lock anything.
  */
-HRESULT VirtualBox::loadMachines (CFGNODE aGlobal)
+HRESULT VirtualBox::loadMachines (const settings::Key &aGlobal)
 {
+    using namespace settings;
+
     AutoCaller autoCaller (this);
     AssertReturn (autoCaller.state() == InInit, E_FAIL);
 
     HRESULT rc = S_OK;
-    CFGNODE machineRegistry = 0;
-    unsigned count = 0;
 
-    CFGLDRGetChildNode (aGlobal, "MachineRegistry", 0, &machineRegistry);
-    Assert (machineRegistry);
-
-    CFGLDRCountChildren(machineRegistry, "MachineEntry", &count);
-    for (unsigned i = 0; i < count && SUCCEEDED (rc); i++)
+    Key::List machines = aGlobal.key ("MachineRegistry").keys ("MachineEntry");
+    for (Key::List::const_iterator it = machines.begin();
+         it != machines.end(); ++ it)
     {
-        CFGNODE vm = 0;
-        CFGLDRGetChildNode(machineRegistry, "MachineEntry", i, &vm);
-        /* get the UUID */
-        Guid uuid;
-        CFGLDRQueryUUID(vm, "uuid", uuid.ptr());
-        /* get the machine configuration file name */
-        Bstr src;
-        CFGLDRQueryBSTR(vm, "src", src.asOutParam());
+        /* required */
+        Guid uuid = (*it).value <Guid> ("uuid");
+        /* required */
+        Bstr src = (*it).stringValue ("src");
 
-        /* create a new object */
+        /* create a new machine object */
         ComObjPtr <Machine> machine;
         rc = machine.createObject();
         if (SUCCEEDED (rc))
@@ -3435,11 +3402,7 @@ HRESULT VirtualBox::loadMachines (CFGNODE aGlobal)
             if (SUCCEEDED (rc))
                 rc = registerMachine (machine);
         }
-
-        CFGLDRReleaseNode(vm);
     }
-
-    CFGLDRReleaseNode(machineRegistry);
 
     return rc;
 }
@@ -3453,79 +3416,73 @@ HRESULT VirtualBox::loadMachines (CFGNODE aGlobal)
  *  @note Can be called only from #init().
  *  @note Doesn't lock anything.
  */
-HRESULT VirtualBox::loadDisks (CFGNODE aGlobal)
+HRESULT VirtualBox::loadDisks (const settings::Key &aGlobal)
 {
+    using namespace settings;
+
     AutoCaller autoCaller (this);
     AssertReturn (autoCaller.state() == InInit, E_FAIL);
 
     HRESULT rc = S_OK;
-    CFGNODE registryNode = 0;
 
-    CFGLDRGetChildNode (aGlobal, "DiskRegistry", 0, &registryNode);
-    ComAssertRet (registryNode, E_FAIL);
+    Key registry = aGlobal.key ("DiskRegistry");
 
-    const char *ImagesNodes[] = { "HardDisks", "DVDImages", "FloppyImages" };
+    const char *kMediaNodes[] = { "HardDisks", "DVDImages", "FloppyImages" };
 
-    for (size_t node = 0; node < ELEMENTS (ImagesNodes) && SUCCEEDED (rc); node ++)
+    for (size_t n = 0; n < ELEMENTS (kMediaNodes); ++ n)
     {
-        CFGNODE imagesNode = 0;
-        CFGLDRGetChildNode (registryNode, ImagesNodes [node], 0, &imagesNode);
-
-        // all three nodes are optional
-        if (!imagesNode)
+        /* All three media nodes are optional */
+        Key node = registry.findKey (kMediaNodes [n]);
+        if (node.isNull())
             continue;
 
-        if (node == 0) // HardDisks node
-            rc = loadHardDisks (imagesNode);
-        else
+        if (n == 0)
         {
-            unsigned count = 0;
-            CFGLDRCountChildren (imagesNode, "Image", &count);
-            for (unsigned i = 0; i < count && SUCCEEDED (rc); ++ i)
-            {
-                CFGNODE imageNode = 0;
-                CFGLDRGetChildNode (imagesNode, "Image", i, &imageNode);
-                ComAssertBreak (imageNode, rc = E_FAIL);
-
-                Guid uuid; // uuid (required)
-                CFGLDRQueryUUID (imageNode, "uuid", uuid.ptr());
-                Bstr src; // source (required)
-                CFGLDRQueryBSTR (imageNode, "src", src.asOutParam());
-
-                switch (node)
-                {
-                    case 1: // DVDImages
-                    {
-                        ComObjPtr <DVDImage> dvdImage;
-                        dvdImage.createObject();
-                        rc = dvdImage->init (this, src, TRUE /* isRegistered */, uuid);
-                        if (SUCCEEDED (rc))
-                            rc = registerDVDImage (dvdImage, TRUE /* aOnStartUp */);
-
-                        break;
-                    }
-                    case 2: // FloppyImages
-                    {
-                        ComObjPtr <FloppyImage> floppyImage;
-                        floppyImage.createObject();
-                        rc = floppyImage->init (this, src, TRUE /* isRegistered */, uuid);
-                        if (SUCCEEDED (rc))
-                            rc = registerFloppyImage (floppyImage, TRUE /* aOnStartUp */);
-
-                        break;
-                    }
-                    default:
-                        AssertFailed();
-                }
-
-                CFGLDRReleaseNode (imageNode);
-            }
+            /* HardDisks node */
+            rc = loadHardDisks (node);
+            continue;
         }
 
-        CFGLDRReleaseNode (imagesNode);
-    }
+        Key::List images = node.keys ("Image");
+        for (Key::List::const_iterator it = images.begin();
+             it != images.end(); ++ it)
+        {
+            /* required */
+            Guid uuid = (*it).value <Guid> ("uuid");
+            /* required */
+            Bstr src = (*it).stringValue ("src");
 
-    CFGLDRReleaseNode (registryNode);
+            switch (n)
+            {
+                case 1: /* DVDImages */
+                {
+                    ComObjPtr <DVDImage> image;
+                    image.createObject();
+                    rc = image->init (this, src, TRUE /* isRegistered */, uuid);
+                    if (SUCCEEDED (rc))
+                        rc = registerDVDImage (image, TRUE /* aOnStartUp */);
+
+                    break;
+                }
+                case 2: /* FloppyImages */
+                {
+                    ComObjPtr <FloppyImage> image;
+                    image.createObject();
+                    rc = image->init (this, src, TRUE /* isRegistered */, uuid);
+                    if (SUCCEEDED (rc))
+                        rc = registerFloppyImage (image, TRUE /* aOnStartUp */);
+
+                    break;
+                }
+                default:
+                    AssertFailed();
+            }
+
+            CheckComRCBreakRC (rc);
+        }
+
+        CheckComRCBreakRC (rc);
+    }
 
     return rc;
 }
@@ -3534,186 +3491,146 @@ HRESULT VirtualBox::loadDisks (CFGNODE aGlobal)
  *  Loads all hard disks from the given <HardDisks> node.
  *  Note that all loaded hard disks register themselves within this VirtualBox.
  *
- *  @param aNode        <HardDisks> node
+ *  @param aNode        <HardDisks> node.
  *
  *  @note Can be called only from #init().
  *  @note Doesn't lock anything.
  */
-HRESULT VirtualBox::loadHardDisks (CFGNODE aNode)
+HRESULT VirtualBox::loadHardDisks (const settings::Key &aNode)
 {
+    using namespace settings;
+
     AutoCaller autoCaller (this);
     AssertReturn (autoCaller.state() == InInit, E_FAIL);
 
-    AssertReturn (aNode, E_INVALIDARG);
+    AssertReturn (!aNode.isNull(), E_INVALIDARG);
 
     HRESULT rc = S_OK;
 
-    unsigned count = 0;
-    CFGLDRCountChildren (aNode, "HardDisk", &count);
-    for (unsigned i = 0; i < count && SUCCEEDED (rc); ++ i)
+    Key::List disks = aNode.keys ("HardDisk");
+    for (Key::List::const_iterator it = disks.begin();
+         it != disks.end(); ++ it)
     {
-        CFGNODE hdNode = 0;
+        Key storageNode;
 
-        CFGLDRGetChildNode (aNode, "HardDisk", i, &hdNode);
-        ComAssertBreak (hdNode, rc = E_FAIL);
+        /* detect the type of the hard disk (either one of VirtualDiskImage,
+         * ISCSIHardDisk, VMDKImage or HCustomHardDisk) */
 
+        do
         {
-            CFGNODE storageNode = 0;
-
-            // detect the type of the hard disk
-            // (either one of HVirtualDiskImage, HISCSIHardDisk or HPhysicalVolume
-            do
+            storageNode = (*it).findKey ("VirtualDiskImage");
+            if (!storageNode.isNull())
             {
-                CFGLDRGetChildNode (hdNode, "VirtualDiskImage", 0, &storageNode);
-                if (storageNode)
-                {
-                    ComObjPtr <HVirtualDiskImage> vdi;
-                    vdi.createObject();
-                    rc = vdi->init (this, NULL, hdNode, storageNode);
-                    break;
-                }
-
-                CFGLDRGetChildNode (hdNode, "ISCSIHardDisk", 0, &storageNode);
-                if (storageNode)
-                {
-                    ComObjPtr <HISCSIHardDisk> iscsi;
-                    iscsi.createObject();
-                    rc = iscsi->init (this, hdNode, storageNode);
-                    break;
-                }
-
-                CFGLDRGetChildNode (hdNode, "VMDKImage", 0, &storageNode);
-                if (storageNode)
-                {
-                    ComObjPtr <HVMDKImage> vmdk;
-                    vmdk.createObject();
-                    rc = vmdk->init (this, NULL, hdNode, storageNode);
-                    break;
-                }
-                CFGLDRGetChildNode (hdNode, "CustomHardDisk", 0, &storageNode);
-                if (storageNode)
-                {
-                    ComObjPtr <HCustomHardDisk> custom;
-                    custom.createObject();
-                    rc = custom->init (this, NULL, hdNode, storageNode);
-                    break;
-                }
-
-                /// @todo (dmik) later
-//                CFGLDRGetChildNode (hdNode, "PhysicalVolume", 0, &storageNode);
-//                if (storageNode)
-//                {
-//                    break;
-//                }
-
-                ComAssertMsgFailedBreak (("No valid hard disk storage node!\n"),
-                                         rc = E_FAIL);
+                ComObjPtr <HVirtualDiskImage> vdi;
+                vdi.createObject();
+                rc = vdi->init (this, NULL, (*it), storageNode);
+                break;
             }
-            while (0);
 
-            if (storageNode)
-                CFGLDRReleaseNode (storageNode);
+            storageNode = (*it).findKey ("ISCSIHardDisk");
+            if (!storageNode.isNull())
+            {
+                ComObjPtr <HISCSIHardDisk> iscsi;
+                iscsi.createObject();
+                rc = iscsi->init (this, (*it), storageNode);
+                break;
+            }
+
+            storageNode = (*it).findKey ("VMDKImage");
+            if (!storageNode.isNull())
+            {
+                ComObjPtr <HVMDKImage> vmdk;
+                vmdk.createObject();
+                rc = vmdk->init (this, NULL, (*it), storageNode);
+                break;
+            }
+
+            storageNode = (*it).findKey ("CustomHardDisk");
+            if (!storageNode.isNull())
+            {
+                ComObjPtr <HCustomHardDisk> custom;
+                custom.createObject();
+                rc = custom->init (this, NULL, (*it), storageNode);
+                break;
+            }
+
+            ComAssertMsgFailedBreak (("No valid hard disk storage node!\n"),
+                                     rc = E_FAIL);
         }
-
-        CFGLDRReleaseNode (hdNode);
+        while (0);
     }
 
     return rc;
 }
 
 /**
- *  Helper function to write out the configuration to XML.
+ *  Helper function to write out the configuration tree.
  *
- *  @note Locks objects!
+ *  @note Locks objects for reading!
  */
-HRESULT VirtualBox::saveConfig()
+HRESULT VirtualBox::saveSettings()
 {
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    ComAssertRet (!!mData.mCfgFile.mName, E_FAIL);
+    AssertReturn (!!mData.mCfgFile.mName, E_FAIL);
 
     HRESULT rc = S_OK;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
 
-    CFGHANDLE configLoader;
-
-    /* load the config file */
-    int vrc = CFGLDRLoad (&configLoader, Utf8Str (mData.mCfgFile.mName),
-                          mData.mCfgFile.mHandle,
-                          XmlSchemaNS, true, cfgLdrEntityResolver, NULL);
-    ComAssertRCRet (vrc, E_FAIL);
-
-    const char * Global = "VirtualBox/Global";
-    CFGNODE global;
-
-    vrc = CFGLDRGetNode(configLoader, Global, 0, &global);
-    if (VBOX_FAILURE (vrc))
-        CFGLDRCreateNode (configLoader, Global, &global);
-
-    do
+    try
     {
-        ComAssertBreak (global, rc = E_FAIL);
+        using namespace settings;
+
+        File file (File::ReadWrite, mData.mCfgFile.mHandle,
+                   Utf8Str (mData.mCfgFile.mName));
+        XmlTreeBackend tree;
+
+        rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
+        CheckComRCThrowRC (rc);
+
+        Key global = tree.rootKey().createKey ("Global");
 
         /* machines */
-        do
         {
-            const char *Registry = "MachineRegistry";
-            const char *Entry = "MachineEntry";
-            CFGNODE registryNode = NULL;
-
             /* first, delete the entire machine registry */
-            if (VBOX_SUCCESS (CFGLDRGetChildNode (global, Registry, 0, &registryNode)))
-                CFGLDRDeleteNode (registryNode);
-
+            Key registryNode = global.findKey ("MachineRegistry");
+            if (!registryNode.isNull())
+                registryNode.zap();
             /* then, recreate it */
-            CFGLDRCreateChildNode (global, Registry, &registryNode);
+            registryNode = global.createKey ("MachineRegistry");
 
             /* write out the machines */
             for (MachineList::iterator it = mData.mMachines.begin();
                  it != mData.mMachines.end();
                  ++ it)
             {
-                /// @todo (dmik) move this part to Machine for better incapsulation
-
-                CFGNODE entryNode = NULL;
-                CFGLDRAppendChildNode (registryNode, Entry, &entryNode);
+                Key entryNode = registryNode.appendKey ("MachineEntry");
                 rc = (*it)->saveRegistryEntry (entryNode);
-                CFGLDRReleaseNode (entryNode);
-                CheckComRCBreakRC (rc);
+                CheckComRCThrowRC (rc);
             }
-
-            CFGLDRReleaseNode (registryNode);
         }
-        while (0);
-        CheckComRCBreakRC (rc);
 
         /* disk images */
-        do
         {
-            CFGNODE registryNode = 0;
-            CFGLDRGetChildNode (global, "DiskRegistry", 0, &registryNode);
             /* first, delete the entire disk image registr */
-            if (registryNode)
-                CFGLDRDeleteNode (registryNode);
+            Key registryNode = global.findKey ("DiskRegistry");
+            if (!registryNode.isNull())
+                registryNode.zap();
             /* then, recreate it */
-            CFGLDRCreateChildNode (global, "DiskRegistry", &registryNode);
-            ComAssertBreak (registryNode, rc = E_FAIL);
+            registryNode = global.createKey ("DiskRegistry");
 
             /* write out the hard disks */
             {
-                CFGNODE imagesNode = 0;
-                CFGLDRCreateChildNode (registryNode, "HardDisks", &imagesNode);
+                Key imagesNode = registryNode.createKey ("HardDisks");
                 rc = saveHardDisks (imagesNode);
-                CFGLDRReleaseNode (imagesNode);
-                CheckComRCBreakRC (rc);
+                CheckComRCThrowRC (rc);
             }
 
             /* write out the CD/DVD images */
             {
-                CFGNODE imagesNode = 0;
-                CFGLDRCreateChildNode (registryNode, "DVDImages", &imagesNode);
+                Key imagesNode = registryNode.createKey ("DVDImages");
 
                 for (DVDImageList::iterator it = mData.mDVDImages.begin();
                      it != mData.mDVDImages.end();
@@ -3721,20 +3638,15 @@ HRESULT VirtualBox::saveConfig()
                 {
                     ComObjPtr <DVDImage> dvd = *it;
                     /* no need to lock: fields are constant */
-                    CFGNODE imageNode = 0;
-                    CFGLDRAppendChildNode (imagesNode, "Image", &imageNode);
-                    CFGLDRSetUUID (imageNode, "uuid", dvd->id());
-                    CFGLDRSetBSTR (imageNode, "src", dvd->filePath());
-                    CFGLDRReleaseNode (imageNode);
+                    Key imageNode = imagesNode.appendKey ("Image");
+                    imageNode.setValue <Guid> ("uuid", dvd->id());
+                    imageNode.setValue <Bstr> ("src", dvd->filePath());
                 }
-
-                CFGLDRReleaseNode (imagesNode);
             }
 
             /* write out the floppy images */
             {
-                CFGNODE imagesNode = 0;
-                CFGLDRCreateChildNode (registryNode, "FloppyImages", &imagesNode);
+                Key imagesNode = registryNode.createKey ("FloppyImages");
 
                 for (FloppyImageList::iterator it = mData.mFloppyImages.begin();
                      it != mData.mFloppyImages.end();
@@ -3742,53 +3654,33 @@ HRESULT VirtualBox::saveConfig()
                 {
                     ComObjPtr <FloppyImage> fd = *it;
                     /* no need to lock: fields are constant */
-                    CFGNODE imageNode = 0;
-                    CFGLDRAppendChildNode (imagesNode, "Image", &imageNode);
-                    CFGLDRSetUUID (imageNode, "uuid", fd->id());
-                    CFGLDRSetBSTR (imageNode, "src", fd->filePath());
-                    CFGLDRReleaseNode (imageNode);
+                    Key imageNode = imagesNode.appendKey ("Image");
+                    imageNode.setValue <Guid> ("uuid", fd->id());
+                    imageNode.setValue <Bstr> ("src", fd->filePath());
                 }
-
-                CFGLDRReleaseNode (imagesNode);
             }
-
-            CFGLDRReleaseNode (registryNode);
         }
-        while (0);
-        CheckComRCBreakRC (rc);
 
-        do
-        {
-            /* host data (USB filters) */
-            rc = mData.mHost->saveSettings (global);
-            CheckComRCBreakRC (rc);
+        /* host data (USB filters) */
+        rc = mData.mHost->saveSettings (global);
+        CheckComRCThrowRC (rc);
 
-            rc = mData.mSystemProperties->saveSettings (global);
-            CheckComRCBreakRC (rc);
-        }
-        while (0);
+        rc = mData.mSystemProperties->saveSettings (global);
+        CheckComRCThrowRC (rc);
+
+        /* save the settings on success */
+        rc = VirtualBox::saveSettingsTree (tree, file);
+        CheckComRCThrowRC (rc);
     }
-    while (0);
-
-    if (global)
-        CFGLDRReleaseNode (global);
-
-    if (SUCCEEDED (rc))
+    catch (HRESULT err)
     {
-        char *loaderError = NULL;
-        vrc = CFGLDRSave (configLoader, &loaderError);
-        if (VBOX_FAILURE (vrc))
-        {
-            rc = setError (E_FAIL,
-                tr ("Could not save the settings file '%ls' (%Vrc)%s%s"),
-                mData.mCfgFile.mName.raw(), vrc,
-                loaderError ? ".\n" : "", loaderError ? loaderError : "");
-            if (loaderError)
-                RTMemTmpFree (loaderError);
-        }
+        /* we assume that error info is set by the thrower */
+        rc = err;
     }
-
-    CFGLDRFree(configLoader);
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+    }
 
     return rc;
 }
@@ -3796,75 +3688,60 @@ HRESULT VirtualBox::saveConfig()
 /**
  *  Saves all hard disks to the given <HardDisks> node.
  *
- *  @param aNode        <HardDisks> node
+ *  @param aNode        <HardDisks> node.
  *
  *  @note Locks this object for reding.
  */
-HRESULT VirtualBox::saveHardDisks (CFGNODE aNode)
+HRESULT VirtualBox::saveHardDisks (settings::Key &aNode)
 {
-    AssertReturn (aNode, E_INVALIDARG);
+    using namespace settings;
+
+    AssertReturn (!aNode.isNull(), E_INVALIDARG);
 
     HRESULT rc = S_OK;
 
     AutoReaderLock alock (this);
 
     for (HardDiskList::const_iterator it = mData.mHardDisks.begin();
-         it != mData.mHardDisks.end() && SUCCEEDED (rc);
+         it != mData.mHardDisks.end();
          ++ it)
     {
         ComObjPtr <HardDisk> hd = *it;
         AutoReaderLock hdLock (hd);
 
-        CFGNODE hdNode = 0;
-        CFGLDRAppendChildNode (aNode, "HardDisk", &hdNode);
-        ComAssertBreak (hdNode, rc = E_FAIL);
-
-        CFGNODE storageNode = 0;
+        Key hdNode = aNode.appendKey ("HardDisk");
 
         switch (hd->storageType())
         {
             case HardDiskStorageType_VirtualDiskImage:
             {
-                CFGLDRAppendChildNode (hdNode, "VirtualDiskImage", &storageNode);
-                ComAssertBreak (storageNode, rc = E_FAIL);
+                Key storageNode = hdNode.createKey ("VirtualDiskImage");
                 rc = hd->saveSettings (hdNode, storageNode);
                 break;
             }
 
             case HardDiskStorageType_ISCSIHardDisk:
             {
-                CFGLDRAppendChildNode (hdNode, "ISCSIHardDisk", &storageNode);
-                ComAssertBreak (storageNode, rc = E_FAIL);
+                Key storageNode = hdNode.createKey ("ISCSIHardDisk");
                 rc = hd->saveSettings (hdNode, storageNode);
                 break;
             }
 
             case HardDiskStorageType_VMDKImage:
             {
-                CFGLDRAppendChildNode (hdNode, "VMDKImage", &storageNode);
-                ComAssertBreak (storageNode, rc = E_FAIL);
+                Key storageNode = hdNode.createKey ("VMDKImage");
                 rc = hd->saveSettings (hdNode, storageNode);
                 break;
             }
             case HardDiskStorageType_CustomHardDisk:
             {
-                CFGLDRAppendChildNode (hdNode, "CustomHardDisk", &storageNode);
-                ComAssertBreak (storageNode, rc = E_FAIL);
+                Key storageNode = hdNode.createKey ("CustomHardDisk");
                 rc = hd->saveSettings (hdNode, storageNode);
                 break;
             }
-
-            /// @todo (dmik) later
-//            case HardDiskStorageType_PhysicalVolume:
-//            {
-//                break;
-//            }
         }
 
-        if (storageNode)
-            CFGLDRReleaseNode (storageNode);
-
-        CFGLDRReleaseNode (hdNode);
+        CheckComRCBreakRC (rc);
     }
 
     return rc;
@@ -3925,7 +3802,7 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
     mData.mMachines.push_back (aMachine);
 
     if (autoCaller.state() != InInit)
-        rc = saveConfig();
+        rc = saveSettings();
 
     return rc;
 }
@@ -3970,7 +3847,7 @@ HRESULT VirtualBox::registerHardDisk (HardDisk *aHardDisk, RHD_Flags aFlags)
     /* save global config file if not on startup */
     /// @todo (dmik) optimize later to save only the <HardDisks> node
     if (aFlags != RHD_OnStartUp)
-        rc = saveConfig();
+        rc = saveSettings();
 
     return rc;
 }
@@ -4030,7 +3907,7 @@ HRESULT VirtualBox::unregisterHardDisk (HardDisk *aHardDisk)
 
     /* save the global config file anyway (already unregistered) */
     /// @todo (dmik) optimize later to save only the <HardDisks> node
-    HRESULT rc2 = saveConfig();
+    HRESULT rc2 = saveSettings();
     if (SUCCEEDED (rc))
         rc = rc2;
 
@@ -4153,9 +4030,148 @@ HRESULT VirtualBox::updateSettings (const char *aOldPath, const char *aNewPath)
         (*it)->updatePaths (aOldPath, aNewPath);
     }
 
-    HRESULT rc = saveConfig();
+    HRESULT rc = saveSettings();
 
     return rc;
+}
+
+/** 
+ * Helper method to load the setting tree and turn expected exceptions into
+ * COM errors, according to arguments.
+ * 
+ * Note that this method will not catch unexpected errors so it may still
+ * throw something.
+ *
+ * @param aTree             Tree to load into settings.
+ * @param aFile             File to load settings from.
+ * @param aValidate         @c @true to enable tree validation.
+ * @param aCatchLoadErrors  @c true to catch exceptions caused by file
+ *                          access or validation errors.
+ * @param aAddDefaults      @c true to cause the substitution of default
+ *                          values for for missing attributes that have
+ *                          defaults in the XML schema.
+ */
+/* static */
+HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
+                                      settings::File &aFile,
+                                      bool aValidate,
+                                      bool aCatchLoadErrors,
+                                      bool aAddDefaults)
+{
+    using namespace settings;
+
+    try
+    {
+        SettingsInputResolver resolver = SettingsInputResolver();
+
+        aTree.setInputResolver (resolver);
+        aTree.read (aFile, aValidate ? VBOX_XML_SCHEMA : NULL,
+                    aAddDefaults ? XmlTreeBackend::Read_AddDefaults : 0);
+        aTree.resetInputResolver();
+    }
+    catch (const EIPRTFailure &err)
+    {
+        if (!aCatchLoadErrors)
+            throw;
+
+        return setError (E_FAIL,
+                         tr ("Could not load the settings file '%s' (%Vrc)"),
+                         aFile.uri(), err.rc());
+    }
+    catch (const XmlTreeBackend::Error &err)
+    {
+        Assert (err.what() != NULL);
+
+        if (!aCatchLoadErrors)
+            throw;
+
+        return setError (E_FAIL,
+                         tr ("Could not load the settings file '%s'.\n%s"),
+                         aFile.uri(),
+                         err.what() ? err.what() : "Unknown error");
+    }
+
+    return S_OK;
+}
+
+/** 
+ * Helper method to save the settings tree and turn expected exceptions to COM
+ * errors.
+ *
+ * Note that this method will not catch unexpected errors so it may still
+ * throw something.
+ * 
+ * @param aTree Tree to save.
+ * @param aFile File to save the tree to.
+ */
+/* static */
+HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
+                                             settings::File &aFile)
+{
+    using namespace settings;
+
+    try
+    {
+        aTree.write (aFile);
+    }
+    catch (const EIPRTFailure &err)
+    {
+        /* this is the only expected exception for now */
+        return setError (E_FAIL,
+                         tr ("Could not save the settings file '%s' (%Vrc)"),
+                         aFile.uri(), err.rc());
+    }
+
+    return S_OK;
+}
+
+/** 
+ * Handles unexpected exceptions by turning them into COM errors in release
+ * builds or by hitting a breakpoint in the release builds.
+ *
+ * Usage pattern:
+ * @code
+        try
+        {
+            // ...
+        }
+        catch (LaLalA)
+        {
+            // ...
+        }
+        catch (...)
+        {
+            rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+        }
+ * @endcode
+ * 
+ * @param RT_SRC_POS_DECL "RT_SRC_POS" macro instantiation.
+ */
+/* static */
+HRESULT VirtualBox::handleUnexpectedExceptions (RT_SRC_POS_DECL)
+{
+    try
+    {
+        /* rethrow the current exception */
+        throw;
+    }
+    catch (const std::exception &err)
+    {
+        ComAssertMsgFailedPos (("Unexpected exception '%s' (%s)\n",
+                                typeid (err).name(), err.what()),
+                               pszFile, iLine, pszFunction);
+        return E_FAIL;
+    }
+    catch (...)
+    {
+        ComAssertMsgFailedPos (("Unknown exception\n"),
+                               pszFile, iLine, pszFunction);
+        return E_FAIL;
+    }
+
+    /* should not get here */
+    AssertFailed();
+    return E_FAIL;
 }
 
 /**
@@ -4186,7 +4202,7 @@ HRESULT VirtualBox::registerDVDImage (DVDImage *aImage, bool aOnStartUp)
 
     /* save global config file if we're supposed to */
     if (!aOnStartUp)
-        rc = saveConfig();
+        rc = saveSettings();
 
     return rc;
 }
@@ -4219,7 +4235,7 @@ HRESULT VirtualBox::registerFloppyImage (FloppyImage *aImage, bool aOnStartUp)
 
     /* save global config file if we're supposed to */
     if (!aOnStartUp)
-        rc = saveConfig();
+        rc = saveSettings();
 
     return rc;
 }

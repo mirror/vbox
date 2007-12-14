@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class declaration
@@ -19,7 +21,6 @@
 #define ____H_MACHINEIMPL
 
 #include "VirtualBoxBase.h"
-#include "VirtualBoxXMLUtil.h"
 #include "ProgressImpl.h"
 #include "SnapshotImpl.h"
 #include "VRDPServerImpl.h"
@@ -37,9 +38,10 @@
 #include "SchemaDefs.h"
 
 #include <VBox/types.h>
-#include <VBox/cfgldr.h>
+
 #include <iprt/file.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 
 #include <list>
 
@@ -68,7 +70,6 @@ class SessionMachine;
 
 class ATL_NO_VTABLE Machine :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxXMLUtil,
     public VirtualBoxSupportErrorInfoImpl <Machine, IMachine>,
     public VirtualBoxSupportTranslation <Machine>,
     public IMachine
@@ -140,7 +141,7 @@ public:
         com::ErrorInfo mAccessError;
 
         MachineState_T mMachineState;
-        LONG64 mLastStateChange;
+        RTTIMESPEC mLastStateChange;
 
         uint32_t mMachineStateDeps;
         RTSEMEVENT mZeroMachineStateDepsSem;
@@ -556,7 +557,7 @@ public:
     virtual HRESULT onUSBControllerChange() { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
 
-    HRESULT saveRegistryEntry (CFGNODE aEntryNode);
+    HRESULT saveRegistryEntry (settings::Key &aEntryNode);
 
     int calculateFullPath (const char *aPath, Utf8Str &aResult);
     void calculateRelativePath (const char *aPath, Utf8Str &aResult);
@@ -612,17 +613,15 @@ protected:
                               bool aSetError = false);
 
     HRESULT loadSettings (bool aRegistered);
-    HRESULT loadSnapshot (CFGNODE aNode, const Guid &aCurSnapshotId,
+    HRESULT loadSnapshot (const settings::Key &aNode, const Guid &aCurSnapshotId,
                           Snapshot *aParentSnapshot);
-    HRESULT loadHardware (CFGNODE aNode);
-    HRESULT loadHardDisks (CFGNODE aNode, bool aRegistered,
+    HRESULT loadHardware (const settings::Key &aNode);
+    HRESULT loadHardDisks (const settings::Key &aNode, bool aRegistered,
                            const Guid *aSnapshotId = NULL);
 
-    HRESULT openConfigLoader (CFGHANDLE *aLoader, bool aIsNew = false);
-    HRESULT closeConfigLoader (CFGHANDLE aLoader, bool aSaveBeforeClose);
-
-    HRESULT findSnapshotNode (Snapshot *aSnapshot, CFGNODE aMachineNode,
-                              CFGNODE *aSnapshotsNode, CFGNODE *aSnapshotNode);
+    HRESULT findSnapshotNode (Snapshot *aSnapshot, settings::Key &aMachineNode,
+                              settings::Key *aSnapshotsNode,
+                              settings::Key *aSnapshotNode);
 
     HRESULT findSnapshot (const Guid &aId, ComObjPtr <Snapshot> &aSnapshot,
                           bool aSetError = false);
@@ -654,12 +653,12 @@ protected:
     };
 
     HRESULT saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags);
-    HRESULT saveSnapshotSettingsWorker (CFGNODE aMachineNode,
+    HRESULT saveSnapshotSettingsWorker (settings::Key &aMachineNode,
                                         Snapshot *aSnapshot, int aOpFlags);
 
-    HRESULT saveSnapshot (CFGNODE aNode, Snapshot *aSnapshot, bool aAttrsOnly);
-    HRESULT saveHardware (CFGNODE aNode);
-    HRESULT saveHardDisks (CFGNODE aNode);
+    HRESULT saveSnapshot (settings::Key &aNode, Snapshot *aSnapshot, bool aAttrsOnly);
+    HRESULT saveHardware (settings::Key &aNode);
+    HRESULT saveHardDisks (settings::Key &aNode);
 
     HRESULT saveStateSettings (int aFlags);
 
@@ -918,7 +917,8 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init (SessionMachine *aSessionMachine,
                   INPTR GUIDPARAM aSnapshotId, INPTR BSTR aStateFilePath);
-    HRESULT init (Machine *aMachine, CFGNODE aHWNode, CFGNODE aHDAsNode,
+    HRESULT init (Machine *aMachine,
+                  const settings::Key &aHWNode, const settings::Key &aHDAsNode,
                   INPTR GUIDPARAM aSnapshotId, INPTR BSTR aStateFilePath);
     void uninit();
 

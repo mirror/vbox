@@ -76,13 +76,13 @@
  */
 #define COM_IIDOF(I) _ATL_IIDOF (I)
 
-#else // defined (RT_OS_WINDOWS)
+#else /* defined (RT_OS_WINDOWS) */
 
 #error "VBOX_WITH_XPCOM is not defined!"
 
-#endif // defined (RT_OS_WINDOWS)
+#endif /* defined (RT_OS_WINDOWS) */
 
-#else // !defined (VBOX_WITH_XPCOM)
+#else /* !defined (VBOX_WITH_XPCOM) */
 
 // XPCOM
 /////////////////////////////////////////////////////////////////////////////
@@ -100,7 +100,7 @@
 #undef FALSE
 #undef TRUE
 
-#endif // defined (RT_OS_OS2)
+#endif /* defined (RT_OS_OS2) */
 
 #if defined (RT_OS_DARWIN)
   /* CFBase.h defines these*/
@@ -288,7 +288,7 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
     return rv;                                                                \
 }
 
-#endif // !defined (RT_OS_WINDOWS)
+#endif /* !defined (RT_OS_WINDOWS) */
 
 /**
  *  Declares a whar_t string literal from the argument.
@@ -303,5 +303,5 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
 #   error "Unsupported compiler!"
 #endif
 
-#endif
+#endif /* ___VBox_com_defs_h */
 

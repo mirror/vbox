@@ -31,7 +31,7 @@
 
 Snapshot::Data::Data()
 {
-    mTimeStamp = 0;
+    RTTimeSpecSetMilli (&mTimeStamp, 0);
 };
 
 Snapshot::Data::~Data()
@@ -61,7 +61,7 @@ void Snapshot::FinalRelease()
  *  @param  aParent        parent snapshot (NULL if no parent)
  */
 HRESULT Snapshot::init (const Guid &aId, INPTR BSTR aName, INPTR BSTR aDescription,
-                        LONG64 aTimeStamp, SnapshotMachine *aMachine,
+                        RTTIMESPEC aTimeStamp, SnapshotMachine *aMachine,
                         Snapshot *aParent)
 {
     LogFlowMember (("Snapshot::init(aParent=%p)\n", aParent));
@@ -248,7 +248,7 @@ STDMETHODIMP Snapshot::COMGETTER(TimeStamp) (LONG64 *aTimeStamp)
     AutoLock alock (this);
     CHECK_READY();
 
-    *aTimeStamp = mData.mTimeStamp;
+    *aTimeStamp = RTTimeSpecGetMilli (&mData.mTimeStamp);
     return S_OK;
 }
 

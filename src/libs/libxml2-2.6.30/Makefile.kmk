@@ -1,0 +1,117 @@
+# $Id  $
+## @file
+# Makefile for the libxml2 library.
+#
+
+#
+#  Copyright (C) 2007 innotek GmbH
+#
+#  This file is part of VirtualBox Open Source Edition (OSE), as
+#  available from http://www.virtualbox.org. This file is free software;
+#  you can redistribute it and/or modify it under the terms of the GNU
+#  General Public License as published by the Free Software Foundation,
+#  in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+#  distribution. VirtualBox OSE is distributed in the hope that it will
+#  be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+DEPTH = ../../..
+include $(PATH_KBUILD)/header.kmk
+
+# include the generated config file
+ifeq ($(filter-out nt win win32 win64,$(BUILD_TARGET)),)
+ include win32/config.msvc
+endif
+
+LIBRARIES = \
+	VBox-libxml2
+
+VBox-libxml2_TEMPLATE       = VBOXR3
+VBox-libxml2_SDKS           = VBOX_ZLIB
+VBox-libxml2_INCS           = include
+VBox-libxml2_DEFS           = LIBXML_STATIC
+VBox-libxml2_SOURCES        = \
+	c14n.c \
+	catalog.c \
+	chvalid.c \
+	debugXML.c \
+	dict.c \
+	DOCBparser.c \
+	encoding.c \
+	entities.c \
+	error.c \
+	globals.c \
+	hash.c \
+	HTMLparser.c \
+	HTMLtree.c \
+	legacy.c \
+	list.c \
+	nanoftp.c \
+	nanohttp.c \
+	parser.c \
+	parserInternals.c \
+	pattern.c \
+	relaxng.c \
+	SAX2.c \
+	SAX.c \
+	schematron.c \
+	threads.c \
+	tree.c \
+	uri.c \
+	valid.c \
+	xinclude.c \
+	xlink.c \
+	xmlIO.c \
+	xmlmemory.c \
+	xmlreader.c \
+	xmlregexp.c \
+	xmlmodule.c \
+	xmlsave.c \
+	xmlschemas.c \
+	xmlschemastypes.c \
+	xmlunicode.c \
+	xmlwriter.c \
+	xpath.c \
+	xpointer.c \
+	xmlstring.c
+
+VBox-libxml2_DEFS.win       = WIN32 _WINDOWS _MBCS \
+                              _CRT_SECURE_NO_DEPRECATE _CRT_NONSTDC_NO_DEPRECATE
+VBox-libxml2_LDFLAGS.win    = /VERSION:$(LIBXML_MAJOR_VERSION).$(LIBXML_MINOR_VERSION)
+
+ifneq ($(WITH_THREADS),no)
+ VBox-libxml2_DEFS.win     += _REENTRANT
+endif
+
+# Note: all _LIBS stuff is left below is just in case if we want to build a
+# shared library one day.
+
+ifeq ($(filter-out yes ctls,$(WITH_THREADS)),)
+ VBox-libxml2_DEFS.win     += HAVE_WIN32_THREADS HAVE_COMPILER_TLS
+else
+ifeq ($(WITH_THREADS),native)
+ VBox-libxml2_DEFS.win     += HAVE_WIN32_THREADS
+else
+ifeq ($(WITH_THREADS),posix)
+ VBox-libxml2_DEFS.win     += HAVE_PTHREAD_H
+ VBox-libxml2_LIBS.win     += pthreadVC.lib
+endif
+endif
+endif
+
+ifeq ($(WITH_ZLIB),1)
+ VBox-libxml2_DEFS.win     += HAVE_ZLIB_H
+ VBox-libxml2_LIBS.win     += zdll.lib
+endif
+
+ifeq ($(WITH_FTP),1)
+ VBox-libxml2_LIBS.win     += wsock32.lib
+endif
+ifeq ($(WITH_ICONV),1)
+ VBox-libxml2_LIBS.win     += iconv.lib
+endif
+ifeq ($(WITH_MODULES),1)
+ VBox-libxml2_LIBS.win     += kernel32.lib
+endif
+
+include $(PATH_KBUILD)/footer.kmk

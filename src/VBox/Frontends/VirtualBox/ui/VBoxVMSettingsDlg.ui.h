@@ -2025,8 +2025,10 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
                     QDir::convertSeparators (leSnapshotFolder->text()));
     }
 
-    /* Description */
-    cmachine.SetDescription (teDescription->text());
+    /* Description (set empty to null to avoid an empty <Description> node
+     * in the settings file) */
+    cmachine.SetDescription (teDescription->text().isEmpty() ? QString::null :
+                             teDescription->text());
 
     /* Shared clipboard mode */
     cmachine.SetClipboardMode ((CEnums::ClipboardMode)cbSharedClipboard->currentItem());

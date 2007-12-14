@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -89,6 +91,9 @@ public:
     STDMETHOD(GetHostDrive) (IHostFloppyDrive **aHostFloppyDrive);
 
     // public methods only for internal purposes
+
+    HRESULT loadSettings (const settings::Key &aMachineNode);
+    HRESULT saveSettings (settings::Key &aMachineNode);
 
     bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }

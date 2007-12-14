@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -21,7 +23,6 @@
 #include "VirtualBoxBase.h"
 #include "Collection.h"
 
-#include <VBox/cfgldr.h>
 #include <VBox/VBoxHDD-new.h>
 
 #include <iprt/semaphore.h>
@@ -133,7 +134,7 @@ public:
     virtual HRESULT trySetRegistered (BOOL aRegistered);
     virtual HRESULT getAccessible (Bstr &aAccessError) = 0;
 
-    virtual HRESULT saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode) = 0;
+    virtual HRESULT saveSettings (settings::Key &aHDNode, settings::Key &aStorageNode) = 0;
 
     virtual void updatePath (const char *aOldPath, const char *aNewPath) {}
 
@@ -179,8 +180,8 @@ public:
 
 protected:
 
-    HRESULT loadSettings (CFGNODE aHDNode);
-    HRESULT saveSettings (CFGNODE aHDNode);
+    HRESULT loadSettings (const settings::Key &aHDNode);
+    HRESULT saveSettings (settings::Key &aHDNode);
 
     /** weak VirualBox parent */
     ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
@@ -233,7 +234,7 @@ public:
     // public initializer/uninitializer for internal purposes only
 
     HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
-                  CFGNODE aHDNode, CFGNODE aVDINode);
+                  const settings::Key &aHDNode, const settings::Key &aVDINode);
     HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
                   const BSTR aFilePath, BOOL aRegistered = FALSE);
     void uninit();
@@ -262,7 +263,7 @@ public:
     HRESULT trySetRegistered (BOOL aRegistered);
     HRESULT getAccessible (Bstr &aAccessError);
 
-    HRESULT saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode);
+    HRESULT saveSettings (settings::Key &aHDNode, settings::Key &aStorageNode);
 
     void updatePath (const char *aOldPath, const char *aNewPath);
 
@@ -358,7 +359,7 @@ public:
     // public initializer/uninitializer for internal purposes only
 
     HRESULT init (VirtualBox *aVirtualBox,
-                  CFGNODE aHDNode, CFGNODE aISCSINode);
+                  const settings::Key &aHDNode, const settings::Key &aISCSINode);
     HRESULT init (VirtualBox *aVirtualBox);
     void uninit();
 
@@ -394,7 +395,7 @@ public:
     HRESULT trySetRegistered (BOOL aRegistered);
     HRESULT getAccessible (Bstr &aAccessError);
 
-    HRESULT saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode);
+    HRESULT saveSettings (settings::Key &aHDNode, settings::Key &aStorageNode);
 
     Bstr toString (bool aShort = false);
 
@@ -455,7 +456,7 @@ public:
     // public initializer/uninitializer for internal purposes only
 
     HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
-                  CFGNODE aHDNode, CFGNODE aVMDKNode);
+                  const settings::Key &aHDNode, const settings::Key &aVMDKNode);
     HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
                   INPTR BSTR aFilePath, BOOL aRegistered = FALSE);
     void uninit();
@@ -484,7 +485,7 @@ public:
     HRESULT trySetRegistered (BOOL aRegistered);
     HRESULT getAccessible (Bstr &aAccessError);
 
-    HRESULT saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode);
+    HRESULT saveSettings (settings::Key &aHDNode, settings::Key &aStorageNode);
 
     void updatePath (const char *aOldPath, const char *aNewPath);
 
@@ -568,7 +569,7 @@ public:
     // public initializer/uninitializer for internal purposes only
 
     HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
-                  CFGNODE aHDNode, CFGNODE aCustomNode);
+                  const settings::Key &aHDNode, const settings::Key &aCustomNode);
     HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
                   INPTR BSTR aLocation, BOOL aRegistered = FALSE);
     void uninit();
@@ -597,7 +598,7 @@ public:
     HRESULT trySetRegistered (BOOL aRegistered);
     HRESULT getAccessible (Bstr &aAccessError);
 
-    HRESULT saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode);
+    HRESULT saveSettings (settings::Key &aHDNode, settings::Key &aStorageNode);
 
     Bstr toString (bool aShort = false);
 

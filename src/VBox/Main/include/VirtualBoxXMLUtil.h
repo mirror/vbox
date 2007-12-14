@@ -1,6 +1,8 @@
+/* $Id$ */
+
 /** @file
  *
- * VirtualBox XML utility class declaration
+ * VirtualBox XML/Settings API utility declarations
  */
 
 /*
@@ -17,13 +19,6 @@
 
 #ifndef ____H_VIRTUALBOXXMLUTIL
 #define ____H_VIRTUALBOXXMLUTIL
-
-// for BSTR referred from VBox/cfgldr.h
-#include "VBox/com/defs.h"
-
-#include <VBox/cdefs.h>
-#include <VBox/cfgldr.h>
-#include <iprt/file.h>
 
 /** VirtualBox XML settings namespace */
 #define VBOX_XML_NAMESPACE      "http://www.innotek.de/VirtualBox-settings"
@@ -58,19 +53,4 @@
 #define VBOX_XML_SCHEMA         "VirtualBox-settings-" VBOX_XML_PLATFORM ".xsd"
 #define VBOX_XML_SCHEMA_COMMON  "VirtualBox-settings-" VBOX_XML_PLATFORM_COMMON ".xsd"
 
-class VirtualBoxXMLUtil
-{
-protected:
-
-    static DECLCALLBACK(int) cfgLdrEntityResolver (const char *pcszPublicId,
-                                                   const char *pcszSystemId,
-                                                   const char *pcszBaseURI,
-                                                   PCFGLDRENTITY pEntity);
-
-    /** VirtualBox XML settings "namespace schema" pair */
-    static const char *XmlSchemaNS;
-};
-
-
-#endif // ____H_VIRTUALBOXXMLUTIL
-
+#endif /* ____H_VIRTUALBOXXMLUTIL */

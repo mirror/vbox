@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -21,7 +23,6 @@
 #include "VirtualBoxBase.h"
 
 #include <VBox/VRDPAuth.h>
-#include <VBox/cfgldr.h>
 
 class Machine;
 
@@ -96,8 +97,8 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings (CFGNODE aNode);
-    HRESULT saveSettings (CFGNODE aNode);
+    HRESULT loadSettings (const settings::Key &aMachineNode);
+    HRESULT saveSettings (settings::Key &aMachineNode);
 
     bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }

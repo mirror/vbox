@@ -160,6 +160,119 @@ void SerialPort::uninit()
 ////////////////////////////////////////////////////////////////////////////////
 
 /** 
+ *  Loads settings from the given port node.
+ *  May be called once right after this object creation.
+ * 
+ *  @param aPortNode <Port> node.
+ * 
+ *  @note Locks this object for writing. 
+ */
+HRESULT SerialPort::loadSettings (const settings::Key &aPortNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aPortNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    /* Note: we assume that the default values for attributes of optional
+     * nodes are assigned in the Data::Data() constructor and don't do it
+     * here. It implies that this method may only be called after constructing
+     * a new BIOSSettings object while all its data fields are in the default
+     * values. Exceptions are fields whose creation time defaults don't match
+     * values that should be applied when these fields are not explicitly set
+     * in the settings file (for backwards compatibility reasons). This takes
+     * place when a setting of a newly created object must default to A while
+     * the same setting of an object loaded from the old settings file must
+     * default to B. */ 
+
+    /* enabled (required) */
+    mData->mEnabled = aPortNode.value <bool> ("enabled");
+    /* I/O base (required) */
+    mData->mIOBase = aPortNode.value <ULONG> ("IOBase");
+    /* IRQ (required) */
+    mData->mIRQ = aPortNode.value <ULONG> ("IRQ");
+    /* host mode (required) */
+    const char *mode = aPortNode.stringValue ("hostMode");
+    if (strcmp (mode, "HostPipe") == 0)
+        mData->mHostMode = PortMode_HostPipePort;
+    else if (strcmp (mode, "HostDevice") == 0)
+        mData->mHostMode = PortMode_HostDevicePort;
+    else if (strcmp (mode, "Disconnected") == 0)
+        mData->mHostMode = PortMode_DisconnectedPort;
+    else
+        ComAssertMsgFailedRet (("Invalid port mode '%s'\n", mode), E_FAIL);
+
+    /* pipe/device path (optional, defaults to null) */
+    Bstr path = aPortNode.stringValue ("path");
+    HRESULT rc = checkSetPath (path);
+    CheckComRCReturnRC (rc);
+    mData->mPath = path;
+
+    /* server mode (optional, defaults to false) */
+    mData->mServer = aPortNode.value <bool> ("server");
+
+    return S_OK;
+}
+
+/**
+ *  Saves the port settings to the given port node.
+ *
+ *  Note that the given Port node is comletely empty on input.
+ *
+ *  @param aPortNode <Port> node.
+ * 
+ *  @note Locks this object for reading.
+ */
+HRESULT SerialPort::saveSettings (settings::Key &aPortNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aPortNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    aPortNode.setValue <bool> ("enabled", !!mData->mEnabled);
+    aPortNode.setValue <ULONG> ("IOBase", mData->mIOBase, 16);
+    aPortNode.setValue <ULONG> ("IRQ", mData->mIRQ);
+
+    const char *mode = NULL;
+    switch (mData->mHostMode)
+    {
+        case PortMode_DisconnectedPort:
+            mode = "Disconnected";
+            break;
+        case PortMode_HostPipePort:
+            mode = "HostPipe";
+            break;
+        case PortMode_HostDevicePort:
+            mode = "HostDevice";
+            break;
+        default:
+            ComAssertMsgFailedRet (("Invalid serial port mode: %d\n",
+                                    mData->mHostMode),
+                                   E_FAIL);
+    }
+    aPortNode.setStringValue ("hostMode", mode);
+    
+    /* Always save non-null mPath and mServer to preserve the user values for
+     * later use. Note that 'server' is false by default in XML so we don't
+     * save it when it's false. */
+    if (!mData->mPath.isEmpty())
+        aPortNode.setValue <Bstr> ("path", mData->mPath);
+    if (mData->mServer)
+        aPortNode.setValue <bool> ("server", !!mData->mServer);
+
+    return S_OK;
+}
+
+/** 
  *  @note Locks this object for writing.
  */
 bool SerialPort::rollback()
@@ -232,119 +345,6 @@ void SerialPort::copyFrom (SerialPort *aThat)
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);
-}
-
-HRESULT SerialPort::loadSettings (CFGNODE aNode, ULONG aSlot)
-{
-    LogFlowThisFunc (("aMachine=%p\n", aNode));
-
-    AssertReturn (aNode, E_FAIL);
-
-    AutoCaller autoCaller (this);
-    AssertComRCReturnRC (autoCaller.rc());
-
-    AutoLock alock (this);
-
-    HRESULT rc = S_OK;
-
-    CFGNODE portNode = NULL;
-    CFGLDRGetChildNode (aNode, "Port", aSlot, &portNode);
-
-    /* slot number (required) */
-    /* slot unicity is guaranteed by XML Schema */
-    uint32_t uSlot = 0;
-    CFGLDRQueryUInt32 (portNode, "slot", &uSlot);
-    /* enabled (required) */
-    bool fEnabled = false;
-    CFGLDRQueryBool (portNode, "enabled", &fEnabled);
-    uint32_t uIOBase;
-    /* I/O base (required) */
-    CFGLDRQueryUInt32 (portNode, "IOBase", &uIOBase);
-    /* IRQ (required) */
-    uint32_t uIRQ;
-    CFGLDRQueryUInt32 (portNode, "IRQ", &uIRQ);
-    /* host mode (required) */
-    Bstr mode;
-    CFGLDRQueryBSTR (portNode, "hostMode", mode.asOutParam());
-    if (mode == L"HostPipe")
-        mData->mHostMode = PortMode_HostPipePort;
-    else if (mode == L"HostDevice")
-        mData->mHostMode = PortMode_HostDevicePort;
-    else
-        mData->mHostMode = PortMode_DisconnectedPort;
-    /* pipe/device path */
-    Bstr path;
-    CFGLDRQueryBSTR (portNode, "path", path.asOutParam());
-    /* server mode */
-    bool fServer = true;
-    CFGLDRQueryBool (portNode, "server", &fServer);
-
-    mData->mEnabled  = fEnabled;
-    mData->mSlot     = uSlot;
-    mData->mIOBase   = uIOBase;
-    mData->mIRQ      = uIRQ;
-
-    rc = checkSetPath (path);
-    CheckComRCReturnRC (rc);
-
-    mData->mPath     = path;
-    mData->mServer   = fServer;
-
-    return rc;
-}
-
-/** 
- *  Saves the port settings to the given <Port> node.
- *
- *  Note that the given node is always empty so it is not necessary to delete
- *  old values.
- * 
- *  @param aNode Node to save the settings to.
- * 
- *  @return 
- */
-HRESULT SerialPort::saveSettings (CFGNODE aNode)
-{
-    AssertReturn (aNode, E_FAIL);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    CFGNODE portNode = 0;
-    int vrc = CFGLDRAppendChildNode (aNode, "Port", &portNode);
-    ComAssertRCRet (vrc, E_FAIL);
-
-    const char *mode;
-    switch (mData->mHostMode)
-    {
-        default:
-        case PortMode_DisconnectedPort:
-            mode = "Disconnected";
-            break;
-        case PortMode_HostPipePort:
-            mode = "HostPipe";
-            break;
-        case PortMode_HostDevicePort:
-            mode = "HostDevice";
-            break;
-    }
-    CFGLDRSetUInt32   (portNode, "slot",     mData->mSlot);
-    CFGLDRSetBool     (portNode, "enabled",  !!mData->mEnabled);
-    CFGLDRSetUInt32Ex (portNode, "IOBase",   mData->mIOBase, 16);
-    CFGLDRSetUInt32   (portNode, "IRQ",      mData->mIRQ);
-    CFGLDRSetString   (portNode, "hostMode", mode);
-
-    /* Always save non-null mPath and mServer to preserve the user values for
-     * later use. Note that 'server' is false by default in XML so we don't
-     * save it when it's false. */
-    if (!mData->mPath.isEmpty())
-        CFGLDRSetBSTR (portNode, "path", mData->mPath);
-    if (mData->mServer)
-        CFGLDRSetBool (portNode, "server", !!mData->mServer);
-
-    return S_OK;
 }
 
 // ISerialPort properties
