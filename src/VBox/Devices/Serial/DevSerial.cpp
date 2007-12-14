@@ -372,7 +372,7 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
             ret |= (s->mcr & 0x01) << 5;
         } else {
             ret = s->msr;
-            /** Reset delta bits. */
+            /* Reset delta bits. */
             s->msr &= ~UART_MSR_ANY_DELTA;
         }
         break;
@@ -427,7 +427,7 @@ static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface
 
     PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
 
-    /** Set new states. */
+    /* Set new states. */
     if (newStatusLines & PDM_ICHAR_STATUS_LINES_DCD)
         newMsr |= UART_MSR_DCD;
     if (newStatusLines & PDM_ICHAR_STATUS_LINES_RI)
@@ -437,7 +437,7 @@ static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface
     if (newStatusLines & PDM_ICHAR_STATUS_LINES_CTS)
         newMsr |= UART_MSR_CTS;
 
-    /** Compare the old and the new states and set the delta bits accordingly. */
+    /* Compare the old and the new states and set the delta bits accordingly. */
     if ((newMsr & UART_MSR_DCD) != (pData->msr & UART_MSR_DCD))
         newMsr |= UART_MSR_DDCD;
     if ((newMsr & UART_MSR_RI) == 1 && (pData->msr & UART_MSR_RI) == 0)
