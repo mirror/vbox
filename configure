@@ -626,8 +626,11 @@ check_libxml2()
       fail
     else
       log_success "found version $libxml2_ver"
-      cnf_append "SDK_VBOX_LIBXML2_CFLAGS" "`pkg-config libxml-2.0 --cflags`"
-      cnf_append "SDK_VBOX_LIBXML2_LIBS"   "`pkg-config libxml-2.0 --libs`"
+      FLGXML2=`pkg-config libxml-2.0 --cflags`
+      INCXML2=`strip_I "$FLGXML2"`
+      LIBXML2=`pkg-config libxml-2.0 --libs`
+      cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
+      cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBXML2"`"
     fi
   elif which_wrapper xml2-config; then
     libxml2_ver=`xml2-config --version`
@@ -636,8 +639,11 @@ check_libxml2()
       fail
     else
       log_success "found version $libxml2_ver"
-      cnf_append "SDK_VBOX_LIBXML2_CFLAGS" "`pkg-config libxml-2.0 --cflags`"
-      cnf_append "SDK_VBOX_LIBXML2_LIBS"   "`pkg-config libxml-2.0 --libs`"
+      FLGXML2=`xml2-config --cflags`
+      INCXML2=`strip_I "$FLGXML2"`
+      LIBXML2=`xml2-config --libs`
+      cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
+      cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBCXML2"`"
     fi
   else
     log_failure "neither pkg-config nor xml2-config found"
