@@ -23,8 +23,8 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-%ifndef __iprt_asmdefs_mac__
-%define __iprt_asmdefs_mac__
+%ifndef ___iprt_asmdefs_mac
+%define ___iprt_asmdefs_mac
 
 ;;
 ; Make the mask for the given bit.
@@ -53,7 +53,7 @@
 ;;
 ; Mangles the given name so it can be referenced using DECLASM() in the
 ; C/C++ world.
-%ifdef __X86__
+%ifdef RT_ARCH_X86
  %ifdef RT_OS_DARWIN
   %define NAME(name)    _ %+ NAME_OVERLOAD(name)
  %endif
@@ -253,7 +253,7 @@ GLOBALNAME %1_EndProc
 ;; @def ARCH_BITS
 ; Defines the bit count of the current context.
 %ifndef ARCH_BITS
- %ifdef __AMD64__
+ %ifdef RT_ARCH_AMD64
   %define ARCH_BITS 64
  %else
   %define ARCH_BITS 32
@@ -519,7 +519,7 @@ GLOBALNAME %1_EndProc
 ; On 32-bit Darwin this is 16 bytes, on L4, Linux, OS/2 and Windows
 ; it's 12 bytes.
 ; @todo figure out what 64-bit Windows does (I don't recall right now).
-%ifdef __X86__
+%ifdef RT_ARCH_X86
  %ifdef RT_OS_DARWIN
   %define RTLRD_CB          16
  %else
@@ -542,7 +542,7 @@ GLOBALNAME %1_EndProc
 ; Note: On X86 we're using cdecl unconditionally. There is not yet any common
 ; calling convention on AMD64, that's why we need to support two different ones.)
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifndef ASM_CALL64_GCC
   %ifndef ASM_CALL64_MSC
    ; define it based on the object format.
@@ -607,7 +607,7 @@ GLOBALNAME %1_EndProc
 ;; @def xSI
 ; RSI or ESI depending on context.
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %define xS  8
  %define xSP rsp
  %define xBP rbp
