@@ -142,14 +142,14 @@ inline RTUTF16 tohex (unsigned char ch)
     return (ch < 0xA) ? ch + '0' : ch - 0xA + 'A';
 }
 
-/** 
+/**
  * Converts a string of hex digits to memory bytes.
- * 
+ *
  * @param puszValue String of hex digits to convert.
  * @param pvValue   Where to store converted bytes.
  * @param cbValue   Size of the @a pvValue array.
  * @param pcbValue  Where to store the actual number of stored bytes.
- * 
+ *
  * @return IPRT status code.
  */
 int wstr_to_bin (PCRTUTF16 puszValue, void *pvValue, unsigned cbValue, unsigned *pcbValue)
@@ -213,7 +213,7 @@ int wstr_to_bin (PCRTUTF16 puszValue, void *pvValue, unsigned cbValue, unsigned 
  * @param cbValue   Number of bytes in the @a pvValue array.
  * @param puszValue Where to store the pointer to the resulting string.
  *                  On success, this string should be freed using RTUtf16Free().
- * 
+ *
  * @return IPRT status code.
  */
 static int bin_to_wstr (const void *pvValue, unsigned cbValue, PRTUTF16 *puszValue)
@@ -1731,10 +1731,10 @@ DOMNode *CfgNode::findChildText (void)
 /**
  * Gets the value of the given attribute as a UTF-16 string.
  * The returned string is owned by CfgNode, the caller must not free it.
- * 
+ *
  * @param pszName       Attribute name.
  * @param ppwszValue    Where to store a pointer to the attribute value.
- * 
+ *
  * @return IPRT status code.
  */
 int CfgNode::getValueString (const char *pszName, PRTUTF16 *ppwszValue)
@@ -2828,7 +2828,7 @@ CFGLDRR3DECL(int) CFGLDRQueryDateTime(CFGNODE hnode, const char *pszName, int64_
 
             RTTIME time = { yyyy, (uint8_t) mm, 0, 0, (uint8_t) dd,
                             (uint8_t) hh, (uint8_t) mi, (uint8_t) ss, 0,
-                            RTTIME_FLAGS_TYPE_UTC };
+                            RTTIME_FLAGS_TYPE_UTC, 0 };
             if (RTTimeNormalize (&time))
             {
                 RTTIMESPEC timeSpec;
