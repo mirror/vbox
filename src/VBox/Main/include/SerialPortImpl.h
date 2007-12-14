@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -19,8 +21,6 @@
 #define ____H_SERIALPORTIMPL
 
 #include "VirtualBoxBase.h"
-
-#include <VBox/cfgldr.h>
 
 class Machine;
 
@@ -104,6 +104,10 @@ public:
     STDMETHOD(COMSETTER(Server))   (BOOL       aServer);
 
     // public methods only for internal purposes
+
+    HRESULT loadSettings (const settings::Key &aPortNode);
+    HRESULT saveSettings (settings::Key &aPortNode);
+
     bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }
     bool rollback();
@@ -112,9 +116,6 @@ public:
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
-
-    HRESULT loadSettings (CFGNODE aMachine, ULONG aSlot);
-    HRESULT saveSettings (CFGNODE aMachine);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"SerialPort"; }

@@ -1132,58 +1132,42 @@ HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
     return S_OK;
 }
 
-HRESULT Host::loadSettings (CFGNODE aGlobal)
+HRESULT Host::loadSettings (const settings::Key &aGlobal)
 {
+    using namespace settings;
+
     AutoLock lock (this);
     CHECK_READY();
 
-    ComAssertRet (aGlobal, E_FAIL);
-
-    CFGNODE filters = NULL;
-    CFGLDRGetChildNode (aGlobal, "USBDeviceFilters", 0, &filters);
-    Assert (filters);
+    AssertReturn (!aGlobal.isNull(), E_FAIL);
 
     HRESULT rc = S_OK;
 
-    unsigned filterCount = 0;
-    CFGLDRCountChildren (filters, "DeviceFilter", &filterCount);
-    for (unsigned i = 0; i < filterCount && SUCCEEDED (rc); i++)
+    Key::List filters = aGlobal.key ("USBDeviceFilters").keys ("DeviceFilter");
+    for (Key::List::const_iterator it = filters.begin();
+         it != filters.end(); ++ it)
     {
-        CFGNODE filter = NULL;
-        CFGLDRGetChildNode (filters, "DeviceFilter", i, &filter);
-        Assert (filter);
+        Bstr name = (*it).stringValue ("name");
+        bool active = (*it).value <bool> ("active");
 
-        Bstr name;
-        CFGLDRQueryBSTR (filter, "name", name.asOutParam());
-        bool active;
-        CFGLDRQueryBool (filter, "active", &active);
-
-        Bstr vendorId;
-        CFGLDRQueryBSTR (filter, "vendorid", vendorId.asOutParam());
-        Bstr productId;
-        CFGLDRQueryBSTR (filter, "productid", productId.asOutParam());
-        Bstr revision;
-        CFGLDRQueryBSTR (filter, "revision", revision.asOutParam());
-        Bstr manufacturer;
-        CFGLDRQueryBSTR (filter, "manufacturer", manufacturer.asOutParam());
-        Bstr product;
-        CFGLDRQueryBSTR (filter, "product", product.asOutParam());
-        Bstr serialNumber;
-        CFGLDRQueryBSTR (filter, "serialnumber", serialNumber.asOutParam());
-        Bstr port;
-        CFGLDRQueryBSTR (filter, "port", port.asOutParam());
+        Bstr vendorId = (*it).stringValue ("vendorid");
+        Bstr productId = (*it).stringValue ("productid");
+        Bstr revision = (*it).stringValue ("revision");
+        Bstr manufacturer = (*it).stringValue ("manufacturer");
+        Bstr product = (*it).stringValue ("product");
+        Bstr serialNumber = (*it).stringValue ("serialnumber");
+        Bstr port = (*it).stringValue ("port");
 
         USBDeviceFilterAction_T action;
         action = USBDeviceFilterAction_USBDeviceFilterIgnore;
-        Bstr actionStr;
-        CFGLDRQueryBSTR (filter, "action", actionStr.asOutParam());
-        if (actionStr == L"Ignore")
+        const char *actionStr = (*it).stringValue ("action");
+        if (strcmp (actionStr, "Ignore") == 0)
             action = USBDeviceFilterAction_USBDeviceFilterIgnore;
         else
-        if (actionStr == L"Hold")
+        if (strcmp (actionStr, "Hold") == 0)
             action = USBDeviceFilterAction_USBDeviceFilterHold;
         else
-            AssertMsgFailed (("Invalid action: %ls\n", actionStr.raw()));
+            AssertMsgFailed (("Invalid action: '%s'\n", actionStr));
 
         ComObjPtr <HostUSBDeviceFilter> filterObj;
         filterObj.createObject();
@@ -1191,51 +1175,43 @@ HRESULT Host::loadSettings (CFGNODE aGlobal)
                               name, active, vendorId, productId, revision,
                               manufacturer, product, serialNumber, port,
                               action);
-        // error info is set by init() when appropriate
-        if (SUCCEEDED (rc))
+        /* error info is set by init() when appropriate */
+        CheckComRCBreakRC (rc);
+
+        mUSBDeviceFilters.push_back (filterObj);
+        filterObj->mInList = true;
+
+        /* notify the proxy (only when the filter is active) */
+        if (filterObj->data().mActive)
         {
-            mUSBDeviceFilters.push_back (filterObj);
-            filterObj->mInList = true;
-
-            // notify the proxy (only when the filter is active)
-            if (filterObj->data().mActive)
-            {
-                HostUSBDeviceFilter *flt = filterObj; // resolve ambiguity
+            HostUSBDeviceFilter *flt = filterObj; /* resolve ambiguity */
 #ifndef VBOX_WITH_USBFILTER
-                flt->id() =
-                    mUSBProxyService->insertFilter (ComPtr <IUSBDeviceFilter> (flt));
+            flt->id() =
+                mUSBProxyService->insertFilter (ComPtr <IUSBDeviceFilter> (flt));
 #else
-                flt->id() = mUSBProxyService->insertFilter (&filterObj->data().mUSBFilter);
+            flt->id() = mUSBProxyService->insertFilter (&filterObj->data().mUSBFilter);
 #endif
-            }
         }
-
-        CFGLDRReleaseNode (filter);
     }
-
-    CFGLDRReleaseNode (filters);
 
     return rc;
 }
 
-HRESULT Host::saveSettings (CFGNODE aGlobal)
+HRESULT Host::saveSettings (settings::Key &aGlobal)
 {
+    using namespace settings;
+
     AutoLock lock (this);
     CHECK_READY();
 
-    ComAssertRet (aGlobal, E_FAIL);
+    ComAssertRet (!aGlobal.isNull(), E_FAIL);
 
-    // first, delete the entry
-    CFGNODE filters = NULL;
-    int vrc = CFGLDRGetChildNode (aGlobal, "USBDeviceFilters", 0, &filters);
-    if (VBOX_SUCCESS (vrc))
-    {
-        vrc = CFGLDRDeleteNode (filters);
-        ComAssertRCRet (vrc, E_FAIL);
-    }
-    // then, recreate it
-    vrc = CFGLDRCreateChildNode (aGlobal, "USBDeviceFilters", &filters);
-    ComAssertRCRet (vrc, E_FAIL);
+    /* first, delete the entry */
+    Key filters = aGlobal.findKey ("USBDeviceFilters");
+    if (!filters.isNull())
+        filters.zap();
+    /* then, recreate it */
+    filters = aGlobal.createKey ("USBDeviceFilters");
 
     USBDeviceFilterList::const_iterator it = mUSBDeviceFilters.begin();
     while (it != mUSBDeviceFilters.end())
@@ -1243,86 +1219,84 @@ HRESULT Host::saveSettings (CFGNODE aGlobal)
         AutoLock filterLock (*it);
         const HostUSBDeviceFilter::Data &data = (*it)->data();
 
-        CFGNODE filter = NULL;
-        CFGLDRAppendChildNode (filters, "DeviceFilter",  &filter);
+        Key filter = filters.appendKey ("DeviceFilter");
 
-        CFGLDRSetBSTR (filter, "name", data.mName);
-        CFGLDRSetBool (filter, "active", !!data.mActive);
+        filter.setValue <Bstr> ("name", data.mName);
+        filter.setValue <bool> ("active", !!data.mActive);
 
 #ifndef VBOX_WITH_USBFILTER
-        // all are optional
-        if (data.mVendorId.string())
-            CFGLDRSetBSTR (filter, "vendorid", data.mVendorId.string());
-        if (data.mProductId.string())
-            CFGLDRSetBSTR (filter, "productid", data.mProductId.string());
-        if (data.mRevision.string())
-            CFGLDRSetBSTR (filter, "revision", data.mRevision.string());
-        if (data.mManufacturer.string())
-            CFGLDRSetBSTR (filter, "manufacturer", data.mManufacturer.string());
-        if (data.mProduct.string())
-            CFGLDRSetBSTR (filter, "product", data.mProduct.string());
-        if (data.mSerialNumber.string())
-            CFGLDRSetBSTR (filter, "serialnumber", data.mSerialNumber.string());
-        if (data.mPort.string())
-            CFGLDRSetBSTR (filter, "port", data.mPort.string());
 
-        // action is mandatory
+        /* all are optional */
+        if (data.mVendorId.string())
+            filter.setValue <Bstr> ("vendorid", data.mVendorId.string());
+        if (data.mProductId.string())
+            filter.setValue <Bstr> ("productid", data.mProductId.string());
+        if (data.mRevision.string())
+            filter.setValue <Bstr> ("revision", data.mRevision.string());
+        if (data.mManufacturer.string())
+            filter.setValue <Bstr> ("manufacturer", data.mManufacturer.string());
+        if (data.mProduct.string())
+            filter.setValue <Bstr> ("product", data.mProduct.string());
+        if (data.mSerialNumber.string())
+            filter.setValue <Bstr> ("serialnumber", data.mSerialNumber.string());
+        if (data.mPort.string())
+            filter.setValue <Bstr> ("port", data.mPort.string());
+
+        /* action is mandatory */
         if (data.mAction == USBDeviceFilterAction_USBDeviceFilterIgnore)
-            CFGLDRSetString (filter, "action", "Ignore");
+            filter.setStringValue ("action", "Ignore");
         else
         if (data.mAction == USBDeviceFilterAction_USBDeviceFilterHold)
-            CFGLDRSetString (filter, "action", "Hold");
+            filter.setStringValue ("action", "Hold");
         else
             AssertMsgFailed (("Invalid action: %d\n", data.mAction));
 
 #else  /* VBOX_WITH_USBFILTER */
-        // all are optional
+
+        /* all are optional */
         Bstr str;
         (*it)->COMGETTER (VendorId) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "vendorid", str);
+            filter.setValue <Bstr> ("vendorid", str);
 
         (*it)->COMGETTER (ProductId) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "productid", str);
+            filter.setValue <Bstr> ("productid", str);
 
         (*it)->COMGETTER (Revision) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "revision", str);
+            filter.setValue <Bstr> ("revision", str);
 
         (*it)->COMGETTER (Manufacturer) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "manufacturer", str);
+            filter.setValue <Bstr> ("manufacturer", str);
 
         (*it)->COMGETTER (Product) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "product", str);
+            filter.setValue <Bstr> ("product", str);
 
         (*it)->COMGETTER (SerialNumber) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "serialnumber", str);
+            filter.setValue <Bstr> ("serialnumber", str);
 
         (*it)->COMGETTER (Port) (str.asOutParam());
         if (!str.isNull())
-            CFGLDRSetBSTR (filter, "port", str);
+            filter.setValue <Bstr> ("port", str);
 
-        // action is mandatory
+        /* action is mandatory */
         ULONG action = USBDeviceFilterAction_InvalidUSBDeviceFilterAction;
         (*it)->COMGETTER (Action) (&action);
         if (action == USBDeviceFilterAction_USBDeviceFilterIgnore)
-            CFGLDRSetString (filter, "action", "Ignore");
+            filter.setStringValue ("action", "Ignore");
         else if (action == USBDeviceFilterAction_USBDeviceFilterHold)
-            CFGLDRSetString (filter, "action", "Hold");
+            filter.setStringValue ("action", "Hold");
         else
             AssertMsgFailed (("Invalid action: %d\n", action));
-#endif /* VBOX_WITH_USBFILTER */
 
-        CFGLDRReleaseNode (filter);
+#endif /* VBOX_WITH_USBFILTER */
 
         ++ it;
     }
-
-    CFGLDRReleaseNode (filters);
 
     return S_OK;
 }

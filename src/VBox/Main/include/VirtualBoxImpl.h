@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -19,11 +21,8 @@
 #define ____H_VIRTUALBOXIMPL
 
 #include "VirtualBoxBase.h"
-#include "VirtualBoxXMLUtil.h"
 
 #include "VBox/com/EventQueue.h"
-
-#include <VBox/cfgldr.h>
 
 #include <list>
 #include <vector>
@@ -59,7 +58,6 @@ struct VMClientWatcherData;
 
 class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxXMLUtil,
     public VirtualBoxSupportErrorInfoImpl <VirtualBox, IVirtualBox>,
     public VirtualBoxSupportTranslation <VirtualBox>,
 #ifdef RT_OS_WINDOWS
@@ -252,10 +250,67 @@ public:
     HRESULT unregisterHardDisk (HardDisk *aHardDisk);
     HRESULT unregisterDiffHardDisk (HardDisk *aHardDisk);
 
-    HRESULT saveSettings() { return saveConfig(); }
+    HRESULT saveSettings();
     HRESULT updateSettings (const char *aOldPath, const char *aNewPath);
 
     const Bstr &settingsFileName() { return mData.mCfgFile.mName; }
+
+    class SettingsInputResolver : public settings::XmlTreeBackend::InputResolver
+    {
+    public:
+
+        settings::Input *resolveEntity (const char *aURI, const char *aID);
+    };
+
+    static HRESULT loadSettingsTree (settings::XmlTreeBackend &aTree,
+                                     settings::File &aFile,
+                                     bool aValidate,
+                                     bool aCatchLoadErrors,
+                                     bool aAddDefaults);
+
+    /** 
+     * Shortcut to loadSettingsTree (aTree, aFile, true, true, true).
+     *
+     * Used when the settings file is to be loaded for the first time for the
+     * given object in order to recreate it from the stored settings.
+     */
+    static HRESULT loadSettingsTree_FirstTime (settings::XmlTreeBackend &aTree,
+                                               settings::File &aFile)
+    {
+        return loadSettingsTree (aTree, aFile, true, true, true);
+    }
+
+    /** 
+     * Shortcut to loadSettingsTree (aTree, aFile, true, false, true).
+     *
+     * Used when the settings file is loaded again (after it has been fully
+     * checked and validated by #loadSettingsTree_FirstTime()) in order to
+     * look at settings that don't have any representation within object's
+     * data fields.
+     */
+    static HRESULT loadSettingsTree_Again (settings::XmlTreeBackend &aTree,
+                                           settings::File &aFile)
+    {
+        return loadSettingsTree (aTree, aFile, true, false, true);
+    }
+
+    /** 
+     * Shortcut to loadSettingsTree (aTree, aFile, true, false, false).
+     *
+     * Used when the settings file is loaded again (after it has been fully
+     * checked and validated by #loadSettingsTree_FirstTime()) in order to
+     * update some settings and then save them back.
+     */
+    static HRESULT loadSettingsTree_ForUpdate (settings::XmlTreeBackend &aTree,
+                                               settings::File &aFile)
+    {
+        return loadSettingsTree (aTree, aFile, true, false, false);
+    }
+
+    static HRESULT saveSettingsTree (settings::TreeBackend &aTree,
+                                     settings::File &aFile);
+
+    static HRESULT handleUnexpectedExceptions (RT_SRC_POS_DECL);
 
     /* for VirtualBoxSupportErrorInfoImpl */
     static const wchar_t *getComponentName() { return L"VirtualBox"; }
@@ -289,12 +344,11 @@ private:
     HRESULT checkMediaForConflicts (HardDisk *aHardDisk,
                                     const Guid *aId, const BSTR aFilePathFull);
 
-    HRESULT loadMachines (CFGNODE aGlobal);
-    HRESULT loadDisks (CFGNODE aGlobal);
-    HRESULT loadHardDisks (CFGNODE aNode);
+    HRESULT loadMachines (const settings::Key &aGlobal);
+    HRESULT loadDisks (const settings::Key &aGlobal);
+    HRESULT loadHardDisks (const settings::Key &aNode);
 
-    HRESULT saveConfig();
-    HRESULT saveHardDisks (CFGNODE aNode);
+    HRESULT saveHardDisks (settings::Key &aNode);
 
     HRESULT registerMachine (Machine *aMachine);
 

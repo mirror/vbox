@@ -377,98 +377,76 @@ STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount) (ULONG count)
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT SystemProperties::loadSettings (CFGNODE aGlobal)
+HRESULT SystemProperties::loadSettings (const settings::Key &aGlobal)
 {
+    using namespace settings;
+
     AutoLock lock (this);
     CHECK_READY();
 
-    ComAssertRet (aGlobal, E_FAIL);
+    AssertReturn (!aGlobal.isNull(), E_FAIL);
 
-    CFGNODE properties = NULL;
-    CFGLDRGetChildNode (aGlobal, "SystemProperties", 0, &properties);
-    ComAssertRet (properties, E_FAIL);
+    HRESULT rc = S_OK;
 
-    HRESULT rc = E_FAIL;
+    Key properties = aGlobal.key ("SystemProperties");
 
-    do
-    {
-        Bstr bstr;
+    Bstr bstr;
 
-        CFGLDRQueryBSTR (properties, "defaultVDIFolder",
-                         bstr.asOutParam());
-        rc = setDefaultVDIFolder (bstr);
-        if (FAILED (rc))
-            break;
+    bstr = properties.stringValue ("defaultVDIFolder");
+    rc = setDefaultVDIFolder (bstr);
+    CheckComRCReturnRC (rc);
 
-        CFGLDRQueryBSTR (properties, "defaultMachineFolder",
-                         bstr.asOutParam());
-        rc = setDefaultMachineFolder (bstr);
-        if (FAILED (rc))
-            break;
+    bstr = properties.stringValue ("defaultMachineFolder");
+    rc = setDefaultMachineFolder (bstr);
+    CheckComRCReturnRC (rc);
 
-        CFGLDRQueryBSTR (properties, "remoteDisplayAuthLibrary",
-                         bstr.asOutParam());
-        rc = setRemoteDisplayAuthLibrary (bstr);
-        if (FAILED (rc))
-            break;
+    bstr = properties.stringValue ("remoteDisplayAuthLibrary");
+    rc = setRemoteDisplayAuthLibrary (bstr);
+    CheckComRCReturnRC (rc);
 
-        CFGLDRQueryBSTR (properties, "webServiceAuthLibrary",
-                         bstr.asOutParam());
-        rc = setWebServiceAuthLibrary (bstr);
-        if (FAILED (rc))
-            break;
+    bstr = properties.stringValue ("webServiceAuthLibrary");
+    rc = setWebServiceAuthLibrary (bstr);
+    CheckComRCReturnRC (rc);
 
-        CFGLDRQueryBool (properties, "HWVirtExEnabled", (bool*)&mHWVirtExEnabled);
+    /* Note: not <BOOL> because Win32 defines BOOL as int */
+    mHWVirtExEnabled = properties.value <bool> ("HWVirtExEnabled");
 
-        uint32_t u32Count = 3;
-        CFGLDRQueryUInt32 (properties, "LogHistoryCount", &u32Count);
-        mLogHistoryCount = u32Count;
-    }
-    while (0);
+    mLogHistoryCount = properties.value <ULONG> ("LogHistoryCount");
 
-    CFGLDRReleaseNode (properties);
-
-    return rc;
+    return S_OK;
 }
 
-HRESULT SystemProperties::saveSettings (CFGNODE aGlobal)
+HRESULT SystemProperties::saveSettings (settings::Key &aGlobal)
 {
+    using namespace settings;
+
     AutoLock lock (this);
     CHECK_READY();
 
-    ComAssertRet (aGlobal, E_FAIL);
+    ComAssertRet (!aGlobal.isNull(), E_FAIL);
 
-    // first, delete the entry
-    CFGNODE properties = NULL;
-    int vrc = CFGLDRGetChildNode (aGlobal, "SystemProperties", 0, &properties);
-    if (VBOX_SUCCESS (vrc))
-    {
-        vrc = CFGLDRDeleteNode (properties);
-        ComAssertRCRet (vrc, E_FAIL);
-    }
-    // then, recreate it
-    vrc = CFGLDRCreateChildNode (aGlobal, "SystemProperties", &properties);
-    ComAssertRCRet (vrc, E_FAIL);
+    /* first, delete the entry */
+    Key properties = aGlobal.findKey ("SystemProperties");
+    if (!properties.isNull())
+        properties.zap();
+    /* then, recreate it */
+    properties = aGlobal.createKey ("SystemProperties");
 
     if (mDefaultVDIFolder)
-        CFGLDRSetBSTR (properties, "defaultVDIFolder",
-                       mDefaultVDIFolder);
+        properties.setValue <Bstr> ("defaultVDIFolder", mDefaultVDIFolder);
 
     if (mDefaultMachineFolder)
-        CFGLDRSetBSTR (properties, "defaultMachineFolder",
-                       mDefaultMachineFolder);
+        properties.setValue <Bstr> ("defaultMachineFolder", mDefaultMachineFolder);
 
     if (mRemoteDisplayAuthLibrary)
-        CFGLDRSetBSTR (properties, "remoteDisplayAuthLibrary",
-                       mRemoteDisplayAuthLibrary);
+        properties.setValue <Bstr> ("remoteDisplayAuthLibrary", mRemoteDisplayAuthLibrary);
 
     if (mWebServiceAuthLibrary)
-        CFGLDRSetBSTR (properties, "webServiceAuthLibrary",
-                       mWebServiceAuthLibrary);
+        properties.setValue <Bstr> ("webServiceAuthLibrary", mWebServiceAuthLibrary);
 
-    CFGLDRSetBool (properties, "HWVirtExEnabled", !!mHWVirtExEnabled);
+    properties.setValue <bool> ("HWVirtExEnabled", !!mHWVirtExEnabled);
 
-    CFGLDRSetUInt32 (properties, "LogHistoryCount", mLogHistoryCount);
+    properties.setValue <ULONG> ("LogHistoryCount", mLogHistoryCount);
 
     return S_OK;
 }

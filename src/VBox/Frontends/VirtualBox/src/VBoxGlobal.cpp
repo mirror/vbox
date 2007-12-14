@@ -2885,6 +2885,12 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
 
     QString text = aStr;
 
+    /* replace special entities, '&' -- first! */
+	text.replace ('&', "&amp;");
+    text.replace ('<', "&lt;");
+	text.replace ('>', "&gt;");
+	text.replace ('\"', "&quot;");
+
     /* mark strings in single quotes with color */
     QRegExp rx = QRegExp ("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
     rx.setMinimal (true);

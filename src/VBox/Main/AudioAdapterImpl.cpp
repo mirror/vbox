@@ -271,6 +271,179 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
 /////////////////////////////////////////////////////////////////////////////
 
 /** 
+ *  Loads settings from the given machine node.
+ *  May be called once right after this object creation.
+ * 
+ *  @param aMachineNode <Machine> node.
+ * 
+ *  @note Locks this object for writing. 
+ */
+HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    /* Note: we assume that the default values for attributes of optional
+     * nodes are assigned in the Data::Data() constructor and don't do it
+     * here. It implies that this method may only be called after constructing
+     * a new BIOSSettings object while all its data fields are in the default
+     * values. Exceptions are fields whose creation time defaults don't match
+     * values that should be applied when these fields are not explicitly set
+     * in the settings file (for backwards compatibility reasons). This takes
+     * place when a setting of a newly created object must default to A while
+     * the same setting of an object loaded from the old settings file must
+     * default to B. */ 
+
+    /* AudioAdapter node (required) */
+    Key audioAdapterNode = aMachineNode.key ("AudioAdapter");
+
+    /* is the adapter enabled? (required) */
+    mData->mEnabled = audioAdapterNode.value <bool> ("enabled");
+
+    /* now check the audio driver (required) */
+    const char *driver = audioAdapterNode.stringValue ("driver");
+    mData->mAudioDriver = AudioDriverType_NullAudioDriver;
+    if      (strcmp (driver, "null") == 0)
+        ; /* Null has been set above */
+#ifdef RT_OS_WINDOWS
+    else if (strcmp (driver, "winmm") == 0)
+#ifdef VBOX_WITH_WINMM
+        mData->mAudioDriver = AudioDriverType_WINMMAudioDriver;
+#else
+        /* fall back to dsound */
+        mData->mAudioDriver = AudioDriverType_DSOUNDAudioDriver;
+#endif
+    else if (strcmp (driver, "dsound") == 0)
+        mData->mAudioDriver = AudioDriverType_DSOUNDAudioDriver;
+#endif // RT_OS_WINDOWS
+#ifdef RT_OS_LINUX
+    else if (strcmp (driver, "oss") == 0)
+        mData->mAudioDriver = AudioDriverType_OSSAudioDriver;
+    else if (strcmp (driver, "alsa") == 0)
+# ifdef VBOX_WITH_ALSA
+        mData->mAudioDriver = AudioDriverType_ALSAAudioDriver;
+# else
+        /* fall back to OSS */
+        mData->mAudioDriver = AudioDriverType_OSSAudioDriver;
+# endif
+    else if (strcmp (driver, "pulse") == 0)
+# ifdef VBOX_WITH_PULSE
+        mData->mAudioDriver = AudioDriverType_PulseAudioDriver;
+# else
+        /* fall back to OSS */
+        mData->mAudioDriver = AudioDriverType_OSSAudioDriver;
+# endif
+#endif // RT_OS_LINUX
+#ifdef RT_OS_DARWIN
+    else if (strcmp (driver, "coreaudio") == 0)
+        mData->mAudioDriver = AudioDriverType_CoreAudioDriver;
+#endif
+#ifdef RT_OS_OS2
+    else if (strcmp (driver, "mmpm") == 0)
+        mData->mAudioDriver = AudioDriverType_MMPMAudioDriver;
+#endif
+    else
+        AssertMsgFailed (("Invalid driver '%s'\n", driver));
+
+    return S_OK;
+}
+
+/** 
+ *  Saves settings to the given machine node.
+ * 
+ *  @param aMachineNode <Machine> node.
+ * 
+ *  @note Locks this object for reading. 
+ */
+HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    Key node = aMachineNode.createKey ("AudioAdapter");
+
+    const char *driverStr = NULL;
+    switch (mData->mAudioDriver)
+    {
+        case AudioDriverType_NullAudioDriver:
+        {
+            driverStr = "null";
+            break;
+        }
+#ifdef RT_OS_WINDOWS
+            case AudioDriverType_WINMMAudioDriver:
+# ifdef VBOX_WITH_WINMM
+            {
+                driverStr = "winmm";
+                break;
+            }
+# endif
+            case AudioDriverType_DSOUNDAudioDriver:
+            {
+                driverStr = "dsound";
+                break;
+            }
+#endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_LINUX
+            case AudioDriverType_ALSAAudioDriver:
+# ifdef VBOX_WITH_ALSA
+            {
+                driverStr = "alsa";
+                break;
+            }
+# endif
+            case AudioDriverType_PulseAudioDriver:
+# ifdef VBOX_WITH_PULSE
+            {
+                driverStr = "pulse";
+                break;
+            }
+# endif
+            case AudioDriverType_OSSAudioDriver:
+            {
+                driverStr = "oss";
+                break;
+            }
+#endif /* RT_OS_LINUX */
+#ifdef RT_OS_DARWIN
+            case AudioDriverType_CoreAudioDriver:
+            {
+                driverStr = "coreaudio";
+                break;
+            }
+#endif
+#ifdef RT_OS_OS2
+            case AudioDriverType_MMPMAudioDriver:
+            {
+                driverStr = "mmpm";
+                break;
+            }
+#endif
+            default:
+                ComAssertMsgFailedRet (("Wrong audio driver type! driver = %d\n",
+                                        mData->mAudioDriver),
+                                       E_FAIL);
+    }
+    node.setStringValue ("driver", driverStr);
+
+    node.setValue <bool> ("enabled", !!mData->mEnabled);
+
+    return S_OK;
+}
+
+/** 
  *  @note Locks this object for writing.
  */
 bool AudioAdapter::rollback()

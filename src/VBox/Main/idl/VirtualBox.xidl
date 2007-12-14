@@ -1587,12 +1587,13 @@
 
     <method name="getNextExtraDataKey">
       <desc>
-        Returns the extra data key name following the supplied key.
-        An error is returned if the supplied key does not exist.
-        @c NULL is returned if the supplied key is the last key.
-        When supplying @c NULL for the key, the first item is returned.
-        @a nextValue is an optional parameter and if supplied, the next
-        key's value is returned in it.
+        Returns the global extra data key name following the supplied key.
+
+        An error is returned if the supplied @a key does not exist. @c NULL is
+        returned in @a nextKey if the supplied key is the last key. When
+        supplying @c NULL for the @a key, the first key item is returned in @a
+        nextKey (if there is any). @a nextValue is an optional parameter and
+        if supplied, the next key's value is returned in it.
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>Name of the data key to follow.</desc>
@@ -1607,9 +1608,10 @@
 
     <method name="getExtraData">
       <desc>
-        Returns associated extra data.
-        If the reuqested key does not exist, this function will
-        succeed and return @c null in the @a value argument.
+        Returns associated global extra data.
+
+        If the reuqested data @a key does not exist, this function will
+        succeed and return @c NULL in the @a value argument.
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>Name of the data key to get.</desc>
@@ -1621,14 +1623,23 @@
 
     <method name="setExtraData">
       <desc>
-        Sets associated extra data.
-        If you pass @c NULL as a key @a vaule, the given key will be
+        Sets associated global extra data.
+
+        If you pass @c NULL as a key @a vaule, the given @a key will be
         deleted.
+
         <note>
-          This method can be called outside a machine session and
-          therefore it's a caller's responsibility to handle race
-          condition when several clients change the same key at the
-          same time.
+          Before performing the actual data change, this method will ask all
+          registered callbacks using the
+          <link to="IVirtualBoxCallback::onExtraDataCanChange()"/>
+          notification for a permission. If one of the callbacks refuses the
+          new value, the change will not be performed.
+        </note>
+        <note>
+          On success, the
+          <link to="IVirtualBoxCallback::onExtraDataChange()"/> notification
+          is called to inform all registered callbacks about a successful data
+          change.
         </note>
       </desc>
       <param name="key" type="wstring" dir="in">
@@ -2849,28 +2860,73 @@
 
     <method name="getNextExtraDataKey">
       <desc>
-        Returns the extra data key name following the supplied key.
-        An error is returned if the supplied key does not exist.
-        NULL is returned if the supplied key is the last key.
-        When supplying NULL for the key, the first item is returned.
-        NextValue is an optional parameter and if supplied, the next
-        key's value is returned as well.
+        Returns the machine-specific extra data key name following the
+        supplied key.
+
+        An error is returned if the supplied @a key does not exist. @c NULL is
+        returned in @a nextKey if the supplied key is the last key. When
+        supplying @c NULL for the @a key, the first key item is returned in @a
+        nextKey (if there is any). @a nextValue is an optional parameter and
+        if supplied, the next key's value is returned in it.
       </desc>
-      <param name="key" type="wstring" dir="in"/>
-      <param name="nextKey" type="wstring" dir="out"/>
-      <param name="nextValue" type="wstring" dir="out"/>
+      <param name="key" type="wstring" dir="in">
+        <desc>Name of the data key to follow.</desc>
+      </param>
+      <param name="nextKey" type="wstring" dir="out">
+        <desc>Name of the next data key.</desc>
+      </param>
+      <param name="nextValue" type="wstring" dir="out">
+        <desc>Value of the next data key.</desc>
+      </param>
     </method>
 
     <method name="getExtraData">
-      <desc>Returns associated extra data.</desc>
-      <param name="key" type="wstring" dir="in"/>
-      <param name="value" type="wstring" dir="return"/>
+      <desc>
+        Returns associated machine-specific extra data.
+
+        If the reuqested data @a key does not exist, this function will
+        succeed and return @c NULL in the @a value argument.
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>Name of the data key to get.</desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>Value of the requested data key.</desc>
+      </param>
     </method>
 
     <method name="setExtraData">
-      <desc>Sets associated extra data.</desc>
-      <param name="key" type="wstring" dir="in"/>
-      <param name="value" type="wstring" dir="in"/>
+      <desc>
+        Sets associated machine-specific extra data.
+
+        If you pass @c NULL as a key @a vaule, the given @a key will be
+        deleted.
+
+        <note>
+          Before performing the actual data change, this method will ask all
+          registered callbacks using the
+          <link to="IVirtualBoxCallback::onExtraDataCanChange()"/>
+          notification for a permission. If one of the callbacks refuses the
+          new value, the change will not be performed.
+        </note>
+        <note>
+          On success, the
+          <link to="IVirtualBoxCallback::onExtraDataChange()"/> notification
+          is called to inform all registered callbacks about a successful data
+          change.
+        </note>
+        <note>
+          This method can be called outside the machine session and therefore
+          it's a caller's responsibility to handle possible race conditions
+          when several clients change the same key at the same time.
+        </note>
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>Name of the data key to set.</desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>Value to assign to the key.</desc>
+      </param>
     </method>
 
     <method name="saveSettings">

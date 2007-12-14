@@ -30,8 +30,6 @@
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
 #include "HardDiskImpl.h"
-#include "HostDVDDriveImpl.h"
-#include "HostFloppyDriveImpl.h"
 #include "ProgressImpl.h"
 #include "HardDiskAttachmentImpl.h"
 #include "USBControllerImpl.h"
@@ -43,6 +41,8 @@
 #include "GuestImpl.h"
 
 #include "USBProxyService.h"
+
+#include "VirtualBoxXMLUtil.h"
 
 #include "Logging.h"
 
@@ -57,10 +57,11 @@
 #include <iprt/env.h>
 
 #include <VBox/err.h>
-#include <VBox/cfgldr.h>
 #include <VBox/param.h>
 
 #include <algorithm>
+
+#include <typeinfo>
 
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 #define HOSTSUFF_EXE ".exe"
@@ -115,8 +116,7 @@ Machine::Data::Data()
     /* mUuid is initialized in Machine::init() */
 
     mMachineState = MachineState_PoweredOff;
-    RTTIMESPEC time;
-    mLastStateChange = RTTimeSpecGetMilli (RTTimeNow (&time));
+    RTTimeNow (&mLastStateChange);
 
     mMachineStateDeps = 0;
     mZeroMachineStateDepsSem = NIL_RTSEMEVENT;
@@ -1398,7 +1398,7 @@ STDMETHODIMP Machine::COMGETTER(LastStateChange) (LONG64 *aLastStateChange)
 
     AutoReaderLock alock (this);
 
-    *aLastStateChange = mData->mLastStateChange;
+    *aLastStateChange = RTTimeSpecGetMilli (&mData->mLastStateChange);
 
     return S_OK;
 }
@@ -1929,6 +1929,9 @@ STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
     return S_OK;
 }
 
+/**
+ *  @note Locks this object for reading.
+ */
 STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 {
     if (!aNextKey)
@@ -1941,84 +1944,96 @@ STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR
 
     /* start with nothing found */
     *aNextKey = NULL;
+    if (aNextValue)
+        *aNextValue = NULL;
 
-    /*
-     *  if we're ready and isConfigLocked() is FALSE then it means
-     *  that no config file exists yet, so return shortly
-     */
+    /* if we're ready and isConfigLocked() is FALSE then it means
+     * that no config file exists yet, so return shortly */
     if (!isConfigLocked())
         return S_OK;
 
     HRESULT rc = S_OK;
 
-    /* load the config file */
-    CFGHANDLE configLoader = 0;
-    rc = openConfigLoader (&configLoader);
-    if (FAILED (rc))
-        return  E_FAIL;
-
-    CFGNODE machineNode;
-    CFGNODE extraDataNode;
-
-    /* navigate to the right position */
-    if (VBOX_SUCCESS(CFGLDRGetNode(configLoader, "VirtualBox/Machine", 0, &machineNode)) &&
-        VBOX_SUCCESS(CFGLDRGetChildNode(machineNode, "ExtraData", 0, &extraDataNode)))
+    try
     {
-        /* check if it exists */
-        bool found = false;
-        unsigned count;
-        CFGNODE extraDataItemNode;
-        CFGLDRCountChildren(extraDataNode, "ExtraDataItem", &count);
-        for (unsigned i = 0; (i < count) && (found == false); i++)
-        {
-            Bstr name;
-            CFGLDRGetChildNode(extraDataNode, "ExtraDataItem", i, &extraDataItemNode);
-            CFGLDRQueryBSTR(extraDataItemNode, "name", name.asOutParam());
+        using namespace settings;
 
-            /* if we're supposed to return the first one */
-            if (aKey == NULL)
+        /* load the config file */
+        File file (File::ReadWrite, mData->mHandleCfgFile,
+                   Utf8Str (mData->mConfigFileFull));
+        XmlTreeBackend tree;
+
+        rc = VirtualBox::loadSettingsTree_Again (tree, file);
+        CheckComRCReturnRC (rc);
+
+        Key machineNode = tree.rootKey().key ("Machine");
+        Key extraDataNode = machineNode.findKey ("ExtraData");
+
+        if (!extraDataNode.isNull())
+        {
+            Key::List items = extraDataNode.keys ("ExtraDataItem");
+            if (items.size())
             {
-                name.cloneTo(aNextKey);
-                if (aNextValue)
-                    CFGLDRQueryBSTR(extraDataItemNode, "value", aNextValue);
-                found = true;
-            }
-            /* did we find the key we're looking for? */
-            else if (name == aKey)
-            {
-                found = true;
-                /* is there another item? */
-                if (i + 1 < count)
+                for (Key::List::const_iterator it = items.begin();
+                     it != items.end(); ++ it)
                 {
-                    CFGLDRGetChildNode(extraDataNode, "ExtraDataItem", i + 1, &extraDataItemNode);
-                    CFGLDRQueryBSTR(extraDataItemNode, "name", name.asOutParam());
-                    name.cloneTo(aNextKey);
-                    if (aNextValue)
-                        CFGLDRQueryBSTR(extraDataItemNode, "value", aNextValue);
-                    found = true;
-                }
-                else
-                {
-                    /* it's the last one */
-                    *aNextKey = NULL;
+                    Bstr key = (*it).stringValue ("name");
+
+                    /* if we're supposed to return the first one */
+                    if (aKey == NULL)
+                    {
+                        key.cloneTo (aNextKey);
+                        if (aNextValue)
+                        {
+                            Bstr val = (*it).stringValue ("value");
+                            val.cloneTo (aNextValue);
+                        }
+                        return S_OK;
+                    }
+
+                    /* did we find the key we're looking for? */
+                    if (key == aKey)
+                    {
+                        ++ it;
+                        /* is there another item? */
+                        if (it != items.end())
+                        {
+                            Bstr key = (*it).stringValue ("name");
+                            key.cloneTo (aNextKey);
+                            if (aNextValue)
+                            {
+                                Bstr val = (*it).stringValue ("value");
+                                val.cloneTo (aNextValue);
+                            }
+                        }
+                        /* else it's the last one, arguments are already NULL */
+                        return S_OK;
+                    }
                 }
             }
-            CFGLDRReleaseNode(extraDataItemNode);
         }
 
-        /* if we haven't found the key, it's an error */
-        if (!found)
-            rc = setError(E_FAIL, tr("Could not find extra data key"));
+        /* Here we are when a) there are no items at all or b) there are items
+         * but none of them equals to the requested non-NULL key. b) is an
+         * error as well as a) if the key is non-NULL. When the key is NULL
+         * (which is the case only when there are no items), we just fall
+         * through to return NULLs and S_OK. */
 
-        CFGLDRReleaseNode(extraDataNode);
-        CFGLDRReleaseNode(machineNode);
+        if (aKey != NULL)
+            return setError (E_FAIL,
+                tr ("Could not find the extra data key '%ls'"), aKey);
     }
-
-    closeConfigLoader (configLoader, false /* aSaveBeforeClose */);
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+    }
 
     return rc;
 }
 
+/**
+ *  @note Locks this object for reading.
+ */
 STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
 {
     if (!aKey)
@@ -2034,57 +2049,56 @@ STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
     /* start with nothing found */
     *aValue = NULL;
 
-    /*
-     *  if we're ready and isConfigLocked() is FALSE then it means
-     *  that no config file exists yet, so return shortly
-     */
+    /* if we're ready and isConfigLocked() is FALSE then it means
+     * that no config file exists yet, so return shortly */
     if (!isConfigLocked())
         return S_OK;
 
     HRESULT rc = S_OK;
 
-    /* load the config file */
-    CFGHANDLE configLoader = 0;
-    rc = openConfigLoader (&configLoader);
-    if (FAILED (rc))
-        return  E_FAIL;
-
-    CFGNODE machineNode;
-    CFGNODE extraDataNode;
-
-    /* navigate to the right position */
-    if (VBOX_SUCCESS(CFGLDRGetNode(configLoader, "VirtualBox/Machine", 0, &machineNode)) &&
-        VBOX_SUCCESS(CFGLDRGetChildNode(machineNode, "ExtraData", 0, &extraDataNode)))
+    try
     {
-        /* check if it exists */
-        bool found = false;
-        unsigned count;
-        CFGNODE extraDataItemNode;
-        CFGLDRCountChildren(extraDataNode, "ExtraDataItem", &count);
-        for (unsigned i = 0; (i < count) && (found == false); i++)
+        using namespace settings;
+
+        /* load the config file */
+        File file (File::ReadWrite, mData->mHandleCfgFile,
+                   Utf8Str (mData->mConfigFileFull));
+        XmlTreeBackend tree;
+
+        rc = VirtualBox::loadSettingsTree_Again (tree, file);
+        CheckComRCReturnRC (rc);
+
+        const Utf8Str key = aKey;
+
+        Key machineNode = tree.rootKey().key ("Machine");
+        Key extraDataNode = machineNode.findKey ("ExtraData");
+
+        if (!extraDataNode.isNull())
         {
-            Bstr name;
-            CFGLDRGetChildNode(extraDataNode, "ExtraDataItem", i, &extraDataItemNode);
-            CFGLDRQueryBSTR(extraDataItemNode, "name", name.asOutParam());
-            if (name == aKey)
+            /* check if the key exists */
+            Key::List items = extraDataNode.keys ("ExtraDataItem");
+            for (Key::List::const_iterator it = items.begin();
+                 it != items.end(); ++ it)
             {
-                found = true;
-                CFGLDRQueryBSTR(extraDataItemNode, "value", aValue);
+                if (key == (*it).stringValue ("name"))
+                {
+                    Bstr val = (*it).stringValue ("value");
+                    val.cloneTo (aValue);
+                    break;
+                }
             }
-            CFGLDRReleaseNode(extraDataItemNode);
         }
-
-        CFGLDRReleaseNode(extraDataNode);
-        CFGLDRReleaseNode(machineNode);
     }
-
-    rc = closeConfigLoader (configLoader, false /* aSaveBeforeClose */);
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+    }
 
     return rc;
 }
 
 /**
- *  @note Locks mParent for reading + this object for writing.
+ *  @note Locks mParent for writing + this object for writing.
  */
 STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
 {
@@ -2094,8 +2108,9 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* VirtualBox::onExtraDataCanChange() needs mParent lock */
-    AutoMultiLock <2> alock (mParent->rlock(), this->wlock());
+    /* VirtualBox::onExtraDataCanChange() and saveSettings() need mParent
+     * lock (saveSettings() needs a write one) */
+    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
 
     if (mType == IsSnapshotMachine)
     {
@@ -2106,64 +2121,47 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
     bool changed = false;
     HRESULT rc = S_OK;
 
-    /*
-     *  if we're ready and isConfigLocked() is FALSE then it means
-     *  that no config file exists yet, so call saveSettings() to create one
-     */
+    /* If we're ready and isConfigLocked() is FALSE then it means that no
+     * config file exists yet, so call saveSettings() to create one. */
     if (!isConfigLocked())
     {
         rc = saveSettings (false /* aMarkCurStateAsModified */);
-        if (FAILED (rc))
-            return rc;
+        CheckComRCReturnRC (rc);
     }
 
-    /* load the config file */
-    CFGHANDLE configLoader = 0;
-    rc = openConfigLoader (&configLoader);
-    if (FAILED (rc))
-        return rc;
-
-    CFGNODE machineNode = 0;
-    CFGNODE extraDataNode = 0;
-
-    int vrc = CFGLDRGetNode (configLoader, "VirtualBox/Machine", 0, &machineNode);
-    if (VBOX_FAILURE (vrc))
-        vrc = CFGLDRCreateNode (configLoader, "VirtualBox/Machine", &machineNode);
-
-    vrc = CFGLDRGetChildNode (machineNode, "ExtraData", 0, &extraDataNode);
-    if (VBOX_FAILURE (vrc) && aValue)
-        vrc = CFGLDRCreateChildNode (machineNode, "ExtraData", &extraDataNode);
-
-    if (extraDataNode)
+    try
     {
-        CFGNODE extraDataItemNode = 0;
+        using namespace settings;
+
+        /* load the config file */
+        File file (File::ReadWrite, mData->mHandleCfgFile,
+                   Utf8Str (mData->mConfigFileFull));
+        XmlTreeBackend tree;
+
+        rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
+        CheckComRCReturnRC (rc);
+
+        const Utf8Str key = aKey;
         Bstr oldVal;
 
-        unsigned count;
-        CFGLDRCountChildren (extraDataNode, "ExtraDataItem", &count);
+        Key machineNode = tree.rootKey().key ("Machine");
+        Key extraDataNode = machineNode.createKey ("ExtraData");
+        Key extraDataItemNode;
 
-        for (unsigned i = 0; i < count; i++)
+        Key::List items = extraDataNode.keys ("ExtraDataItem");
+        for (Key::List::const_iterator it = items.begin();
+             it != items.end(); ++ it)
         {
-            CFGLDRGetChildNode (extraDataNode, "ExtraDataItem", i, &extraDataItemNode);
-            Bstr name;
-            CFGLDRQueryBSTR (extraDataItemNode, "name", name.asOutParam());
-            if (name == aKey)
+            if (key == (*it).stringValue ("name"))
             {
-                CFGLDRQueryBSTR (extraDataItemNode, "value", oldVal.asOutParam());
+                extraDataItemNode = *it;
+                oldVal = (*it).stringValue ("value");
                 break;
             }
-            CFGLDRReleaseNode (extraDataItemNode);
-            extraDataItemNode = 0;
         }
 
-        /*
-         *  When no key is found, oldVal is null
-         *  Note:
-         *  1. when oldVal is null, |oldVal == (BSTR) NULL| is true
-         *  2. we cannot do |oldVal != aValue| because it will compare
-         *  BSTR pointers instead of strings (due to type conversion ops)
-         */
-        changed = !(oldVal == aValue);
+        /* When no key is found, oldVal is null */
+        changed = oldVal != aValue;
 
         if (changed)
         {
@@ -2175,51 +2173,43 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
                 const BSTR err = error.isNull() ? (const BSTR) L"" : error.raw();
                 LogWarningFunc (("Someone vetoed! Change refused%s%ls\n",
                                  sep, err));
-                rc = setError (E_ACCESSDENIED,
+                return setError (E_ACCESSDENIED,
                     tr ("Could not set extra data because someone refused "
                         "the requested change of '%ls' to '%ls'%s%ls"),
                     aKey, aValue, sep, err);
             }
+
+            if (aValue != NULL)
+            {
+                if (extraDataItemNode.isNull())
+                {
+                    extraDataItemNode = extraDataNode.appendKey ("ExtraDataItem");
+                    extraDataItemNode.setStringValue ("name", key);
+                }
+                extraDataItemNode.setStringValue ("value", Utf8Str (aValue));
+            }
             else
             {
-                if (aValue)
-                {
-                    if (!extraDataItemNode)
-                    {
-                        /* create a new item */
-                        CFGLDRAppendChildNode (extraDataNode, "ExtraDataItem",
-                                               &extraDataItemNode);
-                        CFGLDRSetBSTR (extraDataItemNode, "name", aKey);
-                    }
-                    CFGLDRSetBSTR (extraDataItemNode, "value", aValue);
-                }
-                else
-                {
-                    /* an old value does for sure exist here */
-                    CFGLDRDeleteNode (extraDataItemNode);
-                    extraDataItemNode = 0;
-                }
+                /* an old value does for sure exist here (XML schema
+                 * guarantees that "value" may not absent in the
+                 * <ExtraDataItem> element) */
+                Assert (!extraDataItemNode.isNull());
+                extraDataItemNode.zap();
             }
+
+            /* save settings on success */
+            rc = VirtualBox::saveSettingsTree (tree, file);
+            CheckComRCReturnRC (rc);
         }
-
-        if (extraDataItemNode)
-            CFGLDRReleaseNode (extraDataItemNode);
-
-        CFGLDRReleaseNode (extraDataNode);
     }
-
-    CFGLDRReleaseNode (machineNode);
-
-    if (SUCCEEDED (rc) && changed)
-        rc = closeConfigLoader (configLoader, true /* aSaveBeforeClose */);
-    else
-        closeConfigLoader (configLoader, false /* aSaveBeforeClose */);
-
-    /* fire an event */
-    if (SUCCEEDED (rc) && changed)
+    catch (...)
     {
-        mParent->onExtraDataChange (mData->mUuid, aKey, aValue);
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
     }
+
+    /* fire a notification */
+    if (SUCCEEDED (rc) && changed)
+        mParent->onExtraDataChange (mData->mUuid, aKey, aValue);
 
     return rc;
 }
@@ -2229,7 +2219,7 @@ STDMETHODIMP Machine::SaveSettings()
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* Under some circumstancies, saveSettings() needs mParent lock */
+    /* saveSettings() needs mParent lock */
     AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
 
     HRESULT rc = checkStateDependency (MutableStateDep);
@@ -2322,7 +2312,7 @@ STDMETHODIMP Machine::DeleteSettings()
 
         /* delete the directory that contains the settings file, but only
          * if it matches the VM name (i.e. a structure created by default in
-         * openConfigLoader()) */
+         * prepareSaveSettings()) */
         {
             Utf8Str settingsDir;
             if (isInOwnDir (&settingsDir))
@@ -2544,9 +2534,9 @@ ComObjPtr <SessionMachine> Machine::sessionMachine()
  *
  *  @note locks this object for reading.
  */
-HRESULT Machine::saveRegistryEntry (CFGNODE aEntryNode)
+HRESULT Machine::saveRegistryEntry (settings::Key &aEntryNode)
 {
-    AssertReturn (aEntryNode, E_FAIL);
+    AssertReturn (!aEntryNode.isNull(), E_FAIL);
 
     AutoLimitedCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -2554,9 +2544,9 @@ HRESULT Machine::saveRegistryEntry (CFGNODE aEntryNode)
     AutoReaderLock alock (this);
 
     /* UUID */
-    CFGLDRSetUUID (aEntryNode, "uuid", mData->mUuid.raw());
+    aEntryNode.setValue <Guid> ("uuid", mData->mUuid);
     /* settings file name (possibly, relative) */
-    CFGLDRSetBSTR (aEntryNode, "src", mData->mConfigFile);
+    aEntryNode.setValue <Bstr> ("src", mData->mConfigFile);
 
     return S_OK;
 }
@@ -3289,10 +3279,13 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
  *  the caller must make sure there are no active Machine::addCaller() calls
  *  on the current thread because this will block Machine::uninit().
  *
- *  @note Locks this object and children for writing!
+ *  @note Must be called from mParent's write lock. Locks this object and
+ *  children for writing.
  */
 HRESULT Machine::trySetRegistered (BOOL aRegistered)
 {
+    AssertReturn (mParent->isLockedOnCurrentThread(), E_FAIL);
+
     AutoLimitedCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
@@ -3782,8 +3775,7 @@ HRESULT Machine::setMachineState (MachineState_T aMachineState)
     {
         mData->mMachineState = aMachineState;
 
-        RTTIMESPEC time;
-        mData->mLastStateChange = RTTimeSpecGetMilli(RTTimeNow(&time));
+        RTTimeNow (&mData->mLastStateChange);
 
         mParent->onMachineStateChange (mData->mUuid, aMachineState);
     }
@@ -3850,41 +3842,21 @@ HRESULT Machine::loadSettings (bool aRegistered)
 
     HRESULT rc = S_OK;
 
-    CFGHANDLE configLoader = NULL;
-    char *loaderError = NULL;
-    int vrc = CFGLDRLoad (&configLoader,
-                          Utf8Str (mData->mConfigFileFull), mData->mHandleCfgFile,
-                          XmlSchemaNS, true, cfgLdrEntityResolver,
-                          &loaderError);
-    if (VBOX_FAILURE (vrc))
+    try
     {
-        rc = setError (E_FAIL,
-            tr ("Could not load the settings file '%ls' (%Vrc)%s%s"),
-            mData->mConfigFileFull.raw(), vrc,
-            loaderError ? ".\n" : "", loaderError ? loaderError : "");
+        using namespace settings;
 
-        if (loaderError)
-            RTMemTmpFree (loaderError);
+        File file (File::Read, mData->mHandleCfgFile,
+                   Utf8Str (mData->mConfigFileFull));
+        XmlTreeBackend tree;
 
-        LogFlowThisFuncLeave();
-        return rc;
-    }
+        rc = VirtualBox::loadSettingsTree_FirstTime (tree, file);
+        CheckComRCThrowRC (rc);
 
-    /*
-     *  When reading the XML, we assume it has been validated, so we don't
-     *  do any structural checks here, Just Assert() some things.
-     */
-
-    CFGNODE machineNode = 0;
-    CFGLDRGetNode (configLoader, "VirtualBox/Machine", 0, &machineNode);
-
-    do
-    {
-        ComAssertBreak (machineNode, rc = E_FAIL);
+        Key machineNode = tree.rootKey().key ("Machine");
 
         /* uuid (required) */
-        Guid id;
-        CFGLDRQueryUUID (machineNode, "uuid", id.ptr());
+        Guid id = machineNode.value <Guid> ("uuid");
 
         /* If the stored UUID is not empty, it means the registered machine
          * is being loaded. Compare the loaded UUID with the stored one taken
@@ -3893,69 +3865,55 @@ HRESULT Machine::loadSettings (bool aRegistered)
         {
             if (mData->mUuid != id)
             {
-                rc = setError (E_FAIL,
+                throw setError (E_FAIL,
                     tr ("Machine UUID {%Vuuid} in '%ls' doesn't match its "
                         "UUID {%s} in the registry file '%ls'"),
                     id.raw(), mData->mConfigFileFull.raw(),
                     mData->mUuid.toString().raw(),
                     mParent->settingsFileName().raw());
-                break;
             }
         }
         else
             unconst (mData->mUuid) = id;
 
         /* name (required) */
-        CFGLDRQueryBSTR (machineNode, "name", mUserData->mName.asOutParam());
+        mUserData->mName = machineNode.stringValue ("name");
 
         /* nameSync (optional, default is true) */
-        {
-            bool nameSync = true;
-            CFGLDRQueryBool (machineNode, "nameSync", &nameSync);
-            mUserData->mNameSync = nameSync;
-        }
+        mUserData->mNameSync = machineNode.value <bool> ("nameSync");
 
         /* Description (optional, default is null) */
         {
-            CFGNODE descNode = 0;
-            CFGLDRGetChildNode (machineNode, "Description", 0, &descNode);
-            if (descNode)
-            {
-                CFGLDRQueryBSTR (descNode, NULL,
-                                 mUserData->mDescription.asOutParam());
-                CFGLDRReleaseNode (descNode);
-            }
+            Key descNode = machineNode.findKey ("Description");
+            if (!descNode.isNull())
+                mUserData->mDescription = descNode.keyStringValue();
             else
                 mUserData->mDescription.setNull();
         }
 
         /* OSType (required) */
         {
-            CFGLDRQueryBSTR (machineNode, "OSType",
-                             mUserData->mOSTypeId.asOutParam());
+            mUserData->mOSTypeId = machineNode.stringValue ("OSType");
 
             /* look up the object by Id to check it is valid */
             ComPtr <IGuestOSType> guestOSType;
             rc = mParent->GetGuestOSType (mUserData->mOSTypeId,
                                           guestOSType.asOutParam());
-            if (FAILED (rc))
-                break;
+            CheckComRCThrowRC (rc);
         }
 
         /* stateFile (optional) */
         {
-            Bstr stateFilePath;
-            CFGLDRQueryBSTR (machineNode, "stateFile", stateFilePath.asOutParam());
+            Bstr stateFilePath = machineNode.stringValue ("stateFile");
             if (stateFilePath)
             {
                 Utf8Str stateFilePathFull = stateFilePath;
                 int vrc = calculateFullPath (stateFilePathFull, stateFilePathFull);
                 if (VBOX_FAILURE (vrc))
                 {
-                    rc = setError (E_FAIL,
+                    throw setError (E_FAIL,
                         tr ("Invalid saved state file path: '%ls' (%Vrc)"),
                         stateFilePath.raw(), vrc);
-                    break;
                 }
                 mSSData->mStateFilePath = stateFilePathFull;
             }
@@ -3965,46 +3923,36 @@ HRESULT Machine::loadSettings (bool aRegistered)
 
         /*
          *  currentSnapshot ID (optional)
-         *  Note that due to XML Schema constaraints this attribute, when present,
-         *  will guaranteedly refer to an existing snapshot definition in XML
+         *
+         *  Note that due to XML Schema constaraints, this attribute, when
+         *  present, will guaranteedly refer to an existing snapshot
+         *  definition in XML
          */
-        Guid currentSnapshotId;
-        CFGLDRQueryUUID (machineNode, "currentSnapshot", currentSnapshotId.ptr());
+        Guid currentSnapshotId = machineNode.valueOr <Guid> ("currentSnapshot",
+                                                             Guid());
 
         /* snapshotFolder (optional) */
         {
-            Bstr folder;
-            CFGLDRQueryBSTR (machineNode, "snapshotFolder", folder.asOutParam());
+            Bstr folder = machineNode.stringValue ("snapshotFolder");
             rc = COMSETTER(SnapshotFolder) (folder);
-            if (FAILED (rc))
-                break;
+            CheckComRCThrowRC (rc);
         }
+
+        /* currentStateModified (optional, default is true) */
+        mData->mCurrentStateModified = machineNode.value <bool> ("currentStateModified");
 
         /* lastStateChange (optional, for compatiblity) */
         {
-            int64_t lastStateChange = 0;
-            CFGLDRQueryDateTime (machineNode, "lastStateChange", &lastStateChange);
-            if (lastStateChange == 0)
-            {
-                /// @todo (dmik) until lastStateChange is the required attribute,
-                //  we simply set it to the current time if missing in the config
-                RTTIMESPEC time;
-                lastStateChange = RTTimeSpecGetMilli (RTTimeNow (&time));
-            }
-            mData->mLastStateChange = lastStateChange;
+            /// @todo (dmik) until lastStateChange is the required attribute,
+            //  we simply set it to the current time if missing in the config
+            RTTIMESPEC now;
+            RTTimeNow (&now);
+            mData->mLastStateChange =
+                machineNode.valueOr <RTTIMESPEC> ("lastStateChange", now);
         }
 
-        /* aborted (optional) */
-        bool aborted = false;
-        CFGLDRQueryBool (machineNode, "aborted", &aborted);
-
-        /* currentStateModified (optional, default is true) */
-        mData->mCurrentStateModified = TRUE;
-        {
-            bool val = true;
-            CFGLDRQueryBool (machineNode, "currentStateModified", &val);
-            mData->mCurrentStateModified = val;
-        }
+        /* aborted (optional, default is false) */
+        bool aborted = machineNode.value <bool> ("aborted");
 
         /*
          *  note: all mUserData members must be assigned prior this point because
@@ -4015,40 +3963,22 @@ HRESULT Machine::loadSettings (bool aRegistered)
 
         /* Snapshot node (optional) */
         {
-            CFGNODE snapshotNode = 0;
-            CFGLDRGetChildNode (machineNode, "Snapshot", 0, &snapshotNode);
-            if (snapshotNode)
+            Key snapshotNode = machineNode.findKey ("Snapshot");
+            if (!snapshotNode.isNull())
             {
                 /* read all snapshots recursively */
                 rc = loadSnapshot (snapshotNode, currentSnapshotId, NULL);
-                CFGLDRReleaseNode (snapshotNode);
-                if (FAILED (rc))
-                    break;
+                CheckComRCThrowRC (rc);
             }
         }
 
         /* Hardware node (required) */
-        {
-            CFGNODE hardwareNode = 0;
-            CFGLDRGetChildNode (machineNode, "Hardware", 0, &hardwareNode);
-            ComAssertBreak (hardwareNode, rc = E_FAIL);
-            rc = loadHardware (hardwareNode);
-            CFGLDRReleaseNode (hardwareNode);
-            if (FAILED (rc))
-                break;
-        }
+        rc = loadHardware (machineNode.key ("Hardware"));
+        CheckComRCThrowRC (rc);
 
         /* HardDiskAttachments node (required) */
-        {
-            CFGNODE hdasNode = 0;
-            CFGLDRGetChildNode (machineNode, "HardDiskAttachments", 0, &hdasNode);
-            ComAssertBreak (hdasNode, rc = E_FAIL);
-
-            rc = loadHardDisks (hdasNode, aRegistered);
-            CFGLDRReleaseNode (hdasNode);
-            if (FAILED (rc))
-                break;
-        }
+        rc = loadHardDisks (machineNode.key ("HardDiskAttachments"), aRegistered);
+        CheckComRCThrowRC (rc);
 
         /*
          *  NOTE: the assignment below must be the last thing to do,
@@ -4072,12 +4002,15 @@ HRESULT Machine::loadSettings (bool aRegistered)
             mData->mMachineState = MachineState_Saved;
         }
     }
-    while (0);
-
-    if (machineNode)
-        CFGLDRReleaseNode (machineNode);
-
-    CFGLDRFree (configLoader);
+    catch (HRESULT err)
+    {
+        /* we assume that error info is set by the thrower */
+        rc = err;
+    }
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+    }
 
     LogFlowThisFuncLeave();
     return rc;
@@ -4086,125 +4019,100 @@ HRESULT Machine::loadSettings (bool aRegistered)
 /**
  *  Recursively loads all snapshots starting from the given.
  *
- *  @param aNode            <Snapshot> node
- *  @param aCurSnapshotId   current snapshot ID from the settings file
- *  @param aParentSnapshot  parent snapshot
+ *  @param aNode            <Snapshot> node.
+ *  @param aCurSnapshotId   Current snapshot ID from the settings file.
+ *  @param aParentSnapshot  Parent snapshot.
  */
-HRESULT Machine::loadSnapshot (CFGNODE aNode, const Guid &aCurSnapshotId,
+HRESULT Machine::loadSnapshot (const settings::Key &aNode,
+                               const Guid &aCurSnapshotId,
                                Snapshot *aParentSnapshot)
 {
-    AssertReturn (aNode, E_INVALIDARG);
+    using namespace settings;
+
+    AssertReturn (!aNode.isNull(), E_INVALIDARG);
     AssertReturn (mType == IsMachine, E_FAIL);
 
-    // create a snapshot machine object
+    /* create a snapshot machine object */
     ComObjPtr <SnapshotMachine> snapshotMachine;
     snapshotMachine.createObject();
 
     HRESULT rc = S_OK;
 
-    Guid uuid; // required
-    CFGLDRQueryUUID (aNode, "uuid", uuid.ptr());
+    /* required */
+    Guid uuid = aNode.value <Guid> ("uuid");
 
-    Bstr stateFilePath; // optional
-    CFGLDRQueryBSTR (aNode, "stateFile", stateFilePath.asOutParam());
-    if (stateFilePath)
     {
-        Utf8Str stateFilePathFull = stateFilePath;
-        int vrc = calculateFullPath (stateFilePathFull, stateFilePathFull);
-        if (VBOX_FAILURE (vrc))
-            return setError (E_FAIL,
-                tr ("Invalid saved state file path: '%ls' (%Vrc)"),
-                stateFilePath.raw(), vrc);
-
-        stateFilePath = stateFilePathFull;
-    }
-
-    do
-    {
-        // Hardware node (required)
-        CFGNODE hardwareNode = 0;
-        CFGLDRGetChildNode (aNode, "Hardware", 0, &hardwareNode);
-        ComAssertBreak (hardwareNode, rc = E_FAIL);
-
-        do
+        /* optional */
+        Bstr stateFilePath = aNode.stringValue ("stateFile");
+        if (stateFilePath)
         {
-            // HardDiskAttachments node (required)
-            CFGNODE hdasNode = 0;
-            CFGLDRGetChildNode (aNode, "HardDiskAttachments", 0, &hdasNode);
-            ComAssertBreak (hdasNode, rc = E_FAIL);
+            Utf8Str stateFilePathFull = stateFilePath;
+            int vrc = calculateFullPath (stateFilePathFull, stateFilePathFull);
+            if (VBOX_FAILURE (vrc))
+                return setError (E_FAIL,
+                                 tr ("Invalid saved state file path: '%ls' (%Vrc)"),
+                                 stateFilePath.raw(), vrc);
 
-            // initialize the snapshot machine
-            rc = snapshotMachine->init (this, hardwareNode, hdasNode,
-                                        uuid, stateFilePath);
-
-            CFGLDRReleaseNode (hdasNode);
+            stateFilePath = stateFilePathFull;
         }
-        while (0);
 
-        CFGLDRReleaseNode (hardwareNode);
+        /* Hardware node (required) */
+        Key hardwareNode = aNode.key ("Hardware");
+
+        /* HardDiskAttachments node (required) */
+        Key hdasNode = aNode.key ("HardDiskAttachments");
+
+        /* initialize the snapshot machine */
+        rc = snapshotMachine->init (this, hardwareNode, hdasNode,
+                                    uuid, stateFilePath);
+        CheckComRCReturnRC (rc);
     }
-    while (0);
 
-    if (FAILED (rc))
-        return rc;
-
-    // create a snapshot object
+    /* create a snapshot object */
     ComObjPtr <Snapshot> snapshot;
     snapshot.createObject();
 
     {
-        Bstr name; // required
-        CFGLDRQueryBSTR (aNode, "name", name.asOutParam());
+        /* required */
+        Bstr name = aNode.stringValue ("name");
 
-        LONG64 timeStamp = 0; // required
-        CFGLDRQueryDateTime (aNode, "timeStamp", &timeStamp);
+        /* required */
+        RTTIMESPEC timeStamp = aNode.value <RTTIMESPEC> ("timeStamp");
 
-        Bstr description; // optional
+        /* optional */
+        Bstr description;
         {
-            CFGNODE descNode = 0;
-            CFGLDRGetChildNode (aNode, "Description", 0, &descNode);
-            if (descNode)
-            {
-                CFGLDRQueryBSTR (descNode, NULL, description.asOutParam());
-                CFGLDRReleaseNode (descNode);
-            }
+            Key descNode = aNode.findKey ("Description");
+            if (!descNode.isNull())
+                description = descNode.keyStringValue();
         }
 
-        // initialize the snapshot
+        /* initialize the snapshot */
         rc = snapshot->init (uuid, name, description, timeStamp,
                              snapshotMachine, aParentSnapshot);
-        if (FAILED (rc))
-            return rc;
+        CheckComRCReturnRC (rc);
     }
 
-    // memorize the first snapshot if necessary
+    /* memorize the first snapshot if necessary */
     if (!mData->mFirstSnapshot)
         mData->mFirstSnapshot = snapshot;
 
-    // memorize the current snapshot when appropriate
+    /* memorize the current snapshot when appropriate */
     if (!mData->mCurrentSnapshot && snapshot->data().mId == aCurSnapshotId)
         mData->mCurrentSnapshot = snapshot;
 
-    // Snapshots node (optional)
+    /* Snapshots node (optional) */
     {
-        CFGNODE snapshotsNode = 0;
-        CFGLDRGetChildNode (aNode, "Snapshots", 0, &snapshotsNode);
-        if (snapshotsNode)
+        Key snapshotsNode = aNode.findKey ("Snapshots");
+        if (!snapshotsNode.isNull())
         {
-            unsigned cbDisks = 0;
-            CFGLDRCountChildren (snapshotsNode, "Snapshot", &cbDisks);
-            for (unsigned i = 0; i < cbDisks && SUCCEEDED (rc); i++)
+            Key::List children = snapshotsNode.keys ("Snapshot");
+            for (Key::List::const_iterator it = children.begin();
+                 it != children.end(); ++ it)
             {
-                CFGNODE snapshotNode;
-                CFGLDRGetChildNode (snapshotsNode, "Snapshot", i, &snapshotNode);
-                ComAssertBreak (snapshotNode, rc = E_FAIL);
-
-                rc = loadSnapshot (snapshotNode, aCurSnapshotId, snapshot);
-
-                CFGLDRReleaseNode (snapshotNode);
+                rc = loadSnapshot ((*it), aCurSnapshotId, snapshot);
+                CheckComRCBreakRC (rc);
             }
-
-            CFGLDRReleaseNode (snapshotsNode);
         }
     }
 
@@ -4212,50 +4120,44 @@ HRESULT Machine::loadSnapshot (CFGNODE aNode, const Guid &aCurSnapshotId,
 }
 
 /**
- *  @param aNode    <Hardware> node
+ *  @param aNode    <Hardware> node.
  */
-HRESULT Machine::loadHardware (CFGNODE aNode)
+HRESULT Machine::loadHardware (const settings::Key &aNode)
 {
-    AssertReturn (aNode, E_INVALIDARG);
+    using namespace settings;
+
+    AssertReturn (!aNode.isNull(), E_INVALIDARG);
     AssertReturn (mType == IsMachine || mType == IsSnapshotMachine, E_FAIL);
+
+    HRESULT rc = S_OK;
 
     /* CPU node (currently not required) */
     {
         /* default value in case the node is not there */
         mHWData->mHWVirtExEnabled = TriStateBool_Default;
 
-        CFGNODE cpuNode = 0;
-        CFGLDRGetChildNode (aNode, "CPU", 0, &cpuNode);
-        if (cpuNode)
+        Key cpuNode = aNode.findKey ("CPU");
+        if (!cpuNode.isNull())
         {
-            CFGNODE hwVirtExNode = 0;
-            CFGLDRGetChildNode (cpuNode, "HardwareVirtEx", 0, &hwVirtExNode);
-            if (hwVirtExNode)
+            Key hwVirtExNode = cpuNode.key ("HardwareVirtEx");
+            if (!hwVirtExNode.isNull())
             {
-                Bstr hwVirtExEnabled;
-                CFGLDRQueryBSTR (hwVirtExNode, "enabled", hwVirtExEnabled.asOutParam());
-                if      (hwVirtExEnabled == L"false")
+                const char *enabled = hwVirtExNode.stringValue ("enabled");
+                if      (strcmp (enabled, "false") == 0)
                     mHWData->mHWVirtExEnabled = TriStateBool_False;
-                else if (hwVirtExEnabled == L"true")
+                else if (strcmp (enabled, "true") == 0)
                     mHWData->mHWVirtExEnabled = TriStateBool_True;
                 else
                     mHWData->mHWVirtExEnabled = TriStateBool_Default;
-                CFGLDRReleaseNode (hwVirtExNode);
             }
-            CFGLDRReleaseNode (cpuNode);
         }
     }
 
     /* Memory node (required) */
     {
-        CFGNODE memoryNode = 0;
-        CFGLDRGetChildNode (aNode, "Memory", 0, &memoryNode);
-        ComAssertRet (memoryNode, E_FAIL);
+        Key memoryNode = aNode.key ("Memory");
 
-        uint32_t RAMSize;
-        CFGLDRQueryUInt32 (memoryNode, "RAMSize", &RAMSize);
-        mHWData->mMemorySize = RAMSize;
-        CFGLDRReleaseNode (memoryNode);
+        mHWData->mMemorySize = memoryNode.value <ULONG> ("RAMSize");
     }
 
     /* Boot node (required) */
@@ -4264,709 +4166,223 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
         for (size_t i = 0; i < ELEMENTS (mHWData->mBootOrder); i++)
             mHWData->mBootOrder [i] = DeviceType_NoDevice;
 
-        CFGNODE bootNode = 0;
-        CFGLDRGetChildNode (aNode, "Boot", 0, &bootNode);
-        ComAssertRet (bootNode, E_FAIL);
+        Key bootNode = aNode.key ("Boot");
 
-        HRESULT rc = S_OK;
-
-        unsigned cOrder;
-        CFGLDRCountChildren (bootNode, "Order", &cOrder);
-        for (unsigned i = 0; i < cOrder; i++)
+        Key::List orderNodes = bootNode.keys ("Order");
+        for (Key::List::const_iterator it = orderNodes.begin();
+             it != orderNodes.end(); ++ it)
         {
-            CFGNODE orderNode = 0;
-            CFGLDRGetChildNode (bootNode, "Order", i, &orderNode);
-            ComAssertBreak (orderNode, rc = E_FAIL);
-
             /* position (required) */
             /* position unicity is guaranteed by XML Schema */
-            uint32_t position = 0;
-            CFGLDRQueryUInt32 (orderNode, "position", &position);
+            uint32_t position = (*it).value <uint32_t> ("position");
             -- position;
             Assert (position < ELEMENTS (mHWData->mBootOrder));
 
             /* device (required) */
-            Bstr device;
-            CFGLDRQueryBSTR (orderNode, "device", device.asOutParam());
-            if      (device == L"None")
+            const char *device = (*it).stringValue ("device");
+            if      (strcmp (device, "None") == 0)
                 mHWData->mBootOrder [position] = DeviceType_NoDevice;
-            else if (device == L"Floppy")
+            else if (strcmp (device, "Floppy") == 0)
                 mHWData->mBootOrder [position] = DeviceType_FloppyDevice;
-            else if (device == L"DVD")
+            else if (strcmp (device, "DVD") == 0)
                 mHWData->mBootOrder [position] = DeviceType_DVDDevice;
-            else if (device == L"HardDisk")
+            else if (strcmp (device, "HardDisk") == 0)
                 mHWData->mBootOrder [position] = DeviceType_HardDiskDevice;
-            else if (device == L"Network")
+            else if (strcmp (device, "Network") == 0)
                 mHWData->mBootOrder [position] = DeviceType_NetworkDevice;
             else
-                ComAssertMsgFailed (("Invalid device: %ls\n", device.raw()));
-
-            CFGLDRReleaseNode (orderNode);
+                ComAssertMsgFailed (("Invalid device: %s\n", device));
         }
-
-        CFGLDRReleaseNode (bootNode);
-        if (FAILED (rc))
-            return rc;
     }
 
     /* Display node (required) */
     {
-        CFGNODE displayNode = 0;
-        CFGLDRGetChildNode (aNode, "Display", 0, &displayNode);
-        ComAssertRet (displayNode, E_FAIL);
+        Key displayNode = aNode.key ("Display");
 
-        uint32_t VRAMSize;
-        CFGLDRQueryUInt32 (displayNode, "VRAMSize", &VRAMSize);
-        mHWData->mVRAMSize = VRAMSize;
-
-        uint32_t MonitorCount;
-        CFGLDRQueryUInt32 (displayNode, "MonitorCount", &MonitorCount);
-        mHWData->mMonitorCount = MonitorCount;
-
-        CFGLDRReleaseNode (displayNode);
+        mHWData->mVRAMSize = displayNode.value <ULONG> ("VRAMSize");
+        mHWData->mMonitorCount = displayNode.value <ULONG> ("MonitorCount");
     }
 
 #ifdef VBOX_VRDP
-    /* RemoteDisplay node (optional) */
-    {
-        CFGNODE remoteDisplayNode = 0;
-        CFGLDRGetChildNode (aNode, "RemoteDisplay", 0, &remoteDisplayNode);
-        if (remoteDisplayNode)
-        {
-            HRESULT rc = mVRDPServer->loadSettings (remoteDisplayNode);
-            CFGLDRReleaseNode (remoteDisplayNode);
-            CheckComRCReturnRC (rc);
-        }
-    }
+    /* RemoteDisplay */
+    rc = mVRDPServer->loadSettings (aNode);
+    CheckComRCReturnRC (rc);
 #endif
 
-    /* BIOS node (required) */
-    {
-        CFGNODE biosNode = 0;
-        CFGLDRGetChildNode (aNode, "BIOS", 0, &biosNode);
-        ComAssertRet (biosNode, E_FAIL);
+    /* BIOS */
+    rc = mBIOSSettings->loadSettings (aNode);
+    CheckComRCReturnRC (rc);
 
-        HRESULT rc = S_OK;
+    /* DVD drive */
+    rc = mDVDDrive->loadSettings (aNode);
+    CheckComRCReturnRC (rc);
 
-        do
-        {
-            /* ACPI */
-            {
-                CFGNODE acpiNode = 0;
-                CFGLDRGetChildNode (biosNode, "ACPI", 0, &acpiNode);
-                ComAssertBreak (acpiNode, rc = E_FAIL);
-
-                bool enabled;
-                CFGLDRQueryBool (acpiNode, "enabled", &enabled);
-                mBIOSSettings->COMSETTER(ACPIEnabled)(enabled);
-                CFGLDRReleaseNode (acpiNode);
-            }
-
-            /* IOAPIC */
-            {
-                CFGNODE ioapicNode = 0;
-                CFGLDRGetChildNode (biosNode, "IOAPIC", 0, &ioapicNode);
-                if (ioapicNode)
-                {
-                    bool enabled;
-                    CFGLDRQueryBool (ioapicNode, "enabled", &enabled);
-                    mBIOSSettings->COMSETTER(IOAPICEnabled)(enabled);
-                    CFGLDRReleaseNode (ioapicNode);
-                }
-            }
-
-            /* Logo (optional) */
-            {
-                CFGNODE logoNode = 0;
-                CFGLDRGetChildNode (biosNode, "Logo", 0, &logoNode);
-                if (logoNode)
-                {
-                    bool enabled = false;
-                    CFGLDRQueryBool (logoNode, "fadeIn", &enabled);
-                    mBIOSSettings->COMSETTER(LogoFadeIn)(enabled);
-                    CFGLDRQueryBool (logoNode, "fadeOut", &enabled);
-                    mBIOSSettings->COMSETTER(LogoFadeOut)(enabled);
-
-                    uint32_t BIOSLogoDisplayTime;
-                    CFGLDRQueryUInt32 (logoNode, "displayTime", &BIOSLogoDisplayTime);
-                    mBIOSSettings->COMSETTER(LogoDisplayTime)(BIOSLogoDisplayTime);
-
-                    Bstr logoPath;
-                    CFGLDRQueryBSTR (logoNode, "imagePath", logoPath.asOutParam());
-                    mBIOSSettings->COMSETTER(LogoImagePath)(logoPath);
-
-                    CFGLDRReleaseNode (logoNode);
-                }
-            }
-
-            /* boot menu (optional) */
-            {
-                CFGNODE bootMenuNode = 0;
-                CFGLDRGetChildNode (biosNode, "BootMenu", 0, &bootMenuNode);
-                if (bootMenuNode)
-                {
-                    Bstr modeStr;
-                    BIOSBootMenuMode_T mode;
-                    CFGLDRQueryBSTR (bootMenuNode, "mode", modeStr.asOutParam());
-                    if (modeStr == L"disabled")
-                        mode = BIOSBootMenuMode_Disabled;
-                    else if (modeStr == L"menuonly")
-                        mode = BIOSBootMenuMode_MenuOnly;
-                    else
-                        mode = BIOSBootMenuMode_MessageAndMenu;
-                    mBIOSSettings->COMSETTER(BootMenuMode)(mode);
-
-                    CFGLDRReleaseNode (bootMenuNode);
-                }
-            }
-
-            /* PXE debug logging (optional) */
-            {
-                CFGNODE pxedebugNode = 0;
-                CFGLDRGetChildNode (biosNode, "PXEDebug", 0, &pxedebugNode);
-                if (pxedebugNode)
-                {
-                    bool enabled;
-                    CFGLDRQueryBool (pxedebugNode, "enabled", &enabled);
-                    mBIOSSettings->COMSETTER(PXEDebugEnabled)(enabled);
-                    CFGLDRReleaseNode (pxedebugNode);
-                }
-            }
-
-            /* time offset (optional) */
-            {
-                CFGNODE timeOffsetNode = 0;
-                CFGLDRGetChildNode (biosNode, "TimeOffset", 0, &timeOffsetNode);
-                if (timeOffsetNode)
-                {
-                    LONG64 timeOffset;
-                    CFGLDRQueryInt64 (timeOffsetNode, "value", &timeOffset);
-                    mBIOSSettings->COMSETTER(TimeOffset)(timeOffset);
-                    CFGLDRReleaseNode (timeOffsetNode);
-                }
-            }
-
-            /* IDE controller type (optional, defaults to PIIX3) */
-            {
-                CFGNODE ideControllerNode = 0;
-                IDEControllerType_T controllerType = IDEControllerType_IDEControllerPIIX3;
-                CFGLDRGetChildNode (biosNode, "IDEController", 0, &ideControllerNode);
-                if (ideControllerNode)
-                {
-                    Bstr IDEControllerType;
-
-                    CFGLDRQueryBSTR (ideControllerNode, "type", IDEControllerType.asOutParam());
-                    ComAssertBreak (IDEControllerType, rc = E_FAIL);
-
-                    if (IDEControllerType.compare(Bstr("PIIX3")) == 0)
-                        controllerType = IDEControllerType_IDEControllerPIIX3;
-                    else if (IDEControllerType.compare(Bstr("PIIX4")) == 0)
-                        controllerType = IDEControllerType_IDEControllerPIIX4;
-                    else
-                        ComAssertBreak (0, rc = E_FAIL);
-
-                    CFGLDRReleaseNode (ideControllerNode);
-                }
-                mBIOSSettings->COMSETTER(IDEControllerType)(controllerType);
-            }
-
-        }
-        while (0);
-
-        CFGLDRReleaseNode (biosNode);
-        if (FAILED (rc))
-            return rc;
-    }
-
-    /* DVD drive (contains either Image or HostDrive or nothing) */
-    /// @todo (dmik) move the code to DVDDrive
-    {
-        HRESULT rc = S_OK;
-
-        CFGNODE dvdDriveNode = 0;
-        CFGLDRGetChildNode (aNode, "DVDDrive", 0, &dvdDriveNode);
-        ComAssertRet (dvdDriveNode, E_FAIL);
-
-        bool fPassthrough;
-        CFGLDRQueryBool(dvdDriveNode, "passthrough", &fPassthrough);
-        mDVDDrive->COMSETTER(Passthrough)(fPassthrough);
-
-        CFGNODE typeNode = 0;
-
-        do
-        {
-            CFGLDRGetChildNode (dvdDriveNode, "Image", 0, &typeNode);
-            if (typeNode)
-            {
-                Guid uuid;
-                CFGLDRQueryUUID (typeNode, "uuid", uuid.ptr());
-                rc = mDVDDrive->MountImage (uuid);
-            }
-            else
-            {
-                CFGLDRGetChildNode (dvdDriveNode, "HostDrive", 0, &typeNode);
-                if (typeNode)
-                {
-                    Bstr src;
-                    CFGLDRQueryBSTR (typeNode, "src", src.asOutParam());
-
-                    /* find the correspoding object */
-                    ComPtr <IHost> host;
-                    rc = mParent->COMGETTER(Host) (host.asOutParam());
-                    ComAssertComRCBreak (rc, rc = rc);
-
-                    ComPtr <IHostDVDDriveCollection> coll;
-                    rc = host->COMGETTER(DVDDrives) (coll.asOutParam());
-                    ComAssertComRCBreak (rc, rc = rc);
-
-                    ComPtr <IHostDVDDrive> drive;
-                    rc = coll->FindByName (src, drive.asOutParam());
-                    if (SUCCEEDED (rc))
-                        rc = mDVDDrive->CaptureHostDrive (drive);
-                    else if (rc == E_INVALIDARG)
-                    {
-                        /* the host DVD drive is not currently available. we
-                         * assume it will be available later and create an
-                         * extra object now */
-                        ComObjPtr <HostDVDDrive> hostDrive;
-                        hostDrive.createObject();
-                        rc = hostDrive->init (src);
-                        ComAssertComRCBreak (rc, rc = rc);
-                        rc = mDVDDrive->CaptureHostDrive (hostDrive);
-                    }
-                    else
-                        ComAssertComRCBreakRC (rc);
-                }
-            }
-        }
-        while (0);
-
-        if (typeNode)
-            CFGLDRReleaseNode (typeNode);
-        CFGLDRReleaseNode (dvdDriveNode);
-
-        if (FAILED (rc))
-            return rc;
-    }
-
-    /* Floppy drive (contains either Image or HostDrive or nothing) */
-    /// @todo (dmik) move the code to FloppyDrive
-    {
-        HRESULT rc = S_OK;
-
-        CFGNODE driveNode = 0;
-        CFGLDRGetChildNode (aNode, "FloppyDrive", 0, &driveNode);
-        ComAssertRet (driveNode, E_FAIL);
-
-        BOOL fFloppyEnabled = TRUE;
-        CFGLDRQueryBool (driveNode, "enabled", (bool*)&fFloppyEnabled);
-        rc = mFloppyDrive->COMSETTER(Enabled)(fFloppyEnabled);
-
-        CFGNODE typeNode = 0;
-        do
-        {
-            CFGLDRGetChildNode (driveNode, "Image", 0, &typeNode);
-            if (typeNode)
-            {
-                Guid uuid;
-                CFGLDRQueryUUID (typeNode, "uuid", uuid.ptr());
-                rc = mFloppyDrive->MountImage (uuid);
-            }
-            else
-            {
-                CFGLDRGetChildNode (driveNode, "HostDrive", 0, &typeNode);
-                if (typeNode)
-                {
-                    Bstr src;
-                    CFGLDRQueryBSTR (typeNode, "src", src.asOutParam());
-
-                    /* find the correspoding object */
-                    ComPtr <IHost> host;
-                    rc = mParent->COMGETTER(Host) (host.asOutParam());
-                    ComAssertComRCBreak (rc, rc = rc);
-
-                    ComPtr <IHostFloppyDriveCollection> coll;
-                    rc = host->COMGETTER(FloppyDrives) (coll.asOutParam());
-                    ComAssertComRCBreak (rc, rc = rc);
-
-                    ComPtr <IHostFloppyDrive> drive;
-                    rc = coll->FindByName (src, drive.asOutParam());
-                    if (SUCCEEDED (rc))
-                        rc = mFloppyDrive->CaptureHostDrive (drive);
-                    else if (rc == E_INVALIDARG)
-                    {
-                        /* the host Floppy drive is not currently available. we
-                         * assume it will be available later and create an
-                         * extra object now */
-                        ComObjPtr <HostFloppyDrive> hostDrive;
-                        hostDrive.createObject();
-                        rc = hostDrive->init (src);
-                        ComAssertComRCBreak (rc, rc = rc);
-                        rc = mFloppyDrive->CaptureHostDrive (hostDrive);
-                    }
-                    else
-                        ComAssertComRCBreakRC (rc);
-                }
-            }
-        }
-        while (0);
-
-        if (typeNode)
-            CFGLDRReleaseNode (typeNode);
-        CFGLDRReleaseNode (driveNode);
-
-        CheckComRCReturnRC (rc);
-    }
+    /* Floppy drive */
+    rc = mFloppyDrive->loadSettings (aNode);
+    CheckComRCReturnRC (rc);
 
     /* USB Controller */
-    {
-        HRESULT rc = mUSBController->loadSettings (aNode);
-        CheckComRCReturnRC (rc);
-    }
+    rc = mUSBController->loadSettings (aNode);
+    CheckComRCReturnRC (rc);
 
     /* Network node (required) */
-    /// @todo (dmik) move the code to NetworkAdapter
     {
         /* we assume that all network adapters are initially disabled
          * and detached */
 
-        CFGNODE networkNode = 0;
-        CFGLDRGetChildNode (aNode, "Network", 0, &networkNode);
-        ComAssertRet (networkNode, E_FAIL);
+        Key networkNode = aNode.key ("Network");
 
-        HRESULT rc = S_OK;
+        rc = S_OK;
 
-        unsigned cAdapters = 0;
-        CFGLDRCountChildren (networkNode, "Adapter", &cAdapters);
-        for (unsigned i = 0; i < cAdapters; i++)
+        Key::List adapters = networkNode.keys ("Adapter");
+        for (Key::List::const_iterator it = adapters.begin();
+             it != adapters.end(); ++ it)
         {
-            CFGNODE adapterNode = 0;
-            CFGLDRGetChildNode (networkNode, "Adapter", i, &adapterNode);
-            ComAssertBreak (adapterNode, rc = E_FAIL);
-
             /* slot number (required) */
             /* slot unicity is guaranteed by XML Schema */
-            uint32_t slot = 0;
-            CFGLDRQueryUInt32 (adapterNode, "slot", &slot);
-            Assert (slot < ELEMENTS (mNetworkAdapters));
+            uint32_t slot = (*it).value <uint32_t> ("slot");
+            AssertBreakVoid (slot < ELEMENTS (mNetworkAdapters));
 
-            /* type */
-            Bstr adapterType;
-            CFGLDRQueryBSTR (adapterNode, "type", adapterType.asOutParam());
-            ComAssertBreak (adapterType, rc = E_FAIL);
-
-            /* enabled (required) */
-            bool enabled = false;
-            CFGLDRQueryBool (adapterNode, "enabled", &enabled);
-            /* MAC address (can be null) */
-            Bstr macAddr;
-            CFGLDRQueryBSTR (adapterNode, "MACAddress", macAddr.asOutParam());
-            /* cable (required) */
-            bool cableConnected;
-            CFGLDRQueryBool (adapterNode, "cable", &cableConnected);
-            /* line speed (defaults to 100 Mbps) */
-            uint32_t lineSpeed = 100000;
-            CFGLDRQueryUInt32 (adapterNode, "speed", &lineSpeed);
-            /* tracing (defaults to false) */
-            bool traceEnabled;
-            CFGLDRQueryBool (adapterNode, "trace", &traceEnabled);
-            Bstr traceFile;
-            CFGLDRQueryBSTR (adapterNode, "tracefile", traceFile.asOutParam());
-
-            rc = mNetworkAdapters [slot]->COMSETTER(Enabled) (enabled);
-            CheckComRCBreakRC (rc);
-            rc = mNetworkAdapters [slot]->COMSETTER(MACAddress) (macAddr);
-            CheckComRCBreakRC (rc);
-            rc = mNetworkAdapters [slot]->COMSETTER(CableConnected) (cableConnected);
-            CheckComRCBreakRC (rc);
-            rc = mNetworkAdapters [slot]->COMSETTER(LineSpeed) (lineSpeed);
-            CheckComRCBreakRC (rc);
-            rc = mNetworkAdapters [slot]->COMSETTER(TraceEnabled) (traceEnabled);
-            CheckComRCBreakRC (rc);
-            rc = mNetworkAdapters [slot]->COMSETTER(TraceFile) (traceFile);
-            CheckComRCBreakRC (rc);
-
-            if (adapterType.compare(Bstr("Am79C970A")) == 0)
-                mNetworkAdapters [slot]->COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapterAm79C970A);
-            else if (adapterType.compare(Bstr("Am79C973")) == 0)
-                mNetworkAdapters [slot]->COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapterAm79C973);
-#ifdef VBOX_WITH_E1000
-            else if (adapterType.compare(Bstr("82540EM")) == 0)
-                mNetworkAdapters [slot]->COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapter82540EM);
-#endif
-            else
-                ComAssertBreak (0, rc = E_FAIL);
-
-            CFGNODE attachmentNode = 0;
-            if (CFGLDRGetChildNode (adapterNode, "NAT", 0, &attachmentNode), attachmentNode)
-            {
-                rc = mNetworkAdapters [slot]->AttachToNAT();
-                CheckComRCBreakRC (rc);
-            }
-            else
-            if (CFGLDRGetChildNode (adapterNode, "HostInterface", 0, &attachmentNode), attachmentNode)
-            {
-                /* Host Interface Networking */
-                Bstr name;
-                CFGLDRQueryBSTR (attachmentNode, "name", name.asOutParam());
-#ifdef RT_OS_WINDOWS
-                /* @name can be empty on Win32, but not null */
-                ComAssertBreak (!name.isNull(), rc = E_FAIL);
-#endif
-                rc = mNetworkAdapters [slot]->COMSETTER(HostInterface) (name);
-                CheckComRCBreakRC (rc);
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-                Bstr tapSetupApp;
-                CFGLDRQueryBSTR (attachmentNode, "TAPSetup", tapSetupApp.asOutParam());
-                Bstr tapTerminateApp;
-                CFGLDRQueryBSTR (attachmentNode, "TAPTerminate", tapTerminateApp.asOutParam());
-
-                rc = mNetworkAdapters [slot]->COMSETTER(TAPSetupApplication) (tapSetupApp);
-                CheckComRCBreakRC (rc);
-                rc = mNetworkAdapters [slot]->COMSETTER(TAPTerminateApplication) (tapTerminateApp);
-                CheckComRCBreakRC (rc);
-#endif // VBOX_WITH_UNIXY_TAP_NETWORKING
-                rc = mNetworkAdapters [slot]->AttachToHostInterface();
-                CheckComRCBreakRC (rc);
-            }
-            else
-            if (CFGLDRGetChildNode(adapterNode, "InternalNetwork", 0, &attachmentNode), attachmentNode)
-            {
-                /* Internal Networking */
-                Bstr name;
-                CFGLDRQueryBSTR (attachmentNode, "name", name.asOutParam());
-                ComAssertBreak (!name.isNull(), rc = E_FAIL);
-                rc = mNetworkAdapters[slot]->AttachToInternalNetwork();
-                CheckComRCBreakRC (rc);
-                rc = mNetworkAdapters[slot]->COMSETTER(InternalNetwork) (name);
-                CheckComRCBreakRC (rc);
-            }
-            else
-            {
-                /* Adapter has no children */
-                rc = mNetworkAdapters [slot]->Detach();
-                CheckComRCBreakRC (rc);
-            }
-            if (attachmentNode)
-                CFGLDRReleaseNode (attachmentNode);
-
-            CFGLDRReleaseNode (adapterNode);
+            rc = mNetworkAdapters [slot]->loadSettings (*it);
+            CheckComRCReturnRC (rc);
         }
-
-        CFGLDRReleaseNode (networkNode);
-        CheckComRCReturnRC (rc);
     }
 
     /* Serial node (optional) */
-    CFGNODE serialNode = 0;
-    CFGLDRGetChildNode (aNode, "Uart", 0, &serialNode);
-    if (serialNode)
     {
-        HRESULT rc = S_OK;
-        unsigned cPorts = 0;
-        CFGLDRCountChildren (serialNode, "Port", &cPorts);
-        for (unsigned slot = 0; slot < cPorts; slot++)
+        Key serialNode = aNode.findKey ("Uart");
+        if (!serialNode.isNull())
         {
-            rc = mSerialPorts [slot]->loadSettings (serialNode, slot);
-            CheckComRCBreakRC (rc);
-        }
+            rc = S_OK;
 
-        CFGLDRReleaseNode (serialNode);
-        CheckComRCReturnRC (rc);
+            Key::List ports = serialNode.keys ("Port");
+            for (Key::List::const_iterator it = ports.begin();
+                 it != ports.end(); ++ it)
+            {
+                /* slot number (required) */
+                /* slot unicity is guaranteed by XML Schema */
+                uint32_t slot = (*it).value <uint32_t> ("slot");
+                AssertBreakVoid (slot < ELEMENTS (mSerialPorts));
+
+                rc = mSerialPorts [slot]->loadSettings (*it);
+                CheckComRCReturnRC (rc);
+            }
+        }
     }
 
     /* Parallel node (optional) */
-    CFGNODE parallelNode = 0;
-    CFGLDRGetChildNode (aNode, "Lpt", 0, &parallelNode);
-    if (parallelNode)
     {
-        HRESULT rc = S_OK;
-        unsigned cPorts = 0;
-        CFGLDRCountChildren (parallelNode, "Port", &cPorts);
-        for (unsigned slot = 0; slot < cPorts; slot++)
+        Key parallelNode = aNode.findKey ("Lpt");
+        if (!parallelNode.isNull())
         {
-            rc = mParallelPorts [slot]->loadSettings (parallelNode, slot);
-            CheckComRCBreakRC (rc);
+            rc = S_OK;
+
+            Key::List ports = parallelNode.keys ("Port");
+            for (Key::List::const_iterator it = ports.begin();
+                 it != ports.end(); ++ it)
+            {
+                /* slot number (required) */
+                /* slot unicity is guaranteed by XML Schema */
+                uint32_t slot = (*it).value <uint32_t> ("slot");
+                AssertBreakVoid (slot < ELEMENTS (mSerialPorts));
+
+                rc = mParallelPorts [slot]->loadSettings (*it);
+                CheckComRCReturnRC (rc);
+            }
         }
-
-        CFGLDRReleaseNode (parallelNode);
-        CheckComRCReturnRC (rc);
     }
 
-    /* AudioAdapter node (required) */
-    /// @todo (dmik) move the code to AudioAdapter
-    {
-        CFGNODE audioAdapterNode = 0;
-        CFGLDRGetChildNode (aNode, "AudioAdapter", 0, &audioAdapterNode);
-        ComAssertRet (audioAdapterNode, E_FAIL);
-
-        /* is the adapter enabled? */
-        bool enabled = false;
-        CFGLDRQueryBool (audioAdapterNode, "enabled", &enabled);
-        mAudioAdapter->COMSETTER(Enabled) (enabled);
-        /* now check the audio driver */
-        Bstr driver;
-        CFGLDRQueryBSTR (audioAdapterNode, "driver", driver.asOutParam());
-        AudioDriverType_T audioDriver;
-        audioDriver = AudioDriverType_NullAudioDriver;
-        if      (driver == L"null")
-            ; /* Null has been set above */
-#ifdef RT_OS_WINDOWS
-        else if (driver == L"winmm")
-#ifdef VBOX_WITH_WINMM
-            audioDriver = AudioDriverType_WINMMAudioDriver;
-#else
-        /* fall back to dsound */
-            audioDriver = AudioDriverType_DSOUNDAudioDriver;
-#endif
-        else if (driver == L"dsound")
-            audioDriver = AudioDriverType_DSOUNDAudioDriver;
-#endif // RT_OS_WINDOWS
-#ifdef RT_OS_LINUX
-        else if (driver == L"oss")
-            audioDriver = AudioDriverType_OSSAudioDriver;
-        else if (driver == L"alsa")
-# ifdef VBOX_WITH_ALSA
-            audioDriver = AudioDriverType_ALSAAudioDriver;
-# else
-            /* fall back to OSS */
-            audioDriver = AudioDriverType_OSSAudioDriver;
-# endif
-        else if (driver == L"pulse")
-# ifdef VBOX_WITH_PULSE
-            audioDriver = AudioDriverType_PulseAudioDriver;
-# else
-            /* fall back to OSS */
-            audioDriver = AudioDriverType_OSSAudioDriver;
-# endif
-#endif // RT_OS_LINUX
-#ifdef RT_OS_DARWIN
-        else if (driver == L"coreaudio")
-            audioDriver = AudioDriverType_CoreAudioDriver;
-#endif
-#ifdef RT_OS_OS2
-        else if (driver == L"mmpm")
-            audioDriver = AudioDriverType_MMPMAudioDriver;
-#endif
-        else
-            AssertMsgFailed (("Invalid driver: %ls\n", driver.raw()));
-
-        HRESULT rc = mAudioAdapter->COMSETTER(AudioDriver) (audioDriver);
-
-        CFGLDRReleaseNode (audioAdapterNode);
-        CheckComRCReturnRC (rc);
-    }
+    /* AudioAdapter */
+    rc = mAudioAdapter->loadSettings (aNode);
+    CheckComRCReturnRC (rc);
 
     /* Shared folders (optional) */
     /// @todo (dmik) make required on next format change!
-    do
     {
-        CFGNODE sharedFoldersNode = 0;
-        CFGLDRGetChildNode (aNode, "SharedFolders", 0, &sharedFoldersNode);
-
-        if (!sharedFoldersNode)
-            break;
-
-        HRESULT rc = S_OK;
-
-        unsigned cFolders = 0;
-        CFGLDRCountChildren (sharedFoldersNode, "SharedFolder", &cFolders);
-
-        for (unsigned i = 0; i < cFolders; i++)
+        Key sharedFoldersNode = aNode.findKey ("SharedFolders");
+        if (!sharedFoldersNode.isNull())
         {
-            CFGNODE folderNode = 0;
-            CFGLDRGetChildNode (sharedFoldersNode, "SharedFolder", i, &folderNode);
-            ComAssertBreak (folderNode, rc = E_FAIL);
+            rc = S_OK;
 
-            // folder logical name (required)
-            Bstr name;
-            CFGLDRQueryBSTR (folderNode, "name", name.asOutParam());
+            Key::List folders = sharedFoldersNode.keys ("SharedFolder");
+            for (Key::List::const_iterator it = folders.begin();
+                 it != folders.end(); ++ it)
+            {
+                /* folder logical name (required) */
+                Bstr name = (*it).stringValue ("name");
+                /* folder host path (required) */
+                Bstr hostPath = (*it).stringValue ("hostPath");
 
-            // folder host path (required)
-            Bstr hostPath;
-            CFGLDRQueryBSTR (folderNode, "hostPath", hostPath.asOutParam());
-
-            rc = CreateSharedFolder (name, hostPath);
-            CheckComRCBreakRC (rc);
-
-            CFGLDRReleaseNode (folderNode);
+                rc = CreateSharedFolder (name, hostPath);
+                CheckComRCReturnRC (rc);
+            }
         }
-
-        CFGLDRReleaseNode (sharedFoldersNode);
-        CheckComRCReturnRC (rc);
     }
-    while (0);
 
     /* Clipboard node (currently not required) */
     /// @todo (dmik) make required on next format change!
     {
-        /* default value in case the node is not there */
+        /* default value in case if the node is not there */
         mHWData->mClipboardMode = ClipboardMode_ClipDisabled;
 
-        CFGNODE clipNode = 0;
-        CFGLDRGetChildNode (aNode, "Clipboard", 0, &clipNode);
-        if (clipNode)
+        Key clipNode = aNode.findKey ("Clipboard");
+        if (!clipNode.isNull())
         {
-            Bstr mode;
-            CFGLDRQueryBSTR (clipNode, "mode", mode.asOutParam());
-            if      (mode == L"Disabled")
+            const char *mode = clipNode.stringValue ("mode");
+            if      (strcmp (mode, "Disabled") == 0)
                 mHWData->mClipboardMode = ClipboardMode_ClipDisabled;
-            else if (mode == L"HostToGuest")
+            else if (strcmp (mode, "HostToGuest") == 0)
                 mHWData->mClipboardMode = ClipboardMode_ClipHostToGuest;
-            else if (mode == L"GuestToHost")
+            else if (strcmp (mode, "GuestToHost") == 0)
                 mHWData->mClipboardMode = ClipboardMode_ClipGuestToHost;
-            else if (mode == L"Bidirectional")
+            else if (strcmp (mode, "Bidirectional") == 0)
                 mHWData->mClipboardMode = ClipboardMode_ClipBidirectional;
             else
-                AssertMsgFailed (("%ls clipboard mode is invalid\n", mode.raw()));
-            CFGLDRReleaseNode (clipNode);
+                AssertMsgFailed (("Invalid clipboard mode '%s'\n", mode));
         }
     }
 
     /* Guest node (optional) */
-    /// @todo (dmik) make required on next format change!
+    /// @todo (dmik) make required on next format change and change attribute
+    /// naming!
     {
-        CFGNODE guestNode = 0;
-        CFGLDRGetChildNode (aNode, "Guest", 0, &guestNode);
-        if (guestNode)
+        Key guestNode = aNode.findKey ("Guest");
+        if (!guestNode.isNull())
         {
-            uint32_t memoryBalloonSize = 0;
-            CFGLDRQueryUInt32 (guestNode, "MemoryBalloonSize",
-                               &memoryBalloonSize);
-            mHWData->mMemoryBalloonSize = memoryBalloonSize;
-
-            uint32_t statisticsUpdateInterval = 0;
-            CFGLDRQueryUInt32 (guestNode, "StatisticsUpdateInterval",
-                               &statisticsUpdateInterval);
-            mHWData->mStatisticsUpdateInterval = statisticsUpdateInterval;
-
-            CFGLDRReleaseNode (guestNode);
+            /* optional, defaults to 0) */
+            mHWData->mMemoryBalloonSize =
+                guestNode.value <ULONG> ("MemoryBalloonSize");
+            /* optional, defaults to 0) */
+            mHWData->mStatisticsUpdateInterval =
+                guestNode.value <ULONG> ("StatisticsUpdateInterval");
         }
     }
 
-    return S_OK;
+    AssertComRC (rc);
+    return rc;
 }
 
 /**
- *  @param aNode        <HardDiskAttachments> node
+ *  @param aNode        <HardDiskAttachments> node.
  *  @param aRegistered  true when the machine is being loaded on VirtualBox
  *                      startup, or when a snapshot is being loaded (wchich
  *                      currently can happen on startup only)
  *  @param aSnapshotId  pointer to the snapshot ID if this is a snapshot machine
  */
-HRESULT Machine::loadHardDisks (CFGNODE aNode, bool aRegistered,
+HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
                                 const Guid *aSnapshotId /* = NULL */)
 {
-    AssertReturn (aNode, E_INVALIDARG);
+    using namespace settings;
+
+    AssertReturn (!aNode.isNull(), E_INVALIDARG);
     AssertReturn ((mType == IsMachine && aSnapshotId == NULL) ||
                   (mType == IsSnapshotMachine && aSnapshotId != NULL), E_FAIL);
 
     HRESULT rc = S_OK;
 
-    unsigned cbDisks = 0;
-    CFGLDRCountChildren (aNode, "HardDiskAttachment", &cbDisks);
+    Key::List children = aNode.keys ("HardDiskAttachment");
 
-    if (!aRegistered && cbDisks > 0)
+    if (!aRegistered && children.size() > 0)
     {
         /* when the machine is being loaded (opened) from a file, it cannot
          * have hard disks attached (this should not happen normally,
@@ -4975,172 +4391,93 @@ HRESULT Machine::loadHardDisks (CFGNODE aNode, bool aRegistered,
         return setError (E_FAIL,
             tr ("Unregistered machine '%ls' cannot have hard disks attached "
                 "(found %d hard disk attachments)"),
-            mUserData->mName.raw(), cbDisks);
+            mUserData->mName.raw(), children.size());
     }
 
-    for (unsigned i = 0; i < cbDisks && SUCCEEDED (rc); ++ i)
+
+    for (Key::List::const_iterator it = children.begin();
+         it != children.end(); ++ it)
     {
-        CFGNODE hdNode;
-        CFGLDRGetChildNode (aNode, "HardDiskAttachment", i, &hdNode);
-        ComAssertRet (hdNode, E_FAIL);
+        /* hardDisk uuid (required) */
+        Guid uuid = (*it).value <Guid> ("hardDisk");
+        /* bus (controller) type (required) */
+        const char *bus = (*it).stringValue ("bus");
+        /* device (required) */
+        const char *device = (*it).stringValue ("device");
 
-        do
+        /* find a hard disk by UUID */
+        ComObjPtr <HardDisk> hd;
+        rc = mParent->getHardDisk (uuid, hd);
+        CheckComRCReturnRC (rc);
+
+        AutoLock hdLock (hd);
+
+        if (!hd->machineId().isEmpty())
         {
-            /* hardDisk uuid (required) */
-            Guid uuid;
-            CFGLDRQueryUUID (hdNode, "hardDisk", uuid.ptr());
-            /* bus (controller) type (required) */
-            Bstr bus;
-            CFGLDRQueryBSTR (hdNode, "bus", bus.asOutParam());
-            /* device (required) */
-            Bstr device;
-            CFGLDRQueryBSTR (hdNode, "device", device.asOutParam());
-
-            /* find a hard disk by UUID */
-            ComObjPtr <HardDisk> hd;
-            rc = mParent->getHardDisk (uuid, hd);
-            if (FAILED (rc))
-                break;
-
-            AutoLock hdLock (hd);
-
-            if (!hd->machineId().isEmpty())
-            {
-                rc = setError (E_FAIL,
-                    tr ("Hard disk '%ls' with UUID {%s} is already "
-                        "attached to a machine with UUID {%s} (see '%ls')"),
-                    hd->toString().raw(), uuid.toString().raw(),
-                    hd->machineId().toString().raw(),
-                    mData->mConfigFileFull.raw());
-                break;
-            }
-
-            if (hd->type() == HardDiskType_ImmutableHardDisk)
-            {
-                rc = setError (E_FAIL,
-                    tr ("Immutable hard disk '%ls' with UUID {%s} cannot be "
-                        "directly attached to a machine (see '%ls')"),
-                    hd->toString().raw(), uuid.toString().raw(),
-                    mData->mConfigFileFull.raw());
-                break;
-            }
-
-            /* attach the device */
-            DiskControllerType_T ctl = DiskControllerType_InvalidController;
-            LONG dev = -1;
-
-            if (bus == L"ide0")
-            {
-                ctl = DiskControllerType_IDE0Controller;
-                if (device == L"master")
-                    dev = 0;
-                else if (device == L"slave")
-                    dev = 1;
-                else
-                    ComAssertMsgFailedBreak (("Invalid device: %ls\n", device.raw()),
-                                             rc = E_FAIL);
-            }
-            else if (bus == L"ide1")
-            {
-                ctl = DiskControllerType_IDE1Controller;
-                if (device == L"master")
-                    rc = setError (E_FAIL, tr("Could not attach a disk as a master "
-                                              "device on the secondary controller"));
-                else if (device == L"slave")
-                    dev = 1;
-                else
-                    ComAssertMsgFailedBreak (("Invalid device: %ls\n", device.raw()),
-                                             rc = E_FAIL);
-            }
-            else
-                ComAssertMsgFailedBreak (("Invalid bus: %ls\n", bus.raw()),
-                                         rc = E_FAIL);
-
-            ComObjPtr <HardDiskAttachment> attachment;
-            attachment.createObject();
-            rc = attachment->init (hd, ctl, dev, false /* aDirty */);
-            if (FAILED (rc))
-                break;
-
-            /* associate the hard disk with this machine */
-            hd->setMachineId (mData->mUuid);
-
-            /* associate the hard disk with the given snapshot ID */
-            if (mType == IsSnapshotMachine)
-                hd->setSnapshotId (*aSnapshotId);
-
-            mHDData->mHDAttachments.push_back (attachment);
+            return setError (E_FAIL,
+                tr ("Hard disk '%ls' with UUID {%s} is already "
+                    "attached to a machine with UUID {%s} (see '%ls')"),
+                hd->toString().raw(), uuid.toString().raw(),
+                hd->machineId().toString().raw(),
+                mData->mConfigFileFull.raw());
         }
-        while (0);
 
-        CFGLDRReleaseNode (hdNode);
+        if (hd->type() == HardDiskType_ImmutableHardDisk)
+        {
+            return setError (E_FAIL,
+                tr ("Immutable hard disk '%ls' with UUID {%s} cannot be "
+                    "directly attached to a machine (see '%ls')"),
+                hd->toString().raw(), uuid.toString().raw(),
+                mData->mConfigFileFull.raw());
+        }
+
+        /* attach the device */
+        DiskControllerType_T ctl = DiskControllerType_InvalidController;
+        LONG dev = -1;
+
+        if (strcmp (bus, "ide0") == 0)
+        {
+            ctl = DiskControllerType_IDE0Controller;
+            if (strcmp (device, "master") == 0)
+                dev = 0;
+            else if (strcmp (device, "slave") == 0)
+                dev = 1;
+            else
+                ComAssertMsgFailedRet (("Invalid device '%s'\n", device),
+                                       E_FAIL);
+        }
+        else if (strcmp (bus, "ide1") == 0)
+        {
+            ctl = DiskControllerType_IDE1Controller;
+            if (strcmp (device, "master") == 0)
+                rc = setError (E_FAIL, tr("Could not attach a disk as a master "
+                                          "device on the secondary controller"));
+            else if (strcmp (device, "slave") == 0)
+                dev = 1;
+            else
+                ComAssertMsgFailedRet (("Invalid device '%s'\n", device),
+                                       E_FAIL);
+        }
+        else
+            ComAssertMsgFailedRet (("Invalid bus '%s'\n", bus),
+                                   E_FAIL);
+
+        ComObjPtr <HardDiskAttachment> attachment;
+        attachment.createObject();
+        rc = attachment->init (hd, ctl, dev, false /* aDirty */);
+        CheckComRCBreakRC (rc);
+
+        /* associate the hard disk with this machine */
+        hd->setMachineId (mData->mUuid);
+
+        /* associate the hard disk with the given snapshot ID */
+        if (mType == IsSnapshotMachine)
+            hd->setSnapshotId (*aSnapshotId);
+
+        mHDData->mHDAttachments.push_back (attachment);
     }
-
-    return rc;
-}
-
-/**
- *  Creates a config loader and loads the settings file.
- *
- *  @param aIsNew   |true| if a newly created settings file is to be opened
- *                  (must be the case only when called from #saveSettings())
- *
- *  @note
- *      XML Schema errors are not detected by this method because
- *      it assumes that it will load settings from an exclusively locked
- *      file (using a file handle) that was previously validated when opened
- *      for the first time. Thus, this method should be used only when
- *      it's necessary to modify (save) the settings file.
- *
- *  @note The object must be locked at least for reading before calling
- *        this method.
- */
-HRESULT Machine::openConfigLoader (CFGHANDLE *aLoader, bool aIsNew /* = false */)
-{
-    AssertReturn (aLoader, E_FAIL);
-
-    /* The settings file must be created and locked at this point */
-    ComAssertRet (isConfigLocked(), E_FAIL);
-
-    /* load the config file */
-    int vrc = CFGLDRLoad (aLoader,
-                          Utf8Str (mData->mConfigFileFull), mData->mHandleCfgFile,
-                          aIsNew ? NULL : XmlSchemaNS, true, cfgLdrEntityResolver,
-                          NULL);
-    ComAssertRCRet (vrc, E_FAIL);
 
     return S_OK;
-}
-
-/**
- *  Closes the config loader previously created by #openConfigLoader().
- *  If \a aSaveBeforeClose is true, then the config is saved to the settings file
- *  before closing. If saving fails, a proper error message is set.
- *
- *  @param aSaveBeforeClose whether to save the config before closing or not
- */
-HRESULT Machine::closeConfigLoader (CFGHANDLE aLoader, bool aSaveBeforeClose)
-{
-    HRESULT rc = S_OK;
-
-    if (aSaveBeforeClose)
-    {
-        char *loaderError = NULL;
-        int vrc = CFGLDRSave (aLoader, &loaderError);
-        if (VBOX_FAILURE (vrc))
-        {
-            rc = setError (E_FAIL,
-                tr ("Could not save the settings file '%ls' (%Vrc)%s%s"),
-                mData->mConfigFileFull.raw(), vrc,
-                loaderError ? ".\n" : "", loaderError ? loaderError : "");
-            if (loaderError)
-                RTMemTmpFree (loaderError);
-        }
-    }
-
-    CFGLDRFree (aLoader);
-
-    return rc;
 }
 
 /**
@@ -5152,22 +4489,26 @@ HRESULT Machine::closeConfigLoader (CFGHANDLE aLoader, bool aSaveBeforeClose)
  *  If the search fails, a failure is returned and both \a aSnapshotsNode and
  *  \a aSnapshotNode are set to 0.
  *
- *  @param aSnapshot        snapshot to search for
- *  @param aMachineNode     <Machine> node to start from
+ *  @param aSnapshot        Snapshot to search for.
+ *  @param aMachineNode     <Machine> node to start from.
  *  @param aSnapshotsNode   <Snapshots> node containing the found <Snapshot> node
- *                          (may be NULL if the caller is not interested)
- *  @param aSnapshotNode    found <Snapshot> node
+ *                          (may be NULL if the caller is not interested).
+ *  @param aSnapshotNode    Found <Snapshot> node.
  */
-HRESULT Machine::findSnapshotNode (Snapshot *aSnapshot, CFGNODE aMachineNode,
-                                   CFGNODE *aSnapshotsNode, CFGNODE *aSnapshotNode)
+HRESULT Machine::findSnapshotNode (Snapshot *aSnapshot, settings::Key &aMachineNode,
+                                   settings::Key *aSnapshotsNode,
+                                   settings::Key *aSnapshotNode)
 {
-    AssertReturn (aSnapshot && aMachineNode && aSnapshotNode, E_FAIL);
+    using namespace settings;
+
+    AssertReturn (aSnapshot && !aMachineNode.isNull()
+                  && aSnapshotNode != NULL, E_FAIL);
 
     if (aSnapshotsNode)
-        *aSnapshotsNode = 0;
-    *aSnapshotNode = 0;
+        aSnapshotsNode->setNull();
+    aSnapshotNode->setNull();
 
-    // build the full uuid path (from the fist parent to the given snapshot)
+    // build the full uuid path (from the top parent to the given snapshot)
     std::list <Guid> path;
     {
         ComObjPtr <Snapshot> parent = aSnapshot;
@@ -5178,65 +4519,49 @@ HRESULT Machine::findSnapshotNode (Snapshot *aSnapshot, CFGNODE aMachineNode,
         }
     }
 
-    CFGNODE snapshotsNode = aMachineNode;
-    CFGNODE snapshotNode = 0;
+    Key snapshotsNode = aMachineNode;
+    Key snapshotNode;
 
     for (std::list <Guid>::const_iterator it = path.begin();
          it != path.end();
          ++ it)
     {
-        if (snapshotNode)
+        if (!snapshotNode.isNull())
         {
-            // proceed to the nested <Snapshots> node
-            Assert (snapshotsNode);
-            if (snapshotsNode != aMachineNode)
-            {
-                CFGLDRReleaseNode (snapshotsNode);
-                snapshotsNode = 0;
-            }
-            CFGLDRGetChildNode (snapshotNode, "Snapshots", 0, &snapshotsNode);
-            CFGLDRReleaseNode (snapshotNode);
-            snapshotNode = 0;
+            /* proceed to the nested <Snapshots> node */
+            snapshotsNode = snapshotNode.key ("Snapshots");
+            snapshotNode.setNull();
         }
 
-        AssertReturn (snapshotsNode, E_FAIL);
+        AssertReturn (!snapshotsNode.isNull(), E_FAIL);
 
-        unsigned count = 0, i = 0;
-        CFGLDRCountChildren (snapshotsNode, "Snapshot", &count);
-        for (; i < count; ++ i)
+        Key::List children = snapshotsNode.keys ("Snapshot");
+        for (Key::List::const_iterator ch = children.begin();
+             ch != children.end();
+             ++ ch)
         {
-            snapshotNode = 0;
-            CFGLDRGetChildNode (snapshotsNode, "Snapshot", i, &snapshotNode);
-            Guid id;
-            CFGLDRQueryUUID (snapshotNode, "uuid", id.ptr());
+            Guid id = (*ch).value <Guid> ("uuid");
             if (id == (*it))
             {
-                // we keep (don't release) snapshotNode and snapshotsNode
+                /* pass over to the outer loop */
+                snapshotNode = *ch;
                 break;
             }
-            CFGLDRReleaseNode (snapshotNode);
-            snapshotNode = 0;
         }
 
-        if (i == count)
-        {
-            // the next uuid is not found, no need to continue...
-            AssertFailed();
-            if (snapshotsNode != aMachineNode)
-            {
-                CFGLDRReleaseNode (snapshotsNode);
-                snapshotsNode = 0;
-            }
-            break;
-        }
+        if (!snapshotNode.isNull())
+            continue;
+
+        /* the next uuid is not found, no need to continue... */
+        AssertFailedBreakVoid();
     }
 
     // we must always succesfully find the node
-    AssertReturn (snapshotNode, E_FAIL);
-    AssertReturn (snapshotsNode, E_FAIL);
+    AssertReturn (!snapshotNode.isNull(), E_FAIL);
+    AssertReturn (!snapshotsNode.isNull(), E_FAIL);
 
-    if (aSnapshotsNode)
-        *aSnapshotsNode = snapshotsNode != aMachineNode ? snapshotsNode : 0;
+    if (aSnapshotsNode && (snapshotsNode != aMachineNode))
+        *aSnapshotsNode = snapshotsNode;
     *aSnapshotNode = snapshotNode;
 
     return S_OK;
@@ -5381,7 +4706,7 @@ HRESULT Machine::findHardDiskAttachment (const ComObjPtr <HardDisk> &aHd,
  *  file if the machine name was changed and about creating a new settings file
  *  if this is a new machine.
  *
- *  @note Must be never called directly.
+ *  @note Must be never called directly but only from #saveSettings().
  *
  *  @param aRenamed receives |true| if the name was changed and the settings
  *                  file was renamed as a result, or |false| otherwise. The
@@ -5390,6 +4715,13 @@ HRESULT Machine::findHardDiskAttachment (const ComObjPtr <HardDisk> &aHd,
  */
 HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
 {
+    /* Note: tecnhically, mParent needs to be locked only when the machine is
+     * registered (see prepareSaveSettings() for details) but we don't
+     * currently differentiate it in callers of saveSettings() so we don't
+     * make difference here too.  */
+    AssertReturn (mParent->isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+
     HRESULT rc = S_OK;
 
     aRenamed = false;
@@ -5572,7 +4904,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
             }
         }
 
-        /* Note: open flags must correlated with RTFileOpen() in lockConfig() */
+        /* Note: open flags must correlate with RTFileOpen() in lockConfig() */
         path = Utf8Str (mData->mConfigFileFull);
         vrc = RTFileOpen (&mData->mHandleCfgFile, path,
                           RTFILE_O_READWRITE | RTFILE_O_CREATE |
@@ -5600,23 +4932,31 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
  *  Saves machine data, user data and hardware data.
  *
  *  @param aMarkCurStateAsModified
- *      if true (default), mData->mCurrentStateModified will be set to
+ *      If true (default), mData->mCurrentStateModified will be set to
  *      what #isReallyModified() returns prior to saving settings to a file,
  *      otherwise the current value of mData->mCurrentStateModified will be
  *      saved.
  *  @param aInformCallbacksAnyway
- *      if true, callbacks will be informed even if #isReallyModified()
+ *      If true, callbacks will be informed even if #isReallyModified()
  *      returns false. This is necessary for cases when we change machine data
  *      diectly, not through the backup()/commit() mechanism.
  *
- *  @note Locks mParent (only in some cases, and only when #isConfigLocked() is
- *        |TRUE|, see the #prepareSaveSettings() code for details) +
- *        this object + children for writing.
+ *  @note Must be called from under mParent write lock (sometimes needed by
+ *  #prepareSaveSettings()) and this object's write lock. Locks children for
+ *  writing. There is one exception when mParent is unused and therefore may
+ *  be left unlocked: if this machine is an unregistered one.
  */
 HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
                                bool aInformCallbacksAnyway /* = false */)
 {
     LogFlowThisFuncEnter();
+
+    /* Note: tecnhically, mParent needs to be locked only when the machine is
+     * registered (see prepareSaveSettings() for details) but we don't
+     * currently differentiate it in callers of saveSettings() so we don't
+     * make difference here too.  */
+    AssertReturn (mParent->isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
 
     /// @todo (dmik) I guess we should lock all our child objects here
     //  (such as mVRDPServer etc.) to ensure they are not changed
@@ -5657,74 +4997,66 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
     rc = prepareSaveSettings (isRenamed, isNew);
     CheckComRCReturnRC (rc);
 
-    /* then, open the settings file */
-    CFGHANDLE configLoader = 0;
-    rc = openConfigLoader (&configLoader, isNew);
-    CheckComRCReturnRC (rc);
-
-    /* save all snapshots when the machine name was changed since
-     * it may affect saved state file paths for online snapshots (see
-     * #openConfigLoader() for details) */
-    bool updateAllSnapshots = isRenamed;
-
-    /* commit before saving, since it may change settings
-     * (for example, perform fixup of lazy hard disk changes) */
-    rc = commit();
-    if (FAILED (rc))
+    try
     {
-        closeConfigLoader (configLoader, false /* aSaveBeforeClose */);
-        return rc;
-    }
+        using namespace settings;
 
-    /* include hard disk changes to the modified flag */
-    wasModified |= mHDData->mHDAttachmentsChanged;
-    if (aMarkCurStateAsModified)
-        mData->mCurrentStateModified |= BOOL (mHDData->mHDAttachmentsChanged);
+        File file (File::ReadWrite, mData->mHandleCfgFile,
+                   Utf8Str (mData->mConfigFileFull));
+        XmlTreeBackend tree;
+
+        /* The newly created settings file is incomplete therefore we turn off
+         * validation. The rest is like in loadSettingsTree_ForUpdate().*/
+        rc = VirtualBox::loadSettingsTree (tree, file,
+                                           !isNew /* aValidate */,
+                                           false /* aCatchLoadErrors */,
+                                           false /* aAddDefaults */);
+        CheckComRCThrowRC (rc);
 
 
-    CFGNODE machineNode = 0;
-    /* create if not exists */
-    CFGLDRCreateNode (configLoader, "VirtualBox/Machine", &machineNode);
+        /* ask to save all snapshots when the machine name was changed since
+         * it may affect saved state file paths for online snapshots (see
+         * #openConfigLoader() for details) */
+        bool updateAllSnapshots = isRenamed;
 
-    do
-    {
-        ComAssertBreak (machineNode, rc = E_FAIL);
+        /* commit before saving, since it may change settings
+         * (for example, perform fixup of lazy hard disk changes) */
+        rc = commit();
+        CheckComRCReturnRC (rc);
+
+        /* include hard disk changes to the modified flag */
+        wasModified |= mHDData->mHDAttachmentsChanged;
+        if (aMarkCurStateAsModified)
+            mData->mCurrentStateModified |= BOOL (mHDData->mHDAttachmentsChanged);
+
+        Key machineNode = tree.rootKey().createKey ("Machine");
 
         /* uuid (required) */
-        Assert (mData->mUuid);
-        CFGLDRSetUUID (machineNode, "uuid", mData->mUuid.raw());
+        Assert (!mData->mUuid.isEmpty());
+        machineNode.setValue <Guid> ("uuid", mData->mUuid);
 
         /* name (required) */
         Assert (!mUserData->mName.isEmpty());
-        CFGLDRSetBSTR (machineNode, "name", mUserData->mName);
+        machineNode.setValue <Bstr> ("name", mUserData->mName);
 
         /* nameSync (optional, default is true) */
-        if (!mUserData->mNameSync)
-            CFGLDRSetBool (machineNode, "nameSync", false);
-        else
-            CFGLDRDeleteAttribute (machineNode, "nameSync");
+        machineNode.setValueOr <bool> ("nameSync", !!mUserData->mNameSync, true);
 
         /* Description node (optional) */
         if (!mUserData->mDescription.isNull())
         {
-            CFGNODE descNode = 0;
-            CFGLDRCreateChildNode (machineNode, "Description", &descNode);
-            Assert (descNode);
-            CFGLDRSetBSTR (descNode, NULL, mUserData->mDescription);
-            CFGLDRReleaseNode (descNode);
+            Key descNode = machineNode.createKey ("Description");
+            descNode.setKeyValue <Bstr> (mUserData->mDescription);
         }
         else
         {
-            CFGNODE descNode = 0;
-            CFGLDRGetChildNode (machineNode, "Description", 0, &descNode);
-            if (descNode)
-                CFGLDRDeleteNode (descNode);
+            Key descNode = machineNode.findKey ("Description");
+            if (!descNode.isNull())
+                descNode.zap();
         }
 
         /* OSType (required) */
-        {
-            CFGLDRSetBSTR (machineNode, "OSType", mUserData->mOSTypeId);
-        }
+        machineNode.setValue <Bstr> ("OSType", mUserData->mOSTypeId);
 
         /* stateFile (optional) */
         if (mData->mMachineState == MachineState_Saved)
@@ -5733,114 +5065,109 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
             /* try to make the file name relative to the settings file dir */
             Utf8Str stateFilePath = mSSData->mStateFilePath;
             calculateRelativePath (stateFilePath, stateFilePath);
-            CFGLDRSetString (machineNode, "stateFile", stateFilePath);
+            machineNode.setStringValue ("stateFile", stateFilePath);
         }
         else
         {
             Assert (mSSData->mStateFilePath.isNull());
-            CFGLDRDeleteAttribute (machineNode, "stateFile");
+            machineNode.zapValue ("stateFile");
         }
 
         /* currentSnapshot ID (optional) */
         if (!mData->mCurrentSnapshot.isNull())
         {
             Assert (!mData->mFirstSnapshot.isNull());
-            CFGLDRSetUUID (machineNode, "currentSnapshot",
-                           mData->mCurrentSnapshot->data().mId);
+            machineNode.setValue <Guid> ("currentSnapshot",
+                                         mData->mCurrentSnapshot->data().mId);
         }
         else
         {
             Assert (mData->mFirstSnapshot.isNull());
-            CFGLDRDeleteAttribute (machineNode, "currentSnapshot");
+            machineNode.zapValue ("currentSnapshot");
         }
 
         /* snapshotFolder (optional) */
+        /// @todo use the Bstr::NullOrEmpty constant and setValueOr
         if (!mUserData->mSnapshotFolder.isEmpty())
-            CFGLDRSetBSTR (machineNode, "snapshotFolder", mUserData->mSnapshotFolder);
+            machineNode.setValue <Bstr> ("snapshotFolder", mUserData->mSnapshotFolder);
         else
-            CFGLDRDeleteAttribute (machineNode, "snapshotFolder");
+            machineNode.zapValue ("snapshotFolder");
 
-        /* currentStateModified (optional, default is yes) */
-        if (!mData->mCurrentStateModified)
-            CFGLDRSetBool (machineNode, "currentStateModified", false);
-        else
-            CFGLDRDeleteAttribute (machineNode, "currentStateModified");
+        /* currentStateModified (optional, default is true) */
+        machineNode.setValueOr <bool> ("currentStateModified",
+                                       !!mData->mCurrentStateModified, true);
 
         /* lastStateChange */
-        CFGLDRSetDateTime (machineNode, "lastStateChange",
-                           mData->mLastStateChange);
+        machineNode.setValue <RTTIMESPEC> ("lastStateChange",
+                                           mData->mLastStateChange);
+
+        /* set the aborted attribute when appropriate, defaults to false */
+        machineNode.setValueOr <bool> ("aborted",
+                                       mData->mMachineState == MachineState_Aborted,
+                                       false);
 
         /* Hardware node (required) */
         {
-            CFGNODE hwNode = 0;
-            CFGLDRGetChildNode (machineNode, "Hardware", 0, &hwNode);
             /* first, delete the entire node if exists */
-            if (hwNode)
-                CFGLDRDeleteNode (hwNode);
+            Key hwNode = machineNode.findKey ("Hardware");
+            if (!hwNode.isNull())
+                hwNode.zap();
             /* then recreate it */
-            hwNode = 0;
-            CFGLDRCreateChildNode (machineNode, "Hardware", &hwNode);
-            ComAssertBreak (hwNode, rc = E_FAIL);
-
+            hwNode = machineNode.createKey ("Hardware");
+            
             rc = saveHardware (hwNode);
-
-            CFGLDRReleaseNode (hwNode);
-            if (FAILED (rc))
-                break;
+            CheckComRCThrowRC (rc);
         }
 
         /* HardDiskAttachments node (required) */
         {
-            CFGNODE hdasNode = 0;
-            CFGLDRGetChildNode (machineNode, "HardDiskAttachments", 0, &hdasNode);
             /* first, delete the entire node if exists */
-            if (hdasNode)
-                CFGLDRDeleteNode (hdasNode);
+            Key hdaNode = machineNode.findKey ("HardDiskAttachments");
+            if (!hdaNode.isNull())
+                hdaNode.zap();
             /* then recreate it */
-            hdasNode = 0;
-            CFGLDRCreateChildNode (machineNode, "HardDiskAttachments", &hdasNode);
-            ComAssertBreak (hdasNode, rc = E_FAIL);
+            hdaNode = machineNode.createKey ("HardDiskAttachments");
 
-            rc = saveHardDisks (hdasNode);
-
-            CFGLDRReleaseNode (hdasNode);
-            if (FAILED (rc))
-                break;
+            rc = saveHardDisks (hdaNode);
+            CheckComRCThrowRC (rc);
         }
 
         /* update all snapshots if requested */
         if (updateAllSnapshots)
+        {
             rc = saveSnapshotSettingsWorker (machineNode, NULL,
                                              SaveSS_UpdateAllOp);
+            CheckComRCThrowRC (rc);
+        }
+
+        /* save the settings on success */
+        rc = VirtualBox::saveSettingsTree (tree, file);
+        CheckComRCThrowRC (rc);
     }
-    while (0);
-
-    if (machineNode)
-        CFGLDRReleaseNode (machineNode);
-
-    if (SUCCEEDED (rc))
-        rc = closeConfigLoader (configLoader, true /* aSaveBeforeClose */);
-    else
-        closeConfigLoader (configLoader, false /* aSaveBeforeClose */);
+    catch (HRESULT err)
+    {
+        /* we assume that error info is set by the thrower */
+        rc = err;
+    }
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+    }
 
     if (FAILED (rc))
     {
-        /*
-         *  backup arbitrary data item to cause #isModified() to still return
-         *  true in case of any error
-         */
+        /* backup arbitrary data item to cause #isModified() to still return
+         * true in case of any error */
         mHWData.backup();
     }
 
     if (wasModified || aInformCallbacksAnyway)
     {
-        /*
-         *  Fire the data change event, even on failure (since we've already
-         *  committed all data). This is done only for SessionMachines because
-         *  mutable Machine instances are always not registered (i.e. private
-         *  to the client process that creates them) and thus don't need to
-         *  inform callbacks.
-         */
+        /* Fire the data change event, even on failure (since we've already
+         * committed all data). This is done only for SessionMachines because
+         * mutable Machine instances are always not registered (i.e. private
+         * to the client process that creates them) and thus don't need to
+         * inform callbacks. */
         if (mType == IsSessionMachine)
             mParent->onMachineDataChange (mData->mUuid);
     }
@@ -5875,29 +5202,31 @@ HRESULT Machine::saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags)
 
     HRESULT rc = S_OK;
 
-    /* load the config file */
-    CFGHANDLE configLoader = 0;
-    rc = openConfigLoader (&configLoader);
-    if (FAILED (rc))
-        return rc;
-
-    CFGNODE machineNode = 0;
-    CFGLDRGetNode (configLoader, "VirtualBox/Machine", 0, &machineNode);
-
-    do
+    try
     {
-        ComAssertBreak (machineNode, rc = E_FAIL);
+        using namespace settings;
+
+        /* load the config file */
+        File file (File::ReadWrite, mData->mHandleCfgFile,
+                   Utf8Str (mData->mConfigFileFull));
+        XmlTreeBackend tree;
+
+        rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
+        CheckComRCReturnRC (rc);
+
+        Key machineNode = tree.rootKey().key ("Machine");
 
         rc = saveSnapshotSettingsWorker (machineNode, aSnapshot, aOpFlags);
+        CheckComRCReturnRC (rc);
 
-        CFGLDRReleaseNode (machineNode);
+        /* save settings on success */
+        rc = VirtualBox::saveSettingsTree (tree, file);
+        CheckComRCReturnRC (rc);
     }
-    while (0);
-
-    if (SUCCEEDED (rc))
-        rc = closeConfigLoader (configLoader, true /* aSaveBeforeClose */);
-    else
-        closeConfigLoader (configLoader, false /* aSaveBeforeClose */);
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+    }
 
     return rc;
 }
@@ -5914,8 +5243,8 @@ HRESULT Machine::saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags)
  *  \a aOp may be just SaveSS_UpdateCurrentId if only the currentSnapshot
  *  attribute of <Machine> needs to be updated.
  *
- *  @param aMachineNode <Machine> node in the opened settings file
- *  @param aSnapshot    Snapshot to operate on
+ *  @param aMachineNode <Machine> node in the opened settings file.
+ *  @param aSnapshot    Snapshot to operate on.
  *  @param aOpFlags     Operation to perform, one of SaveSS_NoOp, SaveSS_AddOp
  *                      or SaveSS_UpdateAttrsOp possibly combined with
  *                      SaveSS_UpdateCurrentId.
@@ -5923,10 +5252,12 @@ HRESULT Machine::saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags)
  *  @note Must be called with this object locked for writing.
  *        Locks child objects.
  */
-HRESULT Machine::saveSnapshotSettingsWorker (CFGNODE aMachineNode,
+HRESULT Machine::saveSnapshotSettingsWorker (settings::Key &aMachineNode,
                                              Snapshot *aSnapshot, int aOpFlags)
 {
-    AssertReturn (aMachineNode, E_FAIL);
+    using namespace settings;
+
+    AssertReturn (!aMachineNode.isNull(), E_FAIL);
 
     AssertReturn (isLockedOnCurrentThread(), E_FAIL);
 
@@ -5951,15 +5282,13 @@ HRESULT Machine::saveSnapshotSettingsWorker (CFGNODE aMachineNode,
         if (op == SaveSS_UpdateAllOp && !aSnapshot)
         {
             /* first, delete the entire root snapshot node if it exists */
-            CFGNODE snapshotNode = 0;
-            CFGLDRGetChildNode (aMachineNode, "Snapshot", 0, &snapshotNode);
-            if (snapshotNode)
-                CFGLDRDeleteNode (snapshotNode);
+            Key snapshotNode = aMachineNode.findKey ("Snapshot");
+            if (!snapshotNode.isNull())
+                snapshotNode.zap();
 
-            /*
-             *  second, if we have any snapshots left, substitute aSnapshot with
-             *  the first snapshot to recreate the whole tree, otherwise break
-             */
+            /* second, if we have any snapshots left, substitute aSnapshot
+             * with the first snapshot to recreate the whole tree, otherwise
+             * break */
             if (mData->mFirstSnapshot)
             {
                 aSnapshot = mData->mFirstSnapshot;
@@ -5974,76 +5303,55 @@ HRESULT Machine::saveSnapshotSettingsWorker (CFGNODE aMachineNode,
 
         if (op == SaveSS_AddOp)
         {
-            CFGNODE parentNode = 0;
+            Key parentNode;
 
             if (parent)
             {
                 rc = findSnapshotNode (parent, aMachineNode, NULL, &parentNode);
-                if (FAILED (rc))
-                    break;
-                ComAssertBreak (parentNode, rc = E_FAIL);
+                CheckComRCBreakRC (rc);
+
+                ComAssertBreak (!parentNode.isNull(), rc = E_FAIL);
             }
 
             do
             {
-                CFGNODE snapshotsNode = 0;
+                Key snapshotsNode;
 
-                if (parentNode)
-                {
-                    CFGLDRCreateChildNode (parentNode, "Snapshots", &snapshotsNode);
-                    ComAssertBreak (snapshotsNode, rc = E_FAIL);
-                }
+                if (!parentNode.isNull())
+                    snapshotsNode = parentNode.createKey ("Snapshots");
                 else
                     snapshotsNode = aMachineNode;
                 do
                 {
-                    CFGNODE snapshotNode = 0;
-                    CFGLDRAppendChildNode (snapshotsNode, "Snapshot", &snapshotNode);
-                    ComAssertBreak (snapshotNode, rc = E_FAIL);
+                    Key snapshotNode = snapshotsNode.appendKey ("Snapshot");
                     rc = saveSnapshot (snapshotNode, aSnapshot, false /* aAttrsOnly */);
-                    CFGLDRReleaseNode (snapshotNode);
+                    CheckComRCBreakRC (rc);
 
-                    if (FAILED (rc))
-                        break;
+                    /* when a new snapshot is added, this means diffs were created
+                     * for every normal/immutable hard disk of the VM, so we need to
+                     * save the current hard disk attachments */
 
-                    /*
-                     *  when a new snapshot is added, this means diffs were created
-                     *  for every normal/immutable hard disk of the VM, so we need to
-                     *  save the current hard disk attachments
-                     */
+                    Key hdaNode = aMachineNode.findKey ("HardDiskAttachments");
+                    if (!hdaNode.isNull())
+                        hdaNode.zap();
+                    hdaNode = aMachineNode.createKey ("HardDiskAttachments");
 
-                    CFGNODE hdasNode = 0;
-                    CFGLDRGetChildNode (aMachineNode, "HardDiskAttachments", 0, &hdasNode);
-                    if (hdasNode)
-                        CFGLDRDeleteNode (hdasNode);
-                    CFGLDRCreateChildNode (aMachineNode, "HardDiskAttachments", &hdasNode);
-                    ComAssertBreak (hdasNode, rc = E_FAIL);
-
-                    rc = saveHardDisks (hdasNode);
+                    rc = saveHardDisks (hdaNode);
+                    CheckComRCBreakRC (rc);
 
                     if (mHDData->mHDAttachments.size() != 0)
                     {
-                        /*
-                         *  If we have one or more attachments then we definitely
-                         *  created diffs for them and associated new diffs with
-                         *  current settngs. So, since we don't use saveSettings(),
-                         *  we need to inform callbacks manually.
-                         */
+                        /* If we have one or more attachments then we definitely
+                         * created diffs for them and associated new diffs with
+                         * current settngs. So, since we don't use saveSettings(),
+                         * we need to inform callbacks manually. */
                         if (mType == IsSessionMachine)
                             mParent->onMachineDataChange (mData->mUuid);
                     }
-
-                    CFGLDRReleaseNode (hdasNode);
                 }
                 while (0);
-
-                if (snapshotsNode != aMachineNode)
-                    CFGLDRReleaseNode (snapshotsNode);
             }
             while (0);
-
-            if (parentNode)
-                CFGLDRReleaseNode (parentNode);
 
             break;
         }
@@ -6051,39 +5359,30 @@ HRESULT Machine::saveSnapshotSettingsWorker (CFGNODE aMachineNode,
         Assert ((op == SaveSS_UpdateAttrsOp && !recreateWholeTree) ||
                 op == SaveSS_UpdateAllOp);
 
-        CFGNODE snapshotsNode = 0;
-        CFGNODE snapshotNode = 0;
+        Key snapshotsNode;
+        Key snapshotNode;
 
         if (!recreateWholeTree)
         {
             rc = findSnapshotNode (aSnapshot, aMachineNode,
                                    &snapshotsNode, &snapshotNode);
-            if (FAILED (rc))
-                break;
-            ComAssertBreak (snapshotNode, rc = E_FAIL);
+            CheckComRCBreakRC (rc);
         }
 
-        if (!snapshotsNode)
+        if (snapshotsNode.isNull())
             snapshotsNode = aMachineNode;
 
         if (op == SaveSS_UpdateAttrsOp)
             rc = saveSnapshot (snapshotNode, aSnapshot, true /* aAttrsOnly */);
-        else do
+        else
         {
-            if (snapshotNode)
-            {
-                CFGLDRDeleteNode (snapshotNode);
-                snapshotNode = 0;
-            }
-            CFGLDRAppendChildNode (snapshotsNode, "Snapshot", &snapshotNode);
-            ComAssertBreak (snapshotNode, rc = E_FAIL);
-            rc = saveSnapshot (snapshotNode, aSnapshot, false /* aAttrsOnly */);
-        }
-        while (0);
+            if (!snapshotNode.isNull())
+                snapshotNode.zap();
 
-        CFGLDRReleaseNode (snapshotNode);
-        if (snapshotsNode != aMachineNode)
-            CFGLDRReleaseNode (snapshotsNode);
+            snapshotNode = snapshotsNode.appendKey ("Snapshot");
+            rc = saveSnapshot (snapshotNode, aSnapshot, false /* aAttrsOnly */);
+            CheckComRCBreakRC (rc);
+        }
     }
     while (0);
 
@@ -6093,17 +5392,14 @@ HRESULT Machine::saveSnapshotSettingsWorker (CFGNODE aMachineNode,
         if (aOpFlags & SaveSS_UpdateCurrentId)
         {
             if (!mData->mCurrentSnapshot.isNull())
-                CFGLDRSetUUID (aMachineNode, "currentSnapshot",
-                               mData->mCurrentSnapshot->data().mId);
+                aMachineNode.setValue <Guid> ("currentSnapshot",
+                                              mData->mCurrentSnapshot->data().mId);
             else
-                CFGLDRDeleteAttribute (aMachineNode, "currentSnapshot");
+                aMachineNode.zapValue ("currentSnapshot");
         }
         if (aOpFlags & SaveSS_UpdateCurStateModified)
         {
-            if (!mData->mCurrentStateModified)
-                CFGLDRSetBool (aMachineNode, "currentStateModified", false);
-            else
-                CFGLDRDeleteAttribute (aMachineNode, "currentStateModified");
+            aMachineNode.setValue <bool> ("currentStateModified", true);
         }
     }
 
@@ -6114,40 +5410,38 @@ HRESULT Machine::saveSnapshotSettingsWorker (CFGNODE aMachineNode,
  *  Saves the given snapshot and all its children (unless \a aAttrsOnly is true).
  *  It is assumed that the given node is empty (unless \a aAttrsOnly is true).
  *
- *  @param aNode        <Snapshot> node to save the snapshot to
- *  @param aSnapshot    snapshot to save
- *  @param aAttrsOnly   if true, only updatge user-changeable attrs
+ *  @param aNode        <Snapshot> node to save the snapshot to.
+ *  @param aSnapshot    Snapshot to save.
+ *  @param aAttrsOnly   If true, only updatge user-changeable attrs.
  */
-HRESULT Machine::saveSnapshot (CFGNODE aNode, Snapshot *aSnapshot, bool aAttrsOnly)
+HRESULT Machine::saveSnapshot (settings::Key &aNode, Snapshot *aSnapshot, bool aAttrsOnly)
 {
-    AssertReturn (aNode && aSnapshot, E_INVALIDARG);
+    using namespace settings;
+
+    AssertReturn (!aNode.isNull() && aSnapshot, E_INVALIDARG);
     AssertReturn (mType == IsMachine || mType == IsSessionMachine, E_FAIL);
 
     /* uuid (required) */
     if (!aAttrsOnly)
-        CFGLDRSetUUID (aNode, "uuid", aSnapshot->data().mId);
+        aNode.setValue <Guid> ("uuid", aSnapshot->data().mId);
 
     /* name (required) */
-    CFGLDRSetBSTR (aNode, "name", aSnapshot->data().mName);
+    aNode.setValue <Bstr> ("name", aSnapshot->data().mName);
 
     /* timeStamp (required) */
-    CFGLDRSetDateTime (aNode, "timeStamp", aSnapshot->data().mTimeStamp);
+    aNode.setValue <RTTIMESPEC> ("timeStamp", aSnapshot->data().mTimeStamp);
 
     /* Description node (optional) */
     if (!aSnapshot->data().mDescription.isNull())
     {
-        CFGNODE descNode = 0;
-        CFGLDRCreateChildNode (aNode, "Description", &descNode);
-        Assert (descNode);
-        CFGLDRSetBSTR (descNode, NULL, aSnapshot->data().mDescription);
-        CFGLDRReleaseNode (descNode);
+        Key descNode = aNode.createKey ("Description");
+        descNode.setKeyValue <Bstr> (aSnapshot->data().mDescription);
     }
     else
     {
-        CFGNODE descNode = 0;
-        CFGLDRGetChildNode (aNode, "Description", 0, &descNode);
-        if (descNode)
-            CFGLDRDeleteNode (descNode);
+        Key descNode = aNode.findKey ("Description");
+        if (!descNode.isNull())
+            descNode.zap();
     }
 
     if (aAttrsOnly)
@@ -6159,7 +5453,7 @@ HRESULT Machine::saveSnapshot (CFGNODE aNode, Snapshot *aSnapshot, bool aAttrsOn
         /* try to make the file name relative to the settings file dir */
         Utf8Str stateFilePath = aSnapshot->stateFilePath();
         calculateRelativePath (stateFilePath, stateFilePath);
-        CFGLDRSetString (aNode, "stateFile", stateFilePath);
+        aNode.setStringValue ("stateFile", stateFilePath);
     }
 
     {
@@ -6168,26 +5462,16 @@ HRESULT Machine::saveSnapshot (CFGNODE aNode, Snapshot *aSnapshot, bool aAttrsOn
 
         /* save hardware */
         {
-            CFGNODE hwNode = 0;
-            CFGLDRCreateChildNode (aNode, "Hardware", &hwNode);
-
+            Key hwNode = aNode.createKey ("Hardware");
             HRESULT rc = snapshotMachine->saveHardware (hwNode);
-
-            CFGLDRReleaseNode (hwNode);
-            if (FAILED (rc))
-                return rc;
+            CheckComRCReturnRC (rc);
         }
 
         /* save hard disks */
         {
-            CFGNODE hdasNode = 0;
-            CFGLDRCreateChildNode (aNode, "HardDiskAttachments", &hdasNode);
-
+            Key hdasNode = aNode.createKey ("HardDiskAttachments");
             HRESULT rc = snapshotMachine->saveHardDisks (hdasNode);
-
-            CFGLDRReleaseNode (hdasNode);
-            if (FAILED (rc))
-                return rc;
+            CheckComRCReturnRC (rc);
         }
     }
 
@@ -6197,26 +5481,18 @@ HRESULT Machine::saveSnapshot (CFGNODE aNode, Snapshot *aSnapshot, bool aAttrsOn
 
         if (aSnapshot->children().size())
         {
-            CFGNODE snapshotsNode = 0;
-            CFGLDRCreateChildNode (aNode, "Snapshots", &snapshotsNode);
+            Key snapshotsNode = aNode.createKey ("Snapshots");
 
             HRESULT rc = S_OK;
 
             for (Snapshot::SnapshotList::const_iterator it = aSnapshot->children().begin();
-                 it != aSnapshot->children().end() && SUCCEEDED (rc);
+                 it != aSnapshot->children().end();
                  ++ it)
             {
-                CFGNODE snapshotNode = 0;
-                CFGLDRCreateChildNode (snapshotsNode, "Snapshot", &snapshotNode);
-
+                Key snapshotNode = snapshotsNode.createKey ("Snapshot");
                 rc = saveSnapshot (snapshotNode, (*it), aAttrsOnly);
-
-                CFGLDRReleaseNode (snapshotNode);
+                CheckComRCReturnRC (rc);
             }
-
-            CFGLDRReleaseNode (snapshotsNode);
-            if (FAILED (rc))
-                return rc;
         }
     }
 
@@ -6227,20 +5503,20 @@ HRESULT Machine::saveSnapshot (CFGNODE aNode, Snapshot *aSnapshot, bool aAttrsOn
  *  Creates Saves the VM hardware configuration.
  *  It is assumed that the given node is empty.
  *
- *  @param aNode    <Hardware> node to save the VM hardware confguration to
+ *  @param aNode    <Hardware> node to save the VM hardware confguration to.
  */
-HRESULT Machine::saveHardware (CFGNODE aNode)
+HRESULT Machine::saveHardware (settings::Key &aNode)
 {
-    AssertReturn (aNode, E_INVALIDARG);
+    using namespace settings;
+
+    AssertReturn (!aNode.isNull(), E_INVALIDARG);
 
     HRESULT rc = S_OK;
 
-    /* CPU */
+    /* CPU (optional) */
     {
-        CFGNODE cpuNode = 0;
-        CFGLDRCreateChildNode (aNode, "CPU", &cpuNode);
-        CFGNODE hwVirtExNode = 0;
-        CFGLDRCreateChildNode (cpuNode, "HardwareVirtEx", &hwVirtExNode);
+        Key cpuNode = aNode.createKey ("CPU");
+        Key hwVirtExNode = cpuNode.createKey ("HardwareVirtEx");
         const char *value = NULL;
         switch (mHWData->mHWVirtExEnabled)
         {
@@ -6250,29 +5526,23 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
             case TriStateBool_True:
                 value = "true";
                 break;
-            default:
+            case TriStateBool_Default:
                 value = "default";
         }
-        CFGLDRSetString (hwVirtExNode, "enabled", value);
-        CFGLDRReleaseNode (hwVirtExNode);
-        CFGLDRReleaseNode (cpuNode);
+        hwVirtExNode.setStringValue ("enabled", value);
     }
 
     /* memory (required) */
     {
-        CFGNODE memoryNode = 0;
-        CFGLDRCreateChildNode (aNode, "Memory", &memoryNode);
-        CFGLDRSetUInt32 (memoryNode, "RAMSize", mHWData->mMemorySize);
-        CFGLDRReleaseNode (memoryNode);
+        Key memoryNode = aNode.createKey ("Memory");
+        memoryNode.setValue <ULONG> ("RAMSize", mHWData->mMemorySize);
     }
 
     /* boot (required) */
-    do
     {
-        CFGNODE bootNode = 0;
-        CFGLDRCreateChildNode (aNode, "Boot", &bootNode);
+        Key bootNode = aNode.createKey ("Boot");
 
-        for (ULONG pos = 0; pos < ELEMENTS (mHWData->mBootOrder); pos ++)
+        for (ULONG pos = 0; pos < ELEMENTS (mHWData->mBootOrder); ++ pos)
         {
             const char *device = NULL;
             switch (mHWData->mBootOrder [pos])
@@ -6281,478 +5551,103 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
                     /* skip, this is allowed for <Order> nodes
                      * when loading, the default value NoDevice will remain */
                     continue;
-                case DeviceType_FloppyDevice:   device = "Floppy";  break;
+                case DeviceType_FloppyDevice:   device = "Floppy"; break;
                 case DeviceType_DVDDevice:      device = "DVD"; break;
                 case DeviceType_HardDiskDevice: device = "HardDisk"; break;
                 case DeviceType_NetworkDevice:  device = "Network"; break;
                 default:
-                    ComAssertMsgFailedBreak (("Invalid boot device: %d\n",
-                                              mHWData->mBootOrder [pos]),
-                                              rc = E_FAIL);
+                {
+                    ComAssertMsgFailedRet (("Invalid boot device: %d\n",
+                                            mHWData->mBootOrder [pos]),
+                                            E_FAIL);
+                }
             }
-            if (FAILED (rc))
-                break;
 
-            CFGNODE orderNode = 0;
-            CFGLDRAppendChildNode (bootNode, "Order", &orderNode);
-
-            CFGLDRSetUInt32 (orderNode, "position", pos + 1);
-            CFGLDRSetString (orderNode, "device", device);
-
-            CFGLDRReleaseNode (orderNode);
+            Key orderNode = bootNode.appendKey ("Order");
+            orderNode.setValue <ULONG> ("position", pos + 1);
+            orderNode.setStringValue ("device", device);
         }
-
-        CFGLDRReleaseNode (bootNode);
     }
-    while (0);
-
-    CheckComRCReturnRC (rc);
 
     /* display (required) */
     {
-        CFGNODE displayNode = 0;
-        CFGLDRCreateChildNode (aNode, "Display", &displayNode);
-        CFGLDRSetUInt32 (displayNode, "VRAMSize", mHWData->mVRAMSize);
-        CFGLDRSetUInt32 (displayNode, "MonitorCount", mHWData->mMonitorCount);
-        CFGLDRReleaseNode (displayNode);
+        Key displayNode = aNode.createKey ("Display");
+        displayNode.setValue <ULONG> ("VRAMSize", mHWData->mVRAMSize);
+        displayNode.setValue <ULONG> ("MonitorCount", mHWData->mMonitorCount);
     }
 
 #ifdef VBOX_VRDP
     /* VRDP settings (optional) */
-    {
-        CFGNODE remoteDisplayNode = 0;
-        CFGLDRCreateChildNode (aNode, "RemoteDisplay", &remoteDisplayNode);
-        if (remoteDisplayNode)
-        {
-            rc = mVRDPServer->saveSettings (remoteDisplayNode);
-            CFGLDRReleaseNode (remoteDisplayNode);
-            CheckComRCReturnRC (rc);
-        }
-    }
+    rc = mVRDPServer->saveSettings (aNode);
+    CheckComRCReturnRC (rc);
 #endif
 
     /* BIOS (required) */
-    {
-        CFGNODE biosNode = 0;
-        CFGLDRCreateChildNode (aNode, "BIOS", &biosNode);
-        {
-            BOOL fSet;
-            /* ACPI */
-            CFGNODE acpiNode = 0;
-            CFGLDRCreateChildNode (biosNode, "ACPI", &acpiNode);
-            mBIOSSettings->COMGETTER(ACPIEnabled)(&fSet);
-            CFGLDRSetBool (acpiNode, "enabled", !!fSet);
-            CFGLDRReleaseNode (acpiNode);
-
-            /* IOAPIC */
-            CFGNODE ioapicNode = 0;
-            CFGLDRCreateChildNode (biosNode, "IOAPIC", &ioapicNode);
-            mBIOSSettings->COMGETTER(IOAPICEnabled)(&fSet);
-            CFGLDRSetBool (ioapicNode, "enabled", !!fSet);
-            CFGLDRReleaseNode (ioapicNode);
-
-            /* BIOS logo (optional) **/
-            CFGNODE logoNode = 0;
-            CFGLDRCreateChildNode (biosNode, "Logo", &logoNode);
-            mBIOSSettings->COMGETTER(LogoFadeIn)(&fSet);
-            CFGLDRSetBool (logoNode, "fadeIn", !!fSet);
-            mBIOSSettings->COMGETTER(LogoFadeOut)(&fSet);
-            CFGLDRSetBool (logoNode, "fadeOut", !!fSet);
-            ULONG ulDisplayTime;
-            mBIOSSettings->COMGETTER(LogoDisplayTime)(&ulDisplayTime);
-            CFGLDRSetUInt32 (logoNode, "displayTime", ulDisplayTime);
-            Bstr logoPath;
-            mBIOSSettings->COMGETTER(LogoImagePath)(logoPath.asOutParam());
-            if (logoPath)
-                CFGLDRSetBSTR (logoNode, "imagePath", logoPath);
-            else
-                CFGLDRDeleteAttribute (logoNode, "imagePath");
-            CFGLDRReleaseNode (logoNode);
-
-            /* boot menu (optional) */
-            CFGNODE bootMenuNode = 0;
-            CFGLDRCreateChildNode (biosNode, "BootMenu", &bootMenuNode);
-            BIOSBootMenuMode_T bootMenuMode;
-            Bstr bootMenuModeStr;
-            mBIOSSettings->COMGETTER(BootMenuMode)(&bootMenuMode);
-            switch (bootMenuMode)
-            {
-                case BIOSBootMenuMode_Disabled:
-                    bootMenuModeStr = "disabled";
-                    break;
-                case BIOSBootMenuMode_MenuOnly:
-                    bootMenuModeStr = "menuonly";
-                    break;
-                default:
-                    bootMenuModeStr = "messageandmenu";
-            }
-            CFGLDRSetBSTR (bootMenuNode, "mode", bootMenuModeStr);
-            CFGLDRReleaseNode (bootMenuNode);
-
-            /* time offset (optional) */
-            CFGNODE timeOffsetNode = 0;
-            CFGLDRCreateChildNode (biosNode, "TimeOffset", &timeOffsetNode);
-            LONG64 timeOffset;
-            mBIOSSettings->COMGETTER(TimeOffset)(&timeOffset);
-            CFGLDRSetInt64 (timeOffsetNode, "value", timeOffset);
-            CFGLDRReleaseNode (timeOffsetNode);
-
-            /* PXE debug flag (optional) */
-            CFGNODE pxedebugNode = 0;
-            CFGLDRCreateChildNode (biosNode, "PXEDebug", &pxedebugNode);
-            mBIOSSettings->COMGETTER(PXEDebugEnabled)(&fSet);
-            CFGLDRSetBool (pxedebugNode, "enabled", !!fSet);
-            CFGLDRReleaseNode (pxedebugNode);
-
-            /* IDE controller type */
-            CFGNODE ideControllerNode = 0;
-            IDEControllerType_T controllerType;
-            CFGLDRCreateChildNode (biosNode, "IDEController", &ideControllerNode);
-            mBIOSSettings->COMGETTER(IDEControllerType)(&controllerType);
-            switch (controllerType)
-            {
-                case IDEControllerType_IDEControllerPIIX3:
-                    CFGLDRSetString (ideControllerNode, "type", "PIIX3");
-                    break;
-                case IDEControllerType_IDEControllerPIIX4:
-                    CFGLDRSetString (ideControllerNode, "type", "PIIX4");
-                    break;
-                default:
-                    ComAssertMsgFailedBreak (("Invalid IDE Controller type: %d\n",
-                                              controllerType), rc = E_FAIL);
-            }
-            CFGLDRReleaseNode (ideControllerNode);
-
-        }
-        CFGLDRReleaseNode(biosNode);
-    }
+    rc = mBIOSSettings->saveSettings (aNode);
+    CheckComRCReturnRC (rc);
 
     /* DVD drive (required) */
-    /// @todo (dmik) move the code to DVDDrive
-    do
-    {
-        CFGNODE dvdNode = 0;
-        CFGLDRCreateChildNode (aNode, "DVDDrive", &dvdNode);
-
-        BOOL fPassthrough;
-        mDVDDrive->COMGETTER(Passthrough)(&fPassthrough);
-        CFGLDRSetBool(dvdNode, "passthrough", !!fPassthrough);
-
-        switch (mDVDDrive->data()->mDriveState)
-        {
-            case DriveState_ImageMounted:
-            {
-                Assert (!mDVDDrive->data()->mDVDImage.isNull());
-
-                Guid id;
-                rc = mDVDDrive->data()->mDVDImage->COMGETTER(Id) (id.asOutParam());
-                Assert (!id.isEmpty());
-
-                CFGNODE imageNode = 0;
-                CFGLDRCreateChildNode (dvdNode, "Image", &imageNode);
-                CFGLDRSetUUID (imageNode, "uuid", id.ptr());
-                CFGLDRReleaseNode (imageNode);
-                break;
-            }
-            case DriveState_HostDriveCaptured:
-            {
-                Assert (!mDVDDrive->data()->mHostDrive.isNull());
-
-                Bstr name;
-                rc = mDVDDrive->data()->mHostDrive->COMGETTER(Name) (name.asOutParam());
-                Assert (!name.isEmpty());
-
-                CFGNODE hostDriveNode = 0;
-                CFGLDRCreateChildNode (dvdNode, "HostDrive", &hostDriveNode);
-                CFGLDRSetBSTR (hostDriveNode, "src", name);
-                CFGLDRReleaseNode (hostDriveNode);
-                break;
-            }
-            case DriveState_NotMounted:
-                /* do nothing, i.e.leave the DVD drive node empty */
-                break;
-            default:
-                ComAssertMsgFailedBreak (("Invalid DVD drive state: %d\n",
-                                          mDVDDrive->data()->mDriveState),
-                                          rc = E_FAIL);
-        }
-
-        CFGLDRReleaseNode (dvdNode);
-    }
-    while (0);
-
+    rc = mDVDDrive->saveSettings (aNode);
     CheckComRCReturnRC (rc);
 
     /* Flooppy drive (required) */
-    /// @todo (dmik) move the code to DVDDrive
-    do
-    {
-        CFGNODE floppyNode = 0;
-        CFGLDRCreateChildNode (aNode, "FloppyDrive", &floppyNode);
-
-        BOOL fFloppyEnabled;
-        rc = mFloppyDrive->COMGETTER(Enabled)(&fFloppyEnabled);
-        CFGLDRSetBool (floppyNode, "enabled", !!fFloppyEnabled);
-
-        switch (mFloppyDrive->data()->mDriveState)
-        {
-            case DriveState_ImageMounted:
-            {
-                Assert (!mFloppyDrive->data()->mFloppyImage.isNull());
-
-                Guid id;
-                rc = mFloppyDrive->data()->mFloppyImage->COMGETTER(Id) (id.asOutParam());
-                Assert (!id.isEmpty());
-
-                CFGNODE imageNode = 0;
-                CFGLDRCreateChildNode (floppyNode, "Image", &imageNode);
-                CFGLDRSetUUID (imageNode, "uuid", id.ptr());
-                CFGLDRReleaseNode (imageNode);
-                break;
-            }
-            case DriveState_HostDriveCaptured:
-            {
-                Assert (!mFloppyDrive->data()->mHostDrive.isNull());
-
-                Bstr name;
-                rc = mFloppyDrive->data()->mHostDrive->COMGETTER(Name) (name.asOutParam());
-                Assert (!name.isEmpty());
-
-                CFGNODE hostDriveNode = 0;
-                CFGLDRCreateChildNode (floppyNode, "HostDrive", &hostDriveNode);
-                CFGLDRSetBSTR (hostDriveNode, "src", name);
-                CFGLDRReleaseNode (hostDriveNode);
-                break;
-            }
-            case DriveState_NotMounted:
-                /* do nothing, i.e.leave the Floppy drive node empty */
-                break;
-            default:
-                ComAssertMsgFailedBreak (("Invalid Floppy drive state: %d\n",
-                                          mFloppyDrive->data()->mDriveState),
-                                          rc = E_FAIL);
-        }
-
-        CFGLDRReleaseNode (floppyNode);
-    }
-    while (0);
-
+    rc = mFloppyDrive->saveSettings (aNode);
     CheckComRCReturnRC (rc);
-
 
     /* USB Controller (required) */
     rc = mUSBController->saveSettings (aNode);
     CheckComRCReturnRC (rc);
 
     /* Network adapters (required) */
-    do
     {
-        CFGNODE nwNode = 0;
-        CFGLDRCreateChildNode (aNode, "Network", &nwNode);
+        Key nwNode = aNode.createKey ("Network");
 
-        for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+        for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); ++ slot)
         {
-            CFGNODE networkAdapterNode = 0;
-            CFGLDRAppendChildNode (nwNode, "Adapter", &networkAdapterNode);
+            Key adapterNode = nwNode.appendKey ("Adapter");
 
-            CFGLDRSetUInt32 (networkAdapterNode, "slot", slot);
-            CFGLDRSetBool (networkAdapterNode, "enabled",
-                           !!mNetworkAdapters [slot]->data()->mEnabled);
-            CFGLDRSetBSTR (networkAdapterNode, "MACAddress",
-                           mNetworkAdapters [slot]->data()->mMACAddress);
-            CFGLDRSetBool (networkAdapterNode, "cable",
-                           !!mNetworkAdapters [slot]->data()->mCableConnected);
+            adapterNode.setValue <ULONG> ("slot", slot);
 
-            CFGLDRSetUInt32 (networkAdapterNode, "speed",
-                             mNetworkAdapters [slot]->data()->mLineSpeed);
-
-            if (mNetworkAdapters [slot]->data()->mTraceEnabled)
-                CFGLDRSetBool (networkAdapterNode, "trace", true);
-
-            CFGLDRSetBSTR (networkAdapterNode, "tracefile",
-                           mNetworkAdapters [slot]->data()->mTraceFile);
-
-            switch (mNetworkAdapters [slot]->data()->mAdapterType)
-            {
-                case NetworkAdapterType_NetworkAdapterAm79C970A:
-                    CFGLDRSetString (networkAdapterNode, "type", "Am79C970A");
-                    break;
-                case NetworkAdapterType_NetworkAdapterAm79C973:
-                    CFGLDRSetString (networkAdapterNode, "type", "Am79C973");
-                    break;
-                default:
-                    ComAssertMsgFailedBreak (("Invalid network adapter type: %d\n",
-                                              mNetworkAdapters [slot]->data()->mAdapterType),
-                                              rc = E_FAIL);
-            }
-
-            CFGNODE attachmentNode = 0;
-            switch (mNetworkAdapters [slot]->data()->mAttachmentType)
-            {
-                case NetworkAttachmentType_NoNetworkAttachment:
-                {
-                    /* do nothing -- empty content */
-                    break;
-                }
-                case NetworkAttachmentType_NATNetworkAttachment:
-                {
-                    CFGLDRAppendChildNode (networkAdapterNode, "NAT", &attachmentNode);
-                    break;
-                }
-                case NetworkAttachmentType_HostInterfaceNetworkAttachment:
-                {
-                    CFGLDRAppendChildNode (networkAdapterNode, "HostInterface", &attachmentNode);
-                    const Bstr &name = mNetworkAdapters [slot]->data()->mHostInterface;
-#ifdef RT_OS_WINDOWS
-                    Assert (!name.isNull());
-#endif
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-                    if (!name.isEmpty())
-#endif
-                        CFGLDRSetBSTR (attachmentNode, "name", name);
-#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-                    const Bstr &tapSetupApp =
-                        mNetworkAdapters [slot]->data()->mTAPSetupApplication;
-                    if (!tapSetupApp.isEmpty())
-                        CFGLDRSetBSTR (attachmentNode, "TAPSetup", tapSetupApp);
-                    const Bstr &tapTerminateApp =
-                        mNetworkAdapters [slot]->data()->mTAPTerminateApplication;
-                    if (!tapTerminateApp.isEmpty())
-                        CFGLDRSetBSTR (attachmentNode, "TAPTerminate", tapTerminateApp);
-#endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
-                    break;
-                }
-                case NetworkAttachmentType_InternalNetworkAttachment:
-                {
-                    CFGLDRAppendChildNode (networkAdapterNode, "InternalNetwork", &attachmentNode);
-                    const Bstr &name = mNetworkAdapters[slot]->data()->mInternalNetwork;
-                    Assert(!name.isNull());
-                    CFGLDRSetBSTR (attachmentNode, "name", name);
-                    break;
-                }
-                default:
-                {
-                    ComAssertFailedBreak (rc = E_FAIL);
-                    break;
-                }
-            }
-            if (attachmentNode)
-                CFGLDRReleaseNode (attachmentNode);
-
-            CFGLDRReleaseNode (networkAdapterNode);
+            rc = mNetworkAdapters [slot]->saveSettings (adapterNode);
+            CheckComRCReturnRC (rc);
         }
-
-        CFGLDRReleaseNode (nwNode);
     }
-    while (0);
-
-    if (FAILED (rc))
-        return rc;
 
     /* Serial ports */
-    CFGNODE serialNode = 0;
-    CFGLDRCreateChildNode (aNode, "Uart", &serialNode);
-
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot++)
     {
-        rc = mSerialPorts [slot]->saveSettings (serialNode);
-        CheckComRCReturnRC (rc);
+        Key serialNode = aNode.createKey ("Uart");
+        for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); ++ slot)
+        {
+            Key portNode = serialNode.appendKey ("Port");
+
+            portNode.setValue <ULONG> ("slot", slot);
+
+            rc = mSerialPorts [slot]->saveSettings (portNode);
+            CheckComRCReturnRC (rc);
+        }
     }
-    CFGLDRReleaseNode (serialNode);
 
     /* Parallel ports */
-    CFGNODE parallelNode = 0;
-    CFGLDRCreateChildNode (aNode, "Lpt", &parallelNode);
-
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot++)
     {
-        rc = mParallelPorts [slot]->saveSettings (parallelNode);
-        CheckComRCReturnRC (rc);
+        Key parallelNode = aNode.createKey ("Lpt");
+        for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); ++ slot)
+        {
+            Key portNode = parallelNode.appendKey ("Port");
+
+            portNode.setValue <ULONG> ("slot", slot);
+
+            rc = mParallelPorts [slot]->saveSettings (portNode);
+            CheckComRCReturnRC (rc);
+        }
     }
-    CFGLDRReleaseNode (parallelNode);
 
     /* Audio adapter */
-    do
-    {
-        CFGNODE adapterNode = 0;
-        CFGLDRCreateChildNode (aNode, "AudioAdapter", &adapterNode);
-
-        switch (mAudioAdapter->data()->mAudioDriver)
-        {
-            case AudioDriverType_NullAudioDriver:
-            {
-                CFGLDRSetString (adapterNode, "driver", "null");
-                break;
-            }
-#ifdef RT_OS_WINDOWS
-            case AudioDriverType_WINMMAudioDriver:
-# ifdef VBOX_WITH_WINMM
-            {
-                CFGLDRSetString (adapterNode, "driver", "winmm");
-                break;
-            }
-# endif
-            case AudioDriverType_DSOUNDAudioDriver:
-            {
-                CFGLDRSetString (adapterNode, "driver", "dsound");
-                break;
-            }
-#endif /* RT_OS_WINDOWS */
-#ifdef RT_OS_LINUX
-            case AudioDriverType_ALSAAudioDriver:
-# ifdef VBOX_WITH_ALSA
-            {
-                CFGLDRSetString (adapterNode, "driver", "alsa");
-                break;
-            }
-# endif
-# ifdef VBOX_WITH_PULSE
-            case AudioDriverType_PulseAudioDriver:
-            {
-                CFGLDRSetString (adapterNode, "driver", "pulse");
-                break;
-            }
-# endif
-            case AudioDriverType_OSSAudioDriver:
-            {
-                CFGLDRSetString (adapterNode, "driver", "oss");
-                break;
-            }
-#endif /* RT_OS_LINUX */
-#ifdef RT_OS_DARWIN
-            case AudioDriverType_CoreAudioDriver:
-            {
-                CFGLDRSetString (adapterNode, "driver", "coreaudio");
-                break;
-            }
-#endif
-#ifdef RT_OS_OS2
-            case AudioDriverType_MMPMAudioDriver:
-            {
-                CFGLDRSetString (adapterNode, "driver", "mmpm");
-                break;
-            }
-#endif
-            default:
-                ComAssertMsgFailedBreak (("Wrong audio driver type! driver = %d\n",
-                                          mAudioAdapter->data()->mAudioDriver),
-                                          rc = E_FAIL);
-        }
-
-        CFGLDRSetBool (adapterNode, "enabled", !!mAudioAdapter->data()->mEnabled);
-
-        CFGLDRReleaseNode (adapterNode);
-    }
-    while (0);
-
-    if (FAILED (rc))
-        return rc;
+    rc = mAudioAdapter->saveSettings (aNode);
+    CheckComRCReturnRC (rc);
 
     /* Shared folders */
-    do
     {
-        CFGNODE sharedFoldersNode = 0;
-        CFGLDRCreateChildNode (aNode, "SharedFolders", &sharedFoldersNode);
+        Key sharedFoldersNode = aNode.createKey ("SharedFolders");
 
         for (HWData::SharedFolderList::const_iterator it = mHWData->mSharedFolders.begin();
              it != mHWData->mSharedFolders.end();
@@ -6760,69 +5655,57 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
         {
             ComObjPtr <SharedFolder> folder = *it;
 
-            CFGNODE folderNode = 0;
-            CFGLDRAppendChildNode (sharedFoldersNode, "SharedFolder", &folderNode);
+            Key folderNode = sharedFoldersNode.appendKey ("SharedFolder");
 
             /* all are mandatory */
-            CFGLDRSetBSTR (folderNode, "name", folder->name());
-            CFGLDRSetBSTR (folderNode, "hostPath", folder->hostPath());
-
-            CFGLDRReleaseNode (folderNode);
+            folderNode.setValue <Bstr> ("name", folder->name());
+            folderNode.setValue <Bstr> ("hostPath", folder->hostPath());
         }
-
-        CFGLDRReleaseNode (sharedFoldersNode);
     }
-    while (0);
 
     /* Clipboard */
     {
-        CFGNODE clipNode = 0;
-        CFGLDRCreateChildNode (aNode, "Clipboard", &clipNode);
+        Key clipNode = aNode.createKey ("Clipboard");
 
-        const char *mode = "Disabled";
+        const char *modeStr = "Disabled";
         switch (mHWData->mClipboardMode)
         {
             case ClipboardMode_ClipDisabled:
                 /* already assigned */
                 break;
             case ClipboardMode_ClipHostToGuest:
-                mode = "HostToGuest";
+                modeStr = "HostToGuest";
                 break;
             case ClipboardMode_ClipGuestToHost:
-                mode = "GuestToHost";
+                modeStr = "GuestToHost";
                 break;
             case ClipboardMode_ClipBidirectional:
-                mode = "Bidirectional";
+                modeStr = "Bidirectional";
                 break;
             default:
-                AssertMsgFailed (("Clipboard mode %d is invalid",
-                                  mHWData->mClipboardMode));
-                break;
+                ComAssertMsgFailedRet (("Clipboard mode %d is invalid",
+                                        mHWData->mClipboardMode),
+                                       E_FAIL);
         }
-        CFGLDRSetString (clipNode, "mode", mode);
-
-        CFGLDRReleaseNode (clipNode);
+        clipNode.setStringValue ("mode", modeStr);
     }
 
     /* Guest */
     {
-        CFGNODE guestNode = 0;
-        CFGLDRGetChildNode (aNode, "Guest", 0, &guestNode);
+        Key guestNode = aNode.findKey ("Guest");
         /* first, delete the entire node if exists */
-        if (guestNode)
-            CFGLDRDeleteNode (guestNode);
+        if (!guestNode.isNull())
+            guestNode.zap();
         /* then recreate it */
-        guestNode = 0;
-        CFGLDRCreateChildNode (aNode, "Guest", &guestNode);
+        guestNode = aNode.createKey ("Guest");
 
-        CFGLDRSetUInt32 (guestNode, "MemoryBalloonSize",
-                         mHWData->mMemoryBalloonSize);
-        CFGLDRSetUInt32 (guestNode, "StatisticsUpdateInterval",
-                         mHWData->mStatisticsUpdateInterval);
-
-        CFGLDRReleaseNode (guestNode);
+        guestNode.setValue <ULONG> ("MemoryBalloonSize",
+                                    mHWData->mMemoryBalloonSize);
+        guestNode.setValue <ULONG> ("StatisticsUpdateInterval",
+                                    mHWData->mStatisticsUpdateInterval);
     }
 
+    AssertComRC (rc);
     return rc;
 }
 
@@ -6830,24 +5713,22 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
  *  Saves the hard disk confguration.
  *  It is assumed that the given node is empty.
  *
- *  @param aNode    <HardDiskAttachments> node to save the hard disk confguration to
+ *  @param aNode    <HardDiskAttachments> node to save the hard disk confguration to.
  */
-HRESULT Machine::saveHardDisks (CFGNODE aNode)
+HRESULT Machine::saveHardDisks (settings::Key &aNode)
 {
-    AssertReturn (aNode, E_INVALIDARG);
+    using namespace settings;
 
-    HRESULT rc = S_OK;
+    AssertReturn (!aNode.isNull(), E_INVALIDARG);
 
     for (HDData::HDAttachmentList::const_iterator it = mHDData->mHDAttachments.begin();
-         it != mHDData->mHDAttachments.end() && SUCCEEDED (rc);
+         it != mHDData->mHDAttachments.end();
          ++ it)
     {
         ComObjPtr <HardDiskAttachment> att = *it;
 
-        CFGNODE hdNode = 0;
-        CFGLDRAppendChildNode (aNode, "HardDiskAttachment", &hdNode);
+        Key hdNode = aNode.appendKey ("HardDiskAttachment");
 
-        do
         {
             const char *bus = NULL;
             switch (att->controller())
@@ -6855,10 +5736,8 @@ HRESULT Machine::saveHardDisks (CFGNODE aNode)
                 case DiskControllerType_IDE0Controller: bus = "ide0"; break;
                 case DiskControllerType_IDE1Controller: bus = "ide1"; break;
                 default:
-                    ComAssertFailedBreak (rc = E_FAIL);
+                    ComAssertFailedRet (E_FAIL);
             }
-            if (FAILED (rc))
-                break;
 
             const char *dev = NULL;
             switch (att->deviceNumber())
@@ -6866,30 +5745,25 @@ HRESULT Machine::saveHardDisks (CFGNODE aNode)
                 case 0: dev = "master"; break;
                 case 1: dev = "slave"; break;
                 default:
-                    ComAssertFailedBreak (rc = E_FAIL);
+                    ComAssertFailedRet (E_FAIL);
             }
-            if (FAILED (rc))
-                break;
 
-            CFGLDRSetUUID (hdNode, "hardDisk", att->hardDisk()->id());
-            CFGLDRSetString (hdNode, "bus", bus);
-            CFGLDRSetString (hdNode, "device", dev);
+            hdNode.setValue <Guid> ("hardDisk", att->hardDisk()->id());
+            hdNode.setStringValue ("bus", bus);
+            hdNode.setStringValue ("device", dev);
         }
-        while (0);
-
-        CFGLDRReleaseNode (hdNode);
     }
 
-    return rc;
+    return S_OK;
 }
 
 /**
  *  Saves machine state settings as defined by aFlags
  *  (SaveSTS_* values).
  *
- *  @param aFlags   a combination of SaveSTS_* flags
+ *  @param aFlags   Combination of SaveSTS_* flags.
  *
- *  @note Locks objects!
+ *  @note Locks objects for writing.
  */
 HRESULT Machine::saveStateSettings (int aFlags)
 {
@@ -6901,25 +5775,29 @@ HRESULT Machine::saveStateSettings (int aFlags)
 
     AutoLock alock (this);
 
-    /* load the config file */
-    CFGHANDLE configLoader = 0;
-    HRESULT rc = openConfigLoader (&configLoader);
-    if (FAILED (rc))
-        return rc;
+    AssertReturn (isConfigLocked(), E_FAIL);
 
-    CFGNODE machineNode = 0;
-    CFGLDRGetNode (configLoader, "VirtualBox/Machine", 0, &machineNode);
+    HRESULT rc = S_OK;
 
-    do
+    try
     {
-        ComAssertBreak (machineNode, rc = E_FAIL);
+        using namespace settings;
+
+        /* load the config file */
+        File file (File::ReadWrite, mData->mHandleCfgFile,
+                   Utf8Str (mData->mConfigFileFull));
+        XmlTreeBackend tree;
+
+        rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
+        CheckComRCReturnRC (rc);
+
+        Key machineNode = tree.rootKey().key ("Machine");
 
         if (aFlags & SaveSTS_CurStateModified)
         {
-            if (!mData->mCurrentStateModified)
-                CFGLDRSetBool (machineNode, "currentStateModified", false);
-            else
-                CFGLDRDeleteAttribute (machineNode, "currentStateModified");
+            /* defaults to true */
+            machineNode.setValueOr <bool> ("currentStateModified",
+                                           !mData->mCurrentStateModified, true);
         }
 
         if (aFlags & SaveSTS_StateFilePath)
@@ -6929,10 +5807,10 @@ HRESULT Machine::saveStateSettings (int aFlags)
                 /* try to make the file name relative to the settings file dir */
                 Utf8Str stateFilePath = mSSData->mStateFilePath;
                 calculateRelativePath (stateFilePath, stateFilePath);
-                CFGLDRSetString (machineNode, "stateFile", stateFilePath);
+                machineNode.setStringValue ("stateFile", stateFilePath);
             }
             else
-                CFGLDRDeleteAttribute (machineNode, "stateFile");
+                machineNode.zapValue ("stateFile");
         }
 
         if (aFlags & SaveSTS_StateTimeStamp)
@@ -6940,25 +5818,23 @@ HRESULT Machine::saveStateSettings (int aFlags)
             Assert (mData->mMachineState != MachineState_Aborted ||
                     mSSData->mStateFilePath.isNull());
 
-            CFGLDRSetDateTime (machineNode, "lastStateChange",
-                               mData->mLastStateChange);
+            machineNode.setValue <RTTIMESPEC> ("lastStateChange",
+                                               mData->mLastStateChange);
 
-            // set the aborted attribute when appropriate
-            if (mData->mMachineState == MachineState_Aborted)
-                CFGLDRSetBool (machineNode, "aborted", true);
-            else
-                CFGLDRDeleteAttribute (machineNode, "aborted");
+            /* set the aborted attribute when appropriate, defaults to false */
+            machineNode.setValueOr <bool> ("aborted",
+                                           mData->mMachineState == MachineState_Aborted,
+                                           false);
         }
+
+        /* save settings on success */
+        rc = VirtualBox::saveSettingsTree (tree, file);
+        CheckComRCReturnRC (rc);
     }
-    while (0);
-
-    if (machineNode)
-        CFGLDRReleaseNode (machineNode);
-
-    if (SUCCEEDED (rc))
-        rc = closeConfigLoader (configLoader, true /* aSaveBeforeClose */);
-    else
-        closeConfigLoader (configLoader, false /* aSaveBeforeClose */);
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+    }
 
     return rc;
 }
@@ -8946,9 +7822,9 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     ComObjPtr <Snapshot> snapshot;
     snapshot.createObject();
     rc = snapshot->init (snapshotId, aName, aDescription,
-                         RTTimeSpecGetMilli (RTTimeNow (&time)),
-                         snapshotMachine, mData->mCurrentSnapshot);
-    AssertComRCReturn (rc, rc);
+                         *RTTimeNow (&time), snapshotMachine,
+                         mData->mCurrentSnapshot);
+    AssertComRCReturnRC (rc);
 
     /*
      *  create and start the task on a separate thread
@@ -9630,7 +8506,7 @@ HRESULT SessionMachine::endSavingState (BOOL aSuccess)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    /* mParent->removeProgress() needs mParent lock */
+    /* mParent->removeProgress() and saveSettings() need mParent lock */
     AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
 
     HRESULT rc = S_OK;
@@ -9876,7 +8752,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
 
     ComObjPtr <SnapshotMachine> sm = aTask.snapshot->data().mMachine;
 
-    /* mParent is locked because of Progress::notifyComplete(), etc. */
+    /* Progress::notifyComplete() et al., saveSettings() need mParent lock */
     AutoMultiLock <3> alock (mParent->wlock(), this->wlock(), sm->rlock());
 
     /* Safe locking in the direction parent->child */
@@ -10268,7 +9144,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
         return;
     }
 
-    /* mParent is locked because of Progress::notifyComplete(), etc. */
+    /* Progress::notifyComplete() et al., saveSettings() need mParent lock */
     AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
 
     /*
@@ -10327,7 +9203,8 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
             }
         }
 
-        LONG64 snapshotTimeStamp = 0;
+        RTTIMESPEC snapshotTimeStamp;
+        RTTimeSpecSetMilli (&snapshotTimeStamp, 0);
 
         {
             ComObjPtr <Snapshot> curSnapshot = mData->mCurrentSnapshot;
@@ -10461,7 +9338,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
             break;
 
         /* assign the timestamp from the snapshot */
-        Assert (snapshotTimeStamp != 0);
+        Assert (RTTimeSpecGetMilli (&snapshotTimeStamp) != 0);
         mData->mLastStateChange = snapshotTimeStamp;
 
         /* mark the current state as not modified */
@@ -10878,13 +9755,16 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
  *
  *  @note Locks aMachine object for reading.
  */
-HRESULT SnapshotMachine::init (Machine *aMachine, CFGNODE aHWNode, CFGNODE aHDAsNode,
+HRESULT SnapshotMachine::init (Machine *aMachine,
+                               const settings::Key &aHWNode,
+                               const settings::Key &aHDAsNode,
                                INPTR GUIDPARAM aSnapshotId, INPTR BSTR aStateFilePath)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc (("mName={%ls}\n", aMachine->mUserData->mName.raw()));
 
-    AssertReturn (aMachine && aHWNode && aHDAsNode && !Guid (aSnapshotId).isEmpty(),
+    AssertReturn (aMachine && !aHWNode.isNull() && !aHDAsNode.isNull() &&
+                  !Guid (aSnapshotId).isEmpty(),
                   E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */

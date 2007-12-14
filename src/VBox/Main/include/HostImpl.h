@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -25,8 +27,6 @@
 #ifdef RT_OS_WINDOWS
 #include "win32/svchlp.h"
 #endif
-
-#include <VBox/cfgldr.h>
 
 class VirtualBox;
 class SessionMachine;
@@ -97,8 +97,8 @@ public:
     HRESULT onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
                                      BOOL aActiveChanged = FALSE);
 
-    HRESULT loadSettings (CFGNODE aGlobal);
-    HRESULT saveSettings (CFGNODE aGlobal);
+    HRESULT loadSettings (const settings::Key &aGlobal);
+    HRESULT saveSettings (settings::Key &aGlobal);
 
     HRESULT captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId);
     HRESULT detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BOOL aDone);

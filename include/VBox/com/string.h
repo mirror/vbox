@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  * MS COM / XPCOM Abstraction Layer:
  * Smart string classes declaration
@@ -35,6 +37,7 @@
 #include "VBox/com/assert.h"
 
 #include <iprt/string.h>
+#include <iprt/cpputils.h>
 #include <iprt/alloc.h>
 
 namespace com
@@ -206,6 +209,11 @@ public:
      *  Takes the ownership of the returned data.
      */
     BSTR *asOutParam() { setNull(); return &bstr; }
+
+    /** 
+     *  Static immutable null object. May be used for comparison purposes.
+     */
+    static const Bstr Null;
 
 private:
 
@@ -416,6 +424,11 @@ public:
      */
     char **asOutParam() { setNull(); return &str; }
 
+    /** 
+     *  Static immutable null object. May be used for comparison purposes.
+     */
+    static const Utf8Str Null;
+
 private:
 
     void safe_assign (const char *s)
@@ -567,4 +580,4 @@ public:
 
 } /* namespace com */
 
-#endif
+#endif /* ___VBox_com_string_h */

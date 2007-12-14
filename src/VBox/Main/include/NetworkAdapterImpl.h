@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -144,6 +146,9 @@ public:
     STDMETHOD(Detach)();
 
     // public methods only for internal purposes
+
+    HRESULT loadSettings (const settings::Key &aAdapterNode);
+    HRESULT saveSettings (settings::Key &aAdapterNode);
 
     bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }

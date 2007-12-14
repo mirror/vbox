@@ -1,4 +1,5 @@
 # $Id$
+
 ## @file
 # Makefile for the VBox Main module.
 #
@@ -26,7 +27,7 @@ DEFS	      += VBOX_WITH_E1000
 endif
 
 LIBRARIES        = VBoxCOM
-DLLS             = VBoxXML VBoxC
+DLLS             = VBoxXML VBoxSettings VBoxC
 PROGRAMS         = VBoxSVC
 ifneq ($(BUILD_TARGET),win)
  ifndef VBOX_WITH_XPCOM
@@ -100,7 +101,7 @@ $(call DIRDEP, $(PATH_OUT)/docs/Main):
 #
 
 VBoxSVC_TEMPLATE = VBOXMAINEXE
-VBoxSVC_DEFS = CFGLDR_HAVE_COM IN_CFGLDR_R3
+VBoxSVC_DEFS = CFGLDR_HAVE_COM IN_CFGLDR_R3 VBOX_MAIN_SETTINGS_ADDONS
 ifdef VBOX_WITH_VRDP
 VBoxSVC_DEFS += VBOX_VRDP
 endif
@@ -138,8 +139,9 @@ VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
 VBoxSVC_INCS = \
 	include \
 	$(PATH_VBoxSVC) \
-	$(PATH_VBoxCOM) \
 	$(PATH_CURRENT)
+VBoxSVC_INCS.win = \
+	$(PATH_VBoxCOM)
 ifdef VBOX_WITH_USB
  VBoxSVC_INCS.os2 = \
 	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
@@ -148,11 +150,13 @@ endif
 ifeq ($(BUILD_TARGET),win)
  VBoxSVC_LIBS += \
 	$(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxXML$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/VBoxXML$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBoxSettings$(VBOX_SUFF_LIB)
 else
  VBoxSVC_LIBS += \
 	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
-	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL)
+	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL) \
+	$(PATH_BIN)/VBoxSettings$(VBOX_SUFF_DLL)
 endif
 VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
@@ -166,9 +170,9 @@ VBoxSVC_SOURCES = \
 	USBDeviceFilterImpl.cpp \
 	USBProxyService.cpp \
 	VirtualBoxBase.cpp \
-	VirtualBoxXMLUtil.cpp \
 	VirtualBoxErrorInfoImpl.cpp \
 	VirtualBoxImpl.cpp \
+	VirtualBoxImplExtra.cpp \
 	MachineImpl.cpp \
 	SnapshotImpl.cpp \
 	HardDiskImpl.cpp \
@@ -313,16 +317,16 @@ VBoxC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 
 VBoxC_INCS          = \
 	include \
-	$(PATH_VBoxC) \
-	$(PATH_VBoxCOM)
-VBoxC_INCS.win     := \
+	$(PATH_VBoxC)
+VBoxC_INCS.win      = \
+	$(PATH_VBoxCOM) \
 	$(PATH_SUB_CURRENT)
 
 VBoxC_LDFLAGS.darwin = \
 	-install_name @executable_path/components/VBoxSVCM.dylib \
 	-exported_symbols_list $(PATH_TARGET)/VBoxC.def
 ifdef VBOX_USE_VCC80
-VBoxC_LDFLAGS.win = /MANIFEST
+ VBoxC_LDFLAGS.win = /MANIFEST
 endif
 
 VBoxC_LIBS += \
@@ -394,6 +398,7 @@ win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs
 #
 # VBoxXML
 #
+
 VBoxXML_TEMPLATE   = VBOXMAINDLL
 VBoxXML_SDKS       = VBOX_XALAN VBOX_XERCES
 ## @todo Why do we need this? Why isn't it in the template?!?
@@ -418,6 +423,21 @@ OTHER_CLEAN += $(PATH_TARGET)/SettingsConverter_xsl.h
 $(PATH_TARGET)/SettingsConverter_xsl.h: xml/SettingsConverter.xsl $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_TOOL,bin2c,VBoxXML,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) SettingsConverter_xsl $< $@
+
+
+#
+# VBoxSettings (will supercede VBoxXML when done)
+#
+
+VBoxSettings_TEMPLATE	= VBOXMAINDLL
+VBoxSettings_SDKS       = VBOX_LIBXML2 VBOX_ZLIB
+VBoxSettings_DEFS       = IN_VBOXSETTINGS_R3
+VBoxSettings_INCS       = \
+	include \
+	$(PATH_TARGET)
+VBoxSettings_SOURCES    = \
+	xml/Settings.cpp
+VBoxSettings_LDFLAGS.darwin = -install_name @executable_path/VBoxSettings.dylib -Wl,-x # no debug info please.
 
 
 #
@@ -493,14 +513,14 @@ VBOX_XML_SCHEMA.win    = xml/VirtualBox-settings-windows.xsd
 VBOX_XML_SCHEMA.os2    = xml/VirtualBox-settings-os2.xsd
 VBOX_XML_SCHEMA.solaris= xml/VirtualBox-settings-solaris.xsd
 
-VirtualBoxXMLUtil.cpp_DEPS = $(VBOX_XML_ENTITIES) $(VBOX_XML_ENTITIES_COMMON)
+VirtualBoxImplExtra.cpp_DEPS = $(VBOX_XML_ENTITIES) $(VBOX_XML_ENTITIES_COMMON)
 
 $(VBOX_XML_ENTITIES_COMMON): $(VBOX_XML_SCHEMA_COMMON) $(VBOX_BIN2C)
-	$(call MSG_TOOL,bin2c,VBoxXML,$<,$@)
+	$(call MSG_TOOL,bin2c,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) VirtualBox_settings_common_xsd $< $@
 
 $(VBOX_XML_ENTITIES): $(VBOX_XML_SCHEMA.$(BUILD_TARGET)) $(VBOX_BIN2C)
-	$(call MSG_TOOL,bin2c,VBoxXML,$<,$@)
+	$(call MSG_TOOL,bin2c,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) VirtualBox_settings_xsd $< $@
 
 OTHER_CLEAN     += $(VBOX_XML_ENTITIES) $(VBOX_XML_ENTITIES_COMMON)
@@ -518,7 +538,7 @@ VBoxSVC_DEPS    += $(VBOX_XML_SCHEMADEFS_H)
 VBoxSVC_INCS    += $(PATH_TARGET)
 
 $(VBOX_XML_SCHEMADEFS_H): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(BUILD_TARGET)) $(VBOX_XML_SCHEMA_COMMON)
-	$(call MSG_TOOL,xsltproc,VBoxXML,$<,$@)
+	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(filter-out $(VBOX_XML_SCHEMA_COMMON),$^)
 
 OTHER_CLEAN     += $(VBOX_XML_SCHEMADEFS_H)
@@ -555,16 +575,16 @@ ifneq ($(BUILD_TARGET),win)
 linux/helpers.cpp: $(IDLTYPELIB)
 
 $(IDLFILE): idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
-	$(call MSG_TOOL,xsltproc,VBoxXML,$<,$@)
+	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
 $(IDLTYPELIB): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLTYPELIB)))
-	$(call MSG_TOOL,xpidl,VBoxXML,$<,$@)
+	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
 $(IDLHEADER): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLHEADER)))
-	$(call MSG_TOOL,xpidl,VBoxXML,$<,$@)
+	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
 else
@@ -580,7 +600,7 @@ ifdef VBOX_WITH_VRDP
 endif
 
 $(IDLFILE): idl/midl.xsl $(XIDLFILE)
-	$(call MSG_TOOL,xsltproc,VBoxXML,$<,$@)
+	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 

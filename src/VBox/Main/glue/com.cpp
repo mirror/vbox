@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  * MS COM / XPCOM Abstraction Layer
  */
@@ -40,6 +42,8 @@
 
 #include "VBox/com/com.h"
 #include "VBox/com/assert.h"
+
+#include <VBox/com/Guid.h>
 
 
 #ifdef RT_OS_DARWIN
@@ -180,5 +184,8 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
 
     return vrc;
 }
+
+/* static */
+const Guid Guid::Empty; /* default ctor is OK */ 
 
 } /* namespace com */

@@ -1149,6 +1149,25 @@ SDK_VBOX_XALAN        = .
 SDK_VBOX_XALAN_INCS  ?= $(PATH_ROOT)/src/libs/xalan-1.10.0
 SDK_VBOX_XALAN_LIBS  ?= $(PATH_LIB)/VBox-xalan$(VBOX_SUFF_LIB)
 
+SDK_VBOX_LIBXML2          = .
+ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+ SDK_VBOX_LIBXML2_INCS   ?= $(PATH_ROOT)/src/libs/libxml2-2.6.30/include
+ SDK_VBOX_LIBXML2_LIBS   ?= $(PATH_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
+ SDK_VBOX_LIBXML2_DEFS   ?= LIBXML_STATIC
+ SDK_VBOX_LIBXML2_DEFS.win += WIN32 _WINDOWS _MBCS
+else
+ifeq ($(filter-out linux,$(BUILD_TARGET)),)
+ SDK_VBOX_LIBXML2_INCS      ?=
+ SDK_VBOX_LIBXML2_LIBS      ?=
+ SDK_VBOX_LIBXML2_CFLAGS    ?= $(shell pkg-config libxml-2.0 --cflags)
+ SDK_VBOX_LIBXML2_CXXFLAGS  ?= $(SDK_VBOX_LIBXML2_CFLAGS)
+ SDK_VBOX_LIBXML2_LDFLAGS   ?= $(shell pkg-config libxml-2.0 --libs)
+else
+ SDK_VBOX_LIBXML2_INCS   ?=
+ SDK_VBOX_LIBXML2_LIBS   ?= xml2
+endif
+endif
+
 SDK_VBOX_LIBPNG       = .
 SDK_VBOX_LIBPNG_INCS ?= $(PATH_ROOT)/src/libs/libpng-1.2.8
 SDK_VBOX_LIBPNG_LIBS ?= $(PATH_LIB)/VBox-libpng$(VBOX_SUFF_LIB)
@@ -1977,11 +1996,11 @@ ifeq ($(BUILD_TARGET),win)
 else # the GCC guys:
 
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wno-non-virtual-dtor -fshort-wchar -fpermissive $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -Wall -Wno-long-long -Wno-trigraphs -pipe -Wno-non-virtual-dtor -fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
-TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -Wall -Wno-long-long -Wno-trigraphs -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXMAINEXE_CFLAGS.x86          = -m32
 TEMPLATE_VBOXMAINEXE_CFLAGS.amd64        = -m64
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
@@ -2073,11 +2092,6 @@ ifeq ($(BUILD_TARGET),win)
 else
  TEMPLATE_VBOXMAINCLIENTEXE_DEFS = $(TEMPLATE_VBOXMAINEXE_DEFS) \
 	NDEBUG TRIMMED
- ## @todo remove
- ## Wonder why we compile main with defaults for these two and then drops it
- ## in the client executables...
- #TEMPLATE_VBOXMAINCLIENTEXE_CXXFLAGS = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS) \
- #	-fno-rtti -fno-exceptions
  TEMPLATE_VBOXMAINCLIENTEXE_CXXFLAGS.linux = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.linux) \
 	-pthread
  TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS.darwin = $(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin) \

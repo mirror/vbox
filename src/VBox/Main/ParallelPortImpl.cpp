@@ -160,6 +160,81 @@ void ParallelPort::uninit()
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ *  Loads settings from the given port node.
+ *  May be called once right after this object creation.
+ * 
+ *  @param aPortNode <Port> node.
+ * 
+ *  @note Locks this object for writing.
+ */
+HRESULT ParallelPort::loadSettings (const settings::Key &aPortNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aPortNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    /* Note: we assume that the default values for attributes of optional
+     * nodes are assigned in the Data::Data() constructor and don't do it
+     * here. It implies that this method may only be called after constructing
+     * a new BIOSSettings object while all its data fields are in the default
+     * values. Exceptions are fields whose creation time defaults don't match
+     * values that should be applied when these fields are not explicitly set
+     * in the settings file (for backwards compatibility reasons). This takes
+     * place when a setting of a newly created object must default to A while
+     * the same setting of an object loaded from the old settings file must
+     * default to B. */ 
+
+    /* enabled (required) */
+    mData->mEnabled = aPortNode.value <bool> ("enabled");
+    /* I/O base (required) */
+    mData->mIOBase = aPortNode.value <ULONG> ("IOBase");
+    /* IRQ (required) */
+    mData->mIRQ = aPortNode.value <ULONG> ("IRQ");
+    /* device path (may be null) */
+    /// @todo report an error if enabled is true and path is empty or null!
+    //  The same applies to COMSETTER(Path).
+    mData->mPath = aPortNode.stringValue ("path");
+
+    return S_OK;
+}
+
+/** 
+ *  Saves settings to the given port node.
+ * 
+ *  Note that the given Port node is comletely empty on input.
+ *
+ *  @param aPortNode <Port> node.
+ * 
+ *  @note Locks this object for reading. 
+ */
+HRESULT ParallelPort::saveSettings (settings::Key &aPortNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aPortNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    aPortNode.setValue <bool> ("enabled", !!mData->mEnabled);
+    aPortNode.setValue <ULONG> ("IOBase", mData->mIOBase, 16);
+    aPortNode.setValue <ULONG> ("IRQ", mData->mIRQ);
+
+    /* 'path' is optional in XML */
+    if (!mData->mPath.isEmpty())
+        aPortNode.setValue <Bstr> ("path", mData->mPath);
+
+    return S_OK;
+}
+
+/**
  *  @note Locks this object for writing.
  */
 bool ParallelPort::rollback()
@@ -232,81 +307,6 @@ void ParallelPort::copyFrom (ParallelPort *aThat)
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);
-}
-
-HRESULT ParallelPort::loadSettings (CFGNODE aNode, ULONG aSlot)
-{
-    LogFlowThisFunc (("aMachine=%p\n", aNode));
-
-    AssertReturn (aNode, E_FAIL);
-
-    AutoCaller autoCaller (this);
-    AssertComRCReturnRC (autoCaller.rc());
-
-    AutoLock alock (this);
-
-    CFGNODE portNode = NULL;
-    CFGLDRGetChildNode (aNode, "Port", aSlot, &portNode);
-
-    /* slot number (required) */
-    /* slot unicity is guaranteed by XML Schema */
-    uint32_t uSlot = 0;
-    CFGLDRQueryUInt32 (portNode, "slot", &uSlot);
-    /* enabled (required) */
-    bool fEnabled = false;
-    CFGLDRQueryBool (portNode, "enabled", &fEnabled);
-    /* I/O base (required) */
-    uint32_t uIOBase;
-    CFGLDRQueryUInt32 (portNode, "IOBase", &uIOBase);
-    /* IRQ (required) */
-    uint32_t uIRQ;
-    CFGLDRQueryUInt32 (portNode, "IRQ", &uIRQ);
-    /* device path */
-    Bstr path;
-    CFGLDRQueryBSTR   (portNode, "path", path.asOutParam());
-
-    mData->mEnabled = fEnabled;
-    mData->mSlot    = uSlot;
-    mData->mIOBase  = uIOBase;
-    mData->mIRQ     = uIRQ;
-    mData->mPath    = path;
-
-    return S_OK;
-}
-
-/** 
- *  Saves the port settings to the given <Port> node.
- *
- *  Note that the given node is always empty so it is not necessary to delete
- *  old values.
- * 
- *  @param aNode Node to save the settings to.
- * 
- *  @return 
- */
-HRESULT ParallelPort::saveSettings (CFGNODE aNode)
-{
-    AssertReturn (aNode, E_FAIL);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    CFGNODE portNode = 0;
-    int vrc = CFGLDRAppendChildNode (aNode, "Port", &portNode);
-    ComAssertRCRet (vrc, E_FAIL);
-
-    CFGLDRSetUInt32   (portNode, "slot",    mData->mSlot);
-    CFGLDRSetBool     (portNode, "enabled", !!mData->mEnabled);
-    CFGLDRSetUInt32Ex (portNode, "IOBase",  mData->mIOBase, 16);
-    CFGLDRSetUInt32   (portNode, "IRQ",     mData->mIRQ);
-
-    /* 'path' is optional in XML */
-    if (!mData->mPath.isEmpty())
-        CFGLDRSetBSTR (portNode, "path", mData->mPath);
-
-    return S_OK;
 }
 
 // IParallelPort properties

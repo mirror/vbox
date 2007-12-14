@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM base classes implementation
@@ -929,3 +931,94 @@ void VirtualBoxBaseWithChildren::removeDependentChild (const ComPtr <IUnknown> &
     NOREF (result);
 }
 
+#if defined VBOX_MAIN_SETTINGS_ADDONS
+
+// Settings API additions
+////////////////////////////////////////////////////////////////////////////////
+
+namespace settings
+{
+
+template<> stdx::char_auto_ptr
+ToString <com::Bstr> (const com::Bstr &aValue, unsigned int aExtra)
+{
+    stdx::char_auto_ptr result;
+
+    if (aValue.raw() == NULL)
+        throw ENoValue();
+
+    /* The only way to cause RTUtf16ToUtf8Ex return a number of bytes needed
+     * w/o allocating the result buffer itself is to provide that both cch
+     * and *ppsz are not NULL. */
+    char dummy [1];
+    char *dummy2 = dummy;
+    size_t strLen = 1;
+
+    int vrc = RTUtf16ToUtf8Ex (aValue.raw(), RTSTR_MAX,
+                               &dummy2, strLen, &strLen);
+    if (RT_SUCCESS (vrc))
+    {
+        /* the string only contains '\0' :) */
+        result.reset (new char [1]);
+        result.get() [0] = '\0';
+        return result;
+    }
+
+    if (vrc == VERR_BUFFER_OVERFLOW)
+    {
+        result.reset (new char [strLen + 1]);
+        char *buf = result.get();
+        vrc = RTUtf16ToUtf8Ex (aValue.raw(), RTSTR_MAX, &buf, strLen + 1, NULL);
+    }
+
+    if (RT_FAILURE (vrc))
+        throw LogicError (RT_SRC_POS);
+
+    return result;
+}
+
+template<> com::Guid FromString <com::Guid> (const char *aValue)
+{
+    if (aValue == NULL)
+        throw ENoValue();
+
+    /* For settings, the format is always {XXX...XXX} */
+    char buf [RTUUID_STR_LENGTH];
+    if (aValue == NULL || *aValue != '{' ||
+        strlen (aValue) != RTUUID_STR_LENGTH + 1 ||
+        aValue [RTUUID_STR_LENGTH] != '}')
+        throw ENoConversion (FmtStr ("'%s' is not Guid", aValue));
+
+    /* strip { and } */
+    memcpy (buf, aValue + 1, RTUUID_STR_LENGTH - 1);
+    buf [RTUUID_STR_LENGTH - 1] = '\0';
+    /* we don't use Guid (const char *) because we want to throw
+     * ENoConversion on format error */
+    RTUUID uuid;
+    int vrc = RTUuidFromStr (&uuid, buf);
+    if (RT_FAILURE (vrc))
+        throw ENoConversion (FmtStr ("'%s' is not Guid (%Vrc)", aValue, vrc));
+        
+    return com::Guid (uuid);
+}
+
+template<> stdx::char_auto_ptr
+ToString <com::Guid> (const com::Guid &aValue, unsigned int aExtra)
+{
+    /* For settings, the format is always {XXX...XXX} */
+    stdx::char_auto_ptr result (new char [RTUUID_STR_LENGTH + 2]);
+
+    int vrc = RTUuidToStr (aValue.raw(), result.get() + 1, RTUUID_STR_LENGTH);
+    if (RT_FAILURE (vrc))
+        throw LogicError (RT_SRC_POS);
+
+    result.get() [0] = '{';
+    result.get() [RTUUID_STR_LENGTH] = '}';
+    result.get() [RTUUID_STR_LENGTH + 1] = '\0';
+
+    return result;
+}
+
+} /* namespace settings */
+
+#endif /* VBOX_MAIN_SETTINGS_ADDONS */

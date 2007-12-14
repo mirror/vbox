@@ -17,7 +17,10 @@
 
 #include "FloppyDriveImpl.h"
 #include "MachineImpl.h"
+#include "HostImpl.h"
+#include "HostFloppyDriveImpl.h"
 #include "VirtualBoxImpl.h"
+
 #include "Logging.h"
 
 #include <iprt/string.h>
@@ -353,6 +356,152 @@ STDMETHODIMP FloppyDrive::GetHostDrive (IHostFloppyDrive **aHostDrive)
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
+
+/** 
+ *  Loads settings from the given machine node.
+ *  May be called once right after this object creation.
+ * 
+ *  @param aMachineNode <Machine> node.
+ * 
+ *  @note Locks this object for writing. 
+ */
+HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    /* Note: we assume that the default values for attributes of optional
+     * nodes are assigned in the Data::Data() constructor and don't do it
+     * here. It implies that this method may only be called after constructing
+     * a new BIOSSettings object while all its data fields are in the default
+     * values. Exceptions are fields whose creation time defaults don't match
+     * values that should be applied when these fields are not explicitly set
+     * in the settings file (for backwards compatibility reasons). This takes
+     * place when a setting of a newly created object must default to A while
+     * the same setting of an object loaded from the old settings file must
+     * default to B. */ 
+
+    HRESULT rc = S_OK;
+
+    /* Floppy drive (required, contains either Image or HostDrive or nothing) */
+    Key floppyDriveNode = aMachineNode.key ("FloppyDrive");
+
+    /* optional, defaults to true */
+    mData->mEnabled = floppyDriveNode.value <bool> ("enabled");
+
+    Key typeNode;
+
+    if (!(typeNode = floppyDriveNode.findKey ("Image")).isNull())
+    {
+        Guid uuid = typeNode.value <Guid> ("uuid");
+        rc = MountImage (uuid);
+        CheckComRCReturnRC (rc);
+    }
+    else if (!(typeNode = floppyDriveNode.findKey ("HostDrive")).isNull())
+    {
+
+        Bstr src = typeNode.stringValue ("src");
+
+        /* find the correspoding object */
+        ComObjPtr <Host> host = mParent->virtualBox()->host();
+
+        ComPtr <IHostFloppyDriveCollection> coll;
+        rc = host->COMGETTER(FloppyDrives) (coll.asOutParam());
+        AssertComRC (rc);
+
+        ComPtr <IHostFloppyDrive> drive;
+        rc = coll->FindByName (src, drive.asOutParam());
+        if (SUCCEEDED (rc))
+        {
+            rc = CaptureHostDrive (drive);
+            CheckComRCReturnRC (rc);
+        }
+        else if (rc == E_INVALIDARG)
+        {
+            /* the host DVD drive is not currently available. we
+             * assume it will be available later and create an
+             * extra object now */
+            ComObjPtr <HostFloppyDrive> hostDrive;
+            hostDrive.createObject();
+            rc = hostDrive->init (src);
+            AssertComRC (rc);
+            rc = CaptureHostDrive (hostDrive);
+            CheckComRCReturnRC (rc);
+        }
+        else
+            AssertComRC (rc);
+    }
+
+    return S_OK;
+}
+
+/** 
+ *  Saves settings to the given machine node.
+ * 
+ *  @param aMachineNode <Machine> node.
+ * 
+ *  @note Locks this object for reading. 
+ */
+HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
+{
+    using namespace settings;
+
+    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    Key node = aMachineNode.createKey ("FloppyDrive");
+
+    node.setValue <bool> ("enabled", !!mData->mEnabled);
+
+    switch (mData->mDriveState)
+    {
+        case DriveState_ImageMounted:
+        {
+            Assert (!mData->mFloppyImage.isNull());
+
+            Guid id;
+            HRESULT rc = mData->mFloppyImage->COMGETTER(Id) (id.asOutParam());
+            AssertComRC (rc);
+            Assert (!id.isEmpty());
+
+            Key imageNode = node.createKey ("Image");
+            imageNode.setValue <Guid> ("uuid", id);
+            break;
+        }
+        case DriveState_HostDriveCaptured:
+        {
+            Assert (!mData->mHostDrive.isNull());
+
+            Bstr name;
+            HRESULT  rc = mData->mHostDrive->COMGETTER(Name) (name.asOutParam());
+            AssertComRC (rc);
+            Assert (!name.isEmpty());
+
+            Key hostDriveNode = node.createKey ("HostDrive");
+            hostDriveNode.setValue <Bstr> ("src", name);
+            break;
+        }
+        case DriveState_NotMounted:
+            /* do nothing, i.e.leave the drive node empty */
+            break;
+        default:
+            ComAssertMsgFailedRet (("Invalid drive state: %d\n",
+                                      mData->mDriveState),
+                                     E_FAIL);
+    }
+
+    return S_OK;
+}
 
 /** 
  *  @note Locks this object for writing.

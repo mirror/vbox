@@ -234,6 +234,30 @@ __END_DECLS
     } else do {} while (0)
 #endif
 
+/** @def AssertBreakVoid
+ * Assert that an expression is true and breaks if it isn't.
+ * In RT_STRICT mode it will hit a breakpoint before returning.
+ *
+ * @param   expr    Expression which should be true.
+ */
+#ifdef RT_STRICT
+# define AssertBreakVoid(expr) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            AssertBreakpoint(); \
+            break; \
+        } \
+    } while (0)
+#else
+# define AssertBreakVoid(expr) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+            break; \
+    } while (0)
+#endif
+
 
 /** @def AssertMsg
  * Assert that an expression is true. If it's not print message and hit breakpoint.
@@ -333,6 +357,32 @@ __END_DECLS
     } else do {} while (0)
 #endif
 
+/** @def AssertMsgBreakVoid
+ * Assert that an expression is true and breaks if it isn't.
+ * In RT_STRICT mode it will hit a breakpoint before returning.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   a       printf argument list (in parenthesis).
+ */
+#ifdef RT_STRICT
+# define AssertMsgBreakVoid(expr, a)  \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            AssertMsg2 a; \
+            AssertBreakpoint(); \
+            break; \
+        } \
+    } while (0)
+#else
+# define AssertMsgBreakVoid(expr, a) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+            break; \
+    } while (0)
+#endif
+
 
 /** @def AssertFailed
  * An assertion failed hit breakpoint.
@@ -404,6 +454,23 @@ __END_DECLS
         stmt; \
         break; \
     } else do {} while (0)
+#endif
+
+/** @def AssertFailedBreakVoid
+ * An assertion failed, hit breakpoint (RT_STRICT mode only) and break.
+ */
+#ifdef RT_STRICT
+# define AssertFailedBreakVoid()  \
+    do { \
+        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertBreakpoint(); \
+        break; \
+    } while (0)
+#else
+# define AssertFailedBreakVoid()  \
+    do { \
+        break; \
+    } while (0)
 #endif
 
 
@@ -489,6 +556,26 @@ __END_DECLS
     } else do {} while (0)
 #endif
 
+/** @def AssertMsgFailedBreakVoid
+ * An assertion failed, hit breakpoint with message (RT_STRICT mode only) and break.
+ *
+ * @param   a       printf argument list (in parenthesis).
+ */
+#ifdef RT_STRICT
+# define AssertMsgFailedBreakVoid(a)  \
+    do { \
+        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertMsg2 a; \
+        AssertBreakpoint(); \
+        break; \
+    } while (0)
+#else
+# define AssertMsgFailedBreakVoid(a)  \
+    do { \
+        break; \
+    } while (0)
+#endif
+
 
 /** @def AssertReleaseBreakpoint()
  * Assertion Breakpoint.
@@ -563,13 +650,30 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  */
 #define AssertReleaseBreak(expr, stmt)  \
-    if (RT_UNLIKELY(!(expr))) { \
-        AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertReleaseBreakpoint(); \
-        stmt; \
-        break; \
-    } else do {} while (0)
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            AssertReleaseBreakpoint(); \
+            stmt; \
+            break; \
+        } \
+    } while (0)
 
+/** @def AssertReleaseBreakVoid
+ * Assert that an expression is true, hit a breakpoing and break if it isn't.
+ *
+ * @param   expr    Expression which should be true.
+ */
+#define AssertReleaseBreakVoid(expr)  \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            AssertReleaseBreakpoint(); \
+            break; \
+        } \
+    } while (0)
 
 
 /** @def AssertReleaseMsg
@@ -606,7 +710,7 @@ __END_DECLS
         } \
     } while (0)
 
-/** @def AssertReleaseMsgReturn
+/** @def AssertReleaseMsgReturnVoid
  * Assert that an expression is true, print the message and hit a breakpoint and return if it isn't.
  *
  * @param   expr    Expression which should be true.
@@ -640,6 +744,23 @@ __END_DECLS
         break; \
     } else do {} while (0)
 
+/** @def AssertReleaseMsgBreakVoid
+ * Assert that an expression is true, print the message and hit a breakpoint and break if it isn't.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   a       printf argument list (in parenthesis).
+ */
+#define AssertReleaseMsgBreakVoid(expr, a)  \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            AssertMsg2 a; \
+            AssertReleaseBreakpoint(); \
+            break; \
+        } \
+    } while (0)
+
 
 /** @def AssertReleaseFailed
  * An assertion failed, hit a breakpoint.
@@ -662,7 +783,7 @@ __END_DECLS
         return (rc); \
     } while (0)
 
-/** @def AssertReleaseFailedReturn
+/** @def AssertReleaseFailedReturnVoid
  * An assertion failed, hit a breakpoint and return.
  */
 #define AssertReleaseFailedReturnVoid()  \
@@ -685,6 +806,16 @@ __END_DECLS
         stmt; \
         break; \
     } else do {} while (0)
+
+/** @def AssertReleaseFailedBreakVoid
+ * An assertion failed, hit a breakpoint and break.
+ */
+#define AssertReleaseFailedBreakVoid()  \
+    do { \
+        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertReleaseBreakpoint(); \
+        break; \
+    } while (0)
 
 
 /** @def AssertReleaseMsgFailed
@@ -742,6 +873,18 @@ __END_DECLS
         break; \
     } else do {} while (0)
 
+/** @def AssertReleaseMsgFailedBreakVoid
+ * An assertion failed, print a message, hit a breakpoint and break.
+ *
+ * @param   a   printf argument list (in parenthesis).
+ */
+#define AssertReleaseMsgFailedBreakVoid(a) \
+    do { \
+        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        AssertMsg2 a; \
+        AssertReleaseBreakpoint(); \
+        break; \
+    } while (0)
 
 
 /** @def AssertFatal
@@ -840,6 +983,14 @@ __END_DECLS
  */
 #define AssertRCBreak(rc, stmt)   AssertMsgRCBreak(rc, ("%Vra\n", (rc)), stmt)
 
+/** @def AssertRCBreakVoid
+ * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break if it isn't.
+ *
+ * @param   rc      iprt status code.
+ * @remark  rc is references multiple times. In release mode is NOREF()'ed.
+ */
+#define AssertRCBreakVoid(rc)   AssertMsgRCBreakVoid(rc, ("%Vra\n", (rc)))
+
 /** @def AssertMsgRC
  * Asserts a iprt status code successful.
  *
@@ -890,6 +1041,18 @@ __END_DECLS
 #define AssertMsgRCBreak(rc, msg, stmt) \
     do { AssertMsgBreak(RT_SUCCESS_NP(rc), msg, stmt); NOREF(rc); } while (0)
 
+/** @def AssertMsgRCBreakVoid
+ * Asserts a iprt status code successful and if it's not break.
+ *
+ * If RT_STRICT is defined the message will be printed and a breakpoint hit before it breaks
+ *
+ * @param   rc      iprt status code.
+ * @param   msg     printf argument list (in parenthesis).
+ * @remark  rc is references multiple times. In release mode is NOREF()'ed.
+ */
+#define AssertMsgRCBreakVoid(rc, msg) \
+    do { AssertMsgBreakVoid(RT_SUCCESS(rc), msg); NOREF(rc); } while (0)
+
 /** @def AssertRCSuccess
  * Asserts an iprt status code equals VINF_SUCCESS.
  *
@@ -925,6 +1088,14 @@ __END_DECLS
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
 #define AssertRCSuccessBreak(rc, stmt)    AssertMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)), stmt)
+
+/** @def AssertRCSuccessBreakVoid
+ * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and break if it isn't.
+ *
+ * @param   rc      iprt status code.
+ * @remark  rc is references multiple times. In release mode is NOREF()'ed.
+ */
+#define AssertRCSuccessBreakVoid(rc)    AssertMsgBreakVoid((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
 
 
 /** @def AssertReleaseRC
@@ -971,6 +1142,17 @@ __END_DECLS
  * @remark  rc is references multiple times.
  */
 #define AssertReleaseRCBreak(rc, stmt) AssertReleaseMsgRCBreak(rc, ("%Vra\n", (rc)), stmt)
+
+/** @def AssertReleaseRCBreakVoid
+ * Asserts a iprt status code successful, breaking if it isn't.
+ *
+ * On failure information about the error will be printed, a breakpoint hit
+ * and finally breaking the current statement if the breakpoint is somehow ignored.
+ *
+ * @param   rc      iprt status code.
+ * @remark  rc is references multiple times.
+ */
+#define AssertReleaseRCBreakVoid(rc) AssertReleaseMsgRCBreakVoid(rc, ("%Vra\n", (rc)))
 
 /** @def AssertReleaseMsgRC
  * Asserts a iprt status code successful.
@@ -1021,6 +1203,18 @@ __END_DECLS
  */
 #define AssertReleaseMsgRCBreak(rc, msg, stmt)    AssertReleaseMsgBreak(RT_SUCCESS_NP(rc), msg, stmt)
 
+/** @def AssertReleaseMsgRCBreakVoid
+ * Asserts a iprt status code successful.
+ *
+ * On failure a custom message is printed, a breakpoint is hit, and finally
+ * breaking the current status if the breakpoint is showhow ignored.
+ *
+ * @param   rc      iprt status code.
+ * @param   msg     printf argument list (in parenthesis).
+ * @remark  rc is references multiple times.
+ */
+#define AssertReleaseMsgRCBreakVoid(rc, msg)    AssertReleaseMsgBreakVoid(RT_SUCCESS(rc), msg)
+
 /** @def AssertReleaseRCSuccess
  * Asserts that an iprt status code equals VINF_SUCCESS.
  *
@@ -1065,6 +1259,17 @@ __END_DECLS
  * @remark  rc is references multiple times.
  */
 #define AssertReleaseRCSuccessBreak(rc, stmt)     AssertReleaseMsgBreak((rc) == VINF_SUCCESS, ("%Vra\n", (rc)), stmt)
+
+/** @def AssertReleaseRCSuccessBreakVoid
+ * Asserts that an iprt status code equals VINF_SUCCESS.
+ *
+ * On failure information about the error will be printed, a breakpoint hit
+ * and finally breaking the current statement if the breakpoint is somehow ignored.
+ *
+ * @param   rc      iprt status code.
+ * @remark  rc is references multiple times.
+ */
+#define AssertReleaseRCSuccessBreakVoid(rc)     AssertReleaseMsgBreakVoid((rc) == VINF_SUCCESS, ("%Vra\n", (rc)))
 
 
 /** @def AssertFatalRC
@@ -1129,6 +1334,13 @@ __END_DECLS
  */
 #define AssertPtrBreak(pv, stmt)  AssertMsgBreak(VALID_PTR(pv), ("%p\n", (pv)), stmt)
 
+/** @def AssertPtrBreakVoid
+ * Asserts that a pointer is valid.
+ *
+ * @param   pv      The pointer.
+ */
+#define AssertPtrBreakVoid(pv)  AssertMsgBreakVoid(VALID_PTR(pv), ("%p\n", (pv)))
+
 /** @def AssertPtrNull
  * Asserts that a pointer is valid or NULL.
  *
@@ -1158,6 +1370,13 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  */
 #define AssertPtrNullBreak(pv, stmt)  AssertMsgBreak(VALID_PTR(pv) || (pv) == NULL, ("%p\n", (pv)), stmt)
+
+/** @def AssertPtrNullBreakVoid
+ * Asserts that a pointer is valid or NULL.
+ *
+ * @param   pv      The pointer.
+ */
+#define AssertPtrNullBreakVoid(pv)  AssertMsgBreakVoid(VALID_PTR(pv) || (pv) == NULL, ("%p\n", (pv)))
 
 
 __BEGIN_DECLS

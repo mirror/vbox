@@ -25,6 +25,8 @@
 
 #include "VBox/com/VirtualBox.h"
 
+#include <VBox/settings.h>
+
 #include "AutoLock.h"
 
 using namespace com;
@@ -120,7 +122,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  A special version of the Assert macro to be used within VirtualBoxBase
+ *  Special version of the Assert macro to be used within VirtualBoxBase
  *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
  *
  *  In the debug build, this macro is equivalent to Assert.
@@ -144,7 +146,7 @@ public:
 #endif
 
 /**
- *  A special version of the AssertMsg macro to be used within VirtualBoxBase
+ *  Special version of the AssertMsg macro to be used within VirtualBoxBase
  *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
  *
  *  See ComAssert for more info.
@@ -166,7 +168,7 @@ public:
 #endif
 
 /**
- *  A special version of the AssertRC macro to be used within VirtualBoxBase
+ *  Special version of the AssertRC macro to be used within VirtualBoxBase
  *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
  *
  *  See ComAssert for more info.
@@ -180,7 +182,7 @@ public:
 #endif
 
 /**
- *  A special version of the AssertMsgRC macro to be used within VirtualBoxBase
+ *  Special version of the AssertMsgRC macro to be used within VirtualBoxBase
  *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
  *
  *  See ComAssert for more info.
@@ -196,7 +198,7 @@ public:
 
 
 /**
- *  A special version of the AssertFailed macro to be used within VirtualBoxBase
+ *  Special version of the AssertFailed macro to be used within VirtualBoxBase
  *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
  *
  *  See ComAssert for more info.
@@ -213,7 +215,7 @@ public:
 #endif
 
 /**
- *  A special version of the AssertMsgFailed macro to be used within VirtualBoxBase
+ *  Special version of the AssertMsgFailed macro to be used within VirtualBoxBase
  *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
  *
  *  See ComAssert for more info.
@@ -233,7 +235,33 @@ public:
 #endif
 
 /**
- *  A special version of the AssertComRC macro to be used within VirtualBoxBase
+ *  Special version of the ComAssertMsgFailed macro that additionally takes
+ *  line number, file and function arguments to inject an assertion position
+ *  that differs from the position where this macro is instantiated.
+ *
+ *  @param   a                  printf argument list (in parenthesis).
+ *  @param   file, line, func   Line number (int), file and function (const char *).
+ */
+#if defined (DEBUG)
+#define ComAssertMsgFailedPos(a, file, line, func)              \
+    do {                                                        \
+        AssertMsg1 ((const char *) 0, line, file, func);        \
+        AssertMsg2 a;                                           \
+        AssertBreakpoint();                                     \
+    } while (0)
+#else
+#define ComAssertMsgFailedPos(a, file, line, func)              \
+    do {                                                        \
+        setError (E_FAIL,                                       \
+                  "Assertion failed at '%s' (%d) in %s.\n"      \
+                  "%s.\n"                                       \
+                  "Please contact the product vendor!",         \
+                  file, line, func, Utf8StrFmt a .raw());       \
+    } while (0)
+#endif
+
+/**
+ *  Special version of the AssertComRC macro to be used within VirtualBoxBase
  *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
  *
  *  See ComAssert for more info.
@@ -297,6 +325,33 @@ public:
 /** Special version of ComAssertComRC that just breaks if rc does not succeed */
 #define ComAssertComRCBreakRC(rc)                 \
     if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { break; } } else do {} while (0)
+
+
+/** Special version of ComAssert that evaulates eval and throws it if expr fails */
+#define ComAssertThrow(expr, eval)                \
+    if (1) { ComAssert (expr); if (!(expr)) { throw (eval); } } else do {} while (0)
+/** Special version of ComAssertMsg that evaulates eval and throws it if expr fails */
+#define ComAssertMsgThrow(expr, a, eval)          \
+    if (1)  { ComAssertMsg (expr, a); if (!(expr)) { throw (eval); } } else do {} while (0)
+/** Special version of ComAssertRC that evaulates eval and throws it if vrc does not succeed */
+#define ComAssertRCThrow(vrc, eval)               \
+    if (1)  { ComAssertRC (vrc); if (!VBOX_SUCCESS (vrc)) { throw (eval); } } else do {} while (0)
+/** Special version of ComAssertMsgRC that evaulates eval and throws it if vrc does not succeed */
+#define ComAssertMsgRCThrow(vrc, msg, eval)       \
+    if (1)  { ComAssertMsgRC (vrc, msg); if (!VBOX_SUCCESS (vrc)) { throw (eval); } } else do {} while (0)
+/** Special version of ComAssertFailed that evaulates eval and throws it */
+#define ComAssertFailedThrow(eval)                \
+    if (1)  { ComAssertFailed(); { throw (eval); } } else do {} while (0)
+/** Special version of ComAssertMsgFailed that evaulates eval and throws it */
+#define ComAssertMsgFailedThrow(msg, eval)        \
+    if (1)  { ComAssertMsgFailed (msg); { throw (eval); } } else do {} while (0)
+/** Special version of ComAssertComRC that evaulates eval and throws it if rc does not succeed */
+#define ComAssertComRCThrow(rc, eval)             \
+    if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { throw (eval); } } else do {} while (0)
+/** Special version of ComAssertComRC that just throws rc if rc does not succeed */
+#define ComAssertComRCThrowRC(rc)                 \
+    if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { throw rc; } } else do {} while (0)
+
 
 /// @todo (dmik) remove after we switch to VirtualBoxBaseNEXT completely
 /**
@@ -1922,5 +1977,38 @@ protected:
 
     D *mBackupData;
 };
+
+#if defined VBOX_MAIN_SETTINGS_ADDONS
+
+/** 
+ * Settinsg API additions.
+ */
+namespace settings
+{
+
+/// @todo once string data in Bstr and Utf8Str is auto_ref_ptr, enable the
+/// code below
+
+#if 0
+
+/** Specialization of FromString for Bstr. */
+template<> com::Bstr FromString <com::Bstr> (const char *aValue);
+
+#endif
+
+/** Specialization of ToString for Bstr. */
+template<> stdx::char_auto_ptr
+ToString <com::Bstr> (const com::Bstr &aValue, unsigned int aExtra);
+
+/** Specialization of FromString for Guid. */
+template<> com::Guid FromString <com::Guid> (const char *aValue);
+
+/** Specialization of ToString for Guid. */
+template<> stdx::char_auto_ptr
+ToString <com::Guid> (const com::Guid &aValue, unsigned int aExtra);
+
+} /* namespace settings */
+
+#endif /* VBOX_MAIN_SETTINGS_ADDONS */
 
 #endif // ____H_VIRTUALBOXBASEIMPL

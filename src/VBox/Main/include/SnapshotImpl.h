@@ -21,6 +21,8 @@
 #include "VirtualBoxBase.h"
 #include "Collection.h"
 
+#include <iprt/time.h>
+
 #include <list>
 
 class SnapshotMachine;
@@ -41,7 +43,7 @@ public:
         Guid mId;
         Bstr mName;
         Bstr mDescription;
-        LONG64 mTimeStamp;
+        RTTIMESPEC mTimeStamp;
         ComObjPtr <SnapshotMachine> mMachine;
     };
 
@@ -64,7 +66,7 @@ public:
 
     // public initializer/uninitializer only for internal purposes
     HRESULT init (const Guid &aId, INPTR BSTR aName, INPTR BSTR aDescription,
-                  LONG64 aTimeStamp, SnapshotMachine *aMachine,
+                  RTTIMESPEC aTimeStamp, SnapshotMachine *aMachine,
                   Snapshot *aParent);
     void uninit();
 

@@ -20,8 +20,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/assert.h>
-#undef CFGLDR_HAVE_COM
-#include <VBox/cfgldr.h>
 
 void __reference_stuff(void);
 void __reference_stuff(void)

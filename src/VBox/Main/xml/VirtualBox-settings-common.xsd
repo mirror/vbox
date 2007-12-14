@@ -302,7 +302,7 @@
   <xsd:attribute name="serialnumber" type="xsd:token"/>
   <xsd:attribute name="port" type="xsd:token"/>
   <xsd:attribute name="remote" type="xsd:token"/>
-  <xsd:attribute name="maskedInterfaces" type="xsd:unsignedInt"/>
+  <xsd:attribute name="maskedInterfaces" type="xsd:unsignedInt" default="0"/>
 </xsd:complexType>
 
 <xsd:complexType name="THostUSBDeviceFilter">
@@ -436,7 +436,7 @@
 </xsd:complexType>
 
 <xsd:complexType name="TRemoteDisplay">
-  <xsd:attribute name="enabled" type="xsd:boolean"/>
+  <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
   <xsd:attribute name="port" type="xsd:unsignedInt" default="0"/>
   <xsd:attribute name="netAddress" type="xsd:token" default=""/>
   <xsd:attribute name="authType" type="TVRDPAuthType" default="null"/>
@@ -643,7 +643,7 @@
 
 <xsd:complexType name="THardware">
   <xsd:all>
-    <xsd:element name="CPU" type="TCPU" minOccurs = "0"/>
+    <xsd:element name="CPU" type="TCPU" minOccurs="0"/>
     <xsd:element name="Memory" type="TMemory"/>
     <xsd:element name="Boot" type="TBoot">
       <xsd:unique name="THardware-Boot-Order">
@@ -707,7 +707,7 @@
   <xsd:attribute name="snapshotFolder" type="TLocalFile"/>
   <!--- @todo (dmik) make lastStateChange required on next format change! -->
   <xsd:attribute name="lastStateChange" type="TPresentDateTimeUTC"/>
-  <xsd:attribute name="aborted" type="xsd:boolean"/>
+  <xsd:attribute name="aborted" type="xsd:boolean" default="false"/>
   <xsd:attribute name="currentStateModified" type="xsd:boolean" default="true"/>
 </xsd:complexType>
 
