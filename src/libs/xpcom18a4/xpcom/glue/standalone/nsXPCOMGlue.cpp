@@ -113,7 +113,7 @@ nsresult XPCOMGlueStartup(const char* xpcomFile)
             libSpec.value.pathname = xpcomFile;
 
         xpcomLib = PR_LoadLibraryWithFlags(libSpec, PR_LD_LAZY|PR_LD_GLOBAL);
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN /* vbox */
         /* works around bundle problem. */
         if (!xpcomLib) {
             const char *home = PR_GetEnv("VBOX_XPCOM_HOME");
