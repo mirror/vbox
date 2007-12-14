@@ -600,8 +600,9 @@ endif
 ifdef VBOX_WITH_PULSE
  Drivers_DEFS.linux   += VBOX_WITH_PULSE
  Drivers_SOURCES.linux+= \
-	Audio/pulseaudio.c
- VBoxDD_LIBS.linux    += pulse
+	Audio/pulseaudio.c \
+	Audio/pulse_stubs.c
+# VBoxDD_LIBS.linux    += pulse
 endif
 
 ifdef VBOX_WITH_USB
