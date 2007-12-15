@@ -316,6 +316,20 @@ int main()
          */
         if (!g_cFailed)
         {
+            /* sort it by apic id first. */
+            bool fDone;
+            do
+            {
+                for (i = 1, fDone = true; i < cCpus; i++)
+                    if (s_aData[i - 1].u8ApicId > s_aData[i].u8ApicId)
+                    {
+                        TSCDATA Tmp = s_aData[i - 1];
+                        s_aData[i - 1] = s_aData[i];
+                        s_aData[i] = Tmp;
+                        fDone = false;
+                    }
+            } while (!fDone);
+
             RTPrintf(" #  ID  TSC\n"
                      "-----------------------\n");
             for (i = 0; i < cCpus; i++)
@@ -329,18 +343,20 @@ int main()
      * Destroy the threads.
      */
     ASMAtomicXchgSize(&g_fDone, true);
-    for (i = 1; i < cCpus; i++)
-    {
-        int rc = RTThreadUserSignal(s_aData[i].Thread);
-        if (RT_FAILURE(rc))
-            RTPrintf("tstTSC: WARNING - RTThreadUserSignal(%#u) -> rc=%Rrc! (2)\n", i, rc);
-    }
-    for (i = 1; i < cCpus; i++)
-    {
-        int rc = RTThreadWait(s_aData[i].Thread, 5000, NULL);
-        if (RT_FAILURE(rc))
-            RTPrintf("tstTSC: WARNING - RTThreadWait(%#u) -> rc=%Rrc!\n", i, rc);
-    }
+    for (i = 0; i < cCpus; i++)
+        if (s_aData[i].Thread != RTThreadSelf())
+        {
+            int rc = RTThreadUserSignal(s_aData[i].Thread);
+            if (RT_FAILURE(rc))
+                RTPrintf("tstTSC: WARNING - RTThreadUserSignal(%#u) -> rc=%Rrc! (2)\n", i, rc);
+        }
+    for (i = 0; i < cCpus; i++)
+        if (s_aData[i].Thread != RTThreadSelf())
+        {
+            int rc = RTThreadWait(s_aData[i].Thread, 5000, NULL);
+            if (RT_FAILURE(rc))
+                RTPrintf("tstTSC: WARNING - RTThreadWait(%#u) -> rc=%Rrc!\n", i, rc);
+        }
 
     return g_cFailed != 0 || g_cRead != cCpus;
 }
