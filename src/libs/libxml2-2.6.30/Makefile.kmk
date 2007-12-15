@@ -18,18 +18,15 @@
 DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
-# include the generated config file
-ifeq ($(BUILD_TARGET),win)
- include win32/config.msvc
-endif
-
-LIBRARIES = \
-	VBox-libxml2
+LIBRARIES = VBox-libxml2
 
 VBox-libxml2_TEMPLATE       = VBOXR3
 VBox-libxml2_SDKS           = VBOX_ZLIB
+VBox-libxml2_DEFS           = LIBXML_STATIC _REENTRANT # the latter triggers thread support, see xmlversion-default.h and win32xmlversion.h.
+VBox-libxml2_DEFS.win       = WIN32 _WINDOWS _MBCS _CRT_SECURE_NO_DEPRECATE _CRT_NONSTDC_NO_DEPRECATE \
+                              HAVE_WIN32_THREADS HAVE_ZLIB_H
+VBox-libxml2_CFLAGS.win.amd64 = -wd4267
 VBox-libxml2_INCS           = include
-VBox-libxml2_DEFS           = LIBXML_STATIC
 VBox-libxml2_SOURCES        = \
 	c14n.c \
 	catalog.c \
@@ -75,37 +72,8 @@ VBox-libxml2_SOURCES        = \
 	xpointer.c \
 	xmlstring.c
 
-VBox-libxml2_DEFS.win       = WIN32 _WINDOWS _MBCS \
-                              _CRT_SECURE_NO_DEPRECATE _CRT_NONSTDC_NO_DEPRECATE
-VBox-libxml2_DEFS          += _REENTRANT # triggers thread support, see xmlversion-default.h and win32xmlversion.h.
-VBox-libxml2_LDFLAGS.win    = /VERSION:$(LIBXML_MAJOR_VERSION).$(LIBXML_MINOR_VERSION)
-
-# Note: all _LIBS stuff is left below is just in case if we want to build a
-# shared library one day.
-
-ifeq ($(filter-out yes ctls,$(WITH_THREADS)),)
- VBox-libxml2_DEFS.win     += HAVE_WIN32_THREADS HAVE_COMPILER_TLS
-else ifeq ($(WITH_THREADS),native)
- VBox-libxml2_DEFS.win     += HAVE_WIN32_THREADS
-else ifeq ($(WITH_THREADS),posix)
- VBox-libxml2_DEFS.win     += HAVE_PTHREAD_H
- VBox-libxml2_LIBS.win     += pthreadVC.lib
-endif
-
-ifeq ($(WITH_ZLIB),1)
- VBox-libxml2_DEFS.win     += HAVE_ZLIB_H
- VBox-libxml2_LIBS.win     += $(PATH_LIB)/VBox-zlib$(VBOX_LIB_SUFF)
- VBox-libxml2_INCS.win     += ../zlib-1.2.1
-endif
-
-ifeq ($(WITH_FTP),1)
- VBox-libxml2_LIBS.win     += wsock32.lib
-endif
-ifeq ($(WITH_ICONV),1)
- VBox-libxml2_LIBS.win     += iconv.lib
-endif
-ifeq ($(WITH_MODULES),1)
- VBox-libxml2_LIBS.win     += kernel32.lib
-endif
+# For linking:
+# VBox-libxml2_LDFLAGS.win    = /VERSION:$(LIBXML_MAJOR_VERSION).$(LIBXML_MINOR_VERSION)
+# VBox-libxml2_SDKS.win      += WINPSDK
 
 include $(PATH_KBUILD)/footer.kmk
