@@ -32,6 +32,7 @@
 #include <float.h>
 #endif
 
+#undef DEBUG /* bird: shut up harmless warning. */
 #define DEBUG
 
 #ifndef LIBXML_XPATH_ENABLED
