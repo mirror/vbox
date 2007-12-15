@@ -114,37 +114,119 @@ function DirExists(strDirectory)
    DirExists = g_objFileSys.FolderExists(DosSlashes(strDirectory))
 end function
 
+
+''
+' Checks if this is a WOW64 process.
+function IsWow64()
+   if g_objShell.Environment("PROCESS")("PROCESSOR_ARCHITEW6432") <> "" then
+      IsWow64 = 1
+   else
+      IsWow64 = 0
+   end if
+end function
+
+
+''
+' Translates a register root name to a value
+function RegTransRoot(strRoot)
+   const HKEY_LOCAL_MACHINE = &H80000002
+   const HKEY_CURRENT_USER  = &H80000001
+   select case strRoot
+      case "HKLM"
+         RegTransRoot = HKEY_LOCAL_MACHINE
+      case "HKCU"
+         RegTransRoot = HKEY_CURRENT_USER
+      case else
+         MsgFatal "RegEnumSubKeys: Unknown root: " & strRoot
+         RegTransRoot = 0
+   end select
+end function
+
+
+'' The registry globals
+dim g_objReg, g_objRegCtx
+dim g_blnRegistry
+g_blnRegistry = false
+
+
+''
+' Init the register provider globals.
+function RegInit()
+   RegInit = false
+   On Error Resume Next
+   if g_blnRegistry = false then
+      set g_objRegCtx = CreateObject("WbemScripting.SWbemNamedValueSet")
+      ' Comment out the following for lines if the cause trouble on your windows version.
+      if IsWow64() then
+         g_objRegCtx.Add "__ProviderArchitecture", 64
+         g_objRegCtx.Add "__RequiredArchitecture", true
+      end if
+      set objLocator = CreateObject("Wbemscripting.SWbemLocator")
+      set objServices = objLocator.ConnectServer("", "root\default", "", "", , , , g_objRegCtx)
+      set g_objReg = objServices.Get("StdRegProv") 
+      g_blnRegistry = true
+   end if
+   RegInit = true
+end function
+
+
 ''
 ' Gets a value from the registry. Returns "" if string wasn't found / valid.
 function RegGetString(strName)
    RegGetString = ""
-   On Error Resume Next
-   RegGetString = g_objShell.RegRead(strName)
+   if RegInit() then
+      dim strRoot, strKey, strValue
+      dim iRoot
+   
+      ' split up into root, key and value parts.
+      strRoot = left(strName, instr(strName, "\") - 1)
+      strKey = mid(strName, instr(strName, "\") + 1, instrrev(strName, "\") - instr(strName, "\"))
+      strValue = mid(strName, instrrev(strName, "\") + 1)
+
+      ' Must use ExecMethod to call the GetStringValue method because of the context.
+      Set InParms = g_objReg.Methods_("GetStringValue").Inparameters
+      InParms.hDefKey     = RegTransRoot(strRoot)
+      InParms.sSubKeyName = strKey
+      InParms.sValueName  = strValue
+      On Error Resume Next
+      set OutParms = g_objReg.ExecMethod_("GetStringValue", InParms, , g_objRegCtx)
+      if OutParms.ReturnValue = 0 then
+         RegGetString = OutParms.sValue
+      end if
+   else
+      ' fallback mode
+      On Error Resume Next
+      RegGetString = g_objShell.RegRead(strName)
+   end if
 end function
+
 
 ''
 ' Returns an array of subkey strings.
 function RegEnumSubKeys(strRoot, strKeyPath)
-   const HKEY_LOCAL_MACHINE = &H80000002
-   const HKEY_CURRENT_USER  = &H80000001
-   dim objReg, iRoot
-   set objReg = GetObject("winmgmts:{impersonationLevel=impersonate}!\\.\root\default:StdRegProv")
+   dim iRoot
+   iRoot = RegTransRoot(strRoot)
+   RegEnumSubKeys = Array()
 
-   select case strRoot
-      case "HKLM"
-         iRoot = HKEY_LOCAL_MACHINE
-      case "HKCU"
-         iRoot = HKEY_CURRENT_USER
-      case else
-         MsgFatal "RegEnumSubKeys: Unknown root: " & strRoot
-   end select
-
-   On Error Resume Next
-   rc = objReg.EnumKey(iRoot, strKeyPath, arrSubKeys)
-   if rc = 0 then
-      RegEnumSubKeys = arrSubKeys
+   if RegInit() then
+      ' Must use ExecMethod to call the EnumKey method because of the context.
+      Set InParms = g_objReg.Methods_("EnumKey").Inparameters
+      InParms.hDefKey     = RegTransRoot(strRoot)
+      InParms.sSubKeyName = strKeyPath
+      On Error Resume Next
+      set OutParms = g_objReg.ExecMethod_("EnumKey", InParms, , g_objRegCtx)
+      if OutParms.ReturnValue = 0 then
+         RegEnumSubKeys = OutParms.sNames
+      end if
    else
-      RegEnumSubKeys = Array()
+      ' fallback mode
+      dim objReg, rc, arrSubKeys
+      set objReg = GetObject("winmgmts:{impersonationLevel=impersonate}!\\.\root\default:StdRegProv")
+      On Error Resume Next
+      rc = objReg.EnumKey(iRoot, strKeyPath, arrSubKeys)
+      if rc = 0 then
+         RegEnumSubKeys = arrSubKeys
+      end if
    end if
 end function
 
@@ -730,6 +812,19 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
    end if
 
    if strPathVC = "" then
+      str = RegGetString("HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\8.0\Setup\VS\ProductDir")
+      str2 = RegGetString("HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\8.0\Setup\VS\EnvironmentDirectory")
+      if str <> "" And str2 <> "" Then
+         str = str & "VC"
+         str2 = PathParent(str2)
+         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
+            strPathVC = str
+            strPathVCCommon = str2
+         end if
+      end if
+   end if
+
+   if strPathVC = "" then
       str = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\8.0\Setup\VS\ProductDir")
       str2 = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\8.0\Setup\VS\EnvironmentDirectory")
       if str <> "" And str2 <> "" Then
@@ -762,6 +857,17 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
       if str <> "" And str2 <> "" Then
          str = str & "VC7"
          str2 = PathParent(str2)
+         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
+            strPathVC = str
+            strPathVCCommon = str2
+         end if
+      end if
+   end if
+
+   if strPathVC = "" then
+      str = RegGetString("HKLM\SOFTWARE\Microsoft\Wow6432Node\VisualStudio\SxS\VC7\8.0")
+      if str <> "" then
+         str2 = PathParent(str) & "/Common7"
          if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
             strPathVC = str
             strPathVCCommon = str2
@@ -930,7 +1036,22 @@ sub CheckForPlatformSDK(strOptSDK)
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
-   ' Check the registry next.
+   ' Check the registry next. (first pair is vista, second is pre-vista)
+   arrSubKeys = RegEnumSubKeys("HKLM", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
+   for Each strSubKey In arrSubKeys
+      str = RegGetString("HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
+      if (strPathPSDK = "") And (str <> "") then
+         if CheckForPlatformSDKSub(str) then strPathPSDK = str
+      end if
+   Next
+   arrSubKeys = RegEnumSubKeys("HKCU", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
+   for Each strSubKey In arrSubKeys
+      str = RegGetString("HKCU\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
+      if (strPathPSDK = "") And (str <> "") then
+         if CheckForPlatformSDKSub(str) then strPathPSDK = str
+      end if
+   Next
+
    arrSubKeys = RegEnumSubKeys("HKLM", "SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs")
    for Each strSubKey In arrSubKeys
       str = RegGetString("HKLM\SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs\" & strSubKey & "\Install Dir")
@@ -1005,11 +1126,6 @@ sub CheckForWin2k3DDK(strOptDDK)
       if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
    end if
 
-   if strPathDDK = "" then
-      MsgError "Cannot find a suitable Windows 2003 DDK. Check configure.log and the build requirements."
-      exit sub
-   end if
-
    ' Check the environment
    str = EnvGet("DDK_INC_PATH")
    if (strPathDDK = "") And (str <> "") then
@@ -1022,7 +1138,22 @@ sub CheckForWin2k3DDK(strOptDDK)
       if CheckForWin2k3DDKSub(str, True) then strPathDDK = str
    end if
 
-   ' Check the registry next.
+   ' Check the registry next. (the first pair is for vista (WDK), the second for pre-vista (DDK))
+   arrSubKeys = RegEnumSubKeys("HKLM", "SOFTWARE\Microsoft\WINDDK") '' @todo Need some sorting stuff here.
+   for Each strSubKey In arrSubKeys
+      str = RegGetString("HKLM\SOFTWARE\Microsoft\WINDDK\" & strSubKey & "\Setup\BUILD")
+      if (strPathDDK = "") And (str <> "") then
+         if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
+      end if
+   Next
+   arrSubKeys = RegEnumSubKeys("HKCU", "SOFTWARE\Microsoft\WINDDK") '' @todo Need some sorting stuff here.
+   for Each strSubKey In arrSubKeys
+      str = RegGetString("HKCU\SOFTWARE\Microsoft\WINDDK\" & strSubKey & "\Setup\BUILD")
+      if (strPathDDK = "") And (str <> "") then
+         if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
+      end if
+   Next
+
    arrSubKeys = RegEnumSubKeys("HKLM", "SOFTWARE\Microsoft\WINDDK") '' @todo Need some sorting stuff here.
    for Each strSubKey In arrSubKeys
       str = RegGetString("HKLM\SOFTWARE\Microsoft\WINDDK\" & strSubKey & "\SFNDirectory")
@@ -1037,6 +1168,11 @@ sub CheckForWin2k3DDK(strOptDDK)
          if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
       end if
    Next
+
+   if strPathDDK = "" then
+      MsgError "Cannot find a suitable Windows 2003 DDK. Check configure.log and the build requirements."
+      exit sub
+   end if
 
    '
    ' Emit the config.
@@ -1054,6 +1190,8 @@ end sub
 function CheckForWin2k3DDKSub(strPathDDK, blnCheckBuild)
    CheckForWin2k3DDKSub = False
    LogPrint "trying: strPathDDK=" & strPathDDK & " blnCheckBuild=" & blnCheckBuild
+   '' @todo vista: if   (   LogFileExists(strPathDDK, "inc/ddk/wnet/ntdef.h") _
+   '      Or LogFileExists(strPathDDK, "inc/api/ntdef.h")) _
    if   LogFileExists(strPathDDK, "inc/ddk/wnet/ntdef.h") _
     And LogFileExists(strPathDDK, "lib/wnet/i386/int64.lib") _
       then
@@ -1657,6 +1795,7 @@ sub usage
    Print "  --with-Xalan=PATH     "
    Print "  --with-Xerces=PATH    "
 end sub
+
 
 ''
 ' The main() like function.
