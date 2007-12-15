@@ -60,6 +60,7 @@ LINUXSTRIPBIN = \
 	VBoxREM.so \
 	VBoxRT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
+	VBoxSettings.so \
 	VBoxSVC \
 	VBoxDDU.so \
 	VBoxVMM.so \
