@@ -420,7 +420,7 @@ static DECLCALLBACK(int) serialNotifyRead(PPDMICHARPORT pInterface, const void *
     return rc;
 }
 
-static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface, PDMICHARSTATUSLINES newStatusLines)
+static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface, uint32_t newStatusLines)
 {
     SerialState *pData = PDMICHARPORT_2_SERIALSTATE(pInterface);
     uint8_t newMsr = 0;

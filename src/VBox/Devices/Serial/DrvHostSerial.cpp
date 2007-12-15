@@ -50,7 +50,7 @@
  * structs. Thatswhy it is defined here until a better solution is found.
  */
 #ifndef TIOCM_LOOP
-# define TIOCM_LOOP	0x8000
+# define TIOCM_LOOP 0x8000
 #endif
 
 #elif defined(RT_OS_WINDOWS)
@@ -689,9 +689,12 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
     uStatusLinesToCheck = TIOCM_CAR | TIOCM_RNG | TIOCM_LE | TIOCM_CTS;
 #endif
 
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        PDMICHARSTATUSLINES newStatusLine = 0;
+        uint32_t newStatusLine = 0;
 
 #if defined(RT_OS_LINUX)
         unsigned int statusLines;
@@ -768,26 +771,42 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
  *
  * @returns VBox status code
  * @param pInterface        Pointer to the interface structure.
- * @param RequestToSend     Set to 1 if this control line should be made active.
- * @param DataTerminalReady Set to 1 if this control line should be made active.
+ * @param RequestToSend     Set to true if this control line should be made active.
+ * @param DataTerminalReady Set to true if this control line should be made active.
  */
-static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHAR pInterface, unsigned RequestToSend, unsigned DataTerminalReady)
+static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHAR pInterface, bool RequestToSend, bool DataTerminalReady)
 {
-#ifdef RT_OS_LINUX
     PDRVHOSTSERIAL pData = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
-    int modemState = 0;
+
+#ifdef RT_OS_LINUX
+    int modemStateSet = 0;
+    int modemStateClear = 0;
 
     if (RequestToSend)
-    {
-        modemState |= TIOCM_RTS;
-    }
+        modemStateSet |= TIOCM_RTS;
+    else
+        modemStateClear |= TIOCM_RTS;
 
     if (DataTerminalReady)
-    {
-        modemState |= TIOCM_DTR;
-    }
+        modemStateSet |= TIOCM_DTR;
+    else
+        modemStateClear |= TIOCM_DTR;
 
-    ioctl(pData->DeviceFile, TIOCMBIS, &modemState);
+    if (modemStateSet)
+        ioctl(pData->DeviceFile, TIOCMBIS, &modemStateSet);
+
+    if (modemStateClear)
+        ioctl(pData->DeviceFile, TIOCMBIC, &modemStateClear);
+#elif defined(RT_OS_WINDOWS)
+    if (RequestToSend)
+        EscapeCommFunction(pData->hDeviceFile, SETRTS);
+    else
+        EscapeCommFunction(pData->hDeviceFIle, CLRRTS);
+
+    if (DataTerminalReady)
+        EscapeCommFunction(pData->hDeviceFile, SETDTR);
+    else
+        EscapeCommFunction(pData->hDeviceFIle, CLRDTR);
 #endif
 
     return VINF_SUCCESS;
