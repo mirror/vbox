@@ -85,6 +85,14 @@ typedef enum PDMINTERFACE
     /** PDMIISCSITRANSPORT      - The iSCSI transport interface         (Up)    No coupling.
      * used by the iSCSI media driver.  */
     PDMINTERFACE_ISCSITRANSPORT,
+    /** PDMIMEDIAASYNC          - Asynchronous version of the media interface (Down) Coupled with PDMINTERFACE_MEDIA_ASYNC_PORT. */
+    PDMINTERFACE_MEDIA_ASYNC,
+    /** PDMIMEDIAASYNCPORT      - Asynchronous version of the media interface (Up) Coupled with PDMINTERFACE_MEDIA_ASYNC. */
+    PDMINTERFACE_MEDIA_ASYNC_PORT,
+    /** PDMIBLOCKASYNC          - Asynchronous version of the block interface (Down) Coupled with PDMINTERFACE_BLOCK_ASYNC_PORT. */
+    PDMINTERFACE_BLOCK_ASYNC,
+    /** PDMIBLOCKASYNCPORT      - Asynchronous version of the block interface (Up) Coupled with PDMINTERFACE_BLOCK_ASYNC. */
+    PDMINTERFACE_BLOCK_ASYNC_PORT,
 
     /** PDMINETWORKPORT         - The network port interface.           (Down)  Coupled with PDMINTERFACE_NETWORK_CONNECTOR. */
     PDMINTERFACE_NETWORK_PORT,
@@ -1088,6 +1096,265 @@ typedef struct PDMIISCSITRANSPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnClose,(PPDMIISCSITRANSPORT pTransport));
 } PDMIISCSITRANSPORT;
+
+/**
+ * Block notify interface.
+ * Pair with PDMIBLOCKASYNC.
+ */
+
+/** Pointer to a asynchronous block notify interface. */
+typedef struct PDMIBLOCKASYNCPORT *PPDMIBLOCKASYNCPORT;
+
+/**
+ * Asynchronous block notify interface.
+ * Pair with PDMIBLOCKASYNC.
+ */
+typedef struct PDMIBLOCKASYNCPORT
+{
+    /**
+     * Notify completion of a read task.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   uOffset         Offset the task read from.
+     * @param   pvBuf           The buffer containig the read data.
+     * @param   cbRead          Number of bytes read.
+     * @param   pvUser          The user argument given in pfnStartRead.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMIBLOCKASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbRead, void *pvUser));
+
+    /**
+     * Notify completion of a write task.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   uOffset         Offset the task has written to.
+     * @param   pvBuf           The buffer containig the written data.
+     * @param   cbWrite         Number of bytes actually written.
+     * @param   pvUser          The user argument given in pfnStartWrite.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMIBLOCKASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbWrite, void *pvUser));
+} PDMIBLOCKASYNCPORT;
+
+/** Pointer to a asynchronous block interface. */
+typedef struct PDMIBLOCKASYNC *PPDMIBLOCKASYNC;
+
+/**
+ * Asynchronous block interface.
+ * Pair with PDMIBLOCKASYNCPORT.
+ */
+typedef struct PDMIBLOCKASYNC
+{
+    /**
+     * Start reading task.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   off             Offset to start reading from.
+     * @param   pvBuf           Where to store the read bits.
+     * @param   cbRead          Number of bytes to read.
+     * @param   pvUser          User argument which is returned in completion callback.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadStart,(PPDMIBLOCKASYNC pInterface, uint64_t off, void *pvBuf, size_t cbRead, void *pvUser));
+
+    /**
+     * Write bits.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   off             Offset to start writing at.
+     * @param   pvBuf           Where to store the write bits.
+     * @param   cbWrite         Number of bytes to write.
+     * @param   pvUser          User argument which is returned in completion callback.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWriteStart,(PPDMIBLOCKASYNC pInterface, uint64_t off, const void *pvBuf, size_t cbWrite, void *pvUser));
+
+    /**
+     * Make sure that the bits written are actually on the storage medium.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnFlush,(PPDMIBLOCKASYNC pInterface));
+
+    /**
+     * Check if the media is readonly or not.
+     *
+     * @returns true if readonly.
+     * @returns false if read/write.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsReadOnly,(PPDMIBLOCKASYNC pInterface));
+
+    /**
+     * Gets the media size in bytes.
+     *
+     * @returns Media size in bytes.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetSize,(PPDMIBLOCKASYNC pInterface));
+
+    /**
+     * Gets the block drive type.
+     *
+     * @returns block drive type.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(PDMBLOCKTYPE, pfnGetType,(PPDMIBLOCKASYNC pInterface));
+
+    /**
+     * Gets the UUID of the block drive.
+     * Don't return the media UUID if it's removable.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pUuid           Where to store the UUID on success.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetUuid,(PPDMIBLOCKASYNC pInterface, PRTUUID pUuid));
+} PDMIBLOCKASYNC;
+
+
+
+/**
+ * Pointer to a async media notify interface.
+ * Pair with PDMIMEDIAASYNC.
+ */
+typedef struct PDMIMEDIAASYNCPORT *PPDMIMEDIAASYNCPORT;
+
+/**
+ * Notification interface for completed I/O tasks.
+ * Pair with PDMIMEDIAASYNC.
+ */
+typedef struct PDMIMEDIAASYNCPORT
+{
+    /**
+     * Notify completion of a read task.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   uOffset         Offset the task read from.
+     * @param   pvBuf           The buffer containig the read data.
+     * @param   cbRead          Number of bytes read.
+     * @param   pvUser          The user argument given in pfnStartRead.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMIMEDIAASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbRead, void *pvUser));
+
+    /**
+     * Notify completion of a write task.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   uOffset         Offset the task has written to.
+     * @param   pvBuf           The buffer containig the written data.
+     * @param   cbWritten       Number of bytes actually written.
+     * @param   pvUser          The user argument given in pfnStartWrite.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMIMEDIAASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbWritten, void *pvUser));
+} PDMIMEDIAASYNCPORT;
+
+/** Pointer to a async media interface. */
+typedef struct PDMIMEDIAASYNC *PPDMIMEDIAASYNC;
+/**
+ * Asynchronous Media interface.
+ * Makes up the fundation for PDMIBLOCKASYNC and PDMIBLOCKBIOS.
+ */
+typedef struct PDMIMEDIAASYNC
+{
+    /**
+     * Read bits synchronous.
+     * Blocks until finished.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containint the called function pointer.
+     * @param   uOffset         Offset to start reading from.
+     * @param   pvBuf           here to store the read bits.
+     * @param   cbRead          Number of bytes to read.
+     * @param   pcbRead         Where to store the number of bytes actually read.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadSynchronous, (PPDMIMEDIAASYNC pInterface, uint64_t uOffset, void *pvBuf, size_t cbRead, size_t *pcbRead));
+
+    /**
+     * Write bits synchronous.
+     * Blocks until finished.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containint the called function pointer.
+     * @param   uOffset         Offset to start reading from.
+     * @param   pvBuf           here to store the read bits.
+     * @param   cbWrite         Number of bytes to read.
+     * @param   pcbWritten      Where to store the number of bytes actually read.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWriteSynchronous, (PPDMIMEDIAASYNC pInterface, uint64_t uOffset, void *pvBuf, size_t cbWrite, size_t *pcbWritten));
+
+    /**
+     * Start asynchronous read.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   off             Offset to start reading from.
+     * @param   pvBuf           Where to store the read bits.
+     * @param   cbRead          Number of bytes to read.
+     * @param   pvUser          User argument returned in completion callback.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadStartAsynchronous,(PPDMIMEDIAASYNC pInterface, uint64_t off, void *pvBuf, size_t cbRead, void *pvUser));
+
+    /**
+     * Start asynchronous write.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   off             Offset to start writing at.
+     * @param   pvBuf           Where to store the write bits.
+     * @param   cbWrite         Number of bytes to write.
+     * @param   pvUser          User argument returned in completion callback.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWriteStartAsynchronous,(PPDMIMEDIAASYNC pInterface, uint64_t off, const void *pvBuf, size_t cbWrite, void *pvUser));
+
+    /**
+     * Make sure that the bits written are actually on the storage medium.
+     * This is a synchronous task
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnFlushSynchronous,(PPDMIMEDIAASYNC pInterface));
+
+    /**
+     * Get the media size in bytes.
+     *
+     * @returns Media size in bytes.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetSize,(PPDMIMEDIAASYNC pInterface));
+
+    /**
+     * Check if the media is readonly or not.
+     *
+     * @returns true if readonly.
+     * @returns false if read/write.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsReadOnly,(PPDMIMEDIAASYNC pInterface));
+
+} PDMIMEDIAASYNC;
 
 /** Status line type.
  * @todo r=bird: These are just flags, so just use a uint8_t (or better an uint32_t / unsigned). no need for a type here. */
