@@ -431,3 +431,7 @@
 # undef _WINSOCKAPI_
 #endif /* !RT_OS_WINDOWS */
 
+/* make sure LIBXML_ICONV_ENABLED is killed */
+#include <libxml/xmlversion.h>
+#undef LIBXML_ICONV_ENABLED
+
