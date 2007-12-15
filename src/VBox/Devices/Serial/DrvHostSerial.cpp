@@ -801,12 +801,12 @@ static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHAR pInterface, bool R
     if (RequestToSend)
         EscapeCommFunction(pData->hDeviceFile, SETRTS);
     else
-        EscapeCommFunction(pData->hDeviceFIle, CLRRTS);
+        EscapeCommFunction(pData->hDeviceFile, CLRRTS);
 
     if (DataTerminalReady)
         EscapeCommFunction(pData->hDeviceFile, SETDTR);
     else
-        EscapeCommFunction(pData->hDeviceFIle, CLRDTR);
+        EscapeCommFunction(pData->hDeviceFile, CLRDTR);
 #endif
 
     return VINF_SUCCESS;
