@@ -50,6 +50,10 @@ g_strDisableCOM = ""
 dim g_blnInternalMode
 g_blnInternalMode = False
 
+' Whether to try the internal stuff first or last.
+dim g_blnInternalFirst
+g_blnInternalFirst = True
+
 
 
 ''
@@ -789,7 +793,7 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
       end if
    end if
 
-   if strPathVC = "" Then
+   if (strPathVC = "") And (g_blnInternalFirst = True) Then
       strPathVC = g_strPathDev & "/win.x86/vcc/v8"
       if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
          strPathVC = g_strPathDev & "/win.x86/vcc/v7"
@@ -899,6 +903,16 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
       end if
    end if
 
+   if (strPathVC = "") And (g_blnInternalFirst = False) Then
+      strPathVC = g_strPathDev & "/win.x86/vcc/v8"
+      if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
+         strPathVC = g_strPathDev & "/win.x86/vcc/v7"
+         if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
+            strPathVC = ""
+         end if
+      end if
+   end if
+
    if strPathVC = "" then
       MsgError "Cannot find cl.exe (Visual C++) anywhere on your system. Check the build requirements."
       exit sub
@@ -1003,18 +1017,18 @@ sub CheckForPlatformSDK(strOptSDK)
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
-   ' The tools location.
-   if strPathPSDK = "" then
+   ' The tools location (first).
+   if (strPathPSDK = "") And (g_blnInternalFirst = True) then
       str = g_strPathDev & "/win.x86/sdk/200604"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
-   if strPathPSDK = "" then
+   if (strPathPSDK = "") And (g_blnInternalFirst = True) then
       str = g_strPathDev & "/win.x86/sdk/200504"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
-   if strPathPSDK = "" then
+   if (strPathPSDK = "") And (g_blnInternalFirst = True) then
       str = g_strPathDev & "/win.x86/sdk/200209"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
@@ -1067,6 +1081,22 @@ sub CheckForPlatformSDK(strOptSDK)
       end if
    Next
 
+   ' The tools location (post).
+   if (strPathPSDK = "") And (g_blnInternalFirst = False) then
+      str = g_strPathDev & "/win.x86/sdk/200604"
+      if CheckForPlatformSDKSub(str) then strPathPSDK = str
+   end if
+
+   if (strPathPSDK = "") And (g_blnInternalFirst = False) then
+      str = g_strPathDev & "/win.x86/sdk/200504"
+      if CheckForPlatformSDKSub(str) then strPathPSDK = str
+   end if
+
+   if (strPathPSDK = "") And (g_blnInternalFirst = False) then
+      str = g_strPathDev & "/win.x86/sdk/200209"
+      if CheckForPlatformSDKSub(str) then strPathPSDK = str
+   end if
+
    ' Give up.
    if strPathPSDK = "" then
       MsgError "Cannot find a suitable Platform SDK. Check configure.log and the build requirements."
@@ -1115,13 +1145,13 @@ sub CheckForWin2k3DDK(strOptDDK)
       if CheckForWin2k3DDKSub(strOptDDK, True) then strPathDDK = strOptDDK
    end if
 
-   ' The tools location.
-   if strPathDDK = "" then
+   ' The tools location (first).
+   if (strPathDDK = "") And (g_blnInternalFirst = True) then
       str = g_strPathDev & "/win.x86/ddkwin2k3/200503"
       if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
    end if
 
-   if strPathDDK = "" then
+   if (strPathDDK = "") And (g_blnInternalFirst = True) then
       str = g_strPathDev & "/win.x86/ddkwin2k3/2004"
       if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
    end if
@@ -1169,6 +1199,18 @@ sub CheckForWin2k3DDK(strOptDDK)
       end if
    Next
 
+   ' The tools location (post).
+   if (strPathDDK = "") And (g_blnInternalFirst = False) then
+      str = g_strPathDev & "/win.x86/ddkwin2k3/200503"
+      if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
+   end if
+
+   if (strPathDDK = "") And (g_blnInternalFirst = False) then
+      str = g_strPathDev & "/win.x86/ddkwin2k3/2004"
+      if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
+   end if
+
+   ' Give up.
    if strPathDDK = "" then
       MsgError "Cannot find a suitable Windows 2003 DDK. Check configure.log and the build requirements."
       exit sub
@@ -1248,8 +1290,8 @@ sub CheckForDirectXSDK(strOptDXSDK)
       if CheckForDirectXSDKSub(strOptDXSDK) then strPathDXSDK = strOptDXSDK
    end if
 
-   ' The tools location.
-   if strPathDXSDK = "" then
+   ' The tools location (first).
+   if (strPathDXSDK = "") And (g_blnInternalFirst = True) then
       str = g_strPathDev & "/win.x86/dxsdk/200610"
       if CheckForDirectXSDKSub(str) then strPathDXSDK = str
    end if
@@ -1274,6 +1316,13 @@ sub CheckForDirectXSDK(strOptDXSDK)
       Next
    Next
 
+   ' The tools location (post).
+   if (strPathDXSDK = "") And (g_blnInternalFirst = False) then
+      str = g_strPathDev & "/win.x86/dxsdk/200610"
+      if CheckForDirectXSDKSub(str) then strPathDXSDK = str
+   end if
+
+   ' Give up.
    if strPathDXSDK = "" then
       MsgError "Cannot find a suitable Direct X SDK. Check configure.log and the build requirements."
       exit sub
@@ -1325,8 +1374,8 @@ sub CheckForMingW(strOptMingw, strOptW32API)
       end if
    end if
 
-   ' The tools location.
-   if strPathMingW = "" then
+   ' The tools location (first).
+   if (strPathMingW = "") And (g_blnInternalFirst = True) then
       str = g_strPathDev & "/win.x86/mingw32/v3.3.3"
       str2 = g_strPathDev & "/win.x86/w32api/v2.5"
       if CheckForMingWSub(str, str2) then
@@ -1349,6 +1398,16 @@ sub CheckForMingW(strOptMingw, strOptW32API)
       if (str <> "") then
          str = PathParent(PathStripFilename(str))
          if CheckForMingWSub(str, str) then strPathMingW = str
+      end if
+   end if
+
+   ' The tools location (post).
+   if (strPathMingW = "") And (g_blnInternalFirst = False) then
+      str = g_strPathDev & "/win.x86/mingw32/v3.3.3"
+      str2 = g_strPathDev & "/win.x86/w32api/v2.5"
+      if CheckForMingWSub(str, str2) then
+         strPathMingW = str
+         strPathW32API = str2
       end if
    end if
 
@@ -1451,13 +1510,13 @@ sub CheckForlibSDL(strOptlibSDL)
       if CheckForlibSDLSub(strOptlibSDL) then strPathlibSDL = strOptlibSDL
    end if
 
-   ' The tools location.
-   if strPathlibSDL = "" Then
+   ' The tools location (first).
+   if (strPathlibSDL = "") And (g_blnInternalFirst = True) Then
       str = g_strPathDev & "/win.x86/libsdl/v1.2.11"
       if CheckForlibSDLSub(str) then strPathlibSDL = str
    end if
 
-   if strPathlibSDL = "" Then
+   if (strPathlibSDL = "") And (g_blnInternalFirst = True) Then
       str = g_strPathDev & "/win.x86/libsdl/v1.2.7-InnoTek"
       if CheckForlibSDLSub(str) then strPathlibSDL = str
    end if
@@ -1472,6 +1531,17 @@ sub CheckForlibSDL(strOptlibSDL)
    str = Which("SDL.dll")
    if (strPathlibSDL = "") And (str <> "") Then
       str = PathParent(PathStripFilename(str))
+      if CheckForlibSDLSub(str) then strPathlibSDL = str
+   end if
+
+   ' The tools location (post).
+   if (strPathlibSDL = "") And (g_blnInternalFirst = False) Then
+      str = g_strPathDev & "/win.x86/libsdl/v1.2.11"
+      if CheckForlibSDLSub(str) then strPathlibSDL = str
+   end if
+
+   if (strPathlibSDL = "") And (g_blnInternalFirst = False) Then
+      str = g_strPathDev & "/win.x86/libsdl/v1.2.7-InnoTek"
       if CheckForlibSDLSub(str) then strPathlibSDL = str
    end if
 
@@ -1776,6 +1846,7 @@ sub usage
    Print "Configuration:"
    Print "  -h, --help"
    Print "  --internal"
+   Print "  --internal-last"
    Print ""
    Print "Components:"
    Print "  --disable-COM"
@@ -1875,6 +1946,8 @@ Sub Main
             blnOptDisableCOM = False
          case "--internal"
             g_blnInternalMode = True
+         case "--internal-last"
+            g_blnInternalFirst = False
          case "-h", "--help", "-?"
             usage
             Wscript.Quit(0)
