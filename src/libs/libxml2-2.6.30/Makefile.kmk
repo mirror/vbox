@@ -77,11 +77,8 @@ VBox-libxml2_SOURCES        = \
 
 VBox-libxml2_DEFS.win       = WIN32 _WINDOWS _MBCS \
                               _CRT_SECURE_NO_DEPRECATE _CRT_NONSTDC_NO_DEPRECATE
+VBox-libxml2_DEFS          += _REENTRANT # triggers thread support, see xmlversion-default.h and win32xmlversion.h.
 VBox-libxml2_LDFLAGS.win    = /VERSION:$(LIBXML_MAJOR_VERSION).$(LIBXML_MINOR_VERSION)
-
-ifneq ($(WITH_THREADS),no)
- VBox-libxml2_DEFS.win     += _REENTRANT
-endif
 
 # Note: all _LIBS stuff is left below is just in case if we want to build a
 # shared library one day.
