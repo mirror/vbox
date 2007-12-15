@@ -1137,171 +1137,186 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
     /*
      * Processing.
      */
-    switch (pTimer->enmState)
+    unsigned cRetries = 2;
+    do
     {
-        /*
-         * Reschedule timer (in the active list).
-         */
-        case TMTIMERSTATE_PENDING_RESCHEDULE:
+        TMTIMERSTATE enmState = pTimer->enmState;
+        switch (enmState)
         {
-            const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
-            const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
-            if (pPrev)
-                TMTIMER_SET_NEXT(pPrev, pNext);
-            else
+            /*
+             * Reschedule timer (in the active list).
+             */
+            case TMTIMERSTATE_PENDING_RESCHEDULE:
             {
-                TMTIMER_SET_HEAD(pQueue, pNext);
-                pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
-            }
-            if (pNext)
-                TMTIMER_SET_PREV(pNext, pPrev);
-            pTimer->offNext = 0;
-            pTimer->offPrev = 0;
-            /* fall thru */
-        }
+                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE, TMTIMERSTATE_PENDING_RESCHEDULE)))
+                    break; /* retry */
 
-        /*
-         * Schedule timer (insert into the active list).
-         */
-        case TMTIMERSTATE_PENDING_SCHEDULE:
-        {
-            Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
-            TM_SET_STATE(pTimer, TMTIMERSTATE_ACTIVE);
-            PTMTIMER pCur = TMTIMER_GET_HEAD(pQueue);
-            if (pCur)
+                const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
+                const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
+                if (pPrev)
+                    TMTIMER_SET_NEXT(pPrev, pNext);
+                else
+                {       
+                    TMTIMER_SET_HEAD(pQueue, pNext);
+                    pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
+                }
+                if (pNext)
+                    TMTIMER_SET_PREV(pNext, pPrev);
+                pTimer->offNext = 0;
+                pTimer->offPrev = 0;
+                /* fall thru */
+            }
+    
+            /*
+             * Schedule timer (insert into the active list).
+             */
+            case TMTIMERSTATE_PENDING_SCHEDULE:
             {
-                const uint64_t u64Expire = pTimer->u64Expire;
-                for (;; pCur = TMTIMER_GET_NEXT(pCur))
+                Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
+                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, TMTIMERSTATE_PENDING_SCHEDULE)))
+                    break; /* retry */
+
+                PTMTIMER pCur = TMTIMER_GET_HEAD(pQueue);
+                if (pCur)
                 {
-                    if (pCur->u64Expire > u64Expire)
+                    const uint64_t u64Expire = pTimer->u64Expire;
+                    for (;; pCur = TMTIMER_GET_NEXT(pCur))
                     {
-                        const PTMTIMER pPrev = TMTIMER_GET_PREV(pCur);
-                        TMTIMER_SET_NEXT(pTimer, pCur);
-                        TMTIMER_SET_PREV(pTimer, pPrev);
-                        if (pPrev)
-                            TMTIMER_SET_NEXT(pPrev, pTimer);
-                        else
+                        if (pCur->u64Expire > u64Expire)
                         {
-                            TMTIMER_SET_HEAD(pQueue, pTimer);
-                            pQueue->u64Expire = u64Expire;
+                            const PTMTIMER pPrev = TMTIMER_GET_PREV(pCur);
+                            TMTIMER_SET_NEXT(pTimer, pCur);
+                            TMTIMER_SET_PREV(pTimer, pPrev);
+                            if (pPrev)
+                                TMTIMER_SET_NEXT(pPrev, pTimer);
+                            else
+                            {
+                                TMTIMER_SET_HEAD(pQueue, pTimer);
+                                pQueue->u64Expire = u64Expire;
+                            }
+                            TMTIMER_SET_PREV(pCur, pTimer);
+                            return;
                         }
-                        TMTIMER_SET_PREV(pCur, pTimer);
-                        break;
-                    }
-                    else if (!pCur->offNext)
-                    {
-                        TMTIMER_SET_NEXT(pCur, pTimer);
-                        TMTIMER_SET_PREV(pTimer, pCur);
-                        break;
+                        if (!pCur->offNext)
+                        {
+                            TMTIMER_SET_NEXT(pCur, pTimer);
+                            TMTIMER_SET_PREV(pTimer, pCur);
+                            return;
+                        }
                     }
                 }
+                else
+                {
+                    TMTIMER_SET_HEAD(pQueue, pTimer);
+                    pQueue->u64Expire = pTimer->u64Expire;
+                }
+                return;
             }
-            else
+    
+            /*
+             * Stop the timer in active list.
+             */
+            case TMTIMERSTATE_PENDING_STOP:
             {
-                TMTIMER_SET_HEAD(pQueue, pTimer);
-                pQueue->u64Expire = pTimer->u64Expire;
-            }
-            break;
-        }
+                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_PENDING_STOP_SCHEDULE, TMTIMERSTATE_PENDING_STOP)))
+                    break; /* retry */
 
-                /*
-         * Stop the timer in active list.
-         */
-        case TMTIMERSTATE_PENDING_STOP:
-        {
-            const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
-            const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
-            if (pPrev)
-                TMTIMER_SET_NEXT(pPrev, pNext);
-            else
+                const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
+                const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
+                if (pPrev)
+                    TMTIMER_SET_NEXT(pPrev, pNext);
+                else
+                {
+                    TMTIMER_SET_HEAD(pQueue, pNext);
+                    pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
+                }
+                if (pNext)
+                    TMTIMER_SET_PREV(pNext, pPrev);
+                pTimer->offNext = 0;
+                pTimer->offPrev = 0;
+                /* fall thru */
+            }
+    
+            /*
+             * Stop the timer (not on the active list).
+             */
+            case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
+                Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
+                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_PENDING_STOP_SCHEDULE)))
+                    break;
+                return;
+    
+            /*
+             * Stop & destroy the timer.
+             */
+            case TMTIMERSTATE_PENDING_STOP_DESTROY:
             {
-                TMTIMER_SET_HEAD(pQueue, pNext);
-                pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
+                const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
+                const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
+                if (pPrev)
+                    TMTIMER_SET_NEXT(pPrev, pNext);
+                else
+                {
+                    TMTIMER_SET_HEAD(pQueue, pNext);
+                    pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
+                }
+                if (pNext)
+                    TMTIMER_SET_PREV(pNext, pPrev);
+                pTimer->offNext = 0;
+                pTimer->offPrev = 0;
+                /* fall thru */
             }
-            if (pNext)
-                TMTIMER_SET_PREV(pNext, pPrev);
-            pTimer->offNext = 0;
-            pTimer->offPrev = 0;
-            /* fall thru */
-        }
-
-        /*
-         * Stop the timer (not on the active list).
-         */
-        case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
-            Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
-            TM_SET_STATE(pTimer, TMTIMERSTATE_STOPPED);
-            break;
-
-        /*
-         * Stop & destroy the timer.
-         */
-        case TMTIMERSTATE_PENDING_STOP_DESTROY:
-        {
-            const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
-            const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
-            if (pPrev)
-                TMTIMER_SET_NEXT(pPrev, pNext);
-            else
+    
+            /*
+             * Destroy the timer.
+             */
+            case TMTIMERSTATE_PENDING_DESTROY:
             {
-                TMTIMER_SET_HEAD(pQueue, pNext);
-                pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
+                Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
+                PVM pVM = pTimer->CTXALLSUFF(pVM);
+                const PTMTIMER pBigPrev = (PTMTIMER)(pTimer->pBigPrev ? MMHyperR3ToCC(pVM, pTimer->pBigPrev) : NULL);
+                const PTMTIMER pBigNext = (PTMTIMER)(pTimer->pBigNext ? MMHyperR3ToCC(pVM, pTimer->pBigNext) : NULL);
+    
+                /* unlink from created list */
+                if (pBigPrev)
+                    pBigPrev->pBigNext = pTimer->pBigNext;
+                else
+                    pVM->tm.s.pCreated = pTimer->pBigNext;
+                if (pBigNext)
+                    pBigNext->pBigPrev = pTimer->pBigPrev;
+                pTimer->pBigNext = 0;
+                pTimer->pBigPrev = 0;
+    
+                /* free */
+                Log2(("TM: Inserting %p into the free list ahead of %p!\n", pTimer, pVM->tm.s.pFree));
+                pTimer->pBigNext = pVM->tm.s.pFree;
+                pVM->tm.s.pFree = (PTMTIMERR3)MMHyperCCToR3(pVM, pTimer);
+                TM_SET_STATE(pTimer, TMTIMERSTATE_FREE);
+                return;
             }
-            if (pNext)
-                TMTIMER_SET_PREV(pNext, pPrev);
-            pTimer->offNext = 0;
-            pTimer->offPrev = 0;
-            /* fall thru */
+    
+            /*
+             * Postpone these until they get into the right state.
+             */
+            case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
+            case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
+                tmTimerLink(pQueue, pTimer);
+                STAM_COUNTER_INC(&pTimer->CTXALLSUFF(pVM)->tm.s.CTXALLSUFF(StatPostponed));
+                return;
+    
+            /*
+             * None of these can be in the schedule.
+             */
+            case TMTIMERSTATE_FREE:
+            case TMTIMERSTATE_STOPPED:
+            case TMTIMERSTATE_ACTIVE:
+            case TMTIMERSTATE_EXPIRED:
+            default:
+                AssertMsgFailed(("Timer (%p) in the scheduling list has an invalid state %s (%d)!",
+                                 pTimer, tmTimerState(pTimer->enmState), pTimer->enmState));
+                return;
         }
-
-        /*
-         * Destroy the timer.
-         */
-        case TMTIMERSTATE_PENDING_DESTROY:
-        {
-            Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
-            PVM pVM = pTimer->CTXALLSUFF(pVM);
-            const PTMTIMER pBigPrev = (PTMTIMER)(pTimer->pBigPrev ? MMHyperR3ToCC(pVM, pTimer->pBigPrev) : NULL);
-            const PTMTIMER pBigNext = (PTMTIMER)(pTimer->pBigNext ? MMHyperR3ToCC(pVM, pTimer->pBigNext) : NULL);
-
-            /* unlink from created list */
-            if (pBigPrev)
-                pBigPrev->pBigNext = pTimer->pBigNext;
-            else
-                pVM->tm.s.pCreated = pTimer->pBigNext;
-            if (pBigNext)
-                pBigNext->pBigPrev = pTimer->pBigPrev;
-            pTimer->pBigNext = 0;
-            pTimer->pBigPrev = 0;
-
-            /* free */
-            Log2(("TM: Inserting %p into the free list ahead of %p!\n", pTimer, pVM->tm.s.pFree));
-            pTimer->pBigNext = pVM->tm.s.pFree;
-            pVM->tm.s.pFree = (PTMTIMERR3)MMHyperCCToR3(pVM, pTimer);
-            TM_SET_STATE(pTimer, TMTIMERSTATE_FREE);
-            break;
-        }
-
-        /*
-         * Postpone these until they get into the right state.
-         */
-        case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
-        case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
-            tmTimerLink(pQueue, pTimer);
-            STAM_COUNTER_INC(&pTimer->CTXALLSUFF(pVM)->tm.s.CTXALLSUFF(StatPostponed));
-            break;
-
-        /*
-         * None of these can be in the schedule.
-         */
-        case TMTIMERSTATE_FREE:
-        case TMTIMERSTATE_STOPPED:
-        case TMTIMERSTATE_ACTIVE:
-        case TMTIMERSTATE_EXPIRED:
-            AssertMsgFailed(("Timer (%p) in the scheduling list has an invalid state %s (%d)!",
-                             pTimer, tmTimerState(pTimer->enmState), pTimer->enmState));
-            break;
-    }
+    } while (cRetries-- > 0);
 }
 
 
