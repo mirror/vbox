@@ -31,6 +31,9 @@
  */
 #include <win32config.h>
 #include <libxml/xmlversion.h>
+#elif defined(VBOX)
+#include <vboxconfig.h>
+#include <libxml/xmlversion.h>
 #else
 #include "config.h"
 #include <libxml/xmlversion.h>
