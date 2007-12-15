@@ -448,8 +448,7 @@ endif
 Drivers_SDKS.win   = WINPSDK W2K3DDK
 Storage/DrvHostDVD.cpp_SDKS.win = W2K3DDK
 Drivers_DEFS       = IN_IDE_R3
-Drivers_DEFS.win.x86    += _WIN32_WINNT=0x0500
-Drivers_DEFS.win.amd64  += _WIN32_WINNT=0x0510
+Drivers_DEFS.win  += _WIN32_WINNT=0x0510
 Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \
 	Network/slirp
