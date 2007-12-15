@@ -409,9 +409,9 @@ HRESULT SystemProperties::loadSettings (const settings::Key &aGlobal)
     CheckComRCReturnRC (rc);
 
     /* Note: not <BOOL> because Win32 defines BOOL as int */
-    mHWVirtExEnabled = properties.value <bool> ("HWVirtExEnabled");
+    mHWVirtExEnabled = properties.valueOr <bool> ("HWVirtExEnabled", false);
 
-    mLogHistoryCount = properties.value <ULONG> ("LogHistoryCount");
+    mLogHistoryCount = properties.valueOr <ULONG> ("LogHistoryCount", 3);
 
     return S_OK;
 }
