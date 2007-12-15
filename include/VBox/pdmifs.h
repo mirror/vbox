@@ -1356,12 +1356,6 @@ typedef struct PDMIMEDIAASYNC
 
 } PDMIMEDIAASYNC;
 
-/** Status line type.
- * @todo r=bird: These are just flags, so just use a uint8_t (or better an uint32_t / unsigned). no need for a type here. */
-typedef uint8_t PDMICHARSTATUSLINES;
-/** pointer to a PDMICHARSTATUSLINES type. */
-typedef PDMICHARSTATUSLINES *PPDMICHARSTATUSLINES;
-
 /** @name Bit mask definitions for status line type
  * @{ */
 #define PDM_ICHAR_STATUS_LINES_DCD  RT_BIT(0)
@@ -1395,10 +1389,10 @@ typedef struct PDMICHARPORT
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   fNewStatusLine   New state of the status line pins.
+     * @param   fNewStatusLine  New state of the status line pins.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnNotifyStatusLinesChanged,(PPDMICHARPORT pInterface, PDMICHARSTATUSLINES fNewStatusLines));
+    DECLR3CALLBACKMEMBER(int, pfnNotifyStatusLinesChanged,(PPDMICHARPORT pInterface, uint32_t fNewStatusLines));
 } PDMICHARPORT;
 
 /** Pointer to a char interface. */
@@ -1438,12 +1432,11 @@ typedef struct PDMICHAR
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   fRequestToSend      Set to 1 to make the Request to Send line active otherwise to 0.
-     * @param   fDataTerminalReady  Set to 1 to make the Data Terminal Ready line active otherwise 0.
+     * @param   fRequestToSend      Set to true to make the Request to Send line active otherwise to 0.
+     * @param   fDataTerminalReady  Set to true to make the Data Terminal Ready line active otherwise 0.
      * @thread  Any thread.
-     * @todo r=bird: Use booleans for 0/1 kind of values + make the code follow the descriptions (foo & const -> const/0), or fix the description.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetModemLines,(PPDMICHAR pInterface, unsigned fRequestToSend, unsigned fDataTerminalReady));
+    DECLR3CALLBACKMEMBER(int, pfnSetModemLines,(PPDMICHAR pInterface, bool fRequestToSend, bool fDataTerminalReady));
 
 } PDMICHAR;
 

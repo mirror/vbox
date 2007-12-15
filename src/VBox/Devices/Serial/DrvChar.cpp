@@ -270,10 +270,10 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
  *
  * @returns VBox status code
  * @param pInterface        Pointer to the interface structure.
- * @param RequestToSend     Set to 1 if this control line should be made active.
- * @param DataTerminalReady Set to 1 if this control line should be made active.
+ * @param RequestToSend     Set to true if this control line should be made active.
+ * @param DataTerminalReady Set to true if this control line should be made active.
  */
-static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHAR pInterface, unsigned RequestToSend, unsigned DataTerminalReady)
+static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHAR pInterface, bool RequestToSend, bool DataTerminalReady)
 {
     /* Nothing to do here. */
     return VINF_SUCCESS;
