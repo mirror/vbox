@@ -1,4 +1,4 @@
-# $Id  $
+# $Id$
 ## @file
 # Makefile for the libxml2 library.
 #
@@ -19,7 +19,7 @@ DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
 # include the generated config file
-ifeq ($(filter-out nt win win32 win64,$(BUILD_TARGET)),)
+ifeq ($(BUILD_TARGET),win)
  include win32/config.msvc
 endif
 
@@ -88,20 +88,17 @@ endif
 
 ifeq ($(filter-out yes ctls,$(WITH_THREADS)),)
  VBox-libxml2_DEFS.win     += HAVE_WIN32_THREADS HAVE_COMPILER_TLS
-else
-ifeq ($(WITH_THREADS),native)
+else ifeq ($(WITH_THREADS),native)
  VBox-libxml2_DEFS.win     += HAVE_WIN32_THREADS
-else
-ifeq ($(WITH_THREADS),posix)
+else ifeq ($(WITH_THREADS),posix)
  VBox-libxml2_DEFS.win     += HAVE_PTHREAD_H
  VBox-libxml2_LIBS.win     += pthreadVC.lib
-endif
-endif
 endif
 
 ifeq ($(WITH_ZLIB),1)
  VBox-libxml2_DEFS.win     += HAVE_ZLIB_H
- VBox-libxml2_LIBS.win     += zdll.lib
+ VBox-libxml2_LIBS.win     += $(PATH_LIB)/VBox-zlib$(VBOX_LIB_SUFF)
+ VBox-libxml2_INCS.win     += ../zlib-1.2.1
 endif
 
 ifeq ($(WITH_FTP),1)
