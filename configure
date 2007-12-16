@@ -591,7 +591,7 @@ extern "C" int main(void)
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 2.5.0 or higher");
+  printf(", expected version 2.5.0 or higher\n");
   return 1;
 #endif
 }
@@ -614,6 +614,7 @@ EOF
 
 #
 # Check for libxml2, needed by xpcom
+# For now we check for libxml2 2.6.23 as 2.6.22 is known to NOT work
 #
 check_libxml2()
 {
@@ -625,12 +626,31 @@ check_libxml2()
       log_failure "not found"
       fail
     else
-      log_success "found version $libxml2_ver"
       FLGXML2=`pkg-config libxml-2.0 --cflags`
       INCXML2=`strip_I "$FLGXML2"`
       LIBXML2=`pkg-config libxml-2.0 --libs`
-      cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
-      cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBXML2"`"
+      cat > .tmp_src.cc << EOF
+#include <cstdio>
+#include <libxml/xmlversion.h>
+extern "C" int main(void)
+{
+  printf("found version %s", LIBXML_DOTTED_VERSION);
+#if LIBXML_VERSION >= 20623
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 2.6.23 or higher\n");
+  return 1;
+#endif
+}
+EOF
+      [ -n "$INCXML2" ] && I_INCXML2=`prefix_I "$INCXML2"`
+      if test_compile "$LIBXML2 $LIBPTHREAD $I_INCXML2" xml2 xml2; then
+        if test_execute; then
+          cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
+          cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBXML2"`"
+        fi
+      fi
     fi
   elif which_wrapper xml2-config; then
     libxml2_ver=`xml2-config --version`
@@ -642,8 +662,28 @@ check_libxml2()
       FLGXML2=`xml2-config --cflags`
       INCXML2=`strip_I "$FLGXML2"`
       LIBXML2=`xml2-config --libs`
-      cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
-      cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBCXML2"`"
+      cat > .tmp_src.cc << EOF
+#include <cstdio>
+#include <libxml/xmlversion.h>
+extern "C" int main(void)
+{
+  printf("found version %s", LIBXML_DOTTED_VERSION);
+#if LIBXML_VERSION >= 20623
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 2.6.23 or higher\n");
+  return 1;
+#endif
+}
+EOF
+      [ -n "$INCXML2" ] && I_INCXML2=`prefix_I "$INCXML2"`
+      if test_compile "$LIBXML2 $LIBPTHREAD $I_INCXML2" xml2 xml2; then
+        if test_execute; then
+          cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
+          cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBXML2"`"
+        fi
+      fi
     fi
   else
     log_failure "neither pkg-config nor xml2-config found"
