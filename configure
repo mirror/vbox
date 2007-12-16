@@ -56,6 +56,7 @@ LIBXALAN_DIR="/usr/local/lib"
 INCXERCES="/usr/local/include"
 LIBXERCES="-lxerces-c"
 LIBXERCES_DIR="/usr/local/lib"
+BUILD_LIBXML2=
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
 LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
@@ -618,18 +619,18 @@ EOF
 #
 check_libxml2()
 {
-  test_header libxml2
-
-  if which_wrapper pkg-config > /dev/null; then
-    libxml2_ver=`pkg-config libxml-2.0 --modversion 2>> $LOG`
-    if [ $? -ne 0 ]; then
-      log_failure "not found"
-      fail
-    else
-      FLGXML2=`pkg-config libxml-2.0 --cflags`
-      INCXML2=`strip_I "$FLGXML2"`
-      LIBXML2=`pkg-config libxml-2.0 --libs`
-      cat > .tmp_src.cc << EOF
+  if [ -z "$BUILD_LIBXML2" ]; then
+    test_header libxml2
+    if which_wrapper pkg-config > /dev/null; then
+      libxml2_ver=`pkg-config libxml-2.0 --modversion 2>> $LOG`
+      if [ $? -ne 0 ]; then
+        log_failure "not found"
+        fail
+      else
+        FLGXML2=`pkg-config libxml-2.0 --cflags`
+        INCXML2=`strip_I "$FLGXML2"`
+        LIBXML2=`pkg-config libxml-2.0 --libs`
+        cat > .tmp_src.cc << EOF
 #include <cstdio>
 #include <libxml/xmlversion.h>
 extern "C" int main(void)
@@ -644,25 +645,25 @@ extern "C" int main(void)
 #endif
 }
 EOF
-      [ -n "$INCXML2" ] && I_INCXML2=`prefix_I "$INCXML2"`
-      if test_compile "$LIBXML2 $LIBPTHREAD $I_INCXML2" xml2 xml2; then
-        if test_execute; then
-          cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
-          cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBXML2"`"
+        [ -n "$INCXML2" ] && I_INCXML2=`prefix_I "$INCXML2"`
+        if test_compile "$LIBXML2 $LIBPTHREAD $I_INCXML2" xml2 xml2; then
+          if test_execute; then
+            cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
+            cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBXML2"`"
+          fi
         fi
       fi
-    fi
-  elif which_wrapper xml2-config; then
-    libxml2_ver=`xml2-config --version`
-    if [ $? -ne 0 ]; then
-      log_failure "not found"
-      fail
-    else
-      log_success "found version $libxml2_ver"
-      FLGXML2=`xml2-config --cflags`
-      INCXML2=`strip_I "$FLGXML2"`
-      LIBXML2=`xml2-config --libs`
-      cat > .tmp_src.cc << EOF
+    elif which_wrapper xml2-config; then
+      libxml2_ver=`xml2-config --version`
+      if [ $? -ne 0 ]; then
+        log_failure "not found"
+        fail
+      else
+        log_success "found version $libxml2_ver"
+        FLGXML2=`xml2-config --cflags`
+        INCXML2=`strip_I "$FLGXML2"`
+        LIBXML2=`xml2-config --libs`
+        cat > .tmp_src.cc << EOF
 #include <cstdio>
 #include <libxml/xmlversion.h>
 extern "C" int main(void)
@@ -677,17 +678,18 @@ extern "C" int main(void)
 #endif
 }
 EOF
-      [ -n "$INCXML2" ] && I_INCXML2=`prefix_I "$INCXML2"`
-      if test_compile "$LIBXML2 $LIBPTHREAD $I_INCXML2" xml2 xml2; then
-        if test_execute; then
-          cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
-          cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBXML2"`"
+        [ -n "$INCXML2" ] && I_INCXML2=`prefix_I "$INCXML2"`
+        if test_compile "$LIBXML2 $LIBPTHREAD $I_INCXML2" xml2 xml2; then
+          if test_execute; then
+            cnf_append "SDK_VBOX_LIBXML2_INCS" "$INCXML2"
+            cnf_append "SDK_VBOX_LIBXML2_LIBS" "`strip_l "$LIBXML2"`"
+          fi
         fi
       fi
+    else
+      log_failure "neither pkg-config nor xml2-config found"
+      fail
     fi
-  else
-    log_failure "neither pkg-config nor xml2-config found"
-    fail
   fi
 }
 
@@ -1342,7 +1344,8 @@ Configuration:
   --nofatal                don't abort on errors
   --disable-xpcom          disable XPCOM and related stuff
   --disable-sdl-ttf        disable SDL_ttf detection
-  --build-xalan            build xalan & xerces from shipped sources
+  --build-xalan            build xalan & xerces from sources (not OSE!)
+  --build-libxml2          build libxml2 from sources (not OSE!)
   --setup-wine             setup a Wine directory and register the hhc hack
 
 Paths:
@@ -1441,6 +1444,9 @@ for option in $*; do
       LIBXERCES_DIR=
       LIBXALAN=
       LIBXALAN_DIR=
+      ;;
+    --build-libxml2)
+      BUILD_LIBXML2=1
       ;;
     --build-headless)
       HEADLESS=1
