@@ -69,6 +69,7 @@ VBoxDDU_SOURCES          = \
 	Storage/VBoxHDD-new.cpp \
 	Storage/VDICore.cpp \
 	Storage/VmdkHDDCore.cpp \
+	Storage/VHDHDDCore.cpp \
 	VBoxDDUDeps.cpp
 ifdef VBOX_WITH_USB
  VBoxDDU_SOURCES.win     = \
@@ -647,7 +648,17 @@ ifdef VBOX_WITH_USB
 	USB/win32/USBProxyDevice-win32.cpp
 endif # VBOX_WITH_USB
 
+ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+ Drivers_SOURCES.linux += \
+	Storage/DrvBlockAsync.cpp \
+	Storage/DrvRawImageAsync.cpp \
+	Storage/DrvTransportAsync.cpp
 
+ Drivers_SOURCES.win += \
+	Storage/DrvBlockAsync.cpp \
+	Storage/DrvRawImageAsync.cpp \
+	Storage/DrvTransportAsync.cpp
+endif #VBOX_WITH_PDM_ASYNC_COMPLETION
 
 #
 # Ring-0 Services (library, linked into VMMR0.r0)
