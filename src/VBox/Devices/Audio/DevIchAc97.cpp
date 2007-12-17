@@ -1697,7 +1697,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
         ac97Reset(pDevIns);
 
         PDMDevHlpVMSetRuntimeError(pDevIns, false, "HostAudioNotResponding",
-             N_("No audio devices could not be opened. Selecting the NULL audio backend "
+             N_("No audio devices could be opened. Selecting the NULL audio backend "
                 "with the consequence that no sound is audible."));
     }
 #ifndef RT_OS_DARWIN
