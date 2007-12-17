@@ -31,8 +31,9 @@
 
 #include <VBox/com/VirtualBox.h>
 
-#define CFGLDR_HAVE_COM
-#include <VBox/cfgldr.h>
+/// @todo later, when the settings file update funciton is reimplemented using
+/// libxslt (search for CFGLDR to find related parts of code below)
+// #include <VBox/settings.h>
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -3264,7 +3265,8 @@ static int handleConvertDDImage(int argc, char *argv[])
                     while (offFile < cbFile)
                     {
                         size_t cbRead = 0;
-                        size_t cbToRead = cbFile - offFile >= cbBuffer ? cbBuffer : cbFile - offFile;
+                        size_t cbToRead = cbFile - offFile >= (uint64_t) cbBuffer ?
+                            cbBuffer : (size_t) (cbFile - offFile);
                         rc = RTFileRead(File, pvBuf, cbToRead, &cbRead);
                         if (VBOX_FAILURE(rc) || !cbRead)
                             break;
@@ -7250,6 +7252,12 @@ static int handleUpdateSettings_processFile (const char *filePath, HUSPD mode)
 {
     RTPrintf ("%s\n", filePath);
 
+/// @todo later, when the settings file update funciton is reimplemented using
+/// libxslt (search for CFGLDR to find related parts of code below). Note that
+/// it doesn't make sense to enable this code since CFGLDR is no more
+/// available.
+#if 0
+
     CFGHANDLE config = 0;
     char *errMsg = NULL;
 
@@ -7319,6 +7327,14 @@ static int handleUpdateSettings_processFile (const char *filePath, HUSPD mode)
         RTStrFree (errMsg);
 
     return vrc;
+
+#else
+
+    RTPrintf ("Error converting settings file '%s': "
+              "THE FUNCTION IS TEMPORARILY DISABLED!\n");
+    return 1;
+
+#endif
 }
 
 static int handleUpdateSettings_processDir (const char *dirPath, HUSPD mode,
@@ -7405,18 +7421,24 @@ static int handleUpdateSettings (int argc, char *argv[])
                 skipinvalid = true;
             else
             {
-                return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+                return errorSyntax(USAGE_UPDATESETTINGS, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
             }
         }
         else
         {
-            return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+            return errorSyntax(USAGE_UPDATESETTINGS, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
         }
     }
 
     HUSPD mode = HUSPD_DryRun;
     if (apply)
         mode = nobackup ? HUSPD_ApplyNoBackup : HUSPD_Apply;
+
+/// @todo later, when the settings file update funciton is reimplemented using
+/// libxslt (search for CFGLDR to find related parts of code below). Note that
+/// it doesn't make sense to enable this code since CFGLDR is no more
+/// available.
+#if 0
 
     int vrc = CFGLDRInitialize();
     if (VBOX_FAILURE (vrc))
@@ -7471,6 +7493,16 @@ static int handleUpdateSettings (int argc, char *argv[])
     CFGLDRShutdown();
 
     return VBOX_SUCCESS (vrc) ? 0 : 1;
+
+#else
+
+    NOREF (mode);
+
+    RTPrintf ("THE SETTINGS FILE UPDATE FUNCTION IS TEMPORARILY DISABLED!\n");
+    return 1;
+
+
+#endif
 }
 
 // main
