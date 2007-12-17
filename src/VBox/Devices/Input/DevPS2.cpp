@@ -103,6 +103,7 @@ __END_DECLS
 #define KBD_CCMD_WRITE_MOUSE	0xD4	/* Write the following byte to the mouse */
 #define KBD_CCMD_DISABLE_A20    0xDD    /* HP vectra only ? */
 #define KBD_CCMD_ENABLE_A20     0xDF    /* HP vectra only ? */
+#define KBD_CCMD_READ_TSTINP    0xE0    /* Read test inputs T0, T1 */
 #define KBD_CCMD_RESET	        0xFE
 
 /* Keyboard Commands */
@@ -485,6 +486,11 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
 #endif /* VBOX */
         break;
 #endif
+    case KBD_CCMD_READ_TSTINP:
+        /* Keyboard clock line is zero IFF keyboard is disabled */
+        val = (s->mode & KBD_MODE_DISABLE_KBD) ? 0 : 1;
+        kbd_queue(s, val, 0);
+        break;
     case KBD_CCMD_RESET:
 #ifndef VBOX
         qemu_system_reset_request();
