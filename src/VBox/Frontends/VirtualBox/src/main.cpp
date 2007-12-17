@@ -112,7 +112,7 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
 int main (int argc, char **argv)
 {
     /* initialize VBox Runtime */
-    RTR3Init (true, ~(size_t)0);
+    RTR3Init (false, ~(size_t)0);
 
     LogFlowFuncEnter();
 
