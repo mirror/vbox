@@ -37,6 +37,7 @@ WITH_QT=1
 WITH_SDL=1
 WITH_SDL_TTF=1
 WITH_X11=1
+WITH_PULSE=1
 CC="gcc"
 CC32=""
 CC64=""
@@ -988,6 +989,7 @@ check_alsa()
 {
   test_header ALSA
   cat > .tmp_src.cc << EOF
+#include <cstdio>
 #include <alsa/asoundlib.h>
 extern "C" int main(void)
 {
@@ -1003,6 +1005,32 @@ extern "C" int main(void)
 }
 EOF
   if test_compile "-lasound" asound asound; then
+    test_execute
+  fi
+}
+
+#
+# Check for PulseAudio
+#
+check_pulse()
+{
+  test_header "PulseAudio"
+  cat > .tmp_src.cc << EOF
+#include <cstdio>
+#include <pulse/version.h>
+extern "C" int main(void)
+{
+  printf("found version %s API version %d", pa_get_headers_version(), PA_API_VERSION);
+#if PA_API_VERSION >= 9
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 0.9.0 (API version 9) or higher\n");
+  return 1;
+#endif
+}
+EOF
+  if test_compile "-lpulse" pulse pulse; then
     test_execute
   fi
 }
@@ -1344,6 +1372,7 @@ Configuration:
   --nofatal                don't abort on errors
   --disable-xpcom          disable XPCOM and related stuff
   --disable-sdl-ttf        disable SDL_ttf detection
+  --disable-pulse          disable PulseAudio detection
   --build-xalan            build xalan & xerces from sources (not OSE!)
   --build-libxml2          build libxml2 from sources (not OSE!)
   --setup-wine             setup a Wine directory and register the hhc hack
@@ -1435,6 +1464,9 @@ for option in $*; do
       ;;
     --disable-qt)
       WITH_QT=0
+      ;;
+    --disable-pulse)
+      WITH_PULSE=0
       ;;
     --build-debug|-d)
       BUILD_TYPE=debug
@@ -1586,6 +1618,11 @@ if [ "$OS" = "linux" ]; then
   check_staticlibstdcxx
   check_linux
   check_alsa
+  if [ $WITH_PULSE -eq 1 ]; then
+    check_pulse
+  else
+    cnf_append "VBOX_WITH_PULSE" ""
+  fi
   check_compiler_h
   [ "$BUILD_MACHINE" = "amd64" ] && check_32bit
 fi
