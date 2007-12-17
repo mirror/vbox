@@ -218,7 +218,7 @@ VBOX_WITH_ISCSI = 1
 # Enable ALSA support for Linux
 VBOX_WITH_ALSA = 1
 # Enable Pulse support for Linux
-#VBOX_WITH_PULSE = 1
+VBOX_WITH_PULSE = 1
 # Disable WINMM support for Windows (not implemented)
 VBOX_WITH_WINMM =
 # Enable the kchmviewer
