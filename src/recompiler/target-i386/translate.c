@@ -5950,6 +5950,9 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             reg = (modrm >> 3) & 7;
             mod = (modrm >> 6) & 3;
             rm = modrm & 7;
+#ifdef VBOX /* Fix for obvious bug - T1 needs to be loaded */
+            gen_op_mov_TN_reg[ot][1][reg]();
+#endif
             if (mod != 3) {
                 gen_lea_modrm(s, modrm, &reg_addr, &offset_addr);
                 gen_op_ld_T0_A0[ot + s->mem_index]();
