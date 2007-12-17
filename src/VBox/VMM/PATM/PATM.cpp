@@ -3068,7 +3068,7 @@ failure:
 }
 
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
 /**
  * Check if the instruction is patched as a common idt handler
  *
