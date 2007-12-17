@@ -171,6 +171,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_NAT,
     /** Raw image driver group */
     LOG_GROUP_DRV_RAW_IMAGE,
+    /** Async transport driver group */
+    LOG_GROUP_DRV_TRANSPORT_ASYNC,
     /** TUN network transport driver group */
     LOG_GROUP_DRV_TUN,
     /** USB Proxy driver group. */
@@ -358,6 +360,7 @@ typedef enum LOGGROUP
     "DRV_NAMEDPIPE", \
     "DRV_NAT",      \
     "DRV_RAW_IMAGE", \
+    "DRV_TRANSPORT_ASYNC" \
     "DRV_TUN",      \
     "DRV_USBPROXY", \
     "DRV_VBOXHDD",  \
