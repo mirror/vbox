@@ -88,6 +88,121 @@
  * doesn't use this API (e.g. third-party code), it may lead to resource
  * conflicts (followed by crashes, memory corruption etc.). A proper solution
  * for these conflicts is to be found.
+ *
+ * In order to load a settings file the program creates a TreeBackend instance
+ * using one of the specific backends (e.g. XmlTreeBackend) and then passes an
+ * Input stream object (e.g. File or MemoryBuf) to the TreeBackend::read()
+ * method to parse the stream and build the settings tree. On success, the
+ * program uses the TreeBackend::rootKey() method to access the root key of
+ * the settings tree. The root key provides access to the whole tree of
+ * settings through the methods of the Key class which allow to read, change
+ * and create new key values. Below is an example that uses the XML backend to
+ * load the settings tree, then modifies it and then saves the modifications.
+ *
+ * @code
+    using namespace settings;
+
+    try
+    {
+        File file (File::ReadWrite, "myfile.xml");
+        XmlTreeBackend tree;
+
+        // load the tree, parse it and validate using the XML schema
+        tree.read (aFile, "myfile.xsd", XmlTreeBackend::Read_AddDefaults);
+
+        // get the root key
+        Key root = tree.key();
+        printf ("root=%s\n", root.name());
+
+        // enumerate all child keys of the root key named Foo
+        Key::list children = root.keys ("Foo");
+        for (Key::list::const_iterator it = children.begin();
+             it != children.end();
+             ++ it)
+        {
+            // get the "level" attribute
+            int level = (*it).value <int> ("level");
+            if (level > 5)
+            {
+                // if so, create a "Bar" key if it doesn't exist yet 
+                Key bar = (*it).createKey ("Bar");
+                // set the "date" attribute
+                RTTIMESPEC now;
+                RTTimeNow (&now);
+                bar.setValue <RTTIMESPEC> ("date", now);
+            }
+            else if (level < 2)
+            {
+                // if its below 2, delete the whole "Foo" key
+                (*it).zap();
+            }
+        }
+
+        // save the tree on success (the second try is to distinguish between
+        // stream load and save errors)
+        try
+        {
+            aTree.write (aFile);
+        }
+        catch (const EIPRTFailure &err)
+        {
+            // this is an expected exception that may happen in case of stream
+            // read or write errors
+            printf ("Could not save the settings file '%s' (%Vrc)");
+                    file.uri(), err.rc());
+
+            return FAILURE;
+        }
+
+        return SUCCESS;
+    }
+    catch (const EIPRTFailure &err)
+    {
+        // this is an expected exception that may happen in case of stream
+        // read or write errors
+        printf ("Could not load the settings file '%s' (%Vrc)");
+                file.uri(), err.rc());
+    }
+    catch (const XmlTreeBackend::Error &err)
+    {
+        // this is an XmlTreeBackend specific exception exception that may
+        // happen in case of XML parse or validation errors
+        printf ("Could not load the settings file '%s'.\n%s"),
+                file.uri(), err.what() ? err.what() : "Unknown error");
+    }
+    catch (const std::exception &err)
+    {
+        // the rest is unexpected (e.g. should not happen unless you
+        // specifically wish so for some reason and therefore allow for a
+        // situation that may throw one of these from within the try block
+        // above)
+        AssertMsgFailed ("Unexpected exception '%s' (%s)\n",
+                         typeid (err).name(), err.what());
+    catch (...)
+    {
+        // this is even more unexpected, and no any useful info here
+        AssertMsgFailed ("Unexpected exception\n");
+    }
+
+    return FAILURE;
+ * @endcode
+ *
+ * Note that you can get a raw (string) value of the attribute using the
+ * Key::stringValue() method but often it's simpler and better to use the
+ * templated Key::value<>() method that can convert the string to a value of
+ * the given type for you (and throw exceptions when the converison is not
+ * possible). Similarly, the Key::setStringValue() methid is used to set a raw
+ * string value and there is a templated Key::setValue<>() method to set a
+ * typed value which will implicitly convert it to a string.
+ *
+ * Currently, types supported by Key::value<>() and Key::setValue<>() include
+ * all C and IPRT integer types, bool and RTTIMESPEC (represented as isoDate
+ * in XML). You can always add support for your own types by creating
+ * additional specializations of the FromString<>() and ToString<>() templates
+ * in the settings namespace (see the real examples in this header).
+ *
+ * See individual funciton, class and method descriptions to get more details
+ * on the Settings File Manipulation API.
  */
 
 #ifndef IN_RING3
@@ -1136,7 +1251,7 @@ private:
 };
 
 /** 
- * The MemoryFile class represents a stream implementation that reads from the
+ * The MemoryBuf class represents a stream implementation that reads from the
  * memory buffer.
  */
 class VBOXSETTINGS_CLASS MemoryBuf : public Input
