@@ -651,6 +651,14 @@ typedef struct PDMDRVHLP
     DECLR3CALLBACKMEMBER(int, pfnPDMThreadCreate,(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                                   PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
 
+    /**
+     * Gets the VM handle.
+     *
+     * @returns VM Handle.
+     * @param   pDrvIns         Driver instance.
+     */
+    DECLR3CALLBACKMEMBER(PVM, pfnGetVM,(PPDMDRVINS pDrvIns));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLP;
@@ -806,6 +814,14 @@ DECLINLINE(int) PDMDrvHlpPDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThrea
                                          PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     return pDrvIns->pDrvHlp->pfnPDMThreadCreate(pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnGetVM
+ */
+DECLINLINE(PVM) PDMDrvHlpGetVM(PPDMDRVINS pDrvIns)
+{
+    return pDrvIns->pDrvHlp->pfnGetVM(pDrvIns);
 }
 #endif /* IN_RING3 */
 
