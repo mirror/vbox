@@ -38,12 +38,10 @@ ifdef VBOX_WITH_ALSA
 endif
 ifeq ($(BUILD_TARGET),win)
  VBoxManage_LIBS     += \
-	$(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxXML$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB)
 else
  VBoxManage_LIBS     += \
-	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
-	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL)
+	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL)
 endif
 
 # VBoxManageSVN.cpp uses VBOX_SVN_REV.
