@@ -161,6 +161,10 @@ typedef struct
     off_t                   cbMMIO;
     /** VMMDev Version. */
     uint32_t                u32Version;
+#ifndef USE_SESSION_HASH
+    /** Pointer to the session handle. */
+    PVBOXGUESTSESSION       pSession;
+#endif
 } VBoxAddDevState;
 
 /** Device handle (we support only one instance). */
@@ -173,10 +177,12 @@ static void *g_pVBoxAddSolarisState;
 static VBOXGUESTDEVEXT      g_DevExt;
 /** Spinlock protecting g_apSessionHashTab. */
 static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
+#ifdef USE_SESSION_HASH
 /** Hash table */
 static PVBOXGUESTSESSION    g_apSessionHashTab[19];
 /** Calculates the index into g_apSessionHashTab.*/
 #define SESSION_HASH(sfn) ((sfn) % RT_ELEMENTS(g_apSessionHashTab))
+#endif /* USE_SESSION_HASH */
 
 /** GCC C++ hack. */
 unsigned __gxx_personality_v0 = 0xdecea5ed;
@@ -237,6 +243,7 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             VBoxAddDevState *pState;
 
             instance = ddi_get_instance(pDip);
+#ifdef USE_SESSION_HASH
             rc = ddi_soft_state_zalloc(g_pVBoxAddSolarisState, instance);
             if (rc != DDI_SUCCESS)
             {
@@ -251,6 +258,14 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                 VBA_LOGNOTE("ddi_get_soft_state for instance %d failed\n", instance);
                 return DDI_FAILURE;
             }
+#else
+            pState = RTMemAllocZ(sizeof(VBoxAddDevState));
+            if (!pState)
+            {
+                VBA_LOGNOTE("RTMemAllocZ failed to allocate %d bytes\n", sizeof(VBoxAddDevState));
+                return DDI_FAILURE;
+            }
+#endif
 
             /*
              * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
@@ -404,14 +419,22 @@ static int VBoxAddSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
         {
             int rc;
             int instance = ddi_get_instance(pDip);
+#ifdef USE_SESSION_HASH
             VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, instance);
+#else
+            VBoxAddDevState *pState = ddi_get_driver_private(g_pDip);
+#endif
             if (pState)
             {
                 VBoxGuestSolarisRemoveIRQ(pDip, pState);
                 ddi_regs_map_free(&pState->PciIOHandle);
                 ddi_regs_map_free(&pState->PciMMIOHandle);
                 ddi_remove_minor_node(pDip, NULL);
+#ifdef USE_SESSION_HASH
                 ddi_soft_state_free(g_pVBoxAddSolarisState, instance);
+#else
+                RTMemFree(pState);
+#endif
 
                 rc = RTSpinlockDestroy(g_Spinlock);
                 AssertRC(rc);
@@ -479,6 +502,38 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 
     VBA_LOGCONT("VBoxAddSolarisOpen\n");
 
+#ifndef USE_SESSION_HASH
+    VBoxAddDevState *pState = NULL;
+    unsigned iOpenInstance;
+    for (iOpenInstance = 0; iOpenInstance < 4096; iOpenInstance++)
+    {
+        if (    !ddi_get_soft_state(g_pVBoxAddSolarisState, iOpenInstance) /* faster */
+            &&  ddi_soft_state_zalloc(g_pVBoxAddSolarisState, iOpenInstance) == DDI_SUCCESS)
+        {
+            pState = ddi_get_soft_state(g_pVBoxAddSolarisState, iOpenInstance);
+            break;
+        }
+    }
+    if (!pState)
+    {
+        VBA_LOGNOTE("VBoxAddSolarisOpen: too many open instances.");
+        return ENXIO;
+    }
+
+    /*
+     * Create a new session.
+     */
+    rc = VBoxGuestCreateUserSession(&g_DevExt, &pSession);
+    if (RT_SUCCESS(rc))
+    {
+        pState->pSession = pSession;
+        VBA_LOGCONT("VBoxAddSolarisOpen: pSession=%p pState=%p\n", pSession, pState);
+        return 0;
+    }
+
+    /* Failed, clean up. */
+    ddi_soft_state_free(g_pVBoxAddSolarisState, iOpenInstance);
+#else
     /*
      * Create a new session.
      */
@@ -499,6 +554,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         Log(("VBoxAddSolarisOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
         return 0;
     }
+#endif
     LogRel(("VBoxAddSolarisOpen: VBoxGuestCreateUserSession failed. rc=%d\n", rc));
     return rc;
 }
@@ -508,6 +564,7 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 {
     VBA_LOGCONT("VBoxAddSolarisClose pid=%d\n", (int)RTProcSelf());
 
+#ifdef USE_SESSION_HASH
     /*
      * Remove from the hash table.
      */
@@ -550,6 +607,24 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
         Log(("VBoxGuestIoctl: WHUT?!? pSession == NULL! This must be a mistake... pid=%d", (int)Process));
         return VERR_INVALID_PARAMETER;
     }
+#else
+    PVBOXGUESTSESSION pSession;
+    VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, getminor(Dev));
+    if (!pState)
+    {
+        VBA_LOGNOTE("VBoxAddSolarisClose: failed to get pState.\n");
+        return DDI_FAILURE;
+    }
+
+    pSession = pState->pSession;
+    pState->pSession = NULL;
+    ddi_soft_state_free(g_pVBoxAddSolarisState, getminor(Dev));
+    if (!pSession)
+    {
+        VBA_LOGNOTE("VBoxAddSolarisClose: failed to get pSession.\n");
+        return DDI_FAILURE;
+    }
+#endif
 
     /*
      * Close the session.
@@ -597,6 +672,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     VBA_LOGCONT("VBoxAddSolarisIOCtl\n");
 
     /** @todo use the faster way to find pSession (using the soft state) */
+#ifdef USE_SESSION_HASH
     RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     const RTPROCESS     Process = RTProcSelf();
     const unsigned      iHash = SESSION_HASH(Process);
@@ -619,6 +695,24 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
                     (int)Process, Cmd);
         return EINVAL;
     }
+#else
+    /*
+     * Get the session from the soft state item.
+     */
+    VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, getminor(Dev));
+    if (!pState)
+    {
+        VBA_LOGNOTE("VBoxAddSolarisIOCtl: no state data for %d\n", getminor(Dev));
+        return EINVAL;
+    }
+
+    PVBOXGUESTSESSION pSession = pState->pSession;
+    if (!pSession)
+    {
+        VBA_LOGNOTE("VBoxAddSolarisIOCtl: no session data for %d\n", getminor(Dev));
+        return DDI_SUCCESS;
+    }
+#endif
 
     /** @todo I'll remove this size check after testing. */
     uint32_t cbBuf = 0;
@@ -690,7 +784,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     }
 #endif
 
-    cbBuf = IOCPARM_LEN(Cmd);    
+    cbBuf = IOCPARM_LEN(Cmd);
     void *pvBuf = RTMemTmpAlloc(cbBuf);
     if (RT_UNLIKELY(!pvBuf))
     {

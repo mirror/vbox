@@ -25,14 +25,29 @@
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <libdaemon/dfork.h>
+#include <libdaemon/dsignal.h>
 
 /**
- * Solaris daemon() call. Probably might work for other Unix.
+ * Solaris daemon() call uses libdaemon.
  *
  * @returns 0 on success
  */
 int daemon(int nochdir, int noclose)
 {
+    pid_t pid = daemon_fork();
+    if (pid < 0)
+    {
+        daemon_retval_done();
+        return -1;
+    }
+
+    if (pid)
+        exit(0);
+
+    daemon_close_all(-1);
+    return 0;
+#if 0
     if (getppid() == 1) /* We already belong to init process */
         return -1;
 
@@ -51,7 +66,7 @@ int daemon(int nochdir, int noclose)
 
     int size = getdtablesize();
     if (size < 0)
-        size = 3;
+        size = 2;
 
     for (int i = size; i >= 0; i--)
         close(i);
@@ -73,5 +88,6 @@ int daemon(int nochdir, int noclose)
         signal(SIGHUP, SIG_IGN);
     }
     return 0;
+#endif
 }
 
