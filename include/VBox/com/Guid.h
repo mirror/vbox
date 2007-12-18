@@ -103,7 +103,7 @@ public:
     /* to pass instances as GUIDPARAM parameters to interface methods */
     operator const GUID &() const { return *(GUID *) &uuid; }
 
-    /* to directly pass instances to CFGLDRQueryUUID() */
+    /* to directly pass instances to RTPrintf("%Vuuid") */
     PRTUUID ptr() { return &uuid; }
 
     /* to pass instances to printf-like functions */

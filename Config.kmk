@@ -1141,14 +1141,6 @@ VBOXLNX32GUEST_SUFF_LIB = .a
 #
 # SDKs for external libraries.
 #
-SDK_VBOX_XERCES       = .
-SDK_VBOX_XERCES_INCS ?= $(PATH_ROOT)/src/libs/xerces-2.6.0/src
-SDK_VBOX_XERCES_LIBS ?= $(PATH_LIB)/VBox-xerces$(VBOX_SUFF_LIB)
-
-SDK_VBOX_XALAN        = .
-SDK_VBOX_XALAN_INCS  ?= $(PATH_ROOT)/src/libs/xalan-1.10.0
-SDK_VBOX_XALAN_LIBS  ?= $(PATH_LIB)/VBox-xalan$(VBOX_SUFF_LIB)
-
 SDK_VBOX_LIBXML2          = .
 #if1of ($(BUILD_TARGET),win os2 solaris)
  SDK_VBOX_LIBXML2_INCS   ?= $(PATH_ROOT)/src/libs/libxml2-2.6.30/include
@@ -2241,7 +2233,7 @@ endif
 #
 TEMPLATE_VBOXQTGUI = VBox Qt GUI Components
 TEMPLATE_VBOXQTGUI_EXTENDS = VBOXQTGUIEXE
-TEMPLATE_VBOXQTGUI_LIBS = $(filter-out $(QTMAIN) $(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL),$(TEMPLATE_VBOXQTGUIEXE_LIBS))
+TEMPLATE_VBOXQTGUI_LIBS = $(filter-out $(QTMAIN),$(TEMPLATE_VBOXQTGUIEXE_LIBS))
 ifeq ($(BUILD_TARGET),darwin)
  TEMPLATE_VBOXQTGUI_LDFLAGS = $(filter-out -framework Carbon -framework QuickTime -bind_at_load,$(TEMPLATE_VBOXQTGUIEXE_LDFLAGS))
 endif

@@ -27,7 +27,7 @@
 #include "HostUSBDeviceImpl.h"
 
 /* We do not support loadable configurations here */
-// #include <VBox/cfgldr.h>
+// #include <VBox/settings.h>
 
 #include <list>
 

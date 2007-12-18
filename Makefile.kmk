@@ -133,19 +133,6 @@ ifeq ($(BUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  endif
 endif
 
-# The Xerces DLL
-ifneq ($(DLL_SDK_VBOX_XERCES_XERCES),)
- bin_SOURCES += $(DLL_SDK_VBOX_XERCES_XERCES)
-endif
-
-# The Xalan DLLs
-ifneq ($(DLL_SDK_VBOX_XALAN_XALAN),)
- bin_SOURCES += $(DLL_SDK_VBOX_XALAN_XALAN)
-endif
-ifneq ($(DLL_SDK_VBOX_XALAN_XALAN-MESSAGES),)
- bin_SOURCES += $(DLL_SDK_VBOX_XALAN_XALAN-MESSAGES)
-endif
-
 
 #
 # Install staged binaries on platforms where we can't cross

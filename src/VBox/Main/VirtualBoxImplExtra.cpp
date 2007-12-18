@@ -24,8 +24,11 @@
 #include "VirtualBoxXMLUtil.h"
 
 /* embedded XML Schema documents for validating XML settings files */
-#include "VirtualBoxXMLUtil_entities.h"
-#include "VirtualBoxXMLUtil_common_entities.h"
+#include "xml_VirtualBox_settings_xsd.h"
+#include "xml_VirtualBox_settings_common_xsd.h"
+
+/* embedded settings converter template for updating settings files */
+#include "xml_SettingsConverter_xsl.h"
 
 /** 
  * Resolves external entities while parting and validating XML settings files.
@@ -42,15 +45,15 @@ VirtualBox::SettingsInputResolver::resolveEntity (const char *aURI, const char *
     if (strcmp (aURI, VBOX_XML_SCHEMA_COMMON) == 0)
     {
         return new settings::
-            MemoryBuf ((const char *) g_abVirtualBox_settings_common_xsd,
-                       g_cbVirtualBox_settings_common_xsd, aURI);
+            MemoryBuf ((const char *) g_ab_xml_VirtualBox_settings_common_xsd,
+                       g_cb_xml_VirtualBox_settings_common_xsd, aURI);
     }
 
     if (strcmp (aURI, VBOX_XML_SCHEMA) == 0)
     {
         return new settings::
-            MemoryBuf ((const char *) g_abVirtualBox_settings_xsd,
-                       g_cbVirtualBox_settings_xsd, aURI);
+            MemoryBuf ((const char *) g_ab_xml_VirtualBox_settings_xsd,
+                       g_cb_xml_VirtualBox_settings_xsd, aURI);
     }
 
     AssertMsgFailed (("Unexpected entity: '%s' - knows: '%s' and '%s'\n", aURI,

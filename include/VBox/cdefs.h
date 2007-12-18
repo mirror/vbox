@@ -57,7 +57,6 @@
 #ifndef VBOX_STRICT
 # define VBOX_STRICT
 #endif
-#define IN_CFGLDR_R3
 #define IN_CFGM_GC
 #define IN_CFGM_R3
 #define IN_CPUM_GC
