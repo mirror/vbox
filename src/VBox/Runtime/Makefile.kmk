@@ -62,7 +62,7 @@ else
   LIBRARIES += RuntimeR0Drv
  endif
  ifdef VBOX_WITH_ADDITIONS
-  if1of ($(BUILD_TARGET),linux l4 windows)
+  if1of ($(BUILD_TARGET),linux l4 win)
    ifdef VBOX_WITH_WIN32_ADDITIONS
     LIBRARIES += RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
    endif
