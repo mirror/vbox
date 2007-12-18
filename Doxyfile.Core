@@ -484,7 +484,7 @@ INPUT                  = \
     include/VBox/dis.h \
     include/VBox/disopcode.h \
     include/VBox/intnet.h \
-    include/VBox/cfgldr.h \
+    include/VBox/settings.h \
     include/VBox/pci.h \
     include/VBox/scsi.h \
     include/VBox/shflsvc.h \
@@ -1208,7 +1208,6 @@ EXPAND_AS_DEFINED      = \
     CTXMID \
     OTHERCTXMID \
     \
-    CFGLDRR3DECL \
     CFGMDECL \
     CFGMGCDECL \
     CFGMR0DECL \
