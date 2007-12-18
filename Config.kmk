@@ -119,6 +119,8 @@ VBOX_VERSION_MINOR = 5
 # This is the current build number. It should be increased every time we publish a
 # new build. The define is available in every source file. Only even build numbers
 # will be published, odd numbers are set during development.
+# When doing a release also 'export VBOX_ADDITIONS_SH_MODE = release' here to
+# force an exact match of the additions build and the application builds.
 VBOX_VERSION_BUILD = 51
 # Full version string (may include more than just x.y.z, but no spaces or other problematic chars).
 VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
@@ -129,41 +131,42 @@ VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION
 #
 # We try to document all the build configuration options here, thing which
 # aren't enabled by default is left commented out just to show that they
-# exist and which value they should (usually 1, but anyway).
+# exist and which value they should have (usually 1, but anyway).
 #
 
-# Build linux / win32 additions.
-ifeq ($(BUILD_TARGET),linux)
-  VBOX_WITH_LINUX_ADDITIONS = 1
-  VBOX_WITH_WIN32_ADDITIONS = 1
+# This indicates that additions (of some kind or another) is being _built_.
+# VBOX_WITHOUT_ADDITIONS overrides it.
+if1of ($(BUILD_TARGET),l4 linux os2 solaris win)
+ VBOX_WITH_ADDITIONS = 1
+else ifdef VBOX_WITH_WIN32_ADDITIONS # for ssh cross builds -remove later!
+ VBOX_WITH_ADDITIONS = 1
+else ifdef VBOX_WITH_LINUX_ADDITIONS # for ssh cross builds - remove later!
+ VBOX_WITH_ADDITIONS = 1
 endif
-ifeq ($(BUILD_TARGET),l4)
+# Build win32 additions (cross building them on linux and l4 using wine).
+if1of ($(BUILD_TARGET),l4 linux win)
+ VBOX_WITH_WIN32_ADDITIONS = 1
+endif
+# Build linux additions.
+# Note! VBOX_WITH_LINUX_ADDITIONS will be removed later and only VBOX_WITH_WIN32_ADDITIONS will
+# be kept around for cross building. That is, unless it is really needed for l4 development (the
+# build server will fetch the .iso from the additions build box).
+if1of ($(BUILD_TARGET),l4 linux)
  VBOX_WITH_LINUX_ADDITIONS = 1
- VBOX_WITH_WIN32_ADDITIONS = 1
-endif
-ifeq ($(BUILD_TARGET),os2)
- VBOX_WITH_OS2_ADDITIONS = 1
-endif
-ifeq ($(BUILD_TARGET),win)
- VBOX_WITH_WIN32_ADDITIONS = 1
-endif
-ifdef VBOX_WITH_LINUX_ADDITIONS
  ifeq ($(BUILD_TARGET).$(BUILD_PLATFORM_ARCH),linux.x86)
   VBOX_WITH_LINUX_ADDITIONS_32BIT_R0 = 1
  endif
 endif
-ifeq ($(BUILD_TARGET),solaris)
- VBOX_WITH_SOLARIS_ADDITIONS = 1
-endif
 # Enable the building of shared folders in the windows additions.
 VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS = 1
-# Take the binaries of the OS/2 Additions
+# Take the binaries of the OS/2 Additions.
 VBOX_WITH_OS2_ADDITIONS_BIN = 1
 # Use additions from the build server.
 #VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER = 1
-# Don't bother with additions.
+# Don't bother with additions, overrides VBOX_WITH_ADDITIONS.
+# This is not used by makefiles, only Config.kmk, see below.
 #VBOX_WITHOUT_ADDITIONS = 1
-# Only build the additions (for the build server).
+# Only build the additions (for the additions build server).
 #VBOX_ONLY_ADDITIONS = 1
 
 # build the installer
@@ -397,6 +400,29 @@ ifdef VBOX_OSE
   # Only the Linux installer is public
   VBOX_WITH_INSTALLER=
  endif
+endif
+
+#
+# Sanitize the additions build config variables.
+#
+ifdef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
+ VBOX_WITHOUT_ADDITIONS := 1
+ ifdef VBOX_ONLY_ADDITIONS
+  $(error VBOX_ONLY_ADDITIONS + VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER doesn't add up!)
+ endif
+endif
+
+ifdef VBOX_ONLY_ADDITIONS
+ ifdef VBOX_WITHOUT_ADDITIONS
+  $(error VBOX_ONLY_ADDITIONS + VBOX_WITHOUT_ADDITIONS doesn't add up!)
+ endif
+endif
+
+ifdef VBOX_WITHOUT_ADDITIONS
+ # Zap anything that could be contradicting this.
+ VBOX_WITH_ADDITIONS :=
+ VBOX_WITH_WIN32_ADDITIONS :=
+ VBOX_WITH_LINUX_ADDITIONS :=
 endif
 
 #

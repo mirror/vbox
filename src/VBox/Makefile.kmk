@@ -43,10 +43,8 @@ else  # !VBOX_ONLY_ADDITIONS
   SUBDIRS += RDP
  endif
 
- ifndef VBOX_WITHOUT_ADDITIONS
-  ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS)$(VBOX_WITH_SOLARIS_ADDITIONS),)
-   SUBDIRS += Additions
-  endif
+ ifdef VBOX_WITH_ADDITIONS
+  SUBDIRS += Additions
  endif
 
  SUBDIRS += Frontends
