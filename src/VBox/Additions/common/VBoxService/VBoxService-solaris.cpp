@@ -25,8 +25,10 @@
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
+#ifdef USE_LIBDAEMON
 #include <libdaemon/dfork.h>
 #include <libdaemon/dsignal.h>
+#endif
 
 /**
  * Solaris daemon() call uses libdaemon.
@@ -35,6 +37,7 @@
  */
 int daemon(int nochdir, int noclose)
 {
+#ifdef USE_LIBDAEMON
     pid_t pid = daemon_fork();
     if (pid < 0)
     {
@@ -47,7 +50,7 @@ int daemon(int nochdir, int noclose)
 
     daemon_close_all(-1);
     return 0;
-#if 0
+#else
     if (getppid() == 1) /* We already belong to init process */
         return -1;
 
