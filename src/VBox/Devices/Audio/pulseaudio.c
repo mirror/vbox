@@ -256,10 +256,10 @@ static int pulse_open (int fIn, struct pulse_params_req *req,
         goto disconnect_unlock_and_fail;
     }
 
-    pa_threaded_mainloop_unlock(g_pMainLoop);
-
     pBufAttr = pa_stream_get_buffer_attr(pStream);
     obt->buffer_size = pBufAttr->maxlength;
+
+    pa_threaded_mainloop_unlock(g_pMainLoop);
 
     LogRel(("Pulse: buffer settings: max=%d tlength=%d prebuf=%d minreq=%d\n",
             pBufAttr->maxlength, pBufAttr->tlength, pBufAttr->prebuf, pBufAttr->minreq));
@@ -597,16 +597,17 @@ static void *pulse_audio_init (void)
                  pa_strerror(pa_context_errno(g_pContext))));
         goto fail;
     }
-    if (pa_threaded_mainloop_start(g_pMainLoop) < 0)
-    {
-        LogRel(("Pulse: Failed to start threaded mainloop: %s\n",
-                 pa_strerror(pa_context_errno(g_pContext))));
-        goto fail;
-    }
     pa_context_set_state_callback(g_pContext, context_state_callback, NULL);
     if (pa_context_connect(g_pContext, /*server=*/NULL, 0, NULL) < 0)
     {
         LogRel(("Pulse: Failed to connect to server: %s\n",
+                 pa_strerror(pa_context_errno(g_pContext))));
+        goto fail;
+    }
+
+    if (pa_threaded_mainloop_start(g_pMainLoop) < 0)
+    {
+        LogRel(("Pulse: Failed to start threaded mainloop: %s\n",
                  pa_strerror(pa_context_errno(g_pContext))));
         goto fail;
     }
