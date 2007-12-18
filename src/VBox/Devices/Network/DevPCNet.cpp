@@ -1480,7 +1480,8 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
                 CSR_CRBC(pData) = rmd.rmd1.bcnt;               /* Receive Byte Count */
                 CSR_CRST(pData) = ((uint32_t *)&rmd)[1] >> 16; /* Receive Status */
 #ifdef IN_RING3
-                pData->pDrv->pfnNotifyCanReceive(pData->pDrv);
+                if (pData->pDrv)
+                    pData->pDrv->pfnNotifyCanReceive(pData->pDrv);
 #else
                 PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pCanRxQueue));
                 if (pItem)
