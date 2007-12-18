@@ -195,4 +195,8 @@ uint32_t lsbindex (uint32_t u);
 #define audio_MAX(a, b) ((a)<(b)?(b):(a))
 #endif
 
+#ifdef VBOX
+const char *audio_get_stream_name(void);
+#endif
+
 #endif  /* audio.h */

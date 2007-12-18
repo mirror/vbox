@@ -1344,6 +1344,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
 #endif
         }
+        hrc = pMachine->COMGETTER(Name)(&str);                                          H();
+        STR_CONV();
+        rc = CFGMR3InsertString(pCfg,  "StreamName", psz);                              RC_CHECK();
+        STR_FREE();
     }
 
     /*

@@ -179,10 +179,16 @@ static int pulse_open (int fIn, struct pulse_params_req *req,
     pa_buffer_attr        bufAttr;
     const pa_buffer_attr *pBufAttr;
     const pa_sample_spec *pSampSpec;
-    const char           *pchPCMName = fIn ? "pcm_in" : "pcm_out";
+    char                  achPCMName[64];
     pa_stream_flags_t     flags;
     int                   ms = fIn ? conf.buffer_msecs_in : conf.buffer_msecs_out;
+    const char           *stream_name = audio_get_stream_name();
 
+    RTStrPrintf(achPCMName, sizeof(achPCMName), "%.32s%s%s%s",
+                stream_name ? stream_name : "",
+                stream_name ? " (" : "",
+                fIn ? "pcm_in" : "pcm_out",
+                stream_name ? ")" : "");
     sspec.rate     = req->freq;
     sspec.channels = req->nchannels;
     sspec.format   = req->pa_format;
@@ -205,9 +211,9 @@ static int pulse_open (int fIn, struct pulse_params_req *req,
 
     pa_threaded_mainloop_lock(g_pMainLoop);
 
-    if (!(pStream = pa_stream_new(g_pContext, pchPCMName, &sspec, &cmap)))
+    if (!(pStream = pa_stream_new(g_pContext, achPCMName, &sspec, &cmap)))
     {
-        LogRel(("Pulse: Cannot create stream %s\n", pchPCMName));
+        LogRel(("Pulse: Cannot create stream %s\n", achPCMName));
         goto unlock_and_fail;
     }
 

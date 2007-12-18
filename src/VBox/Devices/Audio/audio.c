@@ -86,6 +86,13 @@ static struct audio_driver *drvtab[] = {
     &no_audio_driver
 };
 
+static char *audio_streamname;
+
+const char *audio_get_stream_name(void)
+{
+    return audio_streamname;
+}
+
 struct fixed_settings {
     int enabled;
     int nb_voices;
@@ -1911,7 +1918,7 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "AudioDriver\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "AudioDriver\0StreamName\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     /*
@@ -1928,6 +1935,10 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     rc = CFGMR3QueryStringAlloc (pCfgHandle, "AudioDriver", &drvname);
     if (VBOX_FAILURE (rc))
         return rc;
+
+    rc = CFGMR3QueryStringAlloc (pCfgHandle, "StreamName", &audio_streamname);
+    if (VBOX_FAILURE (rc))
+        audio_streamname = NULL;
 
     rc = AUD_init (pDrvIns, drvname);
     if (VBOX_FAILURE (rc))
