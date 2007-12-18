@@ -974,6 +974,8 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         mData->mAdapterType = NetworkAdapterType_NetworkAdapterAm79C970A;
     else if (strcmp (adapterType, "Am79C973") == 0)
         mData->mAdapterType = NetworkAdapterType_NetworkAdapterAm79C973;
+    else if (strcmp (adapterType, "82540EM") == 0)
+        mData->mAdapterType = NetworkAdapterType_NetworkAdapter82540EM;
     else
         ComAssertMsgFailedRet (("Invalid adapter type '%s'", adapterType),
                                E_FAIL);
@@ -1083,6 +1085,9 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
             break;
         case NetworkAdapterType_NetworkAdapterAm79C973:
             typeStr = "Am79C973";
+            break;
+        case NetworkAdapterType_NetworkAdapter82540EM:
+            typeStr = "82540EM";
             break;
         default:
             ComAssertMsgFailedRet (("Invalid network adapter type: %d\n",
