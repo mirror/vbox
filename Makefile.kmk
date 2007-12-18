@@ -135,6 +135,32 @@ endif
 
 
 #
+# Install additions iso from the build server.
+# The $(CP)/$(RM) stuff can be replaced by a simple $(TOUCH) once that has
+# been added to kBuild.
+#
+## @todo need kmk_builtin_touch!
+ifdef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
+INSTALLS += buildserver-additions
+buildserver-additions_INST = $(INST_ADDITIONS)
+buildserver-additions_MODE = 0644
+buildserver-additions_SOURCES = $(PATH_TARGET)/VBoxGuestAdditions.iso
+buildserver-additions_CLEANS = $(PATH_TARGET)/VBoxGuestAdditions.iso $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+
+$(PATH_TARGET)/VBoxGuestAdditions.iso: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $(call DIRDEP, $(PATH_TARGET))
+	$(RM) -f $(PATH_TARGET)/VBoxGuestAdditions.iso $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+#	$(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-additions-affinity-hack
+	$(CP) -f $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp $(PATH_TARGET)/VBoxGuestAdditions.iso
+	$(RM) -f $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+	$(QUIET)$(APPEND) $@ done
+
+buildserver-additions-affinity-hack:
+	$(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+endif
+
+
+#
 # Install staged binaries on platforms where we can't cross
 # compile things.
 #
@@ -303,7 +329,7 @@ endif
 #
 # Build the additions, all of them.
 #
-# This is currently tailored (hardcoded) for the additions 
+# This is currently tailored (hardcoded) for the additions
 # build box. Can make it pretty and configurable later.
 #
 # The fetching must be done in serial fashion, while the building
@@ -331,7 +357,7 @@ ifeq ($(BUILD_TARGET),win)
 else
 	ssh vbox@192.168.27.5 " cd c:/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 VBOX_ADDITIONS_WIN32_ONLY=1 $(VBOX_ADDITIONS_BUILD) "
 endif
-	
+
 additions-build-solaris.x86:
 #ifeq ($(BUILD_TARGET),solaris)
 #	+ $(KMK) BUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD)
