@@ -64,7 +64,6 @@ LINUXSTRIPBIN = \
 	VBoxSVC \
 	VBoxDDU.so \
 	VBoxVMM.so \
-	VBoxXML.so \
 	VBoxXPCOM.so \
 	VBoxXPCOMIPCD \
 	$(if $(VBOX_WITH_QTGUI),VBoxKeyboard.so,) \
