@@ -53,7 +53,7 @@ typedef uint32_t vmmDevHypPhys;
 
 #elif defined(RT_OS_SOLARIS)
 /** The support device name. */
-# define VBOXGUEST_DEVICE_NAME        "/devices/pci@0:0/pci80ee,cafe@4:vboxadd"
+# define VBOXGUEST_DEVICE_NAME        "/devices/pci@0,0/pci80ee,cafe@4:vboxadd"
 
 #elif defined(RT_OS_WINDOWS)
 /** The support service name. */
@@ -971,7 +971,7 @@ typedef struct
 
 #elif defined(RT_OS_SOLARIS)
 # include <sys/ioccom.h>
-# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWR('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWRN('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 
 #elif 0 /* BSD style - needs some adjusting _IORW takes a type and not a size. */
@@ -1044,7 +1044,7 @@ typedef struct _VBoxGuestWaitEventInfo
  * @remark  The data buffer for this IOCtl has an variable size, keep this in mind
  *          on systems where this matters. */
 #ifdef VBOXGUEST_IOCTL_CODE
-# define VBOXGUEST_IOCTL_VMMREQUEST(Size)   VBOXGUEST_IOCTL_CODE(3, sizeof(VMMDevRequestHeader))
+# define VBOXGUEST_IOCTL_VMMREQUEST(Size)   VBOXGUEST_IOCTL_CODE(3, (Size))
 # define IOCTL_VBOXGUEST_VMMREQUEST         VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevRequestHeader))
 #else
 # define IOCTL_VBOXGUEST_VMMREQUEST IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2050, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VMMDevRequestHeader))

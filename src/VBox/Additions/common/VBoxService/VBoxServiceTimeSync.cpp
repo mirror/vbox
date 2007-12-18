@@ -239,7 +239,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
 #else
                     struct timeval tv;
 # if !defined(RT_OS_OS2) /* PORTME */
-                    RTTimeSpecGetTimeval(Drift, &tv);
+                    RTTimeSpecGetTimeval(&Drift, &tv);
                     if (adjtime(&tv, NULL) == 0)
                     {
                         if (g_cVerbosity >= 1)
@@ -342,7 +342,7 @@ VBOXSERVICE g_TimeSync =
     "    --timesync-latency-factor  The factor to multiply the time query latency\n"
     "                        with to calculate the dynamic minimum adjust time.\n"
     "                        The default is 8 times.\n"
-    "    --timesync-max-latency     The max host timer query latency to accpet.\n"
+    "    --timesync-max-latency     The max host timer query latency to accept.\n"
     "                        The default is 250 ms.\n"
     ,
     /* methods */
