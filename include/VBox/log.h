@@ -360,7 +360,7 @@ typedef enum LOGGROUP
     "DRV_NAMEDPIPE", \
     "DRV_NAT",      \
     "DRV_RAW_IMAGE", \
-    "DRV_TRANSPORT_ASYNC" \
+    "DRV_TRANSPORT_ASYNC", \
     "DRV_TUN",      \
     "DRV_USBPROXY", \
     "DRV_VBOXHDD",  \
