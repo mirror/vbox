@@ -51,12 +51,6 @@ AS86="as86"
 XSLTPROC="xsltproc"
 GENISOIMAGE="genisoimage"
 MKISOFS="mkisofs"
-INCXALAN="/usr/local/include"
-LIBXALAN="-lxalan-c"
-LIBXALAN_DIR="/usr/local/lib"
-INCXERCES="/usr/local/include"
-LIBXERCES="-lxerces-c"
-LIBXERCES_DIR="/usr/local/lib"
 BUILD_LIBXML2=
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
@@ -537,86 +531,8 @@ check_mkisofs()
 }
 
 #
-# Check for xalan, needed by VBoxXML
-#
-check_xalan()
-{
-  if [ -n "$LIBXALAN" ]; then
-    test_header xalan
-    cat > .tmp_src.cc << EOF
-#include <cstdio>
-#include <xalanc/Include/XalanVersion.hpp>
-extern "C" int main(void)
-{
-  printf("found version %d.%d.%d",
-         XALAN_VERSION_MAJOR, XALAN_VERSION_MINOR, XALAN_VERSION_REVISION);
-#if _XALAN_VERSION >= 10800
-  printf(", OK.\n");
-  return 0;
-#else
-  printf(", expected version 1.8.0 or higher\n");
-  return 1;
-#endif
-}
-EOF
-    [ -n "$INCXALAN" ] && I_INCXALAN=`prefix_I "$INCXALAN"`
-    if test_compile "$LIBXALAN $LIBPTHREAD $I_INCXALAN" xalan xalanc; then
-      if test_execute; then
-        cnf_append "SDK_VBOX_XALAN_LIBS"    "`strip_l "$LIBXALAN"`"
-        cnf_append "SDK_VBOX_XALAN_LIBPATH" "`strip_L "$LIBXALAN"`"
-        cnf_append "SDK_VBOX_XALAN_INCS"    "$INCXALAN"
-      fi
-    fi
-  else
-    echo "Building xalan from shipped sources."
-    echo "Building xalan from shipped sources." >> $LOG
-    echo >> $LOG
-    echo >> $LOG
-  fi
-}
-
-#
-# Check for xerces, needed by VBoxXML
-#
-check_xerces()
-{
-  if [ -n "$LIBXERCES" ]; then
-    test_header xerces
-    cat > .tmp_src.cc << EOF
-#include <cstdio>
-#include <xercesc/util/XercesVersion.hpp>
-extern "C" int main(void)
-{
-  printf("found version %d.%d.%d",
-         XERCES_VERSION_MAJOR, XERCES_VERSION_MINOR, XERCES_VERSION_REVISION);
-#if _XERCES_VERSION >= 20500
-  printf(", OK.\n");
-  return 0;
-#else
-  printf(", expected version 2.5.0 or higher\n");
-  return 1;
-#endif
-}
-EOF
-    [ -n "$INCXERCES" ] && I_INCXERCES=`prefix_I "$INCXERCES"`
-    if test_compile "$LIBXERCES $LIBPTHREAD $I_INCXERCES" xerces xercesc; then
-      if test_execute; then
-        cnf_append "SDK_VBOX_XERCES_LIBS"    "`strip_l "$LIBXERCES"`"
-        cnf_append "SDK_VBOX_XERCES_LIBPATH" "`strip_L "$LIBXERCES"`"
-        cnf_append "SDK_VBOX_XERCES_INCS"    "$INCXERCES"
-      fi
-    fi
-  else
-    echo "Building xerces from shipped sources."
-    echo "Building xerces from shipped sources." >> $LOG
-    echo >> $LOG
-    echo >> $LOG
-  fi
-}
-
-#
-# Check for libxml2, needed by xpcom
-# For now we check for libxml2 2.6.23 as 2.6.22 is known to NOT work
+# Check for libxml2, needed by VBoxSettings
+# 2.6.23 is known to NOT work, 2.6.24 is known to work (e.g. Ubuntu/Dapper)
 #
 check_libxml2()
 {
@@ -1373,7 +1289,6 @@ Configuration:
   --disable-xpcom          disable XPCOM and related stuff
   --disable-sdl-ttf        disable SDL_ttf detection
   --disable-pulse          disable PulseAudio detection
-  --build-xalan            build xalan & xerces from sources (not OSE!)
   --build-libxml2          build libxml2 from sources (not OSE!)
   --setup-wine             setup a Wine directory and register the hhc hack
 
@@ -1385,12 +1300,6 @@ Paths:
   --with-linux=DIR         Linux kernel source directory [$LINUX]
   --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
   --with-qt-dir=DIR        directory for QT headers/libraries [$QTDIR]
-  --with-xalan=LIB         location of the xalan library [$LIBXALAN]
-  --with-xalan-incdir=DIR  location of the xalan headers [/usr/include /usr/local/include]
-  --with-xalan-libdir=DIR  location of the xalan library [/usr/lib /usr/local/lib]
-  --with-xerces=LIB        location of the xerces library [$LIBXERCES]
-  --with-xerces-incdir=DIR location of the xerces headers [/usr/include /usr/local/include]
-  --with-xerces-libdir=DIR location of the xerces library [/usr/lib /usr/local/lib]
 
 Build type:
   -d, --build-debug        build with debugging symbols and assertions
@@ -1438,24 +1347,6 @@ for option in $*; do
     --with-mkisofs=*)
       MKISOFS=`echo $option | cut -d'=' -f2`
       ;;
-    --with-xalan=*)
-      LIBXALAN=`echo $option | cut -d'=' -f2`
-      ;;
-    --with-xalan-libdir=*)
-      LIBXALAN_DIR=`echo $option | cut -d'=' -f2`
-      ;;
-    --with-xalan-incdir=*)
-      INCXALAN=`echo $option | cut -d'=' -f2`
-      ;;
-    --with-xerces=*)
-      LIBXERCES=`echo $option | cut -d'=' -f2`
-      ;;
-    --with-xerces-libdir=*)
-      LIBXERCES_DIR=`echo $option | cut -d'=' -f2`
-      ;;
-    --with-xerces-incdir=*)
-      INCXERCES=`echo $option | cut -d'=' -f2`
-      ;;
     --disable-xpcom)
       WITH_XPCOM=0
       ;;
@@ -1470,12 +1361,6 @@ for option in $*; do
       ;;
     --build-debug|-d)
       BUILD_TYPE=debug
-      ;;
-    --build-xalan)
-      LIBXERCES=
-      LIBXERCES_DIR=
-      LIBXALAN=
-      LIBXALAN_DIR=
       ;;
     --build-libxml2)
       BUILD_LIBXML2=1
@@ -1504,9 +1389,6 @@ for option in $*; do
       ;;
   esac
 done
-
-[ -n "$LIBXALAN_DIR" ] && LIBXALAN="-L$LIBXALAN_DIR $LIBXALAN"
-[ -n "$LIBXERCES_DIR" ] && LIBXERCES="-L$LIBXERCES_DIR $LIBXERCES"
 
 LOG="$ODIR$LOG"
 ENV="$ODIR$ENV"
@@ -1599,8 +1481,6 @@ check_gcc
 
 # the libraries
 [ "$OS" != "darwin"  ] && check_pthread
-[ $WITH_XPCOM  -eq 1 ] && check_xalan
-[ $WITH_XPCOM  -eq 1 ] && check_xerces
 [ $WITH_XPCOM  -eq 1 ] && check_libxml2
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
 [ $OSE -eq 0         ] && check_ssl
