@@ -30,6 +30,9 @@
 #include <libdaemon/dsignal.h>
 #endif
 
+#include <VBox/VBoxGuest.h>
+#include "VBoxServiceInternal.h"
+
 /**
  * Solaris daemon() call uses libdaemon.
  *
