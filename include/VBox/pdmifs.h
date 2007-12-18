@@ -85,17 +85,17 @@ typedef enum PDMINTERFACE
     /** PDMIISCSITRANSPORT      - The iSCSI transport interface         (Up)    No coupling.
      * used by the iSCSI media driver.  */
     PDMINTERFACE_ISCSITRANSPORT,
-    /** PDMIMEDIAASYNC          - Asynchronous version of the media interface (Down) Coupled with PDMINTERFACE_MEDIA_ASYNC_PORT. */
+    /** PDMIMEDIAASYNC          - Async version of the media interface  (Down)  Coupled with PDMINTERFACE_MEDIA_ASYNC_PORT. */
     PDMINTERFACE_MEDIA_ASYNC,
-    /** PDMIMEDIAASYNCPORT      - Asynchronous version of the media interface (Up) Coupled with PDMINTERFACE_MEDIA_ASYNC. */
+    /** PDMIMEDIAASYNCPORT      - Async version of the media interface  (Up)    Coupled with PDMINTERFACE_MEDIA_ASYNC. */
     PDMINTERFACE_MEDIA_ASYNC_PORT,
-    /** PDMIBLOCKASYNC          - Asynchronous version of the block interface (Down) Coupled with PDMINTERFACE_BLOCK_ASYNC_PORT. */
+    /** PDMIBLOCKASYNC          - Async version of the block interface  (Down)  Coupled with PDMINTERFACE_BLOCK_ASYNC_PORT. */
     PDMINTERFACE_BLOCK_ASYNC,
-    /** PDMIBLOCKASYNCPORT      - Asynchronous version of the block interface (Up) Coupled with PDMINTERFACE_BLOCK_ASYNC. */
+    /** PDMIBLOCKASYNCPORT      - Async version of the block interface  (Up)    Coupled with PDMINTERFACE_BLOCK_ASYNC. */
     PDMINTERFACE_BLOCK_ASYNC_PORT,
-    /** PDMITRANSPORTASYNC      - Transport data asynchronous to their target (Down) Coupled with PDMINTERFACE_TRANSPORT_ASYNC_PORT. */
+    /** PDMITRANSPORTASYNC      - Transport data async to their target  (Down)  Coupled with PDMINTERFACE_TRANSPORT_ASYNC_PORT. */
     PDMINTERFACE_TRANSPORT_ASYNC,
-    /** PDMITRANSPORTASYNCPORT  - Transport data asynchronous to their target (Up) Coupled with PDMINTERFACE_TRANSPORT_ASYNC. */
+    /** PDMITRANSPORTASYNCPORT  - Transport data async to their target  (Up)    Coupled with PDMINTERFACE_TRANSPORT_ASYNC. */
     PDMINTERFACE_TRANSPORT_ASYNC_PORT,
 
 
@@ -1102,14 +1102,9 @@ typedef struct PDMIISCSITRANSPORT
     DECLR3CALLBACKMEMBER(int, pfnClose,(PPDMIISCSITRANSPORT pTransport));
 } PDMIISCSITRANSPORT;
 
-/**
- * Block notify interface.
- * Pair with PDMIBLOCKASYNC.
- */
 
 /** Pointer to a asynchronous block notify interface. */
 typedef struct PDMIBLOCKASYNCPORT *PPDMIBLOCKASYNCPORT;
-
 /**
  * Asynchronous block notify interface.
  * Pair with PDMIBLOCKASYNC.
@@ -1121,31 +1116,31 @@ typedef struct PDMIBLOCKASYNCPORT
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   uOffset         Offset the task read from.
+     * @param   off             Offset the task read from.
      * @param   pvBuf           The buffer containig the read data.
      * @param   cbRead          Number of bytes read.
      * @param   pvUser          The user argument given in pfnStartRead.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMIBLOCKASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbRead, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMIBLOCKASYNCPORT pInterface, uint64_t off, void *pvBuf, size_t cbRead, void *pvUser));
 
     /**
      * Notify completion of a write task.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   uOffset         Offset the task has written to.
+     * @param   off             Offset the task has written to.
      * @param   pvBuf           The buffer containig the written data.
      * @param   cbWrite         Number of bytes actually written.
      * @param   pvUser          The user argument given in pfnStartWrite.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMIBLOCKASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbWrite, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMIBLOCKASYNCPORT pInterface, uint64_t off, void *pvBuf, size_t cbWrite, void *pvUser));
 } PDMIBLOCKASYNCPORT;
+
 
 /** Pointer to a asynchronous block interface. */
 typedef struct PDMIBLOCKASYNC *PPDMIBLOCKASYNC;
-
 /**
  * Asynchronous block interface.
  * Pair with PDMIBLOCKASYNCPORT.
@@ -1227,13 +1222,9 @@ typedef struct PDMIBLOCKASYNC
     DECLR3CALLBACKMEMBER(int, pfnGetUuid,(PPDMIBLOCKASYNC pInterface, PRTUUID pUuid));
 } PDMIBLOCKASYNC;
 
-/** Notification interface for completed I/O tasks.
- * Pair with PDMIMEDIAASYNC.
- */
 
 /** Pointer to a asynchronous notification interface. */
 typedef struct PDMIMEDIAASYNCPORT *PPDMIMEDIAASYNCPORT;
-
 /**
  * Asynchronous media interface.
  * Makes up the fundation for PDMIBLOCKASYNC and PDMIBLOCKBIOS.
@@ -1245,31 +1236,31 @@ typedef struct PDMIMEDIAASYNCPORT
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   uOffset         Offset the task read from.
+     * @param   off             Offset the task read from.
      * @param   pvBuf           The buffer containig the read data.
      * @param   cbRead          Number of bytes read.
      * @param   pvUser          The user argument given in pfnStartRead.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMIMEDIAASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbRead, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMIMEDIAASYNCPORT pInterface, uint64_t off, void *pvBuf, size_t cbRead, void *pvUser));
 
     /**
      * Notify completion of a write task.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   uOffset         Offset the task has written to.
+     * @param   off             Offset the task has written to.
      * @param   pvBuf           The buffer containig the written data.
      * @param   cbWritten       Number of bytes actually written.
      * @param   pvUser          The user argument given in pfnStartWrite.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMIMEDIAASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbWritten, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMIMEDIAASYNCPORT pInterface, uint64_t off, void *pvBuf, size_t cbWritten, void *pvUser));
 } PDMIMEDIAASYNCPORT;
+
 
 /** Pointer to a asynchronous media interface. */
 typedef struct PDMIMEDIAASYNC *PPDMIMEDIAASYNC;
-
 /**
  * Asynchronous media interface.
  * Makes up the fundation for PDMIBLOCKASYNC and PDMIBLOCKBIOS.
@@ -1400,12 +1391,9 @@ typedef struct PDMIMEDIAASYNC
 
 } PDMIMEDIAASYNC;
 
-/**
- * Pointer to a async media notify interface.
- * Pair with PDMITRANSPORTASYNC.
- */
-typedef struct PDMITRANSPORTASYNCPORT *PPDMITRANSPORTASYNCPORT;
 
+/** Pointer to a async media notify interface. */
+typedef struct PDMITRANSPORTASYNCPORT *PPDMITRANSPORTASYNCPORT;
 /**
  * Notification interface for completed I/O tasks.
  * Pair with PDMITRANSPORTASYNC.
@@ -1417,27 +1405,28 @@ typedef struct PDMITRANSPORTASYNCPORT
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   uOffset         Offset the task read from.
+     * @param   off             Offset the task read from.
      * @param   pvBuf           The buffer containig the read data.
      * @param   cbRead          Number of bytes read.
      * @param   pvUser          The user argument given in pfnStartRead.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMITRANSPORTASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbRead, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMITRANSPORTASYNCPORT pInterface, uint64_t off, void *pvBuf, size_t cbRead, void *pvUser));
 
     /**
      * Notify completion of a write task.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   uOffset         Offset the task has written to.
+     * @param   off             Offset the task has written to.
      * @param   pvBuf           The buffer containig the written data.
      * @param   cbWritten       Number of bytes actually written.
      * @param   pvUser          The user argument given in pfnStartWrite.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMITRANSPORTASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbWritten, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMITRANSPORTASYNCPORT pInterface, uint64_t off, void *pvBuf, size_t cbWritten, void *pvUser));
 } PDMITRANSPORTASYNCPORT;
+
 
 /** Pointer to a async media interface. */
 typedef struct PDMITRANSPORTASYNC *PPDMITRANSPORTASYNC;
@@ -1453,13 +1442,13 @@ typedef struct PDMITRANSPORTASYNC
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containint the called function pointer.
-     * @param   uOffset         Offset to start reading from.
+     * @param   off             Offset to start reading from.
      * @param   pvBuf           here to store the read bits.
      * @param   cbRead          Number of bytes to read.
      * @param   pcbRead         Where to store the number of bytes actually read.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadSynchronous, (PPDMITRANSPORTASYNC pInterface, uint64_t uOffset, void *pvBuf, size_t cbRead, size_t *pcbRead));
+    DECLR3CALLBACKMEMBER(int, pfnReadSynchronous, (PPDMITRANSPORTASYNC pInterface, uint64_t off, void *pvBuf, size_t cbRead, size_t *pcbRead));
 
     /**
      * Write bits synchronous.
@@ -1467,13 +1456,13 @@ typedef struct PDMITRANSPORTASYNC
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containint the called function pointer.
-     * @param   uOffset         Offset to start reading from.
+     * @param   off             Offset to start reading from.
      * @param   pvBuf           here to store the read bits.
      * @param   cbWrite         Number of bytes to read.
      * @param   pcbWritten      Where to store the number of bytes actually read.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteSynchronous, (PPDMITRANSPORTASYNC pInterface, uint64_t uOffset, void *pvBuf, size_t cbWrite, size_t *pcbWritten));
+    DECLR3CALLBACKMEMBER(int, pfnWriteSynchronous, (PPDMITRANSPORTASYNC pInterface, uint64_t off, void *pvBuf, size_t cbWrite, size_t *pcbWritten));
 
     /**
      * Start asynchronous read.
@@ -1552,6 +1541,7 @@ typedef struct PDMITRANSPORTASYNC
 
 } PDMITRANSPORTASYNC;
 
+
 /** @name Bit mask definitions for status line type
  * @{ */
 #define PDM_ICHAR_STATUS_LINES_DCD  RT_BIT(0)
@@ -1559,7 +1549,6 @@ typedef struct PDMITRANSPORTASYNC
 #define PDM_ICHAR_STATUS_LINES_DSR  RT_BIT(2)
 #define PDM_ICHAR_STATUS_LINES_CTS  RT_BIT(3)
 /** @} */
-
 
 /** Pointer to a char port interface. */
 typedef struct PDMICHARPORT *PPDMICHARPORT;
@@ -1590,6 +1579,7 @@ typedef struct PDMICHARPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnNotifyStatusLinesChanged,(PPDMICHARPORT pInterface, uint32_t fNewStatusLines));
 } PDMICHARPORT;
+
 
 /** Pointer to a char interface. */
 typedef struct PDMICHAR *PPDMICHAR;
@@ -1671,7 +1661,6 @@ typedef struct PDMISTREAM
 
 /** Pointer to a host device port interface. */
 typedef struct PDMIHOSTDEVICEPORT *PPDMIHOSTDEVICEPORT;
-
 /**
  * Char port interface.
  * Pair with PDMIHOSTDEVICECONNECTOR.
@@ -1690,9 +1679,9 @@ typedef struct PDMIHOSTDEVICEPORT
     DECLR3CALLBACKMEMBER(int, pfnNotifyRead,(PPDMIHOSTDEVICEPORT pInterface, const void *pvBuf, size_t *pcbRead));
 } PDMIHOSTDEVICEPORT;
 
+
 /** Pointer to a Host Device connector interface. */
 typedef struct PDMIHOSTDEVICECONNECTOR *PPDMIHOSTDEVICECONNECTOR;
-
 /**
  * Host device connector interface
  * Pair with PDMIHOSTDEVICEPORT.
