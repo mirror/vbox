@@ -46,6 +46,9 @@ int g_cVerbosity = 0;
 uint32_t g_DefaultInterval = 0;
 /** Shutdown the main thread. (later, for signals) */
 bool volatile g_fShutdown;
+#ifndef RT_OS_OS2
+extern int daemon(int nochdir, int noclose);
+#endif
 
 /**
  * The details of the services that has been compiled in.
@@ -272,12 +275,20 @@ int main(int argc, char **argv)
 
                 if (cch > sizeof("enable-") && !memcmp(psz, "enable-", sizeof("enable-") - 1))
                     for (unsigned j = 0; !fFound && j < RT_ELEMENTS(g_aServices); j++)
+#if defined(RT_OS_OS2)
                         if ((fFound = !stricmp(psz + sizeof("enable-") - 1, g_aServices[j].pDesc->pszName)))
+#else
+                        if ((fFound = !strcasecmp(psz + sizeof("enable-") - 1, g_aServices[j].pDesc->pszName)))
+#endif
                             g_aServices[j].fEnabled = true;
 
                 if (cch > sizeof("disable-") && !memcmp(psz, "disable-", sizeof("disable-") - 1))
                     for (unsigned j = 0; !fFound && j < RT_ELEMENTS(g_aServices); j++)
+#if defined(RT_OS_OS2)
                         if ((fFound = !stricmp(psz + sizeof("disable-") - 1, g_aServices[j].pDesc->pszName)))
+#else
+                        if ((fFound = !strcasecmp(psz + sizeof("disable-") - 1, g_aServices[j].pDesc->pszName)))
+#endif
                             g_aServices[j].fEnabled = false;
 
                 if (!fFound)

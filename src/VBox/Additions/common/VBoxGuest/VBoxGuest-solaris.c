@@ -31,7 +31,6 @@
 
 #include "VBoxGuestInternal.h"
 #include <VBox/log.h>
-#include <VBox/VBoxGuest.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
@@ -496,6 +495,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         g_apSessionHashTab[iHash] = pSession;
         RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
 
+        VBA_LOGCONT("VBoxAddSolarisOpen: pid=%d\n", (int)RTProcSelf());
         Log(("VBoxAddSolarisOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
         return 0;
     }
@@ -506,7 +506,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 
 static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 {
-    VBA_LOGCONT("VBoxAddSolarisClose pid=%d=%d\n", (int)RTProcSelf());
+    VBA_LOGCONT("VBoxAddSolarisClose pid=%d\n", (int)RTProcSelf());
 
     /*
      * Remove from the hash table.
@@ -624,11 +624,17 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     uint32_t cbBuf = 0;
     if (    Cmd >= VBOXGUEST_IOCTL_VMMREQUEST(0)
         &&  Cmd <= VBOXGUEST_IOCTL_VMMREQUEST(0xfff))
+    {
         cbBuf = sizeof(VMMDevRequestHeader);
+        VBA_LOGCONT("VBOXGUEST_IOCTL_VMMREQUEST");
+    }
 #ifdef VBOX_HGCM
     else if (   Cmd >= VBOXGUEST_IOCTL_HGCM_CALL(0)
              && Cmd <= VBOXGUEST_IOCTL_HGCM_CALL(0xfff))
+    {
         cbBuf = sizeof(VBoxGuestHGCMCallInfo);
+        VBA_LOGCONT("VBOXGUEST_IOCTL_HGCM_CALL");
+    }
 #endif /* VBOX_HGCM */
     else
     {
@@ -636,27 +642,33 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         {
             case VBOXGUEST_IOCTL_GETVMMDEVPORT:
                 cbBuf = sizeof(VBoxGuestPortInfo);
+                VBA_LOGCONT("VBOXGUEST_IOCTL_GETVMMDEVPORT");
                 break;
 
             case VBOXGUEST_IOCTL_WAITEVENT:
                 cbBuf = sizeof(VBoxGuestWaitEventInfo);
+                VBA_LOGCONT("VBOXGUEST_IOCTL_WAITEVENT");
                 break;
 
             case VBOXGUEST_IOCTL_CTL_FILTER_MASK:
                 cbBuf = sizeof(VBoxGuestFilterMaskInfo);
+                VBA_LOGCONT("VBOXGUEST_IOCTL_CTL_FILTER_MASK");
                 break;
 
 #ifdef VBOX_HGCM
             case VBOXGUEST_IOCTL_HGCM_CONNECT:
                 cbBuf = sizeof(VBoxGuestHGCMConnectInfo);
+                VBA_LOGCONT("VBOXGUEST_IOCTL_HGCM_CONNECT");
                 break;
 
             case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
                 cbBuf = sizeof(VBoxGuestHGCMDisconnectInfo);
+                VBA_LOGCONT("VBOXGUEST_IOCTL_HGCM_DISCONNECT");
                 break;
 
             case VBOXGUEST_IOCTL_CLIPBOARD_CONNECT:
                 cbBuf = sizeof(uint32_t);
+                VBA_LOGCONT("VBOXGUEST_IOCTL_CLIPBOARD_CONNECT");
                 break;
 #endif /* VBOX_HGCM */
 
@@ -667,13 +679,18 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
             }
         }
     }
-
+#if 0
+    /* cbBuf must actually get the size based on the VMM request type.
+     * Anyway, this obtaining cbBuf businesss will be removed eventually.
+     */
     if (RT_UNLIKELY(cbBuf != IOCPARM_LEN(Cmd)))
     {
         VBA_LOGNOTE("VBoxAddSolarisIOCtl: buffer size mismatch. size=%d expected=%d.\n", IOCPARM_LEN(Cmd), cbBuf);
         return EINVAL;
     }
+#endif
 
+    cbBuf = IOCPARM_LEN(Cmd);    
     void *pvBuf = RTMemTmpAlloc(cbBuf);
     if (RT_UNLIKELY(!pvBuf))
     {
@@ -688,10 +705,15 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         VBA_LOGNOTE("VBoxAddSolarisIOCtl: ddi_copyin failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc);
         return EFAULT;
     }
+    if (RT_UNLIKELY(cbBuf != 0 && !VALID_PTR(pvBuf)))
+    {
+        RTMemTmpFree(pvBuf);
+        VBA_LOGNOTE("VBoxAddSolarisIOCtl: pvBuf invalid pointer %p\n", pvBuf);
+    }
 
     size_t cbDataReturned;
     rc = VBoxGuestCommonIOCtl(Cmd, &g_DevExt, pSession, pvBuf, cbBuf, &cbDataReturned);
-    if (RT_LIKELY(!rc))
+    if (RT_SUCCESS(rc))
     {
         if (RT_UNLIKELY(cbDataReturned > cbBuf))
         {

@@ -33,6 +33,8 @@ VBoxService_SOURCES.os2   = \
 	VBoxService-os2.cpp \
 	VBoxService-os2.def \
 	VBoxServiceClipboard-os2.cpp
+VBoxService_SOURCES.solaris = \
+    VBoxService-solaris.cpp
 VBoxService_LIBS          = \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3)

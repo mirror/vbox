@@ -33,7 +33,6 @@
 #include <iprt/mem.h>
 #include <VBox/VBoxGuest.h>
 
-
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -96,6 +95,13 @@ VBGLR3DECL(int) VbglR3Init(void)
         }
     }
     g_File = hf;
+
+#elif defined(RT_OS_SOLARIS)
+    RTFILE File;
+    int rc = RTFileOpen(&File, VBOXGUEST_DEVICE_NAME, RTFILE_O_READWRITE);
+    if (RT_FAILURE(rc))
+        return rc;
+    g_File = File;
 
 #else 
     /* the default implemenation. */
