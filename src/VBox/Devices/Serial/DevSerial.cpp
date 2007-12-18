@@ -292,7 +292,7 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         s->mcr = val & 0x1f;
         if (RT_LIKELY(s->pDrvChar))
         {
-            int rc = s->pDrvChar->pfnSetModemLines(s->pDrvChar, (s->mcr & UART_MCR_RTS), (s->mcr & UART_MCR_DTR));
+            int rc = s->pDrvChar->pfnSetModemLines(s->pDrvChar, !!(s->mcr & UART_MCR_RTS), !!(s->mcr & UART_MCR_DTR));
             AssertRC(rc);
         }
         break;
