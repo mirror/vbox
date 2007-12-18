@@ -59,7 +59,6 @@ debian/configure-stamp:
 	cd $(vboxroot) && ./configure --odir=$(current)/debian $(if \
 	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
 	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
-	    $(filter _xandros4.1,$(debrel)),--build-xalan,) $(if \
 	    $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) $(if \
 	    $(HEADLESS),--build-headless,) $(if $(DEBUG),--build-debug,)
 	touch debian/configure-stamp
