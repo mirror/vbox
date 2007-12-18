@@ -3286,6 +3286,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPT
     return rc;
 }
 
+
 /** @copydoc PDMDEVHLP::pfnA20IsEnabled */
 static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns)
 {
@@ -3748,6 +3749,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Obsolete_PhysGCPtr2HCPtr(PPDMDEVI
     NOREF(pHCPtr);
     return VERR_ACCESS_DENIED;
 }
+
 
 /** @copydoc PDMDEVHLP::pfnA20IsEnabled */
 static DECLCALLBACK(bool) pdmR3DevHlp_Untrusted_A20IsEnabled(PPDMDEVINS pDevIns)
