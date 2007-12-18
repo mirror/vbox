@@ -637,11 +637,11 @@ check_libxml2()
 extern "C" int main(void)
 {
   printf("found version %s", LIBXML_DOTTED_VERSION);
-#if LIBXML_VERSION >= 20623
+#if LIBXML_VERSION >= 20624
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 2.6.23 or higher\n");
+  printf(", expected version 2.6.24 or higher\n");
   return 1;
 #endif
 }
@@ -670,11 +670,11 @@ EOF
 extern "C" int main(void)
 {
   printf("found version %s", LIBXML_DOTTED_VERSION);
-#if LIBXML_VERSION >= 20623
+#if LIBXML_VERSION >= 20624
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 2.6.23 or higher\n");
+  printf(", expected version 2.6.24 or higher\n");
   return 1;
 #endif
 }
