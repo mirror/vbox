@@ -719,7 +719,11 @@ static void do_interrupt_protected(int intno, int is_int, int error_code,
             !(ss_e2 & DESC_W_MASK))
             raise_exception_err(EXCP0A_TSS, ss & 0xfffc);
         if (!(ss_e2 & DESC_P_MASK))
+#ifdef VBOX /* See page 3-477 of 253666.pdf */
+            raise_exception_err(EXCP0C_STACK, ss & 0xfffc);
+#else
             raise_exception_err(EXCP0A_TSS, ss & 0xfffc);
+#endif
         new_stack = 1;
         sp_mask = get_sp_mask(ss_e2);
         ssp = get_seg_base(ss_e1, ss_e2);
@@ -2206,7 +2210,11 @@ void helper_ljmp_protected_T0_T1(int next_eip_addend)
                 (!(e2 & DESC_C_MASK) && (dpl != cpl)))
                 raise_exception_err(EXCP0D_GPF, gate_cs & 0xfffc);
             if (!(e2 & DESC_P_MASK))
+#ifdef VBOX /* See page 3-514 of 253666.pdf */
+                raise_exception_err(EXCP0B_NOSEG, gate_cs & 0xfffc);
+#else
                 raise_exception_err(EXCP0D_GPF, gate_cs & 0xfffc);
+#endif
             limit = get_seg_limit(e1, e2);
             if (new_eip > limit)
                 raise_exception_err(EXCP0D_GPF, 0);
@@ -2398,7 +2406,11 @@ void helper_lcall_protected_T0_T1(int shift, int next_eip_addend)
                 !(ss_e2 & DESC_W_MASK))
                 raise_exception_err(EXCP0A_TSS, ss & 0xfffc);
             if (!(ss_e2 & DESC_P_MASK))
+#ifdef VBOX /* See page 3-99 of 253666.pdf */
+                raise_exception_err(EXCP0C_STACK, ss & 0xfffc);
+#else
                 raise_exception_err(EXCP0A_TSS, ss & 0xfffc);
+#endif
             
             //            push_size = ((param_count * 2) + 8) << shift;
 
