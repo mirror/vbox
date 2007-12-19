@@ -680,7 +680,6 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
 {
     LogFlow((DEVICE_NAME ":VBoxAddSolarisIOCtl\n"));
 
-    /** @todo use the faster way to find pSession (using the soft state) */
 #ifdef USE_SESSION_HASH
     RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     const RTPROCESS     Process = RTProcSelf();
