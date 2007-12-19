@@ -524,7 +524,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     {
         pState->pSession = pSession;
         *pDev = makedevice(getmajor(*pDev), iOpenInstance);
-        Log((DEVICE_NAME "VBoxAddSolarisOpen: pSession=%p pState=%p\n", pSession, pState));
+        Log((DEVICE_NAME "VBoxAddSolarisOpen: pSession=%p pState=%p pid=%d\n", pSession, pState, (int)RTProcSelf()));
         return 0;
     }
 
@@ -613,9 +613,10 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        Log((DEVICE_NAME ":VBoxGuestIoctl: WHUT?!? pSession == NULL! This must be a mistake... pid=%d", (int)Process));
+        Log((DEVICE_NAME ":VBoxAddSolarisClose: WHUT?!? pSession == NULL! This must be a mistake... pid=%d", (int)Process));
         return EFAULT;
     }
+    Log((DEVICE_NAME ":VBoxAddSolarisClose: pid=%d\n", (int)Process));
 #else
     PVBOXGUESTSESSION pSession;
     VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, getminor(Dev));
@@ -627,6 +628,7 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 
     pSession = pState->pSession;
     pState->pSession = NULL;
+    Log((DEVICE_NAME ":VBoxAddSolarisClose: pSession=%p pState=%p\n", pSession, pState));
     ddi_soft_state_free(g_pVBoxAddSolarisState, getminor(Dev));
     if (!pSession)
     {
@@ -811,6 +813,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         RTMemTmpFree(pvBuf);
         Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: pvBuf invalid pointer %p\n", pvBuf));
     }
+    Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: pSession=%p pid=%d.\n", pSession, (int)RTProcSelf()));
 
     size_t cbDataReturned;
     rc = VBoxGuestCommonIOCtl(Cmd, &g_DevExt, pSession, pvBuf, cbBuf, &cbDataReturned);
