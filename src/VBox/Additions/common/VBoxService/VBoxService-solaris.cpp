@@ -70,10 +70,8 @@ int daemon(int nochdir, int noclose)
      */
     setsid();
 
-    int size = getdtablesize();
-    if (size < 0)
-        size = 2;
-
+    /* Close all or only standard streams */
+    int size = noclose ? getdtablesize() : 2;
     for (int i = size; i >= 0; i--)
         close(i);
 
@@ -86,13 +84,8 @@ int daemon(int nochdir, int noclose)
     if (!nochdir)
         chdir("/");     /* @todo Check if switching to '/' is the convention for Solaris daemons. */
 
-    /* Set file permission to something secure. */
+    /* Set file permission to something secure, as we need to run as root on Solaris */
     umask(027);
-    if (noclose)        /* Presuming this means ignore SIGTERM, SIGHUP... */
-    {
-        signal(SIGTERM, SIG_IGN);
-        signal(SIGHUP, SIG_IGN);
-    }
     return 0;
 #endif
 }
