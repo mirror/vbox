@@ -141,7 +141,10 @@
  *  Used by command line tools or for debugging.
  */
 #define PRINT_RC_MESSAGE(rc) \
-    RTPrintf ("[!] Primary RC  = %Rwa\n", rc)
+    do { \
+        RTPrintf ("[!] Primary RC  = %Rwa\n", rc); \
+        Log (("[!] Primary RC  = %Rwa\n", rc)); \
+    } while (0)
 
 /**
  *  Prints the extended error information.
@@ -166,7 +169,8 @@
     do { \
         rc = method; \
         if (FAILED (rc)) { \
-            RTPrintf("[!] FAILED calling " #method " at line %d!\n", __LINE__); \
+            RTPrintf ("[!] FAILED calling " #method " at line %d!\n", __LINE__); \
+            Log (("[!] FAILED calling " #method " at line %d!\n", __LINE__)); \
             PRINT_RC_MESSAGE(rc); \
         } \
     } while (0)
@@ -260,7 +264,10 @@
 #define ASSERT(expr) \
     do { \
         if (!(expr)) \
-            RTPrintf("[!] ASSERTION FAILED at line %d: %s\n", __LINE__, #expr); \
+        { \
+            RTPrintf ("[!] ASSERTION FAILED at line %d: %s\n", __LINE__, #expr); \
+            Log (("[!] ASSERTION FAILED at line %d: %s\n", __LINE__, #expr)); \
+        } \
     } while (0)
 
 /**
