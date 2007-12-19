@@ -937,7 +937,6 @@ RuntimeR0Drv_SOURCES.solaris = \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	generic/RTAssertDoBreakpoint-generic.cpp \
-	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/solaris/alloc-r0drv-solaris.c \
@@ -945,6 +944,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/solaris/initterm-r0drv-solaris.c \
 	r0drv/solaris/memobj-r0drv-solaris.c \
 	r0drv/solaris/process-r0drv-solaris.c \
+	r0drv/solaris/RTLogWriteDebugger-r0drv-solaris.c \
 	r0drv/solaris/semevent-r0drv-solaris.c \
 	r0drv/solaris/semeventmulti-r0drv-solaris.c \
 	r0drv/solaris/semfastmutex-r0drv-solaris.c \
