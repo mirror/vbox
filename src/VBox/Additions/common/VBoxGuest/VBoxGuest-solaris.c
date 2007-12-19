@@ -523,6 +523,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     if (RT_SUCCESS(rc))
     {
         pState->pSession = pSession;
+        *pDev = makedevice(getmajor(*pDev), iOpenInstance);
         Log((DEVICE_NAME "VBoxAddSolarisOpen: pSession=%p pState=%p\n", pSession, pState));
         return 0;
     }
@@ -546,6 +547,19 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         g_apSessionHashTab[iHash] = pSession;
         RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
 
+        int instance;
+        for (instance = 0; instance < 4096; instance++)
+        {
+            VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, instance);
+            if (pState)
+                break;
+        }
+        if (instance >= 4096)
+        {
+            Log((DEVICE_NAME ":VBoxAddSolarisOpen: All instances exhausted\n"));
+            return ENXIO;
+        }
+        *pDev = makedevice(getmajor(*pDev), instance);
         Log((DEVICE_NAME "VBoxAddSolarisOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
         return 0;
     }
@@ -600,7 +614,7 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
     if (!pSession)
     {
         Log((DEVICE_NAME ":VBoxGuestIoctl: WHUT?!? pSession == NULL! This must be a mistake... pid=%d", (int)Process));
-        return VERR_INVALID_PARAMETER;
+        return EFAULT;
     }
 #else
     PVBOXGUESTSESSION pSession;
@@ -608,7 +622,7 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
     if (!pState)
     {
         Log((DEVICE_NAME ":VBoxAddSolarisClose: failed to get pState.\n"));
-        return DDI_FAILURE;
+        return EFAULT;
     }
 
     pSession = pState->pSession;
@@ -617,7 +631,7 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
     if (!pSession)
     {
         Log((DEVICE_NAME ":VBoxAddSolarisClose: failed to get pSession.\n"));
-        return DDI_FAILURE;
+        return EFAULT;
     }
 #endif
 
@@ -632,14 +646,14 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 static int VBoxAddSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
     LogFlow((DEVICE_NAME ":VBoxAddSolarisRead\n"));
-    return DDI_SUCCESS;
+    return 0;
 }
 
 
 static int VBoxAddSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
     LogFlow((DEVICE_NAME ":VBoxAddSolarisWrite\n"));
-    return DDI_SUCCESS;
+    return 0;
 }
 
 /** @def IOCPARM_LEN
@@ -704,7 +718,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     if (!pSession)
     {
         Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: no session data for %d\n", getminor(Dev)));
-        return DDI_SUCCESS;
+        return EINVAL;
     }
 #endif
 
