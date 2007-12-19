@@ -3027,7 +3027,9 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
 {
     vmAutoresizeGuestAction->setEnabled (aActive);
     vmSeamlessAction->setEnabled (aSeamlessSupported);
+#ifndef Q_WS_MAC /** @todo fix seamless mode on Mac OS X. It is temporarily disabled to prevent bogus bugreports for the beta 3 / beta 2 leopard update. */
     mIsSeamlessSupported = aSeamlessSupported;
+#endif
     /* If seamless mode should be enabled then check if it is enabled
      * currently and re-enable it if open-view procedure is finished */
     if (vmSeamlessAction->isOn() && mIsOpenViewFinished && aSeamlessSupported)
