@@ -38,6 +38,7 @@ WITH_SDL=1
 WITH_SDL_TTF=1
 WITH_X11=1
 WITH_PULSE=1
+WITH_KMODS=1
 CC="gcc"
 CC32=""
 CC64=""
@@ -1289,6 +1290,7 @@ Configuration:
   --disable-xpcom          disable XPCOM and related stuff
   --disable-sdl-ttf        disable SDL_ttf detection
   --disable-pulse          disable PulseAudio detection
+  --disable-kmods          don't build Linux kernel modules (host and guest)
   --build-libxml2          build libxml2 from sources (not OSE!)
   --setup-wine             setup a Wine directory and register the hhc hack
 
@@ -1358,6 +1360,9 @@ for option in $*; do
       ;;
     --disable-pulse)
       WITH_PULSE=0
+      ;;
+    --disable-kmods)
+      WITH_KMODS=0
       ;;
     --build-debug|-d)
       BUILD_TYPE=debug
@@ -1496,7 +1501,13 @@ check_gcc
 # Linux-specific
 if [ "$OS" = "linux" ]; then
   check_staticlibstdcxx
-  check_linux
+  if [ $WITH_KMODS -eq 1 ]; then
+    check_linux
+  else
+    cnf_append "VBOX_LINUX_SRC" ""
+    cnf_append "VBOX_WITH_VBOXDRV" ""
+    cnf_append "VBOX_WITH_LINUX_ADDITIONS_32BIT_R0" ""
+  fi
   check_alsa
   if [ $WITH_PULSE -eq 1 ]; then
     check_pulse
