@@ -410,25 +410,28 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
 
     Log(("pgmr3PhysGrowRange: allocate chunk of size 0x%X at %VGp\n", PGM_DYNAMIC_CHUNK_SIZE, GCPhys));
 
-    unsigned    cPages = PGM_DYNAMIC_CHUNK_SIZE >> PAGE_SHIFT;
-    rc = SUPPageAlloc(cPages, &pvRam);
-    if (VBOX_SUCCESS(rc))
-    {
-        VMSTATE enmVMState = VMR3GetState(pVM);
+    unsigned cPages = PGM_DYNAMIC_CHUNK_SIZE >> PAGE_SHIFT;
 
-        rc = MMR3PhysRegisterEx(pVM, pvRam, GCPhys, PGM_DYNAMIC_CHUNK_SIZE, 0, MM_PHYS_TYPE_DYNALLOC_CHUNK, "Main Memory");
-        if (    VBOX_SUCCESS(rc)
-            ||  enmVMState != VMSTATE_RUNNING)
+    for (;;)
+    {
+        rc = SUPPageAlloc(cPages, &pvRam);
+        if (VBOX_SUCCESS(rc))
         {
-            if (VBOX_FAILURE(rc))
-            {
-                AssertMsgFailed(("Out of memory while trying to allocate a guest RAM chunk at %VGp!\n", GCPhys));
-                LogRel(("PGM: Out of memory while trying to allocate a guest RAM chunk at %VGp (VMstate=%s)!\n", GCPhys, VMR3GetStateName(enmVMState)));
-            }
-            return rc;
+
+            rc = MMR3PhysRegisterEx(pVM, pvRam, GCPhys, PGM_DYNAMIC_CHUNK_SIZE, 0, MM_PHYS_TYPE_DYNALLOC_CHUNK, "Main Memory");
+            if (VBOX_SUCCESS(rc))
+                return rc;
+
+            SUPPageFree(pvRam, cPages);
         }
 
-        SUPPageFree(pvRam, cPages);
+        VMSTATE enmVMState = VMR3GetState(pVM);
+        if (enmVMState != VMSTATE_RUNNING)
+        {
+            AssertMsgFailed(("Out of memory while trying to allocate a guest RAM chunk at %VGp!\n", GCPhys));
+            LogRel(("PGM: Out of memory while trying to allocate a guest RAM chunk at %VGp (VMstate=%s)!\n", GCPhys, VMR3GetStateName(enmVMState)));
+            return rc;
+        }
 
         LogRel(("pgmr3PhysGrowRange: out of memory. pause until the user resumes execution.\n"));
 
@@ -443,10 +446,7 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
 
         /* Retry */
         LogRel(("pgmr3PhysGrowRange: VM execution resumed -> retry.\n"));
-        return pgmr3PhysGrowRange(pVM, GCPhys);
     }
-    LogRel(("pgmr3PhysGrowRange %VGp SUPPageAlloc %x pages failed with %Vrc\n", GCPhys, cPages, rc));
-    return rc;
 }
 
 #endif /* !NEW_PHYS_CODE */
