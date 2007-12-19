@@ -57,7 +57,7 @@ int daemon(int nochdir, int noclose)
     if (getppid() == 1) /* We already belong to init process */
         return -1;
 
-    int pid = fork();
+    pid_t pid = fork();
     if (pid < 0)         /* The fork() failed. Bad. */
         return -1;
 
@@ -68,17 +68,21 @@ int daemon(int nochdir, int noclose)
      * The orphaned child becomes a daemon after attaching to init. We need to get
      * rid of signals, file descriptors & other stuff we inherited from the parent.
      */
-    setsid();
+    pid_t newpgid = setsid();
+    if (newpgid < 0)     /* Failed to create new sesion */
+        return -1;
 
-    /* Close all or only standard streams */
-    int size = noclose ? getdtablesize() : 2;
-    for (int i = size; i >= 0; i--)
-        close(i);
-
-    /* Open stdin(0), stdout(1) and stderr(2) to /dev/null */
-    int fd = open("/dev/null", O_RDWR);
-    dup(fd);
-    dup(fd);
+    /* BSD daemon style. */
+    if (!noclose)
+    {
+        /* Open stdin(0), stdout(1) and stderr(2) to /dev/null */
+        int fd = open("/dev/null", O_RDWR);
+        dup2(fd, STDIN_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        if (fd > 2)
+            close(fd);
+    }
 
     /* Switch our current directory to root */
     if (!nochdir)
