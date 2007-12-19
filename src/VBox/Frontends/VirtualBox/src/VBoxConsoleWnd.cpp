@@ -2022,6 +2022,16 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         }
         delete list;
 
+#ifdef Q_WS_MAC
+        if (!aSeamless)
+        {
+            /* Make the apple menu bar go away before setMaximumSize! */
+            OSStatus orc = SetSystemUIMode (kUIModeAllHidden, kUIOptionDisableAppleMenu);
+            if (orc)
+                LogRel (("Error: Failed to change UI mode (rc=%#x) when changing to fullscreen mode. (=> menu bar trouble)\n", orc));
+        }
+#endif 
+
         /* Adjust colors and appearance. */
         erase_color = centralWidget()->eraseColor();
         centralWidget()->setEraseColor (black);
@@ -2033,17 +2043,13 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
         /* Going fullscreen */
         setWindowState (windowState() ^ WindowFullScreen);
+#ifdef Q_WS_MAC /* setMask seems to not include the far border pixels. */
+        QRect maskRect = dtw->screenGeometry (this);
+        maskRect.setRight(maskRect.right() + 1);
+        maskRect.setBottom(maskRect.bottom() + 1);
+        setMask (maskRect);
+#else
         setMask (dtw->screenGeometry (this));
-
-#ifdef Q_WS_MAC
-        if (!aSeamless)
-        {
-            /* Make the apple menu bar go away. */
-            OSStatus orc = SetSystemUIMode (kUIModeAllHidden,
-                                            kUIOptionDisableAppleMenu);
-            if (orc)
-                LogRel (("Error: Failed to change UI mode (rc=%#x) when changing to fullscreen mode. (=> menu bar trouble)\n", orc));
-        }
 #endif
 
         qApp->processEvents();
@@ -2069,9 +2075,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
 #ifdef Q_WS_MAC
         if (!aSeamless)
-        {
             SetSystemUIMode (kUIModeNormal, 0);
-        }
 #endif
 
         /* Adjust colors and appearance. */
@@ -2095,9 +2099,14 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         console->toggleFSMode();
     }
 
+#ifdef Q_WS_MAC /* wasHidden is wrong on the mac it seems. */
+    /** @todo figure out what is really wrong here... */
+    if (!wasHidden)
+        show();
+#else
     if (wasHidden)
         hide();
-
+#endif
     return true;
 }
 
