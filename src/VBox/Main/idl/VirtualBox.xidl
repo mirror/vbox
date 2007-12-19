@@ -3757,6 +3757,10 @@
       <desc>Send the ACPI power button event to the guest.</desc>
     </method>
 
+    <method name="sleepButton">
+      <desc>Send the ACPI sleep button event to the guest.</desc>
+    </method>
+
     <method name="saveState">
       <desc>
         Saves the current execution state of a running virtual machine

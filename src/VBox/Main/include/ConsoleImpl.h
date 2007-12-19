@@ -125,6 +125,7 @@ public:
     STDMETHOD(Pause)();
     STDMETHOD(Resume)();
     STDMETHOD(PowerButton)();
+    STDMETHOD(SleepButton)();
     STDMETHOD(SaveState) (IProgress **aProgress);
     STDMETHOD(AdoptSavedState) (INPTR BSTR aSavedStateFile);
     STDMETHOD(DiscardSavedState)();

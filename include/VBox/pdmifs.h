@@ -1768,6 +1768,14 @@ typedef struct PDMIACPIPORT
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      */
     DECLR3CALLBACKMEMBER(int, pfnPowerButtonPress,(PPDMIACPIPORT pInterface));
+
+    /**
+     * Send an ACPI sleep button event.
+     *
+     * @returns VBox status code
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSleepButtonPress,(PPDMIACPIPORT pInterface));
 } PDMIACPIPORT;
 
 /** Pointer to an ACPI connector interface. */
