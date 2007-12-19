@@ -29,6 +29,9 @@
 #include <sys/sunddi.h>
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
+#if defined(DEBUG_ramshankar) && !defined(LOG_ENABLED)
+#define LOG_ENABLED
+#endif
 #include "VBoxGuestInternal.h"
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -45,11 +48,6 @@
 #define DEVICE_NAME              "vboxadd"
 /** The module description as seen in 'modinfo'. */
 #define DEVICE_DESC              "VirtualBox Guest Additions Driver"
-/** @name R0 Log helpers.
- * @{ */
-#define VBA_LOGCONT(...)         cmn_err(CE_CONT, "vboxadd: " __VA_ARGS__);
-#define VBA_LOGNOTE(...)         cmn_err(CE_NOTE, "vboxadd: " __VA_ARGS__);
-/** @} */
 
 
 /*******************************************************************************
@@ -192,8 +190,7 @@ unsigned __gxx_personality_v0 = 0xdecea5ed;
  */
 int _init(void)
 {
-    VBA_LOGCONT("_init\n");
-
+    LogFlow((DEVICE_NAME ":_init\n"));
     int rc = ddi_soft_state_init(&g_pVBoxAddSolarisState, sizeof(VBoxAddDevState), 1);
     if (!rc)
     {
@@ -207,8 +204,7 @@ int _init(void)
 
 int _fini(void)
 {
-    VBA_LOGCONT("_fini\n");
-
+    LogFlow((DEVICE_NAME ":_fini\n"));
     int rc = mod_remove(&g_VBoxAddSolarisModLinkage);
     if (!rc)
         ddi_soft_state_fini(&g_pVBoxAddSolarisState);
@@ -218,7 +214,7 @@ int _fini(void)
 
 int _info(struct modinfo *pModInfo)
 {
-    VBA_LOGCONT("_info\n");
+    LogFlow((DEVICE_NAME ":_info\n"));
     return mod_info(&g_VBoxAddSolarisModLinkage, pModInfo);
 }
 
@@ -233,7 +229,7 @@ int _info(struct modinfo *pModInfo)
  */
 static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
-    VBA_LOGCONT("VBoxAddSolarisAttach\n");
+    LogFlow((DEVICE_NAME ":VBoxAddSolarisAttach\n"));
     switch (enmCmd)
     {
         case DDI_ATTACH:
@@ -247,7 +243,7 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             rc = ddi_soft_state_zalloc(g_pVBoxAddSolarisState, instance);
             if (rc != DDI_SUCCESS)
             {
-                VBA_LOGNOTE("ddi_soft_state_zalloc failed.\n");
+                Log((DEVICE_NAME ":ddi_soft_state_zalloc failed.\n"));
                 return DDI_FAILURE;
             }
 
@@ -255,14 +251,14 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             if (!pState)
             {
                 ddi_soft_state_free(g_pVBoxAddSolarisState, instance);
-                VBA_LOGNOTE("ddi_get_soft_state for instance %d failed\n", instance);
+                Log((DEVICE_NAME ":ddi_get_soft_state for instance %d failed\n", instance));
                 return DDI_FAILURE;
             }
 #else
             pState = RTMemAllocZ(sizeof(VBoxAddDevState));
             if (!pState)
             {
-                VBA_LOGNOTE("RTMemAllocZ failed to allocate %d bytes\n", sizeof(VBoxAddDevState));
+                Log((DEVICE_NAME ":RTMemAllocZ failed to allocate %d bytes\n", sizeof(VBoxAddDevState)));
                 return DDI_FAILURE;
             }
 #endif
@@ -273,7 +269,7 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             rc = RTR0Init(0);
             if (RT_FAILURE(rc))
             {
-                VBA_LOGNOTE("RTR0Init failed.\n");
+                Log((DEVICE_NAME ":RTR0Init failed.\n"));
                 return DDI_FAILURE;
             }
 
@@ -351,40 +347,40 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                     return DDI_SUCCESS;
                                                 }
 
-                                                VBA_LOGNOTE("ddi_create_minor_node failed.\n");
+                                                LogRel((DEVICE_NAME ":ddi_create_minor_node failed.\n"));
                                             }
                                             else
-                                                VBA_LOGNOTE("VBoxGuestInitDevExt failed.\n");
+                                                Log((DEVICE_NAME ":VBoxGuestInitDevExt failed.\n"));
                                             VBoxGuestSolarisRemoveIRQ(pDip, pState);
                                         }
                                         else
-                                            VBA_LOGNOTE("VBoxGuestSolarisAddIRQ failed.\n");
+                                            LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ failed.\n"));
                                         ddi_regs_map_free(&pState->PciMMIOHandle);
                                     }
                                     else
-                                        VBA_LOGNOTE("ddi_regs_map_setup for MMIO region failed.\n");
+                                        Log((DEVICE_NAME ":ddi_regs_map_setup for MMIO region failed.\n"));
                                 }
                                 else
-                                    VBA_LOGNOTE("ddi_dev_regsize for MMIO region failed.\n");
-                                    ddi_regs_map_free(&pState->PciIOHandle);
+                                    Log((DEVICE_NAME ":ddi_dev_regsize for MMIO region failed.\n"));
+                                ddi_regs_map_free(&pState->PciIOHandle);
                             }
                             else
-                                VBA_LOGNOTE("ddi_regs_map_setup for IOport failed.\n");
+                                Log((DEVICE_NAME ":ddi_regs_map_setup for IOport failed.\n"));
                         }
                         else
-                            VBA_LOGNOTE("PCI class/sub-class does not match.\n");
+                            Log((DEVICE_NAME ":PCI class/sub-class does not match.\n"));
                     }
                     else
-                        VBA_LOGNOTE("PCI vendorID, deviceID does not match.\n");
+                        Log((DEVICE_NAME ":PCI vendorID, deviceID does not match.\n"));
                     pci_config_teardown(&pState->PciHandle);
                 }
                 else
-                    VBA_LOGNOTE("pci_config_setup failed rc=%d.\n", rc);
+                    LogRel((DEVICE_NAME ":pci_config_setup failed rc=%d.\n", rc));
                 RTSpinlockDestroy(g_Spinlock);
                 g_Spinlock = NIL_RTSPINLOCK;
             }
             else
-                VBA_LOGNOTE("RTSpinlockCreate failed.\n");
+                Log((DEVICE_NAME ":RTSpinlockCreate failed.\n"));
 
             RTR0Term();
             return DDI_FAILURE;
@@ -412,7 +408,7 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
  */
 static int VBoxAddSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 {
-    VBA_LOGCONT("VBoxAddSolarisDetach\n");
+    LogFlow((DEVICE_NAME ":VBoxAddSolarisDetach\n"));
     switch (enmCmd)
     {
         case DDI_DETACH:
@@ -443,7 +439,7 @@ static int VBoxAddSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
                 RTR0Term();
                 return DDI_SUCCESS;
             }
-            VBA_LOGNOTE("ddi_get_soft_state failed. Cannot detach instance %d\n", instance);
+            Log((DEVICE_NAME ":ddi_get_soft_state failed. Cannot detach instance %d\n", instance));
             return DDI_FAILURE;
         }
 
@@ -471,7 +467,7 @@ static int VBoxAddSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
  */
 static int VBoxAddSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult)
 {
-    VBA_LOGCONT("VBoxAddSolarisGetInfo\n");
+    LogFlow((DEVICE_NAME ":VBoxAddSolarisGetInfo\n"));
 
     int rc = DDI_SUCCESS;
     switch (enmCmd)
@@ -500,7 +496,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     int                 rc;
     PVBOXGUESTSESSION   pSession;
 
-    VBA_LOGCONT("VBoxAddSolarisOpen\n");
+    LogFlow((DEVICE_NAME ":VBoxAddSolarisOpen\n"));
 
 #ifndef USE_SESSION_HASH
     VBoxAddDevState *pState = NULL;
@@ -516,7 +512,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     }
     if (!pState)
     {
-        VBA_LOGNOTE("VBoxAddSolarisOpen: too many open instances.");
+        Log((DEVICE_NAME ":VBoxAddSolarisOpen: too many open instances."));
         return ENXIO;
     }
 
@@ -527,7 +523,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     if (RT_SUCCESS(rc))
     {
         pState->pSession = pSession;
-        VBA_LOGCONT("VBoxAddSolarisOpen: pSession=%p pState=%p\n", pSession, pState);
+        Log((DEVICE_NAME "VBoxAddSolarisOpen: pSession=%p pState=%p\n", pSession, pState));
         return 0;
     }
 
@@ -550,19 +546,18 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         g_apSessionHashTab[iHash] = pSession;
         RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
 
-        VBA_LOGCONT("VBoxAddSolarisOpen: pid=%d\n", (int)RTProcSelf());
-        Log(("VBoxAddSolarisOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
+        Log((DEVICE_NAME "VBoxAddSolarisOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
         return 0;
     }
 #endif
-    LogRel(("VBoxAddSolarisOpen: VBoxGuestCreateUserSession failed. rc=%d\n", rc));
+    LogRel((DEVICE_NAME "VBoxAddSolarisOpen: VBoxGuestCreateUserSession failed. rc=%d\n", rc));
     return rc;
 }
 
 
 static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 {
-    VBA_LOGCONT("VBoxAddSolarisClose pid=%d\n", (int)RTProcSelf());
+    LogFlow((DEVICE_NAME ":VBoxAddSolarisClose pid=%d\n", (int)RTProcSelf()));
 
 #ifdef USE_SESSION_HASH
     /*
@@ -604,7 +599,7 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        Log(("VBoxGuestIoctl: WHUT?!? pSession == NULL! This must be a mistake... pid=%d", (int)Process));
+        Log((DEVICE_NAME ":VBoxGuestIoctl: WHUT?!? pSession == NULL! This must be a mistake... pid=%d", (int)Process));
         return VERR_INVALID_PARAMETER;
     }
 #else
@@ -612,7 +607,7 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
     VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, getminor(Dev));
     if (!pState)
     {
-        VBA_LOGNOTE("VBoxAddSolarisClose: failed to get pState.\n");
+        Log((DEVICE_NAME ":VBoxAddSolarisClose: failed to get pState.\n"));
         return DDI_FAILURE;
     }
 
@@ -621,7 +616,7 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
     ddi_soft_state_free(g_pVBoxAddSolarisState, getminor(Dev));
     if (!pSession)
     {
-        VBA_LOGNOTE("VBoxAddSolarisClose: failed to get pSession.\n");
+        Log((DEVICE_NAME ":VBoxAddSolarisClose: failed to get pSession.\n"));
         return DDI_FAILURE;
     }
 #endif
@@ -636,14 +631,14 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 
 static int VBoxAddSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
-    VBA_LOGCONT("VBoxAddSolarisRead\n");
+    LogFlow((DEVICE_NAME ":VBoxAddSolarisRead\n"));
     return DDI_SUCCESS;
 }
 
 
 static int VBoxAddSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
-    VBA_LOGCONT("VBoxAddSolarisWrite\n");
+    LogFlow((DEVICE_NAME ":VBoxAddSolarisWrite\n"));
     return DDI_SUCCESS;
 }
 
@@ -669,7 +664,7 @@ static int VBoxAddSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
  */
 static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCred, int *pVal)
 {
-    VBA_LOGCONT("VBoxAddSolarisIOCtl\n");
+    LogFlow((DEVICE_NAME ":VBoxAddSolarisIOCtl\n"));
 
     /** @todo use the faster way to find pSession (using the soft state) */
 #ifdef USE_SESSION_HASH
@@ -691,8 +686,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        VBA_LOGNOTE("VBoxAddSolarisIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n",
-                    (int)Process, Cmd);
+        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n", (int)Process, Cmd));
         return EINVAL;
     }
 #else
@@ -702,14 +696,14 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, getminor(Dev));
     if (!pState)
     {
-        VBA_LOGNOTE("VBoxAddSolarisIOCtl: no state data for %d\n", getminor(Dev));
+        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: no state data for %d\n", getminor(Dev)));
         return EINVAL;
     }
 
     PVBOXGUESTSESSION pSession = pState->pSession;
     if (!pSession)
     {
-        VBA_LOGNOTE("VBoxAddSolarisIOCtl: no session data for %d\n", getminor(Dev));
+        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: no session data for %d\n", getminor(Dev)));
         return DDI_SUCCESS;
     }
 #endif
@@ -720,14 +714,14 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         &&  Cmd <= VBOXGUEST_IOCTL_VMMREQUEST(0xfff))
     {
         cbBuf = sizeof(VMMDevRequestHeader);
-        VBA_LOGCONT("VBOXGUEST_IOCTL_VMMREQUEST");
+        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_VMMREQUEST"));
     }
 #ifdef VBOX_HGCM
     else if (   Cmd >= VBOXGUEST_IOCTL_HGCM_CALL(0)
              && Cmd <= VBOXGUEST_IOCTL_HGCM_CALL(0xfff))
     {
         cbBuf = sizeof(VBoxGuestHGCMCallInfo);
-        VBA_LOGCONT("VBOXGUEST_IOCTL_HGCM_CALL");
+        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_HGCM_CALL"));
     }
 #endif /* VBOX_HGCM */
     else
@@ -736,39 +730,39 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         {
             case VBOXGUEST_IOCTL_GETVMMDEVPORT:
                 cbBuf = sizeof(VBoxGuestPortInfo);
-                VBA_LOGCONT("VBOXGUEST_IOCTL_GETVMMDEVPORT");
+                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_GETVMMDEVPORT"));
                 break;
 
             case VBOXGUEST_IOCTL_WAITEVENT:
                 cbBuf = sizeof(VBoxGuestWaitEventInfo);
-                VBA_LOGCONT("VBOXGUEST_IOCTL_WAITEVENT");
+                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_WAITEVENT"));
                 break;
 
             case VBOXGUEST_IOCTL_CTL_FILTER_MASK:
                 cbBuf = sizeof(VBoxGuestFilterMaskInfo);
-                VBA_LOGCONT("VBOXGUEST_IOCTL_CTL_FILTER_MASK");
+                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_CTL_FILTER_MASK"));
                 break;
 
 #ifdef VBOX_HGCM
             case VBOXGUEST_IOCTL_HGCM_CONNECT:
                 cbBuf = sizeof(VBoxGuestHGCMConnectInfo);
-                VBA_LOGCONT("VBOXGUEST_IOCTL_HGCM_CONNECT");
+                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_HGCM_CONNECT"));
                 break;
 
             case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
                 cbBuf = sizeof(VBoxGuestHGCMDisconnectInfo);
-                VBA_LOGCONT("VBOXGUEST_IOCTL_HGCM_DISCONNECT");
+                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_HGCM_DISCONNECT"));
                 break;
 
             case VBOXGUEST_IOCTL_CLIPBOARD_CONNECT:
                 cbBuf = sizeof(uint32_t);
-                VBA_LOGCONT("VBOXGUEST_IOCTL_CLIPBOARD_CONNECT");
+                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_CLIPBOARD_CONNECT"));
                 break;
 #endif /* VBOX_HGCM */
 
             default:
             {
-                VBA_LOGNOTE("VBoxAddSolarisIOCtl: Unkown request %d\n", Cmd);
+                LogRel((DEVICE_NAME ":VBoxAddSolarisIOCtl: Unkown request %d\n", Cmd));
                 return VERR_NOT_SUPPORTED;
             }
         }
@@ -779,7 +773,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
      */
     if (RT_UNLIKELY(cbBuf != IOCPARM_LEN(Cmd)))
     {
-        VBA_LOGNOTE("VBoxAddSolarisIOCtl: buffer size mismatch. size=%d expected=%d.\n", IOCPARM_LEN(Cmd), cbBuf);
+        LogRel((DEVICE_NAME ":VBoxAddSolarisIOCtl: buffer size mismatch. size=%d expected=%d.\n", IOCPARM_LEN(Cmd), cbBuf));
         return EINVAL;
     }
 #endif
@@ -788,7 +782,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     void *pvBuf = RTMemTmpAlloc(cbBuf);
     if (RT_UNLIKELY(!pvBuf))
     {
-        VBA_LOGNOTE("VBoxAddSolarisIOCtl: RTMemTmpAlloc failed to alloc %d bytes.\n", cbBuf);
+        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: RTMemTmpAlloc failed to alloc %d bytes.\n", cbBuf));
         return ENOMEM;
     }
 
@@ -796,13 +790,13 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     if (RT_UNLIKELY(rc))
     {
         RTMemTmpFree(pvBuf);
-        VBA_LOGNOTE("VBoxAddSolarisIOCtl: ddi_copyin failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc);
+        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyin failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
         return EFAULT;
     }
     if (RT_UNLIKELY(cbBuf != 0 && !VALID_PTR(pvBuf)))
     {
         RTMemTmpFree(pvBuf);
-        VBA_LOGNOTE("VBoxAddSolarisIOCtl: pvBuf invalid pointer %p\n", pvBuf);
+        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: pvBuf invalid pointer %p\n", pvBuf));
     }
 
     size_t cbDataReturned;
@@ -811,19 +805,19 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     {
         if (RT_UNLIKELY(cbDataReturned > cbBuf))
         {
-            VBA_LOGNOTE("VBoxAddSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, cbBuf);
+            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, cbBuf));
             cbDataReturned = cbBuf;
         }
         rc = ddi_copyout(pvBuf, (void *)pArg, cbDataReturned, Mode);
         if (RT_UNLIKELY(rc))
         {
-            VBA_LOGNOTE("VBoxAddSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc);
+            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
             rc = EFAULT;
         }
     }
     else
     {
-        VBA_LOGNOTE("VBoxAddSolarisIOCtl: VBoxGuestCommonIOCtl failed. rc=%d\n", rc);
+        LogRel((DEVICE_NAME ":VBoxAddSolarisIOCtl: VBoxGuestCommonIOCtl failed. rc=%d\n", rc));
         rc = EFAULT;
     }
     *pVal = rc;
@@ -843,7 +837,7 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
 {
     int rc;
     VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
-    VBA_LOGCONT("VBoxGuestSolarisAddIRQ\n");
+    LogFlow((DEVICE_NAME "VBoxGuestSolarisAddIRQ\n"));
 
     /*
      * These calls are supposedly deprecated. But Sun seems to use them all over
@@ -856,10 +850,10 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
         mutex_init(&pState->Mtx, "VBoxGuest Driver Mutex", MUTEX_DRIVER, (void *)pState->BlockCookie);
         rc = ddi_add_intr(pDip, 0, &pState->BlockCookie, NULL, VBoxGuestSolarisISR, (caddr_t)pState);
         if (rc != DDI_SUCCESS)
-            VBA_LOGNOTE("ddi_add_intr failed. Cannot set IRQ for VMMDev.\n");
+            Log((DEVICE_NAME ":ddi_add_intr failed. Cannot set IRQ for VMMDev.\n"));
     }
     else
-        VBA_LOGNOTE("ddi_get_iblock_cookie failed. Cannot set IRQ for VMMDev.\n");
+        Log((DEVICE_NAME ":ddi_get_iblock_cookie failed. Cannot set IRQ for VMMDev.\n"));
     return rc;
 }
 
@@ -872,7 +866,7 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
  */
 static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState)
 {
-    VBA_LOGCONT("VBoxGuestSolarisRemoveIRQ\n");
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisRemoveIRQ\n"));
 
     VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
     ddi_remove_intr(pDip, 0, pState->BlockCookie);
@@ -887,7 +881,7 @@ static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState)
  */
 static uint_t VBoxGuestSolarisISR(caddr_t Arg)
 {
-    VBA_LOGCONT("VBoxGuestSolarisISR\n");
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisISR\n"));
 
     VBoxAddDevState *pState = (VBoxAddDevState *)Arg;
     mutex_enter(&pState->Mtx);
@@ -910,7 +904,7 @@ static uint_t VBoxGuestSolarisISR(caddr_t Arg)
  */
 DECLVBGL(int) VBoxGuestSolarisServiceCall(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned)
 {
-    VBA_LOGCONT("VBoxGuestSolarisServiceCall\n");
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisServiceCall\n"));
 
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -929,7 +923,7 @@ DECLVBGL(int) VBoxGuestSolarisServiceCall(void *pvSession, unsigned iCmd, void *
  */
 DECLVBGL(void *) VBoxGuestSolarisServiceOpen(uint32_t *pu32Version)
 {
-    VBA_LOGCONT("VBoxGuestSolarisServiceOpen\n");
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisServiceOpen\n"));
 
     AssertPtrReturn(pu32Version, NULL);
     PVBOXGUESTSESSION pSession;
@@ -939,7 +933,7 @@ DECLVBGL(void *) VBoxGuestSolarisServiceOpen(uint32_t *pu32Version)
         *pu32Version = VMMDEV_VERSION;
         return pSession;
     }
-    VBA_LOGNOTE("VBoxGuestCreateKernelSession failed. rc=%d\n", rc);
+    LogRel((DEVICE_NAME ":VBoxGuestCreateKernelSession failed. rc=%d\n", rc));
     return NULL;
 }
 
@@ -952,7 +946,7 @@ DECLVBGL(void *) VBoxGuestSolarisServiceOpen(uint32_t *pu32Version)
  */
 DECLVBGL(int) VBoxGuestSolarisServiceClose(void *pvSession)
 {
-    VBA_LOGCONT("VBoxGuestSolarisServiceClose\n");
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisServiceClose\n"));
 
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -961,7 +955,7 @@ DECLVBGL(int) VBoxGuestSolarisServiceClose(void *pvSession)
         VBoxGuestCloseSession(&g_DevExt, pSession);
         return VINF_SUCCESS;
     }
-    VBA_LOGNOTE("Invalid pSession.\n");
+    LogRel((DEVICE_NAME ":Invalid pSession.\n"));
     return VERR_INVALID_HANDLE;
 }
 

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Include all necessary headers for the Solaris kernel.
+ * innotek Portable Runtime - Log To Debugger, Ring-0 Driver, Solaris.
  */
 
 /*
@@ -24,35 +24,16 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___the_solaris_kernel_h
-#define ___the_solaris_kernel_h
+#include "the-solaris-kernel.h"
+#include <iprt/log.h>
+#include <iprt/assert.h>
 
-#include <sys/kmem.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <sys/thread.h>
-#include <sys/mutex.h>
-#include <sys/condvar.h>
-#include <sys/sdt.h>
-#include <sys/schedctl.h>
-#include <sys/time.h>
-#include <sys/sysmacros.h>
-#include <sys/cmn_err.h>
-#include <sys/vmsystm.h>
-#include <sys/cyclic.h>
-#include <sys/class.h>
-#include <vm/hat.h>
-#include <vm/seg_vn.h>
-#include <vm/seg_kmem.h>
-#include <sys/ddi.h>
-#include <sys/sunddi.h>
 
-#undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
+RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
+{
+    if (pch[cb] != '\0')
+        AssertBreakpoint();
+    cmn_err(CE_CONT, pch);
+    return;
+}
 
-#include <iprt/cdefs.h>
-
-__BEGIN_DECLS
-extern struct ddi_dma_attr g_SolarisX86PhysMemLimits;
-__END_DECLS
-
-#endif
