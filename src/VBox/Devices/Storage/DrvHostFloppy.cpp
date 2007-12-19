@@ -88,7 +88,7 @@ static DECLCALLBACK(int) drvHostFloppyGetMediaSize(PDRVHOSTBASE pThis, uint64_t 
         Log(("DrvHostFloppy: FDGETDRVSTAT ioctl(%s) failed, errno=%d rc=%Vrc\n", pThis->pszDevice, errno, rc));
         return rc;
     }
-    pThis->fReadOnly = !!(DrvStat.flags & FD_DISK_WRITABLE);
+    pThis->fReadOnly = !(DrvStat.flags & FD_DISK_WRITABLE);
 
     return RTFileSeek(pThis->FileDevice, 0, RTFILE_SEEK_END, pcb);
 }
