@@ -403,7 +403,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage controlvm        <uuid>|<name>\n"
                  "                            pause|resume|reset|poweroff|savestate|\n"
-                 "                            acpipowerbutton |\n"
+                 "                            acpipowerbutton|acpisleepbutton|\n"
                  "                            setlinkstate<1-4> on|off |\n"
                  "                            usbattach <uuid>|<address> |\n"
                  "                            usbdetach <uuid>|<address> |\n"
@@ -5324,6 +5324,10 @@ static int handleControlVM(int argc, char *argv[],
         else if (strcmp(argv[1], "acpipowerbutton") == 0)
         {
             CHECK_ERROR_BREAK (console, PowerButton());
+        }
+        else if (strcmp(argv[1], "acpisleepbutton") == 0)
+        {
+            CHECK_ERROR_BREAK (console, SleepButton());
         }
         else if (strncmp(argv[1], "setlinkstate", 12) == 0)
         {

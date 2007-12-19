@@ -1545,6 +1545,43 @@ STDMETHODIMP Console::PowerButton()
     return rc;
 }
 
+STDMETHODIMP Console::SleepButton()
+{
+    LogFlowThisFuncEnter();
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoLock lock (this);
+
+    if (mMachineState != MachineState_Running)
+        return setError (E_FAIL, tr ("Cannot send the sleep button event as it is "
+                                     "not running (machine state: %d)"),
+                         mMachineState);
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller (this);
+    CheckComRCReturnRC (autoVMCaller.rc());
+
+    PPDMIBASE pBase;
+    int vrc = PDMR3QueryDeviceLun (mpVM, "acpi", 0, 0, &pBase);
+    if (VBOX_SUCCESS (vrc))
+    {
+        Assert (pBase);
+        PPDMIACPIPORT pPort =
+            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        vrc = pPort ? pPort->pfnSleepButtonPress(pPort) : VERR_INVALID_POINTER;
+    }
+
+    HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
+        setError (E_FAIL,
+            tr ("Sending sleep button event failed (%Vrc)"), vrc);
+
+    LogFlowThisFunc (("rc=%08X\n", rc));
+    LogFlowThisFuncLeave();
+    return rc;
+}
+
 STDMETHODIMP Console::SaveState (IProgress **aProgress)
 {
     LogFlowThisFuncEnter();
