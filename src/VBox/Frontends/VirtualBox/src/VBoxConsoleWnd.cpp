@@ -2045,8 +2045,8 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         setWindowState (windowState() ^ WindowFullScreen);
 #ifdef Q_WS_MAC /* setMask seems to not include the far border pixels. */
         QRect maskRect = dtw->screenGeometry (this);
-        maskRect.setRight(maskRect.right() + 1);
-        maskRect.setBottom(maskRect.bottom() + 1);
+        maskRect.setRight (maskRect.right() + 1);
+        maskRect.setBottom (maskRect.bottom() + 1);
         setMask (maskRect);
 #else
         setMask (dtw->screenGeometry (this));
