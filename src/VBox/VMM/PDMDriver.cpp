@@ -92,7 +92,6 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned
 static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_t cPorts, PCPDMUSBHUBREG pUsbHubReg, PPCPDMUSBHUBHLP ppUsbHubHlp);
 static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                                      PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
-static DECLCALLBACK(PVM) pdmR3DrvHlp_GetVM(PPDMDRVINS pDrvIns);
 
 /** @def PDMDRV_ASSERT_DRVINS
  * Asserts the validity of the driver instance.
@@ -140,7 +139,6 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_SUPCallVMMR0Ex,
     pdmR3DrvHlp_USBRegisterHub,
     pdmR3DrvHlp_PDMThreadCreate,
-    pdmR3DrvHlp_GetVM,
     0 /* the end */
 };
 
@@ -1067,10 +1065,3 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTH
     return rc;
 }
 
-/** @copydoc PDMDRVHLP::pfnGetVM */
-static DECLCALLBACK(PVM) pdmR3DrvHlp_GetVM(PPDMDRVINS pDrvIns)
-{
-    PDMDRV_ASSERT_DRVINS(pDrvIns);
-    LogFlow(("pdmR3DrvHlp_GetVM: caller='%s'/%d: returns %p\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pDrvIns->Internal.s.pVM));
-    return pDrvIns->Internal.s.pVM;
-}

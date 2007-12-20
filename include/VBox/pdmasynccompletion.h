@@ -123,7 +123,21 @@ typedef FNPDMASYNCCOMPLETEINT *PFNPDMASYNCCOMPLETEINT;
  * @param   pfnCompleted    The completion callback routine.
  * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDEV pfnCompleted, const char *pszDesc);
+PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDeviceEx(PVM pVM, PPDMDEVINS pDevIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDEV pfnCompleted, const char *pszDesc);
+
+/**
+ * Creates a async completion template for a device instance.
+ * Wrapper for PDMR3AsyncCompletionTemplateCreateDeviceEx.
+ *
+ * The template is used when creating new completion tasks.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   ppTemplate      Where to store the template pointer on success.
+ * @param   pfnCompleted    The completion callback routine.
+ * @param   pszDesc         Description.
+ */
+PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PPDMDEVINS pDevIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDEV pfnCompleted, const char *pszDesc);
 
 /**
  * Creates a async completion template for a driver instance.
@@ -137,7 +151,21 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDev
  * @param   pfnCompleted    The completion callback routine.
  * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc);
+PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriverEx(PVM pVM, PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc);
+
+/**
+ * Creates a async completion template for a driver instance.
+ * Wrapper for PDMR3AsyncCompletionTemplateCreateDriverEx.
+ *
+ * The template is used when creating new completion tasks.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns         The driver instance.
+ * @param   ppTemplate      Where to store the template pointer on success.
+ * @param   pfnCompleted    The completion callback routine.
+ * @param   pszDesc         Description.
+ */
+PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc);
 
 /**
  * Creates a async completion template for a USB device instance.
@@ -151,7 +179,21 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrv
  * @param   pfnCompleted    The completion callback routine.
  * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEUSB pfnCompleted, const char *pszDesc);
+PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateUsbEx(PVM pVM, PPDMUSBINS pUsbIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEUSB pfnCompleted, const char *pszDesc);
+
+/**
+ * Creates a async completion template for a USB device instance.
+ * Wrapper for PDMR3AsyncCompletionTemplateCreateUsbEx.
+ *
+ * The template is used when creating new completion tasks.
+ *
+ * @returns VBox status code.
+ * @param   pUsbIns         The USB device instance.
+ * @param   ppTemplate      Where to store the template pointer on success.
+ * @param   pfnCompleted    The completion callback routine.
+ * @param   pszDesc         Description.
+ */
+PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateUsb(PPDMUSBINS pUsbIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEUSB pfnCompleted, const char *pszDesc);
 
 /**
  * Creates a async completion template for internally by the VMM.
