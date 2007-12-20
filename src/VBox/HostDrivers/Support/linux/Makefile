@@ -70,6 +70,11 @@ endif
 
 ifneq ($(MAKECMDGOALS),clean)
 
+ifdef KDIR
+# Debian kernel module build system
+KERN_DIR := $(KDIR)
+endif
+
 # kernel base directory
 ifndef KERN_DIR
  # build for the current kernel, version check

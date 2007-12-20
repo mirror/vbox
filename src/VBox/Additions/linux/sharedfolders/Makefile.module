@@ -43,6 +43,11 @@ EXTRA_CFLAGS = -fshort-wchar
 
 ifneq ($(MAKECMDGOALS),clean)
 
+ifdef KDIR
+# Debian kernel module build system
+KERN_DIR := $(KDIR)
+endif
+
 # kernel base directory
 ifndef KERN_DIR
  KERN_DIR := /lib/modules/$(shell uname -r)/build
