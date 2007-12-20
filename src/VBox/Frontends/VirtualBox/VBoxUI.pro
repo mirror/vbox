@@ -271,6 +271,7 @@ TRANSLATIONS = \
 	nls/VirtualBox_ca.ts \
 	nls/VirtualBox_sk.ts \
 	nls/VirtualBox_eu.ts \
+	nls/VirtualBox_nl.ts \
 	nls/VirtualBox_cs.ts \
 	nls/VirtualBox_hu.ts \
 	nls/VirtualBox_fi.ts \
