@@ -841,7 +841,7 @@
     </message>
     <message>
         <source>Host Drive </source>
-        <translation>Unidad Real</translation>
+        <translation>Unidad Anfitrión</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
@@ -1370,7 +1370,7 @@
     <message>
         <source>Differencing</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Diferenciando</translation>
+        <translation>Diferenciando</translation>
     </message>
     <message>
         <source>Unknown device %1:%2</source>
@@ -1490,7 +1490,7 @@
     <message>
         <source>Floppy</source>
         <comment>details report</comment>
-        <translation type="unfinished">Disquet</translation>
+        <translation>Disquet</translation>
     </message>
     <message>
         <source>Not mounted</source>
@@ -1505,7 +1505,7 @@
     <message>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
-        <translation>Unidad Real</translation>
+        <translation>Unidad Anfitrión</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
@@ -1958,11 +1958,11 @@
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
-        <translation type="unfinished">El valor &apos;%1&apos; de la tecla (entrada?) &apos;%2&apos; no coincide con la restricción en la expresión regular (regexp) &apos;%3&apos;.</translation>
+        <translation>El valor &apos;%1&apos; de la tecla (entrada) &apos;%2&apos; no coincide con la restricción en la expresión regular (regexp) &apos;%3&apos;.</translation>
     </message>
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
-        <translation type="unfinished">No se puede borrar la tecla (entrada?) &apos;%1&apos;.</translation>
+        <translation>No se puede borrar la tecla (entrada) &apos;%1&apos;.</translation>
     </message>
 </context>
 <context>
@@ -3101,7 +3101,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ud. no conectó un disco duro a la nueva máquina virtual. La máquina no podrá arrancar (&quot;bootear&quot;) a menos que Ud. conecte un disco duro con un sistema operativo huésped o algún otro medio arrancable (&quot;booteable&quot;). Estp lo puede hacer desde el díalogo de configuración o desde el Asistente de Primera Corrida de VirtualBox.&lt;/p&gt;&lt;p&gt;¿Desea continuar?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -3113,19 +3113,19 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falló al mandar el evento ACPI &quot;Botón de Encedido presionado&quot; a la maquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Falló al conectarse al servicio en línea de registración de VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;¡Felicitaciones! Ud. se a registrado exitosamente como un usuario de VirtualBox.&lt;/p&gt;&lt;p&gt;¡Muchas gracias por su colaboración!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Falló al registrar el producto VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -3920,9 +3920,9 @@ cualquier valor.&lt;/qt&gt;</translation>
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;Define si este filtro se aplica a
-dispositivos USB conectados a la computadora anfitrión localmente (&lt;i&gt;No&lt;/i&gt;),
-conectados al cliente VRDP (&lt;i&gt;Yes&lt;/i&gt;),
+        <translation>&lt;qt&gt;Define si este filtro se aplica a
+los dispositivos USB conectados a la computadora anfitrión localmente (&lt;i&gt;No&lt;/i&gt;),
+conectados a un cliente VRDP (&lt;i&gt;Yes&lt;/i&gt;),
 o ambos (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -3930,10 +3930,10 @@ o ambos (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</translation>
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;Defines an action performed by the host
-computer when a matching device is attached: give it up to the host OS
-(&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
-(&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Define la acción realizada por la computadora anfitrión
+cuando hubo una coincidencia con un dispositivo conectado: entregárselo al Sist. Operativo anfitrión
+(&lt;i&gt;Ignorar&lt;/i&gt;) o tomarlo para utilizarlo por las máquinas virtuales
+(&lt;i&gt;Retener&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
@@ -3949,7 +3949,10 @@ cadena de &lt;i&gt;coincidencia exacta&lt;/i&gt; es &lt;tt&gt;XXXX&lt;/tt&gt; do
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Define un filtre de ID de producto. El formato
+ de cadena de &lt;i&gt;coincidencia exacta&lt;/i&gt; es &lt;tt&gt;XXXX&lt;/tt&gt; donde
+&lt;tt&gt;X&lt;/tt&gt; es un dígito hexadecimal. Una cadena vacía filtrará
+cualquier valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the revision number filter. The
@@ -3957,13 +3960,19 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Define el filtro de número de revisión. El formato
+ de cadena de &lt;i&gt;coincidencia exacta&lt;/i&gt; es &lt;tt&gt;IIFF&lt;/tt&gt; donde
+&lt;tt&gt;I&lt;/tt&gt; es un dígito adecimal de la parte entera y &lt;tt&gt;F&lt;/tt&gt;
+es un dígito decimal de la parte fraccional. Una cadena vacía filtrará
+cualquier valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Define el filtro de puerto USB anfitirón como una
+cadena de &lt;i&gt;coincidencia exacta&lt;/i&gt;. Una cadena vacía filtrará
+cualquier valor.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -4009,11 +4018,11 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
-        <translation>Asistente de Introducción a VirtualBox</translation>
+        <translation>Asistente de Primera Corrida</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ha arrancado por primera vez una máquina recién creada. Este asistente le ayudará a realizar los pasos necesarios para instalar un sistema operativo de su elección en la máquina virtual.&lt;/p&gt;&lt;p&gt;Use el botón &lt;b&gt;Siguiente&lt;/b&gt; para ir a la siguiente página del asistente y &lt;b&gt;Atrás&lt;/b&gt;  para volver a la pagina anterior. También puede presionar &lt;b&gt;Cancelar&lt;/b&gt; si desea cancelar la ejecución de este asistente.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the First Run Wizard!</source>
@@ -4021,11 +4030,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccione, abajo, el tipo de medio que desea utilizar para la instalación.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Type</source>
-        <translation type="unfinished">Tipo de Medio</translation>
+        <translation>Tipo de Medio</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Device</source>
@@ -4037,7 +4046,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
-        <translation type="unfinished">&amp;Dispositivo de Disquet</translation>
+        <translation>&amp;Dispositivo de Disquet</translation>
     </message>
     <message>
         <source>Alt+F</source>
@@ -4045,7 +4054,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Selecciona el medio que contiene el programa de instalación del sistema operativo que desea instalar. Este medio debe ser arrancable (&quot;booteable&quot;), de otra manera no podrá iniciar el programa de instalación.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
@@ -4053,11 +4062,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Host Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Unidad Anfitrión</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation type="unfinished">Archivos de &amp;Imagen</translation>
+        <translation>Archivo de &amp;Imagen</translation>
     </message>
     <message>
         <source>Alt+I</source>
@@ -4065,7 +4074,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>VDM</source>
-        <translation type="unfinished"></translation>
+        <translation>VDM (disk virtual)</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
@@ -4077,11 +4086,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Si lo anterior es correcto, presione el botón &lt;b&gt;Finalizar&lt;/b&gt;. Una vez presionado, el medio seleccionado será temporalmente montado en la máquina virtual y la máquina comenzará su ejecución.&lt;/p&gt;&lt;p&gt;Tenga en cuenta que cuando cierre la máquina virtual, el medio especificado será automáticamente desmontado y el dispositivo de arranque será establecido como el primer disco duro virtual.&lt;/p&gt;&lt;p&gt;Dependiendo el tipo de programa de instalación, puede que necesite desmontar manualmente (expulsar) el medio después de que el programa de instalación reinicie la máquina. Puede hacer esto seleccionando &lt;b&gt;Desmontar...&lt;/b&gt; desde el menú &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Resumen</translation>
+        <translation>Resumen</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
@@ -4101,23 +4110,23 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ha arrancado por primera vez una máquina recién creada. Este asistente le ayudará a realizar los pasos necesarios para instalar un sistema operativo de su elección en la máquina virtual.&lt;/p&gt;&lt;p&gt;Tenga en cuenta que no podrá instalar un sistema operativo en la máquina virtual porque no ha conectado ningún disco a la máquina. Si no es esto lo que desea puede cancelar este asistente. Seleccione &lt;b&gt;Configuración&lt;/b&gt; desde el menú &lt;b&gt;Máquina&lt;/b&gt; de la ventana principal de VirtualBox para acceder al diálogo de configuración de esta máquina y cambiar el disco duro.&lt;/p&gt;&lt;p&gt;Use el botón &lt;b&gt;Siguiente&lt;/b&gt; para ir a la siguiente página del asistente y &lt;b&gt;Atrás&lt;/b&gt;  para volver a la pagina anterior. También puede presionar &lt;b&gt;Cancelar&lt;/b&gt; si desea cancelar la ejecución de este asistente.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccione el tipo de medio que desea para arrancar(bootear) un sistema operativo.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Seleccione el tipo de medio que desea para arrancar (&quot;bootear&quot;) un sistema operativo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Selecione el medio que contiene el sistema operativo con el que desea trabajar. Este medio debe ser arrancable (&quot;booteable&quot;), de otra manera el sistema operativo no podrá iniciarse.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccionó el siguiente medio para arrancar un sistema operativo:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Si lo anterior es correcto, presione el botón &lt;b&gt;Finalizar&lt;/b&gt;. Una vez presionado, el medio seleccionado será montado en la máquina virtual y la máquina comenzará su ejecución.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4375,7 +4384,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation type="unfinished">Si está seleccionado</translation>
+        <translation>Si está seleccionado, la tubería especificada en el campo de &lt;b&gt;Ruta de Puerto&lt;/b&gt; será creada por la máquina virtual cuando inicie. De otra manera la máquina virtual tratará de usar la tubería existente.</translation>
     </message>
     <message>
         <source>Port &amp;Path</source>
@@ -4383,26 +4392,26 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muestra la ruta de la tuebería de puerto serie en la máquina anfitrión cuando el puerto trabaja en modo &lt;b&gt;Tubería Anfitrión&lt;/b&gt;. O muestra el nombre del dispositivo serial cuando trabaja en modo &lt;b&gt;Dispositivo Anfitrión&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>Category</source>
-        <translation type="unfinished">Categoría</translation>
+        <translation>Categoría</translation>
     </message>
     <message>
         <source>[id]</source>
-        <translation type="unfinished">[id]</translation>
+        <translation>[id]</translation>
     </message>
     <message>
         <source>[link]</source>
-        <translation type="unfinished">[enlace]</translation>
+        <translation>[enlace]</translation>
     </message>
     <message>
         <source>[name]</source>
-        <translation type="unfinished">[nombre]</translation>
+        <translation>[nombre]</translation>
     </message>
     <message>
         <source>VBoxVMSettingsDlg</source>
@@ -4498,7 +4507,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source> Remote Display </source>
-        <translation type="unfinished"> Pantalla Remota </translation>
+        <translation> Pantalla Remota </translation>
     </message>
     <message>
         <source>7</source>
@@ -5038,7 +5047,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Desea elimar la interface de red anfitrión seleccionada &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Aviso:&lt;/b&gt; Esta interface puede estar en uso por una o más adaptadores de red de esta u otra Máquina Virtual. Depués de ser elminarla, los adaptadores de las máquinas no funcionarán más hasta que se corrijan sus configuraciones eligiendo un nombre de interface diferente o cambiando el tipo de conexión.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>9</source>
@@ -5058,7 +5067,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cuando esté seleccionado, la máquina virtual tratará de hacer uso de las extensiones de virtualizaciónd de hardware del CPU, como Intel VT-x y AMD-V. Cuando la caja de selección este gris significa que esta configuración está determinada por un valor global de configuración.</translation>
     </message>
     <message>
         <source>Other &amp;Settings</source>
