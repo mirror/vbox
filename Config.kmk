@@ -1323,19 +1323,21 @@ ifneq ($(filter linux,$(BUILD_TARGET)),)
    export VBOX_LINUX_SRC           := /usr/src/linux
   endif
  endif
- ifeq ($(origin VBOX_LINUX_INCS),undefined)
-  export VBOX_LINUX_INCS           := $(VBOX_LINUX_SRC)/include
-  # support splitted Linux kernels (make O=<build directory>)
-  kernelsrc := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
-  ifneq ($(kernelsrc),)
-   kernelpath := $(realpath $(VBOX_LINUX_SRC)/$(kernelsrc))
-   VBOX_LINUX_INCS                 += $(VBOX_LINUX_SRC)/include2 $(kernelpath)/include
-  else
-   kernelpath := $(VBOX_LINUX_SRC)
-  endif
-  ifeq ($(BUILD_TARGET_ARCH),x86)
-    VBOX_LINUX_INCS                += $(kernelpath)/include/asm-i386/mach-default \
-                                      $(kernelpath)/include/asm-x86/mach-default
+ ifneq ($(VBOX_LINUX_SRC),)
+  ifeq ($(origin VBOX_LINUX_INCS),undefined)
+   export VBOX_LINUX_INCS           := $(VBOX_LINUX_SRC)/include
+   # support splitted Linux kernels (make O=<build directory>)
+   kernelsrc := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
+   ifneq ($(kernelsrc),)
+    kernelpath := $(realpath $(VBOX_LINUX_SRC)/$(kernelsrc))
+    VBOX_LINUX_INCS                 += $(VBOX_LINUX_SRC)/include2 $(kernelpath)/include
+   else
+    kernelpath := $(VBOX_LINUX_SRC)
+   endif
+   ifeq ($(BUILD_TARGET_ARCH),x86)
+     VBOX_LINUX_INCS                += $(kernelpath)/include/asm-i386/mach-default \
+                                       $(kernelpath)/include/asm-x86/mach-default
+   endif
   endif
  endif
 endif
