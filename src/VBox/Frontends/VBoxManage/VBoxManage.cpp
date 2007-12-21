@@ -6097,6 +6097,9 @@ static int handleShowVDIInfo(int argc, char *argv[],
             case HardDiskStorageType_ISCSIHardDisk:
                 storageTypeStr = "iSCSI target";
                 break;
+            case HardDiskStorageType_VHDImage:
+                storageTypeStr = "VHD Image";
+                break;
         }
         RTPrintf("Storage type:         %s\n", storageTypeStr);
 

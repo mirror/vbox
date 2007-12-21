@@ -986,7 +986,7 @@
 
 /** @def RT_H2BE_U64
  * Converts uint64_t value from host to big endian byte order. */
-#define RT_H2BE_U64(u64) RT_MAKE_U64_FROM_U32(RT_H2BE_U32((u64) >> 32), RT_H2BE_U32((u64) & 0xffffffff))
+#define RT_H2BE_U64(u64) RT_MAKE_U64(RT_H2BE_U32((u64) >> 32), RT_H2BE_U32((u64) & 0xffffffff))
 
 /** @def RT_H2BE_U32
  * Converts uint32_t value from host to big endian byte order. */
@@ -998,7 +998,7 @@
 
 /** @def RT_BE2H_U64
  * Converts uint64_t value from big endian to host byte order. */
-#define RT_BE2H_U64(u64) RT_MAKE_U64_FROM_U32(RT_H2BE_U32((u64) >> 32), RT_H2BE_U32((u64) & 0xffffffff))
+#define RT_BE2H_U64(u64) RT_MAKE_U64(RT_H2BE_U32((u64) >> 32), RT_H2BE_U32((u64) & 0xffffffff))
 
 /** @def RT_BE2H_U32
  * Converts uint32_t value from big endian to host byte order. */
