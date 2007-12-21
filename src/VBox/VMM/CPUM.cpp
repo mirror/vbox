@@ -318,6 +318,13 @@ static int cpumR3CpuIdInit(PVM pVM)
         pCPUM->aGuestCpuIdExt[i] = pCPUM->GuestCpuIdDef;
 
     /*
+     * Workaround for missing cpuid(0) patches: If we miss to patch a cpuid(0).eax then
+     * Linux tries to determine the number of processors from (cpuid(4).eax >> 26) + 1.
+     * We don't support more than 1 processor.
+     */
+    pCPUM->aGuestCpuIdStd[4].eax = 0;
+
+    /*
      * Centaur stuff (VIA).
      *
      * The important part here (we think) is to make sure the 0xc0000000
