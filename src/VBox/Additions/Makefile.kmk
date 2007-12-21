@@ -67,7 +67,8 @@ ifdef VBOX_WITH_WIN32_ADDITIONS
 endif
 
 ifdef VBOX_WITH_LINUX_ADDITIONS
- SUBDIRS += linux
+ SUBDIRS += linux \
+			x11
  LINUXINSTALLER = $(VBOX_PATH_ADDITIONS)/VBoxLinuxAdditions.run
 endif
 LINUXINSTALLER_CROSS = $(PATH_OUT_BASE)/linux.x86/$(BUILD_TYPE)/bin/additions/VBoxLinuxAdditions.run
