@@ -1069,6 +1069,7 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
         /* then try the rest */
         { HardDiskStorageType_VMDKImage, ".vmdk" },
         { HardDiskStorageType_VirtualDiskImage, ".vdi" },
+        { HardDiskStorageType_VHDImage, ".vhd" },
     };
 
     /* try to guess the probe order by extension */
@@ -1127,6 +1128,19 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
             case HardDiskStorageType_CustomHardDisk:
             {
                 ComObjPtr <HCustomHardDisk> obj;
+                obj.createObject();
+                rc = obj->init (aVirtualBox, NULL, aLocation,
+                                FALSE /* aRegistered */);
+                if (SUCCEEDED (rc))
+                {
+                    hardDisk = obj;
+                    return rc;
+                }
+                break;
+            }
+            case HardDiskStorageType_VHDImage:
+            {
+                ComObjPtr <HVHDImage> obj;
                 obj.createObject();
                 rc = obj->init (aVirtualBox, NULL, aLocation,
                                 FALSE /* aRegistered */);
@@ -5032,6 +5046,876 @@ DECLCALLBACK(void) HCustomHardDisk::VDError (void *pvUser, int rc, RT_SRC_POS_DE
                                              const char *pszFormat, va_list va)
 {
     HCustomHardDisk *that = static_cast <HCustomHardDisk *> (pvUser);
+    AssertReturnVoid (that != NULL);
+
+    /// @todo pass the error message to the operation initiator
+    Utf8Str err = Utf8StrFmt (pszFormat, va);
+    if (VBOX_FAILURE (rc))
+        err = Utf8StrFmt ("%s (%Vrc)", err.raw(), rc);
+
+    if (that->mLastVDError.isNull())
+        that->mLastVDError = err;
+    else
+       that->mLastVDError = Utf8StrFmt
+           ("%s.\n%s", that->mLastVDError.raw(), err.raw());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// HVHDImage class
+////////////////////////////////////////////////////////////////////////////////
+
+// constructor / destructor
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT HVHDImage::FinalConstruct()
+{
+    HRESULT rc = HardDisk::FinalConstruct();
+    if (FAILED (rc))
+        return rc;
+
+    mState = NotCreated;
+
+    mStateCheckSem = NIL_RTSEMEVENTMULTI;
+    mStateCheckWaiters = 0;
+
+    mSize = 0;
+    mActualSize = 0;
+
+    /* initialize the container */
+    int vrc = VDCreate ("VHD", VDError, this, &mContainer);
+    ComAssertRCRet (vrc, E_FAIL);
+
+    return S_OK;
+}
+
+void HVHDImage::FinalRelease()
+{
+    if (mContainer != NULL)
+        VDDestroy (mContainer);
+
+    HardDisk::FinalRelease();
+}
+
+// public initializer/uninitializer for internal purposes only
+////////////////////////////////////////////////////////////////////////////////
+
+// public methods for internal purposes only
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Initializes the VHD hard disk object by reading its properties from
+ *  the given configuration node. The created hard disk will be marked as
+ *  registered on success.
+ *
+ *  @param aHDNode      <HardDisk> node
+ *  @param aVHDNode    <VirtualDiskImage> node
+ */
+HRESULT HVHDImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
+                         const settings::Key &aHDNode, 
+                         const settings::Key &aVHDNode)
+{
+    LogFlowThisFunc (("\n"));
+
+    AssertReturn (!aHDNode.isNull() && !aVHDNode.isNull(), E_FAIL);
+
+    AutoLock alock (this);
+    ComAssertRet (!isReady(), E_UNEXPECTED);
+
+    mStorageType = HardDiskStorageType_VHDImage;
+
+    HRESULT rc = S_OK;
+
+    do
+    {
+        rc = protectedInit (aVirtualBox, aParent);
+        CheckComRCBreakRC (rc);
+
+        /* set ready to let protectedUninit() be called on failure */
+        setReady (true);
+
+        /* filePath (required) */
+        Bstr filePath = aVHDNode.stringValue("filePath");
+
+        rc = setFilePath (filePath);
+        CheckComRCBreakRC (rc);
+
+        LogFlowThisFunc (("'%ls'\n", mFilePathFull.raw()));
+
+        /* load basic settings and children */
+        rc = loadSettings (aHDNode);
+        CheckComRCBreakRC (rc);
+
+        if (mType != HardDiskType_WritethroughHardDisk)
+        {
+            rc = setError (E_FAIL,
+                tr ("Currently, non-Writethrough VHD images are not "
+                    "allowed ('%ls')"),
+                toString().raw());
+            break;
+        }
+
+        mState = Created;
+        mRegistered = TRUE;
+
+        /* Don't call queryInformation() for registered hard disks to
+         * prevent the calling thread (i.e. the VirtualBox server startup
+         * thread) from an unexpected freeze. The vital mId property (UUID)
+         * is read from the registry file in loadSettings(). To get the rest,
+         * the user will have to call COMGETTER(Accessible) manually. */
+    }
+    while (0);
+
+    if (FAILED (rc))
+        uninit();
+
+    return rc;
+}
+
+/**
+ *  Initializes the VHD hard disk object using the given image file name.
+ *
+ *  @param aVirtualBox  VirtualBox parent.
+ *  @param aParent      Currently, must always be @c NULL.
+ *  @param aFilePath    Path to the image file, or @c NULL to create an
+ *                      image-less object.
+ *  @param aRegistered  Whether to mark this disk as registered or not
+ *                      (ignored when @a aFilePath is @c NULL, assuming @c FALSE)
+ */
+HRESULT HVHDImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
+                          const BSTR aFilePath, BOOL aRegistered /* = FALSE */)
+{
+    LogFlowThisFunc (("aFilePath='%ls', aRegistered=%d\n", aFilePath, aRegistered));
+
+    AssertReturn (aParent == NULL, E_FAIL);
+
+    AutoLock alock (this);
+    ComAssertRet (!isReady(), E_UNEXPECTED);
+
+    mStorageType = HardDiskStorageType_VHDImage;
+
+    HRESULT rc = S_OK;
+
+    do
+    {
+        rc = protectedInit (aVirtualBox, aParent);
+        CheckComRCBreakRC (rc);
+
+        /* set ready to let protectedUninit() be called on failure */
+        setReady (true);
+
+        rc = setFilePath (aFilePath);
+        CheckComRCBreakRC (rc);
+
+        /* currently, all VHD hard disks are writethrough */
+        mType = HardDiskType_WritethroughHardDisk;
+
+        Assert (mId.isEmpty());
+
+        if (aFilePath && *aFilePath)
+        {
+            mRegistered = aRegistered;
+            mState = Created;
+
+            /* Call queryInformation() anyway (even if it will block), because
+             * it is the only way to get the UUID of the existing VDI and
+             * initialize the vital mId property. */
+            Bstr errMsg;
+            rc = queryInformation (&errMsg);
+            if (SUCCEEDED (rc))
+            {
+                /* We are constructing a new HVirtualDiskImage object. If there
+                 * is a fatal accessibility error (we cannot read image UUID),
+                 * we have to fail. We do so even on non-fatal errors as well,
+                 * because it's not worth to keep going with the inaccessible
+                 * image from the very beginning (when nothing else depends on
+                 * it yet). */
+                if (!errMsg.isNull())
+                    rc = setErrorBstr (E_FAIL, errMsg);
+            }
+        }
+        else
+        {
+            mRegistered = FALSE;
+            mState = NotCreated;
+            mId.create();
+        }
+    }
+    while (0);
+
+    if (FAILED (rc))
+        uninit();
+
+    return rc;
+}
+
+/**
+ *  Uninitializes the instance and sets the ready flag to FALSE.
+ *  Called either from FinalRelease(), by the parent when it gets destroyed,
+ *  or by a third party when it decides this object is no more valid.
+ */
+void HVHDImage::uninit()
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoLock alock (this);
+    if (!isReady())
+        return;
+
+    HardDisk::protectedUninit (alock);
+}
+
+// IHardDisk properties
+////////////////////////////////////////////////////////////////////////////////
+
+STDMETHODIMP HVHDImage::COMGETTER(Description) (BSTR *aDescription)
+{
+    if (!aDescription)
+        return E_POINTER;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    mDescription.cloneTo (aDescription);
+    return S_OK;
+}
+
+STDMETHODIMP HVHDImage::COMSETTER(Description) (INPTR BSTR aDescription)
+{
+    AutoLock alock (this);
+    CHECK_READY();
+
+    CHECK_BUSY_AND_READERS();
+
+    return E_NOTIMPL;
+
+/// @todo implement
+//
+//     if (mState >= Created)
+//     {
+//         int vrc = VDISetImageComment (Utf8Str (mFilePathFull), Utf8Str (aDescription));
+//         if (VBOX_FAILURE (vrc))
+//             return setError (E_FAIL,
+//                 tr ("Could not change the description of the VDI hard disk '%ls' "
+//                     "(%Vrc)"),
+//                 toString().raw(), vrc);
+//     }
+//
+//     mDescription = aDescription;
+//     return S_OK;
+}
+
+STDMETHODIMP HVHDImage::COMGETTER(Size) (ULONG64 *aSize)
+{
+    if (!aSize)
+        return E_POINTER;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+/// @todo will need this if we add suppord for differencing VMDKs
+//
+//     /* only a non-differencing image knows the logical size */
+//     if (isDifferencing())
+//         return root()->COMGETTER(Size) (aSize);
+
+    *aSize = mSize;
+    return S_OK;
+}
+
+STDMETHODIMP HVHDImage::COMGETTER(ActualSize) (ULONG64 *aActualSize)
+{
+    if (!aActualSize)
+        return E_POINTER;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    *aActualSize = mActualSize;
+    return S_OK;
+}
+
+// IVirtualDiskImage properties
+////////////////////////////////////////////////////////////////////////////////
+
+STDMETHODIMP HVHDImage::COMGETTER(FilePath) (BSTR *aFilePath)
+{
+    if (!aFilePath)
+        return E_POINTER;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    mFilePathFull.cloneTo (aFilePath);
+    return S_OK;
+}
+
+STDMETHODIMP HVHDImage::COMSETTER(FilePath) (INPTR BSTR aFilePath)
+{
+    AutoLock alock (this);
+    CHECK_READY();
+
+    if (mState != NotCreated)
+        return setError (E_ACCESSDENIED,
+            tr ("Cannot change the file path of the existing hard disk '%ls'"),
+            toString().raw());
+
+    CHECK_BUSY_AND_READERS();
+
+    /* append the default path if only a name is given */
+    Bstr path = aFilePath;
+    if (aFilePath && *aFilePath)
+    {
+        Utf8Str fp = aFilePath;
+        if (!RTPathHavePath (fp))
+        {
+            AutoReaderLock propsLock (mVirtualBox->systemProperties());
+            path = Utf8StrFmt ("%ls%c%s",
+                               mVirtualBox->systemProperties()->defaultVDIFolder().raw(),
+                               RTPATH_DELIMITER,
+                               fp.raw());
+        }
+    }
+
+    return setFilePath (path);
+}
+
+STDMETHODIMP HVHDImage::COMGETTER(Created) (BOOL *aCreated)
+{
+    if (!aCreated)
+        return E_POINTER;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    *aCreated = mState >= Created;
+    return S_OK;
+}
+
+// IVHDImage methods
+/////////////////////////////////////////////////////////////////////////////
+
+STDMETHODIMP HVHDImage::CreateDynamicImage (ULONG64 aSize, IProgress **aProgress)
+{
+    if (!aProgress)
+        return E_POINTER;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    return createImage (aSize, TRUE /* aDynamic */, aProgress);
+}
+
+STDMETHODIMP HVHDImage::CreateFixedImage (ULONG64 aSize, IProgress **aProgress)
+{
+    if (!aProgress)
+        return E_POINTER;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    return createImage (aSize, FALSE /* aDynamic */, aProgress);
+}
+
+STDMETHODIMP HVHDImage::DeleteImage()
+{
+    AutoLock alock (this);
+    CHECK_READY();
+    CHECK_BUSY_AND_READERS();
+
+    return E_NOTIMPL;
+
+/// @todo later
+// We will need to parse the file in order to delete all related delta and
+// sparse images etc. We may also want to obey the .vmdk.lck file
+// which is (as far as I understood) created when the VMware VM is
+// running or saved etc.
+//
+//     if (mRegistered)
+//         return setError (E_ACCESSDENIED,
+//              tr ("Cannot delete an image of the registered hard disk image '%ls"),
+//              mFilePathFull.raw());
+//     if (mState == NotCreated)
+//         return setError (E_FAIL,
+//              tr ("Hard disk image has been already deleted or never created"));
+//
+//     int vrc = RTFileDelete (Utf8Str (mFilePathFull));
+//     if (VBOX_FAILURE (vrc))
+//         return setError (E_FAIL, tr ("Could not delete the image file '%ls' (%Vrc)"),
+//                          mFilePathFull.raw(), vrc);
+//
+//     mState = NotCreated;
+//
+//     /* reset the fields */
+//     mSize = 0;
+//     mActualSize = 0;
+//
+//     return S_OK;
+}
+
+// public/protected methods for internal purposes only
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Attempts to mark the hard disk as registered.
+ *  Only VirtualBox can call this method.
+ */
+HRESULT HVHDImage::trySetRegistered (BOOL aRegistered)
+{
+    AutoLock alock (this);
+    CHECK_READY();
+
+    if (aRegistered)
+    {
+        if (mState == NotCreated)
+            return setError (E_FAIL,
+                tr ("Image file '%ls' is not yet created for this hard disk"),
+                mFilePathFull.raw());
+
+/// @todo will need this if we add suppord for differencing VHDs
+//         if (isDifferencing())
+//             return setError (E_FAIL,
+//                 tr ("Hard disk '%ls' is differencing and cannot be unregistered "
+//                     "explicitly"),
+//                 mFilePathFull.raw());
+    }
+    else
+    {
+        ComAssertRet (mState >= Created, E_FAIL);
+    }
+
+    return HardDisk::trySetRegistered (aRegistered);
+}
+
+/**
+ *  Checks accessibility of this hard disk image only (w/o parents).
+ *
+ *  @param aAccessError on output, a null string indicates the hard disk is
+ *                      accessible, otherwise contains a message describing
+ *                      the reason of inaccessibility.
+ */
+HRESULT HVHDImage::getAccessible (Bstr &aAccessError)
+{
+    AutoLock alock (this);
+    CHECK_READY();
+
+    if (mStateCheckSem != NIL_RTSEMEVENTMULTI)
+    {
+        /* An accessibility check in progress on some other thread,
+         * wait for it to finish. */
+
+        ComAssertRet (mStateCheckWaiters != (ULONG) ~0, E_FAIL);
+        ++ mStateCheckWaiters;
+        alock.leave();
+
+        int vrc = RTSemEventMultiWait (mStateCheckSem, RT_INDEFINITE_WAIT);
+
+        alock.enter();
+        AssertReturn (mStateCheckWaiters != 0, E_FAIL);
+        -- mStateCheckWaiters;
+        if (mStateCheckWaiters == 0)
+        {
+            RTSemEventMultiDestroy (mStateCheckSem);
+            mStateCheckSem = NIL_RTSEMEVENTMULTI;
+        }
+
+        AssertRCReturn (vrc, E_FAIL);
+
+        /* don't touch aAccessError, it has been already set */
+        return S_OK;
+    }
+
+    /* check the basic accessibility */
+    HRESULT rc = getBaseAccessible (aAccessError, true /* aCheckBusy */);
+    if (FAILED (rc) || !aAccessError.isNull())
+        return rc;
+
+    if (mState >= Created)
+    {
+        return queryInformation (&aAccessError);
+    }
+
+    aAccessError = Utf8StrFmt ("Hard disk image '%ls' is not yet created",
+                               mFilePathFull.raw());
+    return S_OK;
+}
+
+/**
+ *  Saves hard disk settings to the specified storage node and saves
+ *  all children to the specified hard disk node
+ *
+ *  @param aHDNode      <HardDisk> or <DiffHardDisk> node
+ *  @param aStorageNode <VirtualDiskImage> node
+ */
+HRESULT HVHDImage::saveSettings (settings::Key &aHDNode, settings::Key &aStorageNode)
+{
+    AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    /* filePath (required) */
+    aStorageNode.setValue <Bstr> ("filePath", mFilePath);
+
+    /* save basic settings and children */
+    return HardDisk::saveSettings (aHDNode);
+}
+
+/**
+ *  Checks if the given change of \a aOldPath to \a aNewPath affects the path
+ *  of this hard disk and updates it if necessary to reflect the new location.
+ *  Intended to be from HardDisk::updatePaths().
+ *
+ *  @param aOldPath old path (full)
+ *  @param aNewPath new path (full)
+ *
+ *  @note Locks this object for writing.
+ */
+void HVHDImage::updatePath (const char *aOldPath, const char *aNewPath)
+{
+    AssertReturnVoid (aOldPath);
+    AssertReturnVoid (aNewPath);
+
+    AutoLock alock (this);
+    AssertReturnVoid (isReady());
+
+    size_t oldPathLen = strlen (aOldPath);
+
+    Utf8Str path = mFilePathFull;
+    LogFlowThisFunc (("VHD.fullPath={%s}\n", path.raw()));
+
+    if (RTPathStartsWith (path, aOldPath))
+    {
+        Utf8Str newPath = Utf8StrFmt ("%s%s", aNewPath,
+                                              path.raw() + oldPathLen);
+        path = newPath;
+
+        mVirtualBox->calculateRelativePath (path, path);
+
+        unconst (mFilePathFull) = newPath;
+        unconst (mFilePath) = path;
+
+        LogFlowThisFunc (("-> updated: full={%s} short={%s}\n",
+                          newPath.raw(), path.raw()));
+    }
+}
+
+/**
+ *  Returns the string representation of this hard disk.
+ *  When \a aShort is false, returns the full image file path.
+ *  Otherwise, returns the image file name only.
+ *
+ *  @param aShort       if true, a short representation is returned
+ */
+Bstr HVHDImage::toString (bool aShort /* = false */)
+{
+    AutoLock alock (this);
+
+    if (!aShort)
+        return mFilePathFull;
+    else
+    {
+        Utf8Str fname = mFilePathFull;
+        return RTPathFilename (fname.mutableRaw());
+    }
+}
+
+/**
+ *  Creates a clone of this hard disk by storing hard disk data in the given
+ *  VDI file.
+ *
+ *  If the operation fails, @a aDeleteTarget will be set to @c true unless the
+ *  failure happened because the target file already existed.
+ *
+ *  @param aId              UUID to assign to the created image.
+ *  @param aTargetPath      VDI file where the cloned image is to be to stored.
+ *  @param aProgress        progress object to run during operation.
+ *  @param aDeleteTarget    Whether it is recommended to delete target on
+ *                          failure or not.
+ */
+HRESULT
+HVHDImage::cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
+                          Progress *aProgress, bool &aDeleteTarget)
+{
+    ComAssertMsgFailed (("Not implemented"));
+    return E_NOTIMPL;
+
+/// @todo will need this if we add suppord for differencing VHDs
+//  Use code from HVirtualDiskImage::cloneToImage as an example.
+}
+
+/**
+ *  Creates a new differencing image for this hard disk with the given
+ *  VDI file name.
+ *
+ *  @param aId          UUID to assign to the created image
+ *  @param aTargetPath  VDI file where to store the created differencing image
+ *  @param aProgress    progress object to run during operation
+ *                      (can be NULL)
+ */
+HRESULT
+HVHDImage::createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
+                             Progress *aProgress)
+{
+    ComAssertMsgFailed (("Not implemented"));
+    return E_NOTIMPL;
+
+/// @todo will need this if we add suppord for differencing VHDs
+//  Use code from HVirtualDiskImage::createDiffImage as an example.
+}
+
+// private methods
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Helper to set a new file path.
+ *  Resolves a path relatively to the Virtual Box home directory.
+ *
+ *  @note
+ *      Must be called from under the object's lock!
+ */
+HRESULT HVHDImage::setFilePath (const BSTR aFilePath)
+{
+    if (aFilePath && *aFilePath)
+    {
+        /* get the full file name */
+        char filePathFull [RTPATH_MAX];
+        int vrc = RTPathAbsEx (mVirtualBox->homeDir(), Utf8Str (aFilePath),
+                               filePathFull, sizeof (filePathFull));
+        if (VBOX_FAILURE (vrc))
+            return setError (E_FAIL,
+                tr ("Invalid image file path '%ls' (%Vrc)"), aFilePath, vrc);
+
+        mFilePath = aFilePath;
+        mFilePathFull = filePathFull;
+    }
+    else
+    {
+        mFilePath.setNull();
+        mFilePathFull.setNull();
+    }
+
+    return S_OK;
+}
+
+/**
+ *  Helper to query information about the VDI hard disk.
+ *
+ *  @param aAccessError not used when NULL, otherwise see #getAccessible()
+ *
+ *  @note Must be called from under the object's lock, only after
+ *        CHECK_BUSY_AND_READERS() succeeds.
+ */
+HRESULT HVHDImage::queryInformation (Bstr *aAccessError)
+{
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+
+    /* create a lock object to completely release it later */
+    AutoLock alock (this);
+
+    AssertReturn (mStateCheckWaiters == 0, E_FAIL);
+
+    ComAssertRet (mState >= Created, E_FAIL);
+
+    HRESULT rc = S_OK;
+    int vrc = VINF_SUCCESS;
+
+    /* lazily create a semaphore */
+    vrc = RTSemEventMultiCreate (&mStateCheckSem);
+    ComAssertRCRet (vrc, E_FAIL);
+
+    /* Reference the disk to prevent any concurrent modifications
+     * after releasing the lock below (to unblock getters before
+     * a lengthy operation). */
+    addReader();
+
+    alock.leave();
+
+    /* VBoxVHDD management interface needs to be optimized: we're opening a
+     * file three times in a raw to get three bits of information. */
+
+    Utf8Str filePath = mFilePathFull;
+    Bstr errMsg;
+
+    /* reset any previous error report from VDError() */
+    mLastVDError.setNull();
+
+    do
+    {
+        Guid id, parentId;
+
+        /// @todo changed from VD_OPEN_FLAGS_READONLY to VD_OPEN_FLAGS_NORMAL,
+        /// because otherwise registering a VHD which so far has no UUID will
+        /// yield a null UUID. It cannot be added to a VHD opened readonly,
+        /// obviously. This of course changes locking behavior, but for now
+        /// this is acceptable. A better solution needs to be found later.
+        vrc = VDOpen (mContainer, filePath, VD_OPEN_FLAGS_NORMAL);
+        if (VBOX_FAILURE (vrc))
+            break;
+
+        vrc = VDGetUuid (mContainer, 0, id.ptr());
+        if (VBOX_FAILURE (vrc))
+            break;
+        vrc = VDGetParentUuid (mContainer, 0, parentId.ptr());
+        if (VBOX_FAILURE (vrc))
+            break;
+
+        if (!mId.isEmpty())
+        {
+            /* check that the actual UUID of the image matches the stored UUID */
+            if (mId != id)
+            {
+                errMsg = Utf8StrFmt (
+                    tr ("Actual UUID {%Vuuid} of the hard disk image '%s' doesn't "
+                        "match UUID {%Vuuid} stored in the registry"),
+                    id.ptr(), filePath.raw(), mId.ptr());
+                break;
+            }
+        }
+        else
+        {
+            /* assgn an UUID read from the image file */
+            mId = id;
+        }
+
+        if (mParent)
+        {
+            /* check parent UUID */
+            AutoLock parentLock (mParent);
+            if (mParent->id() != parentId)
+            {
+                errMsg = Utf8StrFmt (
+                    tr ("UUID {%Vuuid} of the parent image '%ls' stored in "
+                        "the hard disk image file '%s' doesn't match "
+                        "UUID {%Vuuid} stored in the registry"),
+                    parentId.raw(), mParent->toString().raw(),
+                    filePath.raw(), mParent->id().raw());
+                break;
+            }
+        }
+        else if (!parentId.isEmpty())
+        {
+            errMsg = Utf8StrFmt (
+                tr ("Hard disk image '%s' is a differencing image that is linked "
+                    "to a hard disk with UUID {%Vuuid} and cannot be used "
+                    "directly as a base hard disk"),
+                filePath.raw(), parentId.raw());
+            break;
+        }
+
+        /* get actual file size */
+        /// @todo is there a direct method in RT?
+        {
+            RTFILE file = NIL_RTFILE;
+            vrc = RTFileOpen (&file, filePath, RTFILE_O_READ);
+            if (VBOX_SUCCESS (vrc))
+            {
+                uint64_t size = 0;
+                vrc = RTFileGetSize (file, &size);
+                if (VBOX_SUCCESS (vrc))
+                    mActualSize = size;
+                RTFileClose (file);
+            }
+            if (VBOX_FAILURE (vrc))
+                break;
+        }
+
+        /* query logical size only for non-differencing images */
+        if (!mParent)
+        {
+            uint64_t size = VDGetSize (mContainer);
+            /* convert to MBytes */
+            mSize = size / 1024 / 1024;
+        }
+    }
+    while (0);
+
+    VDCloseAll (mContainer);
+
+    /* enter the lock again */
+    alock.enter();
+
+    /* remove the reference */
+    releaseReader();
+
+    if (FAILED (rc) || VBOX_FAILURE (vrc) || !errMsg.isNull())
+    {
+        LogWarningFunc (("'%ls' is not accessible "
+                         "(rc=%08X, vrc=%Vrc, errMsg='%ls')\n",
+                         mFilePathFull.raw(), rc, vrc, errMsg.raw()));
+
+        if (aAccessError)
+        {
+            if (!errMsg.isNull())
+                *aAccessError = errMsg;
+            else if (!mLastVDError.isNull())
+                *aAccessError = mLastVDError;
+            else if (VBOX_FAILURE (vrc))
+                *aAccessError = Utf8StrFmt (
+                    tr ("Could not access hard disk image '%ls' (%Vrc)"),
+                        mFilePathFull.raw(), vrc);
+        }
+
+        /* downgrade to not accessible */
+        mState = Created;
+    }
+    else
+    {
+        if (aAccessError)
+            aAccessError->setNull();
+
+        mState = Accessible;
+    }
+
+    /* inform waiters if there are any */
+    if (mStateCheckWaiters > 0)
+    {
+        RTSemEventMultiSignal (mStateCheckSem);
+    }
+    else
+    {
+        /* delete the semaphore ourselves */
+        RTSemEventMultiDestroy (mStateCheckSem);
+        mStateCheckSem = NIL_RTSEMEVENTMULTI;
+    }
+
+    /* cleanup the last error report from VDError() */
+    mLastVDError.setNull();
+
+    return rc;
+}
+
+/**
+ *  Helper to create hard disk images.
+ *
+ *  @param aSize        size in MB
+ *  @param aDynamic     dynamic or fixed image
+ *  @param aProgress    address of IProgress pointer to return
+ */
+HRESULT HVHDImage::createImage (ULONG64 aSize, BOOL aDynamic,
+                                 IProgress **aProgress)
+{
+    ComAssertMsgFailed (("Not implemented"));
+    return E_NOTIMPL;
+
+/// @todo later
+//  Use code from HVirtualDiskImage::createImage as an example.
+}
+
+/* static */
+DECLCALLBACK(int) HVHDImage::VDITaskThread (RTTHREAD thread, void *pvUser)
+{
+    AssertMsgFailed (("Not implemented"));
+    return VERR_GENERAL_FAILURE;
+
+/// @todo later
+//  Use code from HVirtualDiskImage::VDITaskThread as an example.
+}
+
+/* static */
+DECLCALLBACK(void) HVHDImage::VDError (void *pvUser, int rc, RT_SRC_POS_DECL,
+                                        const char *pszFormat, va_list va)
+{
+    HVHDImage *that = static_cast <HVHDImage *> (pvUser);
     AssertReturnVoid (that != NULL);
 
     /// @todo pass the error message to the operation initiator

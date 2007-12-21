@@ -958,6 +958,14 @@ STDMETHODIMP VirtualBox::CreateHardDisk (HardDiskStorageType_T aStorageType,
             hardDisk = custom;
             break;
        }
+       case HardDiskStorageType_VHDImage:
+       {
+            ComObjPtr <HVHDImage> vhd;
+            vhd.createObject();
+            rc = vhd->init (this, NULL, NULL);
+            hardDisk = vhd;
+            break;
+       }
        default:
            AssertFailed();
     };
@@ -3027,7 +3035,8 @@ findHardDisk (const Guid *aId, const BSTR aLocation,
             AutoReaderLock hdLock (hd);
 
             if (hd->storageType() == HardDiskStorageType_VirtualDiskImage ||
-                hd->storageType() == HardDiskStorageType_VMDKImage)
+                hd->storageType() == HardDiskStorageType_VMDKImage ||
+                hd->storageType() == HardDiskStorageType_VHDImage)
             {
                 /* locations of VDI and VMDK hard disks for now are just
                  * file paths */
@@ -3554,6 +3563,15 @@ HRESULT VirtualBox::loadHardDisks (const settings::Key &aNode)
                 break;
             }
 
+            storageNode = (*it).findKey ("VHDImage");
+            if (!storageNode.isNull())
+            {
+                ComObjPtr <HVHDImage> vhd;
+                vhd.createObject();
+                rc = vhd->init (this, NULL, (*it), storageNode);
+                break;
+            }
+
             ComAssertMsgFailedBreak (("No valid hard disk storage node!\n"),
                                      rc = E_FAIL);
         }
@@ -3736,6 +3754,13 @@ HRESULT VirtualBox::saveHardDisks (settings::Key &aNode)
             case HardDiskStorageType_CustomHardDisk:
             {
                 Key storageNode = hdNode.createKey ("CustomHardDisk");
+                rc = hd->saveSettings (hdNode, storageNode);
+                break;
+            }
+
+            case HardDiskStorageType_VHDImage:
+            {
+                Key storageNode = hdNode.createKey ("VHDImage");
                 rc = hd->saveSettings (hdNode, storageNode);
                 break;
             }

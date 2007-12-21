@@ -777,6 +777,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertString(pCfg,   "Format",           psz);                   RC_CHECK();
             STR_FREE();
         }
+        else if (hddType == HardDiskStorageType_VHDImage)
+        {
+            ComPtr<IVHDImage> vhdDisk = hardDisk;
+            AssertBreak (!vhdDisk.isNull(), hrc = E_FAIL);
+
+            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+            rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");                    RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+            hrc = vhdDisk->COMGETTER(FilePath)(&str);                                   H();
+            STR_CONV();
+            rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
+            STR_FREE();
+        }
         else
            AssertFailed();
     }

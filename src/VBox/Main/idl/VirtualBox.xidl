@@ -5293,6 +5293,12 @@
         <link to="ICustomHardDisk"/>)
       </desc>
     </const>
+    <const name="VHDImage" value="4">
+      <desc>
+        Virtual PC Virtual Machine Disk image (a regular file in the file
+        system of the host OS, see <link to="IVHDImage"/>)
+      </desc>
+    </const>
   </enum>
 
   <enum
@@ -5409,6 +5415,11 @@
           <i>Custom HardDisk</i>, a disk accessed via a plugin which is loaded
           when the disk is accessed (represented by the
           <link to="ICustomHardDisk"/> interface).
+        </li>
+
+        <li>
+          <i>Virtual PC VHD Image</i>, a regular file in the file system of the
+          host OS (represented by the <link to="IVHDImage"/> interface).
         </li>
 
       </ul>
@@ -6428,6 +6439,168 @@
           After the returned progress object reports that the
           operation is complete, this hard disk object can be
           <link to="IVirtualBox::registerHardDisk()">registered</link> within
+          this VirtualBox installation.
+        </note>
+
+      </desc>
+
+      <param name="size" type="unsigned long long" dir="in">
+        <desc>Maximum logical size of the hard disk in megabytes.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+
+    </method>
+
+    <method name="createFixedImage">
+      <desc>
+
+        Starts creating a fixed-size hard disk image in the background.  The
+        previous image, if any, must be deleted using
+        <link to="#deleteImage"/>, otherwise the operation will fail.
+
+        <note>
+          After the returned progress object reports that the
+          operation is complete, this hard disk object can be
+          <link to="IVirtualBox::registerHardDisk()">registered</link> within
+          this VirtualBox installation.
+        </note>
+
+      </desc>
+
+      <param name="size" type="unsigned long long" dir="in">
+        <desc>Logical size of the hard disk in megabytes.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+
+    </method>
+
+    <method name="deleteImage">
+      <desc>
+
+        Deletes the existing hard disk image. The hard disk must not be
+        registered within this VirtualBox installation, otherwise the
+        operation will fail.
+
+        <note>
+          After this operation succeeds, it will be impossible to register the
+          hard disk until the image file is created again.
+        </note>
+
+        <note>
+          This operation is valid only for non-differencing hard disks, after
+          they are unregistered using
+          <link to="IVirtualBox::unregisterHardDisk()"/>.
+        </note>
+
+      </desc>
+    </method>
+
+  </interface>
+
+  <!--
+  // IVHDImage
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+     name="IVHDImage" extends="$unknown"
+     uuid="163b88c3-7552-424a-8205-daf17a004747"
+     wsmap="managed"
+     >
+    <desc>
+
+      The IVHDImage interface represents <link to="IHardDisk">virtual hard
+      disks</link> that use Virtual PC Virtual Machine Disk image files to store
+      hard disk data.
+
+      Hard disks using VHD images can be either opened using
+      <link to="IVirtualBox::openHardDisk()"/> or created from
+      scratch using <link to="IVirtualBox::createHardDisk()"/>.
+
+      Objects that support this interface also support the
+      <link to="IHardDisk"/> interface.
+
+      When a new hard disk object is created from scatch, an image file for it
+      is not automatically created. To do it, you need to specify a
+      valid <link to="#filePath">file path</link>, and call
+      <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>.
+      When it is done, the hard disk object can be registered by calling
+      <link to="IVirtualBox::registerHardDisk()"/> and then
+      <link to="IMachine::attachHardDisk()">attached</link> to
+      virtual machines.
+
+      The <link to="IHardDisk::description">description</link>
+      of the VHD hard disk is stored in the VirtualBox
+      configuration file, so it can be changed (at appropriate
+      times) even when
+      <link to="IHardDisk::accessible">accessible</link> returns
+      <tt>false</tt>.  However, the hard disk must not be
+      attached to a running virtual machine.
+
+      <note>
+        In the current imlementation, the type of all VHD hard disks
+        is <link to="HardDiskType::WritethroughHardDisk">Writethrough</link>
+        and cannot be changed.
+      </note>
+
+    </desc>
+
+    <attribute name="filePath" type="wstring">
+      <desc>
+
+        Full file name of the VHD image of this hard disk. For
+        newly created hard disk objects, this value is <tt>null</tt>.
+
+        When assigning a new path, it can be absolute (full path) or relative
+        to the <link to="IVirtualBox::homeFolder"> VirtualBox home
+        directory</link>. If only a file name without any path is given,
+        the <link to="ISystemProperties::defaultVDIFolder"> default VDI
+        folder</link> will be used as a path to the image file.
+
+        When reading this propery, a full path is always returned.
+
+        <note>
+          This property cannot be changed when <link to="#created"/>
+          returns <tt>true</tt>. In this case, the specified file name can be
+          absolute (full path) or relative to
+          the <link to="IVirtualBox::homeFolder"> VirtualBox home
+          directory</link>.  If only a file name without any path is given,
+          the <link to="ISystemProperties::defaultVDIFolder"> default VDI
+          folder</link> will be used as a path to the image file.
+        </note>
+
+      </desc>
+    </attribute>
+
+    <attribute name="created" type="boolean" readonly="yes">
+      <desc>
+
+        Whether the virual disk image is created or not. For newly created
+        hard disk objects or after a successful invocation of
+        <link to="#deleteImage()"/>, this value is <tt>false</tt> until
+        <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>
+        is called.
+
+      </desc>
+    </attribute>
+
+    <method name="createDynamicImage">
+
+      <desc>
+
+        Starts creating a dymically expanding hard disk image in the
+        background. The previous image associated with this object, if
+        any, must be deleted using <link to="#deleteImage"/>, otherwise
+        the operation will fail.
+
+        <note>
+          After the returned progress object reports that the
+          operation is complete, this hard disk object can be
+         <link to="IVirtualBox::registerHardDisk()">registered</link> within
           this VirtualBox installation.
         </note>
 
