@@ -337,7 +337,7 @@ void WINAPI VBoxServiceStart(void)
         if (GetVersionEx(&info))
         {
             dprintf(("VBoxService: Windows version major %d minor %d\n", info.dwMajorVersion, info.dwMinorVersion));
-            dwMajorVersion = info.dwMajorVersion;    
+            dwMajorVersion = info.dwMajorVersion;
         }
 
         /* For Vista and up we need to change the integrity of the security descriptor too */
@@ -346,7 +346,7 @@ void WINAPI VBoxServiceStart(void)
             HMODULE hModule;
 
             BOOL (WINAPI * pfnConvertStringSecurityDescriptorToSecurityDescriptorA)(LPCSTR StringSecurityDescriptor, DWORD StringSDRevision, PSECURITY_DESCRIPTOR  *SecurityDescriptor, PULONG  SecurityDescriptorSize);
-    
+
             hModule = LoadLibrary("ADVAPI32.DLL");
             if (hModule)
             {
@@ -418,7 +418,7 @@ void WINAPI VBoxServiceStart(void)
     ndata.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     ndata.uCallbackMessage = WM_USER;
     ndata.hIcon            = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
-    sprintf(ndata.szTip, "innotek VirtualBox Guest Additions %d.%d.%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD);
+    sprintf(ndata.szTip, "innotek VirtualBox Guest Additions %d.%d.%dr%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
 
     dprintf(("VBoxService: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
 
