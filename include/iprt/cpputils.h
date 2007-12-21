@@ -107,15 +107,17 @@ private:
  *
  * Pointer management includes the following key points:
  *
- *   1) Automatic increment of the reference counter when a pointer to the
- *      object of the managed class or another auto_ptr_instance of the same
- *      type is assigned to the given auto_ref_ptr instance.
+ *   1) Automatic increment of the object's reference counter when the given
+ *      auto_ref_ptr instance starts managing a pointer to this object.
+ *
  *   2) Automatic decrement of the reference counter when the given
- *      auto_ref_ptr instance is destroyed (for example, as a result of
- *      leaving the scope) or berfore it is assigned a new object pointer.
- *   3) Automatic deletion of the managed object pointer whenever its
- *      reference counter reaches zero after a decrement.
- *   4) Providing the dereference operator that gives direct access to the
+ *      auto_ref_ptr instance is destroyed, or before it is assigned a pointer
+ *      to a new object.
+ *
+ *   3) Automatic deletion of the managed object whenever its reference
+ *      counter reaches zero after a decrement.
+ *
+ *   4) Providing the dereference operator-> that gives direct access to the
  *      managed pointer.
  *
  * The object class to manage must provide ref() and unref() methods that have
@@ -134,64 +136,73 @@ public:
     auto_ref_ptr() : m (NULL) {}
 
     /** 
-     * Creates an instance that starts managing the given pointer.
+     * Creates an instance that starts managing the given pointer. The
+     * reference counter of the object pointed to by @a a is incremented by
+     * one.
      *
      * @param a Pointer to manage.
      */
     auto_ref_ptr (C* a) : m (a) { if (m) m->ref(); }
 
     /** 
-     * Creates an instance that starts managing the pointer managed
-     * by the given object.
+     * Creates an instance that starts managing a pointer managed by the given
+     * instance. The reference counter of the object managed by @a that is
+     * incremented by one.
      *
-     * @param that Object to manage.
+     * @param that Instance to take a pointer to manage from.
      */
     auto_ref_ptr (const auto_ref_ptr &that) : m (that.m) { if (m) m->ref(); }
 
     ~auto_ref_ptr() { do_unref(); }
     
     /** 
-     * Assigns the given pointer to this instance and starts managing it.
+     * Assigns the given pointer to this instance and starts managing it. The
+     * reference counter of the object pointed to by @a a is incremented by
+     * one. The reference counter of the object previously managed by this
+     * instance is decremented by one.
      *
      * @param a Pointer to assign.
      */
     auto_ref_ptr &operator= (C *a) { do_reref (a); return *this; }
 
     /** 
-     * Assigns the given pointer to this instance and starts managing it.
+     * Assigns a pointer managed by the given instance to this instance and
+     * starts managing it. The reference counter of the object managed by @a
+     * that is incremented by one. The reference counter of the object
+     * previously managed by this instance is decremented by one.
      *
      * @param a Pointer to assign.
      */
     auto_ref_ptr &operator= (const auto_ref_ptr &that) { do_reref (that.m); return *this; }
 
     /** 
-     * Returns @c true if this instance is null and false otherwise.
+     * Returns @c true if this instance is @c null and false otherwise.
      */
     bool is_null() const { return m == NULL; }
 
     /** 
      * Dereferences the instance by returning the managed pointer.
-     * Asserts that the managed pointer is not NULL.
+     * Asserts that the managed pointer is not @c NULL.
      */
     C *operator-> () const { AssertMsg (m, ("Managed pointer is NULL!\n")); return m; }
 
     /** 
-     * Returns the managed pointer or NULL if this instance is null.
+     * Returns the managed pointer or @c NULL if this instance is @c null.
      */
     C *raw() const { return m; }
 
     /** 
-     * Compares this auto_ref_ptr instance another instance and returns @c
-     * true if both instances manage the same or @c NULL pointer.
+     * Compares this auto_ref_ptr instance with another instance and returns
+     * @c true if both instances manage the same or @c NULL pointer.
      *
-     * Note that this method doesn't try to compare objects managed pointers
-     * point to because that would a) break the common 'pointer to something'
-     * semantics auto_ref_ptr tries to follow and b) require to define the
-     * comparison operator in the managed class which is not always possible.
-     * You may analyze pointed objects yourself if you need more precise
-     * comparison.
+     * Note that this method compares pointer values only, it doesn't try to
+     * compare objects themselves. Doing otherwise would a) break the common
+     * 'pointer to something' comparison semantics auto_ref_ptr tries to
+     * follow and b) require to define the comparison operator in the managed
+     * class which is not always possible. You may analyze pointed objects
+     * yourself if you need more precise comparison.
      * 
-     * @param that Object to compare this object with.
+     * @param that Instance to compare this instance with.
      */
     bool operator== (const auto_ref_ptr &that) const
     {
