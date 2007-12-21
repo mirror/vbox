@@ -19,3 +19,4 @@ cs
 sk
 eu
 ca
+tr
