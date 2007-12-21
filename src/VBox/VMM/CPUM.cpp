@@ -194,7 +194,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Get the host CPUIDs.
      */
     for (i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd); i++)
-        ASMCpuId(i,
+        ASMCpuId_Idx_ECX(i, 0,
                  &pCPUM->aGuestCpuIdStd[i].eax, &pCPUM->aGuestCpuIdStd[i].ebx,
                  &pCPUM->aGuestCpuIdStd[i].ecx, &pCPUM->aGuestCpuIdStd[i].edx);
     for (i = 0; i < RT_ELEMENTS(pCPUM->aGuestCpuIdExt); i++)
@@ -1079,10 +1079,10 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     pHlp->pfnPrintf(pHlp,
                     "         RAW Standard CPUIDs\n"
                     "     Function  eax      ebx      ecx      edx\n");
-    for (unsigned i = 0; i <= ELEMENTS(pVM->cpum.s.aGuestCpuIdStd); i++)
+    for (unsigned i = 0; i < ELEMENTS(pVM->cpum.s.aGuestCpuIdStd); i++)
     {
         Guest = pVM->cpum.s.aGuestCpuIdStd[i];
-        ASMCpuId(i, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+        ASMCpuId_Idx_ECX(i, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
         pHlp->pfnPrintf(pHlp,
                         "Gst: %08x  %08x %08x %08x %08x%s\n"
@@ -1260,7 +1260,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                     "\n"
                     "         RAW Extended CPUIDs\n"
                     "     Function  eax      ebx      ecx      edx\n");
-    for (unsigned i = 0; i <= ELEMENTS(pVM->cpum.s.aGuestCpuIdExt); i++)
+    for (unsigned i = 0; i < ELEMENTS(pVM->cpum.s.aGuestCpuIdExt); i++)
     {
         Guest = pVM->cpum.s.aGuestCpuIdExt[i];
         ASMCpuId(0x80000000 | i, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
@@ -1547,7 +1547,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                     "\n"
                     "         RAW Centaur CPUIDs\n"
                     "     Function  eax      ebx      ecx      edx\n");
-    for (unsigned i = 0; i <= RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur); i++)
     {
         Guest = pVM->cpum.s.aGuestCpuIdCentaur[i];
         ASMCpuId(0xc0000000 | i, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
