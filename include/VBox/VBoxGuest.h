@@ -966,8 +966,10 @@ typedef struct
 /* Note that we can't use the Linux header _IOWR macro directly, as it expects
    a "type" argument, whereas we provide "sizeof(type)". */
 /* VBOXGUEST_IOCTL_CODE(Function, sizeof(type)) == _IOWR('V', (Function) | VBOXGUEST_IOCTL_FLAG, (type)) */
-# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOC(_IOC_READ|_IOC_WRITE, 'V', Function, Size)
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOC(_IOC_READ|_IOC_WRITE, 'V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
+
+# define VBOXGUEST_IOCTL_NUMBER(Code)           (_IOC_NR((Code)) & ~VBOXGUEST_IOCTL_FLAG)
 
 #elif defined(RT_OS_SOLARIS)
 # include <sys/ioccom.h>
@@ -1111,11 +1113,15 @@ typedef struct _VBoxGuestHGCMCallInfo
 # define IOCTL_VBOXGUEST_HGCM_CALL          VBOXGUEST_IOCTL_HGCM_CALL(sizeof(VBoxGuestHGCMCallInfo))
 # define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CODE(19, sizeof(uint32_t))
 # define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CLIPBOARD_CONNECT
+/* This was defined after the new IOCTL scheme was created, so we do not need
+   the compatibility macro. */
+# define VBOXGUEST_IOCTL_LOG(Size)          VBOXGUEST_IOCTL_CODE(20, (Size))
 #else
 # define IOCTL_VBOXGUEST_HGCM_CONNECT      IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3072, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMConnectInfo))
 # define IOCTL_VBOXGUEST_HGCM_DISCONNECT   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3073, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMDisconnectInfo))
 # define IOCTL_VBOXGUEST_HGCM_CALL         IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3074, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMCallInfo))
 # define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3075, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(uint32_t))
+# define VBOXGUEST_IOCTL_LOG(Size)         IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3076, METHOD_BUFFERED, FILE_WRITE_ACCESS, (Size))
 #endif
 
 #define VBOXGUEST_HGCM_CALL_PARMS(a) ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
