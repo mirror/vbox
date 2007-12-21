@@ -35,7 +35,7 @@ public:
     {
         Data()
             : mSlot (0)
-            , mEnabled(FALSE)
+            , mEnabled (FALSE)
             , mIRQ (4)
             , mIOBase (0x378)
         {}
@@ -110,6 +110,8 @@ public:
     static const wchar_t *getComponentName() { return L"ParallelPort"; }
 
 private:
+
+    HRESULT checkSetPath (const BSTR aPath);
 
     const ComObjPtr <Machine, ComWeakRef> mParent;
     const ComObjPtr <ParallelPort> mPeer;
