@@ -40,5 +40,10 @@ VBoxService_SOURCES  = \
 VBoxService_LIBS     = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR3.lib
 
+# VBoxService.cpp uses VBOX_SVN_REV.
+VBoxService.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxService.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+
+
 include	$(PATH_KBUILD)/subfooter.kmk
 
