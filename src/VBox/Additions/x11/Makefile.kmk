@@ -1,0 +1,30 @@
+# $Id$
+## @file
+# Sub-Makefile for the X11 Guest Additions.
+#
+
+# Copyright (C) 2006-2007 innotek GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include $(PATH_KBUILD)/subheader.kmk
+
+# Include sub-dirs.
+SUBDIRS =
+ifeq ($(BUILD_TARGET),linux)
+SUBDIRS += xclient \
+			xgraphics \
+			xmouse
+endif
+
+include $(PATH_KBUILD)/subfooter.kmk
+
