@@ -7773,7 +7773,7 @@
       detect the serial port, but all port write operations will be discarded
       and all port read operations will return no data.
 
-      <see>IMachine::getSerial</see>
+      <see>IMachine::getSerialPort</see>
     </desc>
 
      <attribute name="slot" type="unsigned long" readonly="yes">
@@ -7817,7 +7817,7 @@
         PortMode::HostPipePort, or the host serial device name when #hostMode
         is PortMode::HostDevicePort. In either of the above cases, setting a
         @c null or an empty string as the attribute's value will result into
-        an error.
+        an error. Otherwise, the value of this property is ignored.
       </desc>
     </attribute>
 
@@ -7874,8 +7874,9 @@
 
     <attribute name="path" type="wstring">
       <desc>
-        Host parallel device name. Setting a null or an empty string as this
-        attribute's value will result into an error.
+        Host parallel device name. If this parallel port is enabled, setting a
+        @c null or an empty string as this attribute's value will result into
+        an error.
       </desc>
     </attribute>
 

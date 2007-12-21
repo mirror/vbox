@@ -195,10 +195,12 @@ HRESULT ParallelPort::loadSettings (const settings::Key &aPortNode)
     mData->mIOBase = aPortNode.value <ULONG> ("IOBase");
     /* IRQ (required) */
     mData->mIRQ = aPortNode.value <ULONG> ("IRQ");
-    /* device path (may be null) */
-    /// @todo report an error if enabled is true and path is empty or null!
-    //  The same applies to COMSETTER(Path).
-    mData->mPath = aPortNode.stringValue ("path");
+    /* device path (optional, defaults to null) */
+    Bstr path = aPortNode.stringValue ("path");
+
+    HRESULT rc = checkSetPath (path);
+    CheckComRCReturnRC (rc);
+    mData->mPath = path;
 
     return S_OK;
 }
@@ -342,6 +344,13 @@ STDMETHODIMP ParallelPort::COMSETTER(Enabled) (BOOL aEnabled)
 
     if (mData->mEnabled != aEnabled)
     {
+        if (aEnabled &&
+            mData->mPath.isEmpty())
+            return setError (E_INVALIDARG,
+                        tr ("Cannot enable the parallel port %d "
+                            "because the port path is empty or null"),
+                        mData->mSlot);
+
         mData.backup();
         mData->mEnabled = aEnabled;
 
@@ -494,16 +503,25 @@ STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
     return S_OK;
 }
 
-STDMETHODIMP ParallelPort::COMSETTER(Path) (INPTR BSTR aPath)
+/** 
+ *  Validates COMSETTER(Path) arguments.
+ */
+HRESULT ParallelPort::checkSetPath (const BSTR aPath)
 {
-    if (!aPath)
-        return E_POINTER;
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
 
-    if (!*aPath)
+    if (mData->mEnabled &&
+        (aPath == NULL || *aPath == '\0'))
         return setError (E_INVALIDARG,
-            tr ("Path of the parallel port %d may not be empty"),
+            tr ("Path of the parallel port %d may not be empty or null "
+                "when the port is enabled"),
             mData->mSlot);
 
+    return S_OK;
+}
+
+STDMETHODIMP ParallelPort::COMSETTER(Path) (INPTR BSTR aPath)
+{
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -515,6 +533,9 @@ STDMETHODIMP ParallelPort::COMSETTER(Path) (INPTR BSTR aPath)
 
     if (mData->mPath != aPath)
     {
+        HRESULT rc = checkSetPath (aPath);
+        CheckComRCReturnRC (rc);
+
         mData.backup();
         mData->mPath = aPath;
 

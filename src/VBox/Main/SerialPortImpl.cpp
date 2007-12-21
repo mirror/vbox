@@ -620,9 +620,6 @@ HRESULT SerialPort::checkSetPath (const BSTR aPath)
 
 STDMETHODIMP SerialPort::COMSETTER(Path) (INPTR BSTR aPath)
 {
-    if (!aPath)
-        return E_POINTER;
-
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
