@@ -587,6 +587,84 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
 
 
 /**
+ * Performs the cpuid instruction returning all registers.
+ * Some subfunctions of cpuid take ECX as additional parameter (currently known for EAX=4)
+ *
+ * @param   uOperator   CPUID operation (eax).
+ * @param   uIdxECX     ecx index
+ * @param   pvEAX       Where to store eax.
+ * @param   pvEBX       Where to store ebx.
+ * @param   pvECX       Where to store ecx.
+ * @param   pvEDX       Where to store edx.
+ * @remark  We're using void pointers to ease the use of special bitfield structures and such.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX);
+#else
+DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    RTCCUINTREG uRAX, uRBX, uRCX, uRDX;
+    __asm__ ("cpuid\n\t"
+             : "=a" (uRAX),
+               "=b" (uRBX),
+               "=c" (uRCX),
+               "=d" (uRDX)
+             : "0" (uOperator),
+               "2" (uIdxECX));
+    *(uint32_t *)pvEAX = (uint32_t)uRAX;
+    *(uint32_t *)pvEBX = (uint32_t)uRBX;
+    *(uint32_t *)pvECX = (uint32_t)uRCX;
+    *(uint32_t *)pvEDX = (uint32_t)uRDX;
+#  else
+    __asm__ ("xchgl %%ebx, %1\n\t"
+             "cpuid\n\t"
+             "xchgl %%ebx, %1\n\t"
+             : "=a" (*(uint32_t *)pvEAX),
+               "=r" (*(uint32_t *)pvEBX),
+               "=c" (*(uint32_t *)pvECX),
+               "=d" (*(uint32_t *)pvEDX)
+             : "0" (uOperator),
+               "2" (uIdxECX));
+#  endif
+
+# elif RT_INLINE_ASM_USES_INTRIN
+    int aInfo[4];
+    /* ??? another intrinsic ??? */
+    __cpuid(aInfo, uOperator);
+    *(uint32_t *)pvEAX = aInfo[0];
+    *(uint32_t *)pvEBX = aInfo[1];
+    *(uint32_t *)pvECX = aInfo[2];
+    *(uint32_t *)pvEDX = aInfo[3];
+
+# else
+    uint32_t    uEAX;
+    uint32_t    uEBX;
+    uint32_t    uECX;
+    uint32_t    uEDX;
+    __asm
+    {
+        push    ebx
+        mov     eax, [uOperator]
+        mov     ecx, [uIdxECX]
+        cpuid
+        mov     [uEAX], eax
+        mov     [uEBX], ebx
+        mov     [uECX], ecx
+        mov     [uEDX], edx
+        pop     ebx
+    }
+    *(uint32_t *)pvEAX = uEAX;
+    *(uint32_t *)pvEBX = uEBX;
+    *(uint32_t *)pvECX = uECX;
+    *(uint32_t *)pvEDX = uEDX;
+# endif
+}
+#endif
+
+
+/**
  * Performs the cpuid instruction returning ecx and edx.
  *
  * @param   uOperator   CPUID operation (eax).
