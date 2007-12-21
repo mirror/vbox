@@ -24,10 +24,7 @@ ifeq ($(filter-out linux l4, $(BUILD_TARGET)),)
 SUBDIRS += \
 	module \
 	daemon \
-	xgraphics \
-	xmouse \
-	sharedfolders \
-	xclient
+	sharedfolders
 endif
 
 ifndef VBOX_OSE
