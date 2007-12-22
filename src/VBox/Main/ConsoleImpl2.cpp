@@ -788,6 +788,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             hrc = vhdDisk->COMGETTER(FilePath)(&str);                                   H();
             STR_CONV();
             rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
+            rc = CFGMR3InsertString(pCfg,   "Format",           "VHD");                 RC_CHECK();
             STR_FREE();
         }
         else
