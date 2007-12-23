@@ -1113,8 +1113,6 @@ typedef struct _VBoxGuestHGCMCallInfo
 # define IOCTL_VBOXGUEST_HGCM_CALL          VBOXGUEST_IOCTL_HGCM_CALL(sizeof(VBoxGuestHGCMCallInfo))
 # define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CODE(19, sizeof(uint32_t))
 # define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CLIPBOARD_CONNECT
-/* This was defined after the new IOCTL scheme was created, so we do not need
-   the compatibility macro. */
 # define VBOXGUEST_IOCTL_LOG(Size)          VBOXGUEST_IOCTL_CODE(20, (Size))
 #else
 # define IOCTL_VBOXGUEST_HGCM_CONNECT      IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3072, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMConnectInfo))
