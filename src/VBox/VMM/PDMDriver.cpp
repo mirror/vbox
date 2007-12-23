@@ -139,6 +139,7 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_SUPCallVMMR0Ex,
     pdmR3DrvHlp_USBRegisterHub,
     pdmR3DrvHlp_PDMThreadCreate,
+    /** @todo add PDMAsyncCompletionTemplateCreate wrapper here. */
     0 /* the end */
 };
 
