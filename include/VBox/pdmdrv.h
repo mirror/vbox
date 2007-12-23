@@ -651,6 +651,22 @@ typedef struct PDMDRVHLP
     DECLR3CALLBACKMEMBER(int, pfnPDMThreadCreate,(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                                   PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
 
+    /**
+     * Creates a async completion template for a driver instance.
+     *
+     * The template is used when creating new completion tasks.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns         The driver instance.
+     * @param   ppTemplate      Where to store the template pointer on success.
+     * @param   pfnCompleted    The completion callback routine.
+     * @param   pszDesc         Description.
+     */
+    /** @todo Add this
+    DECLR3CALLBACKMEMBER(int, pfnPDMAsyncCompletionTemplateCreate)(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, 
+                                                                   PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc); 
+    And a inline wrapper for it below. */
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLP;
