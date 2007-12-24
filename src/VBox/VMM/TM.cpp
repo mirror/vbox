@@ -1313,7 +1313,6 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser)
         Log(("tmR3TimerCallback: timer event still pending!!\n"));
 #endif
     if (    !VM_FF_ISSET(pVM, VM_FF_TIMER)
-        &&  !pVM->tm.s.fRunningTimers
         &&  (   pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule
             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].offSchedule
             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL].offSchedule
@@ -1321,7 +1320,6 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser)
             ||  tmR3AnyExpiredTimers(pVM)
             )
         && !VM_FF_ISSET(pVM, VM_FF_TIMER)
-        && !pVM->tm.s.fRunningTimers
        )
     {
         VM_FF_SET(pVM, VM_FF_TIMER);
@@ -1348,8 +1346,6 @@ TMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
      * Process the queues.
      */
     AssertCompile(TMCLOCK_MAX == 4);
-    ASMAtomicXchgBool(&pVM->tm.s.fRunningTimers, true);
-    VM_FF_CLEAR(pVM, VM_FF_TIMER);
 
     /* TMCLOCK_VIRTUAL_SYNC */
     STAM_PROFILE_ADV_START(&pVM->tm.s.StatDoQueuesSchedule, s1);
@@ -1386,7 +1382,7 @@ TMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatDoQueuesRun, r3);
 
     /* done. */
-    ASMAtomicXchgBool(&pVM->tm.s.fRunningTimers, false);
+    VM_FF_CLEAR(pVM, VM_FF_TIMER);
 
 #ifdef VBOX_STRICT
     /* check that we didn't screwup. */

@@ -412,11 +412,9 @@ typedef struct TM
     R3PTRTYPE(PRTTIMER)         pTimer;
     /** Interval in milliseconds of the pTimer timer. */
     uint32_t                    u32TimerMillies;
-    /** Indicate that we're running times and that the timer
-     * callback shouldn't set the FF. */ 
-    bool                        fRunningTimers;
 
-    bool                        afPadding[3]; /**< Alignment. */
+    /** Alignment padding to ensure that the statistics are 64-bit aligned when using GCC. */
+    uint32_t                    u32Padding1;
 
     /** TMR3TimerQueuesDo
      * @{ */
