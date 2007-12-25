@@ -80,7 +80,7 @@ public:
 
     void setMouseIntegrationEnabled (bool enabled);
 
-    bool isMouseAbsolute() const { return mouse_absolute; }
+    bool isMouseAbsolute() const { return mMouseAbsolute; }
 
     void setAutoresizeGuest (bool on);
 
@@ -145,14 +145,14 @@ private:
     void emitKeyboardStateChanged()
     {
         emit keyboardStateChanged (
-            (kbd_captured ? KeyboardCaptured : 0) |
+            (mKbdCaptured ? KeyboardCaptured : 0) |
             (mIsHostkeyPressed ? HostKeyPressed : 0));
     }
 
     void emitMouseStateChanged() {
-        emit mouseStateChanged ((mouse_captured ? MouseCaptured : 0) |
-                                (mouse_absolute ? MouseAbsolute : 0) |
-                                (!mouse_integration ? MouseAbsoluteDisabled : 0));
+        emit mouseStateChanged ((mMouseCaptured ? MouseCaptured : 0) |
+                                (mMouseAbsolute ? MouseAbsolute : 0) |
+                                (!mMouseIntegration ? MouseAbsoluteDisabled : 0));
     }
 
     // IConsoleCallback event handlers
@@ -165,8 +165,8 @@ private:
     void timerEvent( QTimerEvent * );
 #endif
 
-    void captureKbd (bool capture, bool emit_signal = true);
-    void captureMouse (bool capture, bool emit_signal = true);
+    void captureKbd (bool aCapture, bool aEmitSignal = true);
+    void captureMouse (bool aCapture, bool aEmitSignal = true);
 
     bool processHotKey (const QKeySequence &key, QMenuData *data);
     void updateModifiers (bool fNumLock, bool fCapsLock, bool fScrollLock);
@@ -178,8 +178,8 @@ private:
 
     void setPointerShape (MousePointerChangeEvent *me);
 
-    bool isPaused() { return last_state == CEnums::Paused; }
-    bool isRunning() { return last_state == CEnums::Running; }
+    bool isPaused() { return mLastState == CEnums::Paused; }
+    bool isRunning() { return mLastState == CEnums::Running; }
 
     static void dimImage (QImage &img);
 
@@ -197,15 +197,15 @@ private:
 
     const VBoxGlobalSettings &gs;
 
-    CEnums::MachineState last_state;
+    CEnums::MachineState mLastState;
 
-    bool attached : 1;
-    bool kbd_captured : 1;
-    bool mouse_captured : 1;
-    bool mouse_absolute : 1;
-    bool mouse_integration : 1;
-    QPoint last_pos;
-    QPoint captured_pos;
+    bool mAttached : 1;
+    bool mKbdCaptured : 1;
+    bool mMouseCaptured : 1;
+    bool mMouseAbsolute : 1;
+    bool mMouseIntegration : 1;
+    QPoint mLastPos;
+    QPoint mCapturedPos;
 
 	bool mDisableAutoCapture : 1;
 
@@ -216,7 +216,7 @@ private:
     bool mIsHostkeyPressed : 1;
     bool mIsHostkeyAlone : 1;
 
-    /** kbd_captured value during the the last host key press or release */
+    /** mKbdCaptured value during the the last host key press or release */
     bool hostkey_in_capture : 1;
 
     bool mIgnoreMainwndResize : 1;

@@ -136,7 +136,7 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inH
      */
     else if (EventClass == kEventClassCommand)
     {
-        if (view->kbd_captured)
+        if (view->mKbdCaptured)
             return 0;
     }
     return ::CallNextEventHandler (inHandlerCallRef, inEvent);
@@ -598,11 +598,11 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mMainWnd (mainWnd)
     , mConsole (console)
     , gs (vboxGlobal().settings())
-    , attached (false)
-    , kbd_captured (false)
-    , mouse_captured (false)
-    , mouse_absolute (false)
-    , mouse_integration (true)
+    , mAttached (false)
+    , mKbdCaptured (false)
+    , mMouseCaptured (false)
+    , mMouseAbsolute (false)
+    , mMouseIntegration (true)
     , mDisableAutoCapture (false)
     , mIsHostkeyPressed (false)
     , mIsHostkeyAlone (false)
@@ -813,9 +813,9 @@ QSize VBoxConsoleView::sizeHint() const
  */
 void VBoxConsoleView::attach()
 {
-    if (!attached)
+    if (!mAttached)
     {
-        attached = true;
+        mAttached = true;
     }
 }
 
@@ -832,11 +832,11 @@ void VBoxConsoleView::attach()
  */
 void VBoxConsoleView::detach()
 {
-    if (attached)
+    if (mAttached)
     {
         /* reuse the focus event handler to uncapture everything */
         focusEvent (false);
-        attached = false;
+        mAttached = false;
     }
 }
 
@@ -921,10 +921,10 @@ bool VBoxConsoleView::pause (bool on)
  */
 void VBoxConsoleView::setMouseIntegrationEnabled (bool enabled)
 {
-    if (mouse_integration == enabled)
+    if (mMouseIntegration == enabled)
         return;
 
-    if (mouse_absolute)
+    if (mMouseAbsolute)
         captureMouse (!enabled, false);
 
     /* Hiding host cursor in case we are entering mouse integration
@@ -944,7 +944,7 @@ void VBoxConsoleView::setMouseIntegrationEnabled (bool enabled)
     if (enabled)
         viewport()->setCursor (QCursor (BlankCursor));
 
-    mouse_integration = enabled;
+    mMouseIntegration = enabled;
 
     emitMouseStateChanged();
 }
@@ -990,7 +990,7 @@ void VBoxConsoleView::onViewOpened()
 
 bool VBoxConsoleView::event (QEvent *e)
 {
-    if (attached)
+    if (mAttached)
     {
         switch (e->type())
         {
@@ -1036,7 +1036,7 @@ bool VBoxConsoleView::event (QEvent *e)
                  * unset to default here will not be hidden in capture state.
                  * So it is necessary to perform updateMouseClipping() for
                  * the guest resize event if the mouse cursor was captured. */
-                if (mouse_captured)
+                if (mMouseCaptured)
                     updateMouseClipping();
 
                 /* apply maximum size restriction */
@@ -1100,19 +1100,19 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* change cursor shape only when mouse integration is
                  * supported (change mouse shape type event may arrive after
                  * mouse capability change that disables integration */
-                if (mouse_absolute)
+                if (mMouseAbsolute)
                     setPointerShape (me);
                 return true;
             }
             case VBoxDefs::MouseCapabilityEventType:
             {
                 MouseCapabilityEvent *me = (MouseCapabilityEvent *) e;
-                if (mouse_absolute != me->supportsAbsolute())
+                if (mMouseAbsolute != me->supportsAbsolute())
                 {
-                    mouse_absolute = me->supportsAbsolute();
+                    mMouseAbsolute = me->supportsAbsolute();
                     /* correct the mouse capture state and reset the cursor
                      * to the default shape if necessary */
-                    if (mouse_absolute)
+                    if (mMouseAbsolute)
                     {
                         CMouse mouse = mConsole.GetMouse();
                         mouse.PutMouseEventAbsolute (-1, -1, 0, 0);
@@ -1121,7 +1121,7 @@ bool VBoxConsoleView::event (QEvent *e)
                     else
                         viewport()->unsetCursor();
                     emitMouseStateChanged();
-                    vboxProblem().remindAboutMouseIntegration (mouse_absolute);
+                    vboxProblem().remindAboutMouseIntegration (mMouseAbsolute);
                 }
                 if (me->needsHostCursor())
                     mMainWnd->setMouseIntegrationLocked (false);
@@ -1280,7 +1280,7 @@ bool VBoxConsoleView::event (QEvent *e)
                     {
                         /* activate the main menu */
                         if (mMainWnd->isTrueSeamless() || mMainWnd->isTrueFullscreen())
-                            mMainWnd->popupMainMenu (mouse_captured);
+                            mMainWnd->popupMainMenu (mMouseCaptured);
                         else
                             mMainWnd->menuBar()->setFocus();
                     }
@@ -1335,7 +1335,7 @@ bool VBoxConsoleView::event (QEvent *e)
 
 bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
 {
-    if (attached && watched == viewport())
+    if (mAttached && watched == viewport())
     {
         switch (e->type())
         {
@@ -1362,7 +1362,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             }
             case QEvent::Resize:
             {
-                if (mouse_captured)
+                if (mMouseCaptured)
                     updateMouseClipping();
             }
             default:
@@ -1474,8 +1474,8 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
 bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &event)
 {
 #if 0
-    LogFlow (("### vkCode=%08X, scanCode=%08X, flags=%08X, dwExtraInfo=%08X (kbd_captured=%d)\n",
-              event.vkCode, event.scanCode, event.flags, event.dwExtraInfo, kbd_captured));
+    LogFlow (("### vkCode=%08X, scanCode=%08X, flags=%08X, dwExtraInfo=%08X (mKbdCaptured=%d)\n",
+              event.vkCode, event.scanCode, event.flags, event.dwExtraInfo, mKbdCaptured));
     char buf [256];
     sprintf (buf, "### vkCode=%08X, scanCode=%08X, flags=%08X, dwExtraInfo=%08X",
              event.vkCode, event.scanCode, event.flags, event.dwExtraInfo);
@@ -1490,7 +1490,7 @@ bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &even
     if (hasFocus() && (event.scanCode & ~0xFF))
         return true;
 
-    if (!kbd_captured)
+    if (!mKbdCaptured)
         return false;
 
     /* it's possible that a key has been pressed while the keyboard was not
@@ -1530,7 +1530,7 @@ bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &even
  */
 bool VBoxConsoleView::winEvent (MSG *msg)
 {
-    if (!attached || ! (
+    if (!mAttached || ! (
         msg->message == WM_KEYDOWN || msg->message == WM_SYSKEYDOWN ||
         msg->message == WM_KEYUP || msg->message == WM_SYSKEYUP
     ))
@@ -1610,7 +1610,7 @@ bool VBoxConsoleView::winEvent (MSG *msg)
     }
 
     bool result = keyEvent (vkey, scan, flags);
-    if (!result && kbd_captured)
+    if (!result && mKbdCaptured)
     {
         /* keyEvent() returned that it didn't process the message, but since the
          * keyboard is captured, we don't want to pass it to Windows. We just want
@@ -1639,7 +1639,7 @@ bool VBoxConsoleView::winEvent (MSG *msg)
  */
 bool VBoxConsoleView::pmEvent (QMSG *aMsg)
 {
-    if (!attached || aMsg->msg != WM_CHAR)
+    if (!mAttached || aMsg->msg != WM_CHAR)
         return false;
 
     /* check for the special flag possibly set at the end of this function */
@@ -1713,7 +1713,7 @@ bool VBoxConsoleView::pmEvent (QMSG *aMsg)
         flags |= KeyPressed;
 
     bool result = keyEvent (vkey, scan, flags);
-    if (!result && kbd_captured)
+    if (!result && mKbdCaptured)
     {
         /* keyEvent() returned that it didn't process the message, but since the
          * keyboard is captured, we don't want to pass it to PM. We just want
@@ -1744,7 +1744,7 @@ bool VBoxConsoleView::x11Event (XEvent *event)
     {
         case XKeyPress:
         case XKeyRelease:
-            if (attached)
+            if (mAttached)
                 break;
             /*  else fall through */
         /// @todo (AH) later, we might want to handle these as well
@@ -1981,7 +1981,7 @@ void VBoxConsoleView::focusEvent (bool aHasFocus,
 //      properly support it, we need to know when *all* mouse buttons are
 //      released after we got focus, and grab the mouse only after then.
 //      btw, the similar would be good the for keyboard auto-capture, too.
-//            if (!(mouse_absolute && mouse_integration))
+//            if (!(mMouseAbsolute && mMouseIntegration))
 //                captureMouse (true);
         }
 
@@ -2101,10 +2101,10 @@ void VBoxConsoleView::toggleFSMode()
 /**
  *  Called on every key press and release (while in focus).
  *
- *  @key        virtual scan code (virtual key on Win32 and KeySym on X11)
- *  @scan       hardware scan code
- *  @flags      flags, a combination of Key* constants
- *  @aUniKey    Unicode translation of the key. Optional.
+ *  @param aKey        virtual scan code (virtual key on Win32 and KeySym on X11)
+ *  @param aScan       hardware scan code
+ *  @param aFlags      flags, a combination of Key* constants
+ *  @param aUniKey     Unicode translation of the key. Optional.
  *
  *  @return     true to consume the event and false to pass it to Qt
  */
@@ -2168,6 +2168,31 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                 fixModifierState (codes, &count);
             }
 
+            /* Check if it's C-A-D */
+            if (aScan == 0x53 /* Del */ &&
+                ((mPressedKeys [0x38] & IsKeyPressed) /* Alt */ ||
+                 (mPressedKeys [0x38] & IsExtKeyPressed)) &&
+                ((mPressedKeys [0x1d] & IsKeyPressed) /* Ctrl */ ||
+                 (mPressedKeys [0x1d] & IsExtKeyPressed)))
+            {
+                /* Use the C-A-D combination as a last resort to get the
+                 * keyboard and mouse back to the host when the user forgets
+                 * the Host Key. Note that it's always possible to send C-A-D
+                 * to the guest using the Host+Del combination. BTW, it would
+                 * be preferrable to completely ignore C-A-D in guests, but
+                 * that's not possible because we cannot predict what other
+                 * keys will be pressed next when one of C, A, D is held. */
+
+                if (isRunning() && mKbdCaptured)
+                {
+                    captureKbd (false);
+                    if (!(mMouseAbsolute && mMouseIntegration))
+                        captureMouse (false);
+                }
+
+                return true;
+            }
+
             /* process the scancode and update the table of pressed keys */
             whatPressed = IsKeyPressed;
 
@@ -2192,7 +2217,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                 mPressedKeys [aScan] &= ~whatPressed;
             }
 
-            if (kbd_captured)
+            if (mKbdCaptured)
                 mPressedKeys [aScan] |= IsKbdCaptured;
             else
                 mPressedKeys [aScan] &= ~IsKbdCaptured;
@@ -2201,7 +2226,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
     else
     {
         /* currently this is used in winLowKeyboardEvent() only */
-        hostkey_in_capture = kbd_captured;
+        hostkey_in_capture = mKbdCaptured;
     }
 
     bool emitSignal = false;
@@ -2249,7 +2274,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                     else
                     if (isRunning())
                     {
-                        bool captured = kbd_captured;
+                        bool captured = mKbdCaptured;
                         bool ok = true;
                         if (!captured)
                         {
@@ -2271,8 +2296,8 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                         if (ok)
                         {
                             captureKbd (!captured, false);
-                            if (!(mouse_absolute && mouse_integration))
-                                captureMouse (kbd_captured);
+                            if (!(mMouseAbsolute && mMouseIntegration))
+                                captureMouse (mKbdCaptured);
                         }
                     }
                 }
@@ -2427,7 +2452,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
         wheel = - (aWheelDelta / 120);
     }
 
-    if (mouse_captured)
+    if (mMouseCaptured)
     {
 #ifdef Q_WS_WIN32
         /* send pending WM_PAINT events */
@@ -2435,8 +2460,8 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
 #endif
 
         CMouse mouse = mConsole.GetMouse();
-        mouse.PutMouseEvent (aGlobalPos.x() - last_pos.x(),
-                             aGlobalPos.y() - last_pos.y(),
+        mouse.PutMouseEvent (aGlobalPos.x() - mLastPos.x(),
+                             aGlobalPos.y() - mLastPos.y(),
                              wheel, state);
 
 #if defined (Q_WS_MAC)
@@ -2468,11 +2493,11 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
         rect.setTop (rect.top() + hsafe);
 
         if (rect.contains (aGlobalPos, true))
-            last_pos = aGlobalPos;
+            mLastPos = aGlobalPos;
         else
         {
-            last_pos = rect.center();
-            QCursor::setPos (last_pos);
+            mLastPos = rect.center();
+            QCursor::setPos (mLastPos);
         }
 
 #else /* !Q_WS_MAC */
@@ -2495,12 +2520,12 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
 
         if (p != aPos)
         {
-            last_pos = viewport()->mapToGlobal (p);
-            QCursor::setPos (last_pos);
+            mLastPos = viewport()->mapToGlobal (p);
+            QCursor::setPos (mLastPos);
         }
         else
         {
-            last_pos = aGlobalPos;
+            mLastPos = aGlobalPos;
         }
 #else
         int we = QApplication::desktop()->width() - 1;
@@ -2517,18 +2542,18 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
 
         if (p != aGlobalPos)
         {
-            last_pos =  p;
-            QCursor::setPos (last_pos);
+            mLastPos =  p;
+            QCursor::setPos (mLastPos);
         }
         else
         {
-            last_pos = aGlobalPos;
+            mLastPos = aGlobalPos;
         }
 #endif
 #endif /* !Q_WS_MAC */
         return true; /* stop further event handling */
     }
-    else /* !mouse_captured */
+    else /* !mMouseCaptured */
     {
 #ifdef Q_WS_MAC
         /* Update the mouse cursor; this is a bit excessive really... */
@@ -2559,7 +2584,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
             }
         }
 
-        if (mouse_absolute && mouse_integration)
+        if (mMouseAbsolute && mMouseIntegration)
         {
             int cw = contentsWidth(), ch = contentsHeight();
             int vw = visibleWidth(), vh = visibleHeight();
@@ -2667,7 +2692,7 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
         }
         case CEnums::Running:
         {
-            if (last_state == CEnums::Paused)
+            if (mLastState == CEnums::Paused)
             {
                 if (mode != VBoxDefs::TimerMode && mFrameBuf)
                 {
@@ -2690,7 +2715,7 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
             break;
     }
 
-    last_state = state;
+    mLastState = state;
 }
 
 void VBoxConsoleView::doRefresh()
@@ -2778,14 +2803,14 @@ void VBoxConsoleView::timerEvent( QTimerEvent * )
  *  Captures the keyboard. When captured, no keyboard input reaches the host
  *  system (including most system combinations like Alt-Tab).
  *
- *  @capture        true to capture, false to uncapture
- *  @emit_signal    whether to emit keyboardStateChanged() or not
+ *  @param aCapture     true to capture, false to uncapture.
+ *  @param aEmitSignal  Whether to emit keyboardStateChanged() or not.
  */
-void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
+void VBoxConsoleView::captureKbd (bool aCapture, bool aEmitSignal /* = true */)
 {
-    AssertMsg (attached, ("Console must be attached"));
+    AssertMsg (mAttached, ("Console must be attached"));
 
-    if (kbd_captured == capture)
+    if (mKbdCaptured == aCapture)
         return;
 
     /* On Win32, keyboard grabbing is ineffective, a low-level keyboard hook is
@@ -2798,7 +2823,7 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
 #if defined (Q_WS_WIN32)
     /**/
 #elif defined (Q_WS_X11)
-	if (capture)
+	if (aCapture)
 		XGrabKey (x11Display(), AnyKey, AnyModifier,
                   topLevelWidget()->winId(), False,
                   GrabModeAsync, GrabModeAsync);
@@ -2806,7 +2831,7 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
 		XUngrabKey (x11Display(),  AnyKey, AnyModifier,
                     topLevelWidget()->winId());
 #elif defined (Q_WS_MAC)
-    if (capture)
+    if (aCapture)
     {
         ::DarwinDisableGlobalHotKeys (true);
         grabKeyboard();
@@ -2817,15 +2842,15 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
         releaseKeyboard();
     }
 #else
-    if (capture)
+    if (aCapture)
         grabKeyboard();
     else
         releaseKeyboard();
 #endif
 
-    kbd_captured = capture;
+    mKbdCaptured = aCapture;
 
-    if (emit_signal)
+    if (aEmitSignal)
         emitKeyboardStateChanged ();
 }
 
@@ -2833,33 +2858,34 @@ void VBoxConsoleView::captureKbd (bool capture, bool emit_signal)
  *  Captures the host mouse pointer. When captured, the mouse pointer is
  *  unavailable to the host applications.
  *
- *  @capture    true to capture, false to uncapture
+ *  @param aCapture     true to capture, false to uncapture.
+ *  @param aEmitSignal  Whether to emit mouseStateChanged() or not.
  */
-void VBoxConsoleView::captureMouse (bool capture, bool emit_signal)
+void VBoxConsoleView::captureMouse (bool aCapture, bool aEmitSignal /* = true */)
 {
-    AssertMsg (attached, ("Console must be attached"));
+    AssertMsg (mAttached, ("Console must be attached"));
 
-    if (mouse_captured == capture)
+    if (mMouseCaptured == aCapture)
         return;
 
-    if (capture)
+    if (aCapture)
     {
         /* memorize the host position where the cursor was captured */
-        captured_pos = QCursor::pos();
+        mCapturedPos = QCursor::pos();
 #ifdef Q_WS_WIN32
         viewport()->setCursor (QCursor (BlankCursor));
         /* move the mouse to the center of the visible area */
         QCursor::setPos (mapToGlobal (visibleRect().center()));
-        last_pos = QCursor::pos();
+        mLastPos = QCursor::pos();
 #elif defined (Q_WS_MAC)
         /* move the mouse to the center of the visible area */
-        last_pos = mapToGlobal (visibleRect().center());
-        QCursor::setPos (last_pos);
+        mLastPos = mapToGlobal (visibleRect().center());
+        QCursor::setPos (mLastPos);
         /* grab all mouse events. */
         viewport()->grabMouse();
 #else
         viewport()->grabMouse();
-        last_pos = QCursor::pos();
+        mLastPos = QCursor::pos();
 #endif
     }
     else
@@ -2872,11 +2898,11 @@ void VBoxConsoleView::captureMouse (bool capture, bool emit_signal)
         mouse.PutMouseEvent (0, 0, 0, 0);
     }
 
-    mouse_captured = capture;
+    mMouseCaptured = aCapture;
 
     updateMouseClipping();
 
-    if (emit_signal)
+    if (aEmitSignal)
         emitMouseStateChanged ();
 }
 
@@ -2940,7 +2966,7 @@ bool VBoxConsoleView::processHotKey (const QKeySequence &key,  QMenuData *data)
  */
 void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostKey)
 {
-    AssertMsg (attached, ("Console must be attached"));
+    AssertMsg (mAttached, ("Console must be attached"));
 
     CKeyboard keyboard = mConsole.GetKeyboard();
     bool fSentRESEND = false;
@@ -3007,7 +3033,7 @@ void VBoxConsoleView::saveKeyStates()
 
 void VBoxConsoleView::sendChangedKeyStates()
 {
-    AssertMsg (attached, ("Console must be attached"));
+    AssertMsg (mAttached, ("Console must be attached"));
 
     LONG codes [2];
     CKeyboard keyboard = mConsole.GetKeyboard();
@@ -3035,22 +3061,25 @@ void VBoxConsoleView::sendChangedKeyStates()
 
 void VBoxConsoleView::updateMouseClipping()
 {
-    AssertMsg (attached, ("Console must be attached"));
+    AssertMsg (mAttached, ("Console must be attached"));
 
-    if ( mouse_captured ) {
-        viewport()->setCursor( QCursor( BlankCursor ) );
+    if (mMouseCaptured)
+    {
+        viewport()->setCursor (QCursor (BlankCursor));
 #ifdef Q_WS_WIN32
         QRect r = viewport()->rect();
-        r.moveTopLeft( viewport()->mapToGlobal( QPoint( 0, 0 ) ) );
+        r.moveTopLeft (viewport()->mapToGlobal (QPoint (0, 0)));
         RECT rect = { r.left(), r.top(), r.right() + 1, r.bottom() + 1 };
-        ::ClipCursor( &rect );
+        ::ClipCursor (&rect);
 #endif
-    } else {
+    }
+    else
+    {
 #ifdef Q_WS_WIN32
-        ::ClipCursor( NULL );
+        ::ClipCursor (NULL);
 #endif
         /* return the cursor to where it was when we captured it and show it */
-        QCursor::setPos( captured_pos );
+        QCursor::setPos (mCapturedPos);
         viewport()->unsetCursor();
     }
 }
