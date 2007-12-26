@@ -636,7 +636,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     if (VBOX_FAILURE(rc))
                     {
                         /* Notifying device failed, continue but log it */
-                        LogRel(("HostSerial#%d: Notifying device failed with error %Vrc; continuing.\n", pDrvIns->iInstance, rc);
+                        LogRel(("HostSerial#%d: Notifying device failed with error %Vrc; continuing.\n", pDrvIns->iInstance, rc));
                     }
                 }
                 else
