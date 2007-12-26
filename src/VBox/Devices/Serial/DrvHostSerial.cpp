@@ -604,13 +604,47 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             /* this might have changed in the meantime */
             if (pThread->enmState != PDMTHREADSTATE_RUNNING)
                 break;
-            if (!ReadFile(pData->hDeviceFile, abBuffer, sizeof(abBuffer), &dwNumberOfBytesTransferred, &pData->overlappedRecv))
-            {
-                LogRel(("HostSerial#%d: Read failed with error %Vrc; terminating the worker thread.\n", pDrvIns->iInstance, RTErrConvertFromWin32(GetLastError())));
-                break;
-            }
-            cbRemaining = dwNumberOfBytesTransferred;
 
+            /* Check the event */
+            if (dwEventMask & EV_RXCHAR)
+            {
+                if (!ReadFile(pData->hDeviceFile, abBuffer, sizeof(abBuffer), &dwNumberOfBytesTransferred, &pData->overlappedRecv))
+                {
+                    LogRel(("HostSerial#%d: Read failed with error %Vrc; terminating the worker thread.\n", pDrvIns->iInstance, RTErrConvertFromWin32(GetLastError())));
+                    break;
+                }
+                cbRemaining = dwNumberOfBytesTransferred;
+            }
+            else
+            {
+                /* The status lines have changed. Notify the device. */
+                DWORD dwNewStatusLinesState = 0;
+                uint8_t uNewStatusLinesState = 0;
+
+                /* Get the new state */
+                if (GetModemStatus(pData->hDeviceFile, &dwNewStatusLinesState))
+                {
+                    if (dwNewStatusLinesState & MS_RLSD_ON)
+                        uNewStatusLinesState |= PDM_ICHAR_STATUS_LINES_DCD;
+                    if (dwNewStatusLinesState & MS_RING_ON)
+                        uNewStatusLinesState |= PDM_ICHAR_STATUS_LINES_RI;
+                    if (dwNewStatusLinesState & MS_DSR_ON)
+                        uNewStatusLinesState |= PDM_ICHAR_STATUS_LINES_DSR;
+                    if (dwNewStatusLinesState & MS_CTS_ON)
+                        uNewStatusLinesState |= PDM_ICHAR_STATUS_LINES_CTS;
+                    rc = pData->pDrvCharPort->pfnNotifyStatusLinesChanged(pData->pDrvCharPort, uNewStatusLinesState);
+                    if (VBOX_FAILURE(rc))
+                    {
+                        /* Notifying device failed, continue but log it */
+                        LogRel(("HostSerial#%d: Notifying device failed with error %Vrc; continuing.\n", pDrvIns->iInstance, rc);
+                    }
+                }
+                else
+                {
+                    /* Getting new state failed, continue but log it */
+                    LogRel(("HostSerial#%d: Getting status lines state failed with error %Vrc; continuing.\n", pDrvIns->iInstance, RTErrConvertFromWin32(GetLastError())));
+                }
+            }
 #endif
 
             Log(("Read %d bytes.\n", cbRemaining));
@@ -666,6 +700,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMT
 #endif
 }
 
+#if defined(RT_OS_LINUX)
 /* -=-=-=-=- Monitor thread -=-=-=-=- */
 
 /**
@@ -682,12 +717,9 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
 {
     PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc = VINF_SUCCESS;
-
-#if defined (RT_OS_LINUX)
     unsigned uStatusLinesToCheck = 0;
 
     uStatusLinesToCheck = TIOCM_CAR | TIOCM_RNG | TIOCM_LE | TIOCM_CTS;
-#endif
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
@@ -695,8 +727,6 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         uint32_t newStatusLine = 0;
-
-#if defined(RT_OS_LINUX)
         unsigned int statusLines;
 
         /*
@@ -717,7 +747,6 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
         if (statusLines & TIOCM_CTS)
             newStatusLine |= PDM_ICHAR_STATUS_LINES_CTS;
         rc = pData->pDrvCharPort->pfnNotifyStatusLinesChanged(pData->pDrvCharPort, newStatusLine);
-#endif
     }
 
     return VINF_SUCCESS;
@@ -734,7 +763,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
 {
     PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc = VINF_SUCCESS;
-#if defined(RT_OS_LINUX)
+
     /*
      * Linux is a bit difficult as the thread is sleeping in an ioctl call.
      * So there is no way to have a wakeup pipe.
@@ -757,14 +786,9 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
     if (rc < 0)
         AssertMsgFailed(("%s: Setting device into normal mode failed. Device is not in a working state!!\n", __FUNCTION__));
 
-#elif defined(RT_OS_WINDOWS)
-    /** @todo */
-#else
-# error adapt me!
-#endif
-
     return rc;
 }
+#endif /* RT_OS_LINUX */
 
 /**
  * Set the modem lines.
@@ -884,7 +908,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     {
         pData->hDeviceFile = hFile;
         /* for overlapped read */
-        if (!SetCommMask(hFile, EV_RXCHAR))
+        if (!SetCommMask(hFile, EV_RXCHAR | EV_CTS | EV_DSR | EV_RING | EV_RLSD))
         {
             LogRel(("HostSerial#%d: SetCommMask failed with error %d.\n", pDrvIns->iInstance, GetLastError()));
             return VERR_FILE_IO_ERROR;
@@ -970,6 +994,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create send thread"), pDrvIns->iInstance);
 
 #if defined(RT_OS_LINUX)
+    /* Linux needs a separate thread which monitors the status lines. */
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pMonitorThread, pData, drvHostSerialMonitorThread, drvHostSerialWakeupMonitorThread, 0, RTTHREADTYPE_IO, "Serial Monitor");
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create monitor thread"), pDrvIns->iInstance);
