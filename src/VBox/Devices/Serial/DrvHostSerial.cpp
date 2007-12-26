@@ -622,7 +622,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 uint8_t uNewStatusLinesState = 0;
 
                 /* Get the new state */
-                if (GetModemStatus(pData->hDeviceFile, &dwNewStatusLinesState))
+                if (GetCommModemStatus(pData->hDeviceFile, &dwNewStatusLinesState))
                 {
                     if (dwNewStatusLinesState & MS_RLSD_ON)
                         uNewStatusLinesState |= PDM_ICHAR_STATUS_LINES_DCD;
