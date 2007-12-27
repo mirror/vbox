@@ -357,6 +357,8 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
         /* reset THR pending bit */
         if ((ret & 0x7) == UART_IIR_THRI)
             s->thr_ipending = 0;
+        /* reset msr changed bit */
+        s->msr_changed = false;
         serial_update_irq(s);
 #endif
         break;
@@ -377,15 +379,9 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
             ret |= (s->mcr & 0x02) << 3;
             ret |= (s->mcr & 0x01) << 5;
         } else {
-#ifndef IN_RING3
-        *pRC = VINF_IOM_HC_IOPORT_READ;
-#else
             ret = s->msr;
             /* Reset delta bits. */
             s->msr &= ~UART_MSR_ANY_DELTA;
-            s->msr_changed = false;
-            serial_update_irq(s);
-#endif
         }
         break;
     case 7:
