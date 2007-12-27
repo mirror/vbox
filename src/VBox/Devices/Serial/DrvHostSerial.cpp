@@ -619,7 +619,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             {
                 /* The status lines have changed. Notify the device. */
                 DWORD dwNewStatusLinesState = 0;
-                uint8_t uNewStatusLinesState = 0;
+                uint32_t uNewStatusLinesState = 0;
 
                 /* Get the new state */
                 if (GetCommModemStatus(pData->hDeviceFile, &dwNewStatusLinesState))
