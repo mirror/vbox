@@ -63,7 +63,7 @@
 #include <VBox/pci.h>
 #endif /* VBOX_SERIAL_PCI */
 
-#define SERIAL_SAVED_STATE_VERSION  2
+#define SERIAL_SAVED_STATE_VERSION  3
 
 #define UART_LCR_DLAB	            0x80	/* Divisor latch access bit */
 
@@ -377,11 +377,15 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
             ret |= (s->mcr & 0x02) << 3;
             ret |= (s->mcr & 0x01) << 5;
         } else {
+#ifndef IN_RING3
+        *pRC = VINF_IOM_HC_IOPORT_READ;
+#else
             ret = s->msr;
             /* Reset delta bits. */
             s->msr &= ~UART_MSR_ANY_DELTA;
             s->msr_changed = false;
             serial_update_irq(s);
+#endif
         }
         break;
     case 7:
@@ -559,6 +563,7 @@ static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns,
     SSMR3PutS32(pSSMHandle, pData->irq);
     SSMR3PutS32(pSSMHandle, pData->last_break_enable);
     SSMR3PutU32(pSSMHandle, pData->base);
+    SSMR3PutBool(pSSMHandle, pData->msr_changed);
     return SSMR3PutU32(pSSMHandle, ~0); /* sanity/terminator */
 }
 
@@ -596,6 +601,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
     SSMR3GetS32(pSSMHandle, &pData->irq);
     SSMR3GetS32(pSSMHandle, &pData->last_break_enable);
     SSMR3GetU32(pSSMHandle, &pData->base);
+    SSMR3GetBool(pSSMHandle, &pData->msr_changed);
 
     rc = SSMR3GetU32(pSSMHandle, &u32);
     if (VBOX_FAILURE(rc))
