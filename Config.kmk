@@ -906,7 +906,7 @@ VBOX_MAKESELF  ?= $(PATH_DEVTOOLS)/common/makeself/v2.1.4_1/makeself.sh
 VBOX_PATH_HTML_HELP_WORKSHOP ?= $(PATH_DEVTOOLS)/win.x86/HTML_Help_Workshop/v1.3/
 
 # Path to the null soft installer.
-VBOX_PATH_NSIS ?= $(PATH_DEVTOOLS)/win.x86/nsis/v2.22
+VBOX_PATH_NSIS ?= $(PATH_DEVTOOLS)/win.x86/nsis/v2.23-log-nsscm
 
 # Windows install tools...
 VBOX_PATH_WIX  ?= $(PATH_DEVTOOLS)/win.x86/wix/v2.0.4611.0
