@@ -18,7 +18,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 VS_VERSION_INFO VERSIONINFO
    FILEVERSION          VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
-   PRODUCTVERSION	VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
+   PRODUCTVERSION	    VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
    FILEFLAGSMASK        0x3fL
    FILEFLAGS            0x0L
    FILEOS               0x40004L
@@ -31,12 +31,12 @@ BEGIN
       BEGIN
          VALUE "CompanyName",      "innotek GmbH\0"
          VALUE "FileDescription",  "VirtualBox OpenGL ICD\0"
-         VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "\0"
+         VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
          VALUE "InternalName",     "VBoxOGL.dll\0"
          VALUE "LegalCopyright",   "(C) 2004-2007 innotek GmbH\0"
          VALUE "OriginalFilename", "VBoxOGL.dll\0"
          VALUE "ProductName",      "VirtualBox Guest Tools\0"
-         VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "\0"
+         VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
       END
    END
    BLOCK "VarFileInfo"

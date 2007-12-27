@@ -26,7 +26,8 @@ VBoxGINA_SOURCES  = \
 	VBoxGINA.cpp \
 	Helper.cpp  \
 	Dialog.cpp \
-	VBoxGINA.def
+	VBoxGINA.def \
+	VBoxGINA.rc
 VBoxGINA_LIBS     = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR3$(VBOXW32GUEST_SUFF_LIB)
 

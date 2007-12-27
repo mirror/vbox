@@ -24,7 +24,7 @@ VBoxService_TEMPLATE = VBOXW32GUESTR3
 ifdef VBOX_SIGN_ADDITIONS
  VBoxService_NOINST  = true
 endif
-VBoxService_DEFS     = VBOX_HGCM
+VBoxService_DEFS     = VBOX_HGCM LOG_TO_BACKDOOR
 VBoxService_INCS     = ../include
 VBoxService_SOURCES  = \
 	VBoxService.cpp \
@@ -41,9 +41,8 @@ VBoxService_LIBS     = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR3.lib
 
 # VBoxService.cpp uses VBOX_SVN_REV.
-VBoxService.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxService.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxService.cpp_DEPS = $(VBOX_SVN_REV_KMK)
-
 
 include	$(PATH_KBUILD)/subfooter.kmk
 

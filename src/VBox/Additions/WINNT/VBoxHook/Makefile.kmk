@@ -29,7 +29,8 @@ VBoxHook_INCS     = ../include
 VBoxHook_SOURCES  = \
 	dllmain.cpp \
 	VBoxHook.cpp \
-	VBoxHook.def
+	VBoxHook.def \
+	VBoxHook.rc
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
