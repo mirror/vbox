@@ -823,6 +823,7 @@ int main()
     GEN_CHECK_OFF(SerialState, scr);
     GEN_CHECK_OFF(SerialState, thr_ipending);
     GEN_CHECK_OFF(SerialState, irq);
+    GEN_CHECK_OFF(SerialState, msr_changed);
     GEN_CHECK_OFF(SerialState, fGCEnabled);
     GEN_CHECK_OFF(SerialState, fR0Enabled);
     GEN_CHECK_OFF(SerialState, pDevInsGC);
@@ -872,7 +873,6 @@ int main()
     GEN_CHECK_OFF(AHCIPort, hbaUpdateSig);
     GEN_CHECK_OFF(AHCIPort, hbaSActive);
     GEN_CHECK_OFF(AHCIPort, AsyncIOThread);
-    GEN_CHECK_OFF(AHCIPort, fShutdown);
     GEN_CHECK_OFF(AHCIPort, AsyncIORequestSem);
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
     GEN_CHECK_OFF(AHCIPort, pDrvBlock);
@@ -901,7 +901,6 @@ int main()
     GEN_CHECK_OFF(AHCIPort, uATARegCommand);
     GEN_CHECK_OFF(AHCIPort, iLUN);
     GEN_CHECK_OFF(AHCIPort, fResetDevice);
-    GEN_CHECK_OFF(AHCIPort, fResetPort);
     GEN_CHECK_OFF(AHCIPort, fLBA48);
     GEN_CHECK_OFF(AHCIPort, cbIOBuffer);
     GEN_CHECK_OFF(AHCIPort, pIOBufferHC);
