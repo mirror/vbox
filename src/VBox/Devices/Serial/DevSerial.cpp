@@ -145,6 +145,7 @@ struct SerialState
        it can be reset while reading iir */
     int                             thr_ipending;
     int                             irq;
+    bool                            msr_changed;
 
     bool                            fGCEnabled;
     bool                            fR0Enabled;
@@ -181,6 +182,8 @@ static void serial_update_irq(SerialState *s)
         s->iir = UART_IIR_RDI;
     } else if (s->thr_ipending && (s->ier & UART_IER_THRI)) {
         s->iir = UART_IIR_THRI;
+    } else if (s->msr_changed && (s->ier & UART_IER_RLSI)) {
+        s->iir = UART_IIR_RLSI;
     } else {
         s->iir = UART_IIR_NO_INT;
     }
@@ -280,8 +283,11 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
     case 3:
         {
             int break_enable;
-            s->lcr = val;
-            serial_update_parameters(s);
+            if (s->lcr != val)
+            {
+                s->lcr = val;
+                serial_update_parameters(s);
+            }
             break_enable = (val >> 6) & 1;
             if (break_enable != s->last_break_enable) {
                 s->last_break_enable = break_enable;
@@ -374,6 +380,8 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
             ret = s->msr;
             /* Reset delta bits. */
             s->msr &= ~UART_MSR_ANY_DELTA;
+            s->msr_changed = false;
+            serial_update_irq(s);
         }
         break;
     case 7:
@@ -425,6 +433,8 @@ static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface
     SerialState *pData = PDMICHARPORT_2_SERIALSTATE(pInterface);
     uint8_t newMsr = 0;
 
+    Log(("%s: pInterface=%p newStatusLines=%u\n", __FUNCTION__, pInterface, newStatusLines));
+
     PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
 
     /* Set new states. */
@@ -448,6 +458,7 @@ static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface
         newMsr |= UART_MSR_DCTS;
 
     pData->msr = newMsr;
+    pData->msr_changed = true;
     serial_update_irq(pData);
 
     PDMCritSectLeave(&pData->CritSect);
@@ -712,7 +723,10 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
      * Validate configuration.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0IOBase\0"))
+    {
+        AssertMsgFailed(("serialConstruct Invalid configuration values\n"));
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+    }
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &pData->fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -748,16 +762,30 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     if (VBOX_FAILURE(rc))
         return rc;
 
-/** @todo r=bird: Check for VERR_CFGM_VALUE_NOT_FOUND and provide sensible defaults.
- * Also do AssertMsgFailed(("Configuration error:....)) in the failure cases of CFGMR3Query*()
- * and CFGR3AreValuesValid() like we're doing in the other devices.  */
     rc = CFGMR3QueryU8 (pCfgHandle, "IRQ", &irq_lvl);
-    if (VBOX_FAILURE (rc))
-        return rc;
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        /* Provide sensible defaults. */
+        if (iInstance == 0)
+            irq_lvl = 4;
+        else if (iInstance == 1)
+            irq_lvl = 3;
+    }
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"IRQ\" value"));
 
     rc = CFGMR3QueryU16 (pCfgHandle, "IOBase", &io_base);
-    if (VBOX_FAILURE (rc))
-        return rc;
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        if (iInstance == 0)
+            io_base = 0x3f8;
+        else if (iInstance == 1)
+            io_base = 0x2f8;
+    }
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"IOBase\" value"));
 
     Log(("serialConstruct instance %d iobase=%04x irq=%d\n", iInstance, io_base, irq_lvl));
 
