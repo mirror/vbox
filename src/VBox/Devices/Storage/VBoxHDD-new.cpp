@@ -510,7 +510,7 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
         }
         else
         {
-            /* try to load the plugin (RTldrLoad appends the suffix for the shared object/DLL). */
+            /* Try to load the plugin (RTLdrLoad appends the suffix for the shared object/DLL). */
             rc = RTLdrLoad(pszPluginName, &hPlugin);
             if (VBOX_SUCCESS(rc))
             {
@@ -526,20 +526,19 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
                 else
                 {
                     /* Get the function table. */
-                    pBackend = (PVBOXHDDBACKEND)RTMemAllocZ(sizeof(VBOXHDDBACKEND));
-                    if (!pBackend)
+                    rc = pfnHDDFormatLoad(&pBackend);
+                    if (VBOX_FAILURE(rc))
+                        pBackend = NULL;
+
+                    /*
+                     * Check if the sizes match.
+                     * If not this plugin is too old to load.
+                     */
+                    if (pBackend->cbSize != sizeof(VBOXHDDBACKEND))
                     {
-                        rc = VERR_NO_MEMORY;
-                    }
-                    else
-                    {
-                        pBackend->cbSize = sizeof(VBOXHDDBACKEND);
-                        rc = pfnHDDFormatLoad(pBackend);
-                        if (VBOX_FAILURE(rc))
-                        {
-                            RTMemFree(pBackend);
-                            pBackend = NULL;
-                        }
+                        rc = VERR_VDI_UNSUPPORTED_VERSION;
+                        pBackend = NULL;
+                        RTLdrClose(hPlugin);
                     }
                 }
             }
@@ -582,10 +581,12 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
  * Try to get the backend name which can use this image. 
  *
  * @returns VBox status code.
+ *          VINF_SUCCESS if a plugin was found. 
+ *                       ppszFormat contains the string which can be used as backend name.
+ *          VERR_NOT_SUPPORTED if no plugin was found.
  * @param   pszFilename     Name of the image file for which the backend is queried.
  * @param   ppszFormat      Where to store the name of the plugin.
  */
-
 VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
 {
     char pszProgramPath[1024]; /* Far too much I think but to be on the safe side. */
@@ -594,6 +595,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
     PRTDIRENTRY pPluginDirEntry = NULL;
     unsigned cbPluginDirEntry;
     int rc = VERR_NOT_SUPPORTED;
+    int rcCheck = VINF_SUCCESS;
     bool fPluginFound = false;
 
     if (!ppszFormat)
@@ -602,17 +604,14 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
     memset(pszProgramPath, 0, 1024);
     rc = RTPathProgram(pszProgramPath, 1024);
     if (VBOX_FAILURE(rc))
-    {
         return rc;
-    }
 
     /* To get all entries with VBoxHDD as prefix. */
     rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", pszProgramPath, VBOX_HDDFORMAT_PLUGIN_PREFIX);
     if (VBOX_FAILURE(rc))
     {
         RTStrFree(pszProgramPath);
-        rc = VERR_NO_MEMORY;
-        return rc;
+        return VERR_NO_MEMORY;
     }
 
     /* The plugins are in the same directory as the program. */
@@ -640,11 +639,10 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
             pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(cbPluginDirEntry);
             /* Retry. */
             rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry);
-            if (VBOX_FAILURE(rc))
-                break;
         }
-        else if (VBOX_FAILURE(rc))
-                break;
+
+        if (VBOX_FAILURE(rc))
+            break;
 
         /* We got the new entry. */
         if (pPluginDirEntry->enmType != RTDIRENTRYTYPE_FILE)
@@ -662,40 +660,20 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
             }
             else
             {
-                /* Get the function table. */
-                pBackend = (PVBOXHDDBACKEND)RTMemAllocZ(sizeof(VBOXHDDBACKEND));
-                if (!pBackend)
+                rc = pfnHDDFormatLoad(&pBackend);
+                if (VBOX_SUCCESS(rc) && (pBackend->cbSize == sizeof(VBOXHDDBACKEND)))
                 {
-                    rc = VERR_NO_MEMORY;
-                }
-                else
-                {
-                    pBackend->cbSize = sizeof(VBOXHDDBACKEND);
-                    rc = pfnHDDFormatLoad(pBackend);
-                    if (VBOX_FAILURE(rc))
-                    {
-                        RTMemFree(pBackend);
-                        pBackend = NULL;
-                    }
-
                     /* Check if the plugin can handle this file. */
-                    rc = pBackend->pfnCheckIfValid(pszFilename);
-                    if (VBOX_FAILURE(rc))
+                    rcCheck = pBackend->pfnCheckIfValid(pszFilename);
+                    if (VBOX_SUCCESS(rcCheck))
                     {
-                        RTMemFree(pBackend);
-                        RTLdrClose(hPlugin);
-                    }
-                    else
-                    {
-                        RTMemFree(pBackend);
-                        RTLdrClose(hPlugin);
                         fPluginFound = true;
 
                         /* Report the format name. */
                         char *pszName = pPluginDirEntry->szName + VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH; /* Point to the rest after the prefix. */
                         char *pszFormat = NULL;
                         unsigned cbFormat = 0;
-                          
+                            
                         while((*pszName != '.') && (*pszName != '\0'))
                         {
                             cbFormat++;
@@ -707,20 +685,26 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
                         /* Copy the name into the new string. */   
                         pszFormat = (char *)RTMemAllocZ(cbFormat+1);
 
-                        if (!pszFormat)
+                        if (pszFormat)
                         {
-                            rc = VERR_NO_MEMORY;
-                            break;
+                            memcpy(pszFormat, pszName, cbFormat);
+                            *ppszFormat = pszFormat;
                         }
-
-                        memcpy(pszFormat, pszName, cbFormat);
-                        
-                        *ppszFormat = pszFormat;
-
-                        break;
+                        else
+                            rc = VERR_NO_MEMORY;
                     }
+                    else
+                        rcCheck = VERR_NOT_SUPPORTED;
                 }
+                else
+                    pBackend = NULL;
             }
+            RTLdrClose(hPlugin);
+            /*
+             * We take the first plugin which can handle this file.
+             */
+            if (fPluginFound)
+                break;
         }
     }
 
@@ -735,6 +719,8 @@ out:
 
     if ((fPluginFound == true) && (*ppszFormat != NULL))
         rc = VINF_SUCCESS;
+    else if ((rcCheck == VERR_NOT_SUPPORTED) && (rc == VINF_SUCCESS))
+        rc = rcCheck;
 
     return rc;
 }
