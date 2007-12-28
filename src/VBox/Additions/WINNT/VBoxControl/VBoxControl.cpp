@@ -18,9 +18,14 @@
 #include <stdarg.h>
 #include <malloc.h>
 
+#include <VBox/VBoxGuest.h>
+#include <VBox/version.h>
+
 void printHelp()
 {
-    printf("VBoxControl   getvideoacceleration\n"
+    printf("VBoxControl   getversion\n"
+           "\n"
+           "VBoxControl   getvideoacceleration\n"
            "\n"
            "VBoxControl   setvideoacceleration <on|off>\n"
            "\n"
@@ -31,6 +36,11 @@ void printHelp()
            "VBoxControl   removecustommode <width> <height> <bpp>\n"
            "\n"
            "VBoxControl   setvideomode <width> <height> <bpp> <screen>\n");
+}
+
+void printVersion()
+{
+    printf("%d.%d.%dr%d\n", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
 }
 
 #if defined(DEBUG) || defined(LOG_ENABLED)
@@ -774,28 +784,37 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    /* todo: add better / stable command line handling here! */
+
     /* determine which command */
-    if (strcmp(argv[1], "getvideoacceleration") == 0)
+    if ((stricmp(argv[1], "getversion") == 0) ||
+        (stricmp(argv[1], "-v") == 0) ||
+        (stricmp(argv[1], "--version") == 0) ||
+        (stricmp(argv[1], "-version") == 0))
+    {
+        printVersion();
+    }
+    else if (stricmp(argv[1], "getvideoacceleration") == 0)
     {
         handleGetVideoAcceleration(argc - 2, &argv[2]);
     }
-    else if (strcmp(argv[1], "setvideoacceleration") == 0)
+    else if (stricmp(argv[1], "setvideoacceleration") == 0)
     {
         handleSetVideoAcceleration(argc - 2, &argv[2]);
     }
-    else if (strcmp(argv[1], "listcustommodes") == 0)
+    else if (stricmp(argv[1], "listcustommodes") == 0)
     {
         handleListCustomModes(argc - 2, &argv[2]);
     }
-    else if (strcmp(argv[1], "addcustommode") == 0)
+    else if (stricmp(argv[1], "addcustommode") == 0)
     {
         handleAddCustomMode(argc - 2, &argv[2]);
     }
-    else if (strcmp(argv[1], "removecustommode") == 0)
+    else if (stricmp(argv[1], "removecustommode") == 0)
     {
         handleRemoveCustomMode(argc - 2, &argv[2]);
     }
-    else if (strcmp(argv[1], "setvideomode") == 0)
+    else if (stricmp(argv[1], "setvideomode") == 0)
     {
         handleSetVideoMode(argc - 2, &argv[2]);
     }

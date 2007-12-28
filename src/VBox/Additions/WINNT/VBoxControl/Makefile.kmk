@@ -28,5 +28,9 @@ VBoxControl_SOURCES  = \
 	VBoxControl.cpp \
 	VBoxControl.rc
 
+# VBoxControl.cpp uses VBOX_SVN_REV.
+VBoxControl.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxControl.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+
 include	$(PATH_KBUILD)/subfooter.kmk
 
