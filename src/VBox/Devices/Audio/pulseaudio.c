@@ -254,12 +254,18 @@ static int pulse_open (int fIn, struct pulse_params_req *req,
     }
 
     /* Wait until the stream is ready */
-    pa_threaded_mainloop_wait(g_pMainLoop);
-
-    if (pa_stream_get_state(pStream) != PA_STREAM_READY)
+    for (;;)
     {
-        LogRel(("Pulse: Wrong stream state %d\n", pa_stream_get_state(pStream)));
-        goto disconnect_unlock_and_fail;
+        pa_stream_state_t sstate;
+        pa_threaded_mainloop_wait(g_pMainLoop);
+        sstate = pa_stream_get_state(pStream);
+        if (sstate == PA_STREAM_READY)
+            break;
+        else if (sstate == PA_STREAM_FAILED || sstate == PA_STREAM_TERMINATED)
+        {
+            LogRel(("Pulse: Failed to initialize stream (state %d)\n", sstate));
+            goto disconnect_unlock_and_fail;
+        }
     }
 
     pBufAttr = pa_stream_get_buffer_attr(pStream);
@@ -603,14 +609,6 @@ static void *pulse_audio_init (void)
                  pa_strerror(pa_context_errno(g_pContext))));
         goto fail;
     }
-    pa_context_set_state_callback(g_pContext, context_state_callback, NULL);
-    if (pa_context_connect(g_pContext, /*server=*/NULL, 0, NULL) < 0)
-    {
-        LogRel(("Pulse: Failed to connect to server: %s\n",
-                 pa_strerror(pa_context_errno(g_pContext))));
-        goto fail;
-    }
-
     if (pa_threaded_mainloop_start(g_pMainLoop) < 0)
     {
         LogRel(("Pulse: Failed to start threaded mainloop: %s\n",
@@ -618,13 +616,29 @@ static void *pulse_audio_init (void)
         goto fail;
     }
 
-    /* Wait until the g_pContext is ready */
+    pa_context_set_state_callback(g_pContext, context_state_callback, NULL);
     pa_threaded_mainloop_lock(g_pMainLoop);
-    pa_threaded_mainloop_wait(g_pMainLoop);
-    if (pa_context_get_state(g_pContext) != PA_CONTEXT_READY)
+
+    if (pa_context_connect(g_pContext, /*server=*/NULL, 0, NULL) < 0)
     {
-        LogRel(("Pulse: Wrong context state %d\n", pa_context_get_state(g_pContext)));
-        goto unlock_and_fail;
+        LogRel(("Pulse: Failed to connect to server: %s\n",
+                 pa_strerror(pa_context_errno(g_pContext))));
+        goto fail;
+    }
+
+    /* Wait until the g_pContext is ready */
+    for (;;)
+    {
+        pa_context_state_t cstate;
+        pa_threaded_mainloop_wait(g_pMainLoop);
+        cstate = pa_context_get_state(g_pContext);
+        if (cstate == PA_CONTEXT_READY)
+            break;
+        else if (cstate == PA_CONTEXT_TERMINATED || cstate == PA_CONTEXT_FAILED)
+        {
+            LogRel(("Pulse: Failed to initialize context (state %d)\n", cstate));
+            goto unlock_and_fail;
+        }
     }
     pa_threaded_mainloop_unlock(g_pMainLoop);
 
