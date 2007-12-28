@@ -410,7 +410,7 @@ EMR3DECL(int) EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode);
  * @param   pVM         VM handle.
  * @param   rc          VBox status code.
  */
-EMR3DECL(void) EMR3FatalError(PVM pVM, int rc);
+EMR3DECL(DECLNORETURN(void)) EMR3FatalError(PVM pVM, int rc);
 
 /**
  * Execute VM
