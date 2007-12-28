@@ -293,6 +293,13 @@ check_environment()
     WITH_X11=0
     echo "Disabling checks for XPCOM related components."
   fi
+
+  echo "export BUILD_PLATFORM=\"$OS\"" >> $ENV
+  echo "export BUILD_PLATFORM_ARCH=\"$BUILD_MACHINE\"" >> $ENV
+  echo "export BUILD_TARGET=\"$OS\"" >> $ENV
+  echo "export BUILD_TARGET_ARCH=\"$TARGET_MACHINE\"" >> $ENV
+  echo "export BUILD_TARGET_CPU=\"$TARGET_CPU\"" >> $ENV
+  echo "export BUILD_TYPE=\"$BUILD_TYPE\"" >> $ENV
 }
 
 #
@@ -1179,12 +1186,6 @@ check_kbuild()
     fail
   fi
   log_success "found"
-  echo "export BUILD_PLATFORM=\"$OS\"" >> $ENV
-  echo "export BUILD_PLATFORM_ARCH=\"$BUILD_MACHINE\"" >> $ENV
-  echo "export BUILD_TARGET=\"$OS\"" >> $ENV
-  echo "export BUILD_TARGET_ARCH=\"$TARGET_MACHINE\"" >> $ENV
-  echo "export BUILD_TARGET_CPU=\"$TARGET_CPU\"" >> $ENV
-  echo "export BUILD_TYPE=\"$BUILD_TYPE\"" >> $ENV
 }
 
 
