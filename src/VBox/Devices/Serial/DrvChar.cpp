@@ -323,7 +323,7 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     PPDMIBASE pBase;
     int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBase);
     if (VBOX_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d failed to attach driver below"), pDrvIns->iInstance);
+        return rc; /* Don't call PDMDrvHlpVMSetError here as we assume that the driver already set an appropriate error */
     pData->pDrvStream = (PPDMISTREAM)pBase->pfnQueryInterface(pBase, PDMINTERFACE_STREAM);
     if (!pData->pDrvStream)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("Char#%d has no stream interface below"), pDrvIns->iInstance);
