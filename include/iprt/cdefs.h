@@ -479,6 +479,17 @@
 # define DECLASMTYPE(type)      type
 #endif
 
+/** @def DECLNORETURN
+ * How to declare a function which does not return.
+ */
+#ifdef _MSC_VER
+# define DECLNORETURN(type)     __declspec(noreturn) type
+#elif defined(__GNUC__)
+# define DECLNORETURN(type)     __attribute__((noreturn)) type
+#else
+# define DECLNORETURN(type)     type
+#endif
+
 /** @def DECLCALLBACK
  * How to declare an call back function type.
  * @param   type    The return type of the function declaration.
