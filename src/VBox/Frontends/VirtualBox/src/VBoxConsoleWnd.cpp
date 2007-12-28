@@ -919,7 +919,9 @@ void VBoxConsoleWnd::finalizeOpenView()
     mIsOpenViewFinished = true;
     LogFlowFuncLeave();
 
+#ifdef VBOX_WITH_REGISTRATION_REQUEST
     vboxGlobal().showRegistrationDialog (false /* aForce */);
+#endif
 }
 
 /**
