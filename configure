@@ -281,8 +281,6 @@ check_environment()
   [ -z "$TARGET_MACHINE" ] && TARGET_MACHINE=$BUILD_MACHINE
   [ -z "$TARGET_CPU"     ] && TARGET_CPU=$BUILD_CPU
   DEVDIR_BIN="$DEVDIR/$OS.$BUILD_MACHINE/bin"
-  KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.$BUILD_MACHINE"
-  KBUILD_SED="$KBUILDDIR_BIN/kmk_sed"
   log_success "Determined build machine: $OS.$BUILD_MACHINE, target machine: $OS.$TARGET_MACHINE"
 
   # Automatically disable XPCOM on darwin.
@@ -1154,14 +1152,8 @@ check_kchmviewer()
 check_kbuild()
 {
   test_header kBuild
-  if check_avail "$KBUILDDIR_BIN/kmk" KBUILDDIR really; then
-    log_success "found"
-    echo "export BUILD_PLATFORM=\"$OS\"" >> $ENV
-    echo "export BUILD_PLATFORM_ARCH=\"$BUILD_MACHINE\"" >> $ENV
-    echo "export BUILD_TARGET=\"$OS\"" >> $ENV
-    echo "export BUILD_TARGET_ARCH=\"$TARGET_MACHINE\"" >> $ENV
-    echo "export BUILD_TARGET_CPU=\"$TARGET_CPU\"" >> $ENV
-    echo "export BUILD_TYPE=\"$BUILD_TYPE\"" >> $ENV
+  if which_wrapper "$KBUILDDIR/bin/$OS.$BUILD_MACHINE/kmk" > /dev/null; then
+    KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.$BUILD_MACHINE"
     echo "export PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
     echo "export PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
     echo "path_kbuild_bin=\"\$PATH_KBUILD/bin/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"" >> $ENV
@@ -1179,7 +1171,20 @@ check_kbuild()
     fi
     echo "export PATH" >> $ENV
     echo "unset path_kbuild_bin path_dev_bin" >> $ENV
+    KBUILD_SED="$KBUILDDIR_BIN/kmk_sed"
+  elif check_avail "kmk" KBUILDDIR really; then
+    # check for installed kBuild
+    KBUILD_SED="`which_wrapper kmk_sed`"
+  else
+    fail
   fi
+  log_success "found"
+  echo "export BUILD_PLATFORM=\"$OS\"" >> $ENV
+  echo "export BUILD_PLATFORM_ARCH=\"$BUILD_MACHINE\"" >> $ENV
+  echo "export BUILD_TARGET=\"$OS\"" >> $ENV
+  echo "export BUILD_TARGET_ARCH=\"$TARGET_MACHINE\"" >> $ENV
+  echo "export BUILD_TARGET_CPU=\"$TARGET_CPU\"" >> $ENV
+  echo "export BUILD_TYPE=\"$BUILD_TYPE\"" >> $ENV
 }
 
 
