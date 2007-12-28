@@ -60,6 +60,8 @@ typedef struct DRVRAWIMAGE
     char           *pszFilename;
     /** File handle of the raw image file. */
     RTFILE          File;
+    /** True if the image is operating in readonly mode. */
+    bool            fReadOnly;
 } DRVRAWIMAGE, *PDRVRAWIMAGE;
 
 
@@ -139,11 +141,23 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     {
         LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
         pData->pszFilename = pszName;
+        pData->fReadOnly = false;
     }
     else
     {
-        AssertMsgFailed(("Could not open Raw image file %s, rc=%Vrc\n", pszName, rc));
-        MMR3HeapFree(pszName);
+        rc = RTFileOpen(&pData->File, pszName,
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        if (VBOX_SUCCESS(rc))
+        {
+            LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
+            pData->pszFilename = pszName;
+            pData->fReadOnly = true;
+        }
+        else
+        {
+            AssertMsgFailed(("Could not open Raw image file %s, rc=%Vrc\n", pszName, rc));
+            MMR3HeapFree(pszName);
+        }
     }
 
     return rc;
@@ -302,7 +316,8 @@ static DECLCALLBACK(int) drvRawImageGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid
 /** @copydoc PDMIMEDIA::pfnIsReadOnly */
 static DECLCALLBACK(bool) drvRawImageIsReadOnly(PPDMIMEDIA pInterface)
 {
-    return false;
+    PDRVRAWIMAGE pData = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
+    return pData->fReadOnly;
 }
 
 
