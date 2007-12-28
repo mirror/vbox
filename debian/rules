@@ -218,6 +218,7 @@ endif
 	dh_shlibdeps
 	dh_gencontrol -- \
 	  -Valsa=$(if $(HEADLESS),,libasound2) \
+	  -Vpulse=$(if $(HEADLESS),,libpulse0) \
 	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0)
 	dh_md5sums
 	dh_builddeb
