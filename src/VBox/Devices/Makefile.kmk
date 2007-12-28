@@ -69,8 +69,11 @@ VBoxDDU_SOURCES          = \
 	Storage/VBoxHDD-new.cpp \
 	Storage/VDICore.cpp \
 	Storage/VmdkHDDCore.cpp \
-	Storage/VHDHDDCore.cpp \
 	VBoxDDUDeps.cpp
+ifndef VBOX_OSE
+VBoxDDU_SOURCES         += \
+	Storage/VHDHDDCore.cpp
+endif
 ifdef VBOX_WITH_USB
  VBoxDDU_SOURCES.win     = \
 	USB/win32/USBLib-win32.cpp

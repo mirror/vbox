@@ -117,12 +117,16 @@ typedef struct
 
 
 extern VBOXHDDBACKEND g_VmdkBackend;
+#ifndef VBOX_OSE
 extern VBOXHDDBACKEND g_VhdBackend;
+#endif
 
 static const VBOXHDDBACKENDENTRY aBackends[] =
 {
     { "VMDK", &g_VmdkBackend },
+#ifndef VBOX_OSE
     { "VHD",  &g_VhdBackend},
+#endif
     { NULL, NULL }
 };
 
