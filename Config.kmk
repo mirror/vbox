@@ -94,7 +94,7 @@ VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_LIB))
 
 # Notify about important kBuild updates.
 ifneq ($(call int-ge,$(KMK_REVISION),1267),1)
- $(error You must update kBuild!)
+ $(error You must update kBuild! KMK_REVISION=$(KMK_REVISION) PATH_KBUILD=$(PATH_KBUILD))
 endif
 
 #
@@ -374,7 +374,7 @@ VBOX_BUILD_TYPES ?= release profile debug kprofile #todo: checked
 ifneq ($(filter-out $(VBOX_BUILD_TYPES),$(BUILD_TYPE)),)
  $(error Invalid BUILD_TYPE value '$(BUILD_TYPE)'. Choose one these: $(VBOX_BUILD_TYPES))
 endif
-
+/
 
 #
 # Disable components that are not open sourced.
