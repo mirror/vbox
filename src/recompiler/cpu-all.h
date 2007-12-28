@@ -895,7 +895,7 @@ void cpu_dump_state(CPUState *env, FILE *f,
                     int (*cpu_fprintf)(FILE *f, const char *fmt, ...),
                     int flags);
 
-void cpu_abort(CPUState *env, const char *fmt, ...);
+DECLNORETURN(void) cpu_abort(CPUState *env, const char *fmt, ...);
 extern CPUState *first_cpu;
 extern CPUState *cpu_single_env;
 extern int code_copy_enabled;
