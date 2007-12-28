@@ -404,6 +404,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
 static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
     int rc;
+    char *pszLocation = NULL;
     PDRVNAMEDPIPE pData = PDMINS2DATA(pDrvIns, PDRVNAMEDPIPE);
 
     /*
@@ -430,14 +431,16 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
      * Read the configuration.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "Location\0IsServer\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+    {
+        rc = VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+        goto out;
+    }
 
-    char *pszLocation;
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Location", &pszLocation);
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query \"Location\" resulted in %Vrc.\n", rc));
-        return rc;
+        goto out;
     }
     pData->pszLocation = pszLocation;
 
@@ -523,13 +526,12 @@ out:
     {
         if (pszLocation)
             MMR3HeapFree(pszLocation);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to initialize"), pDrvIns->iInstance);
     }
-    else
-    {
-        LogFlow(("drvNamedPipeConstruct: location %s isServer %d\n", pszLocation, fIsServer));
-        LogRel(("NamedPipe: location %s, %s\n", pszLocation, fIsServer ? "server" : "client"));
-    }
-    return rc;
+
+    LogFlow(("drvNamedPipeConstruct: location %s isServer %d\n", pszLocation, fIsServer));
+    LogRel(("NamedPipe: location %s, %s\n", pszLocation, fIsServer ? "server" : "client"));
+    return VINF_SUCCESS;
 }
 
 

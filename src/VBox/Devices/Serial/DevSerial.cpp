@@ -857,8 +857,8 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     else
     {
         AssertMsgFailed(("Serial%d: Failed to attach to char driver. rc=%Vrc\n", iInstance, rc));
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("Serial device %d cannot attach to char driver\n"), iInstance);
+        /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
+        return rc;
     }
 
     rc = PDMDevHlpSSMRegister (
