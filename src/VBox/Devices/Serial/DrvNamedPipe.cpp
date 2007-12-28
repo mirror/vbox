@@ -349,8 +349,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
             {
                 RTSemEventWait(pData->ListenSem, 250);
             }
-            else
-            if (hrc != ERROR_SUCCESS)
+            else if (hrc != ERROR_SUCCESS)
             {
                 rc = RTErrConvertFromWin32(hrc);
                 LogRel(("NamedPipe%d: ConnectNamedPipe failed, rc=%Vrc\n", pData->pDrvIns->iInstance, rc));
@@ -463,12 +462,13 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         }
         pData->NamedPipe = hPipe;
 
+        rc = RTSemEventCreate(&pData->ListenSem);
+        AssertRC(rc);
+
         rc = RTThreadCreate(&pData->ListenThread, drvNamedPipeListenLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "NamedPipe");
         if VBOX_FAILURE(rc)
             return PDMDrvHlpVMSetError(pDrvIns, rc,  RT_SRC_POS, N_("NamedPipe#%d failed to create listening thread"), pDrvIns->iInstance);
 
-        rc = RTSemEventCreate(&pData->ListenSem);
-        AssertRC(rc);
     }
     else
     {
