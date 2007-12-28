@@ -32,6 +32,9 @@ FORMS :=
 TRANSLATIONS :=
 IMAGES :=
 
+VBOX_WITH_REGISTRATION := 1
+VBOX_WITH_REGISTRATION_REQUEST := 1
+
 DEPTH = ../../../..
 include $(PATH_KBUILD)/header.kmk
 
@@ -39,10 +42,6 @@ include $(PATH_KBUILD)/header.kmk
 #
 # exclude inappropriate UI content
 #
-#ifndef VBOX_OSE
-VBOX_WITH_REGISTRATION := 1
-#endif
-
 ifndef VBOX_WITH_REGISTRATION
 VirtualBox_QT_UISRCS := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS))
 endif
@@ -236,6 +235,9 @@ ifneq ($(BUILD_TYPE),release)
 endif
 ifdef VBOX_WITH_REGISTRATION
  VirtualBox_DEFS         += VBOX_WITH_REGISTRATION
+endif
+ifdef VBOX_WITH_REGISTRATION_REQUEST
+ VirtualBox_DEFS         += VBOX_WITH_REGISTRATION_REQUEST
 endif
 ifdef VBOX_WITH_ALSA
  VirtualBox_DEFS         += VBOX_WITH_ALSA

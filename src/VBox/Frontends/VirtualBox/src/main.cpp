@@ -242,7 +242,9 @@ int main (int argc, char **argv)
             {
                 a.setMainWidget (&vboxGlobal().selectorWnd());
                 vboxGlobal().selectorWnd().show();
+#ifdef VBOX_WITH_REGISTRATION_REQUEST
                 vboxGlobal().showRegistrationDialog (false /* aForce */);
+#endif
                 vboxGlobal().startEnumeratingMedia();
                 rc = a.exec();
             }
