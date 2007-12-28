@@ -481,6 +481,10 @@
 
 /** @def DECLNORETURN
  * How to declare a function which does not return.
+ * @note: This macro can be combined with other macros, for example
+ * @code
+ *   EMR3DECL(DECLNORETURN(void)) foo(void);
+ * @endcode
  */
 #ifdef _MSC_VER
 # define DECLNORETURN(type)     __declspec(noreturn) type
