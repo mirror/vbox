@@ -1,0 +1,67 @@
+# $Id$
+## @file
+# Makefile for the VirtualBox Linux Guest Addition X11 Client.
+#
+
+#
+# Copyright (C) 2006-2007 innotek GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+DEPTH = ../../../../..
+include	$(PATH_KBUILD)/header.kmk
+
+ifneq ($(USERNAME),bird) # crap
+PROGRAMS = vboxadd-xclient
+endif
+
+OTHER_CLEAN              = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
+
+vboxadd-xclient_TEMPLATE = VBOXLNX32GUESTR3EXE
+vboxadd-xclient_SOURCES  = clipboard.cpp main.cpp
+ifdef LINUX_SEAMLESS_GUEST
+vboxadd-xclient_SOURCES += \
+                seamless-host.cpp \
+                seamless-x11.cpp \
+                thread.cpp
+endif
+vboxadd-xclient_LIBPATH  = $(PATH_TARGET)/vboxadd-xclient $(VBOX_LIBPATH32_X11)
+vboxadd-xclient_LIBS     = \
+                $(PATH_LIB)/VBoxGuestR3LibLinux.a \
+                $(PATH_LIB)/RuntimeLnx32GuestR3.a \
+                pthread \
+                rt \
+                Xt \
+                Xext \
+                X11
+vboxadd-xclient_DEFS     = _GNU_SOURCE VBOX_HGCM
+ifdef LINUX_SEAMLESS_GUEST
+vboxadd-xclient_DEFS     += LINUX_SEAMLESS
+endif
+
+# link agaginst libstdc++.a (http://www.trilithium.com/johan/2005/06/static-libstdc/)
+$(PATH_TARGET)/vboxadd-xclient/vboxadd-xclient: $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
+
+$(PATH_TARGET)/vboxadd-xclient/libstdc++.a:
+	$(call MSG_L1,Forcing static libstdc++)
+	$(QUIET)ln -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ || cp `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
+
+ifdef LINUX_SEAMLESS_GUEST
+ifdef VBOX_WITH_CPPUNIT_TESTCASES
+ PROGRAMS                  += tstSeamlessX11
+ tstSeamlessX11_TEMPLATE    = VBOXCPPUNITEXE
+ tstSeamlessX11_SOURCES     = \
+         testcase/tstSeamlessX11.cpp \
+         seamless-x11.cpp
+ tstSeamlessX11_INST        = $(INST_TESTCASE)
+endif
+endif
+
+include	$(PATH_KBUILD)/footer.kmk
