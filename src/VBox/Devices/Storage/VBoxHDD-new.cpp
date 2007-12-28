@@ -745,7 +745,6 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
         {
             RTLdrClose(pDisk->hPlugin);
             pDisk->hPlugin = NIL_RTLDRMOD;
-            RTMemFree(pDisk->Backend);
         }
         RTMemFree(pDisk);
     }
