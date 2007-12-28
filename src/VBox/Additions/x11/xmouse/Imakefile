@@ -1,0 +1,40 @@
+XCOMM
+XCOMM Imakefile for the VBox Linux Additions X.org mouse driver.
+XCOMM (Only needed if this module is compiled as part of monolithic Xorg)
+XCOMM
+XCOMM
+XCOMM
+XCOMM  Copyright (C) 2006-2007 innotek GmbH
+XCOMM 
+XCOMM  innotek GmbH confidential
+XCOMM  All rights reserved
+XCOMM 
+
+#define IHaveModules
+#include <Server.tmpl>
+
+SRCS = mouse.c pnp.c VBoxUtils.c
+OBJS = mouse.o pnp.o VBoxUtils.o
+
+DRIVER = vboxmouse
+
+INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86SRC)/loader -I$(XF86OSSRC) \
+	-I$(SERVERSRC)/mi -I$(SERVERSRC)/include -I$(XINCLUDESRC) \
+	-I$(EXTINCSRC)
+
+DEFINES = -DPNP_MOUSE -DIN_RING3 -DVBOX
+CCOPTIONS += -fno-merge-constants
+
+#if MakeHasPosixVariableSubstitutions
+SubdirLibraryRule($(OBJS))
+#endif
+
+ModuleObjectRule()
+
+ObjectModuleTarget($(DRIVER),$(OBJS))
+
+InstallInputObjectModule($(DRIVER),$(MODULEDIR))
+
+DependTarget()
+
+InstallDriverSDKObjectModule($(DRIVER),$(DRIVERSDKMODULEDIR),input)
