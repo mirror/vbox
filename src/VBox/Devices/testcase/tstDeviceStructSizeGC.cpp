@@ -872,7 +872,7 @@ int main()
     GEN_CHECK_OFF(AHCIPort, hbaPrdIntr);
     GEN_CHECK_OFF(AHCIPort, hbaUpdateSig);
     GEN_CHECK_OFF(AHCIPort, hbaSActive);
-    GEN_CHECK_OFF(AHCIPort, AsyncIOThread);
+    GEN_CHECK_OFF(AHCIPort, pAsyncIOThread);
     GEN_CHECK_OFF(AHCIPort, AsyncIORequestSem);
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
     GEN_CHECK_OFF(AHCIPort, pDrvBlock);
