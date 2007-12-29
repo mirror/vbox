@@ -652,6 +652,7 @@ ifdef VBOX_WITH_USB
 endif # VBOX_WITH_USB
 
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+ Drivers_DEFS += VBOX_WITH_PDM_ASYNC_COMPLETION
  Drivers_SOURCES.linux += \
 	Storage/DrvBlockAsync.cpp \
 	Storage/DrvRawImageAsync.cpp \

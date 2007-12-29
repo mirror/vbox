@@ -39,6 +39,10 @@
 #include <VBox/err.h>
 #include <iprt/stdarg.h>
 
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+# include <VBox/pdmasynccompletion.h>
+#endif
+
 __BEGIN_DECLS
 
 /** @defgroup grp_pdm_driver    Drivers
@@ -650,7 +654,7 @@ typedef struct PDMDRVHLP
      */
     DECLR3CALLBACKMEMBER(int, pfnPDMThreadCreate,(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                                   PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
-
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     /**
      * Creates a async completion template for a driver instance.
      *
@@ -662,10 +666,9 @@ typedef struct PDMDRVHLP
      * @param   pfnCompleted    The completion callback routine.
      * @param   pszDesc         Description.
      */
-    /** @todo Add this
-    DECLR3CALLBACKMEMBER(int, pfnPDMAsyncCompletionTemplateCreate)(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, 
-                                                                   PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc); 
-    And a inline wrapper for it below. */
+    DECLR3CALLBACKMEMBER(int, pfnPDMAsyncCompletionTemplateCreate,(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, 
+                                                                   PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc));
+#endif
 
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
@@ -823,6 +826,17 @@ DECLINLINE(int) PDMDrvHlpPDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThrea
 {
     return pDrvIns->pDrvHlp->pfnPDMThreadCreate(pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 }
+
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+/**
+ * @copydoc PDMDRVHLP::pfnPDMAsyncCompletionTemplateCreate
+ */
+DECLINLINE(int) PDMDrvHlpPDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, 
+                                                          PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc)
+{
+    return pDrvIns->pDrvHlp->pfnPDMAsyncCompletionTemplateCreate(pDrvIns, ppTemplate, pfnCompleted, pszDesc);
+}
+#endif
 
 #endif /* IN_RING3 */
 
