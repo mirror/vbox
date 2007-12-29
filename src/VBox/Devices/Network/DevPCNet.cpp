@@ -1432,7 +1432,8 @@ static void pcnetStop(PCNetState *pData)
 static DECLCALLBACK(bool) pcnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
-    pData->pDrv->pfnNotifyCanReceive(pData->pDrv);
+    if (pData->pDrv)
+        pData->pDrv->pfnNotifyCanReceive(pData->pDrv);
     return true;
 }
 #endif
@@ -2483,7 +2484,8 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
                 return VINF_IOM_HC_IOPORT_WRITE;
 #else
                 /* check for promiscuous mode change */
-                pData->pDrv->pfnSetPromiscuousMode(pData->pDrv, !!(val & 0x8000));
+                if (pData->pDrv)
+                    pData->pDrv->pfnSetPromiscuousMode(pData->pDrv, !!(val & 0x8000));
 #endif
             }
             break;
