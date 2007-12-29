@@ -93,6 +93,11 @@ static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, uint32_t
 static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                                      PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
 
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, 
+                                                                      PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc);
+#endif
+
 /** @def PDMDRV_ASSERT_DRVINS
  * Asserts the validity of the driver instance.
  */
@@ -139,7 +144,9 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_SUPCallVMMR0Ex,
     pdmR3DrvHlp_USBRegisterHub,
     pdmR3DrvHlp_PDMThreadCreate,
-    /** @todo add PDMAsyncCompletionTemplateCreate wrapper here. */
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+    pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate,
+#endif
     0 /* the end */
 };
 
@@ -1065,4 +1072,21 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTH
             rc, *ppThread));
     return rc;
 }
+
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, 
+                                                                      PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
+    LogFlow(("pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate: caller='%s'/%d: ppTemplate=%p pfnCompleted=%p pszDesc=%p:{%s}\n",
+             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, ppTemplate, pfnCompleted, pszDesc));
+
+    int rc = PDMR3AsyncCompletionTemplateCreateDriver(pDrvIns->Internal.s.pVM, pDrvIns, ppTemplate, pfnCompleted, pszDesc);
+
+    LogFlow(("pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate: caller='%s'/%d: returns %Vrc *ppThread=%p\n", pDrvIns->pDrvReg->szDriverName, 
+             pDrvIns->iInstance, rc, *ppTemplate));
+    return rc;
+}
+#endif
 
