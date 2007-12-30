@@ -33,6 +33,7 @@
 # include <sys/ioctl.h>
 # include <sys/types.h>
 # include <sys/stat.h>
+# include <sys/poll.h>
 # include <fcntl.h>
 # include <unistd.h>
 # include <linux/ppdev.h>
@@ -195,32 +196,34 @@ static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pI
 static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVHOSTPARALLEL pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
-    fd_set readfds;
+    struct pollfd aFDs[2];
 
     /*
-     * We can wait for interrupts using the select call on linux hosts.
+     * We can wait for interrupts using poll on linux hosts.
      */
-
-    /*
-     * Setup the file descriptor set.
-     */
-    FD_ZERO(&readfds);
-    FD_SET(pData->FileDevice, &readfds);
-    FD_SET(pData->WakeupPipeR, &readfds);
-
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         int rc;
 
-        rc = select(FD_SETSIZE, &readfds, NULL, NULL, NULL);
+        aFDs[0].fd      = pData->FileDevice;
+        aFDs[0].events  = POLLIN;
+        aFDs[0].revents = 0;
+        aFDs[1].fd      = pData->WakeupPipeR;
+        aFDs[1].events  = POLLIN | POLLERR | POLLHUP;
+        aFDs[1].revents = 0;
+        rc = poll(aFDs, ELEMENTS(aFDs), -1);
         if (rc < 0)
         {
-            AssertMsgFailed(("select failed with rc=%d\n", RTErrConvertFromErrno(errno)));
+            AssertMsgFailed(("poll failed with rc=%d\n", RTErrConvertFromErrno(errno)));
             return RTErrConvertFromErrno(errno);
         }
 
-        if (FD_ISSET(pData->WakeupPipeR, &readfds))
+        if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+            break;
+        if (rc > 0 && aFDs[1].revents)
         {
+            if (aFDs[1].revents & (POLLHUP | POLLERR | POLLNVAL))
+                break;
             /* notification to terminate -- drain the pipe */
             char ch;
             size_t cbRead;
@@ -337,9 +340,9 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      * Start waiting for interrupts.
      */
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pMonitorThread, pData, drvHostParallelMonitorThread, drvHostParallelWakeupMonitorThread, 0, 
-                                  RTTHREADTYPE_IO, "Interrupt Monitor");
+                                  RTTHREADTYPE_IO, "HostParallel");
     if (VBOX_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create monitor thread"), pDrvIns->iInstance);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostParallel#%d cannot create monitor thread"), pDrvIns->iInstance);
 
     return VINF_SUCCESS;
 }
