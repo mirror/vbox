@@ -22,10 +22,12 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_PARALLEL
 #include <VBox/pdmdrv.h>
+#include <VBox/pdmthread.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/stream.h>
 #include <iprt/semaphore.h>
+#include <iprt/file.h>
 
 #ifdef RT_OS_LINUX
 # include <sys/ioctl.h>
@@ -35,11 +37,10 @@
 # include <unistd.h>
 # include <linux/ppdev.h>
 # include <linux/parport.h>
+# include <errno.h>
 #endif
 
 #include "Builtins.h"
-#include "ParallelIOCtlCmd.h"
-
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -50,32 +51,29 @@
 typedef struct DRVHOSTPARALLEL
 {
     /** Pointer to the driver instance structure. */
-    PPDMDRVINS                  pDrvIns;
+    PPDMDRVINS                    pDrvIns;
     /** Pointer to the char port interface of the driver/device above us. */
-    PPDMIHOSTDEVICEPORT         pDrvHostDevicePort;
+    PPDMIHOSTPARALLELPORT         pDrvHostParallelPort;
     /** Our host device interface. */
-    PDMIHOSTDEVICECONNECTOR     IHostDeviceConnector;
+    PDMIHOSTPARALLELCONNECTOR     IHostParallelConnector;
     /** Our host device port interface. */
-    PDMIHOSTDEVICEPORT          IHostDevicePort;
+    PDMIHOSTPARALLELPORT          IHostParallelPort;
     /** Device Path */
-    char                        *pszDevicePath;
+    char                          *pszDevicePath;
     /** Device Handle */
-    RTFILE                      FileDevice;
-    /** Flag to notify the receive thread it should terminate. */
-    volatile bool               fShutdown;
-    /** Receive thread ID. */
-    RTTHREAD                    ReceiveThread;
-    /** Send thread ID. */
-    RTTHREAD                    SendThread;
-    /** Send event semephore */
-    RTSEMEVENT                  SendSem;
-
+    RTFILE                        FileDevice;
+    /** Thread waiting for interrupts. */
+    PPDMTHREAD                    pMonitorThread;
+    /** Wakeup pipe read end. */
+    RTFILE                        WakeupPipeR;
+    /** Wakeup pipe write end. */
+    RTFILE                        WakeupPipeW;
 } DRVHOSTPARALLEL, *PDRVHOSTPARALLEL;
 
 /** Converts a pointer to DRVHOSTPARALLEL::IHostDeviceConnector to a PDRHOSTPARALLEL. */
-#define PDMIHOSTDEVICECONNECTOR_2_DRVHOSTPARALLEL(pInterface) ( (PDRVHOSTPARALLEL)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTPARALLEL, IHostDeviceConnector)) )
+#define PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface) ( (PDRVHOSTPARALLEL)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTPARALLEL, IHostParallelConnector)) )
 /** Converts a pointer to DRVHOSTPARALLEL::IHostDevicePort to a PDRHOSTPARALLEL. */
-#define PDMIHOSTDEVICEPORT_2_DRVHOSTPARALLEL(pInterface) ( (PDRVHOSTPARALLEL)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTPARALLEL, IHostDevicePort)) )
+#define PDMIHOSTPARALLELPORT_2_DRVHOSTPARALLEL(pInterface) ( (PDRVHOSTPARALLEL)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTPARALLEL, IHostParallelPort)) )
 
 /* -=-=-=-=- IBase -=-=-=-=- */
 
@@ -95,8 +93,8 @@ static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, 
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
-        case PDMINTERFACE_HOST_DEVICE_CONNECTOR:
-            return &pData->IHostDeviceConnector;
+        case PDMINTERFACE_HOST_PARALLEL_CONNECTOR:
+            return &pData->IHostParallelConnector;
         default:
             return NULL;
     }
@@ -105,22 +103,22 @@ static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, 
 /* -=-=-=-=- IHostDeviceConnector -=-=-=-=- */
 
 /** @copydoc PDMICHAR::pfnWrite */
-static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTDEVICECONNECTOR pInterface, const void *pvBuf, size_t *cbWrite)
+static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf, size_t *cbWrite)
 {
-    PDRVHOSTPARALLEL pData = PDMIHOSTDEVICECONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
     const unsigned char *pBuffer = (const unsigned char *)pvBuf;
 
     LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, *cbWrite));
 
     ioctl(pData->FileDevice, PPWDATA, pBuffer);
+    *cbWrite = 1;
 
-    RTSemEventSignal(pData->SendSem);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTDEVICECONNECTOR pInterface, void *pvBuf, size_t *cbRead)
+static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf, size_t *cbRead)
 {
-    PDRVHOSTPARALLEL pData = PDMIHOSTDEVICECONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
     unsigned char *pBuffer = (unsigned char *)pvBuf;
 
     LogFlow(("%s: pvBuf=%#p cbRead=%d\n", __FUNCTION__, pvBuf, cbRead));
@@ -131,29 +129,125 @@ static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTDEVICECONNECTOR pInterface
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostParallelIOCtl(PPDMIHOSTDEVICECONNECTOR pInterface, RTUINT uCommand,
-                                              void *pvData)
+static DECLCALLBACK(int) drvHostParallelSetMode(PPDMIHOSTPARALLELCONNECTOR pInterface, PDMPARALLELPORTMODE mode)
 {
-    PDRVHOSTPARALLEL pData = PDMIHOSTDEVICECONNECTOR_2_DRVHOSTPARALLEL(pInterface);
-    unsigned long ioctlCommand;
+    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    int ppdev_mode;
 
-    LogFlow(("%s: uCommand=%d pvData=%#p\n", __FUNCTION__, uCommand, pvData));
+    LogFlow(("%s: mode=%d\n", __FUNCTION__, mode));
 
-    switch (uCommand) {
-        case LPT_IOCTL_COMMAND_SET_CONTROL:
-            ioctlCommand = PPWCONTROL;
+    switch (mode) {
+        case PDM_PARALLEL_PORT_MODE_COMPAT:
+            ppdev_mode = IEEE1284_MODE_COMPAT;
             break;
-        case LPT_IOCTL_COMMAND_GET_CONTROL:
-            ioctlCommand = PPRCONTROL;
+        case PDM_PARALLEL_PORT_MODE_EPP:
+            ppdev_mode = IEEE1284_MODE_EPP;
             break;
-        default:
-            AssertMsgFailed(("uCommand = %d?\n"));
-            return VERR_INVALID_PARAMETER;
+        case PDM_PARALLEL_PORT_MODE_ECP:
+            //ppdev_mode = IEEE1284_MODE_ECP;
+            break;
     }
-
-    ioctl(pData->FileDevice, ioctlCommand, pvData);
+ 
+    ioctl(pData->FileDevice, PPSETMODE, &ppdev_mode);
 
     return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) drvHostParallelWriteControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t val)
+{
+    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+
+    LogFlow(("%s: val=%d\n", __FUNCTION__, val));
+
+    ioctl(pData->FileDevice, PPWCONTROL, &val);
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pvBuf)
+{
+    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    uint8_t val;
+
+    ioctl(pData->FileDevice, PPRCONTROL, &val);
+
+    LogFlow(("%s: val=%d\n", __FUNCTION__, val));
+
+    *pvBuf = val;
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pvBuf)
+{
+    PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    uint8_t val;
+
+    ioctl(pData->FileDevice, PPRSTATUS, &val);
+
+    LogFlow(("%s: val=%d\n", __FUNCTION__, val));
+
+    *pvBuf = val;
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVHOSTPARALLEL pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
+    fd_set readfds;
+
+    /*
+     * We can wait for interrupts using the select call on linux hosts.
+     */
+
+    /*
+     * Setup the file descriptor set.
+     */
+    FD_ZERO(&readfds);
+    FD_SET(pData->FileDevice, &readfds);
+    FD_SET(pData->WakeupPipeR, &readfds);
+
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+        int rc;
+
+        rc = select(FD_SETSIZE, &readfds, NULL, NULL, NULL);
+        if (rc < 0)
+        {
+            AssertMsgFailed(("select failed with rc=%d\n", RTErrConvertFromErrno(errno)));
+            return RTErrConvertFromErrno(errno);
+        }
+
+        if (FD_ISSET(pData->WakeupPipeR, &readfds))
+        {
+            /* notification to terminate -- drain the pipe */
+            char ch;
+            size_t cbRead;
+            RTFileRead(pData->WakeupPipeR, &ch, 1, &cbRead);
+            continue;
+        }
+
+        /* Interrupt occured. */
+        rc = pData->pDrvHostParallelPort->pfnNotifyInterrupt(pData->pDrvHostParallelPort);
+        AssertRC(rc);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Unblock the monitor thread so it can respond to a state change.
+ *
+ * @returns a VBox status code.
+ * @param     pDrvIns     The driver instance.
+ * @param     pThread     The send thread.
+ */
+static DECLCALLBACK(int) drvHostParallelWakeupMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVHOSTPARALLEL pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
+
+    return RTFileWrite(pData->WakeupPipeW, "", 1, NULL);
 }
 
 /**
@@ -176,14 +270,16 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Init basic data members and interfaces.
      */
-    pData->ReceiveThread                    = NIL_RTTHREAD;
-    pData->fShutdown                        = false;
+
     /* IBase. */
-    pDrvIns->IBase.pfnQueryInterface        = drvHostParallelQueryInterface;
-    /* IChar. */
-    pData->IHostDeviceConnector.pfnWrite                   = drvHostParallelWrite;
-    pData->IHostDeviceConnector.pfnIOCtl                   = drvHostParallelIOCtl;
-    pData->IHostDeviceConnector.pfnRead                    = drvHostParallelRead;
+    pDrvIns->IBase.pfnQueryInterface               = drvHostParallelQueryInterface;
+    /* IHostParallelConnector. */
+    pData->IHostParallelConnector.pfnWrite         = drvHostParallelWrite;
+    pData->IHostParallelConnector.pfnRead          = drvHostParallelRead;
+    pData->IHostParallelConnector.pfnSetMode       = drvHostParallelSetMode;
+    pData->IHostParallelConnector.pfnWriteControl  = drvHostParallelWriteControl;
+    pData->IHostParallelConnector.pfnReadControl   = drvHostParallelReadControl;
+    pData->IHostParallelConnector.pfnReadStatus    = drvHostParallelReadStatus;
 
     /*
      * Query configuration.
@@ -217,14 +313,33 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     }
 
     /*
-     * Get the IHostDevicePort interface of the above driver/device.
+     * Get the IHostParallelPort interface of the above driver/device.
      */
-    pData->pDrvHostDevicePort = (PPDMIHOSTDEVICEPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_HOST_DEVICE_PORT);
-    if (!pData->pDrvHostDevicePort)
-        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("Parallel#%d has no parallel port interface above"), pDrvIns->iInstance);
+    pData->pDrvHostParallelPort = (PPDMIHOSTPARALLELPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_HOST_PARALLEL_PORT);
+    if (!pData->pDrvHostParallelPort)
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("Parallel#%d has no parallel port interface above"), 
+                                   pDrvIns->iInstance);
 
-    rc = RTSemEventCreate(&pData->SendSem);
-    AssertRC(rc);
+    /*
+     * Create wakeup pipe.
+     */
+    int aFDs[2];
+    if (pipe(aFDs) != 0)
+    {
+        int rc = RTErrConvertFromErrno(errno);
+        AssertRC(rc);
+        return rc;
+    }
+    pData->WakeupPipeR = aFDs[0];
+    pData->WakeupPipeW = aFDs[1];
+
+    /*
+     * Start waiting for interrupts.
+     */
+    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pMonitorThread, pData, drvHostParallelMonitorThread, drvHostParallelWakeupMonitorThread, 0, 
+                                  RTTHREADTYPE_IO, "Interrupt Monitor");
+    if (VBOX_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create monitor thread"), pDrvIns->iInstance);
 
     return VINF_SUCCESS;
 }
@@ -243,25 +358,6 @@ static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
     PDRVHOSTPARALLEL     pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
-
-    pData->fShutdown = true;
-    if (pData->ReceiveThread)
-    {
-        RTThreadWait(pData->ReceiveThread, 1000, NULL);
-        if (pData->ReceiveThread != NIL_RTTHREAD)
-            LogRel(("Parallel%d: receive thread did not terminate\n", pDrvIns->iInstance));
-    }
-
-    RTSemEventSignal(pData->SendSem);
-    RTSemEventDestroy(pData->SendSem);
-    pData->SendSem = NIL_RTSEMEVENT;
-
-    if (pData->SendThread)
-    {
-        RTThreadWait(pData->SendThread, 1000, NULL);
-        if (pData->SendThread != NIL_RTTHREAD)
-            LogRel(("Parallel%d: send thread did not terminate\n", pDrvIns->iInstance));
-    }
 
     ioctl(pData->FileDevice, PPRELEASE);
     close(pData->FileDevice);

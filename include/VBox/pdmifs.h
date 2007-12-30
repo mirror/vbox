@@ -144,10 +144,10 @@ typedef enum PDMINTERFACE
     /** VUSBROOTHUBCONNECTOR    - VUSB Device interface.                (Up)     No coupling. */
     PDMINTERFACE_VUSB_DEVICE,
 
-    /** PDMIHOSTDEVICEPORT      - The Host Device port interface.       (Down)   Coupled with PDMINTERFACE_HOST_DEVICE_CONNECTOR. */
-    PDMINTERFACE_HOST_DEVICE_PORT,
-    /** PDMIHOSTDEVICECONNECTOR - The Host device connector interface   (Up)     Coupled with PDMINTERFACE_HOST_DEVICE_PORT. */
-    PDMINTERFACE_HOST_DEVICE_CONNECTOR,
+    /** PDMIHOSTPARALLELPORT      - The Host Parallel port interface.     (Down)   Coupled with PDMINTERFACE_HOST_PARALLEL_CONNECTOR. */
+    PDMINTERFACE_HOST_PARALLEL_PORT,
+    /** PDMIHOSTPARALLELCONNECTOR - The Host Parallel connector interface (Up)     Coupled with PDMINTERFACE_HOST_PARALLEL_PORT. */
+    PDMINTERFACE_HOST_PARALLEL_CONNECTOR,
 
     /** Maximum interface number. */
     PDMINTERFACE_MAX
@@ -1659,13 +1659,22 @@ typedef struct PDMISTREAM
 } PDMISTREAM;
 
 
-/** Pointer to a host device port interface. */
-typedef struct PDMIHOSTDEVICEPORT *PPDMIHOSTDEVICEPORT;
+/** Mode of the parallel port */
+typedef enum PDMPARALLELPORTMODE
+{
+    PDM_PARALLEL_PORT_MODE_COMPAT,
+    PDM_PARALLEL_PORT_MODE_EPP,
+    PDM_PARALLEL_PORT_MODE_ECP
+} PDMPARALLELPORTMODE;
+ 
+/** Pointer to a host parallel port interface. */
+typedef struct PDMIHOSTPARALLELPORT *PPDMIHOSTPARALLELPORT;
+
 /**
- * Char port interface.
- * Pair with PDMIHOSTDEVICECONNECTOR.
+ * Host parallel port interface.
+ * Pair with PDMIHOSTPARALLELCONNECTOR.
  */
-typedef struct PDMIHOSTDEVICEPORT
+typedef struct PDMIHOSTPARALLELPORT
 {
     /**
      * Deliver data read to the device/driver.
@@ -1676,17 +1685,27 @@ typedef struct PDMIHOSTDEVICEPORT
      * @param   pcbRead         Number of bytes available for reading/having been read.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnNotifyRead,(PPDMIHOSTDEVICEPORT pInterface, const void *pvBuf, size_t *pcbRead));
-} PDMIHOSTDEVICEPORT;
+    DECLR3CALLBACKMEMBER(int, pfnNotifyRead,(PPDMIHOSTPARALLELPORT pInterface, const void *pvBuf, size_t *pcbRead));
+
+    /**
+     * Notify device/driver that an interrupt has occured.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnNotifyInterrupt, (PPDMIHOSTPARALLELPORT pInterface));
+} PDMIHOSTPARALLELPORT;
 
 
-/** Pointer to a Host Device connector interface. */
-typedef struct PDMIHOSTDEVICECONNECTOR *PPDMIHOSTDEVICECONNECTOR;
+/** Pointer to a Host Parallel connector interface. */
+typedef struct PDMIHOSTPARALLELCONNECTOR *PPDMIHOSTPARALLELCONNECTOR;
+
 /**
- * Host device connector interface
- * Pair with PDMIHOSTDEVICEPORT.
+ * Host parallel connector interface
+ * Pair with PDMIHOSTPARALLELPORT.
  */
-typedef struct PDMIHOSTDEVICECONNECTOR
+typedef struct PDMIHOSTPARALLELCONNECTOR
 {
     /**
      * Write bits.
@@ -1697,7 +1716,7 @@ typedef struct PDMIHOSTDEVICECONNECTOR
      * @param   pcbWrite        Number of bytes to write/bytes actually written.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIHOSTDEVICECONNECTOR pInterface, const void *pvBuf, size_t *pcbWrite));
+    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf, size_t *pcbWrite));
 
     /**
      * Read bits.
@@ -1708,19 +1727,48 @@ typedef struct PDMIHOSTDEVICECONNECTOR
      * @param   pcbRead         Number of bytes to read/bytes actually read.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIHOSTDEVICECONNECTOR pInterface, void *pvBuf, size_t *pcbRead));
+    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf, size_t *pcbRead));
 
     /**
-     * Perform IO control on the host device.
+     * Write control register bits.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   uCommand        The number of the command to set or get data
-     * @param   pvData          Where to store the command data.
+     * @param   val             The new control register value.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIOCtl,(PPDMIHOSTDEVICECONNECTOR pInterface, RTUINT uCommand, void *pvData));
-} PDMIHOSTDEVICECONNECTOR;
+    DECLR3CALLBACKMEMBER(int, pfnWriteControl,(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t val));
+ 
+    /**
+     * Read control register bits.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           Where to store the control register bits.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadControl,(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pvBuf));
+
+    /**
+     * Read status register bits.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           Where to store the status register bits.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadStatus,(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pvBuf));
+
+    /**
+     * Set mode of the host parallel port.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   mode            The mode of the host parallel port.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetMode,(PPDMIHOSTPARALLELCONNECTOR pInterface, PDMPARALLELPORTMODE mode));
+} PDMIHOSTPARALLELCONNECTOR;
 
 
 /** ACPI power source identifier */

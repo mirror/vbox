@@ -413,6 +413,22 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                         IRQNoFlags () {12}
                     })
                 }
+
+                // Parallel port
+                Device (LPT)
+                {
+                    Name (_HID, EisaId ("PNP0400"))
+                    Method (_STA, 0, NotSerialized)
+                    {
+                        Return (0x0F)
+                    }
+                    Name (_CRS, ResourceTemplate ()
+                    {
+                        IO (Decode16, 0x0378, 0x0378, 0x08, 0x08)
+                        IO (Decode16, 0x0778, 0x0778, 0x08, 0x08)
+                        IRQNoFlags () {7}
+                    })
+                }
             }
 
             // Control method battery
