@@ -191,7 +191,7 @@ static int parallel_ioport_write(void *opaque, uint32_t addr, uint32_t val)
     case 1:
         break;
     case 2:
-        /** Set the reserved bits to one */
+        /* Set the reserved bits to one */
         ch |= (LPT_CONTROL_BIT6 | LPT_CONTROL_BIT7);
         if (ch != s->reg_control) {
 #ifndef IN_RING3
@@ -298,13 +298,13 @@ static int parallel_ioport_write_ecp(void *opaque, uint32_t addr, uint32_t val)
             s->ecp_fifo[s->act_fifo_pos_write] = ch;
             s->act_fifo_pos_write++;
             if (s->act_fifo_pos_write < LPT_ECP_FIFO_DEPTH) {
-                /** FIFO has some data (clear both FIFO bits) */
+                /* FIFO has some data (clear both FIFO bits) */
                 s->reg_ecp_ecr &= ~(LPT_ECP_ECR_FIFO_EMPTY | LPT_ECP_ECR_FIFO_FULL);
             } else {
-                /** FIFO is full */
-                /** Clear FIFO empty bit */
+                /* FIFO is full */
+                /* Clear FIFO empty bit */
                 s->reg_ecp_ecr &= ~LPT_ECP_ECR_FIFO_EMPTY;
-                /** Set FIFO full bit */
+                /* Set FIFO full bit */
                 s->reg_ecp_ecr |= LPT_ECP_ECR_FIFO_FULL;
                 s->act_fifo_pos_write = 0;
             }
@@ -316,17 +316,17 @@ static int parallel_ioport_write_ecp(void *opaque, uint32_t addr, uint32_t val)
         s->reg_ecp_config_b = ch;
         break;
     case 2:
-        /** If we change the mode clear FIFO */
+        /* If we change the mode clear FIFO */
         if ((ch & LPT_ECP_ECR_CHIPMODE_MASK) != (s->reg_ecp_ecr & LPT_ECP_ECR_CHIPMODE_MASK)) {
-            /** reset the fifo */
+            /* reset the fifo */
             s->act_fifo_pos_write = 0;
             s->act_fifo_pos_read = 0;
-            /** Set FIFO empty bit */
+            /* Set FIFO empty bit */
             s->reg_ecp_ecr |= LPT_ECP_ECR_FIFO_EMPTY;
-            /** Clear FIFO full bit */
+            /* Clear FIFO full bit */
             s->reg_ecp_ecr &= ~LPT_ECP_ECR_FIFO_FULL;
         }
-        /** Set new mode */
+        /* Set new mode */
         s->reg_ecp_ecr |= LPT_ECP_ECR_CHIPMODE_SET_BITS(LPT_ECP_ECR_CHIPMODE_GET_BITS(ch));
         break;
     case 3:
@@ -358,15 +358,15 @@ static uint32_t parallel_ioport_read_ecp(void *opaque, uint32_t addr, int *pRC)
             ret = s->ecp_fifo[s->act_fifo_pos_read];
             s->act_fifo_pos_read++;
             if (s->act_fifo_pos_read == LPT_ECP_FIFO_DEPTH)
-                s->act_fifo_pos_read = 0; /** end of FIFO, start at beginning */
+                s->act_fifo_pos_read = 0; /* end of FIFO, start at beginning */
             if (s->act_fifo_pos_read == s->act_fifo_pos_write) {
-                /** FIFO is empty */
-                /** Set FIFO empty bit */
+                /* FIFO is empty */
+                /* Set FIFO empty bit */
                 s->reg_ecp_ecr |= LPT_ECP_ECR_FIFO_EMPTY;
-                /** Clear FIFO full bit */
+                /* Clear FIFO full bit */
                 s->reg_ecp_ecr &= ~LPT_ECP_ECR_FIFO_FULL;
             } else {
-                /** FIFO has some data (clear all FIFO bits) */
+                /* FIFO has some data (clear all FIFO bits) */
                 s->reg_ecp_ecr &= ~(LPT_ECP_ECR_FIFO_EMPTY | LPT_ECP_ECR_FIFO_FULL);
             }
         } else {
@@ -815,9 +815,9 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
                                    N_("Parallel device %d cannot attach to host driver\n"), iInstance);
     }
 
-    /** Set compatibility mode */
+    /* Set compatibility mode */
     pData->pDrvHostParallelConnector->pfnSetMode(pData->pDrvHostParallelConnector, PDM_PARALLEL_PORT_MODE_COMPAT);
-    /** Get status of control register */
+    /* Get status of control register */
     pData->pDrvHostParallelConnector->pfnReadControl(pData->pDrvHostParallelConnector, &pData->reg_control);
 
     rc = PDMDevHlpSSMRegister(
