@@ -646,6 +646,7 @@ static DECLCALLBACK(int) parallelDestruct(PPDMDEVINS pDevIns)
     ParallelState *pData = PDMINS2DATA(pDevIns, ParallelState *);
 
     PDMR3CritSectDelete(&pData->CritSect);
+/** @todo destroy the event sem? */
 
     return VINF_SUCCESS;
 }
@@ -681,7 +682,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0IOBase\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0IOBase\0GCEnabled\0R0Enabled\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Unknown config key"));
 
