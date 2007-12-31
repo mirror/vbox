@@ -1733,10 +1733,10 @@ typedef struct PDMIHOSTPARALLELCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   val             The new control register value.
+     * @param   fReg            The new control register value.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteControl,(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t val));
+    DECLR3CALLBACKMEMBER(int, pfnWriteControl,(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t fReg));
  
     /**
      * Read control register bits.
