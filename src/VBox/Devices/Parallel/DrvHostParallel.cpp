@@ -130,14 +130,14 @@ static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterfa
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostParallelSetMode(PPDMIHOSTPARALLELCONNECTOR pInterface, PDMPARALLELPORTMODE mode)
+static DECLCALLBACK(int) drvHostParallelSetMode(PPDMIHOSTPARALLELCONNECTOR pInterface, PDMPARALLELPORTMODE enmMode)
 {
     PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
     int ppdev_mode;
 
-    LogFlow(("%s: mode=%d\n", __FUNCTION__, mode));
+    LogFlow(("%s: mode=%d\n", __FUNCTION__, enmMode));
 
-    switch (mode) {
+    switch (enmMode) {
         case PDM_PARALLEL_PORT_MODE_COMPAT:
             ppdev_mode = IEEE1284_MODE_COMPAT;
             break;
@@ -154,41 +154,41 @@ static DECLCALLBACK(int) drvHostParallelSetMode(PPDMIHOSTPARALLELCONNECTOR pInte
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostParallelWriteControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t val)
+static DECLCALLBACK(int) drvHostParallelWriteControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t fReg)
 {
     PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
 
-    LogFlow(("%s: val=%d\n", __FUNCTION__, val));
+    LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
 
-    ioctl(pData->FileDevice, PPWCONTROL, &val);
+    ioctl(pData->FileDevice, PPWCONTROL, &fReg);
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pvBuf)
+static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg)
 {
     PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
-    uint8_t val;
+    uint8_t fReg;
 
-    ioctl(pData->FileDevice, PPRCONTROL, &val);
+    ioctl(pData->FileDevice, PPRCONTROL, &fReg);
 
-    LogFlow(("%s: val=%d\n", __FUNCTION__, val));
+    LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
 
-    *pvBuf = val;
+    *pfReg = fReg;
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pvBuf)
+static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg)
 {
     PDRVHOSTPARALLEL pData = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
-    uint8_t val;
+    uint8_t fReg;
 
-    ioctl(pData->FileDevice, PPRSTATUS, &val);
+    ioctl(pData->FileDevice, PPRSTATUS, &fReg);
 
-    LogFlow(("%s: val=%d\n", __FUNCTION__, val));
+    LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
 
-    *pvBuf = val;
+    *pfReg = fReg;
 
     return VINF_SUCCESS;
 }
@@ -271,6 +271,13 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     /*
+     * Validate the config.
+     */
+    if (!CFGMR3AreValuesValid(pCfgHandle, "DevicePath\0"))
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
+                                N_("Unknown host parallel configuration option, only supports DevicePath"));
+
+    /*
      * Init basic data members and interfaces.
      */
 
@@ -298,22 +305,30 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Open the device
      */
-    pData->FileDevice = open(pData->pszDevicePath, O_RDWR | O_NONBLOCK);
-    if (pData->FileDevice < 0) {
-
-    }
+    rc = RTFileOpen(&pData->FileDevice, pData->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
+    if (VBOX_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Parallel#%d could not open '%s'"), 
+                                   pDrvIns->iInstance, pData->pszDevicePath);
 
     /*
      * Try to get exclusive access to parallel port
      */
-    if (ioctl(pData->FileDevice, PPEXCL) < 0) {
-    }
+    rc = ioctl(pData->FileDevice, PPEXCL);     
+    if (rc < 0)
+        return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS, 
+                                   N_("Parallel#%d could not get exclusive access for parallel port '%s'"
+                                      "Be sure that no other process or driver accesses this port"), 
+                                   pDrvIns->iInstance, pData->pszDevicePath);
 
     /*
      * Claim the parallel port
      */
-    if (ioctl(pData->FileDevice, PPCLAIM) < 0) {
-    }
+    rc = ioctl(pData->FileDevice, PPCLAIM);
+    if (rc < 0)
+        return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS, 
+                                   N_("Parallel#%d could not claim parallel port '%s'"
+                                      "Be sure that no other process or driver accesses this port"), 
+                                   pDrvIns->iInstance, pData->pszDevicePath);
 
     /*
      * Get the IHostParallelPort interface of the above driver/device.
@@ -358,12 +373,30 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
  */
 static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVHOSTPARALLEL     pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
+    PDRVHOSTPARALLEL pData = PDMINS2DATA(pDrvIns, PDRVHOSTPARALLEL);
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     ioctl(pData->FileDevice, PPRELEASE);
-    close(pData->FileDevice);
+
+    if (pData->WakeupPipeW != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pData->WakeupPipeW);
+        AssertRC(rc);
+        pData->WakeupPipeW = NIL_RTFILE;
+    }
+    if (pData->WakeupPipeR != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pData->WakeupPipeR);
+        AssertRC(rc);
+        pData->WakeupPipeR = NIL_RTFILE;
+    }
+    if (pData->FileDevice != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pData->FileDevice);
+        AssertRC(rc);
+        pData->FileDevice = NIL_RTFILE;
+    }
 }
 
 /**
