@@ -970,6 +970,7 @@ typedef struct
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 
 # define VBOXGUEST_IOCTL_NUMBER(Code)           (_IOC_NR((Code)) & ~VBOXGUEST_IOCTL_FLAG)
+# define VBOXGUEST_IOCTL_SIZE(Code)             (_IOC_SIZE((Code)))
 
 #elif defined(RT_OS_SOLARIS)
 # include <sys/ioccom.h>
