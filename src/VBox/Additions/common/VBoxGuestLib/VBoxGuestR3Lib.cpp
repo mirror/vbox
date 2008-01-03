@@ -251,7 +251,7 @@ VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
     for (size_t off = 0; off < cb && RT_SUCCESS(rc); off += STEP)
     {
         size_t cbStep = RT_MIN(cb - off, STEP);
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cbStep), pch + off, cbStep);
+        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cbStep), (char *)pch + off, cbStep);
     }
 #undef STEP
     return rc;
