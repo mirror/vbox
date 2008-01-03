@@ -1374,6 +1374,10 @@ VBGLR3DECL(int)     VbglR3SeamlessSetCap(bool bState);
 VBGLR3DECL(int)     VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode);
 VBGLR3DECL(int)     VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects);
 
+/* Backdoor logging */
+
+VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb);
+
 __END_DECLS
 
 #endif /* IN_RING3 */
