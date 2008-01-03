@@ -33,6 +33,7 @@
 #include <iprt/mem.h>
 #include <VBox/VBoxGuest.h>
 
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -96,19 +97,11 @@ VBGLR3DECL(int) VbglR3Init(void)
     }
     g_File = hf;
 
-#elif defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX)
+     /* PORTME */
+#else
+    /* the default implemenation. (linux, solaris) */
     RTFILE File;
-    int rc = RTFileOpen(&File, VBOXGUEST_DEVICE_NAME, RTFILE_O_READWRITE);
-    if (RT_FAILURE(rc))
-        return rc;
-    g_File = File;
-
-#else 
-# error port me  /** @note isn't it nicer to put a todo error here than to
-                     put in a flag which will assert where no-one sees it? */
-    /* the default implemenation. */
-    RTFILE File;
-    int rc = RTFileOpen(&File, VBOXGUEST_DEVICE_NAME, RTFILE_O_DENY_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    int rc = RTFileOpen(&File, VBOXGUEST_DEVICE_NAME, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
     g_File = File;
@@ -162,21 +155,14 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
         return vrc;
     return RTErrConvertFromOS2(rc);
 
-#elif defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+    /* PORTME */
+#else 
+    /* Defalut implementation (linux, solaris). */
     int rc2 = VERR_INTERNAL_ERROR;
     int rc = RTFileIoCtl(g_File, (int)iFunction, pvData, cbData, &rc2);
     if (RT_SUCCESS(rc))
         rc = rc2;
     return rc;
-#else
-# error "PORTME"
-# if 0 /* if this works for anyone I'd be amazed. */
-    int rc2 = VERR_INTERNAL_ERROR;
-    int rc = RTFileIoCtl(g_File, (int)iFunction, pvData, cbData, &rc2);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-    return rc;
-# endif 
 #endif
 }
 
@@ -244,25 +230,30 @@ VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
     return vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL, 0, 0);
 }
 
+
 /**
  * Write to the backdoor logger from ring 3 guest code.
- * @note this currently does not accept more than 255 bytes of data at
- * one time.  It should probably be rewritten to use pass a pointer
- * in the IOCtl.
- *
+ * 
  * @returns IPRT status code
+ * 
+ * @remakes This currently does not accept more than 255 bytes of data at
+ *          one time. It should probably be rewritten to use pass a pointer
+ *          in the IOCtl.
  */
 VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
 {
-    int rc = VINF_SUCCESS;
-
-    /* Solaris does not accept more than 255 bytes of data. */
+    /* 
+     * Solaris does not accept more than 255 bytes of data per ioctl request,
+     * so split large string into 128 byte chunks to prevent truncation.
+     */
 #define STEP 128
-    for (size_t iOffs = 0; (iOffs < cb) && (RT_SUCCESS(rc)); iOffs += STEP)
+    int rc = VINF_SUCCESS;
+    for (size_t off = 0; off < cb && RT_SUCCESS(rc); off += STEP)
     {
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cb), (void *) (pch + iOffs),
-                           iOffs + STEP < cb ? STEP : cb - iOffs);
+        size_t cbStep = RT_MIN(cb - off, STEP);
+        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cbStep), pch + off, cbStep);
     }
 #undef STEP
     return rc;
 }
+
