@@ -361,16 +361,30 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
 {
         int rc = 0;
 
-        switch (cmd) {
-        case IOCTL_VBOXGUEST_WAITEVENT:
-                rc = vboxadd_wait_event((void *) arg);
-                break;
+        /* Deal with variable size ioctls first. */
+        if (VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_LOG(0)) == VBOXGUEST_IOCTL_NUMBER(cmd)) {
+                char *pszMessage = kmalloc(VBOXGUEST_IOCTL_SIZE(cmd), GFP_KERNEL);
+                if (NULL == pszMessage) {
+                        LogRelFunc(("VBOXGUEST_IOCTL_LOG: cannot allocate %d bytes of memory!\n",
+                                    VBOXGUEST_IOCTL_SIZE(cmd)));
+                        rc = -ENOMEM;
+                }
+                if (   (0 == rc)
+                    && copy_from_user(pszMessage, (void*)arg, VBOXGUEST_IOCTL_SIZE(cmd))) {
+                        LogRelFunc(("VBOXGUEST_IOCTL_LOG: copy_from_user failed!\n"));
+                        rc = -EFAULT;
+                }
+                if (0 == rc) {
+                    Log(("%.*s", VBOXGUEST_IOCTL_SIZE(cmd), pszMessage));
+                }
+                if (NULL != pszMessage) {
+                    kfree(pszMessage);
+                }
+                return rc;
+        }
 
-        case VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL:
-                ++vboxDev->u32GuestInterruptions;
-                break;
-
-        case IOCTL_VBOXGUEST_VMMREQUEST: {
+        if (   VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_VMMREQUEST(0))
+            == VBOXGUEST_IOCTL_NUMBER(cmd))  {
             VMMDevRequestHeader reqHeader;
             VMMDevRequestHeader *reqFull = NULL;
             size_t cbRequestSize;
@@ -445,8 +459,17 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                 }
             }
             VbglGRFree(reqFull);
-            break;
+            return rc;
         }
+
+        switch (cmd) {
+        case IOCTL_VBOXGUEST_WAITEVENT:
+                rc = vboxadd_wait_event((void *) arg);
+                break;
+
+        case VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL:
+                ++vboxDev->u32GuestInterruptions;
+                break;
 
         case IOCTL_VBOXGUEST_HGCM_CALL:
         /* This IOCTL allows the guest to make an HGCM call from user space.  The

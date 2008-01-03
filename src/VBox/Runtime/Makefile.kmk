@@ -539,6 +539,7 @@ ifdef IPRT_WITH_KSTUFF
  RuntimeLnx32GuestR3_DEFS     += LDR_WITH_KLDR
 endif
 RuntimeLnx32GuestR3_SOURCES    = $(RuntimeR3_SOURCES.linux) $(RuntimeR3_SOURCES)
+RuntimeLnx32GuestR3_SOURCES   += VBox/logbackdoor.cpp
 RuntimeLnx32GuestR3_INCS       = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
 
 

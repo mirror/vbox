@@ -96,7 +96,7 @@ VBGLR3DECL(int) VbglR3Init(void)
     }
     g_File = hf;
 
-#elif defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX)
     RTFILE File;
     int rc = RTFileOpen(&File, VBOXGUEST_DEVICE_NAME, RTFILE_O_READWRITE);
     if (RT_FAILURE(rc))
@@ -104,6 +104,8 @@ VBGLR3DECL(int) VbglR3Init(void)
     g_File = File;
 
 #else 
+# error port me  /** @note isn't it nicer to put a todo error here than to
+                     put in a flag which will assert where no-one sees it? */
     /* the default implemenation. */
     RTFILE File;
     int rc = RTFileOpen(&File, VBOXGUEST_DEVICE_NAME, RTFILE_O_DENY_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
@@ -240,4 +242,27 @@ VBGLR3DECL(int) VbglR3GetHostTime(PRTTIMESPEC pTime)
 VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
 {
     return vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL, 0, 0);
+}
+
+/**
+ * Write to the backdoor logger from ring 3 guest code.
+ * @note this currently does not accept more than 255 bytes of data at
+ * one time.  It should probably be rewritten to use pass a pointer
+ * in the IOCtl.
+ *
+ * @returns IPRT status code
+ */
+VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Solaris does not accept more than 255 bytes of data. */
+#define STEP 128
+    for (size_t iOffs = 0; (iOffs < cb) && (RT_SUCCESS(rc)); iOffs += STEP)
+    {
+        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cb), (void *) (pch + iOffs),
+                           iOffs + STEP < cb ? STEP : cb - iOffs);
+    }
+#undef STEP
+    return rc;
 }
