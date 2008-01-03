@@ -34,8 +34,8 @@ vboxadd-xclient_SOURCES += \
 endif
 vboxadd-xclient_LIBPATH  = $(PATH_TARGET)/vboxadd-xclient $(VBOX_LIBPATH32_X11)
 vboxadd-xclient_LIBS     = \
-                $(PATH_LIB)/VBoxGuestR3LibLinux.a \
                 $(PATH_LIB)/RuntimeLnx32GuestR3.a \
+                $(PATH_LIB)/VBoxGuestR3LibLinux.a \
                 pthread \
                 rt \
                 Xt \
