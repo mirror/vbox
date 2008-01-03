@@ -623,7 +623,7 @@ static void *pulse_audio_init (void)
     {
         LogRel(("Pulse: Failed to connect to server: %s\n",
                  pa_strerror(pa_context_errno(g_pContext))));
-        goto fail;
+        goto unlock_and_fail;
     }
 
     /* Wait until the g_pContext is ready */
