@@ -86,6 +86,10 @@ ifndef VBOX_OSE
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # linux only, yea, right.
 # Note: I'm doing this right here because the GUI will _not_ run
 #       without that file which might be annoying for developers!
+$(VBOX_LICENSE_BIN): $(VBOX_LICENSE_SRC)
+	$(call MSG_GENERATE,,$@)
+	$(QUIET)$(CP) $< $@
+
 $(PATH_BIN)/VirtualBox: $(VBOX_LICENSE_BIN)
 endif
 endif
