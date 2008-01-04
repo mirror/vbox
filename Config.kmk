@@ -371,7 +371,7 @@ endif
 # Check the build type.
 #
 VBOX_BUILD_TYPES ?= release profile debug kprofile #todo: checked
-ifneq ($(filter-out $(VBOX_BUILD_TYPES),$(BUILD_TYPE)),)
+ifn1of ($(BUILD_TYPE), $(VBOX_BUILD_TYPES))
  $(error Invalid BUILD_TYPE value '$(BUILD_TYPE)'. Choose one these: $(VBOX_BUILD_TYPES))
 endif
 
@@ -458,7 +458,7 @@ endif
 #
 # Image and object format config.
 #
-ifeq ($(filter-out linux l4 freebsd netbsd openbsd solaris,$(BUILD_TARGET)),)
+if1of ($(BUILD_TARGET), linux l4 freebsd netbsd openbsd solaris)
  VBOX_LDR_FMT = elf
 endif
 ifeq ($(BUILD_TARGET),darwin)
@@ -780,7 +780,7 @@ endif
 #
 # Add the output dir(s) to the dynamic loader search path.
 #
-ifeq ($(filter-out linux l4 freebsd netbsd openbsd solaris,$(BUILD_TARGET)),)
+if1of ($(BUILD_TARGET), linux l4 freebsd netbsd openbsd solaris)
  export LD_LIBRARY_PATH:=$(PATH_BIN):$(PATH_LIB):$(LD_LIBRARY_PATH)
 endif
 ifeq ($(BUILD_TARGET),os2)
@@ -811,7 +811,7 @@ ifeq ($(BUILD_TARGET),l4)
  LIB_REM         = $(PATH_BIN)/VBoxREMImp.s.so
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.s.so
 endif
-ifeq ($(filter-out linux freebsd netbsd openbsd solaris,$(BUILD_TARGET)),)
+if1of ($(BUILD_TARGET), linux freebsd netbsd openbsd solaris)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.so
  LIB_RUNTIME_EF  = $(PATH_LIB)/RuntimeEFCPP.a
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.so
@@ -914,7 +914,7 @@ VBOX_PATH_DIFX ?= $(PATH_DEVTOOLS)/win.$(BUILD_TARGET_ARCH)/DIFx/v2.1
 
 # We need to export YASM for OSE, but since it was converted to .zip we need to
 # allow for the location used by the zip to be properly cleaned up first.
-ifeq ($(filter-out win.x86 linux.x86 solaris.x86, $(BUILD_PLATFORM).$(BUILD_PLATFORM_ARCH)),)
+if1of ($(BUILD_PLATFORM).$(BUILD_PLATFORM_ARCH),  win.x86 linux.x86 solaris.x86)
  PATH_TOOL_YASM ?= $(PATH_DEVTOOLS_BLD)/bin
 endif
 
@@ -1150,7 +1150,7 @@ VBOX_EDIT_INF64_FN = $(SED) $(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;
 # Default prefixes and suffixes.
 #
 VBOX_PREF_LIB =
-ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+if1of ($(BUILD_TARGET),win os2)
 VBOX_SUFF_LIB = .lib
 else
 VBOX_SUFF_LIB = .a
@@ -1189,7 +1189,7 @@ SDK_VBOX_LIBPNG_INCS ?= $(PATH_ROOT)/src/libs/libpng-1.2.8
 SDK_VBOX_LIBPNG_LIBS ?= $(PATH_LIB)/VBox-libpng$(VBOX_SUFF_LIB)
 
 SDK_VBOX_ZLIB         = .
-ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+if1of ($(BUILD_TARGET), win os2)
  SDK_VBOX_ZLIB_INCS  ?= $(PATH_ROOT)/src/libs/zlib-1.2.1
  SDK_VBOX_ZLIB_LIBS  ?= $(PATH_LIB)/VBox-zlib$(VBOX_SUFF_LIB)
 else
@@ -1202,7 +1202,7 @@ SDK_VBOX_OPENSSL_INCS?= $(PATH_ROOT)/src/libs/openssl-0.9.7e/include
 SDK_VBOX_OPENSSL_LIBS?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 
 SDK_VBOX_FFMPEG       = .
-ifeq ($(filter-out win os2 darwin,$(BUILD_TARGET)),)
+if1of ($(BUILD_TARGET), win os2 darwin)
  SDK_VBOX_FFMPEG_INCS ?= \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavutil \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavcodec \
@@ -1315,7 +1315,7 @@ endif
 #
 # The linux kernel headers(/sources).
 #
-ifneq ($(filter linux,$(BUILD_TARGET)),)
+if1of ($(BUILD_TARGET), linux)
  ifeq ($(origin VBOX_LINUX_SRC),undefined)
   ifneq ($(wildcard /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h),)
    export VBOX_LINUX_SRC           := /lib/modules/$(shell uname -r)/build
@@ -1385,8 +1385,8 @@ else
  TEMPLATE_VBOXGC_LDFLAGS           += $(if $(VBOX_DO_STRIP_MODULES),-S,)
  TEMPLATE_VBOXGC_LDFLAGS.release    = $(if $(VBOX_DO_STRIP_MODULES),-S,)
 endif
-ifneq ($(filter-out solaris freebsd,$(BUILD_TARGET)),)
-TEMPLATE_VBOXGC_LIBS                = \
+ifn1of ($(BUILD_TARGET), solaris freebsd)
+ TEMPLATE_VBOXGC_LIBS               = \
 	$(VBOX_GCC32_LIBGCC) # instricts
 endif
 endif
@@ -1488,8 +1488,7 @@ else
  TEMPLATE_VBOXR0_LDFLAGS            += $(if $(VBOX_DO_STRIP_MODULES),-S,)
  TEMPLATE_VBOXR0_LDFLAGS.release     = $(if $(VBOX_DO_STRIP_MODULES),-S,)
 endif
-
-ifneq ($(filter-out solaris freebsd,$(BUILD_TARGET)),)
+ifn1of ($(BUILD_TARGET),solaris freebsd)
  TEMPLATE_VBOXR0_LIBS                = \
 	$(VBOX_GCC_LIBGCC) # instricts
 endif
@@ -1791,7 +1790,7 @@ TEMPLATE_VBOXR3EXE_TOOL                = GXX4MACHO
 TEMPLATE_VBOXR3EXE_LIBS                =
 TEMPLATE_VBOXR3EXE_LDFLAGS             = -read_only_relocs suppress
 TEMPLATE_VBOXR3EXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
- else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)
+ else if1of ($(BUILD_TARGET),freebsd netbsd openbsd)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
 TEMPLATE_VBOXR3EXE_INCS               += \
@@ -1944,7 +1943,7 @@ else
   endif
  else # x86:
   TEMPLATE_VBOXNOCRTGCC_LDFLAGS         = -nostdlib
-  ifneq ($(filter-out os2 darwin solaris,$(BUILD_TARGET)),)
+  ifn1of ($(BUILD_TARGET), os2 darwin solaris)
    TEMPLATE_VBOXNOCRTGCC_LDFLAGS       += -Wl,--no-undefined
   endif
  endif # x86
@@ -2041,7 +2040,7 @@ TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX4MACHO
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin      = -bind_at_load -framework Carbon
- else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)
+ else if1of ($(BUILD_TARGET), freebsd netbsd openbsd)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 TEMPLATE_VBOXMAINEXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
@@ -2351,7 +2350,7 @@ TEMPLATE_VBOXBLDPROG_LIBS                = socket iconv
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX4MACHO
 TEMPLATE_VBOXBLDPROG_LIBS                =
 TEMPLATE_VBOXBLDPROG_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
- else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_PLATFORM)),)
+ else if1of ($(BUILD_PLATFORM), freebsd netbsd openbsd)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3
 TEMPLATE_VBOXBLDPROG_LIBS                =
  else ifeq ($(BUILD_PLATFORM),solaris)
@@ -2759,10 +2758,11 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(MV) -f $@.tmp $@
 
 ifndef VBOX_OSE
-ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # linux only, yea, right.
+if1of ($(BUILD_TARGET),freebsd linux netbsd openbsd solaris)
 VBOX_LICENSE_SRC := $(PATH_ROOT)/doc/License.html
 ## @todo this can be done by sed alone. Why do we have to do this $(shell ) stuff in *all* make
 # files btw? If this is really necessary, then just do it once for <insert deity of choice>'s sake.
+# Who-ever added this, please fix!
 VBOX_LICENSE_VER := $(shell grep Version $(VBOX_LICENSE_SRC)|sed -e 's/.*Version \([0-9.]*\),.*/\1/g')
 VBOX_LICENSE_BIN := $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html
 
