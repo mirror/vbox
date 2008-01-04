@@ -1358,30 +1358,31 @@ VBGLR3DECL(void)    VbglR3GRFree(VMMDevRequestHeader *pReq);
 VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
 # endif
 VBGLR3DECL(int)     VbglR3InterruptEventWaits(void);
+VBGLR3DECL(int)     VbglR3WriteLog(const char *pch, size_t cb);
 
-/* Shared clipboard */
-
+/** @name Shared clipboard
+ * @{ */
 VBGLR3DECL(int)     VbglR3ClipboardConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnect(uint32_t u32ClientId);
 VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(uint32_t u32ClientId, uint32_t *pMsg, uint32_t *pfFormats);
 VBGLR3DECL(int)     VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
 VBGLR3DECL(int)     VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFormats);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb);
+/** @} */
 
-/* Seamless mode */
-
-VBGLR3DECL(int)     VbglR3SeamlessSetCap(bool bState);
+/** @name Seamless mode
+ * @{ */
+VBGLR3DECL(int)     VbglR3SeamlessSetCap(bool fState);
 VBGLR3DECL(int)     VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode);
 VBGLR3DECL(int)     VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects);
+/** @}  */
 
-/* Mouse */
+/** @name Mouse
+ * @{ */
+VBGLR3DECL(int)     VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py);
+VBGLR3DECL(int)     VbglR3SetMouseStatus(uint32_t fFeatures);
+/** @}  */
 
-VBGLR3DECL(int)     VbglR3GetMouseStatus(uint32_t *pu32Features, uint32_t *pu32PointerX, uint32_t *pu32PointerY);
-VBGLR3DECL(int)     VbglR3SetMouseStatus(uint32_t u32Features);
-
-/* Backdoor logging */
-
-VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb);
 
 __END_DECLS
 

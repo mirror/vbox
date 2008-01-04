@@ -23,7 +23,7 @@
 # define INCL_BASE
 # define INCL_ERRORS
 # include <os2.h>
-#endif 
+#endif
 
 #include <iprt/time.h>
 #include <iprt/asm.h>
@@ -48,8 +48,8 @@ VBGLR3DECL(int) VbglR3Init(void)
 
 #if defined(RT_OS_OS2)
     /*
-     * We might wish to compile this with Watcom, so stick to 
-     * the OS/2 APIs all the way. And in any case we have to use 
+     * We might wish to compile this with Watcom, so stick to
+     * the OS/2 APIs all the way. And in any case we have to use
      * DosDevIOCtl for the requests, why not use Dos* for everything.
      */
     HFILE hf = NULLHANDLE;
@@ -106,7 +106,7 @@ VBGLR3DECL(int) VbglR3Init(void)
         return rc;
     g_File = File;
 
-#endif 
+#endif
 
     return VINF_SUCCESS;
 }
@@ -130,16 +130,16 @@ VBGLR3DECL(void) VbglR3Term(void)
 
 /**
  * Internal wrapper around various OS specific ioctl implemenations.
- * 
+ *
  * @returns VBox status code as returned by VBoxGuestCommonIOCtl, or
  *          an failure returned by the OS specific ioctl APIs.
- * 
+ *
  * @param   iFunction   The requested function.
  * @param   pvData      The input and output data buffer.
  * @param   cbData      The size of the buffer.
- * 
+ *
  * @remark  Exactly how the VBoxGuestCommonIOCtl is ferried back
- *          here is OS specific. On BSD and Darwin we can use errno,  
+ *          here is OS specific. On BSD and Darwin we can use errno,
  *          while on OS/2 we use the 2nd buffer of the IOCtl.
  */
 int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
@@ -148,7 +148,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     ULONG cbOS2Parm = cbData;
     int32_t vrc = VERR_INTERNAL_ERROR;
     ULONG cbOS2Data = sizeof(vrc);
-    APIRET rc = DosDevIOCtl(g_File, VBOXGUEST_IOCTL_CATEGORY, iFunction, 
+    APIRET rc = DosDevIOCtl(g_File, VBOXGUEST_IOCTL_CATEGORY, iFunction,
                             pvData, cbData, &cbOS2Parm,
                             &vrc, sizeof(vrc), &cbOS2Data);
     if (RT_LIKELY(!rc))
@@ -156,7 +156,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     return RTErrConvertFromOS2(rc);
 
     /* PORTME */
-#else 
+#else
     /* Defalut implementation (linux, solaris). */
     int rc2 = VERR_INTERNAL_ERROR;
     int rc = RTFileIoCtl(g_File, (int)iFunction, pvData, cbData, &rc2);
@@ -172,7 +172,7 @@ VBGLR3DECL(int) VbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cb, VMMDevRe
     VMMDevRequestHeader *pReq;
 
     AssertPtrReturn(ppReq, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cb >= sizeof(VMMDevRequestHeader), ("%#x vs %#zx\n", cb, sizeof(VMMDevRequestHeader)), 
+    AssertMsgReturn(cb >= sizeof(VMMDevRequestHeader), ("%#x vs %#zx\n", cb, sizeof(VMMDevRequestHeader)),
                     VERR_INVALID_PARAMETER);
 
     pReq = (VMMDevRequestHeader *)RTMemTmpAlloc(cb);
@@ -216,7 +216,7 @@ VBGLR3DECL(int) VbglR3GetHostTime(PRTTIMESPEC pTime)
 }
 
 
-VBGLR3DECL(int) VbglR3GetMouseStatus(uint32_t *pu32Features, uint32_t *pu32PointerX, uint32_t *pu32PointerY)
+VBGLR3DECL(int) VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py)
 {
     VMMDevReqMouseStatus Req;
     vmmdevInitRequest(&Req.header, VMMDevReq_GetMouseStatus);
@@ -226,22 +226,22 @@ VBGLR3DECL(int) VbglR3GetMouseStatus(uint32_t *pu32Features, uint32_t *pu32Point
     int rc = VbglR3GRPerform(&Req.header);
     if (RT_SUCCESS(rc))
     {
-        if (pu32Features)
-            *pu32Features = Req.mouseFeatures;
-        if (pu32PointerX)
-            *pu32PointerX = Req.pointerXPos;
-        if (pu32PointerY)
-            *pu32PointerY = Req.pointerYPos;
+        if (pfFeatures)
+            *pfFeatures = Req.mouseFeatures;
+        if (px)
+            *px = Req.pointerXPos;
+        if (py)
+            *py = Req.pointerYPos;
     }
     return rc;
 }
 
 
-VBGLR3DECL(int) VbglR3SetMouseStatus(uint32_t u32Features)
+VBGLR3DECL(int) VbglR3SetMouseStatus(uint32_t fFeatures)
 {
     VMMDevReqMouseStatus Req;
     vmmdevInitRequest(&Req.header, VMMDevReq_SetMouseStatus);
-    Req.mouseFeatures = u32Features;
+    Req.mouseFeatures = fFeatures;
     Req.pointerXPos = 0;
     Req.pointerYPos = 0;
     return VbglR3GRPerform(&Req.header);
@@ -249,10 +249,10 @@ VBGLR3DECL(int) VbglR3SetMouseStatus(uint32_t u32Features)
 
 
 /**
- * Cause any pending WaitEvent calls (VBOXGUEST_IOCTL_WAITEVENT) to return 
+ * Cause any pending WaitEvent calls (VBOXGUEST_IOCTL_WAITEVENT) to return
  * with a VERR_INTERRUPTED status.
- * 
- * Can be used in combination with a termination flag variable for interrupting 
+ *
+ * Can be used in combination with a termination flag variable for interrupting
  * event loops. Avoiding race conditions is the responsibility of the caller.
  *
  * @returns IPRT status code
@@ -265,16 +265,16 @@ VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
 
 /**
  * Write to the backdoor logger from ring 3 guest code.
- * 
+ *
  * @returns IPRT status code
- * 
+ *
  * @remakes This currently does not accept more than 255 bytes of data at
  *          one time. It should probably be rewritten to use pass a pointer
  *          in the IOCtl.
  */
 VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
 {
-    /* 
+    /*
      * Solaris does not accept more than 255 bytes of data per ioctl request,
      * so split large string into 128 byte chunks to prevent truncation.
      */
