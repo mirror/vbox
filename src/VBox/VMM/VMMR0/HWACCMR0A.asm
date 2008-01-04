@@ -777,9 +777,6 @@ BEGINPROC SVMVMRun
     ret
 ENDPROC SVMVMRun
 
-%ifdef RT_ARCH_AMD64
-%ifdef RT_OS_WINDOWS
-
 ;;
 ; Executes INVLPGA
 ;
@@ -804,5 +801,4 @@ BEGINPROC SVMInvlpgA
 %endif
     ret
 ENDPROC SVMInvlpgA
-%endif
-%endif
+
