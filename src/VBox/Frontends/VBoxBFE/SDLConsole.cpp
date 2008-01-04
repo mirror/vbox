@@ -1601,7 +1601,7 @@ int SDLConsole::handleHostKey(const SDL_KeyboardEvent *pEv)
          */
         case SDLK_h:
         {
-            VMCtrlACPIButton();
+            VMCtrlACPIPowerButton();
             break;
         }
 

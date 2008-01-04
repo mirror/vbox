@@ -24,7 +24,8 @@ int  VMCtrlToggleFullscreen(void);
 int  VMCtrlPause(void);
 int  VMCtrlResume(void);
 int  VMCtrlReset(void);
-int  VMCtrlACPIButton(void);
+int  VMCtrlACPIPowerButton(void);
+int  VMCtrlACPISleepButton(void);
 int  VMCtrlSave(void (*pfnQuit)(void));
 
 #endif

@@ -113,7 +113,7 @@ VMCtrlReset(void)
  * Send ACPI power button press event
  */
 int
-VMCtrlACPIButton(void)
+VMCtrlACPIPowerButton(void)
 {
     PPDMIBASE pBase;
     int vrc = PDMR3QueryDeviceLun (pVM, "acpi", 0, 0, &pBase);
@@ -123,6 +123,24 @@ VMCtrlACPIButton(void)
         PPDMIACPIPORT pPort =
             (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
         vrc = pPort ? pPort->pfnPowerButtonPress(pPort) : VERR_INVALID_POINTER;
+    }
+    return VINF_SUCCESS;
+}
+
+/**
+ * Send ACPI sleep button press event
+ */
+int
+VMCtrlACPISleepButton(void)
+{
+    PPDMIBASE pBase;
+    int vrc = PDMR3QueryDeviceLun (pVM, "acpi", 0, 0, &pBase);
+    if (VBOX_SUCCESS (vrc))
+    {
+        Assert (pBase);
+        PPDMIACPIPORT pPort =
+            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        vrc = pPort ? pPort->pfnSleepButtonPress(pPort) : VERR_INVALID_POINTER;
     }
     return VINF_SUCCESS;
 }
