@@ -399,7 +399,7 @@ typedef union
         uint32_t    u1ErrorCodeValid    : 1;
         uint32_t    u19Reserved         : 19;
         uint32_t    u1Valid             : 1;
-        uint32_t    u32ErrorCode        : 32;    
+        uint32_t    u32ErrorCode        : 32;
     } n;
     uint64_t    au64[1];
 } SVM_EVENT;
@@ -630,50 +630,22 @@ typedef struct _SVM_VMCB
 
 
 /**
- * Prepares for and executes VMRUN
+ * Prepares for and executes VMRUN.
  *
- * @returns VBox status code
- * @param   pVMCBHostPhys  Physical address of host VMCB
- * @param   pVMCBPhys      Physical address of the VMCB
- * @param   pCtx           Guest context
+ * @returns VBox status code.
+ * @param   pVMCBHostPhys   Physical address of host VMCB.
+ * @param   pVMCBPhys       Physical address of the VMCB.
+ * @param   pCtx            Guest context.
  */
 DECLASM(int) SVMVMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx);
 
-
 /**
- * Executes INVLPGA
+ * Executes INVLPGA.
  *
- * @param   pPageGC     Virtual page to invalidate
- * @param   uASID       Tagged TLB id
+ * @param   pPageGC         Virtual page to invalidate.
+ * @param   u32ASID         Tagged TLB id.
  */
-#if RT_INLINE_ASM_EXTERNAL
-DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t uASID);
-#else
-DECLINLINE(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t uASID)
-{
-# if RT_INLINE_ASM_GNU_STYLE
-    AssertFailed();
-# else
-    __asm
-    {
-#   ifdef RT_ARCH_AMD64
-        mov     rax, pPageGC
-#   else
-        mov     eax, pPageGC
-#   endif
-        push    ecx
-        mov     ecx, uASID
-        _emit   0x0F
-        _emit   0x01
-        _emit   0xDF   /* invlpga rAX, ECX */
-
-        pop     ecx
-    }
-# endif
-}
-#endif
-
-
+DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 
 /** @} */
 
