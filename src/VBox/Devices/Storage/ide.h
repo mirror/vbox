@@ -96,6 +96,8 @@ typedef enum ATACMD
     ATA_TRUSTED_RECEIVE_DMA                 = 0x5d,
     ATA_TRUSTED_SEND                        = 0x5e,
     ATA_TRUSTED_SEND_DMA                    = 0x5f,
+    ATA_READ_FPDMA_QUEUED                   = 0x60,
+    ATA_WRITE_FPDMA_QUEUED                  = 0x61,
     ATA_SEEK                                = 0x70,
     ATA_CFA_TRANSLATE_SECTOR                = 0x87,
     ATA_EXECUTE_DEVICE_DIAGNOSTIC           = 0x90,
@@ -256,8 +258,8 @@ static const char * const g_apszATACmdNames[256] =
     "TRUSTED RECEIVE DMA",                 /* 0x5d */
     "TRUSTED SEND",                        /* 0x5e */
     "TRUSTED SEND DMA",                    /* 0x5f */
-    "",                                    /* 0x60 */
-    "",                                    /* 0x61 */
+    "READ FPDMA QUEUED",                   /* 0x60 */
+    "WRITE FPDMA QUEUED",                  /* 0x61 */
     "",                                    /* 0x62 */
     "",                                    /* 0x63 */
     "",                                    /* 0x64 */
