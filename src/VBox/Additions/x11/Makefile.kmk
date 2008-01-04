@@ -27,5 +27,9 @@ SUBDIRS += \
 	xmouse
 endif
 
+ifeq ($(BUILD_TARGET),solaris)
+SUBDIRS += xmouse
+endif
+
 include $(PATH_KBUILD)/subfooter.kmk
 
