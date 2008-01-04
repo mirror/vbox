@@ -2759,16 +2759,15 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 
 ifndef VBOX_OSE
 if1of ($(BUILD_TARGET),freebsd linux netbsd openbsd solaris)
-VBOX_LICENSE_SRC := $(PATH_ROOT)/doc/License.html
-## @todo this can be done by sed alone. Why do we have to do this $(shell ) stuff in *all* make
-# files btw? If this is really necessary, then just do it once for <insert deity of choice>'s sake.
-# Who-ever added this, please fix!
-VBOX_LICENSE_VER := $(shell grep Version $(VBOX_LICENSE_SRC)|sed -e 's/.*Version \([0-9.]*\),.*/\1/g')
-VBOX_LICENSE_BIN := $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html
-
-$(VBOX_LICENSE_BIN): $(VBOX_LICENSE_SRC)
-	$(call MSG_GENERATE,,$@)
-	$(QUIET)$(CP) $< $@
+# VBOX_LICENSE_VER is used in several Makefiles
+VBOX_LICENSE_SRC    := $(PATH_ROOT)/doc/License.html
+VBOX_LICENSE_VER_KMK = $(PATH_OUT)/license-version.kmk
+$(VBOX_LICENSE_VER_KMK): $(VBOX_LICENSE_SRC)
+	$(call MSG_GENERATE,,$(VBOX_LICENSE_VER_KMK))
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(SED) -e "s/.*Version \([0-9.]*\),.*/VBOX_LICENSE_VER=\1/;t;d" --output $@ $(VBOX_LICENSE_SRC)
+-include $(VBOX_LICENSE_VER_KMK)
+VBOX_LICENSE_BIN = $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html
 endif
 endif
 
