@@ -255,7 +255,7 @@ static int vboxClipboardReadHostData (uint32_t u32Format, void **ppv, uint32_t *
     /* Allocate a 1K buffer for receiving the clipboard data to start with.  If this is too small,
        the host will tell us what size of buffer we need, and we will try again with a buffer of
        that size. */
-    uint32_t cb = 1024, u32Size;
+    uint32_t cb = 1024, u32Size = 0;
     void *pv = RTMemAlloc(cb);
     if (pv == 0)
     {
