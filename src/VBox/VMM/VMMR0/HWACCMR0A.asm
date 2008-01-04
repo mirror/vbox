@@ -797,7 +797,8 @@ BEGINPROC SVMInvlpgA
 %else
     mov     eax, [esp + 4]
     mov     ecx, [esp + 8]
-    invlpga eax, ecx
+    ;invlpga eax, ecx - YASM BUG? ;; @todo investigate and file bug report.
+    db 0fh, 01h, 0dfh
 %endif
     ret
 ENDPROC SVMInvlpgA
