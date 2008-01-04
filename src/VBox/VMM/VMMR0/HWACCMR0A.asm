@@ -793,7 +793,8 @@ BEGINPROC SVMInvlpgA
     mov     eax, ecx                    ;; @todo 64-bit guest.
     mov     ecx, edx
  %endif
-    invlpga rax, ecx
+    ;invlpga rax, ecx - YASM 0.6.2 BUG? ;; @todo investigate and file bug report.
+    db 0fh, 01h, 0dfh
 %else
     mov     eax, [esp + 4]
     mov     ecx, [esp + 8]
