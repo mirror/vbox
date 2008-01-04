@@ -216,6 +216,38 @@ VBGLR3DECL(int) VbglR3GetHostTime(PRTTIMESPEC pTime)
 }
 
 
+VBGLR3DECL(int) VbglR3GetMouseStatus(uint32_t *pu32Features, uint32_t *pu32PointerX, uint32_t *pu32PointerY)
+{
+    VMMDevReqMouseStatus Req;
+    vmmdevInitRequest(&Req.header, VMMDevReq_GetMouseStatus);
+    Req.mouseFeatures = 0;
+    Req.pointerXPos = 0;
+    Req.pointerYPos = 0;
+    int rc = VbglR3GRPerform(&Req.header);
+    if (RT_SUCCESS(rc))
+    {
+        if (pu32Features)
+            *pu32Features = Req.mouseFeatures;
+        if (pu32PointerX)
+            *pu32PointerX = Req.pointerXPos;
+        if (pu32PointerY)
+            *pu32PointerY = Req.pointerYPos;
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3SetMouseStatus(uint32_t u32Features)
+{
+    VMMDevReqMouseStatus Req;
+    vmmdevInitRequest(&Req.header, VMMDevReq_SetMouseStatus);
+    Req.mouseFeatures = u32Features;
+    Req.pointerXPos = 0;
+    Req.pointerYPos = 0;
+    return VbglR3GRPerform(&Req.header);
+}
+
+
 /**
  * Cause any pending WaitEvent calls (VBOXGUEST_IOCTL_WAITEVENT) to return 
  * with a VERR_INTERRUPTED status.

@@ -87,6 +87,11 @@ ifndef VBOX_WITHOUT_ADDITIONS_ISO
  endif
 endif
 
+# Solaris additions
+ifeq ($(BUILD_TARGET),solaris)
+ SUBDIRS += x11
+endif
+
 include	$(PATH_KBUILD)/subfooter.kmk
 
 

@@ -498,6 +498,12 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 
     LogFlow((DEVICE_NAME ":VBoxAddSolarisOpen\n"));
 
+	/*
+	 * Verify we are being opened as a character device
+	 */
+	if (fType != OTYP_CHR)
+		return EINVAL;
+
 #ifndef USE_SESSION_HASH
     VBoxAddDevState *pState = NULL;
     unsigned iOpenInstance;
@@ -564,7 +570,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         return 0;
     }
 #endif
-    LogRel((DEVICE_NAME "VBoxAddSolarisOpen: VBoxGuestCreateUserSession failed. rc=%d\n", rc));
+    LogRel((DEVICE_NAME ":VBoxAddSolarisOpen: VBoxGuestCreateUserSession failed. rc=%d\n", rc));
     return rc;
 }
 

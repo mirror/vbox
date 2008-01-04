@@ -18,6 +18,7 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
+if1of ($(BUILD_TARGET),linux l4)
 SYSMODS  = vboxmouse_drv
 DLLS     = vboxmouse_drv_70 vboxmouse_drv_71 vboxmouse_drv_14
 
@@ -99,7 +100,26 @@ vboxmouse_drv_14_SOURCES  = \
 	xorg14/mouse.c \
 	xorg14/pnp.c \
 	VBoxUtils.c
+endif
 
+ifeq ($(BUILD_TARGET),solaris)
+DLLS = vboxmouse_drv
+
+vboxmouse_drv_TEMPLATE = VBOXGUESTR3EXE
+vboxmouse_drv_DEFS = 	\
+	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT \
+	IN_RING3 VBOX XORG_7X PIC
+vboxmouse_drv_INCS = \
+	/usr/X11/include/xorg \
+	$(PATH_SUB_CURRENT)
+vboxmouse_drv_SOURCES  = \
+	xorg71/mouse.c \
+	xorg71/pnp.c \
+	VBoxUtils.c
+vboxmouse_drv_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
+endif
 
 include	$(PATH_KBUILD)/footer.kmk
 

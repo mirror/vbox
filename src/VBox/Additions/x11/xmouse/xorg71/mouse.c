@@ -80,6 +80,9 @@
 #include <X11/X.h>
 #include <X11/Xproto.h>
 
+#if defined(VBOX) && defined(RT_OS_SOLARIS)
+# undef RANDR
+#endif
 #include "xf86.h"
 
 #ifdef XINPUT
