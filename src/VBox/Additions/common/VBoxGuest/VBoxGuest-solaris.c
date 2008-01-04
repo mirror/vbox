@@ -498,11 +498,11 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 
     LogFlow((DEVICE_NAME ":VBoxAddSolarisOpen\n"));
 
-	/*
-	 * Verify we are being opened as a character device
-	 */
-	if (fType != OTYP_CHR)
-		return EINVAL;
+    /*
+     * Verify we are being opened as a character device
+     */
+    if (fType != OTYP_CHR)
+        return EINVAL;
 
 #ifndef USE_SESSION_HASH
     VBoxAddDevState *pState = NULL;
