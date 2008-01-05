@@ -330,10 +330,12 @@ int main()
                     }
             } while (!fDone);
 
-            RTPrintf(" #  ID  TSC\n"
-                     "-----------------------\n");
-            for (i = 0; i < cCpus; i++)
-                RTPrintf("%2d  %02x %RX64\n", i, s_aData[i].u8ApicId, s_aData[i].TSC);
+            RTPrintf(" #  ID  TSC            delta0 (decimal)\n"
+                     "-----------------------------------------\n");
+            RTPrintf("%2d  %02x  %RX64\n", 0, s_aData[0].u8ApicId, s_aData[0].TSC);
+            for (i = 1; i < cCpus; i++)
+                RTPrintf("%2d  %02x  %RX64  %s%lld\n", i, s_aData[i].u8ApicId, s_aData[i].TSC, 
+                         s_aData[i].TSC > s_aData[0].TSC ? "+" : "", s_aData[i].TSC - s_aData[0].TSC);
             RTPrintf("(Needed %u attempt%s.)\n", cTries + 1, cTries ? "s" : "");
             break;
         }
