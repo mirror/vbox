@@ -48,7 +48,7 @@
  %ifdef __YASM__
   ; this syntax requires a patch yasm, sorry.
   %macro VMMR0_SEG 1
-  [section %1 segname VMMR0 align=1 ]
+  [section %1 segname=VMMR0 align=1 ]
   %endmacro
  %else
   %macro VMMR0_SEG 1
