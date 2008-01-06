@@ -24,7 +24,7 @@
 %include "VBox/cpum.mac"
 %include "VBox/x86.mac"
 
-%ifdef RT_OS_OS2 ;; @todo build cvs nasm like on OS X.
+%ifdef RT_OS_OS2 ;; @todo fix OMF support in yasm and kick nasm out completely.
  %macro vmwrite 2,
     int3
  %endmacro
@@ -720,7 +720,7 @@ BEGINPROC SVMVMRun
     ; save host fs, gs, sysenter msr etc
     mov     xAX, [xBP + xS*2]       ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
     push    xAX                     ; save for the vmload after vmrun
-    DB      0x0F, 0x01, 0xDB        ; VMSAVE
+    vmsave
 
     ; setup eax for VMLOAD
     mov     xAX, [xBP + xS*2 + RTHCPHYS_CB]     ; pVMCBPhys (64 bits physical address; take low dword only)
@@ -735,26 +735,26 @@ BEGINPROC SVMVMRun
     mov     esi, [xSI + CPUMCTX.esi]
 
     ; Clear the global interrupt flag & execute sti to make sure external interrupts cause a world switch
-    DB      0x0f, 0x01, 0xDD        ; CLGI
+    clgi
     sti
 
     ; load guest fs, gs, sysenter msr etc
-    DB      0x0f, 0x01, 0xDA        ; VMLOAD
+    vmload
     ; run the VM
-    DB      0x0F, 0x01, 0xD8        ; VMRUN
+    vmrun
 
     ;/* EAX is in the VMCB already; we can use it here. */
 
     ; save guest fs, gs, sysenter msr etc
-    DB      0x0F, 0x01, 0xDB        ; VMSAVE
+    vmsave
 
     ; load host fs, gs, sysenter msr etc
     pop     xAX                     ; pushed above
-    DB      0x0F, 0x01, 0xDA        ; VMLOAD
+    vmload
 
     ; Set the global interrupt flag again, but execute cli to make sure IF=0.
     cli
-    DB      0x0f, 0x01, 0xDC        ; STGI
+    stgi
 
     pop     xAX                     ; pCtx
 
@@ -777,6 +777,7 @@ BEGINPROC SVMVMRun
     ret
 ENDPROC SVMVMRun
 
+
 ;;
 ; Executes INVLPGA
 ;
@@ -793,14 +794,11 @@ BEGINPROC SVMInvlpgA
     mov     eax, ecx                    ;; @todo 64-bit guest.
     mov     ecx, edx
  %endif
-    ;invlpga rax, ecx - YASM 0.6.2 BUG? ;; @todo investigate and file bug report.
-    db 0fh, 01h, 0dfh
 %else
     mov     eax, [esp + 4]
     mov     ecx, [esp + 8]
-    ;invlpga eax, ecx - YASM BUG? ;; @todo investigate and file bug report.
-    db 0fh, 01h, 0dfh
 %endif
+    invlpga [xAX], ecx
     ret
 ENDPROC SVMInvlpgA
 
