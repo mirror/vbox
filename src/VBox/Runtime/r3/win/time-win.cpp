@@ -29,33 +29,54 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_TIME
-//#define USE_TICK_COUNT
-//#define USE_PERFORMANCE_COUNTER
-#define USE_FILE_TIME
-//#define USE_INTERRUPT_TIME
-#ifndef USE_INTERRUPT_TIME
-# include <Windows.h>
-#else
-# define _X86_
-  extern "C" {
-# include <ntddk.h>
-  }
-# undef PAGE_SIZE
-# undef PAGE_SHIFT
-#endif
+#include <Windows.h>
 
 #include <iprt/time.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include "internal/time.h"
 
+#define USE_TICK_COUNT
+//#define USE_PERFORMANCE_COUNTER
+#if 0//defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# define USE_INTERRUPT_TIME
+#else
+//# define USE_FILE_TIME
+#endif 
+
+
+#ifdef USE_INTERRUPT_TIME
+
+typedef struct _MY_KSYSTEM_TIME 
+{
+    ULONG LowPart;
+    LONG High1Time;
+    LONG High2Time;
+} MY_KSYSTEM_TIME;
+
+typedef struct _MY_KUSER_SHARED_DATA 
+{
+    ULONG TickCountLowDeprecated;
+    ULONG TickCountMultiplier;
+    volatile MY_KSYSTEM_TIME InterruptTime;
+    /* The rest is not relevant. */
+} MY_KUSER_SHARED_DATA, *PMY_KUSER_SHARED_DATA;
+
+#endif /* USE_INTERRUPT_TIME */
+
 
 DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 {
 #if defined USE_TICK_COUNT
+    /* 
+     * This would work if it didn't flip over every 49 (or so) days. 
+     */
     return (uint64_t)GetTickCount() * (uint64_t)1000000;
 
 #elif defined USE_PERFORMANCE_COUNTER
+    /* 
+     * Slow and no derived from InterruptTime. 
+     */
     static LARGE_INTEGER    llFreq;
     static unsigned         uMult;
     if (!llFreq.QuadPart)
@@ -63,7 +84,7 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
         if (!QueryPerformanceFrequency(&llFreq))
             return (uint64_t)GetTickCount() * (uint64_t)1000000;
         llFreq.QuadPart /=    1000;
-        uMult            = 1000000;     /* no math genious, but this seemed to help avoiding floating point. */
+        uMult            = 1000000;     /* no math genius, but this seemed to help avoiding floating point. */
     }
 
     LARGE_INTEGER   ll;
@@ -73,23 +94,25 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
         return (uint64_t)GetTickCount() * (uint64_t)1000000;
 
 #elif defined USE_FILE_TIME
+    /* 
+     * This is SystemTime not InterruptTime. 
+     */
     uint64_t u64; /* manual say larger integer, should be safe to assume it's the same. */
     GetSystemTimeAsFileTime((LPFILETIME)&u64);
     return u64 * 100;
 
 #elif defined USE_INTERRUPT_TIME
-
-    /* HACK! HACK! HACK! HACK! HACK! HACK! */
-    /* HACK! HACK! HACK! HACK! HACK! HACK! */
-    /* HACK! HACK! HACK! HACK! HACK! HACK! */
-# error "don't use this in production"
-
-    static const KUSER_SHARED_DATA *s_pUserSharedData = NULL;
+    /* 
+     * This is exactly what we want, but we have to obtain it by non-official 
+     * means.
+     */
+    static MY_KUSER_SHARED_DATA *s_pUserSharedData = NULL;
     if (!s_pUserSharedData)
     {
-        /** @todo clever detection algorithm.
-         * The com debugger class exports this too, windbg knows it too... */
-        s_pUserSharedData = (const KUSER_SHARED_DATA *)0x7ffe0000;
+        /** @todo find official way of getting this or some more clever
+         * detection algorithm if necessary. The com debugger class 
+         * exports this too, windbg knows it too... */
+        s_pUserSharedData = (MY_ KUSER_SHARED_DATA *)(uintptr_t)0x7ffe0000;
     }
 
     /* use interrupt time */
@@ -97,7 +120,7 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
     do
     {
         Time.HighPart = s_pUserSharedData->InterruptTime.High1Time;
-        Time.LowPart = s_pUserSharedData->InterruptTime.LowPart;
+        Time.LowPart  = s_pUserSharedData->InterruptTime.LowPart;
     } while (s_pUserSharedData->InterruptTime.High2Time != Time.HighPart);
 
     return (uint64_t)Time.QuadPart * 100;
