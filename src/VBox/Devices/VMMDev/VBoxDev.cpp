@@ -18,6 +18,8 @@
 
 /* #define LOG_ENABLED */
 
+/* Enable dev_vmm Log3 statements to get IRQ-related logging. */
+
 #include <stdio.h>
 #include <string.h>
 
@@ -151,41 +153,31 @@ static void vmmdevMaybeSetIRQ_EMT (VMMDevState *pVMMDevState)
 {
     PPDMDEVINS pDevIns = VMMDEVSTATE_2_DEVINS (pVMMDevState);
 
-#ifdef DEBUG_sunlover
-    Log(("vmmdevMaybeSetIRQ_EMT: u32HostEventFlags = 0x%08X, u32GuestFilterMask = 0x%08X.\n",
+    Log3(("vmmdevMaybeSetIRQ_EMT: u32HostEventFlags = 0x%08X, u32GuestFilterMask = 0x%08X.\n",
           pVMMDevState->u32HostEventFlags, pVMMDevState->u32GuestFilterMask));
-#endif /* DEBUG_sunlover */
 
     if (pVMMDevState->u32HostEventFlags & pVMMDevState->u32GuestFilterMask)
     {
         pVMMDevState->pVMMDevRAMHC->V.V1_04.fHaveEvents = true;
         PDMDevHlpPCISetIrqNoWait (pDevIns, 0, 1);
-#ifdef DEBUG_sunlover
-        Log(("vmmdevMaybeSetIRQ_EMT: IRQ set.\n"));
-#endif /* DEBUG_sunlover */
+        Log3(("vmmdevMaybeSetIRQ_EMT: IRQ set.\n"));
     }
 }
 
 static void vmmdevNotifyGuest_EMT (VMMDevState *pVMMDevState, uint32_t u32EventMask)
 {
-#ifdef DEBUG_sunlover
-    Log(("VMMDevNotifyGuest_EMT: u32EventMask = 0x%08X.\n", u32EventMask));
-#endif /* DEBUG_sunlover */
+    Log3(("VMMDevNotifyGuest_EMT: u32EventMask = 0x%08X.\n", u32EventMask));
 
     if (VBOX_GUEST_ADDITIONS_VERSION_1_03 (pVMMDevState))
     {
-#ifdef DEBUG_sunlover
-        Log(("VMMDevNotifyGuest_EMT: Old additions detected.\n"));
-#endif /* DEBUG_sunlover */
+        Log3(("VMMDevNotifyGuest_EMT: Old additions detected.\n"));
 
         pVMMDevState->u32HostEventFlags |= u32EventMask;
         vmmdevSetIRQ_Legacy_EMT (pVMMDevState);
     }
     else
     {
-#ifdef DEBUG_sunlover
-        Log(("VMMDevNotifyGuest_EMT: New additions detected.\n"));
-#endif /* DEBUG_sunlover */
+        Log3(("VMMDevNotifyGuest_EMT: New additions detected.\n"));
 
         if (!pVMMDevState->fu32AdditionsOk)
         {
@@ -197,10 +189,8 @@ static void vmmdevNotifyGuest_EMT (VMMDevState *pVMMDevState, uint32_t u32EventM
         const bool fHadEvents =
             (pVMMDevState->u32HostEventFlags & pVMMDevState->u32GuestFilterMask) != 0;
 
-#ifdef DEBUG_sunlover
-        Log(("VMMDevNotifyGuest_EMT: fHadEvents = %d, u32HostEventFlags = 0x%08X, u32GuestFilterMask = 0x%08X.\n",
+        Log3(("VMMDevNotifyGuest_EMT: fHadEvents = %d, u32HostEventFlags = 0x%08X, u32GuestFilterMask = 0x%08X.\n",
               fHadEvents, pVMMDevState->u32HostEventFlags, pVMMDevState->u32GuestFilterMask));
-#endif /* DEBUG_sunlover */
 
         pVMMDevState->u32HostEventFlags |= u32EventMask;
 
@@ -267,9 +257,7 @@ void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
     int rc;
     PVMREQ pReq;
 
-#ifdef DEBUG_sunlover
-    Log(("VMMDevNotifyGuest: u32EventMask = 0x%08X.\n", u32EventMask));
-#endif /* DEBUG_sunlover */
+    Log3(("VMMDevNotifyGuest: u32EventMask = 0x%08X.\n", u32EventMask));
 
     rc = VMR3ReqCallVoid (pVM, &pReq, RT_INDEFINITE_WAIT,
                           (PFNRT) vmmdevNotifyGuest_EMT,
@@ -1791,10 +1779,8 @@ static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, 
         fSameResolution = false;
     }
 
-#ifdef DEBUG_sunlover
-    Log(("vmmdevRequestDisplayChange: same=%d. new: xres=%d, yres=%d, bpp=%d, display=%d. old: xres=%d, yres=%d, bpp=%d, display=%d.\n",
+    Log3(("vmmdevRequestDisplayChange: same=%d. new: xres=%d, yres=%d, bpp=%d, display=%d. old: xres=%d, yres=%d, bpp=%d, display=%d.\n",
           fSameResolution, xres, yres, bpp, display, pData->lastReadDisplayChangeRequest.xres, pData->lastReadDisplayChangeRequest.yres, pData->lastReadDisplayChangeRequest.bpp, pData->lastReadDisplayChangeRequest.display));
-#endif /* DEBUG_sunlover */
 
     if (!fSameResolution)
     {
