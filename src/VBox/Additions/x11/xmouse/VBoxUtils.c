@@ -63,7 +63,6 @@ int VBoxMouseQueryPosition(unsigned int *puAbsXPos, unsigned int *puAbsYPos)
     {
         *puAbsXPos = pointerXPos;
         *puAbsYPos = pointerYPos;
-        xf86Msg(X_INFO, "VBoxMouseQueryPosition x=%u y=%u\n", *puAbsXPos, *puAbsYPos);
         return 0;
     }
     ErrorF("Error querying host mouse position! rc = %d\n", rc);
