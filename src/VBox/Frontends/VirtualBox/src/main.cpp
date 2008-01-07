@@ -111,8 +111,19 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
 
 int main (int argc, char **argv)
 {
-    /* initialize VBox Runtime */
-    RTR3Init (false, ~(size_t)0);
+    /* Initialize VBox Runtime. Initialize the Suplib+GC as well only if we
+     * are really about to start a VM. Don't do this if we are only starting
+     * the selector window. */
+    bool fInitGC = false;
+    for (int i = 0; i < argc; i++)
+    {
+        if (!::strcmp(argv[i], "-startvm" ))
+        {
+            fInitGC = true;
+            break;
+        }
+    }
+    RTR3Init (fInitGC, ~(size_t)0);
 
     LogFlowFuncEnter();
 
