@@ -57,6 +57,7 @@ PROGRAMS = \
 	tstTime \
 	tstTime-2 \
 	tstTime-3 \
+	tstTime-4 \
 	tstTimer \
 	tstTimeSpec \
 	tstTSC \
@@ -87,19 +88,20 @@ endif # VBOX_WITH_TESTCASES
 
 TEMPLATE = VBOXR3TSTEXE
 
-
-tstTimer_SOURCES = tstTimer.cpp
-
-tstTSC_SOURCES = tstTSC.cpp
-tstTSC_CXXFLAGS.linux += -O3
-
 tstTime_SOURCES = tstTime.cpp
 
 tstTime-2_SOURCES = tstTime-2.cpp
 
 tstTime-3_SOURCES = tstTime-3.cpp
 
+tstTime-4_SOURCES = tstTime-4.cpp
+
 tstTimeSpec_SOURCES = tstTimeSpec.cpp
+
+tstTimer_SOURCES = tstTimer.cpp
+
+tstTSC_SOURCES = tstTSC.cpp
+tstTSC_CXXFLAGS.linux += -O3
 
 tstStrFormat_SOURCES = tstStrFormat.cpp
 
