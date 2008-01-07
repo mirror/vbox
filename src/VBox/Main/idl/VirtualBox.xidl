@@ -5407,8 +5407,11 @@
         </li>
 
         <li>
-          <i>VMware VMDK Image</i>, a regular file in the file system of the
+          <i>VMware VMDK image</i>, a regular file in the file system of the
           host OS (represented by the <link to="IVMDKImage"/> interface).
+          Note that the regular file may be just a descriptor referring to
+          further files, so don't make assumptions about the OS representation
+          of a VMDK image.
         </li>
 
         <li>
@@ -5946,7 +5949,7 @@
       <link to="IVirtualBox::openHardDisk()"/> or created from
       scratch using <link to="IVirtualBox::createHardDisk()"/>.
 
-      When a new hard disk object is created from scatch, an image file for it
+      When a new hard disk object is created from scratch, an image file for it
       is not automatically created. To do it, you need to specify a
       valid <link to="#filePath">file path</link>, and call
       <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>.
@@ -6199,7 +6202,7 @@
       <link to="IVirtualBox::openHardDisk()"/> or created from
       scratch using <link to="IVirtualBox::createHardDisk()"/>.
 
-      When a new hard disk object is created from scatch, an image file for it
+      When a new hard disk object is created from scratch, an image file for it
       is not automatically created. To do it, you need to specify a
       valid <link to="#filePath">file path</link>, and call
       <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>.
