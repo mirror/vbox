@@ -217,7 +217,7 @@ static void showLogo(void)
     {
         RTPrintf("VirtualBox Command Line Management Interface Version "
                  VBOX_VERSION_STRING  "\n"
-                 "(C) 2005-2007 innotek GmbH\n"
+                 "(C) 2005-2008 innotek GmbH\n"
                  "All rights reserved.\n"
                  "\n");
         fShown = true;
