@@ -312,6 +312,40 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
 }
 
 /**
+ * IOCtl handler.  Control the interrupt filter mask to specify which VMMDev interrupts
+ * we know how to handle.
+ *
+ * @returns iprt status code
+ * @param pInfo kernel space pointer to the filter mask change info
+ */
+static int vboxadd_control_filter_mask(VBoxGuestFilterMaskInfo *pInfo)
+{
+    VMMDevCtlGuestFilterMask *pReq;
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_CtlGuestFilterMask);
+    if (RT_FAILURE(rc))
+    {
+        Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: failed to allocate %u (%#x) bytes to cache the request. rc=%d!!\n",
+             sizeof(*pReq), sizeof(*pReq), rc));
+        return rc;
+    }
+
+    pReq->u32OrMask = pInfo->u32OrMask;
+    pReq->u32NotMask = pInfo->u32NotMask;
+
+    rc = VbglGRPerform(&pReq->header);
+    if (RT_FAILURE(rc))
+        Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: VbglGRPerform failed, rc=%Rrc!\n", rc));
+    else if (RT_FAILURE(pReq->header.rc))
+    {
+        Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: The request failed; VMMDev rc=%Rrc!\n", pReq->header.rc));
+        rc = pReq->header.rc;
+    }
+
+    VbglGRFree(&pReq->header);
+    return rc;
+}
+
+/**
  * IOCTL handler
  *
  */
@@ -445,6 +479,18 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                 rc = vboxadd_hgcm_connect(filp, arg);
                 break;
 
+        case VBOXGUEST_IOCTL_CTL_FILTER_MASK:
+        {
+                VBoxGuestFilterMaskInfo info;
+                if (copy_to_user((void*)arg, (void*)&info, sizeof(info)))
+                {
+                    LogRelFunc(("VBOXGUEST_IOCTL_CTL_FILTER_MASK: error getting parameters from user space!\n"));
+                    rc = -EFAULT;
+                    break;
+                }
+                rc = -RTErrConvertToErrno(vboxadd_control_filter_mask(&info));
+                break;
+        }
         default:
                 LogRelFunc(("unknown command: %x\n", cmd));
                 rc = -EINVAL;

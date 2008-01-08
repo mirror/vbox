@@ -268,7 +268,7 @@ VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
  *
  * @returns IPRT status code
  *
- * @remakes This currently does not accept more than 255 bytes of data at
+ * @remarks This currently does not accept more than 255 bytes of data at
  *          one time. It should probably be rewritten to use pass a pointer
  *          in the IOCtl.
  */
@@ -287,5 +287,19 @@ VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
     }
 #undef STEP
     return rc;
+}
+
+/**
+ * Change the IRQ filter mask.
+ *
+ * @returns IPRT status code
+ */
+VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t u32OrMask, uint32_t u32NotMask)
+{
+    VBoxGuestFilterMaskInfo info;
+
+    info.u32OrMask = u32OrMask;
+    info.u32NotMask = u32NotMask;
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &info, sizeof(info));
 }
 
