@@ -1367,6 +1367,7 @@ VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
 # endif
 VBGLR3DECL(int)     VbglR3InterruptEventWaits(void);
 VBGLR3DECL(int)     VbglR3WriteLog(const char *pch, size_t cb);
+VBGLR3DECL(int)     VbglR3CtlFilterMask(uint32_t u32OrMask, uint32_t u32NotMask);
 
 /** @name Shared clipboard
  * @{ */
