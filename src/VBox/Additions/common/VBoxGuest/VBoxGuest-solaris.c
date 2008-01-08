@@ -47,7 +47,7 @@
 /** The module name. */
 #define DEVICE_NAME              "vboxadd"
 /** The module description as seen in 'modinfo'. */
-#define DEVICE_DESC              "VirtualBox Guest Additions Driver"
+#define DEVICE_DESC              "VirtualBox Guest Driver"
 
 
 /*******************************************************************************
