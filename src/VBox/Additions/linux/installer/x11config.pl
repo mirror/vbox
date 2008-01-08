@@ -62,12 +62,12 @@ foreach $cfg (@cfg_files)
             {
                 if ($line =~ /^\s*driver\s+\"(?:mouse|vboxmouse)\"/i)
                 {
-                    $line = "    Driver      \"vboxmouse\"\n";
+                    $line = "    Driver      \"vboxmouse\"\n    Option      \"CorePointer\"\n";
                     $have_mouse = 1
                 }
 
                 # Other drivers sending events interfere badly with pointer integration
-                if ($line =~ /^\s*option\s+\"(?:alwayscore|sendcoreevents)\"/i)
+                if ($line =~ /^\s*option\s+\"(?:alwayscore|sendcoreevents|corepointer)\"/i)
                 {
                     $line = "";
                 }
