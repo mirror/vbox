@@ -549,16 +549,16 @@ static irqreturn_t vboxadd_irq_handler(int irq, void *dev_id, struct pt_regs *re
     int rcVBox;
 
 #ifdef IRQ_DEBUG
-    printk ("%s: vboxDev->pVMMDevMemory=%p vboxDev->pVMMDevMemory->fHaveEvents=%d\n",
-            __func__, vboxDev->pVMMDevMemory, vboxDev->pVMMDevMemory->fHaveEvents);
+    Log(("vboxadd IRQ_DEBUG: vboxDev->pVMMDevMemory=%p vboxDev->pVMMDevMemory->fHaveEvents=%d\n",
+          vboxDev->pVMMDevMemory, vboxDev->pVMMDevMemory->V.V1_04.fHaveEvents));
 #endif
 
     /* check if IRQ was asserted by VBox */
     if (vboxDev->pVMMDevMemory->V.V1_04.fHaveEvents != 0)
     {
 #ifdef IRQ_DEBUG
-        printk(KERN_INFO "vboxadd: got IRQ with event mask 0x%x\n",
-               vboxDev->pVMMDevMemory->u32HostEvents);
+        Log(("vboxadd IRQ_DEBUG: got IRQ with event mask 0x%x\n",
+               vboxDev->irqAckRequest->events));
 #endif
 
         /* make a copy of the event mask */
@@ -585,10 +585,10 @@ static irqreturn_t vboxadd_irq_handler(int irq, void *dev_id, struct pt_regs *re
 #ifdef IRQ_DEBUG
     else
     {
-        printk ("vboxadd: stale IRQ mem=%p events=%d devevents=%#x\n",
-                vboxDev->pVMMDevMemory,
-                vboxDev->pVMMDevMemory->fHaveEvents,
-                vboxDev->u32Events);
+        Log(("vboxadd IRQ_DEBUG: stale IRQ mem=%p events=%d devevents=%#x\n",
+             vboxDev->pVMMDevMemory,
+             vboxDev->pVMMDevMemory->V.V1_04.fHaveEvents,
+             vboxDev->u32Events));
     }
 #endif
     /* it was ours */
@@ -783,7 +783,7 @@ static __init int init(void)
     err = pci_enable_device (pcidev);
     if (err)
     {
-        printk (KERN_ERR "vboxadd: could not enable device: %d\n", err);
+        Log(("vboxadd: could not enable device: %d\n", err));
         PCI_DEV_PUT(pcidev);
         return -ENODEV;
     }
@@ -794,8 +794,6 @@ static __init int init(void)
     err = register_chrdev(vbox_major, "vboxadd", &vbox_fops);
     if (err < 0 || ((vbox_major & err) || (!vbox_major && !err)))
     {
-        printk(KERN_ERR "vboxadd: register_chrdev failed: vbox_major: %d, err = %d\n",
-               vbox_major, err);
         LogRelFunc(("register_chrdev failed: vbox_major: %d, err = %d\n",
                      vbox_major, err));
         PCI_DEV_PUT(pcidev);
@@ -809,7 +807,6 @@ static __init int init(void)
     vboxDev = kmalloc(sizeof(*vboxDev), GFP_KERNEL);
     if (!vboxDev)
     {
-        printk(KERN_ERR "vboxadd: cannot allocate device!\n");
         LogRelFunc(("cannot allocate device!\n"));
         err = -ENOMEM;
         goto fail;
@@ -827,7 +824,6 @@ static __init int init(void)
     /* all resources found? */
     if (!vboxDev->io_port || !vboxDev->vmmdevmem || !vboxDev->vmmdevmem_size)
     {
-        printk(KERN_ERR "vboxadd: did not find expected hardware resources!\n");
         LogRelFunc(("did not find expected hardware resources!\n"));
         goto fail;
     }
@@ -835,7 +831,6 @@ static __init int init(void)
     /* request ownership of adapter memory */
     if (request_mem_region(vboxDev->vmmdevmem, vboxDev->vmmdevmem_size, "vboxadd") == 0)
     {
-        printk(KERN_ERR "vboxadd: failed to request adapter memory!\n");
         LogRelFunc(("failed to request adapter memory!\n"));
         goto fail;
     }
@@ -845,16 +840,12 @@ static __init int init(void)
                                                       vboxDev->vmmdevmem_size);
     if (!vboxDev->pVMMDevMemory)
     {
-        printk (KERN_ERR "vboxadd: ioremap failed\n");
         LogRelFunc(("ioremap failed\n"));
         goto fail;
     }
 
     if (vboxDev->pVMMDevMemory->u32Version != VMMDEV_MEMORY_VERSION)
     {
-        printk(KERN_ERR
-               "vboxadd: invalid VMM device memory version! (got 0x%x, expected 0x%x)\n",
-               vboxDev->pVMMDevMemory->u32Version, VMMDEV_MEMORY_VERSION);
         LogRelFunc(("invalid VMM device memory version! (got 0x%x, expected 0x%x)\n",
                     vboxDev->pVMMDevMemory->u32Version, VMMDEV_MEMORY_VERSION));
         goto fail;
@@ -864,7 +855,6 @@ static __init int init(void)
     rcVBox = VbglInit(vboxDev->io_port, vboxDev->pVMMDevMemory);
     if (VBOX_FAILURE(rcVBox))
     {
-        printk(KERN_ERR "vboxadd: could not initialize VBGL subsystem! rc = %d\n", rcVBox);
         LogRelFunc(("could not initialize VBGL subsystem! rc = %Vrc\n", rcVBox));
         goto fail;
     }
@@ -874,7 +864,6 @@ static __init int init(void)
                          sizeof(VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
     if (VBOX_FAILURE(rcVBox))
     {
-        printk(KERN_ERR "vboxadd: could not allocate request structure! rc = %d\n", rcVBox);
         LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
         goto fail;
     }
@@ -889,9 +878,6 @@ static __init int init(void)
     rcVBox = VbglGRPerform(&infoReq->header);
     if (VBOX_FAILURE(rcVBox) || VBOX_FAILURE(infoReq->header.rc))
     {
-        printk(KERN_ERR
-               "vboxadd: error reporting guest info to host! rc = %d, header.rc = %d\n",
-               rcVBox, infoReq->header.rc);
         LogRelFunc(("error reporting guest info to host! rc = %Vrc, header.rc = %Vrc\n",
                     rcVBox, infoReq->header.rc));
         VbglGRFree(&infoReq->header);
@@ -910,7 +896,6 @@ static __init int init(void)
                          sizeof(VMMDevEvents), VMMDevReq_AcknowledgeEvents);
     if (VBOX_FAILURE(rcVBox))
     {
-        printk(KERN_ERR "vboxadd: could not allocate request structure! rc = %d\n", rcVBox);
         LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
         goto fail;
     }
@@ -925,7 +910,6 @@ static __init int init(void)
                       "vboxadd", vboxDev);
     if (err)
     {
-        printk(KERN_ERR "vboxadd: Could not request IRQ %d, err: %d\n", pcidev->irq, err);
         LogRelFunc(("could not request IRQ %d, err: %d\n", pcidev->irq, err));
         goto fail;
     }
@@ -934,23 +918,14 @@ static __init int init(void)
     init_waitqueue_head (&vboxDev->eventq);
 
     /* some useful information for the user but don't show this on the console */
-    printk(KERN_DEBUG
-           "vboxadd: major %d, IRQ %d, "
-           "I/O port 0x%x, memory at 0x%x (size 0x%x), "
-           "hypervisor window at 0x%p (size 0x%x)\n",
-           vbox_major, vboxDev->irq, vboxDev->io_port,
-           vboxDev->vmmdevmem, vboxDev->vmmdevmem_size,
-           vboxDev->hypervisorStart, vboxDev->hypervisorSize);
-    LogRelFunc(("major %d, IRQ %d, "
+    LogRel(("VirtualBox device settings: major %d, IRQ %d, "
                 "I/O port 0x%x, MMIO at 0x%x (size 0x%x), "
                 "hypervisor window at 0x%p (size 0x%x)\n",
                 vbox_major, vboxDev->irq, vboxDev->io_port,
                 vboxDev->vmmdevmem, vboxDev->vmmdevmem_size,
                 vboxDev->hypervisorStart, vboxDev->hypervisorSize));
-    printk(KERN_DEBUG
-           "vboxadd: Successfully loaded version "
-           VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")\n");
-
+    Log(("Successfully loaded VirtualBox device version "
+           VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")\n"));
     /* successful return */
     PCI_DEV_PUT(pcidev);
     return 0;
@@ -968,14 +943,9 @@ fail:
  */
 static __exit void fini(void)
 {
-    printk(KERN_DEBUG "vboxadd: unloading...\n");
-    LogRelFunc(("unloading...\n"));
-
     unregister_chrdev(vbox_major, "vboxadd");
     free_resources();
     vboxadd_cmc_fini ();
-    printk(KERN_DEBUG "vboxadd: unloaded\n");
-    LogRelFunc(("unloaded\n"));
 }
 
 module_init(init);
