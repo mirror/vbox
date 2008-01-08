@@ -37,57 +37,6 @@ MODULE_LICENSE("GPL");
 MODULE_VERSION(VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")");
 #endif
 
-/*****************************************************************************
-* Macros                                                                     *
-*****************************************************************************/
-
-/* We need to define these ones here as they only exist in kernels 2.6 and up */
-
-#define __vbox_wait_event_interruptible_timeout(wq, condition, timeout, ret)   \
-do {                                                                      \
-        int __ret = 0;                                                    \
-        if (!(condition)) {                                               \
-          wait_queue_t __wait;                                            \
-          unsigned long expire;                                           \
-          init_waitqueue_entry(&__wait, current);                         \
-	                                                                  \
-          expire = timeout + jiffies;                                     \
-          add_wait_queue(&wq, &__wait);                                   \
-          for (;;) {                                                      \
-                  set_current_state(TASK_INTERRUPTIBLE);                  \
-                  if (condition)                                          \
-                          break;                                          \
-                  if (jiffies > expire) {                                 \
-                          ret = jiffies - expire;                         \
-                          break;                                          \
-                  }                                                       \
-                  if (!signal_pending(current)) {                         \
-                          schedule_timeout(timeout);                      \
-                          continue;                                       \
-                  }                                                       \
-                  ret = -ERESTARTSYS;                                     \
-                  break;                                                  \
-          }                                                               \
-          current->state = TASK_RUNNING;                                  \
-          remove_wait_queue(&wq, &__wait);                                \
-	}                                                                 \
-} while (0)
-
-/*
-   retval == 0; condition met; we're good.
-   retval < 0; interrupted by signal.
-   retval > 0; timed out.
-*/
-#define vbox_wait_event_interruptible_timeout(wq, condition, timeout)	\
-({									\
-	int __ret = 0;							\
-	if (!(condition))						\
-		__vbox_wait_event_interruptible_timeout(wq, condition,	\
-						timeout, __ret);	\
-	__ret;								\
-})
-
-
 /* This is called by our assert macros to find out whether we want
    to insert a breakpoint after the assertion. In kernel modules we
    do not of course. */
@@ -247,26 +196,38 @@ static int vboxadd_release(struct inode *inode, struct file * filp)
 }
 
 static void
-vboxadd_wait_for_event (VBoxGuestWaitEventInfo * info)
+vboxadd_wait_for_event (VBoxGuestWaitEventInfo *info)
 {
     long timeleft;
     uint32_t cInterruptions = vboxDev->u32GuestInterruptions;
     uint32_t in_mask = info->u32EventMaskIn;
 
     info->u32Result = VBOXGUEST_WAITEVENT_OK;
-    timeleft = vbox_wait_event_interruptible_timeout
-                            (vboxDev->eventq,
-                                (vboxDev->u32Events & in_mask)
-                             || (vboxDev->u32GuestInterruptions != cInterruptions),
-                             msecs_to_jiffies (info->u32TimeoutIn));
-    if (vboxDev->u32GuestInterruptions != cInterruptions) {
-            info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
+    if (0 != info->u32TimeoutIn) {
+            timeleft = wait_event_interruptible_timeout
+                           (vboxDev->eventq,
+                               (vboxDev->u32Events & in_mask)
+                            || (vboxDev->u32GuestInterruptions != cInterruptions),
+                            msecs_to_jiffies (info->u32TimeoutIn)
+                           );
+            if (vboxDev->u32GuestInterruptions != cInterruptions) {
+                    info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
+            }
+            if (timeleft < 0) {
+                    info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
+            }
+            if (timeleft == 0) {
+                    info->u32Result = VBOXGUEST_WAITEVENT_TIMEOUT;
+            }
     }
-    if (timeleft < 0) {
-            info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
-    }
-    if (timeleft == 0) {
-            info->u32Result = VBOXGUEST_WAITEVENT_TIMEOUT;
+    else {
+            if (wait_event_interruptible(vboxDev->eventq,
+                                            (vboxDev->u32Events & in_mask)
+                                         || (vboxDev->u32GuestInterruptions != cInterruptions)
+                                        )
+               ) {
+                    info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
+            }
     }
     info->u32EventFlagsOut = vboxDev->u32Events & in_mask;
     vboxDev->u32Events &= ~in_mask;
@@ -436,7 +397,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
             if (rc == VINF_HGCM_ASYNC_EXECUTE)
             {
                 VMMDevHGCMRequestHeader *reqHGCM = (VMMDevHGCMRequestHeader*)reqFull;
-                wait_event (vboxDev->eventq, reqHGCM->fu32Flags & VBOX_HGCM_REQ_DONE);
+                wait_event_interruptible (vboxDev->eventq, reqHGCM->fu32Flags & VBOX_HGCM_REQ_DONE);
                 rc = reqFull->rc;
             }
 
@@ -926,6 +887,7 @@ static __init int init(void)
                 vboxDev->hypervisorStart, vboxDev->hypervisorSize));
     Log(("Successfully loaded VirtualBox device version "
            VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")\n"));
+
     /* successful return */
     PCI_DEV_PUT(pcidev);
     return 0;
