@@ -315,8 +315,6 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
  * IOCTL handler
  *
  */
-AssertCompile((sizeof(VMMDevRequestHeader) == _IOC_SIZE(IOCTL_VBOXGUEST_VMMREQUEST)));
-
 static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                          unsigned int cmd, unsigned long arg)
 {
@@ -352,7 +350,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
             size_t cbVanillaRequestSize;
             int rc;
 
-            if (copy_from_user(&reqHeader, (void*)arg, _IOC_SIZE(cmd)))
+            if (copy_from_user(&reqHeader, (void*)arg, sizeof(reqHeader)))
             {
                 LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: copy_from_user failed for vmm request!\n"));
                 return -EFAULT;
