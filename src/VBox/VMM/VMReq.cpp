@@ -525,9 +525,16 @@ VMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         return VERR_VM_REQUEST_INVALID_TYPE;
     }
 
+    /*
+     * Are we the EMT or not?
+     * Also, store pVM (and fFlags) locally since pReq may be invalid after queuing it.
+     */
     int rc = VINF_SUCCESS;
-    if (pReq->pVM->NativeThreadEMT != RTThreadNativeSelf())
+    PVM pVM = ((VMREQ volatile *)pReq)->pVM;                    /* volatile paranoia */
+    if (pVM->NativeThreadEMT != RTThreadNativeSelf())
     {
+        unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
+
         /*
          * Insert it.
          */
@@ -535,20 +542,20 @@ VMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         PVMREQ pNext;
         do
         {
-            pNext = pReq->pVM->vm.s.pReqs;
+            pNext = pVM->vm.s.pReqs;
             pReq->pNext = pNext;
-        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pReq->pVM->vm.s.pReqs, (void *)pReq, (void *)pNext));
+        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pVM->vm.s.pReqs, (void *)pReq, (void *)pNext));
 
         /*
          * Notify EMT.
          */
-        VM_FF_SET(pReq->pVM, VM_FF_REQUEST);
-        VMR3NotifyFF(pReq->pVM, false);
+        VM_FF_SET(pVM, VM_FF_REQUEST);
+        VMR3NotifyFF(pVM, false);
 
         /*
          * Wait and return.
          */
-        if (!(pReq->fFlags & VMREQFLAGS_NO_WAIT))
+        if (!(fFlags & VMREQFLAGS_NO_WAIT))
             rc = VMR3ReqWait(pReq, cMillies);
         LogFlow(("VMR3ReqQueue: returns %Vrc\n", rc));
     }
@@ -558,7 +565,7 @@ VMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
          * The requester was EMT, just execute it.
          */
         pReq->enmState = VMREQSTATE_QUEUED;
-        rc = vmR3ReqProcessOne(pReq->pVM, pReq);
+        rc = vmR3ReqProcessOne(pVM, pReq);
         LogFlow(("VMR3ReqQueue: returns %Vrc (processed)\n", rc));
     }
     return rc;
