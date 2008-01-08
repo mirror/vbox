@@ -739,8 +739,8 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
         {
 ioctl_error:
             PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                       N_("Ioctl failed for serial host device '%s' (error %d)"),
-                                       pData->pszDevicePath, errno);
+                                       N_("Ioctl failed for serial host device '%s' (%Vrc). The device will not work properly"),
+                                       pData->pszDevicePath, RTErrConvertFromErrno(errno));
             break;
         }
 
@@ -764,6 +764,8 @@ ioctl_error:
 
 /**
  * Unblock the monitor thread so it can respond to a state change.
+ * We need to execute this code exactly once during initialization.
+ * But we don't want to block --- therefore this dedicated thread.
  *
  * @returns a VBox status code.
  * @param     pDrvIns     The driver instance.
@@ -772,7 +774,7 @@ ioctl_error:
 static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
-    int rc = VINF_SUCCESS;
+    int rc;
 
     /*
      * Linux is a bit difficult as the thread is sleeping in an ioctl call.
@@ -793,14 +795,13 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
      * Set serial device into normal state.
      */
     rc = ioctl(pData->DeviceFile, TIOCMBIC, TIOCM_LOOP);
-    if (rc < 0)
-        goto ioctl_error;
+    if (rc >= 0)
+        return VINF_SUCCESS;
 
 ioctl_error:
     PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                N_("Ioctl failed for serial host device '%s' (error %d)"),
-                                pData->pszDevicePath, errno);
-
+                                N_("Ioctl failed for serial host device '%s' (%Vrc). The device will not work properly"),
+                                pData->pszDevicePath, RTErrConvertFromErrno(errno));
     return VINF_SUCCESS;
 }
 #endif /* RT_OS_LINUX */
