@@ -3103,7 +3103,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 #ifdef VBOX_VRDP
     if (type == "vrdp")
     {
-        const char VBoxVRDP_exe[] = "VBoxVRDP" HOSTSUFF_EXE;
+        const char VBoxVRDP_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
         Assert (sz >= sizeof (VBoxVRDP_exe));
         strcpy (cmd, VBoxVRDP_exe);
 
@@ -3120,7 +3120,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 #endif /* VBOX_VRDP */
     if (type == "capture")
     {
-        const char VBoxVRDP_exe[] = "VBoxVRDP" HOSTSUFF_EXE;
+        const char VBoxVRDP_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
         Assert (sz >= sizeof (VBoxVRDP_exe));
         strcpy (cmd, VBoxVRDP_exe);
 
