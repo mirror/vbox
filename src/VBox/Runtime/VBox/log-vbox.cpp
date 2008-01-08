@@ -184,6 +184,11 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
     if (g_pLogger || !ASMAtomicCmpXchgU32(&fInitializing, 1, 0))
         return g_pLogger;
 
+    /* If we are doing backdoor logging then we do not want to
+       create an additional log file inside the guest. */
+#ifdef LOG_TO_BACKDOOR
+    return g_pLogger = NULL;
+#endif
 #ifdef IN_RING3
     /*
      * Assert the group definitions.
