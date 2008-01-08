@@ -1032,8 +1032,8 @@ int main (int argc, char **argv)
             for (int i=iSize; i>0; i--)
                 putchar('*');
             printf ("\n%s\n", szBuf);
-            printf ("(C) 2004-2007 innotek GmbH\n");
-            printf ("All rights reserved.\n");
+            printf ("(C) 2004-2008 innotek GmbH\n"
+                    "All rights reserved.\n");
 #ifdef DEBUG
             printf ("Debug version.\n");
 #endif

@@ -184,7 +184,7 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
                             strcpy(&g_szInitText[0],
                                    "\r\n"
                                    "VirtualBox Guest Additions Driver for OS/2 version " VBOX_VERSION_STRING "\r\n"
-                                   "Copyright (C) 2007 innotek GmbH\r\n");
+                                   "Copyright (C) 2007-2008 innotek GmbH\r\n");
                             g_cchInitText = strlen(&g_szInitText[0]);
                         }
                         Log(("VBoxGuestOS2Init: Successfully loaded\n%s", g_szInitText));
