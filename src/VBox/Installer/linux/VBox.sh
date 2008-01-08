@@ -111,6 +111,9 @@ case "$APP" in
   VBoxVRDP)
     exec "$INSTALL_DIR/VBoxVRDP" "$@"
   ;;
+  VBoxHeadless)
+    exec "$INSTALL_DIR/VBoxHeadless" "$@"
+  ;;
   *)
     echo "Unknown application - $APP"
   ;;

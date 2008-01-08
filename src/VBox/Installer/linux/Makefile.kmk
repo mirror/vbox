@@ -144,6 +144,10 @@ ifdef VBOX_WITH_VRDP
  LINUXNOSTRIP += \
 	rdesktop-vrdp.tar.gz
 endif
+ifdef VBOX_WITH_HEADLESS
+ LINUXSTRIPBIN += \
+	VBoxHeadless
+endif
 
 LINUXARCHFILES := $(LINUXSTRIPBIN) $(LINUXSTRIPOBJ) $(LINUXNOSTRIP)
 
