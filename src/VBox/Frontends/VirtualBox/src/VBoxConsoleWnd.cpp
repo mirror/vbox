@@ -2001,8 +2001,13 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
         /* Setup the shifting spacer to make the console to be aligned on top
          * in the seamless mode. */
+#ifdef Q_WS_MAC 
+        mShiftingSpacer->changeSize (0,  dtw->screenGeometry(this).bottom() - scrGeo.bottom(),
+                                     QSizePolicy::Preferred, QSizePolicy::Fixed);
+#else
         mShiftingSpacer->changeSize (0, mStrictedRegion.boundingRect().height(),
                                      QSizePolicy::Preferred, QSizePolicy::Fixed);
+#endif
 
 #ifdef Q_WS_WIN32
         mPrevRegion = dtw->screenGeometry (this);
