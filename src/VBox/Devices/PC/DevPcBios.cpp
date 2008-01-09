@@ -331,35 +331,27 @@ static void pcbiosCmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
 /**
  * Initializes the CMOS data for one harddisk.
  */
-static void pcbiosCmosInitHardDisk(PPDMDEVINS pDevIns, int offType, int offInfo, PPDMIBLOCKBIOS pBlockBios)
+static void pcbiosCmosInitHardDisk(PPDMDEVINS pDevIns, int offType, int offInfo, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    PDMMEDIAGEOMETRY LCHSGeometry;
-    int rc = pBlockBios->pfnGetLCHSGeometry(pBlockBios, &LCHSGeometry);
-    if (VBOX_SUCCESS(rc))
-    {
-        Log2(("%s: offInfo=%#x: LCHS=%d/%d/%d\n", __FUNCTION__, offInfo, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
-        if (offType)
-            pcbiosCmosWrite(pDevIns, offType, 48);
-        /* Cylinders low */
-        pcbiosCmosWrite(pDevIns, offInfo + 0, RT_MIN(LCHSGeometry.cCylinders, 1024) & 0xff);
-        /* Cylinders high */
-        pcbiosCmosWrite(pDevIns, offInfo + 1, RT_MIN(LCHSGeometry.cCylinders, 1024) >> 8);
-        /* Heads */
-        pcbiosCmosWrite(pDevIns, offInfo + 2, LCHSGeometry.cHeads);
-        /* Landing zone low */
-        pcbiosCmosWrite(pDevIns, offInfo + 3, 0xff);
-        /* Landing zone high */
-        pcbiosCmosWrite(pDevIns, offInfo + 4, 0xff);
-        /* Write precomp low */
-        pcbiosCmosWrite(pDevIns, offInfo + 5, 0xff);
-        /* Write precomp high */
-        pcbiosCmosWrite(pDevIns, offInfo + 6, 0xff);
-        /* Sectors */
-        pcbiosCmosWrite(pDevIns, offInfo + 7, LCHSGeometry.cSectors);
-        return;
-    }
+    Log2(("%s: offInfo=%#x: LCHS=%d/%d/%d\n", __FUNCTION__, offInfo, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     if (offType)
-        pcbiosCmosWrite(pDevIns, offType, 0);
+        pcbiosCmosWrite(pDevIns, offType, 48);
+    /* Cylinders low */
+    pcbiosCmosWrite(pDevIns, offInfo + 0, RT_MIN(pLCHSGeometry->cCylinders, 1024) & 0xff);
+    /* Cylinders high */
+    pcbiosCmosWrite(pDevIns, offInfo + 1, RT_MIN(pLCHSGeometry->cCylinders, 1024) >> 8);
+    /* Heads */
+    pcbiosCmosWrite(pDevIns, offInfo + 2, pLCHSGeometry->cHeads);
+    /* Landing zone low */
+    pcbiosCmosWrite(pDevIns, offInfo + 3, 0xff);
+    /* Landing zone high */
+    pcbiosCmosWrite(pDevIns, offInfo + 4, 0xff);
+    /* Write precomp low */
+    pcbiosCmosWrite(pDevIns, offInfo + 5, 0xff);
+    /* Write precomp high */
+    pcbiosCmosWrite(pDevIns, offInfo + 6, 0xff);
+    /* Sectors */
+    pcbiosCmosWrite(pDevIns, offInfo + 7, pLCHSGeometry->cSectors);
 }
 
 
@@ -575,27 +567,41 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
                 rc = apHDs[i]->pfnSetLCHSGeometry(apHDs[i], &LCHSGeometry);
                 AssertRC(rc);
             }
+            if (i < 4)
+            {
+                /* Award BIOS extended drive types for first to fourth disk.
+                 * Used by the BIOS for setting the logical geometry. */
+                int offType, offInfo;
+                switch (i)
+                {
+                    case 0:
+                        offType = 0x19;
+                        offInfo = 0x1e;
+                        break;
+                    case 1:
+                        offType = 0x1a;
+                        offInfo = 0x26;
+                        break;
+                    case 2:
+                        offType = 0x00;
+                        offInfo = 0x67;
+                        break;
+                    case 3:
+                    default:
+                        offType = 0x00;
+                        offInfo = 0x70;
+                        break;
+                }
+                pcbiosCmosInitHardDisk(pDevIns, offInfo, offType,
+		                       &LCHSGeometry);
+            }
             LogRel(("DevPcBios: ATA LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
-            pcbiosCmosWrite(pDevIns, 0x40 + i * 4, LCHSGeometry.cCylinders & 0xff);
-            pcbiosCmosWrite(pDevIns, 0x41 + i * 4, LCHSGeometry.cCylinders >> 8);
-            pcbiosCmosWrite(pDevIns, 0x42 + i * 4, LCHSGeometry.cHeads & 0xff);
-            pcbiosCmosWrite(pDevIns, 0x43 + i * 4, LCHSGeometry.cSectors & 0xff);
         }
     }
 
     /* 0Fh means extended and points to 19h, 1Ah */
     u32 = (apHDs[0] ? 0xf0 : 0) | (apHDs[1] ? 0x0f : 0);
     pcbiosCmosWrite(pDevIns, 0x12, u32);
-    /* Award BIOS extended drive types for first and second disk, and
-     * extended drive types for third and fourth disk. Used by the BIOS. */
-    if (apHDs[0])
-        pcbiosCmosInitHardDisk(pDevIns, 0x19, 0x1e, apHDs[0]);
-    if (apHDs[1])
-        pcbiosCmosInitHardDisk(pDevIns, 0x1a, 0x26, apHDs[1]);
-    if (apHDs[2])
-        pcbiosCmosInitHardDisk(pDevIns, 0x00, 0x67, apHDs[2]);
-    if (apHDs[3])
-        pcbiosCmosInitHardDisk(pDevIns, 0x00, 0x70, apHDs[3]);
 
     LogFlow(("%s: returns VINF_SUCCESS\n", __FUNCTION__));
     return VINF_SUCCESS;
@@ -1279,11 +1285,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertReleaseMsg(RT_ALIGN_Z(g_cbPcBiosBinary, _64K) == g_cbPcBiosBinary,
                      ("g_cbPcBiosBinary=%#x\n", g_cbPcBiosBinary));
     cb = RT_MIN(g_cbPcBiosBinary, 128 * _1K);
-    rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &g_abPcBiosBinary[g_cbPcBiosBinary - cb], 
+    rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &g_abPcBiosBinary[g_cbPcBiosBinary - cb],
                               false /* fShadow */, "PC BIOS - 0xfffff");
     if (VBOX_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-g_cbPcBiosBinary, g_cbPcBiosBinary, &g_abPcBiosBinary[0], 
+    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-g_cbPcBiosBinary, g_cbPcBiosBinary, &g_abPcBiosBinary[0],
                               false /* fShadow */, "PC BIOS - 0xffffffff");
     if (VBOX_FAILURE(rc))
         return rc;
@@ -1517,7 +1523,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * the (up to) 32 kb ROM image.
      */
     if (pu8LanBoot)
-        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbFileLanBoot, pu8LanBoot, 
+        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbFileLanBoot, pu8LanBoot,
                                   true /* fShadow */, "Net Boot ROM");
 
     rc = CFGMR3QueryU8(pCfgHandle, "DelayBoot", &pData->uBootDelay);
