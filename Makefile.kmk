@@ -201,28 +201,194 @@ include $(PATH_KBUILD)/footer.kmk
 # (This should be converted into a separate pass or merged with an existing one later.)
 #
 docs: docs.Core
-	$(MAKE) -C src/VBox/Main docs
-	$(MAKE) -C src/VBox/Runtime docs
+	$(KMK) -C src/VBox/Main docs
+	$(KMK) -C src/VBox/Runtime docs
 
 docs.Core: $(PATH_TARGET)/docs.Core
 
 
-#
-# The core (VMM+Runtime+Devices) documentation.
-#
-$(PATH_TARGET)/docs.Core: \
-		Doxyfile.Core \
-		| $(call DIRDEP, $(PATH_TARGET)) \
-		  $(call DIRDEP, $(PATH_OUT)/docs/Core)
-	$(RM) -f $(wildcard $(PATH_OUT)/docs/Core/html/*)
-ifdef KMK_USE_REDIRECT
-	$(REDIRECT) -E 'PATH_OUT=$(PATH_OUT)' -E 'PATH_TARGET=$(PATH_TARGET)' -- doxygen Doxyfile.Core
-else
-	PATH_OUT="$(PATH_OUT)" PATH_TARGET="$(PATH_TARGET)" doxygen Doxyfile.Core
-endif
 
-$(call DIRDEP, $(PATH_OUT)/docs/Core):
+#
+# The core (VMM+REM+Devices+Main) documentation.
+#
+# This includes so much because we wish to have the complete CFGM
+# and GCFGM lists.
+#
+OTHER_CLEAN += \
+	$(PATH_TARGET)/Doxyfile \
+	$(PATH_TARGET)/Doxyfile.dep
+
+DOXYGEN_INPUT_DIRS = \
+	include/iprt \
+	include/VBox \
+	include/VBox/com \
+	include/VBox/HostServices \
+	src/VBox/VMM \
+	src/VBox/VMM/VMMR0 \
+	src/VBox/VMM/VMMGC \
+	src/VBox/VMM/VMMAll \
+	src/VBox/VMM/PATM \
+	src/VBox/VMM/PATM/VMMR0 \
+	src/VBox/VMM/PATM/VMMGC \
+	src/VBox/VMM/PATM/VMMAll \
+	src/VBox/VMM/VMMSwitcher \
+	src/VBox/Debugger \
+	src/VBox/Devices/ \
+	src/VBox/Devices/Audio \
+	src/VBox/Devices/Bus \
+	src/VBox/Devices/Graphics \
+	src/VBox/Devices/Graphics/BIOS \
+	src/VBox/Devices/Input \
+	src/VBox/Devices/Networking \
+	src/VBox/Devices/PC \
+	src/VBox/Devices/PC/BIOS \
+	src/VBox/Devices/Parallel \
+	src/VBox/Devices/Serial \
+	src/VBox/Devices/Storage \
+	src/VBox/Devices/VBoxHDDFormats \
+	src/VBox/Devices/VBoxHDDFormats/StorageCraft \
+	src/VBox/Devices/USB \
+	src/VBox/Devices/USB/darwin \
+	src/VBox/Devices/USB/linux \
+	src/VBox/Devices/USB/os2 \
+	src/VBox/Devices/USB/solaris \
+	src/VBox/Devices/USB/vrdp \
+	src/VBox/Devices/USB/win32 \
+	src/VBox/Devices/VMMDev \
+	src/VBox/Main/include \
+	src/VBox/Main/include/hgcm \
+	src/VBox/Main/ \
+	src/VBox/Main/glue \
+	src/VBox/Main/hgcm \
+	src/VBox/Main/webservice \
+	src/VBox/Main/xml \
+	src/VBox/Main/darwin \
+	src/VBox/Main/linux \
+	src/VBox/Main/os2 \
+	src/VBox/Main/solaris \
+	src/VBox/Main/win32 \
+
+# These must come first in order to make things look nice.
+DOXYGEN_INPUT_FIRST =\
+	$(PATH_ROOT)/doc/VBox-doc.c \
+	$(PATH_ROOT)/doc/VBox-CodingGuidelines.cpp \
+	$(PATH_ROOT)/src/VBox/VMM/VMMCodingGuidelines.cpp \
+	$(PATH_ROOT)/src/VBox/VMM/VMMDocsRawMode.cpp \
+	$(PATH_ROOT)/include/VBox/cdefs.h \
+	$(PATH_ROOT)/include/VBox/vmapi.h \
+	$(PATH_ROOT)/include/VBox/vmm.h \
+	$(PATH_ROOT)/include/VBox/cpum.h \
+	$(PATH_ROOT)/include/VBox/mm.h \
+	$(PATH_ROOT)/include/VBox/pgm.h \
+	$(PATH_ROOT)/include/VBox/selm.h \
+	$(PATH_ROOT)/include/VBox/trpm.h \
+	$(PATH_ROOT)/include/VBox/patm.h \
+	$(PATH_ROOT)/include/VBox/dbgf.h \
+	$(PATH_ROOT)/include/VBox/stam.h \
+	$(PATH_ROOT)/include/VBox/em.h \
+	$(PATH_ROOT)/include/VBox/pdm.h \
+	$(PATH_ROOT)/include/VBox/rem.h \
+	$(PATH_ROOT)/include/VBox/iom.h \
+	$(PATH_ROOT)/include/VBox/cfgm.h \
+	$(PATH_ROOT)/include/VBox/tm.h \
+	$(PATH_ROOT)/include/VBox/csam.h \
+	$(PATH_ROOT)/include/VBox/ssm.h \
+	$(PATH_ROOT)/include/VBox/hwaccm.h \
+	$(PATH_ROOT)/include/VBox/hwacc_svm.h \
+	$(PATH_ROOT)/include/VBox/hwacc_vmx.h \
+	$(PATH_ROOT)/\
+	$(PATH_ROOT)/src/VBox/VMM/CFGMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/CPUMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/DBGFInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/EMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/HWACCMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/IOMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/MMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/PDMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/PGMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/PATM/CSAMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/PATM/PATMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/REMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/SELMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/SSMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/STAMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/TMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/TRPMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/VMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/VMMInternal.h \
+	$(PATH_ROOT)/\
+	$(PATH_ROOT)/include/VBox/vm.h \
+	\
+	$(PATH_ROOT)/include/VBox/sup.h \
+	$(PATH_ROOT)/include/VBox/VBoxHDD.h \
+	$(PATH_ROOT)/include/VBox/types.h \
+	$(PATH_ROOT)/include/VBox/err.h \
+	$(PATH_ROOT)/include/VBox/x86.h \
+	$(PATH_ROOT)/include/VBox/cpumdis.h \
+	$(PATH_ROOT)/include/VBox/dbggui.h \
+	$(PATH_ROOT)/include/VBox/dis.h \
+	$(PATH_ROOT)/include/VBox/disopcode.h \
+	$(PATH_ROOT)/include/VBox/intnet.h \
+	$(PATH_ROOT)/include/VBox/settings.h \
+	$(PATH_ROOT)/include/VBox/pci.h \
+	$(PATH_ROOT)/include/VBox/scsi.h \
+	$(PATH_ROOT)/include/VBox/shflsvc.h \
+	$(PATH_ROOT)/include/VBox/hgcmsvc.h \
+	$(PATH_ROOT)/include/VBox/usb.h \
+	$(PATH_ROOT)/include/VBox/vusb.h \
+	$(PATH_ROOT)/\
+	$(PATH_ROOT)/include/VBox/log.h \
+	$(PATH_ROOT)/include/VBox/param.h \
+	$(PATH_ROOT)/include/VBox/version.h
+
+DOXYGEN_INPUT := \
+	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(DOXYGEN_INPUT_DIRS)))) ) \
+	$(foreach dir, $(DOXYGEN_INPUT_DIRS), $(wildcard $(dir)/*.cpp $(dir)/.c $(dir)/.asm))
+DOXYGEN_INPUT := \
+	$(DOXYGEN_INPUT_FIRST) \
+	$(filter-out $(DOXYGEN_INPUT_FIRST), $(DOXYGEN_INPUT))
+
+# And some some additional stuff.
+DOXYGEN_INPUT += \
+	$(PATH_ROOT)/src/recompiler/VBoxRecompiler.c \
+	$(PATH_ROOT)/src/recompiler/VBoxREMWrapper.cpp
+
+
+DOXYGEN_OUTPUT = $(PATH_OUT)/docs/Core
+
+-include $(PATH_TARGET)/Doxyfile.dep
+
+# Generate the Doxyfile
+$(PATH_TARGET)/Doxyfile: Doxyfile.Core \
+		$(comp-vars DOXYGEN_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
+		$(comp-vars DOXYGEN_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
+		| $(call DIRDEP, $(PATH_TARGET))
+	$(RM) -f $@ $@.tmp $(PATH_TARGET)/Doxyfile.dep
+	$(CP) -f Doxyfile.Core $@.tmp
+	$(APPEND) $@.tmp
+	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(DOXYGEN_OUTPUT)"
+	$(APPEND) $@.tmp "WARN_LOGFILE = $(DOXYGEN_OUTPUT)/errors"
+	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include $(PATH_ROOT)/src/VBox/VMM $(PATH_ROOT)/src/VBox/Main/include "
+	$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
+	$(APPEND) $@.tmp
+	$(APPEND) $@.tmp "INPUT = $(DOXYGEN_INPUT)"
+	$(APPEND) $@.tmp
+	$(APPEND) $@.tmp "PREDEFINED += $(DEFS) $(DEFS.$(BUILD_TARGET)) $(DEFS.$(BUILD_TARGET_ARCH)) $(ARCH_BITS_DEFS)"
+	$(APPEND) $@.tmp "PREDEFINED += ARCH_BITS=HC_ARCH_BITS R3_ARCH_BITS=HC_ARCH_BITS R0_ARCH_BITS=HC_ARCH_BITS "
+	$(APPEND) $@.tmp
+	$(MV) -f $@.tmp $@
+	@$(APPEND) $(PATH_TARGET)/Doxyfile.dep "DOXYGEN_OUTPUT_PREV = $(DOXYGEN_OUTPUT)"
+	@$(APPEND) $(PATH_TARGET)/Doxyfile.dep "DOXYGEN_INPUT_PREV = $(DOXYGEN_INPUT)"
+
+# Create the output directory.
+$(call DIRDEP, $(DOXYGEN_OUTPUT)):
 	$(MKDIR) -p $@
+
+# Do the actual job.
+$(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile $(DOXYGEN_INPUT) | $(call DIRDEP, $(DOXYGEN_OUTPUT))
+	$(RM) -f $(wildcard $(DOXYGEN_OUTPUT)/html/*) $(PATH_TARGET)/docs.Core
+	doxygen $(PATH_TARGET)/Doxyfile
+	$(APPEND) $(PATH_TARGET)/docs.Core
 
 
 #
