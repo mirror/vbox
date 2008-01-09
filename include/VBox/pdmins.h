@@ -84,4 +84,6 @@
  */
 #define PDMINS2DATA_R0PTR(pIns)     PDMINS_2_DATA_R0PTR(pIns)
 
+/** @} */
+
 #endif

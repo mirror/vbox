@@ -54,8 +54,8 @@ typedef enum SSMAFTER
     SSMAFTER_DESTROY,
     /** Will continue execution after saving the VM. */
     SSMAFTER_CONTINUE,
-    /** Will debug the saved state. 
-     * This is used to drop some of the stricter consitentcy checks so it'll 
+    /** Will debug the saved state.
+     * This is used to drop some of the stricter consitentcy checks so it'll
      * load fine in the debugger or animator. */
     SSMAFTER_DEBUG_IT,
     /** The file was opened using SSMR3Open() and we have no idea what the plan is. */
@@ -1124,7 +1124,7 @@ SSMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus);
  */
 SSMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM);
 
-
+/** @} */
 #endif /* IN_RING3 */
 
 
