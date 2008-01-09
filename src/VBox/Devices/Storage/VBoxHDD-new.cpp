@@ -686,7 +686,6 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
 {
     PRTDIR pPluginDir = NULL;
     int rc = VERR_NOT_SUPPORTED;
-    int rcCheck = VINF_SUCCESS;
     bool fPluginFound = false;
 
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
@@ -1728,7 +1727,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf, s
     do
     {
         /* sanity check */
-        AssertBreak(VALID_PTR(pDisk), VERR_INVALID_PARAMETER);
+        AssertBreak(VALID_PTR(pDisk), rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
@@ -1769,7 +1768,7 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
     do
     {
         /* sanity check */
-        AssertBreak(VALID_PTR(pDisk), VERR_INVALID_PARAMETER);
+        AssertBreak(VALID_PTR(pDisk), rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         PVDIMAGE pImage = pDisk->pLast;
@@ -1966,7 +1965,7 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
     do
     {
         /* sanity check */
-        AssertBreak(VALID_PTR(pDisk), VERR_INVALID_PARAMETER);
+        AssertBreak(VALID_PTR(pDisk), rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
@@ -2115,7 +2114,7 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
     do
     {
         /* sanity check */
-        AssertBreak(VALID_PTR(pDisk), VERR_INVALID_PARAMETER);
+        AssertBreak(VALID_PTR(pDisk), rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
