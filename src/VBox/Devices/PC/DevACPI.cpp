@@ -19,7 +19,6 @@
 
 #include <VBox/pdmdev.h>
 #include <VBox/log.h>
-#include <VBox/rem.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #ifdef IN_RING3
@@ -876,9 +875,6 @@ static void acpiSmiWriteU8 (ACPIState *s, uint32_t addr, uint32_t val)
         s->pm1a_ctl &= ~SCI_EN;
     else
         Log (("acpi: acpiSmiWriteU8 %#x <- unknown value\n", val));
-    if (s->dev.config[0x5b] & (1 << 1))
-        PDMDevHlpSMIInterrupt(s->pDevIns);
-    LogRel(("acpiSmiWriteU8 %08x <= %08x\n", addr, val));
 }
 
 static uint32_t find_rsdp_space (void)
