@@ -219,7 +219,7 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
     /*
      * Special (0/0x).
      */
-    if (fFlags & RTSTR_F_SPECIAL && (uiBase % 8) == 0)
+    if ((fFlags & RTSTR_F_SPECIAL) && (uiBase % 8) == 0)
     {
         psz[i++] = '0';
         if (uiBase == 16)
