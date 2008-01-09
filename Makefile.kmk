@@ -267,6 +267,34 @@ DOXYGEN_INPUT_DIRS = \
 	src/VBox/Main/os2 \
 	src/VBox/Main/solaris \
 	src/VBox/Main/win32 \
+	src/VBox/HostServices/ \
+	src/VBox/HostServices/SharedClipboard \
+	src/VBox/HostServices/SharedFolders \
+	src/VBox/HostServices/SharedOpenGL \
+	src/VBox/HostDrivers/Support \
+	src/VBox/HostDrivers/Support/darwin \
+	src/VBox/HostDrivers/Support/freebsd \
+	src/VBox/HostDrivers/Support/l4 \
+	src/VBox/HostDrivers/Support/linux \
+	src/VBox/HostDrivers/Support/os2 \
+	src/VBox/HostDrivers/Support/solaris \
+	src/VBox/HostDrivers/Support/win \
+	src/VBox/HostDrivers/VBoxTAP/ \
+	src/VBox/HostDrivers/VBoxTAP/win \
+	src/VBox/HostDrivers/VBoxTAP/darwin \
+	src/VBox/HostDrivers/VBoxUSB/ \
+	src/VBox/HostDrivers/VBoxUSB/darwin \
+	src/VBox/HostDrivers/VBoxUSB/os2 \
+	src/VBox/HostDrivers/VBoxUSB/win \
+	src/VBox/HostDrivers/VBoxUSB/win/Device \
+	src/VBox/HostDrivers/VBoxUSB/win/Device/amd64 \
+	src/VBox/HostDrivers/VBoxUSB/win/Device/x86 \
+	src/VBox/HostDrivers/VBoxUSB/win/Filter \
+	src/VBox/HostDrivers/VBoxUSB/win/Install \
+	src/VBox/HostDrivers/VBoxUSB/win/Monitor \
+	src/VBox/HostDrivers/VBoxUSB/win/Monitor/win32 \
+	src/VBox/HostDrivers/VBoxUSB/win/Monitor/win64 \
+	src/VBox/HostDrivers/VBoxUSB/win/usbd \
 
 # These must come first in order to make things look nice.
 DOXYGEN_INPUT_FIRST =\
