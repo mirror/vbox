@@ -119,6 +119,9 @@ ifndef VBOX_OSE
  VBoxDD_DEFS           += VBOX_WITH_E1000
  VBoxDD_DEFS           += VBOX_WITH_INIP
 endif
+ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+ VBoxDD_DEFS           += VBOX_WITH_PDM_ASYNC_COMPLETION
+endif
 VBoxDD_LIBS             = \
 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
@@ -651,12 +654,10 @@ endif # VBOX_WITH_USB
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  Drivers_DEFS += VBOX_WITH_PDM_ASYNC_COMPLETION
  Drivers_SOURCES.linux += \
-	Storage/DrvBlockAsync.cpp \
 	Storage/DrvRawImageAsync.cpp \
 	Storage/DrvTransportAsync.cpp
 
  Drivers_SOURCES.win += \
-	Storage/DrvBlockAsync.cpp \
 	Storage/DrvRawImageAsync.cpp \
 	Storage/DrvTransportAsync.cpp
 endif #VBOX_WITH_PDM_ASYNC_COMPLETION

@@ -86,6 +86,11 @@ extern const PDMDRVREG g_DrvHostSerial;
 extern const PDMUSBREG g_UsbDevProxy;
 #endif
 
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+extern const PDMDRVREG g_DrvRawImageAsync;
+extern const PDMDRVREG g_DrvTransportAsync;
+#endif
+
 __END_DECLS
 
 #endif
