@@ -27,26 +27,26 @@
  * footprint all tracking structure must be as small as possible without
  * unnecessary performance penalties.
  *
- *
  * The allocation chunks has fixed sized, the size defined at compile time
- * by the GMM_CHUNK_SIZE \#define.
+ * by the #GMM_CHUNK_SIZE \#define.
  *
  * Each chunk is given an unquie ID. Each page also has a unique ID. The
  * relation ship between the two IDs is:
- * @verbatim
-       (idChunk << GMM_CHUNK_SHIFT) | iPage
- @endverbatim
- * Where GMM_CHUNK_SHIFT is log2(GMM_CHUNK_SIZE / PAGE_SIZE) and iPage is
- * the index of the page within the chunk. This ID scheme permits for efficient
- * chunk and page lookup, but it relies on the chunk size to be set at compile
- * time. The chunks are organized in an AVL tree with their IDs being the keys.
+ * @code
+ *  GMM_CHUNK_SHIFT = log2(GMM_CHUNK_SIZE / PAGE_SIZE);
+ *  idPage = (idChunk << GMM_CHUNK_SHIFT) | iPage;
+ * @endcode
+ * Where iPage is the index of the page within the chunk. This ID scheme
+ * permits for efficient chunk and page lookup, but it relies on the chunk size
+ * to be set at compile time. The chunks are organized in an AVL tree with their
+ * IDs being the keys.
  *
  * The physical address of each page in an allocation chunk is maintained by
- * the RTR0MEMOBJ and obtained using RTR0MemObjGetPagePhysAddr. There is no
+ * the #RTR0MEMOBJ and obtained using #RTR0MemObjGetPagePhysAddr. There is no
  * need to duplicate this information (it'll cost 8-bytes per page if we did).
  *
- * So what do we need to track per page? Most importantly we need to know what
- * state the page is in:
+ * So what do we need to track per page? Most importantly we need to know
+ * which state the page is in:
  *   - Private - Allocated for (eventually) backing one particular VM page.
  *   - Shared  - Readonly page that is used by one or more VMs and treated
  *               as COW by PGM.
@@ -63,15 +63,15 @@
  *
  * On 64-bit systems we will use a 64-bit bitfield per page, while on 32-bit
  * systems a 32-bit bitfield will have to suffice because of address space
- * limitations. The GMMPAGE structure shows the details.
+ * limitations. The #GMMPAGE structure shows the details.
  *
  *
  * @section sec_gmm_alloc_strat Page Allocation Strategy
  *
  * The strategy for allocating pages has to take fragmentation and shared
  * pages into account, or we may end up with with 2000 chunks with only
- * a few pages in each. The fragmentation wrt shared pages is that unlike
- * private pages they cannot easily be reallocated. Private pages can be
+ * a few pages in each. Shared pages cannot easily be reallocated because
+ * of the inaccurate usage accounting (see above). Private pages can be
  * reallocated by a defragmentation thread in the same manner that sharing
  * is done.
  *
@@ -95,7 +95,7 @@
  * entails. In addition there is the chunk cost of approximately
  * (sizeof(RT0MEMOBJ) + sizof(CHUNK)) / 2^CHUNK_SHIFT bytes per page.
  *
- * On Windows the per page RTR0MEMOBJ cost is 32-bit on 32-bit windows
+ * On Windows the per page #RTR0MEMOBJ cost is 32-bit on 32-bit windows
  * and 64-bit on 64-bit windows (a PFN_NUMBER in the MDL). So, 64-bit per page.
  * The cost on Linux is identical, but here it's because of sizeof(struct page *).
  *
@@ -103,7 +103,7 @@
  * @section sec_gmm_legacy      Legacy Mode for Non-Tier-1 Platforms
  *
  * In legacy mode the page source is locked user pages and not
- * RTR0MemObjAllocPhysNC, this means that a page can only be allocated
+ * #RTR0MemObjAllocPhysNC, this means that a page can only be allocated
  * by the VM that locked it. We will make no attempt at implementing
  * page sharing on these systems, just do enough to make it all work.
  *
@@ -113,7 +113,7 @@
  * One simple fast mutex will be employed in the initial implementation, not
  * two as metioned in @ref subsec_pgmPhys_Serializing.
  *
- * @see subsec_pgmPhys_Serializing
+ * @see @ref subsec_pgmPhys_Serializing
  *
  *
  * @section sec_gmm_overcommit  Memory Over-Commitment Management
@@ -131,7 +131,17 @@
  * VM process exits? The solution is probably to have an optional root
  * daemon the will keep VMMR0.r0 in memory and enable the security measures.
  *
- * This will not be implemented this week. :-)
+ *
+ *
+ * @section sec_gmm_numa  NUMA
+ *
+ * NUMA considerations will be designed and implemented a bit later.
+ *
+ * The preliminary guesses is that we will have to try allocate memory as
+ * close as possible to the CPUs the VM is executed on (EMT and additional CPU
+ * threads). Which means it's mostly about allocation and sharing policies.
+ * Both the scheduler and allocator interface will to supply some NUMA info
+ * and we'll need to have a way to calc access costs.
  *
  */
 
@@ -2728,7 +2738,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3)
 
     if (!pGMM->fLegacyMode)
     {
-        Log(("GMMR0MapUnmapChunk: not in legacy mode!\n"));
+        Log(("GMMR0SeedChunk: not in legacy mode!\n"));
         return VERR_NOT_SUPPORTED;
     }
 
