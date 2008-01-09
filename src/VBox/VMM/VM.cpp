@@ -269,7 +269,8 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
 #endif
                                 break;
                             default:
-                                pszError = N_("Unknown error creating VM (%Vrc)");
+                                /* XXX check if there was already an error message set! */
+                                pszError = N_("Unknown error creating VM");
                                 AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
                         }
                         vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
@@ -362,7 +363,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                               "running instances of VirtualBox and reinstalling the software.");
                 break;
             default:
-                pszError = N_("Unknown error initializing kernel driver (%Vrc)");
+                pszError = N_("Unknown error initializing kernel driver");
                 AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
         }
         vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
@@ -1180,7 +1181,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRES
     else
     {
         vmR3SetState(pVM, VMSTATE_LOAD_FAILURE);
-        rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Unable to restore the virtual machine's saved state from '%s'.  It may be damaged or from an older version of VirtualBox.  Please discard the saved state before starting the virtual machine.  (Error: %Vrc)"), pszFilename, rc);
+        rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Unable to restore the virtual machine's saved state from '%s'.  It may be damaged or from an older version of VirtualBox.  Please discard the saved state before starting the virtual machine"), pszFilename);
     }
 
     return rc;
