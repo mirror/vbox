@@ -320,7 +320,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 fUDP = false;
             else if (VBOX_FAILURE(rc))
-                return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"UDP\" boolean returned %Vrc"), iInstance, rc);
+                return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"UDP\" boolean failed"), iInstance);
         }
         else if (VBOX_SUCCESS(rc))
         {
@@ -332,19 +332,19 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
                 return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("NAT#%d: Invalid configuration value for \"Protocol\": \"%s\""), iInstance, szProtocol);
         }
         else
-            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Protocol\" string returned %Vrc"), iInstance, rc);
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Protocol\" string failed"), iInstance);
 
         /* host port */
         int32_t iHostPort;
         rc = CFGMR3QueryS32(pNode, "HostPort", &iHostPort);
         if (VBOX_FAILURE(rc))
-            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"HostPort\" integer returned %Vrc"), iInstance, rc);
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"HostPort\" integer failed"), iInstance);
 
         /* guest port */
         int32_t iGuestPort;
         rc = CFGMR3QueryS32(pNode, "GuestPort", &iGuestPort);
         if (VBOX_FAILURE(rc))
-            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestPort\" integer returned %Vrc"), iInstance, rc);
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestPort\" integer failed"), iInstance);
 
         /* guest address */
         char    szGuestIP[32];
@@ -352,7 +352,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             strcpy(szGuestIP, "10.0.2.15");
         else if (VBOX_FAILURE(rc))
-            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestIP\" string returned %Vrc"), iInstance, rc);
+            return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"GuestIP\" string failed"), iInstance);
         struct in_addr GuestIP;
         if (!inet_aton(szGuestIP, &GuestIP))
             return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_NAT_REDIR_GUEST_IP, RT_SRC_POS, N_("NAT#%d: configuration error: invalid \"GuestIP\"=\"%s\", inet_aton failed"), iInstance, szGuestIP);
@@ -414,14 +414,14 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fPassDomain = true;
     else if (VBOX_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"PassDomain\" boolean returned %Vrc"), pDrvIns->iInstance, rc);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"PassDomain\" boolean failed"), pDrvIns->iInstance);
 
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "TFTPPrefix", &pData->pszTFTPPrefix);
     if (VBOX_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"TFTPPrefix\" string returned %Vrc"), pDrvIns->iInstance, rc);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"TFTPPrefix\" string failed"), pDrvIns->iInstance);
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "BootFile", &pData->pszBootFile);
     if (VBOX_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"BootFile\" string returned %Vrc"), pDrvIns->iInstance, rc);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"BootFile\" string failed"), pDrvIns->iInstance);
 
     /*
      * Query the network port interface.
