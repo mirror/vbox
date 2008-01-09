@@ -592,7 +592,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
                         offInfo = 0x70;
                         break;
                 }
-                pcbiosCmosInitHardDisk(pDevIns, offInfo, offType,
+                pcbiosCmosInitHardDisk(pDevIns, offType, offInfo,
 		                       &LCHSGeometry);
             }
             LogRel(("DevPcBios: ATA LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
