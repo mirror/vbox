@@ -1139,7 +1139,6 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, const cha
         *penmBoot = DEVPCBIOSBOOT_LAN;
     else if (!strcmp(psz, "NONE"))
         *penmBoot = DEVPCBIOSBOOT_NONE;
-//    else
     {
         PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                             N_("Configuration error: The \"%s\" value \"%s\" is unknown"),
