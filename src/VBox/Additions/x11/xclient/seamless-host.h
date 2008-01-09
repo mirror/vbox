@@ -122,7 +122,7 @@ public:
     {
         if (mObserver != 0)  /* Assertion */
         {
-            LogRelThisFunc(("ERROR: attempt to initialise service twice!\n"));
+            LogRel(("VBoxService: ERROR: attempt to initialise seamless host object twice!\n"));
             return VERR_INTERNAL_ERROR;
         }
         mObserver = pObserver;
@@ -148,7 +148,7 @@ public:
 
     VBoxGuestSeamlessHost(void) : mThreadFunction(this),
                                   mThread(&mThreadFunction, 0, RTTHREADTYPE_MAIN_WORKER,
-                                  RTTHREADFLAGS_WAITABLE, "Seamless host event thead")
+                                  RTTHREADFLAGS_WAITABLE, "Host events")
     {
         mObserver = 0;
         mRunning = false;
@@ -159,7 +159,7 @@ public:
     {
         if (mRunning)  /* Assertion */
         {
-            LogRelThisFunc(("Service still running!  Stopping...\n"));
+            LogRel(("VBoxService: seamless host object still running!  Stopping...\n"));
             stop();
         }
     }

@@ -53,9 +53,9 @@ VBGLR3DECL(int) VbglR3SeamlessSetCap(bool fState)
     rc = VbglR3GRPerform(&vmmreqGuestCaps.header);
 #ifdef DEBUG
     if (RT_SUCCESS(rc))
-        LogRel(("Successfully enabled seamless mode on the host.\n"));
+        LogRel(("Successfully set the seamless capability on the host.\n"));
     else
-        LogRel(("Failed to enabled seamless mode on the host, rc = %Rrc.\n", rc));
+        LogRel(("Failed to set the seamless capability on the host, rc = %Rrc.\n", rc));
 #endif
     return rc;
 }
@@ -115,6 +115,8 @@ VBGLR3DECL(int) VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects)
     VMMDevVideoSetVisibleRegion *req;
     int rc;
 
+    if (0 == cRects)
+        return VINF_SUCCESS;
     rc = VbglR3GRAlloc((VMMDevRequestHeader **)&req,
                        sizeof(VMMDevVideoSetVisibleRegion) + (cRects - 1) * sizeof(RTRECT),
                        VMMDevReq_VideoSetVisibleRegion);
