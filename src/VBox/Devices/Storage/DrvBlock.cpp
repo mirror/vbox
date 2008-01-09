@@ -94,6 +94,16 @@ typedef struct DRVBLOCK
     /** Our mountable interface. */
     PDMIMOUNT               IMount;
 
+    /** Pointer to the async media driver below us.
+     * This is NULL if the media is not mounted. */
+    PPDMIMEDIAASYNC         pDrvMediaAsync;
+    /** Our media async port. */
+    PDMIMEDIAASYNCPORT      IMediaAsyncPort;
+    /** Pointer to the async block port interface above us. */
+    PPDMIBLOCKASYNCPORT     pDrvBlockAsyncPort;
+    /** Our async block interface. */
+    PDMIBLOCKASYNC          IBlockAsync;
+
     /** Uuid of the drive. */
     RTUUID                  Uuid;
 
@@ -108,7 +118,6 @@ typedef struct DRVBLOCK
 
 /** Makes a PDRVBLOCK out of a PPDMIBLOCK. */
 #define PDMIBLOCK_2_DRVBLOCK(pInterface)        ( (PDRVBLOCK)((uintptr_t)pInterface - RT_OFFSETOF(DRVBLOCK, IBlock)) )
-
 
 /** @copydoc PDMIBLOCK::pfnRead */
 static DECLCALLBACK(int) drvblockRead(PPDMIBLOCK pInterface, uint64_t off, void *pvBuf, size_t cbRead)
@@ -240,6 +249,80 @@ static DECLCALLBACK(int) drvblockGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid)
     return VINF_SUCCESS;
 }
 
+/* -=-=-=-=- IBlockAsync -=-=-=-=- */
+
+/** Makes a PDRVBLOCK out of a PPDMIBLOCKASYNC. */
+#define PDMIBLOCKASYNC_2_DRVBLOCK(pInterface)        ( (PDRVBLOCK)((uintptr_t)pInterface - RT_OFFSETOF(DRVBLOCK, IBlockAsync)) )
+
+/** @copydoc PDMIBLOCKASYNC::pfnRead */
+static DECLCALLBACK(int) drvblockAsyncReadStart(PPDMIBLOCKASYNC pInterface, uint64_t off, void *pvBuf, size_t cbRead, void *pvUser)
+{
+    PDRVBLOCK pData = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
+
+    /*
+     * Check the state.
+     */
+    if (!pData->pDrvMediaAsync)
+    {
+        AssertMsgFailed(("Invalid state! Not mounted!\n"));
+        return VERR_PDM_MEDIA_NOT_MOUNTED;
+    }
+
+    int rc = pData->pDrvMediaAsync->pfnStartRead(pData->pDrvMediaAsync, off, pvBuf, cbRead, pvUser);
+    return rc;
+}
+
+
+/** @copydoc PDMIBLOCKASYNC::pfnWrite */
+static DECLCALLBACK(int) drvblockAsyncWriteStart(PPDMIBLOCKASYNC pInterface, uint64_t off, const void *pvBuf, size_t cbWrite, void *pvUser)
+{
+    PDRVBLOCK pData = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
+
+    /*
+     * Check the state.
+     */
+    if (!pData->pDrvMediaAsync)
+    {
+        AssertMsgFailed(("Invalid state! Not mounted!\n"));
+        return VERR_PDM_MEDIA_NOT_MOUNTED;
+    }
+
+    int rc = pData->pDrvMediaAsync->pfnStartWrite(pData->pDrvMediaAsync, off, pvBuf, cbWrite, pvUser);
+
+    return rc;
+}
+
+/* -=-=-=-=- IMediaAsyncPort -=-=-=-=- */
+
+/** Makes a PDRVBLOCKASYNC out of a PPDMIMEDIAASYNCPORT. */
+#define PDMIMEDIAASYNCPORT_2_DRVBLOCK(pInterface)    ( (PDRVBLOCK((uintptr_t)pInterface - RT_OFFSETOF(DRVBLOCK, IMediaAsyncPort))) )
+
+
+static DECLCALLBACK(int) drvblockAsyncReadCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbRead, void *pvUser)
+{
+    PDRVBLOCK pData = PDMIMEDIAASYNCPORT_2_DRVBLOCK(pInterface);
+
+    return pData->pDrvBlockAsyncPort->pfnReadCompleteNotify(pData->pDrvBlockAsyncPort, uOffset, pvBuf, cbRead, pvUser);
+}
+
+static DECLCALLBACK(int) drvblockAsyncWriteCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbWritten, void *pvUser)
+{
+    PDRVBLOCK pData = PDMIMEDIAASYNCPORT_2_DRVBLOCK(pInterface);
+
+#ifdef VBOX_PERIODIC_FLUSH
+    if (pData->cbFlushInterval)
+    {
+        pData->cbDataWritten += cbWritten;
+        if (pData->cbDataWritten > pData->cbFlushInterval)
+        {
+            pData->cbDataWritten = 0;
+            pData->pDrvMedia->pfnFlush(pData->pDrvMedia);
+        }
+    }
+#endif /* VBOX_PERIODIC_FLUSH */
+
+    return pData->pDrvBlockAsyncPort->pfnWriteCompleteNotify(pData->pDrvBlockAsyncPort, uOffset, pvBuf, cbWritten, pvUser);
+}
 
 /* -=-=-=-=- IBlockBios -=-=-=-=- */
 
@@ -274,6 +357,7 @@ static DECLCALLBACK(int) drvblockGetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDM
      * Call media.
      */
     int rc = pData->pDrvMedia->pfnBiosGetPCHSGeometry(pData->pDrvMedia, &pData->PCHSGeometry);
+
     if (VBOX_SUCCESS(rc))
     {
         *pPCHSGeometry = pData->PCHSGeometry;
@@ -307,6 +391,7 @@ static DECLCALLBACK(int) drvblockSetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPD
      * Call media. Ignore the not implemented return code.
      */
     int rc = pData->pDrvMedia->pfnBiosSetPCHSGeometry(pData->pDrvMedia, pPCHSGeometry);
+
     if (    VBOX_SUCCESS(rc)
         ||  rc == VERR_NOT_IMPLEMENTED)
     {
@@ -344,6 +429,7 @@ static DECLCALLBACK(int) drvblockGetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDM
      * Call media.
      */
     int rc = pData->pDrvMedia->pfnBiosGetLCHSGeometry(pData->pDrvMedia, &pData->LCHSGeometry);
+
     if (VBOX_SUCCESS(rc))
     {
         *pLCHSGeometry = pData->LCHSGeometry;
@@ -377,6 +463,7 @@ static DECLCALLBACK(int) drvblockSetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPD
      * Call media. Ignore the not implemented return code.
      */
     int rc = pData->pDrvMedia->pfnBiosSetLCHSGeometry(pData->pDrvMedia, pLCHSGeometry);
+
     if (    VBOX_SUCCESS(rc)
         ||  rc == VERR_NOT_IMPLEMENTED)
     {
@@ -583,6 +670,10 @@ static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, PDMINT
             return pData->fBiosVisible ? &pData->IBlockBios : NULL;
         case PDMINTERFACE_MOUNT:
             return pData->fMountable ? &pData->IMount : NULL;
+        case PDMINTERFACE_BLOCK_ASYNC:
+            return pData->pDrvMediaAsync ? &pData->IBlockAsync : NULL;
+        case PDMINTERFACE_MEDIA_ASYNC_PORT:
+            return &pData->IMediaAsyncPort;
         default:
             return NULL;
     }
@@ -596,6 +687,7 @@ static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns)
 {
     PDRVBLOCK pData = PDMINS2DATA(pDrvIns, PDRVBLOCK);
     pData->pDrvMedia = NULL;
+    pData->pDrvMediaAsync = NULL;
 }
 
 
@@ -657,6 +749,14 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     pData->IMount.pfnUnlock                 = drvblockUnlock;
     pData->IMount.pfnIsLocked               = drvblockIsLocked;
 
+    /* IBlockAsync. */
+    pData->IBlockAsync.pfnStartRead         = drvblockAsyncReadStart;
+    pData->IBlockAsync.pfnStartWrite        = drvblockAsyncWriteStart;
+
+    /* IMediaAsyncPort. */
+    pData->IMediaAsyncPort.pfnReadCompleteNotify  = drvblockAsyncReadCompleteNotify;
+    pData->IMediaAsyncPort.pfnWriteCompleteNotify = drvblockAsyncWriteCompleteNotify;
+
     /*
      * Get the IBlockPort & IMountNotify interfaces of the above driver/device.
      */
@@ -666,6 +766,10 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         AssertMsgFailed(("Configuration error: No block port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
+
+    /* Try to get the optional async block port interface above. */
+    pData->pDrvBlockAsyncPort = (PPDMIBLOCKASYNCPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_BLOCK_ASYNC_PORT);
+
     pData->pDrvMountNotify = (PPDMIMOUNTNOTIFY)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MOUNT_NOTIFY);
 
     /*
@@ -825,9 +929,13 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     pData->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);
     if (!pData->pDrvMedia)
     {
-        AssertMsgFailed(("Configuration error: No media interface below!\n"));
-        return VERR_PDM_MISSING_INTERFACE_BELOW;
+            AssertMsgFailed(("Configuration error: No media or async media interface below!\n"));
+            return VERR_PDM_MISSING_INTERFACE_BELOW;
     }
+
+    /* Try to get the optional async interface. */
+    pData->pDrvMediaAsync = (PPDMIMEDIAASYNC)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA_ASYNC);
+
     if (RTUuidIsNull(&pData->Uuid))
     {
         if (pData->enmType == PDMBLOCKTYPE_HARD_DISK)
