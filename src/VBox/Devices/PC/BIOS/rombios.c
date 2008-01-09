@@ -2454,6 +2454,7 @@ void ata_detect( )
           lheads = 0;
           lspt = 0;
       }
+      BX_INFO("ata%d-%d: PCHS=%u/%d/%d LCHS=%u/%u/%u\n", channel, slave, cylinders, heads, spt, lcylinders, lheads, lspt);
 #endif /* VBOX */
 
       write_byte(ebda_seg,&EbdaData->ata.devices[device].device,ATA_DEVICE_HD);
@@ -2468,6 +2469,32 @@ void ata_detect( )
       write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.heads, lheads);
       write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.cylinders, lcylinders);
       write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.spt, lspt);
+      if (device < 2)
+      {
+          Bit8u sum, i;
+          unsigned char *fdpt;
+          if (device == 0)
+              fdpt = &EbdaData->fdpt0;
+          else
+              fdpt = &EbdaData->fdpt1;
+
+          /* Update the DPT for drive 0/1 pointed to by Int41/46. This used
+           * to be done at POST time with lots of ugly assembler code, which
+           * isn't worth the effort of converting from AMI to Award CMOS
+           * format. Just do it here. */
+          write_word(ebda_seg, fdpt + 0x00, lcylinders);
+          write_byte(ebda_seg, fdpt + 0x02, lheads);
+          write_byte(ebda_seg, fdpt + 0x0e, lspt);
+          write_word(ebda_seg, fdpt + 0x09, cylinders);
+          write_byte(ebda_seg, fdpt + 0x0b, heads);
+          write_byte(ebda_seg, fdpt + 0x04, spt);
+          write_byte(ebda_seg, fdpt + 0x03, 0xa0);
+          sum = 0;
+          for (i = 0; i < 0xf; i++)
+              sum += read_byte(ebda_seg, fdpt + i);
+          sum = 1 - sum;
+          write_byte(ebda_seg, fdpt + 0x0f, sum);
+      }
 #else /* !VBOX */
       BX_INFO("ata%d-%d: PCHS=%u/%d/%d translation=", channel, slave,cylinders, heads, spt);
 
@@ -8976,6 +9003,7 @@ hard_drive_post:
   SET_INT_VECTOR(0x41, #EBDA_SEG, #0x003D)
   SET_INT_VECTOR(0x46, #EBDA_SEG, #0x004D)
 
+#ifndef VBOX /* This is done later (and the CMOS format is now different). */
   ;; move disk geometry data from CMOS to EBDA disk parameter table(s)
   mov  al, #0x12
   out  #0x70, al
@@ -9257,6 +9285,7 @@ hd1_post_checksum_loop:
   inc   al
   mov   [si], al
 ;;; Done filling EBDA table for hard disk 1.
+#endif /* !VBOX */
 
   ret
 
