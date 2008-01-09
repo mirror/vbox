@@ -115,9 +115,9 @@ extern VBOXHDDBACKEND g_VhdBackend;
 
 static PCVBOXHDDBACKEND aBackends[] =
 {
-    { &g_VmdkBackend },
-    { &g_VhdBackend},
-    { NULL }
+    &g_VmdkBackend,
+    &g_VhdBackend,
+    NULL
 };
 
 
