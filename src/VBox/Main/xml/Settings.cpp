@@ -257,16 +257,16 @@ stdx::char_auto_ptr ToStringInteger (uint64_t aValue, unsigned int aBase,
     switch (aBits)
     {
         case 8:
-            flags = RTSTR_F_8BIT;
+            flags |= RTSTR_F_8BIT;
             break;
         case 16:
-            flags = RTSTR_F_16BIT;
+            flags |= RTSTR_F_16BIT;
             break;
         case 32:
-            flags = RTSTR_F_32BIT;
+            flags |= RTSTR_F_32BIT;
             break;
         case 64:
-            flags = RTSTR_F_64BIT;
+            flags |= RTSTR_F_64BIT;
             break;
         default:
             throw ENotImplemented (RT_SRC_POS);

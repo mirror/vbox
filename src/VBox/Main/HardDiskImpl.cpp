@@ -3249,7 +3249,7 @@ HRESULT HISCSIHardDisk::saveSettings (settings::Key &aHDNode,
 
     /* port (optional, defaults to 0) */
     aStorageNode.setValueOr <USHORT> ("port", mPort, 0);
-    /* lun (optional, force 0x format to coform to XML Schema!) */
+    /* lun (optional, force 0x format to conform to XML Schema!) */
     aStorageNode.setValueOr <ULONG64> ("lun", mLun, 0, 16);
     /* userName (optional) */
     aStorageNode.setValueOr <Bstr> ("userName", mUserName, Bstr::Null);
