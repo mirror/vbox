@@ -221,7 +221,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     if (    g_pSUPGlobalInfoPage->u32Magic == SUPGLOBALINFOPAGE_MAGIC
         &&  g_pSUPGlobalInfoPage->u32UpdateIntervalNS >= 250000000 /* 0.25s */)
         return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                          N_("The GIP update interval is too big. u32UpdateIntervalNS=%RU32 (u32UpdateHz=%RU32)\n"),
+                          N_("The GIP update interval is too big. u32UpdateIntervalNS=%RU32 (u32UpdateHz=%RU32)"),
                           g_pSUPGlobalInfoPage->u32UpdateIntervalNS, g_pSUPGlobalInfoPage->u32UpdateHz);
 
     /*
@@ -270,7 +270,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.fTSCVirtualized = true; /* trap rdtsc */
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
-                          N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc);
+                          N_("Configuration error: Failed to querying bool value \"UseRealTSC\""));
 
     /* source */
     rc = CFGMR3QueryBool(pCfgHandle, "UseRealTSC", &pVM->tm.s.fTSCUseRealTSC);
@@ -278,7 +278,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.fTSCUseRealTSC = false; /* use virtual time */
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
-                          N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc);
+                          N_("Configuration error: Failed to querying bool value \"UseRealTSC\""));
     if (!pVM->tm.s.fTSCUseRealTSC)
         pVM->tm.s.fTSCVirtualized = true;
 
@@ -306,7 +306,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     }
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
-                          N_("Configuration error: Failed to querying uint64_t value \"TSCTicksPerSecond\". (%Vrc)"), rc);
+                          N_("Configuration error: Failed to querying uint64_t value \"TSCTicksPerSecond\""));
     else if (   pVM->tm.s.cTSCTicksPerSecond < _1M
              || pVM->tm.s.cTSCTicksPerSecond >= _4G)
         return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
@@ -335,21 +335,21 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.u32VirtualSyncScheduleSlack           =   100000; /* 0.100ms (ASSUMES virtual time is nanoseconds) */
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
-                          N_("Configuration error: Failed to querying 32-bit integer value \"ScheduleSlack\". (%Vrc)"), rc);
+                          N_("Configuration error: Failed to querying 32-bit integer value \"ScheduleSlack\""));
 
     rc = CFGMR3QueryU64(pCfgHandle, "CatchUpStopThreshold", &pVM->tm.s.u64VirtualSyncCatchUpStopThreshold);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u64VirtualSyncCatchUpStopThreshold    =   500000; /* 0.5ms */
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
-                          N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpStopThreshold\". (%Vrc)"), rc);
+                          N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpStopThreshold\""));
 
     rc = CFGMR3QueryU64(pCfgHandle, "CatchUpGiveUpThreshold", &pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold  = UINT64_C(60000000000); /* 60 sec */
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
-                          N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpGiveUpThreshold\". (%Vrc)"), rc);
+                          N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpGiveUpThreshold\""));
 
 
 #define TM_CFG_PERIOD(iPeriod, DefStart, DefPct) \
@@ -360,7 +360,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
             u64 = UINT64_C(DefStart); \
         else if (VBOX_FAILURE(rc)) \
-            return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpThreshold" #iPeriod "\". (%Vrc)"), rc); \
+            return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpThreshold" #iPeriod "\"")); \
         if (    (iPeriod > 0 && u64 <= pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod - 1].u64Start) \
             ||  u64 >= pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold) \
             return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Configuration error: Invalid start of period #" #iPeriod ": %RU64"), u64); \
@@ -369,7 +369,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
             pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod].u32Percentage = (DefPct); \
         else if (VBOX_FAILURE(rc)) \
-            return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: Failed to querying 32-bit integer value \"CatchUpPrecentage" #iPeriod "\". (%Vrc)"), rc); \
+            return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: Failed to querying 32-bit integer value \"CatchUpPrecentage" #iPeriod "\"")); \
     } while (0)
     /* This needs more tuning. Not sure if we really need so many period and be so gentle. */
     TM_CFG_PERIOD(0,     750000,   5); /* 0.75ms at 1.05x */
@@ -393,7 +393,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.offUTC = 0; /* ns */
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
-                          N_("Configuration error: Failed to querying 64-bit integer value \"UTCOffset\". (%Vrc)"), rc);
+                          N_("Configuration error: Failed to querying 64-bit integer value \"UTCOffset\""));
 
     /*
      * Setup the warp drive.
@@ -405,7 +405,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.u32VirtualWarpDrivePercentage = 100;
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
-                          N_("Configuration error: Failed to querying uint32_t value \"WarpDrivePercent\". (%Vrc)"), rc);
+                          N_("Configuration error: Failed to querying uint32_t value \"WarpDrivePercent\""));
     else if (   pVM->tm.s.u32VirtualWarpDrivePercentage < 2
              || pVM->tm.s.u32VirtualWarpDrivePercentage > 20000)
         return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
@@ -424,7 +424,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         u32Millies = 10;
     else if (VBOX_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
-                          N_("Configuration error: Failed to query uint32_t value \"TimerMillies\", rc=%Vrc.\n"), rc);
+                          N_("Configuration error: Failed to query uint32_t value \"TimerMillies\""));
     rc = RTTimerCreate(&pVM->tm.s.pTimer, u32Millies, tmR3TimerCallback, pVM);
     if (VBOX_FAILURE(rc))
     {
