@@ -18,6 +18,7 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
+if1of ($(BUILD_TARGET),linux l4)
 SYSMODS  = vboxvideo_drv
 DLLS     = vboxvideo_drv_70 vboxvideo_drv_71 vboxvideo_drv_13 vboxvideo_drv_14
 
@@ -154,5 +155,25 @@ vboxvideo_drv_14_INCS = \
 vboxvideo_drv_14_SOURCES  = \
 	vboxvideo_14.c \
 	vboxutils.c
+endif
+
+ifeq ($(BUILD_TARGET),solaris)
+DLLS     = vboxvideo_drv
+
+vboxvideo_drv_TEMPLATE = VBOXGUESTR3DLL
+vboxvideo_drv_DEFS := \
+	XFree86Server IN_MODULE XFree86Module XFree86LOADER \
+	IN_RING3 VBOX XORG_7X RENDER=1
+vboxvideo_drv_INCS = \
+	../x11include/7.1 \
+	../x11include/7.1/X11 \
+	../x11include/7.1/xorg
+vboxvideo_drv_SOURCES  = \
+	vboxvideo_70.c \
+	vboxutils.c
+vboxvideo_drv_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
+endif
 
 include	$(PATH_KBUILD)/footer.kmk

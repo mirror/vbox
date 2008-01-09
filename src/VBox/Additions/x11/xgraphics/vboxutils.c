@@ -26,7 +26,9 @@
 #include "compiler.h"
 #include "cursorstr.h"
 
+#ifndef RT_OS_SOLARIS
 #include <asm/ioctl.h>
+#endif
 
 #include "vboxvideo.h"
 
@@ -102,7 +104,16 @@ static Bool vbox_vmmcall (ScrnInfoPtr pScrn, VBOXPtr pVBox,
     int err;
 
     TRACE_ENTRY ();
+#ifdef RT_OS_SOLARIS
+    err = VbglR3GRPerform(hdrp);
+    if (RT_FAILURE(err))
+    {
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VbglR3Perform failed. rc=%d\n", err);
+        err = -1;
+    }
+#else
     err = ioctl (pVBox->vbox_fd, IOCTL_VBOXGUEST_VMMREQUEST, hdrp);
+#endif
     if (err < 0)
         RETERROR(pScrn->scrnIndex, FALSE,
                  "Ioctl call failed during a request to the virtual machine: %s\n",
@@ -124,6 +135,15 @@ vbox_host_can_hwcursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     int rc;
     int scrnIndex = pScrn->scrnIndex;
 
+#ifdef RT_OS_SOLARIS
+    uint32_t fFeatures;
+    rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
+    if (VBOX_FAILURE(rc))
+        RETERROR(scrnIndex, FALSE,
+            "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", rc);
+
+    return (fFeatures & VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER) ? FALSE : TRUE;
+#else
     rc = vmmdevInitRequest ((VMMDevRequestHeader*)&req, VMMDevReq_GetMouseStatus);
     if (VBOX_FAILURE (rc))
         RETERROR(scrnIndex, FALSE,
@@ -135,6 +155,7 @@ vbox_host_can_hwcursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
             strerror(errno));
 
     return (req.mouseFeatures & VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER) ? FALSE : TRUE;
+#endif
 }
 
 void
@@ -145,11 +166,15 @@ vbox_close(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     xfree (pVBox->reqp);
     pVBox->reqp = NULL;
 
+#ifdef RT_OS_SOLARIS
+    VbglR3Term();
+#else
     if (close (pVBox->vbox_fd))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
             "Unable to close the virtual machine device (file %d): %s\n",
             pVBox->vbox_fd, strerror (errno));
     pVBox->vbox_fd = -1;
+#endif
 }
 
 /**
@@ -392,6 +417,21 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     
     pVBox->useVbva = FALSE;
 
+#ifdef RT_OS_SOLARIS
+    if (pVBox->reqp)
+    {
+        /* still open, just re-enable VBVA after CloseScreen was called */
+        pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
+        return TRUE;
+    }
+
+    rc = VbglR3Init();
+    if (RT_FAILURE(rc))
+    {
+        xf86DrvMsg(scrnIndex, X_ERROR, "VbglR3Init failed rc=%d.\n", rc);
+        return FALSE;
+    }
+#else
     if (pVBox->vbox_fd != -1 && pVBox->reqp)
     {
         /* still open, just re-enable VBVA after CloseScreen was called */
@@ -407,6 +447,7 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
                    strerror (errno));
         return FALSE;
     }
+#endif
 
     size = vmmdevGetRequestSize (VMMDevReq_SetPointerShape);
 
@@ -427,7 +468,9 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         goto fail1;
     }
 
+#ifndef RT_OS_SOLARIS
     pVBox->vbox_fd = fd;
+#endif
     pVBox->reqp = p;
     pVBox->pCurs = NULL;
     pVBox->use_hw_cursor = vbox_host_can_hwcursor(pScrn, pVBox);
@@ -440,12 +483,16 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     xfree (p);
 
  fail0:
+#ifdef RT_OS_SOLARIS
+    VbglR3Term();
+#else
     if (close (fd))
     {
         xf86DrvMsg(scrnIndex, X_ERROR,
                    "Error closing kernel module file descriptor(%d): %s\n",
                    fd, strerror (errno));
     }
+#endif
     return FALSE;
 }
 

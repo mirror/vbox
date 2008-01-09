@@ -729,12 +729,14 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     }
 #endif
 
-    /** @todo I'll remove this size check after testing. */
     uint32_t cbBuf = 0;
+    int rc = 0;
+    int requestType = 0;
     if (    Cmd >= VBOXGUEST_IOCTL_VMMREQUEST(0)
         &&  Cmd <= VBOXGUEST_IOCTL_VMMREQUEST(0xfff))
     {
         cbBuf = sizeof(VMMDevRequestHeader);
+        requestType = 1;
         LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_VMMREQUEST"));
     }
 #ifdef VBOX_HGCM
@@ -788,18 +790,37 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
             }
         }
     }
-#if 0
-    /* cbBuf must actually get the size based on the VMM request type.
-     * Anyway, this obtaining cbBuf businesss will be removed eventually.
-     */
-    if (RT_UNLIKELY(cbBuf != IOCPARM_LEN(Cmd)))
+    if (RT_UNLIKELY(cbBuf > IOCPARM_LEN(Cmd)))
     {
         LogRel((DEVICE_NAME ":VBoxAddSolarisIOCtl: buffer size mismatch. size=%d expected=%d.\n", IOCPARM_LEN(Cmd), cbBuf));
         return EINVAL;
     }
-#endif
 
-    cbBuf = IOCPARM_LEN(Cmd);
+    /*
+     * Read the header.
+     */
+    if (requestType == 1)
+    {
+        VMMDevRequestHeader Hdr;
+        rc = ddi_copyin((void*)pArg, &Hdr, sizeof(Hdr), Mode);
+        if (RT_UNLIKELY(rc))
+        {
+            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyin failed to read header pArg=%p Cmd=%d. rc=%d.\n", pArg, Cmd, rc));
+            return EINVAL;
+        }
+
+        cbBuf = Hdr.size;
+        if (RT_UNLIKELY(cbBuf < sizeof(Hdr)))
+        {
+            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: Invalid request size (%d) in header.\n", cbBuf));
+            return EINVAL;
+        }
+    }
+    /** @todo handle HGCM calls. */
+
+    /*
+     * Read the request.
+     */
     void *pvBuf = RTMemTmpAlloc(cbBuf);
     if (RT_UNLIKELY(!pvBuf))
     {
@@ -807,7 +828,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         return ENOMEM;
     }
 
-    int rc = ddi_copyin((void *)pArg, pvBuf, cbBuf, Mode);
+    rc = ddi_copyin((void *)pArg, pvBuf, cbBuf, Mode);
     if (RT_UNLIKELY(rc))
     {
         RTMemTmpFree(pvBuf);
@@ -821,6 +842,9 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     }
     Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: pSession=%p pid=%d.\n", pSession, (int)RTProcSelf()));
 
+    /*
+     * Process the IOCtl.
+     */
     size_t cbDataReturned;
     rc = VBoxGuestCommonIOCtl(Cmd, &g_DevExt, pSession, pvBuf, cbBuf, &cbDataReturned);
     if (RT_SUCCESS(rc))
