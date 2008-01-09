@@ -92,7 +92,9 @@
 //   ATA driver
 //   - EBDA segment.
 //     I used memory starting at 0x121 in the segment
+#ifndef VBOX
 //   - the translation policy is defined in cmos regs 0x39 & 0x3a
+#endif /* !VBOX */
 //
 // TODO :
 //
@@ -201,6 +203,10 @@
 #endif
 #if BX_APM && BX_CPU<3
 #    error APM BIOS can only be used with 386+ cpu
+#endif
+
+#if defined(VBOX) && !BX_USE_ATADRV
+#    error VBOX requires enabling the ATA/ATAPI driver
 #endif
 
 #ifndef VBOX
@@ -2389,6 +2395,10 @@ void ata_detect( )
     if(type == ATA_TYPE_ATA) {
       Bit32u sectors;
       Bit16u cylinders, heads, spt, blksize;
+#ifdef VBOX
+      Bit16u lcylinders, lheads, lspt;
+      Bit8u chsgeo_base;
+#endif /* VBOX */
       Bit8u  translation, removable, mode;
 
       //Temporary values to do the transfer
@@ -2415,6 +2425,35 @@ void ata_detect( )
       /** @todo update sectors to be a 64 bit number (also lba...). */
       if (sectors == 268435455)
         sectors = read_dword(get_SS(),buffer+(100*2)); // words 100 to 103 (someday)
+      switch (device)
+      {
+          case 0:
+              chsgeo_base = 0x1e;
+              break;
+          case 1:
+              chsgeo_base = 0x26;
+              break;
+          case 2:
+              chsgeo_base = 0x67;
+              break;
+          case 3:
+              chsgeo_base = 0x70;
+              break;
+          default:
+              chsgeo_base = 0;
+      }
+      if (chsgeo_base != 0)
+      {
+          lcylinders = inb_cmos(chsgeo_base) + (inb_cmos(chsgeo_base+1) << 8);
+          lheads = inb_cmos(chsgeo_base+2);
+          lspt = inb_cmos(chsgeo_base+7);
+      }
+      else
+      {
+          lcylinders = 0;
+          lheads = 0;
+          lspt = 0;
+      }
 #endif /* VBOX */
 
       write_byte(ebda_seg,&EbdaData->ata.devices[device].device,ATA_DEVICE_HD);
@@ -2425,6 +2464,11 @@ void ata_detect( )
       write_word(ebda_seg,&EbdaData->ata.devices[device].pchs.cylinders, cylinders);
       write_word(ebda_seg,&EbdaData->ata.devices[device].pchs.spt, spt);
       write_dword(ebda_seg,&EbdaData->ata.devices[device].sectors, sectors);
+#ifdef VBOX
+      write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.heads, lheads);
+      write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.cylinders, lcylinders);
+      write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.spt, lspt);
+#else /* !VBOX */
       BX_INFO("ata%d-%d: PCHS=%u/%d/%d translation=", channel, slave,cylinders, heads, spt);
 
       translation = inb_cmos(0x39 + channel/2);
@@ -2435,32 +2479,16 @@ void ata_detect( )
 
       switch (translation) {
         case ATA_TRANSLATION_NONE:
-#ifndef VBOX
           BX_INFO("none");
-#else /* VBOX */
-          bios_printf(BIOS_PRINTF_INFO, "none");
-#endif /* VBOX */
           break;
         case ATA_TRANSLATION_LBA:
-#ifndef VBOX
           BX_INFO("lba");
-#else /* VBOX */
-          bios_printf(BIOS_PRINTF_INFO, "lba");
-#endif /* VBOX */
           break;
         case ATA_TRANSLATION_LARGE:
-#ifndef VBOX
           BX_INFO("large");
-#else /* VBOX */
-          bios_printf(BIOS_PRINTF_INFO, "large");
-#endif /* VBOX */
           break;
         case ATA_TRANSLATION_RECHS:
-#ifndef VBOX
           BX_INFO("r-echs");
-#else /* VBOX */
-          bios_printf(BIOS_PRINTF_INFO, "r-echs");
-#endif /* VBOX */
           break;
         }
       switch (translation) {
@@ -2497,15 +2525,12 @@ void ata_detect( )
         }
       // clip to 1024 cylinders in lchs
       if (cylinders > 1024) cylinders=1024;
-#ifndef VBOX
       BX_INFO(" LCHS=%d/%d/%d\n", cylinders, heads, spt);
-#else /* VBOX */
-      bios_printf(BIOS_PRINTF_INFO, " LCHS=%d/%d/%d\n", cylinders, heads, spt);
-#endif /* VBOX */
 
       write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.heads, heads);
       write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.cylinders, cylinders);
       write_word(ebda_seg,&EbdaData->ata.devices[device].lchs.spt, spt);
+#endif /* VBOX */
 
       // fill hdidmap
       write_byte(ebda_seg,&EbdaData->ata.hdidmap[hdcount], device);

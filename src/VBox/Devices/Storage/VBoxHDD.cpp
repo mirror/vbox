@@ -59,34 +59,58 @@ static DECLCALLBACK(uint64_t) vdiGetSize(PPDMIMEDIA pInterface)
 
 
 /**
- * Get stored media geometry - BIOS property.
+ * Get stored media PCHS geometry - BIOS property.
  *
- * @see PDMIMEDIA::pfnBiosGetGeometry for details.
+ * @see PDMIMEDIA::pfnBiosGetPCHSGeometry for details.
  */
-static DECLCALLBACK(int) vdiBiosGetGeometry(PPDMIMEDIA pInterface, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors)
+static DECLCALLBACK(int) vdiBiosGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
+{
+    LogFlow(("%s: returns VERR_NOT_IMPLEMENTED\n", __FUNCTION__));
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Set stored media PCHS geometry - BIOS property.
+ *
+ * @see PDMIMEDIA::pfnBiosSetPCHSGeometry for details.
+ */
+static DECLCALLBACK(int) vdiBiosSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry)
+{
+    LogFlow(("%s: returns VERR_NOT_IMPLEMENTED\n", __FUNCTION__));
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Get stored media LCHS geometry - BIOS property.
+ *
+ * @see PDMIMEDIA::pfnBiosGetLCHSGeometry for details.
+ */
+static DECLCALLBACK(int) vdiBiosGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    int rc = VDIDiskGetGeometry(pData, pcCylinders, pcHeads, pcSectors);
+    int rc = VDIDiskGetLCHSGeometry(pData, pLCHSGeometry);
     if (VBOX_SUCCESS(rc))
     {
-        LogFlow(("vdiBiosGetGeometry: returns VINF_SUCCESS\n"));
+        LogFlow(("%s: returns VINF_SUCCESS\n", __FUNCTION__));
         return VINF_SUCCESS;
     }
-    Log(("vdiBiosGetGeometry: The Bios geometry data was not available.\n"));
+    Log(("%s: The Bios geometry data was not available.\n", __FUNCTION__));
     return VERR_PDM_GEOMETRY_NOT_SET;
 }
 
 
 /**
- * Set stored media geometry - BIOS property.
+ * Set stored media LCHS geometry - BIOS property.
  *
- * @see PDMIMEDIA::pfnBiosSetGeometry for details.
+ * @see PDMIMEDIA::pfnBiosSetLCHSGeometry for details.
  */
-static DECLCALLBACK(int) vdiBiosSetGeometry(PPDMIMEDIA pInterface, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors)
+static DECLCALLBACK(int) vdiBiosSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    int rc = VDIDiskSetGeometry(pData, cCylinders, cHeads, cSectors);
-    LogFlow(("vdiBiosSetGeometry: returns %Vrc (%d,%d,%d)\n", rc, cCylinders, cHeads, cSectors));
+    int rc = VDIDiskSetLCHSGeometry(pData, pLCHSGeometry);
+    LogFlow(("%s: returns %Vrc (%d,%d,%d)\n", __FUNCTION__, rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
 }
 
@@ -160,28 +184,6 @@ static DECLCALLBACK(bool) vdiIsReadOnly(PPDMIMEDIA pInterface)
     PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
     LogFlow(("vdiIsReadOnly: returns %d\n", VDIDiskIsReadOnly(pData)));
     return VDIDiskIsReadOnly(pData);
-}
-
-
-/** @copydoc PDMIMEDIA::pfnBiosGetTranslation */
-static DECLCALLBACK(int) vdiBiosGetTranslation(PPDMIMEDIA pInterface,
-                                               PPDMBIOSTRANSLATION penmTranslation)
-{
-    PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    int rc = VDIDiskGetTranslation(pData, penmTranslation);
-    LogFlow(("vdiBiosGetTranslation: returns %Vrc (%d)\n", rc, *penmTranslation));
-    return rc;
-}
-
-
-/** @copydoc PDMIMEDIA::pfnBiosSetTranslation */
-static DECLCALLBACK(int) vdiBiosSetTranslation(PPDMIMEDIA pInterface,
-                                               PDMBIOSTRANSLATION enmTranslation)
-{
-    PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    int rc = VDIDiskSetTranslation(pData, enmTranslation);
-    LogFlow(("vdiBiosSetTranslation: returns %Vrc (%d)\n", rc, enmTranslation));
-    return rc;
 }
 
 
@@ -300,10 +302,10 @@ static DECLCALLBACK(int) vdiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->IMedia.pfnGetSize            = vdiGetSize;
     pData->IMedia.pfnGetUuid            = vdiGetUuid;
     pData->IMedia.pfnIsReadOnly         = vdiIsReadOnly;
-    pData->IMedia.pfnBiosGetGeometry    = vdiBiosGetGeometry;
-    pData->IMedia.pfnBiosSetGeometry    = vdiBiosSetGeometry;
-    pData->IMedia.pfnBiosGetTranslation = vdiBiosGetTranslation;
-    pData->IMedia.pfnBiosSetTranslation = vdiBiosSetTranslation;
+    pData->IMedia.pfnBiosGetPCHSGeometry = vdiBiosGetPCHSGeometry;
+    pData->IMedia.pfnBiosSetPCHSGeometry = vdiBiosSetPCHSGeometry;
+    pData->IMedia.pfnBiosGetLCHSGeometry = vdiBiosGetLCHSGeometry;
+    pData->IMedia.pfnBiosSetLCHSGeometry = vdiBiosSetLCHSGeometry;
 
     /*
      * Validate configuration and find the great to the level of umpteen grandparent.

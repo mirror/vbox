@@ -491,11 +491,9 @@ Drivers_SOURCES    = \
 	Storage/DrvHostBase.cpp \
 	Storage/DrvHostDVD.cpp \
 	Storage/DrvHostFloppy.cpp \
-	Storage/DrvHostRawDisk.cpp \
 	Storage/DrvMediaISO.cpp \
 	Storage/DrvRawImage.cpp \
 	Storage/DrvVD.cpp \
-	Storage/DrvVmdk.cpp \
 	Storage/VBoxHDD.cpp
 
 # -- OS specific --
@@ -563,8 +561,7 @@ Drivers_SOURCES.solaris = \
 	Audio/solaudio.c \
 	Network/DrvTAP.cpp \
 	Storage/DrvHostBase.cpp \
-	Storage/DrvHostDVD.cpp \
-	Storage/DrvHostRawDisk.cpp
+	Storage/DrvHostDVD.cpp
  ifdef VBOX_WITH_CROSSBOW
   Drivers_DEFS += VBOX_WITH_CROSSBOW
  endif

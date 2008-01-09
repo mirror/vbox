@@ -3611,7 +3611,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(Size) (ULONG64 *aSize)
     AutoLock alock (this);
     CHECK_READY();
 
-/// @todo (r=dmik) will need this if we add suppord for differencing VMDKs
+/// @todo (r=dmik) will need this if we add support for differencing VMDKs
 //
 //     /* only a non-differencing image knows the logical size */
 //     if (isDifferencing())
@@ -3770,7 +3770,7 @@ HRESULT HVMDKImage::trySetRegistered (BOOL aRegistered)
                 tr ("Image file '%ls' is not yet created for this hard disk"),
                 mFilePathFull.raw());
 
-/// @todo (r=dmik) will need this if we add suppord for differencing VMDKs
+/// @todo (r=dmik) will need this if we add support for differencing VMDKs
 //         if (isDifferencing())
 //             return setError (E_FAIL,
 //                 tr ("Hard disk '%ls' is differencing and cannot be unregistered "
@@ -3939,7 +3939,7 @@ HVMDKImage::cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
     ComAssertMsgFailed (("Not implemented"));
     return E_NOTIMPL;
 
-/// @todo (r=dmik) will need this if we add suppord for differencing VMDKs
+/// @todo (r=dmik) will need this if we add support for differencing VMDKs
 //  Use code from HVirtualDiskImage::cloneToImage as an example.
 }
 
@@ -3959,7 +3959,7 @@ HVMDKImage::createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
     ComAssertMsgFailed (("Not implemented"));
     return E_NOTIMPL;
 
-/// @todo (r=dmik) will need this if we add suppord for differencing VMDKs
+/// @todo (r=dmik) will need this if we add support for differencing VMDKs
 //  Use code from HVirtualDiskImage::createDiffImage as an example.
 }
 
@@ -4122,7 +4122,7 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
         /* query logical size only for non-differencing images */
         if (!mParent)
         {
-            uint64_t size = VDGetSize (mContainer);
+            uint64_t size = VDGetSize (mContainer, 0);
             /* convert to MBytes */
             mSize = size / 1024 / 1024;
         }
@@ -4958,7 +4958,7 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
         /* query logical size only for non-differencing images */
         if (!mParent)
         {
-            uint64_t size = VDGetSize (mContainer);
+            uint64_t size = VDGetSize (mContainer, 0);
             /* convert to MBytes */
             mSize = size / 1024 / 1024;
         }
@@ -5822,7 +5822,7 @@ HRESULT HVHDImage::queryInformation (Bstr *aAccessError)
         /* query logical size only for non-differencing images */
         if (!mParent)
         {
-            uint64_t size = VDGetSize (mContainer);
+            uint64_t size = VDGetSize (mContainer, 0);
             /* convert to MBytes */
             mSize = size / 1024 / 1024;
         }

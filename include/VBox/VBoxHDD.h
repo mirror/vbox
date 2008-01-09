@@ -373,53 +373,50 @@ VBOXDDU_DECL(unsigned) VDIDiskGetBlockSize(PVDIDISK pDisk);
 VBOXDDU_DECL(unsigned) VDIDiskGetBufferSize(PVDIDISK pDisk);
 
 /**
- * Get virtual disk geometry stored in image file.
+ * Get virtual disk PCHS geometry stored in image file.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_NOT_OPENED if no one VDI image is opened in HDD container.
  * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the HDD container.
  * @param   pDisk           Pointer to VDI HDD container.
- * @param   pcCylinders     Where to store the number of cylinders. NULL is ok.
- * @param   pcHeads         Where to store the number of heads. NULL is ok.
- * @param   pcSectors       Where to store the number of sectors. NULL is ok.
+ * @param   pPCHSGeometry   Where to store PCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDIDiskGetGeometry(PVDIDISK pDisk, unsigned *pcCylinders, unsigned *pcHeads, unsigned *pcSectors);
+VBOXDDU_DECL(int) VDIDiskGetPCHSGeometry(PVDIDISK pDisk, PPDMMEDIAGEOMETRY pPCHSGeometry);
 
 /**
- * Store virtual disk geometry into base image file of HDD container.
+ * Store virtual disk PCHS geometry into base image file of HDD container.
  *
  * Note that in case of unrecoverable error all images of HDD container will be closed.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_NOT_OPENED if no one VDI image is opened in HDD container.
  * @param   pDisk           Pointer to VDI HDD container.
- * @param   cCylinders      Number of cylinders.
- * @param   cHeads          Number of heads.
- * @param   cSectors        Number of sectors.
+ * @param   pPCHSGeometry   Where to store LCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDIDiskSetGeometry(PVDIDISK pDisk, unsigned cCylinders, unsigned cHeads, unsigned cSectors);
+VBOXDDU_DECL(int) VDIDiskSetPCHSGeometry(PVDIDISK pDisk, PCPDMMEDIAGEOMETRY pPCHSGeometry);
 
 /**
- * Get virtual disk translation mode stored in image file.
+ * Get virtual disk LCHS geometry stored in image file.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_NOT_OPENED if no one VDI image is opened in HDD container.
+ * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the HDD container.
  * @param   pDisk           Pointer to VDI HDD container.
- * @param   penmTranslation Where to store the translation mode (see pdm.h).
+ * @param   pLCHSGeometry   Where to store LCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDIDiskGetTranslation(PVDIDISK pDisk, PPDMBIOSTRANSLATION penmTranslation);
+VBOXDDU_DECL(int) VDIDiskGetLCHSGeometry(PVDIDISK pDisk, PPDMMEDIAGEOMETRY pLCHSGeometry);
 
 /**
- * Store virtual disk translation mode into base image file of HDD container.
+ * Store virtual disk LCHS geometry into base image file of HDD container.
  *
  * Note that in case of unrecoverable error all images of HDD container will be closed.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_NOT_OPENED if no one VDI image is opened in HDD container.
  * @param   pDisk           Pointer to VDI HDD container.
- * @param   enmTranslation  Translation mode (see pdm.h).
+ * @param   pLCHSGeometry   Where to store LCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDIDiskSetTranslation(PVDIDISK pDisk, PDMBIOSTRANSLATION enmTranslation);
+VBOXDDU_DECL(int) VDIDiskSetLCHSGeometry(PVDIDISK pDisk, PCPDMMEDIAGEOMETRY pLCHSGeometry);
 
 /**
  * Get number of opened images in HDD container.

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2006-2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,16 +26,20 @@
 typedef struct VBOXHDDBACKEND
 {
     /**
+     * The name of the backend (constant string).
+     */
+    const char *pszBackendName;
+
+    /**
      * The size of the structure.
      */
     uint32_t cbSize;
 
     /**
-     * Check if an file is valid for the backend.
+     * Check if a file is valid for the backend.
      *
      * @returns VBox status code.
-     * @param   pszFilename     Name of the image file to open. Guaranteed to be available and
-     *                          unchanged during the lifetime of this image.
+     * @param   pszFilename     Name of the image file.
      */
     DECLR3CALLBACKMEMBER(int, pfnCheckIfValid, (const char *pszFilename));
 
@@ -62,17 +66,33 @@ typedef struct VBOXHDDBACKEND
      * @param   cbSize          Image size in bytes.
      * @param   uImageFlags     Flags specifying special image features.
      * @param   pszComment      Pointer to image comment. NULL is ok.
-     * @param   cCylinders      Number of cylinders (must be <= 16383).
-     * @param   cHeads          Number of heads (must be <= 16).
-     * @param   cSectors        Number of sectors (must be <= 63).
+     * @param   pPCHSGeometry   Physical drive geometry CHS <= (16383,16,255).
+     * @param   pLCHSGeometry   Logical drive geometry CHS <= (1024,255,63).
      * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
      * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
      * @param   pvUser          User argument for the progress callback.
+     * @param   uPercentStart   Starting value for progress percentage.
+     * @param   uPercentSpan    Span for varying progress percentage.
      * @param   pfnError        Callback for setting extended error information.
      * @param   pvErrorUser     Opaque parameter for pfnError.
      * @param   ppvBackendData  Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors, unsigned uOpenFlags, PFNVMPROGRESS pfnProgress, void *pvUser, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, PCPDMMEDIAGEOMETRY pPCHSGeometry, PCPDMMEDIAGEOMETRY pLCHSGeometry, unsigned uOpenFlags, PFNVMPROGRESS pfnProgress, void *pvUser, unsigned uPercentStart, unsigned uPercentSpan, PFNVDERROR pfnError, void *pvErrorUser, void **ppvBackendData));
+
+    /**
+     * Rename a disk image. Only needs to work as long as the operating
+     * system's rename file functionality is usable. If an attempt is made to
+     * rename an image to a location on another disk/filesystem, this function
+     * may just fail with an appropriate error code (not changing the opened
+     * image data at all). Also works only on images which actually refer to
+     * files (and not for raw disk images).
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pszFilename     New name of the image file. Guaranteed to be available and
+     *                          unchanged during the lifetime of this image.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRename, (void *pvBackendData, const char *pszFilename));
 
     /**
      * Close a disk image.
@@ -89,6 +109,7 @@ typedef struct VBOXHDDBACKEND
      *
      * @returns VBox status code.
      * @returns VINF_VDI_BLOCK_FREE if this image contains no data for this block.
+     * @returns VINF_VDI_BLOCK_ZERO if this image contains a zero data block.
      * @param   pvBackendData   Opaque state data for this image.
      * @param   off             Offset to start reading from.
      * @param   pvBuf           Where to store the read bits.
@@ -134,6 +155,14 @@ typedef struct VBOXHDDBACKEND
     DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pvBackendData));
 
     /**
+     * Get the version of a disk image.
+     *
+     * @returns version of disk image.
+     * @param   pvBackendData   Opaque state data for this image.
+     */
+    DECLR3CALLBACKMEMBER(unsigned, pfnGetVersion, (void *pvBackendData));
+
+    /**
      * Get the type information for a disk image.
      *
      * @returns VBox status code.
@@ -143,56 +172,68 @@ typedef struct VBOXHDDBACKEND
     DECLR3CALLBACKMEMBER(int, pfnGetImageType, (void *pvBackendData, PVDIMAGETYPE penmType));
 
     /**
-     * Get the size of a disk image.
+     * Get the capacity of a disk image.
      *
-     * @returns size of disk image.
+     * @returns size of disk image in bytes.
      * @param   pvBackendData   Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(uint64_t, pfnGetSize, (void *pvBackendData));
 
     /**
-     * Get virtual disk geometry stored in a disk image.
+     * Get the file size of a disk image.
+     *
+     * @returns size of disk image in bytes.
+     * @param   pvBackendData   Opaque state data for this image.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetFileSize, (void *pvBackendData));
+
+    /**
+     * Get virtual disk PCHS geometry stored in a disk image.
      *
      * @returns VBox status code.
      * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the image.
      * @param   pvBackendData   Opaque state data for this image.
-     * @param   pcCylinders     Where to store the number of cylinders. Never NULL.
-     * @param   pcHeads         Where to store the number of heads. Never NULL.
-     * @param   pcSectors       Where to store the number of sectors. Never NULL.
+     * @param   pPCHSGeometry   Where to store the geometry. Not NULL.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetGeometry, (void *pvBackendData, unsigned *pcCylinders, unsigned *pcHeads, unsigned *pcSectors));
+    DECLR3CALLBACKMEMBER(int, pfnGetPCHSGeometry, (void *pvBackendData, PPDMMEDIAGEOMETRY pPCHSGeometry));
 
     /**
-     * Set virtual disk geometry stored in a disk image.
+     * Set virtual disk PCHS geometry stored in a disk image.
      * Only called if geometry is different than before.
      *
      * @returns VBox status code.
      * @param   pvBackendData   Opaque state data for this image.
-     * @param   cCylinders      Number of cylinders.
-     * @param   cHeads          Number of heads.
-     * @param   cSectors        Number of sectors.
+     * @param   pPCHSGeometry   Where to load the geometry from. Not NULL.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetGeometry, (void *pvBackendData, unsigned cCylinders, unsigned cHeads, unsigned cSectors));
+    DECLR3CALLBACKMEMBER(int, pfnSetPCHSGeometry, (void *pvBackendData, PCPDMMEDIAGEOMETRY pPCHSGeometry));
 
     /**
-     * Get virtual disk translation mode stored in a disk image.
+     * Get virtual disk LCHS geometry stored in a disk image.
      *
      * @returns VBox status code.
      * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the image.
      * @param   pvBackendData   Opaque state data for this image.
-     * @param   penmTranslation Where to store the translation mode. Never NULL.
+     * @param   pLCHSGeometry   Where to store the geometry. Not NULL.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetTranslation, (void *pvBackendData, PPDMBIOSTRANSLATION penmTranslation));
+    DECLR3CALLBACKMEMBER(int, pfnGetLCHSGeometry, (void *pvBackendData, PPDMMEDIAGEOMETRY pLCHSGeometry));
 
     /**
-     * Set virtual disk translation mode stored in a disk image.
-     * Only called if translation mode is different than before.
+     * Set virtual disk LCHS geometry stored in a disk image.
+     * Only called if geometry is different than before.
      *
      * @returns VBox status code.
      * @param   pvBackendData   Opaque state data for this image.
-     * @param   enmTranslation  New translation mode.
+     * @param   pLCHSGeometry   Where to load the geometry from. Not NULL.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetTranslation, (void *pvBackendData, PDMBIOSTRANSLATION enmTranslation));
+    DECLR3CALLBACKMEMBER(int, pfnSetLCHSGeometry, (void *pvBackendData, PCPDMMEDIAGEOMETRY pLCHSGeometry));
+
+    /**
+     * Get the image flags of a disk image.
+     *
+     * @returns image flags of disk image.
+     * @param   pvBackendData   Opaque state data for this image.
+     */
+    DECLR3CALLBACKMEMBER(unsigned, pfnGetImageFlags, (void *pvBackendData));
 
     /**
      * Get the open flags of a disk image.
@@ -287,7 +328,20 @@ typedef struct VBOXHDDBACKEND
      */
     DECLR3CALLBACKMEMBER(int, pfnSetParentUuid, (void *pvBackendData, PCRTUUID pUuid));
 
-} VBOXHDDBACKEND, *PVBOXHDDBACKEND;
+    /**
+     * Dump information about a disk image.
+     *
+     * @param   pvBackendData   Opaque state data for this image.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnDump, (void *pvBackendData));
+
+} VBOXHDDBACKEND;
+
+/** Pointer to VD backend. */
+typedef VBOXHDDBACKEND *PVBOXHDDBACKEND;
+
+/** Constant pointer to VD backend. */
+typedef const VBOXHDDBACKEND *PCVBOXHDDBACKEND;
 
 /** Initialization entry point. */
 typedef DECLCALLBACK(int) VBOXHDDFORMATLOAD(PVBOXHDDBACKEND *ppBackendTable);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2006-2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -264,6 +264,47 @@ static DECLCALLBACK(int) logoIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
 __END_DECLS
 
+/* Attempt to guess the LCHS disk geometry from the MS-DOS master boot
+ * record (partition table). */
+static int biosGuessDiskLCHS(PPDMIBLOCK pBlock, PPDMMEDIAGEOMETRY pLCHSGeometry)
+{
+    uint8_t aMBR[512], *p;
+    int rc;
+    uint32_t iEndHead, iEndSector, cLCHSCylinders, cLCHSHeads, cLCHSSectors;
+
+    if (!pBlock)
+        return VERR_INVALID_PARAMETER;
+    rc = pBlock->pfnRead(pBlock, 0, aMBR, sizeof(aMBR));
+    if (VBOX_FAILURE(rc))
+        return rc;
+    /* Test MBR magic number. */
+    if (aMBR[510] != 0x55 || aMBR[511] != 0xaa)
+        return VERR_INVALID_PARAMETER;
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        /* Figure out the start of a partition table entry. */
+        p = &aMBR[0x1be + i * 16];
+        iEndHead = p[5];
+        iEndSector = p[6] & 63;
+        if ((p[12] | p[13] | p[14] | p[15]) && iEndSector & iEndHead)
+        {
+            /* Assumption: partition terminates on a cylinder boundary. */
+            cLCHSHeads = iEndHead + 1;
+            cLCHSSectors = iEndSector;
+            cLCHSCylinders = pBlock->pfnGetSize(pBlock) / (512 * cLCHSHeads * cLCHSSectors);
+            if (cLCHSCylinders >= 1)
+            {
+                pLCHSGeometry->cCylinders = cLCHSCylinders;
+                pLCHSGeometry->cHeads = cLCHSHeads;
+                pLCHSGeometry->cSectors = cLCHSSectors;
+                Log(("%s: LCHS=%d %d %d\n", __FUNCTION__, cLCHSCylinders, cLCHSHeads, cLCHSSectors));
+                return VINF_SUCCESS;
+            }
+        }
+    }
+    return VERR_INVALID_PARAMETER;
+}
+
 
 /**
  * Write to CMOS memory.
@@ -292,30 +333,33 @@ static void pcbiosCmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
  */
 static void pcbiosCmosInitHardDisk(PPDMDEVINS pDevIns, int offType, int offInfo, PPDMIBLOCKBIOS pBlockBios)
 {
-    if (    pBlockBios->pfnGetType(pBlockBios) == PDMBLOCKTYPE_HARD_DISK
-        &&  pBlockBios->pfnIsVisible(pBlockBios))
+    PDMMEDIAGEOMETRY LCHSGeometry;
+    int rc = pBlockBios->pfnGetLCHSGeometry(pBlockBios, &LCHSGeometry);
+    if (VBOX_SUCCESS(rc))
     {
-        uint32_t    cCylinders;
-        uint32_t    cHeads;
-        uint32_t    cSectors;
-        int rc = pBlockBios->pfnGetGeometry(pBlockBios, &cCylinders, &cHeads, &cSectors);
-        if (VBOX_SUCCESS(rc))
-        {
-            Log2(("pcbiosCmosInitHardDisk: offInfo=%#x: CHS=%d/%d/%d\n", offInfo, cCylinders, cHeads, cSectors));
-            pcbiosCmosWrite(pDevIns, offType, 47);                              /* 19h - First Extended Hard Disk Drive Type */
-            pcbiosCmosWrite(pDevIns, offInfo + 0, RT_MIN(cCylinders, 16383) & 0xff); /* 1Bh - (AMI) First Hard Disk (type 47) user defined: # of Cylinders, LSB */
-            pcbiosCmosWrite(pDevIns, offInfo + 1, RT_MIN(cCylinders, 16383) >> 8); /* 1Ch - (AMI) First Hard Disk user defined: # of Cylinders, High Byte */
-            pcbiosCmosWrite(pDevIns, offInfo + 2, cHeads);                      /* 1Dh - (AMI) First Hard Disk user defined: Number of Heads */
-            pcbiosCmosWrite(pDevIns, offInfo + 3, 0xff);                        /* 1Eh - (AMI) First Hard Disk user defined: Write Precompensation Cylinder, Low Byte */
-            pcbiosCmosWrite(pDevIns, offInfo + 4, 0xff);                        /* 1Fh - (AMI) First Hard Disk user defined: Write Precompensation Cylinder, High Byte */
-            pcbiosCmosWrite(pDevIns, offInfo + 5, 0xc0 | ((cHeads > 8) << 3));  /* 20h - (AMI) First Hard Disk user defined: Control Byte */
-            pcbiosCmosWrite(pDevIns, offInfo + 6, 0xff);                        /* 21h - (AMI) First Hard Disk user defined: Landing Zone, Low Byte */
-            pcbiosCmosWrite(pDevIns, offInfo + 7, 0xff);                        /* 22h - (AMI) First Hard Disk user defined: Landing Zone, High Byte */
-            pcbiosCmosWrite(pDevIns, offInfo + 8, cSectors);                    /* 23h - (AMI) First Hard Disk user defined: # of Sectors per track */
-            return;
-        }
+        Log2(("%s: offInfo=%#x: LCHS=%d/%d/%d\n", __FUNCTION__, offInfo, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
+        if (offType)
+            pcbiosCmosWrite(pDevIns, offType, 48);
+        /* Cylinders low */
+        pcbiosCmosWrite(pDevIns, offInfo + 0, RT_MIN(LCHSGeometry.cCylinders, 1024) & 0xff);
+        /* Cylinders high */
+        pcbiosCmosWrite(pDevIns, offInfo + 1, RT_MIN(LCHSGeometry.cCylinders, 1024) >> 8);
+        /* Heads */
+        pcbiosCmosWrite(pDevIns, offInfo + 2, LCHSGeometry.cHeads);
+        /* Landing zone low */
+        pcbiosCmosWrite(pDevIns, offInfo + 3, 0xff);
+        /* Landing zone high */
+        pcbiosCmosWrite(pDevIns, offInfo + 4, 0xff);
+        /* Write precomp low */
+        pcbiosCmosWrite(pDevIns, offInfo + 5, 0xff);
+        /* Write precomp high */
+        pcbiosCmosWrite(pDevIns, offInfo + 6, 0xff);
+        /* Sectors */
+        pcbiosCmosWrite(pDevIns, offInfo + 7, LCHSGeometry.cSectors);
+        return;
     }
-    pcbiosCmosWrite(pDevIns, offType, 0);
+    if (offType)
+        pcbiosCmosWrite(pDevIns, offType, 0);
 }
 
 
@@ -449,8 +493,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     u32 = !!apFDs[0] + !!apFDs[1];
     switch (u32)
     {
-        case 1: u32 = 0x01; break;      /* floppy installed, 1 drive. */
-        case 2: u32 = 0x41; break;      /* floppy installed, 2 drives. */
+        case 1: u32 = 0x01; break;      /* floppy installed, 2 drives. */
         default:u32 = 0;    break;      /* floppy not installed. */
     }
     u32 |= RT_BIT(1);                      /* math coprocessor installed  */
@@ -467,68 +510,94 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
         int rc = PDMR3QueryLun(pVM, pData->pszHDDevice, 0, i, &pBase);
         if (VBOX_SUCCESS(rc))
             apHDs[i] = (PPDMIBLOCKBIOS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK_BIOS);
-    }
-
-    u32 = (apHDs[0] ? 0xf0 : 0) | (apHDs[1] ? 0x0f : 0);                        /* 0Fh means extended and points to 1Ah, 1Bh */
-    pcbiosCmosWrite(pDevIns, 0x12, u32);                                        /* 12h - Hard Disk Data (type) */
-    if (apHDs[0])
-        pcbiosCmosInitHardDisk(pDevIns, 0x19, 0x1b, apHDs[0]);                  /* 19h - First Extended Hard Disk Drive Type */
-    if (apHDs[1])
-        pcbiosCmosInitHardDisk(pDevIns, 0x1a, 0x24, apHDs[1]);                  /* 1Ah - Second Extended Hard Disk Drive Type */
-
-    /*
-     * Translation type - Bochs BIOS specific.
-     */
-    u32 = 0;
-    for (i = 0; i < 4; i++)
-    {
+        if (   apHDs[i]
+            && (   apHDs[i]->pfnGetType(apHDs[i]) != PDMBLOCKTYPE_HARD_DISK
+                || !apHDs[i]->pfnIsVisible(apHDs[i])))
+            apHDs[i] = NULL;
         if (apHDs[i])
         {
-            PDMBIOSTRANSLATION enmTranslation;
-            int rc = apHDs[i]->pfnGetTranslation(apHDs[i], &enmTranslation);
-            if (VBOX_FAILURE(rc) || enmTranslation == PDMBIOSTRANSLATION_AUTO)
+            PDMMEDIAGEOMETRY LCHSGeometry;
+            int rc = apHDs[i]->pfnGetLCHSGeometry(apHDs[i], &LCHSGeometry);
+            if (   rc == VERR_PDM_GEOMETRY_NOT_SET
+                || LCHSGeometry.cCylinders == 0
+                || LCHSGeometry.cCylinders > 1024
+                || LCHSGeometry.cHeads == 0
+                || LCHSGeometry.cHeads > 255
+                || LCHSGeometry.cSectors == 0
+                || LCHSGeometry.cSectors > 63)
             {
-                uint32_t cCylinders, cHeads, cSectors;
-                rc = apHDs[i]->pfnGetGeometry(apHDs[i], &cCylinders, &cHeads, &cSectors);
+                PPDMIBLOCK pBlock;
+                pBlock = (PPDMIBLOCK)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK);
+                /* No LCHS geometry, autodetect and set. */
+                rc = biosGuessDiskLCHS(pBlock, &LCHSGeometry);
                 if (VBOX_FAILURE(rc))
                 {
-                    AssertMsg(rc == VERR_PDM_MEDIA_NOT_MOUNTED, ("This shouldn't happen! rc=%Vrc\n", rc));
-                    enmTranslation = PDMBIOSTRANSLATION_NONE;
+                    /* Try if PCHS geometry works, otherwise fall back. */
+                    rc = apHDs[i]->pfnGetPCHSGeometry(apHDs[i], &LCHSGeometry);
                 }
-                else if (cCylinders <= 1024 && cHeads <= 16 && cSectors <= 63)
+                if (   VBOX_FAILURE(rc)
+                    || LCHSGeometry.cCylinders == 0
+                    || LCHSGeometry.cCylinders > 1024
+                    || LCHSGeometry.cHeads == 0
+                    || LCHSGeometry.cHeads > 16
+                    || LCHSGeometry.cSectors == 0
+                    || LCHSGeometry.cSectors > 63)
                 {
-                    /* Disk <= 512 MByte not needing LBA translation. */
-                    enmTranslation = PDMBIOSTRANSLATION_NONE;
+                    uint64_t cSectors = pBlock->pfnGetSize(pBlock) / 512;
+                    if (cSectors / 16 / 63 <= 1024)
+                    {
+                        LCHSGeometry.cCylinders = RT_MAX(cSectors / 16 / 63, 1);
+                        LCHSGeometry.cHeads = 16;
+                    }
+                    else if (cSectors / 32 / 63 <= 1024)
+                    {
+                        LCHSGeometry.cCylinders = RT_MAX(cSectors / 32 / 63, 1);
+                        LCHSGeometry.cHeads = 32;
+                    }
+                    else if (cSectors / 64 / 63 <= 1024)
+                    {
+                        LCHSGeometry.cCylinders = cSectors / 64 / 63;
+                        LCHSGeometry.cHeads = 64;
+                    }
+                    else if (cSectors / 128 / 63 <= 1024)
+                    {
+                        LCHSGeometry.cCylinders = cSectors / 128 / 63;
+                        LCHSGeometry.cHeads = 128;
+                    }
+                    else
+                    {
+                        LCHSGeometry.cCylinders = RT_MIN(cSectors / 255 / 63, 1024);
+                        LCHSGeometry.cHeads = 255;
+                    }
+                    LCHSGeometry.cSectors = 63;
+
                 }
-                else if (cSectors != 63 || (cHeads != 16 && cHeads != 32 && cHeads != 64 && cHeads != 128 && cHeads != 255))
-                {
-                    /* Disk with strange geometry. Using LBA here can
-                     * break booting of the guest OS. Especially operating
-                     * systems from Microsoft are sensitive to BIOS CHS not
-                     * matching what the partition table says. */
-                    enmTranslation = PDMBIOSTRANSLATION_NONE;
-                }
-                else
-                    enmTranslation = PDMBIOSTRANSLATION_LBA;
+                rc = apHDs[i]->pfnSetLCHSGeometry(apHDs[i], &LCHSGeometry);
+                AssertRC(rc);
             }
-            switch (enmTranslation)
-            {
-                case PDMBIOSTRANSLATION_AUTO: /* makes gcc happy */
-                case PDMBIOSTRANSLATION_NONE:
-                    /* u32 |= 0 << (i * 2) */
-                    break;
-                default:
-                    AssertMsgFailed(("bad enmTranslation=%d\n", enmTranslation));
-                case PDMBIOSTRANSLATION_LBA:
-                    u32 |= 1 << (i * 2);
-                    break;
-            }
+            LogRel(("DevPcBios: ATA LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
+            pcbiosCmosWrite(pDevIns, 0x40 + i * 4, LCHSGeometry.cCylinders & 0xff);
+            pcbiosCmosWrite(pDevIns, 0x41 + i * 4, LCHSGeometry.cCylinders >> 8);
+            pcbiosCmosWrite(pDevIns, 0x42 + i * 4, LCHSGeometry.cHeads & 0xff);
+            pcbiosCmosWrite(pDevIns, 0x43 + i * 4, LCHSGeometry.cSectors & 0xff);
         }
     }
-    Log2(("pcbiosInitComplete: translation byte: %#02x\n", u32));
-    pcbiosCmosWrite(pDevIns, 0x39, u32);
 
-    LogFlow(("pcbiosInitComplete: returns VINF_SUCCESS\n"));
+    /* 0Fh means extended and points to 19h, 1Ah */
+    u32 = (apHDs[0] ? 0xf0 : 0) | (apHDs[1] ? 0x0f : 0);
+    pcbiosCmosWrite(pDevIns, 0x12, u32);
+    /* Award BIOS extended drive types for first and second disk, and
+     * extended drive types for third and fourth disk. Used by the BIOS. */
+    if (apHDs[0])
+        pcbiosCmosInitHardDisk(pDevIns, 0x19, 0x1e, apHDs[0]);
+    if (apHDs[1])
+        pcbiosCmosInitHardDisk(pDevIns, 0x1a, 0x26, apHDs[1]);
+    if (apHDs[2])
+        pcbiosCmosInitHardDisk(pDevIns, 0x00, 0x67, apHDs[2]);
+    if (apHDs[3])
+        pcbiosCmosInitHardDisk(pDevIns, 0x00, 0x70, apHDs[3]);
+
+    LogFlow(("%s: returns VINF_SUCCESS\n", __FUNCTION__));
     return VINF_SUCCESS;
 }
 

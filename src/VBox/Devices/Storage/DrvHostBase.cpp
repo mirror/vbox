@@ -320,8 +320,8 @@ static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid
 #define PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface)    ( (PDRVHOSTBASE((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTBASE, IBlockBios))) )
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnGetGeometry */
-static DECLCALLBACK(int) drvHostBaseGetGeometry(PPDMIBLOCKBIOS pInterface, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors)
+/** @copydoc PDMIBLOCKBIOS::pfnGetPCHSGeometry */
+static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     PDRVHOSTBASE pThis =  PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
     RTCritSectEnter(&pThis->CritSect);
@@ -329,13 +329,11 @@ static DECLCALLBACK(int) drvHostBaseGetGeometry(PPDMIBLOCKBIOS pInterface, uint3
     int rc = VINF_SUCCESS;
     if (pThis->fMediaPresent)
     {
-        if (    pThis->cCylinders > 0
-            &&  pThis->cHeads > 0
-            &&  pThis->cSectors > 0)
+        if (    pThis->PCHSGeometry.cCylinders > 0
+            &&  pThis->PCHSGeometry.cHeads > 0
+            &&  pThis->PCHSGeometry.cSectors > 0)
         {
-            *pcCylinders = pThis->cCylinders;
-            *pcHeads = pThis->cHeads;
-            *pcSectors = pThis->cSectors;
+            *pPCHSGeometry = pThis->PCHSGeometry;
         }
         else
             rc = VERR_PDM_GEOMETRY_NOT_SET;
@@ -344,26 +342,24 @@ static DECLCALLBACK(int) drvHostBaseGetGeometry(PPDMIBLOCKBIOS pInterface, uint3
         rc = VERR_PDM_MEDIA_NOT_MOUNTED;
 
     RTCritSectLeave(&pThis->CritSect);
-    LogFlow(("%s-%d: drvHostBaseGetGeometry: returns %Vrc CHS={%d,%d,%d}\n",
-             pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, rc, *pcCylinders, *pcHeads, *pcSectors));
+    LogFlow(("%s-%d: %s: returns %Vrc CHS={%d,%d,%d}\n",
+             pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, __FUNCTION__, rc, pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors));
     return rc;
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnSetGeometry */
-static DECLCALLBACK(int) drvHostBaseSetGeometry(PPDMIBLOCKBIOS pInterface, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors)
+/** @copydoc PDMIBLOCKBIOS::pfnSetPCHSGeometry */
+static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     PDRVHOSTBASE pThis = PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
-    LogFlow(("%s-%d: drvHostBaseSetGeometry: cCylinders=%d cHeads=%d cSectors=%d\n",
-             pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, cCylinders, cHeads, cSectors));
+    LogFlow(("%s-%d: %s: cCylinders=%d cHeads=%d cSectors=%d\n",
+             pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, __FUNCTION__, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
     if (pThis->fMediaPresent)
     {
-        pThis->cCylinders = cCylinders;
-        pThis->cHeads     = cHeads;
-        pThis->cSectors   = cSectors;
+        pThis->PCHSGeometry = *pPCHSGeometry;
     }
     else
     {
@@ -376,43 +372,46 @@ static DECLCALLBACK(int) drvHostBaseSetGeometry(PPDMIBLOCKBIOS pInterface, uint3
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnGetTranslation */
-static DECLCALLBACK(int) drvHostBaseGetTranslation(PPDMIBLOCKBIOS pInterface, PPDMBIOSTRANSLATION penmTranslation)
+/** @copydoc PDMIBLOCKBIOS::pfnGetLCHSGeometry */
+static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    PDRVHOSTBASE pThis = PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis =  PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
     if (pThis->fMediaPresent)
     {
-        if (pThis->fTranslationSet)
-            *penmTranslation = pThis->enmTranslation;
+        if (    pThis->LCHSGeometry.cCylinders > 0
+            &&  pThis->LCHSGeometry.cHeads > 0
+            &&  pThis->LCHSGeometry.cSectors > 0)
+        {
+            *pLCHSGeometry = pThis->LCHSGeometry;
+        }
         else
-            rc = VERR_PDM_TRANSLATION_NOT_SET;
+            rc = VERR_PDM_GEOMETRY_NOT_SET;
     }
     else
         rc = VERR_PDM_MEDIA_NOT_MOUNTED;
 
     RTCritSectLeave(&pThis->CritSect);
-    LogFlow(("%s-%d: drvHostBaseGetTranslation: returns %Vrc *penmTranslation=%d\n",
-             pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, rc, *penmTranslation));
+    LogFlow(("%s-%d: %s: returns %Vrc CHS={%d,%d,%d}\n",
+             pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, __FUNCTION__, rc, pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors));
     return rc;
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnSetTranslation */
-static DECLCALLBACK(int) drvHostBaseSetTranslation(PPDMIBLOCKBIOS pInterface, PDMBIOSTRANSLATION enmTranslation)
+/** @copydoc PDMIBLOCKBIOS::pfnSetLCHSGeometry */
+static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     PDRVHOSTBASE pThis = PDMIBLOCKBIOS_2_DRVHOSTBASE(pInterface);
-    LogFlow(("%s-%d: drvHostBaseSetTranslation: enmTranslation=%d\n",
-             pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, enmTranslation));
+    LogFlow(("%s-%d: %s: cCylinders=%d cHeads=%d cSectors=%d\n",
+             pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, __FUNCTION__, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
     if (pThis->fMediaPresent)
     {
-        pThis->fTranslationSet = true;
-        pThis->enmTranslation = enmTranslation;
+        pThis->LCHSGeometry = *pLCHSGeometry;
     }
     else
     {
@@ -1276,8 +1275,12 @@ void DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis)
 {
     pThis->fMediaPresent = false;
     pThis->fLocked = false;
-    pThis->fTranslationSet = false;
-    pThis->cSectors = 0;
+    pThis->PCHSGeometry.cCylinders = 0;
+    pThis->PCHSGeometry.cHeads = 0;
+    pThis->PCHSGeometry.cSectors = 0;
+    pThis->LCHSGeometry.cCylinders = 0;
+    pThis->LCHSGeometry.cHeads = 0;
+    pThis->LCHSGeometry.cSectors = 0;
     if (pThis->pDrvMountNotify)
         pThis->pDrvMountNotify->pfnUnmountNotify(pThis->pDrvMountNotify);
 }
@@ -1700,10 +1703,10 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
     pThis->IBlock.pfnGetUuid                = drvHostBaseGetUuid;
 
     /* IBlockBios. */
-    pThis->IBlockBios.pfnGetGeometry        = drvHostBaseGetGeometry;
-    pThis->IBlockBios.pfnSetGeometry        = drvHostBaseSetGeometry;
-    pThis->IBlockBios.pfnGetTranslation     = drvHostBaseGetTranslation;
-    pThis->IBlockBios.pfnSetTranslation     = drvHostBaseSetTranslation;
+    pThis->IBlockBios.pfnGetPCHSGeometry    = drvHostBaseGetPCHSGeometry;
+    pThis->IBlockBios.pfnSetPCHSGeometry    = drvHostBaseSetPCHSGeometry;
+    pThis->IBlockBios.pfnGetLCHSGeometry    = drvHostBaseGetLCHSGeometry;
+    pThis->IBlockBios.pfnSetLCHSGeometry    = drvHostBaseSetLCHSGeometry;
     pThis->IBlockBios.pfnIsVisible          = drvHostBaseIsVisible;
     pThis->IBlockBios.pfnGetType            = drvHostBaseBiosGetType;
 

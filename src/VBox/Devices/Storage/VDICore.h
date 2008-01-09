@@ -105,7 +105,7 @@ typedef struct VDIHEADER0
     /** Image comment. (UTF-8) */
     char            szComment[VDI_IMAGE_COMMENT_SIZE];
     /** Image geometry. */
-    VDIDISKGEOMETRY Geometry;
+    VDIDISKGEOMETRY LCHSGeometry;
     /** Size of disk (in bytes). */
     uint64_t        cbDisk;
     /** Block size. (For instance VDI_IMAGE_BLOCK_SIZE.) */
@@ -145,9 +145,9 @@ typedef struct VDIHEADER1
      * Should be sector-aligned for HDD access optimization. */
     uint32_t        offData;
     /** Image geometry. */
-    VDIDISKGEOMETRY Geometry;
-    /** BIOS HDD translation mode, see PDMBIOSTRANSLATION. */
-    uint32_t        u32Translation;
+    VDIDISKGEOMETRY LCHSGeometry;
+    /** Was BIOS HDD translation mode, now unused. */
+    uint32_t        u32Dummy;
     /** Size of disk (in bytes). */
     uint64_t        cbDisk;
     /** Block size. (For instance VDI_IMAGE_BLOCK_SIZE.) Should be a power of 2! */
@@ -271,36 +271,15 @@ DECLINLINE(unsigned) getImageDataOffset(PVDIHEADER ph)
     return 0;
 }
 
-DECLINLINE(PVDIDISKGEOMETRY) getImageGeometry(PVDIHEADER ph)
+DECLINLINE(PVDIDISKGEOMETRY) getImageLCHSGeometry(PVDIHEADER ph)
 {
     switch (GET_MAJOR_HEADER_VERSION(ph))
     {
-        case 0: return &ph->u.v0.Geometry;
-        case 1: return &ph->u.v1.Geometry;
+        case 0: return &ph->u.v0.LCHSGeometry;
+        case 1: return &ph->u.v1.LCHSGeometry;
     }
     AssertFailed();
     return NULL;
-}
-
-DECLINLINE(PDMBIOSTRANSLATION) getImageTranslation(PVDIHEADER ph)
-{
-    switch (GET_MAJOR_HEADER_VERSION(ph))
-    {
-        case 0: return PDMBIOSTRANSLATION_AUTO;
-        case 1: return (PDMBIOSTRANSLATION)ph->u.v1.u32Translation;
-    }
-    AssertFailed();
-    return PDMBIOSTRANSLATION_NONE;
-}
-
-DECLINLINE(void) setImageTranslation(PVDIHEADER ph, PDMBIOSTRANSLATION enmTranslation)
-{
-    switch (GET_MAJOR_HEADER_VERSION(ph))
-    {
-        case 0:                                                     return;
-        case 1: ph->u.v1.u32Translation = (uint32_t)enmTranslation; return;
-    }
-    AssertFailed();
 }
 
 DECLINLINE(uint64_t) getImageDiskSize(PVDIHEADER ph)
