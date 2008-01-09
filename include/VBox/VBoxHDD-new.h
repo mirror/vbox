@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2006-2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,6 +56,9 @@ __BEGIN_DECLS
 /** Get VDI minor version from combined version. */
 #define VDI_GET_VERSION_MINOR(uVer)    ((uVer) & 0xffff)
 
+/** Placeholder for specifying the last opened image. */
+#define VD_LAST_IMAGE               0xffffffffU
+
 /** @name VBox HDD container image types
  * @{ */
 typedef enum VDIMAGETYPE
@@ -97,6 +100,9 @@ typedef VDIMAGETYPE *PVDIMAGETYPE;
 /** Mask of valid image flags for VDI. */
 #define VD_VDI_IMAGE_FLAGS_MASK             (VD_IMAGE_FLAGS_NONE | VD_VDI_IMAGE_FLAGS_ZERO_EXPAND)
 
+/** Mask of all valid image flags for all formats. */
+#define VD_IMAGE_FLAGS_MASK                 (VD_VMDK_IMAGE_FLAGS_MASK | VD_VDI_IMAGE_FLAGS_MASK)
+
 /** Default image flags. */
 #define VD_IMAGE_FLAGS_DEFAULT              (VD_IMAGE_FLAGS_NONE)
 /** @} */
@@ -131,6 +137,9 @@ typedef struct VBOXHDDRAWPART
  */
 typedef struct VBOXHDDRAW
 {
+    /** Signature for structure. Must be 'R', 'A', 'W', '\0'. Actually a trick
+     * to make logging of the comment string produce sensible results. */
+    char            szSignature[4];
     /** Flag whether access to full disk should be given (ignoring the
      * partition information below). */
     bool            fRawDisk;
@@ -188,27 +197,28 @@ typedef struct VBOXHDD VBOXHDD;
 typedef VBOXHDD *PVBOXHDD;
 
 /**
- * Allocates and initializes an empty VBox HDD container.
+ * Allocates and initializes an empty HDD container.
  * No image files are opened.
  *
  * @returns VBox status code.
  * @param   pszBackend      Name of the image file backend to use.
  * @param   pfnError        Callback for setting extended error information.
  * @param   pvErrorUser     Opaque parameter for pfnError.
- * @param   ppDisk          Where to store the reference to the VBox HDD container.
+ * @param   ppDisk          Where to store the reference to HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError, void *pvErrorUser, PVBOXHDD *ppDisk);
+VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
+                           void *pvErrorUser, PVBOXHDD *ppDisk);
 
 /**
- * Destroys the VBox HDD container.
+ * Destroys HDD container.
  * If container has opened image files they will be closed.
  *
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk);
 
 /**
- * Try to get the backend name which can use this image. 
+ * Try to get the backend name which can use this image.
  *
  * @returns VBox status code.
  * @param   pszFilename     Name of the image file for which the backend is queried.
@@ -220,7 +230,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat);
 /**
  * Opens an image file.
  *
- * The first opened image file in a HDD container must have a base image type,
+ * The first opened image file in HDD container must have a base image type,
  * others (next opened images) must be differencing or undo images.
  * Linkage is checked for differencing image to be consistent with the previously opened image.
  * When another differencing image is opened and the last image was opened in read/write access
@@ -231,25 +241,25 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat);
  * Use VDIsReadOnly to check open mode.
  *
  * @returns VBox status code.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   pszFilename     Name of the image file to open.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  */
-VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename, unsigned uOpenFlags);
+VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
+                         unsigned uOpenFlags);
 
 /**
  * Creates and opens a new base image file.
  *
  * @returns VBox status code.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   pszFilename     Name of the image file to create.
  * @param   enmType         Image type, only base image types are acceptable.
  * @param   cbSize          Image size in bytes.
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
- * @param   cCylinders      Number of cylinders (must be <= 16383).
- * @param   cHeads          Number of heads (must be <= 16).
- * @param   cSectors        Number of sectors (must be <= 63);
+ * @param   pPCHSGeometry   Pointer to physical disk geometry <= (16383,16,63). Not NULL.
+ * @param   pLCHSGeometry   Pointer to logical disk geometry <= (1024,255,63). Not NULL.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
@@ -257,16 +267,17 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename, unsigned uOpen
 VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
                                VDIMAGETYPE enmType, uint64_t cbSize,
                                unsigned uImageFlags, const char *pszComment,
-                               unsigned cCylinders, unsigned cHeads,
-                               unsigned cSectors, unsigned uOpenFlags,
-                               PFNVMPROGRESS pfnProgress, void *pvUser);
+                               PCPDMMEDIAGEOMETRY pPCHSGeometry,
+                               PCPDMMEDIAGEOMETRY pLCHSGeometry,
+                               unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
+                               void *pvUser);
 
 /**
  * Creates and opens a new differencing image file in HDD container.
  * See comments for VDOpen function about differencing images.
  *
  * @returns VBox status code.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   pszFilename     Name of the differencing image file to create.
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
@@ -276,86 +287,63 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
  */
 VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszFilename,
                                unsigned uImageFlags, const char *pszComment,
-                               unsigned uOpenFlags,
-                               PFNVMPROGRESS pfnProgress, void *pvUser);
+                               unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
+                               void *pvUser);
 
 /**
- * Merges two images having a parent/child relationship (both directions).
- * As a side effect the source image is deleted from both the disk and
- * the images in the VBox HDD container.
+ * Merges two images (not necessarily with direct parent/child relationship).
+ * As a side effect the source image and potentially the other images which
+ * are also merged to the destination are deleted from both the disk and the
+ * images in the HDD container.
  *
  * @returns VBox status code.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImageFrom      Name of the image file to merge from.
  * @param   nImageTo        Name of the image file to merge to.
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
  */
-VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom, unsigned nImageTo,
-                          PFNVMPROGRESS pfnProgress, void *pvUser);
+VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
+                          unsigned nImageTo, PFNVMPROGRESS pfnProgress,
+                          void *pvUser);
 
 /**
- * Copies an image from one VBox HDD container to another.
- * The copy is opened in the target VBox HDD container.
+ * Copies an image from one HDD container to another.
+ * The copy is opened in the target HDD container.
  * It is possible to convert between different image formats, because the
- * backend for the destination VBox HDD container may be different from the
+ * backend for the destination HDD container may be different from the
  * source container.
- * If both the source and destination reference the same VBox HDD container,
- * then the image is moved (by copying/deleting) to the new location.
+ * If both the source and destination reference the same HDD container,
+ * then the image is moved (by copying/deleting or renaming) to the new location.
  * The source container is unchanged if the move operation fails, otherwise
  * the image at the new location is opened in the same way as the old one was.
  *
  * @returns VBox status code.
- * @param   pDiskFrom       Pointer to source VBox HDD container.
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDiskFrom       Pointer to source HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   pDiskTo         Pointer to destination VBox HDD container.
+ * @param   pDiskTo         Pointer to destination HDD container.
+ * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
+ * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
+ * @param   cbSize          New image size (0 means leave unchanged).
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
  */
 VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
-                         PFNVMPROGRESS pfnProgress, void *pvUser);
+                         const char *pszFilename, bool fMoveByRename,
+                         uint64_t cbSize, PFNVMPROGRESS pfnProgress,
+                         void *pvUser);
 
 /**
- * Compacts a growing image file by removing zeroed data blocks.
- * Optionally defragments data in the image so that ascending sector numbers
- * are stored in ascending location in the image file.
- *
- * @todo maybe include this function in VDCopy.
- *
- * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
- * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   fDefragment     If true, reorder file data so that sectors are stored in ascending order.
- * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
- * @param   pvUser          User argument for the progress callback.
- */
-VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
-                            bool fDefragment,
-                            PFNVMPROGRESS pfnProgress, void *pvUser);
-
-/**
- * Resizes an image. Allows setting the disk size to both larger and smaller
- * values than the current disk size.
- *
- * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
- * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   cbSize          New image size in bytes.
- * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
- * @param   pvUser          User argument for the progress callback.
- */
-VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, unsigned nImage, uint64_t cbSize,
-                           PFNVMPROGRESS pfnProgress, void *pvUser);
-
-/**
- * Closes the last opened image file in the HDD container. Leaves all changes inside it.
+ * Closes the last opened image file in HDD container.
  * If previous image file was opened in read-only mode (that is normal) and closing image
  * was opened in read-write mode (the whole disk was in read-write mode) - the previous image
  * will be reopened in read/write mode.
  *
- * @param   pDisk           Pointer to VBox HDD container.
+ * @returns VBox status code.
+ * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   fDelete         If true, delete the image from the host disk.
  */
 VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete);
@@ -363,7 +351,8 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete);
 /**
  * Closes all opened image files in HDD container.
  *
- * @param   pDisk           Pointer to VBox HDD container.
+ * @returns VBox status code.
+ * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk);
 
@@ -372,7 +361,7 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk);
  *
  * @returns VBox status code.
  * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   uOffset         Offset of first reading byte from start of disk.
  * @param   pvBuf           Pointer to buffer for reading data.
  * @param   cbRead          Number of bytes to read.
@@ -384,7 +373,7 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf, size_t c
  *
  * @returns VBox status code.
  * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   uOffset         Offset of first writing byte from start of disk.
  * @param   pvBuf           Pointer to buffer for writing data.
  * @param   cbWrite         Number of bytes to write.
@@ -396,7 +385,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf, s
  *
  * @returns VBox status code.
  * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk);
 
@@ -404,149 +393,165 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk);
  * Get number of opened images in HDD container.
  *
  * @returns Number of opened images for HDD container. 0 if no images have been opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(unsigned) VDGetCount(PVBOXHDD pDisk);
 
 /**
- * Get read/write mode of the VBox HDD container.
+ * Get read/write mode of HDD container.
  *
  * @returns Virtual disk ReadOnly status.
  * @returns true if no image is opened in HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(bool) VDIsReadOnly(PVBOXHDD pDisk);
 
 /**
- * Get total disk size of the VBox HDD container.
+ * Get total capacity of an image in HDD container.
  *
  * @returns Virtual disk size in bytes.
- * @returns 0 if no image is opened in HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @returns 0 if image with specified number was not opened.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  */
-VBOXDDU_DECL(uint64_t) VDGetSize(PVBOXHDD pDisk);
+VBOXDDU_DECL(uint64_t) VDGetSize(PVBOXHDD pDisk, unsigned nImage);
 
 /**
- * Get virtual disk geometry stored in HDD container.
+ * Get total file size of an image in HDD container.
+ *
+ * @returns Virtual disk size in bytes.
+ * @returns 0 if image with specified number was not opened.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ */
+VBOXDDU_DECL(uint64_t) VDGetFileSize(PVBOXHDD pDisk, unsigned nImage);
+
+/**
+ * Get virtual disk PCHS geometry of an image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
- * @param   pcCylinders     Where to store the number of cylinders. NULL is ok.
- * @param   pcHeads         Where to store the number of heads. NULL is ok.
- * @param   pcSectors       Where to store the number of sectors. NULL is ok.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   pPCHSGeometry   Where to store PCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDGetGeometry(PVBOXHDD pDisk,
-                                unsigned *pcCylinders, unsigned *pcHeads, unsigned *pcSectors);
+VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
+                                    PPDMMEDIAGEOMETRY pPCHSGeometry);
 
 /**
- * Store virtual disk geometry in HDD container.
- *
- * Note that in case of unrecoverable error all images in HDD container will be closed.
+ * Store virtual disk PCHS geometry of an image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
- * @param   cCylinders      Number of cylinders.
- * @param   cHeads          Number of heads.
- * @param   cSectors        Number of sectors.
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   pPCHSGeometry   Where to load PCHS geometry from. Not NULL.
  */
-VBOXDDU_DECL(int) VDSetGeometry(PVBOXHDD pDisk,
-                                unsigned cCylinders, unsigned cHeads, unsigned cSectors);
+VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
+                                    PCPDMMEDIAGEOMETRY pPCHSGeometry);
 
 /**
- * Get virtual disk translation mode stored in HDD container.
+ * Get virtual disk LCHS geometry of an image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
- * @param   penmTranslation Where to store the translation mode (see pdm.h).
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   pLCHSGeometry   Where to store LCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDGetTranslation(PVBOXHDD pDisk, PPDMBIOSTRANSLATION penmTranslation);
+VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
+                                    PPDMMEDIAGEOMETRY pLCHSGeometry);
 
 /**
- * Store virtual disk translation mode in HDD container.
- *
- * Note that in case of unrecoverable error all images in HDD container will be closed.
+ * Store virtual disk LCHS geometry of an image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
- * @param   enmTranslation  Translation mode (see pdm.h).
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   pLCHSGeometry   Where to load LCHS geometry from. Not NULL.
  */
-VBOXDDU_DECL(int) VDSetTranslation(PVBOXHDD pDisk, PDMBIOSTRANSLATION enmTranslation);
+VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
+                                    PCPDMMEDIAGEOMETRY pLCHSGeometry);
 
 /**
  * Get version of image in HDD container.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puVersion       Where to store the image version.
  */
-VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage, unsigned *puVersion);
+VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
+                               unsigned *puVersion);
 
 /**
  * Get type of image in HDD container.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   penmType        Where to store the image type.
  */
-VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage, PVDIMAGETYPE penmType);
+VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
+                                 PVDIMAGETYPE penmType);
 
 /**
  * Get flags of image in HDD container.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puImageFlags    Where to store the image flags.
  */
 VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage, unsigned *puImageFlags);
 
 /**
- * Get open flags of last opened image in HDD container.
+ * Get open flags of image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puOpenFlags     Where to store the image open flags.
  */
-VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned *puOpenFlags);
+VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
+                                 unsigned *puOpenFlags);
 
 /**
- * Set open flags of last opened image in HDD container.
+ * Set open flags of image in HDD container.
  * This operation may cause file locking changes and/or files being reopened.
  * Note that in case of unrecoverable error all images in HDD container will be closed.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  */
-VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned uOpenFlags);
+VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
+                                 unsigned uOpenFlags);
 
 /**
  * Get base filename of image in HDD container. Some image formats use
- * other filenames as well, so don't use this for anything but for informational
+ * other filenames as well, so don't use this for anything but informational
  * purposes.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @returns VERR_BUFFER_OVERFLOW if pszFilename buffer too small to hold filename.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pszFilename     Where to store the image file name.
  * @param   cbFilename      Size of buffer pszFilename points to.
  */
-VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage, char *pszFilename, unsigned cbFilename);
+VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
+                                char *pszFilename, unsigned cbFilename);
 
 /**
  * Get the comment line of image in HDD container.
@@ -554,30 +559,32 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage, char *pszFilena
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @returns VERR_BUFFER_OVERFLOW if pszComment buffer too small to hold comment text.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pszComment      Where to store the comment string of image. NULL is ok.
  * @param   cbComment       The size of pszComment buffer. 0 is ok.
  */
-VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage, char *pszComment, unsigned cbComment);
+VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
+                               char *pszComment, unsigned cbComment);
 
 /**
  * Changes the comment line of image in HDD container.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pszComment      New comment string (UTF-8). NULL is allowed to reset the comment.
  */
-VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage, const char *pszComment);
+VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
+                               const char *pszComment);
 
 /**
  * Get UUID of image in HDD container.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the image UUID.
  */
@@ -588,9 +595,9 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid);
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   pUuid           Optional parameter, new UUID of the image.
+ * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  */
 VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid);
 
@@ -599,49 +606,53 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid);
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the image modification UUID.
  */
-VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid);
+VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage,
+                                        PRTUUID pUuid);
 
 /**
  * Set the image's last modification UUID. Should not be used by normal applications.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   pUuid           Optional parameter, new last modification UUID of the image.
+ * @param   pUuid           New modification UUID of the image. If NULL, a new UUID is created.
  */
-VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid);
+VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage,
+                                        PCRTUUID pUuid);
 
 /**
  * Get parent UUID of image in HDD container.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of the container.
  * @param   pUuid           Where to store the parent image UUID.
  */
-VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid);
+VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
+                                  PRTUUID pUuid);
 
 /**
  * Set the image's parent UUID. Should not be used by normal applications.
  *
  * @returns VBox status code.
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   pUuid           Optional parameter, new parent UUID of the image.
+ * @param   pUuid           New parent UUID of the image. If NULL, a new UUID is created.
  */
-VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid);
+VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
+                                  PCRTUUID pUuid);
 
 
 /**
  * Debug helper - dumps all opened images in HDD container into the log file.
  *
- * @param   pDisk           Pointer to VBox HDD container.
+ * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk);
 

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2006-2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -770,26 +770,28 @@ typedef struct PDMIMOUNT
 } PDMIBLOCKMOUNT;
 
 /**
- * BIOS translation mode.
+ * Media geometry structure.
  */
-typedef enum PDMBIOSTRANSLATION
+typedef struct PDMMEDIAGEOMETRY
 {
-    /** No translation. */
-    PDMBIOSTRANSLATION_NONE = 1,
-    /** LBA translation. */
-    PDMBIOSTRANSLATION_LBA,
-    /** Automatic select mode. */
-    PDMBIOSTRANSLATION_AUTO
-} PDMBIOSTRANSLATION;
+    /** Number of cylinders. */
+    uint32_t    cCylinders;
+    /** Number of heads. */
+    uint32_t    cHeads;
+    /** Number of sectors. */
+    uint32_t    cSectors;
+} PDMMEDIAGEOMETRY;
 
-/** Pointer to BIOS translation mode. */
-typedef PDMBIOSTRANSLATION *PPDMBIOSTRANSLATION;
+/** Pointer to media geometry structure. */
+typedef PDMMEDIAGEOMETRY *PPDMMEDIAGEOMETRY;
+/** Pointer to constant media geometry structure. */
+typedef const PDMMEDIAGEOMETRY *PCPDMMEDIAGEOMETRY;
 
 /** Pointer to a media interface. */
 typedef struct PDMIMEDIA *PPDMIMEDIA;
 /**
  * Media interface.
- * Makes up the fundation for PDMIBLOCK and PDMIBLOCKBIOS.
+ * Makes up the foundation for PDMIBLOCK and PDMIBLOCKBIOS.
  */
 typedef struct PDMIMEDIA
 {
@@ -846,62 +848,58 @@ typedef struct PDMIMEDIA
     DECLR3CALLBACKMEMBER(bool, pfnIsReadOnly,(PPDMIMEDIA pInterface));
 
     /**
-     * Get stored media geometry - BIOS property.
+     * Get stored media geometry (physical CHS, PCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
      * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
-     * @returns VERR_PDM_GEOMETRY_NOT_SET if the geometry hasn't been set using pfnBiosSetGeometry() yet.
+     * @returns VERR_PDM_GEOMETRY_NOT_SET if the geometry hasn't been set using pfnBiosSetPCHSGeometry() yet.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pcCylinders     Number of cylinders.
-     * @param   pcHeads         Number of heads.
-     * @param   pcSectors       Number of sectors. This number is 1-based.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pPCHSGeometry   Pointer to PCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnBiosGetGeometry,(PPDMIMEDIA pInterface, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors));
+    DECLR3CALLBACKMEMBER(int, pfnBiosGetPCHSGeometry,(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry));
 
     /**
-     * Store the media geometry - BIOS property.
+     * Store the media geometry (physical CHS, PCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
      * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   cCylinders      Number of cylinders.
-     * @param   cHeads          Number of heads.
-     * @param   cSectors        Number of sectors. This number is 1-based.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pPCHSGeometry   Pointer to PCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnBiosSetGeometry,(PPDMIMEDIA pInterface, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors));
+    DECLR3CALLBACKMEMBER(int, pfnBiosSetPCHSGeometry,(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry));
 
     /**
-     * Get stored geometry translation mode - BIOS property.
+     * Get stored media geometry (logical CHS, LCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
-     * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry translation mode.
-     * @returns VERR_PDM_TRANSLATION_NOT_SET if the translation hasn't been set using pfnBiosSetTranslation() yet.
+     * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
+     * @returns VERR_PDM_GEOMETRY_NOT_SET if the geometry hasn't been set using pfnBiosSetLCHSGeometry() yet.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   penmTranslation Where to store the translation type.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pLCHSGeometry   Pointer to LCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnBiosGetTranslation,(PPDMIMEDIA pInterface, PPDMBIOSTRANSLATION penmTranslation));
+    DECLR3CALLBACKMEMBER(int, pfnBiosGetLCHSGeometry,(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry));
 
     /**
-     * Store media geometry - BIOS property.
+     * Store the media geometry (logical CHS, LCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
      * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   enmTranslation  The translation type.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pLCHSGeometry   Pointer to LCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnBiosSetTranslation,(PPDMIMEDIA pInterface, PDMBIOSTRANSLATION enmTranslation));
+    DECLR3CALLBACKMEMBER(int, pfnBiosSetLCHSGeometry,(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry));
 
     /**
      * Gets the UUID of the media drive.
@@ -925,60 +923,58 @@ typedef struct PDMIBLOCKBIOS *PPDMIBLOCKBIOS;
 typedef struct PDMIBLOCKBIOS
 {
     /**
-     * Get stored media geometry - BIOS property.
+     * Get stored media geometry (physical CHS, PCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
      * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
+     * @returns VERR_PDM_GEOMETRY_NOT_SET if the geometry hasn't been set using pfnSetPCHSGeometry() yet.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pcCylinders     Number of cylinders.
-     * @param   pcHeads         Number of heads.
-     * @param   pcSectors       Number of sectors. This number is 1-based.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pPCHSGeometry   Pointer to PCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetGeometry,(PPDMIBLOCKBIOS pInterface, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors));
+    DECLR3CALLBACKMEMBER(int, pfnGetPCHSGeometry,(PPDMIBLOCKBIOS pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry));
 
     /**
-     * Store the media geometry - BIOS property.
+     * Store the media geometry (physical CHS, PCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
      * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   cCylinders      Number of cylinders.
-     * @param   cHeads          Number of heads.
-     * @param   cSectors        Number of sectors. This number is 1-based.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pPCHSGeometry   Pointer to PCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetGeometry,(PPDMIBLOCKBIOS pInterface, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors));
+    DECLR3CALLBACKMEMBER(int, pfnSetPCHSGeometry,(PPDMIBLOCKBIOS pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry));
 
     /**
-     * Get stored geometry translation mode - BIOS property.
+     * Get stored media geometry (logical CHS, LCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
-     * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry translation mode.
+     * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
+     * @returns VERR_PDM_GEOMETRY_NOT_SET if the geometry hasn't been set using pfnSetLCHSGeometry() yet.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   penmTranslation Where to store the translation type.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pLCHSGeometry   Pointer to LCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetTranslation,(PPDMIBLOCKBIOS pInterface, PPDMBIOSTRANSLATION penmTranslation));
+    DECLR3CALLBACKMEMBER(int, pfnGetLCHSGeometry,(PPDMIBLOCKBIOS pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry));
 
     /**
-     * Store media geometry - BIOS property.
+     * Store the media geometry (logical CHS, LCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
      * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   enmTranslation  The translation type.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pLCHSGeometry   Pointer to LCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetTranslation,(PPDMIBLOCKBIOS pInterface, PDMBIOSTRANSLATION enmTranslation));
+    DECLR3CALLBACKMEMBER(int, pfnSetLCHSGeometry,(PPDMIBLOCKBIOS pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry));
 
     /**
      * Checks if the device should be visible to the BIOS or not.
@@ -1322,62 +1318,58 @@ typedef struct PDMIMEDIAASYNC
     DECLR3CALLBACKMEMBER(bool, pfnIsReadOnly,(PPDMIMEDIAASYNC pInterface));
 
     /**
-     * Get stored media geometry - BIOS property.
+     * Get stored media geometry (physical CHS, PCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
      * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
-     * @returns VERR_PDM_GEOMETRY_NOT_SET if the geometry hasn't been set using pfnBiosSetGeometry() yet.
+     * @returns VERR_PDM_GEOMETRY_NOT_SET if the geometry hasn't been set using pfnBiosSetPCHSGeometry() yet.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pcCylinders     Number of cylinders.
-     * @param   pcHeads         Number of heads.
-     * @param   pcSectors       Number of sectors. This number is 1-based.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pPCHSGeometry   Pointer to PCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnBiosGetGeometry,(PPDMIMEDIAASYNC pInterface, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors));
+    DECLR3CALLBACKMEMBER(int, pfnBiosGetPCHSGeometry,(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry));
 
     /**
-     * Store the media geometry - BIOS property.
+     * Store the media geometry (physical CHS, PCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
      * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   cCylinders      Number of cylinders.
-     * @param   cHeads          Number of heads.
-     * @param   cSectors        Number of sectors. This number is 1-based.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pPCHSGeometry   Pointer to PCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnBiosSetGeometry,(PPDMIMEDIAASYNC pInterface, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors));
+    DECLR3CALLBACKMEMBER(int, pfnBiosSetPCHSGeometry,(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry));
 
     /**
-     * Get stored geometry translation mode - BIOS property.
+     * Get stored media geometry (logical CHS, LCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
-     * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry translation mode.
-     * @returns VERR_PDM_TRANSLATION_NOT_SET if the translation hasn't been set using pfnBiosSetTranslation() yet.
+     * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
+     * @returns VERR_PDM_GEOMETRY_NOT_SET if the geometry hasn't been set using pfnBiosSetLCHSGeometry() yet.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   penmTranslation Where to store the translation type.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pLCHSGeometry   Pointer to LCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnBiosGetTranslation,(PPDMIMEDIAASYNC pInterface, PPDMBIOSTRANSLATION penmTranslation));
+    DECLR3CALLBACKMEMBER(int, pfnBiosGetLCHSGeometry,(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry));
 
     /**
-     * Store media geometry - BIOS property.
+     * Store the media geometry (logical CHS, LCHS) - BIOS property.
      * This is an optional feature of a media.
      *
      * @returns VBox status code.
      * @returns VERR_NOT_IMPLEMENTED if the media doesn't support storing the geometry.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   enmTranslation  The translation type.
-     * @remark  This have no influence on the read/write operations.
+     * @param   pLCHSGeometry   Pointer to LCHS geometry (cylinders/heads/sectors).
+     * @remark  This has no influence on the read/write operations.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnBiosSetTranslation,(PPDMIMEDIAASYNC pInterface, PDMBIOSTRANSLATION enmTranslation));
+    DECLR3CALLBACKMEMBER(int, pfnBiosSetLCHSGeometry,(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry));
 
     /**
      * Gets the UUID of the media drive.
@@ -1631,7 +1623,7 @@ typedef struct PDMICHAR
 typedef struct PDMISTREAM *PPDMISTREAM;
 /**
  * Stream interface.
- * Makes up the fundation for PDMICHAR.
+ * Makes up the foundation for PDMICHAR.
  */
 typedef struct PDMISTREAM
 {

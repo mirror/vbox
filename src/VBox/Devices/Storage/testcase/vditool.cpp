@@ -252,9 +252,8 @@ static int ResetImageGeometry(const char *pszFilename)
     rc = VDIDiskOpenImage(pVdi, pszUtf8Filename, VDI_OPEN_FLAGS_NORMAL);
     if (VBOX_SUCCESS(rc))
     {
-        rc = VDIDiskSetGeometry(pVdi, 0, 0, 0);
-        if (VBOX_SUCCESS(rc))
-            rc = VDIDiskSetTranslation(pVdi, PDMBIOSTRANSLATION_AUTO);
+        PDMMEDIAGEOMETRY LCHSGeometry = {0, 0, 0};
+        rc = VDIDiskSetLCHSGeometry(pVdi, &LCHSGeometry);
     }
     VDIDiskCloseImage(pVdi);
     return PrintDone(rc);

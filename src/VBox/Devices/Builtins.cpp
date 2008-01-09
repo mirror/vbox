@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2006-2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -171,11 +171,6 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVD);
     if (VBOX_FAILURE(rc))
         return rc;
-#ifndef RT_OS_L4
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVmdkHDD);
-    if (VBOX_FAILURE(rc))
-        return rc;
-#endif
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostDVD);
     if (VBOX_FAILURE(rc))
@@ -192,11 +187,6 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvRawImage);
     if (VBOX_FAILURE(rc))
         return rc;
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostHDD);
-    if (VBOX_FAILURE(rc))
-        return rc;
-#endif
 #ifdef VBOX_WITH_ISCSI
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvISCSI);
     if (VBOX_FAILURE(rc))

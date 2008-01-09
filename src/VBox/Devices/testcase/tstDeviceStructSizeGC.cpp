@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2006-2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -569,9 +569,9 @@ int main()
     GEN_CHECK_OFF(ATADevState, fATAPI);
     GEN_CHECK_OFF(ATADevState, fIrqPending);
     GEN_CHECK_OFF(ATADevState, cMultSectors);
-    GEN_CHECK_OFF(ATADevState, cCHSCylinders);
-    GEN_CHECK_OFF(ATADevState, cCHSHeads);
-    GEN_CHECK_OFF(ATADevState, cCHSSectors);
+    GEN_CHECK_OFF(ATADevState, PCHSGeometry.cCylinders);
+    GEN_CHECK_OFF(ATADevState, PCHSGeometry.cHeads);
+    GEN_CHECK_OFF(ATADevState, PCHSGeometry.cSectors);
     GEN_CHECK_OFF(ATADevState, cSectorsPerIRQ);
     GEN_CHECK_OFF(ATADevState, cTotalSectors);
     GEN_CHECK_OFF(ATADevState, uATARegFeature);

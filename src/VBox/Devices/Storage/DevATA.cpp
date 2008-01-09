@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2006-2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -83,7 +83,7 @@ typedef struct ATADevState {
     /** Currently configured number of sectors in a multi-sector transfer. */
     uint8_t cMultSectors;
     /** PCHS disk geometry. */
-    uint32_t cCHSCylinders, cCHSHeads, cCHSSectors;
+    PDMMEDIAGEOMETRY PCHSGeometry;
     /** Total number of sectors on this disk. */
     uint64_t cTotalSectors;
     /** Number of sectors to transfer per IRQ. */
@@ -1061,11 +1061,11 @@ static bool ataIdentifySS(ATADevState *s)
     p = (uint16_t *)s->CTXSUFF(pbIOBuffer);
     memset(p, 0, 512);
     p[0] = RT_H2LE_U16(0x0040);
-    p[1] = RT_H2LE_U16(RT_MIN(s->cCHSCylinders, 16383));
-    p[3] = RT_H2LE_U16(s->cCHSHeads);
+    p[1] = RT_H2LE_U16(RT_MIN(s->PCHSGeometry.cCylinders, 16383));
+    p[3] = RT_H2LE_U16(s->PCHSGeometry.cHeads);
     /* Block size; obsolete, but required for the BIOS. */
     p[5] = RT_H2LE_U16(512);
-    p[6] = RT_H2LE_U16(s->cCHSSectors);
+    p[6] = RT_H2LE_U16(s->PCHSGeometry.cSectors);
     ataPadString((uint8_t *)(p + 10), aSerial, 20); /* serial number */
     p[20] = RT_H2LE_U16(3); /* XXX: retired, cache type */
     p[21] = RT_H2LE_U16(512); /* XXX: retired, cache size in sectors */
@@ -1081,11 +1081,15 @@ static bool ataIdentifySS(ATADevState *s)
     p[51] = RT_H2LE_U16(240); /* PIO transfer cycle */
     p[52] = RT_H2LE_U16(240); /* DMA transfer cycle */
     p[53] = RT_H2LE_U16(1 | 1 << 1 | 1 << 2); /* words 54-58,64-70,88 valid */
-    p[54] = RT_H2LE_U16(RT_MIN(s->cCHSCylinders, 16383));
-    p[55] = RT_H2LE_U16(s->cCHSHeads);
-    p[56] = RT_H2LE_U16(s->cCHSSectors);
-    p[57] = RT_H2LE_U16(RT_MIN(s->cCHSCylinders, 16383) * s->cCHSHeads * s->cCHSSectors);
-    p[58] = RT_H2LE_U16(RT_MIN(s->cCHSCylinders, 16383) * s->cCHSHeads * s->cCHSSectors >> 16);
+    p[54] = RT_H2LE_U16(RT_MIN(s->PCHSGeometry.cCylinders, 16383));
+    p[55] = RT_H2LE_U16(s->PCHSGeometry.cHeads);
+    p[56] = RT_H2LE_U16(s->PCHSGeometry.cSectors);
+    p[57] = RT_H2LE_U16(  RT_MIN(s->PCHSGeometry.cCylinders, 16383)
+                        * s->PCHSGeometry.cHeads
+                        * s->PCHSGeometry.cSectors);
+    p[58] = RT_H2LE_U16(  RT_MIN(s->PCHSGeometry.cCylinders, 16383)
+                        * s->PCHSGeometry.cHeads
+                        * s->PCHSGeometry.cSectors >> 16);
     if (s->cMultSectors)
         p[59] = RT_H2LE_U16(0x100 | s->cMultSectors);
     if (s->cTotalSectors <= (1 << 28) - 1)
@@ -1267,8 +1271,8 @@ static uint64_t ataGetSector(ATADevState *s)
     else
     {
         /* CHS */
-        iLBA = ((s->uATARegHCyl << 8) | s->uATARegLCyl) * s->cCHSHeads * s->cCHSSectors +
-            (s->uATARegSelect & 0x0f) * s->cCHSSectors +
+        iLBA = ((s->uATARegHCyl << 8) | s->uATARegLCyl) * s->PCHSGeometry.cHeads * s->PCHSGeometry.cSectors +
+            (s->uATARegSelect & 0x0f) * s->PCHSGeometry.cSectors +
             (s->uATARegSector - 1);
     }
     return iLBA;
@@ -1302,12 +1306,12 @@ static void ataSetSector(ATADevState *s, uint64_t iLBA)
     else
     {
         /* CHS */
-        cyl = iLBA / (s->cCHSHeads * s->cCHSSectors);
-        r = iLBA % (s->cCHSHeads * s->cCHSSectors);
+        cyl = iLBA / (s->PCHSGeometry.cHeads * s->PCHSGeometry.cSectors);
+        r = iLBA % (s->PCHSGeometry.cHeads * s->PCHSGeometry.cSectors);
         s->uATARegHCyl = cyl >> 8;
         s->uATARegLCyl = cyl;
-        s->uATARegSelect = (s->uATARegSelect & 0xf0) | ((r / s->cCHSSectors) & 0x0f);
-        s->uATARegSector = (r % s->cCHSSectors) + 1;
+        s->uATARegSelect = (s->uATARegSelect & 0xf0) | ((r / s->PCHSGeometry.cSectors) & 0x0f);
+        s->uATARegSector = (r % s->PCHSGeometry.cSectors) + 1;
     }
 }
 
@@ -3867,48 +3871,6 @@ static int ataDataRead(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, uint
 
 #ifdef IN_RING3
 
-/* Attempt to guess the LCHS disk geometry from the MS-DOS master boot
- * record (partition table). */
-static int ataGuessDiskLCHS(ATADevState *s, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors)
-{
-    uint8_t aMBR[512], *p;
-    int rc;
-    uint32_t iEndHead, iEndSector, cCHSCylinders, cCHSHeads, cCHSSectors;
-
-    if (s->fATAPI || !s->pDrvBlock)
-        return VERR_INVALID_PARAMETER;
-    rc = s->pDrvBlock->pfnRead(s->pDrvBlock, 0, aMBR, 1 * 512);
-    if (VBOX_FAILURE(rc))
-        return rc;
-    /* Test MBR magic number. */
-    if (aMBR[510] != 0x55 || aMBR[511] != 0xaa)
-        return VERR_INVALID_PARAMETER;
-    for (uint32_t i = 0; i < 4; i++)
-    {
-        /* Figure out the start of a partition table entry. */
-        p = &aMBR[0x1be + i * 16];
-        iEndHead = p[5];
-        iEndSector = p[6] & 63;
-        if ((p[12] | p[13] | p[14] | p[15]) && iEndSector & iEndHead)
-        {
-            /* Assumption: partition terminates on a cylinder boundary. */
-            cCHSHeads = iEndHead + 1;
-            cCHSSectors = iEndSector;
-            cCHSCylinders = s->cTotalSectors / (cCHSHeads * cCHSSectors);
-            if (cCHSCylinders >= 1)
-            {
-                *pcHeads = cCHSHeads;
-                *pcSectors = cCHSSectors;
-                *pcCylinders = cCHSCylinders;
-                Log(("%s: LCHS=%d %d %d\n", __FUNCTION__, cCHSCylinders, cCHSHeads, cCHSSectors));
-                return VINF_SUCCESS;
-            }
-        }
-    }
-    return VERR_INVALID_PARAMETER;
-}
-
-
 static void ataDMATransferStop(ATADevState *s)
 {
     s->cbTotalTransfer = 0;
@@ -5446,112 +5408,48 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
     }
 
     /*
-     * Init geometry.
+     * Init geometry (only for non-CD/DVD media).
      */
     if (pIf->fATAPI)
     {
         pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / 2048;
-        rc = pIf->pDrvBlockBios->pfnGetGeometry(pIf->pDrvBlockBios, &pIf->cCHSCylinders, &pIf->cCHSHeads, &pIf->cCHSSectors);
-        pIf->cCHSCylinders = 0; /* dummy */
-        pIf->cCHSHeads     = 0; /* dummy */
-        pIf->cCHSSectors   = 0; /* dummy */
-        if (rc != VERR_PDM_MEDIA_NOT_MOUNTED)
-        {
-            pIf->pDrvBlockBios->pfnSetTranslation(pIf->pDrvBlockBios, PDMBIOSTRANSLATION_NONE);
-            pIf->pDrvBlockBios->pfnSetGeometry(pIf->pDrvBlockBios, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors);
-        }
+        pIf->PCHSGeometry.cCylinders = 0; /* dummy */
+        pIf->PCHSGeometry.cHeads     = 0; /* dummy */
+        pIf->PCHSGeometry.cSectors   = 0; /* dummy */
         LogRel(("PIIX3 ATA: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough %s\n", pIf->iLUN, pIf->cTotalSectors, (pIf->fATAPIPassthrough ? "enabled" : "disabled")));
     }
     else
     {
         pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / 512;
-        rc = pIf->pDrvBlockBios->pfnGetGeometry(pIf->pDrvBlockBios, &pIf->cCHSCylinders, &pIf->cCHSHeads, &pIf->cCHSSectors);
+        rc = pIf->pDrvBlockBios->pfnGetPCHSGeometry(pIf->pDrvBlockBios,
+                                                    &pIf->PCHSGeometry);
         if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
         {
-            pIf->cCHSCylinders = 0;
-            pIf->cCHSHeads     = 16; /*??*/
-            pIf->cCHSSectors   = 63; /*??*/
+            pIf->PCHSGeometry.cCylinders = 0;
+            pIf->PCHSGeometry.cHeads     = 16; /*??*/
+            pIf->PCHSGeometry.cSectors   = 63; /*??*/
         }
-        else if (VBOX_FAILURE(rc))
+        else if (rc == VERR_PDM_GEOMETRY_NOT_SET)
         {
-            PDMBIOSTRANSLATION enmTranslation;
-            rc = pIf->pDrvBlockBios->pfnGetTranslation(pIf->pDrvBlockBios, &enmTranslation);
-            if (rc == VERR_PDM_TRANSLATION_NOT_SET)
-            {
-                enmTranslation = PDMBIOSTRANSLATION_AUTO;
-                pIf->cCHSCylinders = 0;
-                rc = VINF_SUCCESS;
-            }
-            AssertRC(rc);
+            pIf->PCHSGeometry.cCylinders = 0; /* autodetect marker */
+            rc = VINF_SUCCESS;
+        }
+        AssertRC(rc);
 
-            if (    enmTranslation == PDMBIOSTRANSLATION_AUTO
-                &&  (   pIf->cCHSCylinders == 0
-                     || pIf->cCHSHeads == 0
-                     || pIf->cCHSSectors == 0
-                    )
-               )
-            {
-                /* Image contains no geometry information, detect geometry. */
-                rc = ataGuessDiskLCHS(pIf, &pIf->cCHSCylinders, &pIf->cCHSHeads, &pIf->cCHSSectors);
-                if (VBOX_SUCCESS(rc))
-                {
-                    /* Caution: the above function returns LCHS, but the
-                     * disk must report proper PCHS values for disks bigger
-                     * than approximately 512MB. */
-                    if (pIf->cCHSSectors == 63 && (pIf->cCHSHeads != 16 || pIf->cCHSCylinders >= 1024))
-                    {
-                        pIf->cCHSCylinders = pIf->cTotalSectors / 63 / 16;
-                        pIf->cCHSHeads = 16;
-                        pIf->cCHSSectors = 63;
-                        /* Set the disk CHS translation mode. */
-                         pIf->pDrvBlockBios->pfnSetTranslation(pIf->pDrvBlockBios, PDMBIOSTRANSLATION_LBA);
-                    }
-                    /* Set the disk geometry information. */
-                    rc = pIf->pDrvBlockBios->pfnSetGeometry(pIf->pDrvBlockBios, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors);
-                }
-                else
-                {
-                    /* Flag geometry as invalid, will be replaced below by the
-                     * default geometry. */
-                    pIf->cCHSCylinders = 0;
-                }
-            }
-            if (!pIf->cCHSCylinders)
-            {
-                /* If there is no geometry, use standard physical disk geometry.
-                 * This uses LCHS to LBA translation in the BIOS (which selects
-                 * the logical sector count 63 and the logical head count to be
-                 * the smallest of 16,32,64,128,255 which makes the logical
-                 * cylinder count smaller than 1024 - if that's not possible, it
-                 * uses 255 heads, so up to about 8 GByte maximum with the
-                 * standard int13 interface, which supports 1024 cylinders). */
-                uint64_t cCHSCylinders = pIf->cTotalSectors / (16 * 63);
-                pIf->cCHSCylinders = (uint32_t)RT_MAX(cCHSCylinders, 1);
-                pIf->cCHSHeads = 16;
-                pIf->cCHSSectors = 63;
-                /* Set the disk geometry information. */
-                rc = pIf->pDrvBlockBios->pfnSetGeometry(pIf->pDrvBlockBios, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors);
-            }
-        }
-        else
+        if (   pIf->PCHSGeometry.cCylinders == 0
+            || pIf->PCHSGeometry.cHeads == 0
+            || pIf->PCHSGeometry.cSectors == 0
+           )
         {
-            PDMBIOSTRANSLATION enmTranslation;
-            rc = pIf->pDrvBlockBios->pfnGetTranslation(pIf->pDrvBlockBios, &enmTranslation);
-            if ((   rc == VERR_PDM_TRANSLATION_NOT_SET
-                 || enmTranslation == PDMBIOSTRANSLATION_LBA)
-                &&  pIf->cCHSSectors == 63
-                && (pIf->cCHSHeads != 16 || pIf->cCHSCylinders >= 1024))
-            {
-                /* Use the official LBA physical CHS geometry. */
-                uint64_t cCHSCylinders = pIf->cTotalSectors / (16 * 63);
-                pIf->cCHSCylinders = RT_MAX((uint32_t)RT_MIN(cCHSCylinders, 16383), 1);
-                pIf->cCHSHeads = 16;
-                pIf->cCHSSectors = 63;
-                /* DO NOT write back the disk geometry information. This
-                 * intentionally sets the ATA geometry only. */
-            }
+            uint64_t cCylinders = pIf->cTotalSectors / (16 * 63);
+            pIf->PCHSGeometry.cCylinders = RT_MAX(RT_MIN(cCylinders, 16383), 1);
+            pIf->PCHSGeometry.cHeads = 16;
+            pIf->PCHSGeometry.cSectors = 63;
+            /* Set the disk geometry information. */
+            rc = pIf->pDrvBlockBios->pfnSetPCHSGeometry(pIf->pDrvBlockBios,
+                                                        &pIf->PCHSGeometry);
         }
-        LogRel(("PIIX3 ATA: LUN#%d: disk, CHS=%d/%d/%d, total number of sectors %Ld\n", pIf->iLUN, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors, pIf->cTotalSectors));
+        LogRel(("PIIX3 ATA: LUN#%d: disk, PCHS=%u/%u/%u, total number of sectors %Ld\n", pIf->iLUN, pIf->PCHSGeometry.cCylinders, pIf->PCHSGeometry.cHeads, pIf->PCHSGeometry.cSectors, pIf->cTotalSectors));
     }
     return VINF_SUCCESS;
 }
@@ -5719,9 +5617,9 @@ static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
             SSMR3PutBool(pSSMHandle, pData->aCts[i].aIfs[j].fATAPI);
             SSMR3PutBool(pSSMHandle, pData->aCts[i].aIfs[j].fIrqPending);
             SSMR3PutU8(pSSMHandle, pData->aCts[i].aIfs[j].cMultSectors);
-            SSMR3PutU32(pSSMHandle, pData->aCts[i].aIfs[j].cCHSCylinders);
-            SSMR3PutU32(pSSMHandle, pData->aCts[i].aIfs[j].cCHSHeads);
-            SSMR3PutU32(pSSMHandle, pData->aCts[i].aIfs[j].cCHSSectors);
+            SSMR3PutU32(pSSMHandle, pData->aCts[i].aIfs[j].PCHSGeometry.cCylinders);
+            SSMR3PutU32(pSSMHandle, pData->aCts[i].aIfs[j].PCHSGeometry.cHeads);
+            SSMR3PutU32(pSSMHandle, pData->aCts[i].aIfs[j].PCHSGeometry.cSectors);
             SSMR3PutU32(pSSMHandle, pData->aCts[i].aIfs[j].cSectorsPerIRQ);
             SSMR3PutU64(pSSMHandle, pData->aCts[i].aIfs[j].cTotalSectors);
             SSMR3PutU8(pSSMHandle, pData->aCts[i].aIfs[j].uATARegFeature);
@@ -5824,9 +5722,9 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
             SSMR3GetBool(pSSMHandle, &pData->aCts[i].aIfs[j].fATAPI);
             SSMR3GetBool(pSSMHandle, &pData->aCts[i].aIfs[j].fIrqPending);
             SSMR3GetU8(pSSMHandle, &pData->aCts[i].aIfs[j].cMultSectors);
-            SSMR3GetU32(pSSMHandle, &pData->aCts[i].aIfs[j].cCHSCylinders);
-            SSMR3GetU32(pSSMHandle, &pData->aCts[i].aIfs[j].cCHSHeads);
-            SSMR3GetU32(pSSMHandle, &pData->aCts[i].aIfs[j].cCHSSectors);
+            SSMR3GetU32(pSSMHandle, &pData->aCts[i].aIfs[j].PCHSGeometry.cCylinders);
+            SSMR3GetU32(pSSMHandle, &pData->aCts[i].aIfs[j].PCHSGeometry.cHeads);
+            SSMR3GetU32(pSSMHandle, &pData->aCts[i].aIfs[j].PCHSGeometry.cSectors);
             SSMR3GetU32(pSSMHandle, &pData->aCts[i].aIfs[j].cSectorsPerIRQ);
             SSMR3GetU64(pSSMHandle, &pData->aCts[i].aIfs[j].cTotalSectors);
             SSMR3GetU8(pSSMHandle, &pData->aCts[i].aIfs[j].uATARegFeature);

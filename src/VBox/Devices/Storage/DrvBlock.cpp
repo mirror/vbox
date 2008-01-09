@@ -70,8 +70,6 @@ typedef struct DRVBLOCK
     bool                    fMountable;
     /** Visible to the BIOS. */
     bool                    fBiosVisible;
-    /** Whether or not enmTranslation is valid. */
-    bool                    fTranslationSet;
 #ifdef VBOX_PERIODIC_FLUSH
     /** HACK: Configuration value for number of bytes written after which to flush. */
     uint32_t                cbFlushInterval;
@@ -99,14 +97,10 @@ typedef struct DRVBLOCK
     /** Uuid of the drive. */
     RTUUID                  Uuid;
 
-    /** BIOS Geometry: Translation mode. */
-    PDMBIOSTRANSLATION      enmTranslation;
-    /** BIOS Geometry: Cylinders. */
-    uint32_t                cCylinders;
-    /** BIOS Geometry: Heads. */
-    uint32_t                cHeads;
-    /** BIOS Geometry: Sectors. */
-    uint32_t                cSectors;
+    /** BIOS PCHS Geometry. */
+    PDMMEDIAGEOMETRY        PCHSGeometry;
+    /** BIOS LCHS Geometry. */
+    PDMMEDIAGEOMETRY        LCHSGeometry;
 } DRVBLOCK, *PDRVBLOCK;
 
 
@@ -253,8 +247,8 @@ static DECLCALLBACK(int) drvblockGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid)
 #define PDMIBLOCKBIOS_2_DRVBLOCK(pInterface)    ( (PDRVBLOCK((uintptr_t)pInterface - RT_OFFSETOF(DRVBLOCK, IBlockBios))) )
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnGetGeometry */
-static DECLCALLBACK(int) drvblockGetGeometry(PPDMIBLOCKBIOS pInterface, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors)
+/** @copydoc PDMIBLOCKBIOS::pfnGetPCHSGeometry */
+static DECLCALLBACK(int) drvblockGetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     PDRVBLOCK pData = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
 
@@ -267,41 +261,37 @@ static DECLCALLBACK(int) drvblockGetGeometry(PPDMIBLOCKBIOS pInterface, uint32_t
     /*
      * Use configured/cached values if present.
      */
-    if (    pData->cCylinders > 0
-        &&  pData->cHeads > 0
-        &&  pData->cSectors > 0)
+    if (    pData->PCHSGeometry.cCylinders > 0
+        &&  pData->PCHSGeometry.cHeads > 0
+        &&  pData->PCHSGeometry.cSectors > 0)
     {
-        *pcCylinders = pData->cCylinders;
-        *pcHeads     = pData->cHeads;
-        *pcSectors   = pData->cSectors;
-        LogFlow(("drvblockGetGeometry: returns VINF_SUCCESS {%d,%d,%d}\n", pData->cCylinders, pData->cHeads, pData->cSectors));
+        *pPCHSGeometry = pData->PCHSGeometry;
+        LogFlow(("%s: returns VINF_SUCCESS {%d,%d,%d}\n", __FUNCTION__, pData->PCHSGeometry.cCylinders, pData->PCHSGeometry.cHeads, pData->PCHSGeometry.cSectors));
         return VINF_SUCCESS;
     }
 
     /*
      * Call media.
      */
-    int rc = pData->pDrvMedia->pfnBiosGetGeometry(pData->pDrvMedia, pcCylinders, pcHeads, pcSectors);
+    int rc = pData->pDrvMedia->pfnBiosGetPCHSGeometry(pData->pDrvMedia, &pData->PCHSGeometry);
     if (VBOX_SUCCESS(rc))
     {
-        pData->cCylinders = *pcCylinders;
-        pData->cHeads     = *pcHeads;
-        pData->cSectors   = *pcSectors;
-        LogFlow(("drvblockGetGeometry: returns %Vrc {%d,%d,%d}\n", rc, pData->cCylinders, pData->cHeads, pData->cSectors));
+        *pPCHSGeometry = pData->PCHSGeometry;
+        LogFlow(("%s: returns %Vrc {%d,%d,%d}\n", __FUNCTION__, rc, pData->PCHSGeometry.cCylinders, pData->PCHSGeometry.cHeads, pData->PCHSGeometry.cSectors));
     }
     else if (rc == VERR_NOT_IMPLEMENTED)
     {
         rc = VERR_PDM_GEOMETRY_NOT_SET;
-        LogFlow(("drvblockGetGeometry: returns %Vrc\n", rc));
+        LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
     }
     return rc;
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnSetGeometry */
-static DECLCALLBACK(int) drvblockSetGeometry(PPDMIBLOCKBIOS pInterface, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors)
+/** @copydoc PDMIBLOCKBIOS::pfnSetPCHSGeometry */
+static DECLCALLBACK(int) drvblockSetPCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
-    LogFlow(("drvblockSetGeometry: cCylinders=%d cHeads=%d cSectors=%d\n", cCylinders, cHeads, cSectors));
+    LogFlow(("%s: cCylinders=%d cHeads=%d cSectors=%d\n", __FUNCTION__, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PDRVBLOCK pData = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
 
     /*
@@ -316,21 +306,19 @@ static DECLCALLBACK(int) drvblockSetGeometry(PPDMIBLOCKBIOS pInterface, uint32_t
     /*
      * Call media. Ignore the not implemented return code.
      */
-    int rc = pData->pDrvMedia->pfnBiosSetGeometry(pData->pDrvMedia, cCylinders, cHeads, cSectors);
+    int rc = pData->pDrvMedia->pfnBiosSetPCHSGeometry(pData->pDrvMedia, pPCHSGeometry);
     if (    VBOX_SUCCESS(rc)
         ||  rc == VERR_NOT_IMPLEMENTED)
     {
-        pData->cCylinders = cCylinders;
-        pData->cHeads     = cHeads;
-        pData->cSectors   = cSectors;
+        pData->PCHSGeometry = *pPCHSGeometry;
         rc = VINF_SUCCESS;
     }
     return rc;
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnGetTranslation */
-static DECLCALLBACK(int) drvblockGetTranslation(PPDMIBLOCKBIOS pInterface, PPDMBIOSTRANSLATION penmTranslation)
+/** @copydoc PDMIBLOCKBIOS::pfnGetLCHSGeometry */
+static DECLCALLBACK(int) drvblockGetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     PDRVBLOCK pData = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
 
@@ -338,41 +326,42 @@ static DECLCALLBACK(int) drvblockGetTranslation(PPDMIBLOCKBIOS pInterface, PPDMB
      * Check the state.
      */
     if (!pData->pDrvMedia)
-    {
-        LogFlow(("drvblockGetTranslation: returns VERR_PDM_MEDIA_NOT_MOUNTED\n"));
         return VERR_PDM_MEDIA_NOT_MOUNTED;
-    }
 
     /*
-     * Use configured/cached data if present.
+     * Use configured/cached values if present.
      */
-    if (pData->fTranslationSet)
+    if (    pData->LCHSGeometry.cCylinders > 0
+        &&  pData->LCHSGeometry.cHeads > 0
+        &&  pData->LCHSGeometry.cSectors > 0)
     {
-        *penmTranslation = pData->enmTranslation;
-        LogFlow(("drvblockGetTranslation: returns VINF_SUCCESS *penmTranslation=%d\n", *penmTranslation));
+        *pLCHSGeometry = pData->LCHSGeometry;
+        LogFlow(("%s: returns VINF_SUCCESS {%d,%d,%d}\n", __FUNCTION__, pData->LCHSGeometry.cCylinders, pData->LCHSGeometry.cHeads, pData->LCHSGeometry.cSectors));
         return VINF_SUCCESS;
     }
 
     /*
-     * Call media. Handle the not implemented status code.
+     * Call media.
      */
-    int rc = pData->pDrvMedia->pfnBiosGetTranslation(pData->pDrvMedia, penmTranslation);
+    int rc = pData->pDrvMedia->pfnBiosGetLCHSGeometry(pData->pDrvMedia, &pData->LCHSGeometry);
     if (VBOX_SUCCESS(rc))
     {
-        pData->enmTranslation = *penmTranslation;
-        pData->fTranslationSet = true;
+        *pLCHSGeometry = pData->LCHSGeometry;
+        LogFlow(("%s: returns %Vrc {%d,%d,%d}\n", __FUNCTION__, rc, pData->LCHSGeometry.cCylinders, pData->LCHSGeometry.cHeads, pData->LCHSGeometry.cSectors));
     }
     else if (rc == VERR_NOT_IMPLEMENTED)
-        rc = VERR_PDM_TRANSLATION_NOT_SET;
-    LogFlow(("drvblockGetTranslation: returns %Vrc *penmTranslation=%d\n", rc, *penmTranslation));
+    {
+        rc = VERR_PDM_GEOMETRY_NOT_SET;
+        LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
+    }
     return rc;
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnSetTranslation */
-static DECLCALLBACK(int) drvblockSetTranslation(PPDMIBLOCKBIOS pInterface, PDMBIOSTRANSLATION enmTranslation)
+/** @copydoc PDMIBLOCKBIOS::pfnSetLCHSGeometry */
+static DECLCALLBACK(int) drvblockSetLCHSGeometry(PPDMIBLOCKBIOS pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    LogFlow(("drvblockSetTranslation: enmTranslation=%d\n", enmTranslation));
+    LogFlow(("%s: cCylinders=%d cHeads=%d cSectors=%d\n", __FUNCTION__, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PDRVBLOCK pData = PDMIBLOCKBIOS_2_DRVBLOCK(pInterface);
 
     /*
@@ -387,12 +376,11 @@ static DECLCALLBACK(int) drvblockSetTranslation(PPDMIBLOCKBIOS pInterface, PDMBI
     /*
      * Call media. Ignore the not implemented return code.
      */
-    int rc = pData->pDrvMedia->pfnBiosSetTranslation(pData->pDrvMedia, enmTranslation);
+    int rc = pData->pDrvMedia->pfnBiosSetLCHSGeometry(pData->pDrvMedia, pLCHSGeometry);
     if (    VBOX_SUCCESS(rc)
         ||  rc == VERR_NOT_IMPLEMENTED)
     {
-        pData->fTranslationSet = true;
-        pData->enmTranslation = enmTranslation;
+        pData->LCHSGeometry = *pLCHSGeometry;
         rc = VINF_SUCCESS;
     }
     return rc;
@@ -470,8 +458,12 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
          * Initialize state.
          */
         pData->fLocked = false;
-        pData->enmTranslation = PDMBIOSTRANSLATION_NONE;
-        pData->cCylinders = pData->cHeads = pData->cSectors = 0;
+        pData->PCHSGeometry.cCylinders  = 0;
+        pData->PCHSGeometry.cHeads      = 0;
+        pData->PCHSGeometry.cSectors    = 0;
+        pData->LCHSGeometry.cCylinders  = 0;
+        pData->LCHSGeometry.cHeads      = 0;
+        pData->LCHSGeometry.cSectors    = 0;
 #ifdef VBOX_PERIODIC_FLUSH
         pData->cbDataWritten = 0;
 #endif /* VBOX_PERIODIC_FLUSH */
@@ -626,9 +618,9 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
      * Validate configuration.
      */
 #if defined(VBOX_PERIODIC_FLUSH) || defined(VBOX_IGNORE_FLUSH)
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Translation\0Mountable\0FlushInterval\0IgnoreFlush\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Mountable\0FlushInterval\0IgnoreFlush\0"))
 #else /* !(VBOX_PERIODIC_FLUSH || VBOX_IGNORE_FLUSH) */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Translation\0Mountable\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Mountable\0"))
 #endif /* !(VBOX_PERIODIC_FLUSH || VBOX_IGNORE_FLUSH) */
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
@@ -650,10 +642,10 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     pData->IBlock.pfnGetUuid                = drvblockGetUuid;
 
     /* IBlockBios. */
-    pData->IBlockBios.pfnGetGeometry        = drvblockGetGeometry;
-    pData->IBlockBios.pfnSetGeometry        = drvblockSetGeometry;
-    pData->IBlockBios.pfnGetTranslation     = drvblockGetTranslation;
-    pData->IBlockBios.pfnSetTranslation     = drvblockSetTranslation;
+    pData->IBlockBios.pfnGetPCHSGeometry    = drvblockGetPCHSGeometry;
+    pData->IBlockBios.pfnSetPCHSGeometry    = drvblockSetPCHSGeometry;
+    pData->IBlockBios.pfnGetLCHSGeometry    = drvblockGetLCHSGeometry;
+    pData->IBlockBios.pfnSetLCHSGeometry    = drvblockSetLCHSGeometry;
     pData->IBlockBios.pfnIsVisible          = drvblockIsVisible;
     pData->IBlockBios.pfnGetType            = drvblockBiosGetType;
 
@@ -745,9 +737,9 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     /** @todo AttachFailError is currently completely ignored. */
 
     /* Cylinders */
-    rc = CFGMR3QueryU32(pCfgHandle, "Cylinders", &pData->cCylinders);
+    rc = CFGMR3QueryU32(pCfgHandle, "Cylinders", &pData->LCHSGeometry.cCylinders);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->cCylinders = 0;
+        pData->LCHSGeometry.cCylinders = 0;
     else if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Query \"Cylinders\" resulted in %Vrc.\n", rc));
@@ -755,9 +747,9 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     }
 
     /* Heads */
-    rc = CFGMR3QueryU32(pCfgHandle, "Heads", &pData->cHeads);
+    rc = CFGMR3QueryU32(pCfgHandle, "Heads", &pData->LCHSGeometry.cHeads);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->cHeads = 0;
+        pData->LCHSGeometry.cHeads = 0;
     else if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Query \"Heads\" resulted in %Vrc.\n", rc));
@@ -765,43 +757,13 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     }
 
     /* Sectors */
-    rc = CFGMR3QueryU32(pCfgHandle, "Sectors", &pData->cSectors);
+    rc = CFGMR3QueryU32(pCfgHandle, "Sectors", &pData->LCHSGeometry.cSectors);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->cSectors = 0;
+        pData->LCHSGeometry.cSectors = 0;
     else if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Query \"Sectors\" resulted in %Vrc.\n", rc));
         return rc;
-    }
-
-    /* Translation */
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "Translation", &psz);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-    {
-        pData->enmTranslation = PDMBIOSTRANSLATION_NONE;
-        pData->fTranslationSet = false;
-    }
-    else if (VBOX_SUCCESS(rc))
-    {
-        if (!strcmp(psz, "None"))
-            pData->enmTranslation = PDMBIOSTRANSLATION_NONE;
-        else if (!strcmp(psz, "LBA"))
-            pData->enmTranslation = PDMBIOSTRANSLATION_LBA;
-        else if (!strcmp(psz, "Auto"))
-            pData->enmTranslation = PDMBIOSTRANSLATION_AUTO;
-        else
-        {
-            AssertMsgFailed(("Configuration error: Unknown translation \"%s\".\n", psz));
-            MMR3HeapFree(psz);
-            return VERR_PDM_BLOCK_UNKNOWN_TRANSLATION;
-        }
-        MMR3HeapFree(psz); psz = NULL;
-        pData->fTranslationSet = true;
-    }
-    else
-    {
-        AssertMsgFailed(("Configuration error: Failed to obtain the translation, rc=%Vrc.\n", rc));
-        return VERR_PDM_BLOCK_NO_TYPE;
     }
 
     /* Uuid */

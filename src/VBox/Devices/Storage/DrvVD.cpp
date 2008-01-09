@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2006-2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,7 +71,8 @@ typedef struct VBOXDISK
 *   Error reporting callback                                                   *
 *******************************************************************************/
 
-static void vdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+static void drvvdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL,
+                               const char *pszFormat, va_list va)
 {
     PPDMDRVINS pDrvIns = (PPDMDRVINS)pvUser;
     pDrvIns->pDrvHlp->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
@@ -82,8 +83,8 @@ static void vdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL, const char *p
 *******************************************************************************/
 
 /** @copydoc PDMIMEDIA::pfnRead */
-static DECLCALLBACK(int) vdRead(PPDMIMEDIA pInterface,
-                                uint64_t off, void *pvBuf, size_t cbRead)
+static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
+                                   uint64_t off, void *pvBuf, size_t cbRead)
 {
     LogFlow(("%s: off=%#llx pvBuf=%p cbRead=%d\n", __FUNCTION__,
              off, pvBuf, cbRead));
@@ -97,9 +98,9 @@ static DECLCALLBACK(int) vdRead(PPDMIMEDIA pInterface,
 }
 
 /** @copydoc PDMIMEDIA::pfnWrite */
-static DECLCALLBACK(int) vdWrite(PPDMIMEDIA pInterface,
-                                 uint64_t off, const void *pvBuf,
-                                 size_t cbWrite)
+static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
+                                    uint64_t off, const void *pvBuf,
+                                    size_t cbWrite)
 {
     LogFlow(("%s: off=%#llx pvBuf=%p cbWrite=%d\n", __FUNCTION__,
              off, pvBuf, cbWrite));
@@ -112,7 +113,7 @@ static DECLCALLBACK(int) vdWrite(PPDMIMEDIA pInterface,
 }
 
 /** @copydoc PDMIMEDIA::pfnFlush */
-static DECLCALLBACK(int) vdFlush(PPDMIMEDIA pInterface)
+static DECLCALLBACK(int) drvvdFlush(PPDMIMEDIA pInterface)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
@@ -122,17 +123,17 @@ static DECLCALLBACK(int) vdFlush(PPDMIMEDIA pInterface)
 }
 
 /** @copydoc PDMIMEDIA::pfnGetSize */
-static DECLCALLBACK(uint64_t) vdGetSize(PPDMIMEDIA pInterface)
+static DECLCALLBACK(uint64_t) drvvdGetSize(PPDMIMEDIA pInterface)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
-    uint64_t cb = VDGetSize(pData->pDisk);
+    uint64_t cb = VDGetSize(pData->pDisk, VD_LAST_IMAGE);
     LogFlow(("%s: returns %#llx (%llu)\n", __FUNCTION__, cb, cb));
     return cb;
 }
 
 /** @copydoc PDMIMEDIA::pfnIsReadOnly */
-static DECLCALLBACK(bool) vdIsReadOnly(PPDMIMEDIA pInterface)
+static DECLCALLBACK(bool) drvvdIsReadOnly(PPDMIMEDIA pInterface)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
@@ -141,63 +142,66 @@ static DECLCALLBACK(bool) vdIsReadOnly(PPDMIMEDIA pInterface)
     return f;
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosGetGeometry */
-static DECLCALLBACK(int) vdBiosGetGeometry(PPDMIMEDIA pInterface,
-                                           uint32_t *pcCylinders,
-                                           uint32_t *pcHeads,
-                                           uint32_t *pcSectors)
+/** @copydoc PDMIMEDIA::pfnBiosGetPCHSGeometry */
+static DECLCALLBACK(int) drvvdBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
+                                                  PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
-    int rc = VDGetGeometry(pData->pDisk, pcCylinders, pcHeads, pcSectors);
+    int rc = VDGetPCHSGeometry(pData->pDisk, VD_LAST_IMAGE, pPCHSGeometry);
     if (VBOX_FAILURE(rc))
     {
         Log(("%s: geometry not available.\n", __FUNCTION__));
         rc = VERR_PDM_GEOMETRY_NOT_SET;
     }
     LogFlow(("%s: returns %Vrc (CHS=%d/%d/%d)\n", __FUNCTION__,
-             rc, *pcCylinders, *pcHeads, *pcSectors));
+             rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosSetGeometry */
-static DECLCALLBACK(int) vdBiosSetGeometry(PPDMIMEDIA pInterface,
-                                           uint32_t cCylinders,
-                                           uint32_t cHeads,
-                                           uint32_t cSectors)
+/** @copydoc PDMIMEDIA::pfnBiosSetPCHSGeometry */
+static DECLCALLBACK(int) drvvdBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
+                                                  PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     LogFlow(("%s: CHS=%d/%d/%d\n", __FUNCTION__,
-             cCylinders, cHeads, cSectors));
+             pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
-    int rc = VDSetGeometry(pData->pDisk, cCylinders, cHeads, cSectors);
+    int rc = VDSetPCHSGeometry(pData->pDisk, VD_LAST_IMAGE, pPCHSGeometry);
     LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosGetTranslation */
-static DECLCALLBACK(int) vdBiosGetTranslation(PPDMIMEDIA pInterface,
-                                              PPDMBIOSTRANSLATION penmTranslation)
+/** @copydoc PDMIMEDIA::pfnBiosGetLCHSGeometry */
+static DECLCALLBACK(int) drvvdBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
+                                                  PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
-    int rc = VDGetTranslation(pData->pDisk, penmTranslation);
-    LogFlow(("%s: returns %Vrc (%d)\n", __FUNCTION__, rc, *penmTranslation));
+    int rc = VDGetLCHSGeometry(pData->pDisk, VD_LAST_IMAGE, pLCHSGeometry);
+    if (VBOX_FAILURE(rc))
+    {
+        Log(("%s: geometry not available.\n", __FUNCTION__));
+        rc = VERR_PDM_GEOMETRY_NOT_SET;
+    }
+    LogFlow(("%s: returns %Vrc (CHS=%d/%d/%d)\n", __FUNCTION__,
+             rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosSetTranslation */
-static DECLCALLBACK(int) vdBiosSetTranslation(PPDMIMEDIA pInterface,
-                                              PDMBIOSTRANSLATION enmTranslation)
+/** @copydoc PDMIMEDIA::pfnBiosSetLCHSGeometry */
+static DECLCALLBACK(int) drvvdBiosSetLCHSGeometry(PPDMIMEDIA pInterface,
+                                                  PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlow(("%s: CHS=%d/%d/%d\n", __FUNCTION__,
+             pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
-    int rc = VDSetTranslation(pData->pDisk, enmTranslation);
-    LogFlow(("%s: returns %Vrc (%d)\n", __FUNCTION__, rc, enmTranslation));
+    int rc = VDSetLCHSGeometry(pData->pDisk, VD_LAST_IMAGE, pLCHSGeometry);
+    LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
     return rc;
 }
 
 /** @copydoc PDMIMEDIA::pfnGetUuid */
-static DECLCALLBACK(int) vdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
+static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMIMEDIA_2_VBOXDISK(pInterface);
@@ -212,8 +216,8 @@ static DECLCALLBACK(int) vdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 *******************************************************************************/
 
 /** @copydoc PDMIBASE::pfnQueryInterface */
-static DECLCALLBACK(void *) vdQueryInterface(PPDMIBASE pInterface,
-                                             PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvvdQueryInterface(PPDMIBASE pInterface,
+                                                PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
     PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
@@ -244,7 +248,8 @@ static DECLCALLBACK(void *) vdQueryInterface(PPDMIBASE pInterface,
  *                      of the driver instance. It's also found in pDrvIns->pCfgHandle as it's expected
  *                      to be used frequently in this function.
  */
-static DECLCALLBACK(int) vdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
+                                        PCFGMNODE pCfgHandle)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
@@ -256,21 +261,21 @@ static DECLCALLBACK(int) vdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     /*
      * Init the static parts.
      */
-    pDrvIns->IBase.pfnQueryInterface    = vdQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface    = drvvdQueryInterface;
     pData->pDrvIns = pDrvIns;
     pData->fTempReadOnly = false;
 
     /* IMedia */
-    pData->IMedia.pfnRead               = vdRead;
-    pData->IMedia.pfnWrite              = vdWrite;
-    pData->IMedia.pfnFlush              = vdFlush;
-    pData->IMedia.pfnGetSize            = vdGetSize;
-    pData->IMedia.pfnIsReadOnly         = vdIsReadOnly;
-    pData->IMedia.pfnBiosGetGeometry    = vdBiosGetGeometry;
-    pData->IMedia.pfnBiosSetGeometry    = vdBiosSetGeometry;
-    pData->IMedia.pfnBiosGetTranslation = vdBiosGetTranslation;
-    pData->IMedia.pfnBiosSetTranslation = vdBiosSetTranslation;
-    pData->IMedia.pfnGetUuid            = vdGetUuid;
+    pData->IMedia.pfnRead               = drvvdRead;
+    pData->IMedia.pfnWrite              = drvvdWrite;
+    pData->IMedia.pfnFlush              = drvvdFlush;
+    pData->IMedia.pfnGetSize            = drvvdGetSize;
+    pData->IMedia.pfnIsReadOnly         = drvvdIsReadOnly;
+    pData->IMedia.pfnBiosGetPCHSGeometry = drvvdBiosGetPCHSGeometry;
+    pData->IMedia.pfnBiosSetPCHSGeometry = drvvdBiosSetPCHSGeometry;
+    pData->IMedia.pfnBiosGetLCHSGeometry = drvvdBiosGetLCHSGeometry;
+    pData->IMedia.pfnBiosSetLCHSGeometry = drvvdBiosSetLCHSGeometry;
+    pData->IMedia.pfnGetUuid            = drvvdGetUuid;
 
     /*
      * Validate configuration and find all parent images.
@@ -325,7 +330,7 @@ static DECLCALLBACK(int) vdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         }
         if (VBOX_SUCCESS(rc))
         {
-            rc = VDCreate(pData->szFormat, vdErrorCallback, pDrvIns, &pData->pDisk);
+            rc = VDCreate(pData->szFormat, drvvdErrorCallback, pDrvIns, &pData->pDisk);
             /* Error message is already set correctly. */
         }
         else
@@ -419,7 +424,7 @@ static DECLCALLBACK(int) vdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) vdDestruct(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
@@ -435,17 +440,17 @@ static DECLCALLBACK(void) vdDestruct(PPDMDRVINS pDrvIns)
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) vdSuspend(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
     if (!VDIsReadOnly(pData->pDisk))
     {
         unsigned uOpenFlags;
-        int rc = VDGetOpenFlags(pData->pDisk, &uOpenFlags);
+        int rc = VDGetOpenFlags(pData->pDisk, VD_LAST_IMAGE, &uOpenFlags);
         AssertRC(rc);
         uOpenFlags |= VD_OPEN_FLAGS_READONLY;
-        rc = VDSetOpenFlags(pData->pDisk, uOpenFlags);
+        rc = VDSetOpenFlags(pData->pDisk, VD_LAST_IMAGE, uOpenFlags);
         AssertRC(rc);
         pData->fTempReadOnly = true;
     }
@@ -453,21 +458,21 @@ static DECLCALLBACK(void) vdSuspend(PPDMDRVINS pDrvIns)
 
 /**
  * Before the VM resumes we'll have to undo the read-only mode change
- * done in vdSuspend.
+ * done in drvvdSuspend.
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) vdResume(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
     if (pData->fTempReadOnly)
     {
         unsigned uOpenFlags;
-        int rc = VDGetOpenFlags(pData->pDisk, &uOpenFlags);
+        int rc = VDGetOpenFlags(pData->pDisk, VD_LAST_IMAGE, &uOpenFlags);
         AssertRC(rc);
         uOpenFlags &= ~VD_OPEN_FLAGS_READONLY;
-        rc = VDSetOpenFlags(pData->pDisk, uOpenFlags);
+        rc = VDSetOpenFlags(pData->pDisk, VD_LAST_IMAGE, uOpenFlags);
         AssertRC(rc);
         pData->fTempReadOnly = false;
     }
@@ -483,7 +488,7 @@ const PDMDRVREG g_DrvVD =
     /* u32Version */
     PDM_DRVREG_VERSION,
     /* szDriverName */
-    "VD",
+    "DrvVD",
     /* pszDescription */
     "Generic VBox disk media driver.",
     /* fFlags */
@@ -495,9 +500,9 @@ const PDMDRVREG g_DrvVD =
     /* cbInstance */
     sizeof(VBOXDISK),
     /* pfnConstruct */
-    vdConstruct,
+    drvvdConstruct,
     /* pfnDestruct */
-    vdDestruct,
+    drvvdDestruct,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -505,9 +510,9 @@ const PDMDRVREG g_DrvVD =
     /* pfnReset */
     NULL,
     /* pfnSuspend */
-    vdSuspend,
+    drvvdSuspend,
     /* pfnResume */
-    vdResume,
+    drvvdResume,
     /* pfnDetach */
     NULL
 };

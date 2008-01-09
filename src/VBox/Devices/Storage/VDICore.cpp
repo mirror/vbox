@@ -143,11 +143,11 @@ static void vdiInitHeader(PVDIHEADER pHeader, VDIIMAGETYPE enmType, uint32_t fFl
     }
 
     /* Mark the geometry not-calculated. */
-    pHeader->u.v1.Geometry.cCylinders = 0;
-    pHeader->u.v1.Geometry.cHeads = 0;
-    pHeader->u.v1.Geometry.cSectors = 0;
-    pHeader->u.v1.Geometry.cbSector = VDI_GEOMETRY_SECTOR_SIZE;
-    pHeader->u.v1.u32Translation = PDMBIOSTRANSLATION_AUTO;
+    pHeader->u.v1.LCHSGeometry.cCylinders = 0;
+    pHeader->u.v1.LCHSGeometry.cHeads = 0;
+    pHeader->u.v1.LCHSGeometry.cSectors = 0;
+    pHeader->u.v1.LCHSGeometry.cbSector = VDI_GEOMETRY_SECTOR_SIZE;
+    pHeader->u.v1.u32Dummy = 0;
 
     pHeader->u.v1.cbDisk = cbDisk;
     pHeader->u.v1.cbBlock = cbBlock;
@@ -245,10 +245,10 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
         fFailed = true;
     }
 
-    if ((getImageGeometry(pHeader))->cbSector != VDI_GEOMETRY_SECTOR_SIZE)
+    if ((getImageLCHSGeometry(pHeader))->cbSector != VDI_GEOMETRY_SECTOR_SIZE)
     {
         LogRel(("VDI: wrong sector size (%d != %d)\n",
-               (getImageGeometry(pHeader))->cbSector, VDI_GEOMETRY_SECTOR_SIZE));
+               (getImageLCHSGeometry(pHeader))->cbSector, VDI_GEOMETRY_SECTOR_SIZE));
         fFailed = true;
     }
 
@@ -2265,8 +2265,7 @@ VBOXDDU_DECL(int) VDIConvertImage(const char *pszFilename, PFNVMPROGRESS pfnProg
                   getImageBlockSize(&pImage->Header),
                   0);
     setImageBlocksAllocated(&Header, getImageBlocksAllocated(&pImage->Header));
-    *getImageGeometry(&Header) = *getImageGeometry(&pImage->Header);
-    setImageTranslation(&Header, getImageTranslation(&pImage->Header));
+    *getImageLCHSGeometry(&Header) = *getImageLCHSGeometry(&pImage->Header);
     *getImageCreationUUID(&Header) = *getImageCreationUUID(&pImage->Header);
     *getImageModificationUUID(&Header) = *getImageModificationUUID(&pImage->Header);
 
@@ -2800,7 +2799,7 @@ VBOXDDU_DECL(bool) VDIDiskIsReadOnly(PVDIDISK pDisk)
         return pDisk->pLast->fReadOnly;
     }
 
-    AssertMsgFailed(("No one disk image is opened!\n"));
+    AssertMsgFailed(("No disk image is opened!\n"));
     return true;
 }
 
@@ -2822,7 +2821,7 @@ VBOXDDU_DECL(uint64_t) VDIDiskGetSize(PVDIDISK pDisk)
         return getImageDiskSize(&pDisk->pBase->Header);
     }
 
-    AssertMsgFailed(("No one disk image is opened!\n"));
+    AssertMsgFailed(("No disk image is opened!\n"));
     return 0;
 }
 
@@ -2844,22 +2843,20 @@ VBOXDDU_DECL(unsigned) VDIDiskGetBlockSize(PVDIDISK pDisk)
         return getImageBlockSize(&pDisk->pBase->Header);
     }
 
-    AssertMsgFailed(("No one disk image is opened!\n"));
+    AssertMsgFailed(("No disk image is opened!\n"));
     return 0;
 }
 
 /**
- * Get virtual disk geometry stored in image file.
+ * Get virtual disk LCHS geometry stored in image file.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_NOT_OPENED if no one VDI image is opened in HDD container.
  * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry has been setted.
  * @param   pDisk           Pointer to VDI HDD container.
- * @param   pcCylinders     Where to store the number of cylinders. NULL is ok.
- * @param   pcHeads         Where to store the number of heads. NULL is ok.
- * @param   pcSectors       Where to store the number of sectors. NULL is ok.
+ * @param   pLCHSGeometry   Where to store LCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDIDiskGetGeometry(PVDIDISK pDisk, unsigned *pcCylinders, unsigned *pcHeads, unsigned *pcSectors)
+VBOXDDU_DECL(int) VDIDiskGetLCHSGeometry(PVDIDISK pDisk, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     /* sanity check */
     Assert(pDisk);
@@ -2868,122 +2865,60 @@ VBOXDDU_DECL(int) VDIDiskGetGeometry(PVDIDISK pDisk, unsigned *pcCylinders, unsi
     if (pDisk->pBase)
     {
         int rc = VINF_SUCCESS;
-        PVDIDISKGEOMETRY pGeometry = getImageGeometry(&pDisk->pBase->Header);
-        LogFlow(("VDIDiskGetGeometry: C/H/S = %u/%u/%u\n",
-                 pGeometry->cCylinders, pGeometry->cHeads, pGeometry->cSectors));
+        PVDIDISKGEOMETRY pGeometry = getImageLCHSGeometry(&pDisk->pBase->Header);
+        LogFlow(("%s: C/H/S = %u/%u/%u\n",
+                 __FUNCTION__, pGeometry->cCylinders, pGeometry->cHeads, pGeometry->cSectors));
         if (    pGeometry->cCylinders > 0
             &&  pGeometry->cHeads > 0
             &&  pGeometry->cSectors > 0)
         {
-            if (pcCylinders)
-                *pcCylinders = pGeometry->cCylinders;
-            if (pcHeads)
-                *pcHeads = pGeometry->cHeads;
-            if (pcSectors)
-                *pcSectors = pGeometry->cSectors;
+            pLCHSGeometry->cCylinders = pGeometry->cCylinders;
+            pLCHSGeometry->cHeads = pGeometry->cHeads;
+            pLCHSGeometry->cSectors = pGeometry->cSectors;
         }
         else
             rc = VERR_VDI_GEOMETRY_NOT_SET;
 
-        LogFlow(("VDIDiskGetGeometry: returns %Vrc\n", rc));
+        LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
         return rc;
     }
 
-    AssertMsgFailed(("No one disk image is opened!\n"));
+    AssertMsgFailed(("No disk image is opened!\n"));
     return VERR_VDI_NOT_OPENED;
 }
 
 /**
- * Store virtual disk geometry into base image file of HDD container.
+ * Store virtual disk LCHS geometry into base image file of HDD container.
  *
  * Note that in case of unrecoverable error all images of HDD container will be closed.
  *
  * @returns VBox status code.
  * @returns VERR_VDI_NOT_OPENED if no one VDI image is opened in HDD container.
  * @param   pDisk           Pointer to VDI HDD container.
- * @param   cCylinders      Number of cylinders.
- * @param   cHeads          Number of heads.
- * @param   cSectors        Number of sectors.
+ * @param   pLCHSGeometry   Where to load LCHS geometry from. Not NULL.
  */
-VBOXDDU_DECL(int) VDIDiskSetGeometry(PVDIDISK pDisk, unsigned cCylinders, unsigned cHeads, unsigned cSectors)
+VBOXDDU_DECL(int) VDIDiskSetLCHSGeometry(PVDIDISK pDisk, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    LogFlow(("VDIDiskSetGeometry: C/H/S = %u/%u/%u\n", cCylinders, cHeads, cSectors));
+    LogFlow(("%s: C/H/S = %u/%u/%u\n", __FUNCTION__, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     /* sanity check */
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VDIDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     if (pDisk->pBase)
     {
-        PVDIDISKGEOMETRY pGeometry = getImageGeometry(&pDisk->pBase->Header);
-        pGeometry->cCylinders = cCylinders;
-        pGeometry->cHeads = cHeads;
-        pGeometry->cSectors = cSectors;
+        PVDIDISKGEOMETRY pGeometry = getImageLCHSGeometry(&pDisk->pBase->Header);
+        pGeometry->cCylinders = pLCHSGeometry->cCylinders;
+        pGeometry->cHeads = pLCHSGeometry->cHeads;
+        pGeometry->cSectors = pLCHSGeometry->cSectors;
         pGeometry->cbSector = VDI_GEOMETRY_SECTOR_SIZE;
 
         /* Update header information in base image file. */
         int rc = vdiUpdateReadOnlyHeader(pDisk->pBase);
-        LogFlow(("VDIDiskSetGeometry: returns %Vrc\n", rc));
+        LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
         return rc;
     }
 
-    AssertMsgFailed(("No one disk image is opened!\n"));
-    return VERR_VDI_NOT_OPENED;
-}
-
-/**
- * Get virtual disk translation mode stored in image file.
- *
- * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no one VDI image is opened in HDD container.
- * @param   pDisk           Pointer to VDI HDD container.
- * @param   penmTranslation Where to store the translation mode (see pdm.h).
- */
-VBOXDDU_DECL(int) VDIDiskGetTranslation(PVDIDISK pDisk, PPDMBIOSTRANSLATION penmTranslation)
-{
-    /* sanity check */
-    Assert(pDisk);
-    AssertMsg(pDisk->u32Signature == VDIDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-    Assert(penmTranslation);
-
-    if (pDisk->pBase)
-    {
-        *penmTranslation = getImageTranslation(&pDisk->pBase->Header);
-        LogFlow(("VDIDiskGetTranslation: translation=%d\n", *penmTranslation));
-        return VINF_SUCCESS;
-    }
-
-    AssertMsgFailed(("No one disk image is opened!\n"));
-    return VERR_VDI_NOT_OPENED;
-}
-
-/**
- * Store virtual disk translation mode into base image file of HDD container.
- *
- * Note that in case of unrecoverable error all images of HDD container will be closed.
- *
- * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no one VDI image is opened in HDD container.
- * @param   pDisk           Pointer to VDI HDD container.
- * @param   enmTranslation  Translation mode (see pdm.h).
- */
-VBOXDDU_DECL(int) VDIDiskSetTranslation(PVDIDISK pDisk, PDMBIOSTRANSLATION enmTranslation)
-{
-    LogFlow(("VDIDiskSetTranslation: enmTranslation=%d\n", enmTranslation));
-    /* sanity check */
-    Assert(pDisk);
-    AssertMsg(pDisk->u32Signature == VDIDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-    if (pDisk->pBase)
-    {
-        setImageTranslation(&pDisk->pBase->Header, enmTranslation);
-
-        /* Update header information in base image file. */
-        int rc = vdiUpdateReadOnlyHeader(pDisk->pBase);
-        LogFlow(("VDIDiskSetTranslation: returns %Vrc\n", rc));
-        return rc;
-    }
-
-    AssertMsgFailed(("No one disk image is opened!\n"));
+    AssertMsgFailed(("No disk image is opened!\n"));
     return VERR_VDI_NOT_OPENED;
 }
 
@@ -3527,7 +3462,7 @@ VBOXDDU_DECL(int) VDIDiskCommitLastDiff(PVDIDISK pDisk, PFNVMPROGRESS pfnProgres
     PVDIIMAGEDESC pImage = pDisk->pLast;
     if (!pImage)
     {
-        AssertMsgFailed(("No one disk image is opened!\n"));
+        AssertMsgFailed(("No disk image is opened!\n"));
         return VERR_VDI_NOT_OPENED;
     }
 
@@ -3596,7 +3531,7 @@ VBOXDDU_DECL(int) VDIDiskCreateOpenDifferenceImage(PVDIDISK pDisk, const char *p
 
     if (!pDisk->pLast)
     {
-        AssertMsgFailed(("No one disk image is opened!\n"));
+        AssertMsgFailed(("No disk image is opened!\n"));
         return VERR_VDI_NOT_OPENED;
     }
 
@@ -3645,10 +3580,9 @@ static void vdiDumpImage(PVDIIMAGEDESC pImage)
     RTLogPrintf("Header: offBlocks=%u offData=%u\n",
                 getImageBlocksOffset(&pImage->Header),
                 getImageDataOffset(&pImage->Header));
-    PVDIDISKGEOMETRY pg = getImageGeometry(&pImage->Header);
-    RTLogPrintf("Header: Geometry: C/H/S=%u/%u/%u cbSector=%u Mode=%u\n",
-                pg->cCylinders, pg->cHeads, pg->cSectors, pg->cbSector,
-                getImageTranslation(&pImage->Header));
+    PVDIDISKGEOMETRY pg = getImageLCHSGeometry(&pImage->Header);
+    RTLogPrintf("Header: Geometry: C/H/S=%u/%u/%u cbSector=%u\n",
+                pg->cCylinders, pg->cHeads, pg->cSectors, pg->cbSector);
     RTLogPrintf("Header: uuidCreation={%Vuuid}\n", getImageCreationUUID(&pImage->Header));
     RTLogPrintf("Header: uuidModification={%Vuuid}\n", getImageModificationUUID(&pImage->Header));
     RTLogPrintf("Header: uuidParent={%Vuuid}\n", getImageParentUUID(&pImage->Header));

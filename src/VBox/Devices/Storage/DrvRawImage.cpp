@@ -75,10 +75,10 @@ static DECLCALLBACK(int) drvRawImageFlush(PPDMIMEDIA pInterface);
 static DECLCALLBACK(bool) drvRawImageIsReadOnly(PPDMIMEDIA pInterface);
 static DECLCALLBACK(uint64_t) drvRawImageGetSize(PPDMIMEDIA pInterface);
 static DECLCALLBACK(int) drvRawImageGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid);
-static DECLCALLBACK(int) drvRawImageBiosGetGeometry(PPDMIMEDIA pInterface, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors);
-static DECLCALLBACK(int) drvRawImageBiosSetGeometry(PPDMIMEDIA pInterface, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors);
-static DECLCALLBACK(int) drvRawImageBiosGetTranslation(PPDMIMEDIA pInterface, PPDMBIOSTRANSLATION penmTranslation);
-static DECLCALLBACK(int) drvRawImageBiosSetTranslation(PPDMIMEDIA pInterface, PDMBIOSTRANSLATION enmTranslation);
+static DECLCALLBACK(int) drvRawImageBiosGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry);
+static DECLCALLBACK(int) drvRawImageBiosSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry);
+static DECLCALLBACK(int) drvRawImageBiosGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry);
+static DECLCALLBACK(int) drvRawImageBiosSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry);
 
 static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
 
@@ -113,10 +113,10 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pData->IMedia.pfnGetSize            = drvRawImageGetSize;
     pData->IMedia.pfnGetUuid            = drvRawImageGetUuid;
     pData->IMedia.pfnIsReadOnly         = drvRawImageIsReadOnly;
-    pData->IMedia.pfnBiosGetGeometry    = drvRawImageBiosGetGeometry;
-    pData->IMedia.pfnBiosSetGeometry    = drvRawImageBiosSetGeometry;
-    pData->IMedia.pfnBiosGetTranslation = drvRawImageBiosGetTranslation;
-    pData->IMedia.pfnBiosSetTranslation = drvRawImageBiosSetTranslation;
+    pData->IMedia.pfnBiosGetPCHSGeometry = drvRawImageBiosGetPCHSGeometry;
+    pData->IMedia.pfnBiosSetPCHSGeometry = drvRawImageBiosSetPCHSGeometry;
+    pData->IMedia.pfnBiosGetLCHSGeometry = drvRawImageBiosGetLCHSGeometry;
+    pData->IMedia.pfnBiosSetLCHSGeometry = drvRawImageBiosSetLCHSGeometry;
 
     /*
      * Read the configuration.
@@ -206,15 +206,29 @@ static DECLCALLBACK(uint64_t) drvRawImageGetSize(PPDMIMEDIA pInterface)
 }
 
 
-/** @copydoc PDMIMEDIA::pfnBiosGetGeometry */
-static DECLCALLBACK(int) drvRawImageBiosGetGeometry(PPDMIMEDIA pInterface, uint32_t *pcCylinders, uint32_t *pcHeads, uint32_t *pcSectors)
+/** @copydoc PDMIMEDIA::pfnBiosGetPCHSGeometry */
+static DECLCALLBACK(int) drvRawImageBiosGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-/** @copydoc PDMIMEDIA::pfnBiosSetGeometry */
-static DECLCALLBACK(int) drvRawImageBiosSetGeometry(PPDMIMEDIA pInterface, uint32_t cCylinders, uint32_t cHeads, uint32_t cSectors)
+/** @copydoc PDMIMEDIA::pfnBiosSetPCHSGeometry */
+static DECLCALLBACK(int) drvRawImageBiosSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** @copydoc PDMIMEDIA::pfnBiosGetLCHSGeometry */
+static DECLCALLBACK(int) drvRawImageBiosGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** @copydoc PDMIMEDIA::pfnBiosSetLCHSGeometry */
+static DECLCALLBACK(int) drvRawImageBiosSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -318,30 +332,6 @@ static DECLCALLBACK(bool) drvRawImageIsReadOnly(PPDMIMEDIA pInterface)
 {
     PDRVRAWIMAGE pData = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
     return pData->fReadOnly;
-}
-
-
-/**
- * Stub - operation not supported.
- *
- * @copydoc PDMIMEDIA::pfnBiosGetTranslation
- */
-static DECLCALLBACK(int) drvRawImageBiosGetTranslation(PPDMIMEDIA pInterface, PPDMBIOSTRANSLATION penmTranslation)
-{
-    NOREF(pInterface); NOREF(penmTranslation);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-/**
- * Stub - operation not supported.
- *
- * @copydoc PDMIMEDIA::pfnBiosSetTranslation
- */
-static DECLCALLBACK(int) drvRawImageBiosSetTranslation(PPDMIMEDIA pInterface, PDMBIOSTRANSLATION enmTranslation)
-{
-    NOREF(pInterface); NOREF(enmTranslation);
-    return VERR_NOT_IMPLEMENTED;
 }
 
 
