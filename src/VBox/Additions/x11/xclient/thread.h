@@ -29,7 +29,7 @@ class VBoxGuestThread;
 class VBoxGuestThreadFunction
 {
 public:
-    VBoxGuestThreadFunction(void);
+    // VBoxGuestThreadFunction(void);
     virtual ~VBoxGuestThreadFunction(void) {}
     /**
       * The actual thread function.

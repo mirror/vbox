@@ -28,6 +28,9 @@
 #include <vector>
 
 #define VIRTUAL_ROOTS_PROP "_NET_VIRTUAL_ROOTS"
+#define WM_TYPE_PROP "_NET_WM_WINDOW_TYPE"
+#define WM_TYPE_DESKTOP_PROP "_NET_WM_WINDOW_TYPE_DESKTOP"
+#define NET_CLIENT_LIST "_NET_CLIENT_LIST"
 
 /**
  * Wrapper class around the VBoxGuestX11Pointer to provide reference semantics.
@@ -131,9 +134,11 @@ class VBoxGuestX11Display
 private:
     Display *mDisplay;
 public:
-    VBoxGuestX11Display(char *name = 0)
+    VBoxGuestX11Display(void) {}
+    bool init(char *name = 0)
     {
         mDisplay = XOpenDisplay(name);
+        return (0 != mDisplay);
     }
     operator Display *() { return mDisplay; }
     Display *get(void) { return mDisplay; }
@@ -146,26 +151,23 @@ public:
     Used inside of VBoxGuestWindowList. */
 struct VBoxGuestWinInfo {
 public:
-    /** Is this window currently mapped? */
+    /** Is the window currently mapped? */
     bool mMapped;
     /** Co-ordinates in the guest screen. */
-    int mx, my;
+    int mX, mY;
     /** Window dimensions. */
-    int mwidth, mheight;
+    int mWidth, mHeight;
     /** Number of rectangles used to represent the visible area. */
     int mcRects;
     /** Rectangles representing the visible area.  These must be allocated by XMalloc
         and will be freed automatically if non-null when the class is destroyed. */
     VBoxGuestX11Pointer<XRectangle> mapRects;
-    /** The index of the virtual root that this window is a child of. */
-    int mParent;
     /** Constructor. */
-    VBoxGuestWinInfo(bool mapped, int x, int y, int w, int h, int cRects,
-                     VBoxGuestX11Pointer<XRectangle> rects, int parent)
+    VBoxGuestWinInfo(bool isMapped, int x, int y, int w, int h, int cRects,
+                     VBoxGuestX11Pointer<XRectangle> rects)
             : mapRects(rects)
     {
-        mMapped = mapped; mx = x; my = y; mwidth = w; mheight = h; mcRects = cRects;
-        mParent = parent;
+        mMapped = isMapped, mX = x; mY = y; mWidth = w; mHeight = h; mcRects = cRects;
     }
 
 private:
@@ -213,10 +215,10 @@ public:
     iterator find(Window win) { return mWindows.find(win); }
 
     void addWindow(Window hWin, bool isMapped, int x, int y, int w, int h, int cRects,
-                   VBoxGuestX11Pointer<XRectangle> rects, int parent)
+                   VBoxGuestX11Pointer<XRectangle> rects)
     {
         VBoxGuestWinInfo *pInfo = new VBoxGuestWinInfo(isMapped, x, y, w, h, cRects,
-                                                       rects, parent);
+                                                       rects);
         mWindows.insert(std::pair<Window, VBoxGuestWinInfo *>(hWin, pInfo));
     }
 
@@ -229,27 +231,6 @@ public:
     void removeWindow(Window hWin)
     {
         removeWindow(find(hWin));
-    }
-};
-
-/** Structure containing information about a windows handle and position, for keeping
-    track of desktop windows.  Used internally by VBoxGuestSeamlessX11. */
-struct VBoxGuestDesktopInfo
-{
-    /** The Window handle for this window. */
-    Window mWin;
-    /** Co-ordinates relative to the root window (I hope!). */
-    int mx, my;
-    /** Is this window mapped? */
-    bool mMapped;
-
-    /** Constructor */
-    VBoxGuestDesktopInfo(Window hWin, int x, int y, bool mapped)
-    {
-        mWin = hWin;
-        mx = x;
-        my = y;
-        mMapped = mapped;
     }
 };
 
@@ -267,16 +248,16 @@ private:
     VBoxGuestSeamlessObserver *mObserver;
     /** Our connection to the X11 display we are running on. */
     VBoxGuestX11Display mDisplay;
-    /** Vector to keep track of which windows are to be treated as desktop windows. */
-    std::vector<VBoxGuestDesktopInfo> mDesktopWindows;
     /** Class to keep track of visible guest windows. */
     VBoxGuestWindowList mGuestWindows;
     /** Keeps track of the total number of rectangles needed for the visible area of all
         guest windows on the last call to getRects.  Used for pre-allocating space in
         the vector of rectangles passed to the host. */
     int mcRects;
+    /** Do we support the X shaped window extension? */
+    bool mSupportsShape;
     /** Is seamles mode currently enabled?  */
-    bool isEnabled;
+    bool mEnabled;
 
     // Private methods
 
@@ -296,11 +277,10 @@ private:
      *
      * @param   hWin     the window concerned - should be a "desktop" window
      */
-    void addDesktopWindow(Window hWin);
-    bool addNonDesktopWindow(Window hWin);
-    void addWindowToList(Window hWin, Window hParent);
-    void monitorDesktopWindows(void);
+    void monitorClientList(void);
+    void unmonitorClientList(void);
     void rebuildWindowTree(void);
+    void addClientWindow(Window hWin);
     void freeWindowTree(void);
     void updateHostSeamlessInfo(void);
 
@@ -336,15 +316,14 @@ public:
     /** Get the current list of visible rectangles. */
     std::auto_ptr<std::vector<RTRECT> > getRects(void);
 
-    /** Process next event in the X11 event queue - called by the event thread. */
+    /** Process next event in the guest event queue - called by the event thread. */
     void nextEvent(void);
-    /** Send ourselves an X11 client event to wake up the event thread - called by
-        the event thread. */
+    /** Wake up the event thread if it is waiting for an event so that it can exit. */
     bool interruptEvent(void);
 
     VBoxGuestSeamlessX11(void)
     {
-        mObserver = 0; mcRects = 0; isEnabled = false;
+        mObserver = 0; mcRects = 0; mEnabled = false; mSupportsShape = false;
     }
 
     ~VBoxGuestSeamlessX11() { uninit(); }

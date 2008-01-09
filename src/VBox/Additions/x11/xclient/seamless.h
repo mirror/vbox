@@ -28,6 +28,8 @@ class VBoxGuestSeamlessGuestThread: public VBoxGuestThreadFunction
 private:
     /** The guest class "owning" us. */
     VBoxGuestSeamlessGuestImpl *mGuest;
+    /** The guest observer monitoring the guest. */
+    VBoxGuestSeamlessObserver *mObserver;
     /** Should we exit the thread? */
     bool mExit;
 
@@ -36,8 +38,9 @@ private:
     VBoxGuestSeamlessGuestThread& operator=(const VBoxGuestSeamlessGuestThread&);
 
 public:
-    VBoxGuestSeamlessGuestThread(VBoxGuestSeamlessGuestImpl *pGuest)
-    { mGuest = pGuest; mExit = false; }
+    VBoxGuestSeamlessGuestThread(VBoxGuestSeamlessGuestImpl *pGuest,
+                                 VBoxGuestSeamlessObserver *pObserver)
+    { mGuest = pGuest; mObserver = pObserver; mExit = false; }
     virtual ~VBoxGuestSeamlessGuestThread(void) {}
     /**
       * The actual thread function.
@@ -47,11 +50,18 @@ public:
       */
     virtual int threadFunction(VBoxGuestThread *pThread)
     {
-        while (!pThread->isStopping)
+        int rc = VINF_SUCCESS;
+
+        rc = mGuest->start();
+        if (RT_SUCCESS(rc))
         {
-            mGuest->nextEvent();
+            while (!pThread->isStopping())
+            {
+                mGuest->nextEvent();
+            }
+            mGuest->stop();
         }
-        return VINF_SUCCESS;
+        return rc;
     }
     /**
      * Send a signal to the thread function that it should exit
@@ -65,25 +75,25 @@ class VBoxGuestSeamlessHostObserver : public VBoxGuestSeamlessObserver
 {
 private:
     VBoxGuestSeamlessHost *mHost;
-    VBoxGuestSeamlessGuestImpl *mGuest;
+    VBoxGuestThread *mGuestThread;
 
 public:
     VBoxGuestSeamlessHostObserver(VBoxGuestSeamlessHost *pHost,
-                                  VBoxGuestSeamlessGuestImpl *pGuest)
+                                  VBoxGuestThread *pGuestThread)
     {
         mHost = pHost;
-        mGuest = pGuest;
+        mGuestThread = pGuestThread;
     }
 
-    void notify(void)
+    virtual void notify(void)
     {
         switch (mHost->getState())
         {
-        case VBoxGuestSeamlessGuest::ENABLE:
-             mGuest->start();
+        case VBoxGuestSeamlessHost::ENABLE:
+             mGuestThread->start();
             break;
-        case VBoxGuestSeamlessGuest::DISABLE:
-             mGuest->stop();
+        case VBoxGuestSeamlessHost::DISABLE:
+             mGuestThread->stop(RT_INDEFINITE_WAIT, 0);
             break;
         default:
             break;
@@ -107,7 +117,7 @@ public:
         mGuest = pGuest;
     }
 
-    void notify(void)
+    virtual void notify(void)
     {
         mHost->updateRects(mGuest->getRects());
     }
@@ -118,10 +128,10 @@ class VBoxGuestSeamless
 private:
     VBoxGuestSeamlessHost mHost;
     VBoxGuestSeamlessGuestImpl mGuest;
-    VBoxGuestSeamlessHostObserver mHostObs;
-    VBoxGuestSeamlessGuestObserver mGuestObs;
     VBoxGuestSeamlessGuestThread mGuestFunction;
     VBoxGuestThread mGuestThread;
+    VBoxGuestSeamlessHostObserver mHostObs;
+    VBoxGuestSeamlessGuestObserver mGuestObs;
 
     bool isInitialised;
 public:
@@ -131,7 +141,7 @@ public:
 
         if (isInitialised)  /* Assertion */
         {
-            LogRelFunc(("error: called a second time!\n"));
+            LogRelFunc(("error: called a second time! (VBoxService)\n"));
             rc = VERR_INTERNAL_ERROR;
         }
         if (RT_SUCCESS(rc))
@@ -148,9 +158,12 @@ public:
         }
         if (RT_SUCCESS(rc))
         {
-            rc = mGuestThread.start();
+            isInitialised = true;
         }
-        isInitialised = true;
+        if (RT_FAILURE(rc))
+        {
+            LogFunc(("returning %Rrc (VBoxService)\n", rc));
+        }
         return rc;
     }
 
@@ -158,15 +171,17 @@ public:
     {
         if (isInitialised)
         {
-            mGuestThread.stop();
             mHost.stop();
+            mGuestThread.stop(RT_INDEFINITE_WAIT, 0);
             mGuest.uninit();
             isInitialised = false;
         }
     }
 
-    VBoxGuestSeamless() : mHostObs(&mHost, &mGuest), mHostObs(&mHost, &mGuest),
-                          mGuestFunction(&mGuest), mGuestThread(&mGuestFunction)
+    VBoxGuestSeamless() : mGuestFunction(&mGuest, &mGuestObs),
+                          mGuestThread(&mGuestFunction, 0, RTTHREADTYPE_MSG_PUMP,
+                                       RTTHREADFLAGS_WAITABLE, "Guest events"),
+                          mHostObs(&mHost, &mGuestThread), mGuestObs(&mHost, &mGuest)
     {
         isInitialised = false;
     }

@@ -72,6 +72,10 @@ public:
     // meEvent getState(void);
     /** Get the current list of visible rectangles. */
     std::auto_ptr<std::vector<RTRECT> > getRects(void);
+    /** Process next event in the guest event queue - called by the event thread. */
+    void nextEvent(void);
+    /** Wake up the event thread if it is waiting for an event so that it can exit. */
+    bool interruptEvent(void);
 };
 
 #if defined(RT_OS_LINUX)

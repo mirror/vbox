@@ -66,23 +66,23 @@ static VBoxGuestX11Pointer<unsigned char> XXGetProperty (Display *aDpy, Window a
 int VBoxGuestSeamlessX11::init(VBoxGuestSeamlessObserver *pObserver)
 {
     int rc = VINF_SUCCESS;
-    /** Dummy values for XShapeQueryExtension */
-    int error, event;
+    /** Dummy value for XXGetProperty */
+    unsigned long nItems;
 
     if (0 != mObserver)  /* Assertion */
     {
-        LogRelThisFunc(("ERROR: attempt to initialise service twice!\n"));
+        LogRel(("VBoxService: ERROR: attempt to initialise seamless guest object twice!\n"));
         return VERR_INTERNAL_ERROR;
     }
-    if (!mDisplay.isValid())
+    if (!mDisplay.init())
     {
-        LogRelThisFunc(("Failed to acquire a connection to the display.\n"));
+        LogRel(("VBoxService: seamless guest object failed to acquire a connection to the display.\n"));
         return VERR_ACCESS_DENIED;
     }
-    if (!XShapeQueryExtension(mDisplay, &event, &error))
+    if (0 == XXGetProperty(mDisplay, DefaultRootWindow(mDisplay.get()), XA_WINDOW,
+                           NET_CLIENT_LIST, &nItems).get())
     {
-        LogFlowFunc(("X11 shape extension not supported, returning.\n"));
-        return VERR_NOT_SUPPORTED;
+        LogRel(("VBoxService: _NET_CLIENT_LIST property not supported by guest window manager.  Seamless mode will not be enabled.\n"));
     }
     mObserver = pObserver;
     return rc;
@@ -99,9 +99,13 @@ int VBoxGuestSeamlessX11::init(VBoxGuestSeamlessObserver *pObserver)
 int VBoxGuestSeamlessX11::start(void)
 {
     int rc = VINF_SUCCESS;
+    /** Dummy values for XShapeQueryExtension */
+    int error, event;
 
-    isEnabled = true;
-    monitorDesktopWindows();
+    mSupportsShape = XShapeQueryExtension(mDisplay, &event, &error);
+    mEnabled = true;
+    monitorClientList();
+    rebuildWindowTree();
     return rc;
 }
 
@@ -109,130 +113,76 @@ int VBoxGuestSeamlessX11::start(void)
     and stop requesting updates. */
 void VBoxGuestSeamlessX11::stop(void)
 {
-    isEnabled = false;
+    mEnabled = false;
+    unmonitorClientList();
     freeWindowTree();
 }
 
-void VBoxGuestSeamlessX11::monitorDesktopWindows(void)
+void VBoxGuestSeamlessX11::monitorClientList(void)
 {
-    VBoxGuestX11Pointer<unsigned char> virtualRoots;
-    unsigned long nItems;
-
     XSelectInput(mDisplay, DefaultRootWindow(mDisplay.get()), PropertyChangeMask);
-    virtualRoots = XXGetProperty(mDisplay, DefaultRootWindow(mDisplay.get()), XA_CARDINAL,
-                                 VIRTUAL_ROOTS_PROP, &nItems);
-    if ((0 != virtualRoots.get()) && (0 != nItems))
-    {
-        rebuildWindowTree();
-    }
+}
+
+void VBoxGuestSeamlessX11::unmonitorClientList(void)
+{
+    XSelectInput(mDisplay, DefaultRootWindow(mDisplay.get()), 0);
 }
 
 void VBoxGuestSeamlessX11::rebuildWindowTree(void)
 {
-    VBoxGuestX11Pointer<unsigned char> virtualRoots;
-    Window *desktopWindows;
+    VBoxGuestX11Pointer<unsigned char> clientListRaw;
+    VBoxGuestX11Pointer<Window> clientList;
     unsigned long nItems;
 
     freeWindowTree();
-    virtualRoots = XXGetProperty(mDisplay, DefaultRootWindow(mDisplay.get()), XA_CARDINAL,
-                                 VIRTUAL_ROOTS_PROP, &nItems);
-    desktopWindows = reinterpret_cast<Window *>(virtualRoots.get());
+    clientListRaw = XXGetProperty(mDisplay, DefaultRootWindow(mDisplay.get()), XA_WINDOW,
+                                  NET_CLIENT_LIST, &nItems);
+    clientList = reinterpret_cast<Window *>(clientListRaw.release());
     for (unsigned i = 0; i < nItems; ++i)
     {
-        addDesktopWindow(desktopWindows[i]);
-    }
-    /* This must be done last, so that we do not treat the desktop windows just added as
-       child windows. */
-    addDesktopWindow(DefaultRootWindow(mDisplay.get()));
-}
+        VBoxGuestX11Pointer<unsigned char> windowTypeRaw;
+        VBoxGuestX11Pointer<Atom> windowType;
+        unsigned long ulCount;
 
-/**
- * Store information about a desktop window and register for structure events on it.
- * If it is mapped, go through the list of it's children and add information about
- * mapped children to the tree of visible windows, making sure that those windows are
- * not already in our list of desktop windows.
- *
- * @param   hWin     the window concerned - should be a "desktop" window
- */
-void VBoxGuestSeamlessX11::addDesktopWindow(Window hWin)
-{
-    unsigned int cChildren = 0;
-    VBoxGuestX11Pointer<Window> children;
-    XWindowAttributes winAttrib;
-    /** Dummies */
-    Window root, parent, *pChildren;
-
-    if (!XGetWindowAttributes(mDisplay, hWin, &winAttrib))
-    {
-        LogRelFunc(("Failed to get the window attributes for window %d\n", hWin));
-        return;
-    }
-    mDesktopWindows.push_back(VBoxGuestDesktopInfo(hWin, winAttrib.x, winAttrib.y,
-                              (IsUnmapped != winAttrib.map_state)));
-    XSelectInput(mDisplay, hWin,
-                 StructureNotifyMask | SubstructureNotifyMask | PropertyChangeMask);
-    XQueryTree(mDisplay, hWin, &root, &parent, &pChildren, &cChildren);
-    children = pChildren;
-    if (0 == children.get())
-    {
-        LogRelFunc(("Failed to get the tree of active X11 windows.\n"));
-    }
-    else
-    {
-        for (unsigned int i = 0; i < cChildren; ++i)
+        windowTypeRaw = XXGetProperty(mDisplay, clientList.get()[i], XA_ATOM,
+                                      WM_TYPE_PROP, &ulCount);
+        windowType = reinterpret_cast<Atom *>(windowTypeRaw.release());
+        if (   (ulCount != 0)
+            && (*windowType != XInternAtom(mDisplay, WM_TYPE_DESKTOP_PROP, True)))
         {
-            bool found = false;
-
-            for (unsigned int j = 0; j < mDesktopWindows.size() && !found; ++j)
-            {
-                if (children.get()[i] == mDesktopWindows[j].mWin)
-                {
-                    found = true;
-                }
-            }
-            if (!found)
-            {
-                addWindowToList(children.get()[i], hWin);
-            }
+            addClientWindow(clientList.get()[i]);
         }
     }
 }
 
-void VBoxGuestSeamlessX11::addWindowToList(const Window hWin, const Window hParent)
+void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
 {
     XWindowAttributes winAttrib;
     VBoxGuestX11Pointer<XRectangle> rects;
-    int cRects, iOrdering;
-    unsigned iParent;
-    bool isVisible = false, found = false;
+    int cRects = 0, iOrdering;
+    int x, y;
+    /** Dummy value for XTranslateCoordinates */
+    Window dummyWin;
 
     if (!XGetWindowAttributes(mDisplay, hWin, &winAttrib))
     {
-        LogRelFunc(("Failed to get the window attributes for window %d\n", hWin));
+        LogRelFunc(("VBoxService: Failed to get the window attributes for window %d\n", hWin));
         return;
     }
-    XShapeSelectInput(mDisplay, hWin, ShapeNotify);
-    rects = XShapeGetRectangles(mDisplay, hWin, ShapeClip, &cRects, &iOrdering);
-    if (0 == rects.get())
+    if (mSupportsShape)
     {
-        cRects = 0;
-    }
-    if (IsViewable == winAttrib.map_state)
-    {
-        isVisible = true;
-    }
-    for (iParent = 0; iParent < mDesktopWindows.size() && !found; ++iParent)
-    {
-        if (hParent == mDesktopWindows[iParent].mWin)
+        XShapeSelectInput(mDisplay, hWin, ShapeNotify);
+        rects = XShapeGetRectangles(mDisplay, hWin, ShapeClip, &cRects, &iOrdering);
+        if (0 == rects.get())
         {
-            found = true;
+            cRects = 0;
         }
     }
-    if (found)
-    {
-        mGuestWindows.addWindow(hWin, isVisible, winAttrib.x, winAttrib.y,
-                                winAttrib.width, winAttrib.height, cRects, rects, hParent);
-    }
+    XSelectInput(mDisplay, hWin, StructureNotifyMask);
+    XTranslateCoordinates(mDisplay, hWin, DefaultRootWindow(mDisplay.get()), winAttrib.x,
+                          winAttrib.y, &x, &y, &dummyWin);
+    mGuestWindows.addWindow(hWin, winAttrib.map_state != IsUnmapped, x, y,
+                            winAttrib.width, winAttrib.height, cRects, rects);
 }
 
 /**
@@ -240,15 +190,11 @@ void VBoxGuestSeamlessX11::addWindowToList(const Window hWin, const Window hPare
  */
 void VBoxGuestSeamlessX11::freeWindowTree(void)
 {
-    for (unsigned int i = 0; i != mDesktopWindows.size(); ++i)
-    {
-        XSelectInput(mDisplay, mDesktopWindows[i].mWin, 0);
-    }
-    mDesktopWindows.clear();
     /* We use post-increment in the operation to prevent the iterator from being invalidated. */
     for (VBoxGuestWindowList::iterator it = mGuestWindows.begin(); it != mGuestWindows.end();
                  mGuestWindows.removeWindow(it++))
     {
+        XSelectInput(mDisplay, it->first, 0);
         XShapeSelectInput(mDisplay, it->first, 0);
     }
 }
@@ -289,91 +235,55 @@ void VBoxGuestSeamlessX11::nextEvent(void)
 }
 
 /**
- * Handle a configuration event in the seamless event thread by setting the new position and
- * updating the host's rectangle information.
+ * Handle a configuration event in the seamless event thread by setting the new position.
  *
  * @param event the X11 event structure
  */
 void VBoxGuestSeamlessX11::doConfigureEvent(const XConfigureEvent *event)
 {
-    bool found = false;
-    unsigned i = 0;
+    VBoxGuestWindowList::iterator iter;
 
-    for (i = 0; i < mDesktopWindows.size() && !found; ++i)
+    iter = mGuestWindows.find(event->window);
+    if (iter != mGuestWindows.end())
     {
-        if (event->window == mDesktopWindows[i].mWin)
-        {
-            found = true;
-        }
-    }
-    if (found)
-    {
-        mDesktopWindows[i].mx = event->x;
-        mDesktopWindows[i].my = event->y;
-    }
-    else
-    {
-        VBoxGuestWindowList::iterator iter;
-
-        iter = mGuestWindows.find(event->window);
-        if (iter != mGuestWindows.end())
-        {
-            iter->second->mx = event->x;
-            iter->second->my = event->y;
-        }
+        iter->second->mX = event->x;
+        iter->second->mY = event->y;
+        iter->second->mWidth = event->width;
+        iter->second->mHeight = event->height;
     }
 }
 
 /**
- * Handle a map event in the seamless event thread by adding the guest window to the list of
- * visible windows and updating the host's rectangle information.
+ * Handle a map event in the seamless event thread.
  *
  * @param event the X11 event structure
  */
 void VBoxGuestSeamlessX11::doMapEvent(const XMapEvent *event)
 {
     VBoxGuestWindowList::iterator iter;
-    bool found = false;
 
-    /* Is one of our desktop windows? */
-    for (unsigned i = 0; i < mDesktopWindows.size() && !found; ++i)
+    iter = mGuestWindows.find(event->window);
+    if (iter != mGuestWindows.end())
     {
-        if (event->window == mDesktopWindows[i].mWin)
-        {
-            mDesktopWindows[i].mMapped = true;
-            found = true;
-        }
-    }
-    if (!found)
-    {
-        /* Make sure that the window is not already present in the tree */
-        iter = mGuestWindows.find(event->window);
-        if (iter != mGuestWindows.end())
-        {
-            LogRelFunc(("Warning: MapNotify event received for a window listed as mapped\n"));
-            mGuestWindows.removeWindow(event->window);
-        }
-        addWindowToList(event->window, event->event);
+        iter->second->mMapped = true;
     }
 }
 
 /**
- * If the list of virtual root windows changes, completely rescan visible windows.
+ * If the list of client windows changes, rebuild the list.
  *
  * @param event the X11 event structure
  */
 void VBoxGuestSeamlessX11::doPropertyEvent(const XPropertyEvent *event)
 {
-    if (XInternAtom(mDisplay, VIRTUAL_ROOTS_PROP, true) == event->atom)
+    if (XInternAtom(mDisplay, NET_CLIENT_LIST, true) == event->atom)
     {
         rebuildWindowTree();
     }
 }
 
 /**
- * Handle a window shape change event in the seamless event thread by changing the set of
- * visible rectangles for the window in the list of visible guest windows and updating the
- * host's rectangle information.
+ * Handle a window shape change event in the seamless event thread.
  *
  * @param event the X11 event structure
  */
@@ -397,37 +307,18 @@ void VBoxGuestSeamlessX11::doShapeEvent(const XShapeEvent *event)
 }
 
 /**
- * Handle an unmap event in the seamless event thread by removing the guest window from the
- * list of visible windows and updating the host's rectangle information.
+ * Handle an unmap event in the seamless event thread.
  *
  * @param event the X11 event structure
  */
 void VBoxGuestSeamlessX11::doUnmapEvent(const XUnmapEvent *event)
 {
     VBoxGuestWindowList::iterator iter;
-    bool found = false;
 
-    /* Is this is one of our desktop windows? */
-    for (unsigned i = 0; i < mDesktopWindows.size() && !found; ++i)
+    iter = mGuestWindows.find(event->window);
+    if (iter != mGuestWindows.end())
     {
-        if (event->window == mDesktopWindows[i].mWin)
-        {
-            mDesktopWindows[i].mMapped = false;
-            found = true;
-        }
-    }
-    if (!found)
-    {
-        /* Make sure that the window is not already present in the tree */
-        iter = mGuestWindows.find(event->window);
-        if (iter != mGuestWindows.end())
-        {
-            mGuestWindows.removeWindow(event->window);
-        }
-        else
-        {
-            LogRelFunc(("Warning: UnmapNotify event received for a window not listed as mapped\n"));
-        }
+        iter->second->mMapped = true;
     }
 }
 
@@ -446,39 +337,39 @@ std::auto_ptr<std::vector<RTRECT> > VBoxGuestSeamlessX11::getRects(void)
     for (VBoxGuestWindowList::iterator it = mGuestWindows.begin();
          it != mGuestWindows.end(); ++it)
     {
-        Window hParent = it->second->mParent;
-        unsigned iParent;
-        bool found = false;
-
-        for (iParent = 0; iParent < mDesktopWindows.size() && !found; ++iParent)
+        if (it->second->mMapped)
         {
-            if (mDesktopWindows[iParent].mWin == hParent)
+            if (it->second->mcRects > 0)
             {
-                found = true;
+                for (int i = 0; i < it->second->mcRects; ++i)
+                {
+                    RTRECT rect;
+                    rect.xLeft   =   it->second->mX
+                                   + it->second->mapRects.get()[i].x;
+                    rect.yBottom =   it->second->mY
+                                   + it->second->mapRects.get()[i].y
+                                   + it->second->mapRects.get()[i].height;
+                    rect.xRight  =   it->second->mX
+                                   + it->second->mapRects.get()[i].x
+                                   + it->second->mapRects.get()[i].width;
+                    rect.yTop    =   it->second->mY
+                                   + it->second->mapRects.get()[i].y;
+                    apRects.get()->push_back(rect);
+                }
+                cRects += it->second->mcRects;
             }
-        }
-        if (found && mDesktopWindows[iParent - 1].mMapped && it->second->mMapped)
-        {
-            for (int i = 0; i < it->second->mcRects; ++i)
+            else
             {
                 RTRECT rect;
-                rect.xLeft   =   it->second->mx
-                              + it->second->mapRects.get()[i].x
-                              + mDesktopWindows[iParent].mx;
-                rect.yBottom =   it->second->my
-                              + it->second->mapRects.get()[i].y
-                              + it->second->mapRects.get()[i].height
-                              + mDesktopWindows[iParent].my;
-                rect.xRight  =   it->second->mx
-                              + it->second->mapRects.get()[i].x
-                              + it->second->mapRects.get()[i].width
-                              + mDesktopWindows[iParent].mx;
-                rect.yTop    =   it->second->my
-                              + it->second->mapRects.get()[i].y
-                              + mDesktopWindows[iParent].my;
+                rect.xLeft   =  it->second->mX;
+                rect.yBottom =  it->second->mY
+                              + it->second->mHeight;
+                rect.xRight  =  it->second->mX
+                              + it->second->mWidth;
+                rect.yTop    =  it->second->mY;
                 apRects.get()->push_back(rect);
+                ++cRects;
             }
-            cRects += it->second->mcRects;
         }
     }
     mcRects = cRects;
@@ -492,8 +383,14 @@ std::auto_ptr<std::vector<RTRECT> > VBoxGuestSeamlessX11::getRects(void)
  */
 bool VBoxGuestSeamlessX11::interruptEvent(void)
 {
-    XClientMessageEvent clientMessage = { ClientMessage };  /* Other members set to zero. */
-    XSendEvent(mDisplay, DefaultRootWindow(mDisplay.get()), false, StructureNotifyMask,
-               reinterpret_cast<XEvent *>(&clientMessage));
-    return true;
+    /* Message contents set to zero. */
+    XClientMessageEvent clientMessage = { ClientMessage, 0, 0, 0, 0, 0, 8 };
+
+    if (0 != XSendEvent(mDisplay, DefaultRootWindow(mDisplay.get()), false, PropertyChangeMask,
+                   reinterpret_cast<XEvent *>(&clientMessage)))
+    {
+        XFlush(mDisplay);
+        return true;
+    }
+    return false;
 }
