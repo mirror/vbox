@@ -245,6 +245,16 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
 #endif
 
+#if defined(VBOX_WITH_PDM_ASYNC_COMPLETION)
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvRawImageAsync);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvTransportAsync);
+    if (VBOX_FAILURE(rc))
+        return rc;
+#endif
+
     return VINF_SUCCESS;
 }
 
