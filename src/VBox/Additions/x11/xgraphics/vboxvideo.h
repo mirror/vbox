@@ -155,7 +155,9 @@ typedef struct _VBOXRec
 #ifdef XORG_7X
     IOADDRESS ioBase;
 #endif  /* XORG_7X defined */
+#ifndef RT_OS_SOLARIS
     int vbox_fd;
+#endif
     VMMDevReqMousePointer *reqp;
     xf86CursorInfoPtr pCurs;
     Bool use_hw_cursor;

@@ -105,7 +105,6 @@ endif
 ifeq ($(BUILD_TARGET),solaris)
 DLLS = vboxmouse_drv
 
-## @todo Need a different template here. vboxmouse isn't an executable (EXE) program AFAIK. Bug me about it next week (bird).
 vboxmouse_drv_TEMPLATE = VBOXGUESTR3DLL
 vboxmouse_drv_DEFS = 	\
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT \

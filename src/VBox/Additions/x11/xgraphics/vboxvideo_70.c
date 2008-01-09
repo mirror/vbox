@@ -326,7 +326,9 @@ VBOXGetRec(ScrnInfoPtr pScrn)
     if (!pScrn->driverPrivate)
     {
         pScrn->driverPrivate = xcalloc(sizeof(VBOXRec), 1);
+#ifndef RT_OS_SOLARIS
         ((VBOXPtr)pScrn->driverPrivate)->vbox_fd = -1;
+#endif
     }
 
     return ((VBOXPtr)pScrn->driverPrivate);
