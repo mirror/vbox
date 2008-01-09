@@ -628,7 +628,7 @@ static int SolarisOpenVNIC(PDRVTAP pData)
     int rc = dlpi_open(pData->pszDeviceName, &pData->pDeviceHandle, DLPI_RAW);
     if (rc != DLPI_SUCCESS)
         return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                           N_("Failed to open VNIC \"%s\" in raw mode."), pData->pszDeviceName);
+                           N_("Failed to open VNIC \"%s\" in raw mode"), pData->pszDeviceName);
 
     dlpi_info_t vnicInfo;
     rc = dlpi_info(pData->pDeviceHandle, &vnicInfo, 0);
@@ -657,31 +657,31 @@ static int SolarisOpenVNIC(PDRVTAP pData)
                             }
 
                             rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                                     N_("Failed to obtain file descriptor for VNIC."));
+                                                     N_("Failed to obtain file descriptor for VNIC"));
                         }
                         else
                             rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                                     N_("Failed to set appropriate promiscous mode."));
+                                                     N_("Failed to set appropriate promiscous mode"));
                     }
                     else
                         rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                                 N_("Failed to activate promiscous mode for VNIC."));
+                                                 N_("Failed to activate promiscous mode for VNIC"));
                 }
                 else
                     rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                             N_("Failed to set physical address for VNIC."));
+                                             N_("Failed to set physical address for VNIC"));
             }
             else
                 rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                         N_("Failed to bind VNIC."));
+                                         N_("Failed to bind VNIC"));
         }
         else
             rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                         N_("VNIC type is not ethernet."));
+                                         N_("VNIC type is not ethernet"));
     }
     else
         rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                         N_("Failed to obtain VNIC info.")); 
+                                         N_("Failed to obtain VNIC info")); 
     dlpi_close(pData->pDeviceHandle);
     return rc;
 }
@@ -1048,7 +1048,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, NULL);
     if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_NO_ATTACH,
-                                N_("Configuration error: Cannot attach drivers to the TAP driver!"));
+                                N_("Configuration error: Cannot attach drivers to the TAP driver"));
 
     /*
      * Query the network port interface.
@@ -1056,7 +1056,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     pData->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
     if (!pData->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
-                                N_("Configuration error: The above device/driver didn't export the network port interface!"));
+                                N_("Configuration error: The above device/driver didn't export the network port interface"));
 
     /*
      * Read the configuration.
@@ -1118,11 +1118,11 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     rc = CFGMR3QueryS32(pCfgHandle, "FileHandle", &iFile);
     if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("Configuration error: Query for \"FileHandle\" 32-bit signed integer failed!"));
+                                N_("Configuration error: Query for \"FileHandle\" 32-bit signed integer failed"));
     pData->FileDevice = (RTFILE)iFile;
     if (!RTFileIsValid(pData->FileDevice))
         return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_HANDLE, RT_SRC_POS,
-                                   N_("The TAP file handle %RTfile is not valid!"), pData->FileDevice);
+                                   N_("The TAP file handle %RTfile is not valid"), pData->FileDevice);
 #endif /* !RT_OS_SOLARIS */
 
     /*

@@ -1139,10 +1139,10 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, const cha
         *penmBoot = DEVPCBIOSBOOT_LAN;
     else if (!strcmp(psz, "NONE"))
         *penmBoot = DEVPCBIOSBOOT_NONE;
-    else
+//    else
     {
         PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                            N_("Configuration error: The \"%s\" value \"%s\" is unknown.\n"),
+                            N_("Configuration error: The \"%s\" value \"%s\" is unknown"),
                             pszParam, psz);
         rc = VERR_INTERNAL_ERROR;
     }
@@ -1209,7 +1209,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         pData->u8IOAPIC = 1;
     else if (VBOX_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"IOAPIC\"."));
+                                N_("Configuration error: Failed to read \"IOAPIC\""));
 
     static const char * const s_apszBootDevices[] = { "BootDevice0", "BootDevice1", "BootDevice2", "BootDevice3" };
     Assert(ELEMENTS(s_apszBootDevices) == ELEMENTS(pData->aenmBootDevice));

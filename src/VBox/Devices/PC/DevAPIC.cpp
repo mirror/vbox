@@ -1650,7 +1650,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         fIOAPIC = true;
     else if (VBOX_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"IOAPIC\"."));
+                                N_("Configuration error: Failed to read \"IOAPIC\""));
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -1992,7 +1992,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         fGCEnabled = true;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query boolean value \"GCEnabled\"!"));
+                                N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
     Log(("IOAPIC: fGCEnabled=%d\n", fGCEnabled));
 
     rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
@@ -2000,7 +2000,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         fR0Enabled = true;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query boolean value \"R0Enabled\"!"));
+                                N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
     Log(("IOAPIC: fR0Enabled=%d\n", fR0Enabled));
 
     /*

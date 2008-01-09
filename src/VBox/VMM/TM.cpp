@@ -310,7 +310,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     else if (   pVM->tm.s.cTSCTicksPerSecond < _1M
              || pVM->tm.s.cTSCTicksPerSecond >= _4G)
         return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                          N_("Configuration error: \"TSCTicksPerSecond\" = %RI64 is not in the range 1MHz..4GHz-1!"),
+                          N_("Configuration error: \"TSCTicksPerSecond\" = %RI64 is not in the range 1MHz..4GHz-1"),
                           pVM->tm.s.cTSCTicksPerSecond);
     else
     {
@@ -409,7 +409,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     else if (   pVM->tm.s.u32VirtualWarpDrivePercentage < 2
              || pVM->tm.s.u32VirtualWarpDrivePercentage > 20000)
         return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                          N_("Configuration error: \"WarpDrivePercent\" = %RI32 is not in the range 2..20000!"),
+                          N_("Configuration error: \"WarpDrivePercent\" = %RI32 is not in the range 2..20000"),
                           pVM->tm.s.u32VirtualWarpDrivePercentage);
     pVM->tm.s.fVirtualWarpDrive = pVM->tm.s.u32VirtualWarpDrivePercentage != 100;
     if (pVM->tm.s.fVirtualWarpDrive)

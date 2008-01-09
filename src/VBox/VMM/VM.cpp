@@ -257,7 +257,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                          * An error occurred during VM creation. Set the error message directly
                          * using the initial callback, as the callback list doesn't exist yet.
                          */
-                        const char *pszError;
+                        const char *pszError = NULL;
                         switch (rc)
                         {
                             case VERR_VMX_IN_VMX_ROOT_MODE:
@@ -273,7 +273,8 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                                 pszError = N_("Unknown error creating VM");
                                 AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
                         }
-                        vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
+                        if (pszError)
+                            vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
 
                         /* Forcefully terminate the emulation thread. */
                         VM_FF_SET(pVM, VM_FF_TERMINATE);
@@ -327,7 +328,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
 			      "Re-setup the kernel module by executing "
 			      "'/etc/init.d/vboxdrv setup' as root");
 #else
-                pszError = N_("VirtualBox kernel driver not loaded.");
+                pszError = N_("VirtualBox kernel driver not loaded");
 #endif
                 break;
             case VERR_VM_DRIVER_OPEN_ERROR:

@@ -479,7 +479,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, NULL);
     if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_NO_ATTACH,
-                                N_("Configuration error: Cannot attach drivers to the TUN driver!"));
+                                N_("Configuration error: Cannot attach drivers to the TUN driver"));
 
     /*
      * Query the network port interface.
@@ -487,7 +487,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pData->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
     if (!pData->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
-                                N_("Configuration error: the above device/driver didn't export the network port interface!"));
+                                N_("Configuration error: the above device/driver didn't export the network port interface"));
 
     /*
      * Read the configuration.
@@ -496,7 +496,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "HostInterfaceName", &pszHostDriver);
     if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("Configuration error: query for \"HostInterfaceName\" failed."));
+                                N_("Configuration error: query for \"HostInterfaceName\" failed"));
 
     TAP_MEDIASTATUS mediastatus;
     DWORD length;
@@ -506,7 +506,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     rc = CFGMR3QueryBytes(pCfgHandle, "GUID", szDriverGUID, sizeof(szDriverGUID));
     if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Configuration error: could not query GUID!"));
+                                N_("Configuration error: could not query GUID"));
 
     RTStrPrintfEx(NULL, NULL, szFullDriverName, sizeof(szFullDriverName), "\\\\.\\Global\\%s.tap", szDriverGUID);
 
@@ -531,7 +531,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     {
         CloseHandle(pData->hFile);
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_HIF_INVALID_VERSION,
-                                N_("Failed to get the Host Interface Networking device driver version."));;
+                                N_("Failed to get the Host Interface Networking device driver version"));;
     }
     LogRel(("TAP version %d.%d\n", pData->tapVersion.major, pData->tapVersion.minor));
 
@@ -541,7 +541,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     {
         CloseHandle(pData->hFile);
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_HIF_INVALID_VERSION,
-                                N_("Invalid Host Interface Networking device driver version."));;
+                                N_("Invalid Host Interface Networking device driver version"));;
     }
 
     mediastatus.fConnect = TRUE;

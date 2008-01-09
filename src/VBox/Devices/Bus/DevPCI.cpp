@@ -1447,7 +1447,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         fUseIoApic = false;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query boolean value \"IOAPIC\"."));
+                                N_("Configuration error: Failed to query boolean value \"IOAPIC\""));
 
     /* check if GC code is enabled. */
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
@@ -1455,7 +1455,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         fGCEnabled = true;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query boolean value \"GCEnabled\"."));
+                                N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
     Log(("PCI: fGCEnabled=%d\n", fGCEnabled));
 
     /* check if R0 code is enabled. */
@@ -1464,7 +1464,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         fR0Enabled = true;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query boolean value \"R0Enabled\"."));
+                                N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
     Log(("PCI: fR0Enabled=%d\n", fR0Enabled));
 
     /*
