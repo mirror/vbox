@@ -106,24 +106,24 @@ typedef struct GVMM
      * The first entry is unused as it represents the NIL handle. */
     GVMHANDLE           aHandles[128];
 
-    /** The number of VMs that means we no longer considers ourselves along on a CPU/Core.
-     * @gcfgm   /GVMM/cVMsMeansCompany 32-bit  0..UINT32_MAX
+    /** @gcfgm{/GVMM/cVMsMeansCompany, 32-bit, 0, UINT32_MAX, 1}
+     * The number of VMs that means we no longer consider ourselves alone on a CPU/Core.
      */
     uint32_t            cVMsMeansCompany;
-    /** The minimum sleep time for when we're alone, in nano seconds.
-     * @gcfgm   /GVMM/MinSleepAlone     32-bit  0..100000000
+    /** @gcfgm{/GVMM/MinSleepAlone,32-bit, 0, 100000000, 750000, ns}
+     * The minimum sleep time for when we're alone, in nano seconds.
      */
     uint32_t            nsMinSleepAlone;
-    /** The minimum sleep time for when we've got company, in nano seconds.
-     * @gcfgm   /GVMM/MinSleepCompany   32-bit  0..100000000
+    /** @gcfgm{/GVMM/MinSleepCompany,32-bit,0, 100000000, 15000, ns}
+     * The minimum sleep time for when we've got company, in nano seconds.
      */
     uint32_t            nsMinSleepCompany;
-    /** The limit for the first round of early wakeups, given in nano seconds.
-     * @gcfgm   /GVMM/EarlyWakeUp1      32-bit  0..100000000
+    /** @gcfgm{/GVMM/EarlyWakeUp1, 32-bit, 0, 100000000, 25000, ns}
+     * The limit for the first round of early wakeups, given in nano seconds.
      */
     uint32_t            nsEarlyWakeUp1;
-    /** The limit for the second round of early wakeups, given in nano seconds.
-     * @gcfgm   /GVMM/EarlyWakeUp2      32-bit  0..100000000
+    /** @gcfgm{/GVMM/EarlyWakeUp2, 32-bit, 0, 100000000, 50000, ns}
+     * The limit for the second round of early wakeups, given in nano seconds.
      */
     uint32_t            nsEarlyWakeUp2;
 } GVMM;
