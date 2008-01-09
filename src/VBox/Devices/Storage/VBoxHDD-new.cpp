@@ -802,11 +802,13 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
                             /* Report the format name. */
                             RTPathStripExt(pPluginDirEntry->szName);
                             char *pszFormat = NULL;
-                            AssertBreak(strlen(pszFormat) >= VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH,
-                                        rc = VERR_INVALID_NAME);
+
                             pszFormat = RTStrDup(pPluginDirEntry->szName + VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH);
                             if (!pszFormat)
                                 rc = VERR_NO_MEMORY;
+
+                            AssertBreak(strlen(pszFormat) >= VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH,
+                                        rc = VERR_INVALID_NAME);
                             *ppszFormat = pszFormat;
                         }
                     }
