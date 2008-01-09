@@ -813,7 +813,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     {
         AssertMsgFailed(("Parallel%d: Failed to attach to host driver. rc=%Vrc\n", iInstance, rc));
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("Parallel device %d cannot attach to host driver\n"), iInstance);
+                                   N_("Parallel device %d cannot attach to host driver"), iInstance);
     }
 
     /* Set compatibility mode */

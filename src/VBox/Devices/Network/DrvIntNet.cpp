@@ -786,7 +786,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
                                 N_("Configuration error: Failed to get the \"SendBufferSize\" value"));
     if (OpenReq.cbSend < 16)
         return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("Configuration error: The \"SendBufferSize\" value is too small."));
+                                N_("Configuration error: The \"SendBufferSize\" value is too small"));
     if (OpenReq.cbSend < 1536*2 + 4)
         LogRel(("DrvIntNet: Warning! SendBufferSize=%u, Recommended minimum size %u butes.\n", OpenReq.cbSend, 1536*2 + 4));
 

@@ -429,7 +429,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     pData->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
     if (!pData->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
-                                N_("Configuration error: the above device/driver didn't export the network port interface!\n"));
+                                N_("Configuration error: the above device/driver didn't export the network port interface"));
 
     /* Generate a network address for this network card. */
     RTStrPrintf(szNetAddr, sizeof(szNetAddr), "10.0.%d.0", pDrvIns->iInstance + 2);

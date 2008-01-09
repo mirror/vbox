@@ -323,7 +323,7 @@ static int vmmR3InitCoreCode(PVM pVM)
     }
     else
         VMSetError(pVM, rc, RT_SRC_POS,
-                   N_("Failed to allocate %d bytes of contiguous memory for the world switcher code."),
+                   N_("Failed to allocate %d bytes of contiguous memory for the world switcher code"),
                    cbCoreCode);
 
     pVM->vmm.s.pvHCCoreCodeR3 = NULL;

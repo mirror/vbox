@@ -486,7 +486,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, NULL);
     if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_NO_ATTACH,
-                                N_("Configuration error: Cannot attach drivers to the TAP driver!"));
+                                N_("Configuration error: Cannot attach drivers to the TAP driver"));
 
     /*
      * Query the network port interface.
@@ -494,7 +494,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pThis->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
     if (!pThis->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
-                                N_("Configuration error: The above device/driver didn't export the network port interface!"));
+                                N_("Configuration error: The above device/driver didn't export the network port interface"));
 
     /*
      * Read the configuration.
@@ -504,7 +504,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         strcpy(pThis->szDevice, "\\DEV\\TAP$");
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("Configuration error: Query for \"Device\" failed!"));
+                                N_("Configuration error: Query for \"Device\" failed"));
 
     int32_t iConnectTo;
     rc = CFGMR3QueryS32(pCfgHandle, "ConnectTo", &iConnectTo);
@@ -512,7 +512,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         iConnectTo = -1;
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("Configuration error: Query for \"ConnectTo\" failed!"));
+                                N_("Configuration error: Query for \"ConnectTo\" failed"));
 
     /*
      * Open the device.
@@ -521,7 +521,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     rc = RTFileOpen(&pThis->hDevice, pThis->szDevice, RTFILE_O_DENY_NONE | RTFILE_O_READ);
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("Failed to open tap device '%s'!"), pThis->szDevice);
+                                   N_("Failed to open tap device '%s'"), pThis->szDevice);
 
     ULONG Parm[2] = { ~0UL, ~0UL }; /* mysterious output */
     ULONG cbParm = sizeof(Parm);
@@ -536,7 +536,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         rc = VERR_GENERAL_FAILURE;
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("Failed to query LanNumber! orc=%d Parm={%ld,%ld}\n"), 
+                                   N_("Failed to query LanNumber! orc=%d Parm={%ld,%ld}"), 
                                    orc, Parm[0], Parm[1]);
     pThis->iLan = (int32_t)Data;
     Log(("%s: iLan=%d Parm[1]=%ld\n", pThis->szName, pThis->iLan, Parm[1]));
@@ -563,7 +563,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
             rc = VERR_GENERAL_FAILURE;
         if (VBOX_FAILURE(rc))
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                       N_("Failed to connect %d to %d! orc=%d Parm={%ld,%ld}\n"), 
+                                       N_("Failed to connect %d to %d! orc=%d Parm={%ld,%ld}"), 
                                        pThis->iLan, iConnectTo, orc, Parm[0], Parm[1]);
         Log(("%s: Connected to %d\n", pThis->szName, iConnectTo));
         pThis->iConnectedTo = iConnectTo;

@@ -943,10 +943,10 @@ int vmR3SetHaltMethod(PVM pVM, VMHALTMETHOD enmHaltMethod)
         {
             enmHaltMethod = (VMHALTMETHOD)u32;
             if (enmHaltMethod <= VMHALTMETHOD_INVALID || enmHaltMethod >= VMHALTMETHOD_END)
-                return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Invalid VM/HaltMethod value %d."), enmHaltMethod);
+                return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Invalid VM/HaltMethod value %d"), enmHaltMethod);
         }
         else if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_CHILD_NOT_FOUND)
-            return VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to Query VM/HaltMethod as uint32_t."));
+            return VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to Query VM/HaltMethod as uint32_t"));
         else
             enmHaltMethod = VMHALTMETHOD_GLOBAL_1;
             //enmHaltMethod = VMHALTMETHOD_1;

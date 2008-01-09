@@ -19,6 +19,7 @@
 
 #include <VBox/pdmdev.h>
 #include <VBox/log.h>
+#include <VBox/rem.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #ifdef IN_RING3
@@ -875,6 +876,9 @@ static void acpiSmiWriteU8 (ACPIState *s, uint32_t addr, uint32_t val)
         s->pm1a_ctl &= ~SCI_EN;
     else
         Log (("acpi: acpiSmiWriteU8 %#x <- unknown value\n", val));
+    if (s->dev.config[0x5b] & (1 << 1))
+        PDMDevHlpSMIInterrupt(s->pDevIns);
+    LogRel(("acpiSmiWriteU8 %08x <= %08x\n", addr, val));
 }
 
 static uint32_t find_rsdp_space (void)
@@ -1488,7 +1492,7 @@ static int acpiPlantTables (ACPIState *s)
     last_addr = RT_ALIGN_32 (dsdt_addr + sizeof(AmlCode), 16);
     if (last_addr > 0x10000)
         return PDMDEV_SET_ERROR(s->pDevIns, VERR_TOO_MUCH_DATA,
-                                N_("Error: ACPI tables > 64KB!"));
+                                N_("Error: ACPI tables > 64KB"));
 
     Log(("RSDP 0x%08X\n", find_rsdp_space()));
     addend = (uint32_t) s->u64RamSize - 0x10000;
@@ -1548,27 +1552,27 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
         s->u8UseIOApic = 1;
     else if (VBOX_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"IOAPIC\"."));
+                                N_("Configuration error: Failed to read \"IOAPIC\""));
 
     rc = CFGMR3QueryBool (pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fGCEnabled = true;
     else if (VBOX_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"GCEnabled\"."));
+                                N_("Configuration error: Failed to read \"GCEnabled\""));
 
     rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fR0Enabled = true;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("configuration error: failed to read R0Enabled as boolean."));
+                                N_("configuration error: failed to read R0Enabled as boolean"));
 
     /* */
     rsdp_addr = find_rsdp_space ();
     if (!rsdp_addr)
         return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY,
-                                N_("Can not find space for RSDP. ACPI is disabled."));
+                                N_("Can not find space for RSDP. ACPI is disabled"));
 
     rc = acpiPlantTables (s);
     if (VBOX_FAILURE (rc))
@@ -1690,7 +1694,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
                                                                      PDMINTERFACE_ACPI_CONNECTOR);
        if (!s->pDrv)
            return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_MISSING_INTERFACE,
-                                   N_("LUN #0 doesn't have an ACPI connector interface!\n"));
+                                   N_("LUN #0 doesn't have an ACPI connector interface"));
    }
    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
    {
@@ -1700,7 +1704,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
    }
    else
        return PDMDEV_SET_ERROR(pDevIns, rc,
-                               N_("Failed to attach LUN #0!"));
+                               N_("Failed to attach LUN #0"));
 
     return rc;
 }
