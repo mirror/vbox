@@ -507,11 +507,25 @@ TMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
                 break;
 
             case TMTIMERSTATE_PENDING_SCHEDULE:
-            case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
                 if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE, enmState))
                 {
                     Assert(!pTimer->offPrev);
                     Assert(!pTimer->offNext);
+                    pTimer->u64Expire = u64Expire;
+                    TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
+                    tmSchedule(pTimer);
+                    STAM_PROFILE_STOP(&pTimer->CTXALLSUFF(pVM)->tm.s.CTXALLSUFF(StatTimerSet), a);
+                    return VINF_SUCCESS;
+                }
+                break;
+
+
+            case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
+                if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE, enmState))
+                {
+                    /* The timer is possibly being excluded from the active list atm */
+                    ///Assert(!pTimer->offPrev);
+                    ///Assert(!pTimer->offNext);
                     pTimer->u64Expire = u64Expire;
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
                     tmSchedule(pTimer);
