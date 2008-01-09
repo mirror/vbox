@@ -780,7 +780,7 @@ public:
     {
         try
         {
-            stdx::char_auto_ptr value = ToString (aValue);
+            stdx::char_auto_ptr value = ToString (aValue, aExtra);
             setStringValue (aName, value.get());
         }
         catch (const ENoValue &)
