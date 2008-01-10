@@ -34,7 +34,7 @@
 #include "VBoxServiceInternal.h"
 
 /**
- * Solaris daemon() call uses libdaemon.
+ * Solaris daemon() call (currently does not use libdaemon).
  *
  * @returns 0 on success
  */
