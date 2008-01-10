@@ -45,7 +45,7 @@ fi
 # create users groups
 db_input high virtualbox-ose/group-vboxusers || true
 db_go || true
-groupadd -f vboxusers
+addgroup --system vboxusers
 
 if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
   db_get virtualbox-ose/module-compilation-allowed
