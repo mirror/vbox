@@ -4074,7 +4074,7 @@ static void ataSuspendRedo(PATACONTROLLER pCtl)
 
     pCtl->fRedoIdle = true;
     rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), &pReq, RT_INDEFINITE_WAIT,
-                     (PFNRT)pDevIns->pDevHlp->pfnVMSuspend, 1, pDevIns);
+                     (PFNRT)PDMDevHlpVMSuspend, 1, pDevIns);
     AssertReleaseRC(rc);
     VMR3ReqFree(pReq);
 }
