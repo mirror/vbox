@@ -265,6 +265,7 @@ static void pit_set_gate(PITState *pit, int channel, int val)
 {
     PITChannelState *s = &pit->channels[channel];
     PTMTIMER pTimer = s->CTXSUFF(pPit)->channels[0].CTXSUFF(pTimer);
+    Assert((val & 1) == val);
 
     switch(s->mode) {
     default:
@@ -686,7 +687,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         pData->speaker_data_on = (u32 >> 1) & 1;
         pit_set_gate(pData, 2, u32 & 1);
     }
-    Log(("pitIOPortSpeakerRead: Port=%#x cb=%x u32=%#x\n", Port, cb, u32));
+    Log(("pitIOPortSpeakerWrite: Port=%#x cb=%x u32=%#x\n", Port, cb, u32));
     return VINF_SUCCESS;
 }
 
