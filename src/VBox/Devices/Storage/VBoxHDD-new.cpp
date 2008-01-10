@@ -1681,7 +1681,7 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
     int rc;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu pvBuf=%p cbRead=%llu\n",
-                 pDisk, uOffset, pvBuf, cbRead));
+                 pDisk, uOffset, pvBuf, (uint64_t)cbRead));
     do
     {
         /* sanity check */
@@ -1693,11 +1693,11 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
                        ("pvBuf=%#p\n", pvBuf),
                        rc = VERR_INVALID_PARAMETER);
         AssertMsgBreak(cbRead,
-                       ("cbRead=%llu\n", cbRead),
+                       ("cbRead=%llu\n", (uint64_t)cbRead),
                        rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(uOffset + cbRead > pDisk->cbSize,
+        AssertMsgBreak(uOffset + cbRead <= pDisk->cbSize,
                        ("uOffset=%llu cbRead=%llu pDisk->cbSize=%llu\n",
-                        uOffset, cbRead, pDisk->cbSize),
+                        uOffset, (uint64_t)cbRead, pDisk->cbSize),
                        rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = pDisk->pLast;
@@ -1720,12 +1720,13 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
  * @param   pvBuf           Pointer to buffer for writing data.
  * @param   cbWrite         Number of bytes to write.
  */
-VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf, size_t cbWrite)
+VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
+                          size_t cbWrite)
 {
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu pvBuf=%p cbWrite=%llu\n",
-                 pDisk, uOffset, pvBuf, cbWrite));
+                 pDisk, uOffset, pvBuf, (uint64_t)cbWrite));
     do
     {
         /* sanity check */
@@ -1737,11 +1738,11 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf, s
                        ("pvBuf=%#p\n", pvBuf),
                        rc = VERR_INVALID_PARAMETER);
         AssertMsgBreak(cbWrite,
-                       ("cbWrite=%llu\n", cbWrite),
+                       ("cbWrite=%llu\n", (uint64_t)cbWrite),
                        rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreak(uOffset + cbWrite > pDisk->cbSize,
+        AssertMsgBreak(uOffset + cbWrite <= pDisk->cbSize,
                        ("uOffset=%llu cbWrite=%llu pDisk->cbSize=%llu\n",
-                        uOffset, cbWrite, pDisk->cbSize),
+                        uOffset, (uint64_t)cbWrite, pDisk->cbSize),
                        rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = pDisk->pLast;
