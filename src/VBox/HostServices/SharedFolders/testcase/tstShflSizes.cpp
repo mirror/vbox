@@ -58,7 +58,8 @@ int main(int argc, char **argv)
     STRUCT(SHFLVOLINFO, 40);
     STRUCT(VBoxSFQueryMappings, 52);
     STRUCT(VBoxSFQueryMapName, 52);
-    STRUCT(VBoxSFMapFolder, 52);
+    STRUCT(VBoxSFMapFolder_Old, 52);
+    STRUCT(VBoxSFMapFolder, 64);
     STRUCT(VBoxSFUnmapFolder, 28);
     STRUCT(VBoxSFCreate, 52);
     STRUCT(VBoxSFClose, 40);
