@@ -83,6 +83,12 @@ typedef struct DEVPCBIOS
     uint8_t        *pu8Logo;
     /** The name of the logo file. */
     char           *pszLogoFile;
+    /** The system BIOS ROM data. */
+    uint8_t        *pu8PcBios;
+    /** The size of the system BIOS ROM. */
+    uint64_t        cbPcBios;
+    /** The name of the BIOS ROM file. */
+    char           *pszPcBiosFile;
     /** The LAN boot ROM data. */
     uint8_t        *pu8LanBoot;
     /** The name of the LAN boot ROM file. */
@@ -1021,11 +1027,28 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
      * Paranoia: Check that the BIOS ROM hasn't changed.
      */
     uint8_t abBuf[PAGE_SIZE];
+    const uint8_t *pu8PcBiosBinary;
+    uint64_t cbPcBiosBinary;
+
+    /* Work with either built-in ROM image or one loaded from file.
+     */
+    if (pData->pu8PcBios == NULL)
+    {
+        pu8PcBiosBinary = g_abPcBiosBinary;
+        cbPcBiosBinary  = g_cbPcBiosBinary;
+    } 
+    else 
+    {
+        pu8PcBiosBinary = pData->pu8PcBios;
+        cbPcBiosBinary  = pData->cbPcBios;
+    }
+    Assert(pu8PcBiosBinary);
+    Assert(cbPcBiosBinary);
 
     /* the low ROM mapping. */
-    unsigned cb = RT_MIN(g_cbPcBiosBinary, 128 * _1K);
+    unsigned cb = RT_MIN(cbPcBiosBinary, 128 * _1K);
     RTGCPHYS GCPhys = 0x00100000 - cb;
-    const uint8_t *pbVirgin = &g_abPcBiosBinary[g_cbPcBiosBinary - cb];
+    const uint8_t *pbVirgin = &pu8PcBiosBinary[cbPcBiosBinary - cb];
     while (GCPhys < 0x00100000)
     {
         PDMDevHlpPhysRead(pDevIns, GCPhys, abBuf, PAGE_SIZE);
@@ -1044,9 +1067,9 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     }
 
     /* the high ROM mapping. */
-    GCPhys = UINT32_C(0xffffffff) - (g_cbPcBiosBinary - 1);
-    pbVirgin = &g_abPcBiosBinary[0];
-    while (pbVirgin < &g_abPcBiosBinary[g_cbPcBiosBinary])
+    GCPhys = UINT32_C(0xffffffff) - (cbPcBiosBinary - 1);
+    pbVirgin = &pu8PcBiosBinary[0];
+    while (pbVirgin < &pu8PcBiosBinary[cbPcBiosBinary])
     {
         PDMDevHlpPhysRead(pDevIns, GCPhys, abBuf, PAGE_SIZE);
         if (memcmp(abBuf, pbVirgin, PAGE_SIZE))
@@ -1085,6 +1108,18 @@ static DECLCALLBACK(int) pcbiosDestruct(PPDMDEVINS pDevIns)
     /*
      * Free MM heap pointers.
      */
+    if (pData->pu8PcBios)
+    {
+        MMR3HeapFree(pData->pu8PcBios);
+        pData->pu8PcBios = NULL;
+    }
+
+    if (pData->pszPcBiosFile)
+    {
+        MMR3HeapFree(pData->pszPcBiosFile);
+        pData->pszPcBiosFile = NULL;
+    }
+
     if (pData->pu8LanBoot)
     {
         MMR3HeapFree(pData->pu8LanBoot);
@@ -1189,6 +1224,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "LogoFile\0"
                               "ShowBootMenu\0"
                               "DelayBoot\0"
+                              "BiosRom\0"
                               "LanBootRom\0"
                               "PXEDebug\0"
                               "UUID\0"
@@ -1275,21 +1311,118 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 N_("Configuration error: Querying \"PXEDebug\" as integer failed"));
 
     /*
+     * Get the system BIOS ROM file name.
+     */
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "BiosRom", &pData->pszPcBiosFile);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        pData->pszPcBiosFile = NULL;
+        rc = VINF_SUCCESS;
+    }
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"BiosRom\" as a string failed"));
+    else if (!*pData->pszPcBiosFile)
+    {
+        MMR3HeapFree(pData->pszPcBiosFile);
+        pData->pszPcBiosFile = NULL;
+    }
+
+    const uint8_t *pu8PcBiosBinary = NULL;
+    uint64_t cbPcBiosBinary;
+    /*
+     * Determine the system BIOS ROM size, open specified ROM file in the process.
+     */
+    RTFILE FilePcBios = NIL_RTFILE;
+    if (pData->pszPcBiosFile)
+    {
+        rc = RTFileOpen(&FilePcBios, pData->pszPcBiosFile,
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+        if (VBOX_SUCCESS(rc))
+        {
+            rc = RTFileGetSize(FilePcBios, &pData->cbPcBios);
+            if (VBOX_SUCCESS(rc))
+            {
+                /* The following checks should be in sync the AssertReleaseMsg's below. */
+                if (    RT_ALIGN(pData->cbPcBios, _64K) != pData->cbPcBios
+                    ||  pData->cbPcBios > 32 * _64K
+                    ||  pData->cbPcBios < _64K)
+                    rc = VERR_TOO_MUCH_DATA;
+            }
+        }
+        if (VBOX_FAILURE(rc))
+        {
+            /*
+             * In case of failure simply fall back to the built-in BIOS ROM.
+             */
+            Log(("pcbiosConstruct: Failed to open system BIOS ROM file '%s', rc=%Vrc!\n", pData->pszPcBiosFile, rc));
+            RTFileClose(FilePcBios);
+            FilePcBios = NIL_RTFILE;
+            MMR3HeapFree(pData->pszPcBiosFile);
+            pData->pszPcBiosFile = NULL;
+        }
+    }
+
+    /*
+     * Attempt to get the system BIOS ROM data from file.
+     */
+    if (pData->pszPcBiosFile)
+    {
+        /*
+         * Allocate buffer for the system BIOS ROM data.
+         */
+        pData->pu8PcBios = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, pData->cbPcBios);
+        if (pData->pu8PcBios)
+        {
+            rc = RTFileRead(FilePcBios, pData->pu8PcBios, pData->cbPcBios, NULL);
+            if (VBOX_FAILURE(rc))
+            {
+                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Vrc\n", pData->cbPcBios, rc));
+                MMR3HeapFree(pData->pu8PcBios);
+                pData->pu8PcBios = NULL;
+            }
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        pData->pu8PcBios = NULL;
+
+    /* cleanup */
+    if (FilePcBios != NIL_RTFILE)
+        RTFileClose(FilePcBios);
+
+    /* If we were unable to get the data from file for whatever reason, fall
+     * back to the built-in ROM image.
+     */
+    if (pData->pu8PcBios == NULL)
+    {
+        pu8PcBiosBinary = g_abPcBiosBinary;
+        cbPcBiosBinary  = g_cbPcBiosBinary;
+    } 
+    else 
+    {
+        pu8PcBiosBinary = pData->pu8PcBios;
+        cbPcBiosBinary  = pData->cbPcBios;
+    }
+
+    /*
      * Map the BIOS into memory.
      * There are two mappings:
      *      1. 0x000e0000 to 0x000fffff contains the last 128 kb of the bios.
      *         The bios code might be 64 kb in size, and will then start at 0xf0000.
      *      2. 0xfffxxxxx to 0xffffffff contains the entire bios.
      */
-    AssertReleaseMsg(g_cbPcBiosBinary >= _64K, ("g_cbPcBiosBinary=%#x\n", g_cbPcBiosBinary));
-    AssertReleaseMsg(RT_ALIGN_Z(g_cbPcBiosBinary, _64K) == g_cbPcBiosBinary,
-                     ("g_cbPcBiosBinary=%#x\n", g_cbPcBiosBinary));
-    cb = RT_MIN(g_cbPcBiosBinary, 128 * _1K);
-    rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &g_abPcBiosBinary[g_cbPcBiosBinary - cb],
+    AssertReleaseMsg(cbPcBiosBinary >= _64K, ("cbPcBiosBinary=%#x\n", cbPcBiosBinary));
+    AssertReleaseMsg(RT_ALIGN_Z(cbPcBiosBinary, _64K) == cbPcBiosBinary,
+                     ("cbPcBiosBinary=%#x\n", cbPcBiosBinary));
+    cb = RT_MIN(cbPcBiosBinary, 128 * _1K); /* Effectively either 64 or 128K. */
+    rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &pu8PcBiosBinary[cbPcBiosBinary - cb], 
                               false /* fShadow */, "PC BIOS - 0xfffff");
     if (VBOX_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-g_cbPcBiosBinary, g_cbPcBiosBinary, &g_abPcBiosBinary[0],
+    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-(int32_t)cbPcBiosBinary, cbPcBiosBinary, pu8PcBiosBinary, 
                               false /* fShadow */, "PC BIOS - 0xffffffff");
     if (VBOX_FAILURE(rc))
         return rc;
@@ -1445,9 +1578,10 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         pData->pszLanBootFile = NULL;
     }
 
-    const uint8_t *pu8LanBoot = NULL;
     uint64_t cbFileLanBoot;
-#ifdef VBOX_DO_NOT_LINK_LANBOOT
+    const uint8_t *pu8LanBootBinary = NULL;
+    uint64_t cbLanBootBinary;
+
     /*
      * Determine the LAN boot ROM size, open specified ROM file in the process.
      */
@@ -1462,14 +1596,14 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             if (VBOX_SUCCESS(rc))
             {
                 if (    RT_ALIGN(cbFileLanBoot, _4K) != cbFileLanBoot
-                    ||  cbFileLanBoot > _32K)
+                    ||  cbFileLanBoot > _64K)
                     rc = VERR_TOO_MUCH_DATA;
             }
         }
         if (VBOX_FAILURE(rc))
         {
             /*
-             * Ignore failure and fall back to no LAN boot ROM.
+             * Ignore failure and fall back to the built-in LAN boot ROM.
              */
             Log(("pcbiosConstruct: Failed to open LAN boot ROM file '%s', rc=%Vrc!\n", pData->pszLanBootFile, rc));
             RTFileClose(FileLanBoot);
@@ -1487,16 +1621,14 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Allocate buffer for the LAN boot ROM data.
          */
-        pu8LanBoot = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, cbFileLanBoot);
-        pData->pu8LanBoot = pu8LanBoot;
-        if (pu8LanBoot)
+        pData->pu8LanBoot = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, cbFileLanBoot);
+        if (pData->pu8LanBoot)
         {
             rc = RTFileRead(FileLanBoot, pData->pu8LanBoot, cbFileLanBoot, NULL);
             if (VBOX_FAILURE(rc))
             {
                 AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Vrc\n", cbFileLanBoot, rc));
-                MMR3HeapFree(pu8LanBoot);
-                pu8LanBoot = NULL;
+                MMR3HeapFree(pData->pu8LanBoot);
                 pData->pu8LanBoot = NULL;
             }
             rc = VINF_SUCCESS;
@@ -1511,19 +1643,27 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (FileLanBoot != NIL_RTFILE)
         RTFileClose(FileLanBoot);
 
-#else /* !VBOX_DO_NOT_LINK_LANBOOT */
-    pData->pu8LanBoot = NULL;
-    pu8LanBoot = g_abNetBiosBinary;
-    cbFileLanBoot = g_cbNetBiosBinary;
-#endif /* !VBOX_DO_NOT_LINK_LANBOOT */
+    /* If we were unable to get the data from file for whatever reason, fall
+     * back to the built-in LAN boot ROM image.
+     */
+    if (pData->pu8LanBoot == NULL)
+    {
+        pu8LanBootBinary = g_abNetBiosBinary;
+        cbLanBootBinary  = g_cbNetBiosBinary;
+    } 
+    else 
+    {
+        pu8LanBootBinary = pData->pu8LanBoot;
+        cbLanBootBinary  = cbFileLanBoot;
+    }
 
     /*
      * Map the Network Boot ROM into memory.
      * Currently there is a fixed mapping: 0x000c8000 to 0x000cffff contains
      * the (up to) 32 kb ROM image.
      */
-    if (pu8LanBoot)
-        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbFileLanBoot, pu8LanBoot,
+    if (pu8LanBootBinary)
+        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, pu8LanBootBinary, 
                                   true /* fShadow */, "Net Boot ROM");
 
     rc = CFGMR3QueryU8(pCfgHandle, "DelayBoot", &pData->uBootDelay);
