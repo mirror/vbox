@@ -101,6 +101,9 @@ case "$APP" in
   VBoxVRDP)
     exec "/usr/lib/virtualbox-ose/VBoxVRDP" "$@"
   ;;
+  VBoxHeadless)
+    exec "/usr/lib/virtualbox-ose/VBoxHeadless" "$@"
+  ;;
   *)
     echo "Unknown application - $APP"
   ;;
