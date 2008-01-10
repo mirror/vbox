@@ -21,6 +21,7 @@
 *******************************************************************************/
 #include <VBox/shflsvc.h>
 #include <iprt/stream.h>
+#include <iprt/string.h>
 
 #define STRUCT(t, size)   \
     do { \
@@ -31,7 +32,7 @@
             RTPrintf("%30s: %d expected %d!\n", #t, (int)sizeof(t), (size)); \
             cErrors++; \
         } \
-        else \
+        else if (!fQuiet)\
             RTPrintf("%30s: %d\n", #t, (int)sizeof(t)); \
     } while (0)
 
@@ -43,7 +44,10 @@ int main(int argc, char **argv)
     /*
      * Prints the code below if any argument was giving.
      */
-    bool fPrintChecks = argc != 1;
+    bool fQuiet = argc == 2 && !strcmp(argv[1], "quiet");
+    bool fPrintChecks = !fQuiet && argc != 1;
+
+    RTPrintf("tstShflSizes: TESTING\n");
 
     /*
      * The checks.
@@ -57,7 +61,7 @@ int main(int argc, char **argv)
     STRUCT(SHFLDIRINFO, 128);
     STRUCT(SHFLVOLINFO, 40);
     STRUCT(VBoxSFQueryMappings, 52);
-    STRUCT(VBoxSFQueryMapName, 52);
+    STRUCT(VBoxSFQueryMapName, 40); /* this was changed from 52 in 21976 after VBox-1.4) */
     STRUCT(VBoxSFMapFolder_Old, 52);
     STRUCT(VBoxSFMapFolder, 64);
     STRUCT(VBoxSFUnmapFolder, 28);

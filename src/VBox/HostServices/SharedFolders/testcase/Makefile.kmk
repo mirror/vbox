@@ -19,15 +19,17 @@ DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
 include $(PATH_KBUILD)/subheader.kmk
 
-ifdef VBOX_WITH_TESTCASES
-#
-# Structure size testcase.
-#
-PROGRAMS += tstShflSizes tstShflCase
+PROGRAMS += tstShflSizes
 tstShflSizes_TEMPLATE = VBOXR3TSTEXE
 tstShflSizes_DEFS     = VBOX_HGCM
 tstShflSizes_SOURCES  = tstShflSizes.cpp
 tstShflSizes_LIBS     = $(LIB_RUNTIME)
+
+ifdef VBOX_WITH_TESTCASES
+#
+# Structure size testcase.
+#
+PROGRAMS += tstShflCase
 
 tstShflCase_TEMPLATE = VBOXR3TSTEXE
 tstShflCase_DEFS     = VBOX_HGCM
@@ -36,5 +38,20 @@ tstShflCase_LIBS     = $(LIB_RUNTIME)
 
 endif # VBOX_WITH_TESTCASES
 
+ifeq ($(BUILD_TARGET),$(BUILD_PLATFORM))
+ ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH)),)
+   OTHERS += \
+    $(PATH_TARGET)/tstShflSizes.run
+ endif
+endif
+
+OTHER_CLEAN += \
+	$(PATH_TARGET)/tstShflSizes.run
+
 include $(PATH_KBUILD)/subfooter.kmk
+
+$(PATH_TARGET)/tstShflSizes.run: $(INSTARGET_tstShflSizes)
+	$(QUIET)$(RM) -f $@
+	$(INSTARGET_tstShflSizes) quiet
+	$(QUIET)$(APPEND) "$@" "done"
 
