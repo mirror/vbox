@@ -488,7 +488,7 @@ const PDMDRVREG g_DrvVD =
     /* u32Version */
     PDM_DRVREG_VERSION,
     /* szDriverName */
-    "DrvVD",
+    "VD",
     /* pszDescription */
     "Generic VBox disk media driver.",
     /* fFlags */
