@@ -708,8 +708,7 @@ static void fdctrl_reset_irq (fdctrl_t *fdctrl)
 {
     FLOPPY_DPRINTF("Reset interrupt\n");
 #ifdef VBOX
-    fdctrl->pDevIns->pDevHlp->pfnISASetIrq (fdctrl->pDevIns,
-                                            fdctrl->irq_lvl, 0);
+    PDMDevHlpISASetIrq (fdctrl->pDevIns, fdctrl->irq_lvl, 0);
 #else
     pic_set_irq(fdctrl->irq_lvl, 0);
 #endif
@@ -720,8 +719,7 @@ static void fdctrl_raise_irq (fdctrl_t *fdctrl, uint8_t status)
 {
     if (~(fdctrl->state & FD_CTRL_INTR)) {
 #ifdef VBOX
-        fdctrl->pDevIns->pDevHlp->pfnISASetIrq (fdctrl->pDevIns,
-                                                fdctrl->irq_lvl, 1);
+        PDMDevHlpISASetIrq (fdctrl->pDevIns, fdctrl->irq_lvl, 1);
 #else
         pic_set_irq(fdctrl->irq_lvl, 1);
 #endif
@@ -996,9 +994,7 @@ static void fdctrl_stop_transfer (fdctrl_t *fdctrl, uint8_t status0,
     fdctrl->data_dir = FD_DIR_READ;
     if (fdctrl->state & FD_CTRL_BUSY) {
 #ifdef VBOX
-        fdctrl->pDevIns->pDevHlp->pfnDMASetDREQ (fdctrl->pDevIns,
-                                                 fdctrl->dma_chann,
-                                                 0);
+        PDMDevHlpDMASetDREQ (fdctrl->pDevIns, fdctrl->dma_chann, 0);
 #else
         DMA_release_DREQ(fdctrl->dma_chann);
 #endif
@@ -1080,10 +1076,7 @@ static void fdctrl_start_transfer (fdctrl_t *fdctrl, int direction)
 #ifndef VBOX
         dma_mode = DMA_get_channel_mode(fdctrl->dma_chann);
 #else
-        dma_mode = fdctrl->pDevIns->pDevHlp->pfnDMAGetChannelMode (
-            fdctrl->pDevIns,
-            fdctrl->dma_chann
-            );
+        dma_mode = PDMDevHlpDMAGetChannelMode (fdctrl->pDevIns, fdctrl->dma_chann);
 #endif
         dma_mode = (dma_mode >> 2) & 3;
         FLOPPY_DPRINTF("dma_mode=%d direction=%d (%d - %d)\n",
@@ -1103,10 +1096,8 @@ static void fdctrl_start_transfer (fdctrl_t *fdctrl, int direction)
             DMA_hold_DREQ(fdctrl->dma_chann);
             DMA_schedule(fdctrl->dma_chann);
 #else
-            fdctrl->pDevIns->pDevHlp->pfnDMASetDREQ (fdctrl->pDevIns,
-                                                     fdctrl->dma_chann,
-                                                     1);
-            fdctrl->pDevIns->pDevHlp->pfnDMASchedule (fdctrl->pDevIns);
+            PDMDevHlpDMASetDREQ (fdctrl->pDevIns, fdctrl->dma_chann, 1);
+            PDMDevHlpDMASchedule (fdctrl->pDevIns);
 #endif
             return;
         } else {
@@ -1247,16 +1238,12 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 #ifdef VBOX
             {
                 uint32_t read;
-                int rc = fdctrl->pDevIns->pDevHlp->pfnDMAWriteMemory(
-                    fdctrl->pDevIns,
-                    nchan,
-                    fdctrl->fifo + rel_pos,
-                    fdctrl->data_pos,
-                    len,
-                    &read);
+                int rc = PDMDevHlpDMAWriteMemory(fdctrl->pDevIns, nchan,
+                                                 fdctrl->fifo + rel_pos,
+                                                 fdctrl->data_pos,
+                                                 len, &read);
                 dump (fdctrl->fifo + rel_pos, len);
-                AssertMsgRC (rc,
-                             ("DMAWriteMemory -> %Vrc\n", rc));
+                AssertMsgRC (rc, ("DMAWriteMemory -> %Vrc\n", rc));
             }
 #else
             DMA_write_memory (nchan, fdctrl->fifo + rel_pos,
@@ -1270,15 +1257,11 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 #ifdef VBOX
             {
                 uint32_t written;
-                int rc = fdctrl->pDevIns->pDevHlp->pfnDMAReadMemory(
-                    fdctrl->pDevIns,
-                    nchan,
-                    fdctrl->fifo + rel_pos,
-                    fdctrl->data_pos,
-                    len,
-                    &written);
-                AssertMsgRC (rc,
-                             ("DMAReadMemory -> %Vrc\n", rc));
+                int rc = PDMDevHlpDMAReadMemory(fdctrl->pDevIns, nchan,
+                                                fdctrl->fifo + rel_pos,
+                                                fdctrl->data_pos,
+                                                len, &written);
+                AssertMsgRC (rc, ("DMAReadMemory -> %Vrc\n", rc));
             }
 #else
             DMA_read_memory (nchan, fdctrl->fifo + rel_pos,
@@ -1323,15 +1306,9 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
                 int rc;
                 uint32_t read;
 
-                rc = fdctrl->pDevIns->pDevHlp->pfnDMAReadMemory (
-                    fdctrl->pDevIns,
-                    nchan,
-                    tmpbuf,
-                    fdctrl->data_pos,
-                    len,
-                    &read);
-                AssertMsg (VBOX_SUCCESS (rc),
-                           ("DMAReadMemory -> %Vrc\n", rc));
+                rc = PDMDevHlpDMAReadMemory (fdctrl->pDevIns, nchan, tmpbuf,
+                                             fdctrl->data_pos, len, &read);
+                AssertMsg (VBOX_SUCCESS (rc), ("DMAReadMemory -> %Vrc\n", rc));
 #else
                 DMA_read_memory (nchan, tmpbuf, fdctrl->data_pos, len);
 #endif
@@ -1483,11 +1460,8 @@ transfer_error:
         case FD_DIR_READ:
             /* READ commands */
 #ifdef VBOX
-            fdctrl->pDevIns->pDevHlp->pfnPhysWrite (
-                fdctrl->pDevIns,
-                addr + fdctrl->data_pos,
-                fdctrl->fifo + rel_pos,
-                len);
+            PDMDevHlpPhysWrite (fdctrl->pDevIns, addr + fdctrl->data_pos,
+                                fdctrl->fifo + rel_pos, len);
 #else
             cpu_physical_memory_write(addr + fdctrl->data_pos,
                                       fdctrl->fifo + rel_pos, len);
@@ -1499,11 +1473,8 @@ transfer_error:
             {
                 int rc;
 
-                fdctrl->pDevIns->pDevHlp->pfnPhysRead (
-                    fdctrl->pDevIns,
-                    addr + fdctrl->data_pos,
-                    fdctrl->fifo + rel_pos,
-                    len);
+                PDMDevHlpPhysRead (fdctrl->pDevIns, addr + fdctrl->data_pos,
+                                   fdctrl->fifo + rel_pos, len);
 
                 cur_drv->Led.Asserted.s.fWriting
                     = cur_drv->Led.Actual.s.fWriting = 1;
@@ -1543,11 +1514,8 @@ transfer_error:
                 uint8_t tmpbuf[FD_SECTOR_LEN];
                 int ret;
 #ifdef VBOX
-                fdctrl->pDevIns->pDevHlp->pfnPhysRead (
-                    fdctrl->pDevIns,
-                    addr + fdctrl->data_pos,
-                    tmpbuf,
-                    len);
+                PDMDevHlpPhysRead (fdctrl->pDevIns, addr + fdctrl->data_pos,
+                                   tmpbuf, len);
 #else
                 cpu_physical_memory_read(addr + fdctrl->data_pos,
                                          tmpbuf, len);
@@ -2802,45 +2770,44 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0DMA\0MemMapped\0IOBase\0")) {
+    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0DMA\0MemMapped\0IOBase\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-    }
 
     /*
      * Read the configuration.
      */
     rc = CFGMR3QueryU8 (pCfgHandle, "IRQ", &irq_lvl);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND) {
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         irq_lvl = 6;
-    }
-    else if (VBOX_FAILURE (rc)) {
+    else if (VBOX_FAILURE (rc))
+    {
         AssertMsgFailed (("Configuration error: Failed to read U8 IRQ, rc=%Vrc\n", rc));
         return rc;
     }
 
     rc = CFGMR3QueryU8 (pCfgHandle, "DMA", &dma_chann);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND) {
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         dma_chann = 2;
-    }
-    else if (VBOX_FAILURE (rc)) {
+    else if (VBOX_FAILURE (rc))
+    {
         AssertMsgFailed (("Configuration error: Failed to read U8 DMA, rc=%Vrc\n", rc));
         return rc;
     }
 
     rc = CFGMR3QueryU16 (pCfgHandle, "IOBase", &io_base);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND) {
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         io_base = 0x3f0;
-    }
-    else if (VBOX_FAILURE (rc)) {
+    else if (VBOX_FAILURE (rc))
+    {
         AssertMsgFailed (("Configuration error: Failed to read U16 IOBase, rc=%Vrc\n", rc));
         return rc;
     }
 
     rc = CFGMR3QueryBool (pCfgHandle, "MemMapped", &mem_mapped);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND) {
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         mem_mapped = false;
-    }
-    else if (VBOX_FAILURE (rc)) {
+    else if (VBOX_FAILURE (rc))
+    {
         AssertMsgFailed (("Configuration error: Failed to read bool value MemMapped rc=%Vrc\n", rc));
         return rc;
     }
@@ -2859,7 +2826,8 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     fdctrl->IBaseStatus.pfnQueryInterface = fdcStatusQueryInterface;
     fdctrl->ILeds.pfnQueryStatusLed = fdcStatusQueryStatusLed;
 
-    for (i = 0; i < ELEMENTS(fdctrl->drives); ++i) {
+    for (i = 0; i < ELEMENTS(fdctrl->drives); ++i)
+    {
         fdrive_t *drv = &fdctrl->drives[i];
 
         drv->drive = FDRIVE_DRV_NONE;
@@ -2875,31 +2843,27 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
      * Create the FDC timer.
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, fdc_timer, "FDC Timer", &fdctrl->result_timer);
-    if (VBOX_FAILURE (rc)) {
+    if (VBOX_FAILURE (rc))
         return rc;
-    }
 
     /*
      * Register DMA channel.
      */
-    if (fdctrl->dma_chann != 0xff) {
+    if (fdctrl->dma_chann != 0xff)
+    {
         fdctrl->dma_en = 1;
-        rc = pDevIns->pDevHlp->pfnDMARegister (
-            pDevIns,
-            dma_chann,
-            &fdctrl_transfer_handler,
-            fdctrl);
-        if (VBOX_FAILURE (rc)) {
+        rc = PDMDevHlpDMARegister (pDevIns, dma_chann, &fdctrl_transfer_handler, fdctrl);
+        if (VBOX_FAILURE (rc))
             return rc;
-        }
-    } else {
-        fdctrl->dma_en = 0;
     }
+    else
+        fdctrl->dma_en = 0;
 
     /*
      * IO / MMIO.
      */
-    if (mem_mapped) {
+    if (mem_mapped)
+    {
         AssertMsgFailed (("Memory mapped floppy not support by now\n"));
         return VERR_NOT_SUPPORTED;
 #if 0
@@ -2907,52 +2871,25 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
         io_mem = cpu_register_io_memory(0, fdctrl_mem_read, fdctrl_mem_write);
         cpu_register_physical_memory(base, 0x08, io_mem);
 #endif
-    } else {
-        rc = pDevIns->pDevHlp->pfnIOPortRegister (
-            pDevIns,
-            io_base + 0x1,
-            5,
-            fdctrl,
-            fdc_io_write,
-            fdc_io_read,
-            NULL, NULL,
-            "FDC#1"
-            );
-        if (VBOX_FAILURE (rc)) {
+    }
+    else
+    {
+        rc = PDMDevHlpIOPortRegister (pDevIns, io_base + 0x1, 5, fdctrl,
+                                      fdc_io_write, fdc_io_read, NULL, NULL, "FDC#1");
+        if (VBOX_FAILURE (rc))
             return rc;
-        }
 
-        rc = pDevIns->pDevHlp->pfnIOPortRegister (
-            pDevIns,
-            io_base + 0x7,
-            1,
-            fdctrl,
-            fdc_io_write,
-            fdc_io_read,
-            NULL, NULL,
-            "FDC#2"
-            );
-        if (VBOX_FAILURE (rc)) {
+        rc = PDMDevHlpIOPortRegister (pDevIns, io_base + 0x7, 1, fdctrl,
+                                      fdc_io_write, fdc_io_read, NULL, NULL, "FDC#2");
+        if (VBOX_FAILURE (rc))
             return rc;
-        }
     }
 
     /*
      * Register the saved state data unit.
      */
-    rc = pDevIns->pDevHlp->pfnSSMRegister (
-        pDevIns,                /* pDevIns */
-        pDevIns->pDevReg->szDeviceName, /* pszName */
-        iInstance,              /* u32Instance */
-        1                       /* u32Version */,
-        sizeof (*fdctrl),       /* cbGuess */
-        NULL,                   /* pfnSavePrep */
-        SaveExec,               /* pfnSaveExec */
-        NULL,                   /* pfnSaveDone */
-        NULL,                   /* pfnLoadPrep */
-        LoadExec,               /* pfnLoadExec */
-        NULL                    /* pfnLoadDone */
-        );
+    rc = PDMDevHlpSSMRegister (pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1, sizeof(*fdctrl),
+                               NULL, SaveExec, NULL, NULL, LoadExec, NULL);
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -2973,11 +2910,13 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     /*
      * Initialize drives.
      */
-    for (i = 0; i < ELEMENTS(fdctrl->drives); i++) {
+    for (i = 0; i < ELEMENTS(fdctrl->drives); i++)
+    {
         fdrive_t *drv = &fdctrl->drives[i];
         rc = fdConfig (drv, pDevIns);
         if (    VBOX_FAILURE (rc)
-            &&  rc != VERR_PDM_NO_ATTACHED_DRIVER) {
+            &&  rc != VERR_PDM_NO_ATTACHED_DRIVER)
+        {
             AssertMsgFailed (("Configuration error: failed to configure drive %d, rc=%Vrc\n", rc));
             return rc;
         }
@@ -2986,9 +2925,8 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     fdctrl_reset(fdctrl, 0);
     fdctrl->state = FD_CTRL_ACTIVE;
 
-    for (i = 0; i < ELEMENTS(fdctrl->drives); i++) {
+    for (i = 0; i < ELEMENTS(fdctrl->drives); i++)
         fd_revalidate(&fdctrl->drives[i]);
-    }
 
     return VINF_SUCCESS;
 }
