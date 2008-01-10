@@ -15,6 +15,22 @@
 db_version 2.0
 db_capb backup
 
+# check for upgrade, disable this check for now
+if false; then
+  ver_new=%VER%
+  ver_old=`echo $2 | cut -f1 -d"-"`
+  if [ -n "$ver_old" -a "$ver_new" == "$ver_old" ]; then
+    db_get virtualbox-ose/update_version_change
+    db_input critical virtualbox-ose/update_version_change || true
+    db_go || true
+    db_get virtualbox-ose/update_version_change || true
+    if [ "$RET" = false ]; then
+      db_stop
+      exit 1
+    fi
+  fi
+fi
+
 # check for old vboxdrv modules
 if find /lib/modules -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
   # old modules found
@@ -36,3 +52,6 @@ EOF
     fi
   fi
 fi
+
+#DEBHELPER#
+

@@ -44,3 +44,10 @@ Description: Delete old modules?
    
  as root
 
+Template: virtualbox-ose/update_version_change
+Type: boolean
+Default: false
+Description: Proceed with VirtualBox upgrade?
+ You are about to update VirtualBox to a new upstream version. Make sure to discard or
+ merge all snapshots and saved states before you proceed because VM states are version
+ specific.

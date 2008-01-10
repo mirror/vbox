@@ -16,7 +16,7 @@
 #
 
 # shut up wine complaining about unknown locale
-EXEC_X86_WIN32          := LC_ALL=C DISPLAY= wine 2>/dev/null
+EXEC_X86_WIN32          := wine
 
 # don't build testcases to save time, they are not needed for the package
 VBOX_WITH_TESTCASES     :=

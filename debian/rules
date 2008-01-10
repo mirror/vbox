@@ -170,7 +170,8 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	mv $(archdir)/VBoxAddIF.sh $(prefix)/usr/bin/VBoxTAP
 	for i in VBoxManage VBoxSVC tstVMM $(if $(HEADLESS),,VBoxSDL) \
-	    $(if $(HEADLESS),,VirtualBox) $(if $(ose),,VBoxVRDP); do \
+	    $(if $(HEADLESS),,VirtualBox) $(if $(ose),,VBoxVRDP) \
+	    VBoxHeadless; do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
@@ -194,17 +195,19 @@ endif
 	    usr/bin/VBox usr/bin/VBoxManage \
 	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VBoxSDL) \
 	    $(if $(ose),,usr/bin/VBox usr/bin/VBoxVRDP) \
+	    usr/bin/VBox    usr/bin/VBoxHeadless \
 	    usr/bin/VBoxTAP usr/bin/VBoxAddIF \
 	    usr/bin/VBoxTAP usr/bin/VBoxDeleteIF
 	dh_desktop
 	dh_installmenu
 	$(if $(NOMODS),,dh_installmodules)
 	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g;' \
-	    debian/vboxdrv.init.tmpl > debian/vboxdrv.init
+	    debian/vboxdrv.init.in > debian/vboxdrv.init
 	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g;' \
-	    debian/vboxnet.init.tmpl > debian/vboxnet.init
+	    debian/vboxnet.init.in > debian/vboxnet.init
 	dh_installinit --name=vboxdrv
 	dh_installinit --name=vboxnet
+	cat debian/preinst.in | sed -e 's|%VER%|$(ver)|g' > debian/preinst
 	if [ "$(debrel)" = "_Ubuntu_dapper" -o "$(debrel)" = "_Debian_sarge" ]; then \
 	    cat debian/postrm.dapper > debian/postrm; fi
 	dh_installdebconf
