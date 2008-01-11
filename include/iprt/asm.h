@@ -1309,12 +1309,12 @@ DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
     __asm__ __volatile__("pushfq\n\t"
                          "cli\n\t"
                          "popq  %0\n\t"
-                         : "=m" (xFlags));
+                         : "=rm" (xFlags));
 #  else
     __asm__ __volatile__("pushfl\n\t"
                          "cli\n\t"
                          "popl  %0\n\t"
-                         : "=m" (xFlags));
+                         : "=rm" (xFlags));
 #  endif
 # elif RT_INLINE_ASM_USES_INTRIN && !defined(RT_ARCH_X86)
     xFlags = ASMGetFlags();
