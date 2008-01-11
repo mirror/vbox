@@ -736,7 +736,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     {
         cbBuf = sizeof(VMMDevRequestHeader);
         requestType = 1;
-        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_VMMREQUEST\n"));
+        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_VMMREQUEST"));
     }
 #ifdef VBOX_HGCM
     else if (VBOXGUEST_IOCTL_NUMBER(Cmd) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_HGCM_CALL(0)))
@@ -750,7 +750,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     {
         /** Untested Code. Will be tested soon. */
         cbBuf = VBOXGUEST_IOCTL_SIZE(Cmd);
-        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_LOG Cmd=%d cbBuf=%d", Cmd, cbBuf));        
+        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_LOG Cmd=%#x cbBuf=%d", Cmd, cbBuf));        
         char* pszLogMsg = RTMemTmpAlloc(cbBuf);
         if (RT_UNLIKELY(!pszLogMsg))
         {
