@@ -1528,6 +1528,10 @@ MODULE_LICENSE("GPL");
 MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(SUPDRVIOC_VERSION) ")");
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 module_param(force_async_tsc, int, 0444);
+#else
+MODULE_PARM(force_async_tsc, "i");
+#endif
 MODULE_PARM_DESC(force_async_tsc, "force the asynchronous TSC mode");
 
