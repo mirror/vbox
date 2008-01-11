@@ -573,7 +573,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
                 rc = apHDs[i]->pfnSetLCHSGeometry(apHDs[i], &LCHSGeometry);
 		if (rc == VERR_VDI_IMAGE_READ_ONLY)
 		{
-                    LogRel(("DevPcBios: ATA LUN#%d: failed to update LCHS geometry\n", __FUNCTION__, i));
+                    LogRel(("DevPcBios: ATA LUN#%d: failed to update LCHS geometry\n", i));
 		    rc = VINF_SUCCESS;
 		}
                 AssertRC(rc);
