@@ -5797,7 +5797,7 @@ HRESULT Machine::saveStateSettings (int aFlags)
         {
             /* defaults to true */
             machineNode.setValueOr <bool> ("currentStateModified",
-                                           !mData->mCurrentStateModified, true);
+                                           !!mData->mCurrentStateModified, true);
         }
 
         if (aFlags & SaveSTS_StateFilePath)
