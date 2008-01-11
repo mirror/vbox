@@ -1004,7 +1004,7 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
         CheckComRCReturnRC (rc);
     }
     else
-    if (!(attachmentNode = aAdapterNode.findKey ("HostInerface")).isNull())
+    if (!(attachmentNode = aAdapterNode.findKey ("HostInterface")).isNull())
     {
         /* Host Interface Networking */
 
