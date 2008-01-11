@@ -977,6 +977,9 @@ typedef struct
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWRN('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 
+# define VBOXGUEST_IOCTL_SIZE(Code)             (((Code) >> 16) & IOCPARM_MASK)
+# define VBOXGUEST_IOCTL_NUMBER(Code)           ((Code) & IOCPARM_MASK)
+
 #elif 0 /* BSD style - needs some adjusting _IORW takes a type and not a size. */
 # include <sys/ioccom.h>
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IORW('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))

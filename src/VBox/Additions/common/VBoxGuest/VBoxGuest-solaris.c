@@ -732,21 +732,38 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     uint32_t cbBuf = 0;
     int rc = 0;
     int requestType = 0;
-    if (    Cmd >= VBOXGUEST_IOCTL_VMMREQUEST(0)
-        &&  Cmd <= VBOXGUEST_IOCTL_VMMREQUEST(0xfff))
+    if (VBOXGUEST_IOCTL_NUMBER(Cmd) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_VMMREQUEST(0)))
     {
         cbBuf = sizeof(VMMDevRequestHeader);
         requestType = 1;
-        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_VMMREQUEST"));
+        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_VMMREQUEST\n"));
     }
 #ifdef VBOX_HGCM
-    else if (   Cmd >= VBOXGUEST_IOCTL_HGCM_CALL(0)
-             && Cmd <= VBOXGUEST_IOCTL_HGCM_CALL(0xfff))
+    else if (VBOXGUEST_IOCTL_NUMBER(Cmd) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_HGCM_CALL(0)))
     {
         cbBuf = sizeof(VBoxGuestHGCMCallInfo);
-        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_HGCM_CALL"));
+        requestType = 2;
+        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_HGCM_CALL", Cmd));
     }
 #endif /* VBOX_HGCM */
+    else if (VBOXGUEST_IOCTL_NUMBER(Cmd) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_LOG(0)))
+    {
+        /** Untested Code. Will be tested soon. */
+        cbBuf = VBOXGUEST_IOCTL_SIZE(Cmd);
+        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_LOG Cmd=%d cbBuf=%d", Cmd, cbBuf));        
+        char* pszLogMsg = RTMemTmpAlloc(cbBuf);
+        if (RT_UNLIKELY(!pszLogMsg))
+        {
+            LogRel((DEVICE_NAME ":RTMemAlloc failed to alloc %d bytes\n", cbBuf));
+            return ENOMEM;
+        }
+        rc = ddi_copyin((void *)pArg, pszLogMsg, cbBuf, Mode);
+        if (rc == 0)
+            Log(("%.*s", cbBuf, pszLogMsg));
+        else
+            LogRel((DEVICE_NAME ":ddi_copyin failed. rc=%d\n", rc));
+        RTMemTmpFree(pszLogMsg);
+    }
     else
     {
         switch (Cmd)
@@ -802,7 +819,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     if (requestType == 1)
     {
         VMMDevRequestHeader Hdr;
-        rc = ddi_copyin((void*)pArg, &Hdr, sizeof(Hdr), Mode);
+        rc = ddi_copyin((void *)pArg, &Hdr, sizeof(Hdr), Mode);
         if (RT_UNLIKELY(rc))
         {
             Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyin failed to read header pArg=%p Cmd=%d. rc=%d.\n", pArg, Cmd, rc));
