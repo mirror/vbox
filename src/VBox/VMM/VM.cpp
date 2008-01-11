@@ -273,7 +273,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                                 pszError = N_("Unknown error creating VM");
                                 AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
                         }
-                        if (pszError)
+                        if (pszError && !pVM->vm.s.fErrorSet)
                             vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
 
                         /* Forcefully terminate the emulation thread. */
@@ -2600,6 +2600,14 @@ DECLCALLBACK(void) vmR3SetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *p
     RTLogPrintfV(pszFormat, va3);
     va_end(va3);
 #endif
+
+    /*
+     * Prevent overwriting of the previous error.
+     */
+    if (pVM->vm.s.fErrorSet)
+        return;
+
+    pVM->vm.s.fErrorSet = true;
 
     /*
      * Make a copy of the message.
