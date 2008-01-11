@@ -40,6 +40,7 @@
 #include <iprt/mem.h>
 
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fs.h>
@@ -260,7 +261,7 @@ extern int nmi_active;
 static SUPDRVDEVEXT         g_DevExt;
 
 /** Timer structure for the GIP update. */
-static struct timer_list    g_GipTimer;
+static VBOXKTIMER           g_GipTimer;
 /** Pointer to the page structure for the GIP. */
 struct page                *g_pGipPage;
 
@@ -279,6 +280,9 @@ static devfs_handle_t       g_hDevFsVBoxDrv = NULL;
 /** Saved major device number */
 static int                  g_iModuleMajor;
 #endif /* !CONFIG_VBOXDRV_AS_MISC */
+
+/** Module parameter */
+static int force_async_tsc = 0;
 
 /** The module name. */
 #define DEVICE_NAME         "vboxdrv"
@@ -302,6 +306,12 @@ __asm__(".section execmemory, \"awx\", @progbits\n\t"
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+#ifdef VBOX_HRTIMER
+typedef enum hrtimer_restart (*VBOXTIMERFN)(struct hrtimer *);
+#else
+typedef void (*VBOXTIMERFN)(unsigned long);
+#endif
+
 static int      VBoxDrvLinuxInit(void);
 static void     VBoxDrvLinuxUnload(void);
 static int      VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp);
@@ -314,9 +324,17 @@ static int      VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsi
 static int      VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
 static int      VBoxDrvLinuxInitGip(PSUPDRVDEVEXT pDevExt);
 static int      VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt);
+#ifdef VBOX_HRTIMER
+static enum hrtimer_restart VBoxDrvLinuxGipTimer(struct hrtimer *timer);
+#else
 static void     VBoxDrvLinuxGipTimer(unsigned long ulUser);
+#endif
 #ifdef CONFIG_SMP
+# ifdef VBOX_HRTIMER
+static enum hrtimer_restart VBoxDrvLinuxGipTimerPerCpu(struct hrtimer *timer);
+# else
 static void     VBoxDrvLinuxGipTimerPerCpu(unsigned long ulUser);
+# endif
 static void     VBoxDrvLinuxGipResumePerCpu(void *pvUser);
 #endif
 static int      VBoxDrvLinuxErr2LinuxErr(int);
@@ -348,6 +366,38 @@ static struct miscdevice gMiscDevice =
 # endif
 };
 #endif
+
+static inline void vbox_ktimer_init(VBOXKTIMER *timer, VBOXTIMERFN function, unsigned long data)
+{
+#ifdef VBOX_HRTIMER
+   hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
+    timer->function = function;
+#else
+    init_timer(timer);
+    timer->data     = data;
+    timer->function = function;
+    timer->expires  = jiffies;
+#endif
+}
+
+static inline void vbox_ktimer_start(VBOXKTIMER *timer)
+{
+#ifdef VBOX_HRTIMER
+    hrtimer_start(timer, ktime_add_ns(ktime_get(), 1000000), HRTIMER_MODE_ABS);
+#else
+    mod_timer(timer, jiffies);
+#endif
+}
+
+static inline void vbox_ktimer_stop(VBOXKTIMER *timer)
+{
+#ifdef VBOX_HRTIMER
+    hrtimer_cancel(timer);
+#else
+    if (timer_pending(timer))
+        del_timer_sync(timer);
+#endif
+}
 
 #ifdef CONFIG_X86_LOCAL_APIC
 # ifdef DO_DISABLE_NMI
@@ -646,6 +696,14 @@ nmi_activated:
                 rc = VBoxDrvLinuxInitGip(&g_DevExt);
                 if (!rc)
                 {
+                    printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
+#ifdef VBOX_HRTIMER
+                            "'high-res'"
+#else
+                            "'normal'"
+#endif
+                            ".\n",
+                            g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
                     dprintf(("VBoxDrv::ModuleInit returning %#x\n", rc));
                     printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
                            VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
@@ -976,20 +1034,14 @@ static int VBoxDrvLinuxInitGip(PSUPDRVDEVEXT pDevExt)
     /*
      * Initialize the timer.
      */
-    init_timer(&g_GipTimer);
-    g_GipTimer.data = (unsigned long)pDevExt;
-    g_GipTimer.function = VBoxDrvLinuxGipTimer;
-    g_GipTimer.expires = jiffies;
+    vbox_ktimer_init(&g_GipTimer, VBoxDrvLinuxGipTimer, (unsigned long)pDevExt);
 #ifdef CONFIG_SMP
     for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++)
     {
         pDevExt->aCPUs[i].u64LastMonotime = pDevExt->u64LastMonotime;
         pDevExt->aCPUs[i].ulLastJiffies   = pDevExt->ulLastJiffies;
         pDevExt->aCPUs[i].iSmpProcessorId = -512;
-        init_timer(&pDevExt->aCPUs[i].Timer);
-        pDevExt->aCPUs[i].Timer.data      = i;
-        pDevExt->aCPUs[i].Timer.function  = VBoxDrvLinuxGipTimerPerCpu;
-        pDevExt->aCPUs[i].Timer.expires   = jiffies;
+        vbox_ktimer_init(&pDevExt->aCPUs[i].Timer, VBoxDrvLinuxGipTimerPerCpu, i);
     }
 #endif
 
@@ -1015,12 +1067,10 @@ static int VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt)
     /*
      * Delete the timer if it's pending.
      */
-    if (timer_pending(&g_GipTimer))
-        del_timer_sync(&g_GipTimer);
+    vbox_ktimer_stop(&g_GipTimer);
 #ifdef CONFIG_SMP
     for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++)
-        if (timer_pending(&pDevExt->aCPUs[i].Timer))
-            del_timer_sync(&pDevExt->aCPUs[i].Timer);
+        vbox_ktimer_stop(&pDevExt->aCPUs[i].Timer);
 #endif
 
     /*
@@ -1053,7 +1103,11 @@ static int VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt)
  *
  * @param   ulUser  The device extension pointer.
  */
+#ifdef VBOX_HRTIMER
+static enum hrtimer_restart VBoxDrvLinuxGipTimer(struct hrtimer* timer)
+#else
 static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
+#endif
 {
     PSUPDRVDEVEXT       pDevExt;
     PSUPGLOBALINFOPAGE  pGip;
@@ -1061,11 +1115,19 @@ static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
     unsigned long       ulDiff;
     uint64_t            u64Monotime;
     unsigned long       SavedFlags;
+#ifdef VBOX_HRTIMER
+    ktime_t             kNow;
+#endif
 
     local_irq_save(SavedFlags);
 
     ulNow   = jiffies;
+#ifdef VBOX_HRTIMER
+    kNow    = ktime_get();
+    pDevExt = &g_DevExt;
+#else
     pDevExt = (PSUPDRVDEVEXT)ulUser;
+#endif
     pGip    = pDevExt->pGip;
 
 #ifdef CONFIG_SMP
@@ -1088,9 +1150,19 @@ static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
     if (RT_LIKELY(pGip))
         supdrvGipUpdate(pDevExt->pGip, u64Monotime);
     if (RT_LIKELY(!pDevExt->fGIPSuspended))
+    {
+#ifdef VBOX_HRTIMER
+        hrtimer_forward(&g_GipTimer, kNow, ktime_set(0, 1000000));
+#else
         mod_timer(&g_GipTimer, ulNow + ONE_MSEC_IN_JIFFIES);
+#endif
+    }
 
     local_irq_restore(SavedFlags);
+
+#ifdef VBOX_HRTIMER
+    return pDevExt->fGIPSuspended ? HRTIMER_NORESTART : HRTIMER_RESTART;
+#endif
 }
 
 
@@ -1100,7 +1172,11 @@ static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
  *
  * @param   iTimerCPU     The APIC ID of this timer.
  */
+#ifdef VBOX_HRTIMER
+static enum hrtimer_restart VBoxDrvLinuxGipTimerPerCpu(struct hrtimer *timer)
+#else
 static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
+#endif
 {
     PSUPDRVDEVEXT       pDevExt;
     PSUPGLOBALINFOPAGE  pGip;
@@ -1108,6 +1184,10 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
     uint64_t            u64Monotime;
     unsigned long       SavedFlags;
     unsigned long       ulNow;
+# ifdef VBOX_HRTIMER
+    unsigned long       iTimerCPU;
+    ktime_t             kNow;
+# endif
 
     local_irq_save(SavedFlags);
 
@@ -1115,6 +1195,10 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
     pDevExt = &g_DevExt;
     pGip    = pDevExt->pGip;
     iCPU    = ASMGetApicId();
+# ifdef VBOX_HRTIMER
+    iTimerCPU = iCPU; /* XXX hrtimer does not support a 'data' field */
+    kNow    = ktime_get();
+# endif
 
     if (RT_LIKELY(iCPU < RT_ELEMENTS(pGip->aCPUs)))
     {
@@ -1127,7 +1211,13 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
             if (RT_LIKELY(pGip))
                 supdrvGipUpdatePerCpu(pGip, u64Monotime, iCPU);
             if (RT_LIKELY(!pDevExt->fGIPSuspended))
+            {
+# ifdef VBOX_HRTIMER
+                hrtimer_forward(&pDevExt->aCPUs[iCPU].Timer, kNow, ktime_set(0, 1000000));
+# else
                 mod_timer(&pDevExt->aCPUs[iCPU].Timer, ulNow + ONE_MSEC_IN_JIFFIES);
+# endif
+            }
         }
         else
             printk("vboxdrv: error: GIP CPU update timer executing on the wrong CPU: apicid=%d != timer-apicid=%ld (cpuid=%d !=? timer-cpuid=%d)\n",
@@ -1138,6 +1228,10 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
                iCPU, (unsigned long)RT_ELEMENTS(pGip->aCPUs), smp_processor_id());
 
     local_irq_restore(SavedFlags);
+
+# ifdef VBOX_HRTIMER
+    return pDevExt->fGIPSuspended ? HRTIMER_NORESTART : HRTIMER_RESTART;
+# endif
 }
 #endif  /* CONFIG_SMP */
 
@@ -1252,12 +1346,12 @@ void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt)
     if (pDevExt->pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
     {
 #endif
-        mod_timer(&g_GipTimer, jiffies);
+        vbox_ktimer_start(&g_GipTimer);
 #ifdef CONFIG_SMP
     }
     else
     {
-        mod_timer(&g_GipTimer, jiffies);
+        vbox_ktimer_start(&g_GipTimer);
         smp_call_function(VBoxDrvLinuxGipResumePerCpu, pDevExt, 0 /* retry */, 1 /* wait */);
     }
 #endif
@@ -1285,7 +1379,7 @@ static void VBoxDrvLinuxGipResumePerCpu(void *pvUser)
     }
 
     pDevExt->aCPUs[iCPU].iSmpProcessorId = smp_processor_id();
-    mod_timer(&pDevExt->aCPUs[iCPU].Timer, jiffies);
+    vbox_ktimer_start(&pDevExt->aCPUs[iCPU].Timer);
 }
 #endif /* CONFIG_SMP */
 
@@ -1303,12 +1397,10 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
     dprintf2(("supdrvOSGipSuspend:\n"));
     ASMAtomicXchgU8(&pDevExt->fGIPSuspended, true);
 
-    if (timer_pending(&g_GipTimer))
-        del_timer_sync(&g_GipTimer);
+    vbox_ktimer_stop(&g_GipTimer);
 #ifdef CONFIG_SMP
     for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++)
-        if (timer_pending(&pDevExt->aCPUs[i].Timer))
-            del_timer_sync(&pDevExt->aCPUs[i].Timer);
+        vbox_ktimer_stop(&pDevExt->aCPUs[i].Timer);
 #endif
 }
 
@@ -1338,7 +1430,7 @@ unsigned VBOXCALL supdrvOSGetCPUCount(void)
  */
 bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(void)
 {
-    return false;
+    return force_async_tsc != 0;
 }
 
 
@@ -1435,3 +1527,7 @@ MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(SUPDRVIOC_VERSION) ")");
 #endif
+
+module_param(force_async_tsc, int, 0444);
+MODULE_PARM_DESC(force_async_tsc, "force the asynchronous TSC mode");
+
