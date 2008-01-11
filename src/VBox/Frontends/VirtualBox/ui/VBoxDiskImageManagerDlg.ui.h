@@ -2023,6 +2023,7 @@ void VBoxDiskImageManagerDlg::removeImage()
         /// GetStorageType() to define the correct cast).
         CHardDisk disk = item->getMedia().disk;
         if (disk.GetStorageType() == CEnums::VirtualDiskImage &&
+            disk.GetParent().isNull() && /* must not be differencing (see below) */
             item->getStatus() == VBoxMedia::Ok)
         {
             int rc = vboxProblem().confirmHardDiskImageDeletion (this, src);
@@ -2032,6 +2033,11 @@ void VBoxDiskImageManagerDlg::removeImage()
         }
         else
         {
+            /// @todo note that differencing images are always automatically
+            /// deleted when unregistered, but the following message box
+            /// doesn't mention it. I keep it as is for now because
+            /// implementing the portability feature will most likely change
+            /// this behavior (we'll update the message afterwards).
             if (!vboxProblem().confirmHardDiskUnregister (this, src))
                 return;
         }
