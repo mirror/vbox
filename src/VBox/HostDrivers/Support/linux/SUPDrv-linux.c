@@ -40,7 +40,9 @@
 #include <iprt/mem.h>
 
 #include <linux/module.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 #include <linux/moduleparam.h>
+#endif
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fs.h>
