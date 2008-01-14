@@ -69,7 +69,7 @@
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>Erreur: librairies QT incompatibles</translation>
+        <translation>Erreur : librairies QT incompatibles</translation>
     </message>
 </context>
 <context>
@@ -416,7 +416,7 @@
     </message>
     <message>
         <source>You want to:</source>
-        <translation>Vous désirez:</translation>
+        <translation>Vous désirez :</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -733,7 +733,7 @@
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indique si le curseur de la souris est capturé par le système d&apos;exploitation client:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur non capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Intégration souris MI) en service&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur non capturé&lt;/nobr&gt;&lt;br&gt;Noter que l&apos;intégration de la souris nécessite l&apos;installation des additions client sur le système d&apos;exploitation client. </translation>
+        <translation>Indique si le curseur de la souris est capturé par le système d&apos;exploitation client :&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur non capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Intégration souris MI) en service&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur non capturé&lt;/nobr&gt;&lt;br&gt;Noter que l&apos;intégration de la souris nécessite l&apos;installation des additions client sur le système d&apos;exploitation client. </translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
@@ -911,17 +911,17 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du disque souple:&lt;/nbr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du disque souple :&lt;/nbr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;&lt;Lecteur hôte&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;&lt;Lecteur hôte&lt;/b&gt; : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt; : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -931,17 +931,17 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité sur le média CD/DVD/ROM: &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité sur le média CD/DVD/ROM : &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;&lt;Lecteur hôte&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;&lt;Lecteur hôte&lt;/b&gt; : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt; : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -951,7 +951,7 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du disque dur virtuel:&lt;/nbr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du disque dur virtuel :&lt;/nbr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -961,12 +961,12 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité sur l&apos;interface réseau: &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité sur l&apos;interface réseau : &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptateur %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptateur %1 (%2)&lt;/b&gt; : cable %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -986,7 +986,7 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité sur les appareils USB: &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité sur les appareils USB : &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -1005,7 +1005,7 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité sur le répertoire partagé: &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité sur le répertoire partagé : &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -1102,7 +1102,7 @@
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation>--</translation>
+        <translation>Aucun(e)</translation>
     </message>
     <message>
         <source>&amp;New...</source>
@@ -1190,27 +1190,27 @@
     </message>
     <message>
         <source>Location</source>
-        <translation>Emplacement</translation>
+        <translation>Emplacement </translation>
     </message>
     <message>
         <source>Disk Type</source>
-        <translation>Type du disque</translation>
+        <translation>Type du disque </translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation>Type de mémorisation</translation>
+        <translation>Type de mémorisation </translation>
     </message>
     <message>
         <source>Attached to</source>
-        <translation>Attaché à</translation>
+        <translation>Attaché à </translation>
     </message>
     <message>
         <source>Snapshot</source>
-        <translation>Instantané</translation>
+        <translation>Instantané </translation>
     </message>
     <message>
         <source>Checking accessibility</source>
-        <translation>Test d&apos;accès</translation>
+        <translation>Test d&apos;accès </translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
@@ -1219,17 +1219,17 @@
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disk type:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Storage type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type du disque:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type de la mémorisation:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type du disque&amp;nbsp;:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type de la mémorisation &amp;nbsp;:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>HDD</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Attaché à:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Attaché à&amp;nbsp;:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Snapshot:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</source>
         <comment>HDD</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Instantané:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Instantané/nbsp;:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
@@ -1254,7 +1254,7 @@
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Attaché à:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Attaché à&amp;nbsp;:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
@@ -1343,7 +1343,7 @@
     </message>
     <message>
         <source>Could not locate the file on the server (response: %1).</source>
-        <translation>Le fichier n&apos;a pas été trouvé sur le Serveur (réponde: %1).</translation>
+        <translation>Le fichier n&apos;a pas été trouvé sur le Serveur (réponse : %1).</translation>
     </message>
     <message>
         <source>Could not determine the file size.</source>
@@ -1389,7 +1389,7 @@
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;ID Fabricant: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Produit: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Révision: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID Fabricant : %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Produit : %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Révision : %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
@@ -1399,7 +1399,7 @@
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Etat: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Etat : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Name</source>
@@ -2252,11 +2252,11 @@ Toutes les frappes sur le clavier (ainsi que les combinaisons telles que Alt-Tab
     </message>
     <message>
         <source>Author(s):</source>
-        <translation>Auteur(s):</translation>
+        <translation>Auteur(s) :</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation>Langue:</translation>
+        <translation>Langue :</translation>
     </message>
     <message>
         <source> (built-in)</source>
@@ -2512,11 +2512,11 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation>Disque virtuel, Emplacement et taille</translation>
+        <translation>Disque virtuel, Emplacement et taille </translation>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation>Vous êtes en train der créer un disque dur avec les paramètres suivants:</translation>
+        <translation>Vous êtes en train der créer un disque dur avec les paramètres suivants :</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
@@ -2535,7 +2535,7 @@ Le nouveau disque dur sera créer.</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Emplacement:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Emplacement&amp;nbsp;:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
@@ -2550,7 +2550,7 @@ Le nouveau disque dur sera créer.</translation>
     <name>VBoxNewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation>Créer un nouveau disque virtuel</translation>
+        <translation>Créer un nouvelle machine virtuelle</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
@@ -2649,7 +2649,7 @@ Vous pouvez créer une nouvelle image de disque dur en utilisant le bouton &lt;b
                             with the following parameters:
                             &lt;/p&gt;
                             </source>
-        <translation>&lt;p&gt;Vous allez créer une nouvelle machine virtuelle avec les paramètres suivants:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous allez créer une nouvelle machine virtuelle avec les paramètres suivants :&lt;/p&gt;</translation>
     </message>
     <message>
         <source>
@@ -2677,11 +2677,11 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;Nom:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Type du système d&apos;exploitation:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Mémoire vive de base:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;Mo&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation>&lt;tr&gt;&lt;td&gt;Nom&amp;nbsp;:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Type du système d&apos;exploitation%nbsp;:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Mémoire vive de base&amp;nbsp;:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;Mo&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;Disque dur s&apos;amorçage:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation>&lt;tr&gt;&lt;td&gt;Disque dur s&apos;amorçage :&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
@@ -2835,7 +2835,7 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Libérer cette image détachera celle-ci des machines virtuelle suivantes: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continuer ?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Libérer cette image détachera celle-ci des machines virtuelle suivantes : &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continuer ?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
@@ -2866,7 +2866,7 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Echec: Image de disque dur, emplacement %2 du contrôleur %3 de la machine &lt;b&gt;%4&lt;/b&gt; non détaché.</translation>
+        <translation>Echec : Image de disque dur, emplacement %2 du contrôleur %3 de la machine &lt;b&gt;%4&lt;/b&gt; non détaché.</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -2882,11 +2882,11 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Echec de l&apos;enregistrement: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Echec de l&apos;enregistrement : %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Echec de désenregistrement: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Echec de désenregistrement : %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
@@ -2914,11 +2914,11 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Echec: le périphérique USB  &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été attaché à la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Echec : le périphérique USB  &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été attaché à la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Echec: le périphérique USB  &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été désattaché de la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Echec : le périphérique USB  &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été désattaché de la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -2930,7 +2930,7 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous avez cliqué dans l&apos;écran de la machine virtuelle ou bien actionné la &lt;i&gt;touche hôte&lt;/i&gt;. Le pointeur de la souris est &lt;i&gt;capturé&lt;/i&gt; par la machine virtuelle (seulement si les additions du systéme d&apos;exploitation ne sont pas installées) et de ce fait ne sera pas utilisable par d&apos;autres applications.&lt;/p&gt;
+        <translation>&lt;p&gt;Vous avez cliqué dans l&apos;écran de la machine virtuelle ou bien actionné la &lt;i&gt;touche hôte&lt;/i&gt;. Le pointeur de la souris est &lt;i&gt;capturé&lt;/i&gt; par la machine virtuelle (seulement si les additions du système d&apos;exploitation ne sont pas installées) et de ce fait ne sera pas utilisable par d&apos;autres applications.&lt;/p&gt;
 &lt;p&gt;Vous pouvez actionner la &lt;i&gt;touche hôte&lt;/i&gt; à n&apos;importe quel instant,  ceci libérera le clavier et la souris (s&apos;il sont capturés) et autorisera leur emploi normal. La &lt;i&gt;touche hôte&lt;/i&gt; actuellement paramétrée est affichée dans la barre située das la partie inférieure de la fenêtre de la machine virtuelle, près de l&apos;icone&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Cet icone, ainsi que celui de la souris, placé à proximité de ce dernier, indique l&apos;état de capture actuel du clavier et de la souris.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2986,16 +2986,16 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;ID Erreur: &lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID Erreur : &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation>Sévérité:</translation>
+        <translation>Sévérité :</translation>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une erreur fatale s&apos;est produite pendant l&apos;exécution de la machine virtuelle&amp;nbsp;! La machine virtuelle sera mise hors tension. Copier le message si vous désirer examiné celui ci ultérieurement:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une erreur fatale s&apos;est produite pendant l&apos;exécution de la machine virtuelle ! La machine virtuelle sera mise hors tension. Copier le message si vous désirer examiné celui ci ultérieurement :&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
@@ -3008,27 +3008,27 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Code&amp;nbsp;de résultat: </translation>
+        <translation>Code&amp;nbsp;de résultat : </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>Composant:</translation>
+        <translation>Composant :</translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>Interface: </translation>
+        <translation>Interface : </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Fonction Appelée:</translation>
+        <translation>Fonction Appelée :</translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>Code&amp;nbsp;retourné:</translation>
+        <translation>Code&amp;nbsp;retourné :</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -3090,7 +3090,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;écran de l&apos;ordinateur est optimisé pour le traitement en mode couleur &lt;b&gt;%1&amp;nbsp;bits&lt;/b&gt;  Le mode couleur de l&apos;écran de la machine virtuelle est de &lt;b&gt;%2&amp;nbsp;bits&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Configurez le mode couleur de l&apos;écran à l&apos;aide de la boîte de dialogue correspondante sur votre ordinateur afin d&apos;obtenir des meilleures performances.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; Certain systèmes d&apos;exploitation, tel que OS/2, peuvent fonctionner en mode couleur 32 bits mais annonce 24 bits (16 millions de couleurs). Vous pouvez choisir un autre mode de couleur pour voir si ce message n&apos;est plus affiché ou simplement désactiver ce message si vous êtes sur que votre systéme n&apos;offre pas le mode couleur (%4&amp;nbsp;).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;L&apos;écran de votre l&apos;ordinateur est optimisé pour le traitement en mode couleur &lt;b&gt;%1&amp;nbsp;bits&lt;/b&gt; alors que  le mode couleur de l&apos;écran de la machine virtuelle est de &lt;b&gt;%2&amp;nbsp;bits&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Configurez le mode couleur de l&apos;écran à l&apos;aide de la boîte de dialogue correspondante sur votre ordinateur afin d&apos;obtenir des meilleures performances.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&amp;nbsp;:&lt;/b&gt; Certains systèmes d&apos;exploitations, tel que OS/2, peuvent fonctionner en mode couleur 32 bits mais annoncent 24 bits (16 millions de couleurs). Vous pouvez choisir un autre mode de couleur pour voir si ce message n&apos;est plus affiché ou simplement désactiver ce message si vous êtes sur que votre système n&apos;offre pas le mode couleur (%4&amp;nbsp;).&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
@@ -3133,7 +3133,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Veuillez bien remplir le formulaire d&apos;inscription qui nous informeras que vous utilisez VirtualBox et qui nous permettra de vous informer occasionnellement des nouveautés et des mises à jour.&lt;/p&gt;Entrez votre nom complet en utilisant des caractères latins et votre adresse couriel dans les champs ci dessous. Notez que Innotek n&apos;utilise ces données que pour effectuer des statistiques et pour l&apos;envoi de bulletins d&apos;information. Innotek be communiquera jamais ces informations à des tiers. Des informations détaillées sur l&apos;utilisation de vos données personelles se trouvent sous la section &lt;b&gt;Privacy Policy&lt;/b&gt; du manuel d&apos;utilisation ainsi que sur la page  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site web VirtualBox.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Veuillez bien remplir le formulaire d&apos;inscription qui nous informeras que vous utilisez VirtualBox et qui nous permettra de vous informer occasionnellement des nouveautés et des mises à jour.&lt;/p&gt;Entrez votre nom complet en utilisant des caractères latins et votre adresse courriel dans les champs ci dessous. Notez que Innotek n&apos;utilise ces données que pour effectuer des statistiques et pour l&apos;envoi de bulletins d&apos;information. Innotek ne communiquera jamais ces informations à des tiers. Des informations détaillées sur l&apos;utilisation de vos données personelles se trouvent sous la section &lt;b&gt;Privacy Policy&lt;/b&gt; du manuel d&apos;utilisation ainsi que sur la page  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site web VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -3149,7 +3149,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
-        <translation>Entrez votre adresse couriel.</translation>
+        <translation>Entrez votre adresse courriel.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
@@ -3157,7 +3157,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation>Cocher cette case si vous ne désirez pas recevoir de couriel, à l&apos;adresse spécifiée, de la part d&apos;Innotek.</translation>
+        <translation>Cocher cette case si vous ne désirez pas recevoir de courriel, à l&apos;adresse spécifiée, de la part d&apos;Innotek.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
@@ -3173,7 +3173,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation>Le formulaire d&apos;inscription n&apos;a pas été trouvé sur le serveur (réponse: %1).</translation>
+        <translation>Le formulaire d&apos;inscription n&apos;a pas été trouvé sur le serveur (réponse : %1).</translation>
     </message>
 </context>
 <context>
@@ -3515,7 +3515,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Nom&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Chemin:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Nom&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Chemin&amp;nbsp;:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
@@ -3967,7 +3967,7 @@ or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
 (&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Définit l&apos;action exécutée par l&apos;ordinateur quand un périphérique reconnu par le filtre est attaché à l&apos;ordinateur principal:
+        <translation>&lt;qt&gt;Définit l&apos;action exécutée par l&apos;ordinateur quand un périphérique reconnu par le filtre est attaché à l&apos;ordinateur principal :
 le réserver à l&apos;ordinateur principal (&lt;i&gt;Ignorer&lt;/i&gt;) ou le réserver pour une utilisation ultérieure par une machine virtuelle (&lt;i&gt;Retenir&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4019,7 +4019,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Pas de description. Activer le bouton Editer pour ajouter une description.</translation>
+        <translation>Pas de description. Cliquer le bouton Editer pour ajouter une description.</translation>
     </message>
     <message>
         <source>Edit</source>
@@ -4038,7 +4038,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>La machine virtuelle est &lt;i&gt;inaccessible&lt;/i&gt;. Veuillez inspecter le message d&apos;erreur ci dessous et actionnez la touche &lt;b&gt;Actualiser&lt;/b&gt; si vous désirez reprendre le test d&apos;accès:</translation>
+        <translation>La machine virtuelle est &lt;i&gt;inaccessible&lt;/i&gt;. Veuillez inspecter le message d&apos;erreur ci dessous et actionnez la touche &lt;b&gt;Actualiser&lt;/b&gt; si vous désirez reprendre le test d&apos;accès :</translation>
     </message>
 </context>
 <context>
@@ -4113,7 +4113,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous avez choisi le média de démarrage suivant:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous avez choisi le média de démarrage suivant :&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
@@ -4137,7 +4137,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source :&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
@@ -4153,7 +4153,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous avez choisis le média suivant pour amorcer  un système d&apos;exploitation:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous avez choisis le média suivant pour amorcer  un système d&apos;exploitation :&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
