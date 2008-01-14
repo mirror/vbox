@@ -398,9 +398,7 @@ void Connection::putrequest( const char* method, const char* url )
 
     m_State = REQ_STARTED;
 
-    char req[ 512 ];
-    sprintf( req, "%s %s HTTP/1.1", method, url );
-    m_Buffer.push_back( req );
+    m_Buffer.push_back (string (method) + " " + string (url) + " HTTP/1.1");
 
     putheader( "Host", m_Host.c_str() );    // required for HTTP1.1
 
