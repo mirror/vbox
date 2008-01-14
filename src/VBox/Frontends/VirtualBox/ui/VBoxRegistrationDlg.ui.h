@@ -360,6 +360,13 @@ void VBoxRegistrationDlg::onNetEnd (const QByteArray &aTotalData)
     mTimeout->stop();
     if (mHandshake)
     {
+        /* Verifying key correctness */
+        if (QString (aTotalData).find (QRegExp ("^[a-zA-Z0-9]{32}$")))
+        {
+            abortRegisterRequest (tr ("Could not perform connection handshake."));
+            return;
+        }
+
         /* Registration arguments initializing */
         QString version = vboxGlobal().virtualBox().GetVersion();
         QString key (aTotalData);
