@@ -57,24 +57,16 @@ endif
 
 # The Qt DLLs.
 ifneq ($(VBOX_WITH_QTGUI),)
- ifeq ($(BUILD_TARGET),win)
+ ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
   #include $(PATH_KBUILD)/sdks/QT3.kmk
   #bin_SOURCES += \
   #	$(DLL_SDK_QT3_QT)
-  ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.x86)
-   VBOX_DLL_QT ?= $(VBOX_PATH_QT)/bin/qt-mt333.dll
-  else ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.amd64)
-   VBOX_DLL_QT ?= $(PATH_DEVTOOLS)/win.amd64/Qt/v3.3.8/lib/qt-mt338.dll=>qt-mt338.dll
-  endif
   ifdef VBOX_DLL_QT
    bin_SOURCES += \
 	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
   endif
- else ifeq ($(BUILD_TARGET),os2)
-  VBOX_DLL_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/bin/*qt*.dll)))
-  ifneq ($(strip $(VBOX_DLL_QT)),)
-   bin_SOURCES += \
-	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
+  ifdef VBOX_QT_BINARIES
+   bin_SOURCES += $(VBOX_QT_BINARIES)
   endif
  else ifeq ($(VBOX_MUST_INSTALL_LIB_QT),1)
    bin_SOURCES += \
@@ -89,7 +81,7 @@ ifeq ($(BUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
   include $(PATH_KBUILD)/tools/VCC80X86.kmk
   include $(PATH_KBUILD)/tools/VCC80AMD64.kmk
   bin_SOURCES.x86 += \
- 	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
+	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \
 	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcr80.dll=>Microsoft.VC80.CRT/msvcr80.dll \
 	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/msvcp80.dll=>Microsoft.VC80.CRT/msvcp80.dll \
 	$(PATH_TOOL_VCC80X86)/redist/x86/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest=>testcase/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest \

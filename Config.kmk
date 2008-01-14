@@ -1232,23 +1232,30 @@ SDK_VBOX_NTDLL_LIBS ?= $(PATH_SDK_W2K3DDK_LIB)/ntdll.lib
 #
 ## @todo convert this into SDK and integrate the Qt stuff into kBuild.
 ifeq ($(BUILD_TARGET),win)
- ifeq ($(BUILD_TARGET_ARCH),x86)
-  VBOX_PATH_QT ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.3
-  LIB_QT ?= $(VBOX_PATH_QT)/lib/dynamic/qt-mt333.lib
-  LIB_QTMAIN ?= $(VBOX_PATH_QT)/lib/dynamic/qtmain.lib
- else
-  VBOX_PATH_QT ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.8
-  LIB_QT ?= $(VBOX_PATH_QT)/lib/qt-mt338.lib
-  LIB_QTMAIN ?= $(VBOX_PATH_QT)/lib/qtmain.lib
+ VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v3.*)))
+ VBOX_DLL_QT ?= $(firstword $(wildcard $(VBOX_PATH_QT)/bin/VBoxQt3*.dll) \
+                            $(wildcard $(VBOX_PATH_QT)/bin/qtmt3*.dll) \
+                            $(wildcard $(VBOX_PATH_QT)/bin/qt-mt3*.dll) \
+                            $(wildcard $(VBOX_PATH_QT)/lib/qt-mt3*.dll))
+ ifneq ($(wildcard $(VBOX_PATH_QT)/bin/accessible/VBoxQtWidgets100.dll),)
+  VBOX_QT_BINARIES += \
+    $(VBOX_PATH_QT)/bin/accessible/VBoxQtWidgets100.dll=>accessible/VBoxQtWidgets100.dll
  endif
- ifndef QTDIR
-  QTDIR := $(sort $(wildcard $(PATH_DEVTOOLS_BLD)/v*))
-  QTDIR := $(call lastword,$(QTDIR))
- endif
+ LIB_QT ?= $(firstword $(wildcard $(VBOX_PATH_QT)/lib/VBoxQt3*.lib) \
+                       $(wildcard $(VBOX_PATH_QT)/lib/qt-mt3*.lib) \
+                       $(wildcard $(VBOX_PATH_QT)/lib/dynamic/qt-mt3*.lib))
+ LIB_QT_PRL ?= $(firstword $(wildcard $(VBOX_PATH_QT)/lib/VBoxQt.prl) \
+                           $(wildcard $(VBOX_PATH_QT)/lib/qt-mt.prl) \
+                           $(wildcard $(VBOX_PATH_QT)/lib/dynamic/qt-mt.prl))
+ LIB_QTMAIN ?= $(firstword $(wildcard $(VBOX_PATH_QT)/lib/qtmain.lib) \
+                           $(wildcard $(VBOX_PATH_QT)/lib/dynamic/qtmain.lib))
+ QTDIR ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_BLD)/qt/v3.*)))
 else ifeq ($(BUILD_TARGET),os2)
  QTDIR ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.1
  VBOX_PATH_QT ?= $(QTDIR)
+ VBOX_DLL_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/bin/*qt*.dll)))
  LIB_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/lib/*qt*.lib)))
+ LIB_QT_PRL ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/lib/*qt*.prl)))
  QTDIR := $(VBOX_PATH_QT)
 else ifeq ($(BUILD_TARGET),darwin)
  ifndef VBOX_PATH_QT
@@ -2149,10 +2156,15 @@ TEMPLATE_VBOXQTGUIEXE_INCS = \
 	$(VBOX_PATH_QT)/include
 
 ifeq ($(BUILD_TARGET),win)
+ # drag in library configuration (we need QMAKE_PRL_DEFINES)
+ ifneq ($(LIB_QT_PRL),)
+  include $(LIB_QT_PRL)
+ endif
  TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_VCC_TOOL)
  TEMPLATE_VBOXQTGUIEXE_DEFS += \
     _WIN32_WINNT=0x0500 UNICODE _UNICODE \
-    QT_DLL _CRT_SECURE_NO_DEPRECATE
+    QT_DLL _CRT_SECURE_NO_DEPRECATE \
+    $(QMAKE_PRL_DEFINES)
  ## @todo VCC70 flags?
  ifdef VBOX_USE_VCC80
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
@@ -2196,7 +2208,6 @@ else # the gcc guys:
  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
  TEMPLATE_VBOXQTGUIEXE_LDFLAGS.x86 = -m32
  TEMPLATE_VBOXQTGUIEXE_LDFLAGS.amd64 = -m64
- ## @todo no $(LIB_QTMAIN) here?
  TEMPLATE_VBOXQTGUIEXE_LIBS = \
 	$(LIB_QT) \
 	$(LIB_SDL) \
@@ -2220,6 +2231,11 @@ else # the gcc guys:
   TEMPLATE_VBOXQTGUIEXE_LIBS +=
   TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
  else ifeq ($(BUILD_TARGET),os2)
+  # drag in library configuration (we need QMAKE_PRL_DEFINES)
+  ifneq ($(LIB_QT_PRL),)
+   include $(LIB_QT_PRL)
+  endif
+  TEMPLATE_VBOXQTGUIEXE_DEFS += $(QMAKE_PRL_DEFINES)
   TEMPLATE_VBOXQTGUIEXE_LIBS +=
   TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
  else
