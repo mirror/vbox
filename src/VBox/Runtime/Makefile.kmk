@@ -510,9 +510,11 @@ RuntimeGuestR3_SOURCES              := $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
+	generic/RTLogWriteUser-generic.cpp \
 	, $(RuntimeR3_SOURCES))
 RuntimeGuestR3_SOURCES              += \
-	common/time/timesysalias.cpp
+	common/time/timesysalias.cpp \
+	VBox/logbackdoor.cpp
 RuntimeGuestR3_SOURCES.$(BUILD_TARGET) := $(RuntimeR3_SOURCES.$(BUILD_TARGET))
 RuntimeGuestR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
 
