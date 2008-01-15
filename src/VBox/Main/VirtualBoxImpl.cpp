@@ -4565,8 +4565,13 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                         Assert (semId >= 0 && semId < cnt);
                         if (semId >= 0 && semId < cnt)
                         {
-                            LogFlowFunc (("released mutex: machine='%ls'\n",
-                                          machines [semId]->userData()->mName.raw()));
+#ifdef DEBUG
+                            {
+                                AutoReaderLock machieLock (machines [semId]);
+                                LogFlowFunc (("released mutex: machine='%ls'\n",
+                                              machines [semId]->name().raw()));
+                            }
+#endif
                             machines [semId]->checkForDeath();
                         }
                         update = true;
@@ -4590,8 +4595,13 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                                 Assert (i >= 0 && i < cnt);
                                 if (i >= 0 && i < cnt)
                                 {
-                                    LogFlowFunc (("mutex owner dead: machine='%ls'\n",
-                                                  machines [i]->userData()->mName.raw()));
+#ifdef DEBUG
+                                    {
+                                        AutoReaderLock machieLock (machines [semId]);
+                                        LogFlowFunc (("mutex owner dead: machine='%ls'\n",
+                                                      machines [i]->name().raw()));
+                                    }
+#endif
                                     machines [i]->checkForDeath();
                                 }
                             }

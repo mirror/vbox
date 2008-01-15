@@ -30,6 +30,14 @@
  %endmacro
  %define vmlaunch int3
  %define vmresume int3
+ %define vmsave int3
+ %define vmload int3
+ %define vmrun int3
+ %define clgi int3
+ %define stgi int3
+ %macro invlpga 2,
+    int3
+ %endmacro
 %endif
 
 

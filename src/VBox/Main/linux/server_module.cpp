@@ -161,7 +161,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
             rc = ipcServ->ResolveClientName (VBOXSVC_IPC_NAME, &serverID);
             if (NS_FAILED (rc))
             {
-                LogFlowFunc (("Starting server...\n", VBoxSVCPath));
+                LogFlowFunc (("Starting server \"%s\"...\n", VBoxSVCPath));
 
                 startedOnce = true;
 
