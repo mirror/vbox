@@ -20,17 +20,11 @@ include $(PATH_KBUILD)/subheader.kmk
 
 # Include sub-dirs.
 SUBDIRS =
-if1of ($(BUILD_TARGET),linux)
+if1of ($(BUILD_TARGET),linux solaris)
 SUBDIRS += \
 	xclient \
 	xgraphics \
 	xmouse
-endif
-
-ifeq ($(BUILD_TARGET),solaris)
-SUBDIRS += \
-	xmouse \
-	xgraphics
 endif
 
 include $(PATH_KBUILD)/subfooter.kmk
