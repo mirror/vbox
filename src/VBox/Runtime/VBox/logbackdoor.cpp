@@ -86,7 +86,7 @@ RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
      */
 }
 
-#elif defined(RT_OS_LINUX) && defined(IN_GUEST_R3)
+#elif (defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)) && defined(IN_GUEST_R3)
 
 #include <VBox/VBoxGuest.h>
 
