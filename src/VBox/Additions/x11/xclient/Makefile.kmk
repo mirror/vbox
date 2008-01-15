@@ -18,6 +18,7 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
+if1of ($(BUILD_TARGET),linux l4)
 ifneq ($(USERNAME),bird) # crap
  PROGRAMS = vboxadd-xclient
 endif
@@ -26,7 +27,7 @@ OTHER_CLEAN              = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
 
 vboxadd-xclient_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxadd-xclient_SOURCES  = clipboard.cpp main.cpp
-vboxadd-xclient_DEFS    += CLIPBOARD_LINUX
+vboxadd-xclient_DEFS    += VBOX_X11_CLIPBOARD
 
 ifdef LINUX_SEAMLESS_GUEST
  vboxadd-xclient_SOURCES += \
@@ -77,5 +78,21 @@ ifdef LINUX_SEAMLESS_GUEST
   tstSeamlessX11_INST      = $(INST_TESTCASE)
  endif
 endif
+endif # target linux l4
+
+ifeq ($(BUILD_TARGET),solaris)
+PROGRAMS = VBoxClient
+
+VBoxClient_TEMPLATE = VBOXGUESTR3EXE
+VBoxClient_DEFS    += VBOX_X11_CLIPBOARD VBOX_HGCM
+VBoxClient_SOURCES  = \
+	clipboard-new.cpp \
+	main.cpp
+VBoxClient_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	X11 \
+	Xt
+endif # target solaris
 
 include	$(PATH_KBUILD)/footer.kmk

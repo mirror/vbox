@@ -370,7 +370,7 @@ int main(int argc, char **argv)
     {
         VBoxServiceVerbose(1, "Daemonizing...\n");
         errno = 0;
-        if (daemon(0, 0) != 0)
+        if (VbglR3Daemonize(0, 0) != 0)
             return VBoxServiceError("daemon failed: %s\n", strerror(errno));
         /* in-child */
     }

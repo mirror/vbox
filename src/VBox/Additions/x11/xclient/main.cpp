@@ -25,14 +25,9 @@
 #include <iostream>
 
 #include <sys/types.h>
-#include <sys/stat.h>     /* For umask */
-#include <fcntl.h>        /* For open */
 #include <stdlib.h>       /* For exit */
 #include <unistd.h>
 #include <getopt.h>
-
-#include <sys/time.h>     /* For getrlimit */
-#include <sys/resource.h> /* For getrlimit */
 
 #include <X11/Xlib.h>
 #include <X11/Intrinsic.h>
@@ -44,50 +39,6 @@
 #endif
 
 static bool gbDaemonise = true;
-
-/**
- * Go through the long Un*x ritual required to become a daemon process.
- */
-void vboxDaemonise(void)
-{
-    /** rlimit structure for finding out how many open files we may have. */
-    struct rlimit rlim;
-
-    /* To make sure that we are not currently a session leader, we must first fork and let
-       the parent process exit, as a newly created child is never session leader.  This will
-       allow us to call setsid() later. */
-    if (fork() != 0)
-    {
-        exit(0);
-    }
-    /* Find the maximum number of files we can have open and close them all. */
-    if (0 != getrlimit(RLIMIT_NOFILE, &rlim))
-    {
-        /* For some reason the call failed.  In that case we will just close the three
-           standard files and hope. */
-        rlim.rlim_cur = 3;
-    }
-    for (unsigned int i = 0; i < rlim.rlim_cur; ++i)
-    {
-        close(i);
-    }
-    /* Change to the root directory to avoid keeping the one we were started in open. */
-    chdir("/");
-    /* Set our umask to zero. */
-    umask(0);
-    /* And open /dev/null on stdin/out/err. */
-    open("/dev/null", O_RDONLY);
-    open("/dev/null", O_WRONLY);
-    dup(1);
-    /* Detach from the controlling terminal by creating our own session, to avoid receiving
-       signals from the old session. */
-    setsid();
-    /* And fork again, letting the parent exit, to make us a child of init and avoid zombies. */
-    if (fork() != 0)
-    {
-        exit(0);
-    }
-}
 
 /**
  * Xlib error handler for certain errors that we can't avoid.
@@ -109,7 +60,7 @@ int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
         Log(("VBoxService: ignoring BadWindow error and returning\n"));
         return 0;
     }
-#ifdef CLIPBOARD_LINUX
+#ifdef VBOX_X11_CLIPBOARD
     vboxClipboardDisconnect();
 #endif
     XGetErrorText(pDisplay, pError->error_code, errorText, sizeof(errorText));
@@ -156,9 +107,14 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
+    gbDaemonise = false; // ram
     if (gbDaemonise)
     {
-        vboxDaemonise();
+        if (VbglR3Daemonize(0, 0) != 0)
+        {
+            LogRel(("VBoxService: failed to daemonize. exiting."));
+            return 1;
+        }
     }
     /* Initialise our runtime before all else. */
     RTR3Init(false);
@@ -177,7 +133,7 @@ int main(int argc, char *argv[])
     }
     /* Set an X11 error handler, so that we don't die when we get unavoidable errors. */
     XSetErrorHandler(vboxClientXLibErrorHandler);
-#ifdef CLIPBOARD_LINUX
+#ifdef VBOX_X11_CLIPBOARD
     /* Connect to the host clipboard. */
     LogRel(("VBoxService: starting clipboard Guest Additions...\n"));
     rc = vboxClipboardConnect();
@@ -185,7 +141,7 @@ int main(int argc, char *argv[])
     {
         LogRel(("VBoxService: vboxClipboardConnect failed with rc = %Rrc\n", rc));
     }
-#endif  /* CLIPBOARD_LINUX defined */
+#endif  /* VBOX_X11_CLIPBOARD defined */
 #ifdef SEAMLESS_LINUX
     try
     {
@@ -207,15 +163,15 @@ int main(int argc, char *argv[])
         rc = VERR_UNRESOLVED_ERROR;
     }
 #endif /* SEAMLESS_LINUX defined */
-#ifdef CLIPBOARD_LINUX
+#ifdef VBOX_X11_CLIPBOARD
     LogRel(("VBoxService: connecting to the shared clipboard service.\n"));
     vboxClipboardMain();
     vboxClipboardDisconnect();
-#else  /* CLIPBOARD_LINUX not defined */
+#else  /* VBOX_X11_CLIPBOARD not defined */
     LogRel(("VBoxService: sleeping...\n"));
     pause();
     LogRel(("VBoxService: exiting...\n"));
-#endif  /* CLIPBOARD_LINUX not defined */
+#endif  /* VBOX_X11_CLIPBOARD not defined */
 #ifdef SEAMLESS_LINUX
     try
     {
