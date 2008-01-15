@@ -107,7 +107,6 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
-    gbDaemonise = false; // ram
     if (gbDaemonise)
     {
         if (VbglR3Daemonize(0, 0) != 0)
