@@ -32,21 +32,48 @@ typedef struct _VBOXDISPLAYCONTEXT
 
     /* ChangeDisplaySettingsEx does not exist in NT. ResizeDisplayDevice uses the function. */
     LONG (WINAPI * pfnChangeDisplaySettingsEx)(LPCTSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
+
+    /* EnumDisplayDevices does not exist in NT. isVBoxDisplayDriverActive et al. are using these functions. */
+    BOOL (WINAPI * pfnEnumDisplayDevices)(IN LPCSTR lpDevice, IN DWORD iDevNum, OUT PDISPLAY_DEVICEA lpDisplayDevice, IN DWORD dwFlags);
+
 } VBOXDISPLAYCONTEXT;
 
 static VBOXDISPLAYCONTEXT gCtx = {0};
 
 int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
+    OSVERSIONINFO OSinfo;
+    OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
+    GetVersionEx (&OSinfo);
+
     HMODULE hUser = GetModuleHandle("USER32");
 
     gCtx.pEnv = pEnv;
 
-    if (hUser)
+    if (NULL == hUser)
+    {
+        dprintf(("VBoxService: Could not get module handle of USER32.DLL!\n"));
+        return VERR_NOT_IMPLEMENTED; 
+    }
+    else if (OSinfo.dwMajorVersion >= 5)        /* APIs available only on W2K and up! */
     {
         *(uintptr_t *)&gCtx.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA"); 
-        dprintf(("VBoxService: pChangeDisplaySettingsEx = %p\n", gCtx.pfnChangeDisplaySettingsEx));
+        dprintf(("VBoxService: pfnChangeDisplaySettingsEx = %p\n", gCtx.pfnChangeDisplaySettingsEx));
+
+        *(uintptr_t *)&gCtx.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA"); 
+        dprintf(("VBoxService: pfnEnumDisplayDevices = %p\n", gCtx.pfnEnumDisplayDevices));
     }
+    else if (OSinfo.dwMajorVersion <= 4)            /* Windows NT 4.0 */
+    {
+        /* Nothing to do here yet */
+    }
+    else                                /* Unsupported platform */
+    {
+        dprintf(("VBoxService: Warning, display for platform not handled yet!\n"));
+        return VERR_NOT_IMPLEMENTED; 
+    }
+
+    dprintf(("VBoxService: Display init successful.\n"));
 
     *pfStartThread = true;
     *ppInstance = (void *)&gCtx;
@@ -58,49 +85,61 @@ void VBoxDisplayDestroy (const VBOXSERVICEENV *pEnv, void *pInstance)
     return;
 }
 
-static bool isVBoxDisplayDriverActive (void)
+static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
 {
     bool result = false;
 
-    DISPLAY_DEVICE dispDevice;
-
-    FillMemory(&dispDevice, sizeof(DISPLAY_DEVICE), 0);
-
-    dispDevice.cb = sizeof(DISPLAY_DEVICE);
-
-    INT devNum = 0;
-
-    while (EnumDisplayDevices(NULL,
-                              devNum,
-                              &dispDevice,
-                              0))
+    if( pCtx->pfnEnumDisplayDevices ) 
     {
-        dprintf(("DevNum:%d\nName:%s\nString:%s\nID:%s\nKey:%s\nFlags=%08X\n\n",
-                      devNum,
-                      &dispDevice.DeviceName[0],
-                      &dispDevice.DeviceString[0],
-                      &dispDevice.DeviceID[0],
-                      &dispDevice.DeviceKey[0],
-                      dispDevice.StateFlags));
-
-        if (dispDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
-        {
-            dprintf(("Primary device.\n"));
-
-            if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter") == 0)
-            {
-                dprintf(("VBox display driver is active.\n"));
-                result = true;
-            }
-
-            break;
-        }
-
+        INT devNum = 0;
+        DISPLAY_DEVICE dispDevice;
         FillMemory(&dispDevice, sizeof(DISPLAY_DEVICE), 0);
-
         dispDevice.cb = sizeof(DISPLAY_DEVICE);
 
-        devNum++;
+        dprintf(("Checking for active VBox display driver (W2K+)...\n"));
+
+        while (EnumDisplayDevices(NULL,
+                                  devNum,
+                                  &dispDevice,
+                                  0))
+        {
+            dprintf(("DevNum:%d\nName:%s\nString:%s\nID:%s\nKey:%s\nFlags=%08X\n\n",
+                          devNum,
+                          &dispDevice.DeviceName[0],
+                          &dispDevice.DeviceString[0],
+                          &dispDevice.DeviceID[0],
+                          &dispDevice.DeviceKey[0],
+                          dispDevice.StateFlags));
+    
+            if (dispDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
+            {
+                dprintf(("Primary device.\n"));
+    
+                if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter") == 0)
+                    result = true;
+    
+                break;
+            }
+    
+            FillMemory(&dispDevice, sizeof(DISPLAY_DEVICE), 0);
+    
+            dispDevice.cb = sizeof(DISPLAY_DEVICE);
+    
+            devNum++;
+        }
+    }
+    else    /* This must be NT 4 or something really old, so don't use EnumDisplayDevices() here  ... */
+    {       
+        dprintf(("Checking for active VBox display driver (NT or older)...\n"));
+
+        DEVMODE tempDevMode;
+        ZeroMemory (&tempDevMode, sizeof (tempDevMode));
+        tempDevMode.dmSize = sizeof(DEVMODE);
+        EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &tempDevMode);     /* Get current display device settings */
+
+        /* Check for the short name, because all long stuff would be truncated */
+        if (strcmp((char*)&tempDevMode.dmDeviceName[0], "VBoxDisp") == 0)
+            result = true;
     }
 
     return result;
@@ -271,9 +310,12 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
             paDeviceModes[i].dmFields |= DM_BITSPERPEL;
             paDeviceModes[i].dmBitsPerPel = BitsPerPixel;
         }
-dprintf(("calling pfnChangeDisplaySettingsEx %x\n", gCtx.pfnChangeDisplaySettingsEx));     
+
+        dprintf(("calling pfnChangeDisplaySettingsEx %x\n", gCtx.pfnChangeDisplaySettingsEx));     
+
         gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName, 
-                 &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL); 
+                                        &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL); 
+
         dprintf(("ChangeDisplaySettings position err %d\n", GetLastError ()));
     }
     
@@ -371,10 +413,14 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                         /*
                          * Only try to change video mode if the active display driver is VBox additions.
                          */
-                        if (isVBoxDisplayDriverActive ())
+                        if (isVBoxDisplayDriverActive (pCtx))
                         {
+                            dprintf(("VBoxDisplayThread : Display driver is active!\n"));
+
                             if (pCtx->pfnChangeDisplaySettingsEx != 0)
                             {
+                                dprintf(("VBoxDisplayThread : Detected W2K or later."));
+
                                 /* W2K or later. */
                                 if (!ResizeDisplayDevice(displayChangeRequest.display,
                                                          displayChangeRequest.xres,
@@ -386,6 +432,8 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                             }
                             else
                             {
+                                dprintf(("VBoxDisplayThread : Detected NT.\n"));
+
                                 /* Single monitor NT. */
                                 DEVMODE devMode;
                                 memset (&devMode, 0, sizeof (devMode));
@@ -412,6 +460,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                     else
                                     {
                                         /* All zero values means a forced mode reset. Do nothing. */
+                                        dprintf(("VBoxDisplayThread : Forced mode reset.\n"));
                                     }
 
                                     /* Verify that the mode is indeed changed. */

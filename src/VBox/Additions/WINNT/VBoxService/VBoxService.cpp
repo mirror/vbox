@@ -29,7 +29,6 @@
 #include <iprt/string.h>
 
 #include "helpers.h"
-
 #include <sddl.h>
 
 /* global variables */
@@ -67,6 +66,18 @@ void WriteLog(char *String, ...)
     RTStrPrintfV(pReq->szString, sizeof(Buffer)-sizeof(*pReq), String, va);
     OutputDebugStringA(pReq->szString);
     pReq->header.size += strlen(pReq->szString);
+
+    printf("%s\n", pReq->szString);
+
+    FILE* pFh = fopen("c:\\VBoxServiceDebug.txt", "at");
+
+    /* Does maybe not work on Vista (write protection when starting without admin rights), 
+       so do this check! */
+    if (NULL != pFh)        
+    {
+        fprintf(pFh, "%s", pReq->szString);
+        fclose(pFh);
+    }
 
     DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, pReq, pReq->header.size,
                     pReq, pReq->header.size, &cbReturned, NULL);
@@ -134,6 +145,8 @@ static VBOXSERVICEINFO vboxServiceTable[] =
 
 static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
+    dprintf(("VBoxService: Starting services...\n"));
+
     pEnv->hStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
     if (!pEnv->hStopEvent)
@@ -261,7 +274,7 @@ void WINAPI VBoxServiceStart(void)
                              NULL);
     if (gVBoxDriver == INVALID_HANDLE_VALUE)
     {
-        dprintf(("VBoxService: could not open VBox Guest Additions driver! rc = %d\n", GetLastError()));
+        dprintf(("VBoxService: could not open VBox Guest Additions driver! Please install / start it first! rc = %d\n", GetLastError()));
         status = ERROR_GEN_FAILURE;
     }
 
@@ -314,7 +327,7 @@ void WINAPI VBoxServiceStart(void)
         gStopSem = CreateEvent(NULL, TRUE, FALSE, NULL);
         if (gStopSem == NULL)
         {
-            dprintf(("VBoxService: CreateEvent failed: rc = %d\n", GetLastError()));
+            dprintf(("VBoxService: CreateEvent for Stopping failed: rc = %d\n", GetLastError()));
             return;
         }
 
@@ -376,11 +389,14 @@ void WINAPI VBoxServiceStart(void)
             }
         }
 
-        ghSeamlessNotifyEvent = CreateEvent(&SecAttr, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
-        if (ghSeamlessNotifyEvent == NULL)
+        if (dwMajorVersion >= 5)        /* Only for W2K and up ... */
         {
-            dprintf(("VBoxService: CreateEvent failed: rc = %d\n", GetLastError()));
-            return;
+            ghSeamlessNotifyEvent = CreateEvent(&SecAttr, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
+            if (ghSeamlessNotifyEvent == NULL)
+            {
+                dprintf(("VBoxService: CreateEvent for Seamless failed: rc = %d\n", GetLastError()));
+                return;
+            }
         }
     }
 
@@ -429,19 +445,32 @@ void WINAPI VBoxServiceStart(void)
      * Main execution loop
      * Wait for the stop semaphore to be posted or a window event to arrive
      */
+
+    DWORD dwEventCount = 2;
     HANDLE hWaitEvent[2] = {gStopSem, ghSeamlessNotifyEvent};
+
+    if (0 == ghSeamlessNotifyEvent)         /* If seamless mode is not active / supported, reduce event array count */
+        dwEventCount = 1;                       
+
+    dprintf(("VBoxService: Number of events to wait in main loop: %ld\n", dwEventCount));
+
     while(true)
     {
-        DWORD waitResult = MsgWaitForMultipleObjectsEx(2, hWaitEvent, 500, QS_ALLINPUT, 0);
-        if (waitResult == WAIT_OBJECT_0)
+        DWORD waitResult = MsgWaitForMultipleObjectsEx(dwEventCount, hWaitEvent, 500, QS_ALLINPUT, 0);
+        waitResult = waitResult - WAIT_OBJECT_0;
+
+        dprintf(("VBoxService: Wait result  = %ld.\n", waitResult));
+
+        if (waitResult == 0)
         {
-            dprintf(("VBoxService: exit\n"));
+            dprintf(("VBoxService: Event 'Exit' triggered.\n"));
             /* exit */
             break;
         }
-        else
-        if (waitResult == WAIT_OBJECT_0+1)
+        else if ((waitResult == 1) && (ghSeamlessNotifyEvent!=0))       /* Only jump in, if seamless is active! */
         {
+            dprintf(("VBoxService: Event 'Seamless' triggered.\n"));
+
             /* seamless window notification */
             VBoxSeamlessCheckWindows();
         }
@@ -503,7 +532,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 {
     dprintf(("VBoxService: WinMain\n"));
     gInstance = hInstance;
-    VBoxServiceStart ();
+    VBoxServiceStart();
+    
     return 0;
 }
 
@@ -545,4 +575,3 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     }
     return 0;
 }
-

@@ -55,6 +55,18 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
     *pfStartThread = false;
     gCtx.pEnv = pEnv;
 
+    OSVERSIONINFO OSinfo;
+    OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
+    GetVersionEx (&OSinfo);
+
+    /* We have to jump out here when using NT4, otherwise it complains about
+       a missing API function "UnhookWinEvent" used by the dynamically loaded VBoxHook.dll below */
+    if (OSinfo.dwMajorVersion <= 4)         /* Windows NT 4.0 or older */
+    {
+        dprintf(("VBoxSeamlessInit: Windows NT 4.0 or older not supported!"));
+        return VERR_NOT_SUPPORTED;
+    }
+
     /* Will fail if SetWinEventHook is not present (version < NT4 SP6 apparently) */
     gCtx.hModule = LoadLibrary(VBOXHOOK_DLL_NAME);
     if (gCtx.hModule)
@@ -71,7 +83,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
         if (!DeviceIoControl(pEnv->hDriver, IOCTL_VBOXGUEST_VMMREQUEST, &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
                              &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
         {
-            dprintf(("VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
+            dprintf(("VBoxSeamlessInit: VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
             return VERR_INVALID_PARAMETER;
         }
 
@@ -81,7 +93,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
     }
     else
     {
-        dprintf(("VBoxSeamlessInit LoadLibrary failed with %d\n", GetLastError()));
+        dprintf(("VBoxSeamlessInit: LoadLibrary failed with %d\n", GetLastError()));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -403,5 +415,4 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
     dprintf(("VBoxSeamlessThread: finished seamless change request thread\n"));
     return 0;
 }
-
 
