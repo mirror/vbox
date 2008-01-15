@@ -760,7 +760,7 @@
 #define VERR_PDM_MISSING_INTERFACE                  (-2804)
 /** A driver encountered an unknown configuration value.
  * This means that the driver is potentially misconfigured and the driver
- * construction. */
+ * construction failed because of this. */
 #define VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES          (-2805)
 /** The PCI bus assigned to a device didn't have room for it.
  * Either too many devices are configured on the same PCI bus, or there are
@@ -926,6 +926,9 @@
 #define VERR_PDM_ASYNC_COMPLETION_ALREADY_SUSPENDED (-2864)
 /** The async completion task is not suspended. */
 #define VERR_PDM_ASYNC_COMPLETION_NOT_SUSPENDED     (-2865)
+/** The driver properties were invalid, and as a consequence construction
+ * failed. Caused my unusable media or similar problems. */
+#define VERR_PDM_DRIVER_INVALID_PROPERTIES          (-2866)
 /** @} */
 
 
