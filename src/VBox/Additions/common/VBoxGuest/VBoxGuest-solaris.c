@@ -20,7 +20,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <sys/conf.h>
-#include <sys/cmn_err.h>
 #include <sys/modctl.h>
 #include <sys/mutex.h>
 #include <sys/pci.h>
@@ -34,7 +33,6 @@
 #endif
 #include "VBoxGuestInternal.h"
 #include <VBox/log.h>
-#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <iprt/process.h>
@@ -566,7 +564,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
             return ENXIO;
         }
         *pDev = makedevice(getmajor(*pDev), instance);
-        Log((DEVICE_NAME "VBoxAddSolarisOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
+        Log((DEVICE_NAME ":VBoxAddSolarisOpen success: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
         return 0;
     }
 #endif
@@ -736,33 +734,33 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     {
         cbBuf = sizeof(VMMDevRequestHeader);
         requestType = 1;
-        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_VMMREQUEST"));
+        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_VMMREQUEST %#x", Cmd));
     }
 #ifdef VBOX_HGCM
     else if (VBOXGUEST_IOCTL_NUMBER(Cmd) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_HGCM_CALL(0)))
     {
         cbBuf = sizeof(VBoxGuestHGCMCallInfo);
         requestType = 2;
-        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_HGCM_CALL", Cmd));
+        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_HGCM_CALL %#x", Cmd));
     }
 #endif /* VBOX_HGCM */
     else if (VBOXGUEST_IOCTL_NUMBER(Cmd) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_LOG(0)))
     {
-        /** Untested Code. Will be tested soon. */
         cbBuf = VBOXGUEST_IOCTL_SIZE(Cmd);
-        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_LOG Cmd=%#x cbBuf=%d", Cmd, cbBuf));        
-        char* pszLogMsg = RTMemTmpAlloc(cbBuf);
+        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_LOG Cmd=%#x cbBuf=%d", Cmd, cbBuf));
+        char *pszLogMsg = RTMemTmpAlloc(cbBuf);
         if (RT_UNLIKELY(!pszLogMsg))
         {
             LogRel((DEVICE_NAME ":RTMemAlloc failed to alloc %d bytes\n", cbBuf));
             return ENOMEM;
         }
         rc = ddi_copyin((void *)pArg, pszLogMsg, cbBuf, Mode);
-        if (rc == 0)
-            Log(("%.*s", cbBuf, pszLogMsg));
-        else
+        if (RT_UNLIKELY(rc))
             LogRel((DEVICE_NAME ":ddi_copyin failed. rc=%d\n", rc));
+        else
+            Log(("%.*s", cbBuf, pszLogMsg));
         RTMemTmpFree(pszLogMsg);
+        return rc;
     }
     else
     {
@@ -807,11 +805,6 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
             }
         }
     }
-    if (RT_UNLIKELY(cbBuf > IOCPARM_LEN(Cmd)))
-    {
-        LogRel((DEVICE_NAME ":VBoxAddSolarisIOCtl: buffer size mismatch. size=%d expected=%d.\n", IOCPARM_LEN(Cmd), cbBuf));
-        return EINVAL;
-    }
 
     /*
      * Read the header.
@@ -833,7 +826,23 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
             return EINVAL;
         }
     }
-    /** @todo handle HGCM calls. */
+    else if (requestType == 2)
+    {
+        VBoxGuestHGCMCallInfo Hdr;
+        rc = ddi_copyin((void *)pArg, &Hdr, sizeof(Hdr), Mode);
+        if (RT_UNLIKELY(rc))
+        {
+            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyin failed to read header pArg=%p Cmd=%d. rc=%d.\n", pArg, Cmd, rc));
+            return EINVAL;
+        }
+
+        if (RT_UNLIKELY(Hdr.cParms <= 0))
+        {
+            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: Invalid request size. cParms=%d in HCGM call info header.\n", Hdr.cParms));
+            return EINVAL;
+        }
+        cbBuf += Hdr.cParms * sizeof(HGCMFunctionParameter);
+    }
 
     /*
      * Read the request.
@@ -900,7 +909,7 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
 {
     int rc;
     VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
-    LogFlow((DEVICE_NAME "VBoxGuestSolarisAddIRQ\n"));
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisAddIRQ %p\n", pvState));
 
     /*
      * These calls are supposedly deprecated. But Sun seems to use them all over
@@ -929,7 +938,7 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
  */
 static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState)
 {
-    LogFlow((DEVICE_NAME ":VBoxGuestSolarisRemoveIRQ\n"));
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisRemoveIRQ pvState=%p\n"));
 
     VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
     ddi_remove_intr(pDip, 0, pState->BlockCookie);
@@ -944,7 +953,7 @@ static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState)
  */
 static uint_t VBoxGuestSolarisISR(caddr_t Arg)
 {
-    LogFlow((DEVICE_NAME ":VBoxGuestSolarisISR\n"));
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisISR Arg=%p\n", Arg));
 
     VBoxAddDevState *pState = (VBoxAddDevState *)Arg;
     mutex_enter(&pState->Mtx);
@@ -967,7 +976,7 @@ static uint_t VBoxGuestSolarisISR(caddr_t Arg)
  */
 DECLVBGL(int) VBoxGuestSolarisServiceCall(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned)
 {
-    LogFlow((DEVICE_NAME ":VBoxGuestSolarisServiceCall\n"));
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisServiceCall %pvSesssion=%p Cmd=%u pvData=%p cbData=%d\n", pvSession, iCmd, pvData, cbData));
 
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
