@@ -1000,7 +1000,7 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
     {
         static unsigned s_cErrors = 0;
         if (s_cErrors++ > 32)
-            LogRel(("VBoxGuestCommonIOCtl: HGCM_CALL: u32Client=%RX32\n", u32ClientId));
+            LogRel(("VBoxGuestCommonIOCtl: HGCM_CALL: Invalid handle. u32Client=%RX32\n", u32ClientId));
         return VERR_INVALID_HANDLE;
     }
 
@@ -1018,6 +1018,7 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
         if (pcbDataReturned)
             *pcbDataReturned = cbActual;
     }
+    Log(("VBoxGuestCommonIOCtl: HGCM_CALL: Failed. rc=%Rrc.\n", rc));
     return rc;
 }
 
@@ -1141,8 +1142,15 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
      * Deal with variably sized requests first.
      */
     int rc = VINF_SUCCESS;
+#ifdef RT_OS_SOLARIS
+    /* The other way of determining the request type does not work on Solaris (and perhaps on Linux too) 
+     * as the range between the request types overlap when comparing all bits of the function code...
+     */
+    if (VBOXGUEST_IOCTL_NUMBER(iFunction) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_VMMREQUEST(0)))
+#else
     if (    iFunction >= VBOXGUEST_IOCTL_VMMREQUEST(0)
         &&  iFunction <= VBOXGUEST_IOCTL_VMMREQUEST(0xfff)) /** @todo find a better way to do this*/
+#endif
     {
         CHECKRET_MIN_SIZE("VMMREQUEST", sizeof(VMMDevRequestHeader));
         rc = VBoxGuestCommonIOCtl_VMMRequest(pDevExt, (VMMDevRequestHeader *)pvData, cbData, pcbDataReturned);
@@ -1151,8 +1159,12 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
     /*
      * This one is tricky and can be done later.
      */
+# ifdef RT_OS_SOLARIS
+    else if (VBOXGUEST_IOCTL_NUMBER(iFunction) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_HGCM_CALL(0)))
+#else
     else if (   iFunction >= VBOXGUEST_IOCTL_HGCM_CALL(0)
              && iFunction <= VBOXGUEST_IOCTL_HGCM_CALL(0xfff))
+#endif
     {
         CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfo));
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, cbData, pcbDataReturned);
