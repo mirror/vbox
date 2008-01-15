@@ -22,5 +22,6 @@ int                VBoxDisplayInit    (const VBOXSERVICEENV *pEnv, void **ppInst
 unsigned __stdcall VBoxDisplayThread  (void *pInstance);
 void               VBoxDisplayDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 
+static bool isVBoxDisplayDriverActive (void);
 
 #endif /* __VBOXSERVICEDISPLAY__H */
