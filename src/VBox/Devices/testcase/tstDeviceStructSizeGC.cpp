@@ -844,7 +844,9 @@ int main()
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, uTag);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, fPending);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, fProcessing);
+    GEN_CHECK_OFF(AHCIPORTTASKSTATE, fQueued);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, cmdHdr);
+    GEN_CHECK_OFF(AHCIPORTTASKSTATE, cmdFis);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, GCPhysCmdHdrAddr);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, uLBAStartSector);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, cSectors);
@@ -871,15 +873,19 @@ int main()
     GEN_CHECK_OFF(AHCIPort, regSERR);
     GEN_CHECK_OFF(AHCIPort, regSACT);
     GEN_CHECK_OFF(AHCIPort, regCI);
+    GEN_CHECK_OFF(AHCIPort, fAsyncInterface);
     GEN_CHECK_OFF(AHCIPort, pAsyncIOThread);
     GEN_CHECK_OFF(AHCIPort, AsyncIORequestSem);
     GEN_CHECK_OFF(AHCIPort, ahciPortTasks);
     GEN_CHECK_OFF(AHCIPort, ahciPortTasks[AHCI_NR_COMMAND_SLOTS-1]);
+    GEN_CHECK_OFF(AHCIPort, iTasksActive);
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
     GEN_CHECK_OFF(AHCIPort, pDrvBlock);
+    GEN_CHECK_OFF(AHCIPort, pDrvBlockAsync);
     GEN_CHECK_OFF(AHCIPort, pDrvBlockBios);
     GEN_CHECK_OFF(AHCIPort, IBase);
     GEN_CHECK_OFF(AHCIPort, IPort);
+    GEN_CHECK_OFF(AHCIPort, IPortAsync);
     GEN_CHECK_OFF(AHCIPort, PCHSGeometry);
     GEN_CHECK_OFF(AHCIPort, cTotalSectors);
     GEN_CHECK_OFF(AHCIPort, cMultSectors);
@@ -890,6 +896,10 @@ int main()
     GEN_CHECK_OFF(AHCIPort, pIOBufferHC);
     GEN_CHECK_OFF(AHCIPort, pNotifierQueueHC);
     GEN_CHECK_OFF(AHCIPort, pNotifierQueueGC);
+    GEN_CHECK_OFF(AHCIPort, u32TasksFinished);
+    GEN_CHECK_OFF(AHCIPort, pNotifierQueueGC);
+    GEN_CHECK_OFF(AHCIPort, pNotifierQueueHC);
+    GEN_CHECK_OFF(AHCIPort, StatAsyncTime);
 
     GEN_CHECK_SIZE(AHCI);
     GEN_CHECK_OFF(AHCI, dev);
@@ -903,7 +913,7 @@ int main()
     GEN_CHECK_OFF(AHCI, regHbaVs);
     GEN_CHECK_OFF(AHCI, ahciPort);
     GEN_CHECK_OFF(AHCI, ahciPort[AHCI_NR_PORTS_IMPL-1]);
-    GEN_CHECK_OFF(AHCI, fInterrupts);
+    GEN_CHECK_OFF(AHCI, fInterruptPending);
     GEN_CHECK_OFF(AHCI, f64BitAddr);
     GEN_CHECK_OFF(AHCI, fGCEnabled);
     GEN_CHECK_OFF(AHCI, fR0Enabled);
