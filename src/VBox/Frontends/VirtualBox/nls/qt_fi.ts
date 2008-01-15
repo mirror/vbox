@@ -75,11 +75,11 @@
     </message>
     <message>
         <source>PgUp</source>
-        <translation>Sivu Ylös</translation>
+        <translation>Sivu ylös</translation>
     </message>
     <message>
         <source>PgDown</source>
-        <translation>Sivu Alas</translation>
+        <translation>Sivu alas</translation>
     </message>
     <message>
         <source>CapsLock</source>
@@ -361,7 +361,7 @@
     </message>
     <message>
         <source>&amp;Add to Custom Colors</source>
-        <translation>&amp;Lisää Muokattu Väri</translation>
+        <translation>&amp;Lisää muokattu väri</translation>
     </message>
     <message>
         <source>Select color</source>
@@ -395,7 +395,7 @@
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>Mikä Tämä On?</translation>
+        <translation>Mikä tämä on?</translation>
     </message>
 </context>
 <context>
@@ -418,14 +418,14 @@
     </message>
     <message>
         <source>Fatal Error:</source>
-        <translation>Vakava Virhe:</translation>
+        <translation>Vakava virhe:</translation>
     </message>
 </context>
 <context>
     <name>QFileDialog</name>
     <message>
         <source>Copy or Move a File</source>
-        <translation>Kopioi tai Siirrä Tiedosto</translation>
+        <translation>Kopioi tai siirrä tiedosto</translation>
     </message>
     <message>
         <source>Read: %1</source>
@@ -441,7 +441,7 @@
     </message>
     <message>
         <source>All Files (*)</source>
-        <translation>Kaikki Tiedostot (*)</translation>
+        <translation>Kaikki tiedostot (*)</translation>
     </message>
     <message>
         <source>Name</source>
@@ -489,7 +489,7 @@
     </message>
     <message>
         <source>Create New Folder</source>
-        <translation>Luo Uusi Kansio</translation>
+        <translation>Luo uusi kansio</translation>
     </message>
     <message>
         <source>List View</source>
@@ -525,11 +525,11 @@
     </message>
     <message>
         <source>Symlink to File</source>
-        <translation>Symlinkki Tiedostoon</translation>
+        <translation>Symbolinen linkki tiedostoon</translation>
     </message>
     <message>
         <source>Symlink to Directory</source>
-        <translation>Symlinkki Kasioon</translation>
+        <translation>Symbolinen linkki kansioon</translation>
     </message>
     <message>
         <source>Symlink to Special</source>
@@ -553,7 +553,7 @@
     </message>
     <message>
         <source>Save As</source>
-        <translation>Tallenna Nimellä</translation>
+        <translation>Tallenna nimellä</translation>
     </message>
     <message>
         <source>&amp;Open</source>
@@ -565,7 +565,7 @@
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation>&amp;Nimeä Uudelleen</translation>
+        <translation>&amp;Nimeä uudelleen</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
@@ -573,7 +573,7 @@
     </message>
     <message>
         <source>R&amp;eload</source>
-        <translation>&amp;Lataa Uudelleen</translation>
+        <translation>&amp;Lataa uudelleen</translation>
     </message>
     <message>
         <source>Sort by &amp;Name</source>
@@ -585,11 +585,11 @@
     </message>
     <message>
         <source>Sort by &amp;Date</source>
-        <translation>Järjestä &amp;Päväyksen mukaan</translation>
+        <translation>Järjestä &amp;päiväyksen mukaan</translation>
     </message>
     <message>
         <source>&amp;Unsorted</source>
-        <translation>&amp;Ei Järjestetty</translation>
+        <translation>&amp;Ei järjestetty</translation>
     </message>
     <message>
         <source>Sort</source>
@@ -629,19 +629,19 @@
     </message>
     <message>
         <source>New Folder 1</source>
-        <translation>Uusi Kansio 1</translation>
+        <translation>Uusi kansio 1</translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation>Uusi Kansio</translation>
+        <translation>Uusi kansio</translation>
     </message>
     <message>
         <source>New Folder %1</source>
-        <translation>Uusi Kansio %1</translation>
+        <translation>Uusi kansio %1</translation>
     </message>
     <message>
         <source>Find Directory</source>
-        <translation>Etsi Kansio</translation>
+        <translation>Etsi kansio</translation>
     </message>
     <message>
         <source>Directories</source>
@@ -665,7 +665,7 @@ Tarkista polku ja tiedoston nimi.</translation>
     </message>
     <message>
         <source>All Files (*.*)</source>
-        <translation>Kaikki Tiedostot (*.*)</translation>
+        <translation>Kaikki tiedostot (*.*)</translation>
     </message>
     <message>
         <source>Open </source>
@@ -673,7 +673,7 @@ Tarkista polku ja tiedoston nimi.</translation>
     </message>
     <message>
         <source>Select a Directory</source>
-        <translation>Valitse Kansio</translation>
+        <translation>Valitse kansio</translation>
     </message>
     <message>
         <source>Directory:</source>
@@ -871,11 +871,11 @@ Tarkista polku ja tiedoston nimi.</translation>
     <name>QFontDialog</name>
     <message>
         <source>&amp;Font</source>
-        <translation>&amp;Fontti</translation>
+        <translation>&amp;Kirjasin</translation>
     </message>
     <message>
         <source>Font st&amp;yle</source>
-        <translation>Fontin t&amp;yyli</translation>
+        <translation>Kirjasint&amp;yyli</translation>
     </message>
     <message>
         <source>&amp;Size</source>
@@ -883,11 +883,11 @@ Tarkista polku ja tiedoston nimi.</translation>
     </message>
     <message>
         <source>Effects</source>
-        <translation type="unfinished"></translation>
+        <translation>Tehosteet</translation>
     </message>
     <message>
         <source>Stri&amp;keout</source>
-        <translation type="unfinished"></translation>
+        <translation>Yli&amp;viivaus</translation>
     </message>
     <message>
         <source>&amp;Underline</source>
@@ -923,7 +923,7 @@ Tarkista polku ja tiedoston nimi.</translation>
     </message>
     <message>
         <source>Select Font</source>
-        <translation>Valitse Fontti</translation>
+        <translation>Valitse kirjasin</translation>
     </message>
 </context>
 <context>
@@ -979,7 +979,7 @@ Tarkista polku ja tiedoston nimi.</translation>
     <message>
         <source>Listing directory failed:
 %1</source>
-        <translation>Kasion listaus epäonnistui:
+        <translation>Kansion listaus epäonnistui:
 %1</translation>
     </message>
     <message>
@@ -1009,13 +1009,13 @@ Tarkista polku ja tiedoston nimi.</translation>
     <message>
         <source>Creating directory failed:
 %1</source>
-        <translation>Kasion luonti epäonnistui:
+        <translation>Kansion luonti epäonnistui:
 %1</translation>
     </message>
     <message>
         <source>Removing directory failed:
 %1</source>
-        <translation>Kasion poisto epäonnistui:
+        <translation>Kansion poisto epäonnistui:
 %1</translation>
     </message>
     <message>
@@ -1217,7 +1217,7 @@ to
     </message>
     <message>
         <source>Quit</source>
-        <translation>Lopeta</translation>
+        <translation>Poistu</translation>
     </message>
     <message>
         <source>Exit</source>
@@ -1602,7 +1602,7 @@ to
     </message>
     <message>
         <source>Apply</source>
-        <translation>Lisää</translation>
+        <translation>Toteuta</translation>
     </message>
     <message>
         <source>Help</source>
@@ -1780,7 +1780,7 @@ to
     <name>QWhatsThisButton</name>
     <message>
         <source>What&apos;s this?</source>
-        <translation>Mikä Tämä On?</translation>
+        <translation>Mikä tämä on?</translation>
     </message>
 </context>
 <context>

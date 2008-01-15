@@ -24,18 +24,18 @@
     <message>
         <source>innotek</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Jarno Kiuttu</translation>
+        <translation>Jarno Kiuttu, Timo Jyrinki</translation>
     </message>
 </context>
 <context>
     <name>BootItemsList</name>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation>Siirrä ylös (Ctrl+Ylös)</translation>
+        <translation>Siirrä ylös (Ctrl+ylös)</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation>Siirrä alas (Ctrl+Alas)</translation>
+        <translation>Siirrä alas (Ctrl+alas)</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
@@ -61,7 +61,7 @@
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>Qt Kirjasto Virhe</translation>
+        <translation>Qt-kirjastovirhe</translation>
     </message>
 </context>
 <context>
@@ -76,11 +76,11 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation>Vasen Shift</translation>
+        <translation>Vasen vaihtonäppäin</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation>Oikea Shift</translation>
+        <translation>Oikea vaihtonäppäin</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
@@ -100,15 +100,15 @@
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation>Vasen Win näp</translation>
+        <translation>Vasen Win</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation>Oikea Win näp</translation>
+        <translation>Oikea Win</translation>
     </message>
     <message>
         <source>Menu key</source>
-        <translation>Menu näppäin</translation>
+        <translation>Menu-näppäin</translation>
     </message>
     <message>
         <source>Alt Gr</source>
@@ -298,7 +298,7 @@
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation>VirtualBox - Tietoja</translation>
+        <translation>VirtualBox - tietoja</translation>
     </message>
     <message>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
@@ -310,11 +310,11 @@
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation>Lisää Isäntäkoneeseen Käyttöliittymä</translation>
+        <translation>Lisää isäntäkoneen liitäntä</translation>
     </message>
     <message>
         <source>Interface Name</source>
-        <translation>Käyttöliittymän Nimi</translation>
+        <translation>Liitännän nimi</translation>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
@@ -349,7 +349,7 @@
     </message>
     <message>
         <source>Folder Name</source>
-        <translation>Kansion Nimi</translation>
+        <translation>Kansion nimi</translation>
     </message>
     <message>
         <source>Displays the path to an existing folder on the host PC.</source>
@@ -384,7 +384,7 @@
     <name>VBoxCloseVMDlg</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>Sulje Virtuaalikone</translation>
+        <translation>Sulje virtuaalikone</translation>
     </message>
     <message>
         <source>You want to:</source>
@@ -486,25 +486,25 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>&amp;Kokoruutu Tila</translation>
+        <translation>&amp;Kokoruututila</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Vaihda kokoruutu tilaan</translation>
+        <translation>Vaihda kokoruututilaan</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>Hiiren Integrointi</translation>
+        <translation>Hiiren integrointi</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Muuta Automaattisesti Asikkaan Näytön Kokoa</translation>
+        <translation>Muuta automaattisesti asiakkaan näytön kokoa</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>&amp;Muuta Automaattisesti Asikkaan Näytön Kokoa</translation>
+        <translation>&amp;Muuta automaattisesti asiakkaan näytön kokoa</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -512,7 +512,7 @@
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>&amp;Säädä Ikkunan Kokoa</translation>
+        <translation>&amp;Säädä ikkunan kokoa</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
@@ -544,7 +544,7 @@
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>Samm&amp;uta ACPI</translation>
+        <translation>ACPI-samm&amp;utus</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
@@ -560,7 +560,7 @@
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>Luo &amp;Palautuspiste...</translation>
+        <translation>Luo &amp;palautuspiste...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
@@ -576,7 +576,7 @@
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>Irrota L&amp;evyke</translation>
+        <translation>Irrota l&amp;evyke</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
@@ -584,7 +584,7 @@
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
-        <translation>&amp;CD/DVD-ROM Levykuva...</translation>
+        <translation>&amp;CD/DVD-ROM-levykuva...</translation>
     </message>
     <message>
         <source>Mount a CD/DVD-ROM image file</source>
@@ -601,7 +601,7 @@
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation>Etätyöpöytä (RDP) Palvelin</translation>
+        <translation>Etätyöpöytä (RDP) -palvelin</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
@@ -617,7 +617,7 @@
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>&amp;Jaetut Kansiot...</translation>
+        <translation>&amp;Jaetut kansiot...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>
@@ -625,11 +625,11 @@
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Asenna Asiakkaan Lisäykset...</translation>
+        <translation>&amp;Asenna asiakaslisäykset...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Liitä asiakkaan lisäyksien asennus levykuva</translation>
+        <translation>Liitä asiakaslisäyksien asennuslevykuva</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -641,7 +641,7 @@
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>&amp;VirtualBox Web Sivusto...</translation>
+        <translation>&amp;VirtualBox-WWW-sivusto...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
@@ -665,7 +665,7 @@
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
-        <translation>Liitä &amp;Levyke</translation>
+        <translation>Liitä &amp;levyke</translation>
     </message>
     <message>
         <source>Mount &amp;CD/DVD-ROM</source>
@@ -673,7 +673,7 @@
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>&amp;USB Laitteet</translation>
+        <translation>&amp;USB-laitteet</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
@@ -702,7 +702,7 @@
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
         <comment>Floppy tooltip</comment>
-        <translation type="obsolete">Palvelin&amp;nbsp;PC:n&amp;nbsp;Asema&amp;nbsp;</translation>
+        <translation type="obsolete">Palvelin&amp;nbsp;PC:n&amp;nbsp;asema&amp;nbsp;</translation>
     </message>
     <message>
         <source>not&amp;nbsp;mounted</source>
@@ -754,7 +754,7 @@
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Käytä &amp;Hiiren Integrointia</translation>
+        <translation>Ota &amp;hiiren integrointi käyttöön</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
@@ -766,7 +766,7 @@
     </message>
     <message>
         <source>Host Drive </source>
-        <translation>Isäntäkoneen Asema </translation>
+        <translation>Isäntäkoneen asema </translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -829,7 +829,7 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Ilmaisee aktiiviset levyke mediat:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Ilmaisee aktiiviset levykemediat:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -849,7 +849,7 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Ilmaisee aktiiviset CD/DVD-ROM mediat:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Ilmaisee aktiiviset CD/DVD-ROM-mediat:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -869,7 +869,7 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Ilmaisee aktiiviset virtuaali kiintilevyt:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Ilmaisee aktiiviset virtuaalikiintolevyt:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -879,7 +879,7 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Ilmaisee aktiiviset verkkoliitoset:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Ilmaisee aktiiviset verkkoliitännät:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
@@ -904,17 +904,17 @@
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Ilmaisee aktiiviset liitetyt USB laitteet:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Ilmaisee aktiiviset liitetyt USB-laitteet:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB laitteita ei ole liitetty&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB-laitteita ei ole liitetty&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB ohjain ei ole käytössä&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB-ohjain ei ole käytössä&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
@@ -959,11 +959,11 @@
     </message>
     <message>
         <source>Virtual Size</source>
-        <translation>Virtuaalinen Koko</translation>
+        <translation>Virtuaalinen koko</translation>
     </message>
     <message>
         <source>Actual Size</source>
-        <translation>Todellinen Koko</translation>
+        <translation>Todellinen koko</translation>
     </message>
     <message>
         <source>Size</source>
@@ -971,7 +971,7 @@
     </message>
     <message>
         <source>Virtual Disk Manager</source>
-        <translation>Virtuaali Levy Hallinta</translation>
+        <translation>Virtuaalilevyjen hallinta</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
@@ -979,11 +979,11 @@
     </message>
     <message>
         <source>&amp;CD/DVD Images</source>
-        <translation>&amp;CD/DVD Levykuvat</translation>
+        <translation>&amp;CD/DVD-levykuvat</translation>
     </message>
     <message>
         <source>&amp;Floppy Images</source>
-        <translation>&amp;Levykkeen levykuvat</translation>
+        <translation>&amp;Levykelevykuvat</translation>
     </message>
     <message>
         <source>Help</source>
@@ -1036,7 +1036,7 @@
     </message>
     <message>
         <source>Re&amp;lease</source>
-        <translation>&amp;Julkaise</translation>
+        <translation>&amp;Vapauta</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
@@ -1092,15 +1092,15 @@
     </message>
     <message>
         <source>Disk Type</source>
-        <translation>Levyn Tyyppi</translation>
+        <translation>Levyn tyyppi</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation>Tallennus Tyyppi</translation>
+        <translation>Tallennustyyppi</translation>
     </message>
     <message>
         <source>Attached to</source>
-        <translation>Liitos</translation>
+        <translation>Liitetty kohteeseen</translation>
     </message>
     <message>
         <source>Snapshot</source>
@@ -1108,21 +1108,21 @@
     </message>
     <message>
         <source>Checking accessibility</source>
-        <translation>Tarkistaa esteellisyydet</translation>
+        <translation>Tarkistetaan esteettömyyttä</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>HDD</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Tarkistetaan esteellisyydet...</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Tarkistetaan esteettömyyttä...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disk type:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Storage type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Levyn tyyppi:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Tallennus tyyppi:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Levyn tyyppi:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Tallennustyyppi:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>HDD</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Liittetty:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Liitetty:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Snapshot:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</source>
@@ -1166,7 +1166,7 @@
     <message>
         <source>The image file is not accessible</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>Tämä levykuva tiedosto ei ole käytettävissä</translation>
+        <translation>Tämä levykuvatiedosto ei ole käytettävissä</translation>
     </message>
     <message>
         <source>&amp;Select</source>
@@ -1174,27 +1174,27 @@
     </message>
     <message>
         <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
-        <translation>Kaikki kiintolevyjen levykuvat (*.vdi; *.vmdk);;Virtuaali levyjen levykuvat (*.vdi);;VMDK levykuvat (*.vmdk);;Kaikki tiedostot (*)</translation>
+        <translation>Kaikki kiintolevyjen levykuvat (*.vdi; *.vmdk);;Virtuaalilevyjen levykuvat (*.vdi);;VMDK levykuvat (*.vmdk);;Kaikki tiedostot (*)</translation>
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation>Valitse kiintolevyn levykuva tiedosto</translation>
+        <translation>Valitse kiintolevyn levykuvatiedosto</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>Valitse CD/DVD-ROM levykuva tiedosto</translation>
+        <translation>Valitse CD/DVD-ROM levykuvatiedosto</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
-        <translation>Valitse levykkeen levykuva tiedosto</translation>
+        <translation>Valitse levykkeen levykuvatiedosto</translation>
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
-        <translation>Luo uusi virtuaali kiintolevy</translation>
+        <translation>Luo uusi virtuaalikiintolevy</translation>
     </message>
     <message>
         <source>Add (register) an existing image file</source>
-        <translation>Lisää (rekisteröi) olemassa oleva levykuva tiedosto</translation>
+        <translation>Lisää (rekisteröi) olemassa oleva levykuvatiedosto</translation>
     </message>
     <message>
         <source>Remove (unregister) the selected media</source>
@@ -1206,11 +1206,11 @@
     </message>
     <message>
         <source>Refresh the media list</source>
-        <translation>Päivitä media lista</translation>
+        <translation>Päivitä medialuettelo</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation>CD/DVD-ROM levykuvat (*.iso);;Kaikki tiedostot (*)</translation>
+        <translation>CD/DVD-ROM-levykuvat (*.iso);;Kaikki tiedostot (*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -1225,11 +1225,11 @@
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Lataa VirtualBox Asiakkaan Lisäyksien CD levykuva &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Lataa VirtualBox-asiakaslisäyksien CD-levykuva &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Peruuta VirtualBox Asiakkaan Lisäyksien CD levykuvan lataus</translation>
+        <translation>Peruuta VirtualBox-asiakaslisäyksien CD-levykuvan lataus</translation>
     </message>
     <message>
         <source>Could not locate the file on the server (response: %1).</source>
@@ -1287,12 +1287,12 @@
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>OS Tyyppi</translation>
+        <translation>Käytttöjärjestelmän tyyppi</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation>Järjestelmä Muisti</translation>
+        <translation>Järjestelmän muisti</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
@@ -1307,7 +1307,7 @@
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation>Video Muisti</translation>
+        <translation>Videomuisti</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
@@ -1317,7 +1317,7 @@
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation>Käynnistys Järjestys</translation>
+        <translation>Käynnistysjärjestys</translation>
     </message>
     <message>
         <source>ACPI</source>
@@ -1332,7 +1332,7 @@
     <message>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
-        <translation>Ei Liitetty</translation>
+        <translation>Ei liitetty</translation>
     </message>
     <message>
         <source>Hard Disks</source>
@@ -1372,7 +1372,7 @@
     <message>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
-        <translation>Isäntäkoneen Asema</translation>
+        <translation>Isäntäkoneen asema</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -1392,7 +1392,7 @@
     <message>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
-        <translation>Isäntäkoneen Asema</translation>
+        <translation>Isäntäkoneen asema</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
@@ -1432,7 +1432,7 @@
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation>Laite Suodatin</translation>
+        <translation>Laitesuodattimet</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
@@ -1452,7 +1452,7 @@
     <message>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
-        <translation>VRDP Palvelimen Portti</translation>
+        <translation>VRDP-palvelimen portti</translation>
     </message>
     <message>
         <source>%1</source>
@@ -1596,7 +1596,7 @@
     <message>
         <source>Virtual Disk Image</source>
         <comment>DiskStorageType</comment>
-        <translation>Virtuaalinen Kiintolevy Levykuva</translation>
+        <translation>Virtuaalilevyn levykuva</translation>
     </message>
     <message>
         <source>iSCSI</source>
@@ -1636,12 +1636,12 @@
     <message>
         <source>Master</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Isäntä (Master)</translation>
+        <translation>Isäntä (master)</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Orja (Slave)</translation>
+        <translation>Orja (slave)</translation>
     </message>
     <message>
         <source>Device&amp;nbsp;%1</source>
@@ -1681,7 +1681,7 @@
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Ei Liitetty</translation>
+        <translation>Ei liitetty</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -1912,7 +1912,7 @@
     </message>
     <message>
         <source>Default &amp;Folders</source>
-        <translation>Oletus &amp;Kansiot</translation>
+        <translation>Oletus&amp;kansiot</translation>
     </message>
     <message>
         <source>Machines</source>
@@ -1920,7 +1920,7 @@
     </message>
     <message>
         <source>VDI files</source>
-        <translation>VDI tiedostot</translation>
+        <translation>VDI-tiedostot</translation>
     </message>
     <message>
         <source>Select</source>
@@ -1940,7 +1940,7 @@
     </message>
     <message>
         <source>&amp;USB Device Filters</source>
-        <translation>USB Laite &amp;Suodattimet</translation>
+        <translation>USB-laite&amp;suodattimet</translation>
     </message>
     <message>
         <source>Ins</source>
@@ -1948,7 +1948,7 @@
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation>Lisää Tyhjä (Ins)</translation>
+        <translation>Lisää tyhjä (Ins)</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
@@ -1968,11 +1968,11 @@
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation>Poista valitut USB suodattimet.</translation>
+        <translation>Poista valitut USB-suodattimet.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation>Ctrl+Ylös</translation>
+        <translation>Ctrl+ylös</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
@@ -1980,19 +1980,19 @@
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation>Siirrä valitut USB suodattimet ylös.</translation>
+        <translation>Siirrä valitut USB-suodattimet ylös.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation>Ctrl+Alas</translation>
+        <translation>Ctrl+alas</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>Siirrä alas (Ctrl+Alas)</translation>
+        <translation>Siirrä alas (Ctrl+alas)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation>Siirrä valitut USB suodattimet alas.</translation>
+        <translation>Siirrä valitut USB-suodattimet alas.</translation>
     </message>
     <message>
         <source>Help</source>
@@ -2004,7 +2004,7 @@
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation>Näyttää ohje dialogin.</translation>
+        <translation>Näyttää valintaikkunan ohjeen.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
@@ -2032,7 +2032,7 @@
     </message>
     <message>
         <source>VirtualBox Preferences</source>
-        <translation>VirtualBox Asetukset</translation>
+        <translation>VirtualBox-asetukset</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
@@ -2041,7 +2041,7 @@
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation>Uusi Suodatin %1</translation>
+        <translation>Uusi suodatin %1</translation>
     </message>
     <message>
         <source>Language</source>
@@ -2061,7 +2061,7 @@
     </message>
     <message>
         <source>&amp;Interface Language</source>
-        <translation>&amp;Sisäinen Kieli</translation>
+        <translation>&amp;Käyttöliittymän kieli</translation>
     </message>
     <message>
         <source>Author(s):</source>
@@ -2074,7 +2074,7 @@
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation> (sisäänrekennettu)</translation>
+        <translation> (sisäänrakennettu)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
@@ -2237,7 +2237,7 @@ to the system default language.&lt;/qt&gt;
     <name>VBoxNewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
-        <translation>Luo Uusi Virtuaali Kiintolevy</translation>
+        <translation>Luo uusi virtuaalilevy</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
@@ -2247,7 +2247,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Tervetuloa Luomaan Uusi Virtuaali Kiintolevy Avustajalla!</translation>
+        <translation>Tervetuloa uuden virtuaalilevyn luontivelhoon</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -2260,7 +2260,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>Image Type</source>
-        <translation>Levykuvan Tyyppi</translation>
+        <translation>Levykuvan tyyppi</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding image</source>
@@ -2276,7 +2276,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
-        <translation>Virtuaalisen Kiintolevyn Tyyppi</translation>
+        <translation>Virtuaalilevyn tyyppi</translation>
     </message>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
@@ -2285,7 +2285,7 @@ to store the virtual hard disk image or type a file name in the entry field.&lt;
     </message>
     <message>
         <source>&amp;Image File Name</source>
-        <translation>&amp;Levykuva Tiedoston Nimi</translation>
+        <translation>&amp;Levykuvatiedoston nimi</translation>
     </message>
     <message>
         <source>Select</source>
@@ -2298,11 +2298,11 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>Image &amp;Size</source>
-        <translation>Levykuvan &amp;Koko</translation>
+        <translation>Levykuvan &amp;koko</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation>Virtuaali Kiintolevyn Sijainti ja Koko</translation>
+        <translation>Virtuaalilevyn sijainti ja koko</translation>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
@@ -2339,7 +2339,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     <name>VBoxNewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation>Luo Uusi Virtuaalikone</translation>
+        <translation>Luo uusi virtuaalikone</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
@@ -2350,7 +2350,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Tervetuloa Virtuaalikoneen Luonti Velhoon!</translation>
+        <translation>Tervetuloa virtuaalikoneen luontivelhoon</translation>
     </message>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
@@ -2365,11 +2365,11 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>OS &amp;Tyyppi</translation>
+        <translation>Käyttöjärjestelmän &amp;tyyppi</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation>VM Nimi ja OS Tyyppi</translation>
+        <translation>Virtuaalikoneen nimi ja käyttöjärjestelmän tyyppi</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
@@ -2377,7 +2377,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>Järjestelmä &amp;Muistin Koko</translation>
+        <translation>Järjestelmä&amp;muistin koko</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -2411,7 +2411,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation>&amp;Käynnistä Kovalevyltä</translation>
+        <translation>&amp;Käynnistä kovalevyltä</translation>
     </message>
     <message>
         <source>N&amp;ew...</source>
@@ -2423,7 +2423,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation>Virtuaalinen Kiintolevy</translation>
+        <translation>Virtuaalilevy</translation>
     </message>
     <message>
         <source>
@@ -2488,22 +2488,22 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - Varoitus</translation>
+        <translation>VirtualBox - varoitus</translation>
     </message>
     <message>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - Virhe</translation>
+        <translation>VirtualBox - virhe</translation>
     </message>
     <message>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - Kriitinen Virhe</translation>
+        <translation>VirtualBox - kriittinen virhe</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
-        <translation>Elä näytä tätä viestiä uudestaan</translation>
+        <translation>Älä näytä tätä viestiä uudestaan</translation>
     </message>
     <message>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
@@ -2651,7 +2651,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>CD/DVD image</source>
-        <translation>CD/DVD levykuva</translation>
+        <translation>CD/DVD-levykuva</translation>
     </message>
     <message>
         <source>floppy image</source>
@@ -2732,12 +2732,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Kriittinen Virhe&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Kriittinen virhe&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Ei Kriittinen Virhe&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ei-kriittinen virhe&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
@@ -2747,7 +2747,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Virheen ID: &lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Virheen tunniste: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
@@ -2939,7 +2939,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>VBoxSFDialog</name>
     <message>
         <source>Shared Folders</source>
-        <translation>Jaetut Kansiot</translation>
+        <translation>Jaetut kansiot</translation>
     </message>
     <message>
         <source>OK</source>
@@ -2974,7 +2974,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
-        <translation>Virtuaali &amp;Levy Hallinta...</translation>
+        <translation>Virtuaali&amp;levyjen hallinta...</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
@@ -2982,7 +2982,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
-        <translation>Näyttää Virtuaali Levy Hallinta dialogin</translation>
+        <translation>Näyttää virtuaalilevyjen hallinnan valintaikkunan</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
@@ -3023,7 +3023,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Create a new virtual machine</source>
-        <translation>Luo uusi virtuaali kiintolevy</translation>
+        <translation>Luo uusi virtuaalikone</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -3095,7 +3095,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>&amp;VirtualBox Web Sivusto...</translation>
+        <translation>&amp;VirtualBox-WWW-sivusto...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
@@ -3103,7 +3103,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
-        <translation>&amp;Tietoa VirtualBoxista...</translation>
+        <translation>&amp;Tietoja VirtualBoxista...</translation>
     </message>
     <message>
         <source>Show a dialog with product information</source>
@@ -3171,11 +3171,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation>Näytä &amp;Loki...</translation>
+        <translation>Näytä &amp;loki...</translation>
     </message>
     <message>
         <source>Show Log...</source>
-        <translation>Näytä Loki...</translation>
+        <translation>Näytä loki...</translation>
     </message>
     <message>
         <source>Ctrl+L</source>
@@ -3183,7 +3183,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation>Näyttää loki tiedostot valitusta virtuaalikoneesta</translation>
+        <translation>Näyttää lokitiedostot valitusta virtuaalikoneesta</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -3206,7 +3206,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation>&amp;Jaetut Kansiot</translation>
+        <translation>&amp;Jaetut kansiot</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
@@ -3215,7 +3215,7 @@ Use
 to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;Listaa kaikki jaetut kansiot jotka ovat käyttävissä tällä koneella.
+        <translation type="unfinished">&lt;qt&gt;Luettelee kaikki jaetut kansiot jotka ovat käyttävissä tällä koneella.
 Use
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
 to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
@@ -3228,7 +3228,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
-        <translation>Lisää uuden jaettu kansion määrittelyineen.</translation>
+        <translation>Lisää uuden jaettujen kansioiden määrittelyn.</translation>
     </message>
     <message>
         <source>Edit</source>
@@ -3240,7 +3240,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Removes the selected shared folder definition.</source>
-        <translation>Poistaa valitun jaetun kansion määrityksineen.</translation>
+        <translation>Poistaa valitun jaettujen kansiouden määrityksen.</translation>
     </message>
     <message>
         <source>Add a new shared folder</source>
@@ -3308,7 +3308,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source> Snapshot Details </source>
-        <translation> Palautuspisteen Yksityiskohdat </translation>
+        <translation> Palautuspisteen yksityiskohdat </translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -3320,7 +3320,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>&amp;Machine Details</source>
-        <translation>&amp;Koneen Yksityiskohdat</translation>
+        <translation>&amp;Koneen yksityiskohdat</translation>
     </message>
     <message>
         <source>Help</source>
@@ -3363,11 +3363,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Discard Snapshot</source>
-        <translation>Peru Palautuspiste</translation>
+        <translation>Hylkää palautuspiste</translation>
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation>&amp;Peru Palautuspiste</translation>
+        <translation>&amp;Hylkää palautuspiste</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -3379,11 +3379,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Take Snapshot</source>
-        <translation>Luo Palautuspiste</translation>
+        <translation>Luo palautuspiste</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
-        <translation>Luo &amp;Palautuspiste</translation>
+        <translation>Luo &amp;palautuspiste</translation>
     </message>
     <message>
         <source>Ctrl+Alt+S</source>
@@ -3399,11 +3399,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Show Details</source>
-        <translation>Näytä Yksityiskohdat</translation>
+        <translation>Näytä yksityiskohdat</translation>
     </message>
     <message>
         <source>S&amp;how Details</source>
-        <translation>Näy&amp;tä Yksityiskohdat</translation>
+        <translation>Näy&amp;tä yksityiskohdat</translation>
     </message>
     <message>
         <source>Space</source>
@@ -3521,15 +3521,15 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <name>VBoxTakeSnapshotDlg</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>Luo Palautuspiste Virtuaalikoneesta</translation>
+        <translation>Luo palautuspiste virtuaalikoneesta</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation>Palautuspisteen &amp;Nimi</translation>
+        <translation>Palautuspisteen &amp;nimi</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation>Palautuspisteen &amp;Kuvaus</translation>
+        <translation>Palautuspisteen &amp;kuvaus</translation>
     </message>
     <message>
         <source>Help</source>
@@ -3589,11 +3589,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>&amp;Vendor ID</source>
-        <translation>&amp;Valmistaja ID</translation>
+        <translation>&amp;Valmistajan tunniste</translation>
     </message>
     <message>
         <source>&amp;Product ID</source>
-        <translation>&amp;Tuote ID</translation>
+        <translation>&amp;Tuotteen tunniste</translation>
     </message>
     <message>
         <source>&amp;Revision</source>
@@ -3689,14 +3689,14 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation>Tuettuja laitteita ei ole yhdistetty palvelin PC:hen</translation>
+        <translation>Tuettuja laitteita ei ole yhdistettynä palvelin-PC:hen</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Ei kuvausta. Klikkaa Muokkaa painiketta ja lisää se.</translation>
+        <translation>Ei kuvausta. Napsauta Muokkaa-painiketta ja lisää se.</translation>
     </message>
     <message>
         <source>Edit</source>
@@ -3762,7 +3762,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>&amp;Levykuva Tiedosto</translation>
+        <translation>&amp;Levykuvatiedosto</translation>
     </message>
     <message>
         <source>Alt+I</source>
@@ -3846,7 +3846,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
-        <translation>Logi Katselin</translation>
+        <translation>Lokikatselin</translation>
     </message>
     <message>
         <source>&amp;Save</source>
@@ -3874,15 +3874,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - VirtualBox Logi Katselin</translation>
+        <translation>%1 - VirtualBox-lokikatselin</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Logi tiedostoja ei löydetty. Napsauta &lt;b&gt;Päivitä&lt;/b&gt; painiketta skannaaksesi logi kansio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Lokitiedostoja ei löydetty. Napsauta &lt;b&gt;Päivitä&lt;/b&gt;-painiketta tutkiaksesi lokikansion uudestaan &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>Tallenna VirtualBox Logi nimellä</translation>
+        <translation>Tallenna VirtualBox-loki nimellä</translation>
     </message>
     <message>
         <source>Help</source>
@@ -3909,15 +3909,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation>&amp;Käytä Verkko Sovitinta</translation>
+        <translation>&amp;Käytä verkkosovitinta</translation>
     </message>
     <message>
         <source>&amp;Attached to</source>
-        <translation>&amp;Liitos</translation>
+        <translation>&amp;Liitetty kohteeseen</translation>
     </message>
     <message>
         <source>&amp;MAC Address</source>
-        <translation>&amp;MAC Osoite</translation>
+        <translation>&amp;MAC-osoite</translation>
     </message>
     <message>
         <source>&amp;Generate</source>
@@ -3929,11 +3929,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation>Luo uusi satunnainen MAC asoite.</translation>
+        <translation>Luo uusi satunnainen MAC-osoite.</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
-        <translation>Kaapeli K&amp;ytketty</translation>
+        <translation>Kaapeli k&amp;ytketty</translation>
     </message>
     <message>
         <source>Alt+B</source>
@@ -3941,15 +3941,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Host Interface Settings</source>
-        <translation>Isäntäkoneen Sisäiset Asetukset</translation>
+        <translation>Isäntäliitännän asetukset</translation>
     </message>
     <message>
         <source>&amp;Interface Name</source>
-        <translation>&amp;Sisäinen Nimi</translation>
+        <translation>&amp;Liitännän nimi</translation>
     </message>
     <message>
         <source>&amp;File Descriptor</source>
-        <translation>&amp;Tiedostokuvaus</translation>
+        <translation>&amp;Tiedostokahva</translation>
     </message>
     <message>
         <source>&amp;Setup Application</source>
@@ -4199,7 +4199,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source> Shared Folders </source>
-        <translation> Jaetut Kansiot </translation>
+        <translation> Jaetut kansiot </translation>
     </message>
     <message>
         <source>8</source>
@@ -4223,11 +4223,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>OS &amp;Tyyppi</translation>
+        <translation>Käyttöjärjestelmän &amp;tyyppi</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>Järjestelmä &amp;Muistin Koko</translation>
+        <translation>Järjestelmä&amp;muistin koko</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
@@ -4251,7 +4251,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
-        <translation>&amp;Video Muistin Koko</translation>
+        <translation>&amp;Videomuistin koko</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
@@ -4267,7 +4267,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Selects the snapshot folder path.</source>
-        <translation>Valitse palautuspiste kansion polku.</translation>
+        <translation>Valitse palautuspistekansion polku.</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -4275,11 +4275,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Extended Features</source>
-        <translation>Laajennetut Ominaisuudet</translation>
+        <translation>Laajennetut ominaisuudet</translation>
     </message>
     <message>
         <source>Enable A&amp;CPI</source>
-        <translation>Käytä A&amp;CPI:a</translation>
+        <translation>Ota A&amp;CPI käyttöön</translation>
     </message>
     <message>
         <source>Alt+C</source>
@@ -4287,7 +4287,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation>Käytä IO AC&amp;PI:a</translation>
+        <translation>Ota IO AC&amp;PI käyttöön</translation>
     </message>
     <message>
         <source>Alt+P</source>
@@ -4295,7 +4295,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
-        <translation>&amp;Käynnistys Järjestys</translation>
+        <translation>&amp;Käynnistysjärjestys</translation>
     </message>
     <message>
         <source>&amp;Advanced</source>
@@ -4307,7 +4307,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Primary Master</source>
-        <translation>&amp;Ensisijainen Isäntä (Primary Master)</translation>
+        <translation>&amp;Ensisijainen isäntä (Primary Master)</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
@@ -4315,19 +4315,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>P&amp;rimary Slave</source>
-        <translation>&amp;Ensisijainen Orja (Primary Slave)</translation>
+        <translation>&amp;Ensisijainen orja (Primary Slave)</translation>
     </message>
     <message>
         <source>&amp;Secondary (IDE 1) Slave</source>
-        <translation>&amp;Toissijainen Orja (Secondary Slave)</translation>
+        <translation>&amp;Toissijainen orja (Secondary Slave)</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
-        <translation>&amp;Liitä Levyke Asema</translation>
+        <translation>&amp;Liitä levykeasema</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation>Isäntäkoneen Levyke &amp;Asema</translation>
+        <translation>Isäntäkoneen levyke&amp;asema</translation>
     </message>
     <message>
         <source>Alt+D</source>
@@ -4335,11 +4335,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation>Liittää määritellyn Levykkeaseman virtuaaliseen Levykeasemaan.</translation>
+        <translation>Liittää määritellyn levykeaseman virtuaaliseen levykeasemaan.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>&amp;Levykuva Tiedosto</translation>
+        <translation>&amp;Levykuvatiedosto</translation>
     </message>
     <message>
         <source>Alt+I</source>
@@ -4347,39 +4347,39 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation>Liittää määritellyn Levykkeenlevykuvan virtuaaliseen Levykeasemaan.</translation>
+        <translation>Liittää määritellyn levykkeenl levykuvan virtuaaliseen levykeasemaan.</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>&amp;Liitä CD/DVD Asema</translation>
+        <translation>&amp;Liitä CD/DVD-asema</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>Isäntäkoneen CD/DVD &amp;Asema</translation>
+        <translation>Isäntäkoneen CD/DVD-&amp;asema</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation>Liittää määritellyn CD/DVD aseman virtuaaliseen CD/DVD asemaan.</translation>
+        <translation>Liittää määritellyn CD/DVD-aseman virtuaaliseen CD/DVD-asemaan.</translation>
     </message>
     <message>
         <source>&amp;ISO Image File</source>
-        <translation>&amp;ISO Levykuva Tiedosto</translation>
+        <translation>&amp;ISO-levykuvatiedosto</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation>Liittää määritellyn CD/DVD levykuvan virtuaaliseen CD/DVD asemaan.</translation>
+        <translation>Liittää määritellyn CD/DVD-levykuvan virtuaaliseen CD/DVD-asemaan.</translation>
     </message>
     <message>
         <source>&amp;Enable Audio</source>
-        <translation>&amp;Käytä Ääntä</translation>
+        <translation>&amp;Ota ääni käyttöön</translation>
     </message>
     <message>
         <source>Host Audio &amp;Driver</source>
-        <translation>Isäntäkoneen Ääni &amp;Ajuri</translation>
+        <translation>Isäntäkoneen ääni&amp;ajuri</translation>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation>Käytä &amp;USB Ohjainta</translation>
+        <translation>Ota &amp;USB-ohjain käyttöön</translation>
     </message>
     <message>
         <source>Alt+U</source>
@@ -4387,7 +4387,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
-        <translation>USB Laite &amp;Suodattimet</translation>
+        <translation>USB-laite&amp;suodattimet</translation>
     </message>
     <message>
         <source>Ins</source>
@@ -4395,7 +4395,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation>Lisää Tyhjä (Ins)</translation>
+        <translation>Lisää tyhjä (Ins)</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
@@ -4403,7 +4403,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation>Lisää...(Alt+Ins)</translation>
+        <translation>Lisää kohteesta (Alt+Ins)</translation>
     </message>
     <message>
         <source>Del</source>
@@ -4415,11 +4415,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation>Poista valitut USB suodattimet.</translation>
+        <translation>Poista valitut USB-suodattimet.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation>Ctrl+Ylös</translation>
+        <translation>Ctrl+ylös</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
@@ -4427,23 +4427,23 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation>Siirrä valitut USB suodattimet ylös.</translation>
+        <translation>Siirrä valitut USB-suodattimet ylös.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation>Ctrl+Alas</translation>
+        <translation>Ctrl+alas</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>Siirrä alas (Ctrl+Alas)</translation>
+        <translation>Siirrä alas (Ctrl+alas)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation>Siirrä valitut USB suodattimet alas.</translation>
+        <translation>Siirrä valitut USB-suodattimet alas.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
-        <translation>&amp;Käytä VRDP Palvelinta</translation>
+        <translation>&amp;Käytä VRDP-palvelinta</translation>
     </message>
     <message>
         <source>Server port </source>
@@ -4451,19 +4451,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Authentication Method </source>
-        <translation type="obsolete">Tunnistus Menetelmä </translation>
+        <translation type="obsolete">Todennusmenetelmä </translation>
     </message>
     <message>
         <source>Authentication Timeout </source>
-        <translation type="obsolete">Tunnistuksen Aikakatkaisu </translation>
+        <translation type="obsolete">Todennuksen aikakatkaisu </translation>
     </message>
     <message>
         <source>Displays the VRDP Server port.</source>
-        <translation type="obsolete">Näyttää VRDP Palvelimen portin.</translation>
+        <translation type="obsolete">Näyttää VRDP-palvelimen portin.</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation>Määrittelee VRDP tunnistus menetelmän.</translation>
+        <translation>Määrittelee VRDP-todennusmenetelmän.</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
@@ -4479,11 +4479,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation>Näyttää ohje dialogin.</translation>
+        <translation>Näyttää valintaikkunan ohjeen.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>Virheelliset tunnistus asetukset</translation>
+        <translation>Virheellisiä asetuksia</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -4584,20 +4584,20 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source> - Settings</source>
-        <translation> - Asetukset</translation>
+        <translation> - asetukset</translation>
     </message>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation>Uusi Suodatin %1</translation>
+        <translation>Uusi suodatin %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
-        <translation>&amp;Jaettu Leikepöytä</translation>
+        <translation>&amp;Jaettu leikepöytä</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
-        <translation>P&amp;alautuspisteiden Kansio</translation>
+        <translation>P&amp;alautuspisteiden kansio</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
@@ -4679,7 +4679,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Host &amp;Interfaces</source>
-        <translation>&amp;Isäntäkoneen Sisäinen</translation>
+        <translation>&amp;Isäntäkoneen liitännät</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
@@ -4719,11 +4719,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source> Serial Ports </source>
-        <translation> Sarja Portit </translation>
+        <translation> Sarjaportit </translation>
     </message>
     <message>
         <source>#serialPorts</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
@@ -4735,7 +4735,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Other &amp;Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Muut &amp;asetukset</translation>
     </message>
     <message>
         <source>&amp;Remember Media Mounted at Runtime</source>
@@ -4767,11 +4767,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Authentication &amp;Method </source>
-        <translation>Tunnistus &amp;Menetelmä </translation>
+        <translation>Todennus&amp;menetelmä </translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout </source>
-        <translation>&amp;Tunnistuksen Aikakatkaisu </translation>
+        <translation>&amp;Todennuksen aikakatkaisu </translation>
     </message>
     <message>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
@@ -4779,11 +4779,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Primary Master hard disk is not selected</source>
-        <translation>Ensisijaista Isäntä (Primary Master) kiintolevyä ei ole valittu</translation>
+        <translation>Ensisijaista isäntäkiintolevyä (Primary Master) ei ole valittu</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected</source>
-        <translation>Ensisijaista Orja (Primary Slave) kiintolevyä ei ole valittu</translation>
+        <translation>Ensisijaista orjakiintolevyä (Primary Slave) ei ole valittu</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot</source>
@@ -4791,7 +4791,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected</source>
-        <translation>Toissijaista Orja (Secondary Slave) kiintolevyä ei ole valittu</translation>
+        <translation>Toissijaista orjakiintolevyä (Secondary Slave) ei ole valittu</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot</source>
@@ -4799,11 +4799,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>CD/DVD image file is not selected</source>
-        <translation>CD/DVD:n levykuva tiedostoa ei ole valittu</translation>
+        <translation>CD/DVD:n levykuvatiedostoa ei ole valittu</translation>
     </message>
     <message>
         <source>Floppy image file is not selected</source>
-        <translation>Levykkeen levykuva tiedostoa ei ole valittu</translation>
+        <translation>Levykkeen levykuvatiedostoa ei ole valittu</translation>
     </message>
     <message>
         <source>Incorrect host network interface is selected</source>
