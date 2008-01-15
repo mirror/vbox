@@ -23,7 +23,9 @@ include	$(PATH_KBUILD)/subheader.kmk
 # VBoxGuest.sys - The OS/2 driver.
 #
 ifeq ($(BUILD_PLATFORM),os2)
-SYSMODS.os2 += VBoxGuest
+ifdef VBOX_WITH_OS2_ADDITIONS
+ SYSMODS.os2 += VBoxGuest
+endif
 VBoxGuest_TEMPLATE      = VBOXOS2GUESTR0
 VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
 VBoxGuest_INCS         := $(PATH_SUB_CURRENT)
@@ -42,7 +44,9 @@ VBoxGuest_LIBS          = \
 #VBoxGuest_NAME = VBoxGst
 
 # temp hack to ensure that VBoxGuestA-os2.asm is first in the link.
-LIBRARIES += VBoxGuestLib
+ifdef VBOX_WITH_OS2_ADDITIONS
+ LIBRARIES += VBoxGuestLib
+endif
 VBoxGuestLib_TEMPLATE   = VBOXOS2GUESTR0LIB
 VBoxGuestLib_NOINST     = 1
 VBoxGuestLib_DEFS       = VBGL_VBOXGUEST VBOX_HGCM

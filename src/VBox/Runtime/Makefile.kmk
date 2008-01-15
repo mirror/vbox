@@ -73,7 +73,9 @@ else
     endif
    endif
   else ifeq ($(BUILD_TARGET),os2) ## @todo RuntimeOS2Guest* -> RuntimeGuest*
-   LIBRARIES += RuntimeOS2GuestR0 RuntimeOS2GuestR3
+   ifdef VBOX_WITH_OS2_ADDITIONS
+    LIBRARIES += RuntimeOS2GuestR0 RuntimeOS2GuestR3
+   endif
   else
    LIBRARIES += RuntimeGuestR0 RuntimeGuestR3
   endif

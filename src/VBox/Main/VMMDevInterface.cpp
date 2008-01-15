@@ -721,7 +721,12 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->pVMMDev->mpDrv = pData;
 
 #ifdef VBOX_HGCM
-    rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedFolders", "VBoxSharedFolders");
+    rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedFolders",
+#ifdef RT_OS_OS2
+                                          "VBoxSFld");
+#else
+                                          "VBoxSharedFolders");
+#endif
     pData->pVMMDev->fSharedFolderActive = VBOX_SUCCESS(rc);
     if (VBOX_SUCCESS(rc))
     {

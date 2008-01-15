@@ -144,15 +144,9 @@ ifdef VBOX_WITH_USB
 	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
 endif
 
-ifeq ($(BUILD_TARGET),win)
- VBoxSVC_LIBS += \
-	$(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxSettings$(VBOX_SUFF_LIB)
-else
- VBoxSVC_LIBS += \
-	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
-	$(PATH_BIN)/VBoxSettings$(VBOX_SUFF_DLL)
-endif
+VBoxSVC_LIBS += \
+	$(LIB_DDU) \
+	$(LIB_SETTINGS)
 VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
@@ -395,6 +389,7 @@ win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs
 #
 
 VBoxSettings_TEMPLATE	= VBOXMAINDLL
+VBoxSettings_NAME       = $(basename $(notdir $(LIB_SETTINGS)))
 VBoxSettings_SDKS       = VBOX_LIBXML2 VBOX_ZLIB
 VBoxSettings_DEFS       = IN_VBOXSETTINGS_R3
 VBoxSettings_INCS       = \
@@ -402,7 +397,7 @@ VBoxSettings_INCS       = \
 	$(PATH_TARGET)
 VBoxSettings_SOURCES    = \
 	xml/Settings.cpp
-VBoxSettings_LDFLAGS.darwin = -install_name @executable_path/VBoxSettings.dylib -Wl,-x # no debug info please.
+VBoxSettings_LDFLAGS.darwin = -install_name @executable_path/$(notdir $(LIB_SETTINGS)) -Wl,-x # no debug info please.
 
 
 #

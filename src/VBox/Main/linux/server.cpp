@@ -1045,15 +1045,15 @@ int main (int argc, char **argv)
 #endif
         }
 
+#ifndef RT_OS_OS2
         if (daemon_pipe_fds[1] >= 0)
         {
             printf ("\nStarting event loop....\n[send TERM signal to quit]\n");
-#ifndef RT_OS_OS2
             /* now we're ready, signal the parent process */
             write(daemon_pipe_fds[1], "READY", strlen("READY"));
-#endif
         }
         else
+#endif
         {
             printf ("\nStarting event loop....\n[press Ctrl-C to quit]\n");
         }

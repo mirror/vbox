@@ -801,6 +801,8 @@ ifeq ($(BUILD_TARGET),darwin)
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
  LIB_REM         = $(PATH_LIB)/VBoxREMImp.dylib
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dylib
+ LIB_DDU         = $(PATH_BIN)/VBoxDDU.dylib
+ LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.dylib
 endif
 ifeq ($(BUILD_TARGET),l4)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.s.so
@@ -810,6 +812,8 @@ ifeq ($(BUILD_TARGET),l4)
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
  LIB_REM         = $(PATH_BIN)/VBoxREMImp.s.so
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.s.so
+ LIB_DDU         = $(PATH_BIN)/VBoxDDU.s.so
+ LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.s.so
 endif
 if1of ($(BUILD_TARGET), linux freebsd netbsd openbsd solaris)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.so
@@ -819,6 +823,8 @@ if1of ($(BUILD_TARGET), linux freebsd netbsd openbsd solaris)
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
  LIB_REM         = $(PATH_BIN)/VBoxREMImp.so
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.so
+ LIB_DDU         = $(PATH_BIN)/VBoxDDU.so
+ LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.so
 endif
 ifeq ($(BUILD_TARGET),os2)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.dll
@@ -828,6 +834,8 @@ ifeq ($(BUILD_TARGET),os2)
  LIB_VMMGC       = $(PATH_LIB)/VMMGCImp.lib
  LIB_REM         = $(PATH_LIB)/VBoxREMImp.lib
  LIB_XPCOM       = $(PATH_BIN)/VBoxXCOM.dll
+ LIB_DDU         = $(PATH_BIN)/VBoxDDU.dll
+ LIB_SETTINGS    = $(PATH_BIN)/VBoxSett.dll
  OBJ_SYS0        = $(PATH_OBJ)/src/VBox/Runtime/RuntimeR0/os2/sys0.obj
 endif
 ifeq ($(BUILD_TARGET),win)
@@ -838,6 +846,8 @@ ifeq ($(BUILD_TARGET),win)
  LIB_VMMGC       = $(PATH_OUT)/obj/src/VBox/VMM/VMMGC/VMMGC.lib
  LIB_REM         = $(PATH_LIB)/VBoxREMImp.lib
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dll
+ LIB_DDU         = $(PATH_LIB)/VBoxDDU.lib
+ LIB_SETTINGS    = $(PATH_LIB)/VBoxSettings.lib
 endif
 
 # The kprofile build automagically links with kProfile.
@@ -1312,11 +1322,13 @@ VBOX_LUPDATE  ?= $(VBOX_PATH_QT_HOST)/bin/lupdate$(HOSTSUFF_EXE)
 VBOX_LRELEASE ?= $(VBOX_PATH_QT_HOST)/bin/lrelease$(HOSTSUFF_EXE)
 
 ifeq ($(BUILD_TARGET),os2)
- # search DLLs in the EXE directory first
- VBOX_UIC      := BEGINLIBPATH="$(dir $(VBOX_UIC));$$BEGINLIBPATH" $(VBOX_UIC)
- VBOX_MOC      := BEGINLIBPATH="$(dir $(VBOX_MOC));$$BEGINLIBPATH" $(VBOX_MOC)
- VBOX_LUPDATE  := BEGINLIBPATH="$(dir $(VBOX_LUPDATE));$$BEGINLIBPATH" $(VBOX_LUPDATE)
- VBOX_LRELEASE := BEGINLIBPATH="$(dir $(VBOX_LRELEASE));$$BEGINLIBPATH" $(VBOX_LRELEASE)
+ # search DLLs in the EXE directory first (unless VBOX_DLL_QT is set)
+ VBOX_DLL_QT_PATH := $(dir $(VBOX_DLL_QT))
+ VBOX_DLL_QT_PATH := $(if $(VBOX_DLL_QT_PATH),$(VBOX_DLL_QT_PATH);,)
+ VBOX_UIC      := BEGINLIBPATH="$(VBOX_DLL_QT_PATH)$(dir $(VBOX_UIC));$$BEGINLIBPATH" $(VBOX_UIC)
+ VBOX_MOC      := BEGINLIBPATH="$(VBOX_DLL_QT_PATH)$(dir $(VBOX_MOC));$$BEGINLIBPATH" $(VBOX_MOC)
+ VBOX_LUPDATE  := BEGINLIBPATH="$(VBOX_DLL_QT_PATH)$(dir $(VBOX_LUPDATE));$$BEGINLIBPATH" $(VBOX_LUPDATE)
+ VBOX_LRELEASE := BEGINLIBPATH="$(VBOX_DLL_QT_PATH)$(dir $(VBOX_LRELEASE));$$BEGINLIBPATH" $(VBOX_LRELEASE)
 endif
 
 #
