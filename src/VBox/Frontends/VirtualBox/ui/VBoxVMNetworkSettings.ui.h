@@ -49,12 +49,15 @@ void VBoxVMNetworkSettings::init()
 #if defined Q_WS_WIN
     /* disable unused interface name UI */
     grbTAP->setHidden (true);
+    grbIntNet->setHidden (true);
     connect (grbEnabled, SIGNAL (toggled (bool)),
              this, SLOT (grbEnabledToggled (bool)));
 #else
     /* disable unused interface name UI */
     txHostInterface_WIN->setHidden (true);
     cbHostInterfaceName->setHidden (true);
+    txInternalNetwork_WIN->setHidden (true);
+    cbInternalNetworkName_WIN->setHidden (true);
     /* setup iconsets */
     pbTAPSetup->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
                                                  "select_file_dis_16px.png"));
@@ -72,22 +75,31 @@ void VBoxVMNetworkSettings::init()
 #endif
 }
 
-bool VBoxVMNetworkSettings::isPageValid (const QStringList &aList)
+int VBoxVMNetworkSettings::checkPage (const QStringList &aList)
 {
-#if defined Q_WS_WIN
     CEnums::NetworkAttachmentType type =
         vboxGlobal().toNetworkAttachmentType (cbNetworkAttachment->currentText());
-
-    return !(type == CEnums::HostInterfaceNetworkAttachment &&
-             isInterfaceInvalid (aList, cbHostInterfaceName->currentText()));
+#if defined Q_WS_WIN
+    if (type == CEnums::HostInterfaceNetworkAttachment &&
+        isInterfaceInvalid (aList, cbHostInterfaceName->currentText()))
+        return 1;
+    else if (type == CEnums::InternalNetworkAttachment &&
+             cbInternalNetworkName_WIN->currentText().isEmpty())
+        return 2;
+    else
+        return 0;
 #else
     NOREF (aList);
-    return true;
+    if (type == CEnums::InternalNetworkAttachment &&
+        cbInternalNetworkName_X11->currentText().isEmpty())
+        return 2;
+    else
+        return 0;
 #endif
 }
 
-void VBoxVMNetworkSettings::loadList (const QStringList &aList,
-                                      const QString &aNillItem)
+void VBoxVMNetworkSettings::loadInterfaceList (const QStringList &aList,
+                                               const QString &aNillItem)
 {
 #if defined Q_WS_WIN
     /* save current list item name */
@@ -111,6 +123,20 @@ void VBoxVMNetworkSettings::loadList (const QStringList &aList,
     NOREF (aList);
     NOREF (aNillItem);
 #endif
+}
+
+void VBoxVMNetworkSettings::loadNetworksList (const QStringList &aList)
+{
+    QComboBox *cbNetworkName = 0;
+#if defined Q_WS_WIN
+    cbNetworkName = cbInternalNetworkName_WIN;
+#else
+    cbNetworkName = cbInternalNetworkName_X11;
+#endif
+    Assert (cbNetworkName);
+    cbNetworkName->clear();
+    cbNetworkName->clearEdit();
+    cbNetworkName->insertStringList (aList);
 }
 
 void VBoxVMNetworkSettings::getFromAdapter (const CNetworkAdapter &adapter)
@@ -143,8 +169,10 @@ void VBoxVMNetworkSettings::getFromAdapter (const CNetworkAdapter &adapter)
         }
     if (cbHostInterfaceName->currentItem() == -1)
         cbHostInterfaceName->setCurrentText (name);
+    cbInternalNetworkName_WIN->setCurrentText (adapter.GetInternalNetwork());
 #else
     leHostInterface->setText (adapter.GetHostInterface());
+    cbInternalNetworkName_X11->setCurrentText (adapter.GetInternalNetwork());
 #endif
 
 #if defined Q_WS_X11
@@ -200,6 +228,16 @@ void VBoxVMNetworkSettings::putBackToAdapter()
         cadapter.SetTAPTerminateApplication (term.isEmpty() ? QString::null : term);
 #endif
     }
+    else if (type == CEnums::InternalNetworkAttachment)
+    {
+#if defined Q_WS_WIN
+        if (!cbInternalNetworkName_WIN->currentText().isEmpty())
+            cadapter.SetInternalNetwork (cbInternalNetworkName_WIN->currentText());
+#else
+        if (!cbInternalNetworkName_X11->currentText().isEmpty())
+            cadapter.SetInternalNetwork (cbInternalNetworkName_X11->currentText());
+#endif
+    }
 }
 
 void VBoxVMNetworkSettings::setValidator (QIWidgetValidator *aWalidator)
@@ -229,11 +267,16 @@ void VBoxVMNetworkSettings::cbNetworkAttachment_activated (const QString &aStrin
 {
     bool enableHostIf = vboxGlobal().toNetworkAttachmentType (aString) ==
                         CEnums::HostInterfaceNetworkAttachment;
+    bool enableIntNet = vboxGlobal().toNetworkAttachmentType (aString) ==
+                        CEnums::InternalNetworkAttachment;
 #if defined Q_WS_WIN
     txHostInterface_WIN->setEnabled (enableHostIf);
     cbHostInterfaceName->setEnabled (enableHostIf);
+    txInternalNetwork_WIN->setEnabled (enableIntNet);
+    cbInternalNetworkName_WIN->setEnabled (enableIntNet);
 #else
     grbTAP->setEnabled (enableHostIf);
+    grbIntNet->setEnabled (enableIntNet);
 #endif
 }
 

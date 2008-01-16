@@ -877,6 +877,7 @@ void VBoxVMSettingsDlg::init()
     /* Network Page */
 
     loadInterfacesList();
+    loadNetworksList();
 
     /*
      *  update the Ok button state for pages with validation
@@ -1019,6 +1020,27 @@ void VBoxVMSettingsDlg::loadInterfacesList()
 #endif
 }
 
+void VBoxVMSettingsDlg::loadNetworksList()
+{
+    /* clear inner list */
+    mNetworksList.clear();
+    /* loading internal networks list */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    ulong count = vbox.GetSystemProperties().GetNetworkAdapterCount();
+    CMachineEnumerator en = vbox.GetMachines().Enumerate();
+    while (en.HasMore())
+    {
+        CMachine machine = en.GetNext();
+        for (ulong slot = 0; slot < count; ++ slot)
+        {
+            CNetworkAdapter adapter = machine.GetNetworkAdapter (slot);
+            if (adapter.GetAttachmentType() == CEnums::InternalNetworkAttachment &&
+                !mNetworksList.contains (adapter.GetInternalNetwork()))
+                mNetworksList << adapter.GetInternalNetwork();
+        }
+    }
+}
+
 void VBoxVMSettingsDlg::hostInterfaceAdd()
 {
 #if defined Q_WS_WIN
@@ -1142,7 +1164,7 @@ void VBoxVMSettingsDlg::networkPageUpdate (QWidget *aWidget)
     if (!aWidget) return;
 #if defined Q_WS_WIN
     VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (aWidget);
-    set->loadList (mInterfaceList, mNoInterfaces);
+    set->loadInterfaceList (mInterfaceList, mNoInterfaces);
     set->revalidate();
 #endif
 }
@@ -1494,18 +1516,22 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
     else if (pg == pageNetwork)
     {
         QWidget *tab = NULL;
+        int error = 0;
         for (int index = 0; index < tbwNetwork->count(); ++ index)
         {
             tab = tbwNetwork->page (index);
             VBoxVMNetworkSettings *page =
                 static_cast <VBoxVMNetworkSettings *> (tab);
-            valid = page->isPageValid (mInterfaceList);
+            error = page->checkPage (mInterfaceList);
+            valid = !error;
             if (!valid) break;
         }
         if (!valid)
         {
             Assert (tab);
-            warningText = tr ("Incorrect host network interface is selected");
+            warningText = error == 1 ?
+                tr ("Incorrect host network interface is selected") : error == 2 ?
+                tr ("Internal network name should be defined") : QString::null;
             pageTitle += ": " + tbwNetwork->tabLabel (tab);
         }
     }
@@ -2306,7 +2332,8 @@ void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, Q
 void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
 {
     VBoxVMNetworkSettings *page = new VBoxVMNetworkSettings();
-    page->loadList (mInterfaceList, mNoInterfaces);
+    page->loadInterfaceList (mInterfaceList, mNoInterfaces);
+    page->loadNetworksList (mNetworksList);
     page->getFromAdapter (aAdapter);
     QString pageTitle = QString (tr ("Adapter %1", "network"))
                                  .arg (aAdapter.GetSlot());
@@ -2318,12 +2345,24 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     setTabOrder (buttonOk, buttonCancel);
 
     /* setup validation */
+    QComboBox *cbNetworkName = 0;
+#ifdef Q_WS_WIN
+    cbNetworkName = page->cbInternalNetworkName_WIN;
+#else
+    cbNetworkName = page->cbInternalNetworkName_X11;
+#endif
+    Assert (cbNetworkName);
+
     QIWidgetValidator *wval =
         new QIWidgetValidator (QString ("%1: %2")
                                .arg (pagePath (pageNetwork), pageTitle),
                                pageNetwork, this);
     connect (page->grbEnabled, SIGNAL (toggled (bool)), wval, SLOT (revalidate()));
     connect (page->cbNetworkAttachment, SIGNAL (activated (const QString &)),
+             wval, SLOT (revalidate()));
+    connect (cbNetworkName, SIGNAL (activated (const QString &)),
+             wval, SLOT (revalidate()));
+    connect (cbNetworkName, SIGNAL (textChanged (const QString &)),
              wval, SLOT (revalidate()));
     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
