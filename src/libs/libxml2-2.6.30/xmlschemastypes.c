@@ -32,8 +32,10 @@
 #include <float.h>
 #endif
 
-#undef DEBUG /* bird: shut up harmless warning. */
+#ifndef VBOX /* Avoid warnings about redefining DEBUG */
 #define DEBUG
+#endif /* !VBOX */
+
 
 #ifndef LIBXML_XPATH_ENABLED
 extern double xmlXPathNAN;
