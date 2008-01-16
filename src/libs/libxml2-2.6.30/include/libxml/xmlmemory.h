@@ -26,11 +26,13 @@
 /* #define DEBUG_MEMORY_FREED */
 /* #define DEBUG_MEMORY_LOCATION */
 
+#ifndef VBOX /* Avoid spewing out boring libxml2 memory logging. */
 #ifdef DEBUG
 #ifndef DEBUG_MEMORY
 #define DEBUG_MEMORY
 #endif
 #endif
+#endif /* !VBOX */
 
 /**
  * DEBUG_MEMORY_LOCATION:
