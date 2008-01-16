@@ -5,7 +5,7 @@
 :folding=explicit:collapseFolds=1:
 
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -3203,6 +3203,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <variable access="private">QValueVector &lt; CHostFloppyDrive &gt; hostFloppies;</variable>
     <variable access="private">CMachine cmachine;</variable>
     <variable access="private">QStringList mInterfaceList;</variable>
+    <variable access="private">QStringList mNetworksList;</variable>
     <variable access="private">QWidgetStack *wstUSBFilters;</variable>
     <variable access="private">bool mUSBFilterListModified;</variable>
     <variable access="private">VBoxSharedFoldersSettings *mSharedFolders;</variable>
@@ -3273,6 +3274,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <function access="private">updateShortcuts()</function>
     <function access="private" returnType="QString">getHdInfo( QGroupBox*, QUuid )</function>
     <function access="private">loadInterfacesList()</function>
+    <function access="private">loadNetworksList()</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>

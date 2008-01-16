@@ -5,7 +5,7 @@
 :folding=explicit:collapseFolds=1:
 
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -96,7 +96,26 @@
                                 <cstring>cbHostInterfaceName</cstring>
                             </property>
                         </widget>
-                        <widget class="QLineEdit" row="2" column="1">
+                        <widget class="QLabel" row="2" column="0">
+                            <property name="name">
+                                <cstring>txInternalNetwork_WIN</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>0</hsizetype>
+                                    <vsizetype>5</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="text">
+                                <string>&amp;Network Name</string>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>cbInternalNetworkName_WIN</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QLineEdit" row="3" column="1">
                             <property name="name">
                                 <cstring>leMACAddress</cstring>
                             </property>
@@ -126,7 +145,7 @@
 	                            <string>Controls the way how this virtual adapter is attached to the real network of the Host OS.</string>
                             </property>
                         </widget>
-                        <widget class="QToolButton" row="2" column="2">
+                        <widget class="QToolButton" row="3" column="2">
                             <property name="name">
                                 <cstring>pbGenerateMAC</cstring>
                             </property>
@@ -167,7 +186,7 @@
                                 <cstring>cbNetworkAttachment</cstring>
                             </property>
                         </widget>
-                        <widget class="QLabel" row="2" column="0">
+                        <widget class="QLabel" row="3" column="0">
                             <property name="name">
                                 <cstring>txMACAddress</cstring>
                             </property>
@@ -192,6 +211,26 @@
                             </property>
                             <property name="whatsThis" stdset="0">
                                 <string>Displays the name of the host interface selected for this adapter.</string>
+                            </property>
+                        </widget>
+                        <widget class="QComboBox" row="2" column="1" rowspan="1" colspan="2">
+                            <property name="name">
+                                <cstring>cbInternalNetworkName_WIN</cstring>
+                            </property>
+                            <property name="editable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="insertionPolicy">
+                                <enum>NoInsertion</enum>
+                            </property>
+                            <property name="autoCompletion">
+                                <bool>true</bool>
+                            </property>
+                            <property name="duplicatesEnabled">
+                                <bool>false</bool>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Displays the name of the internal network selected for this adapter.</string>
                             </property>
                         </widget>
                     </grid>
@@ -527,6 +566,67 @@
                 </widget>
             </vbox>
         </widget>
+        <widget class="QGroupBox">
+            <property name="name">
+                <cstring>grbIntNet</cstring>
+            </property>
+            <property name="title">
+                <string>Internal Network Settings</string>
+            </property>
+            <property name="flat">
+                <bool>false</bool>
+            </property>
+            <hbox>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>txInternalNetwork_X11</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;Network Name</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>cbInternalNetworkName_X11</cstring>
+                    </property>
+                </widget>
+                <widget class="QComboBox">
+                    <property name="name">
+                        <cstring>cbInternalNetworkName_X11</cstring>
+                    </property>
+                    <property name="editable">
+                        <bool>true</bool>
+                    </property>
+                    <property name="insertionPolicy">
+                        <enum>NoInsertion</enum>
+                    </property>
+                    <property name="autoCompletion">
+                        <bool>true</bool>
+                    </property>
+                    <property name="duplicatesEnabled">
+                        <bool>false</bool>
+                    </property>
+                </widget>
+            </hbox>
+        </widget>
+        <spacer>
+            <property name="name">
+                <cstring>spacer5</cstring>
+            </property>
+            <property name="orientation">
+                <enum>Vertical</enum>
+            </property>
+            <property name="sizeType">
+                <enum>Expanding</enum>
+            </property>
+            <property name="sizeHint">
+                <size>
+                    <width>0</width>
+                    <height>0</height>
+                </size>
+            </property>
+        </spacer>
     </vbox>
 </widget>
 <connections>
@@ -558,6 +658,7 @@
 <tabstops>
     <tabstop>cbNetworkAttachment</tabstop>
     <tabstop>cbHostInterfaceName</tabstop>
+    <tabstop>cbInternalNetworkName_WIN</tabstop>
     <tabstop>leMACAddress</tabstop>
 </tabstops>
 <includes>
@@ -582,8 +683,9 @@
 </slots>
 <functions>
     <function access="private" specifier="non virtual">init()</function>
-    <function returnType="bool">isPageValid( const QStringList &amp; )</function>
-    <function>loadList( const QStringList &amp;, const QString &amp; )</function>
+    <function returnType="int">checkPage( const QStringList &amp; )</function>
+    <function>loadInterfaceList( const QStringList &amp;, const QString &amp; )</function>
+    <function>loadNetworksList( const QStringList &amp; )</function>
     <function>getFromAdapter( const CNetworkAdapter &amp; )</function>
     <function>putBackToAdapter()</function>
     <function>setValidator( QIWidgetValidator* )</function>
