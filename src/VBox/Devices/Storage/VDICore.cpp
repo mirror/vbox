@@ -111,7 +111,7 @@ static int vdiValidatePreHeader(PVDIPREHEADER pPreHdr)
     if (pPreHdr->u32Signature != VDI_IMAGE_SIGNATURE)
         return VERR_VDI_INVALID_SIGNATURE;
 
-    if (    pPreHdr->u32Version != VDI_IMAGE_VERSION
+    if (    VDI_GET_VERSION_MAJOR(pPreHdr->u32Version) != VDI_IMAGE_VERSION_MAJOR
         &&  pPreHdr->u32Version != 0x00000002)    /* old version. */
         return VERR_VDI_UNSUPPORTED_VERSION;
 
@@ -142,12 +142,12 @@ static void vdiInitHeader(PVDIHEADER pHeader, VDIIMAGETYPE enmType, uint32_t fFl
         strncat(pHeader->u.v1.szComment, pszComment, sizeof(pHeader->u.v1.szComment));
     }
 
-    /* Mark the geometry not-calculated. */
-    pHeader->u.v1.LCHSGeometry.cCylinders = 0;
-    pHeader->u.v1.LCHSGeometry.cHeads = 0;
-    pHeader->u.v1.LCHSGeometry.cSectors = 0;
-    pHeader->u.v1.LCHSGeometry.cbSector = VDI_GEOMETRY_SECTOR_SIZE;
-    pHeader->u.v1.u32Dummy = 0;
+    /* Mark the legacy geometry not-calculated. */
+    pHeader->u.v1.LegacyGeometry.cCylinders = 0;
+    pHeader->u.v1.LegacyGeometry.cHeads = 0;
+    pHeader->u.v1.LegacyGeometry.cSectors = 0;
+    pHeader->u.v1.LegacyGeometry.cbSector = VDI_GEOMETRY_SECTOR_SIZE;
+    pHeader->u.v1.u32Dummy = 0; /* used to be the translation value */
 
     pHeader->u.v1.cbDisk = cbDisk;
     pHeader->u.v1.cbBlock = cbBlock;
@@ -166,6 +166,12 @@ static void vdiInitHeader(PVDIHEADER pHeader, VDIIMAGETYPE enmType, uint32_t fFl
     RTUuidClear(&pHeader->u.v1.uuidModify);
     RTUuidClear(&pHeader->u.v1.uuidLinkage);
     RTUuidClear(&pHeader->u.v1.uuidParentModify);
+
+    /* Mark LCHS geometry not-calculated. */
+    pHeader->u.v1plus.LCHSGeometry.cCylinders = 0;
+    pHeader->u.v1plus.LCHSGeometry.cHeads = 0;
+    pHeader->u.v1plus.LCHSGeometry.cSectors = 0;
+    pHeader->u.v1plus.LCHSGeometry.cbSector = VDI_GEOMETRY_SECTOR_SIZE;
 }
 
 /**
@@ -245,7 +251,8 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
         fFailed = true;
     }
 
-    if ((getImageLCHSGeometry(pHeader))->cbSector != VDI_GEOMETRY_SECTOR_SIZE)
+    if (   getImageLCHSGeometry(pHeader)
+        && (getImageLCHSGeometry(pHeader))->cbSector != VDI_GEOMETRY_SECTOR_SIZE)
     {
         LogRel(("VDI: wrong sector size (%d != %d)\n",
                (getImageLCHSGeometry(pHeader))->cbSector, VDI_GEOMETRY_SECTOR_SIZE));
@@ -354,7 +361,7 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
         ||  enmType == VDI_IMAGE_TYPE_DIFF)
     {
         Assert(pParent);
-        if ((pParent->PreHeader.u32Version >> 16) != VDI_IMAGE_VERSION_MAJOR)
+        if (VDI_GET_VERSION_MAJOR(pParent->PreHeader.u32Version) != VDI_IMAGE_VERSION_MAJOR)
         {
             /* Invalid parent image version. */
             Log(("vdiCreateImage: unsupported parent version=%08X\n", pParent->PreHeader.u32Version));
@@ -450,7 +457,7 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
             goto l_create_failed;
 
         /* Write header. */
-        rc = RTFileWrite(pImage->File, &pImage->Header.u.v1, sizeof(pImage->Header.u.v1), NULL);
+        rc = RTFileWrite(pImage->File, &pImage->Header.u.v1plus, sizeof(pImage->Header.u.v1plus), NULL);
         if (VBOX_FAILURE(rc))
             goto l_create_failed;
 
@@ -623,7 +630,36 @@ static int vdiOpenImage(PVDIIMAGEDESC *ppImage, const char *pszFilename,
             rc = RTFileRead(pImage->File, &pImage->Header.u.v0, sizeof(pImage->Header.u.v0), NULL);
             break;
         case 1:
-            rc = RTFileRead(pImage->File, &pImage->Header.u.v1, sizeof(pImage->Header.u.v1), NULL);
+            switch (GET_MINOR_HEADER_VERSION(&pImage->Header))
+            {
+                case 1:
+                    rc = RTFileRead(pImage->File, &pImage->Header.u.v1, sizeof(pImage->Header.u.v1), NULL);
+                    /* Convert VDI 1.1 images to VDI 1.1+ on open in read/write
+                     * mode. Conversion is harmless, as any VirtualBox version
+                     * supporting VDI 1.1 doesn't touch fields it doesn't know
+                     * about. And it accepts bigger headers. */
+                    if (   VBOX_SUCCESS(rc)
+                        && !pImage->fReadOnly
+                        && pImage->Header.u.v1.cbHeader < sizeof(pImage->Header.u.v1plus))
+                    {
+                        pImage->Header.u.v1plus.cbHeader = sizeof(pImage->Header.u.v1plus);
+                        /* Mark LCHS geometry not-calculated. */
+                        pImage->Header.u.v1plus.LCHSGeometry.cCylinders = 0;
+                        pImage->Header.u.v1plus.LCHSGeometry.cHeads = 0;
+                        pImage->Header.u.v1plus.LCHSGeometry.cSectors = 0;
+                        pImage->Header.u.v1plus.LCHSGeometry.cbSector = VDI_GEOMETRY_SECTOR_SIZE;
+                    }
+                    else if (   VBOX_SUCCESS(rc)
+                             && pImage->Header.u.v1.cbHeader >= sizeof(pImage->Header.u.v1plus))
+                    {
+                        /* Read the actual VDI 1.1+ header completely. */
+                        rc = RTFileReadAt(pImage->File, sizeof(pImage->PreHeader), &pImage->Header.u.v1plus, sizeof(pImage->Header.u.v1plus), NULL);
+                    }
+                    break;
+                default:
+                    rc = VERR_VDI_UNSUPPORTED_VERSION;
+                    break;
+            }
             break;
         default:
             rc = VERR_VDI_UNSUPPORTED_VERSION;
@@ -752,7 +788,18 @@ static int vdiUpdateHeader(PVDIIMAGEDESC pImage)
                 rc = RTFileWrite(pImage->File, &pImage->Header.u.v0, sizeof(pImage->Header.u.v0), NULL);
                 break;
             case 1:
-                rc = RTFileWrite(pImage->File, &pImage->Header.u.v1, sizeof(pImage->Header.u.v1), NULL);
+                switch (GET_MAJOR_HEADER_VERSION(&pImage->Header))
+                {
+                    case 1:
+                        if (pImage->Header.u.v1plus.cbHeader < sizeof(pImage->Header.u.v1plus))
+                            rc = RTFileWrite(pImage->File, &pImage->Header.u.v1, sizeof(pImage->Header.u.v1), NULL);
+                        else
+                            rc = RTFileWrite(pImage->File, &pImage->Header.u.v1plus, sizeof(pImage->Header.u.v1plus), NULL);
+                        break;
+                    default:
+                        rc = VERR_VDI_UNSUPPORTED_VERSION;
+                        break;
+                }
                 break;
             default:
                 rc = VERR_VDI_UNSUPPORTED_VERSION;
@@ -2265,7 +2312,13 @@ VBOXDDU_DECL(int) VDIConvertImage(const char *pszFilename, PFNVMPROGRESS pfnProg
                   getImageBlockSize(&pImage->Header),
                   0);
     setImageBlocksAllocated(&Header, getImageBlocksAllocated(&pImage->Header));
-    *getImageLCHSGeometry(&Header) = *getImageLCHSGeometry(&pImage->Header);
+    /* Set both the LCHSGeometry and LegacyGeometry. If they're wrong they
+     * will be fixed later when the image is used. */
+    if (getImageLCHSGeometry(&pImage->Header))
+    {
+        Header.u.v1.LegacyGeometry = *getImageLCHSGeometry(&pImage->Header);
+        Header.u.v1plus.LCHSGeometry = *getImageLCHSGeometry(&pImage->Header);
+    }
     *getImageCreationUUID(&Header) = *getImageCreationUUID(&pImage->Header);
     *getImageModificationUUID(&Header) = *getImageModificationUUID(&pImage->Header);
 
@@ -2865,7 +2918,11 @@ VBOXDDU_DECL(int) VDIDiskGetLCHSGeometry(PVDIDISK pDisk, PPDMMEDIAGEOMETRY pLCHS
     if (pDisk->pBase)
     {
         int rc = VINF_SUCCESS;
+        VDIDISKGEOMETRY DummyGeo = { 0, 0, 0, VDI_GEOMETRY_SECTOR_SIZE };
         PVDIDISKGEOMETRY pGeometry = getImageLCHSGeometry(&pDisk->pBase->Header);
+        if (!pGeometry)
+            pGeometry = &DummyGeo;
+
         LogFlow(("%s: C/H/S = %u/%u/%u\n",
                  __FUNCTION__, pGeometry->cCylinders, pGeometry->cHeads, pGeometry->cSectors));
         if (    pGeometry->cCylinders > 0
@@ -2906,14 +2963,18 @@ VBOXDDU_DECL(int) VDIDiskSetLCHSGeometry(PVDIDISK pDisk, PCPDMMEDIAGEOMETRY pLCH
 
     if (pDisk->pBase)
     {
+        int rc = VINF_SUCCESS;
         PVDIDISKGEOMETRY pGeometry = getImageLCHSGeometry(&pDisk->pBase->Header);
-        pGeometry->cCylinders = pLCHSGeometry->cCylinders;
-        pGeometry->cHeads = pLCHSGeometry->cHeads;
-        pGeometry->cSectors = pLCHSGeometry->cSectors;
-        pGeometry->cbSector = VDI_GEOMETRY_SECTOR_SIZE;
+        if (pGeometry)
+        {
+            pGeometry->cCylinders = pLCHSGeometry->cCylinders;
+            pGeometry->cHeads = pLCHSGeometry->cHeads;
+            pGeometry->cSectors = pLCHSGeometry->cSectors;
+            pGeometry->cbSector = VDI_GEOMETRY_SECTOR_SIZE;
 
-        /* Update header information in base image file. */
-        int rc = vdiUpdateReadOnlyHeader(pDisk->pBase);
+            /* Update header information in base image file. */
+            rc = vdiUpdateReadOnlyHeader(pDisk->pBase);
+        }
         LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
         return rc;
     }
@@ -3581,8 +3642,9 @@ static void vdiDumpImage(PVDIIMAGEDESC pImage)
                 getImageBlocksOffset(&pImage->Header),
                 getImageDataOffset(&pImage->Header));
     PVDIDISKGEOMETRY pg = getImageLCHSGeometry(&pImage->Header);
-    RTLogPrintf("Header: Geometry: C/H/S=%u/%u/%u cbSector=%u\n",
-                pg->cCylinders, pg->cHeads, pg->cSectors, pg->cbSector);
+    if (pg)
+        RTLogPrintf("Header: Geometry: C/H/S=%u/%u/%u cbSector=%u\n",
+                    pg->cCylinders, pg->cHeads, pg->cSectors, pg->cbSector);
     RTLogPrintf("Header: uuidCreation={%Vuuid}\n", getImageCreationUUID(&pImage->Header));
     RTLogPrintf("Header: uuidModification={%Vuuid}\n", getImageModificationUUID(&pImage->Header));
     RTLogPrintf("Header: uuidParent={%Vuuid}\n", getImageParentUUID(&pImage->Header));
