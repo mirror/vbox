@@ -104,8 +104,8 @@ typedef struct VDIHEADER0
     uint32_t        fFlags;
     /** Image comment. (UTF-8) */
     char            szComment[VDI_IMAGE_COMMENT_SIZE];
-    /** Image geometry. */
-    VDIDISKGEOMETRY LCHSGeometry;
+    /** Legacy image geometry (previous code stored PCHS there). */
+    VDIDISKGEOMETRY LegacyGeometry;
     /** Size of disk (in bytes). */
     uint64_t        cbDisk;
     /** Block size. (For instance VDI_IMAGE_BLOCK_SIZE.) */
@@ -124,8 +124,8 @@ typedef struct VDIHEADER0
 #pragma pack()
 
 /**
- * Header to be stored in image file, VDI_IMAGE_VERSION_MAJOR = 1.
- * Prepended by VDIPREHEADER.
+ * Header to be stored in image file, VDI_IMAGE_VERSION_MAJOR = 1,
+ * VDI_IMAGE_VERSION_MINOR = 1. Prepended by VDIPREHEADER.
  */
 #pragma pack(1)
 typedef struct VDIHEADER1
@@ -144,8 +144,8 @@ typedef struct VDIHEADER1
     /** Offset of image data from the begining of image file.
      * Should be sector-aligned for HDD access optimization. */
     uint32_t        offData;
-    /** Image geometry. */
-    VDIDISKGEOMETRY LCHSGeometry;
+    /** Legacy image geometry (previous code stored PCHS there). */
+    VDIDISKGEOMETRY LegacyGeometry;
     /** Was BIOS HDD translation mode, now unused. */
     uint32_t        u32Dummy;
     /** Size of disk (in bytes). */
@@ -172,6 +172,57 @@ typedef struct VDIHEADER1
 #pragma pack()
 
 /**
+ * Header to be stored in image file, VDI_IMAGE_VERSION_MAJOR = 1,
+ * VDI_IMAGE_VERSION_MINOR = 1, the slightly changed variant necessary as the
+ * old released code doesn't support changing the minor version at all.
+ */
+#pragma pack(1)
+typedef struct VDIHEADER1PLUS
+{
+    /** Size of this structure in bytes. */
+    uint32_t        cbHeader;
+    /** The image type (VDI_IMAGE_TYPE_*). */
+    uint32_t        u32Type;
+    /** Image flags (VDI_IMAGE_FLAGS_*). */
+    uint32_t        fFlags;
+    /** Image comment. (UTF-8) */
+    char            szComment[VDI_IMAGE_COMMENT_SIZE];
+    /** Offset of Blocks array from the begining of image file.
+     * Should be sector-aligned for HDD access optimization. */
+    uint32_t        offBlocks;
+    /** Offset of image data from the begining of image file.
+     * Should be sector-aligned for HDD access optimization. */
+    uint32_t        offData;
+    /** Legacy image geometry (previous code stored PCHS there). */
+    VDIDISKGEOMETRY LegacyGeometry;
+    /** Was BIOS HDD translation mode, now unused. */
+    uint32_t        u32Dummy;
+    /** Size of disk (in bytes). */
+    uint64_t        cbDisk;
+    /** Block size. (For instance VDI_IMAGE_BLOCK_SIZE.) Should be a power of 2! */
+    uint32_t        cbBlock;
+    /** Size of additional service information of every data block.
+     * Prepended before block data. May be 0.
+     * Should be a power of 2 and sector-aligned for optimization reasons. */
+    uint32_t        cbBlockExtra;
+    /** Number of blocks. */
+    uint32_t        cBlocks;
+    /** Number of allocated blocks. */
+    uint32_t        cBlocksAllocated;
+    /** UUID of image. */
+    RTUUID          uuidCreate;
+    /** UUID of image's last modification. */
+    RTUUID          uuidModify;
+    /** Only for secondary images - UUID of previous image. */
+    RTUUID          uuidLinkage;
+    /** Only for secondary images - UUID of previous image's last modification. */
+    RTUUID          uuidParentModify;
+    /** LCHS image geometry (new field in VDI1.2 version. */
+    VDIDISKGEOMETRY LCHSGeometry;
+} VDIHEADER1PLUS, *PVDIHEADER1PLUS;
+#pragma pack()
+
+/**
  * Header structure for all versions.
  */
 typedef struct VDIHEADER
@@ -181,6 +232,7 @@ typedef struct VDIHEADER
     {
         VDIHEADER0    v0;
         VDIHEADER1    v1;
+        VDIHEADER1PLUS v1plus;
     } u;
 } VDIHEADER, *PVDIHEADER;
 
@@ -275,8 +327,16 @@ DECLINLINE(PVDIDISKGEOMETRY) getImageLCHSGeometry(PVDIHEADER ph)
 {
     switch (GET_MAJOR_HEADER_VERSION(ph))
     {
-        case 0: return &ph->u.v0.LCHSGeometry;
-        case 1: return &ph->u.v1.LCHSGeometry;
+        case 0: return NULL;
+        case 1:
+            switch (GET_MINOR_HEADER_VERSION(ph))
+            {
+                case 1:
+		    if (ph->u.v1.cbHeader < sizeof(ph->u.v1plus))
+                        return NULL;
+		    else
+                        return &ph->u.v1plus.LCHSGeometry;
+            }
     }
     AssertFailed();
     return NULL;
