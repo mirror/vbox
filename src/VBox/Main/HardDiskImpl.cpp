@@ -421,7 +421,7 @@ STDMETHODIMP HardDisk::CloneToImage (INPTR BSTR aFilePath,
     /* create a project object */
     ComObjPtr <Progress> progress;
     progress.createObject();
-    rc = progress->init (mVirtualBox, (IVirtualDiskImage *) this,
+    rc = progress->init (mVirtualBox, static_cast <IHardDisk *> (this),
                          Bstr (tr ("Creating a hard disk clone")),
                          FALSE /* aCancelable */);
     CheckComRCReturnRC (rc);
@@ -2645,8 +2645,8 @@ HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
     {
         Bstr desc = aDynamic ? tr ("Creating a dynamically expanding hard disk")
                              : tr ("Creating a fixed-size hard disk");
-        rc = progress->init (mVirtualBox, (IVirtualDiskImage *) this, desc,
-                             FALSE /* aCancelable */);
+        rc = progress->init (mVirtualBox, static_cast <IVirtualDiskImage *> (this),
+                             desc, FALSE /* aCancelable */);
         CheckComRCReturnRC (rc);
     }
 
