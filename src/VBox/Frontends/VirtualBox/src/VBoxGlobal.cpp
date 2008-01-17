@@ -563,8 +563,6 @@ public:
         mDisagreeButton = new QPushButton (tr ("I &Disagree"), this);
 
         mLicenseText->setTextFormat (Qt::RichText);
-        mAgreeButton->setEnabled (false);
-        mDisagreeButton->setEnabled (false);
 
         connect (mLicenseText->verticalScrollBar(), SIGNAL (valueChanged (int)),
                  SLOT (onScrollBarMoving (int)));
@@ -579,6 +577,8 @@ public:
                                                       QSizePolicy::Preferred));
         buttonLayout->addWidget (mAgreeButton);
         buttonLayout->addWidget (mDisagreeButton);
+
+        mLicenseText->verticalScrollBar()->installEventFilter (this);
 
         resize (600, 450);
     }
@@ -606,13 +606,39 @@ private slots:
     void onScrollBarMoving (int aValue)
     {
         if (aValue == mLicenseText->verticalScrollBar()->maxValue())
-        {
-            mAgreeButton->setEnabled (true);
-            mDisagreeButton->setEnabled (true);
-        }
+            unlockButtons();
+    }
+
+    void unlockButtons()
+    {
+        mAgreeButton->setEnabled (true);
+        mDisagreeButton->setEnabled (true);
     }
 
 private:
+
+    void showEvent (QShowEvent *aEvent)
+    {
+        QDialog::showEvent (aEvent);
+        bool isScrollBarHidden = mLicenseText->verticalScrollBar()->isHidden()
+                                 && !(windowState() & WindowMinimized);
+        mAgreeButton->setEnabled (isScrollBarHidden);
+        mDisagreeButton->setEnabled (isScrollBarHidden);
+    }
+
+    bool eventFilter (QObject *aObject, QEvent *aEvent)
+    {
+        switch (aEvent->type())
+        {
+            case QEvent::Hide:
+                if (aObject == mLicenseText->verticalScrollBar() &&
+                    (windowState() & WindowActive))
+                    unlockButtons();
+            default:
+                break;
+        }
+        return QDialog::eventFilter (aObject, aEvent);
+    }
 
     QString       mFilePath;
     QTextBrowser *mLicenseText;
