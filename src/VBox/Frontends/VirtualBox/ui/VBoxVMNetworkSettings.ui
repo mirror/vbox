@@ -671,6 +671,7 @@
     <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
 </includes>
 <variables>
+    <variable access="public">enum CheckPageResult { NoErrors, IncorrectInterface, MissedNetworkName };</variable>
     <variable access="private">CNetworkAdapter cadapter;</variable>
     <variable access="private">QIWidgetValidator *mWalidator;</variable>
 </variables>
@@ -683,7 +684,7 @@
 </slots>
 <functions>
     <function access="private" specifier="non virtual">init()</function>
-    <function returnType="int">checkPage( const QStringList &amp; )</function>
+    <function returnType="CheckPageResult">checkPage( const QStringList &amp; )</function>
     <function>loadInterfaceList( const QStringList &amp;, const QString &amp; )</function>
     <function>loadNetworksList( const QStringList &amp; )</function>
     <function>getFromAdapter( const CNetworkAdapter &amp; )</function>
