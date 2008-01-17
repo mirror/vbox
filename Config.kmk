@@ -323,7 +323,7 @@ ifeq ($(BUILD_TARGET),solaris)
  VBOX_WITH_TESTSUITE=
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=
- #VBOX_WITH_DOCS=
+ VBOX_WITH_OGL=
 endif
 
 ifeq ($(BUILD_TARGET),freebsd)

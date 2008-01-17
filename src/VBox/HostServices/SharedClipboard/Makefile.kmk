@@ -35,8 +35,12 @@ VBoxSharedClipboard_SOURCES.win = \
 ifndef VBOX_HEADLESS
 VBoxSharedClipboard_SOURCES.linux = \
 	linux.cpp
+VBoxSharedClipboard_SOURCES.solaris = \
+	linux.cpp
 else
 VBoxSharedClipboard_SOURCES.linux = \
+	linux-stub.cpp
+VBoxSharedClipboard_SOURCES.solaris = \
 	linux-stub.cpp
 endif
 
@@ -47,7 +51,12 @@ VBoxSharedClipboard_LIBS = \
 ifndef VBOX_HEADLESS
 VBoxSharedClipboard_LIBPATH.linux = \
 	$(VBOX_LIBPATH_X11)
+VBoxSharedClipboard_LIBPATH.solaris = \
+	$(VBOX_LIBPATH_X11)
 VBoxSharedClipboard_LIBS.linux = \
+	Xt \
+	X11
+VBoxSharedClipboard_LIBS.solaris = \
 	Xt \
 	X11
 endif
