@@ -1341,7 +1341,8 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
         progressDesc = tr ("Restoring the virtual machine");
     else
         progressDesc = tr ("Starting the virtual machine");
-    progress->init ((IConsole *) this, progressDesc, FALSE /* aCancelable */);
+    progress->init (static_cast <IConsole *> (this),
+                    progressDesc, FALSE /* aCancelable */);
 
     /* pass reference to caller if requested */
     if (aProgress)
@@ -1617,7 +1618,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
     /* create a progress object to track operation completion */
     ComObjPtr <Progress> progress;
     progress.createObject();
-    progress->init ((IConsole *) this,
+    progress->init (static_cast <IConsole *> (this),
                     Bstr (tr ("Saving the execution state of the virtual machine")),
                     FALSE /* aCancelable */);
 
@@ -2227,7 +2228,7 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
         if (takingSnapshotOnline)
         {
             combinedProgress.createObject();
-            rc = combinedProgress->init ((IConsole *) this,
+            rc = combinedProgress->init (static_cast <IConsole *> (this),
                                          Bstr (tr ("Taking snapshot of virtual machine")),
                                          serverProgress, saveProgress);
             AssertComRCBreakRC (rc);

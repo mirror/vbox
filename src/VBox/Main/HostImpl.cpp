@@ -839,7 +839,7 @@ Host::CreateHostNetworkInterface (INPTR BSTR aName,
     /* create a progress object */
     ComObjPtr <Progress> progress;
     progress.createObject();
-    rc = progress->init (mParent, (IHost *) this,
+    rc = progress->init (mParent, static_cast <IHost *> (this),
                          Bstr (tr ("Creating host network interface")),
                          FALSE /* aCancelable */);
     CheckComRCReturnRC (rc);
@@ -907,7 +907,7 @@ Host::RemoveHostNetworkInterface (INPTR GUIDPARAM aId,
     /* create a progress object */
     ComObjPtr <Progress> progress;
     progress.createObject();
-    rc = progress->init (mParent, (IHost *) this,
+    rc = progress->init (mParent, static_cast <IHost *> (this),
                         Bstr (tr ("Removing host network interface")),
                         FALSE /* aCancelable */);
     CheckComRCReturnRC (rc);

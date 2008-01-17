@@ -1949,7 +1949,7 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
     /* create a progress object */
     ComObjPtr <Progress> progress;
     progress.createObject();
-    progress->init (this, (IMachine *) machine,
+    progress->init (this, static_cast <IMachine *> (machine),
                     Bstr (tr ("Spawning session")),
                     FALSE /* aCancelable */);
 
