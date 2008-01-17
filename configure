@@ -1496,7 +1496,7 @@ check_gcc
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
 [ $OSE -eq 0         ] && check_ssl
 [ "$OS" != "darwin"  ] && check_z
-[ $OSE -eq 0 ]         && check_png
+check_png
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
 [ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
