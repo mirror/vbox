@@ -913,7 +913,7 @@ int main()
     GEN_CHECK_OFF(AHCI, regHbaVs);
     GEN_CHECK_OFF(AHCI, ahciPort);
     GEN_CHECK_OFF(AHCI, ahciPort[AHCI_NR_PORTS_IMPL-1]);
-    GEN_CHECK_OFF(AHCI, fInterruptPending);
+    GEN_CHECK_OFF(AHCI, u32PortsInterrupted);
     GEN_CHECK_OFF(AHCI, f64BitAddr);
     GEN_CHECK_OFF(AHCI, fGCEnabled);
     GEN_CHECK_OFF(AHCI, fR0Enabled);
