@@ -627,7 +627,12 @@ static void vboxClipboardGetCText(XtPointer pValue, unsigned cbSrcLen, void *pv,
     property.encoding = g_ctx.atomCText;
     property.format = 8;
     property.nitems = cbSrcLen;
+#ifdef RT_OS_SOLARIS
+    rc = XConverterNotFound;
+    NOREF(cProps);
+#else
     rc = Xutf8TextPropertyToTextList(XtDisplay(g_ctx.widget), &property, &ppu8SrcText, &cProps);
+#endif
     XtFree(reinterpret_cast<char *>(pValue));
     if (rc < 0)
     {
@@ -1407,8 +1412,12 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
         return false;
     }
     /* And finally (!) convert the Utf8 text to compound text. */
+#ifdef RT_OS_SOLARIS
+    rc = XConverterNotFound;
+#else
     rc = Xutf8TextListToTextProperty(XtDisplay(g_ctx.widget), &pu8DestText, 1,
                                      XCompoundTextStyle, &property);
+#endif
     RTMemFree(pu8DestText);
     if (rc < 0)
     {
