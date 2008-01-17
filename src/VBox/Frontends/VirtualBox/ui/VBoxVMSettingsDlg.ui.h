@@ -1529,8 +1529,9 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
         if (!valid)
         {
             Assert (tab);
-            warningText = error == 1 ?
-                tr ("Incorrect host network interface is selected") : error == 2 ?
+            warningText = error == VBoxVMNetworkSettings::IncorrectInterface ?
+                tr ("Incorrect host network interface is selected") :
+                error == VBoxVMNetworkSettings::MissedNetworkName ?
                 tr ("Internal network name is not set") : QString::null;
             pageTitle += ": " + tbwNetwork->tabLabel (tab);
         }
