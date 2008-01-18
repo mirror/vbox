@@ -1517,7 +1517,8 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
     else if (pg == pageNetwork)
     {
         QWidget *tab = NULL;
-        int error = 0;
+        VBoxVMNetworkSettings::CheckPageResult error =
+                VBoxVMNetworkSettings::CheckPage_Ok;
         for (int index = 0; index < tbwNetwork->count(); ++ index)
         {
             tab = tbwNetwork->page (index);
@@ -1530,10 +1531,12 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
         if (!valid)
         {
             Assert (tab);
-            warningText = error == VBoxVMNetworkSettings::IncorrectInterface ?
-                tr ("Incorrect host network interface is selected") :
-                error == VBoxVMNetworkSettings::MissedNetworkName ?
-                tr ("Internal network name is not set") : QString::null;
+            warningText =
+                error == VBoxVMNetworkSettings::CheckPage_InvalidInterface ?
+                    tr ("Incorrect host network interface is selected") :
+                error == VBoxVMNetworkSettings::CheckPage_NoNetworkName ?
+                    tr ("Internal network name is not set") :
+                QString::null;
             pageTitle += ": " + tbwNetwork->tabLabel (tab);
         }
     }

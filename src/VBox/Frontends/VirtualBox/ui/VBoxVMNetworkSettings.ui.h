@@ -72,23 +72,24 @@ void VBoxVMNetworkSettings::init()
 #endif
 }
 
-VBoxVMNetworkSettings::CheckPageResult VBoxVMNetworkSettings::checkPage (const QStringList &aList)
+VBoxVMNetworkSettings::CheckPageResult
+VBoxVMNetworkSettings::checkPage (const QStringList &aList)
 {
     CEnums::NetworkAttachmentType type =
         vboxGlobal().toNetworkAttachmentType (cbNetworkAttachment->currentText());
 #if defined Q_WS_WIN
     if (type == CEnums::HostInterfaceNetworkAttachment &&
         isInterfaceInvalid (aList, cbHostInterfaceName->currentText()))
-        return IncorrectInterface;
+        return CheckPage_InvalidInterface;
     else
 #else
     NOREF (aList);
 #endif
     if (type == CEnums::InternalNetworkAttachment &&
         cbInternalNetworkName->currentText().isEmpty())
-        return MissedNetworkName;
+        return CheckPage_NoNetworkName;
     else
-        return NoErrors;
+        return CheckPage_Ok;
 }
 
 void VBoxVMNetworkSettings::loadInterfaceList (const QStringList &aList,
