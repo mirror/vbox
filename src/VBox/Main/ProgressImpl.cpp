@@ -746,6 +746,9 @@ HRESULT Progress::advanceOperation (const BSTR aOperationDescription)
  *
  *  If the result code indicates a success (|SUCCEEDED (@a aResultCode)|)
  *  then the current operation is set to the last
+ *  
+ *  Note that this method may be called only once for the given Progress object.
+ *  Subsequent calls will assert.
  *
  *  @param aResultCode  Operation result code
  */
@@ -753,6 +756,8 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode)
 {
     AutoLock lock (this);
     AssertReturn (isReady(), E_FAIL);
+
+    AssertReturn (mCompleted == FALSE, E_FAIL);
 
     mCompleted = TRUE;
     mResultCode = aResultCode;
