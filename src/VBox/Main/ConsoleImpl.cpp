@@ -1994,7 +1994,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
 }
 
 STDMETHODIMP
-Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, bool aWritable)
+Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable)
 {
     if (!aName || !aHostPath)
         return E_INVALIDARG;
