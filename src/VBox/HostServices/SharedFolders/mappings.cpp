@@ -27,7 +27,7 @@ MAPPING FolderMapping[SHFL_MAX_MAPPINGS];
  * We are always executed from one specific HGCM thread. So thread safe.
  *
  */
-int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName)
+int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWritable)
 {
     int i;
 
@@ -72,6 +72,7 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName)
 
             FolderMapping[i].fValid    = true;
             FolderMapping[i].cMappings = 0;
+            FolderMapping[i].fWritable = fWritable;
 
             /* Check if the host file system is case sensitive */
             RTFSPROPERTIES prop;
@@ -227,6 +228,26 @@ int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *p
         rc = VERR_FILE_NOT_FOUND;
 
     LogFlow(("vbsfMappingsQuery:Name return rc = %Vrc\n", rc));
+
+    return rc;
+}
+
+int vbsfMappingsQueryWritable (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWritable)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlow(("vbsfMappingsQueryWritable: pClient = %p, root = %d\n",
+             pClient, root));
+
+    if (root >= SHFL_MAX_MAPPINGS)
+        return VERR_INVALID_PARAMETER;
+
+    if (FolderMapping[root].fValid == true)
+        *fWritable = FolderMapping[root].fWritable;
+    else
+        rc = VERR_FILE_NOT_FOUND;
+
+    LogFlow(("vbsfMappingsQuery:Writable return rc = %Vrc\n", rc));
 
     return rc;
 }

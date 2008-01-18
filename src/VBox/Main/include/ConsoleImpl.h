@@ -133,7 +133,7 @@ public:
                                  DeviceActivity_T *aDeviceActivity);
     STDMETHOD(AttachUSBDevice) (INPTR GUIDPARAM aId);
     STDMETHOD(DetachUSBDevice) (INPTR GUIDPARAM aId, IUSBDevice **aDevice);
-    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath);
+    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable);
     STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
     STDMETHOD(TakeSnapshot) (INPTR BSTR aName, INPTR BSTR aDescription,
                              IProgress **aProgress);
@@ -352,8 +352,21 @@ public:
      */
     typedef SafeVMPtrBase <true> SafeVMPtrQuiet;
 
+    class SharedFolderData
+    {
+    public:
+        SharedFolderData() {}
+        SharedFolderData(Bstr aHostPath, BOOL aWritable)
+           : mHostPath (aHostPath)
+           , mWritable (aWritable) {}
+        SharedFolderData(const SharedFolderData& aThat)
+           : mHostPath (aThat.mHostPath)
+           , mWritable (aThat.mWritable) {}
+        Bstr mHostPath;
+        BOOL mWritable;
+    };
     typedef std::map <Bstr, ComObjPtr <SharedFolder> > SharedFolderMap;
-    typedef std::map <Bstr, Bstr> SharedFolderDataMap;
+    typedef std::map <Bstr, SharedFolderData> SharedFolderDataMap;
 
 private:
 
@@ -385,7 +398,7 @@ private:
     bool findOtherSharedFolder (INPTR BSTR aName,
                                 SharedFolderDataMap::const_iterator &aIt);
 
-    HRESULT createSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath);
+    HRESULT createSharedFolder (INPTR BSTR aName, SharedFolderData aData);
     HRESULT removeSharedFolder (INPTR BSTR aName);
 
     static DECLCALLBACK(int) configConstructor(PVM pVM, void *pvConsole);

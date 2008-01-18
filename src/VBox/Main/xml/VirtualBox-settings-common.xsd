@@ -629,6 +629,7 @@
 <xsd:complexType name="TSharedFolder">
   <xsd:attribute name="name" type="TNonEmptyString" use="required"/>
   <xsd:attribute name="hostPath" type="TLocalFile" use="required"/>
+  <xsd:attribute name="writable" type="xsd:boolean" default="true"/>
 </xsd:complexType>
 
 <xsd:complexType name="TSharedFolders">
