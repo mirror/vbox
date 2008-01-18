@@ -403,6 +403,7 @@ void VBoxSharedFoldersSettings::removeSharedFolder (const QString & aName,
 
 void VBoxSharedFoldersSettings::createSharedFolder (const QString & aName,
                                                     const QString & aPath,
+                                                    bool aWritable,
                                                     SFDialogType aType)
 {
     switch (aType)
@@ -416,7 +417,7 @@ void VBoxSharedFoldersSettings::createSharedFolder (const QString & aName,
         case MachineType:
         {
             Assert (!mMachine.isNull());
-            mMachine.CreateSharedFolder (aName, aPath);
+            mMachine.CreateSharedFolder (aName, aPath, aWritable);
             if (!mMachine.isOk())
                 vboxProblem().cannotCreateSharedFolder (this, mMachine,
                                                         aName, aPath);
@@ -425,7 +426,7 @@ void VBoxSharedFoldersSettings::createSharedFolder (const QString & aName,
         case ConsoleType:
         {
             Assert (!mConsole.isNull());
-            mConsole.CreateSharedFolder (aName, aPath);
+            mConsole.CreateSharedFolder (aName, aPath, aWritable);
             if (!mConsole.isOk())
                 vboxProblem().cannotCreateSharedFolder (this, mConsole,
                                                         aName, aPath);
@@ -572,7 +573,7 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
             item = static_cast<VBoxRichListItem*> (iterator);
         if (item && !item->getText (0).isNull() && !item->getText (1).isNull()
             && item->getText (2) == "edited")
-            createSharedFolder (item->getText (0), item->getText (1), type);
+            createSharedFolder (item->getText (0), item->getText (1), true, type);
         iterator = iterator->nextSibling();
     }
 }

@@ -1017,6 +1017,20 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
                     pParms->CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
                 }
             }
+
+            /* write access requested? */
+            if (pParms->CreateFlags & (  SHFL_CF_ACT_REPLACE_IF_EXISTS
+                                       | SHFL_CF_ACT_OVERWRITE_IF_EXISTS
+                                       | SHFL_CF_ACT_CREATE_IF_NEW
+                                       | SHFL_CF_ACCESS_WRITE))
+            {
+                /* is the guest allowed to write to this share? */
+                bool fWritable;
+                rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
+                if (RT_FAILURE(rc) || !fWritable)
+                    return VERR_WRITE_PROTECT;
+            }
+
             if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
             {
                 rc = vbsfOpenDir (pszFullPath, pParms);
