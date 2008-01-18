@@ -1096,6 +1096,7 @@ static DECLCALLBACK(int) svcHostCall (uint32_t u32Function, uint32_t cParms, VBO
         }
         else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR     /* host folder name */
                  || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR     /* guest map name */
+                 || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT   /* fWritable */
                 )
         {
             rc = VERR_INVALID_PARAMETER;
@@ -1107,6 +1108,7 @@ static DECLCALLBACK(int) svcHostCall (uint32_t u32Function, uint32_t cParms, VBO
             uint32_t cbStringFolder = paParms[0].u.pointer.size;
             SHFLSTRING *pMapName    = (SHFLSTRING *)paParms[1].u.pointer.addr;
             uint32_t cbStringMap    = paParms[1].u.pointer.size;
+            uint32_t fWritable      = paParms[2].u.uint32;
 
             /* Verify parameters values. */
             if (   (cbStringFolder < sizeof (SHFLSTRING))
@@ -1120,7 +1122,7 @@ static DECLCALLBACK(int) svcHostCall (uint32_t u32Function, uint32_t cParms, VBO
             else
             {
                 /* Execute the function. */
-                rc = vbsfMappingsAdd (pFolderName, pMapName);
+                rc = vbsfMappingsAdd (pFolderName, pMapName, fWritable);
 
                 if (VBOX_SUCCESS(rc))
                 {
