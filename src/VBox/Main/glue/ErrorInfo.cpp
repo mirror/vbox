@@ -233,17 +233,6 @@ void ErrorInfo::print (const char *aPrefix /* = NULL */)
     }
 }
 
-/**
- *  Sets the given error info object for the current thread.  If @a aPreserve
- *  is @c true, then the current error info set on the thread before this
- *  method is called will be preserved in the IVirtualBoxErrorInfo::next
- *  attribute of the new error info object that will be then set as the
- *  current error info object.
- */
-
-//static
-HRESULT setError (IVirtualBoxErrorInfo *aInfo);
-
 // ProgressErrorInfo class
 ////////////////////////////////////////////////////////////////////////////////
 

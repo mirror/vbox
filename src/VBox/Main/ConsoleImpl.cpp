@@ -167,6 +167,8 @@ struct VMProgressTask : public VMTask
         : VMTask (aConsole, aUsesVMPtr), mProgress (aProgress) {}
 
     const ComObjPtr <Progress> mProgress;
+
+    Utf8Str mErrorMsg;
 };
 
 struct VMPowerUpTask : public VMProgressTask
@@ -5328,12 +5330,17 @@ Console::stateProgressCallback (PVM pVM, unsigned uPercent, void *pvUser)
 /**
  * VM error callback function. Called by the various VM components.
  *
- * @param   pVM         The VM handle. Can be NULL if an error occurred before
- *                          successfully creating a VM.
+ * @param   pVM         VM handle. Can be NULL if an error occurred before
+ *                      successfully creating a VM.
  * @param   pvUser      Pointer to the VMProgressTask structure.
  * @param   rc          VBox status code.
- * @param   pszFormat   The error message.
- * @thread EMT.
+ * @param   pszFormat   Printf-like error message.
+ * @param   args        Various number of argumens for the error message. 
+ * 
+ * @thread EMT, VMPowerUp... 
+ *  
+ * @note The VMProgressTask structure modified by this callback is not thread 
+ *       safe.
  */
 /* static */ DECLCALLBACK (void)
 Console::setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
@@ -5345,12 +5352,17 @@ Console::setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
     /* we ignore RT_SRC_POS_DECL arguments to avoid confusion of end-users */
     va_list va2;
     va_copy(va2, args); /* Have to make a copy here or GCC will break. */
-    HRESULT hrc = setError (E_FAIL, tr ("%N.\n"
-                                        "VBox status code: %d (%Vrc)"),
-                                    tr (pszFormat), &va2,
-                                    rc, rc);
-    task->mProgress->notifyComplete (hrc);
+    Utf8Str errorMsg = Utf8StrFmt (tr ("%N.\n"
+                                       "VBox status code: %d (%Vrc)"),
+                                   pszFormat, &va2, rc, rc);
     va_end(va2);
+
+    /* For now, this may be called only once. Ignore subsequent calls. */
+    AssertMsgReturnVoid (task->mErrorMsg.isNull(),
+                         ("Cannot set error to '%s': it is already set to '%s'",
+                         errorMsg.raw(), task->mErrorMsg.raw()));
+
+    task->mErrorMsg = errorMsg;
 }
 
 /**
@@ -5918,10 +5930,8 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                 /* preserve existing error info */
                 ErrorInfoKeeper eik;
 
-                /*
-                 *  powerDown() will call VMR3Destroy() and do all necessary
-                 *  cleanup (VRDP, USB devices)
-                 */
+                /* powerDown() will call VMR3Destroy() and do all necessary
+                 * cleanup (VRDP, USB devices) */
                 HRESULT hrc2 = console->powerDown();
                 AssertComRC (hrc2);
             }
@@ -5936,31 +5946,27 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
         if (SUCCEEDED (hrc) && VBOX_FAILURE (vrc))
         {
-            /*
-             *  If VMR3Create() or one of the other calls in this function fail,
-             *  an appropriate error message has been already set. However since
-             *  that happens via a callback, the status code in this function is
-             *  not updated.
+            /* If VMR3Create() or one of the other calls in this function fail,
+             * an appropriate error message has been set in task->mErrorMsg.
+             * However since that happens via a callback, the hrc status code in
+             * this function is not updated.
              */
-            if (!task->mProgress->completed())
+            if (task->mErrorMsg.isNull())
             {
-                /*
-                 *  If the COM error info is not yet set but we've got a
-                 *  failure, convert the VBox status code into a meaningful
-                 *  error message. This becomes unused once all the sources of
-                 *  errors set the appropriate error message themselves.
-                 *  Note that we don't use VMSetError() below because pVM is
-                 *  either invalid or NULL here.
+                /* If the error message is not set but we've got a failure,
+                 * convert the VBox status code into a meaningfulerror message.
+                 * This becomes unused once all the sources of errors set the
+                 * appropriate error message themselves.
                  */
                 AssertMsgFailed (("Missing error message during powerup for "
                                   "status code %Vrc\n", vrc));
-                hrc = setError (E_FAIL,
+                task->mErrorMsg = Utf8StrFmt (
                     tr ("Failed to start VM execution (%Vrc)"), vrc);
             }
-            else
-                hrc = task->mProgress->resultCode();
 
-            Assert (FAILED (hrc));
+            /* Set the error message as the COM error.
+             * Progress::notifyComplete() will pick it up later. */
+            hrc = setError (E_FAIL, task->mErrorMsg);
             break;
         }
     }
@@ -5969,13 +5975,14 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
     if (console->mMachineState == MachineState_Starting ||
         console->mMachineState == MachineState_Restoring)
     {
-        /*
-         *  We are still in the Starting/Restoring state. This means one of:
-         *  1) we failed before VMR3Create() was called;
-         *  2) VMR3Create() failed.
-         *  In both cases, there is no need to call powerDown(), but we still
-         *  need to go back to the PoweredOff/Saved state. Reuse
-         *  vmstateChangeCallback() for that purpose.
+        /* We are still in the Starting/Restoring state. This means one of:
+         * 
+         * 1) we failed before VMR3Create() was called;
+         * 2) VMR3Create() failed.
+         * 
+         * In both cases, there is no need to call powerDown(), but we still
+         * need to go back to the PoweredOff/Saved state. Reuse
+         * vmstateChangeCallback() for that purpose.
          */
 
         /* preserve existing error info */
@@ -5987,9 +5994,8 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
     }
 
     /*
-     *  Evaluate the final result.
-     *  Note that the appropriate mMachineState value is already set by
-     *  vmstateChangeCallback() in all cases.
+     * Evaluate the final result. Note that the appropriate mMachineState value
+     * is already set by vmstateChangeCallback() in all cases.
      */
 
     /* leave the lock, don't need it any more */
@@ -6002,14 +6008,8 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
     }
     else
     {
-        if (!task->mProgress->completed())
-        {
-            /*  The progress object will fetch the current error info. This
-             *  gets the errors signalled by using setError(). The ones
-             *  signalled via VMSetError() immediately notify the progress
-             *  object that the operation is completed. */
-            task->mProgress->notifyComplete (hrc);
-        }
+        /* The progress object will fetch the current error info */
+        task->mProgress->notifyComplete (hrc);
 
         LogRel (("Power up failed (vrc=%Vrc, hrc=0x%08X)\n", vrc, hrc));
     }
