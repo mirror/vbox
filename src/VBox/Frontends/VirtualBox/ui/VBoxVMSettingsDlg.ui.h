@@ -2347,14 +2347,6 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     setTabOrder (buttonOk, buttonCancel);
 
     /* setup validation */
-    QComboBox *cbNetworkName = 0;
-#ifdef Q_WS_WIN
-    cbNetworkName = page->cbInternalNetworkName_WIN;
-#else
-    cbNetworkName = page->cbInternalNetworkName_X11;
-#endif
-    Assert (cbNetworkName);
-
     QIWidgetValidator *wval =
         new QIWidgetValidator (QString ("%1: %2")
                                .arg (pagePath (pageNetwork), pageTitle),
@@ -2362,11 +2354,11 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     connect (page->grbEnabled, SIGNAL (toggled (bool)), wval, SLOT (revalidate()));
     connect (page->cbNetworkAttachment, SIGNAL (activated (const QString &)),
              wval, SLOT (revalidate()));
-    connect (cbNetworkName, SIGNAL (activated (const QString &)),
+    connect (page->cbInternalNetworkName, SIGNAL (activated (const QString &)),
              wval, SLOT (revalidate()));
-    connect (cbNetworkName, SIGNAL (textChanged (const QString &)),
+    connect (page->cbInternalNetworkName, SIGNAL (textChanged (const QString &)),
              this, SLOT (updateNetworksList()));
-    connect (cbNetworkName, SIGNAL (textChanged (const QString &)),
+    connect (page->cbInternalNetworkName, SIGNAL (textChanged (const QString &)),
              wval, SLOT (revalidate()));
     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
@@ -2401,14 +2393,7 @@ void VBoxVMSettingsDlg::updateNetworksList()
             static_cast <VBoxVMNetworkSettings*> (tbwNetwork->page (index)) : 0;
         if (pg)
         {
-            QComboBox *cb = 0;
-#if defined Q_WS_WIN
-            cb = pg->cbInternalNetworkName_WIN;
-#else
-            cb = pg->cbInternalNetworkName_X11;
-#endif
-            Assert (cb);
-            QString curText = cb->currentText();
+            QString curText = pg->cbInternalNetworkName->currentText();
             if (!curText.isEmpty() && !curList.contains (curText))
                 curList << curText;
         }
