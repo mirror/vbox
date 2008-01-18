@@ -133,7 +133,7 @@ public:
                                  DeviceActivity_T *aDeviceActivity);
     STDMETHOD(AttachUSBDevice) (INPTR GUIDPARAM aId);
     STDMETHOD(DetachUSBDevice) (INPTR GUIDPARAM aId, IUSBDevice **aDevice);
-    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath, bool aWritable);
+    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable);
     STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
     STDMETHOD(TakeSnapshot) (INPTR BSTR aName, INPTR BSTR aDescription,
                              IProgress **aProgress);

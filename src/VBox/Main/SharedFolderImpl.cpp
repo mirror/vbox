@@ -62,7 +62,7 @@ void SharedFolder::FinalRelease()
  *  @return          COM result indicator
  */
 HRESULT SharedFolder::init (Machine *aMachine,
-                            const BSTR aName, const BSTR aHostPath, bool aWritable)
+                            const BSTR aName, const BSTR aHostPath, BOOL aWritable)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
@@ -120,7 +120,7 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
  *  @return          COM result indicator
  */
 HRESULT SharedFolder::init (Console *aConsole,
-                            const BSTR aName, const BSTR aHostPath, bool aWritable)
+                            const BSTR aName, const BSTR aHostPath, BOOL aWritable)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
@@ -148,7 +148,7 @@ HRESULT SharedFolder::init (Console *aConsole,
  *  @return          COM result indicator
  */
 HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
-                            const BSTR aName, const BSTR aHostPath, bool aWritable)
+                            const BSTR aName, const BSTR aHostPath, BOOL aWritable)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
@@ -172,7 +172,7 @@ HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
  *      Must be called from under the object's lock!
  */
 HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
-                                     const BSTR aName, const BSTR aHostPath, bool aWritable)
+                                     const BSTR aName, const BSTR aHostPath, BOOL aWritable)
 {
     LogFlowThisFunc (("aName={%ls}, aHostPath={%ls}, aWritable={%d}\n",
                       aName, aHostPath, aWritable));

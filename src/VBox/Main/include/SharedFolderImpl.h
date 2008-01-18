@@ -40,7 +40,7 @@ public:
 
         const Bstr mName;
         const Bstr mHostPath;
-        bool       mWritable;
+        BOOL       mWritable;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (SharedFolder)
@@ -62,10 +62,10 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *aMachine, const BSTR aName, const BSTR aHostPath, bool aWritable);
+    HRESULT init (Machine *aMachine, const BSTR aName, const BSTR aHostPath, BOOL aWritable);
     HRESULT initCopy (Machine *aMachine, SharedFolder *aThat);
-    HRESULT init (Console *aConsole, const BSTR aName, const BSTR aHostPath, bool aWritable);
-    HRESULT init (VirtualBox *aVirtualBox, const BSTR aName, const BSTR aHostPath, bool aWritable);
+    HRESULT init (Console *aConsole, const BSTR aName, const BSTR aHostPath, BOOL aWritable);
+    HRESULT init (VirtualBox *aVirtualBox, const BSTR aName, const BSTR aHostPath, BOOL aWritable);
     void uninit();
 
     // ISharedFolder properties
@@ -90,7 +90,7 @@ public:
 protected:
 
     HRESULT protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
-                           const BSTR aName, const BSTR aHostPath, bool aWritable);
+                           const BSTR aName, const BSTR aHostPath, BOOL aWritable);
 
 private:
 
