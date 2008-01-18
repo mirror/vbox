@@ -942,13 +942,9 @@ typedef struct _VBoxSFAddMapping
      */
     HGCMFunctionParameter mapping;
 
-    /** bool, in: Writable
-     * True (default) if the folder is writable.
-     */
-
 } VBoxSFAddMapping;
 
-#define SHFL_CPARMS_ADD_MAPPING  (3)
+#define SHFL_CPARMS_ADD_MAPPING  (2)
 
 
 /**

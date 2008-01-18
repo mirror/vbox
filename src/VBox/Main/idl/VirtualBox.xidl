@@ -1572,9 +1572,6 @@
       <param name="hostPath" type="wstring" dir="in">
         <desc>Full path to the shared folder in the host file system.</desc>
       </param>
-      <param name="writable" type="boolean" dir="in">
-        <desc>Whether the share is writable or readonly</desc>
-      </param>
     </method>
 
     <method name="removeSharedFolder">
@@ -3048,9 +3045,6 @@
       <param name="hostPath" type="wstring" dir="in">
         <desc>Full path to the shared folder in the host file system.</desc>
       </param>
-      <param name="writable" type="boolean" dir="in">
-        <desc>Whether the share is writable or readonly</desc>
-      </param>
     </method>
 
     <method name="removeSharedFolder">
@@ -3906,9 +3900,6 @@
       </param>
       <param name="hostPath" type="wstring" dir="in">
         <desc>Full path to the shared folder in the host file system.</desc>
-      </param>
-      <param name="writable" type="boolean" dir="in">
-        <desc>Whether the share is writable or readonly</desc>
       </param>
     </method>
 
@@ -9043,13 +9034,6 @@
         For example, the folder can be unaccessible if it is placed
         on the network share that is not available by the time
         this property is read.
-      </desc>
-    </attribute>
-    
-    <attribute name="writable" type="boolean" readonly="yes">
-      <desc>
-        Whether the folder defined by the host path is writable or
-        not.
       </desc>
     </attribute>
 

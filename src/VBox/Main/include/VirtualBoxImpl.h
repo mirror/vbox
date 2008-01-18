@@ -160,7 +160,7 @@ public:
     STDMETHOD(UnregisterFloppyImage) (INPTR GUIDPARAM aId, IFloppyImage **aFloppyImage);
 
     STDMETHOD(GetGuestOSType) (INPTR BSTR aId, IGuestOSType **aType);
-    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable);
+    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath);
     STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
     STDMETHOD(GetNextExtraDataKey) (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
     STDMETHOD(GetExtraData) (INPTR BSTR aKey, BSTR *aValue);

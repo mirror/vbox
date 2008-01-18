@@ -2371,7 +2371,7 @@ STDMETHODIMP Machine::SetCurrentSnapshot (INPTR GUIDPARAM aId)
 }
 
 STDMETHODIMP
-Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable)
+Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
 {
     if (!aName || !aHostPath)
         return E_INVALIDARG;
@@ -2391,7 +2391,7 @@ Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
             tr ("Shared folder named '%ls' already exists"), aName);
 
     sharedFolder.createObject();
-    rc = sharedFolder->init (machine(), aName, aHostPath, aWritable);
+    rc = sharedFolder->init (machine(), aName, aHostPath);
     CheckComRCReturnRC (rc);
 
     BOOL accessible = FALSE;
@@ -4313,9 +4313,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 /* folder host path (required) */
                 Bstr hostPath = (*it).stringValue ("hostPath");
 
-                bool writable = (*it).value <bool> ("writable");
-
-                rc = CreateSharedFolder (name, hostPath, writable);
+                rc = CreateSharedFolder (name, hostPath);
                 CheckComRCReturnRC (rc);
             }
         }
@@ -5662,7 +5660,6 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
             /* all are mandatory */
             folderNode.setValue <Bstr> ("name", folder->name());
             folderNode.setValue <Bstr> ("hostPath", folder->hostPath());
-            folderNode.setValue <bool> ("writable", folder->writable());
         }
     }
 

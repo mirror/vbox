@@ -1574,7 +1574,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType (INPTR BSTR aId, IGuestOSType **aType)
 }
 
 STDMETHODIMP
-VirtualBox::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable)
+VirtualBox::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
 {
     if (!aName || !aHostPath)
         return E_INVALIDARG;

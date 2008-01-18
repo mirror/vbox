@@ -57,12 +57,11 @@ void SharedFolder::FinalRelease()
  *  @param aMachine     parent Machine object
  *  @param aName        logical name of the shared folder
  *  @param aHostPath    full path to the shared folder on the host
- *  @param aWritable    writable if true, readonly otherwise
  *
  *  @return          COM result indicator
  */
 HRESULT SharedFolder::init (Machine *aMachine,
-                            const BSTR aName, const BSTR aHostPath, bool aWritable)
+                            const BSTR aName, const BSTR aHostPath)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
@@ -70,7 +69,7 @@ HRESULT SharedFolder::init (Machine *aMachine,
 
     unconst (mMachine) = aMachine;
 
-    HRESULT rc = protectedInit (aMachine, aName, aHostPath, aWritable);
+    HRESULT rc = protectedInit (aMachine, aName, aHostPath);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED (rc))
@@ -100,7 +99,7 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
     unconst (mMachine) = aMachine;
 
     HRESULT rc = protectedInit (aMachine, aThat->mData.mName,
-                                aThat->mData.mHostPath, aThat->mData.mWritable);
+                                aThat->mData.mHostPath);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED (rc))
@@ -115,12 +114,11 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
  *  @param aConsole     Console parent object
  *  @param aName        logical name of the shared folder
  *  @param aHostPath    full path to the shared folder on the host
- *  @param aWritable    writable if true, readonly otherwise
  *
  *  @return          COM result indicator
  */
 HRESULT SharedFolder::init (Console *aConsole,
-                            const BSTR aName, const BSTR aHostPath, bool aWritable)
+                            const BSTR aName, const BSTR aHostPath)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
@@ -128,7 +126,7 @@ HRESULT SharedFolder::init (Console *aConsole,
 
     unconst (mConsole) = aConsole;
 
-    HRESULT rc = protectedInit (aConsole, aName, aHostPath, aWritable);
+    HRESULT rc = protectedInit (aConsole, aName, aHostPath);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED (rc))
@@ -143,12 +141,11 @@ HRESULT SharedFolder::init (Console *aConsole,
  *  @param aVirtualBox  VirtualBox parent object
  *  @param aName        logical name of the shared folder
  *  @param aHostPath    full path to the shared folder on the host
- *  @param aWritable    writable if true, readonly otherwise
  *
  *  @return          COM result indicator
  */
 HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
-                            const BSTR aName, const BSTR aHostPath, bool aWritable)
+                            const BSTR aName, const BSTR aHostPath)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
@@ -156,7 +153,7 @@ HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
 
     unconst (mVirtualBox) = aVirtualBox;
 
-    HRESULT rc = protectedInit (aVirtualBox, aName, aHostPath, aWritable);
+    HRESULT rc = protectedInit (aVirtualBox, aName, aHostPath);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED (rc))
@@ -172,10 +169,9 @@ HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
  *      Must be called from under the object's lock!
  */
 HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
-                                     const BSTR aName, const BSTR aHostPath, bool aWritable)
+                                     const BSTR aName, const BSTR aHostPath)
 {
-    LogFlowThisFunc (("aName={%ls}, aHostPath={%ls}, aWritable={%d}\n",
-                      aName, aHostPath, aWritable));
+    LogFlowThisFunc (("aName={%ls}, aHostPath={%ls}\n", aName, aHostPath));
 
     ComAssertRet (aParent && aName && aHostPath, E_INVALIDARG);
 
@@ -219,7 +215,6 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
 
     unconst (mData.mName) = aName;
     unconst (mData.mHostPath) = hostPath;
-    mData.mWritable = aWritable;
 
     return S_OK;
 }
@@ -311,12 +306,3 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     return S_OK;
 }
 
-STDMETHODIMP SharedFolder::COMGETTER(Writable) (BOOL *aWritable)
-{
-    if (!aWritable)
-        return E_POINTER;
-
-    *aWritable = mData.mWritable;
-
-    return S_OK;
-}
