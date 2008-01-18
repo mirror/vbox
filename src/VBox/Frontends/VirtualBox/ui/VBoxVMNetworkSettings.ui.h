@@ -134,9 +134,11 @@ void VBoxVMNetworkSettings::loadNetworksList (const QStringList &aList)
     cbNetworkName = cbInternalNetworkName_X11;
 #endif
     Assert (cbNetworkName);
+    QString curText = cbNetworkName->currentText();
     cbNetworkName->clear();
     cbNetworkName->clearEdit();
     cbNetworkName->insertStringList (aList);
+    cbNetworkName->setCurrentText (curText);
 }
 
 void VBoxVMNetworkSettings::getFromAdapter (const CNetworkAdapter &adapter)
