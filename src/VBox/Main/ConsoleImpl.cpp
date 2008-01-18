@@ -881,6 +881,10 @@ Console::saveStateFileExec (PSSMHANDLE pSSM, void *pvUser)
         AssertRC (vrc);
         vrc = SSMR3PutStrZ (pSSM, hostPath);
         AssertRC (vrc);
+
+//        XXX
+//        vrc = SSMR3PutBool (pSSM, folder->writable());
+//        AssertRC (vrc);
     }
 
     return;
@@ -952,7 +956,7 @@ Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
 
         ComObjPtr <SharedFolder> sharedFolder;
         sharedFolder.createObject();
-        HRESULT rc = sharedFolder->init (that, name, hostPath);
+        HRESULT rc = sharedFolder->init (that, name, hostPath, true); /* TODO: fWritable */
         AssertComRCReturn (rc, VERR_INTERNAL_ERROR);
 
         that->mSharedFolders.insert (std::make_pair (name, sharedFolder));
@@ -1314,7 +1318,7 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
         /* third, insert console folders */
         for (SharedFolderMap::const_iterator it = mSharedFolders.begin();
              it != mSharedFolders.end(); ++ it)
-            sharedFolders [it->first] = it->second->hostPath();
+            sharedFolders [it->first] = SharedFolderData(it->second->hostPath(), it->second->writable());
     }
 
     Bstr savedStateFile;
@@ -1990,7 +1994,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
 }
 
 STDMETHODIMP
-Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
+Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable)
 {
     if (!aName || !aHostPath)
         return E_INVALIDARG;
@@ -2018,7 +2022,7 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
             tr ("Shared folder named '%ls' already exists"), aName);
 
     sharedFolder.createObject();
-    rc = sharedFolder->init (this, aName, aHostPath);
+    rc = sharedFolder->init (this, aName, aHostPath, aWritable);
     CheckComRCReturnRC (rc);
 
     BOOL accessible = FALSE;
@@ -2046,7 +2050,7 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
         }
 
         /* second, create the given folder */
-        rc = createSharedFolder (aName, aHostPath);
+        rc = createSharedFolder (aName, SharedFolderData (aHostPath, aWritable));
         CheckComRCReturnRC (rc);
     }
 
@@ -4194,20 +4198,22 @@ HRESULT Console::fetchSharedFolders (BOOL aGlobal)
 
             Bstr name;
             Bstr hostPath;
+            BOOL writable;
 
             rc = folder->COMGETTER(Name) (name.asOutParam());
             CheckComRCBreakRC (rc);
             rc = folder->COMGETTER(HostPath) (hostPath.asOutParam());
             CheckComRCBreakRC (rc);
+            rc = folder->COMGETTER(Writable) (&writable);
 
-            mMachineSharedFolders.insert (std::make_pair (name, hostPath));
+            mMachineSharedFolders.insert (std::make_pair (name, SharedFolderData (hostPath, writable)));
 
             /* send changes to HGCM if the VM is running */
             /// @todo report errors as runtime warnings through VMSetError
             if (online)
             {
                 SharedFolderDataMap::iterator it = oldFolders.find (name);
-                if (it == oldFolders.end() || it->second != hostPath)
+                if (it == oldFolders.end() || it->second.mHostPath != hostPath)
                 {
                     /* a new machine folder is added or
                      * the existing machine folder is changed */
@@ -4222,7 +4228,7 @@ HRESULT Console::fetchSharedFolders (BOOL aGlobal)
                                 mGlobalSharedFolders.end())
                             rc = removeSharedFolder (name);
                         /* create the new machine folder */
-                        rc = createSharedFolder (name, hostPath);
+                        rc = createSharedFolder (name, SharedFolderData (hostPath, writable));
                     }
                 }
                 /* forget the processed (or identical) folder */
@@ -4301,27 +4307,27 @@ bool Console::findOtherSharedFolder (INPTR BSTR aName,
  *  @note Must be called from under AutoVMCaller and when mpVM != NULL!
  *  @note Doesn't lock anything.
  */
-HRESULT Console::createSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
+HRESULT Console::createSharedFolder (INPTR BSTR aName, SharedFolderData aData)
 {
     ComAssertRet (aName && *aName, E_FAIL);
-    ComAssertRet (aHostPath && *aHostPath, E_FAIL);
+    ComAssertRet (aData.mHostPath, E_FAIL);
 
     /* sanity checks */
     AssertReturn (mpVM, E_FAIL);
     AssertReturn (mVMMDev->isShFlActive(), E_FAIL);
 
-    VBOXHGCMSVCPARM  parms[2];
+    VBOXHGCMSVCPARM  parms[SHFL_CPARMS_ADD_MAPPING];
     SHFLSTRING      *pFolderName, *pMapName;
     size_t           cbString;
 
-    Log (("Adding shared folder '%ls' -> '%ls'\n", aName, aHostPath));
+    Log (("Adding shared folder '%ls' -> '%ls'\n", aName, aData.mHostPath.raw()));
 
-    cbString = (RTStrUcs2Len (aHostPath) + 1) * sizeof (RTUCS2);
+    cbString = (RTStrUcs2Len (aData.mHostPath) + 1) * sizeof (RTUCS2);
     if (cbString >= UINT16_MAX)
         return setError (E_INVALIDARG, tr ("The name is too long"));
     pFolderName = (SHFLSTRING *) RTMemAllocZ (sizeof (SHFLSTRING) + cbString);
     Assert (pFolderName);
-    memcpy (pFolderName->String.ucs2, aHostPath, cbString);
+    memcpy (pFolderName->String.ucs2, aData.mHostPath, cbString);
 
     pFolderName->u16Size   = (uint16_t)cbString;
     pFolderName->u16Length = (uint16_t)cbString - sizeof(RTUCS2);
@@ -4347,9 +4353,12 @@ HRESULT Console::createSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
     parms[1].u.pointer.addr = pMapName;
     parms[1].u.pointer.size = sizeof (SHFLSTRING) + (uint16_t)cbString;
 
+    parms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
+    parms[2].u.uint32 = aData.mWritable;
+
     int vrc = mVMMDev->hgcmHostCall ("VBoxSharedFolders",
                                      SHFL_FN_ADD_MAPPING,
-                                     2, &parms[0]);
+                                     SHFL_CPARMS_ADD_MAPPING, &parms[0]);
     RTMemFree (pFolderName);
     RTMemFree (pMapName);
 
@@ -4357,7 +4366,7 @@ HRESULT Console::createSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
         return setError (E_FAIL,
                          tr ("Could not create a shared folder '%ls' "
                              "mapped to '%ls' (%Vrc)"),
-                         aName, aHostPath, vrc);
+                         aName, aData.mHostPath.raw(), vrc);
 
     return S_OK;
 }
