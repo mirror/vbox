@@ -30,19 +30,17 @@ typedef struct
     bool        fValid;
     bool        fHostCaseSensitive;
     bool        fGuestCaseSensitive;
-    bool        fWritable;
 } MAPPING, *PMAPPING;
 
 extern MAPPING FolderMapping[SHFL_MAX_MAPPINGS];
 
 bool vbsfMappingQuery(uint32_t iMapping, PMAPPING *pMapping);
 
-int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWritable);
+int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName);
 int vbsfMappingsRemove (PSHFLSTRING pMapName);
 
 int vbsfMappingsQuery (SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t *pcMappings);
 int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pString);
-int vbsfMappingsQueryWritable (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWritable);
 
 int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUCS2 delimiter, bool fCaseSensitive, SHFLROOT *pRoot);
 int vbsfUnmapFolder (SHFLCLIENTDATA *pClient, SHFLROOT root);

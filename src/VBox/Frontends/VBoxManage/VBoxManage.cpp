@@ -591,7 +591,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage sharedfolder     add <vmname>|<uuid>\n"
                  "                            -name <name> -hostpath <hostpath>\n"
-                 "                            [-transient] [-readonly]\n"
+                 "                            [-transient]\n"
                  "\n");
     }
 
@@ -1906,10 +1906,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             ComPtr<ISharedFolder> sf;
             CHECK_ERROR_RET(sfEnum, GetNext(sf.asOutParam()), rc);
             Bstr name, hostPath;
-            BOOL writable;
             sf->COMGETTER(Name)(name.asOutParam());
             sf->COMGETTER(HostPath)(hostPath.asOutParam());
-            sf->COMGETTER(Writable)(&writable);
             if (!numSharedFolders && details != VMINFO_MACHINEREADABLE)
                 RTPrintf("\n\n");
             if (details == VMINFO_MACHINEREADABLE)
@@ -1920,8 +1918,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                          hostPath.raw());
             }
             else
-                RTPrintf("Name: '%lS', Host path: '%lS' (machine mapping), %s\n",
-                         name.raw(), hostPath.raw(), writable ? "writable" : "readonly");
+                RTPrintf("Name: '%lS', Host path: '%lS' (machine mapping)\n", name.raw(), hostPath.raw());
             ++numSharedFolders;
             CHECK_ERROR_RET(sfEnum, HasMore(&fMore), rc);
         }
@@ -7024,7 +7021,6 @@ static int handleSharedFolder (int argc, char *argv[],
         char *name = NULL;
         char *hostpath = NULL;
         bool fTransient = false;
-        bool fWritable = true;
 
         for (int i = 2; i < argc; i++)
         {
@@ -7045,10 +7041,7 @@ static int handleSharedFolder (int argc, char *argv[],
                 }
                 i++;
                 hostpath = argv[i];
-            }
-            else if (strcmp(argv[i], "-readonly") == 0)
-            {
-                fWritable = false;
+
             }
             else if (strcmp(argv[i], "-transient") == 0)
             {
@@ -7077,7 +7070,7 @@ static int handleSharedFolder (int argc, char *argv[],
             /* get the session console */
             CHECK_ERROR_RET(aSession, COMGETTER(Console)(console.asOutParam()), 1);
 
-            CHECK_ERROR(console, CreateSharedFolder(Bstr(name), Bstr(hostpath), fWritable));
+            CHECK_ERROR(console, CreateSharedFolder(Bstr(name), Bstr(hostpath)));
 
             if (console)
                 aSession->Close();
@@ -7090,7 +7083,7 @@ static int handleSharedFolder (int argc, char *argv[],
             /* get the mutable session machine */
             aSession->COMGETTER(Machine)(machine.asOutParam());
 
-            CHECK_ERROR(machine, CreateSharedFolder(Bstr(name), Bstr(hostpath), fWritable));
+            CHECK_ERROR(machine, CreateSharedFolder(Bstr(name), Bstr(hostpath)));
 
             if (SUCCEEDED(rc))
                 CHECK_ERROR(machine, SaveSettings());

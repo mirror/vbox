@@ -40,7 +40,6 @@ public:
 
         const Bstr mName;
         const Bstr mHostPath;
-        bool       mWritable;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (SharedFolder)
@@ -62,17 +61,16 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *aMachine, const BSTR aName, const BSTR aHostPath, bool aWritable);
+    HRESULT init (Machine *aMachine, const BSTR aName, const BSTR aHostPath);
     HRESULT initCopy (Machine *aMachine, SharedFolder *aThat);
-    HRESULT init (Console *aConsole, const BSTR aName, const BSTR aHostPath, bool aWritable);
-    HRESULT init (VirtualBox *aVirtualBox, const BSTR aName, const BSTR aHostPath, bool aWritable);
+    HRESULT init (Console *aConsole, const BSTR aName, const BSTR aHostPath);
+    HRESULT init (VirtualBox *aVirtualBox, const BSTR aName, const BSTR aHostPath);
     void uninit();
 
     // ISharedFolder properties
     STDMETHOD(COMGETTER(Name)) (BSTR *aName);
     STDMETHOD(COMGETTER(HostPath)) (BSTR *aHostPath);
     STDMETHOD(COMGETTER(Accessible)) (BOOL *aAccessible);
-    STDMETHOD(COMGETTER(Writable)) (BOOL *aWritable);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
@@ -82,7 +80,6 @@ public:
 
     const Bstr &name() const { return mData.mName; }
     const Bstr &hostPath() const { return mData.mHostPath; }
-    BOOL writable() const { return mData.mWritable; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"SharedFolder"; }
@@ -90,7 +87,7 @@ public:
 protected:
 
     HRESULT protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
-                           const BSTR aName, const BSTR aHostPath, bool aWritable);
+                           const BSTR aName, const BSTR aHostPath);
 
 private:
 

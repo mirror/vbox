@@ -240,7 +240,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <function>setDialogType( int )</function>
     <function returnType="int">dialogType() {return mDialogType;}</function>
     <function access="private">removeSharedFolder( const QString &amp;, const QString &amp;, VBoxSharedFoldersSettings::SFDialogType )</function>
-    <function access="private">createSharedFolder( const QString &amp;, const QString &amp;, bool, VBoxSharedFoldersSettings::SFDialogType )</function>
+    <function access="private">createSharedFolder( const QString &amp;, const QString &amp;, VBoxSharedFoldersSettings::SFDialogType )</function>
     <function>getFromGlobal()</function>
     <function>getFromMachine( const CMachine &amp; )</function>
     <function>getFromConsole( const CConsole &amp; )</function>
