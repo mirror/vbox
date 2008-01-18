@@ -26,7 +26,7 @@
 
 /** Disable stack frame pointer generation here. */
 #if defined(_MSC_VER) && !defined(DEBUG)
-# pragma optimize("y", "off");
+# pragma optimize("y", off);
 #endif
 
 
