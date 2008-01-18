@@ -956,7 +956,7 @@ Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
 
         ComObjPtr <SharedFolder> sharedFolder;
         sharedFolder.createObject();
-        HRESULT rc = sharedFolder->init (that, name, hostPath, PR_TRUE); /* TODO: fWritable */
+        HRESULT rc = sharedFolder->init (that, name, hostPath, true); /* TODO: fWritable */
         AssertComRCReturn (rc, VERR_INTERNAL_ERROR);
 
         that->mSharedFolders.insert (std::make_pair (name, sharedFolder));
