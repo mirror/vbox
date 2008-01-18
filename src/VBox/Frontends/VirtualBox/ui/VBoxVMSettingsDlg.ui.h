@@ -1039,6 +1039,7 @@ void VBoxVMSettingsDlg::loadNetworksList()
                 mNetworksList << adapter.GetInternalNetwork();
         }
     }
+    mLockNetworkListUpdate = false;
 }
 
 void VBoxVMSettingsDlg::hostInterfaceAdd()
@@ -2364,6 +2365,8 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     connect (cbNetworkName, SIGNAL (activated (const QString &)),
              wval, SLOT (revalidate()));
     connect (cbNetworkName, SIGNAL (textChanged (const QString &)),
+             this, SLOT (updateNetworksList()));
+    connect (cbNetworkName, SIGNAL (textChanged (const QString &)),
              wval, SLOT (revalidate()));
     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
@@ -2383,6 +2386,42 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     setTabOrder (pbHostAdd, pbHostRemove);
 
 #endif
+}
+
+void VBoxVMSettingsDlg::updateNetworksList()
+{
+    if (mLockNetworkListUpdate)
+        return;
+    mLockNetworkListUpdate = true;
+
+    QStringList curList (mNetworksList);
+    for (int index = 0; index < tbwNetwork->count(); ++ index)
+    {
+        VBoxVMNetworkSettings *pg = tbwNetwork->page (index) ?
+            static_cast <VBoxVMNetworkSettings*> (tbwNetwork->page (index)) : 0;
+        if (pg)
+        {
+            QComboBox *cb = 0;
+#if defined Q_WS_WIN
+            cb = pg->cbInternalNetworkName_WIN;
+#else
+            cb = pg->cbInternalNetworkName_X11;
+#endif
+            Assert (cb);
+            QString curText = cb->currentText();
+            if (!curText.isEmpty() && !curList.contains (curText))
+                curList << curText;
+        }
+    }
+
+    for (int index = 0; index < tbwNetwork->count(); ++ index)
+    {
+        VBoxVMNetworkSettings *pg = tbwNetwork->page (index) ?
+            static_cast <VBoxVMNetworkSettings*> (tbwNetwork->page (index)) : 0;
+        pg->loadNetworksList (curList);
+    }
+
+    mLockNetworkListUpdate = false;
 }
 
 void VBoxVMSettingsDlg::addSerialPort (const CSerialPort &aPort)

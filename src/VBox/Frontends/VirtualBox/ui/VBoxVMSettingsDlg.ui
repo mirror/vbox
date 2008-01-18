@@ -3219,6 +3219,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <variable access="private">QString mNoInterfaces;</variable>
     <variable access="private">bool mAllowResetFirstRunFlag;</variable>
     <variable access="private">bool mResetFirstRunFlag;</variable>
+    <variable access="private">bool mLockNetworkListUpdate;</variable>
 </variables>
 <slots>
     <slot>listView_currentChanged( QListViewItem * item )</slot>
@@ -3232,6 +3233,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <slot>showImageManagerISOFloppy()</slot>
     <slot>showVDImageManager( QUuid *id, VBoxMediaComboBox *le, QLabel *tx = NULL )</slot>
     <slot>addNetworkAdapter( const CNetworkAdapter &amp; )</slot>
+    <slot>updateNetworksList()</slot>
     <slot>addSerialPort( const CSerialPort &amp; )</slot>
     <slot>addParallelPort( const CParallelPort &amp; )</slot>
     <slot>slRAM_valueChanged( int val )</slot>
