@@ -627,7 +627,7 @@
     <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
 </includes>
 <variables>
-    <variable access="public">enum CheckPageResult { NoErrors, IncorrectInterface, MissedNetworkName };</variable>
+    <variable access="public">enum CheckPageResult { CheckPage_Ok, CheckPage_InvalidInterface, CheckPage_NoNetworkName };</variable>
     <variable access="private">CNetworkAdapter cadapter;</variable>
     <variable access="private">QIWidgetValidator *mWalidator;</variable>
 </variables>
