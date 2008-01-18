@@ -4320,7 +4320,7 @@ HRESULT Console::createSharedFolder (INPTR BSTR aName, SharedFolderData aData)
     SHFLSTRING      *pFolderName, *pMapName;
     size_t           cbString;
 
-    Log (("Adding shared folder '%ls' -> '%ls'\n", aName, aHostPath));
+    Log (("Adding shared folder '%ls' -> '%ls'\n", aName, aData.mHostPath.raw()));
 
     cbString = (RTStrUcs2Len (aData.mHostPath) + 1) * sizeof (RTUCS2);
     if (cbString >= UINT16_MAX)
