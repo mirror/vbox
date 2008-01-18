@@ -571,11 +571,11 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
 
                 }
                 rc = apHDs[i]->pfnSetLCHSGeometry(apHDs[i], &LCHSGeometry);
-		if (rc == VERR_VDI_IMAGE_READ_ONLY)
-		{
+                if (rc == VERR_VDI_IMAGE_READ_ONLY)
+                {
                     LogRel(("DevPcBios: ATA LUN#%d: failed to update LCHS geometry\n", i));
-		    rc = VINF_SUCCESS;
-		}
+                    rc = VINF_SUCCESS;
+                }
                 AssertRC(rc);
             }
             if (i < 4)
@@ -604,7 +604,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
                         break;
                 }
                 pcbiosCmosInitHardDisk(pDevIns, offType, offInfo,
-		                       &LCHSGeometry);
+                                       &LCHSGeometry);
             }
             LogRel(("DevPcBios: ATA LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
         }

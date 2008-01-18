@@ -477,8 +477,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             }
             else
             {
-	      PDMDRV_SET_ERROR(pDrvIns, rc, N_("Unknown error during NAT networking setup: "));
-    	      AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
+              PDMDRV_SET_ERROR(pDrvIns, rc, N_("Unknown error during NAT networking setup: "));
+              AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
             }
 #if 0
             g_fThreadTerm = true;
