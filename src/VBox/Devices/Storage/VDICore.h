@@ -332,9 +332,9 @@ DECLINLINE(PVDIDISKGEOMETRY) getImageLCHSGeometry(PVDIHEADER ph)
             switch (GET_MINOR_HEADER_VERSION(ph))
             {
                 case 1:
-		    if (ph->u.v1.cbHeader < sizeof(ph->u.v1plus))
+                    if (ph->u.v1.cbHeader < sizeof(ph->u.v1plus))
                         return NULL;
-		    else
+                    else
                         return &ph->u.v1plus.LCHSGeometry;
             }
     }
