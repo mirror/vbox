@@ -410,6 +410,11 @@ sf_create_aux (struct inode *parent, struct dentry *dentry, int dirop)
                  path->String.utf8, params.CreateFlags));
         rc = vboxCallCreate (&client_handle, &sf_g->map, path, &params);
         if (VBOX_FAILURE (rc)) {
+                if (rc == VERR_WRITE_PROTECT)
+                {
+                    err = -EACCES;
+                    goto fail0;
+                }
                 err = -EPROTO;
                 LogFunc(("(%d): vboxCallCreate(%s) failed rc=%Vrc\n", dirop,
                          sf_i->path->String.utf8, rc));
