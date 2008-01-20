@@ -1,0 +1,36 @@
+# $Id$
+## @file
+# Makefile for libpng.
+#
+
+
+# Copyright (C) 2006-2007 innotek GmbH
+#
+# innotek GmbH confidential
+# All rights reserved
+#
+
+LIBRARIES = VBox-libpng
+
+VBox-libpng_TEMPLATE = VBOXR3
+VBox-libpng_INCS = ../zlib-1.2.1
+VBox-libpng_SOURCES = \
+	png.c \
+	pngset.c \
+	pngget.c \
+	pngrutil.c \
+	pngtrans.c \
+	pngwutil.c \
+	pngread.c \
+	pngrio.c \
+	pngwio.c \
+	pngwrite.c \
+	pngrtran.c \
+	pngwtran.c \
+	pngmem.c \
+	pngerror.c \
+	pngpread.c
+
+DEPTH = ../../..
+include $(PATH_KBUILD)/rules.kmk
+
