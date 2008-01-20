@@ -1,0 +1,33 @@
+# $Id$
+## @file
+# Makefile for zlib
+#
+
+#
+# Copyright (C) 2006-2007 innotek GmbH
+#
+# innotek GmbH confidential
+# All rights reserved
+#
+
+LIBRARIES = VBox-zlib
+
+VBox-zlib_TEMPLATE = VBOXR3
+VBox-zlib_DEFS = verbose=-1
+VBox-zlib_SOURCES = \
+	adler32.c \
+	compress.c \
+	crc32.c \
+	gzio.c \
+	uncompr.c \
+	deflate.c \
+	trees.c \
+	zutil.c \
+	inflate.c \
+	infback.c \
+	inftrees.c \
+	inffast.c
+
+DEPTH = ../../..
+include $(PATH_KBUILD)/rules.kmk
+
