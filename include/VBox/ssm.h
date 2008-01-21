@@ -37,6 +37,25 @@ __BEGIN_DECLS
  * @{
  */
 
+/**
+ * Determine the major version of the SSM version. If the major SSM version of two snapshots is
+ * different, the snapshots are incompatible.
+ */
+#define SSM_VERSION_MAJOR(ver)                  ((ver) & 0xffff0000)
+
+/**
+ * Determine the minor version of the SSM version. If the major SSM version of two snapshots is
+ * the same, the code must handle incompatibilies between minor version changes (e.g. use dummy
+ * values for non-existent fields).
+ */
+#define SSM_VERSION_MINOR(ver)                  ((ver) & 0x0000ffff)
+
+/**
+ * Determine if the major version changed between two SSM versions.
+ */
+#define SSM_VERSION_MAJOR_CHANGED(ver1,ver2)    (SSM_VERSION_MAJOR(ver1) != SSM_VERSION_MAJOR(ver2))
+
+
 #ifdef IN_RING3
 /** @defgroup grp_ssm_r3     The SSM Host Context Ring-3 API
  * @{
