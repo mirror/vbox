@@ -218,26 +218,63 @@ RTR3DECL(uint64_t)  RTFileTell(RTFILE File)
 
 
 /**
- * Determine the maximum file size. Tested on Windows and Linux.
+ * Determine the maximum file size. 
+ *  
+ * @returns The max size of the file. 
+ *          -1 on failure, the file position is undefined.
+ * @param   File        Handle to the file. 
+ * @see     RTFileGetMaxSizeEx. 
  */
-RTR3DECL(uint64_t)  RTFileGetMaxSize(RTFILE File)
+RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File)
 {
+    RTFOFF cbMax;
+    int rc = RTFileGetMaxSizeEx(File, &cbMax);
+    return RT_SUCCESS(rc) ? cbMax : -1;
+}
+
+
+/**
+ * Determine the maximum file size. 
+ *  
+ * @returns IPRT status code.
+ * @param   File        Handle to the file. 
+ * @param   pcbMax      Where to store the max file size. 
+ * @see     RTFileGetMaxSize.
+ */
+RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax)
+{
+    /* 
+     * Save the current location 
+     */
+    uint64_t offOld;
+    int rc = RTFileSeek(File, 0, RTFILE_SEEK_CURRENT, &offOld);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Perform a binary search for the max file size. 
+     */
     uint64_t offLow  =       0;
     uint64_t offHigh = 8 * _1T; /* we don't need bigger files */
-    uint64_t offOld  = RTFileTell(File);
-
+    /** @todo r=bird: This isn't doing the trick for windows (at least not vista). 
+     * Close to offHigh is returned regardless of NTFS or FAT32. 
+     * We might have to make this code OS specific... */ 
+    //uint64_t offHigh = INT64_MAX;
     for (;;)
     {
-        uint64_t interval = (offHigh - offLow) >> 1;
-        if (interval == 0)
+        uint64_t cbInterval = (offHigh - offLow) >> 1;
+        if (cbInterval == 0)
         {
-            RTFileSeek(File, offOld, RTFILE_SEEK_BEGIN, NULL);
-            return offLow;
+            if (pcbMax)
+                *pcbMax = offLow;
+            return RTFileSeek(File, offOld, RTFILE_SEEK_BEGIN, NULL);
         }
-        if (RT_FAILURE(RTFileSeek(File, offLow + interval, RTFILE_SEEK_BEGIN, NULL)))
-            offHigh = offLow + interval;
+
+        rc = RTFileSeek(File, offLow + cbInterval, RTFILE_SEEK_BEGIN, NULL);
+        if (RT_FAILURE(rc))
+            offHigh = offLow + cbInterval;
         else
-            offLow  = offLow + interval;
+            offLow  = offLow + cbInterval;
     }
 }
 
