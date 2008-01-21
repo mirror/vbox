@@ -265,6 +265,11 @@ RTR3DECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize);
 RTR3DECL(int)  RTFileGetSize(RTFILE File, uint64_t *pcbSize);
 
 /**
+ * Determine the maximum file size depending on the file system the file is stored on.
+ */
+RTR3DECL(uint64_t) RTFileGetMaxSize(RTFILE File);
+
+/**
  * Gets the current file position.
  *
  * @returns File offset.
