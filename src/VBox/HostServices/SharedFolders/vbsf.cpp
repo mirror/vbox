@@ -1382,7 +1382,7 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
     return rc;
 }
 
-int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
+static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE);
     int             rc = VINF_SUCCESS;
@@ -1393,12 +1393,6 @@ int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, u
         AssertFailed();
         return VERR_INVALID_PARAMETER;
     }
-
-    /* is the guest allowed to write to this share? */
-    bool fWritable;
-    rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
-    if (RT_FAILURE(rc) || !fWritable)
-        return VERR_WRITE_PROTECT;
 
     *pcbBuffer  = 0;
     pSFDEntry   = (RTFSOBJINFO *)pBuffer;
@@ -1467,7 +1461,7 @@ int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, u
 }
 
 
-int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
+static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
     int             rc = VINF_SUCCESS;
@@ -1478,14 +1472,6 @@ int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, 
         AssertFailed();
         return VERR_INVALID_PARAMETER;
     }
-
-    /* is the guest allowed to write to this share? */
-    bool fWritable;
-    rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
-    if (RT_FAILURE(rc) || !fWritable)
-        return VERR_WRITE_PROTECT;
-
-    rc = VINF_SUCCESS;
 
     *pcbBuffer  = 0;
     pSFDEntry   = (RTFSOBJINFO *)pBuffer;
