@@ -187,7 +187,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 
     /* PORTME */
 #else
-    /* Defalut implementation (linux, solaris). */
+    /* Default implementation (linux, solaris). */
     int rc2 = VERR_INTERNAL_ERROR;
     int rc = RTFileIoCtl(g_File, (int)iFunction, pvData, cbData, &rc2);
     if (RT_SUCCESS(rc))
@@ -308,7 +308,7 @@ VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
      * Solaris does not accept more than 255 bytes of data per ioctl request,
      * so split large string into 128 byte chunks to prevent truncation.
      */
-#define STEP 128
+#define STEP 128 /** @todo increase to 512 when solaris ioctl code is fixed. (darwin limits us to 1024 IIRC) */
     int rc = VINF_SUCCESS;
     for (size_t off = 0; off < cb && RT_SUCCESS(rc); off += STEP)
     {
