@@ -576,7 +576,26 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 {
     LogFlow((DEVICE_NAME ":VBoxAddSolarisClose pid=%d\n", (int)RTProcSelf()));
 
-#ifdef USE_SESSION_HASH
+#ifndef USE_SESSION_HASH
+    PVBOXGUESTSESSION pSession;
+    VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, getminor(Dev));
+    if (!pState)
+    {
+        Log((DEVICE_NAME ":VBoxAddSolarisClose: failed to get pState.\n"));
+        return EFAULT;
+    }
+
+    pSession = pState->pSession;
+    pState->pSession = NULL;
+    Log((DEVICE_NAME ":VBoxAddSolarisClose: pSession=%p pState=%p\n", pSession, pState));
+    ddi_soft_state_free(g_pVBoxAddSolarisState, getminor(Dev));
+    if (!pSession)
+    {
+        Log((DEVICE_NAME ":VBoxAddSolarisClose: failed to get pSession.\n"));
+        return EFAULT;
+    }
+
+#else /* USE_SESSION_HASH */
     /*
      * Remove from the hash table.
      */
@@ -620,25 +639,7 @@ static int VBoxAddSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
         return EFAULT;
     }
     Log((DEVICE_NAME ":VBoxAddSolarisClose: pid=%d\n", (int)Process));
-#else
-    PVBOXGUESTSESSION pSession;
-    VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, getminor(Dev));
-    if (!pState)
-    {
-        Log((DEVICE_NAME ":VBoxAddSolarisClose: failed to get pState.\n"));
-        return EFAULT;
-    }
-
-    pSession = pState->pSession;
-    pState->pSession = NULL;
-    Log((DEVICE_NAME ":VBoxAddSolarisClose: pSession=%p pState=%p\n", pSession, pState));
-    ddi_soft_state_free(g_pVBoxAddSolarisState, getminor(Dev));
-    if (!pSession)
-    {
-        Log((DEVICE_NAME ":VBoxAddSolarisClose: failed to get pSession.\n"));
-        return EFAULT;
-    }
-#endif
+#endif /* USE_SESSION_HASH */
 
     /*
      * Close the session.
@@ -678,7 +679,25 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
 {
     LogFlow((DEVICE_NAME ":VBoxAddSolarisIOCtl\n"));
 
-#ifdef USE_SESSION_HASH
+#ifndef USE_SESSION_HASH
+    /*
+     * Get the session from the soft state item.
+     */
+    VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, getminor(Dev));
+    if (!pState)
+    {
+        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: no state data for %d\n", getminor(Dev)));
+        return EINVAL;
+    }
+
+    PVBOXGUESTSESSION pSession = pState->pSession;
+    if (!pSession)
+    {
+        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: no session data for %d\n", getminor(Dev)));
+        return EINVAL;
+    }
+
+#else /* USE_SESSION_HASH */
     RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     const RTPROCESS     Process = RTProcSelf();
     const unsigned      iHash = SESSION_HASH(Process);
@@ -700,25 +719,11 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n", (int)Process, Cmd));
         return EINVAL;
     }
-#else
-    /*
-     * Get the session from the soft state item.
-     */
-    VBoxAddDevState *pState = ddi_get_soft_state(g_pVBoxAddSolarisState, getminor(Dev));
-    if (!pState)
-    {
-        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: no state data for %d\n", getminor(Dev)));
-        return EINVAL;
-    }
+#endif /* USE_SESSION_HASH */
 
-    PVBOXGUESTSESSION pSession = pState->pSession;
-    if (!pSession)
-    {
-        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: no session data for %d\n", getminor(Dev)));
-        return EINVAL;
-    }
-#endif
-
+    /** @todo r=bird: This is not the way I told you to implement this. Just do it exactly like the support
+     * driver, i.e. the request is just a fixed size header containing the buffer pointer and size of the
+     * real request (SUPREQHDR). Trying to save the extra ddi_copyin isn't worth the effort and inflexibility. */
     uint32_t cbBuf = 0;
     int rc = 0;
     int requestType = 0;
@@ -750,6 +755,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         if (RT_UNLIKELY(rc))
             LogRel((DEVICE_NAME ":ddi_copyin failed. rc=%d\n", rc));
         else
+/** @todo r=bird: this should be handled by generic code and not here so it works 100% the same everywhere. */
             Log(("%.*s", cbBuf, pszLogMsg));
         RTMemTmpFree(pszLogMsg);
         return rc;
