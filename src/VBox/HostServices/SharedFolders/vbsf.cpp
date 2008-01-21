@@ -1131,7 +1131,8 @@ int vbsfWrite (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
 
     Log(("vbsfWrite %RX64 offset %RX64 bytes %x\n", Handle, offset, *pcbBuffer));
 
-    /* is the guest allowed to write to this share? */
+    /* Is the guest allowed to write to this share?
+     * XXX Actually this check was still done in vbsfCreate() -- RTFILE_O_WRITE cannot be set if vbsfMappingsQueryWritable() failed. */
     bool fWritable;
     rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
     if (RT_FAILURE(rc) || !fWritable)
