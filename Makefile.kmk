@@ -38,7 +38,7 @@ INSTALLS = bin
 bin_INST = $(INST_BIN)
 
 # The SDL DLLs
-ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+if1of ($(BUILD_TARGET), win os2)
  ifneq ($(VBOX_WITH_VBOXSDL)$(VBOX_WITH_VBOXBFE),)
   include $(PATH_KBUILD)/sdks/LIBSDL.kmk
   bin_SOURCES += \
@@ -57,7 +57,7 @@ endif
 
 # The Qt DLLs.
 ifneq ($(VBOX_WITH_QTGUI),)
- ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
+ if1of ($(BUILD_TARGET), win os2)
   #include $(PATH_KBUILD)/sdks/QT3.kmk
   #bin_SOURCES += \
   #	$(DLL_SDK_QT3_QT)
@@ -156,7 +156,7 @@ endif
 # Install staged binaries on platforms where we can't cross
 # compile things.
 #
-ifneq ($(filter-out linux win l4, $(BUILD_TARGET)),)
+ifn1of ($(BUILD_TARGET), l4 linux win)
  VBOX_PATH_STAGED ?= .
 
  # Additions.
