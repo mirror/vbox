@@ -786,7 +786,7 @@ void Console::VRDPInterceptClipboard (uint32_t u32ClientId)
 //static
 const char *Console::sSSMConsoleUnit = "ConsoleData";
 //static
-uint32_t Console::sSSMConsoleVer = 0x00010000;
+uint32_t Console::sSSMConsoleVer = 0x00010001;
 
 /**
  *  Loads various console data stored in the saved state file.
@@ -814,7 +814,7 @@ HRESULT Console::loadDataFromSavedState()
     {
         uint32_t version = 0;
         vrc = SSMR3Seek (ssm, sSSMConsoleUnit, 0 /* iInstance */, &version);
-        if (version == sSSMConsoleVer)
+        if (SSM_VERSION_MAJOR(version)  == SSM_VERSION_MAJOR(sSSMConsoleVer))
         {
             if (VBOX_SUCCESS (vrc))
                 vrc = loadStateFileExec (ssm, this, 0);
@@ -882,9 +882,8 @@ Console::saveStateFileExec (PSSMHANDLE pSSM, void *pvUser)
         vrc = SSMR3PutStrZ (pSSM, hostPath);
         AssertRC (vrc);
 
-//        XXX
-//        vrc = SSMR3PutBool (pSSM, folder->writable());
-//        AssertRC (vrc);
+        vrc = SSMR3PutBool (pSSM, folder->writable());
+        AssertRC (vrc);
     }
 
     return;
@@ -907,7 +906,7 @@ Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
 {
     LogFlowFunc (("\n"));
 
-    if (u32Version != 0 && u32Version != sSSMConsoleVer)
+    if (u32Version != 0 && SSM_VERSION_MAJOR_CHANGED(u32Version, sSSMConsoleVer))
         return VERR_VERSION_MISMATCH;
 
     if (u32Version != 0)
@@ -934,6 +933,7 @@ Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
     {
         Bstr name;
         Bstr hostPath;
+        bool writable = true;
 
         uint32_t szBuf = 0;
         char *buf = NULL;
@@ -954,9 +954,12 @@ Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
         hostPath = buf;
         delete[] buf;
 
+        if (u32Version > 0x00010000)
+            SSMR3GetBool (pSSM, &writable);
+
         ComObjPtr <SharedFolder> sharedFolder;
         sharedFolder.createObject();
-        HRESULT rc = sharedFolder->init (that, name, hostPath, true); /* TODO: fWritable */
+        HRESULT rc = sharedFolder->init (that, name, hostPath, writable);
         AssertComRCReturn (rc, VERR_INTERNAL_ERROR);
 
         that->mSharedFolders.insert (std::make_pair (name, sharedFolder));
