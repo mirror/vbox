@@ -507,25 +507,11 @@ TMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
                 break;
 
             case TMTIMERSTATE_PENDING_SCHEDULE:
+            case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
                 if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE, enmState))
                 {
                     Assert(!pTimer->offPrev);
                     Assert(!pTimer->offNext);
-                    pTimer->u64Expire = u64Expire;
-                    TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
-                    tmSchedule(pTimer);
-                    STAM_PROFILE_STOP(&pTimer->CTXALLSUFF(pVM)->tm.s.CTXALLSUFF(StatTimerSet), a);
-                    return VINF_SUCCESS;
-                }
-                break;
-
-
-            case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
-                if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE, enmState))
-                {
-                    /* The timer is possibly being excluded from the active list atm */
-                    ///Assert(!pTimer->offPrev);
-                    ///Assert(!pTimer->offNext);
                     pTimer->u64Expire = u64Expire;
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
                     tmSchedule(pTimer);
@@ -1170,7 +1156,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 if (pPrev)
                     TMTIMER_SET_NEXT(pPrev, pNext);
                 else
-                {       
+                {
                     TMTIMER_SET_HEAD(pQueue, pNext);
                     pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
                 }
@@ -1180,7 +1166,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 pTimer->offPrev = 0;
                 /* fall thru */
             }
-    
+
             /*
              * Schedule timer (insert into the active list).
              */
@@ -1226,7 +1212,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 }
                 return;
             }
-    
+
             /*
              * Stop the timer in active list.
              */
@@ -1250,7 +1236,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 pTimer->offPrev = 0;
                 /* fall thru */
             }
-    
+
             /*
              * Stop the timer (not on the active list).
              */
@@ -1259,7 +1245,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_PENDING_STOP_SCHEDULE)))
                     break;
                 return;
-    
+
             /*
              * Stop & destroy the timer.
              */
@@ -1280,7 +1266,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 pTimer->offPrev = 0;
                 /* fall thru */
             }
-    
+
             /*
              * Destroy the timer.
              */
@@ -1290,7 +1276,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 PVM pVM = pTimer->CTXALLSUFF(pVM);
                 const PTMTIMER pBigPrev = (PTMTIMER)(pTimer->pBigPrev ? MMHyperR3ToCC(pVM, pTimer->pBigPrev) : NULL);
                 const PTMTIMER pBigNext = (PTMTIMER)(pTimer->pBigNext ? MMHyperR3ToCC(pVM, pTimer->pBigNext) : NULL);
-    
+
                 /* unlink from created list */
                 if (pBigPrev)
                     pBigPrev->pBigNext = pTimer->pBigNext;
@@ -1300,7 +1286,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                     pBigNext->pBigPrev = pTimer->pBigPrev;
                 pTimer->pBigNext = 0;
                 pTimer->pBigPrev = 0;
-    
+
                 /* free */
                 Log2(("TM: Inserting %p into the free list ahead of %p!\n", pTimer, pVM->tm.s.pFree));
                 pTimer->pBigNext = pVM->tm.s.pFree;
@@ -1308,7 +1294,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 TM_SET_STATE(pTimer, TMTIMERSTATE_FREE);
                 return;
             }
-    
+
             /*
              * Postpone these until they get into the right state.
              */
@@ -1317,7 +1303,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 tmTimerLink(pQueue, pTimer);
                 STAM_COUNTER_INC(&pTimer->CTXALLSUFF(pVM)->tm.s.CTXALLSUFF(StatPostponed));
                 return;
-    
+
             /*
              * None of these can be in the schedule.
              */
