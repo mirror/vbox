@@ -1131,6 +1131,12 @@ int vbsfWrite (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
 
     Log(("vbsfWrite %RX64 offset %RX64 bytes %x\n", Handle, offset, *pcbBuffer));
 
+    /* is the guest allowed to write to this share? */
+    bool fWritable;
+    rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
+    if (RT_FAILURE(rc) || !fWritable)
+        return VERR_WRITE_PROTECT;
+
     if (*pcbBuffer == 0)
         return VINF_SUCCESS; /** @todo correct? */
 
@@ -1473,6 +1479,14 @@ int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, 
         return VERR_INVALID_PARAMETER;
     }
 
+    /* is the guest allowed to write to this share? */
+    bool fWritable;
+    rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
+    if (RT_FAILURE(rc) || !fWritable)
+        return VERR_WRITE_PROTECT;
+
+    rc = VINF_SUCCESS;
+
     *pcbBuffer  = 0;
     pSFDEntry   = (RTFSOBJINFO *)pBuffer;
 
@@ -1577,6 +1591,13 @@ int vbsfSetFSInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uin
         AssertFailed();
         return VERR_INVALID_PARAMETER;
     }
+
+    /* is the guest allowed to write to this share? */
+    bool fWritable;
+    int rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
+    if (RT_FAILURE(rc) || !fWritable)
+        return VERR_WRITE_PROTECT;
+
     if (flags & SHFL_INFO_FILE)
         return vbsfSetFileInfo(pClient, root, Handle, flags, pcbBuffer, pBuffer);
 
