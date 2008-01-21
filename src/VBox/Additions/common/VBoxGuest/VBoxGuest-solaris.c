@@ -724,6 +724,37 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     /** @todo r=bird: This is not the way I told you to implement this. Just do it exactly like the support
      * driver, i.e. the request is just a fixed size header containing the buffer pointer and size of the
      * real request (SUPREQHDR). Trying to save the extra ddi_copyin isn't worth the effort and inflexibility. */
+#if 0
+    /*
+     * Read and validate the request wrapper.
+     */
+    VBGLBIGREQ ReqWrap;
+    if (IOCPARM_LEN(Cmd) != sizeof(ReqWrap))
+    {
+        Log((DEVICE_NAME ": VBoxAddSolarisIOCtl: bad request %#x\n", Cmd));
+        return ENOTTY;
+    }
+
+    rc = ddi_copyin((void *)pArg, &ReqWrap, sizeof(ReqWrap), Mode);
+    if (RT_UNLIKELY(rc))
+    {
+        Log((DEVICE_NAME ": VBoxAddSolarisIOCtl: ddi_copyin failed to read header pArg=%p Cmd=%d. rc=%d.\n", pArg, Cmd, rc));
+        return EINVAL;
+    }
+
+    if (ReqWrap.u32Magic != VBGLBIGREQ_MAGIC)
+    {
+        Log((DEVICE_NAME ": VBoxAddSolarisIOCtl: bad magic %#x; pArg=%p Cmd=%d.\n", ReqWrap.u32Magic, pArg, Cmd));
+        return EINVAL;
+    }
+    if (RT_UNLIKELY(   ReqWrap.cbData == 0
+                    || ReqWrap.cbData > _1M*16))
+    {
+        Log((DEVICE_NAME ": VBoxAddSolarisIOCtl: bad size %#x; pArg=%p Cmd=%d.\n", ReqWrap.cbData, pArg, Cmd));
+        return EINVAL;
+    }
+
+#else
     uint32_t cbBuf = 0;
     int rc = 0;
     int requestType = 0;
@@ -841,18 +872,27 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         }
         cbBuf += Hdr.cParms * sizeof(HGCMFunctionParameter);
     }
+#endif
 
     /*
      * Read the request.
      */
+#if 0
+    void *pvBuf = RTMemTmpAlloc(ReqWrap.cbData);
+#else
     void *pvBuf = RTMemTmpAlloc(cbBuf);
+#endif
     if (RT_UNLIKELY(!pvBuf))
     {
         Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: RTMemTmpAlloc failed to alloc %d bytes.\n", cbBuf));
         return ENOMEM;
     }
 
+#if 0
+    rc = ddi_copyin((void *)pArg, (void *)(uintptr_t)ReqWrap.pvData, ReqWrap.cbData, Mode);
+#else
     rc = ddi_copyin((void *)pArg, pvBuf, cbBuf, Mode);
+#endif
     if (RT_UNLIKELY(rc))
     {
         RTMemTmpFree(pvBuf);
@@ -878,7 +918,11 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
             Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, cbBuf));
             cbDataReturned = cbBuf;
         }
+#if 0
+        rc = ddi_copyout(pvBuf, (void *)(uintptr_t)ReqWrap.pvData, cbDataReturned, Mode);
+#else
         rc = ddi_copyout(pvBuf, (void *)pArg, cbDataReturned, Mode);
+#endif
         if (RT_UNLIKELY(rc))
         {
             Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
