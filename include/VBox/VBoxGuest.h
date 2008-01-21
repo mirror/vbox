@@ -1012,8 +1012,9 @@ typedef struct _VBoxGuestPortInfo
 # define IOCTL_VBOXGUEST_WAITEVENT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2049, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestWaitEventInfo))
 #endif
 
-/** IOCTL to VBoxGuest to interrupt any pending WAITEVENTs and return.  Handled inside the
- * guest additions and not seen by the host at all.
+/** IOCTL to VBoxGuest to interrupt (cancel) any pending WAITEVENTs and return.
+ * Handled inside the guest additions and not seen by the host at all.
+ * @todo r=bird: rename this to VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS.
  * @see VBOXGUEST_IOCTL_WAITEVENT */
 #ifdef VBOXGUEST_IOCTL_CODE
 # define VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL    VBOXGUEST_IOCTL_CODE(5, 0)
