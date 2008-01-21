@@ -173,6 +173,18 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
         return vrc;
     return RTErrConvertFromOS2(rc);
 
+#elif defined(RT_OS_SOLARIS) && 0
+    VBGLBIGREQ Hdr;
+    Hdr.u32Magic = VBGLBIGREQ_MAGIC;
+    Hdr.cbData = cbData;
+    Hdr.pvData = pvData;
+    Assert(_IOC_SIZE(iFunction) == sizeof(Hdr));
+
+    int rc = ioctl((int)File, iFunction, &Hdr);
+    if (rc == -1)
+        rc = errno;
+    return rc;
+
     /* PORTME */
 #else
     /* Defalut implementation (linux, solaris). */
