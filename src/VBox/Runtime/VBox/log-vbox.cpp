@@ -184,11 +184,6 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
     if (g_pLogger || !ASMAtomicCmpXchgU32(&fInitializing, 1, 0))
         return g_pLogger;
 
-    /* If we are doing backdoor logging then we do not want to
-       create an additional log file inside the guest. */
-#ifdef LOG_TO_BACKDOOR
-    return g_pLogger = NULL;
-#endif
 #ifdef IN_RING3
     /*
      * Assert the group definitions.
@@ -288,13 +283,14 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
      */
     PRTLOGGER pLogger;
 #ifdef IN_RING3
+# ifndef LOG_TO_BACKDOOR
     char szExecName[RTPATH_MAX];
     if (!RTProcGetExecutableName(szExecName, sizeof(szExecName)))
         strcpy(szExecName, "VBox");
     RTTIMESPEC TimeSpec;
     RTTIME Time;
     RTTimeExplode(&Time, RTTimeNow(&TimeSpec));
-    int rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_FILE,
+    int rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_FILE,
                          "./%04d-%02d-%02d-%02d-%02d-%02d.%03d-%s-%d.log",
                          Time.i32Year, Time.u8Month, Time.u8MonthDay, Time.u8Hour, Time.u8Minute, Time.u8Second, Time.u32Nanosecond / 10000000,
                          RTPathFilename(szExecName), RTProcSelf());
@@ -309,10 +305,10 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
         RTLogLoggerEx(pLogger, 0, ~0U, "Executable: %s\n", szExecName);
 
         /* executable and arguments - tricky and all platform specific. */
-# if defined(RT_OS_WINDOWS)
+#  if defined(RT_OS_WINDOWS)
         RTLogLoggerEx(pLogger, 0, ~0U, "Commandline: %ls\n", GetCommandLineW());
 
-# elif defined(RT_OS_SOLARIS)
+#  elif defined(RT_OS_SOLARIS)
         psinfo_t psi;
         char szArgFileBuf[80];
         RTStrPrintf(szArgFileBuf, sizeof(szArgFileBuf), "/proc/%ld/psinfo", (long)getpid());
@@ -321,24 +317,24 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
         {
             if (fread(&psi, sizeof(psi), 1, pFile) == 1)
             {
-#  if 0     /* 100% safe:*/
+#   if 0     /* 100% safe:*/
                 RTLogLoggerEx(pLogger, 0, ~0U, "Args: %s\n", psi.pr_psargs);
-#  else     /* probably safe: */
+#   else     /* probably safe: */
                 const char * const *argv = (const char * const *)psi.pr_argv;
                 for (int iArg = 0; iArg < psi.pr_argc; iArg++)
                     RTLogLoggerEx(pLogger, 0, ~0U, "Arg[%d]: %s\n", iArg, argv[iArg]);
-#  endif
+#   endif
 
             }
             fclose(pFile);
         }
 
-# elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
-#  ifdef RT_OS_LINUX
+#  elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+#   ifdef RT_OS_LINUX
         FILE *pFile = fopen("/proc/self/cmdline", "r");
-#  else /* RT_OS_FREEBSD: */
+#   else /* RT_OS_FREEBSD: */
         FILE *pFile = fopen("/proc/curproc/cmdline", "r");
-#  endif
+#   endif
         if (pFile)
         {
             /* braindead */
@@ -365,17 +361,28 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
             fclose(pFile);
         }
 
-# elif defined(RT_OS_L4) || defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
+#  elif defined(RT_OS_L4) || defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
         /* commandline? */
-# else
-#  error needs porting.
-#endif
+#  else
+#   error needs porting.
+#  endif
     }
 
+# else  /* LOG_TO_BACKDOOR */
+    /* The user destination is backdoor logging. */
+    int rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG",
+                         RT_ELEMENTS(g_apszGroups), &g_apszGroups[0],
+                         RTLOGDEST_USER, "VBox.log");
+# endif /* LOG_TO_BACKDOOR */
 
 #else /* IN_RING0 */
-    int rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", ELEMENTS(g_apszGroups), &g_apszGroups[0],
-                         RTLOGDEST_FILE, "VBox-ring0.log");
+    int rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0],
+# ifdef LOG_TO_BACKDOOR
+                         RTLOGDEST_USER,
+# else
+                         RTLOGDEST_FILE,
+# endif
+                         "VBox-ring0.log");
     if (RT_SUCCESS(rc))
     {
         /*
