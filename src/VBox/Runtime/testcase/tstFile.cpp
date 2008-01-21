@@ -69,8 +69,6 @@ int main()
     else
         RTPrintf("Maximum file size is %RTfoff bytes.\n", cbMax);
 
-return 0;
-
     /* grow file beyond 2G */
     rc = RTFileSetSize(File, _2G + _1M);
     if (RT_FAILURE(rc))
