@@ -49,7 +49,27 @@ int main()
         return 1;
     }
 
-    RTPrintf("Maximum file size is %lld bytes.\n", RTFileGetMaxSize(File));
+    RTFOFF cbMax = -2;
+    rc = RTFileGetMaxSizeEx(File, &cbMax);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstFile: RTFileGetMaxSizeEx failed: %Rrc\n", rc);
+        cErrors++;
+    }
+    else if (cbMax <= 0)
+    {
+        RTPrintf("tstFile: RTFileGetMaxSizeEx failed: cbMax=%RTfoff\n", cbMax);
+        cErrors++;
+    }
+    else if (RTFileGetMaxSize(File) != cbMax)
+    {
+        RTPrintf("tstFile: RTFileGetMaxSize failed; returns %RTfoff instead of %RTfoff\n", RTFileGetMaxSize(File), cbMax);
+        cErrors++;
+    }
+    else
+        RTPrintf("Maximum file size is %RTfoff bytes.\n", cbMax);
+
+return 0;
 
     /* grow file beyond 2G */
     rc = RTFileSetSize(File, _2G + _1M);

@@ -265,9 +265,33 @@ RTR3DECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize);
 RTR3DECL(int)  RTFileGetSize(RTFILE File, uint64_t *pcbSize);
 
 /**
- * Determine the maximum file size depending on the file system the file is stored on.
+ * Determine the maximum file size. 
+ *  
+ * @returns The max size of the file. 
+ *          -1 on failure, the file position is undefined.
+ * @param   File        Handle to the file. 
+ * @see     RTFileGetMaxSizeEx. 
  */
-RTR3DECL(uint64_t) RTFileGetMaxSize(RTFILE File);
+RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
+
+/**
+ * Determine the maximum file size. 
+ *  
+ * @returns IPRT status code.
+ * @param   File        Handle to the file. 
+ * @param   pcbMax      Where to store the max file size. 
+ * @see     RTFileGetMaxSize.
+ */
+RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax);
+
+/**
+ * Determine the maximum file size depending on the file system the file is stored on. 
+ *  
+ * @returns The max size of the file. 
+ *          -1 on failure.
+ * @param   File        Handle to the file.         
+ */
+RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
 
 /**
  * Gets the current file position.
