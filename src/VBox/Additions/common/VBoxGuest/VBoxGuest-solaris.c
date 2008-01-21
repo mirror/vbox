@@ -139,8 +139,6 @@ static struct modlinkage g_VBoxAddSolarisModLinkage =
  */
 typedef struct
 {
-    /** PCI handle of VMMDev. */
-    ddi_acc_handle_t        PciHandle;
     /** IO port handle. */
     ddi_acc_handle_t        PciIOHandle;
     /** MMIO handle. */
@@ -280,22 +278,23 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                 /*
                  * Enable resources for PCI access.
                  */
-                rc = pci_config_setup(pDip, &pState->PciHandle);
+                ddi_acc_handle_t PciHandle;
+                rc = pci_config_setup(pDip, &PciHandle);
                 if (rc == DDI_SUCCESS)
                 {
                     /*
                      * Check vendor and device ID.
                      */
-                    uint16_t uVendorID = pci_config_get16(pState->PciHandle, PCI_CONF_VENID);
-                    uint16_t uDeviceID = pci_config_get16(pState->PciHandle, PCI_CONF_DEVID);
+                    uint16_t uVendorID = pci_config_get16(PciHandle, PCI_CONF_VENID);
+                    uint16_t uDeviceID = pci_config_get16(PciHandle, PCI_CONF_DEVID);
                     if (   uVendorID == VMMDEV_VENDORID
                         && uDeviceID == VMMDEV_DEVICEID)
                     {
                         /*
                          * Verify PCI class of the device (a bit paranoid).
                          */
-                        uint8_t uClass = pci_config_get8(pState->PciHandle, PCI_CONF_BASCLASS);
-                        uint8_t uSubClass = pci_config_get8(pState->PciHandle, PCI_CONF_SUBCLASS);
+                        uint8_t uClass = pci_config_get8(PciHandle, PCI_CONF_BASCLASS);
+                        uint8_t uSubClass = pci_config_get8(PciHandle, PCI_CONF_SUBCLASS);
                         if (   uClass == PCI_CLASS_PERIPH
                             && uSubClass == PCI_PERIPH_OTHER)
                         {
@@ -340,7 +339,7 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                 {
                                                     g_pDip = pDip;
                                                     ddi_set_driver_private(pDip, pState);
-                                                    pci_config_teardown(&pState->PciHandle);
+                                                    pci_config_teardown(&PciHandle);
                                                     ddi_report_dev(pDip);
                                                     return DDI_SUCCESS;
                                                 }
@@ -370,7 +369,7 @@ static int VBoxAddSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                     }
                     else
                         Log((DEVICE_NAME ":PCI vendorID, deviceID does not match.\n"));
-                    pci_config_teardown(&pState->PciHandle);
+                    pci_config_teardown(&PciHandle);
                 }
                 else
                     LogRel((DEVICE_NAME ":pci_config_setup failed rc=%d.\n", rc));
@@ -662,13 +661,6 @@ static int VBoxAddSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
     return 0;
 }
 
-/** @def IOCPARM_LEN
- * Gets the length from the ioctl number.
- * This is normally defined by sys/ioccom.h on BSD systems...
- */
-#ifndef IOCPARM_LEN
-# define IOCPARM_LEN(x)     ( ((x) >> 16) & IOCPARM_MASK )
-#endif
 
 /**
  * Driver ioctl, an alternate entry point for this character driver.
