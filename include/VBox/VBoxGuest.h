@@ -951,6 +951,29 @@ typedef struct
 # error "dunno which arch this is!"
 #endif
 
+/** Ring-3 request wrapper for big requests.
+ *
+ * This is necessary because the ioctl number scheme on many Unixy OSes (esp. Solaris)
+ * only allows a relatively small size to be encoded into the request. So, for big
+ * request this generic form is used instead. */
+typedef struct VBGLBIGREQ
+{
+    /** Magic value (VBGLBIGREQ_MAGIC). */
+    uint32_t    u32Magic;
+    /** The size of the data buffer. */
+    uint32_t    cbData;
+    /** The user address of the data buffer. */
+    RTR3PTR     pvDataR3;
+} VBGLBIGREQ;
+/** Pointer to a request wrapper for solaris guests. */
+typedef VBGLBIGREQ *PVBGLBIGREQ;
+/** Pointer to a const request wrapper for solaris guests. */
+typedef const VBGLBIGREQ *PCVBGLBIGREQ;
+
+/** The VBGLBIGREQ::u32Magic value (Ryuu Murakami). */
+#define VBGLBIGREQ_MAGIC                            0x19520219
+
+
 #if defined(RT_OS_WINDOWS)
 # define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
     ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
@@ -975,12 +998,17 @@ typedef struct
 
 #elif defined(RT_OS_SOLARIS)
 # include <sys/ioccom.h>
+#if 0
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWRN('V', (Function) | VBOXGUEST_IOCTL_FLAG, sizeof(VBGLBIGREQ))
+# define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
+#else
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWRN('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 
 /** @todo r=bird: Please remove. See discussion in xTracker and elsewhere; VBOXGUEST_IOCTL_STRIP_SIZE is all we need here and it must be defined everywhere. */
 # define VBOXGUEST_IOCTL_SIZE(Code)             (((Code) >> 16) & IOCPARM_MASK)
 # define VBOXGUEST_IOCTL_NUMBER(Code)           ((Code) & IOCPARM_MASK)
+#endif
 
 #elif 0 /* BSD style - needs some adjusting _IORW takes a type and not a size. */
 # include <sys/ioccom.h>
