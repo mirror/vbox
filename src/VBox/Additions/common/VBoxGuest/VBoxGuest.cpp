@@ -1142,15 +1142,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
      * Deal with variably sized requests first.
      */
     int rc = VINF_SUCCESS;
-#ifdef RT_OS_SOLARIS
-    /* The other way of determining the request type does not work on Solaris (and perhaps on Linux too) 
-     * as the range between the request types overlap when comparing all bits of the function code...
-     */
-    if (VBOXGUEST_IOCTL_NUMBER(iFunction) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_VMMREQUEST(0)))
-#else
-    if (    iFunction >= VBOXGUEST_IOCTL_VMMREQUEST(0)
-        &&  iFunction <= VBOXGUEST_IOCTL_VMMREQUEST(0xfff)) /** @todo find a better way to do this*/
-#endif
+    if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST(0)))
     {
         CHECKRET_MIN_SIZE("VMMREQUEST", sizeof(VMMDevRequestHeader));
         rc = VBoxGuestCommonIOCtl_VMMRequest(pDevExt, (VMMDevRequestHeader *)pvData, cbData, pcbDataReturned);
@@ -1159,12 +1151,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
     /*
      * This one is tricky and can be done later.
      */
-# ifdef RT_OS_SOLARIS
-    else if (VBOXGUEST_IOCTL_NUMBER(iFunction) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_HGCM_CALL(0)))
-#else
-    else if (   iFunction >= VBOXGUEST_IOCTL_HGCM_CALL(0)
-             && iFunction <= VBOXGUEST_IOCTL_HGCM_CALL(0xfff))
-#endif
+    else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0)))
     {
         CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfo));
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, cbData, pcbDataReturned);
