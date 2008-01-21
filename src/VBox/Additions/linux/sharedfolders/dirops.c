@@ -563,11 +563,10 @@ sf_rename (struct inode *old_parent, struct dentry *old_dentry,
                                 sf_file_i->path = new_path;
                         } else {
                                 LogFunc(("vboxCallRename failed rc=%Vrc\n", rc));
-                                err = -RTErrConvertToErrno (err);
+                                err = -RTErrConvertToErrno (rc);
                         }
-                        if (0 != err) {
+                        if (0 != err)
                                 kfree (new_path);
-                        }
                 }
         }
         return err;
