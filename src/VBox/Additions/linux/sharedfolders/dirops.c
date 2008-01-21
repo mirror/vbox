@@ -412,7 +412,7 @@ sf_create_aux (struct inode *parent, struct dentry *dentry, int dirop)
         if (VBOX_FAILURE (rc)) {
                 if (rc == VERR_WRITE_PROTECT)
                 {
-                    err = -EACCES;
+                    err = -EROFS;
                     goto fail0;
                 }
                 err = -EPROTO;
