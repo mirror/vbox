@@ -312,14 +312,15 @@ VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
  * Change the IRQ filter mask.
  *
  * @returns IPRT status code
+ * @param   fOr     The OR mask.
+ * @param   fNo     The NOT mask.
  */
-VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t u32OrMask, uint32_t u32NotMask)
+VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
 {
-    VBoxGuestFilterMaskInfo info;
-
-    info.u32OrMask = u32OrMask;
-    info.u32NotMask = u32NotMask;
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &info, sizeof(info));
+    VBoxGuestFilterMaskInfo Info;
+    Info.u32OrMask = fOr;
+    Info.u32NotMask = fNot;
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
 }
 
 
