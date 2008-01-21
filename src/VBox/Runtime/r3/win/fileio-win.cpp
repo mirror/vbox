@@ -66,13 +66,24 @@
  */
 inline bool MySetFilePointer(RTFILE File, uint64_t offSeek, uint64_t *poffNew, unsigned uMethod)
 {
+    bool            fRc;
     LARGE_INTEGER   off;
+
     off.QuadPart = offSeek;
 #if 1
-    off.LowPart = SetFilePointer((HANDLE)File, off.LowPart, &off.HighPart, uMethod);
-    bool fRc = off.LowPart != INVALID_SET_FILE_POINTER;
+    if (off.LowPart != INVALID_SET_FILE_POINTER)
+    {
+        off.LowPart = SetFilePointer((HANDLE)File, off.LowPart, &off.HighPart, uMethod);
+        fRc = off.LowPart != INVALID_SET_FILE_POINTER;
+    }
+    else
+    {
+        SetLastError(NO_ERROR);
+        off.LowPart = SetFilePointer((HANDLE)File, off.LowPart, &off.HighPart, uMethod);
+        fRc = GetLastError() == NO_ERROR;
+    }
 #else
-    bool fRc = SetFilePointerEx((HANDLE)File, off, &off, uMethod);
+    fRc = SetFilePointerEx((HANDLE)File, off, &off, uMethod);
 #endif
     if (fRc && poffNew)
         *poffNew = off.QuadPart;
