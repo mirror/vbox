@@ -237,8 +237,6 @@ typedef struct VMINT
     R3PTRTYPE(PVMATERROR)           pAtError;
     /** List of registered error callbacks. */
     R3PTRTYPE(PVMATERROR *)         ppAtErrorNext;
-    /** Ignore all but the first error */
-    bool                            fErrorSet;
 
     /** List of registered error callbacks. */
     R3PTRTYPE(PVMATRUNTIMEERROR)    pAtRuntimeError;
