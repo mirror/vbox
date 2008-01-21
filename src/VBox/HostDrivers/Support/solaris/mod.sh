@@ -47,7 +47,7 @@ if test -n "$old_id"; then
     sync
     $SUDO /usr/sbin/modunload -i $old_id
 else
-    echo "* If it fails below, run: $SUDO add_drv vboxdrv"
+    echo "* If it fails below, run: $SUDO add_drv -m'* 0666 root sys' vboxdrv"
 fi
 echo "* loading vboxdrv..."
 sync
