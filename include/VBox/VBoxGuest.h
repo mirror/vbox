@@ -969,6 +969,7 @@ typedef struct
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOC(_IOC_READ|_IOC_WRITE, 'V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 
+/** @todo r=bird: Please remove. See discussion in xTracker and elsewhere; VBOXGUEST_IOCTL_STRIP_SIZE is all we need here and it must be defined everywhere. */
 # define VBOXGUEST_IOCTL_NUMBER(Code)           (_IOC_NR((Code)) & ~VBOXGUEST_IOCTL_FLAG)
 # define VBOXGUEST_IOCTL_SIZE(Code)             (_IOC_SIZE((Code)))
 
@@ -977,6 +978,7 @@ typedef struct
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWRN('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 
+/** @todo r=bird: Please remove. See discussion in xTracker and elsewhere; VBOXGUEST_IOCTL_STRIP_SIZE is all we need here and it must be defined everywhere. */
 # define VBOXGUEST_IOCTL_SIZE(Code)             (((Code) >> 16) & IOCPARM_MASK)
 # define VBOXGUEST_IOCTL_NUMBER(Code)           ((Code) & IOCPARM_MASK)
 
