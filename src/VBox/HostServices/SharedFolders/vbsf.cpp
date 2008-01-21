@@ -1018,6 +1018,8 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
                 }
             }
 
+            rc = VINF_SUCCESS;
+
             /* write access requested? */
             if (pParms->CreateFlags & (  SHFL_CF_ACT_REPLACE_IF_EXISTS
                                        | SHFL_CF_ACT_OVERWRITE_IF_EXISTS
@@ -1028,16 +1030,15 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
                 bool fWritable;
                 rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
                 if (RT_FAILURE(rc) || !fWritable)
-                    return VERR_WRITE_PROTECT;
+                    rc = VERR_WRITE_PROTECT;
             }
 
-            if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
+            if (RT_SUCCESS(rc))
             {
-                rc = vbsfOpenDir (pszFullPath, pParms);
-            }
-            else
-            {
-                rc = vbsfOpenFile (pszFullPath, pParms);
+                if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
+                    rc = vbsfOpenDir (pszFullPath, pParms);
+                else
+                    rc = vbsfOpenFile (pszFullPath, pParms);
             }
         }
 
@@ -1387,6 +1388,12 @@ int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, u
         return VERR_INVALID_PARAMETER;
     }
 
+    /* is the guest allowed to write to this share? */
+    bool fWritable;
+    rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
+    if (RT_FAILURE(rc) || !fWritable)
+        return VERR_WRITE_PROTECT;
+
     *pcbBuffer  = 0;
     pSFDEntry   = (RTFSOBJINFO *)pBuffer;
 
@@ -1686,13 +1693,21 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
     char *pszFullPath = NULL;
 
     rc = vbsfBuildFullPath (pClient, root, pPath, cbPath, &pszFullPath, NULL);
-
     if (VBOX_SUCCESS (rc))
     {
-        if (flags & SHFL_REMOVE_FILE)
-            rc = RTFileDelete(pszFullPath);
-        else
-            rc = RTDirRemove(pszFullPath);
+        /* is the guest allowed to write to this share? */
+        bool fWritable;
+        rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
+        if (RT_FAILURE(rc) || !fWritable)
+            rc = VERR_WRITE_PROTECT;
+
+        if (VBOX_SUCCESS (rc))
+        {
+            if (flags & SHFL_REMOVE_FILE)
+                rc = RTFileDelete(pszFullPath);
+            else
+                rc = RTDirRemove(pszFullPath);
+        }
 
 #ifndef DEBUG_dmik
         // VERR_ACCESS_DENIED for example?
@@ -1732,14 +1747,24 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
     if (VBOX_SUCCESS (rc))
     {
         Log(("Rename %s to %s\n", pszFullPathSrc, pszFullPathDest));
-        if (flags & SHFL_RENAME_FILE)
+
+        /* is the guest allowed to write to this share? */
+        bool fWritable;
+        rc = vbsfMappingsQueryWritable (pClient, root, &fWritable);
+        if (RT_FAILURE(rc) || !fWritable)
+            rc = VERR_WRITE_PROTECT;
+
+        if (VBOX_SUCCESS (rc))
         {
-            rc = RTFileMove(pszFullPathSrc, pszFullPathDest, (flags & SHFL_RENAME_REPLACE_IF_EXISTS) ? RTFILEMOVE_FLAGS_REPLACE : 0);
-        }
-        else
-        {
-            /* NT ignores the REPLACE flag and simply return and already exists error. */
-            rc = RTDirRename(pszFullPathSrc, pszFullPathDest, (flags & SHFL_RENAME_REPLACE_IF_EXISTS) ? RTPATHRENAME_FLAGS_REPLACE : 0);
+            if (flags & SHFL_RENAME_FILE)
+            {
+                rc = RTFileMove(pszFullPathSrc, pszFullPathDest, (flags & SHFL_RENAME_REPLACE_IF_EXISTS) ? RTFILEMOVE_FLAGS_REPLACE : 0);
+            }
+            else
+            {
+                /* NT ignores the REPLACE flag and simply return and already exists error. */
+                rc = RTDirRename(pszFullPathSrc, pszFullPathDest, (flags & SHFL_RENAME_REPLACE_IF_EXISTS) ? RTPATHRENAME_FLAGS_REPLACE : 0);
+            }
         }
 
 #ifndef DEBUG_dmik
