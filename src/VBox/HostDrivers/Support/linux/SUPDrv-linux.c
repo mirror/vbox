@@ -41,7 +41,7 @@
 
 #include <linux/module.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-#include <linux/moduleparam.h>
+# include <linux/moduleparam.h>
 #endif
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -283,7 +283,8 @@ static devfs_handle_t       g_hDevFsVBoxDrv = NULL;
 static int                  g_iModuleMajor;
 #endif /* !CONFIG_VBOXDRV_AS_MISC */
 
-/** Module parameter */
+/** Module parameter.
+ * Not prefixed because the name is used by macros and the end of this file. */
 static int force_async_tsc = 0;
 
 /** The module name. */
@@ -309,9 +310,9 @@ __asm__(".section execmemory, \"awx\", @progbits\n\t"
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifdef VBOX_HRTIMER
-typedef enum hrtimer_restart (*VBOXTIMERFN)(struct hrtimer *);
+typedef enum hrtimer_restart (*PFNVBOXKTIMER)(struct hrtimer *);
 #else
-typedef void (*VBOXTIMERFN)(unsigned long);
+typedef void (*PFNVBOXKTIMER)(unsigned long);
 #endif
 
 static int      VBoxDrvLinuxInit(void);
@@ -327,13 +328,13 @@ static int      VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, uns
 static int      VBoxDrvLinuxInitGip(PSUPDRVDEVEXT pDevExt);
 static int      VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt);
 #ifdef VBOX_HRTIMER
-static enum hrtimer_restart VBoxDrvLinuxGipTimer(struct hrtimer *timer);
+static enum hrtimer_restart VBoxDrvLinuxGipTimer(struct hrtimer *pTimer);
 #else
 static void     VBoxDrvLinuxGipTimer(unsigned long ulUser);
 #endif
 #ifdef CONFIG_SMP
 # ifdef VBOX_HRTIMER
-static enum hrtimer_restart VBoxDrvLinuxGipTimerPerCpu(struct hrtimer *timer);
+static enum hrtimer_restart VBoxDrvLinuxGipTimerPerCpu(struct hrtimer *pTimer);
 # else
 static void     VBoxDrvLinuxGipTimerPerCpu(unsigned long ulUser);
 # endif
@@ -369,35 +370,35 @@ static struct miscdevice gMiscDevice =
 };
 #endif
 
-static inline void vbox_ktimer_init(VBOXKTIMER *timer, VBOXTIMERFN function, unsigned long data)
+static inline void vbox_ktimer_init(PVBOXKTIMER pTimer, PFNVBOXKTIMER pfnFunction, unsigned long ulData)
 {
 #ifdef VBOX_HRTIMER
-   hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
-    timer->function = function;
+    hrtimer_init(pTimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
+    pTimer->function = pfnFunction;
 #else
-    init_timer(timer);
-    timer->data     = data;
-    timer->function = function;
-    timer->expires  = jiffies;
+    init_timer(pTimer);
+    pTimer->data     = ulData;
+    pTimer->function = pfnFunction;
+    pTimer->expires  = jiffies;
 #endif
 }
 
-static inline void vbox_ktimer_start(VBOXKTIMER *timer)
+static inline void vbox_ktimer_start(PVBOXKTIMER pTimer)
 {
 #ifdef VBOX_HRTIMER
-    hrtimer_start(timer, ktime_add_ns(ktime_get(), 1000000), HRTIMER_MODE_ABS);
+    hrtimer_start(pTimer, ktime_add_ns(ktime_get(), 1000000), HRTIMER_MODE_ABS);
 #else
-    mod_timer(timer, jiffies);
+    mod_timer(pTimer, jiffies);
 #endif
 }
 
-static inline void vbox_ktimer_stop(VBOXKTIMER *timer)
+static inline void vbox_ktimer_stop(PVBOXKTIMER pTimer)
 {
 #ifdef VBOX_HRTIMER
-    hrtimer_cancel(timer);
+    hrtimer_cancel(pTimer);
 #else
-    if (timer_pending(timer))
-        del_timer_sync(timer);
+    if (timer_pending(pTimer))
+        del_timer_sync(pTimer);
 #endif
 }
 
@@ -700,12 +701,12 @@ nmi_activated:
                 {
                     printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
 #ifdef VBOX_HRTIMER
-                            "'high-res'"
+                           "'high-res'"
 #else
-                            "'normal'"
+                           "'normal'"
 #endif
-                            ".\n",
-                            g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
+                           ".\n",
+                           g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
                     dprintf(("VBoxDrv::ModuleInit returning %#x\n", rc));
                     printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
                            VBOX_VERSION_STRING " (interface " xstr(SUPDRVIOC_VERSION) ").\n");
@@ -1106,7 +1107,7 @@ static int VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt)
  * @param   ulUser  The device extension pointer.
  */
 #ifdef VBOX_HRTIMER
-static enum hrtimer_restart VBoxDrvLinuxGipTimer(struct hrtimer* timer)
+static enum hrtimer_restart VBoxDrvLinuxGipTimer(struct hrtimer *pTimer)
 #else
 static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
 #endif
@@ -1118,14 +1119,14 @@ static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
     uint64_t            u64Monotime;
     unsigned long       SavedFlags;
 #ifdef VBOX_HRTIMER
-    ktime_t             kNow;
+    ktime_t             KtNow;
 #endif
 
     local_irq_save(SavedFlags);
 
     ulNow   = jiffies;
 #ifdef VBOX_HRTIMER
-    kNow    = ktime_get();
+    KtNow   = ktime_get();
     pDevExt = &g_DevExt;
 #else
     pDevExt = (PSUPDRVDEVEXT)ulUser;
@@ -1154,7 +1155,7 @@ static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
     if (RT_LIKELY(!pDevExt->fGIPSuspended))
     {
 #ifdef VBOX_HRTIMER
-        hrtimer_forward(&g_GipTimer, kNow, ktime_set(0, 1000000));
+        hrtimer_forward(&g_GipTimer, KtNow, ktime_set(0, 1000000));
 #else
         mod_timer(&g_GipTimer, ulNow + ONE_MSEC_IN_JIFFIES);
 #endif
@@ -1175,7 +1176,7 @@ static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
  * @param   iTimerCPU     The APIC ID of this timer.
  */
 #ifdef VBOX_HRTIMER
-static enum hrtimer_restart VBoxDrvLinuxGipTimerPerCpu(struct hrtimer *timer)
+static enum hrtimer_restart VBoxDrvLinuxGipTimerPerCpu(struct hrtimer *pTimer)
 #else
 static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
 #endif
@@ -1188,7 +1189,7 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
     unsigned long       ulNow;
 # ifdef VBOX_HRTIMER
     unsigned long       iTimerCPU;
-    ktime_t             kNow;
+    ktime_t             KtNow;
 # endif
 
     local_irq_save(SavedFlags);
@@ -1199,7 +1200,7 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
     iCPU    = ASMGetApicId();
 # ifdef VBOX_HRTIMER
     iTimerCPU = iCPU; /* XXX hrtimer does not support a 'data' field */
-    kNow    = ktime_get();
+    KtNow   = ktime_get();
 # endif
 
     if (RT_LIKELY(iCPU < RT_ELEMENTS(pGip->aCPUs)))
@@ -1215,7 +1216,7 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
             if (RT_LIKELY(!pDevExt->fGIPSuspended))
             {
 # ifdef VBOX_HRTIMER
-                hrtimer_forward(&pDevExt->aCPUs[iCPU].Timer, kNow, ktime_set(0, 1000000));
+                hrtimer_forward(&pDevExt->aCPUs[iCPU].Timer, KtNow, ktime_set(0, 1000000));
 # else
                 mod_timer(&pDevExt->aCPUs[iCPU].Timer, ulNow + ONE_MSEC_IN_JIFFIES);
 # endif
