@@ -983,6 +983,7 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 # define VBOXGUEST_IOCTL_CODE(Function, Size)       ((unsigned char)(Function))
 # define VBOXGUEST_IOCTL_CATEGORY_FAST              0xc3 /**< Also defined in VBoxGuestA-os2.asm. */
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)        ((unsigned char)(Function))
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Function)       (Function)
 
 #elif defined(RT_OS_LINUX)
 # include <linux/ioctl.h>
@@ -991,6 +992,7 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 /* VBOXGUEST_IOCTL_CODE(Function, sizeof(type)) == _IOWR('V', (Function) | VBOXGUEST_IOCTL_FLAG, (type)) */
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOC(_IOC_READ|_IOC_WRITE, 'V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Function)   ((Function) - _IOC_SIZE((Function)))
 
 /** @todo r=bird: Please remove. See discussion in xTracker and elsewhere; VBOXGUEST_IOCTL_STRIP_SIZE is all we need here and it must be defined everywhere. */
 # define VBOXGUEST_IOCTL_NUMBER(Code)           (_IOC_NR((Code)) & ~VBOXGUEST_IOCTL_FLAG)
@@ -1001,9 +1003,11 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 #if 0
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWRN('V', (Function) | VBOXGUEST_IOCTL_FLAG, sizeof(VBGLBIGREQ))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Function)   (Function)
 #else
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWRN('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Function)   ((Function) & ~(IOCPARM_MASK << 16))
 
 /** @todo r=bird: Please remove. See discussion in xTracker and elsewhere; VBOXGUEST_IOCTL_STRIP_SIZE is all we need here and it must be defined everywhere. */
 # define VBOXGUEST_IOCTL_SIZE(Code)             (((Code) >> 16) & IOCPARM_MASK)
@@ -1014,6 +1018,7 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 # include <sys/ioccom.h>
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IORW('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Function)   ((Function) - IOCPARM_LEN((Function)))
 
 #else
 /* PORTME */
