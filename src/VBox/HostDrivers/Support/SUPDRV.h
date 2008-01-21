@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef __SUPDRV_h__
-#define __SUPDRV_h__
+#ifndef ___SUPDRV_h
+#define ___SUPDRV_h
 
 
 /*******************************************************************************
@@ -270,6 +270,7 @@ typedef struct hrtimer    VBOXKTIMER;
 # else
 typedef struct timer_list VBOXKTIMER;
 # endif
+typedef VBOXKTIMER       *PVBOXKTIMER;
 #endif
 
 #ifdef VBOX_WITH_IDT_PATCHING
