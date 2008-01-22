@@ -79,74 +79,72 @@ protected:
 };
 
 /**
- *  Equality operations for the ComPtrBase template.
+ *  Returns @c true if two interface pointers are equal.
+ *  
+ *  According to the COM Identity Rule, interface pointers are considered to be
+ *  equal if and only if IUnknown pointers queried on these interfaces pointers
+ *  are equal (e.g. have the same binary value). Equal interface pointers
+ *  represent the same object even if they are pointers to different interfaces.
+ *  
+ *  @param I1   Class of the first interface pointer (must be derived from
+ *              IUnknown).
+ *  @param I2   Class of the second interface pointer (must be derived from
+ *              IUnknown).
  */
-template <class C>
-class ComPtrEqOps
+template <class I1, class I2>
+inline bool ComPtrEquals (I1 *aThis, I2 *aThat)
 {
-protected:
+    IUnknown *thatUnk = NULL, *thisUnk = NULL;
+    if (aThat)
+        aThat->QueryInterface (COM_IIDOF (IUnknown), (void **) &thatUnk);
+    if (aThis)
+        aThis->QueryInterface (COM_IIDOF (IUnknown), (void **) &thisUnk);
+    bool equal = thisUnk == thatUnk;
+    if (thisUnk)
+        thisUnk->Release();
+    if (thatUnk)
+        thatUnk->Release();
+    return equal;
+}
 
-    template <class I>
-    static bool equals (C *aThis, I *aThat)
-    {
-        IUnknown *thatUnk = NULL, *thisUnk = NULL;
-        if (aThat)
-            aThat->QueryInterface (COM_IIDOF (IUnknown), (void **) &thatUnk);
-        if (aThis)
-            aThis->QueryInterface (COM_IIDOF (IUnknown), (void **) &thisUnk);
-        bool equal = thisUnk == thatUnk;
-        if (thisUnk)
-            thisUnk->Release();
-        if (thatUnk)
-            thatUnk->Release();
-        return equal;
-    }
+/* specialization for <Any, IUnknown> */
+template <class I1>
+inline bool ComPtrEquals (I1 *aThis, IUnknown *aThat)
+{
+    IUnknown *thisUnk = NULL;
+    if (aThis)
+        aThis->QueryInterface (COM_IIDOF (IUnknown), (void **) &thisUnk);
+    bool equal = thisUnk == aThat;
+    if (thisUnk)
+        thisUnk->Release();
+    return equal;
+}
 
-    /* specialization for IUnknown */
-    template<>
-    static bool equals <IUnknown> (C *aThis, IUnknown *aThat)
-    {
-        IUnknown *thisUnk = NULL;
-        if (aThis)
-            aThis->QueryInterface (COM_IIDOF (IUnknown), (void **) &thisUnk);
-        bool equal = thisUnk == aThat;
-        if (thisUnk)
-            thisUnk->Release();
-        return equal;
-    }
-};
+/** Specialization for <IUnknown, Any> */
+template <class I2>
+inline bool ComPtrEquals (IUnknown *aThis, I2 *aThat)
+{
+    IUnknown *thatUnk = NULL;
+    if (aThat)
+        aThat->QueryInterface (COM_IIDOF (IUnknown), (void **) &thatUnk);
+    bool equal = aThis == thatUnk;
+    if (thatUnk)
+        thatUnk->Release();
+    return equal;
+}
 
-/** Specialization for IUnknown */
+/* specialization for IUnknown */
 template<>
-class ComPtrEqOps <IUnknown>
+inline bool ComPtrEquals <IUnknown, IUnknown> (IUnknown *aThis, IUnknown *aThat)
 {
-protected:
-
-    template <class I>
-    static bool equals (IUnknown *aThis, I *aThat)
-    {
-        IUnknown *thatUnk = NULL;
-        if (aThat)
-            aThat->QueryInterface (COM_IIDOF (IUnknown), (void **) &thatUnk);
-        bool equal = aThis == thatUnk;
-        if (thatUnk)
-            thatUnk->Release();
-        return equal;
-    }
-
-    /* specialization for IUnknown */
-    template<>
-    static bool equals <IUnknown> (IUnknown *aThis, IUnknown *aThat)
-    {
-        return aThis == aThat;
-    }
-};
+    return aThis == aThat;
+}
 
 /** 
  *  Base template for smart COM pointers. Not intended to be used directly.
  */
 template <class C, template <class> class RefOps = ComStrongRef>
-class ComPtrBase : protected RefOps <C>, protected ComPtrEqOps <C>
+class ComPtrBase : protected RefOps <C>
 {
 public:
 
@@ -205,7 +203,7 @@ public:
     template <class I>
     bool equalsTo (I *aThat) const
     {
-        return equals (p, aThat);
+        return ComPtrEquals (p, aThat);
     }
 
     template <class OC>
