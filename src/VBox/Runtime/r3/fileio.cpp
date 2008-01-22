@@ -258,7 +258,11 @@ RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax)
     uint64_t offHigh = 8 * _1T; /* we don't need bigger files */
     /** @todo r=bird: This isn't doing the trick for windows (at least not vista). 
      * Close to offHigh is returned regardless of NTFS or FAT32. 
-     * We might have to make this code OS specific... */ 
+     * We might have to make this code OS specific... 
+     * In the worse case, we'll have to try GetVolumeInformationByHandle on vista and fall 
+     * back on NtQueryVolumeInformationFile(,,,, FileFsAttributeInformation) else where, and
+     * check for known file system names. (For LAN shares we'll have to figure out the remote
+     * file system.) */ 
     //uint64_t offHigh = INT64_MAX;
     for (;;)
     {
