@@ -2958,8 +2958,9 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
 
     if (SUCCEEDED (rc))
     {
-        /* memorize the direct session control */
+        /* memorize the direct session control and cache IUnknown for it */
         mData->mSession.mDirectControl = aControl;
+        mData->mSession.mDirectControlUnk = aControl;
         mData->mSession.mState = SessionState_SessionOpen;
         /* associate the SessionMachine with this Machine */
         mData->mSession.mMachine = sessionMachine;
@@ -5662,7 +5663,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
             /* all are mandatory */
             folderNode.setValue <Bstr> ("name", folder->name());
             folderNode.setValue <Bstr> ("hostPath", folder->hostPath());
-            folderNode.setValue <bool> ("writable", folder->writable());
+            folderNode.setValue <bool> ("writable", !!folder->writable());
         }
     }
 
@@ -7304,7 +7305,10 @@ void SessionMachine::uninit (Uninit::Reason aReason)
         LogWarningThisFunc (("Unexpected SessionMachine uninitialization!\n"));
 
     if (aReason != Uninit::Normal)
+    {
         mData->mSession.mDirectControl.setNull();
+        mData->mSession.mDirectControlUnk.setNull();
+    }
     else
     {
         /* this must be null here (see #OnSessionEnd()) */
@@ -7530,7 +7534,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
     /* Progress::init() needs mParent lock */
     AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
 
-    if (control.equalsTo (mData->mSession.mDirectControl))
+    if (control.equalsTo (mData->mSession.mDirectControlUnk))
     {
         ComAssertRet (aProgress, E_POINTER);
 
@@ -7544,6 +7548,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
 
         /* set direct control to NULL to release the remote instance */
         mData->mSession.mDirectControl.setNull();
+        mData->mSession.mDirectControlUnk.setNull();
         LogFlowThisFunc (("Direct control is set to NULL\n"));
 
         /*
