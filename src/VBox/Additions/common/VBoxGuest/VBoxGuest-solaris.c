@@ -746,6 +746,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         Log((DEVICE_NAME ": VBoxAddSolarisIOCtl: ddi_copyin failed to read header pArg=%p Cmd=%d. rc=%d.\n", pArg, Cmd, rc));
         return EINVAL;
     }
+
     if (ReqWrap.u32Magic != VBGLBIGREQ_MAGIC)
     {
         Log((DEVICE_NAME ": VBoxAddSolarisIOCtl: bad magic %#x; pArg=%p Cmd=%d.\n", ReqWrap.u32Magic, pArg, Cmd));
@@ -761,11 +762,10 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     /*
      * Read the request.
      */
-    uint32_t cbBuf = ReqWrap.cbData;
-    void *pvBuf = RTMemTmpAlloc(cbBuf);
+    void *pvBuf = RTMemTmpAlloc(ReqWrap.cbData);
     if (RT_UNLIKELY(!pvBuf))
     {
-        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: RTMemTmpAlloc failed to alloc %d bytes.\n", cbBuf));
+        Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: RTMemTmpAlloc failed to alloc %d bytes.\n", ReqWrap.cbData));
         return ENOMEM;
     }
 
@@ -776,7 +776,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyin failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
         return EFAULT;
     }
-    if (RT_UNLIKELY(   cbBuf != 0
+    if (RT_UNLIKELY(   ReqWrap.cbData != 0
                     && !VALID_PTR(pvBuf)))
     {
         RTMemTmpFree(pvBuf);
@@ -789,13 +789,13 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
      * Process the IOCtl.
      */
     size_t cbDataReturned;
-    rc = VBoxGuestCommonIOCtl(Cmd, &g_DevExt, pSession, pvBuf, cbBuf, &cbDataReturned);
+    rc = VBoxGuestCommonIOCtl(Cmd, &g_DevExt, pSession, pvBuf, ReqWrap.cbData, &cbDataReturned);
     if (RT_SUCCESS(rc))
     {
-        if (RT_UNLIKELY(cbDataReturned > cbBuf))
+        if (RT_UNLIKELY(cbDataReturned > ReqWrap.cbData))
         {
-            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, cbBuf));
-            cbDataReturned = cbBuf;
+            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, ReqWrap.cbData));
+            cbDataReturned = ReqWrap.cbData;
         }
         if (cbDataReturned > 0)
         {
