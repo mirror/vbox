@@ -1098,9 +1098,9 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
  * @param   cbData              Size of the buffer.
  * @param   pcbDataReturned     Where to store the amount of returned data. Can be NULL.
  */
-static int VBoxGuestCommonIOCtl_Log(char *pch, size_t cbData, size_t *pcbDataReturned)
+static int VBoxGuestCommonIOCtl_Log(const char *pch, size_t cbData, size_t *pcbDataReturned)
 {
-    Log(("%.*s\n", cbData, pch));
+    Log(("%.*s", cbData, pch));
     if (pcbDataReturned)
         *pcbDataReturned = 0;
     return VINF_SUCCESS;
