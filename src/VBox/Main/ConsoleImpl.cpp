@@ -5789,41 +5789,38 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
     do
     {
 #ifdef VBOX_VRDP
-        if (VBOX_SUCCESS (vrc))
+        /* Create the VRDP server. In case of headless operation, this will
+         * also create the framebuffer, required at VM creation.
+         */
+        ConsoleVRDPServer *server = console->consoleVRDPServer();
+        Assert (server);
+        /// @todo (dmik)
+        //      does VRDP server call Console from the other thread?
+        //      Not sure, so leave the lock just in case
+        alock.leave();
+        vrc = server->Launch();
+        alock.enter();
+        if (VBOX_FAILURE (vrc))
         {
-            /* Create the VRDP server. In case of headless operation, this will
-             * also create the framebuffer, required at VM creation.
-             */
-            ConsoleVRDPServer *server = console->consoleVRDPServer();
-            Assert (server);
-            /// @todo (dmik)
-            //      does VRDP server call Console from the other thread?
-            //      Not sure, so leave the lock just in case
-            alock.leave();
-            vrc = server->Launch();
-            alock.enter();
-            if (VBOX_FAILURE (vrc))
+            Utf8Str errMsg;
+            switch (vrc)
             {
-                Utf8Str errMsg;
-                switch (vrc)
+                case VERR_NET_ADDRESS_IN_USE:
                 {
-                    case VERR_NET_ADDRESS_IN_USE:
-                    {
-                        ULONG port = 0;
-                        console->mVRDPServer->COMGETTER(Port) (&port);
-                        errMsg = Utf8StrFmt (tr ("VRDP server port %d is already in use"),
-                                             port);
-                        break;
-                    }
-                    default:
-                        errMsg = Utf8StrFmt (tr ("Failed to launch VRDP server (%Vrc)"),
-                                             vrc);
+                    ULONG port = 0;
+                    console->mVRDPServer->COMGETTER(Port) (&port);
+                    errMsg = Utf8StrFmt (tr ("VRDP server port %d is already in use"),
+                                         port);
+                    break;
                 }
-                LogRel (("Failed to launch VRDP server (%Vrc), error message: '%s'\n",
-                         vrc, errMsg.raw()));
-                hrc = setError (E_FAIL, errMsg);
-                break;
+                default:
+                    errMsg = Utf8StrFmt (tr ("Failed to launch VRDP server (%Vrc)"),
+                                         vrc);
             }
+            LogRel (("Failed to launch VRDP server (%Vrc), error message: '%s'\n",
+                     vrc, errMsg.raw()));
+            hrc = setError (E_FAIL, errMsg);
+            break;
         }
 #endif /* VBOX_VRDP */
 
