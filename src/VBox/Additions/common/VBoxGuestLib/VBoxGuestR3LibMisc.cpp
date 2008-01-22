@@ -50,10 +50,10 @@ VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
 VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
 {
     /*
-     * Solaris does not accept more than 255 bytes of data per ioctl request,
-     * so split large string into 128 byte chunks to prevent truncation.
+     * *BSD does not accept more than 4KB per ioctl request,
+     * so, split it up into 2KB chunks.
      */
-#define STEP 128 /** @todo increase to 512 when solaris ioctl code is fixed. (darwin limits us to 1024 IIRC) */
+#define STEP 2048
     int rc = VINF_SUCCESS;
     for (size_t off = 0; off < cb && RT_SUCCESS(rc); off += STEP)
     {
