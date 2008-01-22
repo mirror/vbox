@@ -181,6 +181,8 @@ private slots:
     void onEnterFullscreen();
     void onExitFullscreen();
 
+    void setViewInSeamlessMode(const QRect& targetRect);
+
 private:
 
     /** Popup version of the main menu */
@@ -247,7 +249,10 @@ private:
     bool waitForStatusBarChange;
     bool statusBarChangedInside;
 
-    QSpacerItem *mShiftingSpacer;
+    QSpacerItem *mShiftingSpacerLeft;
+    QSpacerItem *mShiftingSpacerTop;
+    QSpacerItem *mShiftingSpacerRight;
+    QSpacerItem *mShiftingSpacerBottom;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger popup menu

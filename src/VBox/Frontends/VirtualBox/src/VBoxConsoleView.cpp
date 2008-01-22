@@ -1056,13 +1056,16 @@ bool VBoxConsoleView::event (QEvent *e)
 
                 mIgnoreMainwndResize = oldIgnoreMainwndResize;
 
-                /* emit a signal about guest was resized */
-                emit resizeHintDone();
-
                 /* update geometry after entering fullscreen | seamless */
                 if (mMainWnd->isTrueFullscreen() || mMainWnd->isTrueSeamless())
                     updateGeometry();
 
+                /* make sure that all posted signals are processed */
+                qApp->processEvents();
+
+                /* emit a signal about guest was resized */
+                emit resizeHintDone();
+              
                 return true;
             }
 
