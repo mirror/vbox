@@ -568,7 +568,7 @@ static int VBoxAddSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     }
 #endif
     LogRel((DEVICE_NAME ":VBoxAddSolarisOpen: VBoxGuestCreateUserSession failed. rc=%d\n", rc));
-    return rc;
+    return EFAULT;
 }
 
 
