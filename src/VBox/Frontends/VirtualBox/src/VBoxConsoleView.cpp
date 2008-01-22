@@ -18,6 +18,7 @@
 
 #include "VBoxConsoleView.h"
 #include "VBoxConsoleWnd.h"
+#include "VBoxUtils.h"
 
 #include "VBoxFrameBuffer.h"
 #include "VBoxGlobal.h"
@@ -2783,6 +2784,12 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
         {
             /* delegate the paint function to the VBoxFrameBuffer interface */
             mFrameBuf->paintEvent (pe);
+#ifdef Q_WS_MAC
+            /* Update the dock icon if we are in the running state */
+            if(isRunning())
+                SetApplicationDockTileImage(::DarwinCreateDockPreview(mFrameBuf));
+#endif
+
             return;
         }
 
