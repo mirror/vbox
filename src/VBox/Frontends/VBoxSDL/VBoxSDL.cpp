@@ -639,7 +639,7 @@ static void show_usage()
              "  -nograbonclick           Disable mouse/keyboard grabbing on mouse click w/o additions\n"
              "  -detecthostkey           Get the hostkey identifier and modifier state\n"
              "  -hostkey <key> {<key2>} <mod> Set the host key to the values obtained using -detecthostkey\n"
-             "  -acpiterm                Send an ACPI power button event when closing the window\n"
+             "  -termacpi                Send an ACPI power button event when closing the window\n"
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) /** @todo UNIXISH_TAP stuff out of main and up to Config.kmk! */
              "  -tapdev<1-N> <dev>       Use existing persistent TAP device with the given name\n"
              "  -tapfd<1-N> <fd>         Use existing TAP device, don't allocate\n"
@@ -1099,7 +1099,7 @@ int main(int argc, char *argv[])
         {
             gfGrabOnMouseClick = FALSE;
         }
-        else if (strcmp(argv[curArg], "-acpiterm") == 0)
+        else if (strcmp(argv[curArg], "-termacpi") == 0)
         {
             gfACPITerm = TRUE;
         }
