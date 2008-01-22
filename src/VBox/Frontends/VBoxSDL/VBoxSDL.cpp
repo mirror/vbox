@@ -165,6 +165,7 @@ static BOOL gfOffCursorActive = FALSE;
 static BOOL gfGuestNumLockPressed = FALSE;
 static BOOL gfGuestCapsLockPressed = FALSE;
 static BOOL gfGuestScrollLockPressed = FALSE;
+static BOOL gfACPITerm = FALSE;
 static int  gcGuestNumLockAdaptions = 2;
 static int  gcGuestCapsLockAdaptions = 2;
 
@@ -638,6 +639,7 @@ static void show_usage()
              "  -nograbonclick           Disable mouse/keyboard grabbing on mouse click w/o additions\n"
              "  -detecthostkey           Get the hostkey identifier and modifier state\n"
              "  -hostkey <key> {<key2>} <mod> Set the host key to the values obtained using -detecthostkey\n"
+             "  -acpiterm                Send an ACPI power button event when closing the window\n"
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) /** @todo UNIXISH_TAP stuff out of main and up to Config.kmk! */
              "  -tapdev<1-N> <dev>       Use existing persistent TAP device with the given name\n"
              "  -tapfd<1-N> <fd>         Use existing TAP device, don't allocate\n"
@@ -1096,6 +1098,10 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[curArg], "-nograbonclick") == 0)
         {
             gfGrabOnMouseClick = FALSE;
+        }
+        else if (strcmp(argv[curArg], "-acpiterm") == 0)
+        {
+            gfACPITerm = TRUE;
         }
         else if (strcmp(argv[curArg], "-hda") == 0)
         {
@@ -2203,7 +2209,11 @@ int main(int argc, char *argv[])
              */
             case SDL_QUIT:
             {
-                goto leave;
+                if (!gfACPITerm)
+                    goto leave;
+                if (gConsole)
+                    gConsole->PowerButton();
+                gfACPITerm = false; /* don't try a second time */
                 break;
             }
 
