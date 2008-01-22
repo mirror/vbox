@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
 #endif
 
     /* Parse our option(s) */
+/** @todo r=bird: use RTGetOpt */
     while (1)
     {
         static struct option sOpts[] =
@@ -109,7 +110,8 @@ int main(int argc, char *argv[])
     }
     if (gbDaemonise)
     {
-        if (VbglR3Daemonize(0, 0) != 0)
+        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
+        if (RT_FAILURE(rc))
         {
             LogRel(("VBoxService: failed to daemonize. exiting."));
             return 1;
