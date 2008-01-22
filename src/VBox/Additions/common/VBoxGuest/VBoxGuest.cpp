@@ -1090,6 +1090,24 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
 
 
 /**
+ * Guest backdoor logging.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pch                 The log message (need not be NULL terminated).
+ * @param   cbData              Size of the buffer.
+ * @param   pcbDataReturned     Where to store the amount of returned data. Can be NULL.
+ */
+static int VBoxGuestCommonIOCtl_Log(char *pch, size_t cbData, size_t *pcbDataReturned)
+{
+    Log(("%.*s\n", cbData, pch));
+    if (pcbDataReturned)
+        *pcbDataReturned = 0;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Common IOCtl for user to kernel and kernel to kernel communcation.
  *
  * This function only does the basic validation and then invokes
@@ -1157,6 +1175,11 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, cbData, pcbDataReturned);
     }
 #endif /* VBOX_HGCM */
+    else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0)))
+    {
+        CHECKRET_MIN_SIZE("LOG", 1);
+        rc = VBoxGuestCommonIOCtl_Log((char *)pvData, cbData, pcbDataReturned);
+    }
     else
     {
         switch (iFunction)
@@ -1188,7 +1211,6 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
                 CHECKRET_MIN_SIZE("HGCM_DISCONNECT", sizeof(VBoxGuestHGCMDisconnectInfo));
                 rc = VBoxGuestCommonIOCtl_HGCMDisconnect(pDevExt, pSession, (VBoxGuestHGCMDisconnectInfo *)pvData, pcbDataReturned);
                 break;
-
 
             case VBOXGUEST_IOCTL_CLIPBOARD_CONNECT:
                 CHECKRET_MIN_SIZE("CLIPBOARD_CONNECT", sizeof(uint32_t));
