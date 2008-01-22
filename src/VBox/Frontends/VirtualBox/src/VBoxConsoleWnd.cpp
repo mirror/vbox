@@ -1012,6 +1012,14 @@ void VBoxConsoleWnd::onEnterFullscreen()
      * mask and the spacing shifter to the corresponding values. */
     setViewInSeamlessMode(QRect(console->mapToGlobal(QPoint(0, 0)), console->size()));
 #endif
+#ifdef Q_WS_MAC 
+    if(!mIsSeamless)
+    {
+      /* Fade back to the normal gamma */
+      CGDisplayFade(mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false); 
+      CGReleaseDisplayFadeReservation(mFadeToken);
+    }
+#endif
 
     vmSeamlessAction->setEnabled (mIsSeamless);
     vmFullscreenAction->setEnabled (mIsFullscreen);
@@ -1024,6 +1032,14 @@ void VBoxConsoleWnd::onEnterFullscreen()
 void VBoxConsoleWnd::onExitFullscreen()
 {
     disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
+#ifdef Q_WS_MAC 
+    if(!mIsSeamless)
+    {
+      /* Fade back to the normal gamma */
+      CGDisplayFade(mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false); 
+      CGReleaseDisplayFadeReservation(mFadeToken);
+    }
+#endif
 
     vmSeamlessAction->setEnabled (mIsSeamlessSupported);
     vmFullscreenAction->setEnabled (true);
@@ -1911,6 +1927,14 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
  */
 bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
+#ifdef Q_WS_MAC
+    if (!aSeamless)
+    {
+      /* Fade to black */
+      CGAcquireDisplayFadeReservation(kCGMaxDisplayReservationInterval, &mFadeToken); 
+      CGDisplayFade(mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
+    }
+#endif
 
     if (aSeamless)
     {
