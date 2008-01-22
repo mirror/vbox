@@ -1387,10 +1387,6 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 __BEGIN_DECLS
 VBGLR3DECL(int)     VbglR3Init(void);
 VBGLR3DECL(void)    VbglR3Term(void);
-VBGLR3DECL(int)     VbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cbSize,
-                                  VMMDevRequestType reqType);
-VBGLR3DECL(int)     VbglR3GRPerform(VMMDevRequestHeader *pReq);
-VBGLR3DECL(void)    VbglR3GRFree(VMMDevRequestHeader *pReq);
 # ifdef ___iprt_time_h
 VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
 # endif
