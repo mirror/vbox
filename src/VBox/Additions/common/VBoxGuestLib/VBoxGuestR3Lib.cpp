@@ -36,6 +36,7 @@
 #elif defined(RT_OS_SOLARIS)
 # include <sys/types.h>
 # include <sys/stat.h>
+# include <errno.h>
 # include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
@@ -173,19 +174,17 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
         return vrc;
     return RTErrConvertFromOS2(rc);
 
-#elif defined(RT_OS_SOLARIS) && 0
+#elif defined(RT_OS_SOLARIS)
     VBGLBIGREQ Hdr;
     Hdr.u32Magic = VBGLBIGREQ_MAGIC;
     Hdr.cbData = cbData;
-    Hdr.pvData = pvData;
-    Assert(_IOC_SIZE(iFunction) == sizeof(Hdr));
+    Hdr.pvDataR3 = pvData;
 
-    int rc = ioctl((int)File, iFunction, &Hdr);
+    int rc = ioctl((int)g_File, iFunction, &Hdr);
     if (rc == -1)
         rc = errno;
     return rc;
 
-    /* PORTME */
 #else
     /* Default implementation (linux, solaris). */
     int rc2 = VERR_INTERNAL_ERROR;

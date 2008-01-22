@@ -1000,19 +1000,9 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 
 #elif defined(RT_OS_SOLARIS)
 # include <sys/ioccom.h>
-#if 0
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWRN('V', (Function) | VBOXGUEST_IOCTL_FLAG, sizeof(VBGLBIGREQ))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
-# define VBOXGUEST_IOCTL_STRIP_SIZE(Function)   (Function)
-#else
-# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWRN('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
-# define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 # define VBOXGUEST_IOCTL_STRIP_SIZE(Function)   ((Function) & ~(IOCPARM_MASK << 16))
-
-/** @todo r=bird: Please remove. See discussion in xTracker and elsewhere; VBOXGUEST_IOCTL_STRIP_SIZE is all we need here and it must be defined everywhere. */
-# define VBOXGUEST_IOCTL_SIZE(Code)             (((Code) >> 16) & IOCPARM_MASK)
-# define VBOXGUEST_IOCTL_NUMBER(Code)           ((Code) & IOCPARM_MASK)
-#endif
 
 #elif 0 /* BSD style - needs some adjusting _IORW takes a type and not a size. */
 # include <sys/ioccom.h>

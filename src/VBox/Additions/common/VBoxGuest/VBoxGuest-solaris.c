@@ -663,6 +663,15 @@ static int VBoxAddSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
 }
 
 
+/** @def IOCPARM_LEN
+ * Gets the length from the ioctl number.
+ * This is normally defined by sys/ioccom.h on BSD systems...
+ */
+#ifndef IOCPARM_LEN
+# define IOCPARM_LEN(Code)                      (((Code) >> 16) & IOCPARM_MASK)
+#endif
+
+
 /**
  * Driver ioctl, an alternate entry point for this character driver.
  *
@@ -721,27 +730,22 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     }
 #endif /* USE_SESSION_HASH */
 
-    /** @todo r=bird: This is not the way I told you to implement this. Just do it exactly like the support
-     * driver, i.e. the request is just a fixed size header containing the buffer pointer and size of the
-     * real request (SUPREQHDR). Trying to save the extra ddi_copyin isn't worth the effort and inflexibility. */
-#if 0
     /*
      * Read and validate the request wrapper.
      */
     VBGLBIGREQ ReqWrap;
     if (IOCPARM_LEN(Cmd) != sizeof(ReqWrap))
     {
-        Log((DEVICE_NAME ": VBoxAddSolarisIOCtl: bad request %#x\n", Cmd));
+        Log((DEVICE_NAME ": VBoxAddSolarisIOCtl: bad request %#x size=%d expected=%d\n", Cmd, IOCPARM_LEN(Cmd), sizeof(ReqWrap)));
         return ENOTTY;
     }
 
-    rc = ddi_copyin((void *)pArg, &ReqWrap, sizeof(ReqWrap), Mode);
+    int rc = ddi_copyin((void *)pArg, &ReqWrap, sizeof(ReqWrap), Mode);
     if (RT_UNLIKELY(rc))
     {
         Log((DEVICE_NAME ": VBoxAddSolarisIOCtl: ddi_copyin failed to read header pArg=%p Cmd=%d. rc=%d.\n", pArg, Cmd, rc));
         return EINVAL;
     }
-
     if (ReqWrap.u32Magic != VBGLBIGREQ_MAGIC)
     {
         Log((DEVICE_NAME ": VBoxAddSolarisIOCtl: bad magic %#x; pArg=%p Cmd=%d.\n", ReqWrap.u32Magic, pArg, Cmd));
@@ -754,155 +758,30 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
         return EINVAL;
     }
 
-#else
-    uint32_t cbBuf = 0;
-    int rc = 0;
-    int requestType = 0;
-    if (VBOXGUEST_IOCTL_NUMBER(Cmd) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_VMMREQUEST(0)))
-    {
-        cbBuf = sizeof(VMMDevRequestHeader);
-        requestType = 1;
-        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_VMMREQUEST %#x", Cmd));
-    }
-#ifdef VBOX_HGCM
-    else if (VBOXGUEST_IOCTL_NUMBER(Cmd) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_HGCM_CALL(0)))
-    {
-        cbBuf = sizeof(VBoxGuestHGCMCallInfo);
-        requestType = 2;
-        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_HGCM_CALL %#x", Cmd));
-    }
-#endif /* VBOX_HGCM */
-    else if (VBOXGUEST_IOCTL_NUMBER(Cmd) == VBOXGUEST_IOCTL_NUMBER(VBOXGUEST_IOCTL_LOG(0)))
-    {
-        cbBuf = VBOXGUEST_IOCTL_SIZE(Cmd);
-        LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_LOG Cmd=%#x cbBuf=%d", Cmd, cbBuf));
-        char *pszLogMsg = RTMemTmpAlloc(cbBuf);
-        if (RT_UNLIKELY(!pszLogMsg))
-        {
-            LogRel((DEVICE_NAME ":RTMemAlloc failed to alloc %d bytes\n", cbBuf));
-            return ENOMEM;
-        }
-        rc = ddi_copyin((void *)pArg, pszLogMsg, cbBuf, Mode);
-        if (RT_UNLIKELY(rc))
-            LogRel((DEVICE_NAME ":ddi_copyin failed. rc=%d\n", rc));
-        else
-/** @todo r=bird: this should be handled by generic code and not here so it works 100% the same everywhere. */
-            Log(("%.*s", cbBuf, pszLogMsg));
-        RTMemTmpFree(pszLogMsg);
-        return rc;
-    }
-    else
-    {
-        switch (Cmd)
-        {
-            case VBOXGUEST_IOCTL_GETVMMDEVPORT:
-                cbBuf = sizeof(VBoxGuestPortInfo);
-                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_GETVMMDEVPORT"));
-                break;
-
-            case VBOXGUEST_IOCTL_WAITEVENT:
-                cbBuf = sizeof(VBoxGuestWaitEventInfo);
-                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_WAITEVENT"));
-                break;
-
-            case VBOXGUEST_IOCTL_CTL_FILTER_MASK:
-                cbBuf = sizeof(VBoxGuestFilterMaskInfo);
-                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_CTL_FILTER_MASK"));
-                break;
-
-#ifdef VBOX_HGCM
-            case VBOXGUEST_IOCTL_HGCM_CONNECT:
-                cbBuf = sizeof(VBoxGuestHGCMConnectInfo);
-                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_HGCM_CONNECT"));
-                break;
-
-            case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
-                cbBuf = sizeof(VBoxGuestHGCMDisconnectInfo);
-                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_HGCM_DISCONNECT"));
-                break;
-
-            case VBOXGUEST_IOCTL_CLIPBOARD_CONNECT:
-                cbBuf = sizeof(uint32_t);
-                LogFlow((DEVICE_NAME ":VBOXGUEST_IOCTL_CLIPBOARD_CONNECT"));
-                break;
-#endif /* VBOX_HGCM */
-
-            default:
-            {
-                LogRel((DEVICE_NAME ":VBoxAddSolarisIOCtl: Unkown request %d\n", Cmd));
-                return VERR_NOT_SUPPORTED;
-            }
-        }
-    }
-
-    /*
-     * Read the header.
-     */
-    if (requestType == 1)
-    {
-        VMMDevRequestHeader Hdr;
-        rc = ddi_copyin((void *)pArg, &Hdr, sizeof(Hdr), Mode);
-        if (RT_UNLIKELY(rc))
-        {
-            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyin failed to read header pArg=%p Cmd=%d. rc=%d.\n", pArg, Cmd, rc));
-            return EINVAL;
-        }
-
-        cbBuf = Hdr.size;
-        if (RT_UNLIKELY(cbBuf < sizeof(Hdr)))
-        {
-            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: Invalid request size (%d) in header.\n", cbBuf));
-            return EINVAL;
-        }
-    }
-    else if (requestType == 2)
-    {
-        VBoxGuestHGCMCallInfo Hdr;
-        rc = ddi_copyin((void *)pArg, &Hdr, sizeof(Hdr), Mode);
-        if (RT_UNLIKELY(rc))
-        {
-            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyin failed to read header pArg=%p Cmd=%d. rc=%d.\n", pArg, Cmd, rc));
-            return EINVAL;
-        }
-
-        if (RT_UNLIKELY(Hdr.cParms <= 0))
-        {
-            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: Invalid request size. cParms=%d in HCGM call info header.\n", Hdr.cParms));
-            return EINVAL;
-        }
-        cbBuf += Hdr.cParms * sizeof(HGCMFunctionParameter);
-    }
-#endif
-
     /*
      * Read the request.
      */
-#if 0
-    void *pvBuf = RTMemTmpAlloc(ReqWrap.cbData);
-#else
+    uint32_t cbBuf = ReqWrap.cbData;
     void *pvBuf = RTMemTmpAlloc(cbBuf);
-#endif
     if (RT_UNLIKELY(!pvBuf))
     {
         Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: RTMemTmpAlloc failed to alloc %d bytes.\n", cbBuf));
         return ENOMEM;
     }
 
-#if 0
-    rc = ddi_copyin((void *)pArg, (void *)(uintptr_t)ReqWrap.pvData, ReqWrap.cbData, Mode);
-#else
-    rc = ddi_copyin((void *)pArg, pvBuf, cbBuf, Mode);
-#endif
+    rc = ddi_copyin((void *)(uintptr_t)ReqWrap.pvDataR3, pvBuf, ReqWrap.cbData, Mode);
     if (RT_UNLIKELY(rc))
     {
         RTMemTmpFree(pvBuf);
         Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyin failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
         return EFAULT;
     }
-    if (RT_UNLIKELY(cbBuf != 0 && !VALID_PTR(pvBuf)))
+    if (RT_UNLIKELY(   cbBuf != 0
+                    && !VALID_PTR(pvBuf)))
     {
         RTMemTmpFree(pvBuf);
         Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: pvBuf invalid pointer %p\n", pvBuf));
+        return EINVAL;
     }
     Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: pSession=%p pid=%d.\n", pSession, (int)RTProcSelf()));
 
@@ -918,11 +797,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
             Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, cbBuf));
             cbDataReturned = cbBuf;
         }
-#if 0
-        rc = ddi_copyout(pvBuf, (void *)(uintptr_t)ReqWrap.pvData, cbDataReturned, Mode);
-#else
-        rc = ddi_copyout(pvBuf, (void *)pArg, cbDataReturned, Mode);
-#endif
+        rc = ddi_copyout(pvBuf, (void *)(uintptr_t)ReqWrap.pvDataR3, cbDataReturned, Mode);
         if (RT_UNLIKELY(rc))
         {
             Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
