@@ -61,6 +61,7 @@ template <class C>
 class ComStrongRef
 {
 protected:
+
     static void addref (C *p) { p->AddRef(); }
     static void release (C *p) { p->Release(); }
 };
@@ -72,21 +73,87 @@ template <class C>
 class ComWeakRef
 {
 protected:
+
     static void addref (C *p) {}
     static void release (C *p) {}
 };
 
 /**
+ *  Equality operations for the ComPtrBase template.
+ */
+template <class C>
+class ComPtrEqOps
+{
+protected:
+
+    template <class I>
+    static bool equals (C *aThis, I *aThat)
+    {
+        IUnknown *thatUnk = NULL, *thisUnk = NULL;
+        if (aThat)
+            aThat->QueryInterface (COM_IIDOF (IUnknown), (void **) &thatUnk);
+        if (aThis)
+            aThis->QueryInterface (COM_IIDOF (IUnknown), (void **) &thisUnk);
+        bool equal = thisUnk == thatUnk;
+        if (thisUnk)
+            thisUnk->Release();
+        if (thatUnk)
+            thatUnk->Release();
+        return equal;
+    }
+
+    /* specialization for IUnknown */
+    template<>
+    static bool equals <IUnknown> (C *aThis, IUnknown *aThat)
+    {
+        IUnknown *thisUnk = NULL;
+        if (aThis)
+            aThis->QueryInterface (COM_IIDOF (IUnknown), (void **) &thisUnk);
+        bool equal = thisUnk == aThat;
+        if (thisUnk)
+            thisUnk->Release();
+        return equal;
+    }
+};
+
+/** Specialization for IUnknown */
+template<>
+class ComPtrEqOps <IUnknown>
+{
+protected:
+
+    template <class I>
+    static bool equals (IUnknown *aThis, I *aThat)
+    {
+        IUnknown *thatUnk = NULL;
+        if (aThat)
+            aThat->QueryInterface (COM_IIDOF (IUnknown), (void **) &thatUnk);
+        bool equal = aThis == thatUnk;
+        if (thatUnk)
+            thatUnk->Release();
+        return equal;
+    }
+
+    /* specialization for IUnknown */
+    template<>
+    static bool equals <IUnknown> (IUnknown *aThis, IUnknown *aThat)
+    {
+        return aThis == aThat;
+    }
+};
+
+/** 
  *  Base template for smart COM pointers. Not intended to be used directly.
  */
 template <class C, template <class> class RefOps = ComStrongRef>
-class ComPtrBase : protected RefOps <C>
+class ComPtrBase : protected RefOps <C>, protected ComPtrEqOps <C>
 {
 public:
 
-    // a special template to disable AddRef()/Release()
+    /* special template to disable AddRef()/Release() */
     template <class I>
-    class NoAddRefRelease : public I {
+    class NoAddRefRelease : public I
+    {
         private:
 #if !defined (VBOX_WITH_XPCOM)
             STDMETHOD_(ULONG, AddRef)() = 0;
@@ -105,47 +172,45 @@ protected:
 
     ~ComPtrBase() { release(); }
 
-    ComPtrBase &operator= (const ComPtrBase &that) {
+    ComPtrBase &operator= (const ComPtrBase &that)
+    {
         safe_assign (that.p);
         return *this;
     }
-    ComPtrBase &operator= (C *that_p) {
+
+    ComPtrBase &operator= (C *that_p)
+    {
         safe_assign (that_p);
         return *this;
     }
 
 public:
 
-    void setNull() {
+    void setNull()
+    {
         release();
         p = NULL;
     }
 
-    bool isNull() const {
+    bool isNull() const
+    {
         return (p == NULL);
     }
+
     bool operator! () const { return isNull(); }
 
     bool operator< (C* that_p) const { return p < that_p; }
     bool operator== (C* that_p) const { return p == that_p; }
 
     template <class I>
-    bool equalsTo (I *i) const {
-        IUnknown *this_unk = NULL, *that_unk = NULL;
-        if (i)
-            i->QueryInterface (COM_IIDOF (IUnknown), (void**) &that_unk);
-        if (p)
-            p->QueryInterface (COM_IIDOF (IUnknown), (void**) &this_unk);
-        bool equal = this_unk == that_unk;
-        if (that_unk)
-            that_unk->Release();
-        if (this_unk)
-            this_unk->Release();
-        return equal;
+    bool equalsTo (I *aThat) const
+    {
+        return equals (p, aThat);
     }
 
     template <class OC>
-    bool equalsTo (const ComPtrBase <OC> &oc) const {
+    bool equalsTo (const ComPtrBase <OC> &oc) const
+    {
         return equalsTo ((OC *) oc);
     }
 
@@ -156,44 +221,55 @@ public:
      *  Derefereces the instance (redirects the -> operator to the managed
      *  pointer).
      */
-    NoAddRefRelease <C> *operator-> () const {
+    NoAddRefRelease <C> *operator-> () const
+    {
         AssertMsg (p, ("Managed pointer must not be null\n"));
         return (NoAddRefRelease <C> *) p;
     }
 
     template <class I>
-    HRESULT queryInterfaceTo (I **pp) const {
-        if (pp) {
-            if (p) {
-                return p->QueryInterface (COM_IIDOF (I), (void**) pp);
-            } else {
+    HRESULT queryInterfaceTo (I **pp) const
+    {
+        if (pp)
+        {
+            if (p)
+            {
+                return p->QueryInterface (COM_IIDOF (I), (void **) pp);
+            }
+            else
+            {
                 *pp = NULL;
                 return S_OK;
             }
-        } else {
-            return E_INVALIDARG;
         }
+
+        return E_INVALIDARG;
     }
 
     /** Intended to pass instances as out parameters to interface methods */
-    C **asOutParam() {
+    C **asOutParam()
+    {
         setNull();
         return &p;
     }
 
 private:
 
-    void addref() {
+    void addref()
+    {
         if (p)
             RefOps <C>::addref (p);
     }
-    void release() {
+
+    void release()
+    {
         if (p)
             RefOps <C>::release (p);
     }
 
-    void safe_assign (C *that_p) {
-        // be aware of self-assignment
+    void safe_assign (C *that_p)
+    {
+        /* be aware of self-assignment */
         if (that_p)
             RefOps <C>::addref (that_p);
         release();
@@ -218,35 +294,41 @@ public:
 
     ComPtr () : Base() {}
     ComPtr (const ComPtr &that) : Base (that) {}
-    ComPtr &operator= (const ComPtr &that) {
+    ComPtr &operator= (const ComPtr &that)
+    {
         Base::operator= (that);
         return *this;
     }
 
     template <class OI>
     ComPtr (OI *that_p) : Base () { operator= (that_p); }
-    // specialization for I
+
+    /* specialization for I */
     ComPtr (I *that_p) : Base (that_p) {}
 
     template <class OC>
     ComPtr (const ComPtr <OC, RefOps> &oc) : Base () { operator= ((OC *) oc); }
 
     template <class OI>
-    ComPtr &operator= (OI *that_p) {
+    ComPtr &operator= (OI *that_p)
+    {
         if (that_p)
             that_p->QueryInterface (COM_IIDOF (I), (void **) Base::asOutParam());
         else
             Base::setNull();
         return *this;
     }
-    // specialization for I
-    ComPtr &operator= (I *that_p) {
+
+    /* specialization for I */
+    ComPtr &operator=(I *that_p)
+    {
         Base::operator= (that_p);
         return *this;
     }
 
     template <class OC>
-    ComPtr &operator= (const ComPtr <OC, RefOps> &oc) {
+    ComPtr &operator= (const ComPtr <OC, RefOps> &oc)
+    {
         return operator= ((OC *) oc);
     }
 
@@ -315,7 +397,8 @@ public:
         {
             PRUint32 serverID = 0;
             rc = ipcServ->ResolveClientName (serverName, &serverID);
-            if (SUCCEEDED (rc)) {
+            if (SUCCEEDED (rc))
+            {
                 nsCOMPtr <ipcIDConnectService> dconServ =
                     do_GetService (IPC_DCONNECTSERVICE_CONTRACTID, &rc);
                 if (SUCCEEDED (rc))
@@ -345,7 +428,8 @@ public:
 
     ComPtr () : Base() {}
     ComPtr (const ComPtr &that) : Base (that) {}
-    ComPtr &operator= (const ComPtr &that) {
+    ComPtr &operator= (const ComPtr &that)
+    {
         Base::operator= (that);
         return *this;
     }
@@ -357,7 +441,8 @@ public:
     ComPtr (const ComPtr <OC, RefOps> &oc) : Base () { operator= ((OC *) oc); }
 
     template <class OI>
-    ComPtr &operator= (OI *that_p) {
+    ComPtr &operator= (OI *that_p)
+    {
         if (that_p)
             that_p->QueryInterface (COM_IIDOF (IUnknown), (void **) Base::asOutParam());
         else
@@ -366,7 +451,8 @@ public:
     }
 
     template <class OC>
-    ComPtr &operator= (const ComPtr <OC, RefOps> &oc) {
+    ComPtr &operator= (const ComPtr <OC, RefOps> &oc)
+    {
         return operator= ((OC *) oc);
     }
 };
@@ -389,11 +475,15 @@ public:
     ComObjPtr () : Base() {}
     ComObjPtr (const ComObjPtr &that) : Base (that) {}
     ComObjPtr (C *that_p) : Base (that_p) {}
-    ComObjPtr &operator= (const ComObjPtr &that) {
+
+    ComObjPtr &operator= (const ComObjPtr &that)
+    {
         Base::operator= (that);
         return *this;
     }
-    ComObjPtr &operator= (C *that_p) {
+
+    ComObjPtr &operator= (C *that_p)
+    {
         Base::operator= (that_p);
         return *this;
     }
@@ -411,29 +501,30 @@ public:
      *  object doesn't increase the lock count of the server module, as it
      *  does otherwise.
      */
-    HRESULT createObject() {
+    HRESULT createObject()
+    {
         HRESULT rc;
 #if !defined (VBOX_WITH_XPCOM)
 #   ifdef VBOX_COM_OUTOFPROC_MODULE
         CComObjectNoLock <C> *obj = new CComObjectNoLock <C>();
-        if (obj) {
+        if (obj)
+        {
             obj->InternalFinalConstructAddRef();
             rc = obj->FinalConstruct();
             obj->InternalFinalConstructRelease();
-        } else {
-            rc = E_OUTOFMEMORY;
         }
+        else
+            rc = E_OUTOFMEMORY;
 #   else
         CComObject <C> *obj = NULL;
         rc = CComObject <C>::CreateInstance (&obj);
 #   endif
 #else /* !defined (VBOX_WITH_XPCOM) */
         CComObject <C> *obj = new CComObject <C>();
-        if (obj) {
+        if (obj)
             rc = obj->FinalConstruct();
-        } else {
+        else
             rc = E_OUTOFMEMORY;
-        }
 #endif /* !defined (VBOX_WITH_XPCOM) */
         *this = obj;
         return rc;

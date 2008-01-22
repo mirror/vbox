@@ -882,7 +882,7 @@ Console::saveStateFileExec (PSSMHANDLE pSSM, void *pvUser)
         vrc = SSMR3PutStrZ (pSSM, hostPath);
         AssertRC (vrc);
 
-        vrc = SSMR3PutBool (pSSM, folder->writable());
+        vrc = SSMR3PutBool (pSSM, !!folder->writable());
         AssertRC (vrc);
     }
 
