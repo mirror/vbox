@@ -1746,6 +1746,13 @@ bool VBoxConsoleView::x11Event (XEvent *event)
 
     switch (event->type)
     {
+        /* We have to handle XFocusOut right here as this event is not passed
+         * to VBoxConsoleView::event(). Handling this event is important for
+         * releasing the keyboard before the screen saver gets active. */
+        case XFocusOut:
+            if (isRunning ())
+                focusEvent (false);
+            return false;
         case XKeyPress:
         case XKeyRelease:
             if (mAttached)
