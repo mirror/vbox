@@ -797,11 +797,14 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
             Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, cbBuf));
             cbDataReturned = cbBuf;
         }
-        rc = ddi_copyout(pvBuf, (void *)(uintptr_t)ReqWrap.pvDataR3, cbDataReturned, Mode);
-        if (RT_UNLIKELY(rc))
+        if (cbDataReturned > 0)
         {
-            Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
-            rc = EFAULT;
+            rc = ddi_copyout(pvBuf, (void *)(uintptr_t)ReqWrap.pvDataR3, cbDataReturned, Mode);
+            if (RT_UNLIKELY(rc))
+            {
+                Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
+                rc = EFAULT;
+            }
         }
     }
     else
