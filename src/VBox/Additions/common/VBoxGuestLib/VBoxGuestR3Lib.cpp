@@ -1,6 +1,6 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
- * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions.
+ * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, Core.
  */
 
 /*
@@ -38,6 +38,7 @@
 #include <iprt/mem.h>
 #include <iprt/alloca.h>
 #include <VBox/VBoxGuest.h>
+#include "VBGLR3Internal.h"
 
 
 /*******************************************************************************
@@ -180,144 +181,5 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
         rc = rc2;
     return rc;
 #endif
-}
-
-
-VBGLR3DECL(int) VbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cb, VMMDevRequestType enmReqType)
-{
-    VMMDevRequestHeader *pReq;
-
-    AssertPtrReturn(ppReq, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cb >= sizeof(VMMDevRequestHeader), ("%#x vs %#zx\n", cb, sizeof(VMMDevRequestHeader)),
-                    VERR_INVALID_PARAMETER);
-
-    pReq = (VMMDevRequestHeader *)RTMemTmpAlloc(cb);
-    if (RT_UNLIKELY(!pReq))
-        return VERR_NO_MEMORY;
-
-    pReq->size        = cb;
-    pReq->version     = VMMDEV_REQUEST_HEADER_VERSION;
-    pReq->requestType = enmReqType;
-    pReq->rc          = VERR_GENERAL_FAILURE;
-    pReq->reserved1   = 0;
-    pReq->reserved2   = 0;
-
-    *ppReq = pReq;
-
-    return VINF_SUCCESS;
-}
-
-
-VBGLR3DECL(int) VbglR3GRPerform(VMMDevRequestHeader *pReq)
-{
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_VMMREQUEST(pReq->size), pReq, pReq->size);
-}
-
-
-VBGLR3DECL(void) VbglR3GRFree(VMMDevRequestHeader *pReq)
-{
-    RTMemTmpFree(pReq);
-}
-
-
-VBGLR3DECL(int) VbglR3GetHostTime(PRTTIMESPEC pTime)
-{
-    VMMDevReqHostTime Req;
-    vmmdevInitRequest(&Req.header, VMMDevReq_GetHostTime);
-    Req.time = UINT64_MAX;
-    int rc = VbglR3GRPerform(&Req.header);
-    if (RT_SUCCESS(rc))
-        RTTimeSpecSetMilli(pTime, (int64_t)Req.time);
-    return rc;
-}
-
-
-VBGLR3DECL(int) VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py)
-{
-    VMMDevReqMouseStatus Req;
-    vmmdevInitRequest(&Req.header, VMMDevReq_GetMouseStatus);
-    Req.mouseFeatures = 0;
-    Req.pointerXPos = 0;
-    Req.pointerYPos = 0;
-    int rc = VbglR3GRPerform(&Req.header);
-    if (RT_SUCCESS(rc))
-    {
-        if (pfFeatures)
-            *pfFeatures = Req.mouseFeatures;
-        if (px)
-            *px = Req.pointerXPos;
-        if (py)
-            *py = Req.pointerYPos;
-    }
-    return rc;
-}
-
-
-VBGLR3DECL(int) VbglR3SetMouseStatus(uint32_t fFeatures)
-{
-    VMMDevReqMouseStatus Req;
-    vmmdevInitRequest(&Req.header, VMMDevReq_SetMouseStatus);
-    Req.mouseFeatures = fFeatures;
-    Req.pointerXPos = 0;
-    Req.pointerYPos = 0;
-    return VbglR3GRPerform(&Req.header);
-}
-
-
-/**
- * Cause any pending WaitEvent calls (VBOXGUEST_IOCTL_WAITEVENT) to return
- * with a VERR_INTERRUPTED status.
- *
- * Can be used in combination with a termination flag variable for interrupting
- * event loops. Avoiding race conditions is the responsibility of the caller.
- *
- * @returns IPRT status code
- */
-VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
-{
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL, 0, 0);
-}
-
-
-/**
- * Write to the backdoor logger from ring 3 guest code.
- *
- * @returns IPRT status code
- *
- * @remarks This currently does not accept more than 255 bytes of data at
- *          one time. It should probably be rewritten to use pass a pointer
- *          in the IOCtl.
- */
-VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
-{
-    /*
-     * Solaris does not accept more than 255 bytes of data per ioctl request,
-     * so split large string into 128 byte chunks to prevent truncation.
-     */
-#define STEP 128 /** @todo increase to 512 when solaris ioctl code is fixed. (darwin limits us to 1024 IIRC) */
-    int rc = VINF_SUCCESS;
-    for (size_t off = 0; off < cb && RT_SUCCESS(rc); off += STEP)
-    {
-        size_t cbStep = RT_MIN(cb - off, STEP);
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cbStep), (char *)pch + off, cbStep);
-    }
-#undef STEP
-    return rc;
-}
-
-
-/**
- * Change the IRQ filter mask.
- *
- * @returns IPRT status code
- * @param   fOr     The OR mask.
- * @param   fNo     The NOT mask.
- */
-VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
-{
-    VBoxGuestFilterMaskInfo Info;
-    Info.u32OrMask = fOr;
-    Info.u32NotMask = fNot;
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
 }
 

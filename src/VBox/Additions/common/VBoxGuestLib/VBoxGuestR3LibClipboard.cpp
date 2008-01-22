@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, Clipboard.
  */
@@ -23,45 +23,14 @@
 #include <VBox/VBoxGuest.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
+#include "VBGLR3Internal.h"
 
-
-/* Move this to a header { */
-
-extern int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData);
-
-
-DECLINLINE(void) VbglHGCMParmUInt32Set(HGCMFunctionParameter *pParm, uint32_t u32)
-{
-    pParm->type = VMMDevHGCMParmType_32bit;
-    pParm->u.value32 = u32;
-}
-
-
-DECLINLINE(int) VbglHGCMParmUInt32Get(HGCMFunctionParameter *pParm, uint32_t *pu32)
-{
-    if (pParm->type == VMMDevHGCMParmType_32bit)
-    {
-        *pu32 = pParm->u.value32;
-        return VINF_SUCCESS;
-    }
-    return VERR_INVALID_PARAMETER;
-}
-
-
-DECLINLINE(void) VbglHGCMParmPtrSet(HGCMFunctionParameter *pParm, void *pv, uint32_t cb)
-{
-    pParm->type                    = VMMDevHGCMParmType_LinAddr;
-    pParm->u.Pointer.size          = cb;
-    pParm->u.Pointer.u.linearAddr  = (vmmDevHypPtr)pv;
-}
-
-/* } */
 
 
 
 /**
  * Connects to the clipboard service.
- * 
+ *
  * @returns VBox status code
  * @param   pu32ClientId    Where to put the client id on success. The client id
  *                          must be passed to all the other clipboard calls.
@@ -87,7 +56,7 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(uint32_t *pu32ClientId)
 
 /**
  * Disconnect from the clipboard service.
- * 
+ *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
  */
@@ -106,9 +75,9 @@ VBGLR3DECL(int) VbglR3ClipboardDisconnect(uint32_t u32ClientId)
 
 /**
  * Get a host message.
- * 
+ *
  * This will block until a message becomes available.
- * 
+ *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
  * @param   pMsg            Where to store the message id.
@@ -153,15 +122,15 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(uint32_t u32ClientId, uint32_t *pMsg, 
 
 /**
  * Reads data from the host clipboard.
- * 
+ *
  * @returns VBox status code.
  * @retval  VINF_BUFFER_OVERFLOW    If there is more data available than the caller provided buffer space for.
- * 
+ *
  * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
  * @param   fFormat         The format we're requesting the data in.
  * @param   pv              Where to store the data.
  * @param   cb              The size of the buffer pointed to by pv.
- * @param   pcb             The actual size of the host clipboard data. May be larger than cb. 
+ * @param   pcb             The actual size of the host clipboard data. May be larger than cb.
  */
 VBGLR3DECL(int) VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb)
 {
@@ -198,7 +167,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, 
 
 /**
  * Advertises guest clipboard formats to the host.
- * 
+ *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
  * @param   fFormats        The formats to advertise.
@@ -222,10 +191,10 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFor
 
 /**
  * Send guest clipboard data to the host.
- * 
- * This is usually called in reply to a VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA message 
+ *
+ * This is usually called in reply to a VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA message
  * from the host.
- * 
+ *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
  * @param   fFormat         The format of the data.
