@@ -2960,10 +2960,15 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
     {
         /* memorize the direct session control and cache IUnknown for it */
         mData->mSession.mDirectControl = aControl;
-        mData->mSession.mDirectControlUnk = aControl;
         mData->mSession.mState = SessionState_SessionOpen;
         /* associate the SessionMachine with this Machine */
         mData->mSession.mMachine = sessionMachine;
+
+        /* request an IUnknown pointer early from the remote party for later
+         * identity checks (it will be internally cached within mDirectControl
+         * at least on XPCOM) */
+        ComPtr <IUnknown> unk = mData->mSession.mDirectControl;
+        NOREF (unk);
     }
 
     if (mData->mSession.mProgress)
@@ -7307,7 +7312,6 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     if (aReason != Uninit::Normal)
     {
         mData->mSession.mDirectControl.setNull();
-        mData->mSession.mDirectControlUnk.setNull();
     }
     else
     {
@@ -7534,7 +7538,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
     /* Progress::init() needs mParent lock */
     AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
 
-    if (control.equalsTo (mData->mSession.mDirectControlUnk))
+    if (control.equalsTo (mData->mSession.mDirectControl))
     {
         ComAssertRet (aProgress, E_POINTER);
 
@@ -7548,7 +7552,6 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
 
         /* set direct control to NULL to release the remote instance */
         mData->mSession.mDirectControl.setNull();
-        mData->mSession.mDirectControlUnk.setNull();
         LogFlowThisFunc (("Direct control is set to NULL\n"));
 
         /*
