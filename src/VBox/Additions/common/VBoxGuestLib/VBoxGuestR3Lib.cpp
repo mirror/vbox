@@ -23,25 +23,11 @@
 # define INCL_BASE
 # define INCL_ERRORS
 # include <os2.h>
-
-# include <iprt/alloca.h>
-# include <iprt/string.h>
-#elif defined(RT_OS_LINUX)
-# include <sys/stat.h>
-# include <fcntl.h>
-# include <stdlib.h>
-# include <unistd.h>
-# include <sys/time.h>
-# include <sys/resource.h>
 #elif defined(RT_OS_SOLARIS)
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <errno.h>
-# include <stdio.h>
-# include <stdlib.h>
 # include <unistd.h>
-# include <signal.h>
-# include <fcntl.h>
 #endif
 
 #include <iprt/time.h>
@@ -50,6 +36,7 @@
 #include <iprt/file.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
+#include <iprt/alloca.h>
 #include <VBox/VBoxGuest.h>
 
 
@@ -186,7 +173,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     return rc;
 
 #else
-    /* Default implementation (linux, solaris). */
+    /* Default implementation - PORTME: Do not use this without testings that error passing works! */
     int rc2 = VERR_INTERNAL_ERROR;
     int rc = RTFileIoCtl(g_File, (int)iFunction, pvData, cbData, &rc2);
     if (RT_SUCCESS(rc))
@@ -332,160 +319,5 @@ VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
     Info.u32OrMask = fOr;
     Info.u32NotMask = fNot;
     return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
-}
-
-
-/**
- * Daemonize the process for running in the background.
- *
- * @returns 0 on success
- *
- * @param   nochdir     Pass 0 to change working directory to root.
- * @param   noclose     Pass 0 to redirect standard file streams to /dev/null.
- */
-VBGLR3DECL(int) VbglR3Daemonize(int nochdir, int noclose)
-{
-#if defined(RT_OS_LINUX)
-    /** rlimit structure for finding out how many open files we may have. */
-    struct rlimit rlim;
-
-    /* To make sure that we are not currently a session leader, we must first fork and let
-       the parent process exit, as a newly created child is never session leader.  This will
-       allow us to call setsid() later. */
-    if (fork() != 0)
-    {
-        exit(0);
-    }
-    /* Find the maximum number of files we can have open and close them all. */
-    if (0 != getrlimit(RLIMIT_NOFILE, &rlim))
-    {
-        /* For some reason the call failed.  In that case we will just close the three
-           standard files and hope. */
-        rlim.rlim_cur = 3;
-    }
-    for (unsigned int i = 0; i < rlim.rlim_cur; ++i)
-    {
-        close(i);
-    }
-    /* Change to the root directory to avoid keeping the one we were started in open. */
-    chdir("/");
-    /* Set our umask to zero. */
-    umask(0);
-    /* And open /dev/null on stdin/out/err. */
-    open("/dev/null", O_RDONLY);
-    open("/dev/null", O_WRONLY);
-    dup(1);
-    /* Detach from the controlling terminal by creating our own session, to avoid receiving
-       signals from the old session. */
-    setsid();
-    /* And fork again, letting the parent exit, to make us a child of init and avoid zombies. */
-    if (fork() != 0)
-    {
-        exit(0);
-    }
-    NOREF(nochdir);
-    NOREF(noclose);
-
-    return 0;
-
-#elif defined(RT_OS_OS2)
-    PPIB pPib;
-    PTIB pTib;
-    DosGetInfoBlocks(&pTib, &pPib);
-
-    /* Get the full path to the executable. */
-    char szExe[CCHMAXPATH];
-    APIRET rc = DosQueryModuleName(pPib->pib_hmte, sizeof(szExe), szExe);
-    if (rc)
-    {
-        errno = EDOOFUS;
-        return -1;
-    }
-
-    /* calc the length of the command line. */
-    char *pch = pPib->pib_pchcmd;
-    size_t cch0 = strlen(pch);
-    pch += cch0 + 1;
-    size_t cch1 = strlen(pch);
-    pch += cch1 + 1;
-    char *pchArgs;
-    if (cch1 && *pch)
-    {
-        do  pch = strchr(pch, '\0') + 1;
-        while (*pch);
-
-        size_t cchTotal = pch - pPib->pib_pchcmd;
-        pchArgs = (char *)alloca(cchTotal + sizeof("--daemonized\0\0"));
-        memcpy(pchArgs, pPib->pib_pchcmd, cchTotal - 1);
-        memcpy(pchArgs + cchTotal - 1, "--daemonized\0\0", sizeof("--daemonized\0\0"));
-    }
-    else
-    {
-        size_t cchTotal = pch - pPib->pib_pchcmd + 1;
-        pchArgs = (char *)alloca(cchTotal + sizeof(" --daemonized "));
-        memcpy(pchArgs, pPib->pib_pchcmd, cch0 + 1);
-        pch = pchArgs + cch0 + 1;
-        memcpy(pch, " --daemonized ", sizeof(" --daemonized ") - 1);
-        pch += sizeof(" --daemonized ") - 1;
-        if (cch1)
-            memcpy(pch, pPib->pib_pchcmd + cch0 + 1, cch1 + 2);
-        else
-            pch[0] = pch[1] = '\0';
-    }
-
-    /* spawn a detach process  */
-    char szObj[128];
-    RESULTCODES ResCodes = { 0, 0 };
-    szObj[0] = '\0';
-    rc = DosExecPgm(szObj, sizeof(szObj), EXEC_BACKGROUND, (PCSZ)pchArgs, NULL, &ResCodes, (PCSZ)szExe);
-    if (rc)
-    {
-        /** @todo Change this to some standard log/print error?? */
-        /* VBoxServiceError("DosExecPgm failed with rc=%d and szObj='%s'\n", rc, szObj); */
-        errno = EDOOFUS;
-        return -1;
-    }
-    DosExit(EXIT_PROCESS, 0);
-    return -1;
-
-#elif defined(RT_OS_SOLARIS)
-    if (getppid() == 1) /* We already belong to init process */
-        return -1;
-
-    pid_t pid = fork();
-    if (pid < 0)         /* The fork() failed. Bad. */
-        return -1;
-
-    if (pid > 0)         /* Quit parent process */
-        exit(0);
-
-    /*
-     * The orphaned child becomes a daemon after attaching to init. We need to get
-     * rid of signals, file descriptors & other stuff we inherited from the parent.
-     */
-    pid_t newpgid = setsid();
-    if (newpgid < 0)     /* Failed to create new sesion */
-        return -1;
-
-    /* BSD daemon style. */
-    if (!noclose)
-    {
-        /* Open stdin(0), stdout(1) and stderr(2) to /dev/null */
-        int fd = open("/dev/null", O_RDWR);
-        dup2(fd, STDIN_FILENO);
-        dup2(fd, STDOUT_FILENO);
-        dup2(fd, STDERR_FILENO);
-        if (fd > 2)
-            close(fd);
-    }
-
-    /* Switch our current directory to root */
-    if (!nochdir)
-        chdir("/");     /* @todo Check if switching to '/' is the convention for Solaris daemons. */
-
-    /* Set file permission to something secure, as we need to run as root on Solaris */
-    umask(027);
-    return 0;
-#endif
 }
 
