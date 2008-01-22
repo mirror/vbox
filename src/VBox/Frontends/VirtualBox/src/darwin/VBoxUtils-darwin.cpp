@@ -17,6 +17,7 @@
 
 
 #include "VBoxUtils.h"
+#include "VBoxFrameBuffer.h"
 #include <qimage.h>
 #include <qpixmap.h>
 
@@ -124,3 +125,63 @@ CGImageRef DarwinCreateDockBadge (const char *aSource)
     return ::DarwinQPixmapToCGImage (&back);
 }
 
+/**
+ * Creates a dock preview image.
+ * 
+ * Use this method to create a 128x128 preview image of the vm window.
+ * 
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.) 
+ * @param   aFrameBuffer    The source name.
+ */
+CGImageRef DarwinCreateDockPreview(VBoxFrameBuffer *aFrameBuffer)
+{
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+    /* Create the image copy of the framebuffer */
+    CGDataProviderRef dp = CGDataProviderCreateWithData(aFrameBuffer, aFrameBuffer->address(), aFrameBuffer->bitsPerPixel() / 8 * aFrameBuffer->width() * aFrameBuffer->height() , NULL);
+    CGImageRef ir = CGImageCreate(aFrameBuffer->width(), aFrameBuffer->height(), 8, 32, aFrameBuffer->bytesPerLine(), cs,
+                                  kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0 /*decode */, 0 /* shouldInterpolate */, 
+                                  kCGRenderingIntentDefault);
+
+    Assert(cs);
+    Assert(dp);
+    Assert(ir);
+    /* Calc the size of the dock icon image and fit it into 128x128 */
+    int targetWidth = 128;
+    int targetHeight = 128;
+    float aspect = static_cast<float>(aFrameBuffer->width()) / aFrameBuffer->height();
+    CGRect rect;
+    if(aspect > 1.0)
+    {
+      rect.origin.x = 0;
+      rect.origin.y = (targetHeight-targetHeight/aspect)/2;
+      rect.size.width = targetWidth;
+      rect.size.height = targetHeight/aspect;
+    }else
+    {
+      rect.origin.x = (targetWidth-targetWidth*aspect)/2;
+      rect.origin.y = 0;
+      rect.size.width = targetWidth*aspect;
+      rect.size.height = targetHeight;
+    }
+    /* Create a bitmap context to draw on */
+    int bitmapBytesPerRow = (targetWidth * 4);
+    int bitmapByteCount = (bitmapBytesPerRow * targetHeight);
+    void *bitmapData = malloc(bitmapByteCount);
+    CGImageRef dockImage = NULL;
+    if (bitmapData)
+    {
+      CGContextRef context = CGBitmapContextCreate(bitmapData, targetWidth, targetHeight, 8, bitmapBytesPerRow, cs, kCGImageAlphaPremultipliedLast);
+      /* Draw on the bitmap */
+      CGContextDrawImage(context, rect, ir);
+      /* Create the preview image ref from the bitmap */
+      dockImage = CGBitmapContextCreateImage(context);
+      CGContextRelease(context);
+      free(bitmapData); 
+    }
+    CGColorSpaceRelease(cs);
+    CGDataProviderRelease(dp);
+    CGImageRelease(ir);
+
+    Assert (dockImage);
+    return dockImage;
+}

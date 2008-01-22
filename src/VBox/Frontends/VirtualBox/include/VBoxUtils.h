@@ -249,10 +249,12 @@ private:
 # include <Carbon/Carbon.h>
 class QImage;
 class QPixmap;
+class VBoxFrameBuffer;
 CGImageRef DarwinQImageToCGImage (const QImage *aImage);
 CGImageRef DarwinQPixmapToCGImage (const QPixmap *aPixmap);
 CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource);
 CGImageRef DarwinCreateDockBadge (const char *aSource);
+CGImageRef DarwinCreateDockPreview(VBoxFrameBuffer *aFrameBuffer);
 #endif /* Q_WS_MAC */
 
 #endif // __VBoxUtils_h__
