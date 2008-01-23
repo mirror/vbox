@@ -476,11 +476,14 @@ vslick.h: include/VBox/cdefs.h Makefile
 	$(SED)  -e '/__cdecl/d' \
 		-e '/^ *# *define.*DECL/!d' \
 		-e '/DECLS/d' \
+		-e '/DECLARE_CLS_/d' \
 		-e '/_SRC_POS_DECL/d' \
 		-e '/declspec/d' \
+		-e '/__attribute__/d' \
 		-e 's/#  */#/g' \
 		-e 's/   */ /g' \
 		-e '/(type) DECLEXPORT/d' \
+		-e '/ DECLEXPORT_CLASS/d' \
 		-e 's/ *VBOXCALL//' \
 		-e 's/ *RTCALL//' \
 		-e 's/(type) DECLIMPORT(type)/(type) type/' \
@@ -488,12 +491,13 @@ vslick.h: include/VBox/cdefs.h Makefile
 		-e '/define  *DECL..CALLBACKMEMBER(type[^)]*) *RT/d' \
 		-e '/define  *DECLINLINE(type)/d' \
 		\
-		include/iprt/cdefs.h \
-		include/VBox/cdefs.h \
-		>> $@.tmp
-	sort $@.tmp | sort | sed -e 's/$$/\n/' > $@.tmp2
+		--append $@.tmp \
+		$(filter-out include/VBox/err.h, $(wildcard include/VBox/*.h)) \
+		include/iprt/cdefs.h
+	$(CAT_EXT) $@.tmp | sort | $(SED_EXT) -e 's/$$/\n/' --output $@.tmp2
 	$(MV) -f $@.tmp2 $@
 	$(RM) -f $@.tmp $@.tmp2 $@.tmp3
+	$(ECHO) "TODO: Merge ./vslick.h with your ~/.slickedit/x.y.z/unxcpp.h file."
 
 
 ## add tools fetching to the 'up' / 'update' target.
