@@ -1157,97 +1157,6 @@ Console::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
 // IConsole methods
 /////////////////////////////////////////////////////////////////////////////
 
-/*
- * Initialize the release logging facility. In case something
- * goes wrong, there will be no release logging. Maybe in the future
- * we can add some logic to use different file names in this case.
- * Note that the logic must be in sync with Machine::DeleteSettings().
- */
-static HRESULT consoleInitReleaseLog(const ComPtr <IMachine> machine,
-                                     char szError[RTPATH_MAX + 128], int *pRc)
-{
-    HRESULT hrc = S_OK;
-    int vrc = VINF_SUCCESS;
-
-    Bstr logFolder;
-    hrc = machine->COMGETTER(LogFolder) (logFolder.asOutParam());
-    CheckComRCReturnRC (hrc);
-
-    Utf8Str logDir = logFolder;
-
-    /* make sure the Logs folder exists */
-    Assert (!logDir.isEmpty());
-    if (!RTDirExists (logDir))
-        RTDirCreateFullPath (logDir, 0777);
-
-    Utf8Str logFile = Utf8StrFmt ("%s%cVBox.log",
-                                  logDir.raw(), RTPATH_DELIMITER);
-    Utf8Str pngFile = Utf8StrFmt ("%s%cVBox.png",
-                                  logDir.raw(), RTPATH_DELIMITER);
-
-    /*
-     * Age the old log files
-     * Rename .(n-1) to .(n), .(n-2) to .(n-1), ..., and the last log file to .1
-     * Overwrite target files in case they exist.
-     */
-    ComPtr<IVirtualBox> virtualBox;
-    machine->COMGETTER(Parent)(virtualBox.asOutParam());
-    ComPtr <ISystemProperties> systemProperties;
-    virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
-    ULONG uLogHistoryCount = 3;
-    systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
-    if (uLogHistoryCount)
-    {
-        for (int i = uLogHistoryCount-1; i >= 0; i--)
-        {
-            Utf8Str *files[] = { &logFile, &pngFile };
-            Utf8Str oldName, newName;
-
-            for (unsigned int j = 0; j < ELEMENTS (files); ++ j)
-            {
-                if (i > 0)
-                    oldName = Utf8StrFmt ("%s.%d", files [j]->raw(), i);
-                else
-                    oldName = *files [j];
-                newName = Utf8StrFmt ("%s.%d", files [j]->raw(), i + 1);
-                /* If the old file doesn't exist, delete the new file (if it
-                 * exists) to provide correct rotation even if the sequence is
-                 * broken */
-                if (RTFileRename (oldName, newName, RTFILEMOVE_FLAGS_REPLACE) ==
-                        VERR_FILE_NOT_FOUND)
-                    RTFileDelete (newName);
-            }
-        }
-    }
-
-    PRTLOGGER loggerRelease;
-    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    RTUINT fFlags = RTLOGFLAGS_PREFIX_TIME_PROG;
-#if defined (RT_OS_WINDOWS) || defined (RT_OS_OS2)
-    fFlags |= RTLOGFLAGS_USECRLF;
-#endif
-    vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
-                        "VBOX_RELEASE_LOG", ELEMENTS(s_apszGroups), s_apszGroups,
-                        RTLOGDEST_FILE, szError, sizeof(szError), logFile.raw());
-    if (VBOX_SUCCESS(vrc))
-    {
-        /* some introductory information */
-        RTTIMESPEC timeSpec;
-        char nowUct[64];
-        RTTimeSpecToString(RTTimeNow(&timeSpec), nowUct, sizeof(nowUct));
-        RTLogRelLogger(loggerRelease, 0, ~0U,
-                       "VirtualBox %s r%d %s (%s %s) release log\n"
-                       "Log opened %s\n",
-                       VBOX_VERSION_STRING, VBoxSVNRev (), VBOX_BUILD_TARGET,
-                       __DATE__, __TIME__, nowUct);
-
-        /* register this logger as the release logger */
-        RTLogRelSetDefaultInstance(loggerRelease);
-    }
-    *pRc = vrc;
-    return RT_SUCCESS(vrc) ? hrc : E_FAIL;
-}
-
 STDMETHODIMP Console::PowerUp (IProgress **aProgress)
 {
     LogFlowThisFuncEnter();
@@ -1458,14 +1367,12 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
     if (mMachineState == MachineState_Saved)
         task->mSavedStateFile = savedStateFile;
 
-    int vrc;
-    char szError[RTPATH_MAX + 128] = "";
-    HRESULT hrc = consoleInitReleaseLog(mMachine, szError, &vrc);
-    ComAssertMsgRCRet (SUCCEEDED (hrc),
-                       ("Failed to open release log (%s, %Vrc)", szError, vrc),
-                       hrc);
-    vrc = RTThreadCreate (NULL, Console::powerUpThread, (void *) task.get(),
-                          0, RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
+    HRESULT hrc = consoleInitReleaseLog (mMachine);
+    if (FAILED (hrc))
+        return hrc;
+
+    int vrc = RTThreadCreate (NULL, Console::powerUpThread, (void *) task.get(),
+                              0, RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
 
     ComAssertMsgRCRet (vrc, ("Could not create VMPowerUp thread (%Vrc)\n", vrc),
                        E_FAIL);
@@ -3836,7 +3743,7 @@ HRESULT Console::onShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
     return S_OK;
 }
 
-// private mehtods
+// private methods
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -3915,6 +3822,101 @@ void Console::releaseVMCaller()
         RTSemEventSignal (mVMZeroCallersSem);
     }
 }
+
+/**
+ * Initialize the release logging facility. In case something
+ * goes wrong, there will be no release logging. Maybe in the future
+ * we can add some logic to use different file names in this case.
+ * Note that the logic must be in sync with Machine::DeleteSettings().
+ */
+HRESULT Console::consoleInitReleaseLog (const ComPtr <IMachine> aMachine)
+{
+    HRESULT hrc = S_OK;
+
+    Bstr logFolder;
+    hrc = aMachine->COMGETTER(LogFolder) (logFolder.asOutParam());
+    CheckComRCReturnRC (hrc);
+
+    Utf8Str logDir = logFolder;
+
+    /* make sure the Logs folder exists */
+    Assert (!logDir.isEmpty());
+    if (!RTDirExists (logDir))
+        RTDirCreateFullPath (logDir, 0777);
+
+    Utf8Str logFile = Utf8StrFmt ("%s%cVBox.log",
+                                  logDir.raw(), RTPATH_DELIMITER);
+    Utf8Str pngFile = Utf8StrFmt ("%s%cVBox.png",
+                                  logDir.raw(), RTPATH_DELIMITER);
+
+    /*
+     * Age the old log files
+     * Rename .(n-1) to .(n), .(n-2) to .(n-1), ..., and the last log file to .1
+     * Overwrite target files in case they exist.
+     */
+    ComPtr<IVirtualBox> virtualBox;
+    aMachine->COMGETTER(Parent)(virtualBox.asOutParam());
+    ComPtr <ISystemProperties> systemProperties;
+    virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+    ULONG uLogHistoryCount = 3;
+    systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
+    if (uLogHistoryCount)
+    {
+        for (int i = uLogHistoryCount-1; i >= 0; i--)
+        {
+            Utf8Str *files[] = { &logFile, &pngFile };
+            Utf8Str oldName, newName;
+
+            for (unsigned int j = 0; j < ELEMENTS (files); ++ j)
+            {
+                if (i > 0)
+                    oldName = Utf8StrFmt ("%s.%d", files [j]->raw(), i);
+                else
+                    oldName = *files [j];
+                newName = Utf8StrFmt ("%s.%d", files [j]->raw(), i + 1);
+                /* If the old file doesn't exist, delete the new file (if it
+                 * exists) to provide correct rotation even if the sequence is
+                 * broken */
+                if (   RTFileRename (oldName, newName, RTFILEMOVE_FLAGS_REPLACE)
+                    == VERR_FILE_NOT_FOUND)
+                    RTFileDelete (newName);
+            }
+        }
+    }
+
+    PRTLOGGER loggerRelease;
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    RTUINT fFlags = RTLOGFLAGS_PREFIX_TIME_PROG;
+#if defined (RT_OS_WINDOWS) || defined (RT_OS_OS2)
+    fFlags |= RTLOGFLAGS_USECRLF;
+#endif
+    char szError[RTPATH_MAX + 128] = "";
+    int vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
+                            "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                            RTLOGDEST_FILE, szError, sizeof(szError), logFile.raw());
+    if (RT_SUCCESS(vrc))
+    {
+        /* some introductory information */
+        RTTIMESPEC timeSpec;
+        char nowUct[64];
+        RTTimeSpecToString(RTTimeNow(&timeSpec), nowUct, sizeof(nowUct));
+        RTLogRelLogger(loggerRelease, 0, ~0U,
+                       "VirtualBox %s r%d %s (%s %s) release log\n"
+                       "Log opened %s\n",
+                       VBOX_VERSION_STRING, VBoxSVNRev (), VBOX_BUILD_TARGET,
+                       __DATE__, __TIME__, nowUct);
+
+        /* register this logger as the release logger */
+        RTLogRelSetDefaultInstance(loggerRelease);
+        hrc = S_OK;
+    }
+    else
+        hrc = setError (E_FAIL,
+                        tr ("Failed to open release log (%s, %Rrc)"), szError, vrc);
+
+    return hrc;
+}
+
 
 /**
  *  Internal power off worker routine.
@@ -5444,11 +5446,11 @@ Console::stateProgressCallback (PVM pVM, unsigned uPercent, void *pvUser)
  * @param   pvUser      Pointer to the VMProgressTask structure.
  * @param   rc          VBox status code.
  * @param   pszFormat   Printf-like error message.
- * @param   args        Various number of argumens for the error message. 
- * 
- * @thread EMT, VMPowerUp... 
- *  
- * @note The VMProgressTask structure modified by this callback is not thread 
+ * @param   args        Various number of argumens for the error message.
+ *
+ * @thread EMT, VMPowerUp...
+ *
+ * @note The VMProgressTask structure modified by this callback is not thread
  *       safe.
  */
 /* static */ DECLCALLBACK (void)
@@ -5992,10 +5994,10 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
         console->mMachineState == MachineState_Restoring)
     {
         /* We are still in the Starting/Restoring state. This means one of:
-         * 
+         *
          * 1) we failed before VMR3Create() was called;
          * 2) VMR3Create() failed.
-         * 
+         *
          * In both cases, there is no need to call powerDown(), but we still
          * need to go back to the PoweredOff/Saved state. Reuse
          * vmstateChangeCallback() for that purpose.
