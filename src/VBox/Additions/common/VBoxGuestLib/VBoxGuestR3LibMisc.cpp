@@ -34,7 +34,7 @@
  */
 VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
 {
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL, 0, 0);
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS, 0, 0);
 }
 
 
