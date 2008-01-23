@@ -31,6 +31,10 @@
 
 #include <qkeysequence.h>
 
+#if defined (Q_WS_PM)
+#include "src/os2/VBoxHlp.h"
+#endif
+
 #if defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
 # include "DarwinCursor.h"

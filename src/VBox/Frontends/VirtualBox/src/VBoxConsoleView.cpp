@@ -750,6 +750,12 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     g_view = this;
 #endif
 
+#if defined (Q_WS_PM)
+    bool ok = VBoxHlpInstallKbdHook (0, winId(), WM_CHAR);
+    Assert (ok);
+    NOREF (ok);
+#endif
+
 #ifdef Q_WS_MAC
     DarwinCursorClearHandle (&mDarwinCursor);
 #endif
@@ -757,6 +763,12 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
 VBoxConsoleView::~VBoxConsoleView()
 {
+#if defined (Q_WS_PM)
+    bool ok = VBoxHlpUninstallKbdHook (0, winId(), WM_CHAR);
+    Assert (ok);
+    NOREF (ok);
+#endif
+
 #if defined (Q_WS_WIN)
     if (g_kbdhook)
         UnhookWindowsHookEx (g_kbdhook);
@@ -2016,7 +2028,7 @@ void VBoxConsoleView::focusEvent (bool aHasFocus,
  *  @param  codes  pointer to keycodes which are sent to the keyboard
  *  @param  count  pointer to the keycodes counter
  */
-void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
+void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
 {
 #if defined(Q_WS_X11)
 
