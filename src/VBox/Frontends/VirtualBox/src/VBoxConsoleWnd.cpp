@@ -631,16 +631,16 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     {
         setCentralWidget (new QWidget (this, "centralWidget"));
         QGridLayout *pMainLayout = new QGridLayout(centralWidget(), 3, 3, 0, 0);
-        mShiftingSpacerLeft = new QSpacerItem (0, 0, 
+        mShiftingSpacerLeft = new QSpacerItem (0, 0,
                                                QSizePolicy::Fixed,
                                                QSizePolicy::Fixed);
-        mShiftingSpacerTop = new QSpacerItem (0, 0, 
+        mShiftingSpacerTop = new QSpacerItem (0, 0,
                                               QSizePolicy::Fixed,
                                               QSizePolicy::Fixed);
-        mShiftingSpacerRight = new QSpacerItem (0, 0, 
+        mShiftingSpacerRight = new QSpacerItem (0, 0,
                                                 QSizePolicy::Fixed,
                                                 QSizePolicy::Fixed);
-        mShiftingSpacerBottom = new QSpacerItem (0, 0, 
+        mShiftingSpacerBottom = new QSpacerItem (0, 0,
                                                  QSizePolicy::Fixed,
                                                  QSizePolicy::Fixed);
         pMainLayout->addItem(mShiftingSpacerLeft, 1, 0);
@@ -662,7 +662,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     activateUICustomizations();
 
     static_cast<QGridLayout*>(centralWidget()->layout())->addWidget(console, 1, 1, AlignVCenter | AlignHCenter);
-    
+
     CMachine cmachine = csession.GetMachine();
 
     /* restore the position of the window and some options */
@@ -1006,18 +1006,18 @@ void VBoxConsoleWnd::refreshView()
 void VBoxConsoleWnd::onEnterFullscreen()
 {
     disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
-#ifndef Q_WS_MAC 
+#ifndef Q_WS_MAC
     /* It isn't guaranteed that the guest os set the video mode that
-     * we requested. So after all the resizing stuff set the clipping 
+     * we requested. So after all the resizing stuff set the clipping
      * mask and the spacing shifter to the corresponding values. */
-    setViewInSeamlessMode(QRect(console->mapToGlobal(QPoint(0, 0)), console->size()));
+    setViewInSeamlessMode (QRect(console->mapToGlobal (QPoint(0, 0)), console->size()));
 #endif
-#ifdef Q_WS_MAC 
-    if(!mIsSeamless)
+#ifdef Q_WS_MAC
+    if (!mIsSeamless)
     {
-      /* Fade back to the normal gamma */
-      CGDisplayFade(mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false); 
-      CGReleaseDisplayFadeReservation(mFadeToken);
+        /* Fade back to the normal gamma */
+        CGDisplayFade (mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false);
+        CGReleaseDisplayFadeReservation (mFadeToken);
     }
 #endif
 
@@ -1032,12 +1032,12 @@ void VBoxConsoleWnd::onEnterFullscreen()
 void VBoxConsoleWnd::onExitFullscreen()
 {
     disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
-#ifdef Q_WS_MAC 
-    if(!mIsSeamless)
+#ifdef Q_WS_MAC
+    if (!mIsSeamless)
     {
-      /* Fade back to the normal gamma */
-      CGDisplayFade(mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false); 
-      CGReleaseDisplayFadeReservation(mFadeToken);
+        /* Fade back to the normal gamma */
+        CGDisplayFade (mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false);
+        CGReleaseDisplayFadeReservation (mFadeToken);
     }
 #endif
 
@@ -1930,9 +1930,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #ifdef Q_WS_MAC
     if (!aSeamless)
     {
-      /* Fade to black */
-      CGAcquireDisplayFadeReservation(kCGMaxDisplayReservationInterval, &mFadeToken); 
-      CGDisplayFade(mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
+        /* Fade to black */
+        CGAcquireDisplayFadeReservation (kCGMaxDisplayReservationInterval, &mFadeToken);
+        CGDisplayFade (mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
     }
 #endif
 
@@ -2037,9 +2037,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             dtw->availableGeometry (this) : dtw->screenGeometry (this);
 
         /* It isn't guaranteed that the guest os set the video mode that
-         * we requested. So after all the resizing stuff set the clipping 
+         * we requested. So after all the resizing stuff set the clipping
          * mask and the spacing shifter to the corresponding values. */
-        setViewInSeamlessMode(dtw->availableGeometry(this));
+        setViewInSeamlessMode (dtw->availableGeometry (this));
 
 #ifdef Q_WS_WIN32
         mPrevRegion = dtw->screenGeometry (this);
@@ -2069,7 +2069,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             if (orc)
                 LogRel (("Error: Failed to change UI mode (rc=%#x) when changing to fullscreen mode. (=> menu bar trouble)\n", orc));
         }
-#endif 
+#endif
 
         /* Adjust colors and appearance. */
         erase_color = centralWidget()->eraseColor();
@@ -2087,7 +2087,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 //        maskRect.setRight (maskRect.right() + 1);
 //        maskRect.setBottom (maskRect.bottom() + 1);
 //        setMask (maskRect);
-
 #else
 //        setMask (dtw->screenGeometry (this));
 #endif
@@ -2155,34 +2154,34 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 //
 // Private slots
 /////////////////////////////////////////////////////////////////////////////
-void VBoxConsoleWnd::setViewInSeamlessMode(const QRect& targetRect)
+void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
 {
     if (mIsSeamless)
     {
         /* It isn't guaranteed that the guest os set the video mode that
-         * we requested. So after all the resizing stuff set the clipping 
+         * we requested. So after all the resizing stuff set the clipping
          * mask and the spacing shifter to the corresponding values. */
         QDesktopWidget *dtw = QApplication::desktop();
         QRect sRect = dtw->screenGeometry (this);
-        QRect aRect(targetRect);
-        QRect a1Rect(targetRect);
+        QRect aRect (aTargetRect);
+        QRect a1Rect (aTargetRect);
 #ifdef Q_WS_MAC
         /* On mac os x this isn't necessary cause the screen starts
          * by y=0 always regardless if there is the global menubar or not. */
-        aRect.setRect(aRect.left(), 0, aRect.width(), aRect.height()+aRect.top());
-        a1Rect.setRect(a1Rect.left(), 0, a1Rect.width(), a1Rect.height());
+        aRect.setRect (aRect.left(), 0, aRect.width(), aRect.height() + aRect.top());
+        a1Rect.setRect (a1Rect.left(), 0, a1Rect.width(), a1Rect.height());
 #endif // Q_WS_MAC
         /* Set the clipping mask */
-        mStrictedRegion = QRegion(sRect) - a1Rect;
+        mStrictedRegion = QRegion (sRect) - a1Rect;
         /* Set the shifting spacer */
-        mShiftingSpacerLeft->changeSize(RT_ABS(sRect.left() - aRect.left()), 0,
-                                        QSizePolicy::Fixed, QSizePolicy::Preferred);
-        mShiftingSpacerTop->changeSize(0, RT_ABS(sRect.top() - aRect.top()),
-                                       QSizePolicy::Preferred, QSizePolicy::Fixed);
-        mShiftingSpacerRight->changeSize(RT_ABS(sRect.right() - aRect.right()), 0,
+        mShiftingSpacerLeft->changeSize (RT_ABS (sRect.left() - aRect.left()), 0,
                                          QSizePolicy::Fixed, QSizePolicy::Preferred);
-        mShiftingSpacerBottom->changeSize(0, RT_ABS(sRect.bottom() - aRect.bottom()),
-                                          QSizePolicy::Preferred, QSizePolicy::Fixed);
+        mShiftingSpacerTop->changeSize (0, RT_ABS (sRect.top() - aRect.top()),
+                                        QSizePolicy::Preferred, QSizePolicy::Fixed);
+        mShiftingSpacerRight->changeSize (RT_ABS (sRect.right() - aRect.right()), 0,
+                                          QSizePolicy::Fixed, QSizePolicy::Preferred);
+        mShiftingSpacerBottom->changeSize (0, RT_ABS (sRect.bottom() - aRect.bottom()),
+                                           QSizePolicy::Preferred, QSizePolicy::Fixed);
     }
 }
 
@@ -2578,18 +2577,18 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 {
     QRegion region = aRegion;
-    region.translate(mShiftingSpacerLeft->sizeHint().width(), mShiftingSpacerTop->sizeHint().height());
+    region.translate (mShiftingSpacerLeft->sizeHint().width(), mShiftingSpacerTop->sizeHint().height());
     region -= mStrictedRegion;
 
 #ifdef Q_WS_MAC
     /* This is necessary to avoid the flicker by
-     * an mask update. 
+     * an mask update.
      * See http://lists.apple.com/archives/Carbon-development/2001/Apr/msg01651.html
      * for the hint.
      * There *must* be a better solution. */
     if(!region.isEmpty())
       region |= QRect(0, 0, 1, 1);
-#endif 
+#endif
 
 #ifdef Q_WS_WIN
     QRegion difference = mPrevRegion.subtract (region);
@@ -3113,9 +3112,7 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
 {
     vmAutoresizeGuestAction->setEnabled (aActive);
     vmSeamlessAction->setEnabled (aSeamlessSupported);
-//#ifndef Q_WS_MAC /** @todo fix seamless mode on Mac OS X. It is temporarily disabled to prevent bogus bugreports for the beta 3 / beta 2 leopard update. */
     mIsSeamlessSupported = aSeamlessSupported;
-//#endif
     /* If seamless mode should be enabled then check if it is enabled
      * currently and re-enable it if open-view procedure is finished */
     if (vmSeamlessAction->isOn() && mIsOpenViewFinished && aSeamlessSupported)

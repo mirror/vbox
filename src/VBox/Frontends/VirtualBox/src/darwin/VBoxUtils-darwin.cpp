@@ -1,3 +1,4 @@
+/* $Id: $ */
 /** @file
  * Qt GUI - Utility Classes and Functions specific to Darwin.
  */
@@ -22,12 +23,13 @@
 #include <qpixmap.h>
 
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 
 
 /**
- * Callback for deleting the QImage object when CGImageCreate is done 
+ * Callback for deleting the QImage object when CGImageCreate is done
  * with it (which is probably not until the returned CFGImageRef is released).
- * 
+ *
  * @param   info        Pointer to the QImage.
  */
 static void darwinDataProviderReleaseQImage(void *info, const void *, size_t)
@@ -38,8 +40,8 @@ static void darwinDataProviderReleaseQImage(void *info, const void *, size_t)
 
 /**
  * Converts a QPixmap to a CGImage.
- * 
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.) 
+ *
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aPixmap     Pointer to the QPixmap instance to convert.
  */
 CGImageRef DarwinQImageToCGImage(const QImage *aImage)
@@ -56,7 +58,7 @@ CGImageRef DarwinQImageToCGImage(const QImage *aImage)
     CGBitmapInfo bmpInfo = imageCopy->hasAlphaBuffer() ? kCGImageAlphaFirst : kCGImageAlphaNoneSkipFirst;
     bmpInfo |= kCGBitmapByteOrder32Host;
     CGImageRef ir = CGImageCreate (imageCopy->width(), imageCopy->height(), 8, 32, imageCopy->bytesPerLine(), cs,
-                                   bmpInfo, dp, 0 /*decode */, 0 /* shouldInterpolate */, 
+                                   bmpInfo, dp, 0 /*decode */, 0 /* shouldInterpolate */,
                                    kCGRenderingIntentDefault);
     CGColorSpaceRelease (cs);
     CGDataProviderRelease (dp);
@@ -67,8 +69,8 @@ CGImageRef DarwinQImageToCGImage(const QImage *aImage)
 
 /**
  * Converts a QPixmap to a CGImage.
- * 
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.) 
+ *
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aPixmap     Pointer to the QPixmap instance to convert.
  */
 CGImageRef DarwinQPixmapToCGImage(const QPixmap *aPixmap)
@@ -80,8 +82,8 @@ CGImageRef DarwinQPixmapToCGImage(const QPixmap *aPixmap)
 
 /**
  * Loads an image using Qt and converts it to a CGImage.
- * 
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.) 
+ *
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aSource     The source name.
  */
 CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource)
@@ -93,16 +95,16 @@ CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource)
 
 /**
  * Creates a dock badge image.
- * 
+ *
  * The badge will be placed on the right hand size and vertically centered
  * after having been scaled up to 32x32.
- * 
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.) 
+ *
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aSource     The source name.
  */
 CGImageRef DarwinCreateDockBadge (const char *aSource)
 {
-    /* instead of figuring out how to create a transparent 128x128 pixmap I've 
+    /* instead of figuring out how to create a transparent 128x128 pixmap I've
        just created one that I can load. The Qt gurus can fix this if they like :-) */
     QPixmap back (QPixmap::fromMimeSource ("dock_128x128_transparent.png"));
     Assert (!back.isNull());
@@ -127,61 +129,69 @@ CGImageRef DarwinCreateDockBadge (const char *aSource)
 
 /**
  * Creates a dock preview image.
- * 
- * Use this method to create a 128x128 preview image of the vm window.
- * 
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.) 
- * @param   aFrameBuffer    The source name.
+ *
+ * This method is a callback that creates a 128x128 preview image of the VM window.
+ *
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
+ * @param   aFrameBuffer    The guest frame buffer.
  */
-CGImageRef DarwinCreateDockPreview(VBoxFrameBuffer *aFrameBuffer)
+CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer)
 {
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-    /* Create the image copy of the framebuffer */
-    CGDataProviderRef dp = CGDataProviderCreateWithData(aFrameBuffer, aFrameBuffer->address(), aFrameBuffer->bitsPerPixel() / 8 * aFrameBuffer->width() * aFrameBuffer->height() , NULL);
-    CGImageRef ir = CGImageCreate(aFrameBuffer->width(), aFrameBuffer->height(), 8, 32, aFrameBuffer->bytesPerLine(), cs,
-                                  kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0 /*decode */, 0 /* shouldInterpolate */, 
-                                  kCGRenderingIntentDefault);
 
-    Assert(cs);
-    Assert(dp);
-    Assert(ir);
+    /* Create the image copy of the framebuffer */
+    CGDataProviderRef dp = CGDataProviderCreateWithData (aFrameBuffer, aFrameBuffer->address(), aFrameBuffer->bitsPerPixel() / 8 * aFrameBuffer->width() * aFrameBuffer->height() , NULL);
+    CGImageRef ir = CGImageCreate (aFrameBuffer->width(), aFrameBuffer->height(), 8, 32, aFrameBuffer->bytesPerLine(), cs,
+                                   kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0 /* decode */, 0 /* shouldInterpolate */,
+                                   kCGRenderingIntentDefault);
+
+    Assert (cs);
+    Assert (dp);
+    Assert (ir);
+
     /* Calc the size of the dock icon image and fit it into 128x128 */
     int targetWidth = 128;
     int targetHeight = 128;
     float aspect = static_cast<float>(aFrameBuffer->width()) / aFrameBuffer->height();
     CGRect rect;
-    if(aspect > 1.0)
+    if (aspect > 1.0)
     {
-      rect.origin.x = 0;
-      rect.origin.y = (targetHeight-targetHeight/aspect)/2;
-      rect.size.width = targetWidth;
-      rect.size.height = targetHeight/aspect;
-    }else
-    {
-      rect.origin.x = (targetWidth-targetWidth*aspect)/2;
-      rect.origin.y = 0;
-      rect.size.width = targetWidth*aspect;
-      rect.size.height = targetHeight;
+        rect.origin.x = 0;
+        rect.origin.y = (targetHeight - targetHeight / aspect) / 2;
+        rect.size.width = targetWidth;
+        rect.size.height = targetHeight / aspect;
     }
+    else
+    {
+        rect.origin.x = (targetWidth - targetWidth * aspect) / 2;
+        rect.origin.y = 0;
+        rect.size.width = targetWidth*aspect;
+        rect.size.height = targetHeight;
+    }
+
     /* Create a bitmap context to draw on */
-    int bitmapBytesPerRow = (targetWidth * 4);
-    int bitmapByteCount = (bitmapBytesPerRow * targetHeight);
-    void *bitmapData = malloc(bitmapByteCount);
     CGImageRef dockImage = NULL;
+    int bitmapBytesPerRow = targetWidth * 4;
+    int bitmapByteCount = bitmapBytesPerRow * targetHeight;
+    void *bitmapData = RTMemAlloc (bitmapByteCount);
     if (bitmapData)
     {
-      CGContextRef context = CGBitmapContextCreate(bitmapData, targetWidth, targetHeight, 8, bitmapBytesPerRow, cs, kCGImageAlphaPremultipliedLast);
-      /* Draw on the bitmap */
-      CGContextDrawImage(context, rect, ir);
-      /* Create the preview image ref from the bitmap */
-      dockImage = CGBitmapContextCreateImage(context);
-      CGContextRelease(context);
-      free(bitmapData); 
+        CGContextRef context = CGBitmapContextCreate (bitmapData, targetWidth, targetHeight, 8, bitmapBytesPerRow, cs, kCGImageAlphaPremultipliedLast);
+
+        /* Draw on the bitmap */
+        CGContextDrawImage (context, rect, ir);
+
+        /* Create the preview image ref from the bitmap */
+        dockImage = CGBitmapContextCreateImage (context);
+        CGContextRelease (context);
+        RTMemFree (bitmapData);
     }
-    CGColorSpaceRelease(cs);
-    CGDataProviderRelease(dp);
-    CGImageRelease(ir);
+
+    CGColorSpaceRelease (cs);
+    CGDataProviderRelease (dp);
+    CGImageRelease (ir);
 
     Assert (dockImage);
     return dockImage;
 }
+

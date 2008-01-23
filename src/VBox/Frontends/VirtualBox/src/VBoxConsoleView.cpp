@@ -1066,7 +1066,7 @@ bool VBoxConsoleView::event (QEvent *e)
 
                 /* emit a signal about guest was resized */
                 emit resizeHintDone();
-              
+
                 return true;
             }
 
@@ -2794,10 +2794,9 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
             mFrameBuf->paintEvent (pe);
 #ifdef Q_WS_MAC
             /* Update the dock icon if we are in the running state */
-            if(isRunning())
+            if (isRunning())
                 SetApplicationDockTileImage(::DarwinCreateDockPreview(mFrameBuf));
 #endif
-
             return;
         }
 
@@ -2977,9 +2976,9 @@ bool VBoxConsoleView::processHotKey (const QKeySequence &key,  QMenuData *data)
     return false;
 }
 
-/** 
+/**
  * Send the KEY BREAK code to the VM for all currently pressed keys.
- * 
+ *
  * @param aReleaseHostKey @c true to set the host key state to unpressed.
  */
 void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostKey)
