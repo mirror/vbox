@@ -4880,88 +4880,91 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
     /* reset any previous error report from VDError() */
     mLastVDError.setNull();
 
-    Guid id, parentId;
-
-    vrc = VDOpen (mContainer, location, VD_OPEN_FLAGS_INFO);
-    if (VBOX_FAILURE (vrc))
-        goto error;
-
-    vrc = VDGetUuid (mContainer, 0, id.ptr());
-    if (VBOX_FAILURE (vrc))
-        goto error;
-    vrc = VDGetParentUuid (mContainer, 0, parentId.ptr());
-    if (VBOX_FAILURE (vrc))
-        goto error;
-
-    if (!mId.isEmpty())
+    do
     {
-        /* check that the actual UUID of the image matches the stored UUID */
-        if (mId != id)
-        {
-            errMsg = Utf8StrFmt (
-                tr ("Actual UUID {%Vuuid} of the hard disk image '%s' doesn't "
-                    "match UUID {%Vuuid} stored in the registry"),
-                    id.ptr(), location.raw(), mId.ptr());
-            goto error;
-        }
-    }
-    else
-    {
-        /* assgn an UUID read from the image file */
-        mId = id;
-    }
+        Guid id, parentId;
 
-    if (mParent)
-    {
-        /* check parent UUID */
-        AutoLock parentLock (mParent);
-        if (mParent->id() != parentId)
-        {
-            errMsg = Utf8StrFmt (
-                tr ("UUID {%Vuuid} of the parent image '%ls' stored in "
-                    "the hard disk image file '%s' doesn't match "
-                    "UUID {%Vuuid} stored in the registry"),
-                parentId.raw(), mParent->toString().raw(),
-                location.raw(), mParent->id().raw());
-            goto error;
-        }
-    }
-    else if (!parentId.isEmpty())
-    {
-        errMsg = Utf8StrFmt (
-            tr ("Hard disk image '%s' is a differencing image that is linked "
-                "to a hard disk with UUID {%Vuuid} and cannot be used "
-                "directly as a base hard disk"),
-            location.raw(), parentId.raw());
-        goto error;
-    }
-
-    /* get actual file size */
-    /// @todo is there a direct method in RT?
-    {
-        RTFILE file = NIL_RTFILE;
-        vrc = RTFileOpen (&file, location, RTFILE_O_READ);
-        if (VBOX_SUCCESS (vrc))
-        {
-            uint64_t size = 0;
-            vrc = RTFileGetSize (file, &size);
-            if (VBOX_SUCCESS (vrc))
-                mActualSize = size;
-            RTFileClose (file);
-        }
+        vrc = VDOpen (mContainer, location, VD_OPEN_FLAGS_INFO);
         if (VBOX_FAILURE (vrc))
-            goto error;
-    }
+            break;
 
-    /* query logical size only for non-differencing images */
-    if (!mParent)
-    {
-        uint64_t size = VDGetSize (mContainer, 0);
-        /* convert to MBytes */
-        mSize = size / 1024 / 1024;
-    }
+        vrc = VDGetUuid (mContainer, 0, id.ptr());
+        if (VBOX_FAILURE (vrc))
+            break;
+        vrc = VDGetParentUuid (mContainer, 0, parentId.ptr());
+        if (VBOX_FAILURE (vrc))
+            break;
 
-error:
+        if (!mId.isEmpty())
+        {
+            /* check that the actual UUID of the image matches the stored UUID */
+            if (mId != id)
+            {
+                errMsg = Utf8StrFmt (
+                    tr ("Actual UUID {%Vuuid} of the hard disk image '%s' doesn't "
+                        "match UUID {%Vuuid} stored in the registry"),
+                        id.ptr(), location.raw(), mId.ptr());
+                break;
+            }
+        }
+        else
+        {
+            /* assgn an UUID read from the image file */
+            mId = id;
+        }
+
+        if (mParent)
+        {
+            /* check parent UUID */
+            AutoLock parentLock (mParent);
+            if (mParent->id() != parentId)
+            {
+                errMsg = Utf8StrFmt (
+                    tr ("UUID {%Vuuid} of the parent image '%ls' stored in "
+                        "the hard disk image file '%s' doesn't match "
+                        "UUID {%Vuuid} stored in the registry"),
+                    parentId.raw(), mParent->toString().raw(),
+                    location.raw(), mParent->id().raw());
+                break;
+            }
+        }
+        else if (!parentId.isEmpty())
+        {
+            errMsg = Utf8StrFmt (
+                tr ("Hard disk image '%s' is a differencing image that is linked "
+                    "to a hard disk with UUID {%Vuuid} and cannot be used "
+                    "directly as a base hard disk"),
+                location.raw(), parentId.raw());
+            break;
+        }
+
+        /* get actual file size */
+        /// @todo is there a direct method in RT?
+        {
+            RTFILE file = NIL_RTFILE;
+            vrc = RTFileOpen (&file, location, RTFILE_O_READ);
+            if (VBOX_SUCCESS (vrc))
+            {
+                uint64_t size = 0;
+                vrc = RTFileGetSize (file, &size);
+                if (VBOX_SUCCESS (vrc))
+                    mActualSize = size;
+                RTFileClose (file);
+            }
+            if (VBOX_FAILURE (vrc))
+                break;
+        }
+
+        /* query logical size only for non-differencing images */
+        if (!mParent)
+        {
+            uint64_t size = VDGetSize (mContainer, 0);
+            /* convert to MBytes */
+            mSize = size / 1024 / 1024;
+        }
+    }
+    while (0);
+
     VDCloseAll (mContainer);
 
     /* enter the lock again */
