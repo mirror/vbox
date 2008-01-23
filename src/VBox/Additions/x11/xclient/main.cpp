@@ -34,7 +34,7 @@
 
 #include "clipboard.h"
 
-#ifdef SEAMLESS_LINUX
+#ifdef SEAMLESS_X11
 # include "seamless.h"
 #endif
 
@@ -72,7 +72,7 @@ int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
 int main(int argc, char *argv[])
 {
     int rc;
-#ifdef SEAMLESS_LINUX
+#ifdef SEAMLESS_X11
     /** Our instance of the seamless class. */
     VBoxGuestSeamless seamless;
 #endif
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
         LogRel(("VBoxService: vboxClipboardConnect failed with rc = %Rrc\n", rc));
     }
 #endif  /* VBOX_X11_CLIPBOARD defined */
-#ifdef SEAMLESS_LINUX
+#ifdef SEAMLESS_X11
     try
     {
         LogRel(("VBoxService: starting seamless Guest Additions...\n"));
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
         LogRel(("VBoxService: failed to initialise seamless Additions - caught unknown exception.\n"));
         rc = VERR_UNRESOLVED_ERROR;
     }
-#endif /* SEAMLESS_LINUX defined */
+#endif /* SEAMLESS_X11 defined */
 #ifdef VBOX_X11_CLIPBOARD
     LogRel(("VBoxService: connecting to the shared clipboard service.\n"));
     vboxClipboardMain();
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
     pause();
     LogRel(("VBoxService: exiting...\n"));
 #endif  /* VBOX_X11_CLIPBOARD not defined */
-#ifdef SEAMLESS_LINUX
+#ifdef SEAMLESS_X11
     try
     {
         seamless.uninit();
@@ -188,6 +188,6 @@ int main(int argc, char *argv[])
         LogRel(("VBoxService: error shutting down seamless Additions - caught unknown exception.\n"));
         rc = VERR_UNRESOLVED_ERROR;
     }
-#endif /* SEAMLESS_LINUX defined */
+#endif /* SEAMLESS_X11 defined */
     return rc;
 }

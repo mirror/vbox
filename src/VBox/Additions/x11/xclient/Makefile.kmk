@@ -29,7 +29,7 @@ vboxadd-xclient_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxadd-xclient_SOURCES  = clipboard.cpp main.cpp
 vboxadd-xclient_DEFS    += VBOX_X11_CLIPBOARD
 
-ifdef LINUX_SEAMLESS_GUEST
+ifdef VBOX_X11_SEAMLESS_GUEST
  vboxadd-xclient_SOURCES += \
                  seamless-host.cpp \
                  seamless-x11.cpp \
@@ -48,8 +48,8 @@ vboxadd-xclient_LIBS     = \
                 X11
 vboxadd-xclient_DEFS    += _GNU_SOURCE VBOX_HGCM
 
-ifdef LINUX_SEAMLESS_GUEST
- vboxadd-xclient_DEFS     += SEAMLESS_LINUX
+ifdef VBOX_X11_SEAMLESS_GUEST
+ vboxadd-xclient_DEFS     += SEAMLESS_X11
 endif
 
 # link agaginst libstdc++.a (http://www.trilithium.com/johan/2005/06/static-libstdc/)
@@ -59,7 +59,7 @@ $(PATH_TARGET)/vboxadd-xclient/libstdc++.a:
 	$(call MSG_L1,Forcing static libstdc++)
 	$(QUIET)ln -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ || cp `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
 
-ifdef LINUX_SEAMLESS_GUEST
+ifdef VBOX_X11_SEAMLESS_GUEST
  ifdef VBOX_WITH_TESTCASES
  # Additional testcase designed to be run manually, which initiates and starts the Linux
  # guest client part of the seamless additions in the host, faking seamless events from
