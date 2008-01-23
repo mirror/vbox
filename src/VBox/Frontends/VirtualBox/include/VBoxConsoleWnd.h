@@ -181,7 +181,7 @@ private slots:
     void onEnterFullscreen();
     void onExitFullscreen();
 
-    void setViewInSeamlessMode(const QRect& targetRect);
+    void setViewInSeamlessMode (const QRect &aTargetRect);
 
 private:
 
