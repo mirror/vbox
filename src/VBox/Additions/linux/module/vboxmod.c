@@ -460,7 +460,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                 rc = vboxadd_wait_event((void *) arg);
                 break;
 
-        case VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL:
+        case VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS:
                 ++vboxDev->u32GuestInterruptions;
                 break;
 
