@@ -376,6 +376,8 @@ private:
     HRESULT addVMCaller (bool aQuiet = false, bool aAllowNullVM = false);
     void releaseVMCaller();
 
+    HRESULT consoleInitReleaseLog (const ComPtr <IMachine> aMachine);
+
     HRESULT powerDown();
 
     HRESULT callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapDevice,
