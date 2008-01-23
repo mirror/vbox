@@ -25,12 +25,7 @@ include	$(PATH_KBUILD)/subheader.kmk
 PROGRAMS += vditool
 vditool_TEMPLATE = VBOXR3EXE
 vditool_SOURCES  = vditool.cpp
-ifeq ($(BUILD_TARGET),win)
- vditool_LIBS    = $(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB)
-else
- vditool_LIBS    = $(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL)
-endif
-vditool_LIBS    += $(LIB_RUNTIME)
+vditool_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
 
 
 #
