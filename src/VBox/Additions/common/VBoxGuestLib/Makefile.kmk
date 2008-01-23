@@ -102,6 +102,7 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibGR.cpp \
 	VBoxGuestR3LibMouse.cpp \
 	VBoxGuestR3LibMisc.cpp \
+	VBoxGuestR3LibSeamless.cpp \
 	VBoxGuestR3LibTime.cpp \
 
 

@@ -80,3 +80,36 @@ VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
     return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
 }
 
+/**
+ * Query the last display change request.
+ *
+ * @returns iprt status value
+ * @retval xres     horizontal pixel resolution (0 = do not change)
+ * @retval yres     vertical pixel resolution (0 = do not change)
+ * @retval bpp      bits per pixel (0 = do not change)
+ * @param  eventAck Flag that the request is an acknowlegement for the
+ *                  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
+ *                  Values:
+ *                      0                                   - just querying,
+ *                      VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
+ * @param  display  0 for primary display, 1 for the first secondary, etc.
+ */
+VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *px, uint32_t *py, uint32_t *pbpp,
+                                              uint32_t eventAck, uint32_t display)
+{
+    VMMDevDisplayChangeRequest2 Req;
+    vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
+    Req.xres = 0;
+    Req.yres = 0;
+    Req.bpp = 0;
+    Req.eventAck = eventAck;
+    Req.display = display;
+    int rc = vbglR3GRPerform(&Req.header);
+    if (RT_SUCCESS(rc))
+    {
+        *px = Req.xres;
+        *py = Req.yres;
+        *pbpp = Req.bpp;
+    }
+    return rc;
+}
