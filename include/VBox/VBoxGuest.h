@@ -1418,6 +1418,12 @@ VBGLR3DECL(int)     VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uin
 VBGLR3DECL(int)     VbglR3SetMouseStatus(uint32_t fFeatures);
 /** @}  */
 
+/** @name Display
+ * @{ */
+VBGLR3DECL(int)     VbglR3GetDisplayChangeRequest(uint32_t *px, uint32_t *py, uint32_t *pbpp,
+                                                  uint32_t eventAck, uint32_t display);
+/** @}  */
+
 
 __END_DECLS
 
