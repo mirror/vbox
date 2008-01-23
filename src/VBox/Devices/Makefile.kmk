@@ -55,6 +55,7 @@ SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 # VBoxDDU (shared object)
 #
 VBoxDDU_TEMPLATE         = VBOXR3
+VBoxDDU_NAME             = $(basename $(notdir $(LIB_DDU)))
 VBoxDDU_DEFS             = IN_VBOXDDU
 ifdef VBOX_WITH_USB
  VBoxDDU_DEFS           += VBOX_WITH_USB IN_USBLIB
@@ -130,7 +131,7 @@ VBoxDD_LIBS             = \
 	$(LIB_RUNTIME)
 ifeq ($(BUILD_TARGET),win)
  VBoxDD_LIBS           += \
-	$(PATH_LIB)/VBoxDDU.lib \
+	$(LIB_DDU) \
 	$(PATH_LIB)/VBoxDD2.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 else
