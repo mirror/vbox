@@ -582,6 +582,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     SetApplicationDockTileImage (dockImgOS);
     OverlayApplicationDockTileImage (dockImgStateRunning);
 #endif
+    mMaskShift.scale (0, 0, QSize::ScaleFree);
 }
 
 VBoxConsoleWnd::~VBoxConsoleWnd()
@@ -1006,12 +1007,10 @@ void VBoxConsoleWnd::refreshView()
 void VBoxConsoleWnd::onEnterFullscreen()
 {
     disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
-#ifndef Q_WS_MAC
     /* It isn't guaranteed that the guest os set the video mode that
      * we requested. So after all the resizing stuff set the clipping
      * mask and the spacing shifter to the corresponding values. */
     setViewInSeamlessMode (QRect(console->mapToGlobal (QPoint(0, 0)), console->size()));
-#endif
 #ifdef Q_WS_MAC
     if (!mIsSeamless)
     {
@@ -2087,6 +2086,26 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 //        maskRect.setRight (maskRect.right() + 1);
 //        maskRect.setBottom (maskRect.bottom() + 1);
 //        setMask (maskRect);
+        if (aSeamless)
+        {
+            OSStatus status;
+            WindowPtr WindowRef = reinterpret_cast<WindowPtr>(winId());
+            EventTypeSpec wNonCompositingEvent = { kEventClassWindow, kEventWindowGetRegion };
+            status = InstallWindowEventHandler (WindowRef, DarwinRegionHandler, GetEventTypeCount (wNonCompositingEvent), &wNonCompositingEvent, &mCurrRegion, &mDarwinRegionEventHandlerRef);
+            Assert (status == noErr);
+            status = ReshapeCustomWindow (WindowRef);
+            Assert (status == noErr);
+            UInt32 features;
+            status = GetWindowFeatures (WindowRef, &features);
+            Assert (status == noErr);
+            if (( features & kWindowIsOpaque ) != 0)
+            {
+                status = HIWindowChangeFeatures (WindowRef, 0, kWindowIsOpaque);
+                Assert(status == noErr);
+            }
+            status = SetWindowAlpha(WindowRef, 0.999);
+            Assert (status == noErr);
+        }
 #else
 //        setMask (dtw->screenGeometry (this));
 #endif
@@ -2117,6 +2136,19 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #ifdef Q_WS_MAC
         if (!aSeamless)
             SetSystemUIMode (kUIModeNormal, 0);
+
+        if (aSeamless)
+        {
+            /* Undo all mac specific installations */
+            OSStatus status;
+            WindowPtr WindowRef = reinterpret_cast<WindowPtr>(winId());
+            status = RemoveEventHandler (mDarwinRegionEventHandlerRef);
+            Assert (status == noErr);
+            status = ReshapeCustomWindow (WindowRef);
+            Assert (status == noErr);
+            status = SetWindowAlpha (WindowRef, 1);
+            Assert (status == noErr);
+        }
 #endif
 
         /* Adjust colors and appearance. */
@@ -2161,18 +2193,17 @@ void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
         /* It isn't guaranteed that the guest os set the video mode that
          * we requested. So after all the resizing stuff set the clipping
          * mask and the spacing shifter to the corresponding values. */
-        QDesktopWidget *dtw = QApplication::desktop();
+        QDesktopWidget *dtw = QApplication::desktop ();
         QRect sRect = dtw->screenGeometry (this);
         QRect aRect (aTargetRect);
-        QRect a1Rect (aTargetRect);
+        mMaskShift.scale (aTargetRect.left(), aTargetRect.top(), QSize::ScaleFree);
 #ifdef Q_WS_MAC
         /* On mac os x this isn't necessary cause the screen starts
          * by y=0 always regardless if there is the global menubar or not. */
         aRect.setRect (aRect.left(), 0, aRect.width(), aRect.height() + aRect.top());
-        a1Rect.setRect (a1Rect.left(), 0, a1Rect.width(), a1Rect.height());
 #endif // Q_WS_MAC
         /* Set the clipping mask */
-        mStrictedRegion = QRegion (sRect) - a1Rect;
+        mStrictedRegion = aRect;
         /* Set the shifting spacer */
         mShiftingSpacerLeft->changeSize (RT_ABS (sRect.left() - aRect.left()), 0,
                                          QSizePolicy::Fixed, QSizePolicy::Preferred);
@@ -2577,18 +2608,13 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 {
     QRegion region = aRegion;
-    region.translate (mShiftingSpacerLeft->sizeHint().width(), mShiftingSpacerTop->sizeHint().height());
-    region -= mStrictedRegion;
-
-#ifdef Q_WS_MAC
-    /* This is necessary to avoid the flicker by
-     * an mask update.
-     * See http://lists.apple.com/archives/Carbon-development/2001/Apr/msg01651.html
-     * for the hint.
-     * There *must* be a better solution. */
-    if(!region.isEmpty())
-      region |= QRect(0, 0, 1, 1);
-#endif
+    /* The global mask shift cause of toolbars and such thinks. */
+    region.translate (mMaskShift.width(), mMaskShift.height());
+    /* Restrict the drawing to the available space on the screen.
+     * (The &operator is better than the previous used -operator, 
+     * because this excludes space around the real screen also. 
+     * This is necessary for the mac.) */
+    region &= mStrictedRegion;
 
 #ifdef Q_WS_WIN
     QRegion difference = mPrevRegion.subtract (region);
@@ -2619,6 +2645,23 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
     RedrawWindow (console->viewport()->winId(), NULL, NULL, RDW_INVALIDATE);
 
     mPrevRegion = region;
+#elif defined(Q_WS_MAC)
+    /* This is necessary to avoid the flicker by an mask update. 
+     * See http://lists.apple.com/archives/Carbon-development/2001/Apr/msg01651.html
+     * for the hint.
+     * There *must* be a better solution. */
+    if(!region.isEmpty ())
+      region |= QRect (0, 0, 1, 1);
+    /* Save the current region for later processing in the darwin event handler. */
+    mCurrRegion = region;
+    /* We repaint the screen before the ReshapeCustomWindow command. Unfortunately
+     * this command flushes a copy of the backbuffer to the screen after the new
+     * mask is set. This leads into a missplaced drawing of the content. Currently
+     * no alternative to this and also this is not 100% perfect. */
+    repaint ();
+    qApp->processEvents ();
+    /* Now force the reshaping of the window. This is definitly necessary. */
+    ReshapeCustomWindow (reinterpret_cast<WindowPtr>(winId()));
 #else
     QMainWindow::setMask (region);
 #endif
