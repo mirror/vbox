@@ -215,7 +215,7 @@ CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aO
 
 OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
 {
-    NORE F(aInHandlerCallRef);
+    NOREF(aInHandlerCallRef);
 
     OSStatus status = eventNotHandledErr;
     
