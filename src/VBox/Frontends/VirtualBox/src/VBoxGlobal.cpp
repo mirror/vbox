@@ -3560,6 +3560,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
          * will report problems. */
         ::ICLaunchURL (icInstance, hint, data, length, &start, &end);
         ICStop (icInstance);
+        return true;
     }
 
 #else
