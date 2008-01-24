@@ -253,6 +253,7 @@ private:
     QSpacerItem *mShiftingSpacerTop;
     QSpacerItem *mShiftingSpacerRight;
     QSpacerItem *mShiftingSpacerBottom;
+    QSize mMaskShift;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger popup menu
@@ -299,6 +300,11 @@ private:
 
 #ifdef Q_WS_WIN32
     QRegion mPrevRegion;
+#endif
+
+#ifdef Q_WS_MAC
+    QRegion mCurrRegion;
+    EventHandlerRef mDarwinRegionEventHandlerRef;
 #endif
 
     // variables for dealing with true fullscreen
