@@ -27,7 +27,7 @@
 #include "VBGLR3Internal.h"
 
 
-int VbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cb, VMMDevRequestType enmReqType)
+int vbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cb, VMMDevRequestType enmReqType)
 {
     VMMDevRequestHeader *pReq;
 
@@ -52,13 +52,13 @@ int VbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cb, VMMDevRequestType en
 }
 
 
-VBGLR3DECL(int) VbglR3GRPerform(VMMDevRequestHeader *pReq)
+VBGLR3DECL(int) vbglR3GRPerform(VMMDevRequestHeader *pReq)
 {
-    return VbglR3DoIOCtl(VBOXGUEST_IOCTL_VMMREQUEST(pReq->size), pReq, pReq->size);
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_VMMREQUEST(pReq->size), pReq, pReq->size);
 }
 
 
-void VbglR3GRFree(VMMDevRequestHeader *pReq)
+void vbglR3GRFree(VMMDevRequestHeader *pReq)
 {
     RTMemTmpFree(pReq);
 }
