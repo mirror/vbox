@@ -393,6 +393,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_PAGE:
         case RTR0MEMOBJTYPE_CONT:
         case RTR0MEMOBJTYPE_PHYS:
+        case RTR0MEMOBJTYPE_PHYS_NC:
             rtR0MemObjLinuxVUnmap(pMemLnx);
             rtR0MemObjLinuxFreePages(pMemLnx);
             break;
