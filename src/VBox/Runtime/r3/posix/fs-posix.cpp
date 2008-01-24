@@ -82,7 +82,7 @@ RTR3DECL(int) RTFsQuerySizes(const char *pszFsPath, RTFOFF *pcbTotal, RTFOFF *pc
     LogFlow(("RTFsQuerySizes(%p:{%s}, %p:{%RTfoff}, %p:{%RTfoff}, %p:{%RX32}, %p:{%RX32}): returns %Rrc\n",
              pszFsPath, pszFsPath, pcbTotal, pcbTotal ? *pcbTotal : 0, pcbFree, pcbFree ? *pcbFree : 0,
              pcbBlock, pcbBlock ? *pcbBlock : 0, pcbSector, pcbSector ? *pcbSector : 0, rc));
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
