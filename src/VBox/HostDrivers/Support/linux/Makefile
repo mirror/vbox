@@ -26,8 +26,9 @@
 #
 
 #
-# First, figure out which architecture we're targeting.
+# First, figure out which architecture we're targeting and the build type.
 # (We have to support basic cross building (ARCH=i386|x86_64).)
+# While at it, warn about BUILD_* vars found to help with user problems.
 #
 ifneq ($(filter-out amd64 x86,$(BUILD_TARGET_ARCH)),)
  $(warning Ignoring unknown BUILD_TARGET_ARCH value '$(BUILD_TARGET_ARCH)'.)
@@ -47,6 +48,18 @@ ifeq ($(BUILD_TARGET_ARCH),)
    endif
   endif
  endif
+else
+ $(warning Using BUILD_TARGET_ARCH='$(BUILD_TARGET_ARCH)' from the $(origin BUILD_TARGET_ARCH).)
+endif
+
+ifneq ($(filter-out release profile debug strict,$(BUILD_TYPE)),)
+ $(warning Ignoring unknown BUILD_TYPE value '$(BUILD_TYPE)'.)
+ BUILD_TYPE :=
+endif
+ifeq ($(BUILD_TYPE),)
+ BUILD_TYPE := release
+else
+ $(warning Using BUILD_TYPE='$(BUILD_TYPE)' from the $(origin BUILD_TYPE).)
 endif
 
 
@@ -66,6 +79,22 @@ OBJS   = \
 	r0drv/linux/thread-r0drv-linux.o
 ifeq ($(BUILD_TARGET_ARCH),amd64)
 OBJS  += alloc/heapsimple.o
+endif
+ifeq ($(BUILD_TYPE),debug)
+OBJS  += \
+	common/log/log.o \
+	common/log/logcom.o \
+	common/log/logformat.o \
+	common/string/strformat.o \
+	common/string/strformatrt.o \
+	common/string/strprintf.o \
+	common/string/strtonum.o \
+	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \
+	generic/RTLogWriteStdErr-stub-generic.o \
+	generic/RTLogWriteStdOut-stub-generic.o \
+	generic/RTLogWriteUser-generic.o \
+	VBox/log-vbox.o \
+	VBox/strformat-vbox.o
 endif
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -142,7 +171,7 @@ ifndef INCL
  INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
  export INCL
 endif
-KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0
+KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DRT_WITH_VBOX
 ifndef CONFIG_VBOXDRV_FIXEDMAJOR
  KFLAGS  += -DCONFIG_VBOXDRV_AS_MISC
 endif
@@ -151,9 +180,9 @@ ifeq ($(BUILD_TARGET_ARCH),amd64)
 else
  KFLAGS  += -DRT_ARCH_X86
 endif
-#ifeq ($(BUILD_TYPE),debug) - you'll have to enable this manually to get debug stuff.
-#KFLAGS   += -DDEBUG
-#endif
+ifeq ($(BUILD_TYPE),debug)
+ KFLAGS  += -DDEBUG -DDEBUG_$(USER)
+endif
 
 #
 # Use the RTR0MemObj API - testing.
