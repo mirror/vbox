@@ -2807,7 +2807,7 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
 #ifdef Q_WS_MAC
             /* Update the dock icon if we are in the running state */
             if (isRunning())
-                SetApplicationDockTileImage(::DarwinCreateDockPreview(mFrameBuf));
+                SetApplicationDockTileImage (::DarwinCreateDockPreview(mFrameBuf, mMainWnd->dockImageState ()));
 #endif
             return;
         }
