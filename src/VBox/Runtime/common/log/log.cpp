@@ -1391,7 +1391,8 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
             return VERR_BUFFER_OVERFLOW; /* horrible error code! */
         }
 
-        for (unsigned j = 0; j < 10; j++)
+        unsigned j;
+        for (j = 0; j < 10; j++)
         {
             i = ELEMENTS(g_aPerThreadLoggers);
             while (i-- > 0)

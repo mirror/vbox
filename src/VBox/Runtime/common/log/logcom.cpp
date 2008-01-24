@@ -100,7 +100,8 @@ static DECLCALLBACK(size_t) rtLogComOutput(void *pv, const char *pachChars, size
  */
 RTDECL(void) RTLogWriteCom(const char *pach, size_t cb)
 {
-    for (const uint8_t *pu8 = (const uint8_t *)pach; cb-- > 0; pu8++)
+    const uint8_t *pu8;
+    for (pu8 = (const uint8_t *)pach; cb-- > 0; pu8++)
     {
         /* expand \n -> \r\n */
         if (*pu8 == '\n')
