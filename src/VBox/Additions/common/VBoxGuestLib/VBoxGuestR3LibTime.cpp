@@ -28,7 +28,7 @@ VBGLR3DECL(int) VbglR3GetHostTime(PRTTIMESPEC pTime)
     VMMDevReqHostTime Req;
     vmmdevInitRequest(&Req.header, VMMDevReq_GetHostTime);
     Req.time = UINT64_MAX;
-    int rc = vbglR3GRPerform(&Req.header);
+    int rc = VbglR3GRPerform(&Req.header);
     if (RT_SUCCESS(rc))
         RTTimeSpecSetMilli(pTime, (int64_t)Req.time);
     return rc;

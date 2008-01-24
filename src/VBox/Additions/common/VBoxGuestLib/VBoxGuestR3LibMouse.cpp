@@ -29,7 +29,7 @@ VBGLR3DECL(int) VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_
     Req.mouseFeatures = 0;
     Req.pointerXPos = 0;
     Req.pointerYPos = 0;
-    int rc = vbglR3GRPerform(&Req.header);
+    int rc = VbglR3GRPerform(&Req.header);
     if (RT_SUCCESS(rc))
     {
         if (pfFeatures)
@@ -50,6 +50,6 @@ VBGLR3DECL(int) VbglR3SetMouseStatus(uint32_t fFeatures)
     Req.mouseFeatures = fFeatures;
     Req.pointerXPos = 0;
     Req.pointerYPos = 0;
-    return vbglR3GRPerform(&Req.header);
+    return VbglR3GRPerform(&Req.header);
 }
 

@@ -45,7 +45,7 @@ VBGLR3DECL(int) VbglR3SeamlessSetCap(bool fState)
     memset(&vmmreqGuestCaps, 0, sizeof(vmmreqGuestCaps));
     vmmdevInitRequest(&vmmreqGuestCaps.header, VMMDevReq_ReportGuestCapabilities);
     vmmreqGuestCaps.caps = fState ? VMMDEV_GUEST_SUPPORTS_SEAMLESS : 0;
-    rc = vbglR3GRPerform(&vmmreqGuestCaps.header);
+    rc = VbglR3GRPerform(&vmmreqGuestCaps.header);
 #ifdef DEBUG
     if (RT_SUCCESS(rc))
         LogRel(("Successfully set the seamless capability on the host.\n"));
@@ -70,7 +70,7 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
     AssertPtrReturn(pMode, VERR_INVALID_PARAMETER);
     waitEvent.u32TimeoutIn = 0;
     waitEvent.u32EventMaskIn = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-    rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
+    rc = VbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
     if (RT_SUCCESS(rc))
     {
         /* did we get the right event? */
@@ -81,7 +81,7 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
             /* get the seamless change request */
             vmmdevInitRequest(&seamlessChangeRequest.header, VMMDevReq_GetSeamlessChangeRequest);
             seamlessChangeRequest.eventAck = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-            rc = vbglR3GRPerform(&seamlessChangeRequest.header);
+            rc = VbglR3GRPerform(&seamlessChangeRequest.header);
             if (RT_SUCCESS(rc))
             {
                 *pMode = seamlessChangeRequest.mode;
@@ -101,7 +101,7 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
  * @param   cRects number of rectangles in the list of visible rectangles
  * @param   pRects list of visible rectangles on the guest display
  *
- * @todo A scatter-gather version of vbglR3GRPerform would be nice, so that we don't have
+ * @todo A scatter-gather version of VbglR3GRPerform would be nice, so that we don't have
  *       to copy our rectangle and header data into a single structure and perform an
  *       additional allocation.
  */
@@ -112,15 +112,15 @@ VBGLR3DECL(int) VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects)
 
     if (0 == cRects)
         return VINF_SUCCESS;
-    rc = vbglR3GRAlloc((VMMDevRequestHeader **)&req,
+    rc = VbglR3GRAlloc((VMMDevRequestHeader **)&req,
                        sizeof(VMMDevVideoSetVisibleRegion) + (cRects - 1) * sizeof(RTRECT),
                        VMMDevReq_VideoSetVisibleRegion);
     if (RT_SUCCESS(rc))
     {
         req->cRect = cRects;
         memcpy(&req->Rect, pRects, cRects * sizeof(RTRECT));
-        rc = vbglR3GRPerform(&req->header);
-        vbglR3GRFree(&req->header);
+        rc = VbglR3GRPerform(&req->header);
+        VbglR3GRFree(&req->header);
         if (RT_SUCCESS(rc))
         {
             if (RT_SUCCESS(req->header.rc))
