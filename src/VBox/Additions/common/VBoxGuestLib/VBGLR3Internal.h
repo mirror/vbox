@@ -22,10 +22,10 @@
 
 __BEGIN_DECLS
 
-int     vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData);
-int     vbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cb, VMMDevRequestType enmReqType);
-int     vbglR3GRPerform(VMMDevRequestHeader *pReq);
-void    vbglR3GRFree(VMMDevRequestHeader *pReq);
+int     VbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData);
+int     VbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cb, VMMDevRequestType enmReqType);
+int     VbglR3GRPerform(VMMDevRequestHeader *pReq);
+void    VbglR3GRFree(VMMDevRequestHeader *pReq);
 
 
 

@@ -34,7 +34,7 @@
  */
 VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
 {
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS, 0, 0);
+    return VbglR3DoIOCtl(VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS, 0, 0);
 }
 
 
@@ -58,7 +58,7 @@ VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
     for (size_t off = 0; off < cb && RT_SUCCESS(rc); off += STEP)
     {
         size_t cbStep = RT_MIN(cb - off, STEP);
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cbStep), (char *)pch + off, cbStep);
+        rc = VbglR3DoIOCtl(VBOXGUEST_IOCTL_LOG(cbStep), (char *)pch + off, cbStep);
     }
 #undef STEP
     return rc;
@@ -77,7 +77,7 @@ VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
     VBoxGuestFilterMaskInfo Info;
     Info.u32OrMask = fOr;
     Info.u32NotMask = fNot;
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
+    return VbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
 }
 
 /**
@@ -104,7 +104,7 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint
     Req.bpp = 0;
     Req.eventAck = fEventAck;
     Req.display = iDisplay;
-    int rc = vbglR3GRPerform(&Req.header);
+    int rc = VbglR3GRPerform(&Req.header);
     if (RT_SUCCESS(rc))
     {
         *pcx = Req.xres;

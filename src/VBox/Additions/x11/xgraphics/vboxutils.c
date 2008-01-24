@@ -137,6 +137,7 @@ vbox_host_can_hwcursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 
 #ifdef RT_OS_SOLARIS
     uint32_t fFeatures;
+    NOREF(req);
     rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
     if (VBOX_FAILURE(rc))
         RETERROR(scrnIndex, FALSE,
@@ -418,6 +419,7 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     pVBox->useVbva = FALSE;
 
 #ifdef RT_OS_SOLARIS
+    NOREF(fd);
     if (pVBox->reqp)
     {
         /* still open, just re-enable VBVA after CloseScreen was called */

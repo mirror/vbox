@@ -43,7 +43,7 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(uint32_t *pu32ClientId)
     memset(&Info.Loc.u, 0, sizeof(Info.Loc.u));
     strcpy(Info.Loc.u.host.achName, "VBoxSharedClipboard");
 
-    int rc = vbglR3DoIOCtl(IOCTL_VBOXGUEST_HGCM_CONNECT, &Info, sizeof(Info));
+    int rc = VbglR3DoIOCtl(IOCTL_VBOXGUEST_HGCM_CONNECT, &Info, sizeof(Info));
     if (RT_SUCCESS(rc))
     {
         rc = Info.result;
@@ -66,7 +66,7 @@ VBGLR3DECL(int) VbglR3ClipboardDisconnect(uint32_t u32ClientId)
     Info.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
     Info.u32ClientID = u32ClientId;
 
-    int rc = vbglR3DoIOCtl(IOCTL_VBOXGUEST_HGCM_DISCONNECT, &Info, sizeof(Info));
+    int rc = VbglR3DoIOCtl(IOCTL_VBOXGUEST_HGCM_DISCONNECT, &Info, sizeof(Info));
     if (RT_SUCCESS(rc))
         rc = Info.result;
     return rc;
@@ -94,7 +94,7 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(uint32_t u32ClientId, uint32_t *pMsg, 
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.formats, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         rc = Msg.hdr.result;
@@ -144,7 +144,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, 
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         rc = Msg.hdr.result;
@@ -182,7 +182,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFor
     Msg.hdr.cParms = 1;
     VbglHGCMParmUInt32Set(&Msg.formats, fFormats);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
     return rc;
@@ -211,7 +211,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(uint32_t u32ClientId, uint32_t fFormat,
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = VbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
     return rc;
