@@ -254,7 +254,7 @@ CGImageRef DarwinQImageToCGImage (const QImage *aImage);
 CGImageRef DarwinQPixmapToCGImage (const QPixmap *aPixmap);
 CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource);
 CGImageRef DarwinCreateDockBadge (const char *aSource);
-CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer);
+CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage);
 OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 #endif /* Q_WS_MAC */
 

@@ -77,6 +77,10 @@ public:
 
     void setMask (const QRegion &aRegion);
 
+#ifdef Q_WS_MAC
+    CGImageRef dockImageState () const;
+#endif
+
 public slots:
 
 protected:

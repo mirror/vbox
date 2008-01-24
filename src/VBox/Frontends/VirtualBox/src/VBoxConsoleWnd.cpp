@@ -1897,26 +1897,10 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             vmDisableMouseIntegrAction->setEnabled (false);
     }
 #ifdef Q_WS_MAC
-    if (1)//(element & DockTile)
-    {
-        //CGContextDrawImage
-        //HIViewDrawCGImage();
-        //CGImageAlphaInfo
-        CGImageRef img;
-        if (machine_state == CEnums::Running)
-            img = dockImgStateRunning;
-        else if (machine_state == CEnums::Paused)
-            img = dockImgStatePaused;
-        else if (machine_state == CEnums::Restoring)
-            img = dockImgStateRestoring;
-        else if (machine_state == CEnums::Saving)
-            img = dockImgStateSaving;
-        else
-            img = NULL;
         SetApplicationDockTileImage (dockImgOS);
+        CGImageRef img = dockImageState ();
         if (img)
             OverlayApplicationDockTileImage (img);
-    }
 #endif
 }
 
@@ -2182,6 +2166,24 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #endif
     return true;
 }
+
+#ifdef Q_WS_MAC
+CGImageRef VBoxConsoleWnd::dockImageState () const
+{
+    CGImageRef img;
+    if (machine_state == CEnums::Running)
+        img = dockImgStateRunning;
+    else if (machine_state == CEnums::Paused)
+        img = dockImgStatePaused;
+    else if (machine_state == CEnums::Restoring)
+        img = dockImgStateRestoring;
+    else if (machine_state == CEnums::Saving)
+        img = dockImgStateSaving;
+    else
+        img = NULL;
+    return img;
+}
+#endif 
 
 //
 // Private slots

@@ -135,14 +135,14 @@ CGImageRef DarwinCreateDockBadge (const char *aSource)
  * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aFrameBuffer    The guest frame buffer.
  */
-CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer)
+CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage)
 {
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
 
     /* Create the image copy of the framebuffer */
     CGDataProviderRef dp = CGDataProviderCreateWithData (aFrameBuffer, aFrameBuffer->address(), aFrameBuffer->bitsPerPixel() / 8 * aFrameBuffer->width() * aFrameBuffer->height() , NULL);
     CGImageRef ir = CGImageCreate (aFrameBuffer->width(), aFrameBuffer->height(), 8, 32, aFrameBuffer->bytesPerLine(), cs,
-                                   kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0 /* decode */, 0 /* shouldInterpolate */,
+                                   kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
                                    kCGRenderingIntentDefault);
 
     Assert (cs);
@@ -152,23 +152,22 @@ CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer)
     /* Calc the size of the dock icon image and fit it into 128x128 */
     int targetWidth = 128;
     int targetHeight = 128;
+    int scaledWidth;
+    int scaledHeight;
     float aspect = static_cast<float>(aFrameBuffer->width()) / aFrameBuffer->height();
-    CGRect rect;
     if (aspect > 1.0)
     {
-        rect.origin.x = 0;
-        rect.origin.y = (targetHeight - targetHeight / aspect) / 2;
-        rect.size.width = targetWidth;
-        rect.size.height = targetHeight / aspect;
+        scaledWidth = targetWidth;
+        scaledHeight = targetHeight / aspect;
     }
     else
     {
-        rect.origin.x = (targetWidth - targetWidth * aspect) / 2;
-        rect.origin.y = 0;
-        rect.size.width = targetWidth*aspect;
-        rect.size.height = targetHeight;
+        scaledWidth = targetWidth * aspect;
+        scaledHeight = targetHeight;
     }
-
+    CGRect iconRect = CGRectMake ((targetWidth - scaledWidth) / 2.0, 
+                                  (targetHeight - scaledHeight) / 2.0, 
+                                  scaledWidth, scaledHeight);
     /* Create a bitmap context to draw on */
     CGImageRef dockImage = NULL;
     int bitmapBytesPerRow = targetWidth * 4;
@@ -177,10 +176,29 @@ CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer)
     if (bitmapData)
     {
         CGContextRef context = CGBitmapContextCreate (bitmapData, targetWidth, targetHeight, 8, bitmapBytesPerRow, cs, kCGImageAlphaPremultipliedLast);
-
-        /* Draw on the bitmap */
-        CGContextDrawImage (context, rect, ir);
-
+        /* rounded corners */
+//        CGContextSetLineJoin (context, kCGLineJoinRound);
+//        CGContextSetShadow (context, CGSizeMake(10, 5), 1);
+//        CGContextSetAllowsAntialiasing (context, true);
+        /* some little boarder */
+        iconRect = CGRectInset (iconRect, 1, 1);
+        /* gray stroke */
+        CGContextSetRGBStrokeColor (context, 225.0/255.0, 218.0/255.0, 211.0/255.0, 1);
+        iconRect = CGRectInset (iconRect, 6, 6);
+        CGContextStrokeRectWithWidth (context, iconRect, 12);
+        iconRect = CGRectInset (iconRect, 5, 5);
+        /* black stroke */
+        CGContextSetRGBStrokeColor (context, 0.0, 0.0, 0.0, 1.0);
+        CGContextStrokeRectWithWidth (context, iconRect, 2);
+        /* vm content */
+        iconRect = CGRectInset (iconRect, 1, 1);
+        CGContextDrawImage (context, iconRect, ir);
+        /* the overlay image */
+        if (aOverlayImage)
+        {
+            CGRect overlayRect = CGRectMake (targetWidth - CGImageGetWidth (aOverlayImage), 0, CGImageGetWidth (aOverlayImage), CGImageGetHeight (aOverlayImage));
+            CGContextDrawImage (context, overlayRect, aOverlayImage);
+        }
         /* Create the preview image ref from the bitmap */
         dockImage = CGBitmapContextCreateImage (context);
         CGContextRelease (context);
