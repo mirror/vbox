@@ -953,3 +953,46 @@ vboxDisableVbva(ScrnInfoPtr pScrn)
         memset(pVBox->pVbvaMemory, 0, sizeof(VBVAMEMORY));
     return TRUE;
 }
+
+
+/**
+ * Query the last display change request.
+ *
+ * @returns iprt status value
+ * @retval xres     horizontal pixel resolution (0 = do not change)
+ * @retval yres     vertical pixel resolution (0 = do not change)
+ * @retval bpp      bits per pixel (0 = do not change)
+ * @param  eventAck Flag that the request is an acknowlegement for the
+ *                  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
+ *                  Values:
+ *                      0                                   - just querying,
+ *                      VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
+ * @param  display  0 for primary display, 1 for the first secondary, etc.
+ */
+Bool
+vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *px, uint32_t *py,
+                            uint32_t *pbpp, uint32_t eventAck, uint32_t display)
+{
+    int rc, scrnIndex = pScrn->scrnIndex;
+    VBOXPtr pVBox = pScrn->driverPrivate;
+
+    VMMDevDisplayChangeRequest2 Req;
+    vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
+    Req.xres = 0;
+    Req.yres = 0;
+    Req.bpp = 0;
+    Req.eventAck = eventAck;
+    Req.display = display;
+    rc = vbox_vmmcall(pScrn, pVBox, &Req.header);
+    if (RT_SUCCESS(rc))
+    {
+        *px = Req.xres;
+        *py = Req.yres;
+        *pbpp = Req.bpp;
+        return TRUE;
+    }
+    xf86DrvMsg(scrnIndex, X_ERROR,
+               "Failed to request the last resolution requested from the guest, rc=%d.\n",
+               rc);
+    return FALSE;
+}
