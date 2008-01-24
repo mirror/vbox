@@ -42,8 +42,6 @@
 
 PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 {
-    Assert(cb != sizeof(void *)); /* 99% of pointer sized allocations are wrong. */
-
     void *pv = NULL;
     APIRET rc = KernVMAlloc(cb + sizeof(RTMEMHDR), VMDHA_FIXED, &pv, (void **)-1, NULL);
     if (!rc)
