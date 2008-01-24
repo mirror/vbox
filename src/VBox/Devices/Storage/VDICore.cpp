@@ -422,6 +422,21 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
         /* Lock image exclusively to close any wrong access by VDI API calls. */
         uint64_t cbLock = pImage->offStartData
                         + ((uint64_t)getImageBlocks(&pImage->Header) << pImage->uShiftIndex2Offset);
+
+        if (enmType == VDI_IMAGE_TYPE_FIXED)
+        {
+            /* check the free space on the disk and leave early if there is not
+             * sufficient space available */
+            RTFOFF cbFree = 0;
+            rc = RTFsQuerySizes(pszFilename, NULL, &cbFree, NULL, NULL);
+            if (VBOX_SUCCESS(rc) /* ignore errors */ && ((uint64_t)cbFree < cbLock))
+            {
+                rc = VERR_DISK_FULL;
+                cbLock = 0;
+                goto l_create_failed;
+            }
+        }
+
         rc = RTFileLock(pImage->File,
                         RTFILE_LOCK_WRITE | RTFILE_LOCK_IMMEDIATELY, 0, cbLock);
         if (VBOX_FAILURE(rc))
@@ -436,9 +451,7 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
              * Allocate & commit whole file if fixed image, it must be more
              * effective than expanding file by write operations.
              */
-            rc = RTFileSetSize(pImage->File,
-                               pImage->offStartData
-                             + ((uint64_t)getImageBlocks(&pImage->Header) << pImage->uShiftIndex2Offset));
+            rc = RTFileSetSize(pImage->File, cbLock);
         }
         else
         {
