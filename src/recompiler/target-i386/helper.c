@@ -1372,8 +1372,8 @@ void do_interrupt(int intno, int is_int, int error_code,
 void raise_interrupt(int intno, int is_int, int error_code, 
                      int next_eip_addend)
 {
-#if defined(VBOX) && defined(DEBUG) && !defined(DEBUG_dmik)
-    Log2(("raise_interrupt: %x %x %x %08x\n", intno, is_int, error_code, env->eip + next_eip_addend));
+#if defined(VBOX) && defined(DEBUG)
+    NoDmik(Log2(("raise_interrupt: %x %x %x %08x\n", intno, is_int, error_code, env->eip + next_eip_addend)));
 #endif
     env->exception_index = intno;
     env->error_code = error_code;

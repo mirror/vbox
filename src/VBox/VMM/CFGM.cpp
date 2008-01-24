@@ -138,7 +138,7 @@ CFGMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void 
 
     }
     else
-        AssertMsgFailed(("Constructor failed with rc=%Vrc pfnCFGMConstructor=%p\n", rc, pfnCFGMConstructor));
+        NoDmik(AssertMsgFailed(("Constructor failed with rc=%Vrc pfnCFGMConstructor=%p\n", rc, pfnCFGMConstructor)));
 
     return rc;
 }
