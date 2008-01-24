@@ -204,7 +204,8 @@ typedef enum
     USBSUP_XFER_OK         = 0,
     USBSUP_XFER_STALL      = 1,
     USBSUP_XFER_DNR        = 2,
-    USBSUP_XFER_CRC        = 3
+    USBSUP_XFER_CRC        = 3,
+    USBSUP_XFER_NAC        = 4
 } USBSUP_ERROR;
 
 typedef struct
