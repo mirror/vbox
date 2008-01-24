@@ -215,32 +215,32 @@ CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aO
 
 OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
 {
-    NOREF(aInHandlerCallRef);
+    NORE F(aInHandlerCallRef);
 
-	OSStatus status = eventNotHandledErr;
-	
-	switch(GetEventKind (aInEvent))
-	{
-		case kEventWindowGetRegion:
-		{
-			WindowRegionCode code;
-			RgnHandle rgn;
-			
-			/* which region code is being queried? */
-			GetEventParameter (aInEvent, kEventParamWindowRegionCode, typeWindowRegionCode, NULL, sizeof(code), NULL, &code);
+    OSStatus status = eventNotHandledErr;
+    
+    switch (GetEventKind (aInEvent))
+    {
+        case kEventWindowGetRegion:
+        {
+            WindowRegionCode code;
+            RgnHandle rgn;
+            
+            /* which region code is being queried? */
+            GetEventParameter (aInEvent, kEventParamWindowRegionCode, typeWindowRegionCode, NULL, sizeof (code), NULL, &code);
 
-			/* if it is the opaque region code then set the region to Empty and return noErr to stop the propagation */
-			if (code == kWindowOpaqueRgn)
-			{
-				GetEventParameter (aInEvent, kEventParamRgnHandle, typeQDRgnHandle, NULL, sizeof(rgn), NULL, &rgn);
-				SetEmptyRgn (rgn);
-				status = noErr;
-			}
+            /* if it is the opaque region code then set the region to Empty and return noErr to stop the propagation */
+            if (code == kWindowOpaqueRgn)
+            {
+                GetEventParameter (aInEvent, kEventParamRgnHandle, typeQDRgnHandle, NULL, sizeof (rgn), NULL, &rgn);
+                SetEmptyRgn (rgn);
+                status = noErr;
+            }
             /* if the content of the whole window is queried return a copy of our saved region. */
             else if (code == (kWindowStructureRgn))// || kWindowGlobalPortRgn || kWindowUpdateRgn))
             {
-				GetEventParameter (aInEvent, kEventParamRgnHandle, typeQDRgnHandle, NULL, sizeof(rgn), NULL, &rgn);
-                QRegion *pRegion = static_cast<QRegion*>(aInUserData);
+                GetEventParameter (aInEvent, kEventParamRgnHandle, typeQDRgnHandle, NULL, sizeof (rgn), NULL, &rgn);
+                QRegion *pRegion = static_cast <QRegion*>(aInUserData);
                 if(!pRegion->isNull () && pRegion)
                 {
                     CopyRgn (pRegion->handle(), rgn);
@@ -248,9 +248,9 @@ OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
                 }
             }
             break;
-		}
-	}
-	
-	return status;
+        }
+    }
+    
+    return status;
 }
 
