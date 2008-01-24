@@ -2610,7 +2610,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 {
     QRegion region = aRegion;
-    /* The global mask shift cause of toolbars and such thinks. */
+    /* The global mask shift cause of toolbars and such things. */
     region.translate (mMaskShift.width(), mMaskShift.height());
     /* Restrict the drawing to the available space on the screen.
      * (The &operator is better than the previous used -operator, 
@@ -2652,8 +2652,8 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
      * See http://lists.apple.com/archives/Carbon-development/2001/Apr/msg01651.html
      * for the hint.
      * There *must* be a better solution. */
-    if(!region.isEmpty ())
-      region |= QRect (0, 0, 1, 1);
+    if (!region.isEmpty ())
+        region |= QRect (0, 0, 1, 1);
     /* Save the current region for later processing in the darwin event handler. */
     mCurrRegion = region;
     /* We repaint the screen before the ReshapeCustomWindow command. Unfortunately
