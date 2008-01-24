@@ -149,7 +149,7 @@ VBGLR3DECL(void) VbglR3Term(void)
  *          here is OS specific. On BSD and Darwin we can use errno,
  *          while on OS/2 we use the 2nd buffer of the IOCtl.
  */
-int VbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
+int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 {
 #ifdef RT_OS_OS2
     ULONG cbOS2Parm = cbData;

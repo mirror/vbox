@@ -105,7 +105,7 @@ static Bool vbox_vmmcall (ScrnInfoPtr pScrn, VBOXPtr pVBox,
 
     TRACE_ENTRY ();
 #ifdef RT_OS_SOLARIS
-    err = VbglR3GRPerform(hdrp);
+    err = vbglR3GRPerform(hdrp);
     if (RT_FAILURE(err))
     {
         xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VbglR3Perform failed. rc=%d\n", err);
