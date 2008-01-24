@@ -25,6 +25,10 @@ DLLS     = vboxvideo_drv_70 vboxvideo_drv_71 vboxvideo_drv_13 vboxvideo_drv_14
 # for BUILD_TARGET=l4
 SUFF_DLL = .so
 
+# For now
+VBOX_LIB_VBGL_R3 := $(PATH_LIB)/VBoxGuestR3LibLinux.a
+VBOX_LIB_IPRT_GUEST_R3 := $(PATH_LIB)/RuntimeLnx32GuestR3.a
+
 vboxvideo_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxvideo_drv_SYSSUFF = .o
 vboxvideo_drv_DEFS = \
@@ -101,7 +105,9 @@ endif
 vboxvideo_drv_SOURCES = \
 	vboxvideo_68.c \
 	vboxutils.c
-
+vboxvideo_drv_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
 
 vboxvideo_drv_70_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxvideo_drv_70_DEFS := \
@@ -118,7 +124,9 @@ vboxvideo_drv_70_INCS = \
 vboxvideo_drv_70_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils.c
-
+vboxvideo_drv_70_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
 
 vboxvideo_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxvideo_drv_71_DEFS := $(vboxvideo_drv_70_DEFS)
@@ -131,6 +139,9 @@ vboxvideo_drv_71_INCS = \
 vboxvideo_drv_71_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils.c
+vboxvideo_drv_71_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
 
 vboxvideo_drv_13_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS)
@@ -143,6 +154,9 @@ vboxvideo_drv_13_INCS = \
 vboxvideo_drv_13_SOURCES  = \
 	vboxvideo_13.c \
 	vboxutils.c
+vboxvideo_drv_13_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
 
 vboxvideo_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxvideo_drv_14_DEFS := $(vboxvideo_drv_70_DEFS)
@@ -152,9 +166,14 @@ vboxvideo_drv_14_INCS = \
 	../x11include/1.4 \
 	../x11include/1.4/X11 \
 	../x11include/1.4/xorg
+# The actual source has not changed from the 1.3 driver, but the headers
+# have.  To be safe, build the driver for 1.4 separately.
 vboxvideo_drv_14_SOURCES  = \
-	vboxvideo_14.c \
+	vboxvideo_13.c \
 	vboxutils.c
+vboxvideo_drv_14_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
 endif
 
 ifeq ($(BUILD_TARGET),solaris)

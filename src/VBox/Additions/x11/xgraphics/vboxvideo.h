@@ -204,4 +204,22 @@ vboxEnableVbva(ScrnInfoPtr pScrn);
 extern Bool
 vboxDisableVbva(ScrnInfoPtr pScrn);
 
+/**
+ * Query the last display change request.
+ *
+ * @returns iprt status value
+ * @retval xres     horizontal pixel resolution (0 = do not change)
+ * @retval yres     vertical pixel resolution (0 = do not change)
+ * @retval bpp      bits per pixel (0 = do not change)
+ * @param  eventAck Flag that the request is an acknowlegement for the
+ *                  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
+ *                  Values:
+ *                      0                                   - just querying,
+ *                      VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
+ * @param  display  0 for primary display, 1 for the first secondary, etc.
+ */
+extern Bool
+vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *px, uint32_t *py,
+                            uint32_t *pbpp, uint32_t eventAck, uint32_t display);
+
 #endif /* _VBOXVIDEO_H_ */
