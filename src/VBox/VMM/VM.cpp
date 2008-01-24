@@ -248,7 +248,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                                 return VINF_SUCCESS;
                             }
 
-                            AssertMsgFailed(("vmR3Create failed rc=%Vrc\n", rc));
+                            NoDmik(AssertMsgFailed(("vmR3Create failed rc=%Vrc\n", rc)));
                         }
                         else
                             AssertMsgFailed(("VMR3ReqCall failed rc=%Vrc\n", rc));
@@ -271,7 +271,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                             default:
                                 /* XXX check if there was already an error message set! */
                                 pszError = N_("Unknown error creating VM");
-                                AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
+                                NoDmik(AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc)));
                         }
                         if (pszError)
                             vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
@@ -2601,6 +2601,7 @@ DECLCALLBACK(void) vmR3SetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *p
     va_copy(va3, *pArgs);
     RTLogPrintfV(pszFormat, va3);
     va_end(va3);
+    RTLogPrintf("\n");
 #endif
 
     /*

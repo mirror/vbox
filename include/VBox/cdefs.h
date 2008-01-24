@@ -1378,6 +1378,16 @@
 #endif
 
 
+/** @def NoDmik(expr)
+ * Turns the given expression into NOOP when DEBUG_dmik is defined. Evaluates 
+ * the expression normally otherwise. 
+ * @param expr  Expression to guard.
+ */
+#if defined(DEBUG_dmik)
+# define NoDmik(expr)
+#else
+# define NoDmik(expr) expr
+#endif
 
 
 #endif
