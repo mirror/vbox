@@ -1382,9 +1382,10 @@
  * Turns the given expression into NOOP when DEBUG_dmik is defined. Evaluates 
  * the expression normally otherwise. 
  * @param expr  Expression to guard.
+ * @todo r=bird: please rename to NO_DMIK or NOT_DMIK.
  */
 #if defined(DEBUG_dmik)
-# define NoDmik(expr)
+# define NoDmik(expr) do { } while (0)
 #else
 # define NoDmik(expr) expr
 #endif
