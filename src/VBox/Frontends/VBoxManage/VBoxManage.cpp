@@ -2987,7 +2987,10 @@ static int handleCreateVDI(int argc, char *argv[],
         }
         if (SUCCEEDED(rc) && progress)
         {
-            CHECK_ERROR(progress, WaitForCompletion(-1));
+            if (fStatic)
+                showProgress(progress);
+            else
+                CHECK_ERROR(progress, WaitForCompletion(-1));
             if (SUCCEEDED(rc))
             {
                 progress->COMGETTER(ResultCode)(&rc);
