@@ -472,10 +472,11 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
         if (VBOX_FAILURE(rc))
             goto l_create_failed;
 
-        if (    (enmType == VDI_IMAGE_TYPE_FIXED)
-            &&  (fFlags & VDI_IMAGE_FLAGS_ZERO_EXPAND))
+        if (enmType == VDI_IMAGE_TYPE_FIXED)
         {
-            /* Fill image with zeroes. */
+            /* Fill image with zeroes. We do this for every fixed-size image since on some systems
+             * (for example Windows Vista), it takes ages to write a block near the end of a sparse
+             * file and the guest could complain about an ATA timeout. */
 
             /** @todo Starting with Linux 2.6.23, there is an fallocate() system call.
              *        Currently supported file systems are ext4 and ocfs2. */
@@ -484,8 +485,9 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
             if (VBOX_FAILURE(rc))
                 goto l_create_failed;
 
-            /* alloc tmp zero-filled buffer */
-            void *pvBuf = RTMemTmpAllocZ(VDIDISK_DEFAULT_BUFFER_SIZE);
+            /* Allocate a temporary zero-filled buffer. Use a bigger block size to optimize writing */
+            const size_t cbBuf = 128 * _1K;
+            void *pvBuf = RTMemTmpAllocZ(cbBuf);
             if (pvBuf)
             {
                 uint64_t cbFill = (uint64_t)getImageBlocks(&pImage->Header) << pImage->uShiftIndex2Offset;
@@ -494,7 +496,7 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
                 /* do loop to fill all image. */
                 while (cbFill > 0)
                 {
-                    unsigned to_fill = (unsigned)RT_MIN(cbFill, VDIDISK_DEFAULT_BUFFER_SIZE);
+                    unsigned to_fill = (unsigned)RT_MIN(cbFill, cbBuf);
 
                     rc = RTFileWrite(pImage->File, pvBuf, to_fill, NULL);
                     if (VBOX_FAILURE(rc))
