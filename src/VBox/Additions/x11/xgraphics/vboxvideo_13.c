@@ -197,7 +197,6 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
     VBOXPtr pVBox = VBOXGetRec(scrn);
     Bool rc = TRUE;
 
-    TRACE3("width=%d, height=%d\n", width, height);
     /* We only support horizontal resolutions which are a multiple of 8.  Round down if
        necessary. */
     if (width % 8 != 0)
@@ -223,7 +222,6 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
         }
     }
     if (rc) {
-        TRACE3("Setting screen pixmap parameters: width=%d, height=%d, depth=%d, bpp=%d, stride=%d, VRAM=%p\n", width, height, scrn->depth, bpp, width * bpp / 8, pVBox->base);
         if (
             !pScreen->ModifyPixmapHeader(pPixmap, width, height,
                                          scrn->depth, bpp, width * bpp / 8,
@@ -239,7 +237,6 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
         scrn->virtualY = height;
         scrn->displayWidth = width;
     }
-    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }
 
@@ -249,11 +246,11 @@ static const xf86CrtcConfigFuncsRec VBOXCrtcConfigFuncs = {
 
 static void
 vbox_crtc_dpms(xf86CrtcPtr crtc, int mode)
-{ TRACE; (void) crtc; (void) mode; }
+{ (void) crtc; (void) mode; }
 
 static Bool
 vbox_crtc_lock (xf86CrtcPtr crtc)
-{ TRACE; (void) crtc; return FALSE; }
+{ (void) crtc; return FALSE; }
 
 static Bool
 vbox_crtc_mode_fixup (xf86CrtcPtr crtc, DisplayModePtr mode,
@@ -262,7 +259,6 @@ vbox_crtc_mode_fixup (xf86CrtcPtr crtc, DisplayModePtr mode,
     ScrnInfoPtr pScrn = crtc->scrn;
     int xRes = adjusted_mode->HDisplay;
 
-    TRACE;
     (void) mode;
     /* We only support horizontal resolutions which are a multiple of 8.  Round down if
        necessary. */
@@ -273,33 +269,30 @@ vbox_crtc_mode_fixup (xf86CrtcPtr crtc, DisplayModePtr mode,
                    xRes, xRes - (xRes % 8));
         adjusted_mode->HDisplay = xRes - (xRes % 8);
     }
-    TRACE2;
     return TRUE;
 }
 
 static void
 vbox_crtc_stub (xf86CrtcPtr crtc)
-{ TRACE; (void) crtc; }
+{ (void) crtc; }
 
 static void
 vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
                     DisplayModePtr adjusted_mode, int x, int y)
 {
     (void) mode;
-    TRACE;
     VBOXSetMode(crtc->scrn, adjusted_mode);
     VBOXAdjustFrame(crtc->scrn->scrnIndex, x, y, 0);
-    TRACE2;
 }
 
 static void
 vbox_crtc_gamma_set (xf86CrtcPtr crtc, CARD16 *red,
                      CARD16 *green, CARD16 *blue, int size)
-{ TRACE; (void) crtc; (void) red; (void) green; (void) blue; (void) size; }
+{ (void) crtc; (void) red; (void) green; (void) blue; (void) size; }
 
 static void *
 vbox_crtc_shadow_allocate (xf86CrtcPtr crtc, int width, int height)
-{ TRACE; (void) crtc; (void) width; (void) height; return NULL; }
+{ (void) crtc; (void) width; (void) height; return NULL; }
 
 static const xf86CrtcFuncsRec VBOXCrtcFuncs = {
     .dpms = vbox_crtc_dpms,
@@ -326,19 +319,15 @@ static const xf86CrtcFuncsRec VBOXCrtcFuncs = {
 
 static void
 vbox_output_stub (xf86OutputPtr output)
-{ TRACE; (void) output; }
+{ (void) output; }
 
 static void
 vbox_output_dpms (xf86OutputPtr output, int mode)
-{ TRACE; (void) output; (void) mode; }
+{ (void) output; (void) mode; }
 
 static int
 vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
 {
-    TRACE3("Modeline %s   %f  %d %d %d %d  %d %d %d %d\n",
-           mode->name, mode->Clock * 1.0 / 1000, mode->HDisplay, mode->HSyncStart,
-           mode->HSyncEnd, mode->HTotal, mode->VDisplay, mode->VSyncStart,
-           mode->VSyncEnd, mode->VTotal);
     (void) output; (void) mode;
     return MODE_OK;
 }
@@ -346,12 +335,12 @@ vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
 static Bool
 vbox_output_mode_fixup (xf86OutputPtr output, DisplayModePtr mode,
                         DisplayModePtr adjusted_mode)
-{ TRACE; (void) output; (void) mode; (void) adjusted_mode; return TRUE; }
+{ (void) output; (void) mode; (void) adjusted_mode; return TRUE; }
 
 static void
 vbox_output_mode_set (xf86OutputPtr output, DisplayModePtr mode,
                         DisplayModePtr adjusted_mode)
-{ TRACE; (void) output; (void) mode; (void) adjusted_mode; }
+{ (void) output; (void) mode; (void) adjusted_mode; }
 
 /* A virtual monitor is always connected. */
 static xf86OutputStatus
@@ -395,10 +384,8 @@ vbox_output_get_modes (xf86OutputPtr output)
     DisplayModePtr pModes = NULL;
     ScrnInfoPtr pScrn = output->scrn;
 
-    TRACE;
     rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, 0, 0);
     if (RT_SUCCESS(rc) && (0 != x) && (0 != y)) {
-        TRACE3("Adding host mode %dx%d\n", x, y);
         vbox_output_add_mode(&pModes, NULL, x, y, TRUE);
         vbox_output_add_mode(&pModes, "1024x768", 1024, 768, FALSE);
         vbox_output_add_mode(&pModes, "800x600", 800, 600, FALSE);
@@ -408,7 +395,6 @@ vbox_output_get_modes (xf86OutputPtr output)
         vbox_output_add_mode(&pModes, "800x600", 800, 600, FALSE);
         vbox_output_add_mode(&pModes, "640x480", 640, 480, FALSE);
     }
-    TRACE2;
     return pModes;
 }
 
@@ -417,7 +403,7 @@ vbox_output_get_modes (xf86OutputPtr output)
 static Bool
 vbox_output_set_property(xf86OutputPtr output, Atom property,
                          RRPropertyValuePtr value)
-{ TRACE; (void) output, (void) property, (void) value; return FALSE; }
+{ (void) output, (void) property, (void) value; return FALSE; }
 #endif
 
 static const xf86OutputFuncsRec VBOXOutputFuncs = {
@@ -731,14 +717,14 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     output = xf86OutputCreate(pScrn, &VBOXOutputFuncs, "Virtual Output");
 
     /* Set a sane minimum and maximum mode size */
-    xf86CrtcSetSizeRange(pScrn, 64, 64, 102400, 76800);
+    xf86CrtcSetSizeRange(pScrn, 64, 64, 64000, 64000);
 
     /* I don't know exactly what these are for (and they are only used in a couple
        of places in the X server code), but due to a bug in RandR 1.2 they place
        an upper limit on possible resolutions.  To add to the fun, they get set
        automatically if we don't do it ourselves. */
-    pScrn->display->virtualX = 102400;
-    pScrn->display->virtualY = 76800;
+    pScrn->display->virtualX = 64000;
+    pScrn->display->virtualY = 64000;
 
     /* We are not interested in the monitor section in the configuration file. */
     xf86OutputUseScreenMonitor(output, FALSE);
