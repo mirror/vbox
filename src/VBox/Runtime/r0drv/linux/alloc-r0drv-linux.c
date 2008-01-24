@@ -113,7 +113,6 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
      * Allocate.
      */
     PRTMEMHDR pHdr;
-    Assert(cb != sizeof(void *)); /* 99% of pointer sized allocations are wrong. */
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
 #if defined(RT_ARCH_AMD64)

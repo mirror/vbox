@@ -42,7 +42,6 @@
  */
 PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 {
-    Assert(cb != sizeof(void *));
     PRTMEMHDR pHdr;
 #ifdef RT_ARCH_AMD64
     if (fFlags & RTMEMHDR_FLAG_EXEC)

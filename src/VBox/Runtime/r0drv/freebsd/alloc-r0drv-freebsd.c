@@ -52,7 +52,6 @@ MALLOC_DEFINE(M_IPRTCONT, "iprtcont", "innotek Portable Runtime - contiguous");
 PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 {
     PRTMEMHDR pHdr;
-    Assert(cb != sizeof(void *)); /* 99% of pointer sized allocations are wrong. */
 
     /** @todo Just like OS/2, FreeBSD doesn't need this header. */
     pHdr = (PRTMEMHDR)malloc(cb + sizeof(RTMEMHDR), M_IPRTHEAP,

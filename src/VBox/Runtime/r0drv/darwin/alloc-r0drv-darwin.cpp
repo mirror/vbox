@@ -40,7 +40,6 @@
  */
 PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 {
-    Assert(cb != sizeof(void *)); /* 99% of pointer sized allocations are wrong. */
     PRTMEMHDR pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr));
     if (pHdr)
     {
