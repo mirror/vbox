@@ -409,13 +409,14 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
 Bool
 vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 {
-    int fd, rc;
-    void *p;
+    int fd, vrc;
+    void *p = NULL;
     size_t size;
     int scrnIndex = pScrn->scrnIndex;
+    Bool rc = TRUE;
 
     TRACE_ENTRY ();
-    
+
     pVBox->useVbva = FALSE;
 
 #ifdef RT_OS_SOLARIS
@@ -427,11 +428,11 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         return TRUE;
     }
 
-    rc = VbglR3Init();
-    if (RT_FAILURE(rc))
+    vrc = VbglR3Init();
+    if (RT_FAILURE(vrc))
     {
-        xf86DrvMsg(scrnIndex, X_ERROR, "VbglR3Init failed rc=%d.\n", rc);
-        return FALSE;
+        xf86DrvMsg(scrnIndex, X_ERROR, "VbglR3Init failed vrc=%d.\n", vrc);
+        rc = FALSE;
     }
 #else
     if (pVBox->vbox_fd != -1 && pVBox->reqp)
@@ -447,55 +448,55 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         xf86DrvMsg(scrnIndex, X_ERROR,
                    "Error opening kernel module: %s\n",
                    strerror (errno));
-        return FALSE;
+        rc = FALSE;
     }
 #endif
 
-    size = vmmdevGetRequestSize (VMMDevReq_SetPointerShape);
+    if (rc) {
+        size = vmmdevGetRequestSize (VMMDevReq_SetPointerShape);
 
-    p = xcalloc (1, size);
-    if (!p)
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Could not allocate %lu bytes for VMM request\n",
-                   (unsigned long) size);
-        goto fail0;
+        p = xcalloc (1, size);
+        if (NULL == p) {
+            xf86DrvMsg(scrnIndex, X_ERROR,
+                       "Could not allocate %lu bytes for VMM request\n",
+                       (unsigned long) size);
+            rc = FALSE;
+        }
     }
-
-    rc = vmmdevInitRequest (p, VMMDevReq_SetPointerShape);
-    if (VBOX_FAILURE (rc))
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Could not init VMM request: rc = %d\n", rc);
-        goto fail1;
+    if (rc) {
+        vrc = vmmdevInitRequest (p, VMMDevReq_SetPointerShape);
+        if (VBOX_FAILURE (vrc))
+        {
+            xf86DrvMsg(scrnIndex, X_ERROR,
+                       "Could not init VMM request: vrc = %d\n", vrc);
+            rc = FALSE;
+        }
     }
-
+    if (rc) {
 #ifndef RT_OS_SOLARIS
-    pVBox->vbox_fd = fd;
+        pVBox->vbox_fd = fd;
 #endif
-    pVBox->reqp = p;
-    pVBox->pCurs = NULL;
-    pVBox->use_hw_cursor = vbox_host_can_hwcursor(pScrn, pVBox);
-    pVBox->set_pointer_shape_size = size;
-    pVBox->pointer_offscreen = FALSE;
-    pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
-    return TRUE;
-
- fail1:
-    xfree (p);
-
- fail0:
+        pVBox->reqp = p;
+        pVBox->pCurs = NULL;
+        pVBox->use_hw_cursor = vbox_host_can_hwcursor(pScrn, pVBox);
+        pVBox->set_pointer_shape_size = size;
+        pVBox->pointer_offscreen = FALSE;
+        pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
+    } else {
+        if (NULL != p) {
+            xfree (p);
+        }
 #ifdef RT_OS_SOLARIS
-    VbglR3Term();
+        VbglR3Term();
 #else
-    if (close (fd))
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Error closing kernel module file descriptor(%d): %s\n",
-                   fd, strerror (errno));
-    }
+        if (close (fd)) {
+            xf86DrvMsg(scrnIndex, X_ERROR,
+                       "Error closing kernel module file descriptor(%d): %s\n",
+                       fd, strerror (errno));
+        }
 #endif
-    return FALSE;
+    }
+    return rc;
 }
 
 static void vbox_vmm_hide_cursor (ScrnInfoPtr pScrn, VBOXPtr pVBox)
@@ -650,11 +651,10 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
 
     rc = vmmdevInitRequest ((VMMDevRequestHeader *) p,
                             VMMDevReq_SetPointerShape);
-    if (VBOX_FAILURE (rc))
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Could not init VMM request: rc = %d\n", rc);
-        goto fail0;
+    if (VBOX_FAILURE (rc)) {
+        xfree(p);
+        RETERROR(scrnIndex, NULL,
+                 "Could not init VMM request: rc = %d\n", rc);
     }
 
     m = p + offsetof (VMMDevReqMousePointer, pointerData);
@@ -736,10 +736,6 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
 #endif
 
     return p;
-
- fail0:
-    xfree (p);
-    return NULL;
 }
 
 #ifdef ARGB_CURSOR
