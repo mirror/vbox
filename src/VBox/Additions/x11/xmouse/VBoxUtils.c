@@ -1,6 +1,6 @@
 /** @file
  *
- * VirtualBox Linux Additions mouse driver utility functions
+ * VirtualBox X11 Additions mouse driver utility functions
  */
 
 /*
