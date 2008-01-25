@@ -101,20 +101,23 @@ APP=${APP##/*/}
 case "$APP" in
   VirtualBox)
     exec "$INSTALL_DIR/VirtualBox" "$@"
-  ;;
+    ;;
   VBoxManage)
     exec "$INSTALL_DIR/VBoxManage" "$@"
-  ;;
+    ;;
   VBoxSDL)
     exec "$INSTALL_DIR/VBoxSDL" "$@"
-  ;;
+    ;;
   VBoxVRDP)
     exec "$INSTALL_DIR/VBoxVRDP" "$@"
-  ;;
+    ;;
   VBoxHeadless)
     exec "$INSTALL_DIR/VBoxHeadless" "$@"
-  ;;
+    ;;
+  vboxwebsrv)
+    exec "$INSTALL_DIR/vboxwebsrv" "$@"
+    ;;
   *)
     echo "Unknown application - $APP"
-  ;;
+    ;;
 esac
