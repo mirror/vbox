@@ -190,15 +190,17 @@ ifeq ($(filter win.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),) # too much work
 VBOX_WITH_SECURELABEL = 1
 endif
 
-# the main api
+# The main api.
 VBOX_WITH_MAIN = 1
-# the SDL based GUI
+# The webservices api.
+VBOX_WITH_WEBSERVICES = 1
+# The SDL based GUI.
 VBOX_WITH_VBOXSDL = 1
-# the basic frontend (w/o Main)
+# The basic frontend (w/o Main).
 VBOX_WITH_VBOXBFE = 1
-# the Qt GUI
+# The Qt GUI.
 VBOX_WITH_QTGUI = 1
-# the headless frontend
+# The headless frontend.
 VBOX_WITH_HEADLESS = 1
 ## the Direct Framebuffer GUI
 #VBOX_WITH_VBOXFB = 1
@@ -380,6 +382,7 @@ endif
 # Disable components that are not open sourced.
 #
 ifdef VBOX_OSE
+ VBOX_WITH_WEBSERVICES=
  VBOX_WITH_VRDP=
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=

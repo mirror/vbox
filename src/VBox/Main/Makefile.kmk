@@ -20,10 +20,12 @@ DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
 SUBDIRS_AFTER    = testcase
+ifdef VBOX_WITH_WEBSERVICES
+ SUBDIRS_AFTER  += webservice
+endif
 
 ifndef VBOX_OSE
-SUBDIRS_AFTER += webservice
-DEFS	      += VBOX_WITH_E1000
+ DEFS           += VBOX_WITH_E1000
 endif
 
 LIBRARIES        = VBoxCOM
