@@ -365,7 +365,7 @@ vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     pVBox->reqp->fFlags = 0;
     rc = VbglR3SetPointerShape(0, pVBox->reqp->xHot, pVBox->reqp->yHot, pVBox->reqp->width,
                                pVBox->reqp->height, pVBox->reqp->pointerData,
-                               pVBox->reqp->header.size - pVBox->set_pointer_shape_size);
+                               pVBox->reqp->header.size);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not hide the virtual mouse pointer.\n");
 }
@@ -377,7 +377,7 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     pVBox->reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE;
     rc = VbglR3SetPointerShape(VBOX_MOUSE_POINTER_VISIBLE, pVBox->reqp->xHot, pVBox->reqp->yHot,
                                pVBox->reqp->width, pVBox->reqp->height, pVBox->reqp->pointerData,
-                               pVBox->reqp->header.size - pVBox->set_pointer_shape_size);
+                               pVBox->reqp->header.size);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
 }
@@ -396,7 +396,7 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
 #endif
 
     rc = VbglR3SetPointerShape(reqp->fFlags, reqp->xHot, reqp->yHot, reqp->width, reqp->height,
-                               reqp->pointerData, reqp->header.size - pVBox->set_pointer_shape_size);
+                               reqp->pointerData, reqp->header.size);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,  "Unable to set the virtual mouse pointer image.\n");
 }
@@ -707,7 +707,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     }
 
     VbglR3SetPointerShape(VBOX_MOUSE_POINTER_SHAPE | VBOX_MOUSE_POINTER_ALPHA, bitsp->xhot, bitsp->yhot, w, h,
-                          pm, reqp->header.size - pVBox->set_pointer_shape_size);
+                          pm, reqp->header.size);
     xfree(p);
 }
 #endif
