@@ -839,7 +839,7 @@ check_sdl()
     INCSDL=`strip_I "$FLGSDL"`
     LIBSDL=`sdl-config --libs`
     LIBSDLMAIN="-lSDLmain"
-    [ "$OS" = "darwin" -o "$OS" = "solaris" ] && LIBSDLMAIN=""
+    [ "$OS" = "linux" -o "$OS" = "darwin" -o "$OS" = "solaris" ] && LIBSDLMAIN=""
     cat > .tmp_src.cc << EOF
 #include <cstdio>
 #include <SDL/SDL.h>
