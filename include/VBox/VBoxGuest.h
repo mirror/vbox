@@ -1419,9 +1419,9 @@ VBGLR3DECL(int)     VbglR3SetMouseStatus(uint32_t fFeatures);
 
 /** @name Video
  * @{ */
-VBGLR3DECL(int)     VbglR3VideoAccelEnable(uint32_t fEnable);
+VBGLR3DECL(int)     VbglR3VideoAccelEnable(bool fEnable);
 VBGLR3DECL(int)     VbglR3VideoAccelFlush(void);
-VBGLR3DECL(int)     VbglR3SetPointerShape(uint32_t fFlags, uint32_t x, uint32_t y, uint32_t width, uint32_t height, void *pv, uint32_t cbImgSize);
+VBGLR3DECL(int)     VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, const void *pvImg, size_t cbImg);
 /** @}  */
 
 /** @name Display

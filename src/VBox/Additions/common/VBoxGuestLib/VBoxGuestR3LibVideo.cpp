@@ -32,7 +32,7 @@
  *
  * @param   fEnable       Pass zero to disable, any other value to enable.
  */
-VBGLR3DECL(int) VbglR3VideoAccelEnable(uint32_t fEnable)
+VBGLR3DECL(int) VbglR3VideoAccelEnable(bool fEnable)
 {
     VMMDevVideoAccelEnable Req;
     vmmdevInitRequest(&Req.header, VMMDevReq_VideoAccelEnable);
@@ -64,26 +64,26 @@ VBGLR3DECL(int) VbglR3VideoAccelFlush(void)
  * @param   fFlags      Mouse pointer flags.
  * @param   xHot        X coordinate of hot spot.
  * @param   yHot        Y coordinate of hot spot.
- * @param   width       Pointer width.
- * @param   height      Pointer height.
- * @param   pv          Pointer to the image data (can be NULL).
- * @param   cbImgSize   The size of the image data not including the pre-allocated area.
+ * @param   cx          Pointer width.
+ * @param   cy          Pointer height.
+ * @param   pvImg       Pointer to the image data (can be NULL).
+ * @param   cbImg       The size of the image data not including the pre-allocated area.
  *                      This should be the size of the image data exceeding the size of
  *                      the VMMDevReqMousePointer structure.
  */
-VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t yHot, uint32_t width, uint32_t height, void *pv, size_t cbImgSize)
+VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, const void *pvImg, size_t cbImg)
 {
     VMMDevReqMousePointer *pReq;
-    int rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq, sizeof(VMMDevReqMousePointer) + cbImgSize, VMMDevReq_SetPointerShape);
+    int rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq, sizeof(VMMDevReqMousePointer) + cbImg, VMMDevReq_SetPointerShape);
     if (RT_SUCCESS(rc))
     {
         pReq->fFlags = fFlags;
         pReq->xHot = xHot;
         pReq->yHot = yHot;
-        pReq->width = width;
-        pReq->height = height;
-        if (pv)
-            memcpy(pReq->pointerData, pv, sizeof(pReq->pointerData) + cbImgSize);
+        pReq->width = cx;
+        pReq->height = cy;
+        if (pvImg)
+            memcpy(pReq->pointerData, pvImg, sizeof(pReq->pointerData) + cbImg);
 
         rc = vbglR3GRPerform(&pReq->header);
         vbglR3GRFree(&pReq->header);
@@ -91,6 +91,7 @@ VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t y
         {
             if (RT_SUCCESS(pReq->header.rc))
                 return VINF_SUCCESS;
+
             rc = pReq->header.rc;
         }
     }
