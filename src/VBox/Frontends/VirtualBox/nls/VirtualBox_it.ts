@@ -3357,7 +3357,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 Usa
 &lt;tt&gt;net use x: \\vboxsrv\share&lt;/tt&gt;
 per accedere ad una cartella condivisa chiamata &lt;i&gt;share&lt;/i&gt; da un sistema basato su DOS, oppure
-&lt;tt&gt;mount -t vboxfs share mount_point&lt;/tt&gt;
+&lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions.&lt;/qt&gt;</translation>
     </message>
     <message>
