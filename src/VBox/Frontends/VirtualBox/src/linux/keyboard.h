@@ -42,7 +42,7 @@ extern CCALL unsigned X11DRV_KeyEvent(KeyCode code);
 #endif
 
 /* debug macros */
-#if 1 && defined(DEBUG)
+#if 0 && defined(DEBUG)
 # include <stdio.h>
 # define noop printf
 #else
