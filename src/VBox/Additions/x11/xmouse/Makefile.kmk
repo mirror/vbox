@@ -108,9 +108,11 @@ DLLS = vboxmouse_drv
 vboxmouse_drv_TEMPLATE = VBOXGUESTR3DLL
 vboxmouse_drv_DEFS = 	\
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT \
-	IN_RING3 VBOX XORG_7X
+	IN_RING3 VBOX XORG_7X __EXTENSIONS__
 vboxmouse_drv_INCS = \
-	/usr/X11/include/xorg \
+	../x11include/7.1 \
+	../x11include/7.1/X11 \
+	../x11include/7.1/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_SOURCES  = \
 	xorg71/mouse.c \
