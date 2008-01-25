@@ -23,7 +23,7 @@
 
 
 /**
- * Retrieve mouse co-ordinate information from the host.
+ * Retrieve mouse coordinates and features from the host.
  *
  * @returns VBox status code.
  *
