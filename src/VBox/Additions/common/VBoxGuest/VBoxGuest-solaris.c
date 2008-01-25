@@ -25,6 +25,7 @@
 #include <sys/pci.h>
 #include <sys/stat.h>
 #include <sys/ddi.h>
+#include <sys/ddi_intr.h>
 #include <sys/sunddi.h>
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
@@ -155,6 +156,10 @@ typedef struct
     off_t                   cbMMIO;
     /** VMMDev Version. */
     uint32_t                u32Version;
+    /** Interrupt handle vector */
+    ddi_intr_handle_t       *pIntr;
+    /** Number of interrupt handles */
+    size_t                  cIntr;
 #ifndef USE_SESSION_HASH
     /** Pointer to the session handle. */
     PVBOXGUESTSESSION       pSession;
@@ -827,10 +832,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
  */
 static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
 {
-    int rc;
-    VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
-    LogFlow((DEVICE_NAME ":VBoxGuestSolarisAddIRQ %p\n", pvState));
-
+#if 0
     /*
      * These calls are supposedly deprecated. But Sun seems to use them all over
      * the place. Anyway, once this works we will switch to the highly elaborate
@@ -847,6 +849,92 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
     else
         Log((DEVICE_NAME ":ddi_get_iblock_cookie failed. Cannot set IRQ for VMMDev.\n"));
     return rc;
+#endif
+    int rc;
+    int IntrType;
+    VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisAddIRQ %p\n", pvState));
+
+    rc = ddi_intr_get_supported_types(pDip, &IntrType);
+    if (rc == DDI_SUCCESS)
+    {
+        /* We won't need to bother about MSIs. */
+        if (IntrType & DDI_INTR_TYPE_FIXED)
+        {
+            int IntrCount;
+            rc = ddi_intr_get_nintrs(pDip, IntrType, &IntrCount);
+            if (rc == DDI_SUCCESS)
+            {
+                int IntrAvail;
+                rc = ddi_intr_get_navail(pDip, IntrType, &IntrAvail);
+                if (rc == DDI_SUCCESS)
+                {
+                    /* Allocated kernel memory for the interrupt handles. */
+                    pState->cIntr = IntrCount;
+                    pState->pIntr = RTMemAlloc(pState->cIntr * sizeof(ddi_intr_handle_t));
+                    if (pState->pIntr)
+                    {
+                        int IntrAllocated;
+                        rc = ddi_intr_alloc(pDip, pState->pIntr, IntrType, 0, IntrCount, &IntrAllocated, DDI_INTR_ALLOC_NORMAL);
+                        if (   rc == DDI_SUCCESS
+                            && IntrAllocated > 0)
+                        {
+                            pState->cIntr = IntrAllocated;
+                            uint_t uIntrPriority;
+                            rc = ddi_intr_get_pri(pState->pIntr[0], &uIntrPriority);
+                            if (rc == DDI_SUCCESS)
+                            {
+                                /* Initialize the mutex. */
+                                mutex_init(&pState->Mtx, "VBoxGuestMtx", MUTEX_DRIVER, DDI_INTR_PRI(uIntrPriority));
+
+                                /* Assign interrupt handler functions and enable interrupts. */
+                                for (int i = 0; i < IntrAllocated; i++)
+                                {
+                                    rc = ddi_intr_add_handler(pState->pIntr[i], (ddi_intr_handler_t *)VBoxGuestSolarisISR,
+                                                            (caddr_t)pState, NULL);
+                                    if (rc == DDI_SUCCESS)
+                                        rc = ddi_intr_enable(pState->pIntr[i]);
+                                    if (rc != DDI_SUCCESS)
+                                    {
+                                        /* Changing local IntrAllocated to hold so-far allocated handles for freeing. */
+                                        IntrAllocated = i;
+                                        break;
+                                    }
+                                }
+                                if (rc == DDI_SUCCESS)
+                                    return rc;
+
+                                /* Remove any assigned handlers */
+                                LogRel((DEVICE_NAME ":failed to assign IRQs allocated=%d\n", IntrAllocated));
+                                for (int x = 0; x < IntrAllocated; x++)
+                                    ddi_intr_remove_handler(pState->pIntr[x]);
+                            }
+                            else
+                                LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get priority of interrupt. rc=%d\n", rc));
+
+                            /* Remove allocated IRQs, too bad we can free only one handle at a time. */
+                            for (int k = 0; k < pState->cIntr; k++)
+                                ddi_intr_free(pState->pIntr[k]);
+                        }
+                        else
+                            LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to allocated IRQs. count=%d\n", IntrCount));
+                        RTMemFree(pState->pIntr);
+                    }
+                    else
+                        LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to allocated IRQs. count=%d\n", IntrCount));
+                }
+                else
+                    LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get available IRQs. rc=%d\n", rc));
+            }
+            else
+                LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get number of IRQs. rc=%d\n", rc));
+        }
+        else
+            LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: invalid irq type. IntrType=%d\n", IntrType));
+    }
+    else
+        LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get supported interrupt types\n"));
+    return rc;
 }
 
 
@@ -858,10 +946,24 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
  */
 static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState)
 {
+    VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
     LogFlow((DEVICE_NAME ":VBoxGuestSolarisRemoveIRQ pvState=%p\n"));
 
-    VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
+#if 0
     ddi_remove_intr(pDip, 0, pState->BlockCookie);
+    mutex_destroy(&pState->Mtx);
+#endif
+    for (int i = 0; i < pState->cIntr; i++)
+    {
+        int rc = ddi_intr_disable(pState->pIntr[i]);
+        if (rc == DDI_SUCCESS)
+        {
+            rc = ddi_intr_remove_handler(pState->pIntr[i]);
+            if (rc == DDI_SUCCESS)
+                ddi_intr_free(pState->pIntr[i]);
+        }
+    }
+    RTMemFree(pState->pIntr);
     mutex_destroy(&pState->Mtx);
 }
 
