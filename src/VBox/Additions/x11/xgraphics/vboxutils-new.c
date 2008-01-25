@@ -1,6 +1,6 @@
 /** @file
  *
- * Linux Additions X11 graphics driver helper module
+ * VirtualBox X11 Additions graphics driver utility functions
  */
 
 /*
@@ -67,30 +67,29 @@ vbox_show_shape(unsigned short w, unsigned short h, CARD32 bg, unsigned char *im
     unsigned char *mask;
     size_t size_mask;
 
-    image    += offsetof (VMMDevReqMousePointer, pointerData);
+    image    += offsetof(VMMDevReqMousePointer, pointerData);
     mask      = image;
     pitch     = (w + 7) / 8;
     size_mask = (pitch * h + 3) & ~3;
     color     = (CARD32 *)(image + size_mask);
 
-    TRACE_ENTRY ();
+    TRACE_ENTRY();
     for (y = 0; y < h; ++y, mask += pitch, color += w)
     {
         for (x = 0; x < w; ++x)
         {
             if (mask[x / 8] & (1 << (7 - (x % 8))))
                 ErrorF (" ");
-
             else
             {
                 CARD32 c = color[x];
                 if (c == bg)
-                    ErrorF ("Y");
+                    ErrorF("Y");
                 else
-                    ErrorF ("X");
+                    ErrorF("X");
             }
         }
-        ErrorF ("\n");
+        ErrorF("\n");
     }
 }
 #endif
@@ -116,7 +115,7 @@ vbox_host_can_hwcursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 void
 vbox_close(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
-    TRACE_ENTRY ();
+    TRACE_ENTRY();
 
     xfree (pVBox->reqp);
     pVBox->reqp = NULL;
@@ -319,7 +318,7 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     size_t size;
     int scrnIndex = pScrn->scrnIndex;
 
-    TRACE_ENTRY ();
+    TRACE_ENTRY();
 
     pVBox->useVbva = FALSE;
 
@@ -338,10 +337,10 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     }
 
     size = vmmdevGetRequestSize (VMMDevReq_SetPointerShape);
-    p = xcalloc (1, size);
+    p = xcalloc(1, size);
     if (p)
     {
-        rc = vmmdevInitRequest (p, VMMDevReq_SetPointerShape);
+        rc = vmmdevInitRequest(p, VMMDevReq_SetPointerShape);
         if (RT_SUCCESS(rc))
         {
             pVBox->reqp = p;
@@ -392,9 +391,9 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
     VMMDevReqMousePointer *reqp;
     reqp = (VMMDevReqMousePointer *)image;
 
-    dolog ("w=%d h=%d size=%d\n", reqp->width, reqp->height, reqp->header.size);
+    dolog("w=%d h=%d size=%d\n", reqp->width, reqp->height, reqp->header.size);
 #ifdef DEBUG_X
-    vbox_show_shape (reqp->width, reqp->height, 0, image);
+    vbox_show_shape(reqp->width, reqp->height, 0, image);
 #endif
 
     rc = VbglR3SetPointerShape(reqp->fFlags, reqp->xHot, reqp->yHot, reqp->width, reqp->height,
@@ -406,12 +405,12 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
 static void
 vbox_set_cursor_colors(ScrnInfoPtr pScrn, int bg, int fg)
 {
-    TRACE_ENTRY ();
+    TRACE_ENTRY();
 
-    (void) pScrn;
-    (void) bg;
-    (void) fg;
-    /* ErrorF ("vbox_set_cursor_colors NOT IMPLEMENTED\n"); */
+    NOREF(pScrn);
+    NOREF(bg);
+    NOREF(fg);
+    /* ErrorF("vbox_set_cursor_colors NOT IMPLEMENTED\n"); */
 }
 
 static void
@@ -419,7 +418,7 @@ vbox_set_cursor_position(ScrnInfoPtr pScrn, int x, int y)
 {
     /* VBOXPtr pVBox = pScrn->driverPrivate; */
 
-    /* TRACE_ENTRY (); */
+    /* TRACE_ENTRY(); */
 
     /* don't disable the mouse cursor if we go out of our visible area
      * since the mouse cursor is drawn by the host anyway */
@@ -430,7 +429,7 @@ vbox_set_cursor_position(ScrnInfoPtr pScrn, int x, int y)
         if (!pVBox->pointer_offscreen)
         {
             pVBox->pointer_offscreen = TRUE;
-            vbox_vmm_hide_cursor (pScrn, pVBox);
+            vbox_vmm_hide_cursor(pScrn, pVBox);
         }
     }
     else
@@ -438,7 +437,7 @@ vbox_set_cursor_position(ScrnInfoPtr pScrn, int x, int y)
         if (pVBox->pointer_offscreen)
         {
             pVBox->pointer_offscreen = FALSE;
-            vbox_vmm_show_cursor (pScrn, pVBox);
+            vbox_vmm_show_cursor(pScrn, pVBox);
         }
     }
 #endif
@@ -449,9 +448,9 @@ vbox_hide_cursor(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = pScrn->driverPrivate;
 
-    TRACE_ENTRY ();
+    TRACE_ENTRY();
 
-    vbox_vmm_hide_cursor (pScrn, pVBox);
+    vbox_vmm_hide_cursor(pScrn, pVBox);
 }
 
 static void
@@ -459,9 +458,9 @@ vbox_show_cursor(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = pScrn->driverPrivate;
 
-    TRACE_ENTRY ();
+    TRACE_ENTRY();
 
-    vbox_vmm_show_cursor (pScrn, pVBox);
+    vbox_vmm_show_cursor(pScrn, pVBox);
 }
 
 static void
@@ -469,9 +468,9 @@ vbox_load_cursor_image(ScrnInfoPtr pScrn, unsigned char *image)
 {
     VBOXPtr pVBox = pScrn->driverPrivate;
 
-    TRACE_ENTRY ();
+    TRACE_ENTRY();
 
-    vbox_vmm_load_cursor_image (pScrn, pVBox, image);
+    vbox_vmm_load_cursor_image(pScrn, pVBox, image);
 }
 
 static Bool
@@ -526,15 +525,15 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
                  "Error failed to alloc %lu bytes for cursor\n",
                  (unsigned long) size);
 
-    rc = vmmdevInitRequest ((VMMDevRequestHeader *)p, VMMDevReq_SetPointerShape);
-    if (VBOX_FAILURE (rc))
+    rc = vmmdevInitRequest((VMMDevRequestHeader *)p, VMMDevReq_SetPointerShape);
+    if (VBOX_FAILURE(rc))
     {
         xf86DrvMsg(scrnIndex, X_ERROR, "Could not init VMM request: rc = %d\n", rc);
         xfree(p);
         return NULL;
     }
 
-    m = p + offsetof (VMMDevReqMousePointer, pointerData);
+    m = p + offsetof(VMMDevReqMousePointer, pointerData);
     cp = (CARD32 *)(m + size_mask);
 
     dolog ("w=%d h=%d sm=%d sr=%d p=%d\n",
@@ -579,12 +578,12 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
                 if (ps[x / 8] & (1 << (x % 8)))
                 {
                     *cp++ = fc;
-                    PUT_PIXEL ('X');
+                    PUT_PIXEL('X');
                 }
                 else
                 {
                     *cp++ = bc;
-                    PUT_PIXEL ('*');
+                    PUT_PIXEL('*');
                 }
             }
             else
@@ -593,10 +592,10 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
                 m[x / 8] |= 1 << (7 - (x % 8));
                 /* don't change the screen pixel */
                 *cp++ = 0;
-                PUT_PIXEL (' ');
+                PUT_PIXEL(' ');
             }
         }
-        PUT_PIXEL ('\n');
+        PUT_PIXEL('\n');
     }
 
     reqp = (VMMDevReqMousePointer *)p;
@@ -608,8 +607,8 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     reqp->header.size = size;
 
 #ifdef DEBUG_X
-    ErrorF ("shape = %p\n", p);
-    vbox_show_shape (w, h, bc, c);
+    ErrorF("shape = %p\n", p);
+    vbox_show_shape(w, h, bc, c);
 #endif
 
     return p;
@@ -659,7 +658,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
             bitsp->xhot, bitsp->yhot, w, h);
 
     size = w * h * 4 + pVBox->set_pointer_shape_size + mask_size;
-    p = xcalloc (1, size);
+    p = xcalloc(1, size);
     if (!p)
         RETERROR(scrnIndex, ,
             "Error failed to alloc %lu bytes for cursor\n",
@@ -674,15 +673,15 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     reqp->fFlags = VBOX_MOUSE_POINTER_SHAPE | VBOX_MOUSE_POINTER_ALPHA;
     reqp->header.size = size;
 
-    memcpy (p + offsetof (VMMDevReqMousePointer, pointerData) + mask_size,
+    memcpy(p + offsetof(VMMDevReqMousePointer, pointerData) + mask_size,
             bitsp->argb, w * h * 4);
 
     /* Emulate the AND mask. */
-    pm = p + offsetof (VMMDevReqMousePointer, pointerData);
+    pm = p + offsetof(VMMDevReqMousePointer, pointerData);
     pc = bitsp->argb;
 
     /* Init AND mask to 1 */
-    memset (pm, 0xFF, mask_size);
+    memset(pm, 0xFF, mask_size);
 
     /**
      * The additions driver must provide the AND mask for alpha cursors. The host frontend
@@ -710,7 +709,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
 
     VbglR3SetPointerShape(VBOX_MOUSE_POINTER_SHAPE | VBOX_MOUSE_POINTER_ALPHA, bitsp->xhot, bitsp->yhot, w, h,
                 (void *)pm, reqp->header.size - pVBox->set_pointer_shape_size);
-    xfree (p);
+    xfree(p);
 }
 #endif
 
@@ -734,7 +733,7 @@ vbox_cursor_init(ScreenPtr pScreen)
         return TRUE;
     }
 
-    pVBox->pCurs = pCurs = xf86CreateCursorInfoRec ();
+    pVBox->pCurs = pCurs = xf86CreateCursorInfoRec();
     if (!pCurs)
         RETERROR(pScrn->scrnIndex, FALSE,
                  "Failed to create X Window cursor information structures for virtual mouse.\n");
@@ -758,7 +757,7 @@ vbox_cursor_init(ScreenPtr pScreen)
     pCurs->LoadCursorARGB    = vbox_load_cursor_argb;
 #endif
 
-    rc = xf86InitCursor (pScreen, pCurs);
+    rc = xf86InitCursor(pScreen, pCurs);
     if (rc == TRUE)
         return TRUE;
     RETERROR(pScrn->scrnIndex, FALSE, "Failed to enable mouse pointer integration.\n");

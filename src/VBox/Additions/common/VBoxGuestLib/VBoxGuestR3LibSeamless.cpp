@@ -107,25 +107,25 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
  */
 VBGLR3DECL(int) VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects)
 {
-    VMMDevVideoSetVisibleRegion *req;
+    VMMDevVideoSetVisibleRegion *pReq;
     int rc;
 
     if (0 == cRects)
         return VINF_SUCCESS;
-    rc = vbglR3GRAlloc((VMMDevRequestHeader **)&req,
+    rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq,
                        sizeof(VMMDevVideoSetVisibleRegion) + (cRects - 1) * sizeof(RTRECT),
                        VMMDevReq_VideoSetVisibleRegion);
     if (RT_SUCCESS(rc))
     {
-        req->cRect = cRects;
-        memcpy(&req->Rect, pRects, cRects * sizeof(RTRECT));
-        rc = vbglR3GRPerform(&req->header);
-        vbglR3GRFree(&req->header);
+        pReq->cRect = cRects;
+        memcpy(&pReq->Rect, pRects, cRects * sizeof(RTRECT));
+        rc = vbglR3GRPerform(&pReq->header);
+        vbglR3GRFree(&pReq->header);
         if (RT_SUCCESS(rc))
         {
-            if (RT_SUCCESS(req->header.rc))
+            if (RT_SUCCESS(pReq->header.rc))
                 return VINF_SUCCESS;
-            rc = req->header.rc;
+            rc = pReq->header.rc;
         }
     }
     return rc;
