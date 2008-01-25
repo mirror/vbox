@@ -1,5 +1,4 @@
 /** @file
- *
  * VirtualBox X11 Additions graphics driver utility functions
  */
 
@@ -36,10 +35,10 @@
 #endif
 #ifdef DEBUG_X
 #define TRACE_ENTRY() for (;;) \
-{ \
-    ErrorF ("%s\n", __FUNCTION__); \
-    break; \
-}
+    { \
+        ErrorF ("%s\n", __FUNCTION__); \
+        break; \
+    }
 #define PUT_PIXEL(c) ErrorF ("%c", c)
 #define dolog(...) ErrorF  (__VA_ARGS__)
 #else
@@ -50,12 +49,12 @@
 
 /** Macro to printf an error message and return from a function */
 #define RETERROR(scrnIndex, RetVal, ...) \
-do \
-{ \
-    xf86DrvMsg(scrnIndex, X_ERROR, __VA_ARGS__); \
-    return RetVal; \
-} \
-while (0)
+    do \
+    { \
+        xf86DrvMsg(scrnIndex, X_ERROR, __VA_ARGS__); \
+        return RetVal; \
+    } \
+    while (0)
 
 #ifdef DEBUG_X
 static void
@@ -107,7 +106,7 @@ vbox_host_can_hwcursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
     if (VBOX_FAILURE(rc))
         RETERROR(scrnIndex, FALSE,
-            "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", rc);
+                 "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", rc);
 
     return (fFeatures & VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER) ? FALSE : TRUE;
 }
@@ -128,14 +127,14 @@ vbox_close(ScrnInfoPtr pScrn, VBOXPtr pVBox)
  * unexplained error occurs.
  */
 #define DISABLE_VBVA_AND_RETURN(pScrn, ...) \
-do \
-{ \
-    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, __VA_ARGS__); \
-    vboxDisableVbva(pScrn); \
-    pVBox->useVbva = FALSE; \
-    return; \
-} \
-while (0)
+    do \
+    { \
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, __VA_ARGS__); \
+        vboxDisableVbva(pScrn); \
+        pVBox->useVbva = FALSE; \
+        return; \
+    } \
+    while (0)
 
 /**
  * Callback function called by the X server to tell us about dirty
@@ -243,7 +242,7 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
             CARD32 u32Second = sizeof(cmdHdr) - u32First;
             memcpy(&pMem->au8RingBuffer[off32Free], &cmdHdr, u32First);
             if (u32Second)
-                memcpy(&pMem->au8RingBuffer[0], (void *)pu8Second, u32Second);
+                memcpy(&pMem->au8RingBuffer[0], pu8Second, u32Second);
             pMem->off32Free = u32Second;
         }
         pRecord->cbRecord += sizeof(cmdHdr);
@@ -336,7 +335,7 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         return FALSE;
     }
 
-    size = vmmdevGetRequestSize (VMMDevReq_SetPointerShape);
+    size = vmmdevGetRequestSize(VMMDevReq_SetPointerShape);
     p = xcalloc(1, size);
     if (p)
     {
@@ -365,8 +364,8 @@ vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     int rc;
     pVBox->reqp->fFlags = 0;
     rc = VbglR3SetPointerShape(0, pVBox->reqp->xHot, pVBox->reqp->yHot, pVBox->reqp->width,
-            pVBox->reqp->height, pVBox->reqp->pointerData,
-            pVBox->reqp->header.size - pVBox->set_pointer_shape_size);
+                               pVBox->reqp->height, pVBox->reqp->pointerData,
+                               pVBox->reqp->header.size - pVBox->set_pointer_shape_size);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not hide the virtual mouse pointer.\n");
 }
@@ -377,15 +376,15 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     int rc;
     pVBox->reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE;
     rc = VbglR3SetPointerShape(VBOX_MOUSE_POINTER_VISIBLE, pVBox->reqp->xHot, pVBox->reqp->yHot,
-            pVBox->reqp->width, pVBox->reqp->height, pVBox->reqp->pointerData,
-            pVBox->reqp->header.size - pVBox->set_pointer_shape_size);
+                               pVBox->reqp->width, pVBox->reqp->height, pVBox->reqp->pointerData,
+                               pVBox->reqp->header.size - pVBox->set_pointer_shape_size);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
 }
 
 static void
 vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
-                                        unsigned char *image)
+                           unsigned char *image)
 {
     int rc;
     VMMDevReqMousePointer *reqp;
@@ -397,7 +396,7 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
 #endif
 
     rc = VbglR3SetPointerShape(reqp->fFlags, reqp->xHot, reqp->yHot, reqp->width, reqp->height,
-                        reqp->pointerData, reqp->header.size - pVBox->set_pointer_shape_size);
+                               reqp->pointerData, reqp->header.size - pVBox->set_pointer_shape_size);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,  "Unable to set the virtual mouse pointer image.\n");
 }
@@ -423,8 +422,8 @@ vbox_set_cursor_position(ScrnInfoPtr pScrn, int x, int y)
     /* don't disable the mouse cursor if we go out of our visible area
      * since the mouse cursor is drawn by the host anyway */
 #if 0
-    if (((x < 0) || (x > pScrn->pScreen->width))
-        || ((y < 0) || (y > pScrn->pScreen->height)))
+    if (   (x < 0 || x > pScrn->pScreen->width)
+        || (y < 0 || y > pScrn->pScreen->height))
     {
         if (!pVBox->pointer_offscreen)
         {
@@ -538,7 +537,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
 
     dolog ("w=%d h=%d sm=%d sr=%d p=%d\n",
            w, h, (int) size_mask, (int) size_rgba, (int) dst_pitch);
-    dolog ("m=%p c=%p cp=%p\n", m, c, (void *)cp);
+    dolog ("m=%p c=%p cp=%p\n", m, c, cp);
 
     fc = color_to_byte (pCurs->foreBlue)
       | (color_to_byte (pCurs->foreGreen) << 8)
@@ -645,7 +644,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     scrnIndex = pScrn->scrnIndex;
 
     /* Mask must be generated for alpha cursors, that is required by VBox. */
-    /* @note: (michael) the next struct must be 32bit aligned. */
+    /* note: (michael) the next struct must be 32bit aligned. */
     mask_size  = ((w + 7) / 8 * h + 3) & ~3;
 
     if (!w || !h || w > VBOX_MAX_CURSOR_WIDTH || h > VBOX_MAX_CURSOR_HEIGHT)
@@ -683,7 +682,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     /* Init AND mask to 1 */
     memset(pm, 0xFF, mask_size);
 
-    /**
+    /*
      * The additions driver must provide the AND mask for alpha cursors. The host frontend
      * which can handle alpha channel, will ignore the AND mask and draw an alpha cursor.
      * But if the host does not support ARGB, then it simply uses the AND mask and the color
@@ -708,7 +707,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     }
 
     VbglR3SetPointerShape(VBOX_MOUSE_POINTER_SHAPE | VBOX_MOUSE_POINTER_ALPHA, bitsp->xhot, bitsp->yhot, w, h,
-                (void *)pm, reqp->header.size - pVBox->set_pointer_shape_size);
+                          pm, reqp->header.size - pVBox->set_pointer_shape_size);
     xfree(p);
 }
 #endif
@@ -768,7 +767,7 @@ vbox_cursor_init(ScreenPtr pScreen)
  * and install the dirty rectangle handler.
  *
  * @returns TRUE for success, FALSE for failure
- * @param   pScreen Pointer to a structure describing the X screen in use
+ * @param   pScrn   Pointer to a structure describing the X screen in use
  */
 Bool
 vboxEnableVbva(ScrnInfoPtr pScrn)
@@ -779,7 +778,7 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
 
     if (pVBox->useVbva != TRUE)
         return FALSE;
-    rc = VbglR3VideoAccelEnable(1);
+    rc = VbglR3VideoAccelEnable(true);
     if (RT_FAILURE(rc))
     {
         /* Request not accepted - disable for old hosts. */
@@ -788,7 +787,7 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
                    "- the request to the virtual machine failed.  "
                    "You may be running an old version of VirtualBox.\n");
         pVBox->useVbva = FALSE;
-        VbglR3VideoAccelEnable(0);
+        VbglR3VideoAccelEnable(false);
         return FALSE;
     }
     return TRUE;
@@ -800,7 +799,7 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
  * virtual terminal is disabled, or the X server is terminated.
  *
  * @returns TRUE for success, FALSE for failure
- * @param   pScreen Pointer to a structure describing the X screen in use
+ * @param   pScrn   Pointer to a structure describing the X screen in use
  */
 Bool
 vboxDisableVbva(ScrnInfoPtr pScrn)
@@ -811,12 +810,12 @@ vboxDisableVbva(ScrnInfoPtr pScrn)
 
     if (pVBox->useVbva != TRUE)  /* Ths function should not have been called */
         return FALSE;
-    rc = VbglR3VideoAccelEnable(0);
+    rc = VbglR3VideoAccelEnable(false);
     if (RT_FAILURE(rc))
     {
         xf86DrvMsg(scrnIndex, X_ERROR,
-            "Unable to disable VirtualBox graphics acceleration "
-            "- the request to the virtual machine failed.\n");
+                   "Unable to disable VirtualBox graphics acceleration "
+                   "- the request to the virtual machine failed.\n");
     }
     else
         memset(pVBox->pVbvaMemory, 0, sizeof(VBVAMEMORY));
@@ -826,25 +825,26 @@ vboxDisableVbva(ScrnInfoPtr pScrn)
 /**
  * Query the last display change request.
  *
- * @returns iprt status value
- * @retval xres     horizontal pixel resolution (0 = do not change)
- * @retval yres     vertical pixel resolution (0 = do not change)
- * @retval bpp      bits per pixel (0 = do not change)
- * @param  eventAck Flag that the request is an acknowlegement for the
- *                  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
- *                  Values:
- *                      0                                   - just querying,
- *                      VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
- * @param  display  0 for primary display, 1 for the first secondary, etc.
+ * @returns boolean success indicator.
+ * @param   pScrn       Pointer to the X screen info structure.
+ * @param   pcx         Where to store the horizontal pixel resolution (0 = do not change).
+ * @param   pcy         Where to store the vertical pixel resolution (0 = do not change).
+ * @param   pcBits      Where to store the bits per pixel (0 = do not change).
+ * @param   fEventAck   Flag that the request is an acknowlegement for the
+ *                      VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
+ *                      Values:
+ *                          0                                   - just querying,
+ *                          VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
+ * @param   iDisplay    0 for primary display, 1 for the first secondary, etc.
  */
 Bool
-vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *px, uint32_t *py,
-                            uint32_t *pbpp, uint32_t eventAck, uint32_t display)
+vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
+                            uint32_t *pcBits, uint32_t fEventAck, uint32_t iDisplay)
 {
-    int rc, scrnIndex = pScrn->scrnIndex;
-    rc = VbglR3GetDisplayChangeRequest(px, py, pbpp, eventAck, display);
+    int rc = VbglR3GetDisplayChangeRequest(pcx, pcy, pcBits, fEventAck, iDisplay);
     if (RT_SUCCESS(rc))
         return TRUE;
-    xf86DrvMsg(scrnIndex, X_ERROR, "Failed to request the last resolution requested from the guest, rc=%d.\n", rc);
+    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to request the last resolution requested from the guest, rc=%d.\n", rc);
     return FALSE;
 }
+
