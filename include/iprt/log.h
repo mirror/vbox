@@ -286,9 +286,11 @@ typedef enum RTLOGFLAGS
     /** The logger instance expands LF to CR/LF. */
     RTLOGFLAGS_USECRLF          = 0x00000010,
     /** Show relative timestamps with PREFIX_TSC and PREFIX_TS */
-    RTLOGFLAGS_REL_TS           = 0x00010000,
+    RTLOGFLAGS_REL_TS           = 0x00008000,
     /** Show decimal timestamps with PREFIX_TSC and PREFIX_TS */
-    RTLOGFLAGS_DECIMAL_TS       = 0x00020000,
+    RTLOGFLAGS_DECIMAL_TS       = 0x00010000,
+    /** New lines should be prefixed with the native process id. */
+    RTLOGFLAGS_PREFIX_PID       = 0x00020000,
     /** New lines should be prefixed with group flag number causing the output. */
     RTLOGFLAGS_PREFIX_FLAG_NO   = 0x00040000,
     /** New lines should be prefixed with group flag name causing the output. */
