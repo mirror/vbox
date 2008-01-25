@@ -389,11 +389,11 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
          * This is where you set your ring-0 logging preferences.
          */
 # if defined(DEBUG_bird) && !defined(IN_GUEST)
-        //RTLogGroupSettings(pLogger, "all=~0");
-        //RTLogFlags(pLogger, "enabled unbuffered");
-        RTLogGroupSettings(pLogger, "-all");
-        RTLogFlags(pLogger, "disabled unbuffered");
-        pLogger->fDestFlags |= /*RTLOGDEST_DEBUGGER |*/ RTLOGDEST_COM;
+        RTLogGroupSettings(pLogger, "all=~0");
+        RTLogFlags(pLogger, "enabled unbuffered pid");
+        //RTLogGroupSettings(pLogger, "-all");
+        //RTLogFlags(pLogger, "disabled unbuffered");
+        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;/* | RTLOGDEST_COM;*/
 # endif
 # if defined(DEBUG_sandervl) && !defined(IN_GUEST)
         RTLogGroupSettings(pLogger, "+all");

@@ -31,11 +31,11 @@
 #include <iprt/log.h>
 #ifndef IN_GC
 # include <iprt/alloc.h>
-# include <iprt/thread.h>
+# include <iprt/process.h>
 # include <iprt/semaphore.h>
+# include <iprt/thread.h>
 #endif
 #ifdef IN_RING3
-# include <iprt/process.h>
 # include <iprt/file.h>
 # include <iprt/path.h>
 #endif
@@ -1195,6 +1195,7 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
             { "abs",          sizeof("abs"         ) - 1,   RTLOGFLAGS_REL_TS,              true  },
             { "dec",          sizeof("dec"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          false },
             { "hex",          sizeof("hex"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          true  },
+            { "pid",          sizeof("pid"         ) - 1,   RTLOGFLAGS_PREFIX_PID,          false },
             { "flagno",       sizeof("flagno"      ) - 1,   RTLOGFLAGS_PREFIX_FLAG_NO,      false },
             { "flag",         sizeof("flag"        ) - 1,   RTLOGFLAGS_PREFIX_FLAG,         false },
             { "groupno",      sizeof("groupno"     ) - 1,   RTLOGFLAGS_PREFIX_GROUP_NO,     false },
@@ -1869,9 +1870,9 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 
                 /*
                  * Flush the buffer if there isn't enough room for the maximum prefix config.
-                 * Max is 124, add a couple of extra bytes.
+                 * Max is 198, add a couple of extra bytes.
                  */
-                if (cb < 128 + 18 + 22)
+                if (cb < 198 + 16)
                 {
                     rtlogFlush(pLogger);
                     cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
@@ -1898,7 +1899,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     }
                     if (pLogger->fFlags & RTLOGFLAGS_REL_TS)
                     {
-                        static uint64_t s_u64LastTs;
+                        static volatile uint64_t s_u64LastTs;
                         uint64_t        u64DiffTs = u64 - s_u64LastTs;
                         s_u64LastTs = u64;
                         /* We could have been preempted just before reading of s_u64LastTs by
@@ -1907,7 +1908,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                         u64         = (int64_t)u64DiffTs < 0 ? 0 : u64DiffTs;
                     }
                     /* 1E15 nanoseconds = 11 days */
-                    psz += RTStrFormatNumber(psz, u64, iBase, 16, 0, fFlags);
+                    psz += RTStrFormatNumber(psz, u64, iBase, 16, 0, fFlags);                       /* +17 */
                     *psz++ = ' ';
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_TSC)
@@ -1922,7 +1923,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     }
                     if (pLogger->fFlags & RTLOGFLAGS_REL_TS)
                     {
-                        static uint64_t s_u64LastTsc;
+                        static volatile uint64_t s_u64LastTsc;
                         uint64_t        u64DiffTsc = u64 - s_u64LastTsc;
                         s_u64LastTsc = u64;
                         /* We could have been preempted just before reading of s_u64LastTsc by
@@ -1931,7 +1932,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                         u64          = u64DiffTsc < 0 ? 0 : u64DiffTsc;
                     }
                     /* 1E15 ticks at 4GHz = 69 hours */
-                    psz += RTStrFormatNumber(psz, u64, iBase, 16, 0, fFlags);
+                    psz += RTStrFormatNumber(psz, u64, iBase, 16, 0, fFlags);                       /* +17 */
                     *psz++ = ' ';
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_MS_PROG)
@@ -1958,7 +1959,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     psz += RTStrFormatNumber(psz, Time.u8Second, 10, 2, 0, RTSTR_F_ZEROPAD);
                     *psz++ = '.';
                     psz += RTStrFormatNumber(psz, Time.u32Nanosecond / 1000000, 10, 3, 0, RTSTR_F_ZEROPAD);
-                    *psz++ = ' ';
+                    *psz++ = ' ';                                                                   /* +17 (3+1+3+1+3+1+4+1) */
 #else
                     memset(psz, ' ', 13);
                     psz += 13;
@@ -1977,7 +1978,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     psz += RTStrFormatNumber(psz, u32 / 1000, 10, 2, 0, RTSTR_F_ZEROPAD);
                     *psz++ = '.';
                     psz += RTStrFormatNumber(psz, u32 % 1000, 10, 3, 0, RTSTR_F_ZEROPAD);
-                    *psz++ = ' ';
+                    *psz++ = ' ';                                                               /* +20 (9+1+2+1+2+1+3+1) */
 #else
                     memset(psz, ' ', 13);
                     psz += 13;
@@ -1992,18 +1993,28 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     size_t cch = strlen(szDate);
                     memcpy(psz, szDate, cch);
                     psz += cch;
-                    *psz++ = ' ';
+                    *psz++ = ' ';                                                               /* +32 */
                 }
 # endif
+                if (pLogger->fFlags & RTLOGFLAGS_PREFIX_PID)
+                {
+#ifndef IN_GC
+                    RTPROCESS Process = RTProcSelf();
+#else
+                    RTPROCESS Process = NIL_RTPROCESS;
+#endif
+                    psz += RTStrFormatNumber(psz, Process, 16, sizeof(RTPROCESS) * 2, 0, RTSTR_F_ZEROPAD);
+                    *psz++ = ' ';                                                               /* +9 */
+                }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_TID)
                 {
-#ifdef IN_RING3
+#ifndef IN_GC
                     RTNATIVETHREAD Thread = RTThreadNativeSelf();
 #else
                     RTNATIVETHREAD Thread = NIL_RTNATIVETHREAD;
 #endif
                     psz += RTStrFormatNumber(psz, Thread, 16, sizeof(RTNATIVETHREAD) * 2, 0, RTSTR_F_ZEROPAD);
-                    *psz++ = ' ';
+                    *psz++ = ' ';                                                               /* +17 */
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_THREAD)
                 {
@@ -2024,12 +2035,12 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     }
                     do
                         *psz++ = ' ';
-                    while (cch++ < 8);
+                    while (cch++ < 8);                                                          /* +17  */
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_FLAG_NO)
                 {
                     psz += RTStrFormatNumber(psz, pArgs->fFlags, 16, 8, 0, RTSTR_F_ZEROPAD);
-                    *psz++ = ' ';
+                    *psz++ = ' ';                                                               /* +9 */
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_FLAG)
                 {
@@ -2048,7 +2059,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     }
                     do
                         *psz++ = ' ';
-                    while (cch++ < 8);
+                    while (cch++ < 8);                                                          /* +17 */
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_GROUP_NO)
                 {
@@ -2061,7 +2072,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     {
                         memcpy(psz, "-1  ", sizeof("-1  ") - 1);
                         psz += sizeof("-1  ") - 1;
-                    }
+                    }                                                                           /* +9 */
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_GROUP)
                 {
@@ -2101,14 +2112,14 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     }
                     do
                         *psz++ = ' ';
-                    while (cch++ < 8);
+                    while (cch++ < 8);                                                          /* +17 */
                 }
 
                 /*
                  * Done, figure what we've used and advance the buffer and free size.
                  */
                 cb = psz - &pLogger->achScratch[pLogger->offScratch];
-                Assert(cb <= 124);
+                Assert(cb <= 198);
                 pLogger->offScratch += cb;
                 cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
             }
