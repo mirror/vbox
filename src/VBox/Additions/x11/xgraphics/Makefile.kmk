@@ -189,7 +189,7 @@ vboxvideo_drv_INCS = \
 	../x11include/7.1/xorg
 vboxvideo_drv_SOURCES  = \
 	vboxvideo_70.c \
-	vboxutils.c
+	vboxutils-new.c
 vboxvideo_drv_LIBS = \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3)

@@ -104,6 +104,7 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibSeamless.cpp \
 	VBoxGuestR3LibTime.cpp \
+	VBoxGuestR3LibVideo.cpp
 
 
 

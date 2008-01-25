@@ -22,6 +22,15 @@
 #include "VBGLR3Internal.h"
 
 
+/**
+ * Retrieve mouse co-ordinate information from the host.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pfFeatures  Where to store the mouse features.
+ * @param   px          Where to store the X co-ordinate.
+ * @param   py          Where to store the Y co-ordinate.
+ */
 VBGLR3DECL(int) VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py)
 {
     VMMDevReqMouseStatus Req;
@@ -43,6 +52,13 @@ VBGLR3DECL(int) VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_
 }
 
 
+/**
+ * Send mouse features to the host.
+ *
+ * @returns VBox status code.
+ *
+ * @param   fFeatures  Supported mouse pointer features.
+ */
 VBGLR3DECL(int) VbglR3SetMouseStatus(uint32_t fFeatures)
 {
     VMMDevReqMouseStatus Req;
