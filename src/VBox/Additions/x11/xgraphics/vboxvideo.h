@@ -184,44 +184,14 @@ Bool vbox_cursor_init (ScreenPtr pScreen);
 Bool vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBOX);
 void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBOX);
 
-/**
- * Inform VBox that we will supply it with dirty rectangle information.
- * This function is intended to be called when an X virtual terminal is
- * re-enabled.  The dirty rectangle handler should be installed.
- *
- * @returns TRUE for success, FALSE for failure
- * @param   pScreen Pointer to a structure describing the X screen in use
- */
 extern Bool
 vboxEnableVbva(ScrnInfoPtr pScrn);
 
-/**
- * Inform VBox that we will stop supplying it with dirty rectangle
- * information. This function is intended to be called when an X
- * virtual terminal is disabled, or the X server is terminated.
- *
- * @returns TRUE for success, FALSE for failure
- * @param   pScreen Pointer to a structure describing the X screen in use
- */
 extern Bool
 vboxDisableVbva(ScrnInfoPtr pScrn);
 
-/**
- * Query the last display change request.
- *
- * @returns iprt status value
- * @retval xres     horizontal pixel resolution (0 = do not change)
- * @retval yres     vertical pixel resolution (0 = do not change)
- * @retval bpp      bits per pixel (0 = do not change)
- * @param  eventAck Flag that the request is an acknowlegement for the
- *                  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
- *                  Values:
- *                      0                                   - just querying,
- *                      VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
- * @param  display  0 for primary display, 1 for the first secondary, etc.
- */
 extern Bool
-vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *px, uint32_t *py,
-                            uint32_t *pbpp, uint32_t eventAck, uint32_t display);
+vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
+                            uint32_t *pcBits, uint32_t fEventAck, uint32_t iDisplay);
 
 #endif /* _VBOXVIDEO_H_ */
