@@ -1,6 +1,6 @@
 /** @file
  *
- * Linux Additions X11 graphics driver
+ * VirtualBox X11 Additions graphics driver
  */
 
 /*
@@ -164,8 +164,10 @@ typedef struct _VBOXRec
     size_t set_pointer_shape_size;
     Bool pointer_offscreen;
     Bool useVbva;
+#ifndef RT_OS_SOLARIS
     VMMDevVideoAccelFlush *reqf;
     VMMDevVideoAccelEnable *reqe;
+#endif
     VMMDevMemory *pVMMDevMemory;
     VBVAMEMORY *pVbvaMemory;
 } VBOXRec, *VBOXPtr;
