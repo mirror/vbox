@@ -17,6 +17,13 @@
 # include <math.h>
 #endif
 
+#if defined(__GNUC__) && ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3) || (__GNUC__ > 4))
+  /* gcc starting with version 4.3 uses the MPFR library which results in more accurate results */
+# define SIN180 -0.8011526357338304777463731115L
+#else
+# define SIN180 -0.801152635733830477871L
+#endif
+
 static void bitch(const char *pszWhat, const long double *plrdResult, const long double *plrdExpected)
 {
     const unsigned char *pach1 = (const unsigned char *)plrdResult;
@@ -46,7 +53,7 @@ static void bitchl(const char *pszWhat, long lResult, long lExpected)
 
 extern int testsin(void)
 {
-    return sinl(180.0L) == -0.801152635733830477871L;
+    return sinl(180.0L) == SIN180;
 }
 
 extern int testremainder(void)
@@ -281,7 +288,7 @@ extern int testmath(void)
     CHECK(sinl(1.0L),  0.84147098480789650664L);
     lrd = 180.0L;
     CHECK(sinl(lrd), -0.801152635733830477871L);
-    CHECK(sinl(180.0L), -0.801152635733830477871L);
+    CHECK(sinl(180.0L), SIN180);
     CHECKLL(testsin(), 1);
 
     CHECK(sqrtl(1.0L), 1.0);
