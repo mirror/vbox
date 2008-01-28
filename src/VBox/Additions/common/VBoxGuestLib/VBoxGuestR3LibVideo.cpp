@@ -96,3 +96,37 @@ VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t y
     return rc;
 }
 
+
+/**
+ * Query the last display change request.
+ *
+ * @returns iprt status value
+ * @param   pcx         Where to store the horizontal pixel resolution (0 = do not change).
+ * @param   pcy         Where to store the vertical pixel resolution (0 = do not change).
+ * @param   pcBits      Where to store the bits per pixel (0 = do not change).
+ * @param   fEventAck   Flag that the request is an acknowlegement for the
+ *                      VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
+ *                      Values:
+ *                          0                                   - just querying,
+ *                          VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
+ * @param   iDisplay    0 for primary display, 1 for the first secondary, etc.
+ */
+VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
+                                              uint32_t fEventAck, uint32_t iDisplay)
+{
+    VMMDevDisplayChangeRequest2 Req;
+    vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
+    Req.xres = 0;
+    Req.yres = 0;
+    Req.bpp = 0;
+    Req.eventAck = fEventAck;
+    Req.display = iDisplay;
+    int rc = vbglR3GRPerform(&Req.header);
+    if (RT_SUCCESS(rc))
+    {
+        *pcx = Req.xres;
+        *pcy = Req.yres;
+        *pcBits = Req.bpp;
+    }
+    return rc;
+}
