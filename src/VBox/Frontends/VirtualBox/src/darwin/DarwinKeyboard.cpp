@@ -74,6 +74,11 @@ __END_DECLS
 #define QZ_RSHIFT       0x3C
 #define QZ_RALT         0x3D
 #define QZ_RCTRL        0x3E
+/* Found the definition of the fn-key in:
+ * http://stuff.mit.edu/afs/sipb/project/darwin/src/modules/IOHIDFamily/IOHIDSystem/IOHIKeyboardMapper.cpp &
+ * http://stuff.mit.edu/afs/sipb/project/darwin/src/modules/AppleADBKeyboard/AppleADBKeyboard.cpp 
+ * Maybe we need this in the future.*/
+#define QZ_FN           0x3F
 #define QZ_NUMLOCK      0x47
 
 /** short hand for an extended key. */
@@ -332,7 +337,7 @@ unsigned DarwinModifierMaskToDarwinKeycode(UInt32 fModifiers)
 
     /** @todo find symbols for these keycodes... */
     fModifiers &= shiftKey | rightShiftKey | controlKey | rightControlKey | optionKey | rightOptionKey | cmdKey
-                | kEventKeyModifierRightCmdKeyMask | kEventKeyModifierNumLockMask | alphaLock;
+                | kEventKeyModifierRightCmdKeyMask | kEventKeyModifierNumLockMask | alphaLock | kEventKeyModifierFnMask;
     if (fModifiers == shiftKey)
         uKeyCode = QZ_LSHIFT;
     else if (fModifiers == rightShiftKey)
@@ -353,6 +358,8 @@ unsigned DarwinModifierMaskToDarwinKeycode(UInt32 fModifiers)
         uKeyCode = QZ_CAPSLOCK;
     else if (fModifiers == kEventKeyModifierNumLockMask)
         uKeyCode = QZ_NUMLOCK;
+    else if (fModifiers == kEventKeyModifierFnMask)
+        uKeyCode = QZ_FN;
     else if (fModifiers == 0)
         uKeyCode = 0;
     else
@@ -393,6 +400,8 @@ UInt32 DarwinKeyCodeToDarwinModifierMask(unsigned uKeyCode)
         fModifiers = alphaLock;
     else if (uKeyCode == QZ_NUMLOCK)
         fModifiers = kEventKeyModifierNumLockMask;
+    else if (uKeyCode == QZ_FN)
+        fModifiers = kEventKeyModifierFnMask;
     else
         fModifiers = 0;
     return fModifiers;
