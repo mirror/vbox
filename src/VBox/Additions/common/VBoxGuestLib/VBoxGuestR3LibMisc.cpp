@@ -19,7 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/assert.h>
+#ifndef VBOX_VBGLR3_XFREE86
+# include <iprt/assert.h>
+#endif
 #include "VBGLR3Internal.h"
 
 

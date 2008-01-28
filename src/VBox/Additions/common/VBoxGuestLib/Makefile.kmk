@@ -47,7 +47,8 @@ else
   	VBoxGuestLibBaseLinux
   endif
    LIBRARIES += \
-  	VBoxGuestR3LibLinux
+  	VBoxGuestR3LibLinux \
+  	VBoxGuestR3LibLinuxXFree86
  endif
  ifdef VBOX_WITH_OS2_ADDITIONS
   LIBRARIES += \
@@ -91,7 +92,7 @@ VBoxGuestR0LibBase_SOURCES  = \
 	HGCMInternal.cpp
 
 #
-# VBoxGuestR3LibBase
+# VBoxGuestR3Lib
 #
 VBoxGuestR3Lib_TEMPLATE    = VBOXGUESTR3LIB
 VBoxGuestR3Lib_DEFS        = VBOX_HGCM
@@ -106,6 +107,17 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibTime.cpp \
 	VBoxGuestR3LibVideo.cpp
 
+#
+# VBoxGuestR3LibXFree86 - a reduced version of the guest library which uses
+# the X server runtime instead of iprt, for use with old servers where the
+# C library is not available.
+#
+VBoxGuestR3LibXFree86_SOURCES    = \
+	VBoxGuestR3Lib.cpp \
+	VBoxGuestR3LibGR.cpp \
+	VBoxGuestR3LibMouse.cpp \
+	VBoxGuestR3LibMisc.cpp \
+	VBoxGuestR3LibVideo.cpp
 
 
 #
@@ -153,11 +165,24 @@ VBoxGuestLibBaseLinux_INCS     = $(VBoxGuestLib_INCS)
 VBoxGuestLibBaseLinux_DEFS     = VBOX_HGCM VBGL_VBOXGUEST LOG_TO_BACKDOOR
 
 #
-# VBoxGuestR3LibBaseLinux
+# VBoxGuestR3LibLinux
 #
 VBoxGuestR3LibLinux_TEMPLATE = VBOXLNX32GUESTR3LIB
 VBoxGuestR3LibLinux_SOURCES  = $(VBoxGuestR3Lib_SOURCES)
 VBoxGuestR3LibLinux_DEFS     = VBOX_HGCM
+
+
+#
+# VBoxGuestR3LibLinuxXFree86
+#
+VBoxGuestR3LibLinuxXFree86_TEMPLATE = VBOXLNX32GUESTR3LIB
+VBoxGuestR3LibLinuxXFree86_SOURCES  = $(VBoxGuestR3LibXFree86_SOURCES)
+VBoxGuestR3LibLinuxXFree86_DEFS     = VBOX_HGCM VBOX_VBGLR3_XFREE86
+VBoxGuestR3LibLinuxXFree86_INCS     = \
+        ../../x11/x11include/4.2/programs/Xserver/hw/xfree86/common/ \
+        ../../x11/x11include/4.2/programs/Xserver/hw/xfree86/os-support \
+        ../../x11/x11include/4.2/programs/Xserver/include \
+        ../../x11/x11include/4.2/exports/include/X11
 
 
 #
