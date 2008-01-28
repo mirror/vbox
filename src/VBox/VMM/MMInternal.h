@@ -661,11 +661,9 @@ typedef struct MM
 
     /** Size of the currently allocated guest RAM.
      * Mark that this is the actual size, not the end address. */
-    RTUINT                      cbRAMSize;
+    RTUINT                      cbRamRegistered;
     /** Size of the base RAM in bytes. */
     RTUINT                      cbRamBase;
-    /** Pointer to the base RAM. */
-    R3PTRTYPE(void *)           pvRamBaseHC;
     /** The head of the ROM ranges. */
     R3PTRTYPE(PMMROMRANGE)      pRomHead;
 

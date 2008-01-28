@@ -186,50 +186,48 @@ MMR3DECL(int) MMR3Init(PVM pVM)
 MMR3DECL(int) MMR3InitPaging(PVM pVM)
 {
     LogFlow(("MMR3InitPaging:\n"));
-    bool        fPreAlloc;
+
+    /*
+     * Query the CFGM values.
+     */
+    bool fPreAlloc;
     int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RamPreAlloc", &fPreAlloc);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-#ifdef VBOX_WITH_PREALLOC_RAM_BY_DEFAULT
-        fPreAlloc = true;
-#else
         fPreAlloc = false;
-#endif
     else
         AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamPreAlloc\", rc=%Vrc.\n", rc), rc);
 
-    uint64_t    cbRam;
+    uint64_t cbRam;
     rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cbRam = 0;
-    if (VBOX_SUCCESS(rc) || rc == VERR_CFGM_VALUE_NOT_FOUND)
+    if (    RT_SUCCESS(rc)
+        ||  rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (cbRam < PAGE_SIZE)
         {
             Log(("MM: No RAM configured\n"));
             return VINF_SUCCESS;
         }
+
+        /*
+         * Register the memory.
+         */
         Log(("MM: %llu bytes of RAM%s\n", cbRam, fPreAlloc ? " (PreAlloc)" : ""));
-        pVM->mm.s.pvRamBaseHC = 0; /** @todo obsolete */
-        pVM->mm.s.cbRamBase   = cbRam & PAGE_BASE_GC_MASK;
-        rc = MMR3PhysRegister(pVM, pVM->mm.s.pvRamBaseHC, 0, pVM->mm.s.cbRamBase, MM_RAM_FLAGS_DYNAMIC_ALLOC, "Main Memory");
-        if (VBOX_SUCCESS(rc))
+        pVM->mm.s.cbRamBase = cbRam & X86_PTE_PAE_PG_MASK;
+        rc = MMR3PhysRegister(pVM, NULL, 0, pVM->mm.s.cbRamBase, MM_RAM_FLAGS_DYNAMIC_ALLOC, "Main Memory");
+        if (RT_SUCCESS(rc))
         {
-            /* Allocate the first chunk, as we'll map ROM ranges there. */
+            /*
+             * Allocate the first chunk, as we'll map ROM ranges there.
+             * If requested, allocated the rest too.
+             */
             rc = PGM3PhysGrowRange(pVM, (RTGCPHYS)0);
-            if (VBOX_SUCCESS(rc))
-            {
-                /* Should we preallocate the entire guest RAM? */
-                if (fPreAlloc)
-                {
-                    for (RTGCPHYS GCPhys = PGM_DYNAMIC_CHUNK_SIZE; GCPhys < cbRam; GCPhys += PGM_DYNAMIC_CHUNK_SIZE)
-                    {
-                        rc = PGM3PhysGrowRange(pVM, GCPhys);
-                        if (VBOX_FAILURE(rc))
-                            return rc;
-                    }
-                }
-                return rc;
-            }
+            if (RT_SUCCESS(rc) && fPreAlloc)
+                for (RTGCPHYS GCPhys = PGM_DYNAMIC_CHUNK_SIZE;
+                     GCPhys < cbRam && RT_SUCCESS(rc);
+                     GCPhys += PGM_DYNAMIC_CHUNK_SIZE)
+                    rc = PGM3PhysGrowRange(pVM, GCPhys);
         }
     }
     else
@@ -346,7 +344,7 @@ static DECLCALLBACK(int) mmR3Save(PVM pVM, PSSMHANDLE pSSM)
     LogFlow(("mmR3Save:\n"));
 
     /* (PGM saves the physical memory.) */
-    SSMR3PutUInt(pSSM, pVM->mm.s.cbRAMSize);
+    SSMR3PutUInt(pSSM, pVM->mm.s.cbRamRegistered);
     return SSMR3PutUInt(pSSM, pVM->mm.s.cbRamBase);
 }
 
@@ -373,15 +371,15 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     }
 
     /*
-     * Check the cbRAMSize and cbRamBase values.
+     * Check the cbRamRegistered and cbRamBase values.
      */
     RTUINT  cb;
     int rc = SSMR3GetUInt(pSSM, &cb);
     if (VBOX_FAILURE(rc))
         return rc;
-    if (cb != pVM->mm.s.cbRAMSize)
+    if (cb != pVM->mm.s.cbRamRegistered)
     {
-        Log(("mmR3Load: Memory configuration has changed. cbRAMSize=%#x save %#x\n", pVM->mm.s.cbRAMSize, cb));
+        Log(("mmR3Load: Memory configuration has changed. cbRamRegistered=%#x save %#x\n", pVM->mm.s.cbRamRegistered, cb));
         return VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH;
     }
 
