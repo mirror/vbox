@@ -160,6 +160,7 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
             AssertMsgFailed(("SUPPageAlloc(%#x,,) -> %Vrc\n", cbRam >> PAGE_SHIFT, rc));
 
     }
+/** @todo Make VGA and VMMDev register their memory at init time before the hma size is fixated. */
     if (RT_FAILURE(rc))
     {   /* small + fallback (vga) */
         rc = MMHyperAlloc(pVM, cbRam, 16, MM_TAG_PGM, (void **)&pNew);
