@@ -155,6 +155,9 @@ typedef struct _VBOXRec
 #ifdef XORG_7X
     IOADDRESS ioBase;
 #endif  /* XORG_7X defined */
+#ifndef RT_OS_SOLARIS
+    int vbox_fd;
+#endif
     VMMDevReqMousePointer *reqp;
     xf86CursorInfoPtr pCurs;
     Bool useHwCursor;
@@ -162,6 +165,10 @@ typedef struct _VBOXRec
     size_t pointerSize;
     Bool pointerOffscreen;
     Bool useVbva;
+#ifndef RT_OS_SOLARIS 
+    VMMDevVideoAccelFlush *reqf; 
+    VMMDevVideoAccelEnable *reqe; 
+#endif
     VMMDevMemory *pVMMDevMemory;
     VBVAMEMORY *pVbvaMemory;
 } VBOXRec, *VBOXPtr;
