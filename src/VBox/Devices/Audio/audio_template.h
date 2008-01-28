@@ -164,7 +164,7 @@ static int glue (audio_pcm_sw_init_, TYPE) (
         [sw->info.nchannels == 2]
         [sw->info.sign]
         [sw->info.swap_endianness]
-        [sw->info.bits == 16];
+        [audio_bits_to_index (sw->info.bits)];
 
     sw->name = qemu_strdup (name);
     err = glue (audio_pcm_sw_alloc_resources_, TYPE) (sw);
@@ -289,7 +289,7 @@ static HW *glue (audio_pcm_hw_add_new_, TYPE) (AudioState *s, audsettings_t *as)
         [hw->info.nchannels == 2]
         [hw->info.sign]
         [hw->info.swap_endianness]
-        [hw->info.bits == 16];
+        [audio_bits_to_index (hw->info.bits)];
 
     if (glue (audio_pcm_hw_alloc_resources_, TYPE) (hw)) {
         goto err1;
@@ -352,13 +352,8 @@ static SW *glue (audio_pcm_create_voice_pair_, TYPE) (
 
     sw = audio_calloc (AUDIO_FUNC, 1, sizeof (*sw));
     if (!sw) {
-#if defined __STDC_VERSION__ && __STDC_VERSION__ > 199901L
         dolog ("Could not allocate soft voice `%s' (%zu bytes)\n",
                sw_name ? sw_name : "unknown", sizeof (*sw));
-#else
-        dolog ("Could not allocate soft voice `%s' (%u bytes)\n",
-               sw_name ? sw_name : "unknown", sizeof (*sw));
-#endif
         goto err1;
     }
 
