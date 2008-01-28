@@ -27,10 +27,17 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Comport to log to (COM2).
- * This is also defined in VBox/nasm.mac. */
-//#define UART_BASE   0x2f8 /* COM2 */
-#define UART_BASE   0x3f8 /* COM1 */
+#ifndef IPRT_UART_BASE
+/** The port address of the COM port to log to.
+ *
+ * To override the default (COM1) append IPRT_UART_BASE=0xWXYZ to DEFS in your
+ * LocalConfig.kmk. Alternatively you can edit this file, but the don't forget
+ * to also update the default found in VBox/asmdefs.h.
+ *
+ * Standard port assignments are: COM1=0x3f8, COM2=0x2f8, COM3=0x3e8, COM4=0x2e8.
+ */
+# define IPRT_UART_BASE 0x3f8
+#endif
 
 
 /*******************************************************************************
@@ -112,12 +119,12 @@ RTDECL(void) RTLogWriteCom(const char *pach, size_t cb)
         register uint8_t    u8;
         do
         {
-            u8 = ASMInU8(UART_BASE + 5);
+            u8 = ASMInU8(IPRT_UART_BASE + 5);
             cMaxWait--;
         } while (!(u8 & 0x20) && u8 != 0xff && cMaxWait);
 
         /* write */
-        ASMOutU8(UART_BASE, *pu8);
+        ASMOutU8(IPRT_UART_BASE, *pu8);
     }
 }
 
