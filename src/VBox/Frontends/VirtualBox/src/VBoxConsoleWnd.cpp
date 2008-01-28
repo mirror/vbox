@@ -1910,15 +1910,6 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
  */
 bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
-#ifdef Q_WS_MAC
-    if (!aSeamless)
-    {
-        /* Fade to black */
-        CGAcquireDisplayFadeReservation (kCGMaxDisplayReservationInterval, &mFadeToken);
-        CGDisplayFade (mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
-    }
-#endif
-
     if (aSeamless)
     {
         /* Check if the Guest Video RAM enough for the seamless mode. */
@@ -1963,6 +1954,15 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         if (!ok)
             return false;
     }
+
+#ifdef Q_WS_MAC
+    if (!aSeamless)
+    {
+        /* Fade to black */
+        CGAcquireDisplayFadeReservation (kCGMaxDisplayReservationInterval, &mFadeToken);
+        CGDisplayFade (mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
+    }
+#endif
 
     if (aSeamless)
     {
