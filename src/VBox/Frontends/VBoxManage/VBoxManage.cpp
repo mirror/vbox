@@ -267,11 +267,10 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_LIST)
     {
-        RTPrintf("VBoxManage list             vms|ostypes|hostdvds|hostfloppies|");
+        RTPrintf("VBoxManage list             vms|runningvms|ostypes|hostdvds|hostfloppies|\n");
         if (fWin)
             RTPrintf(                         "hostifs|");
-        RTPrintf(                             "\n"
-                 "                            hdds|dvds|floppies|usbhost|usbfilters|\n"
+        RTPrintf("                            hdds|dvds|floppies|usbhost|usbfilters|\n"
                  "                            systemproperties\n"
                  "\n");
     }
@@ -2428,6 +2427,50 @@ static int handleList(int argc, char *argv[],
                 if ((SUCCEEDED(rc)) && machine)
                 {
                     rc = showVMInfo(virtualBox, machine);
+                }
+            }
+        }
+    }
+    else
+    if (strcmp(argv[0], "runningvms") == 0)
+    {
+        /*
+         * Get the list of all _running_ VMs
+         */
+        ComPtr<IMachineCollection> collection;
+        rc = virtualBox->COMGETTER(Machines)(collection.asOutParam());
+        ComPtr<IMachineEnumerator> enumerator;
+        if (SUCCEEDED(rc))
+            rc = collection->Enumerate(enumerator.asOutParam());
+        if (SUCCEEDED(rc))
+        {
+            /*
+             * Iterate through the collection
+             */
+            BOOL hasMore = FALSE;
+            while (enumerator->HasMore(&hasMore), hasMore)
+            {
+                ComPtr<IMachine> machine;
+                rc = enumerator->GetNext(machine.asOutParam());
+                if ((SUCCEEDED(rc)) && machine)
+                {
+                    MachineState_T machineState;
+                    rc = machine->COMGETTER(State)(&machineState);
+                    if (SUCCEEDED(rc))
+                    {
+                        switch (machineState)
+                        {
+                            case MachineState_Running:
+                            case MachineState_Paused:
+                                {
+                                    Guid uuid;
+                                    rc = machine->COMGETTER(Id) (uuid.asOutParam());
+                                    if (SUCCEEDED(rc))
+                                        RTPrintf ("%s\n", uuid.toString().raw());
+                                    break;
+                                }
+                        }
+                    }
                 }
             }
         }
