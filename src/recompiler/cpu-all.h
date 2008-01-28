@@ -1,6 +1,6 @@
 /*
  * defines common to all virtual CPUs
- * 
+ *
  *  Copyright (c) 2003 Fabrice Bellard
  *
  * This library is free software; you can redistribute it and/or
@@ -32,16 +32,16 @@
 #define WORDS_ALIGNED
 #endif
 
-/* some important defines: 
- * 
+/* some important defines:
+ *
  * WORDS_ALIGNED : if defined, the host cpu can only make word aligned
  * memory accesses.
- * 
+ *
  * WORDS_BIGENDIAN : if defined, the host cpu is big endian and
  * otherwise little endian.
- * 
+ *
  * (TARGET_WORDS_ALIGNED : same for target cpu (not supported yet))
- * 
+ *
  * TARGET_WORDS_BIGENDIAN : same for target cpu
  */
 
@@ -155,7 +155,7 @@ typedef union {
  * type is:
  * (empty): integer access
  *   f    : float access
- * 
+ *
  * sign is:
  * (empty): for floats or 32 bit size
  *   u    : unsigned
@@ -166,7 +166,7 @@ typedef union {
  *   w: 16 bits
  *   l: 32 bits
  *   q: 64 bits
- * 
+ *
  * endian is:
  * (empty): target cpu endianness or 8 bit access
  *   r    : reversed target cpu endianness (not implemented yet)
@@ -195,14 +195,12 @@ void     remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val);
 void     remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val);
 void     remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val);
 
-#ifdef PGM_DYNAMIC_RAM_ALLOC
 void     remR3GrowDynRange(unsigned long physaddr);
-#endif
 #if 0 /*defined(RT_ARCH_AMD64) && defined(VBOX_STRICT)*/
 # define VBOX_CHECK_ADDR(ptr) do { if ((uintptr_t)(ptr) >= _4G) __asm__("int3"); } while (0)
 #else
 # define VBOX_CHECK_ADDR(ptr) do { } while (0)
-#endif 
+#endif
 
 static inline int ldub_p(void *ptr)
 {
@@ -758,7 +756,7 @@ static inline void stfq_be_p(void *ptr, float64 v)
 #define stfq_raw(p, v) stfq_p(saddr((p)), v)
 
 
-#if defined(CONFIG_USER_ONLY) 
+#if defined(CONFIG_USER_ONLY)
 
 /* if user mode, no other memory access functions */
 #define ldub(p) ldub_raw(p)
@@ -820,7 +818,7 @@ extern unsigned long qemu_host_page_mask;
 #define PAGE_VALID     0x0008
 /* original state of the write flag (used when tracking self-modifying
    code */
-#define PAGE_WRITE_ORG 0x0010 
+#define PAGE_WRITE_ORG 0x0010
 
 void page_dump(FILE *f);
 int page_get_flags(target_ulong address);
@@ -891,7 +889,7 @@ void page_unprotect_range(target_ulong data, target_ulong data_size);
 
 #endif /* SINGLE_CPU_DEFINES */
 
-void cpu_dump_state(CPUState *env, FILE *f, 
+void cpu_dump_state(CPUState *env, FILE *f,
                     int (*cpu_fprintf)(FILE *f, const char *fmt, ...),
                     int flags);
 
@@ -937,7 +935,7 @@ void cpu_reset(CPUState *s);
    if no page found. */
 target_ulong cpu_get_phys_page_debug(CPUState *env, target_ulong addr);
 
-#define CPU_LOG_TB_OUT_ASM (1 << 0) 
+#define CPU_LOG_TB_OUT_ASM (1 << 0)
 #define CPU_LOG_TB_IN_ASM  (1 << 1)
 #define CPU_LOG_TB_OP      (1 << 2)
 #define CPU_LOG_TB_OP_OPT  (1 << 3)
@@ -984,7 +982,7 @@ extern RTGCPHYS phys_ram_size;
 /** This is required for bounds checking the phys_ram_dirty accesses. */
 extern uint32_t phys_ram_dirty_size;
 #endif /* VBOX */
-#if !defined(VBOX) || !(defined(PGM_DYNAMIC_RAM_ALLOC) || defined(REM_PHYS_ADDR_IN_TLB))
+#if !defined(VBOX)
 extern uint8_t *phys_ram_base;
 #endif
 extern uint8_t *phys_ram_dirty;
@@ -998,7 +996,7 @@ extern uint8_t *phys_ram_dirty;
 #define IO_MEM_ROM         (1 << IO_MEM_SHIFT) /* hardcoded offset */
 #define IO_MEM_UNASSIGNED  (2 << IO_MEM_SHIFT)
 #define IO_MEM_NOTDIRTY    (4 << IO_MEM_SHIFT) /* used internally, never use directly */
-#if defined(VBOX) && defined(PGM_DYNAMIC_RAM_ALLOC)
+#if defined(VBOX)
 #define IO_MEM_RAM_MISSING (5 << IO_MEM_SHIFT) /* used internally, never use directly */
 #endif
 /* acts like a ROM when read and like a device when written. As an
@@ -1009,7 +1007,7 @@ extern uint8_t *phys_ram_dirty;
 typedef void CPUWriteMemoryFunc(void *opaque, target_phys_addr_t addr, uint32_t value);
 typedef uint32_t CPUReadMemoryFunc(void *opaque, target_phys_addr_t addr);
 
-void cpu_register_physical_memory(target_phys_addr_t start_addr, 
+void cpu_register_physical_memory(target_phys_addr_t start_addr,
                                   unsigned long size,
                                   unsigned long phys_offset);
 uint32_t cpu_get_physical_page_desc(target_phys_addr_t addr);
@@ -1022,12 +1020,12 @@ CPUReadMemoryFunc **cpu_get_io_memory_read(int io_index);
 
 void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
                             int len, int is_write);
-static inline void cpu_physical_memory_read(target_phys_addr_t addr, 
+static inline void cpu_physical_memory_read(target_phys_addr_t addr,
                                             uint8_t *buf, int len)
 {
     cpu_physical_memory_rw(addr, buf, len, 0);
 }
-static inline void cpu_physical_memory_write(target_phys_addr_t addr, 
+static inline void cpu_physical_memory_write(target_phys_addr_t addr,
                                              const uint8_t *buf, int len)
 {
     cpu_physical_memory_rw(addr, (uint8_t *)buf, len, 1);
@@ -1042,9 +1040,9 @@ void stw_phys(target_phys_addr_t addr, uint32_t val);
 void stl_phys(target_phys_addr_t addr, uint32_t val);
 void stq_phys(target_phys_addr_t addr, uint64_t val);
 
-void cpu_physical_memory_write_rom(target_phys_addr_t addr, 
+void cpu_physical_memory_write_rom(target_phys_addr_t addr,
                                    const uint8_t *buf, int len);
-int cpu_memory_rw_debug(CPUState *env, target_ulong addr, 
+int cpu_memory_rw_debug(CPUState *env, target_ulong addr,
                         uint8_t *buf, int len, int is_write);
 
 #define VGA_DIRTY_FLAG  0x01
@@ -1064,7 +1062,7 @@ static inline int cpu_physical_memory_is_dirty(ram_addr_t addr)
     return phys_ram_dirty[addr >> TARGET_PAGE_BITS] == 0xff;
 }
 
-static inline int cpu_physical_memory_get_dirty(ram_addr_t addr, 
+static inline int cpu_physical_memory_get_dirty(ram_addr_t addr,
                                                 int dirty_flags)
 {
 #ifdef VBOX
@@ -1081,7 +1079,7 @@ static inline int cpu_physical_memory_get_dirty(ram_addr_t addr,
 static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
 {
 #ifdef VBOX
-    if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size)) 
+    if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
     {
         Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
         /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
@@ -1103,14 +1101,14 @@ void dump_exec_info(FILE *f,
 
 #if defined(__powerpc__)
 
-static inline uint32_t get_tbl(void) 
+static inline uint32_t get_tbl(void)
 {
     uint32_t tbl;
     asm volatile("mftb %0" : "=r" (tbl));
     return tbl;
 }
 
-static inline uint32_t get_tbu(void) 
+static inline uint32_t get_tbu(void)
 {
 	uint32_t tbl;
 	asm volatile("mftbu %0" : "=r" (tbl));

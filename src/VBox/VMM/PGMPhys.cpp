@@ -267,7 +267,6 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
  */
 PGMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t cb, unsigned fFlags, const SUPPAGE *paPages, const char *pszDesc)
 {
-#ifdef PGM_DYNAMIC_RAM_ALLOC
     NOREF(pszDesc);
 
     /*
@@ -324,10 +323,6 @@ PGMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, siz
     REMR3NotifyPhysRamChunkRegister(pVM, GCPhys, PGM_DYNAMIC_CHUNK_SIZE, (RTHCUINTPTR)pvRam, fFlags);
 
     return VINF_SUCCESS;
-#else /* !PGM_DYNAMIC_RAM_ALLOC */
-    AssertReleaseMsgFailed(("Shouldn't ever get here when PGM_DYNAMIC_RAM_ALLOC isn't defined!\n"));
-    return VERR_INTERNAL_ERROR;
-#endif /* !PGM_DYNAMIC_RAM_ALLOC */
 }
 
 
