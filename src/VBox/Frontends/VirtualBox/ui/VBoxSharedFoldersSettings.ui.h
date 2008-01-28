@@ -57,10 +57,10 @@ public:
 
     VBoxRichListItem (FormatType aFormat, QListViewItem *aParent,
                       const QString& aName, const QString& aPath,
-                      const QString& aEdited) :
-        QListViewItem (aParent, aName, aPath, aEdited), mFormat (aFormat)
+                      const QString& aEdited, const QString& aWritable) :
+        QListViewItem (aParent, aName, aPath, aEdited, aWritable), mFormat (aFormat)
     {
-        mTextList << aName << aPath << aEdited;
+        mTextList << aName << aPath << aEdited << aWritable;
     }
 
     int rtti() const { return QIRichListItemId; }
@@ -180,7 +180,7 @@ public:
                      bool aEnableSelector /* for "permanent" checkbox */,
                      const SFoldersNameList &aUsedNames)
         : QDialog (aParent, "VBoxAddSFDialog", true /* modal */)
-        , mLePath (0), mLeName (0), mCbPermanent (0)
+        , mLePath (0), mLeName (0), mCbPermanent (0), mCbWritable (0)
         , mUsedNames (aUsedNames)
     {
         switch (aType)
@@ -222,11 +222,16 @@ public:
         inputLayout->addWidget (lbName,  1, 0);
         inputLayout->addMultiCellWidget (mLeName, 1, 1, 1, 2);
 
+		QHBoxLayout *cbLayout = new QHBoxLayout (0, "cbLayout");
+        inputLayout->addMultiCellLayout (cbLayout, 2, 2, 0, 2);
+		mCbWritable = new QCheckBox (tr ("&Writable"), this);
+        mCbWritable->setChecked (true);
+        cbLayout->addWidget (mCbWritable);
         if (aEnableSelector)
         {
             mCbPermanent = new QCheckBox ( tr ("&Make Permanent"), this);
             mCbPermanent->setChecked (true);
-            inputLayout->addMultiCellWidget (mCbPermanent, 2, 2, 0, 2);
+            cbLayout->addWidget (mCbPermanent);
             connect (mCbPermanent, SIGNAL (toggled (bool)),
                      this, SLOT (validate()));
         }
@@ -255,6 +260,7 @@ public:
     {
         return mCbPermanent ? mCbPermanent->isChecked() : true;
     }
+	bool getWritable() { return mCbWritable->isChecked(); }
 
     void setPath (const QString &aPath) { mLePath->setText (aPath); }
     void setName (const QString &aName) { mLeName->setText (aName); }
@@ -266,6 +272,7 @@ public:
             mCbPermanent->setEnabled (!aPermanent);
         }
     }
+	void setWritable (bool aWritable) { mCbWritable->setChecked (aWritable); }
 
 private slots:
 
@@ -330,6 +337,7 @@ private:
     QLineEdit *mLePath;
     QLineEdit *mLeName;
     QCheckBox *mCbPermanent;
+    QCheckBox *mCbWritable;
     SFoldersNameList mUsedNames;
 };
 
@@ -482,7 +490,8 @@ void VBoxSharedFoldersSettings::getFrom (const CSharedFolderEnumerator &aEn,
     {
         CSharedFolder sf = aEn.GetNext();
         new VBoxRichListItem (VBoxRichListItem::EllipsisFile, aRoot,
-                              sf.GetName(), sf.GetHostPath(), "not edited");
+                              sf.GetName(), sf.GetHostPath(), "not edited",
+                              sf.GetWritable() ? "writable" : "readonly");
     }
     listView->setOpen (aRoot, true);
     listView->setCurrentItem (aRoot->firstChild() ? aRoot->firstChild() : aRoot);
@@ -573,7 +582,8 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
             item = static_cast<VBoxRichListItem*> (iterator);
         if (item && !item->getText (0).isNull() && !item->getText (1).isNull()
             && item->getText (2) == "edited")
-            createSharedFolder (item->getText (0), item->getText (1), true, type);
+            createSharedFolder (item->getText (0), item->getText (1),
+            					item->getText (3) == "writable" ? true : false, type);
         iterator = iterator->nextSibling();
     }
 }
@@ -620,7 +630,8 @@ void VBoxSharedFoldersSettings::tbAddPressed()
     Assert (root);
     /* Appending a new listview item to the root */
     VBoxRichListItem *item = new VBoxRichListItem (
-        VBoxRichListItem::EllipsisFile, root, name, path, "edited");
+        VBoxRichListItem::EllipsisFile, root, name, path, "edited",
+        dlg.getWritable() ? "writable" : "readonly");
     /* Make the created item selected */
     listView->ensureItemVisible (item);
     listView->setCurrentItem (item);
@@ -661,6 +672,7 @@ void VBoxSharedFoldersSettings::tbEditPressed()
     dlg.setName (item->getText (0));
     dlg.setPermanent ((SFDialogType)item->parent()->text (2).toInt()
                       != ConsoleType);
+    dlg.setWritable (item->getText (3) == "writable");
     if (dlg.exec() != QDialog::Accepted)
         return;
     QString name = dlg.getName();
@@ -672,6 +684,7 @@ void VBoxSharedFoldersSettings::tbEditPressed()
     QListViewItem *root = searchRoot (isPermanent);
     Assert (root);
     /* Updating an edited listview item */
+    item->updateText (3, dlg.getWritable() ? "writable" : "readonly");
     item->updateText (2, "edited");
     item->updateText (1, path);
     item->updateText (0, name);
@@ -706,8 +719,9 @@ void VBoxSharedFoldersSettings::processOnItem (QListViewItem *aItem)
         item = static_cast<VBoxRichListItem*> (aItem);
     Assert (item);
     QString tip = tr ("<nobr>Name:&nbsp;&nbsp;%1</nobr><br>"
-                      "<nobr>Path:&nbsp;&nbsp;%2</nobr>")
-                      .arg (item->getText (0)).arg (item->getText (1));
+		"<nobr>Path:&nbsp;&nbsp;%2</nobr><br>"
+		"<nobr>Access:&nbsp;&nbsp;%3</nobr>")
+		.arg (item->getText (0)).arg (item->getText (1)).arg (item->getText (3));
     if (!item->getText (0).isNull() && !item->getText (1).isNull())
         QToolTip::add (listView->viewport(), listView->itemRect (aItem), tip);
     else
