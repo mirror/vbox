@@ -251,6 +251,7 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
     return rc;
 }
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 
 /**
  * Register a chunk of a the physical memory range with PGM. MM is responsible
@@ -368,7 +369,6 @@ PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
 
 /**
  * Allocate missing physical pages for an existing guest RAM range.

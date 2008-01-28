@@ -334,7 +334,7 @@ static DECLCALLBACKPTR(void, pfnREMR3StateUpdate)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3A20Set)(PVM, bool);
 static DECLCALLBACKPTR(void, pfnREMR3ReplayInvalidatedPages)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3ReplayHandlerNotifications)(PVM pVM);
-static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamRegister)(PVM, RTGCPHYS, RTUINT, void *, unsigned);
+static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamRegister)(PVM, RTGCPHYS, RTUINT, unsigned);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamChunkRegister)(PVM, RTGCPHYS, RTUINT, RTHCUINTPTR, unsigned);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysReserve)(PVM, RTGCPHYS, RTUINT);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRomRegister)(PVM, RTGCPHYS, RTUINT, void *, bool);
@@ -1033,7 +1033,9 @@ static REMFNDESC g_aVMMImports[] =
     { "PGMInvalidatePage",                      (void *)(uintptr_t)&PGMInvalidatePage,              &g_aArgsPGMInvalidatePage[0],               ELEMENTS(g_aArgsPGMInvalidatePage),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMPhysGCPhys2HCPtr",                    (void *)(uintptr_t)&PGMPhysGCPhys2HCPtr,            &g_aArgsPGMPhysGCPhys2HCPtr[0],             ELEMENTS(g_aArgsPGMPhysGCPhys2HCPtr),               REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMPhysGCPtr2HCPtrByGstCR3",             (void *)(uintptr_t)&PGMPhysGCPtr2HCPtrByGstCR3,     &g_aArgsPGMPhysGCPtr2HCPtrByGstCR3[0],      ELEMENTS(g_aArgsPGMPhysGCPtr2HCPtrByGstCR3),        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+#ifndef VBOX_WITH_NEW_PHYS_CODE
     { "PGM3PhysGrowRange",                      (void *)(uintptr_t)&PGM3PhysGrowRange,              &g_aArgsPGM3PhysGrowRange[0],               ELEMENTS(g_aArgsPGM3PhysGrowRange),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+#endif
     { "PGMPhysIsGCPhysValid",                   (void *)(uintptr_t)&PGMPhysIsGCPhysValid,           &g_aArgsPGMPhysIsGCPhysValid[0],            ELEMENTS(g_aArgsPGMPhysIsGCPhysValid),              REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "PGMPhysIsA20Enabled",                    (void *)(uintptr_t)&PGMPhysIsA20Enabled,            &g_aArgsVM[0],                              ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "PGMPhysRead",                            (void *)(uintptr_t)&PGMPhysRead,                    &g_aArgsPGMPhysRead[0],                     ELEMENTS(g_aArgsPGMPhysRead),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
@@ -1980,14 +1982,15 @@ REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
 #endif
 }
 
-REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvRam, unsigned fFlags)
+REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, unsigned fFlags)
 {
 #ifndef USE_REM_STUBS
     Assert(VALID_PTR(pfnREMR3NotifyPhysRamRegister));
-    pfnREMR3NotifyPhysRamRegister(pVM, GCPhys, cb, pvRam, fFlags);
+    pfnREMR3NotifyPhysRamRegister(pVM, GCPhys, cb, fFlags);
 #endif
 }
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, RTHCUINTPTR pvRam, unsigned fFlags)
 {
 #ifndef USE_REM_STUBS
@@ -1995,6 +1998,7 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
     pfnREMR3NotifyPhysRamChunkRegister(pVM, GCPhys, cb, pvRam, fFlags);
 #endif
 }
+#endif
 
 REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy, bool fShadow)
 {

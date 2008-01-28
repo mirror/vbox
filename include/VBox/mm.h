@@ -113,6 +113,7 @@ __BEGIN_DECLS
 #define MM_RAM_FLAGS_NO_REFS_MASK       UINT64_C(0x0000ffffffffffff)
 /** @} */
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 /** @name MMR3PhysRegisterEx registration type
  * @{
  */
@@ -126,6 +127,7 @@ typedef enum
     MM_PHYS_TYPE_32BIT_HACK = 0x7fffffff
 } MMPHYSREG;
 /** @} */
+#endif
 
 /**
  * Memory Allocation Tags.
@@ -880,9 +882,12 @@ MMR3DECL(int) MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb
  * @param   fFlags      Flags of the MM_RAM_FLAGS_* defines.
  * @param   pszDesc     Description of the memory.
  * @thread  The Emulation Thread.
+ *
+ * @todo    This will only be used for registering MMIO2 memory from devices. So, rename it.
  */
 MMR3DECL(int) MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, const char *pszDesc);
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 /**
  * Register externally allocated RAM for the virtual machine.
  *
@@ -899,8 +904,10 @@ MMR3DECL(int) MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned c
  * @param   pszDesc     Description of the memory.
  * @thread  The Emulation Thread.
  * @todo update this description.
+ * @deprecated  For the old dynamic allocation code only. Will be removed with VBOX_WITH_NEW_PHYS_CODE.
  */
 MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc);
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 /**
  * Register previously registered externally allocated RAM for the virtual machine.

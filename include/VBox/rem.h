@@ -283,10 +283,10 @@ REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage);
  * @param   GCPhys      The physical address the RAM.
  * @param   cb          Size of the memory.
  * @param   fFlags      Flags of the MM_RAM_FLAGS_* defines.
- * @param   pvRam       The HC address of the RAM.
  */
-REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvRam, unsigned fFlags);
+REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, unsigned fFlags);
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 /**
  * Notification about a successful PGMR3PhysRegisterChunk() call.
  *
@@ -297,6 +297,7 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
  * @param   fFlags      Flags of the MM_RAM_FLAGS_* defines.
  */
 REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, RTHCUINTPTR pvRam, unsigned fFlags);
+#endif
 
 /**
  * Notification about a successful MMR3PhysRomRegister() call.
@@ -306,7 +307,7 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
  * @param   cb          The size of the ROM.
  * @param   pvCopy      Pointer to the ROM copy.
  * @param   fShadow     Whether it's currently writable shadow ROM or normal readonly ROM.
- *                      This function will be called when ever the protection of the 
+ *                      This function will be called when ever the protection of the
  *                      shadow ROM changes (at reset and end of POST).
  */
 REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy, bool fShadow);

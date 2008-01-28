@@ -250,7 +250,7 @@ typedef REM *PREM;
 
 
 #ifdef REM_INCLUDE_CPU_H
-bool    remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, uint32_t *pExceptionIndex);
+bool    remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piException);
 void    remR3CSAMCheckEIP(CPUState *env, RTGCPTR GCPtrCode);
 bool    remR3GetOpcode(CPUState *env, RTGCPTR GCPtrInstr, uint8_t *pu8Byte);
 bool    remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix);

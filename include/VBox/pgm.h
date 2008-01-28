@@ -1413,6 +1413,7 @@ PDMR3DECL(int) PGMR3LockCall(PVM pVM);
  */
 PGMR3DECL(int) PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 /**
  * Allocate missing physical pages for an existing guest RAM range.
  *
@@ -1421,6 +1422,7 @@ PGMR3DECL(int) PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
  * @param   GCPhys          GC physical address of the RAM range. (page aligned)
  */
 PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 /**
  * Interface that the MMR3RamRegister(), MMR3RomRegister() and MMIO handler
@@ -1441,6 +1443,7 @@ PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
  */
 PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t cb, unsigned fFlags, const SUPPAGE *paPages, const char *pszDesc);
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 /**
  * Register a chunk of a the physical memory range with PGM. MM is responsible
  * for the toplevel things - allocation and locking - while PGM is taking
@@ -1456,6 +1459,7 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
  * @param   pszDesc         Description string.
  */
 PGMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t cb, unsigned fFlags, const SUPPAGE *paPages, const char *pszDesc);
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 /**
  * Interface MMIO handler relocation calls.

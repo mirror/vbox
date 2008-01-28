@@ -69,6 +69,8 @@ MMR3DECL(int) MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned c
  * @param   enmType     Physical range type (MM_PHYS_TYPE_*)
  * @param   pszDesc     Description of the memory.
  * @thread  The Emulation Thread.
+ *
+ * @deprecated  For the old dynamic allocation code only. Will be removed with VBOX_WITH_NEW_PHYS_CODE.
  */
 /** @todo this function description is not longer up-to-date */
 MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc)
@@ -133,7 +135,7 @@ MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned
             if (fFlags == MM_RAM_FLAGS_DYNAMIC_ALLOC)
                 pVM->mm.s.cbRamRegistered += cb;
 
-            REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, pvRam, fFlags);
+            REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, fFlags);
             return rc;
         }
     }
@@ -166,7 +168,7 @@ MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned
                     if (!fFlags)
                         pVM->mm.s.cbRamRegistered += cb;
 
-                    REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, pvRam, fFlags);
+                    REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, fFlags);
                     return rc;
                 }
             }
@@ -252,8 +254,8 @@ MMR3DECL(int) MMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, 
          * This implementation seems to work, but is not very pretty. */
         /// @todo one day provide a proper MMIO relocation operation
         REMR3NotifyPhysReserve(pVM, GCPhysOld, cb);
-        REMR3NotifyPhysRamRegister(pVM, GCPhysNew, cb, pCur->pv,
-                pCur->aPhysPages[0].Phys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2));
+        REMR3NotifyPhysRamRegister(pVM, GCPhysNew, cb,
+                                   pCur->aPhysPages[0].Phys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2));
     }
 
     return rc;
