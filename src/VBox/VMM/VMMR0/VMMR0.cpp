@@ -77,30 +77,36 @@ VMMR0DECL(int) ModuleInit(void)
     LogFlow(("ModuleInit:\n"));
 
     /*
-     * Initialize the GVMM.
+     * Initialize the GVMM and GMM.
      */
     int rc = GVMMR0Init();
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_INTERNAL_NETWORKING
-        LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
-        g_pIntNet = NULL;
-        LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
-        rc = INTNETR0Create(&g_pIntNet);
-        if (VBOX_SUCCESS(rc))
-        {
-            LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
-            return VINF_SUCCESS;
-        }
-        g_pIntNet = NULL;
-        LogFlow(("ModuleTerm: returns %Vrc\n", rc));
-#else
-        LogFlow(("ModuleInit: returns success.\n"));
-        return VINF_SUCCESS;
+#ifdef VBOX_WITH_NEW_PHYS_CODE /* need to test on windows, solaris and darwin. */
+        rc = GMMR0Init();
 #endif
+        if (RT_SUCCESS(rc))
+        {
+#ifdef VBOX_WITH_INTERNAL_NETWORKING
+            LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
+            g_pIntNet = NULL;
+            LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
+            rc = INTNETR0Create(&g_pIntNet);
+            if (VBOX_SUCCESS(rc))
+            {
+                LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
+                return VINF_SUCCESS;
+            }
+            g_pIntNet = NULL;
+            LogFlow(("ModuleTerm: returns %Vrc\n", rc));
+#else
+            LogFlow(("ModuleInit: returns success.\n"));
+            return VINF_SUCCESS;
+#endif
+        }
     }
 
-    LogFlow(("ModuleInit: failed %Vrc\n", rc));
+    LogFlow(("ModuleInit: failed %Rrc\n", rc));
     return rc;
 }
 
@@ -125,8 +131,11 @@ VMMR0DECL(void) ModuleTerm(void)
 #endif
 
     /*
-     * Destroy the GVMM instance.
+     * Destroy the GMM and GVMM instances.
      */
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    GMMR0Term();
+#endif
     GVMMR0Term();
 
     LogFlow(("ModuleTerm: returns\n"));
@@ -191,6 +200,7 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
         RTLogPrintf("hello ring-0 logger (RTLogPrintf)\n");
         LogCom(("VMMR0Init: RTLogPrintf returned fine offScratch=%d\n", pR0Logger->Logger.offScratch));
 #endif
+        Log(("Switching to per-thread logging instance %p (key=%p)\n", &pR0Logger->Logger, pVM->pSession));
         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
     }
 

@@ -543,7 +543,7 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
  */
 PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
-#ifdef NEW_PHYS_CODE
+#ifdef VBOX_WITH_NEW_PHYS_CODE
 #ifdef IN_GC
     /* Until a physical TLB is implemented for GC, let PGMGCDynMapGCPageEx handle it. */
     return PGMGCDynMapGCPageEx(pVM, GCPhys, ppv);
@@ -712,7 +712,7 @@ PGMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void const **ppv
  */
 PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
 {
-#ifdef NEW_PHYS_CODE
+#ifdef VBOX_WITH_NEW_PHYS_CODE
 #ifdef IN_GC
     /* currently nothing to do here. */
 /* --- postponed
@@ -758,7 +758,7 @@ PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
  */
 PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr)
 {
-#ifdef NEW_PHYS_CODE
+#ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
 #endif
 
@@ -853,7 +853,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
  */
 PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
 {
-#ifdef NEW_PHYS_CODE
+#ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
 #endif
 
@@ -881,7 +881,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
  */
 PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, unsigned fFlags, PRTHCPTR pHCPtr)
 {
-#ifdef NEW_PHYS_CODE
+#ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
 #endif
     /*
@@ -1706,7 +1706,7 @@ PGMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
         RTGCPHYS off = GCPhysDst - pRam->GCPhys;
         if (off < pRam->cb)
         {
-#ifdef NEW_PHYS_CODE
+#ifdef VBOX_WITH_NEW_PHYS_CODE
 /** @todo PGMRamGCPhys2HCPtrWithRange. */
 #endif
             if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)

@@ -87,7 +87,7 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_PGM_MAP_CHUNK,
     /** Allocates more handy pages. */
     VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES,
-#ifndef NEW_PHYS_CODE
+#ifndef VBOX_WITH_NEW_PHYS_CODE
     /** Dynamically allocate physical guest RAM. */
     VMMCALLHOST_PGM_RAM_GROW_RANGE,
 #endif

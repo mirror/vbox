@@ -2206,7 +2206,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
             pVM->vmm.s.rcCallHost = PGMR3PhysAllocateHandyPages(pVM);
             break;
         }
-#ifndef NEW_PHYS_CODE
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 
         case VMMCALLHOST_PGM_RAM_GROW_RANGE:
         {

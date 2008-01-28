@@ -735,6 +735,9 @@ endif
 ifdef VBOX_OSE
  DEFS += VBOX_OSE
 endif
+ifdef VBOX_WITH_NEW_PHYS_CODE
+ DEFS += VBOX_WITH_NEW_PHYS_CODE
+endif
 
 #
 # Compiler optimization flags.

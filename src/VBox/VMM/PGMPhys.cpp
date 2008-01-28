@@ -371,7 +371,7 @@ PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
 
-#ifndef NEW_PHYS_CODE
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 
 /**
  * Allocate missing physical pages for an existing guest RAM range.
@@ -449,7 +449,7 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
     }
 }
 
-#endif /* !NEW_PHYS_CODE */
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 /**
  * Interface MMIO handler relocation calls.

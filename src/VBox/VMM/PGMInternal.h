@@ -1642,9 +1642,9 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
     GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
     GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
-#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64 
-    RTGCPTR                         alignment3; /**< structure size alignment. */ 
-#endif     
+#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
+    RTGCPTR                         alignment3; /**< structure size alignment. */
+#endif
 
     DECLR0CALLBACKMEMBER(int,  pfnR0GstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1682,9 +1682,9 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,       pfnGCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLGCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
-#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64 
-    RTGCPTR                         alignment2; /**< structure size alignment. */ 
-#endif     
+#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
+    RTGCPTR                         alignment2; /**< structure size alignment. */
+#endif
     /** @} */
 
     /** Pointer to SHW+GST mode data (function pointers).
@@ -2188,7 +2188,7 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
 #ifdef IN_RING3
 int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk);
-#ifndef NEW_PHYS_CODE
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 int             pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
 #endif
 
@@ -2295,7 +2295,7 @@ DECLINLINE(int) pgmPhysGetPageEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
         } while (off >= pRam->cb);
     }
     *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
-#ifndef NEW_PHYS_CODE
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 
     /*
      * Make sure it's present.
@@ -2362,7 +2362,7 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE p
         *ppRamHint = pRam;
     }
     *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
-#ifndef NEW_PHYS_CODE
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 
     /*
      * Make sure it's present.
@@ -2455,7 +2455,7 @@ DECLINLINE(int) pgmPhysGetPageAndRangeEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE p
     }
     *ppRam = pRam;
     *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
-#ifndef NEW_PHYS_CODE
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 
     /*
      * Make sure it's present.
@@ -2534,7 +2534,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
 #endif /* !IN_GC */
 
 
-#ifndef NEW_PHYS_CODE
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 /**
  * Convert GC Phys to HC Virt.
  *
@@ -2571,7 +2571,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
     *pHCPtr = 0; /* Shut up silly GCC warnings. */
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
-#endif /* !NEW_PHYS_CODE */
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 
 /**
