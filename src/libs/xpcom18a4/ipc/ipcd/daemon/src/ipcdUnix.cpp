@@ -464,6 +464,16 @@ int main(int argc, char **argv)
     IPC_NotifyParent();
 
 #ifdef VBOX
+    /* redirect all standard file descriptors to /dev/null for daemonizing */
+    PR_Close(PR_STDIN);
+    PR_Open("/dev/null", O_RDONLY, 0);
+    PR_Close(PR_STDOUT);
+    PR_Open("/dev/null", O_WRONLY, 0);
+    PR_Close(PR_STDERR);
+    PR_Open("/dev/null", O_WRONLY, 0);
+#endif
+
+#ifdef VBOX
     successLevel = All;
 #endif
 
