@@ -64,13 +64,13 @@ vbox_show_shape(unsigned short w, unsigned short h, CARD32 bg, unsigned char *im
     unsigned short pitch;
     CARD32 *color;
     unsigned char *mask;
-    size_t size_mask;
+    size_t sizeMask;
 
     image    += offsetof(VMMDevReqMousePointer, pointerData);
     mask      = image;
     pitch     = (w + 7) / 8;
-    size_mask = (pitch * h + 3) & ~3;
-    color     = (CARD32 *)(image + size_mask);
+    sizeMask  = (pitch * h + 3) & ~3;
+    color     = (CARD32 *)(image + sizeMask);
 
     TRACE_ENTRY();
     for (y = 0; y < h; ++y, mask += pitch, color += w)
@@ -178,8 +178,7 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
         cmdHdr.h = (uint16_t)(aRects[i].y2 - aRects[i].y1);
 
         /* Get the active record and move the pointer along */
-        indexRecordNext = (pMem->indexRecordFree + 1)
-                           % VBVA_MAX_RECORDS;
+        indexRecordNext = (pMem->indexRecordFree + 1) % VBVA_MAX_RECORDS;
         if (indexRecordNext == pMem->indexRecordFirst)
         {
             /* All slots in the records queue are used. */
@@ -207,8 +206,7 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
          * Guest only changes free, host only changes data.
          */
         i32Diff = off32Data - off32Free;
-        cbHwBufferAvail = i32Diff > 0? i32Diff: VBVA_RING_BUFFER_SIZE
-                                              + i32Diff;
+        cbHwBufferAvail = i32Diff > 0 ? i32Diff : VBVA_RING_BUFFER_SIZE + i32Diff;
         if (cbHwBufferAvail <= VBVA_RING_BUFFER_THRESHOLD)
         {
             if (VbglR3VideoAccelFlush() < 0)
@@ -230,8 +228,7 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
         /* Now copy the data into the buffer */
         if (off32Free + sizeof(cmdHdr) < VBVA_RING_BUFFER_SIZE)
         {
-            memcpy(&pMem->au8RingBuffer[off32Free], &cmdHdr,
-                   sizeof(cmdHdr));
+            memcpy(&pMem->au8RingBuffer[off32Free], &cmdHdr, sizeof(cmdHdr));
             pMem->off32Free = pMem->off32Free + sizeof(cmdHdr);
         }
         else
@@ -493,7 +490,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     CursorBitsPtr bitsp;
     unsigned short w, h, x, y;
     unsigned char *c, *p, *pm, *ps, *m;
-    size_t size, size_rgba, size_mask, src_pitch, dst_pitch;
+    size_t sizeRequest, sizeRgba, sizeMask, srcPitch, dstPitch;
     CARD32 fc, bc, *cp;
     int rc, scrnIndex = infoPtr->pScrn->scrnIndex;
     VMMDevReqMousePointer *reqp;
@@ -512,18 +509,18 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
             "Error invalid cursor hotspot location %dx%d (max %dx%d)\n",
             bitsp->xhot, bitsp->yhot, w, h);
 
-    src_pitch = PixmapBytePad (bitsp->width, 1);
-    dst_pitch = (w + 7) / 8;
-    size_mask = ((dst_pitch * h) + 3) & (size_t) ~3;
-    size_rgba = w * h * 4;
-    pVBox->pointerSize = size_mask + size_rgba;
-    size      = pVBox->pointerSize + pVBox->pointerHeaderSize;
+    srcPitch = PixmapBytePad (bitsp->width, 1);
+    dstPitch = (w + 7) / 8;
+    sizeMask = ((dstPitch * h) + 3) & (size_t) ~3;
+    sizeRgba = w * h * 4;
+    pVBox->pointerSize = sizeMask + sizeRgba;
+    sizeRequest = pVBox->pointerSize + pVBox->pointerHeaderSize;
 
-    p = c = xcalloc (1, size);
+    p = c = xcalloc (1, sizeRequest);
     if (!c)
         RETERROR(scrnIndex, NULL,
                  "Error failed to alloc %lu bytes for cursor\n",
-                 (unsigned long) size);
+                 (unsigned long) sizeRequest);
 
     rc = vmmdevInitRequest((VMMDevRequestHeader *)p, VMMDevReq_SetPointerShape);
     if (VBOX_FAILURE(rc))
@@ -534,10 +531,10 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     }
 
     m = p + offsetof(VMMDevReqMousePointer, pointerData);
-    cp = (CARD32 *)(m + size_mask);
+    cp = (CARD32 *)(m + sizeMask);
 
     dolog ("w=%d h=%d sm=%d sr=%d p=%d\n",
-           w, h, (int) size_mask, (int) size_rgba, (int) dst_pitch);
+           w, h, (int) sizeMask, (int) sizeRgba, (int) dstPitch);
     dolog ("m=%p c=%p cp=%p\n", m, c, cp);
 
     fc = color_to_byte (pCurs->foreBlue)
@@ -568,7 +565,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
      */
     for (pm = bitsp->mask, ps = bitsp->source, y = 0;
          y < h;
-         ++y, pm += src_pitch, ps += src_pitch, m += dst_pitch)
+         ++y, pm += srcPitch, ps += srcPitch, m += dstPitch)
     {
         for (x = 0; x < w; ++x)
         {
@@ -604,7 +601,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     reqp->xHot   = bitsp->xhot;
     reqp->yHot   = bitsp->yhot;
     reqp->fFlags = VBOX_MOUSE_POINTER_SHAPE;
-    reqp->header.size = size;
+    reqp->header.size = sizeRequest;
 
 #ifdef DEBUG_X
     ErrorF("shape = %p\n", p);
@@ -634,7 +631,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     unsigned short cx, cy;
     unsigned char *pm;
     CARD32 *pc;
-    size_t size, mask_size;
+    size_t sizeRequest, sizeMask;
     CARD8 *p;
     int scrnIndex;
 
@@ -646,7 +643,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
 
     /* Mask must be generated for alpha cursors, that is required by VBox. */
     /* note: (michael) the next struct must be 32bit aligned. */
-    mask_size  = ((w + 7) / 8 * h + 3) & ~3;
+    sizeMask  = ((w + 7) / 8 * h + 3) & ~3;
 
     if (!w || !h || w > VBOX_MAX_CURSOR_WIDTH || h > VBOX_MAX_CURSOR_HEIGHT)
         RETERROR(scrnIndex, ,
@@ -657,13 +654,13 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
             "Error invalid cursor hotspot location %dx%d (max %dx%d)\n",
             bitsp->xhot, bitsp->yhot, w, h);
 
-    pVBox->pointerSize = w * h * 4 + mask_size;
-    size = pVBox->pointerSize + pVBox->pointerHeaderSize;
-    p = xcalloc(1, size);
+    pVBox->pointerSize = w * h * 4 + sizeMask;
+    sizeRequest = pVBox->pointerSize + pVBox->pointerHeaderSize;
+    p = xcalloc(1, sizeRequest);
     if (!p)
         RETERROR(scrnIndex, ,
             "Error failed to alloc %lu bytes for cursor\n",
-            (unsigned long) size);
+            (unsigned long) sizeRequest);
 
     reqp = (VMMDevReqMousePointer *)p;
     *reqp = *pVBox->reqp;
@@ -672,17 +669,16 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     reqp->xHot   = bitsp->xhot;
     reqp->yHot   = bitsp->yhot;
     reqp->fFlags = VBOX_MOUSE_POINTER_SHAPE | VBOX_MOUSE_POINTER_ALPHA;
-    reqp->header.size = size;
+    reqp->header.size = sizeRequest;
 
-    memcpy(p + offsetof(VMMDevReqMousePointer, pointerData) + mask_size,
-            bitsp->argb, w * h * 4);
+    memcpy(p + offsetof(VMMDevReqMousePointer, pointerData) + sizeMask, bitsp->argb, w * h * 4);
 
     /* Emulate the AND mask. */
     pm = p + offsetof(VMMDevReqMousePointer, pointerData);
     pc = bitsp->argb;
 
     /* Init AND mask to 1 */
-    memset(pm, 0xFF, mask_size);
+    memset(pm, 0xFF, sizeMask);
 
     /*
      * The additions driver must provide the AND mask for alpha cursors. The host frontend
