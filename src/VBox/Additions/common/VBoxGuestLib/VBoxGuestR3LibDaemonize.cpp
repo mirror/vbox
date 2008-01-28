@@ -123,16 +123,6 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
 # error "PORTME"
 
 #else /* the unices */
-
-# ifdef RT_OS_SOLARIS
-    /*
-     * Check if we already belong the init process (pid 1).
-     */
-    /** @todo Why do we need to check for this? */
-    if (getppid() == 1)
-        return VERR_GENERAL_FAILURE;
-# endif
-
     /*
      * Fork the child process and quit the parent.
      *
