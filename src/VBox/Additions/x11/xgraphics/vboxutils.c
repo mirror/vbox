@@ -478,9 +478,9 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 #endif
         pVBox->reqp = p;
         pVBox->pCurs = NULL;
-        pVBox->use_hw_cursor = vbox_host_can_hwcursor(pScrn, pVBox);
-        pVBox->set_pointer_shape_size = size;
-        pVBox->pointer_offscreen = FALSE;
+        pVBox->useHwCursor = vbox_host_can_hwcursor(pScrn, pVBox);
+        pVBox->pointerHeaderSize = size;
+        pVBox->pointerOffscreen = FALSE;
         pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
     } else {
         if (NULL != p) {
@@ -557,14 +557,14 @@ vbox_set_cursor_position (ScrnInfoPtr pScrn, int x, int y)
 #if 0
     if (((x < 0) || (x > pScrn->pScreen->width))
         || ((y < 0) || (y > pScrn->pScreen->height))) {
-        if (!pVBox->pointer_offscreen) {
-            pVBox->pointer_offscreen = TRUE;
+        if (!pVBox->pointerOffscreen) {
+            pVBox->pointerOffscreen = TRUE;
             vbox_vmm_hide_cursor (pScrn, pVBox);
         }
     }
     else {
-        if (pVBox->pointer_offscreen) {
-            pVBox->pointer_offscreen = FALSE;
+        if (pVBox->pointerOffscreen) {
+            pVBox->pointerOffscreen = FALSE;
             vbox_vmm_show_cursor (pScrn, pVBox);
         }
     }
@@ -603,7 +603,7 @@ vbox_use_hw_cursor (ScreenPtr pScreen, CursorPtr pCurs)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     VBOXPtr pVBox = pScrn->driverPrivate;
-    return pVBox->use_hw_cursor;
+    return pVBox->useHwCursor;
 }
 
 static unsigned char color_to_byte (unsigned c)
@@ -641,7 +641,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     dst_pitch = (w + 7) / 8;
     size_mask = ((dst_pitch * h) + 3) & (size_t) ~3;
     size_rgba = w * h * 4;
-    size      = size_mask + size_rgba + pVBox->set_pointer_shape_size;
+    size      = size_mask + size_rgba + pVBox->pointerHeaderSize;
 
     p = c = xcalloc (1, size);
     if (!c)
@@ -779,7 +779,7 @@ static void vbox_load_cursor_argb (ScrnInfoPtr pScrn, CursorPtr pCurs)
             "Error invalid cursor hotspot location %dx%d (max %dx%d)\n",
             bitsp->xhot, bitsp->yhot, w, h);
 
-    size = w * h * 4 + pVBox->set_pointer_shape_size + mask_size;
+    size = w * h * 4 + pVBox->pointerHeaderSize + mask_size;
     p = xcalloc (1, size);
     if (!p)
         RETERROR(scrnIndex, ,
@@ -846,7 +846,7 @@ Bool vbox_cursor_init (ScreenPtr pScreen)
     xf86CursorInfoPtr pCurs;
     Bool rc;
 
-    if (pVBox->use_hw_cursor)
+    if (pVBox->useHwCursor)
     {
         xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                   "The host system is drawing the mouse cursor.\n");
