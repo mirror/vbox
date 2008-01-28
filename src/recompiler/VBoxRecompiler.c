@@ -1095,11 +1095,11 @@ REMR3DECL(int) REMR3Run(PVM pVM)
  * @param   env         The CPU env struct.
  * @param   eip         The EIP to check this for (might differ from env->eip).
  * @param   fFlags      hflags OR'ed with IOPL, TF and VM from eflags.
- * @param   pExceptionIndex  Stores EXCP_EXECUTE_RAW/HWACC in case raw mode is supported in this context
+ * @param   piException Stores EXCP_EXECUTE_RAW/HWACC in case raw mode is supported in this context
  *
  * @remark  This function must be kept in perfect sync with the scheduler in EM.cpp!
  */
-bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, uint32_t *pExceptionIndex)
+bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piException)
 {
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
@@ -1146,7 +1146,7 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, uint32_t *p
          */
         if (HWACCMR3CanExecuteGuest(env->pVM, &Ctx) == true)
         {
-            *pExceptionIndex = EXCP_EXECUTE_HWACC;
+            *piException = EXCP_EXECUTE_HWACC;
             return true;
         }
         return false;
@@ -1258,7 +1258,7 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, uint32_t *p
         if (PATMIsPatchGCAddr(env->pVM, eip))
         {
             Log2(("raw r0 mode forced: patch code\n"));
-            *pExceptionIndex = EXCP_EXECUTE_RAW;
+            *piException = EXCP_EXECUTE_RAW;
             return true;
         }
 
@@ -1287,7 +1287,7 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, uint32_t *p
     }
 
     Assert(PGMPhysIsA20Enabled(env->pVM));
-    *pExceptionIndex = EXCP_EXECUTE_RAW;
+    *piException = EXCP_EXECUTE_RAW;
     return true;
 }
 
@@ -1352,6 +1352,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
     //RAWEx_ProfileStart(env, STATS_QEMU_TOTAL);
 }
 
+
 /**
  * Called from tlb_protect_code in order to write monitor a code page.
  *
@@ -1368,6 +1369,7 @@ void remR3ProtectCode(CPUState *env, RTGCPTR GCPtr)
         &&  !HWACCMIsEnabled(env->pVM))
         CSAMR3MonitorPage(env->pVM, GCPtr, CSAM_TAG_REM);
 }
+
 
 /**
  * Called when the CPU is initialized, any of the CRx registers are changed or
@@ -1461,6 +1463,7 @@ void remR3DmaRun(CPUState *env)
     remR3ProfileStart(STATS_QEMU_RUN_EMULATED_CODE);
 }
 
+
 /**
  * Called from compiled code to schedule pending timers in VMM
  *
@@ -1475,6 +1478,7 @@ void remR3TimersRun(CPUState *env)
     remR3ProfileStart(STATS_QEMU_RUN_EMULATED_CODE);
 }
 
+
 /**
  * Record trap occurance
  *
@@ -1488,21 +1492,21 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
 {
     PVM pVM = env->pVM;
 #ifdef VBOX_WITH_STATISTICS
-    static STAMCOUNTER aStatTrap[255];
-    static bool        aRegisters[ELEMENTS(aStatTrap)];
+    static STAMCOUNTER s_aStatTrap[255];
+    static bool        s_aRegisters[RT_ELEMENTS(s_aStatTrap)];
 #endif
 
 #ifdef VBOX_WITH_STATISTICS
     if (uTrap < 255)
     {
-        if (!aRegisters[uTrap])
+        if (!s_aRegisters[uTrap])
         {
-            aRegisters[uTrap] = true;
+            s_aRegisters[uTrap] = true;
             char szStatName[64];
             RTStrPrintf(szStatName, sizeof(szStatName), "/REM/Trap/0x%02X", uTrap);
-            STAM_REG(env->pVM, &aStatTrap[uTrap], STAMTYPE_COUNTER, szStatName, STAMUNIT_OCCURENCES, "Trap stats.");
+            STAM_REG(env->pVM, &s_aStatTrap[uTrap], STAMTYPE_COUNTER, szStatName, STAMUNIT_OCCURENCES, "Trap stats.");
         }
-        STAM_COUNTER_INC(&aStatTrap[uTrap]);
+        STAM_COUNTER_INC(&s_aStatTrap[uTrap]);
     }
 #endif
     Log(("remR3NotifyTrap: uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%08x\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
@@ -1535,6 +1539,7 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
     return VINF_SUCCESS;
 }
 
+
 /*
  * Clear current active trap
  *
@@ -1548,6 +1553,7 @@ void remR3TrapClear(PVM pVM)
     pVM->rem.s.uPendingExcptCR2   = 0;
 }
 
+
 /*
  * Record previous call instruction addresses
  *
@@ -1557,6 +1563,7 @@ void remR3RecordCall(CPUState *env)
 {
     CSAMR3RecordCallAddress(env->pVM, env->eip);
 }
+
 
 /**
  * Syncs the internal REM state with the VM.
@@ -1860,13 +1867,13 @@ REMR3DECL(int) REMR3State(PVM pVM)
     int rc = TRPMQueryTrap(pVM, &u8TrapNo, &enmType);
     if (VBOX_SUCCESS(rc))
     {
-        #ifdef DEBUG
+#ifdef DEBUG
         if (u8TrapNo == 0x80)
         {
             remR3DumpLnxSyscall(pVM);
             remR3DumpOBsdSyscall(pVM);
         }
-        #endif
+#endif
 
         pVM->rem.s.Env.exception_index = u8TrapNo;
         if (enmType != TRPM_SOFTWARE_INT)
@@ -2436,25 +2443,23 @@ REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Notification about a successful MMR3PhysRegister() call.
  *
  * @param   pVM         VM handle.
  * @param   GCPhys      The physical address the RAM.
  * @param   cb          Size of the memory.
- * @param   pvRam       The HC address of the RAM.
  * @param   fFlags      Flags of the MM_RAM_FLAGS_* defines.
  */
-REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvRam, unsigned fFlags)
+REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, unsigned fFlags)
 {
-    Log(("REMR3NotifyPhysRamRegister: GCPhys=%VGp cb=%d pvRam=%p fFlags=%d\n", GCPhys, cb, pvRam, fFlags));
+    Log(("REMR3NotifyPhysRamRegister: GCPhys=%VGp cb=%d fFlags=%d\n", GCPhys, cb, fFlags));
     VM_ASSERT_EMT(pVM);
 
     /*
      * Validate input - we trust the caller.
      */
-    Assert(!GCPhys || pvRam);
-    Assert(RT_ALIGN_P(pvRam, PAGE_SIZE) == pvRam);
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
@@ -2486,6 +2491,12 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     Assert(!pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = true;
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    if (fFlags & MM_RAM_FLAGS_RESERVED)
+        cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
+    else
+        cpu_register_physical_memory(GCPhys, cb, GCPhys);
+#else
     if (!GCPhys)
         cpu_register_physical_memory(GCPhys, cb, GCPhys | IO_MEM_RAM_MISSING);
     else
@@ -2495,10 +2506,12 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
         else
             cpu_register_physical_memory(GCPhys, cb, GCPhys);
     }
+#endif
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;
 }
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
 
 /**
  * Notification about a successful PGMR3PhysRegisterChunk() call.
@@ -2553,6 +2566,7 @@ void remR3GrowDynRange(unsigned long physaddr)
     AssertFatalFailed();
 }
 
+#endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 /**
  * Notification about a successful MMR3PhysRomRegister() call.
@@ -3444,7 +3458,7 @@ void disas(FILE *phFileIgnored, void *pvCode, unsigned long cb)
         Cpu.mode = CPUMODE_32BIT;
 #else
         Cpu.mode = CPUMODE_64BIT;
-#endif 
+#endif
 
         RTLogPrintf("Recompiled Code: %p %#lx (%ld) bytes\n", pvCode, cb, cb);
         while (off < cb)
@@ -3458,7 +3472,7 @@ void disas(FILE *phFileIgnored, void *pvCode, unsigned long cb)
                 cbInstr = 1;
 #ifdef RT_ARCH_AMD64 /** @todo remove when DISInstr starts supporing 64-bit code. */
                 break;
-#endif 
+#endif
             }
             off += cbInstr;
         }

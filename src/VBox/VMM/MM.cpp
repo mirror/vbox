@@ -215,7 +215,7 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
          */
         Log(("MM: %llu bytes of RAM%s\n", cbRam, fPreAlloc ? " (PreAlloc)" : ""));
         pVM->mm.s.cbRamBase = cbRam & X86_PTE_PAE_PG_MASK;
-        rc = MMR3PhysRegister(pVM, NULL, 0, pVM->mm.s.cbRamBase, MM_RAM_FLAGS_DYNAMIC_ALLOC, "Main Memory");
+        rc = MMR3PhysRegisterEx(pVM, NULL, 0, pVM->mm.s.cbRamBase, MM_RAM_FLAGS_DYNAMIC_ALLOC, MM_PHYS_TYPE_NORMAL, "Main Memory");
         if (RT_SUCCESS(rc))
         {
             /*
