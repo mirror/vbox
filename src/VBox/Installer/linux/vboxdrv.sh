@@ -28,6 +28,8 @@
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 CONFIG="/etc/vbox/vbox.cfg"
+. "$CONFIG"
+VBOXMANAGE="$INSTALL_DIR/VBoxManage"
 
 if [ -f /etc/redhat-release ]; then
     system=redhat
@@ -37,6 +39,10 @@ elif [ -f /etc/gentoo-release ]; then
     system=gentoo
 else
     system=other
+fi
+
+if [ -r /etc/default/virtualbox ]; then
+  . /etc/default/virtualbox
 fi
 
 if [ "$system" = "redhat" ]; then
@@ -153,18 +159,18 @@ start() {
             fi
         fi
         test -z "$maj" && {
-            rmmod $modname
+            rmmod $modname 2>/dev/null
             fail "Cannot locate the VirtualBox device"
         }
 
-        mknod -m 0660 $dev c $maj $min || {
-            rmmod $modname
+        mknod -m 0660 $dev c $maj $min 2>/dev/null || {
+            rmmod $modname 2>/dev/null
             fail "Cannot create device $dev with major $maj and minor $min"
         }
     fi
 
-    chown :$groupname $dev || {
-        rmmod $modname
+    chown :$groupname $dev 2>/dev/null || {
+        rmmod $modname 2>/dev/null
         fail "Cannot change owner $groupname for device $dev"
     }
 
@@ -182,13 +188,58 @@ stop() {
     return 0
 }
 
+# enter the following variables in /etc/default/virtualbox:
+#   SHUTDOWN_USERS="foo bar"  
+#     check for running VMs of user foo and user bar
+#   SHUTDOWN=poweroff
+#   SHUTDOWN=acpibutton
+#   SHUTDOWN=savestate
+#     select one of these shutdown methods for running VMs
+stop_vms() {
+    wait=0
+    for i in $SHUTDOWN_USERS; do
+        # don't create the ipcd directory with wrong permissions!
+        if [ -d /tmp/.vbox-$i-ipc ]; then
+            export VBOX_IPC_SOCKETID="$i"
+            VMS=`$VBOXMANAGE -nologo list runningvms 2>/dev/null`
+            if [ -n "$VMS" ]; then
+                if [ "$SHUTDOWN" = "poweroff" ]; then
+                    begin "Powering off remaining VMs "
+                    for v in $VMS; do
+                        $VBOXMANAGE -nologo controlvm $v poweroff
+                    done
+                    succ_msg
+                elif [ "$SHUTDOWN" = "acpibutton" ]; then
+                    begin "Sending ACPI power button event to remaining VMs "
+                    for v in $VMS; do
+                        $VBOXMANAGE -nologo controlvm $v acpipowerbutton
+                        wait=15
+                    done
+                    succ_msg
+                elif [ "$SHUTDOWN" = "savestate" ]; then
+                    begin "Saving state of remaining VMs "
+                    for v in $VMS; do
+                        $VBOXMANAGE -nologo controlvm $v savestate
+                    done
+                    succ_msg
+                fi
+            fi
+        fi
+    done
+    # wait for some seconds when doing ACPI shutdown
+    if [ "$wait" -ne 0 ]; then
+        log_daemon_msg "Waiting for $wait seconds for VM shutdown"
+        sleep $wait
+        log_end_msg
+    fi
+}
+
 restart() {
     stop && start
     return 0
 }
 
 setup() {
-    . "$CONFIG"
     stop
     if find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
       begin "Removing old VirtualBox kernel module "
@@ -206,6 +257,19 @@ setup() {
 dmnstatus() {
     if running; then
         echo "VirtualBox kernel module is loaded."
+        for i in $SHUTDOWN_USERS; do
+            # don't create the ipcd directory with wrong permissions!
+            if [ -d /tmp/.vbox-$i-ipc ]; then
+                export VBOX_IPC_SOCKETID="$i"
+                VMS=`$VBOXMANAGE -nologo list runningvms 2>/dev/null`
+                if [ -n "$VMS" ]; then
+                    echo "The following VMs are currently running:"
+                    for v in $VMS; do
+                       echo "  $v"
+                    done
+                fi
+            fi
+        done
     else
         echo "VirtualBox kernel module is not loaded."
     fi
@@ -216,7 +280,11 @@ start)
     start
     ;;
 stop)
+    stop_vms
     stop
+    ;;
+stop_vms)
+    stop_vms
     ;;
 restart)
     restart
@@ -228,7 +296,7 @@ status)
     dmnstatus
     ;;
 *)
-    echo "Usage: $0 {start|stop|restart|status|setup}"
+    echo "Usage: $0 {start|stop|stop_vms|restart|status|setup}"
     exit 1
 esac
 
