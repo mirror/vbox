@@ -1105,6 +1105,9 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
  *
  * @returns The GVM pointer on success, NULL on failure.
  * @param   pVM     The shared VM structure (the ring-0 mapping).
+ *
+ * @remark  This will not take the 'used'-lock because it doesn't do
+ *          nesting and this function will be used from under the lock.
  */
 GVMMR0DECL(PGVM) GVMMR0ByVM(PVM pVM)
 {
