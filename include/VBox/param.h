@@ -44,7 +44,7 @@
 #define MM_HYPER_AREA_ADDRESS   0xa0000000
 
 /** The max size of the hypervisor memory area. */
-#define MM_HYPER_AREA_MAX_SIZE (12*1024*1024)
+#define MM_HYPER_AREA_MAX_SIZE (16*1024*1024)
 
 /** Maximum number of bytes we can dynamically map into the hypervisor region.
  * This must be a power of 2 number of pages!
