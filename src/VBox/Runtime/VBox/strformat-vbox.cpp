@@ -138,7 +138,7 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
              * Current thread.
              */
             case 't':
-#ifdef IN_RING3                         /* we don't want this anywhere else yet. */
+#if defined(IN_RING3) && !defined(VBOX_SHARED_RUNTIME)  /* we don't want this anywhere else yet. */
                 return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%#x\n", RTThreadSelf());
 #else /* !IN_RING3 */
                 return pfnOutput(pvArgOutput, "0xffffffff", sizeof("0xffffffff") - 1);
