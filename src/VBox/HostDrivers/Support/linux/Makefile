@@ -82,6 +82,11 @@ OBJS  += alloc/heapsimple.o
 endif
 ifeq ($(BUILD_TYPE),debug)
 OBJS  += \
+	math/gcc/divdi3.o \
+	math/gcc/moddi3.o \
+	math/gcc/udivdi3.o \
+	math/gcc/umoddi3.o \
+	math/gcc/qdivrem.o \
 	common/log/log.o \
 	common/log/logcom.o \
 	common/log/logformat.o \
