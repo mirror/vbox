@@ -224,10 +224,12 @@ typedef union GMMPAGE
     /** The view of a free page. */
     struct GMMPAGEFREE
     {
-        /** The index of the next page in the free list. */
-        uint32_t    iNext;
+        /** The index of the next page in the free list. UINT16_MAX is NIL. */
+        uint16_t    iNext;
         /** Reserved. Checksum or something? */
-        uint32_t    u30Reserved : 30;
+        uint16_t    u16Reserved0;
+        /** Reserved. Checksum or something? */
+        uint32_t    u30Reserved1 : 30;
         /** The page state. */
         uint32_t    u2State : 2;
     } Free;
@@ -267,13 +269,16 @@ typedef union GMMPAGE
     /** The view of a free page. */
     struct GMMPAGEFREE
     {
-        /** The index of the next page in the free list. */
-        uint32_t    iNext : 30;
+        /** The index of the next page in the free list. UINT16_MAX is NIL. */
+        uint32_t    iNext : 16;
+        /** Reserved. Checksum or something? */
+        uint32_t    u14Reserved : 14;
         /** The page state. */
         uint32_t    u2State : 2;
     } Free;
 #endif
 } GMMPAGE;
+AssertCompileSize(GMMPAGE, sizeof(RTHCUINTPTR));
 /** Pointer to a GMMPAGE. */
 typedef GMMPAGE *PGMMPAGE;
 
@@ -593,6 +598,7 @@ GMMR0DECL(int) GMMR0Init(void)
         /*
          * Check and see if RTR0MemObjAllocPhysNC works.
          */
+#if 0 /* later */
         RTR0MEMOBJ MemObj;
         rc = RTR0MemObjAllocPhysNC(&MemObj, _64K, NIL_RTHCPHYS);
         if (RT_SUCCESS(rc))
@@ -604,6 +610,9 @@ GMMR0DECL(int) GMMR0Init(void)
             pGMM->fLegacyMode = true;
         else
             SUPR0Printf("GMMR0Init: RTR0MemObjAllocPhysNC(,64K,Any) -> %d!\n", rc);
+#else
+        pGMM->fLegacyMode = true;
+#endif
 
         g_pGMM = pGMM;
         LogFlow(("GMMInit: pGMM=%p fLegacy=%RTbool\n", pGMM, pGMM->fLegacyMode));
@@ -636,7 +645,7 @@ GMMR0DECL(void) GMMR0Term(void)
     }
 
     /*
-     * Undo what init did and free any resources we've acquired.
+     * Undo what init did and free all the resources we've acquired.
      */
     /* Destroy the fundamentals. */
     g_pGMM = NULL;
@@ -1401,8 +1410,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
             pChunk->aPages[iPage].Free.iNext = iPage + 1;
         }
         pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.u2State = GMM_PAGE_STATE_FREE;
-        /* XXX sizeof(iNext) < 32, please fix this!! */
-        pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.iNext = UINT32_MAX;
+        pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.iNext = UINT16_MAX;
 
         /*
          * Allocate a Chunk ID and insert it into the tree.
