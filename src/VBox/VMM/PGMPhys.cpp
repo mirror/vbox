@@ -137,7 +137,7 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
     size_t          cbRam = RT_OFFSETOF(PGMRAMRANGE, aPages[cb >> PAGE_SHIFT]);
     PPGMRAMRANGE    pNew;
     RTGCPTR         GCPtrNew;
-    int             rc;
+    int             rc = VERR_NO_MEMORY;
     if (cbRam > PAGE_SIZE / 2)
     {   /* large */
         cbRam = RT_ALIGN_Z(cbRam, PAGE_SIZE);
@@ -158,9 +158,10 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         }
         else
             AssertMsgFailed(("SUPPageAlloc(%#x,,) -> %Vrc\n", cbRam >> PAGE_SHIFT, rc));
+
     }
-    else
-    {   /* small */
+    if (RT_FAILURE(rc))
+    {   /* small + fallback (vga) */
         rc = MMHyperAlloc(pVM, cbRam, 16, MM_TAG_PGM, (void **)&pNew);
         if (VBOX_SUCCESS(rc))
             GCPtrNew = MMHyperHC2GC(pVM, pNew);
