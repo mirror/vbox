@@ -23,8 +23,8 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-%ifndef __VBox_asmdefs_mac__
-%define __VBox_asmdefs_mac__
+%ifndef ___VBox_asmdefs_mac
+%define ___VBox_asmdefs_mac
 
 ;; @def VBOX_WITH_STATISTICS
 ; When defined all statistics will be included in the build.
@@ -39,46 +39,55 @@
 
 
 
-;%define UART_BASE   2f8h            ; com2
-%define UART_BASE   3f8h            ; com1
-%define UART_RATE   12              ; 9600 bps
-%define UART_PARAMS 00000011b       ; 8n1
+%ifndef VBOX_UART_BASE
+ %ifndef IPRT_UART_BASE
+  %define VBOX_UART_BASE    3f8h         ; COM1 (see src/VBox/Runtime/common/log/logcom.cpp)
+ %else
+  %define VBOX_UART_BASE    IPRT_UART_BASE
+ %endif
+%endif
+%ifndef VBOX_UART_RATE
+ %define VBOX_UART_RATE     12           ; 9600 bps
+%endif
+%ifndef VBOX_UART_PARAMS
+ %define VBOX_UART_PARAMS   00000011b    ; 8n1
+%endif
 
 
 ;;
 ; Initializes the com port to 9600 baud 8n1.
 ; al and dx are wasted.
-; @todo comport init doesn't quite work. :/
+; @todo comport init doesn't quite work - therefore we no longer use this! :-/
 %macro COM_INIT 0
     push    eax
     push    edx
 
-    mov     dx, UART_BASE + 3
+    mov     dx, VBOX_UART_BASE + 3
     mov     al, 80h
     out     dx, al                      ; make DL register accessible
 
-    mov     dx, UART_BASE
-    mov     ax, UART_RATE
+    mov     dx, VBOX_UART_BASE
+    mov     ax, VBOX_UART_RATE
     out     dx, ax                      ; write bps rate divisor
 
-    mov     dx, UART_BASE + 3
-    mov     al, UART_PARAMS
+    mov     dx, VBOX_UART_BASE + 3
+    mov     al, VBOX_UART_PARAMS
     out     dx, al                      ; write parameters
 
 
     xor     ax, ax
-    mov     dx, UART_BASE + 4           ; disconnect the UART from the int line
+    mov     dx, VBOX_UART_BASE + 4      ; disconnect the UART from the int line
     out     dx, al
 
-    mov     dx, UART_BASE + 1           ; disable UART ints
+    mov     dx, VBOX_UART_BASE + 1      ; disable UART ints
     out     dx, al
 
-    mov     dx, UART_BASE + 2           ; disable the fifos (old software relies on it)
+    mov     dx, VBOX_UART_BASE + 2      ; disable the fifos (old software relies on it)
     out     dx, al
 
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     in      al, dx                      ; clear receiver
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx                      ; clear line status
     inc     dx
     in      al, dx                      ; clear modem status
@@ -105,20 +114,20 @@
     pop     esi
     mov     cx, %%stringend - %%string
 %%status:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status
 
     mov     al, [esi]
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
     inc     esi
     dec     cx
     jnz short %%status
 
 %%status2:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status2
@@ -142,20 +151,20 @@
     lea     rsi, [%%string wrt rip]
     mov     cx, %%stringend - %%string
 %%status:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status
 
     mov     al, [rsi]
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
     inc     rsi
     dec     cx
     jnz short %%status
 
 %%status2:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status2
@@ -183,17 +192,17 @@
     mov     si, dx
 
 %%status:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status
 
     mov     al, %1
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
 %%status2:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status2
@@ -212,17 +221,17 @@
     push    edx
 
 %%status:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status
 
     mov     al, %1
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
 %%status2:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status2
@@ -236,17 +245,17 @@
     push    rdx
 
 %%status:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status
 
     mov     al, %1
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
 %%status2:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status2
@@ -272,27 +281,27 @@
     mov     si, dx
 
 %%status1:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status1
 
     mov     al, 13
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
 %%status2:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status2
 
     mov     al, 10
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
 %%status3:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status3
@@ -311,27 +320,27 @@
     push    eax
 
 %%status1:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status1
 
     mov     al, 13
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
 %%status2:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status2
 
     mov     al, 10
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
 %%status3:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status3
@@ -345,27 +354,27 @@
     push    rax
 
 %%status1:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status1
 
     mov     al, 13
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
 %%status2:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status2
 
     mov     al, 10
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
 %%status3:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status3
@@ -398,7 +407,7 @@
     rol     ebx, 4                      ; shift next digit to the front
 
 %%status0:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status0
@@ -412,7 +421,7 @@
 %%hex:
     add     al, 'a' - 10
 %%print:
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
     dec     ah
@@ -440,7 +449,7 @@
     rol     ebx, 4                      ; shift next digit to the front
 
 %%status0:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status0
@@ -454,7 +463,7 @@
 %%hex:
     add     al, 'a' - 10
 %%print:
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
     dec     ah
@@ -477,7 +486,7 @@
     rol     ebx, 4                      ; shift next digit to the front
 
 %%status0:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status0
@@ -491,7 +500,7 @@
 %%hex:
     add     al, 'a' - 10
 %%print:
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
     dec     ah
@@ -525,7 +534,7 @@
     rol     rbx, 4                      ; shift next digit to the front
 
 %%status0:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status0
@@ -539,7 +548,7 @@
 %%hex:
     add     al, 'a' - 10
 %%print:
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
     dec     ah
@@ -567,7 +576,7 @@
     rol     ebx, 4                      ; shift next digit to the front
 
 %%status0:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status0
@@ -581,7 +590,7 @@
 %%hex:
     add     al, 'a' - 10
 %%print:
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
     dec     ah
@@ -605,7 +614,7 @@
     rol     ebx, 4                      ; shift next digit to the front
 
 %%status0:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status0
@@ -619,7 +628,7 @@
 %%hex:
     add     al, 'a' - 10
 %%print:
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
     dec     ah
@@ -650,7 +659,7 @@
 
     mov     ebx, %1                     ; get value we're supposed to print
 %%status0:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status0
@@ -664,7 +673,7 @@
 %%hex:
     add     al, 'a' - 10
 %%print:
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
     pop     ebx
@@ -679,7 +688,7 @@
 
     mov     ebx, %1                     ; get value we're supposed to print
 %%status0:
-    mov     dx, UART_BASE + 5
+    mov     dx, VBOX_UART_BASE + 5
     in      al, dx
     test    al, 20h
     jz short %%status0
@@ -693,7 +702,7 @@
 %%hex:
     add     al, 'a' - 10
 %%print:
-    mov     dx, UART_BASE
+    mov     dx, VBOX_UART_BASE
     out     dx, al
 
     pop     rbx
