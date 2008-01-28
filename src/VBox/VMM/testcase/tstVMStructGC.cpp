@@ -181,8 +181,7 @@ int main()
     GEN_CHECK_OFF(MM, pPagePoolLow);
     GEN_CHECK_OFF(MM, pvDummyPage);
     GEN_CHECK_OFF(MM, HCPhysDummyPage);
-    GEN_CHECK_OFF(MM, cbRAMSize);
-    GEN_CHECK_OFF(MM, pvRamBaseHC);
+    GEN_CHECK_OFF(MM, cbRamRegistered);
     GEN_CHECK_OFF(MM, cbRamBase);
     GEN_CHECK_OFF(MM, pHeap);
     GEN_CHECK_SIZE(MMHYPERSTAT);
