@@ -143,7 +143,7 @@ MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned
          * Lock the memory. (fully allocated by caller)
          */
         PMMLOCKEDMEM    pLockedMem;
-        rc = mmr3LockMem(pVM, pvRam, cb, MM_LOCKED_TYPE_PHYS, &pLockedMem, enmType == MM_PHYS_TYPE_DYNALLOC_CHUNK /* fSilentFailure */);
+        rc = mmR3LockMem(pVM, pvRam, cb, MM_LOCKED_TYPE_PHYS, &pLockedMem, enmType == MM_PHYS_TYPE_DYNALLOC_CHUNK /* fSilentFailure */);
         if (VBOX_SUCCESS(rc))
         {
             pLockedMem->u.phys.GCPhys = GCPhys;
@@ -277,7 +277,7 @@ MMR3DECL(int) MMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, 
  * @param   pvBinary            Pointer to the binary data backing the ROM image.
  *                              This must be cbRange bytes big.
  *                              It will be copied and doesn't have to stick around.
- *                              It will be copied and doesn't have to stick around if fShadow is clear. 
+ *                              It will be copied and doesn't have to stick around if fShadow is clear.
  * @param   fShadow             Whether to emulate ROM shadowing. This involves leaving
  *                              the ROM writable for a while during the POST and refreshing
  *                              it at reset. When this flag is set, the memory pointed to by
@@ -286,7 +286,7 @@ MMR3DECL(int) MMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, 
  * @remark  There is no way to remove the rom, automatically on device cleanup or
  *          manually from the device yet. At present I doubt we need such features...
  */
-MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary, 
+MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary,
                                   bool fShadow, const char *pszDesc)
 {
     /*
@@ -356,7 +356,7 @@ MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, 
     if (VBOX_SUCCESS(rc))
     {
         /*
-         * To prevent the shadow page table mappings from being RW in raw-mode, we 
+         * To prevent the shadow page table mappings from being RW in raw-mode, we
          * must currently employ a little hack. We register an write access handler
          * and thereby ensures a RO mapping of the pages. This is NOT very nice,
          * and wasn't really my intention when writing the code, consider it a PGM bug.
@@ -486,12 +486,12 @@ MMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM)
 }
 
 
-/** 
+/**
  * Called by MMR3Reset to reset the shadow ROM.
- * 
- * Resetting involves reloading the ROM into RAM and make it 
+ *
+ * Resetting involves reloading the ROM into RAM and make it
  * wriable again (as it was made read only at the end of the POST).
- * 
+ *
  * @param   pVM         The VM handle.
  */
 void mmR3PhysRomReset(PVM pVM)
@@ -517,20 +517,20 @@ void mmR3PhysRomReset(PVM pVM)
 
 /**
  * Write-protects a shadow ROM range.
- * 
+ *
  * This is called late in the POST for shadow ROM ranges.
- * 
+ *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
- * @param   GCPhys      Start of the registered shadow ROM range 
+ * @param   GCPhys      Start of the registered shadow ROM range
  * @param   cbRange     The length of the registered shadow ROM range.
  *                      This can be NULL (not sure about the BIOS interface yet).
  */
 MMR3DECL(int) MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
 {
     for (PMMROMRANGE pCur = pVM->mm.s.pRomHead; pCur; pCur = pCur->pNext)
-        if (    pCur->GCPhys == GCPhys 
-            &&  (   pCur->cbRange == cbRange 
+        if (    pCur->GCPhys == GCPhys
+            &&  (   pCur->cbRange == cbRange
                  || !cbRange))
         {
             if (pCur->fWritable)
@@ -545,7 +545,7 @@ MMR3DECL(int) MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
 
                 rc = PGMR3PhysSetFlags(pVM, GCPhys, cbRange, 0, ~MM_RAM_FLAGS_MMIO2); /* ROM + MMIO2 -> ROM */
                 AssertRCReturn(rc, rc);
-                /* Don't bother with the MM page flags here because I don't think they are 
+                /* Don't bother with the MM page flags here because I don't think they are
                    really used beyond conflict checking at ROM, RAM, Reservation, etc. */
 
                 REMR3NotifyPhysRomRegister(pVM, GCPhys, cbRange, pCur->pvCopy, false /* read-only now */);

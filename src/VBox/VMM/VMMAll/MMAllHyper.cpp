@@ -148,7 +148,7 @@ static void mmR3HyperStatRegisterOne(PVM pVM, PMMHYPERSTAT pStat);
 #endif
 static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk);
 #ifdef MMHYPER_HEAP_STRICT
-static void mmr3HyperHeapCheck(PMMHYPERHEAP pHeap);
+static void mmR3HyperHeapCheck(PMMHYPERHEAP pHeap);
 #endif
 
 
@@ -298,7 +298,7 @@ static PMMHYPERCHUNK mmHyperAllocChunk(PMMHYPERHEAP pHeap, uint32_t cb, unsigned
 {
     Log3(("mmHyperAllocChunk: Enter cb=%#x uAlignment=%#x\n", cb, uAlignment));
 #ifdef MMHYPER_HEAP_STRICT
-    mmr3HyperHeapCheck(pHeap);
+    mmR3HyperHeapCheck(pHeap);
 #endif
 
     /*
@@ -509,7 +509,7 @@ static PMMHYPERCHUNK mmHyperAllocChunk(PMMHYPERHEAP pHeap, uint32_t cb, unsigned
     }
 
 #ifdef MMHYPER_HEAP_STRICT
-    mmr3HyperHeapCheck(pHeap);
+    mmR3HyperHeapCheck(pHeap);
 #endif
     return pRet;
 }
@@ -530,7 +530,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
     Log3(("mmHyperAllocPages: Enter cb=%#x\n", cb));
 
 #ifdef MMHYPER_HEAP_STRICT
-    mmr3HyperHeapCheck(pHeap);
+    mmR3HyperHeapCheck(pHeap);
 #endif
 
     /*
@@ -614,7 +614,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
     Log3(("mmHyperAllocPages: Returning %p (page aligned)\n", pvRet));
 
 #ifdef MMHYPER_HEAP_STRICT
-    mmr3HyperHeapCheck(pHeap);
+    mmR3HyperHeapCheck(pHeap);
 #endif
     return pvRet;
 }
@@ -858,7 +858,7 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
     PMMHYPERCHUNKFREE   pFree = (PMMHYPERCHUNKFREE)pChunk;
 
 #ifdef MMHYPER_HEAP_STRICT
-    mmr3HyperHeapCheck(pHeap);
+    mmR3HyperHeapCheck(pHeap);
 #endif
 
     /*
@@ -1008,7 +1008,7 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
     ASSERT_CHUNK_FREE(pHeap, pFree);
 
 #ifdef MMHYPER_HEAP_STRICT
-    mmr3HyperHeapCheck(pHeap);
+    mmR3HyperHeapCheck(pHeap);
 #endif
     return VINF_SUCCESS;
 }
@@ -1018,7 +1018,7 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
 /**
  * Internal consitency check.
  */
-static void mmr3HyperHeapCheck(PMMHYPERHEAP pHeap)
+static void mmR3HyperHeapCheck(PMMHYPERHEAP pHeap)
 {
     PMMHYPERCHUNKFREE pPrev = NULL;
     PMMHYPERCHUNKFREE pCur = (PMMHYPERCHUNKFREE)CTXSUFF(pHeap->pbHeap);

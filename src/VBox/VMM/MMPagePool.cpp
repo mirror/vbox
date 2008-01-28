@@ -41,8 +41,8 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifdef IN_RING3
-static void *   mmr3PagePoolAlloc(PMMPAGEPOOL pPool);
-static void     mmr3PagePoolFree(PMMPAGEPOOL pPool, void *pv);
+static void *   mmR3PagePoolAlloc(PMMPAGEPOOL pPool);
+static void     mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv);
 #endif
 
 
@@ -53,7 +53,7 @@ static void     mmr3PagePoolFree(PMMPAGEPOOL pPool, void *pv);
  * @param   pVM     VM handle.
  * @thread  The Emulation Thread.
  */
-int mmr3PagePoolInit(PVM pVM)
+int mmR3PagePoolInit(PVM pVM)
 {
     AssertMsg(!pVM->mm.s.pPagePool, ("Already initialized!\n"));
 
@@ -98,7 +98,7 @@ int mmr3PagePoolInit(PVM pVM)
  * @param   pVM     VM handle.
  * @thread  The Emulation Thread.
  */
-void mmr3PagePoolTerm(PVM pVM)
+void mmR3PagePoolTerm(PVM pVM)
 {
     if (pVM->mm.s.pPagePool)
     {
@@ -151,7 +151,7 @@ void mmr3PagePoolTerm(PVM pVM)
  * @param   pPool   Pointer to the page pool.
  * @thread  The Emulation Thread.
  */
-DECLINLINE(void *) mmr3PagePoolAlloc(PMMPAGEPOOL pPool)
+DECLINLINE(void *) mmR3PagePoolAlloc(PMMPAGEPOOL pPool)
 {
     VM_ASSERT_EMT(pPool->pVM);
     STAM_COUNTER_INC(&pPool->cAllocCalls);
@@ -218,7 +218,7 @@ DECLINLINE(void *) mmr3PagePoolAlloc(PMMPAGEPOOL pPool)
      */
     unsigned        cPages = !pPool->fLow ? 128 : 32;
     PMMPAGESUBPOOL  pSub;
-    int rc = MMHyperAlloc(pPool->pVM, 
+    int rc = MMHyperAlloc(pPool->pVM,
                           RT_OFFSETOF(MMPAGESUBPOOL, auBitmap[cPages / (sizeof(pSub->auBitmap[0] * 8))])
                           + (sizeof(SUPPAGE) + sizeof(MMPPLOOKUPHCPHYS)) * cPages
                           + sizeof(MMPPLOOKUPHCPTR),
@@ -312,7 +312,7 @@ DECLINLINE(void *) mmr3PagePoolAlloc(PMMPAGEPOOL pPool)
     STAM_COUNTER_INC(&pPool->cErrors);
     if (pPool->fLow)
         VMSetError(pPool->pVM, rc, RT_SRC_POS,
-                   N_("Failed to expand page pool for memory below 4GB. current size: %d pages"), 
+                   N_("Failed to expand page pool for memory below 4GB. current size: %d pages"),
                    pPool->cPages);
     AssertMsgFailed(("Failed to expand pool%s. rc=%Vrc poolsize=%d\n",
                      pPool->fLow ? " (<4GB)" : "", rc, pPool->cPages));
@@ -325,10 +325,10 @@ DECLINLINE(void *) mmr3PagePoolAlloc(PMMPAGEPOOL pPool)
  *
  * @param   pPool   Pointer to the page pool.
  * @param   pv      Pointer to the page to free.
- *                  I.e. pointer returned by mmr3PagePoolAlloc().
+ *                  I.e. pointer returned by mmR3PagePoolAlloc().
  * @thread  The Emulation Thread.
  */
-DECLINLINE(void) mmr3PagePoolFree(PMMPAGEPOOL pPool, void *pv)
+DECLINLINE(void) mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv)
 {
     VM_ASSERT_EMT(pPool->pVM);
     STAM_COUNTER_INC(&pPool->cFreeCalls);
@@ -387,7 +387,7 @@ DECLINLINE(void) mmr3PagePoolFree(PMMPAGEPOOL pPool, void *pv)
  */
 MMR3DECL(void *) MMR3PageAlloc(PVM pVM)
 {
-    return mmr3PagePoolAlloc(pVM->mm.s.pPagePool);
+    return mmR3PagePoolAlloc(pVM->mm.s.pPagePool);
 }
 
 
@@ -406,7 +406,7 @@ MMR3DECL(void *) MMR3PageAlloc(PVM pVM)
 MMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM)
 {
     /** @todo optimize this, it's the most common case now. */
-    void *pv = mmr3PagePoolAlloc(pVM->mm.s.pPagePool);
+    void *pv = mmR3PagePoolAlloc(pVM->mm.s.pPagePool);
     if (pv)
         return mmPagePoolPtr2Phys(pVM->mm.s.pPagePool, pv);
     return NIL_RTHCPHYS;
@@ -423,7 +423,7 @@ MMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM)
  */
 MMR3DECL(void) MMR3PageFree(PVM pVM, void *pvPage)
 {
-    mmr3PagePoolFree(pVM->mm.s.pPagePool, pvPage);
+    mmR3PagePoolFree(pVM->mm.s.pPagePool, pvPage);
 }
 
 
@@ -437,7 +437,7 @@ MMR3DECL(void) MMR3PageFree(PVM pVM, void *pvPage)
  */
 MMR3DECL(void *) MMR3PageAllocLow(PVM pVM)
 {
-    return mmr3PagePoolAlloc(pVM->mm.s.pPagePoolLow);
+    return mmR3PagePoolAlloc(pVM->mm.s.pPagePoolLow);
 }
 
 
@@ -450,7 +450,7 @@ MMR3DECL(void *) MMR3PageAllocLow(PVM pVM)
  */
 MMR3DECL(void) MMR3PageFreeLow(PVM pVM, void *pvPage)
 {
-    mmr3PagePoolFree(pVM->mm.s.pPagePoolLow, pvPage);
+    mmR3PagePoolFree(pVM->mm.s.pPagePoolLow, pvPage);
 }
 
 
@@ -469,7 +469,7 @@ MMR3DECL(void) MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage)
     if (!pvPage)
         pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePoolLow, HCPhysPage);
     if (pvPage)
-        mmr3PagePoolFree(pVM->mm.s.pPagePool, pvPage);
+        mmR3PagePoolFree(pVM->mm.s.pPagePool, pvPage);
     else
         AssertMsgFailed(("Invalid address HCPhysPT=%#x\n", HCPhysPage));
 }
@@ -490,7 +490,7 @@ MMR3DECL(void *) MMR3PageDummyHCPtr(PVM pVM)
     VM_ASSERT_EMT(pVM);
     if (!pVM->mm.s.pvDummyPage)
     {
-        pVM->mm.s.pvDummyPage = mmr3PagePoolAlloc(pVM->mm.s.pPagePool);
+        pVM->mm.s.pvDummyPage = mmR3PagePoolAlloc(pVM->mm.s.pPagePool);
         AssertRelease(pVM->mm.s.pvDummyPage);
         pVM->mm.s.HCPhysDummyPage = mmPagePoolPtr2Phys(pVM->mm.s.pPagePool, pVM->mm.s.pvDummyPage);
     }
