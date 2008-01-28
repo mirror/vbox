@@ -503,10 +503,10 @@ typedef MMLOCKEDMEM *PMMLOCKEDMEM;
 
 /**
  * A registered Rom range.
- * 
+ *
  * This is used to track ROM registrations both for debug reasons
  * and for resetting shadow ROM at reset.
- * 
+ *
  * This is allocated of the MMR3Heap and thus only accessibel from ring-3.
  */
 typedef struct MMROMRANGE
@@ -679,17 +679,17 @@ typedef MM *PMM;
 __BEGIN_DECLS
 
 
-int  mmr3PagePoolInit(PVM pVM);
-void mmr3PagePoolTerm(PVM pVM);
+int  mmR3PagePoolInit(PVM pVM);
+void mmR3PagePoolTerm(PVM pVM);
 
-int  mmr3HeapCreate(PVM pVM, PMMHEAP *ppHeap);
-void mmr3HeapDestroy(PMMHEAP pHeap);
+int  mmR3HeapCreate(PVM pVM, PMMHEAP *ppHeap);
+void mmR3HeapDestroy(PMMHEAP pHeap);
 
-int  mmr3HyperInit(PVM pVM);
+int  mmR3HyperInit(PVM pVM);
 int  mmR3HyperInitPaging(PVM pVM);
 
-int  mmr3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *ppLockedMem, bool fSilentFailure);
-int  mmr3MapLocked(PVM pVM, PMMLOCKEDMEM pLockedMem, RTGCPTR Addr, unsigned iPage, size_t cPages, unsigned fFlags);
+int  mmR3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *ppLockedMem, bool fSilentFailure);
+int  mmR3MapLocked(PVM pVM, PMMLOCKEDMEM pLockedMem, RTGCPTR Addr, unsigned iPage, size_t cPages, unsigned fFlags);
 
 const char *mmR3GetTagName(MMTAG enmTag);
 

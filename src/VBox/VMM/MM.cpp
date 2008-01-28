@@ -142,7 +142,7 @@ MMR3DECL(int) MMR3Init(PVM pVM)
      */
     if (!pVM->mm.s.pHeap)
     {
-        int rc = mmr3HeapCreate(pVM, &pVM->mm.s.pHeap);
+        int rc = mmR3HeapCreate(pVM, &pVM->mm.s.pHeap);
         if (!VBOX_SUCCESS(rc))
             return rc;
     }
@@ -150,13 +150,13 @@ MMR3DECL(int) MMR3Init(PVM pVM)
     /*
      * Init the page pool.
      */
-    int rc = mmr3PagePoolInit(pVM);
+    int rc = mmR3PagePoolInit(pVM);
     if (VBOX_SUCCESS(rc))
     {
         /*
          * Init the hypervisor related stuff.
          */
-        rc = mmr3HyperInit(pVM);
+        rc = mmR3HyperInit(pVM);
         if (VBOX_SUCCESS(rc))
         {
             /*
@@ -287,7 +287,7 @@ static int mmR3Term(PVM pVM, bool fKeepTheHeap)
     /*
      * Destroy the page pool. (first as it used the hyper heap)
      */
-    mmr3PagePoolTerm(pVM);
+    mmR3PagePoolTerm(pVM);
 
     /*
      * Release locked memory.
@@ -319,7 +319,7 @@ static int mmR3Term(PVM pVM, bool fKeepTheHeap)
      */
     if (!fKeepTheHeap)
     {
-        mmr3HeapDestroy(pVM->mm.s.pHeap);
+        mmR3HeapDestroy(pVM->mm.s.pHeap);
         pVM->mm.s.pHeap = NULL;
     }
 
@@ -338,10 +338,10 @@ static int mmR3Term(PVM pVM, bool fKeepTheHeap)
 
 /**
  * Reset notification.
- * 
- * MM will reload shadow ROMs into RAM at this point and make 
+ *
+ * MM will reload shadow ROMs into RAM at this point and make
  * the ROM writable.
- * 
+ *
  * @param   pVM             The VM handle.
  */
 MMR3DECL(void) MMR3Reset(PVM pVM)
@@ -429,7 +429,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
  *                          This is optional, pass NULL if not used.
  * @param   fSilentFailure  Don't raise an error when unsuccessful. Upper layer with deal with it.
  */
-int mmr3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *ppLockedMem, bool fSilentFailure)
+int mmR3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *ppLockedMem, bool fSilentFailure)
 {
     Assert(RT_ALIGN_P(pv, PAGE_SIZE) == pv);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
@@ -499,7 +499,7 @@ int mmr3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *
  * @param   cPages      Number of pages to map.
  * @param   fFlags      See the fFlags argument of PGR3Map().
  */
-int mmr3MapLocked(PVM pVM, PMMLOCKEDMEM pLockedMem, RTGCPTR Addr, unsigned iPage, size_t cPages, unsigned fFlags)
+int mmR3MapLocked(PVM pVM, PMMLOCKEDMEM pLockedMem, RTGCPTR Addr, unsigned iPage, size_t cPages, unsigned fFlags)
 {
     /*
      * Adjust ~0 argument

@@ -36,7 +36,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void * mmr3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZero);
+static void *mmR3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZero);
 
 
 
@@ -47,7 +47,7 @@ static void * mmr3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZe
  * @param   pVM     The handle to the VM the heap should be associated with.
  * @param   ppHeap  Where to store the heap pointer.
  */
-int mmr3HeapCreate(PVM pVM, PMMHEAP *ppHeap)
+int mmR3HeapCreate(PVM pVM, PMMHEAP *ppHeap)
 {
     PMMHEAP pHeap = (PMMHEAP)RTMemAllocZ(sizeof(MMHEAP) + sizeof(MMHEAPSTAT));
     if (pHeap)
@@ -88,7 +88,7 @@ int mmr3HeapCreate(PVM pVM, PMMHEAP *ppHeap)
  *
  * @param   pHeap   Heap handle.
  */
-void mmr3HeapDestroy(PMMHEAP pHeap)
+void mmR3HeapDestroy(PMMHEAP pHeap)
 {
     /*
      * Start by deleting the lock, that'll trap anyone
@@ -136,11 +136,11 @@ MMR3DECL(void *) MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize)
 {
     if (!pVM->mm.s.pHeap)
     {
-        int rc = mmr3HeapCreate(pVM, &pVM->mm.s.pHeap);
+        int rc = mmR3HeapCreate(pVM, &pVM->mm.s.pHeap);
         if (VBOX_FAILURE(rc))
             return NULL;
     }
-    return mmr3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, false);
+    return mmR3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, false);
 }
 
 
@@ -160,11 +160,11 @@ MMR3DECL(int) MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
 {
     if (!pVM->mm.s.pHeap)
     {
-        int rc = mmr3HeapCreate(pVM, &pVM->mm.s.pHeap);
+        int rc = mmR3HeapCreate(pVM, &pVM->mm.s.pHeap);
         if (VBOX_FAILURE(rc))
             return rc;
     }
-    void *pv = mmr3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, false);
+    void *pv = mmR3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, false);
     if (pv)
     {
         *ppv = pv;
@@ -189,11 +189,11 @@ MMR3DECL(void *) MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize)
 {
     if (!pVM->mm.s.pHeap)
     {
-        int rc = mmr3HeapCreate(pVM, &pVM->mm.s.pHeap);
+        int rc = mmR3HeapCreate(pVM, &pVM->mm.s.pHeap);
         if (VBOX_FAILURE(rc))
             return NULL;
     }
-    return mmr3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, true);
+    return mmR3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, true);
 }
 
 
@@ -213,11 +213,11 @@ MMR3DECL(int) MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
 {
     if (!pVM->mm.s.pHeap)
     {
-        int rc = mmr3HeapCreate(pVM, &pVM->mm.s.pHeap);
+        int rc = mmR3HeapCreate(pVM, &pVM->mm.s.pHeap);
         if (VBOX_FAILURE(rc))
             return rc;
     }
-    void *pv = mmr3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, true);
+    void *pv = mmR3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, true);
     if (pv)
     {
         *ppv = pv;
@@ -238,7 +238,7 @@ MMR3DECL(int) MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
  * @param   cbSize      Size of the block.
  * @param   fZero       Whether or not to zero the memory block.
  */
-void * mmr3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZero)
+void * mmR3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZero)
 {
 #ifdef MMR3HEAP_WITH_STATISTICS
     RTCritSectEnter(&pHeap->Lock);

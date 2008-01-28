@@ -54,9 +54,9 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
  *
  * @returns VBox status.
  */
-int mmr3HyperInit(PVM pVM)
+int mmR3HyperInit(PVM pVM)
 {
-    LogFlow(("mmr3HyperInit:\n"));
+    LogFlow(("mmR3HyperInit:\n"));
 
     /*
      * Decide Hypervisor mapping in the guest context
@@ -112,14 +112,14 @@ int mmr3HyperInit(PVM pVM)
                  */
                 DBGFR3InfoRegisterInternal(pVM, "hma", "Show the layout of the Hypervisor Memory Area.", mmR3HyperInfoHma);
 
-                LogFlow(("mmr3HyperInit: returns VINF_SUCCESS\n"));
+                LogFlow(("mmR3HyperInit: returns VINF_SUCCESS\n"));
                 return VINF_SUCCESS;
             }
             /* Caller will do proper cleanup. */
         }
     }
 
-    LogFlow(("mmr3HyperInit: returns %Vrc\n", rc));
+    LogFlow(("mmR3HyperInit: returns %Vrc\n", rc));
     return rc;
 }
 
@@ -158,7 +158,7 @@ MMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
         switch (pLookup->enmType)
         {
             case MMLOOKUPHYPERTYPE_LOCKED:
-                rc = mmr3MapLocked(pVM, pLookup->u.Locked.pLockedMem, GCPtr, 0, cPages, 0);
+                rc = mmR3MapLocked(pVM, pLookup->u.Locked.pLockedMem, GCPtr, 0, cPages, 0);
                 break;
 
             case MMLOOKUPHYPERTYPE_HCPHYS:
@@ -431,12 +431,12 @@ MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, cons
          * Lock the heap memory and tell PGM about the locked pages.
          */
         PMMLOCKEDMEM    pLockedMem;
-        rc = mmr3LockMem(pVM, pvHCPage, cb, fFree ? MM_LOCKED_TYPE_HYPER : MM_LOCKED_TYPE_HYPER_NOFREE, &pLockedMem, false /* fSilentFailure */);
+        rc = mmR3LockMem(pVM, pvHCPage, cb, fFree ? MM_LOCKED_TYPE_HYPER : MM_LOCKED_TYPE_HYPER_NOFREE, &pLockedMem, false /* fSilentFailure */);
         if (VBOX_SUCCESS(rc))
         {
             /* map the stuff into guest address space. */
             if (pVM->mm.s.fPGMInitialized)
-                rc = mmr3MapLocked(pVM, pLockedMem, GCPtr, 0, ~(size_t)0, 0);
+                rc = mmR3MapLocked(pVM, pLockedMem, GCPtr, 0, ~(size_t)0, 0);
             if (VBOX_SUCCESS(rc))
             {
                 pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
@@ -472,7 +472,7 @@ MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, cons
  */
 MMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages, const char *pszDesc, PRTGCPTR pGCPtr)
 {
-    LogFlow(("MMR3HyperMapPages: pvR3=%p pvR0=%p cPages=%zu paPages=%p pszDesc=%p:{%s} pGCPtr=%p\n", 
+    LogFlow(("MMR3HyperMapPages: pvR3=%p pvR0=%p cPages=%zu paPages=%p pszDesc=%p:{%s} pGCPtr=%p\n",
              pvR3, pvR0, cPages, paPages, pszDesc, pszDesc, pGCPtr));
 
     /*
@@ -513,7 +513,7 @@ MMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages
 
             /* map the stuff into guest address space. */
             if (pVM->mm.s.fPGMInitialized)
-                rc = mmr3MapLocked(pVM, pLockedMem, GCPtr, 0, ~(size_t)0, 0);
+                rc = mmR3MapLocked(pVM, pLockedMem, GCPtr, 0, ~(size_t)0, 0);
             if (VBOX_SUCCESS(rc))
             {
                 pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
@@ -937,7 +937,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                                 pLookup->u.Locked.pvHC,
                                 sizeof(RTHCPTR) * 2,
                                 pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER_NOFREE  ? "nofree"
-                                : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER       ? "autofree" 
+                                : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER       ? "autofree"
                                 : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER_PAGES ? "pages"
                                 : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_PHYS        ? "gstphys"
                                 : "??",
