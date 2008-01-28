@@ -344,9 +344,9 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         {
             pVBox->reqp = p;
             pVBox->pCurs = NULL;
-            pVBox->use_hw_cursor = vbox_host_can_hwcursor(pScrn, pVBox);
-            pVBox->set_pointer_shape_size = size;
-            pVBox->pointer_offscreen = FALSE;
+            pVBox->useHwCursor = vbox_host_can_hwcursor(pScrn, pVBox);
+            pVBox->pointerHeaderSize = size;
+            pVBox->pointerOffscreen = FALSE;
             pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
             return TRUE;
         }
@@ -365,7 +365,7 @@ vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     pVBox->reqp->fFlags = 0;
     rc = VbglR3SetPointerShape(0, pVBox->reqp->xHot, pVBox->reqp->yHot, pVBox->reqp->width,
                                pVBox->reqp->height, pVBox->reqp->pointerData,
-                               pVBox->reqp->header.size);
+                               pVBox->pointerSize);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not hide the virtual mouse pointer.\n");
 }
@@ -377,7 +377,7 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     pVBox->reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE;
     rc = VbglR3SetPointerShape(VBOX_MOUSE_POINTER_VISIBLE, pVBox->reqp->xHot, pVBox->reqp->yHot,
                                pVBox->reqp->width, pVBox->reqp->height, pVBox->reqp->pointerData,
-                               pVBox->reqp->header.size);
+                               pVBox->pointerSize);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
 }
@@ -396,7 +396,7 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
 #endif
 
     rc = VbglR3SetPointerShape(reqp->fFlags, reqp->xHot, reqp->yHot, reqp->width, reqp->height,
-                               reqp->pointerData, reqp->header.size);
+                               reqp->pointerData, pVBox->pointerSize);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,  "Unable to set the virtual mouse pointer image.\n");
 }
@@ -425,17 +425,17 @@ vbox_set_cursor_position(ScrnInfoPtr pScrn, int x, int y)
     if (   (x < 0 || x > pScrn->pScreen->width)
         || (y < 0 || y > pScrn->pScreen->height))
     {
-        if (!pVBox->pointer_offscreen)
+        if (!pVBox->pointerOffscreen)
         {
-            pVBox->pointer_offscreen = TRUE;
+            pVBox->pointerOffscreen = TRUE;
             vbox_vmm_hide_cursor(pScrn, pVBox);
         }
     }
     else
     {
-        if (pVBox->pointer_offscreen)
+        if (pVBox->pointerOffscreen)
         {
-            pVBox->pointer_offscreen = FALSE;
+            pVBox->pointerOffscreen = FALSE;
             vbox_vmm_show_cursor(pScrn, pVBox);
         }
     }
@@ -477,7 +477,7 @@ vbox_use_hw_cursor(ScreenPtr pScreen, CursorPtr pCurs)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     VBOXPtr pVBox = pScrn->driverPrivate;
-    return pVBox->use_hw_cursor;
+    return pVBox->useHwCursor;
 }
 
 static unsigned char
@@ -516,7 +516,8 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     dst_pitch = (w + 7) / 8;
     size_mask = ((dst_pitch * h) + 3) & (size_t) ~3;
     size_rgba = w * h * 4;
-    size      = size_mask + size_rgba + pVBox->set_pointer_shape_size;
+    pVBox->pointerSize = size_mask + size_rgba;
+    size      = pVBox->pointerSize + pVBox->pointerHeaderSize;
 
     p = c = xcalloc (1, size);
     if (!c)
@@ -656,7 +657,8 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
             "Error invalid cursor hotspot location %dx%d (max %dx%d)\n",
             bitsp->xhot, bitsp->yhot, w, h);
 
-    size = w * h * 4 + pVBox->set_pointer_shape_size + mask_size;
+    pVBox->pointerSize = w * h * 4 + mask_size;
+    size = pVBox->pointerSize + pVBox->pointerHeaderSize;
     p = xcalloc(1, size);
     if (!p)
         RETERROR(scrnIndex, ,
@@ -707,7 +709,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     }
 
     VbglR3SetPointerShape(VBOX_MOUSE_POINTER_SHAPE | VBOX_MOUSE_POINTER_ALPHA, bitsp->xhot, bitsp->yhot, w, h,
-                          pm, reqp->header.size);
+                          pm, pVBox->pointerSize);
     xfree(p);
 }
 #endif
@@ -720,7 +722,7 @@ vbox_cursor_init(ScreenPtr pScreen)
     xf86CursorInfoPtr pCurs;
     Bool rc;
 
-    if (pVBox->use_hw_cursor)
+    if (pVBox->useHwCursor)
     {
         xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                   "The host system is drawing the mouse cursor.\n");

@@ -155,25 +155,20 @@ typedef struct _VBOXRec
 #ifdef XORG_7X
     IOADDRESS ioBase;
 #endif  /* XORG_7X defined */
-#ifndef RT_OS_SOLARIS
-    int vbox_fd;
-#endif
     VMMDevReqMousePointer *reqp;
     xf86CursorInfoPtr pCurs;
-    Bool use_hw_cursor;
-    size_t set_pointer_shape_size;
-    Bool pointer_offscreen;
+    Bool useHwCursor;
+    size_t pointerHeaderSize;
+    size_t pointerSize;
+    Bool pointerOffscreen;
     Bool useVbva;
-#ifndef RT_OS_SOLARIS
-    VMMDevVideoAccelFlush *reqf;
-    VMMDevVideoAccelEnable *reqe;
-#endif
     VMMDevMemory *pVMMDevMemory;
     VBVAMEMORY *pVbvaMemory;
 } VBOXRec, *VBOXPtr;
 
 #ifndef XORG_7X
-typedef struct _ModeInfoData {
+typedef struct _ModeInfoData
+{
     int mode;
     VbeModeInfoBlock *data;
     VbeCRTCInfoBlock *block;
@@ -184,14 +179,11 @@ Bool vbox_cursor_init (ScreenPtr pScreen);
 Bool vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBOX);
 void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBOX);
 
-extern Bool
-vboxEnableVbva(ScrnInfoPtr pScrn);
+extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
 
-extern Bool
-vboxDisableVbva(ScrnInfoPtr pScrn);
+extern Bool vboxDisableVbva(ScrnInfoPtr pScrn);
 
-extern Bool
-vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
+extern Bool vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
                             uint32_t *pcBits, uint32_t fEventAck, uint32_t iDisplay);
 
 #endif /* _VBOXVIDEO_H_ */

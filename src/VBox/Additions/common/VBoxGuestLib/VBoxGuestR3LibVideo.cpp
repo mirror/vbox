@@ -67,12 +67,12 @@ VBGLR3DECL(int) VbglR3VideoAccelFlush(void)
  * @param   cx          Pointer width.
  * @param   cy          Pointer height.
  * @param   pvImg       Pointer to the image data (can be NULL).
- * @param   cbReq       The complete size of the request.
+ * @param   cbImg       Size of the image data pointed to by pvImg.
  */
-VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, const void *pvImg, size_t cbReq)
+VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, const void *pvImg, size_t cbImg)
 {
     VMMDevReqMousePointer *pReq;
-    int rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq, cbReq, VMMDevReq_SetPointerShape);
+    int rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq, RT_OFFSETOF(VMMDevReqMousePointer, pointerData) + cbImg, VMMDevReq_SetPointerShape);
     if (RT_SUCCESS(rc))
     {
         pReq->fFlags = fFlags;
@@ -81,7 +81,7 @@ VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t y
         pReq->width = cx;
         pReq->height = cy;
         if (pvImg)
-            memcpy(pReq->pointerData, pvImg, cbReq - sizeof(VMMDevReqMousePointer) + sizeof(pReq->pointerData));
+            memcpy(pReq->pointerData, pvImg, cbImg);
 
         rc = vbglR3GRPerform(&pReq->header);
         vbglR3GRFree(&pReq->header);
