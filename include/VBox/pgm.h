@@ -38,9 +38,6 @@ __BEGIN_DECLS
  * @{
  */
 
-/** Enable dynamic allocation of guest physical RAM. */
-#define PGM_DYNAMIC_RAM_ALLOC
-
 /** Chunk size for dynamically allocated physical memory. */
 #define PGM_DYNAMIC_CHUNK_SIZE          (1*1024*1024)
 /** Shift GC physical address by 20 bits to get the offset into the pvHCChunkHC array. */

@@ -208,7 +208,6 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
             Log(("MM: No RAM configured\n"));
             return VINF_SUCCESS;
         }
-#ifdef PGM_DYNAMIC_RAM_ALLOC
         Log(("MM: %llu bytes of RAM%s\n", cbRam, fPreAlloc ? " (PreAlloc)" : ""));
         pVM->mm.s.pvRamBaseHC = 0; /** @todo obsolete */
         pVM->mm.s.cbRamBase   = cbRam & PAGE_BASE_GC_MASK;
@@ -232,21 +231,6 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
                 return rc;
             }
         }
-#else
-        unsigned    cPages = cbRam >> PAGE_SHIFT;
-        Log(("MM: %llu bytes of RAM (%d pages)\n", cbRam, cPages));
-        rc = SUPPageAlloc(cPages, &pVM->mm.s.pvRamBaseHC);
-        if (VBOX_SUCCESS(rc))
-        {
-            pVM->mm.s.cbRamBase = cPages << PAGE_SHIFT;
-            rc = MMR3PhysRegister(pVM, pVM->mm.s.pvRamBaseHC, 0, pVM->mm.s.cbRamBase, 0, "Main Memory");
-            if (VBOX_SUCCESS(rc))
-                return rc;
-            SUPPageFree(pVM->mm.s.pvRamBaseHC);
-        }
-        else
-            LogRel(("MMR3InitPage: Failed to allocate %u bytes of RAM! rc=%Vrc\n", cPages << PAGE_SHIFT));
-#endif
     }
     else
         AssertMsgFailed(("Configuration error: Failed to query integer \"RamSize\", rc=%Vrc.\n", rc));
