@@ -996,3 +996,6 @@ vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *px, uint32_t *py,
                rc);
     return FALSE;
 }
+
+extern int __gxx_personality_v0;
+int __gxx_personality_v0 = 0xdeadbeef;

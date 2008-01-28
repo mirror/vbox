@@ -846,3 +846,6 @@ vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
     return FALSE;
 }
 
+/* Make our C++ libraries happy. */
+extern int __gxx_personality_v0;
+int __gxx_personality_v0 = 0xdeadbeef;
