@@ -528,6 +528,7 @@ RuntimeGuestR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR3_SOURC
 #
 ifeq ($(BUILD_TARGET),linux) ## @todo elimiate this by fixing VBOXGUESTR3LIB/DLL/EXE. What about NOCPP like the x11 bits?
 RuntimeGuestR3Mini_TEMPLATE             := VBOXLNX32GUESTR3LIB
+RuntimeGuestR3Mini_INST                 = $(INST_ADDITIONS_LIB)
 else ## @todo this should be VBOXGUESTR3DLL I think if PIC code is required.
 RuntimeGuestR3Mini_TEMPLATE             := VBOXGUESTR3LIB
 endif
