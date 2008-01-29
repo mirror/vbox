@@ -128,10 +128,10 @@ VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibVideo.cpp
 VBoxGuestR3LibXFree86_INCS     = \
-        ../../x11/x11include/4.2/programs/Xserver/hw/xfree86/common/ \
-        ../../x11/x11include/4.2/programs/Xserver/hw/xfree86/os-support \
-        ../../x11/x11include/4.2/programs/Xserver/include \
-        ../../x11/x11include/4.2/exports/include/X11
+        $(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/common/ \
+        $(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support \
+        $(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/include \
+        $(VBOX_PATH_X11_XFREE_4_2)/exports/include/X11
 
 
 #
