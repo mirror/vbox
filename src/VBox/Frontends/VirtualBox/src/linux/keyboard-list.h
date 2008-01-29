@@ -79,6 +79,8 @@
  {"Bosnia and Herzegovina, US keyboard with Bosnian letters", &main_key_ba_us},
  {"Brazil", &main_key_br},
  {"Brazil, Eliminate dead keys", &main_key_br_nodeadkeys},
+ {"Brazil, Alternative 102", &main_key_br_alt_102},
+ {"Brazil, Alternative 102, Eliminate dead keys", &main_key_br_alt_102_nodeadkeys},
  {"Bulgaria", &main_key_bg},
  {"Bulgaria, Phonetic", &main_key_bg_phonetic},
  {"Myanmar", &main_key_mm},
