@@ -44,12 +44,14 @@ vboxadd-xclient_LIBS     = \
 # Link aginst libstdc++.a on linux. (http://www.trilithium.com/johan/2005/06/static-libstdc/).
 # (It would've been preferred to avoid features depending on libstdc++, of course...)
 #
-vboxadd-xclient_LIBPATH.linux = $(PATH_TARGET)/vboxadd-xclient
-vboxadd-xclient_DEPS.linux    = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
-vboxadd-xclient_CLEAN.linux   = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
+vboxadd-xclient_LIBPATH.linux   = $(PATH_TARGET)/vboxadd-xclient
+vboxadd-xclient_ORDERDEPS.linux = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
+vboxadd-xclient_CLEAN.linux     = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
 $(PATH_TARGET)/vboxadd-xclient/libstdc++.a:
 	$(call MSG_L1,Forcing static libstdc++)
-	$(QUIET)ln -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ || cp `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ \
+	     || $(CP_EXT) -f  `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
 
 ifdef VBOX_X11_SEAMLESS_GUEST
  vboxadd-xclient_DEFS += SEAMLESS_X11
