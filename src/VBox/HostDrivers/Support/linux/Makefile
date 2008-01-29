@@ -104,58 +104,74 @@ endif
 
 ifneq ($(MAKECMDGOALS),clean)
 
-ifdef KDIR
-# Debian kernel module build system
-KERN_DIR := $(KDIR)
-endif
+ifeq ($(KERNELRELEASE),)
 
-# kernel base directory
-ifndef KERN_DIR
- # build for the current kernel, version check
- KERN_DIR := /lib/modules/$(shell uname -r)/build
- ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
-  KERN_DIR := /usr/src/linux
+ #
+ # building from this directory
+ #
+
+ # kernel base directory
+ ifndef KERN_DIR
+  # build for the current kernel, version check
+  KERN_DIR := /lib/modules/$(shell uname -r)/build
   ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
-   $(error Error: unable to find the sources of your current Linux kernel. Specify KERN_DIR=<directory> and run Make again.)
+   KERN_DIR := /usr/src/linux
+   ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+    $(error Error: unable to find the sources of your current Linux kernel. \
+	           Specify KERN_DIR=<directory> and run Make again)
+   endif
+   $(warning Warning: using /usr/src/linux as the source directory of your \
+                      Linux kernel. If this is not correct, specify \
+		      KERN_DIR=<directory> and run Make again.)
   endif
-  $(warning Warning: using /usr/src/linux as the source directory of your Linux kernel. If this is not correct, specify KERN_DIR=<directory> and run Make again.)
- endif
- # check if versions match -- works only for later 2.6 kernels
- VBOX_KERN_VER := $(shell $(MAKE) -sC $(KERN_DIR) kernelrelease 2> /dev/null || true)
- ifneq ($(VBOX_KERN_VER),)
-  ifneq ($(VBOX_KERN_VER),$(shell uname -r))
-   $(error Error: /usr/src/linux (version $(VBOX_KERN_VER)) does not match the current kernel (version $(shell uname -r)))
+  # check if versions match -- works only for later 2.6 kernels
+  VBOX_KERN_VER := $(shell $(MAKE) -sC $(KERN_DIR) kernelrelease 2> /dev/null || true)
+  ifneq ($(VBOX_KERN_VER),)
+   ifneq ($(VBOX_KERN_VER),$(shell uname -r))
+    $(error Error: /usr/src/linux (version $(VBOX_KERN_VER)) does not match \
+                   the current kernel (version $(shell uname -r)))
+   endif
+  endif
+ else
+  # build for a dedicated kernel, no version check
+  ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+   $(error Error: KERN_DIR does not point to a directory)
   endif
  endif
-else
- # build for a dedicated kernel, no version check
- ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
-  $(error Error: KERN_DIR does not point to a directory.)
+
+ # includes
+ ifndef KERN_INCL
+  KERN_INCL = $(KERN_DIR)/include
  endif
-endif
+ ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
+  $(error Error: unable to find the include directory for your current Linux \
+                 kernel. Specify KERN_INCL=<directory> and run Make again)
+ endif
 
-# includes
-ifndef KERN_INCL
- KERN_INCL = $(KERN_DIR)/include
-endif
-ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
- $(error Error: unable to find the include directory for your current Linux kernel. Specify KERN_INCL=<directory> and run Make again.)
-endif
+ # module install dir, only for current kernel
+ ifneq ($(filter install install_rpm,$(MAKECMDGOALS)),)
+  ifndef MODULE_DIR
+   MODULE_DIR_TST := /lib/modules/$(shell uname -r)
+   ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
+    MODULE_DIR := $(MODULE_DIR_TST)/misc
+   else
+    $(error Unable to find the folder to install the support driver to)
+   endif
+  endif # MODULE_DIR unspecified
+ endif
 
-# module install dir, only for current kernel
-ifneq ($(filter install install_rpm,$(MAKECMDGOALS)),)
- ifndef MODULE_DIR
-  MODULE_DIR_TST := /lib/modules/$(shell uname -r)
-  ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
-   MODULE_DIR := $(MODULE_DIR_TST)/misc
-  else
-   $(error Unable to find the folder to install the support driver to)
-  endif
- endif # MODULE_DIR unspecified
-endif
+ # guess kernel version (24 or 26)
+ KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
 
-# guess kernel version (24 or 26)
-KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
+else # neq($(KERNELRELEASE),)
+
+ #
+ # building from Linux-2.6-kbuild (make -C <kernel_directory> M=`pwd`)
+ #
+
+ KERN_VERSION := 26
+
+endif # neq($(KERNELRELEASE),)
 
 # debug - show guesses.
 ifdef DEBUG
@@ -169,7 +185,7 @@ endif
 # Compiler options
 #
 ifndef INCL
- INCL    := -I$(KERN_INCL) $(addprefix -I, $(EXTRA_INCL))
+ INCL    := $(addprefix -I,$(KERN_INCL) $(EXTRA_INCL))
  ifndef KBUILD_EXTMOD
   KBUILD_EXTMOD := $(shell pwd)
  endif
