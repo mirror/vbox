@@ -69,35 +69,41 @@ static int g_File = -1;
 #else
 static RTFILE g_File = NIL_RTFILE;
 #endif
-/**
+/** User counter.
  * A counter of the number of times the library has been initialised, for use with
  * X.org drivers, where the library may be shared by multiple independant modules
  * inside a single process space.
  */
-static uint32_t g_cInits = 0;
+static uint32_t volatile g_cInits = 0;
+
 
 VBGLR3DECL(int) VbglR3Init(void)
 {
     uint32_t cInits = ASMAtomicIncU32(&g_cInits);
-#ifdef VBOX_VBGLR3_XFREE86
-    if (1 != cInits)
-        return VINF_SUCCESS;
-    if (-1 != g_File)
-        return VERR_INTERNAL_ERROR;
-#else
+#ifndef VBOX_VBGLR3_XFREE86
     Assert(cInits > 0);
-    if (1 > cInits)
+#endif
+    if (cInits > 1)
     {
-        /* This will not work when the library is shared inside a multi-threaded
-           process.  Hopefully no-one will try that, as we can't use the threads
-           APIs here. */
-        if (NIL_RTFILE == g_File)
+        /* 
+         * This will fail if two (or more) threads race each other calling VbglR3Init.
+         * However it will work fine for single threaded or otherwise serialized
+         * processed calling us more than once.
+         */
+#ifndef VBOX_VBGLR3_XFREE86
+        if (g_File == NIL_RTFILE)
+#else
+        if (g_File == -1)
+#endif 
             return VERR_INTERNAL_ERROR;
         return VINF_SUCCESS;
     }
-    if (NIL_RTFILE != g_File)
+#ifndef VBOX_VBGLR3_XFREE86
+    if (g_File != NIL_RTFILE)
+#else
+    if (g_File != -1)
+#endif 
         return VERR_INTERNAL_ERROR;
-#endif
 
 #if defined(RT_OS_OS2)
     /*
@@ -152,10 +158,8 @@ VBGLR3DECL(int) VbglR3Init(void)
 
 #elif defined(VBOX_VBGLR3_XFREE86)
     int File = open(VBOXGUEST_DEVICE_NAME, O_RDWR);
-    if (-1 == File)
-    {
-        return VERR_UNRESOLVED_ERROR;
-    }
+    if (File == -1)
+        return VERR_OPEN_FAILED;
     g_File = File;
 
 #else
@@ -178,27 +182,26 @@ VBGLR3DECL(void) VbglR3Term(void)
     if (cInits > 0)
         return;
 #ifndef VBOX_VBGLR3_XFREE86
-    AssertReturnVoid(0 == cInits);
+    AssertReturnVoid(!cInits);
     RTFILE File = g_File;
     g_File = NIL_RTFILE;
-    AssertReturnVoid(NIL_RTFILE != File);
+    AssertReturnVoid(File != NIL_RTFILE);
+
 #else
     int File = g_File;
     g_File = -1;
-    if (-1 == File)
+    if (File == -1)
         return;
 #endif
+
 #if defined(RT_OS_OS2)
     APIRET rc = DosClose(File);
     AssertMsg(!rc, ("%ld\n", rc));
+
 #elif defined(VBOX_VBGLR3_XFREE86)
-    /* if (-1 == close(File))
-    {
-        int iErr = errno;
-        AssertRC(RTErrConvertFromErrno(iErr));
-    } */
-    close(File);  /* iprt is not available here. */
+    close(File);
     File = -1;
+
 #else
     int rc = RTFileClose(File);
     AssertRC(rc);
@@ -239,6 +242,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     Hdr.cbData = cbData;
     Hdr.pvDataR3 = pvData;
 
+/** @todo test status code passing! */
     int rc = ioctl((int)g_File, iFunction, &Hdr);
     if (rc == -1)
     {
@@ -247,23 +251,25 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     }
     return VINF_SUCCESS;
 
-#else
-    /* Default implementation - PORTME: Do not use this without testings that error passing works! */
-# ifdef VBOX_VBGLR3_XFREE86
-    int rc = ioctl(g_File, (int) iFunction, pvData);
+#elif defined(VBOX_VBGLR3_XFREE86)
+    /* PORTME - This is preferred over the RTFileIOCtl variant below, just be careful with the (int). */
+/** @todo test status code passing! */
+    int rc = ioctl(g_File, (int)iFunction, pvData); 
     if (rc == -1)
     {
         rc = errno;
         return RTErrConvertFromErrno(rc);
     }
     return VINF_SUCCESS;
-# else
+
+#else
+    /* Default implementation - PORTME: Do not use this without testings that passing errors works! */
+/** @todo test status code passing! */
     int rc2 = VERR_INTERNAL_ERROR;
     int rc = RTFileIoCtl(g_File, (int)iFunction, pvData, cbData, &rc2);
     if (RT_SUCCESS(rc))
         rc = rc2;
     return rc;
-# endif
 #endif
 }
 
