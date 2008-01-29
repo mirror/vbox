@@ -47,8 +47,9 @@ else
   	VBoxGuestLibBaseLinux
   endif
    LIBRARIES += \
-  	VBoxGuestR3LibLinux \
-  	VBoxGuestR3LibXFree86
+  	VBoxGuestR3Lib \
+  	VBoxGuestR3LibXFree86 \
+  	VBoxGuestR3LibLinux
  endif
  ifdef VBOX_WITH_OS2_ADDITIONS
   LIBRARIES += \
@@ -113,12 +114,12 @@ VBoxGuestR3Lib_SOURCES     = \
 # the X server runtime instead of IPRT, for use with old servers where the
 # C library is not available.
 #
-ifeq ($(BUILD_TARGET),linux)
-VBoxGuestR3LibXFree86_TEMPLATE = VBOXLNX32GUESTR3LIB
-VBoxGuestR3LibXFree86_INST     = $(INST_ADDITIONS_LIB)
-else
-VBoxGuestR3LibXFree86_TEMPLATE = FIXME
-endif
+#ifeq ($(BUILD_TARGET),linux) - VBOXGUESTR3LIB should work now (only difference is the default visibility).
+#VBoxGuestR3LibXFree86_TEMPLATE = VBOXLNX32GUESTR3LIB
+#VBoxGuestR3LibXFree86_INST     = $(INST_ADDITIONS_LIB)
+#else
+VBoxGuestR3LibXFree86_TEMPLATE = VBOXGUESTR3LIB
+#endif
 VBoxGuestR3LibXFree86_DEFS     = VBOX_HGCM VBOX_VBGLR3_XFREE86
 VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3Lib.cpp \
