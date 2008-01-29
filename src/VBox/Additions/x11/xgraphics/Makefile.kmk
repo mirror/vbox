@@ -28,7 +28,6 @@ SUFF_DLL = .so
 # For now
 VBOX_LIB_VBGL_R3 := $(PATH_LIB)/VBoxGuestR3LibLinux.a
 VBOX_LIB_VBGL_R3_XFREE86 := $(PATH_LIB)/VBoxGuestR3LibLinuxXFree86.a
-VBOX_LIB_IPRT_GUEST_R3 := $(PATH_LIB)/RuntimeLnx32GuestR3Shared.a
 
 vboxvideo_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxvideo_drv_SYSSUFF = .o
@@ -126,7 +125,7 @@ vboxvideo_drv_70_SOURCES  = \
 	vboxutils-new.c
 vboxvideo_drv_70_LIBS = \
 	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_IPRT_GUEST_MINI_R3) \
 	$(VBOX_LIB_VBGL_R3)
 
 vboxvideo_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
@@ -142,7 +141,7 @@ vboxvideo_drv_71_SOURCES  = \
 	vboxutils-new.c
 vboxvideo_drv_71_LIBS = \
 	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_IPRT_GUEST_MINI_R3) \
 	$(VBOX_LIB_VBGL_R3)
 
 vboxvideo_drv_13_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
@@ -158,7 +157,7 @@ vboxvideo_drv_13_SOURCES  = \
 	vboxutils-new.c
 vboxvideo_drv_13_LIBS = \
 	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_IPRT_GUEST_MINI_R3) \
 	$(VBOX_LIB_VBGL_R3)
 
 vboxvideo_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
@@ -176,7 +175,7 @@ vboxvideo_drv_14_SOURCES  = \
 	vboxutils-new.c
 vboxvideo_drv_14_LIBS = \
 	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_IPRT_GUEST_MINI_R3) \
 	$(VBOX_LIB_VBGL_R3)
 endif
 
@@ -198,6 +197,7 @@ vboxvideo_drv_LIBS = \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)
+## @todo Use VBOX_LIB_IPRT_GUEST_MINI_R3 instead of VBOX_LIB_IPRT_GUEST_R3?
 endif
 
 include	$(PATH_KBUILD)/footer.kmk

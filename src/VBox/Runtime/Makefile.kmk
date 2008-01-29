@@ -33,13 +33,13 @@ ifdef VBOX_ONLY_ADDITIONS
  # Only build the additions, sort out the legacy names first.
  #
  ifeq ($(BUILD_TARGET),linux)
-  LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3 RuntimeLnx32GuestR3Shared
+  LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3 RuntimeGuestR3Mini
  else ifeq ($(BUILD_TARGET),os2)
   LIBRARIES  = RuntimeOS2GuestR0 RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
  else ifeq ($(BUILD_TARGET),win)
   LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
  else
-  LIBRARIES = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Shared
+  LIBRARIES = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
   #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
   #LIBRARIES.win = RuntimeW32NT4GuestR0
  endif
@@ -48,7 +48,7 @@ ifdef VBOX_ONLY_ADDITIONS
  # Remote cross building... Will be removed unless somebody speaks up!
  #
 else ifdef VBOX_ADDITIONS_LINUX_ONLY
- LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3 RuntimeLnx32GuestR3Shared
+ LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3 RuntimeGuestR3Mini
 else ifdef VBOX_ADDITIONS_WIN32_ONLY
  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
 else
@@ -67,7 +67,7 @@ else
     LIBRARIES += RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
    endif
    ifdef VBOX_WITH_LINUX_ADDITIONS
-    LIBRARIES += RuntimeLnx32GuestR3 RuntimeLnx32GuestR3Shared
+    LIBRARIES += RuntimeLnx32GuestR3 RuntimeGuestR3Mini
     ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
      LIBRARIES += RuntimeLnx32GuestR0
     endif
@@ -77,7 +77,7 @@ else
     LIBRARIES += RuntimeOS2GuestR0 RuntimeOS2GuestR3
    endif
   else
-   LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Shared
+   LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
   endif
   #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
  endif # VBOX_WITH_ADDITIONS
@@ -455,42 +455,6 @@ RuntimeR3_SOURCES.solaris = \
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
-RuntimeR3Shared_SOURCES       = \
-	common/err/errmsg.cpp \
-	common/err/RTErrConvertFromErrno.cpp \
-	common/log/logformat.cpp \
-	common/misc/assert.cpp \
-	common/misc/sanity-c.c \
-	common/misc/sanity-cpp.cpp \
-	common/string/strformat.cpp \
-	common/string/strformatrt.cpp \
-	common/string/string.cpp \
-	common/string/strprintf.cpp \
-	common/string/unidata.cpp \
-	common/string/utf-8.cpp \
-	common/string/utf-16.cpp \
-	generic/pathhost-generic.cpp \
-	generic/RTAssertDoBreakpoint-generic.cpp \
-	r3/alloc.cpp \
-	r3/fileio.cpp \
-	r3/fs.cpp \
-	r3/path.cpp
-
-# VBox specific stuff.
-RuntimeR3Shared_SOURCES += \
-	VBox/strformat-vbox.cpp
-
-RuntimeR3Shared_SOURCES.linux = \
-	r3/posix/fileio-posix.cpp \
-	r3/posix/path-posix.cpp \
-	r3/posix/utf8-posix.cpp
-
-
-RuntimeR3Shared_SOURCES.solaris = \
-	r3/posix/fileio-posix.cpp \
-	r3/posix/path-posix.cpp \
-	r3/posix/utf8-posix.cpp
-
 
 #
 # L4 RuntimeR3 subtarget since L4 headers won't work with VBOXR3.
@@ -558,23 +522,54 @@ RuntimeGuestR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR3_SOURC
 
 
 #
-# RuntimeGuestR3Shared - Guest Additions Runtime (static) which does not require initialisation.
+# RuntimeGuestR3Mini - Minimal Guest Additions Runtime which does not require 
+#                      initialization and can be linked into an .so. Intended 
+#                      for X11 drivers.
 #
-RuntimeGuestR3Shared_TEMPLATE             := VBOXGUESTR3LIB
-RuntimeGuestR3Shared_SDKS.win             := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3Shared_DEFS                 := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS)) \
-                                             VBOX_SHARED_RUNTIME
-RuntimeGuestR3Shared_DEFS.$(BUILD_TARGET) := $(RuntimeR3_DEFS.$(BUILD_TARGET))
-RuntimeGuestR3Shared_INCS                 := $(RuntimeR3_INCS)
-RuntimeGuestR3Shared_INCS.$(BUILD_TARGET) := $(RuntimeR3_INCS.$(BUILD_TARGET))
-RuntimeGuestR3Shared_SOURCES              := $(filter-out \
-	generic/RTLogWriteUser-generic.cpp \
-	, $(RuntimeR3Shared_SOURCES))
-RuntimeGuestR3Shared_SOURCES              += \
+ifeq ($(BUILD_TARGET),linux) ## @todo elimiate this by fixing VBOXGUESTR3LIB/DLL/EXE. What about NOCPP like the x11 bits?
+RuntimeGuestR3Mini_TEMPLATE             := VBOXLNX32GUESTR3LIB
+else ## @todo this should be VBOXGUESTR3DLL I think if PIC code is required.
+RuntimeGuestR3Mini_TEMPLATE             := VBOXGUESTR3LIB
+endif
+RuntimeGuestR3Mini_SDKS.win             := $(RuntimeR3_SDKS.win)
+RuntimeGuestR3Mini_DEFS                 := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS)) \
+                                           RT_MINI
+RuntimeGuestR3Mini_DEFS.$(BUILD_TARGET) := $(RuntimeR3_DEFS.$(BUILD_TARGET))
+RuntimeGuestR3Mini_INCS                 := $(RuntimeR3_INCS)
+RuntimeGuestR3Mini_INCS.$(BUILD_TARGET) := $(RuntimeR3_INCS.$(BUILD_TARGET))
+RuntimeGuestR3Mini_SOURCES               = \
+	common/err/errmsg.cpp \
+	common/err/RTErrConvertFromErrno.cpp \
+	common/log/logformat.cpp \
+	common/misc/assert.cpp \
+	common/misc/sanity-c.c \
+	common/misc/sanity-cpp.cpp \
+	common/string/strformat.cpp \
+	common/string/strformatrt.cpp \
+	common/string/string.cpp \
+	common/string/strprintf.cpp \
+	common/string/unidata.cpp \
+	common/string/utf-8.cpp \
+	common/string/utf-16.cpp \
+	generic/pathhost-generic.cpp \
+	generic/RTAssertDoBreakpoint-generic.cpp \
+	r3/alloc.cpp \
+	r3/fileio.cpp \
+	r3/fs.cpp \
+	r3/path.cpp
+RuntimeGuestR3Mini_SOURCES.linux         = \
+	r3/posix/fileio-posix.cpp \
+	r3/posix/path-posix.cpp \
+	r3/posix/utf8-posix.cpp
+RuntimeGuestR3Mini_SOURCES.solaris       = \
+	r3/posix/fileio-posix.cpp \
+	r3/posix/path-posix.cpp \
+	r3/posix/utf8-posix.cpp
+# VBox specific stuff.
+RuntimeGuestR3Mini_SOURCES              += \
 	VBox/logbackdoor.cpp \
-	VBox/logbackdoor-redirect.cpp
-RuntimeGuestR3Shared_SOURCES.$(BUILD_TARGET) := $(RuntimeR3Shared_SOURCES.$(BUILD_TARGET))
-RuntimeGuestR3Shared_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR3Shared_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
+	VBox/logbackdoor-redirect.cpp \
+	VBox/strformat-vbox.cpp
 
 
 #
@@ -601,23 +596,6 @@ endif
 RuntimeLnx32GuestR3_SOURCES    = $(RuntimeR3_SOURCES.linux) $(RuntimeR3_SOURCES)
 RuntimeLnx32GuestR3_SOURCES   += VBox/logbackdoor.cpp
 RuntimeLnx32GuestR3_INCS       = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
-
-
-#
-# RuntimeLnx32GuestR3Shared - 32-bit Linux guest program runtime which does not require
-# initialisation.
-#
-RuntimeLnx32GuestR3Shared_TEMPLATE   = VBOXLNX32GUESTR3LIB
-RuntimeLnx32GuestR3Shared_DEFS       = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 \
-                                       LDR_WITH_PE RT_WITH_VBOX VBOX_SHARED_RUNTIME
-ifdef IPRT_WITH_KSTUFF
- RuntimeLnx32GuestR3Shared_DEFS     += LDR_WITH_KLDR
-endif
-RuntimeLnx32GuestR3Shared_SOURCES    = $(RuntimeR3Shared_SOURCES.linux) $(RuntimeR3Shared_SOURCES)
-RuntimeLnx32GuestR3Shared_SOURCES   += \
-        VBox/logbackdoor.cpp \
-        VBox/logbackdoor-redirect.cpp
-RuntimeLnx32GuestR3Shared_INCS       = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
 
 
 #

@@ -400,8 +400,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
 }
 
 
-#ifndef VBOX_SHARED_RUNTIME
-
+#ifndef RT_MINI
 RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
 {
     /*
@@ -487,8 +486,8 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
     LogFlow(("RTPathProgram(%p, %u): returns %Rrc\n", pszPath, cchPath, VERR_BUFFER_OVERFLOW));
     return VERR_BUFFER_OVERFLOW;
 }
+#endif /* !RT_MINI */
 
-#endif /* !VBOX_SHARED_RUNTIME */
 
 #ifndef RT_OS_L4
 /**
