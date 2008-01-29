@@ -797,6 +797,7 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
     rc = VBoxGuestCommonIOCtl(Cmd, &g_DevExt, pSession, pvBuf, ReqWrap.cbData, &cbDataReturned);
     if (RT_SUCCESS(rc))
     {
+        rc = 0;
         if (RT_UNLIKELY(cbDataReturned > ReqWrap.cbData))
         {
             Log((DEVICE_NAME ":VBoxAddSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, ReqWrap.cbData));
