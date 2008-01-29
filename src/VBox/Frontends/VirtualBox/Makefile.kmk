@@ -53,6 +53,7 @@ endif
 PROGRAMS = VirtualBox
 ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(BUILD_TARGET)),) # X11
 DLLS = VBoxKeyboard
+OTHERS = $(PATH_BIN)/vboxkeyboard.tar.gz
 endif
 INSTALLS = VirtualBox.nls
 
@@ -87,8 +88,32 @@ VBoxHlp_SOURCES     = \
 VBoxKeyboard_TEMPLATE = VBOXR3
 VBoxKeyboard_SOURCES  = \
 	src/linux/keyboard-new.c
+VBoxKeyboard_TARSOURCES = \
+	$(VBoxKeyboard_SOURCES) \
+	src/linux/COPYING.LIB \
+	src/linux/keyboard.h \
+	src/linux/keyboard-layouts.h \
+	src/linux/keyboard-list.h \
+	src/linux/keyboard-tables.h \
+	src/linux/Makefile
 VBoxKeyboard_LIBS     = X11
 VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
+
+
+#
+# vboxkeyboard.tar.gz - the LGPLed keyboard library must always be
+# redistributed with usable sources.
+#
+SOURCE_DIRECTORY = vboxkeyboard
+DIRECTORY_PREFIX = src/linux/
+
+$(PATH_TARGET)/$(SOURCE_DIRECTORY):
+	$(MKDIR) -p $(@D)
+	$(LN_SYMLINK) $(abspath $(PATH_CURRENT))/$(DIRECTORY_PREFIX) $@
+
+$(PATH_BIN)/vboxkeyboard.tar.gz: $(VBoxKeyboard_TARSOURCES) $(PATH_TARGET)/$(SOURCE_DIRECTORY)
+	$(call MSG_TOOL,tar,,,$@)
+	$(QUIET)cd $(PATH_TARGET) && tar -chzf $@ $(addprefix $(SOURCE_DIRECTORY)/,$(subst $(DIRECTORY_PREFIX),,$(VBoxKeyboard_TARSOURCES)))
 
 
 #
