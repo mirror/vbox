@@ -98,7 +98,7 @@ ifeq ($(KERNELRELEASE),)
  KERN_VERSION := 26
  endif
  # KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
- 
+
 else # neq($(KERNELRELEASE),)
 
  #
