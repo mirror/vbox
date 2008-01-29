@@ -50,6 +50,20 @@ __BEGIN_DECLS
 # define GMMR0DECL(type)    DECLIMPORT(type) VBOXCALL
 #endif
 
+/** @def IN_GMM_R3
+ * Used to indicate whether we're inside the same link module as the ring 3
+ * part of the Global Memory Manager or not.
+ */
+/** @def GMMR3DECL
+ * Ring 3 GMM export or import declaration.
+ * @param   type    The return type of the function declaration.
+ */
+#ifdef IN_GMM_R3
+# define GMMR3DECL(type)    DECLEXPORT(type) VBOXCALL
+#else
+# define GMMR3DECL(type)    DECLIMPORT(type) VBOXCALL
+#endif
+
 
 /** The chunk shift. (2^20 = 1 MB) */
 #define GMM_CHUNK_SHIFT                 20
@@ -233,6 +247,15 @@ GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t 
 GMMR0DECL(int)  GMMR0DeflatedBalloon(PVM pVM, uint32_t cPages);
 GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3);
+
+
+GMMR3DECL(int)  GMMR3InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
+                                        GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority);
+GMMR3DECL(int)  GMMR3UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages);
+GMMR3DECL(int)  GMMR3DeflatedBalloon(PVM pVM, uint32_t cPages);
+GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
+GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
+
 
 
 /**
