@@ -45,54 +45,69 @@ OBJS   = \
 
 ifneq ($(MAKECMDGOALS),clean)
 
-ifdef KDIR
-# Debian kernel module build system
-KERN_DIR := $(KDIR)
-endif
+ifeq ($(KERNELRELEASE),)
 
-# kernel base directory
-ifndef KERN_DIR
- KERN_DIR := /lib/modules/$(shell uname -r)/build
- ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
-  KERN_DIR := /usr/src/linux
+ #
+ # building from this directory
+ #
+
+ # kernel base directory
+ ifndef KERN_DIR
+  KERN_DIR := /lib/modules/$(shell uname -r)/build
   ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
-   $(error Error: unable to find the sources of your current Linux kernel. Specify KERN_DIR=<directory> and run Make again.)
+   KERN_DIR := /usr/src/linux
+   ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+    $(error Error: unable to find the sources of your current Linux kernel. \
+	           Specify KERN_DIR=<directory> and run Make again)
+   endif
+   $(warning Warning: using /usr/src/linux as the source directory of your \
+                      Linux kernel. If this is not correct, specify \
+		      KERN_DIR=<directory> and run Make again.)
   endif
-  $(warning Warning: using /usr/src/linux as the source directory of your Linux kernel. If this is not correct, specify KERN_DIR=<directory> and run Make again.)
- endif
-else
- ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
-  $(error Error: KERN_DIR does not point to a directory.)
- endif
-endif
-
-# includes
-ifndef KERN_INCL
- KERN_INCL = $(KERN_DIR)/include
-endif
-ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
- $(error Error: unable to find the include directory for your current Linux kernel. Specify KERN_INCL=<directory> and run Make again.)
-endif
-
-# module install dir.
-ifneq ($(filter install install_rpm,$(MAKECMDGOALS)),)
- ifndef MODULE_DIR
-  MODULE_DIR_TST := /lib/modules/$(shell uname -r)
-  ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
-   MODULE_DIR := $(MODULE_DIR_TST)/misc
-  else
-   $(error Unable to find the folder to install the additions driver to)
+ else
+  ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+   $(error Error: KERN_DIR does not point to a directory)
   endif
- endif # MODULE_DIR unspecified
-endif
+ endif
 
-# guess kernel version (24 or 26)
-ifeq ($(shell if grep '"2.4.' $(KERN_INCL)/linux/version.h > /dev/null; then echo yes; fi),yes)
-KERN_VERSION := 24
-else
-KERN_VERSION := 26
-endif
-# KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
+ # includes
+ ifndef KERN_INCL
+  KERN_INCL = $(KERN_DIR)/include
+ endif
+ ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
+  $(error Error: unable to find the include directory for your current Linux \
+                 kernel. Specify KERN_INCL=<directory> and run Make again)
+ endif
+
+ # module install dir.
+ ifneq ($(filter install install_rpm,$(MAKECMDGOALS)),)
+  ifndef MODULE_DIR
+   MODULE_DIR_TST := /lib/modules/$(shell uname -r)
+   ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
+    MODULE_DIR := $(MODULE_DIR_TST)/misc
+   else
+    $(error Unable to find the folder to install the additions driver to)
+   endif
+  endif # MODULE_DIR unspecified
+ endif
+
+ # guess kernel version (24 or 26)
+ ifeq ($(shell if grep '"2.4.' $(KERN_INCL)/linux/version.h > /dev/null; then echo yes; fi),yes)
+ KERN_VERSION := 24
+ else
+ KERN_VERSION := 26
+ endif
+ # KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
+ 
+else # neq($(KERNELRELEASE),)
+
+ #
+ # building from Linux-2.6-kbuild (make -C <kernel_directory> M=`pwd`)
+ #
+
+ KERN_VERSION := 26
+
+endif # neq($(KERNELRELEASE),)
 
 # debug - show guesses.
 ifdef DEBUG
@@ -107,7 +122,7 @@ endif
 # Compiler options
 #
 ifndef INCL
- INCL    := -I$(KERN_INCL) $(addprefix -I, $(EXTRA_INCL))
+ INCL    := $(addprefix -I,$(KERN_INCL) $(EXTRA_INCL))
  ifndef KBUILD_EXTMOD
   KBUILD_EXTMOD := $(shell pwd)
  endif
