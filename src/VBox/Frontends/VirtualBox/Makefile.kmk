@@ -351,7 +351,8 @@ XIDLFILE            = ../../Main/idl/VirtualBox.xidl
 OTHER_CLEAN           = \
 	$(VirtualBox_GENSRCS) \
 	$(VirtualBox_GENHDRS) \
-	$(WRAPPERSFILE)
+	$(WRAPPERSFILE) \
+	$(PATH_BIN)/vboxkeyboard.tar.gz
 
 
 #
