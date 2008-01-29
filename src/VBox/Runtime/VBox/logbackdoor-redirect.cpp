@@ -1,10 +1,12 @@
 /* $Id$ */
 /** @file
- * Virtual Box Runtime - Guest Backdoor Logging, release logging for assertions.
+ * Virtual Box Runtime - RTLog stubs for the stripped down IPRT used by 
+ *                       RuntimeGuestR3Shared (X11), output is redirected
+ *                       to the RTLogBackdoor API where possible.
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,16 +30,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/log.h>
-#include <iprt/asm.h>
-#include <iprt/string.h>
-#ifdef IN_GUEST_R3
-# include <VBox/VBoxGuest.h>
-#endif
 
 
-/*******************************************************************************
-*   Public Functions                                                         *
-*******************************************************************************/
 
 /* All release logging goes to the backdoor logger anyway. */
 RTDECL(PRTLOGGER) RTLogRelDefaultInstance(void)
@@ -45,11 +39,13 @@ RTDECL(PRTLOGGER) RTLogRelDefaultInstance(void)
     return NULL;
 }
 
+
 /* All logging goes to the backdoor logger anyway. */
 RTDECL(PRTLOGGER) RTLogDefaultInstance(void)
 {
     return NULL;
 }
+
 
 RTDECL(void) RTLogRelPrintf(const char *pszFormat, ...)
 {
@@ -60,10 +56,12 @@ RTDECL(void) RTLogRelPrintf(const char *pszFormat, ...)
     va_end(args);
 }
 
+
 RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args)
 {
     RTLogBackdoorPrintfV(pszFormat, args);
 }
+
 
 RTDECL(void) RTLogPrintf(const char *pszFormat, ...)
 {
@@ -74,12 +72,15 @@ RTDECL(void) RTLogPrintf(const char *pszFormat, ...)
     va_end(args);
 }
 
+
 RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args)
 {
     RTLogBackdoorPrintfV(pszFormat, args);
 }
 
+
 /* Do nothing for now. */
 RTDECL(void) RTLogFlush(PRTLOGGER)
 {
 }
+
