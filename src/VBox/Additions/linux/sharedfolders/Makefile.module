@@ -120,7 +120,7 @@ endif
 # Compiler options
 #
 ifndef INCL
- INCL    := $(addprefix -I, $(KERN_INCL) $(EXTRA_INCL))
+ INCL    := $(addprefix -I,$(KERN_INCL) $(EXTRA_INCL))
  ifndef KBUILD_EXTMOD
   KBUILD_EXTMOD := $(shell pwd)
  endif
