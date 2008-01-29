@@ -19,70 +19,71 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 if1of ($(BUILD_TARGET),linux l4)
-ifneq ($(USERNAME),bird) # crap
- PROGRAMS = vboxadd-xclient
-endif
 
-OTHER_CLEAN              = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
-
+#
+# vboxadd-xclient.
+#
+PROGRAMS += vboxadd-xclient
 vboxadd-xclient_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxadd-xclient_SOURCES  = clipboard.cpp main.cpp
 vboxadd-xclient_DEFS    += VBOX_X11_CLIPBOARD
-
-ifdef VBOX_X11_SEAMLESS_GUEST
- vboxadd-xclient_SOURCES += \
-                 seamless-host.cpp \
-                 seamless-x11.cpp \
-                 thread.cpp
-endif
-vboxadd-xclient_LIBPATH  = $(PATH_TARGET)/vboxadd-xclient $(VBOX_LIBPATH32_X11)
-# Ugly recursive dependency between the runtime and the guest library.  Sorry.
-vboxadd-xclient_LIBS     = \
-                $(PATH_LIB)/RuntimeLnx32GuestR3.a \
-                $(PATH_LIB)/VBoxGuestR3LibLinux.a \
-                $(PATH_LIB)/RuntimeLnx32GuestR3.a \
-                pthread \
-                rt \
-                Xt \
-                Xext \
-                X11
 vboxadd-xclient_DEFS    += _GNU_SOURCE VBOX_HGCM
+vboxadd-xclient_LIBPATH  = \
+	$(VBOX_LIBPATH32_X11)
+vboxadd-xclient_LIBS     = \
+	$(PATH_LIB)/RuntimeLnx32GuestR3.a \
+	$(PATH_LIB)/VBoxGuestR3LibLinux.a \
+	$(PATH_LIB)/RuntimeLnx32GuestR3.a \
+	pthread \
+	rt \
+	Xt \
+	Xext \
+	X11
 
-ifdef VBOX_X11_SEAMLESS_GUEST
- vboxadd-xclient_DEFS     += SEAMLESS_X11
-endif
-
-# link agaginst libstdc++.a (http://www.trilithium.com/johan/2005/06/static-libstdc/)
-$(PATH_TARGET)/vboxadd-xclient/vboxadd-xclient: $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
-
+#
+# Link aginst libstdc++.a on linux. (http://www.trilithium.com/johan/2005/06/static-libstdc/).
+# (It would've been preferred to avoid features depending on libstdc++, of course...)
+#
+vboxadd-xclient_LIBPATH.linux = $(PATH_TARGET)/vboxadd-xclient
+vboxadd-xclient_DEPS.linux    = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
+vboxadd-xclient_CLEAN.linux   = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
 $(PATH_TARGET)/vboxadd-xclient/libstdc++.a:
 	$(call MSG_L1,Forcing static libstdc++)
 	$(QUIET)ln -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ || cp `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
 
 ifdef VBOX_X11_SEAMLESS_GUEST
+ vboxadd-xclient_DEFS += SEAMLESS_X11
+ vboxadd-xclient_SOURCES += \
+ 	seamless-host.cpp \
+ 	seamless-x11.cpp \
+ 	thread.cpp
+
  ifdef VBOX_WITH_TESTCASES
- # Additional testcase designed to be run manually, which initiates and starts the Linux
- # guest client part of the seamless additions in the host, faking seamless events from
- # the host and writing information about guest events to standard output.
-  PROGRAMS                  += tstSeamlessX11
-  tstSeamlessX11_TEMPLATE  = VBOXR3EXE
+  #
+  # Additional testcase designed to be run manually, which initiates and starts the Linux
+  # guest client part of the seamless additions in the host, faking seamless events from
+  # the host and writing information about guest events to standard output.
+  #
+  PROGRAMS += tstSeamlessX11
+  tstSeamlessX11_TEMPLATE  = VBOXR3TSTEXE
   tstSeamlessX11_SOURCES   = \
-          testcase/tstSeamlessX11.cpp \
-          seamless-host.cpp \
-          seamless-x11.cpp \
-          thread.cpp
+  	testcase/tstSeamlessX11.cpp \
+  	seamless-host.cpp \
+  	seamless-x11.cpp \
+  	thread.cpp
   tstSeamlessX11_LIBS      = \
-          $(LIB_RUNTIME) \
-          Xext \
-          X11
-  tstSeamlessX11_INST      = $(INST_TESTCASE)
+  	$(LIB_RUNTIME) \
+  	Xext \
+  	X11
  endif
 endif
-endif # target linux l4
 
-ifeq ($(BUILD_TARGET),solaris)
-PROGRAMS = VBoxClient
-
+else ifeq ($(BUILD_TARGET),solaris)
+#
+# VBoxClient.
+#
+## @todo r=bird: merge this with the linux additions one way or the other, pleaaaase!
+PROGRAMS += VBoxClient
 VBoxClient_TEMPLATE = VBOXGUESTR3EXE
 VBoxClient_DEFS    += VBOX_X11_CLIPBOARD VBOX_HGCM
 VBoxClient_SOURCES  = \
