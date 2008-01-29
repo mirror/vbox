@@ -111,10 +111,13 @@ $(PATH_TARGET)/$(SOURCE_DIRECTORY):
 	$(MKDIR) -p $(@D)
 	$(LN_SYMLINK) $(abspath $(PATH_CURRENT))/$(DIRECTORY_PREFIX) $@
 
-$(PATH_BIN)/vboxkeyboard.tar.gz: $(VBoxKeyboard_TARSOURCES) $(PATH_TARGET)/$(SOURCE_DIRECTORY)
-	$(call MSG_TOOL,tar,,,$@)
-	$(QUIET)cd $(PATH_TARGET) && tar -chzf $@ $(addprefix $(SOURCE_DIRECTORY)/,$(subst $(DIRECTORY_PREFIX),,$(VBoxKeyboard_TARSOURCES)))
+$(PATH_TARGET)/vboxkeyboard.tar: $(VBoxKeyboard_TARSOURCES) $(PATH_TARGET)/$(SOURCE_DIRECTORY)
+	$(call MSG_TOOL,tar,,$@)
+	$(QUIET)cd $(PATH_TARGET) && tar -chf $@ $(addprefix $(SOURCE_DIRECTORY)/,$(subst $(DIRECTORY_PREFIX),,$(VBoxKeyboard_TARSOURCES)))
 
+$(PATH_BIN)/vboxkeyboard.tar.gz: $(PATH_TARGET)/vboxkeyboard.tar
+	$(call MSG_TOOL,gzip,,$@)
+	$(QUIET)cat $(PATH_TARGET)/vboxkeyboard.tar | gzip - > $(PATH_BIN)/vboxkeyboard.tar.gz
 
 #
 # VirtualBox - The GUI program.
