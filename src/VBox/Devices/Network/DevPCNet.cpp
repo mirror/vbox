@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * AMD PCnet-PCI II / PCnet-FAST III (Am79C970A / Am79C973) Ethernet Controller Emulation.
  */
