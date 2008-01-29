@@ -474,11 +474,29 @@ static const char main_key_br[MAIN_LEN][2] =
 "'\"","1!","2@","3#","4$","5%","6W","7&","8*","9(","0)","-_","=+",
 "qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","QP","[{",
 "aA","sS","dD","fF","gG","hH","jJ","kK","lL","\xe7\xc7","SR","]}",
-"zZ","xX","cC","vV","bB","nN","mM",",<",".>",";:","<>","/?","\x0\x0"
+"zZ","xX","cC","vV","bB","nN","mM",",<",".>",";:","\\|","/?","\x0\x0"
 };
 
 /* Brazil, Eliminate dead keys */
 static const char main_key_br_nodeadkeys[MAIN_LEN][2] =
+{
+"'\"","1!","2@","3#","4$","5%","6\xa8","7&","8*","9(","0)","-_","=+",
+"qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","'`","[{",
+"aA","sS","dD","fF","gG","hH","jJ","kK","lL","\xe7\xc7","~^","]}",
+"zZ","xX","cC","vV","bB","nN","mM",",<",".>",";:","\\|","/?","\x0\x0"
+};
+
+/* Brazil with alternative 102 */
+static const char main_key_br_alt_102[MAIN_LEN][2] =
+{
+"'\"","1!","2@","3#","4$","5%","6W","7&","8*","9(","0)","-_","=+",
+"qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","QP","[{",
+"aA","sS","dD","fF","gG","hH","jJ","kK","lL","\xe7\xc7","SR","]}",
+"zZ","xX","cC","vV","bB","nN","mM",",<",".>",";:","<>","/?","\x0\x0"
+};
+
+/* Brazil with alternative 102, Eliminate dead keys */
+static const char main_key_br_alt_102_nodeadkeys[MAIN_LEN][2] =
 {
 "'\"","1!","2@","3#","4$","5%","6\xa8","7&","8*","9(","0)","-_","=+",
 "qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","'`","[{",
