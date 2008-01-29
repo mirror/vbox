@@ -651,17 +651,22 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
 
     if ((bitsp->xhot > w) || (bitsp->yhot > h))
         RETERROR(scrnIndex, ,
-            "Error invalid cursor hotspot location %dx%d (max %dx%d)\n",
-            bitsp->xhot, bitsp->yhot, w, h);
+                 "Error invalid cursor hotspot location %dx%d (max %dx%d)\n",
+                 bitsp->xhot, bitsp->yhot, w, h);
 
     pVBox->pointerSize = w * h * 4 + sizeMask;
     sizeRequest = pVBox->pointerSize + pVBox->pointerHeaderSize;
     p = xcalloc(1, sizeRequest);
     if (!p)
         RETERROR(scrnIndex, ,
-            "Error failed to alloc %lu bytes for cursor\n",
-            (unsigned long) sizeRequest);
+                 "Error failed to alloc %lu bytes for cursor\n",
+                 (unsigned long)sizeRequest);
 
+    /** @todo r=bird: The VbglR3SetPointerShape API and this code seems to 
+     * end up doing the stuff twice, at least wrt memory. It would make much 
+     * more sense to have a VbglR3SetPointerShape version which took a 
+     * VMMDevReqMousePointer pointer instead. Sorry for not spotting this 
+     * the first time around. */
     reqp = (VMMDevReqMousePointer *)p;
     *reqp = *pVBox->reqp;
     reqp->width  = w;
