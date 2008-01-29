@@ -113,7 +113,7 @@ VBoxGuestR3Lib_SOURCES     = \
 # the X server runtime instead of IPRT, for use with old servers where the
 # C library is not available.
 #
-ifeq ($(BUILD_TARGET),linux))
+ifeq ($(BUILD_TARGET),linux)
 VBoxGuestR3LibXFree86_TEMPLATE = VBOXLNX32GUESTR3LIB
 VBoxGuestR3LibXFree86_INST     = $(INST_ADDITIONS_LIB)
 else
