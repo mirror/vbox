@@ -33,32 +33,21 @@
 #include <iprt/time.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
-#ifdef VBOX_VBGLR3_XFREE86
-/* Definitions for X server library functions such as xf86open and mappings to C functions. */
-/* Make the headers C++-compatible */
-# define class xf86_vbox_class
-# define bool xf86_vbox_bool
-# define private xf86_vbox_private
-# define new xf86_vbox_new
-extern "C"
-{
-# include "xf86.h"
-# include "xf86_OSproc.h"
-# include "xf86Resources.h"
-# include "xf86_ansic.h"
-}
-# undef class
-# undef bool
-# undef private
-# undef new
-#else
-# include <iprt/file.h>
-# include <iprt/assert.h>
-# include <iprt/thread.h>
-#endif
+#include <iprt/file.h>
+#include <iprt/assert.h>
+#include <iprt/thread.h>
 #include <VBox/VBoxGuest.h>
 #include "VBGLR3Internal.h"
 
+#ifdef VBOX_VBGLR3_XFREE86
+/* Rather than try to resolve all the header file conflicts, I will just
+   prototype what we need here. */
+# define XF86_O_RDWR  0x0002
+typedef void *pointer;
+extern int xf86open(const char*, int,...);
+extern int xf86close(int);
+extern int xf86ioctl(int, unsigned long, pointer);
+#endif
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -157,7 +146,7 @@ VBGLR3DECL(int) VbglR3Init(void)
     g_File = hf;
 
 #elif defined(VBOX_VBGLR3_XFREE86)
-    int File = open(VBOXGUEST_DEVICE_NAME, O_RDWR);
+    int File = xf86open(VBOXGUEST_DEVICE_NAME, XF86_O_RDWR);
     if (File == -1)
         return VERR_OPEN_FAILED;
     g_File = File;
@@ -199,7 +188,7 @@ VBGLR3DECL(void) VbglR3Term(void)
     AssertMsg(!rc, ("%ld\n", rc));
 
 #elif defined(VBOX_VBGLR3_XFREE86)
-    close(File);
+    xf86close(File);
     File = -1;
 
 #else
@@ -254,12 +243,9 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 #elif defined(VBOX_VBGLR3_XFREE86)
     /* PORTME - This is preferred over the RTFileIOCtl variant below, just be careful with the (int). */
 /** @todo test status code passing! */
-    int rc = ioctl(g_File, (int)iFunction, pvData); 
+    int rc = xf86ioctl(g_File, iFunction, pvData);
     if (rc == -1)
-    {
-        rc = errno;
-        return RTErrConvertFromErrno(rc);
-    }
+        return VERR_FILE_IO_ERROR;  /* This is purely legacy stuff, it has to work and no more. */
     return VINF_SUCCESS;
 
 #else
