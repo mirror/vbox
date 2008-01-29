@@ -194,7 +194,7 @@ vboxvideo_drv_SOURCES  = \
 	vboxutils-new.c
 vboxvideo_drv_LIBS = \
 	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
 	$(VBOX_LIB_VBGL_R3)
 ## @todo Use VBOX_LIB_IPRT_GUEST_R3_MINI instead of VBOX_LIB_IPRT_GUEST_R3?
 endif

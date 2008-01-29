@@ -98,6 +98,24 @@ VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t y
 
 
 /**
+ * Send mouse pointer shape information to the host.
+ * This version of the function accepts a request for clients that
+ * already allocate and manipulate the request structure directly.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pReq        Pointer to the VMMDevReqMousePointer structure.
+ */
+VBGLR3DECL(int) VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq)
+{
+    int rc = vbglR3GRPerform(&pReq->header);
+    if (RT_SUCCESS(rc))
+        rc = pReq->header.rc;
+    return rc;
+}
+
+
+/**
  * Query the last display change request.
  *
  * @returns iprt status value
