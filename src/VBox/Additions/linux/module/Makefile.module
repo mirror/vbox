@@ -14,8 +14,8 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-#
-MODULE = vboxadd
+# override is required by the Debian guys
+override MODULE = vboxadd
 OBJS   = \
 	cmc.o \
 	hgcmcall.o \

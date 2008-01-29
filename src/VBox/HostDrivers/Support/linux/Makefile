@@ -63,7 +63,8 @@ else
 endif
 
 
-MODULE = vboxdrv
+# override is required by the Debian guys
+override MODULE = vboxdrv
 OBJS   = \
 	linux/SUPDrv-linux.o \
 	SUPDRVShared.o \

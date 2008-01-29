@@ -14,8 +14,8 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-#
-MODULE = vboxvfs
+# override is required by the Debian guys
+override MODULE = vboxvfs
 OBJS   = \
 	vfsmod.o \
 	dirops.o \
