@@ -360,9 +360,7 @@ vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
     pVBox->reqp->fFlags = 0;
-    rc = VbglR3SetPointerShape(0, pVBox->reqp->xHot, pVBox->reqp->yHot, pVBox->reqp->width,
-                               pVBox->reqp->height, pVBox->reqp->pointerData,
-                               pVBox->pointerSize);
+    rc = VbglR3SetPointerShapeReq(pVBox->reqp);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not hide the virtual mouse pointer.\n");
 }
@@ -372,9 +370,7 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
     pVBox->reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE;
-    rc = VbglR3SetPointerShape(VBOX_MOUSE_POINTER_VISIBLE, pVBox->reqp->xHot, pVBox->reqp->yHot,
-                               pVBox->reqp->width, pVBox->reqp->height, pVBox->reqp->pointerData,
-                               pVBox->pointerSize);
+    rc = VbglR3SetPointerShapeReq(pVBox->reqp);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
 }
@@ -392,8 +388,7 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
     vbox_show_shape(reqp->width, reqp->height, 0, image);
 #endif
 
-    rc = VbglR3SetPointerShape(reqp->fFlags, reqp->xHot, reqp->yHot, reqp->width, reqp->height,
-                               reqp->pointerData, pVBox->pointerSize);
+    rc = VbglR3SetPointerShapeReq(reqp);
     if (RT_FAILURE(rc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,  "Unable to set the virtual mouse pointer image.\n");
 }
@@ -662,11 +657,6 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
                  "Error failed to alloc %lu bytes for cursor\n",
                  (unsigned long)sizeRequest);
 
-    /** @todo r=bird: The VbglR3SetPointerShape API and this code seems to 
-     * end up doing the stuff twice, at least wrt memory. It would make much 
-     * more sense to have a VbglR3SetPointerShape version which took a 
-     * VMMDevReqMousePointer pointer instead. Sorry for not spotting this 
-     * the first time around. */
     reqp = (VMMDevReqMousePointer *)p;
     *reqp = *pVBox->reqp;
     reqp->width  = w;
@@ -709,8 +699,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
         pm += (w + 7) / 8;
     }
 
-    VbglR3SetPointerShape(VBOX_MOUSE_POINTER_SHAPE | VBOX_MOUSE_POINTER_ALPHA, bitsp->xhot, bitsp->yhot, w, h,
-                          pm, pVBox->pointerSize);
+    VbglR3SetPointerShapeReq(reqp);
     xfree(p);
 }
 #endif
