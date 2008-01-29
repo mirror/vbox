@@ -115,6 +115,7 @@ $(PATH_BIN)/vboxkeyboard.tar.gz: $(VBoxKeyboard_TARSOURCES) $(PATH_TARGET)/$(SOU
 	$(call MSG_TOOL,tar/gzip,,$@)
 	$(QUIET)cd $(PATH_TARGET) && tar -chf - $(addprefix $(SOURCE_DIRECTORY)/,$(subst $(DIRECTORY_PREFIX),,$(VBoxKeyboard_TARSOURCES))) | gzip - > $@
 
+
 #
 # VirtualBox - The GUI program.
 #
