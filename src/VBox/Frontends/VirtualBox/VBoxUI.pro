@@ -37,7 +37,8 @@ FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 	ui/VBoxAboutDlg.ui \
 	ui/VBoxVMFirstRunWzd.ui \
 	ui/VBoxVMLogViewer.ui \
-	ui/VBoxRegistrationDlg.ui
+	ui/VBoxRegistrationDlg.ui \
+	ui/VBoxVMInformationDlg.ui
 
 IMAGES	= images/tpixel.png \
 	images/transparent_16px.png \

@@ -140,6 +140,7 @@ private slots:
     void vmACPIShutdown();
     void vmClose();
     void vmTakeSnapshot();
+    void vmShowInfoDialog();
     void vmDisableMouseIntegr (bool);
 
     void devicesMountFloppyImage();
@@ -210,6 +211,7 @@ private:
     QAction *vmCloseAction;
     QAction *vmTakeSnapshotAction;
     QAction *vmDisableMouseIntegrAction;
+    QAction *vmShowInformationDlgAction;
 
     // Devices actions
     QAction *devicesMountFloppyImageAction;

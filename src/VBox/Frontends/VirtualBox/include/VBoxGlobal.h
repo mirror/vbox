@@ -383,14 +383,16 @@ public:
 
     /* details generators */
 
-    QString details (const CHardDisk &aHD, bool aPredict = false);
+    QString details (const CHardDisk &aHD, bool aPredict = false,
+                     bool aDoRefresh = true);
 
     QString details (const CUSBDevice &aDevice) const;
     QString toolTip (const CUSBDevice &aDevice) const;
 
     QString prepareFileNameForHTML (const QString &fn) const;
 
-    QString detailsReport (const CMachine &m, bool isNewVM, bool withLinks);
+    QString detailsReport (const CMachine &m, bool isNewVM, bool withLinks,
+                           bool aDoRefresh = true);
 
     /* VirtualBox helpers */
 

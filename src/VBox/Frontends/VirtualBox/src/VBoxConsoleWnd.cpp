@@ -23,6 +23,7 @@
 #include "VBoxDiskImageManagerDlg.h"
 #include "VBoxVMFirstRunWzd.h"
 #include "VBoxSharedFoldersSettings.h"
+#include "VBoxVMInformationDlg.h"
 #include "VBoxDownloaderWgt.h"
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
@@ -206,6 +207,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vmTakeSnapshotAction->setIconSet (VBoxGlobal::iconSet (
         "take_snapshot_16px.png", "take_snapshot_dis_16px.png"));
 
+    vmShowInformationDlgAction = new QAction (this, "vmShowInformationDlgAction");
+    vmShowInformationDlgAction->setIconSet (VBoxGlobal::iconSet (
+        "description_16px.png", "description_disabled_16px.png"));
+
     vmDisableMouseIntegrAction = new QAction (this, "vmDisableMouseIntegrAction");
     vmDisableMouseIntegrAction->setIconSet (VBoxGlobal::iconSet (
         "mouse_can_seamless_16px.png", "mouse_can_seamless_disabled_16px.png"));
@@ -296,6 +301,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 #endif
     vmMenu->insertSeparator();
     vmTakeSnapshotAction->addTo (vmMenu);
+    vmMenu->insertSeparator();
+    vmShowInformationDlgAction->addTo (vmMenu);
     vmMenu->insertSeparator();
     vmResetAction->addTo (vmMenu);
     vmPauseAction->addTo (vmMenu);
@@ -484,6 +491,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (vmCloseAction, SIGNAL(activated()), this, SLOT (vmClose()));
 
     connect (vmTakeSnapshotAction, SIGNAL(activated()), this, SLOT(vmTakeSnapshot()));
+    connect (vmShowInformationDlgAction, SIGNAL(activated()), this, SLOT (vmShowInfoDialog()));
 
     connect (vmDisableMouseIntegrAction, SIGNAL(toggled (bool)), this, SLOT(vmDisableMouseIntegr (bool)));
 
@@ -1459,6 +1467,10 @@ void VBoxConsoleWnd::languageChange()
     vmTakeSnapshotAction->setMenuText (tr ("Take &Snapshot..." ) + "\tHost+S");
     vmTakeSnapshotAction->setStatusTip (tr ("Take a snapshot of the virtual machine"));
 
+    vmShowInformationDlgAction->setMenuText (tr ("Session I&nformation Dialog") +
+                                             "\tHost+N");
+    vmShowInformationDlgAction->setStatusTip (tr ("Show Session Information Dialog"));
+
     /* vmDisableMouseIntegrAction is set up in updateAppearanceOf() */
 
     /* Devices actions */
@@ -2405,6 +2417,11 @@ void VBoxConsoleWnd::vmTakeSnapshot()
     /* restore the running state if needed */
     if (!wasPaused)
         console->pause (false);
+}
+
+void VBoxConsoleWnd::vmShowInfoDialog()
+{
+    VBoxVMInformationDlg::createInformationDlg (csession, console);
 }
 
 void VBoxConsoleWnd::vmDisableMouseIntegr (bool aOff)
