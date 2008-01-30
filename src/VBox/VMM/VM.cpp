@@ -213,79 +213,82 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                 pVM->vm.s.ppAtStateNext = &pVM->vm.s.pAtState;
                 pVM->vm.s.ppAtErrorNext = &pVM->vm.s.pAtError;
                 pVM->vm.s.ppAtRuntimeErrorNext = &pVM->vm.s.pAtRuntimeError;
+                pVM->vm.s.enmHaltMethod = VMHALTMETHOD_1;
                 rc = RTSemEventCreate(&pVM->vm.s.EventSemWait);
-                AssertRCReturn(rc, rc);
-
-                /*
-                 * Initialize STAM.
-                 */
-                rc = STAMR3Init(pVM);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /*
-                     * Create the EMT thread, it will start up and wait for requests to process.
+                     * Initialize STAM.
                      */
-                    VMEMULATIONTHREADARGS Args;
-                    Args.pVM = pVM;
-                    rc = RTThreadCreate(&pVM->ThreadEMT, vmR3EmulationThread, &Args, _1M,
-                                        RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
+                    rc = STAMR3Init(pVM);
                     if (VBOX_SUCCESS(rc))
                     {
                         /*
-                         * Issue a VM Create request and wait for it to complete.
+                         * Create the EMT thread, it will start up and wait for requests to process.
                          */
-                        PVMREQ pReq;
-                        rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Create, 5,
-                                         pVM, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM);
+                        VMEMULATIONTHREADARGS Args;
+                        Args.pVM = pVM;
+                        rc = RTThreadCreate(&pVM->ThreadEMT, vmR3EmulationThread, &Args, _1M,
+                                            RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
                         if (VBOX_SUCCESS(rc))
                         {
-                            rc = pReq->iStatus;
-                            VMR3ReqFree(pReq);
+                            /*
+                             * Issue a VM Create request and wait for it to complete.
+                             */
+                            PVMREQ pReq;
+                            rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Create, 5,
+                                             pVM, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM);
                             if (VBOX_SUCCESS(rc))
                             {
-                                *ppVM = pVM;
-                                LogFlow(("VMR3Create: returns VINF_SUCCESS *ppVM=%p\n", pVM));
-                                return VINF_SUCCESS;
+                                rc = pReq->iStatus;
+                                VMR3ReqFree(pReq);
+                                if (VBOX_SUCCESS(rc))
+                                {
+                                    *ppVM = pVM;
+                                    LogFlow(("VMR3Create: returns VINF_SUCCESS *ppVM=%p\n", pVM));
+                                    return VINF_SUCCESS;
+                                }
+
+                                NoDmik(AssertMsgFailed(("vmR3Create failed rc=%Vrc\n", rc)));
                             }
+                            else
+                                AssertMsgFailed(("VMR3ReqCall failed rc=%Vrc\n", rc));
 
-                            NoDmik(AssertMsgFailed(("vmR3Create failed rc=%Vrc\n", rc)));
-                        }
-                        else
-                            AssertMsgFailed(("VMR3ReqCall failed rc=%Vrc\n", rc));
-
-                        /*
-                         * An error occurred during VM creation. Set the error message directly
-                         * using the initial callback, as the callback list doesn't exist yet.
-                         */
-                        const char *pszError = NULL;
-                        switch (rc)
-                        {
-                            case VERR_VMX_IN_VMX_ROOT_MODE:
+                            /*
+                             * An error occurred during VM creation. Set the error message directly
+                             * using the initial callback, as the callback list doesn't exist yet.
+                             */
+                            const char *pszError = NULL;
+                            switch (rc)
+                            {
+                                case VERR_VMX_IN_VMX_ROOT_MODE:
 #ifdef RT_OS_LINUX
-                                pszError = N_("VirtualBox can't operate in VMX root mode. "
-                                              "Please disable the KVM kernel extension, recompile your kernel and reboot");
+                                    pszError = N_("VirtualBox can't operate in VMX root mode. "
+                                                  "Please disable the KVM kernel extension, recompile your kernel and reboot");
 #else
-                                pszError = N_("VirtualBox can't operate in VMX root mode");
+                                    pszError = N_("VirtualBox can't operate in VMX root mode");
 #endif
-                                break;
-                            default:
-                                /* XXX check if there was already an error message set! */
-                                pszError = N_("Unknown error creating VM");
-                                NoDmik(AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc)));
-                        }
-                        if (pszError)
-                            vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
+                                    break;
+                                default:
+                                    /* XXX check if there was already an error message set! */
+                                    pszError = N_("Unknown error creating VM");
+                                    NoDmik(AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc)));
+                            }
+                            if (pszError)
+                                vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
 
-                        /* Forcefully terminate the emulation thread. */
-                        VM_FF_SET(pVM, VM_FF_TERMINATE);
-                        VMR3NotifyFF(pVM, false);
-                        RTThreadWait(pVM->ThreadEMT, 1000, NULL);
+                            /* Forcefully terminate the emulation thread. */
+                            VM_FF_SET(pVM, VM_FF_TERMINATE);
+                            VMR3NotifyFF(pVM, false);
+                            RTThreadWait(pVM->ThreadEMT, 1000, NULL);
+                        }
+
+                        int rc2 = STAMR3Term(pVM);
+                        AssertRC(rc2);
                     }
 
-                    int rc2 = STAMR3Term(pVM);
-                    AssertRC(rc2);
+                    RTSemEventDestroy(pVM->vm.s.EventSemWait);
                 }
-
                 /* cleanup the heap. */
                 int rc2 = MMR3Term(pVM);
                 AssertRC(rc2);
@@ -462,12 +465,19 @@ static int vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFG
                             if (VBOX_SUCCESS(rc))
                             {
                                 /*
-                                 * Set the state and link into the global list.
+                                 * Now we can safely set the VM halt method to default.
                                  */
-                                vmR3SetState(pVM, VMSTATE_CREATED);
-                                pVM->pNext = g_pVMsHead;
-                                g_pVMsHead = pVM;
-                                return VINF_SUCCESS;
+                                rc = vmR3SetHaltMethod(pVM, VMHALTMETHOD_DEFAULT);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    /*
+                                     * Set the state and link into the global list.
+                                     */
+                                    vmR3SetState(pVM, VMSTATE_CREATED);
+                                    pVM->pNext = g_pVMsHead;
+                                    g_pVMsHead = pVM;
+                                    return VINF_SUCCESS;
+                                }
                             }
 #ifdef VBOX_WITH_DEBUGGER
                             DBGCTcpTerminate(pVM, pVM->vm.s.pvDBGC);
@@ -504,9 +514,6 @@ static int vmR3InitRing3(PVM pVM)
     /*
      * Init all R3 components, the order here might be important.
      */
-    rc = vmR3SetHaltMethod(pVM, VMHALTMETHOD_DEFAULT);
-    AssertRCReturn(rc, rc);
-
     rc = MMR3Init(pVM);
     if (VBOX_SUCCESS(rc))
     {
