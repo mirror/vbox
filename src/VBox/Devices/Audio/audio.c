@@ -180,7 +180,7 @@ uint32_t popcount (uint32_t u)
     return u;
 }
 
-inline uint32_t lsbindex (uint32_t u)
+uint32_t lsbindex (uint32_t u)
 {
     return popcount ((u&-u)-1);
 }
