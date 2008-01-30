@@ -1017,7 +1017,6 @@ static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
     g_ctx.formatList.clear();
     RTSemEventDestroy(g_ctx.waitForData);
     RTSemMutexDestroy(g_ctx.asyncMutex);
-    XtCloseDisplay(pDisplay);
     LogRel (("vboxClipboardThread: clipboard thread terminated successfully with return code %Vrc\n", rc));
     return rc;
 }
@@ -1058,6 +1057,7 @@ void vboxClipboardDestroy (void)
     rc = RTThreadWait(g_ctx.thread, 2000, &rcThread);
     AssertRC(rc);
     AssertRC(rcThread);
+    XtCloseDisplay(XtDisplay(g_ctx.widget));
     LogFlowFunc(("returning.\n"));
 }
 
