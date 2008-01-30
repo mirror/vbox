@@ -1121,8 +1121,6 @@ GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, PGMMINITIALRESERVATIONREQ pRe
  * @param   cShadowPages    The number of pages that may be allocated for shadow pageing structures.
  * @param   cFixedPages     The number of pages that may be allocated for fixed objects like the
  *                          hyper heap, MMIO2 and similar.
- * @param   enmPolicy       The OC policy to use on this VM.
- * @param   enmPriority     The priority in an out-of-memory situation.
  *
  * @thread  EMT.
  */
