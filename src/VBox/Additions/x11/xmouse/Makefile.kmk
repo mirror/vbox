@@ -121,9 +121,8 @@ ifeq ($(BUILD_TARGET),solaris)
 DLLS = vboxmouse_drv
 
 vboxmouse_drv_TEMPLATE = VBOXGUESTR3DLL
-vboxmouse_drv_DEFS = 	\
-	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT \
-	IN_RING3 VBOX XORG_7X __EXTENSIONS__
+vboxmouse_drv_DEFS = XFree86Server XFree86Module XFree86LOADER IN_MODULE XINPUT XORG_7X
+vboxmouse_drv_DEFS.solaris = __EXTENSIONS__
 vboxmouse_drv_INCS = \
 	../x11include/7.1 \
 	../x11include/7.1/X11 \
