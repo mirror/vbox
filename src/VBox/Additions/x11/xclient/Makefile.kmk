@@ -28,7 +28,7 @@ else
  VBoxClient_TEMPLATE = VBOXLNX32GUESTR3EXE
 endif
 VBoxClient_DEFS    += VBOX_X11_CLIPBOARD VBOX_HGCM
-VBoxClient_DEFS    += _GNU_SOURCE
+VBoxClient_DEFS.linux += _GNU_SOURCE
 VBoxClient_SOURCES  = \
 	main.cpp
 
