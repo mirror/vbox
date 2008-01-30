@@ -1458,6 +1458,9 @@ static int stamR3Enum(PVM pVM, const char *pszPat, bool fUpdateRing0, int (*pfnC
         if (fUpdateRing0)
             stamR3Ring0StatsUpdate(pVM, pszPat);
 
+        /** @todo This needs to be optimized since the GUI is using this path for the VM info dialog.
+         * Note that it's doing exact matching. Organizing the samples in a tree would speed up thing
+         * no end (at least for debug and profile builds). */
         for (PSTAMDESC pCur = pVM->stam.s.pHead; pCur; pCur = pCur->pNext)
             if (stamR3Match(pszPat, pCur->pszName))
             {
