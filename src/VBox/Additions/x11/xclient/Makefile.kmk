@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VirtualBox Linux Guest Addition X11 Client.
+# Makefile for the VirtualBox Guest Addition X11 Client.
 #
 
 #
@@ -18,47 +18,54 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
-if1of ($(BUILD_TARGET),linux l4)
+#
+# VBoxClient (clipboard)
+#
+PROGRAMS += VBoxClient
+ifneq ($(BUILD_TARGET),linux)
+ VBoxClient_TEMPLATE = VBOXGUESTR3EXE
+else
+ VBoxClient_TEMPLATE = VBOXLNX32GUESTR3EXE
+endif
+VBoxClient_DEFS    += VBOX_X11_CLIPBOARD VBOX_HGCM
+VBoxClient_DEFS    += _GNU_SOURCE
+VBoxClient_SOURCES  = \
+	main.cpp
 
-#
-# vboxadd-xclient.
-#
-PROGRAMS += vboxadd-xclient
-vboxadd-xclient_TEMPLATE = VBOXLNX32GUESTR3EXE
-vboxadd-xclient_SOURCES  = clipboard.cpp main.cpp
-vboxadd-xclient_DEFS    += VBOX_X11_CLIPBOARD
-vboxadd-xclient_DEFS    += _GNU_SOURCE VBOX_HGCM
-vboxadd-xclient_LIBPATH  = \
+ifneq ($(BUILD_TARGET),linux)
+ VBoxClient_SOURCES += \
+	clipboard-new.cpp
+ VBoxClient_LIBS    = \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3) \
+	X11 \
+	Xt
+else
+ VBoxClient_SOURCES += \
+	clipboard.cpp
+ VBoxClient_LIBPATH  = \
 	$(VBOX_LIBPATH32_X11)
-vboxadd-xclient_LIBS     = \
+ VBoxClient_LIBS     = \
 	$(PATH_LIB)/RuntimeLnx32GuestR3.a \
 	$(PATH_LIB)/VBoxGuestR3LibLinux.a \
 	$(PATH_LIB)/RuntimeLnx32GuestR3.a \
 	pthread \
 	rt \
 	Xt \
-	Xext \
 	X11
+endif   # target linux
 
 #
-# Link aginst libstdc++.a on linux. (http://www.trilithium.com/johan/2005/06/static-libstdc/).
-# (It would've been preferred to avoid features depending on libstdc++, of course...)
+# VBoxClient (seamless)
 #
-vboxadd-xclient_LIBPATH.linux   = $(PATH_TARGET)/vboxadd-xclient
-vboxadd-xclient_ORDERDEPS.linux = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
-vboxadd-xclient_CLEAN.linux     = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
-$(PATH_TARGET)/vboxadd-xclient/libstdc++.a:
-	$(call MSG_L1,Forcing static libstdc++)
-	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ \
-	     || $(CP_EXT) -f  `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
-
 ifdef VBOX_X11_SEAMLESS_GUEST
- vboxadd-xclient_DEFS += SEAMLESS_X11
- vboxadd-xclient_SOURCES += \
- 	seamless-host.cpp \
- 	seamless-x11.cpp \
- 	thread.cpp
+ VBoxClient_DEFS += SEAMLESS_X11
+ VBoxClient_SOURCES += \
+	seamless-host.cpp \
+	seamless-x11.cpp \
+	thread.cpp
+ VBoxClient_LIBS += \
+	Xext
 
  ifdef VBOX_WITH_TESTCASES
   #
@@ -80,22 +87,18 @@ ifdef VBOX_X11_SEAMLESS_GUEST
  endif
 endif
 
-else ifeq ($(BUILD_TARGET),solaris)
+
 #
-# VBoxClient.
+# Link aginst libstdc++.a. (http://www.trilithium.com/johan/2005/06/static-libstdc/).
+# (It would've been preferred to avoid features depending on libstdc++, of course...)
 #
-## @todo r=bird: merge this with the linux additions one way or the other, pleaaaase!
-PROGRAMS += VBoxClient
-VBoxClient_TEMPLATE = VBOXGUESTR3EXE
-VBoxClient_DEFS    += VBOX_X11_CLIPBOARD VBOX_HGCM
-VBoxClient_SOURCES  = \
-	clipboard-new.cpp \
-	main.cpp
-VBoxClient_LIBS = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3) \
-	X11 \
-	Xt
-endif # target solaris
+VBoxClient_LIBPATH         = $(PATH_TARGET)/VBoxClient
+VBoxClient_ORDERDEPS       = $(PATH_TARGET)/VBoxClient/libstdc++.a
+VBoxClient_CLEAN           = $(PATH_TARGET)/VBoxClient/libstdc++.a
+$(PATH_TARGET)/VBoxClient/libstdc++.a:
+	$(call MSG_L1,Forcing static libstdc++)
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ \
+	     || $(CP_EXT) -f  `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
 
 include	$(PATH_KBUILD)/footer.kmk
