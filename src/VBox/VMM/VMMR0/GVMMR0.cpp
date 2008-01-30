@@ -389,6 +389,66 @@ GVMMR0DECL(int) GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, 
 
 
 /**
+ * Try acquire the 'used' lock.
+ *
+ * @returns IPRT status code, see RTSemFastMutexRequest.
+ * @param   pGVMM   The GVMM instance data.
+ */
+DECLINLINE(int) gvmmR0UsedLock(PGVMM pGVMM)
+{
+    LogFlow(("++gvmmR0UsedLock(%p)\n", pGVMM));
+    int rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+    LogFlow(("gvmmR0UsedLock(%p)->%Rrc\n", pGVMM, rc));
+    return rc;
+}
+
+
+/**
+ * Release the 'used' lock.
+ *
+ * @returns IPRT status code, see RTSemFastMutexRelease.
+ * @param   pGVMM   The GVMM instance data.
+ */
+DECLINLINE(int) gvmmR0UsedUnlock(PGVMM pGVMM)
+{
+    LogFlow(("--gvmmR0UsedUnlock(%p)\n", pGVMM));
+    int rc = RTSemFastMutexRelease(pGVMM->UsedLock);
+    AssertRC(rc);
+    return rc;
+}
+
+
+/**
+ * Try acquire the 'create & destroy' lock.
+ *
+ * @returns IPRT status code, see RTSemFastMutexRequest.
+ * @param   pGVMM   The GVMM instance data.
+ */
+DECLINLINE(int) gvmmR0CreateDestroyLock(PGVMM pGVMM)
+{
+    LogFlow(("++gvmmR0CreateDestroyLock(%p)\n", pGVMM));
+    int rc = RTSemFastMutexRequest(pGVMM->CreateDestroyLock);
+    LogFlow(("gvmmR0CreateDestroyLock(%p)->%Rrc\n", pGVMM, rc));
+    return rc;
+}
+
+
+/**
+ * Release the 'create & destroy' lock.
+ *
+ * @returns IPRT status code, see RTSemFastMutexRequest.
+ * @param   pGVMM   The GVMM instance data.
+ */
+DECLINLINE(int) gvmmR0CreateDestroyUnlock(PGVMM pGVMM)
+{
+    LogFlow(("--gvmmR0CreateDestroyUnlock(%p)\n", pGVMM));
+    int rc = RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+    AssertRC(rc);
+    return rc;
+}
+
+
+/**
  * Request wrapper for the GVMMR0CreateVM API.
  *
  * @returns VBox status code.
@@ -445,7 +505,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
     /*
      * The whole allocation process is protected by the lock.
      */
-    int rc = RTSemFastMutexRequest(pGVMM->CreateDestroyLock);
+    int rc = gvmmR0CreateDestroyLock(pGVMM);
     AssertRCReturn(rc, rc);
 
     /*
@@ -468,7 +528,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
                 /*
                  * Move the handle from the free to used list and perform permission checks.
                  */
-                rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+                rc = gvmmR0UsedLock(pGVMM);
                 AssertRC(rc);
 
                 pGVMM->iFreeHead = pHandle->iNext;
@@ -481,7 +541,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
                 pHandle->pSession = pSession;
                 pHandle->hEMT = NIL_RTNATIVETHREAD;
 
-                RTSemFastMutexRelease(pGVMM->UsedLock);
+                gvmmR0UsedUnlock(pGVMM);
 
                 rc = SUPR0ObjVerifyAccess(pHandle->pvObj, pSession, NULL);
                 if (RT_SUCCESS(rc))
@@ -543,7 +603,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
                                         AssertPtr((void *)pVM->paVMPagesR3);
 
                                         /* complete the handle - take the UsedLock sem just to be careful. */
-                                        rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+                                        rc = gvmmR0UsedLock(pGVMM);
                                         AssertRC(rc);
 
                                         pHandle->pVM = pVM;
@@ -551,8 +611,8 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
                                         pGVM->pVM = pVM;
 
 
-                                        RTSemFastMutexRelease(pGVMM->UsedLock);
-                                        RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+                                        gvmmR0UsedUnlock(pGVMM);
+                                        gvmmR0CreateDestroyUnlock(pGVMM);
 
                                         *ppVM = pVM;
                                         Log(("GVMMR0CreateVM: pVM=%p pVMR3=%p pGVM=%p hGVM=%d\n", pVM, pVM->pVMR3, pGVM, iHandle));
@@ -578,7 +638,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
                  */
                 void *pvObj = pHandle->pvObj;
                 pHandle->pvObj = NULL;
-                RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+                gvmmR0CreateDestroyUnlock(pGVMM);
 
                 SUPR0ObjRelease(pvObj, pSession);
 
@@ -594,7 +654,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
     else
         rc = VERR_GVM_TOO_MANY_VMS;
 
-    RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+    gvmmR0CreateDestroyUnlock(pGVMM);
     return rc;
 }
 
@@ -653,9 +713,9 @@ GVMMR0DECL(int) GVMMR0AssociateEMTWithVM(PVM pVM)
     /*
      * Take the lock, validate the handle and update the structure members.
      */
-    int rc = RTSemFastMutexRequest(pGVMM->CreateDestroyLock);
+    int rc = gvmmR0CreateDestroyLock(pGVMM);
     AssertRCReturn(rc, rc);
-    rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+    rc = gvmmR0UsedLock(pGVMM);
     AssertRC(rc);
 
     if (    pHandle->pVM == pVM
@@ -670,8 +730,8 @@ GVMMR0DECL(int) GVMMR0AssociateEMTWithVM(PVM pVM)
     else
         rc = VERR_INTERNAL_ERROR;
 
-    RTSemFastMutexRelease(pGVMM->UsedLock);
-    RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+    gvmmR0UsedUnlock(pGVMM);
+    gvmmR0CreateDestroyUnlock(pGVMM);
     LogFlow(("GVMMR0AssociateEMTWithVM: returns %Vrc (hEMT=%RTnthrd)\n", rc, hEMT));
     return rc;
 }
@@ -749,9 +809,9 @@ GVMMR0DECL(int) GVMMR0DisassociateEMTFromVM(PVM pVM)
     /*
      * Take the lock, validate the handle and update the structure members.
      */
-    int rc = RTSemFastMutexRequest(pGVMM->CreateDestroyLock);
+    int rc = gvmmR0CreateDestroyLock(pGVMM);
     AssertRCReturn(rc, rc);
-    rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+    rc = gvmmR0UsedLock(pGVMM);
     AssertRC(rc);
 
     if (    VALID_PTR(pHandle->pvObj)
@@ -771,8 +831,8 @@ GVMMR0DECL(int) GVMMR0DisassociateEMTFromVM(PVM pVM)
     else
         rc = VERR_INVALID_HANDLE;
 
-    RTSemFastMutexRelease(pGVMM->UsedLock);
-    RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+    gvmmR0UsedUnlock(pGVMM);
+    gvmmR0CreateDestroyUnlock(pGVMM);
     LogFlow(("GVMMR0DisassociateEMTFromVM: returns %Vrc (hEMT=%RTnthrd)\n", rc, hEMT));
     return rc;
 }
@@ -820,7 +880,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
      * Since the lock isn't recursive and we'll have to leave it before dereferencing the
      * object, we take some precautions against racing callers just in case...
      */
-    int rc = RTSemFastMutexRequest(pGVMM->CreateDestroyLock);
+    int rc = gvmmR0CreateDestroyLock(pGVMM);
     AssertRC(rc);
 
     /* be careful here because we might theoretically be racing someone else cleaning up. */
@@ -834,7 +894,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
     {
         void *pvObj = pHandle->pvObj;
         pHandle->pvObj = NULL;
-        RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+        gvmmR0CreateDestroyUnlock(pGVMM);
 
         SUPR0ObjRelease(pvObj, pHandle->pSession);
     }
@@ -842,7 +902,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
     {
         SUPR0Printf("GVMMR0DestroyVM: pHandle=%p:{.pVM=%p, hEMT=%p, .pvObj=%p} pVM=%p hSelf=%p\n",
                     pHandle, pHandle->pVM, pHandle->hEMT, pHandle->pvObj, pVM, hSelf);
-        RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+        gvmmR0CreateDestroyUnlock(pGVMM);
         rc = VERR_INTERNAL_ERROR;
     }
 
@@ -876,9 +936,9 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
         return;
     }
 
-    int rc = RTSemFastMutexRequest(pGVMM->CreateDestroyLock);
+    int rc = gvmmR0CreateDestroyLock(pGVMM);
     AssertRC(rc);
-    rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+    rc = gvmmR0UsedLock(pGVMM);
     AssertRC(rc);
 
     /*
@@ -887,8 +947,8 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     if (RT_UNLIKELY(pHandle->iNext >= RT_ELEMENTS(pGVMM->aHandles)))
     {
         SUPR0Printf("GVM: used list index %d is out of range!\n", pHandle->iNext);
-        RTSemFastMutexRelease(pGVMM->UsedLock);
-        RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+        gvmmR0UsedUnlock(pGVMM);
+        gvmmR0CreateDestroyUnlock(pGVMM);
         return;
     }
 
@@ -903,8 +963,8 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
             if (RT_UNLIKELY(iPrev >= RT_ELEMENTS(pGVMM->aHandles)))
             {
                 SUPR0Printf("GVM: used list index %d is out of range!\n");
-                RTSemFastMutexRelease(pGVMM->UsedLock);
-                RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+                gvmmR0UsedUnlock(pGVMM);
+                gvmmR0CreateDestroyUnlock(pGVMM);
                 return;
             }
             if (RT_UNLIKELY(c-- <= 0))
@@ -920,8 +980,8 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
         if (!iPrev)
         {
             SUPR0Printf("GVM: can't find the handle previous previous of %d!\n", pHandle->iSelf);
-            RTSemFastMutexRelease(pGVMM->UsedLock);
-            RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+            gvmmR0UsedUnlock(pGVMM);
+            gvmmR0CreateDestroyUnlock(pGVMM);
             return;
         }
 
@@ -930,7 +990,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     pHandle->iNext = 0;
     pGVMM->cVMs--;
 
-    RTSemFastMutexRelease(pGVMM->UsedLock);
+    gvmmR0UsedUnlock(pGVMM);
 
     /*
      * Do the global cleanup round.
@@ -979,7 +1039,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
      * Free the handle.
      * Reacquire the UsedLock here to since we're updating handle fields.
      */
-    rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+    rc = gvmmR0UsedLock(pGVMM);
     AssertRC(rc);
 
     pHandle->iNext = pGVMM->iFreeHead;
@@ -990,8 +1050,8 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     ASMAtomicXchgPtr((void * volatile *)&pHandle->pSession, NULL);
     ASMAtomicXchgSize(&pHandle->hEMT, NIL_RTNATIVETHREAD);
 
-    RTSemFastMutexRelease(pGVMM->UsedLock);
-    RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
+    gvmmR0UsedUnlock(pGVMM);
+    gvmmR0CreateDestroyUnlock(pGVMM);
     LogFlow(("gvmmR0HandleObjDestructor: returns\n"));
 }
 
@@ -1067,7 +1127,7 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
     PGVM pGVM;
     if (fTakeUsedLock)
     {
-        int rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+        int rc = gvmmR0UsedLock(pGVMM);
         AssertRCReturn(rc, rc);
 
         pGVM = pHandle->pGVM;
@@ -1076,7 +1136,7 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
                         ||  !VALID_PTR(pGVM)
                         ||  pGVM->pVM != pVM))
         {
-            RTSemFastMutexRelease(pGVMM->UsedLock);
+            gvmmR0UsedUnlock(pGVMM);
             return VERR_INVALID_HANDLE;
         }
     }
@@ -1088,9 +1148,9 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
             return VERR_INVALID_HANDLE;
 
         pGVM = pHandle->pGVM;
-        if (!RT_UNLIKELY(!VALID_PTR(pGVM)))
+        if (RT_UNLIKELY(!VALID_PTR(pGVM)))
             return VERR_INVALID_HANDLE;
-        if (!RT_UNLIKELY(pGVM->pVM != pVM))
+        if (RT_UNLIKELY(pGVM->pVM != pVM))
             return VERR_INVALID_HANDLE;
     }
 
@@ -1364,7 +1424,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
      * and check if anyone needs waking up.
      * Interrupts must NOT be disabled at this point because we ask for GIP time!
      */
-    rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+    rc = gvmmR0UsedLock(pGVMM);
     AssertRC(rc);
 
     pGVM->gvmm.s.iCpuEmt = ASMGetApicId();
@@ -1383,7 +1443,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
     {
         pGVM->gvmm.s.StatsSched.cHaltBlocking++;
         ASMAtomicXchgU64(&pGVM->gvmm.s.u64HaltExpire, u64ExpireGipTime);
-        RTSemFastMutexRelease(pGVMM->UsedLock);
+        gvmmR0UsedUnlock(pGVMM);
 
         uint32_t cMillies = (u64ExpireGipTime - u64Now) / 1000000;
         rc = RTSemEventMultiWaitNoResume(pGVM->gvmm.s.HaltEventMulti, cMillies ? cMillies : 1);
@@ -1397,7 +1457,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
     else
     {
         pGVM->gvmm.s.StatsSched.cHaltNotBlocking++;
-        RTSemFastMutexRelease(pGVMM->UsedLock);
+        gvmmR0UsedUnlock(pGVMM);
     }
 
     /* Make sure false wake up calls (gvmmR0SchedDoWakeUps) cause us to spin. */
@@ -1457,7 +1517,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM)
         pGVM->gvmm.s.StatsSched.cWakeUpWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
 
 
-        rc2 = RTSemFastMutexRelease(pGVMM->UsedLock);
+        rc2 = gvmmR0UsedUnlock(pGVMM);
         AssertRC(rc2);
     }
 
@@ -1490,7 +1550,7 @@ GVMMR0DECL(int) GVMMR0SchedPoll(PVM pVM, bool fYield)
     int rc = gvmmR0ByVMAndEMT(pVM, &pGVM, &pGVMM);
     if (RT_SUCCESS(rc))
     {
-        rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+        rc = gvmmR0UsedLock(pGVMM);
         AssertRC(rc);
         pGVM->gvmm.s.StatsSched.cPollCalls++;
 
@@ -1505,7 +1565,7 @@ GVMMR0DECL(int) GVMMR0SchedPoll(PVM pVM, bool fYield)
             rc = VERR_NOT_IMPLEMENTED;
         }
 
-        RTSemFastMutexRelease(pGVMM->UsedLock);
+        gvmmR0UsedUnlock(pGVMM);
     }
 
     LogFlow(("GVMMR0SchedWakeUp: returns %Rrc\n", rc));
@@ -1551,7 +1611,7 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
         GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
         memset(&pStats->SchedVM, 0, sizeof(pStats->SchedVM));
 
-        int rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+        int rc = gvmmR0UsedLock(pGVMM);
         AssertRCReturn(rc, rc);
     }
 
@@ -1590,7 +1650,7 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
         }
     }
 
-    RTSemFastMutexRelease(pGVMM->UsedLock);
+    gvmmR0UsedUnlock(pGVMM);
 
     return VINF_SUCCESS;
 }
@@ -1663,7 +1723,7 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
     {
         GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
 
-        int rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+        int rc = gvmmR0UsedLock(pGVMM);
         AssertRCReturn(rc, rc);
     }
 
@@ -1701,7 +1761,7 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
         }
     }
 
-    RTSemFastMutexRelease(pGVMM->UsedLock);
+    gvmmR0UsedUnlock(pGVMM);
 
     return VINF_SUCCESS;
 }
