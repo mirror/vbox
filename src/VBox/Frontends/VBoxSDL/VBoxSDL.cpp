@@ -837,7 +837,7 @@ int main(int argc, char *argv[])
     unsigned fRawR3 = ~0U;
     unsigned fPATM  = ~0U;
     unsigned fCSAM  = ~0U;
-    TriStateBool_T fHWVirt = TriStateBool_Default;
+    TriStateBool_T fHWVirt = TriStateBool_TSDefault;
     uint32_t u32WarpDrive = 0;
 #endif
 #ifdef VBOX_WIN32_UI
@@ -1274,9 +1274,9 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[curArg], "-nocsam") == 0)
             fCSAM = false;
         else if (strcmp(argv[curArg], "-hwvirtex") == 0)
-            fHWVirt = TriStateBool_True;
+            fHWVirt = TriStateBool_TSTrue;
         else if (strcmp(argv[curArg], "-nohwvirtex") == 0)
-            fHWVirt = TriStateBool_False;
+            fHWVirt = TriStateBool_TSFalse;
         else if (strcmp(argv[curArg], "-warpdrive") == 0)
         {
             if (++curArg >= argc)
@@ -1822,7 +1822,7 @@ int main(int argc, char *argv[])
         }
         gMachineDebugger->COMSETTER(CSAMEnabled)(fCSAM);
     }
-    if (fHWVirt != TriStateBool_Default)
+    if (fHWVirt != TriStateBool_TSDefault)
     {
         gMachine->COMSETTER(HWVirtExEnabled)(fHWVirt);
     }

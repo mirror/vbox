@@ -329,7 +329,7 @@ bool VBoxNewVMWzd::constructMachine()
     if (type.GetId() == "os2warp3" ||
         type.GetId() == "os2warp4" ||
         type.GetId() == "os2warp45")
-        cmachine.SetHWVirtExEnabled (CEnums::True);
+        cmachine.SetHWVirtExEnabled (CEnums::TSTrue);
 
     /* RAM size */
     cmachine.SetMemorySize (slRAM->value());
