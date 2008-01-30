@@ -92,7 +92,7 @@ endif
 # Link aginst libstdc++.a. (http://www.trilithium.com/johan/2005/06/static-libstdc/).
 # (It would've been preferred to avoid features depending on libstdc++, of course...)
 #
-VBoxClient_LIBPATH         = $(PATH_TARGET)/VBoxClient
+VBoxClient_LIBPATH        += $(PATH_TARGET)/VBoxClient
 VBoxClient_ORDERDEPS       = $(PATH_TARGET)/VBoxClient/libstdc++.a
 VBoxClient_CLEAN           = $(PATH_TARGET)/VBoxClient/libstdc++.a
 $(PATH_TARGET)/VBoxClient/libstdc++.a:
