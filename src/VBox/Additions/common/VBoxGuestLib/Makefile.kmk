@@ -117,11 +117,11 @@ VBoxGuestR3Lib_SOURCES     = \
 #ifeq ($(BUILD_TARGET),linux) - VBOXGUESTR3LIB should work now (only difference is the default visibility).
 #VBoxGuestR3LibXFree86_TEMPLATE = VBOXLNX32GUESTR3LIB
 #VBoxGuestR3LibXFree86_INST     = $(INST_ADDITIONS_LIB)
+#VBoxGuestR3LibXFree86_CXXFLAGS = -fno-exceptions
 #else
 VBoxGuestR3LibXFree86_TEMPLATE = VBOXGUESTR3LIB
 #endif
 VBoxGuestR3LibXFree86_DEFS     = VBOX_HGCM VBOX_VBGLR3_XFREE86
-VBoxGuestR3LibXFree86_CXXFLAGS = -fno-exceptions
 VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibGR.cpp \
