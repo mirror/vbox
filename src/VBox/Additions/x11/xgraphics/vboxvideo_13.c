@@ -47,7 +47,7 @@
  * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
  */
 
-#define DEBUG_VERB 2
+#ifdef DEBUG
 
 #define TRACE \
 do { \
@@ -64,6 +64,15 @@ do { \
     xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
     xf86Msg(X_INFO, __VA_ARGS__); \
 } while(0)
+
+#else  /* DEBUG not defined */
+
+#define TRACE
+#define TRACE2
+#define TRACE3(...)
+
+#endif  /* DEBUG not defined */
+
 #ifdef XFree86LOADER
 # include "xorg-server.h"
 #else
@@ -197,6 +206,7 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
     VBOXPtr pVBox = VBOXGetRec(scrn);
     Bool rc = TRUE;
 
+    TRACE3("width=%d, height=%d\n", width, height);
     /* We only support horizontal resolutions which are a multiple of 8.  Round down if
        necessary. */
     if (width % 8 != 0)
@@ -237,6 +247,7 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
         scrn->virtualY = height;
         scrn->displayWidth = width;
     }
+    TRACE3("returning %d\n", rc);
     return rc;
 }
 
@@ -260,6 +271,8 @@ vbox_crtc_mode_fixup (xf86CrtcPtr crtc, DisplayModePtr mode,
     int xRes = adjusted_mode->HDisplay;
 
     (void) mode;
+    TRACE3("name=%s, HDisplay=%d, VDisplay=%d\n", adjusted_mode->name,
+           adjusted_mode->HDisplay, adjusted_mode->VDisplay);
     /* We only support horizontal resolutions which are a multiple of 8.  Round down if
        necessary. */
     if (xRes % 8 != 0)
@@ -281,6 +294,8 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
                     DisplayModePtr adjusted_mode, int x, int y)
 {
     (void) mode;
+    TRACE3("name=%s, HDisplay=%d, VDisplay=%d, x=%d, y=%d\n", adjusted_mode->name,
+           adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
     VBOXSetMode(crtc->scrn, adjusted_mode);
     VBOXAdjustFrame(crtc->scrn->scrnIndex, x, y, 0);
 }
@@ -354,6 +369,7 @@ static void
 vbox_output_add_mode (DisplayModePtr *pModes, const char *pszName, int x, int y,
                       Bool isPreferred)
 {
+    TRACE3("pszName=%s, x=%d, y=%d\n", pszName, x, y);
     DisplayModePtr pMode = xnfcalloc(1, sizeof(DisplayModeRec));
 
     pMode->status        = MODE_OK;
@@ -380,12 +396,13 @@ static DisplayModePtr
 vbox_output_get_modes (xf86OutputPtr output)
 {
     uint32_t x, y, bpp;
-    int rc;
+    bool rc;
     DisplayModePtr pModes = NULL;
     ScrnInfoPtr pScrn = output->scrn;
 
+    TRACE;
     rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, 0, 0);
-    if (RT_SUCCESS(rc) && (0 != x) && (0 != y)) {
+    if (rc && (0 != x) && (0 != y)) {
         vbox_output_add_mode(&pModes, NULL, x, y, TRUE);
         vbox_output_add_mode(&pModes, "1024x768", 1024, 768, FALSE);
         vbox_output_add_mode(&pModes, "800x600", 800, 600, FALSE);
@@ -395,6 +412,7 @@ vbox_output_get_modes (xf86OutputPtr output)
         vbox_output_add_mode(&pModes, "800x600", 800, 600, FALSE);
         vbox_output_add_mode(&pModes, "640x480", 640, 480, FALSE);
     }
+    TRACE2;
     return pModes;
 }
 
