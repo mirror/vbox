@@ -522,16 +522,16 @@ RuntimeGuestR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR3_SOURC
 
 
 #
-# RuntimeGuestR3Mini - Minimal Guest Additions Runtime which does not require 
-#                      initialization and can be linked into an .so. Intended 
+# RuntimeGuestR3Mini - Minimal Guest Additions Runtime which does not require
+#                      initialization and can be linked into an .so. Intended
 #                      for X11 drivers.
 #
 ifeq ($(BUILD_TARGET),linux) ## @todo elimiate this by fixing VBOXGUESTR3LIB/DLL/EXE. What about NOCPP like the x11 bits?
 RuntimeGuestR3Mini_TEMPLATE             := VBOXLNX32GUESTR3LIB
 RuntimeGuestR3Mini_INST                  = $(INST_ADDITIONS_LIB)
 RuntimeGuestR3Mini_CXXFLAGS.linux        = -fno-exceptions
-else ## @todo this should be VBOXGUESTR3DLL I think if PIC code is required.
-RuntimeGuestR3Mini_TEMPLATE             := VBOXGUESTR3LIB
+else
+RuntimeGuestR3Mini_TEMPLATE             := VBOXGUESTR3DLL
 endif
 RuntimeGuestR3Mini_SDKS.win             := $(RuntimeR3_SDKS.win)
 RuntimeGuestR3Mini_DEFS                 := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS)) \
