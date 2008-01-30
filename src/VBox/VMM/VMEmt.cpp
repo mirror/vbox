@@ -104,7 +104,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
         else if (VM_FF_ISSET(pVM, VM_FF_RESET))
         {
             /*
-             * Service a delay reset request.
+             * Service a delayed reset request.
              */
             rc = VMR3Reset(pVM);
             VM_FF_CLEAR(pVM, VM_FF_RESET);
