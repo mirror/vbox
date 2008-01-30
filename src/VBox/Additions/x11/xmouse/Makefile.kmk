@@ -120,7 +120,7 @@ vboxmouse_drv_SOURCES  = \
 	VBoxUtils.c
 vboxmouse_drv_LIBS = \
 	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3)
+	$(VBOX_LIB_IPRT_GUEST_R3_MINI)
 endif
 
 include	$(PATH_KBUILD)/footer.kmk
