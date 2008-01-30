@@ -152,13 +152,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     TriStateBool_T hwVirtExEnabled;
     BOOL fHWVirtExEnabled;
     hrc = pMachine->COMGETTER(HWVirtExEnabled)(&hwVirtExEnabled);                   H();
-    if (hwVirtExEnabled == TriStateBool_Default)
+    if (hwVirtExEnabled == TriStateBool_TSDefault)
     {
         /* check the default value */
         hrc = systemProperties->COMGETTER(HWVirtExEnabled)(&fHWVirtExEnabled);      H();
     }
     else
-        fHWVirtExEnabled = (hwVirtExEnabled == TriStateBool_True);
+        fHWVirtExEnabled = (hwVirtExEnabled == TriStateBool_TSTrue);
 #ifndef RT_OS_DARWIN /** @todo Implement HWVirtExt on darwin. See #1865. */
     if (fHWVirtExEnabled)
     {

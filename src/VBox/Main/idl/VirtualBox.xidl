@@ -104,9 +104,9 @@
       This represents a boolean variable having a third state, default.
     </desc>
 
-    <const name="False"   value="0"/>
-    <const name="True"    value="1"/>
-    <const name="Default" value="2"/>
+    <const name="TSFalse"   value="0"/>
+    <const name="TSTrue"    value="1"/>
+    <const name="TSDefault" value="2"/>
   </enum>
 
   <enum

@@ -909,7 +909,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
     TriStateBool_T hwVirtExEnabled;
     machine->COMGETTER(HWVirtExEnabled)(&hwVirtExEnabled);
-    if (hwVirtExEnabled == TriStateBool_Default)
+    if (hwVirtExEnabled == TriStateBool_TSDefault)
     {
         BOOL fHWVirtExEnabled;
         ComPtr<ISystemProperties> systemProperties;
@@ -923,9 +923,9 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     else
     {
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("hwvirtex=\"%s\"\n", hwVirtExEnabled == TriStateBool_True ? "on" : "off");
+            RTPrintf("hwvirtex=\"%s\"\n", hwVirtExEnabled == TriStateBool_TSTrue ? "on" : "off");
         else
-            RTPrintf("Hardw. virt.ext: %s\n", hwVirtExEnabled == TriStateBool_True ? "on" : "off");
+            RTPrintf("Hardw. virt.ext: %s\n", hwVirtExEnabled == TriStateBool_TSTrue ? "on" : "off");
     }
 
     MachineState_T machineState;
@@ -4391,15 +4391,15 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hwvirtex, "on") == 0)
             {
-                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TriStateBool_True));
+                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TriStateBool_TSTrue));
             }
             else if (strcmp(hwvirtex, "off") == 0)
             {
-                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TriStateBool_False));
+                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TriStateBool_TSFalse));
             }
             else if (strcmp(hwvirtex, "default") == 0)
             {
-                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TriStateBool_Default));
+                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TriStateBool_TSDefault));
             }
             else
             {

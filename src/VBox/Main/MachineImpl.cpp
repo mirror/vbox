@@ -168,7 +168,7 @@ Machine::HWData::HWData()
     mStatisticsUpdateInterval = 0;
     mVRAMSize = 8;
     mMonitorCount = 1;
-    mHWVirtExEnabled = TriStateBool_False;
+    mHWVirtExEnabled = TriStateBool_TSFalse;
 
     /* default boot order: floppy - DVD - HDD */
     mBootOrder [0] = DeviceType_FloppyDevice;
@@ -4140,7 +4140,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     /* CPU node (currently not required) */
     {
         /* default value in case the node is not there */
-        mHWData->mHWVirtExEnabled = TriStateBool_Default;
+        mHWData->mHWVirtExEnabled = TriStateBool_TSDefault;
 
         Key cpuNode = aNode.findKey ("CPU");
         if (!cpuNode.isNull())
@@ -4150,11 +4150,11 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             {
                 const char *enabled = hwVirtExNode.stringValue ("enabled");
                 if      (strcmp (enabled, "false") == 0)
-                    mHWData->mHWVirtExEnabled = TriStateBool_False;
+                    mHWData->mHWVirtExEnabled = TriStateBool_TSFalse;
                 else if (strcmp (enabled, "true") == 0)
-                    mHWData->mHWVirtExEnabled = TriStateBool_True;
+                    mHWData->mHWVirtExEnabled = TriStateBool_TSTrue;
                 else
-                    mHWData->mHWVirtExEnabled = TriStateBool_Default;
+                    mHWData->mHWVirtExEnabled = TriStateBool_TSDefault;
             }
         }
     }
@@ -5528,13 +5528,13 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
         const char *value = NULL;
         switch (mHWData->mHWVirtExEnabled)
         {
-            case TriStateBool_False:
+            case TriStateBool_TSFalse:
                 value = "false";
                 break;
-            case TriStateBool_True:
+            case TriStateBool_TSTrue:
                 value = "true";
                 break;
-            case TriStateBool_Default:
+            case TriStateBool_TSDefault:
                 value = "default";
         }
         hwVirtExNode.setStringValue ("enabled", value);
