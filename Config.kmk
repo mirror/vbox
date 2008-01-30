@@ -2702,26 +2702,29 @@ endif # VBOX_WITH_OS2_ADDITIONS
 
 #
 # Template for building R3 programs for the guest additions.
+# Note: Make sure you don't break VBOXGUESTR3CPPEXE when changing this.
 #
 # For the time being, we force 32-bitness onto this and related
-# templates (BLD_TRG_ARCH). When we start doing 64-bit guest however,
-# they will be reverted to BUILD_TARGET_ARCH.
+# templates (via BLD_TRG_ARCH). When we start doing 64-bit guest
+# however, they will be reverted to follow BUILD_TARGET_ARCH.
+# So, if someone sees any weirdness happening in a 64-bit build now,
+# try do a 32-bit cross build (kmk BUILD_TARGET_ARCH=x86) first. It
 #
-TEMPLATE_VBOXGUESTR3EXE         = VBox Guest Program
+TEMPLATE_VBOXGUESTR3EXE           = VBox Guest Program
 ifeq ($(BUILD_TARGET),win) # quick hack
-TEMPLATE_VBOXGUESTR3EXE_EXTENDS = VBOXW32GUESTR3
+ TEMPLATE_VBOXGUESTR3EXE_EXTENDS  = VBOXW32GUESTR3
 else
-TEMPLATE_VBOXGUESTR3EXE_EXTENDS = VBOXR3EXE
-#TEMPLATE_VBOXGUESTR3EXE_TOOL   := $(subst GXX,GCC,$(TEMPLATE_VBOXR3EXE_TOOL))
-TEMPLATE_VBOXGUESTR3EXE_TOOL   := $(subst GXX,GCC,$(VBOX_GCC32_TOOL))
-TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS= $(TEMPLATE_VBOXR3EXE_CXXFLAGS) -fno-exceptions
+ TEMPLATE_VBOXGUESTR3EXE_EXTENDS  = VBOXR3EXE
+ #TEMPLATE_VBOXGUESTR3EXE_TOOL   := $(subst GXX,GCC,$(TEMPLATE_VBOXR3EXE_TOOL))
+ TEMPLATE_VBOXGUESTR3EXE_TOOL    := $(subst GXX,GCC,$(VBOX_GCC32_TOOL))
+ TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS = $(TEMPLATE_VBOXR3EXE_CXXFLAGS) -fno-exceptions
 endif
-TEMPLATE_VBOXGUESTR3EXE_INST    = $(INST_ADDITIONS)
-TEMPLATE_VBOXGUESTR3EXE_ASFLAGS = $(VBOX_ASFLAGS32)
+TEMPLATE_VBOXGUESTR3EXE_INST      = $(INST_ADDITIONS)
+TEMPLATE_VBOXGUESTR3EXE_ASFLAGS   = $(VBOX_ASFLAGS32)
 TEMPLATE_VBOXGUESTR3EXE_BLD_TRG_ARCH  = x86
 TEMPLATE_VBOXGUESTR3EXE_BLD_TRG_CPU   = blend
-TEMPLATE_VBOXGUESTR3EXE_DEFS   := IN_GUEST IN_GUEST_R3 IN_RT_R3 \
-                                  $(filter-out $(ARCH_BITS_DEFS),$(TEMPLATE_VBOXR3EXE_DEFS)) HC_ARCH_BITS=32 GC_ARCH_BITS=32
+TEMPLATE_VBOXGUESTR3EXE_DEFS     := IN_GUEST IN_GUEST_R3 IN_RT_R3 \
+                                    $(filter-out $(ARCH_BITS_DEFS),$(TEMPLATE_VBOXR3EXE_DEFS)) HC_ARCH_BITS=32 GC_ARCH_BITS=32
 
 #
 # Template for building R3 (dynamic) libraries for the guest additions.
@@ -2748,6 +2751,22 @@ if1of ($(BUILD_TARGET), solaris) ## @todo r=bird: Fix the *R3Mini template to VB
  TEMPLATE_VBOXGUESTR3LIB_CXXFLAGS   = $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS) -fPIC -fno-exceptions
 endif
 
+
+#
+# Template for guest stuff that makes use of the C++ library and features.
+# (This is mostly about undoing what was done to C++ for VBOXGUESTR3EXE.)
+#
+TEMPLATE_VBOXGUESTR3CPPEXE         = VBox Guest Program with C++ library dependencies
+TEMPLATE_VBOXGUESTR3CPPEXE_EXTENDS = VBOXGUESTR3EXE
+ifeq ($(BUILD_TARGET),win)
+ # later
+else
+ #TEMPLATE_VBOXGUESTR3CPPEXE_TOOL  = $(TEMPLATE_VBOXR3EXE_TOOL)
+ TEMPLATE_VBOXGUESTR3CPPEXE_TOOL   = $(VBOX_GCC32_TOOL)
+ TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS = $(TEMPLATE_VBOXR3EXE_CXXFLAGS)
+endif
+
+
 #
 # Template for building R0 drivers for the guest additions.
 #
@@ -2766,16 +2785,6 @@ TEMPLATE_VBOXGUESTR0_DEFS       = $(filter-out $(ARCH_BITS_DEFS),$(TEMPLATE_VBOX
 TEMPLATE_VBOXGUESTR0LIB         = VBox Guest Driver Libraries
 TEMPLATE_VBOXGUESTR0LIB_EXTENDS = VBOXGUESTR0
 TEMPLATE_VBOXGUESTR0LIB_INST    = $(INST_ADDITIONS_LIB)
-
-#
-# Template for guest stuff that makes use of the C++ library and features.
-#
-TEMPLATE_VBOXGUESTR3CPPEXE         = VBox Guest Program with C++ library dependencies
-TEMPLATE_VBOXGUESTR3CPPEXE_EXTENDS = VBOXGUESTR3EXE
-ifndef TEMPLATE_VBOXGUESTR3CPPEXE_TOOL
- TEMPLATE_VBOXGUESTR3CPPEXE_TOOL  := $(subst GCC,GXX,$(VBOX_GCC32_TOOL))
- TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS = $(filter-out -fno-exceptions,$(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS))
-endif
 
 
 #
