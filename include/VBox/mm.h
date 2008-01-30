@@ -217,77 +217,20 @@ typedef enum MMTAG
  * @ingroup grp_mm
  * @{ */
 
-/**
- * Converts a ring-0 host context address in the Hypervisor memory region to a ring-3 host context address.
- *
- * @returns ring-3 host context address.
- * @param   pVM         The VM to operate on.
- * @param   R0Ptr       The ring-0 host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-MMDECL(RTR3PTR) MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr);
-
-/**
- * Converts a ring-0 host context address in the Hypervisor memory region to a guest context address.
- *
- * @returns guest context address.
- * @param   pVM         The VM to operate on.
- * @param   R0Ptr       The ring-0 host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-MMDECL(RTGCPTR) MMHyperR0ToGC(PVM pVM, RTR0PTR R0Ptr);
-
-/**
- * Converts a ring-0 host context address in the Hypervisor memory region to a current context address.
- *
- * @returns current context address.
- * @param   pVM         The VM to operate on.
- * @param   R0Ptr       The ring-0 host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
+MMDECL(RTR3PTR)     MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr);
+MMDECL(RTGCPTR)     MMHyperR0ToGC(PVM pVM, RTR0PTR R0Ptr);
 #ifndef IN_RING0
-MMDECL(void *) MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr);
+MMDECL(void *)      MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr);
 #endif
+MMDECL(RTR0PTR)     MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr);
+MMDECL(RTGCPTR)     MMHyperR3ToGC(PVM pVM, RTR3PTR R3Ptr);
+MMDECL(RTR3PTR)     MMHyperGCToR3(PVM pVM, RTGCPTR GCPtr);
+MMDECL(RTR0PTR)     MMHyperGCToR0(PVM pVM, RTGCPTR GCPtr);
 
-
-/**
- * Converts a ring-3 host context address in the Hypervisor memory region to a ring-0 host context address.
- *
- * @returns ring-0 host context address.
- * @param   pVM         The VM to operate on.
- * @param   R3Ptr       The ring-3 host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-MMDECL(RTR0PTR) MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr);
-
-/**
- * Converts a ring-3 host context address in the Hypervisor memory region to a guest context address.
- *
- * @returns guest context address.
- * @param   pVM         The VM to operate on.
- * @param   R3Ptr       The ring-3 host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-MMDECL(RTGCPTR) MMHyperR3ToGC(PVM pVM, RTR3PTR R3Ptr);
-
-/**
- * Converts a ring-3 host context address in the Hypervisor memory region to a current context address.
- *
- * @returns current context address.
- * @param   pVM         The VM to operate on.
- * @param   R3Ptr       The ring-3 host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
 #ifndef IN_RING3
-MMDECL(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr);
+MMDECL(void *)      MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr);
 #else
-DECLINLINE(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
+DECLINLINE(void *)  MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 {
     NOREF(pVM);
     return R3Ptr;
@@ -295,60 +238,18 @@ DECLINLINE(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 #endif
 
 
-/**
- * Converts a guest context address in the Hypervisor memory region to a ring-3 context address.
- *
- * @returns ring-3 host context address.
- * @param   pVM         The VM to operate on.
- * @param   GCPtr       The guest context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-MMDECL(RTR3PTR) MMHyperGCToR3(PVM pVM, RTGCPTR GCPtr);
-
-/**
- * Converts a guest context address in the Hypervisor memory region to a ring-0 host context address.
- *
- * @returns ring-0 host context address.
- * @param   pVM         The VM to operate on.
- * @param   GCPtr       The guest context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-MMDECL(RTR0PTR) MMHyperGCToR0(PVM pVM, RTGCPTR GCPtr);
-
-/**
- * Converts a guest context address in the Hypervisor memory region to a current context address.
- *
- * @returns current context address.
- * @param   pVM         The VM to operate on.
- * @param   GCPtr       The guest host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
 #ifndef IN_GC
-MMDECL(void *) MMHyperGCToCC(PVM pVM, RTGCPTR GCPtr);
+MMDECL(void *)      MMHyperGCToCC(PVM pVM, RTGCPTR GCPtr);
 #else
-DECLINLINE(void *) MMHyperGCToCC(PVM pVM, RTGCPTR GCPtr)
+DECLINLINE(void *)  MMHyperGCToCC(PVM pVM, RTGCPTR GCPtr)
 {
     NOREF(pVM);
     return GCPtr;
 }
 #endif
 
-
-
-/**
- * Converts a current context address in the Hypervisor memory region to a ring-3 host context address.
- *
- * @returns ring-3 host context address.
- * @param   pVM         The VM to operate on.
- * @param   pv          The current context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
 #ifndef IN_RING3
-MMDECL(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv);
+MMDECL(RTR3PTR)     MMHyperCCToR3(PVM pVM, void *pv);
 #else
 DECLINLINE(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
 {
@@ -357,17 +258,8 @@ DECLINLINE(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
 }
 #endif
 
-/**
- * Converts a current context address in the Hypervisor memory region to a ring-0 host context address.
- *
- * @returns ring-0 host context address.
- * @param   pVM         The VM to operate on.
- * @param   pv          The current context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
 #ifndef IN_RING0
-MMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv);
+MMDECL(RTR0PTR)     MMHyperCCToR0(PVM pVM, void *pv);
 #else
 DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 {
@@ -376,17 +268,8 @@ DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 }
 #endif
 
-/**
- * Converts a current context address in the Hypervisor memory region to a guest context address.
- *
- * @returns guest context address.
- * @param   pVM         The VM to operate on.
- * @param   pv          The current context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
 #ifndef IN_GC
-MMDECL(RTGCPTR) MMHyperCCToGC(PVM pVM, void *pv);
+MMDECL(RTGCPTR)     MMHyperCCToGC(PVM pVM, void *pv);
 #else
 DECLINLINE(RTGCPTR) MMHyperCCToGC(PVM pVM, void *pv)
 {
@@ -396,19 +279,8 @@ DECLINLINE(RTGCPTR) MMHyperCCToGC(PVM pVM, void *pv)
 #endif
 
 
-
-/**
- * Converts a current context address in the Hypervisor memory region to a HC address.
- * The memory must have been allocated with MMHyperAlloc().
- *
- * @returns HC address.
- * @param   pVM         The VM to operate on.
- * @param   Ptr         The current context address.
- * @thread  The Emulation Thread.
- * @deprecated
- */
 #ifdef IN_GC
-MMDECL(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr);
+MMDECL(RTHCPTR)     MMHyper2HC(PVM pVM, uintptr_t Ptr);
 #else
 DECLINLINE(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
 {
@@ -417,17 +289,8 @@ DECLINLINE(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
 }
 #endif
 
-/**
- * Converts a current context address in the Hypervisor memory region to a GC address.
- * The memory must have been allocated with MMHyperAlloc().
- *
- * @returns HC address.
- * @param   pVM         The VM to operate on.
- * @param   Ptr         The current context address.
- * @thread  The Emulation Thread.
- */
 #ifndef IN_GC
-MMDECL(RTGCPTR) MMHyper2GC(PVM pVM, uintptr_t Ptr);
+MMDECL(RTGCPTR)     MMHyper2GC(PVM pVM, uintptr_t Ptr);
 #else
 DECLINLINE(RTGCPTR) MMHyper2GC(PVM pVM, uintptr_t Ptr)
 {
@@ -436,173 +299,24 @@ DECLINLINE(RTGCPTR) MMHyper2GC(PVM pVM, uintptr_t Ptr)
 }
 #endif
 
-/**
- * Converts a HC address in the Hypervisor memory region to a GC address.
- * The memory must have been allocated with MMGCHyperAlloc() or MMR3HyperAlloc().
- *
- * @returns GC address.
- * @param   pVM         The VM to operate on.
- * @param   HCPtr       The host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- * @deprecated
- */
-MMDECL(RTGCPTR) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr);
-
-/**
- * Converts a GC address in the Hypervisor memory region to a HC address.
- * The memory must have been allocated with MMGCHyperAlloc() or MMR3HyperAlloc().
- *
- * @returns HC address.
- * @param   pVM         The VM to operate on.
- * @param   GCPtr       The guest context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- * @deprecated
- */
-MMDECL(RTHCPTR) MMHyperGC2HC(PVM pVM, RTGCPTR GCPtr);
-
-
-/**
- * Allocates memory in the Hypervisor (GC VMM) area.
- * The returned memory is of course zeroed.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   cb          Number of bytes to allocate.
- * @param   uAlignment  Required memory alignment in bytes.
- *                      Values are 0,8,16,32 and PAGE_SIZE.
- *                      0 -> default alignment, i.e. 8 bytes.
- * @param   enmTag      The statistics tag.
- * @param   ppv         Where to store the address to the allocated
- *                      memory.
- * @remark  This is assumed not to be used at times when serialization is required.
- */
-MMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
-
-/**
- * Free memory allocated using MMHyperAlloc().
- *
- * It's not possible to free memory which is page aligned!
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pv          The memory to free.
- * @remark  Try avoid freeing hyper memory.
- * @thread  The Emulation Thread.
- */
-MMDECL(int) MMHyperFree(PVM pVM, void *pv);
-
+MMDECL(RTGCPTR)     MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr);
+MMDECL(RTHCPTR)     MMHyperGC2HC(PVM pVM, RTGCPTR GCPtr);
+MMDECL(int)         MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
+MMDECL(int)         MMHyperFree(PVM pVM, void *pv);
 #ifdef DEBUG
-/**
- * Dumps the hypervisor heap to Log.
- * @param pVM       VM Handle.
- * @thread  The Emulation Thread.
- */
-MMDECL(void) MMHyperHeapDump(PVM pVM);
+MMDECL(void)        MMHyperHeapDump(PVM pVM);
 #endif
-
-/**
- * Query the amount of free memory in the hypervisor heap.
- *
- * @returns Number of free bytes in the hypervisor heap.
- * @thread  Any.
- */
-MMDECL(size_t) MMHyperHeapGetFreeSize(PVM pVM);
-
-/**
- * Query the size the hypervisor heap.
- *
- * @returns The size of the hypervisor heap in bytes.
- * @thread  Any.
- */
-MMDECL(size_t) MMHyperHeapGetSize(PVM pVM);
+MMDECL(size_t)      MMHyperHeapGetFreeSize(PVM pVM);
+MMDECL(size_t)      MMHyperHeapGetSize(PVM pVM);
+MMDECL(RTGCPTR)     MMHyperGetArea(PVM pVM, size_t *pcb);
+MMDECL(bool)        MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr);
 
 
-/**
- * Query the address and size the hypervisor memory area.
- *
- * @returns Base address of the hypervisor area.
- * @param   pVM         VM Handle.
- * @param   pcb         Where to store the size of the hypervisor area. (out)
- * @thread  Any.
- */
-MMDECL(RTGCPTR) MMHyperGetArea(PVM pVM, size_t *pcb);
-
-/**
- * Checks if an address is within the hypervisor memory area.
- *
- * @returns true if inside.
- * @returns false if outside.
- * @param   pVM         VM handle.
- * @param   GCPtr       The pointer to check.
- * @thread  The Emulation Thread.
- */
-MMDECL(bool) MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr);
-
-/**
- * Convert a page in the page pool to a HC physical address.
- * This works for pages allocated by MMR3PageAlloc(), MMR3PageAllocPhys()
- * and MMR3PageAllocLow().
- *
- * @returns Physical address for the specified page table.
- * @param   pVM         VM handle.
- * @param   pvPage      Page which physical address we query.
- * @thread  The Emulation Thread.
- */
-MMDECL(RTHCPHYS) MMPage2Phys(PVM pVM, void *pvPage);
-
-/**
- * Convert physical address of a page to a HC virtual address.
- * This works for pages allocated by MMR3PageAlloc(), MMR3PageAllocPhys()
- * and MMR3PageAllocLow().
- *
- * @returns Pointer to the page at that physical address.
- * @param   pVM         VM handle.
- * @param   HCPhysPage  The physical address of a page.
- * @thread  The Emulation Thread.
- */
-MMDECL(void *) MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage);
-
-
-/**
- * Convert physical address of a page to a HC virtual address.
- * This works for pages allocated by MMR3PageAlloc(), MMR3PageAllocPhys()
- * and MMR3PageAllocLow().
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   HCPhysPage  The physical address of a page.
- * @param   ppvPage     Where to store the address corresponding to HCPhysPage.
- * @thread  The Emulation Thread.
- */
-MMDECL(int) MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
-
-
-/**
- * Try convert physical address of a page to a HC virtual address.
- * This works for pages allocated by MMR3PageAlloc(), MMR3PageAllocPhys()
- * and MMR3PageAllocLow().
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   HCPhysPage  The physical address of a page.
- * @param   ppvPage     Where to store the address corresponding to HCPhysPage.
- * @thread  The Emulation Thread.
- */
-MMDECL(int) MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
-
-/**
- * Convert GC physical address to HC virtual address.
- *
- * @returns HC virtual address.
- * @param   pVM         VM Handle
- * @param   GCPhys      Guest context physical address.
- * @param   cbRange     Physical range
- * @thread  The Emulation Thread.
- * @deprecated
- */
-MMDECL(void *) MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
+MMDECL(RTHCPHYS)    MMPage2Phys(PVM pVM, void *pvPage);
+MMDECL(void *)      MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage);
+MMDECL(int)         MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
+MMDECL(int)         MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
+MMDECL(void *)      MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
 
 
 /** @def MMHYPER_GC_ASSERT_GCPTR
@@ -625,700 +339,80 @@ MMDECL(void *) MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
  * @{
  */
 
-/**
- * Initialization of MM (save anything depending on PGM).
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3Init(PVM pVM);
+MMR3DECL(int)       MMR3Init(PVM pVM);
+MMR3DECL(int)       MMR3InitPaging(PVM pVM);
+MMR3DECL(int)       MMR3HyperInitFinalize(PVM pVM);
+MMR3DECL(int)       MMR3Term(PVM pVM);
+MMR3DECL(void)      MMR3Reset(PVM pVM);
+MMR3DECL(int)       MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages);
+MMR3DECL(int)       MMR3IncreateFixedReservation(PVM pVM, uint32_t cAddFixedPages);
+MMR3DECL(int)       MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages);
 
-/**
- * Initializes the MM parts which depends on PGM being initialized.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3InitPaging(PVM pVM);
-
-/**
- * Finalizes the HMA mapping.
- *
- * This is called later during init, most (all) HMA allocations should be done
- * by the time this function is called.
- *
- * @returns VBox status.
- */
-MMR3DECL(int) MMR3HyperInitFinalize(PVM pVM);
-
-/**
- * Terminates the MM.
- *
- * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3Term(PVM pVM);
-
-/**
- * Reset notification.
- *
- * MM will reload shadow ROMs into RAM at this point and make
- * the ROM writable.
- *
- * @param   pVM             The VM handle.
- */
-MMR3DECL(void) MMR3Reset(PVM pVM);
-
-/**
- * Convert HC Physical address to HC Virtual address.
- *
- * @returns VBox status.
- * @param   pVM         VM handle.
- * @param   HCPhys      The host context virtual address.
- * @param   ppv         Where to store the resulting address.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv);
-
-/**
- * Read memory from GC virtual address using the current guest CR3.
- *
- * @returns VBox status.
- * @param   pVM         VM handle.
- * @param   pvDst       Destination address (HC of course).
- * @param   GCPtr       GC virtual address.
- * @param   cb          Number of bytes to read.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3ReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb);
-
-/**
- * Write to memory at GC virtual address translated using the current guest CR3.
- *
- * @returns VBox status.
- * @param   pVM         VM handle.
- * @param   GCPtrDst    GC virtual address.
- * @param   pvSrc       The source address (HC of course).
- * @param   cb          Number of bytes to read.
- */
-MMR3DECL(int) MMR3WriteGCVirt(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
+MMR3DECL(int)       MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv);
+MMR3DECL(int)       MMR3ReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb);
+MMR3DECL(int)       MMR3WriteGCVirt(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 
 
 /** @defgroup grp_mm_r3_hyper  Hypervisor Memory Manager (HC R3 Portion)
  * @ingroup grp_mm_r3
  * @{ */
-/**
- * Allocates memory in the Hypervisor (GC VMM) area which never will
- * be freed and don't have any offset based relation to other heap blocks.
- *
- * The latter means that two blocks allocated by this API will not have the
- * same relative position to each other in GC and HC. In short, never use
- * this API for allocating nodes for an offset based AVL tree!
- *
- * The returned memory is of course zeroed.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   cb          Number of bytes to allocate.
- * @param   uAlignment  Required memory alignment in bytes.
- *                      Values are 0,8,16,32 and PAGE_SIZE.
- *                      0 -> default alignment, i.e. 8 bytes.
- * @param   enmTag      The statistics tag.
- * @param   ppv         Where to store the address to the allocated
- *                      memory.
- * @remark  This is assumed not to be used at times when serialization is required.
- */
-MMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
-
-/**
- * Maps contiguous HC physical memory into the hypervisor region in the GC.
- *
- * @return VBox status code.
- *
- * @param   pVM         VM handle.
- * @param   pvHC        Host context address of the memory. Must be page aligned!
- * @param   HCPhys      Host context physical address of the memory to be mapped. Must be page aligned!
- * @param   cb          Size of the memory. Will be rounded up to nearest page.
- * @param   pszDesc     Description.
- * @param   pGCPtr      Where to store the GC address.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvHC, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
-
-/**
- * Maps contiguous GC physical memory into the hypervisor region in the GC.
- *
- * @return VBox status code.
- *
- * @param   pVM         VM handle.
- * @param   GCPhys      Guest context physical address of the memory to be mapped. Must be page aligned!
- * @param   cb          Size of the memory. Will be rounded up to nearest page.
- * @param   pszDesc     Mapping description.
- * @param   pGCPtr      Where to store the GC address.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
-
-/**
- * Locks and Maps HC virtual memory into the hypervisor region in the GC.
- *
- * @return VBox status code.
- *
- * @param   pVM         VM handle.
- * @param   pvHC        Host context address of the memory (may be not page aligned).
- * @param   cb          Size of the memory. Will be rounded up to nearest page.
- * @param   fFree       Set this if MM is responsible for freeing the memory using SUPPageFree.
- * @param   pszDesc     Mapping description.
- * @param   pGCPtr      Where to store the GC address corresponding to pvHC.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, const char *pszDesc, PRTGCPTR pGCPtr);
-
-/**
- * Maps locked R3 virtual memory into the hypervisor region in the GC.
- *
- * @return VBox status code.
- *
- * @param   pVM         VM handle.
- * @param   pvR3        The ring-3 address of the memory, must be page aligned.
- * @param   pvR0        The ring-0 address of the memory, must be page aligned. (optional)
- * @param   cPages      The number of pages.
- * @param   paPages     The page descriptors.
- * @param   pszDesc     Mapping description.
- * @param   pGCPtr      Where to store the GC address corresponding to pvHC.
- */
-MMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages, const char *pszDesc, PRTGCPTR pGCPtr);
-
-/**
- * Reserves a hypervisor memory area.
- * Most frequent usage is fence pages and dynamically mappings like the guest PD and PDPTR.
- *
- * @return VBox status code.
- *
- * @param   pVM         VM handle.
- * @param   cb          Size of the memory. Will be rounded up to nearest page.
- * @param   pszDesc     Mapping description.
- * @param   pGCPtr      Where to store the assigned GC address. Optional.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGCPTR pGCPtr);
-
-
-/**
- * Convert hypervisor HC virtual address to HC physical address.
- *
- * @returns HC physical address.
- * @param   pVM         VM Handle
- * @param   pvHC        Host context physical address.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvHC);
-/**
- * Convert hypervisor HC virtual address to HC physical address.
- *
- * @returns HC physical address.
- * @param   pVM         VM Handle
- * @param   pvHC        Host context physical address.
- * @param   pHCPhys     Where to store the HC physical address.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3HyperHCVirt2HCPhysEx(PVM pVM, void *pvHC, PRTHCPHYS pHCPhys);
-/**
- * Convert hypervisor HC physical address to HC virtual address.
- *
- * @returns HC virtual address.
- * @param   pVM         VM Handle
- * @param   HCPhys      Host context physical address.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(void *) MMR3HyperHCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys);
-/**
- * Convert hypervisor HC physical address to HC virtual address.
- *
- * @returns VBox status.
- * @param   pVM         VM Handle
- * @param   HCPhys      Host context physical address.
- * @param   ppv         Where to store the HC virtual address.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int)   MMR3HyperHCPhys2HCVirtEx(PVM pVM, RTHCPHYS HCPhys, void **ppv);
-
-/**
- * Read hypervisor memory from GC virtual address.
- *
- * @returns VBox status.
- * @param   pVM         VM handle.
- * @param   pvDst       Destination address (HC of course).
- * @param   GCPtr       GC virtual address.
- * @param   cb          Number of bytes to read.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb);
-
+MMDECL(int)         MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
+MMR3DECL(int)       MMR3HyperMapHCPhys(PVM pVM, void *pvHC, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
+MMR3DECL(int)       MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
+MMR3DECL(int)       MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, const char *pszDesc, PRTGCPTR pGCPtr);
+MMR3DECL(int)       MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages, const char *pszDesc, PRTGCPTR pGCPtr);
+MMR3DECL(int)       MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGCPTR pGCPtr);
+MMR3DECL(RTHCPHYS)  MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvHC);
+MMR3DECL(int)       MMR3HyperHCVirt2HCPhysEx(PVM pVM, void *pvHC, PRTHCPHYS pHCPhys);
+MMR3DECL(void *)    MMR3HyperHCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys);
+MMR3DECL(int)       MMR3HyperHCPhys2HCVirtEx(PVM pVM, RTHCPHYS HCPhys, void **ppv);
+MMR3DECL(int)       MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb);
 /** @} */
 
 
 /** @defgroup grp_mm_phys   Guest Physical Memory Manager
  * @ingroup grp_mm_r3
  * @{ */
-
-/**
- * Register externally allocated RAM for the virtual machine.
- *
- * The memory registered with the VM thru this interface must not be freed
- * before the virtual machine has been destroyed. Bad things may happen... :-)
- *
- * @return VBox status code.
- * @param   pVM         VM handle.
- * @param   pvRam       Virtual address of the guest's physical memory range Must be page aligned.
- * @param   GCPhys      The physical address the ram shall be registered at.
- * @param   cb          Size of the memory. Must be page aligend.
- * @param   fFlags      Flags of the MM_RAM_FLAGS_* defines.
- * @param   pszDesc     Description of the memory.
- * @thread  The Emulation Thread.
- *
- * @todo    This will only be used for registering MMIO2 memory from devices. So, rename it.
- */
-MMR3DECL(int) MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, const char *pszDesc);
-
+MMR3DECL(int)       MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, const char *pszDesc);
 #ifndef VBOX_WITH_NEW_PHYS_CODE
-/**
- * Register externally allocated RAM for the virtual machine.
- *
- * The memory registered with the VM thru this interface must not be freed
- * before the virtual machine has been destroyed. Bad things may happen... :-)
- *
- * @return VBox status code.
- * @param   pVM         VM handle.
- * @param   pvRam       Virtual address of the guest's physical memory range Must be page aligned.
- * @param   GCPhys      The physical address the ram shall be registered at.
- * @param   cb          Size of the memory. Must be page aligend.
- * @param   fFlags      Flags of the MM_RAM_FLAGS_* defines.
- * @param   enmType     Physical range type (MM_PHYS_TYPE_*)
- * @param   pszDesc     Description of the memory.
- * @thread  The Emulation Thread.
- * @todo update this description.
- * @deprecated  For the old dynamic allocation code only. Will be removed with VBOX_WITH_NEW_PHYS_CODE.
- */
-MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc);
-#endif /* !VBOX_WITH_NEW_PHYS_CODE */
-
-/**
- * Register previously registered externally allocated RAM for the virtual machine.
- *
- * Use this only for MMIO ranges or the guest will become very confused.
- * The memory registered with the VM thru this interface must not be freed
- * before the virtual machine has been destroyed. Bad things may happen... :-)
- *
- * @return VBox status code.
- * @param   pVM         VM handle.
- * @param   GCPhysOld   The physical address the ram was registered at.
- * @param   GCPhysNew   The physical address the ram shall be registered at.
- * @param   cb          Size of the memory. Must be page aligend.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, unsigned cb);
-
-/**
- * Register a ROM (BIOS) region.
- *
- * It goes without saying that this is read-only memory. The memory region must be
- * in unassigned memory. I.e. from the top of the address space or on the PC in
- * the 0xa0000-0xfffff range.
- *
- * @returns VBox status.
- * @param   pVM                 VM Handle.
- * @param   pDevIns             The device instance owning the ROM region.
- * @param   GCPhys              First physical address in the range.
- *                              Must be page aligned!
- * @param   cbRange             The size of the range (in bytes).
- *                              Must be page aligned!
- * @param   pvBinary            Pointer to the binary data backing the ROM image.
- *                              This must be cbRange bytes big.
- *                              It will be copied and doesn't have to stick around.
- *                              It will be copied and doesn't have to stick around if fShadow is clear.
- * @param   fShadow             Whether to emulate ROM shadowing. This involves leaving
- *                              the ROM writable for a while during the POST and refreshing
- *                              it at reset. When this flag is set, the memory pointed to by
- *                              pvBinary has to stick around for the lifespan of the VM.
- * @param   pszDesc             Pointer to description string. This must not be freed.
- * @remark  There is no way to remove the rom, automatically on device cleanup or
- *          manually from the device yet. At present I doubt we need such features...
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc);
-
-/**
- * Write-protects a shadow ROM range.
- *
- * This is called late in the POST for shadow ROM ranges.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   GCPhys      Start of the registered shadow ROM range
- * @param   cbRange     The length of the registered shadow ROM range.
- *                      This can be NULL (not sure about the BIOS interface yet).
- */
-MMR3DECL(int) MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
-
-/**
- * Reserve physical address space for ROM and MMIO ranges.
- *
- * @returns VBox status code.
- * @param   pVM             VM Handle.
- * @param   GCPhys          Start physical address.
- * @param   cbRange         The size of the range.
- * @param   pszDesc         Description string.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(int) MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
-
-/**
- * Get the size of the base RAM.
- * This usually means the size of the first contigous block of physical memory.
- *
- * @returns
- * @param   pVM
- * @thread  Any.
- */
-MMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM);
-
-
+MMR3DECL(int)       MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc);
+#endif
+MMR3DECL(int)       MMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, unsigned cb);
+MMR3DECL(int)       MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc);
+MMR3DECL(int)       MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
+MMR3DECL(int)       MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
+MMR3DECL(uint64_t)  MMR3PhysGetRamSize(PVM pVM);
 /** @} */
 
 
 /** @defgroup grp_mm_page   Physical Page Pool
  * @ingroup grp_mm_r3
  * @{ */
-/**
- * Allocates a page from the page pool.
- *
- * This function may returns pages which has physical addresses any
- * where. If you require a page to be within the first 4GB of physical
- * memory, use MMR3PageAllocLow().
- *
- * @returns Pointer to the allocated page page.
- * @returns NULL on failure.
- * @param   pVM         VM handle.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(void *) MMR3PageAlloc(PVM pVM);
-
-/**
- * Allocates a page from the page pool and return its physical address.
- *
- * This function may returns pages which has physical addresses any
- * where. If you require a page to be within the first 4GB of physical
- * memory, use MMR3PageAllocLow().
- *
- * @returns Pointer to the allocated page page.
- * @returns NIL_RTHCPHYS on failure.
- * @param   pVM         VM handle.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM);
-
-/**
- * Frees a page allocated from the page pool by MMR3PageAlloc() and MMR3PageAllocPhys().
- *
- * @param   pVM         VM handle.
- * @param   pvPage      Pointer to the page.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(void) MMR3PageFree(PVM pVM, void *pvPage);
-
-/**
- * Allocates a page from the low page pool.
- *
- * @returns Pointer to the allocated page.
- * @returns NULL on failure.
- * @param   pVM         VM handle.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(void *) MMR3PageAllocLow(PVM pVM);
-
-/**
- * Frees a page allocated from the page pool by MMR3PageAllocLow().
- *
- * @param   pVM         VM handle.
- * @param   pvPage      Pointer to the page.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(void) MMR3PageFreeLow(PVM pVM, void *pvPage);
-
-/**
- * Free a page allocated from the page pool by physical address.
- * This works for pages allocated by MMR3PageAlloc(), MMR3PageAllocPhys()
- * and MMR3PageAllocLow().
- *
- * @param   pVM         VM handle.
- * @param   HCPhysPage  The physical address of the page to be freed.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(void) MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage);
-
-/**
- * Gets the HC pointer to the dummy page.
- *
- * The dummy page is used as a place holder to prevent potential bugs
- * from doing really bad things to the system.
- *
- * @returns Pointer to the dummy page.
- * @param   pVM         VM handle.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(void *) MMR3PageDummyHCPtr(PVM pVM);
-
-/**
- * Gets the HC Phys to the dummy page.
- *
- * The dummy page is used as a place holder to prevent potential bugs
- * from doing really bad things to the system.
- *
- * @returns Pointer to the dummy page.
- * @param   pVM         VM handle.
- * @thread  The Emulation Thread.
- */
-MMR3DECL(RTHCPHYS) MMR3PageDummyHCPhys(PVM pVM);
-
-
-#if 1 /* these are temporary wrappers and will be removed soon */
-/**
- * Allocates a Page Table.
- *
- * @returns Pointer to page table.
- * @returns NULL on failure.
- * @param   pVM         VM handle.
- * @deprecated  Use MMR3PageAlloc().
- */
-DECLINLINE(PVBOXPT) MMR3PTAlloc(PVM pVM)
-{
-    return (PVBOXPT)MMR3PageAlloc(pVM);
-}
-
-/**
- * Free a Page Table.
- *
- * @param   pVM         VM handle.
- * @param   pPT         Pointer to the page table as returned by MMR3PTAlloc().
- * @deprecated Use MMR3PageFree().
- */
-DECLINLINE(void) MMR3PTFree(PVM pVM, PVBOXPT pPT)
-{
-    MMR3PageFree(pVM, pPT);
-}
-
-/**
- * Free a Page Table by physical address.
- *
- * @param   pVM         VM handle.
- * @param   HCPhysPT    The physical address of the page table to be freed.
- * @deprecated Use MMR3PageFreeByPhys().
- */
-DECLINLINE(void) MMR3PTFreeByPhys(PVM pVM, RTHCPHYS HCPhysPT)
-{
-    MMR3PageFreeByPhys(pVM, HCPhysPT);
-}
-
-/**
- * Convert a Page Table address to a HC physical address.
- *
- * @returns Physical address for the specified page table.
- * @param   pVM         VM handle.
- * @param   pPT         Page table which physical address we query.
- * @deprecated Use MMR3Page2Phys().
- */
-DECLINLINE(RTHCPHYS) MMR3PT2Phys(PVM pVM, PVBOXPT pPT)
-{
-    return MMPage2Phys(pVM, pPT);
-}
-
-/**
- * Convert a physical address to a page table address
- *
- * @returns Pointer to the page table at that physical address.
- * @param   pVM         VM handle.
- * @param   PhysPT      Page table which physical address we query.
- * @deprecated Use MMR3PagePhys2Page().
- */
-DECLINLINE(PVBOXPT) MMR3Phys2PT(PVM pVM, RTHCPHYS PhysPT)
-{
-    return (PVBOXPT)MMPagePhys2Page(pVM, PhysPT);
-}
-
-/**
- * Allocate a Page Directory.
- *
- * @returns Pointer to the page directory.
- * @returns NULL on failure.
- * @param   pVM         VM handle.
- * @deprecated Use MMR3PageAlloc().
- */
-DECLINLINE(PVBOXPD)  MMR3PDAlloc(PVM pVM)
-{
-    return (PVBOXPD)MMR3PageAlloc(pVM);
-}
-
-/**
- * Free a Page Directory.
- *
- * @param   pVM         VM handle.
- * @param   pPD         Pointer to the page directory allocated by MMR3PDAlloc().
- * @deprecated Use MMR3PageFree().
- */
-DECLINLINE(void) MMR3PDFree(PVM pVM, PVBOXPD pPD)
-{
-    MMR3PageFree(pVM, pPD);
-}
-
-/**
- * Convert a Page Directory address to a physical address.
- *
- * @returns Physical address for the specified page directory.
- * @param   pVM         VM handle.
- * @param   pPD         Page directory which physical address we query.
- *                      Allocated by MMR3PDAlloc().
- * @deprecated Use MMR3Page2Phys().
- */
-DECLINLINE(RTHCPHYS)  MMR3PD2Phys(PVM pVM, PVBOXPD pPD)
-{
-    return MMPage2Phys(pVM, pPD);
-}
-
-/**
- * Convert a physical address to a page directory address
- *
- * @returns Pointer to the page directory at that physical address.
- * @param   pVM         VM handle.
- * @param   PhysPD      Physical address of page directory.
- *                      Allocated by MMR3PDAlloc().
- * @deprecated Use MMR3PageAlloc().
- */
-DECLINLINE(PVBOXPD) MMR3Phys2PD(PVM pVM, RTHCPHYS PhysPD)
-{
-    return (PVBOXPD)MMPagePhys2Page(pVM, PhysPD);
-}
-
-/** @deprecated */
-DECLINLINE(void *) MMR3DummyPageHCPtr(PVM pVM) { return MMR3PageDummyHCPtr(pVM); }
-/** @deprecated */
-DECLINLINE(RTHCPHYS) MMR3DummyPageHCPhys(PVM pVM) { return MMR3PageDummyHCPhys(pVM); }
-
-#endif /* will be removed */
-
+MMR3DECL(void *)    MMR3PageAlloc(PVM pVM);
+MMR3DECL(RTHCPHYS)  MMR3PageAllocPhys(PVM pVM);
+MMR3DECL(void)      MMR3PageFree(PVM pVM, void *pvPage);
+MMR3DECL(void *)    MMR3PageAllocLow(PVM pVM);
+MMR3DECL(void)      MMR3PageFreeLow(PVM pVM, void *pvPage);
+MMR3DECL(void)      MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage);
+MMR3DECL(void *)    MMR3PageDummyHCPtr(PVM pVM);
+MMR3DECL(RTHCPHYS)  MMR3PageDummyHCPhys(PVM pVM);
 /** @} */
 
 
 /** @defgroup grp_mm_heap   Heap Manager
  * @ingroup grp_mm_r3
  * @{ */
-
-/**
- * Allocate memory associating it with the VM for collective cleanup.
- *
- * The memory will be allocated from the default heap but a header
- * is added in which we keep track of which VM it belongs to and chain
- * all the allocations together so they can be freed in a one go.
- *
- * This interface is typically used for memory block which will not be
- * freed during the life of the VM.
- *
- * @returns Pointer to allocated memory.
- * @param   pVM         VM handle.
- * @param   enmTag      Statistics tag. Statistics are collected on a per tag
- *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
- * @param   cbSize      Size of the block.
- * @thread  Any thread.
- */
-MMR3DECL(void *) MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize);
-
-/**
- * Same as MMR3HeapAlloc().
- *
- *
- * @returns Pointer to allocated memory.
- * @param   pVM         VM handle.
- * @param   enmTag      Statistics tag. Statistics are collected on a per tag
- *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
- * @param   cbSize      Size of the block.
- * @param   ppv         Where to store the pointer to the allocated memory on success.
- * @thread  Any thread.
- */
-MMR3DECL(int) MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv);
-
-/**
- * Same as MMR3HeapAlloc() only the memory is zeroed.
- *
- *
- * @returns Pointer to allocated memory.
- * @param   pVM         VM handle.
- * @param   enmTag      Statistics tag. Statistics are collected on a per tag
- *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
- * @param   cbSize      Size of the block.
- * @thread  Any thread.
- */
-MMR3DECL(void *) MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize);
-
-/**
- * Same as MMR3HeapAllocZ().
- *
- *
- * @returns Pointer to allocated memory.
- * @param   pVM         VM handle.
- * @param   enmTag      Statistics tag. Statistics are collected on a per tag
- *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
- * @param   cbSize      Size of the block.
- * @param   ppv         Where to store the pointer to the allocated memory on success.
- * @thread  Any thread.
- */
-MMR3DECL(int) MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv);
-
-/**
- * Reallocate memory allocated with MMR3HeapAlloc() or MMR3HeapRealloc().
- *
- * @returns Pointer to reallocated memory.
- * @param   pv          Pointer to the memory block to reallocate.
- *                      Must not be NULL!
- * @param   cbNewSize   New block size.
- * @thread  Any thread.
- */
-MMR3DECL(void *) MMR3HeapRealloc(void *pv, size_t cbNewSize);
-
-/**
- * Duplicates the specified string.
- *
- * @returns Pointer to the duplicate.
- * @returns NULL on failure or when input NULL.
- * @param   pVM         The VM handle.
- * @param   enmTag      Statistics tag. Statistics are collected on a per tag
- *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
- * @param   psz         The string to duplicate. NULL is allowed.
- */
-MMR3DECL(char *) MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz);
-
-/**
- * Releases memory allocated with MMR3HeapAlloc() or MMR3HeapRealloc().
- *
- * @param   pv          Pointer to the memory block to free.
- * @thread  Any thread.
- */
-MMR3DECL(void) MMR3HeapFree(void *pv);
-
+MMR3DECL(void *)    MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize);
+MMR3DECL(int)       MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv);
+MMR3DECL(void *)    MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize);
+MMR3DECL(int)       MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv);
+MMR3DECL(void *)    MMR3HeapRealloc(void *pv, size_t cbNewSize);
+MMR3DECL(char *)    MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz);
+MMR3DECL(void)      MMR3HeapFree(void *pv);
 /** @} */
 
 /** @} */
-#endif
+#endif /* IN_RING3 */
 
 
 
@@ -1328,72 +422,15 @@ MMR3DECL(void) MMR3HeapFree(void *pv);
  * @{
  */
 
-/**
- * Install MMGCRam Hypervisor page fault handler for normal working
- * of MMGCRamRead and MMGCRamWrite calls.
- * This handler will be automatically removed at page fault.
- * In other case it must be removed by MMGCRamDeregisterTrapHandler call.
- *
- * @param   pVM         VM handle.
- */
-MMGCDECL(void) MMGCRamRegisterTrapHandler(PVM pVM);
-
-/**
- * Remove MMGCRam Hypervisor page fault handler.
- * See description of MMGCRamRegisterTrapHandler call.
- *
- * @param   pVM         VM handle.
- */
-MMGCDECL(void) MMGCRamDeregisterTrapHandler(PVM pVM);
-
-/**
- * Read data in guest context with \#PF control.
- * MMRamGC page fault handler must be installed prior this call for safe operation.
- * Use MMGCRamRegisterTrapHandler() call for this task.
- *
- * @returns VBox status.
- * @param   pDst        Where to store the readed data.
- * @param   pSrc        Pointer to the data to read.
- * @param   cb          Size of data to read, only 1/2/4/8 is valid.
- */
-MMGCDECL(int) MMGCRamReadNoTrapHandler(void *pDst, void *pSrc, size_t cb);
-
-/**
- * Write data in guest context with \#PF control.
- * MMRamGC page fault handler must be installed prior this call for safe operation.
- * Use MMGCRamRegisterTrapHandler() call for this task.
- *
- * @returns VBox status.
- * @param   pDst        Where to write the data.
- * @param   pSrc        Pointer to the data to write.
- * @param   cb          Size of data to write, only 1/2/4 is valid.
- */
-MMGCDECL(int) MMGCRamWriteNoTrapHandler(void *pDst, void *pSrc, size_t cb);
-
-/**
- * Read data in guest context with \#PF control.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   pDst        Where to store the readed data.
- * @param   pSrc        Pointer to the data to read.
- * @param   cb          Size of data to read, only 1/2/4/8 is valid.
- */
-MMGCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb);
-
-/**
- * Write data in guest context with \#PF control.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   pDst        Where to write the data.
- * @param   pSrc        Pointer to the data to write.
- * @param   cb          Size of data to write, only 1/2/4 is valid.
- */
-MMGCDECL(int) MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb);
+MMGCDECL(void)      MMGCRamRegisterTrapHandler(PVM pVM);
+MMGCDECL(void)      MMGCRamDeregisterTrapHandler(PVM pVM);
+MMGCDECL(int)       MMGCRamReadNoTrapHandler(void *pDst, void *pSrc, size_t cb);
+MMGCDECL(int)       MMGCRamWriteNoTrapHandler(void *pDst, void *pSrc, size_t cb);
+MMGCDECL(int)       MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb);
+MMGCDECL(int)       MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb);
 
 /** @} */
-#endif
+#endif /* IN_GC */
 
 /** @} */
 __END_DECLS
