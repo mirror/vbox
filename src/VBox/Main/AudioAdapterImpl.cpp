@@ -264,6 +264,59 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
     return rc;
 }
 
+STDMETHODIMP AudioAdapter::COMGETTER(AudioController)(AudioControllerType_T *aAudioController)
+{
+    if (!aAudioController)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aAudioController = mData->mAudioController;
+
+    return S_OK;
+}
+
+STDMETHODIMP AudioAdapter::COMSETTER(AudioController)(AudioControllerType_T aAudioController)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
+
+    HRESULT rc = S_OK;
+
+    if (mData->mAudioController != aAudioController)
+    {
+        /*
+         * which audio hardware type are we supposed to use?
+         */
+        switch (aAudioController)
+        {
+            case AudioControllerType_AC97:
+            case AudioControllerType_SB16:
+                mData.backup();
+                mData->mAudioController = aAudioController;
+                break;
+
+            default:
+            {
+                AssertMsgFailed (("Wrong audio controller type %d\n",
+                                  aAudioController));
+                rc = E_FAIL;
+            }
+        }
+    }
+
+    return rc;
+}
+
 // IAudioAdapter methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -305,6 +358,13 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
 
     /* is the adapter enabled? (required) */
     mData->mEnabled = audioAdapterNode.value <bool> ("enabled");
+
+    /* now check the audio adapter (not required, default is AC97) */
+    const char *controller = audioAdapterNode.stringValue ("controller");
+    if (strcmp (controller, "SB16") == 0)
+        mData->mAudioController = AudioControllerType_SB16;
+    else
+        mData->mAudioController = AudioControllerType_AC97;
 
     /* now check the audio driver (required) */
     const char *driver = audioAdapterNode.stringValue ("driver");
@@ -373,6 +433,22 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
     AutoReaderLock alock (this);
 
     Key node = aMachineNode.createKey ("AudioAdapter");
+
+    const char *controllerStr = NULL;
+    switch (mData->mAudioController)
+    {
+        case AudioControllerType_SB16:
+        {
+            controllerStr = "SB16";
+            break;
+        }
+        default:
+        {
+            controllerStr = "AC97";
+            break;
+        }
+    }
+    node.setStringValue ("controller", controllerStr);
 
     const char *driverStr = NULL;
     switch (mData->mAudioDriver)

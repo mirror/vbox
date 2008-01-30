@@ -128,7 +128,7 @@ struct SchemaDefs
   <xsl:call-template name="defineEnumMember">
       <xsl:with-param name="member" select="'        NetworkAdapterCount'"/>
       <xsl:with-param name="select" select="
-        xsd:complexType[@name='TAdapter']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
+        xsd:complexType[@name='TNetworkAdapter']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
       "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">

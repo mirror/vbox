@@ -1282,30 +1282,54 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pCfg,  "Object", (uintptr_t)pAudioSniffer);            RC_CHECK();
 
     /*
-     * AC'97 ICH audio
+     * AC'97 ICH / SoundBlaster16 audio
      */
     ComPtr<IAudioAdapter> audioAdapter;
     hrc = pMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());             H();
     BOOL enabled = FALSE;
     if (audioAdapter)
-    {
         hrc = audioAdapter->COMGETTER(Enabled)(&enabled);                           H();
-    }
+
     if (enabled)
     {
-        rc = CFGMR3InsertNode(pDevices, "ichac97", &pDev); /* ichac97 */
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);
-        rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          5);                     RC_CHECK();
-        Assert(!afPciDeviceNo[5]);
-        afPciDeviceNo[5] = true;
-        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
+        AudioControllerType_T audioController;
+        hrc = audioAdapter->COMGETTER(AudioController)(&audioController);               H();
+        switch (audioController)
+        {
+            case AudioControllerType_AC97:
+            {
+                /* default: ICH AC97 */
+                rc = CFGMR3InsertNode(pDevices, "ichac97", &pDev);                      RC_CHECK();
+                rc = CFGMR3InsertNode(pDev,     "0", &pInst);
+                rc = CFGMR3InsertInteger(pInst, "Trusted",          1); /* boolean */   RC_CHECK();
+                rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",      5);                 RC_CHECK();
+                Assert(!afPciDeviceNo[5]);
+                afPciDeviceNo[5] = true;
+                rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",    0);                 RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
+                break;
+            }
+            case AudioControllerType_SB16:
+            {
+                /* legacy SoundBlaster16 */
+                rc = CFGMR3InsertNode(pDevices, "sb16", &pDev);                         RC_CHECK();
+                rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
+                rc = CFGMR3InsertInteger(pInst, "Trusted",          1); /* boolean */   RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "IRQ", 5);                              RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "DMA", 1);                              RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "DMA16", 5);                            RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Port", 0x220);                         RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Version", 0x0405);                     RC_CHECK();
+                break;
+            }
+        }
 
         /* the Audio driver */
         rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              RC_CHECK();
         rc = CFGMR3InsertString(pLunL0, "Driver",               "AUDIO");               RC_CHECK();
         rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+
         AudioDriverType_T audioDriver;
         hrc = audioAdapter->COMGETTER(AudioDriver)(&audioDriver);                       H();
         switch (audioDriver)

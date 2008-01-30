@@ -218,6 +218,7 @@ DevicesR3_SOURCES       = \
 	VMMDev/VMMDevHGCM.cpp \
 	Network/DevPCNet.cpp \
 	Audio/DevIchAc97.cpp \
+	Audio/DevSB16.cpp \
 	PC/DevDMA.cpp \
 	Storage/fdc.c \
 	Serial/DevSerial.cpp \
