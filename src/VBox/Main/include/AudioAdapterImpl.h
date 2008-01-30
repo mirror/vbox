@@ -37,17 +37,20 @@ public:
         Data() {
             mEnabled = false;
             mAudioDriver = AudioDriverType_NullAudioDriver;
+            mAudioController = AudioControllerType_AC97;
         }
 
         bool operator== (const Data &that) const
         {
             return this == &that ||
                    (mEnabled == that.mEnabled &&
-                    mAudioDriver == that.mAudioDriver);
+                    mAudioDriver == that.mAudioDriver &&
+                    mAudioController == that.mAudioController);
         }
 
         BOOL mEnabled;
         AudioDriverType_T mAudioDriver;
+        AudioControllerType_T mAudioController;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (AudioAdapter)
@@ -78,6 +81,8 @@ public:
     STDMETHOD(COMSETTER(Enabled))(BOOL aEnabled);
     STDMETHOD(COMGETTER(AudioDriver)) (AudioDriverType_T *aAudioDriverType);
     STDMETHOD(COMSETTER(AudioDriver)) (AudioDriverType_T aAudioDriverType);
+    STDMETHOD(COMGETTER(AudioController)) (AudioControllerType_T *aAudioControllerType);
+    STDMETHOD(COMSETTER(AudioController)) (AudioControllerType_T aAudioControllerType);
 
     // public methods only for internal purposes
 

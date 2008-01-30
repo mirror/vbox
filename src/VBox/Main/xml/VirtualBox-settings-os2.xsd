@@ -59,7 +59,7 @@
     <xsd:element name="Adapter" minOccurs="0" maxOccurs="unbounded">
       <xsd:complexType>
         <xsd:complexContent>
-          <xsd:extension base="TAdapter">
+          <xsd:extension base="TNetworkAdapter">
             <xsd:choice minOccurs="0">
               <xsd:element name="NAT">
                 <xsd:complexType/>
@@ -85,16 +85,17 @@
 </xsd:complexType>
 
 <xsd:complexType name="TAudioAdapter">
-  <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
-  <xsd:attribute name="driver" use="required">
-    <!--- @todo (dmik) capitalize enum values on next format change! -->
-    <xsd:simpleType>
-      <xsd:restriction base="xsd:token">
-        <xsd:enumeration value="null"/>
-        <xsd:enumeration value="mmpm"/>
-      </xsd:restriction>
-    </xsd:simpleType>
-  </xsd:attribute>
+  <xsd:extension base="TAudioAdapterBase">
+    <xsd:attribute name="driver" use="required">
+      <!--- @todo (dmik) capitalize enum values on next format change! -->
+      <xsd:simpleType>
+        <xsd:restriction base="xsd:token">
+          <xsd:enumeration value="null"/>
+          <xsd:enumeration value="mmpm"/>
+        </xsd:restriction>
+      </xsd:simpleType>
+    </xsd:attribute>
+  </xsd:extension>
 </xsd:complexType>
 
 <!--

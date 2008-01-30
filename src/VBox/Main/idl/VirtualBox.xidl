@@ -8855,6 +8855,14 @@
     <const name="PulseAudioDriver"  value="7"/>
   </enum>
 
+  <enum
+    name="AudioControllerType"
+    uuid="7afd395c-42c3-444e-8788-3ce80292f36c"
+    >
+    <const name="AC97" value="0"/>
+    <const name="SB16" value="1"/>
+  </enum>
+
   <interface
      name="IAudioAdapter" extends="$unknown"
      uuid="921873db-5f3f-4b69-91f9-7be9e535a2cb"
@@ -8870,6 +8878,11 @@
         guest system. If disabled, the virtual guest hardware will
         not contain any audio adapter. Can only be changed when
         the VM is not running.
+      </desc>
+    </attribute>
+    <attribute name="audioController" type="AudioControllerType">
+      <desc>
+        The audio hardware we emulate.
       </desc>
     </attribute>
     <attribute name="audioDriver" type="AudioDriverType">

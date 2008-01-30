@@ -544,7 +544,19 @@
   <xsd:attribute name="enabledEhci" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
-<xsd:complexType name="TAdapter">
+<xsd:complexType name="TAudioAdapterBase">
+  <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
+  <xsd:attribute name="controller" default="AC97">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:token">
+        <xsd:enumeration value="AC97"/>
+        <xsd:enumeration value="SB16"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+</xsd:complexType>
+
+<xsd:complexType name="TNetworkAdapter">
   <xsd:attribute name="type" type="TNetworkAdapterType" default="Am79C970A"/>
   <xsd:attribute name="slot" use="required">
     <xsd:simpleType>
