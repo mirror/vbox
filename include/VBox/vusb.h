@@ -952,7 +952,8 @@ typedef struct VUSBURB
     uint8_t         DstAddress;
 
     /** The endpoint.
-     * IN: Must be set before submitting the URB. */
+     * IN: Must be set before submitting the URB.
+     * @remark This does not have the high bit (direction) set! */
     uint8_t         EndPt;
     /** The transfer type.
      * IN: Must be set before submitting the URB. */
