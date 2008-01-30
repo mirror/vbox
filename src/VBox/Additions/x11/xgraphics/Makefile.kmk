@@ -25,9 +25,6 @@ DLLS     = vboxvideo_drv_70 vboxvideo_drv_71 vboxvideo_drv_13 vboxvideo_drv_14
 # for BUILD_TARGET=l4
 SUFF_DLL = .so
 
-## @todo clean up this by switching to VBoxGuestR3Lib
-VBOX_LIB_VBGL_R3 := $(PATH_LIB)/VBoxGuestR3LibLinux.a
-
 vboxvideo_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxvideo_drv_SYSSUFF = .o
 vboxvideo_drv_DEFS = \
@@ -123,14 +120,14 @@ vboxvideo_drv_70_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils-new.c
 vboxvideo_drv_70_LIBS = \
-	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3_SHARED)
 
 vboxvideo_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxvideo_drv_71_DEFS := $(vboxvideo_drv_70_DEFS)
 vboxvideo_drv_71_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
-vboxvideo_drv_71_LDFLAGS = -s 
+vboxvideo_drv_71_LDFLAGS = -s
 vboxvideo_drv_71_INCS = \
 	../x11include/7.1 \
 	../x11include/7.1/X11 \
@@ -139,14 +136,14 @@ vboxvideo_drv_71_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils-new.c
 vboxvideo_drv_71_LIBS = \
-	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3_SHARED)
 
 vboxvideo_drv_13_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS)
 vboxvideo_drv_13_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
-vboxvideo_drv_13_LDFLAGS = -s 
+vboxvideo_drv_13_LDFLAGS = -s
 vboxvideo_drv_13_INCS = \
 	../x11include/1.3 \
 	../x11include/1.3/X11 \
@@ -155,14 +152,14 @@ vboxvideo_drv_13_SOURCES  = \
 	vboxvideo_13.c \
 	vboxutils-new.c
 vboxvideo_drv_13_LIBS = \
-	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3_SHARED)
 
 vboxvideo_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxvideo_drv_14_DEFS := $(vboxvideo_drv_70_DEFS)
 vboxvideo_drv_14_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
-vboxvideo_drv_14_LDFLAGS = -s 
+vboxvideo_drv_14_LDFLAGS = -s
 vboxvideo_drv_14_INCS = \
 	../x11include/1.4 \
 	../x11include/1.4/X11 \
@@ -173,9 +170,9 @@ vboxvideo_drv_14_SOURCES  = \
 	vboxvideo_13.c \
 	vboxutils-new.c
 vboxvideo_drv_14_LIBS = \
-	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3_SHARED)
 endif
 
 ifeq ($(BUILD_TARGET),solaris)
@@ -193,9 +190,9 @@ vboxvideo_drv_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils-new.c
 vboxvideo_drv_LIBS = \
-	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3_SHARED)
 endif
 
 include	$(PATH_KBUILD)/footer.kmk

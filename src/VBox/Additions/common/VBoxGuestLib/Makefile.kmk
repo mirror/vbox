@@ -25,7 +25,8 @@ if1of ($(BUILD_TARGET),solaris)
 	VBoxGuestR0LibBase
  ifneq ($(BUILD_TARGET),win)
   LIBRARIES += \
-	VBoxGuestR3Lib
+	VBoxGuestR3Lib \
+	VBoxGuestR3LibShared
  endif
 else
  # As we build Windows Additions on Linux as well, we need a
@@ -48,6 +49,7 @@ else
   endif
    LIBRARIES += \
   	VBoxGuestR3Lib \
+	VBoxGuestR3LibShared \
   	VBoxGuestR3LibXFree86 \
   	VBoxGuestR3LibLinux
  endif
@@ -107,6 +109,14 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibSeamless.cpp \
 	VBoxGuestR3LibTime.cpp \
 	VBoxGuestR3LibVideo.cpp
+
+#
+# VBoxGuestR3LibShared - a PIC variant of VBoxGuestR3Lib for linking into .so/.dll/.dylib.
+#
+VBoxGuestR3LibShared_TEMPLATE = VBOXGUESTR3DLL
+VBoxGuestR3LibShared_DEFS    := $(VBoxGuestR3Lib_DEFS)
+VBoxGuestR3LibShared_SOURCES := $(VBoxGuestR3Lib_SOURCES)
+VBoxGuestR3LibShared_INST    := $(INST_ADDITIONS_LIB)
 
 
 #
