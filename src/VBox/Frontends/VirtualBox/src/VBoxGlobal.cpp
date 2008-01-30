@@ -1122,12 +1122,15 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
  *  while this method is reading its properties. In this case, the method will
  *  return an empty string.
  */
-QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */)
+QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */,
+                             bool aDoRefresh)
 {
     Assert (!aPredict || aHD.GetParent().isNull());
 
     VBoxMedia media;
-    if (!findMedia (CUnknown (aHD), media))
+    if (!aDoRefresh)
+        media = VBoxMedia (CUnknown (aHD), VBoxDefs::HD, VBoxMedia::Ok);
+    else if (!findMedia (CUnknown (aHD), media))
     {
         /* media may be new and not alredy in the media list, request refresh */
         startEnumeratingMedia();
@@ -1270,7 +1273,7 @@ QString VBoxGlobal::prepareFileNameForHTML (const QString &fn) const
  *  @param withLinks    true if section titles should be hypertext links
  */
 QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
-                                   bool withLinks)
+                                   bool withLinks, bool aDoRefresh)
 {
     static const char *sTableTpl =
         "<table border=0 cellspacing=0 cellpadding=0 width=100%>%1</table>";
@@ -1319,16 +1322,17 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                                              tr ("<nobr>%4 MB</nobr>", "details report"))
             + QString (sSectionItemTpl).arg (tr ("Boot Order", "details report"), "%5")
             + QString (sSectionItemTpl).arg (tr ("ACPI", "details report"), "%6")
-            + QString (sSectionItemTpl).arg (tr ("IO APIC", "details report"), "%7");
+            + QString (sSectionItemTpl).arg (tr ("IO APIC", "details report"), "%7")
+            + QString (sSectionItemTpl).arg (tr ("VT-x/AMD-V", "details report"), "%8");
 
         sGeneralFullHrefTpl = QString (sSectionHrefTpl)
-            .arg (2 + 7) /* rows */
+            .arg (2 + 8) /* rows */
             .arg ("machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
                   generalItems); /* items */
         sGeneralFullBoldTpl = QString (sSectionBoldTpl)
-            .arg (2 + 7) /* rows */
+            .arg (2 + 8) /* rows */
             .arg ("machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
@@ -1365,7 +1369,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                                               hda.GetDeviceNumber())))
                         .arg (QString ("%1 [<nobr>%2</nobr>]")
                               .arg (prepareFileNameForHTML (src))
-                              .arg (details (hd, isNewVM /* predict */)));
+                              .arg (details (hd, isNewVM /* predict */, aDoRefresh)));
                     ++ rows;
                 }
             }
@@ -1435,6 +1439,16 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             ? tr ("Enabled", "details report (IO APIC)")
             : tr ("Disabled", "details report (IO APIC)");
 
+        /* VT-x/AMD-V */
+        CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
+        QString virt = m.GetHWVirtExEnabled() == True ?
+                       tr ("Enabled", "details report (VT-x/AMD-V)") :
+                       m.GetHWVirtExEnabled() == False ?
+                       tr ("Disabled", "details report (VT-x/AMD-V)") :
+                       props.GetHWVirtExEnabled() ?
+                       tr ("Enabled", "details report (VT-x/AMD-V)") :
+                       tr ("Disabled", "details report (VT-x/AMD-V)");
+
         /* General + Hard Disks */
         detailsReport
             = generalFullTpl
@@ -1445,6 +1459,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 .arg (bootOrder)
                 .arg (acpi)
                 .arg (ioapic)
+                .arg (virt)
             + hardDisks;
 
         QString item;
