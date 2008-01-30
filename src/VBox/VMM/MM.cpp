@@ -248,7 +248,7 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
             ||  !RTStrICmp(sz, "no overcommitment"))
             enmPolicy = GMMOCPOLICY_NO_OC;
         else
-            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "Unknown \"MM/Policy\" value \"%s\"", sz)
+            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "Unknown \"MM/Policy\" value \"%s\"", sz);
     }
     else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         enmPolicy = GMMOCPOLICY_NO_OC;
@@ -271,7 +271,7 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
         else if (!RTStrICmp(sz, "high"))
             enmPriority = GMMPRIORITY_HIGH;
         else
-            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "Unknown \"MM/Priority\" value \"%s\"", sz)
+            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "Unknown \"MM/Priority\" value \"%s\"", sz);
     }
     else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         enmPriority = GMMPRIORITY_NORMAL;
@@ -284,12 +284,12 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
     rc = GMMR3InitialReservation(pVM, cbRam >> PAGE_SHIFT, 1, 1, enmPolicy, enmPriority);
     if (RT_FAILURE(rc))
     {
-        if (rc == VERR_GMM_NOT_SUFFICENT_MEMORY)
+        if (rc == VERR_GMM_MEMORY_RESERVATION_DECLINED)
             return VMSetError(pVM, rc, RT_SRC_POS,
                               N_("Insufficient free memory to start the VM (cbRam=%#RX64 enmPolicy=%d enmPriority=%d)"),
                               cbRam, enmPolicy, enmPriority);
         return VMSetError(pVM, rc, RT_SRC_POS, "GMMR3InitialReservation(,%#RX64,0,0,%d,%d).",
-                          cbRam >> PAGE_SHIFT, enmPolicy, enmPriority)
+                          cbRam >> PAGE_SHIFT, enmPolicy, enmPriority);
     }
 #endif /* VBOX_WITH_NEW_PHYS_CODE */
 
