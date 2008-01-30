@@ -121,6 +121,7 @@ VBoxGuestR3Lib_SOURCES     = \
 VBoxGuestR3LibXFree86_TEMPLATE = VBOXGUESTR3LIB
 #endif
 VBoxGuestR3LibXFree86_DEFS     = VBOX_HGCM VBOX_VBGLR3_XFREE86
+VBoxGuestR3LibXFree86_CXXFLAGS = -fno-exceptions
 VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibGR.cpp \
@@ -182,6 +183,7 @@ VBoxGuestLibBaseLinux_DEFS     = VBOX_HGCM VBGL_VBOXGUEST LOG_TO_BACKDOOR
 # VBoxGuestR3LibLinux
 #
 VBoxGuestR3LibLinux_TEMPLATE = VBOXLNX32GUESTR3LIB
+VBoxGuestR3LibLinux_CXXFLAGS = -fno-exceptions
 VBoxGuestR3LibLinux_SOURCES  = $(VBoxGuestR3Lib_SOURCES)
 VBoxGuestR3LibLinux_DEFS     = VBOX_HGCM
 

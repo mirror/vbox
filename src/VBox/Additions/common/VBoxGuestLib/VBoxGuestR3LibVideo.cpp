@@ -142,6 +142,10 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint
     int rc = vbglR3GRPerform(&Req.header);
     if (RT_SUCCESS(rc))
     {
+        rc = Req.header.rc;
+    }
+    if (RT_SUCCESS(rc))
+    {
         *pcx = Req.xres;
         *pcy = Req.yres;
         *pcBits = Req.bpp;
