@@ -77,9 +77,9 @@ vboxmouse_drv_70_SOURCES  = \
 	xorg70/pnp.c \
 	VBoxUtils.c
 vboxmouse_drv_70_LIBS = \
-	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3_SHARED)
 
 
 vboxmouse_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
@@ -96,9 +96,9 @@ vboxmouse_drv_71_SOURCES  = \
 	xorg71/pnp.c \
 	VBoxUtils.c
 vboxmouse_drv_71_LIBS = \
-	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3_SHARED)
 
 
 vboxmouse_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
@@ -115,9 +115,9 @@ vboxmouse_drv_14_SOURCES  = \
 	xorg14/pnp.c \
 	VBoxUtils.c
 vboxmouse_drv_14_LIBS = \
-	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3_SHARED)
 endif
 
 ifeq ($(BUILD_TARGET),solaris)
@@ -137,7 +137,7 @@ vboxmouse_drv_SOURCES  = \
 	xorg71/pnp.c \
 	VBoxUtils.c
 vboxmouse_drv_LIBS = \
-	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI)
 endif
 
