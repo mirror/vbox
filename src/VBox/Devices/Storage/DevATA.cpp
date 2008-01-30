@@ -1329,7 +1329,7 @@ static int ataReadSectors(ATADevState *s, uint64_t u64Sector, void *pvBuf, uint3
     s->Led.Actual.s.fReading = 0;
     STAM_PROFILE_ADV_STOP(&s->StatReads, r);
 
-    STAM_COUNTER_ADD(&s->StatBytesRead, cSectors * 512);
+    STAM_REL_COUNTER_ADD(&s->StatBytesRead, cSectors * 512);
 
     STAM_PROFILE_START(&pCtl->StatLockWait, a);
     PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
@@ -1351,7 +1351,7 @@ static int ataWriteSectors(ATADevState *s, uint64_t u64Sector, const void *pvBuf
     s->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&s->StatWrites, w);
 
-    STAM_COUNTER_ADD(&s->StatBytesWritten, cSectors * 512);
+    STAM_REL_COUNTER_ADD(&s->StatBytesWritten, cSectors * 512);
 
     STAM_PROFILE_START(&pCtl->StatLockWait, a);
     PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
@@ -1678,7 +1678,7 @@ static bool atapiReadSS(ATADevState *s)
     if (VBOX_SUCCESS(rc))
     {
         s->Led.Actual.s.fReading = 0;
-        STAM_COUNTER_ADD(&s->StatBytesRead, s->cbATAPISector * cSectors);
+        STAM_REL_COUNTER_ADD(&s->StatBytesRead, s->cbATAPISector * cSectors);
 
         /* The initial buffer end value has been set up based on the total
          * transfer size. But the I/O buffer size limits what can actually be
@@ -1826,12 +1826,12 @@ static bool atapiPassthroughSS(ATADevState *s)
         if (s->uTxDir != PDMBLOCKTXDIR_TO_DEVICE)
         {
             s->Led.Actual.s.fReading = 0;
-            STAM_COUNTER_ADD(&s->StatBytesRead, cbTransfer);
+            STAM_REL_COUNTER_ADD(&s->StatBytesRead, cbTransfer);
         }
         else
         {
             s->Led.Actual.s.fWriting = 0;
-            STAM_COUNTER_ADD(&s->StatBytesWritten, cbTransfer);
+            STAM_REL_COUNTER_ADD(&s->StatBytesWritten, cbTransfer);
         }
     }
 
@@ -5999,9 +5999,13 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIPIO,     STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,       "Number of ATAPI PIO transfers.", "/Devices/ATA%d/Unit%d/AtapiPIO", i, j);
 #ifdef VBOX_WITH_STATISTICS /** @todo release too. */
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatReads,        STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the read operations.", "/Devices/ATA%d/Unit%d/Reads", i, j);
+#endif
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatBytesRead,    STAMTYPE_COUNTER,     STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,           "Amount of data read.",              "/Devices/ATA%d/Unit%d/ReadBytes", i, j);
+#ifdef VBOX_WITH_STATISTICS
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatWrites,       STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the write operations.","/Devices/ATA%d/Unit%d/Writes", i, j);
+#endif
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatBytesWritten, STAMTYPE_COUNTER,     STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,           "Amount of data written.",           "/Devices/ATA%d/Unit%d/WrittenBytes", i, j);
+#ifdef VBOX_WITH_STATISTICS
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatFlushes,      STAMTYPE_PROFILE,     STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the flush operations.","/Devices/ATA%d/Unit%d/Flushes", i, j);
 #endif
         }
