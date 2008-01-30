@@ -20,9 +20,6 @@ include	$(PATH_KBUILD)/header.kmk
 
 if1of ($(BUILD_TARGET),linux l4)
 
-## @todo clean up this by switching to VBoxGuestR3Lib
-VBOX_LIB_VBGL_R3 := $(PATH_LIB)/VBoxGuestR3LibLinux.a
-
 SYSMODS  = vboxmouse_drv
 DLLS     = vboxmouse_drv_70 vboxmouse_drv_71 vboxmouse_drv_14
 
