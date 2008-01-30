@@ -997,5 +997,7 @@ vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *px, uint32_t *py,
     return FALSE;
 }
 
+/** @todo r=bird: This can be eliminated by -fno-exceptions. We just need to fix 
+ * the templates...  */
 extern int __gxx_personality_v0;
 int __gxx_personality_v0 = 0xdeadbeef;
