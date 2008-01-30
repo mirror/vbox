@@ -836,7 +836,7 @@ vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
     int rc = VbglR3GetDisplayChangeRequest(pcx, pcy, pcBits, fEventAck, iDisplay);
     if (RT_SUCCESS(rc))
         return TRUE;
-    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to request the last resolution requested from the guest, rc=%d.\n", rc);
+    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to obtain the last resolution requested by the guest, rc=%d.\n", rc);
     return FALSE;
 }
 
