@@ -40,15 +40,15 @@ vboxmouse_drv_CFLAGS = -fno-merge-constants -std=c99
 vboxmouse_drv_SYSSUFF = .o
 vboxmouse_drv_LDFLAGS.release = -S
 vboxmouse_drv_INCS := \
-	../x11include/4.2/exports/include/X11 \
-	../x11include/4.2/include \
-	../x11include/4.2/include/extensions \
-	../x11include/4.2/programs/Xserver/include \
-	../x11include/4.2/programs/Xserver/hw/xfree86 \
-	../x11include/4.2/programs/Xserver/hw/xfree86/common \
-	../x11include/4.2/programs/Xserver/hw/xfree86/os-support \
-	../x11include/4.2/programs/Xserver/hw/xfree86/os-support/bus \
-	../x11include/4.2/programs/Xserver/mi \
+	$(VBOX_PATH_X11_XFREE_4_2)/exports/include/X11 \
+	$(VBOX_PATH_X11_XFREE_4_2)/include \
+	$(VBOX_PATH_X11_XFREE_4_2)/include/extensions \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/include \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86 \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/common \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support/bus \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/mi \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_SOURCES  = \
 	mouse.c \
@@ -65,9 +65,9 @@ vboxmouse_drv_70_DEFS = \
 vboxmouse_drv_70_CFLAGS = -std=c99
 vboxmouse_drv_70_LDFLAGS = -s
 vboxmouse_drv_70_INCS := \
-	../x11include/7.0 \
-	../x11include/7.0/X11 \
-	../x11include/7.0/xorg \
+	$(VBOX_PATH_X11_XORG_7_0) \
+	$(VBOX_PATH_X11_XORG_7_0)/X11 \
+	$(VBOX_PATH_X11_XORG_7_0)/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_70_SOURCES  = \
 	xorg70/mouse.c \
@@ -84,9 +84,9 @@ vboxmouse_drv_71_DEFS = $(vboxmouse_drv_70_DEFS)
 vboxmouse_drv_71_CFLAGS = -std=c99
 vboxmouse_drv_71_LDFLAGS = -s
 vboxmouse_drv_71_INCS = \
-	../x11include/7.1 \
-	../x11include/7.1/X11 \
-	../x11include/7.1/xorg \
+	$(VBOX_PATH_X11_XORG_7_1) \
+	$(VBOX_PATH_X11_XORG_7_1)/X11 \
+	$(VBOX_PATH_X11_XORG_7_1)/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_71_SOURCES  = \
 	xorg71/mouse.c \
@@ -103,9 +103,9 @@ vboxmouse_drv_14_DEFS = $(vboxmouse_drv_70_DEFS)
 vboxmouse_drv_14_CFLAGS = -std=c99
 vboxmouse_drv_14_LDFLAGS = -s
 vboxmouse_drv_14_INCS = \
-	../x11include/1.4 \
-	../x11include/1.4/X11 \
-	../x11include/1.4/xorg \
+	$(VBOX_PATH_X11_XORG_1_4) \
+	$(VBOX_PATH_X11_XORG_1_4)/X11 \
+	$(VBOX_PATH_X11_XORG_1_4)/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_14_SOURCES  = \
 	xorg14/mouse.c \
@@ -124,9 +124,9 @@ vboxmouse_drv_TEMPLATE = VBOXGUESTR3DLL
 vboxmouse_drv_DEFS = XFree86Server XFree86Module XFree86LOADER IN_MODULE XINPUT XORG_7X
 vboxmouse_drv_DEFS.solaris = __EXTENSIONS__
 vboxmouse_drv_INCS = \
-	../x11include/7.1 \
-	../x11include/7.1/X11 \
-	../x11include/7.1/xorg \
+	$(VBOX_PATH_X11_XORG_7_1) \
+	$(VBOX_PATH_X11_XORG_7_1)/X11 \
+	$(VBOX_PATH_X11_XORG_7_1)/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_SOURCES  = \
 	xorg71/mouse.c \
