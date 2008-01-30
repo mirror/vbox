@@ -1308,7 +1308,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
         LogRel(("vboxClipboardConvertUtf8: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Vrc.  Abandoning.\n", rc));
         RTMemFree(reinterpret_cast<void *>(pu16DestText));
         vboxClipboardEmptyGuestBuffer();
-        return rc;
+        return false;
     }
     /* Allocate enough space, as RTUtf16ToUtf8Ex may fail if the
        space is too tightly calculated. */
@@ -1329,7 +1329,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
         LogRel(("vboxClipboardConvertUtf8: clipboard conversion failed.  RTUtf16ToUtf8Ex() returned %Vrc.  Abandoning.\n", rc));
         XtFree(pu8DestText);
         vboxClipboardEmptyGuestBuffer();
-        return rc;
+        return false;
     }
     LogFlowFunc (("converted string is %.*s. Returning.\n", cbDestLen, pu8DestText));
     vboxClipboardEmptyGuestBuffer();
