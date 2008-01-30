@@ -100,8 +100,8 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
 {
     AssertCompile(sizeof(RTR0PTR) == sizeof(RTR3PTR));
 
-    /* 
-     * Translate Ring-0 VM addresses into Ring-3 VM addresses before feeding it to mmHyperLookupR3. 
+    /*
+     * Translate Ring-0 VM addresses into Ring-3 VM addresses before feeding it to mmHyperLookupR3.
      */
     /** @todo fix this properly; the ring 0 pVM address differs from the R3 one. (#1865) */
     RTR0UINTPTR offVM = (RTR0UINTPTR)R0Ptr - (RTR0UINTPTR)pVM->pVMR0;
@@ -295,6 +295,7 @@ MMDECL(RTGCPTR) MMHyperR0ToGC(PVM pVM, RTR0PTR R0Ptr)
 }
 
 
+#ifndef IN_RING0
 /**
  * Converts a ring-0 host context address in the Hypervisor memory region to a current context address.
  *
@@ -304,7 +305,6 @@ MMDECL(RTGCPTR) MMHyperR0ToGC(PVM pVM, RTR0PTR R0Ptr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-#ifndef IN_RING0
 MMDECL(void *) MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr)
 {
     uint32_t off;
