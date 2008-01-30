@@ -22,8 +22,8 @@ include	$(PATH_KBUILD)/header.kmk
 # VBoxClient (clipboard)
 #
 PROGRAMS += VBoxClient
-ifneq ($(BUILD_TARGET),linux)
- VBoxClient_TEMPLATE = VBOXGUESTR3EXE
+ifneq ($(BUILD_TARGET),linux) ## @todo Elimiate this too.
+ VBoxClient_TEMPLATE = VBOXGUESTR3CPPEXE
 else
  VBoxClient_TEMPLATE = VBOXLNX32GUESTR3EXE
 endif
