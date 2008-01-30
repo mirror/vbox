@@ -133,7 +133,7 @@ MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned
         if (VBOX_SUCCESS(rc))
         {
             if (fFlags == MM_RAM_FLAGS_DYNAMIC_ALLOC)
-                pVM->mm.s.cbRamRegistered += cb;
+                pVM->mm.s.cBasePages += cb >> PAGE_SHIFT;
 
             REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, fFlags);
             return rc;
@@ -166,7 +166,7 @@ MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned
                 if (VBOX_SUCCESS(rc))
                 {
                     if (!fFlags)
-                        pVM->mm.s.cbRamRegistered += cb;
+                        pVM->mm.s.cBasePages += cb >> PAGE_SHIFT;
 
                     REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, fFlags);
                     return rc;

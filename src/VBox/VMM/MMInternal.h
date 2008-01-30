@@ -617,6 +617,8 @@ typedef struct MM
      * See MM2VM(). */
     RTINT                       offVM;
 
+    /** Set if MMR3InitPaging has been called. */
+    bool                        fDoneMMR3InitPaging;
     /** Set if PGM has been initialized and we can safely call PGMR3Map(). */
     bool                        fPGMInitialized;
 #if GC_ARCH_BITS == 64 || HC_ARCH_BITS == 64
@@ -659,11 +661,17 @@ typedef struct MM
     /** Physical address of the dummy page. */
     RTHCPHYS                    HCPhysDummyPage;
 
-    /** Size of the currently allocated guest RAM.
-     * Mark that this is the actual size, not the end address. */
-    RTUINT                      cbRamRegistered;
-    /** Size of the base RAM in bytes. */
-    RTUINT                      cbRamBase;
+    /** Size of the base RAM in bytes. (The CFGM RamSize value.) */
+    uint64_t                    cbRamBase;
+    /** The number of base RAM pages that PGM has reserved (GMM).
+     * @remarks Shadow ROMs will be counted twice (RAM+ROM), so it won't be 1:1 with
+     *          what the guest sees. */
+    uint64_t                    cBasePages;
+    /** The number of shadow pages PGM has reserved (GMM). */
+    uint32_t                    cShadowPages;
+    /** The number of fixed pages we've reserved (GMM). */
+    uint32_t                    cFixedPages;
+
     /** The head of the ROM ranges. */
     R3PTRTYPE(PMMROMRANGE)      pRomHead;
 
@@ -676,6 +684,8 @@ typedef MM *PMM;
 
 __BEGIN_DECLS
 
+
+int  mmR3UpdateReservation(PVM pVM);
 
 int  mmR3PagePoolInit(PVM pVM);
 void mmR3PagePoolTerm(PVM pVM);

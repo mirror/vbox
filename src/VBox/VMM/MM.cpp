@@ -18,6 +18,8 @@
 
 /** @page pg_mm     MM - The Memory Monitor/Manager
  *
+ * WARNING: THIS IS SOMEWHAT OUTDATED!
+ *
  * It seems like this is going to be the entity taking care of memory allocations
  * and the locking of physical memory for a VM. MM will track these allocations and
  * pinnings so pointer conversions, memory read and write, and correct clean up can
@@ -82,6 +84,7 @@
 #include <VBox/pgm.h>
 #include <VBox/cfgm.h>
 #include <VBox/ssm.h>
+#include <VBox/gmm.h>
 #include "MMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/err.h>
@@ -91,6 +94,13 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** The current saved state versino of MM. */
+#define MM_SAVED_STATE_VERSION      2
 
 
 /*******************************************************************************
@@ -162,7 +172,7 @@ MMR3DECL(int) MMR3Init(PVM pVM)
             /*
              * Register the saved state data unit.
              */
-            rc = SSMR3RegisterInternal(pVM, "mm", 1, 1, sizeof(uint32_t) * 2,
+            rc = SSMR3RegisterInternal(pVM, "mm", 1, MM_SAVED_STATE_VERSION, sizeof(uint32_t) * 2,
                                        NULL, mmR3Save, NULL,
                                        NULL, mmR3Load, NULL);
             if (VBOX_SUCCESS(rc))
@@ -190,48 +200,135 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
     /*
      * Query the CFGM values.
      */
+    int rc;
+    PCFGMNODE pMMCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM");
+    if (pMMCfg)
+    {
+        rc = CFGMR3InsertNode(CFGMR3GetRoot(pVM), "MM", &pMMCfg);
+        AssertRCReturn(rc, rc);
+    }
+
+    /** @cfgm{RamPreAlloc, boolean, false}
+     * Indicates whether the base RAM should all be allocated before starting
+     * the VM (default), or if it should be allocated when first written to.
+     */
     bool fPreAlloc;
-    int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RamPreAlloc", &fPreAlloc);
+    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RamPreAlloc", &fPreAlloc);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fPreAlloc = false;
     else
         AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamPreAlloc\", rc=%Vrc.\n", rc), rc);
 
+    /** @cfgm{RamSize, uint64_t, 0, 0, UINT64_MAX}
+     * Specifies the size of the base RAM that is to be set up during
+     * VM initialization.
+     */
     uint64_t cbRam;
     rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cbRam = 0;
-    if (    RT_SUCCESS(rc)
-        ||  rc == VERR_CFGM_VALUE_NOT_FOUND)
-    {
-        if (cbRam < PAGE_SIZE)
-        {
-            Log(("MM: No RAM configured\n"));
-            return VINF_SUCCESS;
-        }
-
-        /*
-         * Register the memory.
-         */
-        Log(("MM: %llu bytes of RAM%s\n", cbRam, fPreAlloc ? " (PreAlloc)" : ""));
-        pVM->mm.s.cbRamBase = cbRam & X86_PTE_PAE_PG_MASK;
-        rc = MMR3PhysRegisterEx(pVM, NULL, 0, pVM->mm.s.cbRamBase, MM_RAM_FLAGS_DYNAMIC_ALLOC, MM_PHYS_TYPE_NORMAL, "Main Memory");
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Allocate the first chunk, as we'll map ROM ranges there.
-             * If requested, allocated the rest too.
-             */
-            rc = PGM3PhysGrowRange(pVM, (RTGCPHYS)0);
-            if (RT_SUCCESS(rc) && fPreAlloc)
-                for (RTGCPHYS GCPhys = PGM_DYNAMIC_CHUNK_SIZE;
-                     GCPhys < cbRam && RT_SUCCESS(rc);
-                     GCPhys += PGM_DYNAMIC_CHUNK_SIZE)
-                    rc = PGM3PhysGrowRange(pVM, GCPhys);
-        }
-    }
     else
-        AssertMsgFailed(("Configuration error: Failed to query integer \"RamSize\", rc=%Vrc.\n", rc));
+        AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamSize\", rc=%Vrc.\n", rc), rc);
+
+    cbRam &= X86_PTE_PAE_PG_MASK;
+    pVM->mm.s.cbRamBase = cbRam;            /* Warning: don't move this code to MMR3Init without fixing REMR3Init.  */
+    Log(("MM: %RU64 bytes of RAM%s\n", cbRam, fPreAlloc ? " (PreAlloc)" : ""));
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    /** @cfgm{MM/Policy, string, no overcommitment}
+     * Specifies the policy to use when reserving memory for this VM. The recognized
+     * value is 'no overcommitment' (default). See GMMPOLICY.
+     */
+    GMMOCPOLICY enmPolicy;
+    char sz[64];
+    rc = CFGMR3QueryString(CFGMR3GetRoot(pVM), "Policy", sz, sizeof(sz));
+    if (RT_SUCCESS(rc))
+    {
+        if (    !RTStrICmp(sz, "no_oc")
+            ||  !RTStrICmp(sz, "no overcommitment"))
+            enmPolicy = GMMOCPOLICY_NO_OC;
+        else
+            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "Unknown \"MM/Policy\" value \"%s\"", sz)
+    }
+    else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        enmPolicy = GMMOCPOLICY_NO_OC;
+    else
+        AssertMsgRCReturn(rc, ("Configuration error: Failed to query string \"MM/Policy\", rc=%Vrc.\n", rc), rc);
+
+    /** @cfgm{MM/Priority, string, normal}
+     * Specifies the memory priority of this VM. The priority comes into play when the
+     * system is overcommitted and the VMs needs to be milked for memory. The recognized
+     * values are 'low', 'normal' (default) and 'high'. See GMMPRIORITY.
+     */
+    GMMPRIORITY enmPriority;
+    rc = CFGMR3QueryString(CFGMR3GetRoot(pVM), "Priority", sz, sizeof(sz));
+    if (RT_SUCCESS(rc))
+    {
+        if (!RTStrICmp(sz, "low"))
+            enmPriority = GMMPRIORITY_LOW;
+        else if (!RTStrICmp(sz, "normal"))
+            enmPriority = GMMPRIORITY_NORMAL;
+        else if (!RTStrICmp(sz, "high"))
+            enmPriority = GMMPRIORITY_HIGH;
+        else
+            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "Unknown \"MM/Priority\" value \"%s\"", sz)
+    }
+    else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        enmPriority = GMMPRIORITY_NORMAL;
+    else
+        AssertMsgRCReturn(rc, ("Configuration error: Failed to query string \"MM/Priority\", rc=%Vrc.\n", rc), rc);
+
+    /*
+     * Make the initial memory reservation with GMM.
+     */
+    rc = GMMR3InitialReservation(pVM, cbRam >> PAGE_SHIFT, 1, 1, enmPolicy, enmPriority);
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_GMM_NOT_SUFFICENT_MEMORY)
+            return VMSetError(pVM, rc, RT_SRC_POS,
+                              N_("Insufficient free memory to start the VM (cbRam=%#RX64 enmPolicy=%d enmPriority=%d)"),
+                              cbRam, enmPolicy, enmPriority);
+        return VMSetError(pVM, rc, RT_SRC_POS, "GMMR3InitialReservation(,%#RX64,0,0,%d,%d).",
+                          cbRam >> PAGE_SHIFT, enmPolicy, enmPriority)
+    }
+#endif /* VBOX_WITH_NEW_PHYS_CODE */
+
+    /*
+     * If RamSize is 0 we're done now.
+     */
+    if (cbRam < PAGE_SIZE)
+    {
+        Log(("MM: No RAM configured\n"));
+        return VINF_SUCCESS;
+    }
+
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    /*
+     * Setup the base ram (PGM).
+     */
+    rc = PGMR3PhysRegisterRam(pVM, 0, cbRam, "Base RAM");
+    if (RT_SUCCESS(rc) && fPreAlloc)
+    {
+        /** @todo implement RamPreAlloc if it makes sense. */
+        return VM_SET_ERROR(pVM, VERR_NOT_IMPLEMENTED, "TODO: RamPreAlloc");
+    }
+
+#else
+    rc = MMR3PhysRegisterEx(pVM, NULL, 0, cbRam, MM_RAM_FLAGS_DYNAMIC_ALLOC, MM_PHYS_TYPE_NORMAL, "Main Memory");
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Allocate the first chunk, as we'll map ROM ranges there.
+         * If requested, allocated the rest too.
+         */
+        rc = PGM3PhysGrowRange(pVM, (RTGCPHYS)0);
+        if (RT_SUCCESS(rc) && fPreAlloc)
+            for (RTGCPHYS GCPhys = PGM_DYNAMIC_CHUNK_SIZE;
+                 GCPhys < cbRam && RT_SUCCESS(rc);
+                 GCPhys += PGM_DYNAMIC_CHUNK_SIZE)
+                rc = PGM3PhysGrowRange(pVM, GCPhys);
+    }
+#endif
 
     LogFlow(("MMR3InitPaging: returns %Vrc\n", rc));
     return rc;
@@ -344,8 +441,8 @@ static DECLCALLBACK(int) mmR3Save(PVM pVM, PSSMHANDLE pSSM)
     LogFlow(("mmR3Save:\n"));
 
     /* (PGM saves the physical memory.) */
-    SSMR3PutUInt(pSSM, pVM->mm.s.cbRamRegistered);
-    return SSMR3PutUInt(pSSM, pVM->mm.s.cbRamBase);
+    SSMR3PutU64(pSSM, pVM->mm.s.cBasePages);
+    return SSMR3PutU64(pSSM, pVM->mm.s.cbRamBase);
 }
 
 
@@ -364,36 +461,127 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Validate version.
      */
-    if (u32Version != 1)
+    if (    SSM_VERSION_MAJOR_CHANGED(u32Version, MM_SAVED_STATE_VERSION)
+        ||  !u32Version)
     {
         Log(("mmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
     /*
-     * Check the cbRamRegistered and cbRamBase values.
+     * Check the cBasePages and cbRamBase values.
      */
-    RTUINT  cb;
-    int rc = SSMR3GetUInt(pSSM, &cb);
+    int rc;
+    RTUINT cb1;
+
+    /* cBasePages */
+    uint64_t cPages;
+    if (u32Version != 1)
+        rc = SSMR3GetU64(pSSM, &cPages);
+    else
+    {
+        rc = SSMR3GetUInt(pSSM, &cb1);
+        cPages = cb1 >> PAGE_SHIFT;
+    }
     if (VBOX_FAILURE(rc))
         return rc;
-    if (cb != pVM->mm.s.cbRamRegistered)
+    if (cPages != pVM->mm.s.cBasePages)
     {
-        Log(("mmR3Load: Memory configuration has changed. cbRamRegistered=%#x save %#x\n", pVM->mm.s.cbRamRegistered, cb));
+        Log(("mmR3Load: Memory configuration has changed. cPages=%#RX64 saved=%#RX64\n", pVM->mm.s.cBasePages, cPages));
         return VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH;
     }
 
-    rc = SSMR3GetUInt(pSSM, &cb);
+    /* cbRamBase */
+    uint64_t cb;
+    if (u32Version != 1)
+        rc = SSMR3GetU64(pSSM, &cb);
+    else
+    {
+        rc = SSMR3GetUInt(pSSM, &cb1);
+        cb = cb1;
+    }
     if (VBOX_FAILURE(rc))
         return rc;
     if (cb != pVM->mm.s.cbRamBase)
     {
-        Log(("mmR3Load: Memory configuration has changed. cbRamBase=%#x save %#x\n", pVM->mm.s.cbRamBase, cb));
+        Log(("mmR3Load: Memory configuration has changed. cbRamBase=%#RX64 save=%#RX64\n", pVM->mm.s.cbRamBase, cb));
         return VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH;
     }
 
-    /* PGM restores the physical memory. */
+    /* (PGM restores the physical memory.) */
     return rc;
+}
+
+
+/**
+ * Updates GMM with memory reservation changes.
+ *
+ * Called when MM::cbRamRegistered, MM::cShadowPages or MM::cFixedPages changes.
+ *
+ * @returns VBox status code - see GMMR0UpdateReservation.
+ * @param   pVM             The shared VM structure.
+ */
+int mmR3UpdateReservation(PVM pVM)
+{
+    if (pVM->mm.s.fDoneMMR3InitPaging)
+        return GMMR3UpdateReservation(pVM,
+                                      RT_MAX(pVM->mm.s.cBasePages, 1),
+                                      RT_MAX(pVM->mm.s.cShadowPages, 1),
+                                      RT_MAX(pVM->mm.s.cFixedPages, 1));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Interface for PGM to increase the reservation of RAM and ROM pages.
+ *
+ * This can be called before MMR3InitPaging.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The shared VM structure.
+ * @param   cAddBasePages   The number of pages to add.
+ */
+MMR3DECL(int) MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
+{
+    LogFlow(("MMR3IncreaseBaseReservation: +%RU64 (%RU64 -> %RU64\n", cAddBasePages,
+             pVM->mm.s.cBasePages, pVM->mm.s.cBasePages + cAddBasePages));
+    pVM->mm.s.cBasePages += cAddBasePages;
+    return mmR3UpdateReservation(pVM);
+}
+
+
+/**
+ * Interface for PGM to increase the reservation of fixed pages.
+ *
+ * This can be called before MMR3InitPaging.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The shared VM structure.
+ * @param   cAddFixedPages  The number of pages to add.
+ */
+MMR3DECL(int) MMR3AddFixedReservation(PVM pVM, uint32_t cAddFixedPages)
+{
+    LogFlow(("MMR3AddFixedReservation: +%u (%u -> %u)\n", cAddFixedPages,
+             pVM->mm.s.cFixedPages, pVM->mm.s.cFixedPages + cAddFixedPages));
+    pVM->mm.s.cFixedPages += cAddFixedPages;
+    return mmR3UpdateReservation(pVM);
+}
+
+
+/**
+ * Interface for PGM to update the reservation of shadow pages.
+ *
+ * This can be called before MMR3InitPaging.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The shared VM structure.
+ * @param   cShadowPages    The new page count.
+ */
+MMR3DECL(int) MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages)
+{
+    LogFlow(("MMR3UpdateShadowReservation: %u -> %u\n", pVM->mm.s.cShadowPages, cShadowPages));
+    pVM->mm.s.cShadowPages = cShadowPages;
+    return mmR3UpdateReservation(pVM);
 }
 
 
