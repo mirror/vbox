@@ -1016,7 +1016,7 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
  * ring-3 init has completed.
  *
  * @returns VBox status code.
- * @retval  VERR_GMM_NOT_SUFFICENT_MEMORY
+ * @retval  VERR_GMM_MEMORY_RESERVATION_DECLINED
  * @retval  VERR_GMM_
  *
  * @param   pVM             Pointer to the shared VM structure.
@@ -1103,7 +1103,7 @@ GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, PGMMINITIALRESERVATIONREQ pRe
      */
     AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(pReq->Hdr.cbReq != sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
     return GMMR0InitialReservation(pVM, pReq->cBasePages, pReq->cShadowPages, pReq->cFixedPages, pReq->enmPolicy, pReq->enmPriority);
 }
@@ -1113,7 +1113,7 @@ GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, PGMMINITIALRESERVATIONREQ pRe
  * This updates the memory reservation with the additional MMIO2 and ROM pages.
  *
  * @returns VBox status code.
- * @retval  VERR_GMM_NOT_SUFFICENT_MEMORY
+ * @retval  VERR_GMM_MEMORY_RESERVATION_DECLINED
  *
  * @param   pVM             Pointer to the shared VM structure.
  * @param   cBasePages      The number of pages that may be allocated for the base RAM and ROMs.
@@ -1193,7 +1193,7 @@ GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, PGMMUPDATERESERVATIONREQ pReq)
      */
     AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(pReq->Hdr.cbReq != sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
     return GMMR0UpdateReservation(pVM, pReq->cBasePages, pReq->cShadowPages, pReq->cFixedPages);
 }
