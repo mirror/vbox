@@ -19,6 +19,10 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 if1of ($(BUILD_TARGET),linux l4)
+
+## @todo clean up this by switching to VBoxGuestR3Lib
+VBOX_LIB_VBGL_R3 := $(PATH_LIB)/VBoxGuestR3LibLinux.a
+
 SYSMODS  = vboxmouse_drv
 DLLS     = vboxmouse_drv_70 vboxmouse_drv_71 vboxmouse_drv_14
 
@@ -53,6 +57,8 @@ vboxmouse_drv_SOURCES  = \
 	mouse.c \
 	pnp.c \
 	VBoxUtils.c
+vboxmouse_drv_LIBS = \
+	$(VBOX_LIB_VBGL_R3_XFREE86)
 
 
 vboxmouse_drv_70_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
@@ -70,6 +76,10 @@ vboxmouse_drv_70_SOURCES  = \
 	xorg70/mouse.c \
 	xorg70/pnp.c \
 	VBoxUtils.c
+vboxmouse_drv_70_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
+	$(VBOX_LIB_VBGL_R3)
 
 
 vboxmouse_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
@@ -85,6 +95,10 @@ vboxmouse_drv_71_SOURCES  = \
 	xorg71/mouse.c \
 	xorg71/pnp.c \
 	VBoxUtils.c
+vboxmouse_drv_71_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
+	$(VBOX_LIB_VBGL_R3)
 
 
 vboxmouse_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
@@ -100,6 +114,10 @@ vboxmouse_drv_14_SOURCES  = \
 	xorg14/mouse.c \
 	xorg14/pnp.c \
 	VBoxUtils.c
+vboxmouse_drv_14_LIBS = \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
+	$(VBOX_LIB_VBGL_R3)
 endif
 
 ifeq ($(BUILD_TARGET),solaris)
