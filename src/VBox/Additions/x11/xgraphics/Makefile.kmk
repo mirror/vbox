@@ -43,60 +43,60 @@ vboxvideo_drv_LDFLAGS.release = -S
 ARGB_CURSORS=1
 ifdef ARGB_CURSORS
 vboxvideo_drv_INCS = \
-	../x11include/4.3/include \
-	../x11include/4.3/include/extensions \
-	../x11include/4.3/include/fonts \
-	../x11include/4.3/programs/Xserver/afb \
-	../x11include/4.3/programs/Xserver/include \
-	../x11include/4.3/programs/Xserver/fb \
-	../x11include/4.3/programs/Xserver/hw/xfree86 \
-	../x11include/4.3/programs/Xserver/hw/xfree86/common \
-	../x11include/4.3/programs/Xserver/hw/xfree86/ddc \
-	../x11include/4.3/programs/Xserver/hw/xfree86/int10 \
-	../x11include/4.3/programs/Xserver/hw/xfree86/i2c \
-	../x11include/4.3/programs/Xserver/hw/xfree86/os-support \
-	../x11include/4.3/programs/Xserver/hw/xfree86/vbe \
-	../x11include/4.3/programs/Xserver/hw/xfree86/os-support/bus \
-	../x11include/4.3/programs/Xserver/hw/xfree86/rac \
-	../x11include/4.3/programs/Xserver/hw/xfree86/ramdac \
-	../x11include/4.3/programs/Xserver/hw/xfree86/shadowfb \
-	../x11include/4.3/programs/Xserver/hw/xfree86/vgahw \
-	../x11include/4.3/programs/Xserver/hw/xfree86/xf1bpp \
-	../x11include/4.3/programs/Xserver/hw/xfree86/xf24_32bpp \
-	../x11include/4.3/programs/Xserver/hw/xfree86/xf4bpp \
-	../x11include/4.3/programs/Xserver/mfb \
-	../x11include/4.3/programs/Xserver/mi \
-	../x11include/4.3/programs/Xserver/miext/shadow \
-	../x11include/4.3/programs/Xserver/render \
-	../x11include/4.3/programs/Xserver/Xext
+	$(VBOX_PATH_X11_XFREE_4_3)/include \
+	$(VBOX_PATH_X11_XFREE_4_3)/include/extensions \
+	$(VBOX_PATH_X11_XFREE_4_3)/include/fonts \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/afb \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/include \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/fb \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86 \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/common \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/ddc \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/int10 \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/i2c \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/os-support \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/vbe \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/os-support/bus \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/rac \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/ramdac \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/shadowfb \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/vgahw \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/xf1bpp \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/xf24_32bpp \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/xf4bpp \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/mfb \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/mi \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/miext/shadow \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/render \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/Xext
 else
 vboxvideo_drv_INCS = \
-	../x11include/4.2/exports/include/X11 \
-	../x11include/4.2/include \
-	../x11include/4.2/include/extensions \
-	../x11include/4.2/include/fonts \
-	../x11include/4.2/programs/Xserver/afb \
-	../x11include/4.2/programs/Xserver/include \
-	../x11include/4.2/programs/Xserver/fb \
-	../x11include/4.2/programs/Xserver/hw/xfree86/common \
-	../x11include/4.2/programs/Xserver/hw/xfree86/ddc \
-	../x11include/4.2/programs/Xserver/hw/xfree86/int10 \
-	../x11include/4.2/programs/Xserver/hw/xfree86/i2c \
-	../x11include/4.2/programs/Xserver/hw/xfree86/os-support \
-	../x11include/4.2/programs/Xserver/hw/xfree86/os-support/bus \
-	../x11include/4.2/programs/Xserver/hw/xfree86/os-support/vbe \
-	../x11include/4.2/programs/Xserver/hw/xfree86/rac \
-	../x11include/4.2/programs/Xserver/hw/xfree86/ramdac \
-	../x11include/4.2/programs/Xserver/hw/xfree86/shadowfb \
-	../x11include/4.2/programs/Xserver/hw/xfree86/vgahw \
-	../x11include/4.2/programs/Xserver/hw/xfree86/xf1bpp \
-	../x11include/4.2/programs/Xserver/hw/xfree86/xf24_32bpp \
-	../x11include/4.2/programs/Xserver/hw/xfree86/xf4bpp \
-	../x11include/4.2/programs/Xserver/mfb \
-	../x11include/4.2/programs/Xserver/mi \
-	../x11include/4.2/programs/Xserver/miext/shadow \
-	../x11include/4.2/programs/Xserver/render \
-	../x11include/4.2/programs/Xserver/Xext
+	$(VBOX_PATH_X11_XFREE_4_2)/exports/include/X11 \
+	$(VBOX_PATH_X11_XFREE_4_2)/include \
+	$(VBOX_PATH_X11_XFREE_4_2)/include/extensions \
+	$(VBOX_PATH_X11_XFREE_4_2)/include/fonts \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/afb \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/include \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/fb \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/common \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/ddc \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/int10 \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/i2c \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support/bus \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support/vbe \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/rac \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/ramdac \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/shadowfb \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/vgahw \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/xf1bpp \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/xf24_32bpp \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/xf4bpp \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/mfb \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/mi \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/miext/shadow \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/render \
+	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/Xext
 endif
 vboxvideo_drv_SOURCES = \
 	vboxvideo_68.c \
@@ -113,9 +113,9 @@ vboxvideo_drv_70_CFLAGS.linux := \
 	$(VBOX_GCC_Wno-variadic-macros) -std=c99
 vboxvideo_drv_70_LDFLAGS = -s
 vboxvideo_drv_70_INCS = \
-	../x11include/7.0 \
-	../x11include/7.0/X11 \
-	../x11include/7.0/xorg
+	$(VBOX_PATH_X11_XORG_7_0) \
+	$(VBOX_PATH_X11_XORG_7_0)/X11 \
+	$(VBOX_PATH_X11_XORG_7_0)/xorg
 vboxvideo_drv_70_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils-new.c
@@ -129,9 +129,9 @@ vboxvideo_drv_71_DEFS := $(vboxvideo_drv_70_DEFS)
 vboxvideo_drv_71_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
 vboxvideo_drv_71_LDFLAGS = -s
 vboxvideo_drv_71_INCS = \
-	../x11include/7.1 \
-	../x11include/7.1/X11 \
-	../x11include/7.1/xorg
+	$(VBOX_PATH_X11_XORG_7_1) \
+	$(VBOX_PATH_X11_XORG_7_1)/X11 \
+	$(VBOX_PATH_X11_XORG_7_1)/xorg
 vboxvideo_drv_71_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils-new.c
@@ -145,9 +145,9 @@ vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS)
 vboxvideo_drv_13_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
 vboxvideo_drv_13_LDFLAGS = -s
 vboxvideo_drv_13_INCS = \
-	../x11include/1.3 \
-	../x11include/1.3/X11 \
-	../x11include/1.3/xorg
+	$(VBOX_PATH_X11_XORG_1_3) \
+	$(VBOX_PATH_X11_XORG_1_3)/X11 \
+	$(VBOX_PATH_X11_XORG_1_3)/xorg
 vboxvideo_drv_13_SOURCES  = \
 	vboxvideo_13.c \
 	vboxutils-new.c
@@ -161,9 +161,9 @@ vboxvideo_drv_14_DEFS := $(vboxvideo_drv_70_DEFS)
 vboxvideo_drv_14_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
 vboxvideo_drv_14_LDFLAGS = -s
 vboxvideo_drv_14_INCS = \
-	../x11include/1.4 \
-	../x11include/1.4/X11 \
-	../x11include/1.4/xorg
+	$(VBOX_PATH_X11_XORG_1_4) \
+	$(VBOX_PATH_X11_XORG_1_4)/X11 \
+	$(VBOX_PATH_X11_XORG_1_4)/xorg
 # The actual source has not changed from the 1.3 driver, but the headers
 # have.  To be safe, build the driver for 1.4 separately.
 vboxvideo_drv_14_SOURCES  = \
@@ -183,9 +183,9 @@ vboxvideo_drv_DEFS := \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER \
 	IN_RING3 VBOX XORG_7X RENDER=1
 vboxvideo_drv_INCS = \
-	../x11include/7.1 \
-	../x11include/7.1/X11 \
-	../x11include/7.1/xorg
+	$(VBOX_PATH_X11_XORG_7_1) \
+	$(VBOX_PATH_X11_XORG_7_1)/X11 \
+	$(VBOX_PATH_X11_XORG_7_1)/xorg
 vboxvideo_drv_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils-new.c
