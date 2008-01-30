@@ -181,7 +181,7 @@ DLLS     = vboxvideo_drv
 vboxvideo_drv_TEMPLATE = VBOXGUESTR3DLL
 vboxvideo_drv_DEFS := \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER \
-	IN_RING3 VBOX XORG_7X RENDER=1
+	VBOX XORG_7X RENDER=1
 vboxvideo_drv_INCS = \
 	$(VBOX_PATH_X11_XORG_7_1) \
 	$(VBOX_PATH_X11_XORG_7_1)/X11 \
