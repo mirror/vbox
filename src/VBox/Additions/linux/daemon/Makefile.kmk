@@ -19,15 +19,17 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 
+## @todo Replace with VBoxService.
 PROGRAMS = vboxadd-timesync
 
 vboxadd-timesync_TEMPLATE = VBOXLNX32GUESTR3EXENOCPP
-vboxadd-timesync_SOURCES  = \
-    vboxadd_timesync.c \
-    supc++.c
-vboxadd-timesync_LIBS     = \
-    $(PATH_LIB)/RuntimeLnx32GuestR3.a
 vboxadd-timesync_DEFS     = _GNU_SOURCE
+vboxadd-timesync_SOURCES  = \
+	vboxadd_timesync.c \
+	supc++.c
+vboxadd-timesync_LIBS     = \
+	$(VBOX_LIB_IPRT_GUEST_R3)
+
 
 include	$(PATH_KBUILD)/footer.kmk
 
