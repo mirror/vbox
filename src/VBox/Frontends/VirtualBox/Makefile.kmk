@@ -323,6 +323,7 @@ else
   VirtualBox_LDFLAGS.win += /SUBSYSTEM:console
  endif
 endif
+VirtualBox_LDFLAGS.os2    = -Zlinker /PM:PM -Zno-fork
 VirtualBox_LDFLAGS.darwin = -framework IOKit
 VirtualBox_LIBS.win       = \
 	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
