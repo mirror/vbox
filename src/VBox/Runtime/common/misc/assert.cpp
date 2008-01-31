@@ -37,7 +37,12 @@
 #endif
 
 
-#ifdef IN_GUEST_R0
+#if defined(IN_GUEST_R0) && (defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)) 
+/* 
+ * This is legacy that should be eliminated. OS specific code deals with 
+ * R0 assertions now and it will do the backdoor printfs in addition to
+ * proper OS specific printfs and panics / BSODs / IPEs.
+ */
 #include <VBox/log.h>
 
 
@@ -74,15 +79,15 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     va_end(args);
 }
 
-#if defined(RT_OS_LINUX) && defined(IN_MODULE)
+# if defined(RT_OS_LINUX) && defined(IN_MODULE)
 /*
  * When we build this in the Linux kernel module, we wish to make the
  * symbols available to other modules as well.
  */
-# include "the-linux-kernel.h"
+#  include "the-linux-kernel.h"
 EXPORT_SYMBOL(AssertMsg1);
 EXPORT_SYMBOL(AssertMsg2);
-#endif
+# endif
 
 #elif defined(IN_RING0)
 

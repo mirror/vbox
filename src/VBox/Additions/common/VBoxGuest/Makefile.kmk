@@ -19,61 +19,71 @@ DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
 include	$(PATH_KBUILD)/subheader.kmk
 
-#
-# VBoxGuest.sys - The OS/2 driver.
-#
-ifeq ($(BUILD_PLATFORM),os2)
-ifdef VBOX_WITH_OS2_ADDITIONS
- SYSMODS.os2 += VBoxGuest
-endif
-VBoxGuest_TEMPLATE      = VBOXOS2GUESTR0
-VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
-VBoxGuest_INCS         := $(PATH_SUB_CURRENT)
-#VBoxGuest_LDFLAGS       = -s -t -v
-VBoxGuest_SOURCES       = \
-	VBoxGuestA-os2.asm \
-	VBoxGuest-os2.def
-VBoxGuest_LIBS          = \
-	$(TARGET_VBoxGuestLib) \
-	$(VBOX_LIB_VBGL_OS2_R0BASE) \
-	$(VBOX_LIB_IPRT_OS2_GUEST_R0) \
-	$(VBOX_GCC_LIBGCC) \
-	end
+# PORTME: OSes using mixed case driver names join OS/2, the others join Solaris below.
 
-## When debugging init with kDrvTest:
-#VBoxGuest_NAME = VBoxGst
+if1of ($(BUILD_TARGET),os2) 
+ #
+ # VBoxGuest - The Guest Additions Driver (mixed case).
+ #
+ ifdef VBOX_WITH_OS2_ADDITIONS
+  SYSMODS.os2 += VBoxGuest
+  LIBRARIES += VBoxGuestLibOs2Hack
+ endif
+ VBoxGuest_TEMPLATE      = VBOXGUESTR0
+ VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
+ VBoxGuest_INCS         := $(PATH_SUB_CURRENT)
+ ifneq ($(BUILD_TARGET),os2)
+  VBoxGuest_SOURCES    = \
+  	VBoxGuest-$(BUILD_TARGET).cpp \
+  	VBoxGuest.cpp
+  VBoxGuest_LIBS          = \
+  	$(VBOX_LIB_VBGL_R0BASE) \
+  	$(VBOX_LIB_IPRT_GUEST_R0)
+ else # OS/2:
+  # The library order is crusial, so a bit of trickery is necessary.
+  # A library is used to make sure that VBoxGuestA-os2.asm is first in the link. (temporary hack?)
+  VBoxGuest_SOURCES       = \
+  	VBoxGuestA-os2.asm \
+  	VBoxGuest-os2.def
+  #VBoxGuest_LDFLAGS       = -s -t -v
+  VBoxGuest_LIBS          = \
+  	$(TARGET_VBoxGuestLibOs2Hack) \
+  	$(VBOX_LIB_VBGL_R0BASE) \
+  	$(VBOX_LIB_IPRT_GUEST_R0) \
+  	$(VBOX_GCC_LIBGCC) \
+  	end
+  ## When debugging init with kDrvTest:
+  #VBoxGuest_NAME          = VBoxGst
+  
+  VBoxGuestLibOs2Hack_TEMPLATE   = VBOXGUESTR0LIB
+  VBoxGuestLibOs2Hack_NOINST     = 1
+  VBoxGuestLibOs2Hack_DEFS       = $(VBoxGuest_DEFS)
+  VBoxGuestLibOs2Hack_INCS      := \
+  	$(PATH_SUB_CURRENT) \
+  	$(PATH_TARGET) \
+  	$(PATH_ROOT)/src/VBox/Runtime/include # for the os2ddk
+  VBoxGuestLibOs2Hack_SOURCES    = \
+  	VBoxGuest-os2.cpp \
+  	VBoxGuest.cpp
+ endif # OS/2
 
-# temp hack to ensure that VBoxGuestA-os2.asm is first in the link.
-ifdef VBOX_WITH_OS2_ADDITIONS
- LIBRARIES += VBoxGuestLib
-endif
-VBoxGuestLib_TEMPLATE   = VBOXOS2GUESTR0LIB
-VBoxGuestLib_NOINST     = 1
-VBoxGuestLib_DEFS       = VBGL_VBOXGUEST VBOX_HGCM
-VBoxGuestLib_INCS      := \
-	$(PATH_SUB_CURRENT) \
-	$(PATH_TARGET) \
-	$(PATH_ROOT)/src/VBox/Runtime/include
-VBoxGuestLib_SOURCES    = \
-	VBoxGuest-os2.cpp \
-	VBoxGuest.cpp
-endif
-
-#
-# vboxadd.o - The Solaris Guest Driver.
-#
-ifeq ($(BUILD_PLATFORM),solaris)
-SYSMODS.solaris += vboxadd
-vboxadd_TEMPLATE      = VBOXGUESTR0
-vboxadd_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
-vboxadd_INCS         := $(PATH_SUB_CURRENT) \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris
-vboxadd_SOURCES       = \
-	VBoxGuest-solaris.c \
-	VBoxGuest.cpp
-vboxadd_LIBS          = \
-	$(VBOX_LIB_VBGL_R0BASE) \
-	$(VBOX_LIB_IPRT_GUEST_R0)
+else if1of ($(BUILD_TARGET),solaris)
+ #
+ # vboxguest - The Guest Additions Driver (lower cased).
+ #
+ ## @todo rename to vboxguest, please.
+ SYSMODS.solaris += vboxadd
+ vboxadd_TEMPLATE      = VBOXGUESTR0
+ vboxadd_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
+ vboxadd_INCS         := $(PATH_SUB_CURRENT)
+ vboxadd_INCS.solaris  = $(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris
+ vboxadd_SOURCES       = \
+ 	VBoxGuest-$(BUILD_TARGET).c \
+ 	VBoxGuest.cpp
+ vboxadd_LIBS          = \
+ 	$(VBOX_LIB_VBGL_R0BASE) \
+ 	$(VBOX_LIB_IPRT_GUEST_R0)
+ 
 endif
 
 include	$(PATH_KBUILD)/subfooter.kmk

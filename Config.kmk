@@ -2630,83 +2630,6 @@ TEMPLATE_VBOXLNX32GUESTR3LIB_EXTENDS           = VBOXLNX32GUESTR3EXE
 TEMPLATE_VBOXLNX32GUESTR3LIB_INST              = $(INST_ADDITION_LIB)
 
 
-
-
-ifdef VBOX_WITH_OS2_ADDITIONS
-
-#
-# Template for building R3 OS/2 guest additions.
-#
-TEMPLATE_VBOXOS2GUESTR3                 = VBox OS/2 Guest Programs and DLLs
-TEMPLATE_VBOXOS2GUESTR3_INST            = $(INST_ADDITIONS)os2/
-TEMPLATE_VBOXOS2GUESTR3_BLD_TRG         = os2
-TEMPLATE_VBOXOS2GUESTR3_BLD_TRG_ARCH    = x86
-TEMPLATE_VBOXOS2GUESTR3_BLD_TRG_CPU     = blend
-TEMPLATE_VBOXOS2GUESTR3_DEFS            = IN_GUEST IN_GUEST_R3 IN_RING3 IN_RT_R3 HC_ARCH_BITS=32 GC_ARCH_BITS=32
-TEMPLATE_VBOXOS2GUESTR3_ASTOOL          = NASM
-TEMPLATE_VBOXOS2GUESTR3_ASFLAGS         = -f obj -DASM_FORMAT_OMF -D__NASM__ -w+orphan-labels -g
-TEMPLATE_VBOXOS2GUESTR3_DLLSUFF         = .dll
-TEMPLATE_VBOXOS2GUESTR3_EXESUFF         = .exe
-TEMPLATE_VBOXOS2GUESTR3_LIBSUFF         = .lib
-TEMPLATE_VBOXOS2GUESTR3_ARLIBSUFF       = .lib
-TEMPLATE_VBOXOS2GUESTR3_TOOL            = GXX3OMF
-TEMPLATE_VBOXOS2GUESTR3_CXXFLAGS        = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -pipe -fno-strict-aliasing -fno-rtti -fno-exceptions
-TEMPLATE_VBOXOS2GUESTR3_CFLAGS          = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -fno-strict-aliasing
-ifneq ($(BUILD_TYPE),debug)
- TEMPLATE_VBOXOS2GUESTR3_CFLAGS        += -O2 -fno-omit-frame-pointer
- TEMPLATE_VBOXOS2GUESTR3_CXXFLAGS      += -O2 -fno-omit-frame-pointer
-endif
-TEMPLATE_VBOXOS2GUESTR3_INCS            = \
-	$(VBOX_PATH_SDK)/include
-
-#
-# Template for building OS/2 guest R3 libraries.
-#
-TEMPLATE_VBOXOS2GUESTR3LIB              = VBox OS/2 Guest Usermode Libraries
-TEMPLATE_VBOXOS2GUESTR3LIB_EXTENDS      = VBOXOS2GUESTR3
-TEMPLATE_VBOXOS2GUESTR3LIB_INST         = $(INST_ADDITIONS_LIB)os2/
-
-#
-# Template for building OS/2 Guest R0 images.
-#
-TEMPLATE_VBOXOS2GUESTR0                 = VBox OS/2 Guest Driver
-TEMPLATE_VBOXOS2GUESTR0_INST            = $(INST_ADDITIONS)os2/
-TEMPLATE_VBOXOS2GUESTR0_BLD_TRG         = os2
-TEMPLATE_VBOXOS2GUESTR0_BLD_TRG_ARCH    = x86
-TEMPLATE_VBOXOS2GUESTR0_BLD_TRG_CPU     = blend
-TEMPLATE_VBOXOS2GUESTR0_DEFS            = IN_RING0 IN_GUEST IN_GUEST_R0 IN_RT_R0 HC_ARCH_BITS=32 GC_ARCH_BITS=32 LOG_TO_BACKDOOR
-TEMPLATE_VBOXOS2GUESTR0_SYSSUFF         = .sys
-TEMPLATE_VBOXOS2GUESTR0_ASTOOL          = NASM
-TEMPLATE_VBOXOS2GUESTR0_ASFLAGS         = -f obj -DASM_FORMAT_OMF -D__NASM__ -w+orphan-labels -g
-TEMPLATE_VBOXOS2GUESTR0_TOOL            = GXX3OMF
-TEMPLATE_VBOXOS2GUESTR0_CXXFLAGS        = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -pipe -fno-strict-aliasing -fno-rtti -fno-exceptions
-TEMPLATE_VBOXOS2GUESTR0_CFLAGS          = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -fno-strict-aliasing
-ifneq ($(BUILD_TYPE),debug)
- TEMPLATE_VBOXOS2GUESTR0_CFLAGS        += -O2 -fno-omit-frame-pointer
- TEMPLATE_VBOXOS2GUESTR0_CXXFLAGS      += -O2 -fno-omit-frame-pointer
-endif
-TEMPLATE_VBOXOS2GUESTR0_LIBS            = $(VBOX_GCC_LIBGCC) ## @todo this isn't nice.
-TEMPLATE_VBOXOS2GUESTR0_LDFLAGS         = -Zlinker Option -Zlinker internalrelocs, -Zlinker togglerelocs
-
-#
-# Template for building OS/2 Guest R0 libraries.
-#
-TEMPLATE_VBOXOS2GUESTR0LIB              = VBox OS/2 Guest Driver Library
-TEMPLATE_VBOXOS2GUESTR0LIB_EXTENDS      = VBOXOS2GUESTR0
-TEMPLATE_VBOXOS2GUESTR0LIB_INST         = $(INST_ADDITIONS_LIB)os2/
-
-#
-# OS/2 Guest Libraries.
-#
-VBOX_LIB_IPRT_OS2_GUEST_R0              = $(PATH_LIB)/additions/os2/RuntimeOS2GuestR0.lib
-VBOX_LIB_IPRT_OS2_GUEST_R3              = $(PATH_LIB)/additions/os2/RuntimeOS2GuestR3.lib
-VBOX_LIB_VBGL_OS2_R3                    = $(PATH_LIB)/additions/os2/VBoxGuestR3LibOS2.lib
-VBOX_LIB_VBGL_OS2_R0BASE                = $(PATH_LIB)/additions/os2/VBoxGuestR0LibBaseOS2.lib
-VBOX_LIB_VBGL_OS2_R0                    = $(PATH_LIB)/additions/os2/VBoxGuestR0LibOS2.lib
-
-endif # VBOX_WITH_OS2_ADDITIONS
-
-
 #
 # Template for building R3 programs for the guest additions.
 # Note: Make sure you don't break VBOXGUESTR3CPPEXE when changing this.
@@ -2798,18 +2721,10 @@ TEMPLATE_VBOXGUESTR0LIB_INST    = $(INST_ADDITIONS_LIB)
 # Guest additions libraries (all static).
 #   The _MINI and _SHARED are both compiled as PIC and intended for linking into a .so/.dll/.dylib.
 #
-ifeq ($(BUILD_TARGET),os2)
-VBOX_LIB_IPRT_GUEST_R3          = $(VBOX_PATH_ADDITIONS_LIB)/os2/RuntimeOS2GuestR3$(VBOX_SUFF_LIB)
-else
 VBOX_LIB_IPRT_GUEST_R3          = $(VBOX_PATH_ADDITIONS_LIB)/RuntimeGuestR3$(VBOX_SUFF_LIB)
-endif
 VBOX_LIB_IPRT_GUEST_R3_MINI     = $(VBOX_PATH_ADDITIONS_LIB)/RuntimeGuestR3Mini$(VBOX_SUFF_LIB)
 VBOX_LIB_IPRT_GUEST_R0          = $(VBOX_PATH_ADDITIONS_LIB)/RuntimeGuestR0$(VBOX_SUFF_LIB)
-ifeq ($(BUILD_TARGET),os2)
-VBOX_LIB_VBGL_R3                = $(VBOX_PATH_ADDITIONS_LIB)/os2/VBoxGuestR3LibOS2$(VBOX_SUFF_LIB)
-else
 VBOX_LIB_VBGL_R3                = $(VBOX_PATH_ADDITIONS_LIB)/VBoxGuestR3Lib$(VBOX_SUFF_LIB)
-endif
 VBOX_LIB_VBGL_R3_XFREE86        = $(VBOX_PATH_ADDITIONS_LIB)/VBoxGuestR3LibXFree86$(VBOX_SUFF_LIB)
 VBOX_LIB_VBGL_R3_SHARED         = $(VBOX_PATH_ADDITIONS_LIB)/VBoxGuestR3LibShared$(VBOX_SUFF_LIB)
 VBOX_LIB_VBGL_R0BASE            = $(VBOX_PATH_ADDITIONS_LIB)/VBoxGuestR0LibBase$(VBOX_SUFF_LIB)
