@@ -5815,6 +5815,11 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                                          port);
                     break;
                 }
+                case VERR_FILE_NOT_FOUND:
+                {
+                    errMsg = Utf8StrFmt (tr ("Could not load the VRDP library"));
+                    break;
+                }
                 default:
                     errMsg = Utf8StrFmt (tr ("Failed to launch VRDP server (%Vrc)"),
                                          vrc);

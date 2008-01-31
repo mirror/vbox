@@ -1091,20 +1091,26 @@ int ConsoleVRDPServer::Launch (void)
     HRESULT rc2 = vrdpserver->COMGETTER(Enabled) (&vrdpEnabled);
     AssertComRC(rc2);
 
-    if (SUCCEEDED (rc2)
-        && vrdpEnabled
-        && loadVRDPLibrary ())
+    if (SUCCEEDED (rc2) && vrdpEnabled)
     {
-        rc = mpfnVRDPCreateServer (&mCallbacks.header, this, (VRDPINTERFACEHDR **)&mpEntryPoints, &mhServer);
-
-        if (VBOX_SUCCESS(rc))
+        if (loadVRDPLibrary ())
         {
+            rc = mpfnVRDPCreateServer (&mCallbacks.header, this, (VRDPINTERFACEHDR **)&mpEntryPoints, &mhServer);
+
+            if (VBOX_SUCCESS(rc))
+            {
 #ifdef VBOX_WITH_USB
-            remoteUSBThreadStart ();
+                remoteUSBThreadStart ();
 #endif /* VBOX_WITH_USB */
+            }
+            else
+                AssertMsgFailed(("Could not start VRDP server: rc = %Vrc\n", rc));
         }
         else
-            AssertMsgFailed(("Could not start VRDP server: rc = %Vrc\n", rc));
+        {
+            AssertMsgFailed(("Could not load the VRDP library\n"));
+            rc = VERR_FILE_NOT_FOUND;
+        }
     }
 #else
     int rc = VERR_NOT_SUPPORTED;
