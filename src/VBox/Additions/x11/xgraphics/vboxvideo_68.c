@@ -311,7 +311,9 @@ VBOXGetRec(ScrnInfoPtr pScrn)
     if (!pScrn->driverPrivate)
     {
         pScrn->driverPrivate = xcalloc(sizeof(VBOXRec), 1);
+#if 0
         ((VBOXPtr)pScrn->driverPrivate)->vbox_fd = -1;
+#endif
     }
 
     return ((VBOXPtr)pScrn->driverPrivate);
