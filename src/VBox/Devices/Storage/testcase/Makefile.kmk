@@ -23,9 +23,16 @@ include	$(PATH_KBUILD)/subheader.kmk
 # vditool - useful too for manipulating VDIs.
 #
 PROGRAMS += vditool
-vditool_TEMPLATE = VBOXR3EXE
+ifeq ($(BUILD_TARGET),l4)
+ vditool_TEMPLATE = VBOXLNXHOSTR3EXE
+ vditool_LIBS     = \
+	$(PATH_LIB)/VBoxDDULnxHostR3.a \
+	$(PATH_LIB)/RuntimeLnxHostR3.a
+else
+ vditool_TEMPLATE = VBOXR3EXE
+ vditool_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
+endif
 vditool_SOURCES  = vditool.cpp
-vditool_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
 
 
 #
