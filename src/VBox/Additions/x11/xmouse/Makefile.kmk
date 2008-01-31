@@ -19,16 +19,21 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 if1of ($(BUILD_TARGET),linux l4)
-
-SYSMODS  = vboxmouse_drv
+## @todo figure out vboxmouse_drv on solaris (seems to be a kernel module)
+ SYSMODS  = vboxmouse_drv
+# for BUILD_TARGET=l4
+ SUFF_DLL = .so
+endif
 DLLS     = vboxmouse_drv_70 vboxmouse_drv_71 vboxmouse_drv_14
 
-# for BUILD_TARGET=l4
-SUFF_DLL = .so
-
-vboxmouse_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
-vboxmouse_drv_DEFS = \
-	linux __i386__ _POSIX_C_SOURCE=199309L _POSIX_SOURCE _XOPEN_SOURCE \
+#
+# vboxmouse_drv
+#
+if1of ($(BUILD_TARGET),linux l4)
+ vboxmouse_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
+ vboxmouse_drv_DEFS  = linux
+ vboxmouse_drv_DEFS += \
+	__i386__ _POSIX_C_SOURCE=199309L _POSIX_SOURCE _XOPEN_SOURCE \
 	_BSD_SOURCE _SVID_SOURCE _GNU_SOURCE SHAPE XINPUT XKB LBX XAPPGROUP \
 	XCSECURITY TOGCUP XF86BIGFONT DPMSExtension PIXPRIV PANORAMIX RENDER \
 	GCCUSESGAS AVOID_GLYPHBLT PIXPRIV SINGLEDEPTH XFreeXDGA XvExtension \
@@ -36,10 +41,10 @@ vboxmouse_drv_DEFS = \
 	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
 	IN_MODULE XFree86Module PNP_MOUSE \
 	IN_RING3 VBOX
-vboxmouse_drv_CFLAGS = -fno-merge-constants -std=c99
-vboxmouse_drv_SYSSUFF = .o
-vboxmouse_drv_LDFLAGS.release = -S
-vboxmouse_drv_INCS := \
+ vboxmouse_drv_CFLAGS  = -fno-merge-constants -std=c99
+ vboxmouse_drv_SYSSUFF = .o
+ vboxmouse_drv_LDFLAGS.release = -S
+ vboxmouse_drv_INCS := \
 	$(VBOX_PATH_X11_XFREE_4_2)/exports/include/X11 \
 	$(VBOX_PATH_X11_XFREE_4_2)/include \
 	$(VBOX_PATH_X11_XFREE_4_2)/include/extensions \
@@ -50,20 +55,31 @@ vboxmouse_drv_INCS := \
 	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support/bus \
 	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/mi \
 	$(PATH_SUB_CURRENT)
-vboxmouse_drv_SOURCES  = \
+ vboxmouse_drv_SOURCES  = \
 	mouse.c \
 	pnp.c \
 	VBoxUtils.c
-vboxmouse_drv_LIBS = \
+ vboxmouse_drv_LIBS = \
 	$(VBOX_LIB_VBGL_R3_XFREE86)
+endif
 
 
-vboxmouse_drv_70_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+#
+# vboxmouse_drv_70
+#
+if1of ($(BUILD_TARGET),linux l4)
+ vboxmouse_drv_70_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+else
+ vboxmouse_drv_70_TEMPLATE = VBOXGUESTR3DLL
+endif
+## @todo PIC should be defined in the template on linux
 vboxmouse_drv_70_DEFS = \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT \
-	IN_RING3 VBOX XORG_7X PIC
-vboxmouse_drv_70_CFLAGS = -std=c99
-vboxmouse_drv_70_LDFLAGS = -s
+	XORG_7X PIC
+if1of ($(BUILD_TARGET),linux l4)
+ vboxmouse_drv_70_CFLAGS   = -std=c99
+ vboxmouse_drv_70_LDFLAGS  = -s
+endif
 vboxmouse_drv_70_INCS := \
 	$(VBOX_PATH_X11_XORG_7_0) \
 	$(VBOX_PATH_X11_XORG_7_0)/X11 \
@@ -79,10 +95,17 @@ vboxmouse_drv_70_LIBS = \
 	$(VBOX_LIB_VBGL_R3_SHARED)
 
 
-vboxmouse_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+#
+# vboxmouse_drv_71
+#
+if1of ($(BUILD_TARGET),linux l4)
+ vboxmouse_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+ vboxmouse_drv_71_CFLAGS   = -std=c99
+ vboxmouse_drv_71_LDFLAGS  = -s
+else
+ vboxmouse_drv_71_TEMPLATE = VBOXGUESTR3DLL
+endif
 vboxmouse_drv_71_DEFS = $(vboxmouse_drv_70_DEFS)
-vboxmouse_drv_71_CFLAGS = -std=c99
-vboxmouse_drv_71_LDFLAGS = -s
 vboxmouse_drv_71_INCS = \
 	$(VBOX_PATH_X11_XORG_7_1) \
 	$(VBOX_PATH_X11_XORG_7_1)/X11 \
@@ -98,10 +121,17 @@ vboxmouse_drv_71_LIBS = \
 	$(VBOX_LIB_VBGL_R3_SHARED)
 
 
-vboxmouse_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+#
+# vboxmouse_drv_14
+#
+if1of ($(BUILD_TARGET),linux l4)
+ vboxmouse_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+ vboxmouse_drv_14_CFLAGS   = -std=c99
+ vboxmouse_drv_14_LDFLAGS  = -s
+else
+ vboxmouse_drv_14_TEMPLATE = VBOXGUESTR3DLL
+endif
 vboxmouse_drv_14_DEFS = $(vboxmouse_drv_70_DEFS)
-vboxmouse_drv_14_CFLAGS = -std=c99
-vboxmouse_drv_14_LDFLAGS = -s
 vboxmouse_drv_14_INCS = \
 	$(VBOX_PATH_X11_XORG_1_4) \
 	$(VBOX_PATH_X11_XORG_1_4)/X11 \
@@ -115,27 +145,6 @@ vboxmouse_drv_14_LIBS = \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
 	$(VBOX_LIB_VBGL_R3_SHARED)
-endif
-
-ifeq ($(BUILD_TARGET),solaris)
-DLLS = vboxmouse_drv
-
-vboxmouse_drv_TEMPLATE = VBOXGUESTR3DLL
-vboxmouse_drv_DEFS = XFree86Server XFree86Module XFree86LOADER IN_MODULE XINPUT XORG_7X
-vboxmouse_drv_DEFS.solaris = __EXTENSIONS__
-vboxmouse_drv_INCS = \
-	$(VBOX_PATH_X11_XORG_7_1) \
-	$(VBOX_PATH_X11_XORG_7_1)/X11 \
-	$(VBOX_PATH_X11_XORG_7_1)/xorg \
-	$(PATH_SUB_CURRENT)
-vboxmouse_drv_SOURCES  = \
-	xorg71/mouse.c \
-	xorg71/pnp.c \
-	VBoxUtils.c
-vboxmouse_drv_LIBS = \
-	$(VBOX_LIB_VBGL_R3_SHARED) \
-	$(VBOX_LIB_IPRT_GUEST_R3_MINI)
-endif
 
 include	$(PATH_KBUILD)/footer.kmk
 
