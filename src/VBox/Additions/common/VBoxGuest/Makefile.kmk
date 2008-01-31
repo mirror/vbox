@@ -71,16 +71,15 @@ else if1of ($(BUILD_TARGET),solaris)
  #
  # vboxguest - The Guest Additions Driver (lower cased).
  #
- ## @todo rename to vboxguest, please.
- SYSMODS.solaris += vboxadd
- vboxadd_TEMPLATE      = VBOXGUESTR0
- vboxadd_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
- vboxadd_INCS         := $(PATH_SUB_CURRENT)
- vboxadd_INCS.solaris  = $(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris
- vboxadd_SOURCES       = \
+ SYSMODS.solaris += vboxguest
+ vboxguest_TEMPLATE      = VBOXGUESTR0
+ vboxguest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
+ vboxguest_INCS         := $(PATH_SUB_CURRENT)
+ vboxguest_INCS.solaris  = $(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris
+ vboxguest_SOURCES       = \
  	VBoxGuest-$(BUILD_TARGET).c \
  	VBoxGuest.cpp
- vboxadd_LIBS          = \
+ vboxguest_LIBS          = \
  	$(VBOX_LIB_VBGL_R0BASE) \
  	$(VBOX_LIB_IPRT_GUEST_R0)
  
