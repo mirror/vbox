@@ -460,7 +460,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if defined(Q_WS_MAC) && defined (VBOX_GUI_USE_QUARTZ2D)
+#if defined (Q_WS_MAC) && defined (VBOX_GUI_USE_QUARTZ2D)
 
 #include <Carbon/Carbon.h>
 
