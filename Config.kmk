@@ -167,6 +167,9 @@ VBOX_WITH_OS2_ADDITIONS_BIN = 1
 #VBOX_WITHOUT_ADDITIONS = 1
 # Only build the additions (for the additions build server).
 #VBOX_ONLY_ADDITIONS = 1
+# Don't create the additions ISO.
+# (Used by the additions build server, don't invert it.)
+#VBOX_WITHOUT_ADDITIONS_ISO = 1
 
 # build the installer
 VBOX_WITH_INSTALLER = 1
@@ -388,6 +391,7 @@ ifdef VBOX_OSE
  VBOX_WITH_ISCSI=
  VBOX_WITH_DEBUGGER_GUI=
  VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS=
+ VBOX_WITHOUT_ADDITIONS_ISO=1
  VBOX_WITH_OS2_ADDITIONS_BIN=
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_KCHMVIEWER=
