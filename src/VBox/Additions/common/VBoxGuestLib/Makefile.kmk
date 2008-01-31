@@ -19,7 +19,7 @@ DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
 include	$(PATH_KBUILD)/subheader.kmk
 
-ifn1of ($(BUILD_TARGET),l4 linux windows)
+ifn1of ($(BUILD_TARGET),l4 linux win)
  LIBRARIES += \
 	VBoxGuestR0Lib \
 	VBoxGuestR0LibBase
