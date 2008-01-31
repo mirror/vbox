@@ -22,25 +22,17 @@ include	$(PATH_KBUILD)/header.kmk
 # VBoxClient (clipboard)
 #
 PROGRAMS += VBoxClient
-ifneq ($(BUILD_TARGET),linux) ## @todo Elimiate this too.
- VBoxClient_TEMPLATE = VBOXGUESTR3CPPEXE
-else
+if1of ($(BUILD_TARGET),linux l4) ## @todo Elimiate this too.
  VBoxClient_TEMPLATE = VBOXLNX32GUESTR3EXE
+else
+ VBoxClient_TEMPLATE = VBOXGUESTR3CPPEXE
 endif
 VBoxClient_DEFS    += VBOX_X11_CLIPBOARD VBOX_HGCM
 VBoxClient_DEFS.linux += _GNU_SOURCE
 VBoxClient_SOURCES  = \
 	main.cpp
 
-ifneq ($(BUILD_TARGET),linux)
- VBoxClient_SOURCES += \
-	clipboard-new.cpp
- VBoxClient_LIBS    = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3) \
-	X11 \
-	Xt
-else
+if1of ($(BUILD_TARGET),linux l4)
  VBoxClient_SOURCES += \
 	clipboard.cpp
  VBoxClient_LIBPATH  = \
@@ -53,7 +45,15 @@ else
 	rt \
 	Xt \
 	X11
-endif   # target linux
+else
+ VBoxClient_SOURCES += \
+	clipboard-new.cpp
+ VBoxClient_LIBS    = \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3) \
+	X11 \
+	Xt
+endif # ! linux || l4
 
 #
 # VBoxClient (seamless)
