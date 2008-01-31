@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox frontends: Qt GUI ("VirtualBox"):
  * Implementation of OS/2-specific helpers that require to reside in a DLL
  */
@@ -29,13 +29,13 @@
 /**
  *  Undocumented PM hook that is called before the pressed key is checked
  *  against the global accelerator table.
- * 
+ *
  *  Taken from the xWorkplace source code where it appears to come from the
  *  ProgramCommander/2 source code. Thanks to Ulrich Moeller and Roman Stangl.
  */
 #define HK_PREACCEL 17
 
-/* NOTE: all global non-static DLL data is per-process (multiple, nonshared) */
+/* NOTE: all global data is per-process (DATA32 is multiple, nonshared). */
 
 /* Module handle of this DLL */
 static HMODULE gThisModule = NULLHANDLE;
@@ -48,7 +48,7 @@ HAB gKbdHookHab = NULLHANDLE;
 HWND gKbdHookHwnd = NULLHANDLE;
 ULONG gKbdHookMsg = 0;
 
-/** 
+/**
  *  Message Input hook used to monitor the system message queue.
  *
  *  @param aHab     Anchor handle.
@@ -67,7 +67,7 @@ BOOL EXPENTRY vboxInputHook (HAB aHab, PQMSG aMsg, ULONG aFS)
         /* For foreign processes that didn't call VBoxHlpInstallKbdHook(),
          * gKbdHookHwnd remains NULL. If it's the case while in this input
          * hook, it means that the given foreign process is in foreground
-         * now. Since forwarding should work only for processes that 
+         * now. Since forwarding should work only for processes that
          * called VBoxHlpInstallKbdHook(), we ignore the message. */
         if (gKbdHookHwnd != NULLHANDLE)
         {
@@ -80,7 +80,7 @@ BOOL EXPENTRY vboxInputHook (HAB aHab, PQMSG aMsg, ULONG aFS)
     return FALSE;
 }
 
-/** 
+/**
  *  Installs a hook that will intercept all keyboard input (WM_CHAR) messages
  *  and forward them to the given window handle using the given message
  *  identifier. Messages are intercepted only when the given top-level window
@@ -97,11 +97,11 @@ BOOL EXPENTRY vboxInputHook (HAB aHab, PQMSG aMsg, ULONG aFS)
  *
  *  @note This function is not thread-safe and must be called only on the main
  *  thread once per process.
- * 
+ *
  *  @param aHab     Window anchor block.
  *  @param aHwnd    Top-level window handle to forward WM_CHAR messages to.
  *  @param aMsg     Message ID to use when forwarding.
- * 
+ *
  *  @return @c true on success and @c false otherwise.  */
 VBOXHLPDECL(bool) VBoxHlpInstallKbdHook (HAB aHab, HWND aHwnd,
                                          unsigned long aMsg)
@@ -123,7 +123,7 @@ VBOXHLPDECL(bool) VBoxHlpInstallKbdHook (HAB aHab, HWND aHwnd,
     return (bool) ok;
 }
 
-/** 
+/**
  *  Uninstalls the keyboard hook installed by VBoxHlpInstallKbdHook().
  *  All arguments must match arguments passed to VBoxHlpInstallKbdHook(),
  *  otherwise this method will do nothing and return @c false.
@@ -151,12 +151,12 @@ VBOXHLPDECL(bool) VBoxHlpUninstallKbdHook (HAB aHab, HWND aHwnd,
     return (bool) ok;
 }
 
-/** 
+/**
  *  DLL entry point.
- * 
+ *
  *  @param aHandle  DLL module handle.
  *  @param aFlag    0 on initialization or 1 on termination.
- * 
+ *
  *  @return Non-zero for success or 0 for failure.
  */
 ULONG _System _DLL_InitTerm (HMODULE aHandle, ULONG aFlag)

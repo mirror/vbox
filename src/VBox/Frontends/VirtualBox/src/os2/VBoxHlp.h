@@ -1,5 +1,4 @@
 /** @file
- *
  * VBox frontends: Qt GUI ("VirtualBox"):
  * Declaration of OS/2-specific helpers that require to reside in a DLL
  */
@@ -16,8 +15,8 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxHlp_h__
-#define __VBoxHlp_h__
+#ifndef ___VBoxHlp_h
+#define ___VBoxHlp_h
 
 #include <iprt/cdefs.h>
 
@@ -33,5 +32,5 @@ VBOXHLPDECL(bool) VBoxHlpInstallKbdHook (HAB aHab, HWND aHwnd,
 VBOXHLPDECL(bool) VBoxHlpUninstallKbdHook (HAB aHab, HWND aHwnd,
                                            unsigned long aMsg);
 
-#endif /* __VBoxHlp_h__ */
+#endif /* !___VBoxHlp_h */
 
