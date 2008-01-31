@@ -2103,8 +2103,8 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             status = SetWindowAlpha(WindowRef, 0.999);
             Assert (status == noErr);
             /* For now disable the shadow of the window. This feature cause errors
-             * if a window in vbox looses focus, is reselected and than moved.
-             * todo: Search for an option to enable this again. A shadow on every
+             * if a window in vbox looses focus, is reselected and than moved. */
+            /** @todo Search for an option to enable this again. A shadow on every
              * window has a big coolness factor. */
             ChangeWindowAttributes (WindowRef, kWindowNoShadowAttribute, 0);
         }
