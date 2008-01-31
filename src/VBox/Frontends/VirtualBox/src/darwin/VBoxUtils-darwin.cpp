@@ -32,7 +32,7 @@
  *
  * @param   info        Pointer to the QImage.
  */
-static void darwinDataProviderReleaseQImage(void *info, const void *, size_t)
+static void darwinDataProviderReleaseQImage (void *info, const void *, size_t)
 {
     QImage *qimg = (QImage *)info;
     delete qimg;
@@ -44,20 +44,20 @@ static void darwinDataProviderReleaseQImage(void *info, const void *, size_t)
  * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aPixmap     Pointer to the QPixmap instance to convert.
  */
-CGImageRef DarwinQImageToCGImage(const QImage *aImage)
+CGImageRef DarwinQImageToCGImage (const QImage *aImage)
 {
-    QImage *imageCopy = new QImage(*aImage);
+    QImage *imageCopy = new QImage (*aImage);
     /** @todo this code assumes 32-bit image input, the lazy bird convert image to 32-bit method is anything but optimal... */
-    if (imageCopy->depth() != 32)
+    if (imageCopy->depth () != 32)
         *imageCopy = imageCopy->convertDepth (32);
-    Assert (!imageCopy->isNull());
+    Assert (!imageCopy->isNull ());
 
-    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-    CGDataProviderRef dp = CGDataProviderCreateWithData (imageCopy, aImage->bits(), aImage->numBytes(), darwinDataProviderReleaseQImage);
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB ();
+    CGDataProviderRef dp = CGDataProviderCreateWithData (imageCopy, aImage->bits (), aImage->numBytes (), darwinDataProviderReleaseQImage);
 
-    CGBitmapInfo bmpInfo = imageCopy->hasAlphaBuffer() ? kCGImageAlphaFirst : kCGImageAlphaNoneSkipFirst;
+    CGBitmapInfo bmpInfo = imageCopy->hasAlphaBuffer () ? kCGImageAlphaFirst : kCGImageAlphaNoneSkipFirst;
     bmpInfo |= kCGBitmapByteOrder32Host;
-    CGImageRef ir = CGImageCreate (imageCopy->width(), imageCopy->height(), 8, 32, imageCopy->bytesPerLine(), cs,
+    CGImageRef ir = CGImageCreate (imageCopy->width (), imageCopy->height (), 8, 32, imageCopy->bytesPerLine (), cs,
                                    bmpInfo, dp, 0 /*decode */, 0 /* shouldInterpolate */,
                                    kCGRenderingIntentDefault);
     CGColorSpaceRelease (cs);
@@ -73,11 +73,11 @@ CGImageRef DarwinQImageToCGImage(const QImage *aImage)
  * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aPixmap     Pointer to the QPixmap instance to convert.
  */
-CGImageRef DarwinQPixmapToCGImage(const QPixmap *aPixmap)
+CGImageRef DarwinQPixmapToCGImage (const QPixmap *aPixmap)
 {
-    QImage qimg = aPixmap->convertToImage();
-    Assert (!qimg.isNull());
-    return DarwinQImageToCGImage(&qimg);
+    QImage qimg = aPixmap->convertToImage ();
+    Assert (!qimg.isNull ());
+    return DarwinQImageToCGImage (&qimg);
 }
 
 /**
@@ -89,7 +89,7 @@ CGImageRef DarwinQPixmapToCGImage(const QPixmap *aPixmap)
 CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource)
 {
     QPixmap qpm = QPixmap::fromMimeSource (aSource);
-    Assert (!qpm.isNull());
+    Assert (!qpm.isNull ());
     return DarwinQPixmapToCGImage (&qpm);
 }
 
@@ -107,25 +107,26 @@ CGImageRef DarwinCreateDockBadge (const char *aSource)
     /* instead of figuring out how to create a transparent 128x128 pixmap I've
        just created one that I can load. The Qt gurus can fix this if they like :-) */
     QPixmap back (QPixmap::fromMimeSource ("dock_128x128_transparent.png"));
-    Assert (!back.isNull());
-    Assert (back.width() == 128 && back.height() == 128);
+    Assert (!back.isNull ());
+    Assert (back.width () == 128 && back.height () == 128);
 
     /* load the badge */
     QPixmap badge = QPixmap::fromMimeSource (aSource);
-    Assert (!badge.isNull());
+    Assert (!badge.isNull ());
 
     /* resize it and copy it onto the background. */
-    if (badge.width() < 32)
-        badge = badge.convertToImage().smoothScale (32, 32);
-    copyBlt (&back, back.width() - badge.width(), back.height() - badge.height(),
+    if (badge.width () < 32)
+        badge = badge.convertToImage ().smoothScale (32, 32);
+    copyBlt (&back, back.width () - badge.width (), back.height () - badge.height (),
              &badge, 0, 0,
-             badge.width(), badge.height());
-    Assert (!back.isNull());
-    Assert (back.width() == 128 && back.height() == 128);
+             badge.width (), badge.height ());
+    Assert (!back.isNull ());
+    Assert (back.width () == 128 && back.height () == 128);
 
     /* Convert it to a CGImage. */
     return ::DarwinQPixmapToCGImage (&back);
 }
+
 
 /**
  * Creates a dock preview image.
@@ -133,28 +134,22 @@ CGImageRef DarwinCreateDockBadge (const char *aSource)
  * This method is a callback that creates a 128x128 preview image of the VM window.
  *
  * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
- * @param   aFrameBuffer    The guest frame buffer.
+ * @param   aVMImage   the vm screen as a CGImageRef
+ * @param   aOverlayImage   an optional overlay image to add at the bottom right of the icon
  */
-CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage)
+CGImageRef DarwinCreateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage)
 {
-    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+    Assert (aVMImage);
 
-    /* Create the image copy of the framebuffer */
-    CGDataProviderRef dp = CGDataProviderCreateWithData (aFrameBuffer, aFrameBuffer->address(), aFrameBuffer->bitsPerPixel() / 8 * aFrameBuffer->width() * aFrameBuffer->height() , NULL);
-    CGImageRef ir = CGImageCreate (aFrameBuffer->width(), aFrameBuffer->height(), 8, 32, aFrameBuffer->bytesPerLine(), cs,
-                                   kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
-                                   kCGRenderingIntentDefault);
-
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB ();
     Assert (cs);
-    Assert (dp);
-    Assert (ir);
 
     /* Calc the size of the dock icon image and fit it into 128x128 */
     int targetWidth = 128;
     int targetHeight = 128;
     int scaledWidth;
     int scaledHeight;
-    float aspect = static_cast<float>(aFrameBuffer->width()) / aFrameBuffer->height();
+    float aspect = static_cast<float>(CGImageGetWidth (aVMImage)) / CGImageGetHeight (aVMImage);
     if (aspect > 1.0)
     {
         scaledWidth = targetWidth;
@@ -178,7 +173,7 @@ CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aO
         CGContextRef context = CGBitmapContextCreate (bitmapData, targetWidth, targetHeight, 8, bitmapBytesPerRow, cs, kCGImageAlphaPremultipliedLast);
         /* rounded corners */
 //        CGContextSetLineJoin (context, kCGLineJoinRound);
-//        CGContextSetShadow (context, CGSizeMake(10, 5), 1);
+//        CGContextSetShadow (context, CGSizeMake (10, 5), 1);
 //        CGContextSetAllowsAntialiasing (context, true);
         /* some little boarder */
         iconRect = CGRectInset (iconRect, 1, 1);
@@ -192,7 +187,7 @@ CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aO
         CGContextStrokeRectWithWidth (context, iconRect, 2);
         /* vm content */
         iconRect = CGRectInset (iconRect, 1, 1);
-        CGContextDrawImage (context, iconRect, ir);
+        CGContextDrawImage (context, iconRect, aVMImage);
         /* the overlay image */
         if (aOverlayImage)
         {
@@ -206,16 +201,43 @@ CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aO
     }
 
     CGColorSpaceRelease (cs);
-    CGDataProviderRelease (dp);
-    CGImageRelease (ir);
 
     Assert (dockImage);
     return dockImage;
 }
 
+/**
+ * Creates a dock preview image.
+ *
+ * This method is a callback that creates a 128x128 preview image of the VM window.
+ *
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
+ * @param   aFrameBuffer    The guest frame buffer.
+ * @param   aOverlayImage   an optional overlay image to add at the bottom right of the icon
+ */
+CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage)
+{
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB ();
+    Assert (cs);
+    /* Create the image copy of the framebuffer */
+    CGDataProviderRef dp = CGDataProviderCreateWithData (aFrameBuffer, aFrameBuffer->address (), aFrameBuffer->bitsPerPixel () / 8 * aFrameBuffer->width () * aFrameBuffer->height (), NULL);
+    Assert (dp);
+    CGImageRef ir = CGImageCreate (aFrameBuffer->width (), aFrameBuffer->height (), 8, 32, aFrameBuffer->bytesPerLine (), cs,
+                                   kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
+                                   kCGRenderingIntentDefault);
+    /* Create the preview icon */
+    CGImageRef dockImage = DarwinCreateDockPreview (ir, aOverlayImage);
+    /* Release the temp data and image */
+    CGDataProviderRelease (dp);
+    CGImageRelease (ir);
+    CGColorSpaceRelease (cs);
+
+    return dockImage;
+}
+
 OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
 {
-    NOREF(aInHandlerCallRef);
+    NOREF (aInHandlerCallRef);
 
     OSStatus status = eventNotHandledErr;
     
@@ -240,10 +262,10 @@ OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
             else if (code == (kWindowStructureRgn))// || kWindowGlobalPortRgn || kWindowUpdateRgn))
             {
                 GetEventParameter (aInEvent, kEventParamRgnHandle, typeQDRgnHandle, NULL, sizeof (rgn), NULL, &rgn);
-                QRegion *pRegion = static_cast <QRegion*>(aInUserData);
-                if(!pRegion->isNull () && pRegion)
+                QRegion *pRegion = static_cast <QRegion*> (aInUserData);
+                if (!pRegion->isNull () && pRegion)
                 {
-                    CopyRgn (pRegion->handle(), rgn);
+                    CopyRgn (pRegion->handle (), rgn);
                     status = noErr;
                 }
             }

@@ -458,4 +458,55 @@ private:
 
 #endif
 
+/////////////////////////////////////////////////////////////////////////////
+
+#if defined(Q_WS_MAC) && defined (VBOX_GUI_USE_QUARTZ2D)
+
+#include <Carbon/Carbon.h>
+class VBoxQuartz2DFrameBuffer : public VBoxFrameBuffer
+{
+public:
+
+    VBoxQuartz2DFrameBuffer (VBoxConsoleView *aView);
+    virtual ~VBoxQuartz2DFrameBuffer ();
+
+    STDMETHOD (NotifyUpdate) (ULONG aX, ULONG aY,
+                              ULONG aW, ULONG aH,
+                              BOOL *aFinished);
+    STDMETHOD (SetVisibleRegion) (BYTE *aRectangles, ULONG aCount);
+
+    uchar *address () { return mDataAddress; }
+    ulong bitsPerPixel () { return CGImageGetBitsPerPixel (mImage); }
+    ulong bytesPerLine () { return CGImageGetBytesPerRow (mImage); }
+    ulong pixelFormat () { return mPixelFormat; };
+    bool usesGuestVRAM () { return mBitmapData == NULL; }
+
+    const CGImageRef imageRef () const { return mImage; }
+
+    void paintEvent (QPaintEvent *pe);
+    void resizeEvent (VBoxResizeEvent *re);
+
+private:
+    inline CGRect QRectToCGRect (const QRect &aRect) const
+    {
+        return CGRectMake (aRect.x (), aRect.y (), aRect.width (), aRect.height ());
+    } 
+    inline QRect mapYOrigin (const QRect &aRect, int aHeight) const
+    {
+        /* The cgcontext has a fliped y-coord relative to the 
+         * qt coord system. So we need some mapping here */
+        return QRect (aRect.x (), aHeight - (aRect.y () + aRect.height ()), aRect.width (), aRect.height ());
+    }
+    void clean ();
+
+    uchar *mDataAddress; 
+    void *mBitmapData;
+    ulong mPixelFormat;
+    CGImageRef mImage;
+    CGRect *mRegionRects;
+    ULONG mRegionCount;
+};
+
+#endif
+
 #endif // __VBoxFrameBuffer_h__

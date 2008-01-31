@@ -631,3 +631,13 @@ void VBoxSDLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 /* The class is defined in VBoxFBDDRAW.cpp */
 
 #endif
+
+//
+// VBoxQuartz2DFrameBuffer class
+/////////////////////////////////////////////////////////////////////////////
+
+#if defined (VBOX_GUI_USE_QUARTZ2D)
+
+/* The class is defined in VBoxQuartz2D.cpp */
+
+#endif
