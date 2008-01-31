@@ -1908,11 +1908,12 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         else
             vmDisableMouseIntegrAction->setEnabled (false);
     }
+
 #ifdef Q_WS_MAC
-        SetApplicationDockTileImage (dockImgOS);
-        CGImageRef img = dockImageState ();
-        if (img)
-            OverlayApplicationDockTileImage (img);
+    SetApplicationDockTileImage (dockImgOS);
+    CGImageRef img = dockImageState();
+    if (img)
+        OverlayApplicationDockTileImage (img);
 #endif
 }
 
@@ -2102,7 +2103,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             status = SetWindowAlpha(WindowRef, 0.999);
             Assert (status == noErr);
             /* For now disable the shadow of the window. This feature cause errors
-             * if a window in vbox looses focus, is reselected and than moved. 
+             * if a window in vbox looses focus, is reselected and than moved.
              * todo: Search for an option to enable this again. A shadow on every
              * window has a big coolness factor. */
             ChangeWindowAttributes (WindowRef, kWindowNoShadowAttribute, 0);
@@ -2185,7 +2186,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 }
 
 #ifdef Q_WS_MAC
-CGImageRef VBoxConsoleWnd::dockImageState () const
+CGImageRef VBoxConsoleWnd::dockImageState() const
 {
     CGImageRef img;
     if (machine_state == CEnums::Running)
@@ -2200,7 +2201,7 @@ CGImageRef VBoxConsoleWnd::dockImageState () const
         img = NULL;
     return img;
 }
-#endif 
+#endif
 
 //
 // Private slots
@@ -2212,7 +2213,7 @@ void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
         /* It isn't guaranteed that the guest os set the video mode that
          * we requested. So after all the resizing stuff set the clipping
          * mask and the spacing shifter to the corresponding values. */
-        QDesktopWidget *dtw = QApplication::desktop ();
+        QDesktopWidget *dtw = QApplication::desktop();
         QRect sRect = dtw->screenGeometry (this);
         QRect aRect (aTargetRect);
         mMaskShift.scale (aTargetRect.left(), aTargetRect.top(), QSize::ScaleFree);
@@ -2306,7 +2307,8 @@ void VBoxConsoleWnd::vmTypeCABS()
     {
         CKeyboard keyboard  = console->console().GetKeyboard();
         Assert (!keyboard.isNull());
-        static LONG cadSequence[] = {
+        static LONG sSequence[] =
+        {
             0x1d, // Ctrl down
             0x38, // Alt down
             0x0E, // Backspace down
@@ -2314,7 +2316,7 @@ void VBoxConsoleWnd::vmTypeCABS()
             0xb8, // Alt up
             0x9d  // Ctrl up
         };
-        keyboard.PutScancodes (cadSequence, ELEMENTS (cadSequence));
+        keyboard.PutScancodes (sSequence, ELEMENTS (sSequence));
         AssertWrapperOk (keyboard);
     }
 #else
@@ -2635,8 +2637,8 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
     /* The global mask shift cause of toolbars and such things. */
     region.translate (mMaskShift.width(), mMaskShift.height());
     /* Restrict the drawing to the available space on the screen.
-     * (The &operator is better than the previous used -operator, 
-     * because this excludes space around the real screen also. 
+     * (The &operator is better than the previous used -operator,
+     * because this excludes space around the real screen also.
      * This is necessary for the mac.) */
     region &= mStrictedRegion;
 
@@ -2673,20 +2675,20 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 # if defined(VBOX_GUI_USE_QUARTZ2D)
     if (vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode)
     {
-        /* If we are using the Quartz2D backend we have to trigger 
-         * an repaint only. All the magic clipping stuff is done 
+        /* If we are using the Quartz2D backend we have to trigger
+         * an repaint only. All the magic clipping stuff is done
          * in the paint engine. */
-        repaint ();
-//        qApp->processEvents ();
+        repaint();
+//        qApp->processEvents();
     }
     else
 # endif
     {
-        /* This is necessary to avoid the flicker by an mask update. 
+        /* This is necessary to avoid the flicker by an mask update.
          * See http://lists.apple.com/archives/Carbon-development/2001/Apr/msg01651.html
          * for the hint.
          * There *must* be a better solution. */
-        if (!region.isEmpty ())
+        if (!region.isEmpty())
             region |= QRect (0, 0, 1, 1);
         /* Save the current region for later processing in the darwin event handler. */
         mCurrRegion = region;
@@ -2694,10 +2696,10 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
          * this command flushes a copy of the backbuffer to the screen after the new
          * mask is set. This leads into a missplaced drawing of the content. Currently
          * no alternative to this and also this is not 100% perfect. */
-        repaint ();
-        qApp->processEvents ();
+        repaint();
+        qApp->processEvents();
         /* Now force the reshaping of the window. This is definitly necessary. */
-        ReshapeCustomWindow (reinterpret_cast<WindowPtr>(winId()));
+        ReshapeCustomWindow (reinterpret_cast <WindowPtr> (winId()));
     }
 #else
     QMainWindow::setMask (region);

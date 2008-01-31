@@ -720,7 +720,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     }
 
 #if defined (VBOX_GUI_USE_DDRAW)
-    if (!mFrameBuf || mFrameBuf->address () == NULL)
+    if (!mFrameBuf || mFrameBuf->address() == NULL)
     {
         if (mFrameBuf)
             delete mFrameBuf;
@@ -1207,7 +1207,7 @@ bool VBoxConsoleView::event (QEvent *e)
                  *  main window). Detect this situation to prevent calls to
                  *  destroyed widgets.
                  */
-                QWidgetList *list = QApplication::topLevelWidgets ();
+                QWidgetList *list = QApplication::topLevelWidgets();
                 bool destroyed = list->find (mMainWnd) < 0;
                 delete list;
                 if (!destroyed && mMainWnd->statusBar())
@@ -1768,7 +1768,7 @@ bool VBoxConsoleView::x11Event (XEvent *event)
          * releasing the keyboard before the screen saver gets active. */
         case XFocusOut:
         case XFocusIn:
-            if (isRunning ())
+            if (isRunning())
                 focusEvent (event->type == XFocusIn);
             return false;
         case XKeyPress:
@@ -1965,7 +1965,7 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
     }
     else
     {
-        ::DarwinReleaseKeyboard ();
+        ::DarwinReleaseKeyboard();
 #ifndef VBOX_WITH_HACKED_QT
         if (mDarwinEventHandlerRef)
         {
@@ -2811,18 +2811,23 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
             mFrameBuf->paintEvent (pe);
 #ifdef Q_WS_MAC
             /* Update the dock icon if we are in the running state */
-            if (isRunning ())
+            if (isRunning())
             {
 # if defined (VBOX_GUI_USE_QUARTZ2D)
                 if (mode == VBoxDefs::Quartz2DMode)
                 {
-                    /* If the render mode is Quartz2D we could use the CGImageRef of the framebuffer 
-                     * for the dock icon creation. This saves some conversation time. */
-                    CGImageRef ir = static_cast<VBoxQuartz2DFrameBuffer*>(mFrameBuf)->imageRef ();
-                    SetApplicationDockTileImage (::DarwinCreateDockPreview (ir, mMainWnd->dockImageState ()));
-                }else
+                    /* If the render mode is Quartz2D we could use the
+                     * CGImageRef of the framebuffer for the dock icon creation.
+                     * This saves some conversation time.*/
+                    CGImageRef ir =
+                        static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
+                    SetApplicationDockTileImage (
+                        ::DarwinCreateDockPreview (ir, mMainWnd->dockImageState()));
+                }
+                else
 # endif
-                    SetApplicationDockTileImage (::DarwinCreateDockPreview (mFrameBuf, mMainWnd->dockImageState ()));
+                    SetApplicationDockTileImage (
+                        ::DarwinCreateDockPreview (mFrameBuf, mMainWnd->dockImageState()));
             }
 #endif
             return;
@@ -2896,7 +2901,7 @@ void VBoxConsoleView::captureKbd (bool aCapture, bool aEmitSignal /* = true */)
     mKbdCaptured = aCapture;
 
     if (aEmitSignal)
-        emitKeyboardStateChanged ();
+        emitKeyboardStateChanged();
 }
 
 /**
@@ -2948,7 +2953,7 @@ void VBoxConsoleView::captureMouse (bool aCapture, bool aEmitSignal /* = true */
     updateMouseClipping();
 
     if (aEmitSignal)
-        emitMouseStateChanged ();
+        emitMouseStateChanged();
 }
 
 /**
@@ -3067,7 +3072,7 @@ void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostKey)
         (aReleaseHostKey ? 0 : ::DarwinKeyCodeToDarwinModifierMask (gs.hostKey()));
 #endif
 
-    emitKeyboardStateChanged ();
+    emitKeyboardStateChanged();
 }
 
 void VBoxConsoleView::saveKeyStates()
@@ -3131,7 +3136,7 @@ void VBoxConsoleView::updateMouseClipping()
 
 void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
 {
-    if (me->shapeData () != NULL)
+    if (me->shapeData() != NULL)
     {
         bool ok = false;
 
@@ -3367,7 +3372,7 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
         /*
          * We did not get any shape data
          */
-        if (me->isVisible ())
+        if (me->isVisible())
         {
             /*
              * We're supposed to make the last shape we got visible.
