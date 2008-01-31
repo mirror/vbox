@@ -1654,6 +1654,7 @@ VBOX_SOLARIS_SYS_INCS ?= /usr/include
 
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL _STRICT_STDC IN_RING0 IN_RT_R0
+## @todo the suffix is supposed to be ''. (Wait for kBuild update.)
 TEMPLATE_VBOXR0DRV_SYSSUFF             = .o
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -r
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -64
