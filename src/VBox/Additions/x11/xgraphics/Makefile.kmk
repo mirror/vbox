@@ -19,12 +19,17 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 if1of ($(BUILD_TARGET),linux l4)
+## @todo figure out vboxvideo_drv on solaris (seems to be a kernel module)
 SYSMODS  = vboxvideo_drv
-DLLS     = vboxvideo_drv_70 vboxvideo_drv_71 vboxvideo_drv_13 vboxvideo_drv_14
-
 # for BUILD_TARGET=l4
 SUFF_DLL = .so
+endif
+DLLS     = vboxvideo_drv_70 vboxvideo_drv_71 vboxvideo_drv_13 vboxvideo_drv_14
 
+#
+# vboxvideo_drv
+#
+if1of ($(BUILD_TARGET),linux l4)
 vboxvideo_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxvideo_drv_SYSSUFF = .o
 vboxvideo_drv_DEFS = \
@@ -103,15 +108,27 @@ vboxvideo_drv_SOURCES = \
 	vboxutils-new.c
 vboxvideo_drv_LIBS = \
 	$(VBOX_LIB_VBGL_R3_XFREE86)
+endif   # target linux, l4
 
-vboxvideo_drv_70_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+
+#
+# vboxvideo_drv_70 
+#
+if1of ($(BUILD_TARGET),linux l4)
+ vboxvideo_drv_70_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+ vboxvideo_drv_70_CFLAGS.linux := \
+	-Wno-conversion -Wno-unused-parameter \
+	$(VBOX_GCC_Wno-variadic-macros) -std=c99
+ vboxvideo_drv_70_LDFLAGS = -s
+else
+ vboxvideo_drv_70_TEMPLATE = VBOXGUESTR3DLL
+ vboxvideo_drv_70_CFLAGS   = -std=c99
+endif
+## @todo PIC should be defined in the template on linux
 vboxvideo_drv_70_DEFS := \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER \
 	IN_RING3 VBOX XORG_7X PIC RENDER=1
-vboxvideo_drv_70_CFLAGS.linux := \
-	-Wno-conversion -Wno-unused-parameter \
-	$(VBOX_GCC_Wno-variadic-macros) -std=c99
-vboxvideo_drv_70_LDFLAGS = -s
+vboxvideo_drv_70_DEFS.solaris = _XPG6
 vboxvideo_drv_70_INCS = \
 	$(VBOX_PATH_X11_XORG_7_0) \
 	$(VBOX_PATH_X11_XORG_7_0)/X11 \
@@ -124,10 +141,20 @@ vboxvideo_drv_70_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
 	$(VBOX_LIB_VBGL_R3_SHARED)
 
-vboxvideo_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+
+#
+# vboxvideo_drv_71
+#
+if1of ($(BUILD_TARGET),linux l4)
+ vboxvideo_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+ vboxvideo_drv_71_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
+ vboxvideo_drv_71_LDFLAGS = -s
+else
+ vboxvideo_drv_71_TEMPLATE = VBOXGUESTR3DLL
+ vboxvideo_drv_71_CFLAGS   = $(vboxvideo_drv_70_CFLAGS)
+endif
 vboxvideo_drv_71_DEFS := $(vboxvideo_drv_70_DEFS)
-vboxvideo_drv_71_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
-vboxvideo_drv_71_LDFLAGS = -s
+vboxvideo_drv_71_DEFS.solaris = $(vboxvideo_drv_70_DEFS.solaris)
 vboxvideo_drv_71_INCS = \
 	$(VBOX_PATH_X11_XORG_7_1) \
 	$(VBOX_PATH_X11_XORG_7_1)/X11 \
@@ -140,10 +167,20 @@ vboxvideo_drv_71_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
 	$(VBOX_LIB_VBGL_R3_SHARED)
 
-vboxvideo_drv_13_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+
+#
+# vboxvideo_drv_13
+#
+if1of ($(BUILD_TARGET),linux l4)
+ vboxvideo_drv_13_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+ vboxvideo_drv_13_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
+ vboxvideo_drv_13_LDFLAGS = -s
+else
+ vboxvideo_drv_13_TEMPLATE = VBOXGUESTR3DLL
+ vboxvideo_drv_13_CFLAGS   = $(vboxvideo_drv_70_CFLAGS)
+endif
 vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS)
-vboxvideo_drv_13_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
-vboxvideo_drv_13_LDFLAGS = -s
+vboxvideo_drv_13_DEFS.solaris = $(vboxvideo_drv_70_DEFS.solaris)
 vboxvideo_drv_13_INCS = \
 	$(VBOX_PATH_X11_XORG_1_3) \
 	$(VBOX_PATH_X11_XORG_1_3)/X11 \
@@ -156,10 +193,20 @@ vboxvideo_drv_13_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
 	$(VBOX_LIB_VBGL_R3_SHARED)
 
-vboxvideo_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+
+#
+# vboxvideo_drv_14
+#
+if1of ($(BUILD_TARGET),linux l4)
+ vboxvideo_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+ vboxvideo_drv_14_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
+ vboxvideo_drv_14_LDFLAGS = -s
+else
+ vboxvideo_drv_14_TEMPLATE = VBOXGUESTR3DLL
+ vboxvideo_drv_14_CFLAGS   = $(vboxvideo_drv_70_CFLAGS)
+endif
 vboxvideo_drv_14_DEFS := $(vboxvideo_drv_70_DEFS)
-vboxvideo_drv_14_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
-vboxvideo_drv_14_LDFLAGS = -s
+vboxvideo_drv_14_DEFS.solaris = $(vboxvideo_drv_70_DEFS.solaris)
 vboxvideo_drv_14_INCS = \
 	$(VBOX_PATH_X11_XORG_1_4) \
 	$(VBOX_PATH_X11_XORG_1_4)/X11 \
@@ -173,25 +220,6 @@ vboxvideo_drv_14_LIBS = \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
 	$(VBOX_LIB_VBGL_R3_SHARED)
-endif
 
-ifeq ($(BUILD_TARGET),solaris)
-DLLS     = vboxvideo_drv
-
-vboxvideo_drv_TEMPLATE = VBOXGUESTR3DLL
-vboxvideo_drv_DEFS := \
-	XFree86Server XFree86Module XFree86LOADER IN_MODULE XORG_7X RENDER=1
-vboxvideo_drv_INCS = \
-	$(VBOX_PATH_X11_XORG_7_1) \
-	$(VBOX_PATH_X11_XORG_7_1)/X11 \
-	$(VBOX_PATH_X11_XORG_7_1)/xorg
-vboxvideo_drv_SOURCES  = \
-	vboxvideo_70.c \
-	vboxutils-new.c
-vboxvideo_drv_LIBS = \
-	$(VBOX_LIB_VBGL_R3_SHARED) \
-	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3_SHARED)
-endif
 
 include	$(PATH_KBUILD)/footer.kmk
