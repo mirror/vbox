@@ -30,8 +30,8 @@ endif
 #
 if1of ($(BUILD_TARGET),linux l4)
  SYSMODS += vboxmouse_drv
- vboxmouse_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
- vboxmouse_drv_DEFS  = linux
+ vboxmouse_drv_TEMPLATE = VBOXGUESTR3XF86MOD
+ vboxmouse_drv_DEFS.linux = linux
  vboxmouse_drv_DEFS += \
 	__i386__ _POSIX_C_SOURCE=199309L _POSIX_SOURCE _XOPEN_SOURCE \
 	_BSD_SOURCE _SVID_SOURCE _GNU_SOURCE SHAPE XINPUT XKB LBX XAPPGROUP \
@@ -40,9 +40,6 @@ if1of ($(BUILD_TARGET),linux l4)
 	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
 	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
 	IN_MODULE XFree86Module PNP_MOUSE
- vboxmouse_drv_CFLAGS  = -fno-merge-constants -std=c99
- vboxmouse_drv_SYSSUFF = .o
- vboxmouse_drv_LDFLAGS.release = -S
  vboxmouse_drv_INCS := \
 	$(VBOX_PATH_X11_XFREE_4_2)/exports/include/X11 \
 	$(VBOX_PATH_X11_XFREE_4_2)/include \
@@ -58,8 +55,6 @@ if1of ($(BUILD_TARGET),linux l4)
 	mouse.c \
 	pnp.c \
 	VBoxUtils.c
- vboxmouse_drv_LIBS = \
-	$(VBOX_LIB_VBGL_R3_XFREE86)
 endif
 
 
@@ -67,19 +62,9 @@ endif
 # vboxmouse_drv_70
 #
 DLLS += vboxmouse_drv_70
-if1of ($(BUILD_TARGET),linux l4)
- vboxmouse_drv_70_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
- ## @todo Remove PIC from DEFS.
-else
- vboxmouse_drv_70_TEMPLATE = VBOXGUESTR3DLL
-endif
-if1of ($(BUILD_TARGET),linux l4)
- vboxmouse_drv_70_CFLAGS = -std=c99
- vboxmouse_drv_70_LDFLAGS = -s
-endif
+vboxmouse_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_70_DEFS = \
-	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT \
-	XORG_7X PIC
+	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT XORG_7X
 vboxmouse_drv_70_INCS := \
 	$(VBOX_PATH_X11_XORG_7_0) \
 	$(VBOX_PATH_X11_XORG_7_0)/X11 \
@@ -89,26 +74,14 @@ vboxmouse_drv_70_SOURCES = \
 	xorg70/mouse.c \
 	xorg70/pnp.c \
 	VBoxUtils.c
-vboxmouse_drv_70_LIBS = \
-	$(VBOX_LIB_VBGL_R3_SHARED) \
-	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3_SHARED)
 
 
 #
 # vboxmouse_drv_71
 #
 DLLS += vboxmouse_drv_71
-if1of ($(BUILD_TARGET),linux l4)
- vboxmouse_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
-else
- vboxmouse_drv_71_TEMPLATE = VBOXGUESTR3DLL
-endif
-if1of ($(BUILD_TARGET),linux l4)
- vboxmouse_drv_71_CFLAGS = -std=c99
- vboxmouse_drv_71_LDFLAGS = -s
-endif
-vboxmouse_drv_71_DEFS = $(vboxmouse_drv_70_DEFS)
+vboxmouse_drv_71_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_71_DEFS := $(vboxmouse_drv_70_DEFS)
 vboxmouse_drv_71_INCS = \
 	$(VBOX_PATH_X11_XORG_7_1) \
 	$(VBOX_PATH_X11_XORG_7_1)/X11 \
@@ -118,26 +91,14 @@ vboxmouse_drv_71_SOURCES = \
 	xorg71/mouse.c \
 	xorg71/pnp.c \
 	VBoxUtils.c
-vboxmouse_drv_71_LIBS = \
-	$(VBOX_LIB_VBGL_R3_SHARED) \
-	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3_SHARED)
 
 
 #
 # vboxmouse_drv_14
 #
 DLLS += vboxmouse_drv_14
-if1of ($(BUILD_TARGET),linux l4)
- vboxmouse_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
-else
- vboxmouse_drv_14_TEMPLATE = VBOXGUESTR3DLL
-endif
-if1of ($(BUILD_TARGET),linux l4)
- vboxmouse_drv_14_CFLAGS = -std=c99
- vboxmouse_drv_14_LDFLAGS = -s
-endif
-vboxmouse_drv_14_DEFS = $(vboxmouse_drv_70_DEFS)
+vboxmouse_drv_14_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_14_DEFS := $(vboxmouse_drv_70_DEFS)
 vboxmouse_drv_14_INCS = \
 	$(VBOX_PATH_X11_XORG_1_4) \
 	$(VBOX_PATH_X11_XORG_1_4)/X11 \
@@ -147,10 +108,6 @@ vboxmouse_drv_14_SOURCES = \
 	xorg14/mouse.c \
 	xorg14/pnp.c \
 	VBoxUtils.c
-vboxmouse_drv_14_LIBS = \
-	$(VBOX_LIB_VBGL_R3_SHARED) \
-	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
-	$(VBOX_LIB_VBGL_R3_SHARED)
 
 
 include	$(PATH_KBUILD)/footer.kmk
