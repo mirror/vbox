@@ -33,6 +33,7 @@
 
 #if defined (Q_WS_PM)
 #include "src/os2/VBoxHlp.h"
+#define UM_PREACCEL_CHAR WM_USER
 #endif
 
 #if defined (Q_WS_MAC)
