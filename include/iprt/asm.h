@@ -2639,10 +2639,10 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t *pu64, const uint64_t u
         lock cmpxchg8b [edi]
         mov     ebx, [pu64Old]
         mov     [ebx], eax
-        add     ebx, 8
-        mov     [ebx], edx
         setz    al
         movzx   eax, al
+        add     ebx, 4
+        mov     [ebx], edx
         mov     dword ptr [u32Ret], eax
     }
     return !!u32Ret;
