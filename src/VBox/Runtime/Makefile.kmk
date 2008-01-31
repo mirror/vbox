@@ -45,14 +45,6 @@ ifdef VBOX_ONLY_ADDITIONS
   endif
  endif
 
- #
- # Remote cross building... Will be removed unless somebody speaks up!
- ## @todo Remove this tomorrow.
- #
-else ifdef VBOX_ADDITIONS_LINUX_ONLY
- LIBRARIES  = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
-else ifdef VBOX_ADDITIONS_WIN32_ONLY
- LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
 else
 
  #
