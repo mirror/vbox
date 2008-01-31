@@ -677,7 +677,9 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
 {
     VBoxDefs::RenderMode mode = VBoxDefs::InvalidRenderMode;
 
-#if (defined (Q_WS_WIN32) || defined (Q_WS_PM)) && defined (VBOX_GUI_USE_QIMAGE)
+#if defined (Q_WS_MAC) && defined(VBOX_GUI_USE_QUARTZ2D)
+    mode = VBoxDefs::Quartz2DMode;
+#elif (defined (Q_WS_WIN32) || defined (Q_WS_PM)) && defined (VBOX_GUI_USE_QIMAGE)
     mode = VBoxDefs::QImageMode;
 #elif defined (Q_WS_X11) && defined (VBOX_GUI_USE_SDL)
     mode = VBoxDefs::SDLMode;
@@ -705,6 +707,10 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
 #if defined (VBOX_GUI_USE_DDRAW)
         else if (::strcmp (aModeStr, "ddraw") == 0)
             mode = VBoxDefs::DDRAWMode;
+#endif
+#if defined (VBOX_GUI_USE_QUARTZ2D)
+        else if (::strcmp (aModeStr, "quartz2d") == 0)
+            mode = VBoxDefs::Quartz2DMode;
 #endif
     }
 

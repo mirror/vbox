@@ -2101,6 +2101,11 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             }
             status = SetWindowAlpha(WindowRef, 0.999);
             Assert (status == noErr);
+            /* For now disable the shadow of the window. This feature cause errors
+             * if a window in vbox looses focus, is reselected and than moved. 
+             * todo: Search for an option to enable this again. A shadow on every
+             * window has a big coolness factor. */
+            ChangeWindowAttributes (WindowRef, kWindowNoShadowAttribute, 0);
         }
 #else
 //        setMask (dtw->screenGeometry (this));
@@ -2665,22 +2670,35 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 
     mPrevRegion = region;
 #elif defined(Q_WS_MAC)
-    /* This is necessary to avoid the flicker by an mask update. 
-     * See http://lists.apple.com/archives/Carbon-development/2001/Apr/msg01651.html
-     * for the hint.
-     * There *must* be a better solution. */
-    if (!region.isEmpty ())
-        region |= QRect (0, 0, 1, 1);
-    /* Save the current region for later processing in the darwin event handler. */
-    mCurrRegion = region;
-    /* We repaint the screen before the ReshapeCustomWindow command. Unfortunately
-     * this command flushes a copy of the backbuffer to the screen after the new
-     * mask is set. This leads into a missplaced drawing of the content. Currently
-     * no alternative to this and also this is not 100% perfect. */
-    repaint ();
-    qApp->processEvents ();
-    /* Now force the reshaping of the window. This is definitly necessary. */
-    ReshapeCustomWindow (reinterpret_cast<WindowPtr>(winId()));
+# if defined(VBOX_GUI_USE_QUARTZ2D)
+    if (vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode)
+    {
+        /* If we are using the Quartz2D backend we have to trigger 
+         * an repaint only. All the magic clipping stuff is done 
+         * in the paint engine. */
+        repaint ();
+//        qApp->processEvents ();
+    }
+    else
+# endif
+    {
+        /* This is necessary to avoid the flicker by an mask update. 
+         * See http://lists.apple.com/archives/Carbon-development/2001/Apr/msg01651.html
+         * for the hint.
+         * There *must* be a better solution. */
+        if (!region.isEmpty ())
+            region |= QRect (0, 0, 1, 1);
+        /* Save the current region for later processing in the darwin event handler. */
+        mCurrRegion = region;
+        /* We repaint the screen before the ReshapeCustomWindow command. Unfortunately
+         * this command flushes a copy of the backbuffer to the screen after the new
+         * mask is set. This leads into a missplaced drawing of the content. Currently
+         * no alternative to this and also this is not 100% perfect. */
+        repaint ();
+        qApp->processEvents ();
+        /* Now force the reshaping of the window. This is definitly necessary. */
+        ReshapeCustomWindow (reinterpret_cast<WindowPtr>(winId()));
+    }
 #else
     QMainWindow::setMask (region);
 #endif

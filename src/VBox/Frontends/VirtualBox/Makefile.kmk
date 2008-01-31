@@ -250,7 +250,8 @@ VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
 	src/darwin/DarwinCursor.cpp \
 	src/darwin/VBoxAquaStyle.cpp \
-	src/darwin/VBoxUtils-darwin.cpp
+	src/darwin/VBoxUtils-darwin.cpp \
+	src/VBoxFBQuartz2D.cpp
 
 ifneq ($(BUILD_TARGET),win)
 src/HappyHttp.cpp_CXXFLAGS += -fexceptions
@@ -268,7 +269,7 @@ endif
 
 VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
-VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_QHTTP
+VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QUARTZ2D VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_QHTTP
 VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.linux     = VBOX_GUI_USE_SDL
 VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL

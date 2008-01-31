@@ -707,6 +707,11 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
             mFrameBuf = new VBoxDDRAWFrameBuffer (this);
             break;
 #endif
+#if defined (VBOX_GUI_USE_QUARTZ2D)
+        case VBoxDefs::Quartz2DMode:
+            mFrameBuf = new VBoxQuartz2DFrameBuffer (this);
+            break;
+#endif
         default:
             AssertReleaseMsgFailed (("Render mode must be valid: %d\n", mode));
             LogRel (("Invalid render mode: %d\n", mode));
@@ -2806,8 +2811,19 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
             mFrameBuf->paintEvent (pe);
 #ifdef Q_WS_MAC
             /* Update the dock icon if we are in the running state */
-            if (isRunning())
-                SetApplicationDockTileImage (::DarwinCreateDockPreview(mFrameBuf, mMainWnd->dockImageState ()));
+            if (isRunning ())
+            {
+# if defined (VBOX_GUI_USE_QUARTZ2D)
+                if (mode == VBoxDefs::Quartz2DMode)
+                {
+                    /* If the render mode is Quartz2D we could use the CGImageRef of the framebuffer 
+                     * for the dock icon creation. This saves some conversation time. */
+                    CGImageRef ir = static_cast<VBoxQuartz2DFrameBuffer*>(mFrameBuf)->imageRef ();
+                    SetApplicationDockTileImage (::DarwinCreateDockPreview (ir, mMainWnd->dockImageState ()));
+                }else
+# endif
+                    SetApplicationDockTileImage (::DarwinCreateDockPreview (mFrameBuf, mMainWnd->dockImageState ()));
+            }
 #endif
             return;
         }
