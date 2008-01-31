@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * Qt GUI - Utility Classes and Functions specific to Darwin.
  */
