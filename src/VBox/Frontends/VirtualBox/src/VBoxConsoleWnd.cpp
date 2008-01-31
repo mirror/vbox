@@ -2068,7 +2068,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #endif
 
         /* Adjust colors and appearance. */
-        erase_color = centralWidget()->eraseColor();
+        mEraseColor = centralWidget()->eraseColor();
         centralWidget()->setEraseColor (black);
         console_style = console->frameStyle();
         console->setFrameStyle (QFrame::NoFrame);
@@ -2155,7 +2155,8 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
         /* Adjust colors and appearance. */
         clearMask();
-        centralWidget()->setEraseColor (erase_color);
+        centralWidget()->setEraseColor (mEraseColor);
+        centralWidget()->setBackgroundMode (Qt::PaletteBackground);
         console->setFrameStyle (console_style);
         console->setMaximumSize (console->sizeHint());
         console->setVScrollBarMode (QScrollView::Auto);
