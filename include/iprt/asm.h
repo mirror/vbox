@@ -2581,7 +2581,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t *pu64, const uint64_t u
                            "=a" (*pu64Old)
                          : "r" (u64New),
                            "a" (u64Old));
-    return (bool)u64Ret;
+    return (bool)u8Ret;
 #  else
     bool fRet;
     __asm
