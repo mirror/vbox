@@ -218,8 +218,8 @@ VBoxGuestR0LibBaseOS2_DEFS     = VBOX_HGCM VBGL_VBOXGUEST
 # VBoxGuestR3LibBaseOS2
 #
 VBoxGuestR3LibOS2_TEMPLATE = VBOXOS2GUESTR3LIB
-VBoxGuestR3LibOS2_SOURCES  = VBoxGuestR3Lib.cpp VBoxGuestR3LibClipboard.cpp
 VBoxGuestR3LibOS2_DEFS     = VBOX_HGCM
+VBoxGuestR3LibOS2_SOURCES  = $(VBoxGuestR3Lib_SOURCES)
 
 
 include	$(PATH_KBUILD)/subfooter.kmk

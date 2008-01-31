@@ -51,6 +51,7 @@
 
 #include "VBoxGuestInternal.h"
 #include <VBox/VBoxGuest.h>
+#include <VBox/VBoxDev.h>               /* VMMDEV_RAM_SIZE */
 #include <VBox/version.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>
@@ -58,6 +59,9 @@
 #include <iprt/process.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
+#include <iprt/memobj.h>
+#include <iprt/mem.h>
+#include <iprt/param.h>
 
 
 /*******************************************************************************
@@ -201,7 +205,7 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
             else
                 g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: VBoxGuestOS2InitDevExt failed, rc=%Vrc\n", rc);
 
-            rc2 = RTR0MemObjFree(g_MemObjMMIO, true /* fFreeMappings */); AssertRC(rc2);
+            int rc2 = RTR0MemObjFree(g_MemObjMMIO, true /* fFreeMappings */); AssertRC(rc2);
             g_MemObjMMIO = g_MemMapMMIO = NIL_RTR0MEMOBJ;
         }
         else
