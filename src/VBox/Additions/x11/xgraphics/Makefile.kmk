@@ -39,8 +39,7 @@ vboxvideo_drv_DEFS = \
 	GCCUSESGAS AVOID_GLYPHBLT PIXPRIV SINGLEDEPTH XFreeXDGA XvExtension \
 	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
 	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
-	IN_MODULE XFree86Module \
-	IN_RING3 VBOX
+	IN_MODULE XFree86Module
 vboxvideo_drv_CFLAGS.linux := \
 	-fno-merge-constants -Wno-conversion -Wno-unused-parameter \
 	$(VBOX_GCC_Wno-variadic-macros)
@@ -127,7 +126,7 @@ endif
 ## @todo PIC should be defined in the template on linux
 vboxvideo_drv_70_DEFS := \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER \
-	IN_RING3 VBOX XORG_7X PIC RENDER=1
+	XORG_7X PIC RENDER=1
 vboxvideo_drv_70_DEFS.solaris = _XPG6
 vboxvideo_drv_70_INCS = \
 	$(VBOX_PATH_X11_XORG_7_0) \
