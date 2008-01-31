@@ -239,6 +239,9 @@ struct PCNetState_st
     bool                                afAlignment[1];
     uint32_t                            u32LinkSpeed;
 
+    STAMCOUNTER                         StatReceiveBytes;
+    STAMCOUNTER                         StatTransmitBytes;
+
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILEADV                      StatMMIOReadGC;
     STAMPROFILEADV                      StatMMIOReadHC;
@@ -1742,6 +1745,8 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
                 rmd.rmd1.lafm = !CSR_PROM(pData) && is_ladr;
                 rmd.rmd1.bam  = !CSR_PROM(pData) && is_bcast;
                 rmd.rmd2.mcnt = pkt_size;
+
+                STAM_REL_COUNTER_ADD(&pData->StatReceiveBytes, pkt_size);
             }
             else
             {
@@ -1751,6 +1756,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
                 rmd.rmd1.buff = 1;
                 rmd.rmd1.err  = 1;
             }
+
             /* write back, clear the own bit */
             pcnetRmdStorePassHost(pData, &rmd, PHYSADDR(pData, crda));
 
@@ -1878,6 +1884,7 @@ DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pData)
     if (pData->SendFrame.cb > 70) /* unqualified guess */
         pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
     pData->pDrv->pfnSend(pData->pDrv, pData->SendFrame.pvBuf, pData->SendFrame.cb);
+    STAM_REL_COUNTER_ADD(&pData->StatTransmitBytes, pData->SendFrame.cb);
     pData->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&pData->StatTransmitSend, a);
 
@@ -4490,8 +4497,14 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatIOWriteHC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet IO writes in HC",    "/Devices/PCNet%d/IO/WriteHC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTimer,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet Timer",              "/Devices/PCNet%d/Timer", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet receive",            "/Devices/PCNet%d/Receive", iInstance);
+#endif
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/PCNet%d/ReceiveBytes", iInstance);
+#ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmit,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet transmit in HC",     "/Devices/PCNet%d/Transmit/Total", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmitSend,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet send transmit in HC",     "/Devices/PCNet%d/Transmit/Send", iInstance);
+#endif
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/PCNet%d/TransmitBytes", iInstance);
+#ifdef VBOX_WITH_STATISTICS
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmitSend,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet send transmit in HC","/Devices/PCNet%d/Transmit/Send", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTdtePollGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TdtePoll in GC",     "/Devices/PCNet%d/TdtePollGC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTdtePollHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TdtePoll in HC",     "/Devices/PCNet%d/TdtePollHC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRdtePollGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet RdtePoll in GC",     "/Devices/PCNet%d/RdtePollGC", iInstance);

@@ -180,6 +180,11 @@ void VBoxVMInformationDlg::languageChangeImp()
     mNamesMap ["/Devices/ATA1/Unit1/ReadBytes"] = tr ("Amount of data read");
     mNamesMap ["/Devices/ATA1/Unit1/WrittenBytes"] = tr ("Amount of data written");
 
+    mNamesMap ["/Devices/PCNet0/TransmitBytes"] = tr ("Amount of bytes transmitted");
+    mNamesMap ["/Devices/PCNet0/ReceiveBytes"] = tr ("Amount of bytes received");
+    mNamesMap ["/Devices/PCNet1/TransmitBytes"] = tr ("Amount of bytes transmitted");
+    mNamesMap ["/Devices/PCNet1/ReceiveBytes"] = tr ("Amount of bytes received");
+
     /* Statistics page update. */
     refreshStatistics();
 }
@@ -425,9 +430,9 @@ void VBoxVMInformationDlg::refreshStatistics()
     result += paragraph;
 
     /* Network Adapters Statistics. Counters are currently missed. */
-    // result += hdrRow.arg ("nw_16px.png").arg (tr ("Dummy Network Adapters Statistics"));
-    // result += subRow.arg (tr ("Dummy Adapter 1")).arg (tr ("Dummy Adapter 2"));
-    // result += composeArticle ("B", 6, 7, 14, 15);
+    result += hdrRow.arg ("nw_16px.png").arg (tr ("Network Adapters Statistics"));
+    result += subRow.arg (tr ("Adapter 1")).arg (tr ("Adapter 2"));
+    result += composeArticle ("B", 16, 17, 18, 19);
 
     /* Show full composed page. */
     mStatisticText->setText (table.arg (result));
