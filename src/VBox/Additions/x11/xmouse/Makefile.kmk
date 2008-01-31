@@ -19,7 +19,8 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 ifeq ($(BUILD_TARGET),l4)
- # l4 cross build hack. Do we *really* need this now with the additions build box?
+ # l4 cross build hack.
+ ## @todo enforce this in the template instead of here. (after eliminating the VBOXLNX32* stuff)
  SUFF_DLL = .so
 endif
 
