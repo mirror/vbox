@@ -25,7 +25,8 @@ endif
 VBOX_NO_LINUX_RUN_INSTALLER ?= $(VBOX_OSE)
 
 PROGRAMS       = VBoxTunctl
-PACKING        = $(if $(VBOX_NO_LINUX_RUN_INSTALLER),,$(PATH_BIN)/VirtualBox.run)
+PACKING        = $(if $(VBOX_NO_LINUX_RUN_INSTALLER),,\
+		 $(PATH_BIN)/VirtualBox.run $(PATH_BIN)/VirtualBox-dbg.tar.bz2)
 PACKING       += $(PATH_BIN)/VirtualBox.tar.bz2
 OTHER_CLEAN    = $(addprefix $(PATH_TARGET)/install/,\
 	         install.sh deffiles routines.sh \
@@ -162,8 +163,10 @@ ifdef VBOX_WITH_WEBSERVICES
 endif
 
 LINUXARCHFILES := $(LINUXSTRIPBIN) $(LINUXSTRIPOBJ) $(LINUXNOSTRIP)
+DBGPATH        := usr/lib/debug/opt/VirtualBox-$(VBOX_VERSION_STRING)
 
-OTHER_CLEAN += $(addprefix $(PATH_TARGET)/archive/,$(LINUXARCHFILES))
+OTHER_CLEAN += $(addprefix $(PATH_TARGET)/archive/,$(LINUXARCHFILES)) \
+	       $(addprefix $(PATH_TARGET)/archive-dbg/$(DBGPATH)/$(LINUXSTRIPBIN))
 
 include $(PATH_KBUILD)/footer.kmk
 
@@ -190,6 +193,12 @@ $(PATH_BIN)/VirtualBox.run: \
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(VBOX_MAKESELF) --follow $(PATH_TARGET)/install $@ \
 		"VirtualBox for Linux installation" ./install.sh "\$$0 1> /dev/null"
+
+$(PATH_BIN)/VirtualBox-dbg.tar.bz2: \
+		$(addprefix $(PATH_TARGET)/archive-dbg/$(DBGPATH)/, $(LINUXSTRIPBIN))
+	$(call MSG_L1,Packing $@)
+	$(QUIET)tar --owner 0 --group 0 -cjRhf $@ -C $(PATH_TARGET)/archive-dbg \
+		$(addprefix $(DBGPATH)/,$(LINUXSTRIPBIN))
 
 # .tar.bz2 for converting into .run
 $(PATH_TARGET)/install/VirtualBox.tar.bz2: \
@@ -235,9 +244,13 @@ endif
 # Note: The -m <mode> feature of kmk_builtin_install does not work together with fakeroot!
 # Note: $(INSTALL) -s is currently not reliable when used in parallel builds. Fixed in 0.1.1.
 $(foreach f,$(LINUXSTRIPBIN),$(PATH_TARGET)/archive/$(f)): \
-		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% | $(call DIRDEP,$(PATH_TARGET)/archive)
+		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% \
+		$(if $(VBOX_NO_LINUX_RUN_INSTALLER),,\
+		    $(PATH_TARGET)/archive-dbg/$(DBGPATH)/%) \
+		| $(call DIRDEP,$(PATH_TARGET)/archive)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)install -D -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
+	$(QUIET)$(if $(VBOX_NO_LINUX_RUN_INSTALLER),,objcopy --add-gnu-debuglink=$(subst $(PATH_TARGET)/archive,$(PATH_TARGET)/archive-dbg/$(DBGPATH),$@) $@)
 
 $(foreach f,$(LINUXSTRIPOBJ),$(PATH_TARGET)/archive/$(f)): \
 		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% | $(call DIRDEP,$(PATH_TARGET)/archive)
@@ -251,5 +264,12 @@ $(foreach f,$(LINUXNOSTRIP),$(PATH_TARGET)/archive/$(f)): \
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(LN_SYMLINK) $< $@
 
-$(foreach d,archive install,$(PATH_TARGET)/$(d)/):
+$(foreach d,archive archive-dbg/$(DBGPATH) archive-dbg/$(DBGPATH)/components install,$(PATH_TARGET)/$(d)/):
 	$(QUIET)$(MKDIR) -p $@
+
+$(foreach f,$(LINUXSTRIPBIN),$(PATH_TARGET)/archive-dbg/$(DBGPATH)/$(f)): \
+		$(PATH_TARGET)/archive-dbg/$(DBGPATH)/% : $(PATH_BIN)/% \
+		| $(call DIRDEP,$(PATH_TARGET)/archive-dbg/$(DBGPATH)/components)
+	$(call MSG_TOOL,copydbg,$<,$@)
+	$(QUIET)objcopy --only-keep-debug $< $@
+
