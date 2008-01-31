@@ -2925,7 +2925,7 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
                 {
                     /* If the render mode is Quartz2D we could use the
                      * CGImageRef of the framebuffer for the dock icon creation.
-                     * This saves some conversation time.*/
+                     * This saves some conversion time. */
                     CGImageRef ir =
                         static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
                     SetApplicationDockTileImage (
