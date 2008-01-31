@@ -2630,6 +2630,33 @@ TEMPLATE_VBOXLNX32GUESTR3LIB                   = Template for building 32-bit li
 TEMPLATE_VBOXLNX32GUESTR3LIB_EXTENDS           = VBOXLNX32GUESTR3EXE
 TEMPLATE_VBOXLNX32GUESTR3LIB_INST              = $(INST_ADDITION_LIB)
 
+#
+# Template for building Linux host tools (only for BUILD_TARGET=l4)
+#
+TEMPLATE_VBOXLNXHOSTR3EXE                   = Template for building linux host programs.
+TEMPLATE_VBOXLNXHOSTR3EXE_INST              = $(INST_BIN)
+TEMPLATE_VBOXLNXHOSTR3EXE_BLD_TRG           = linux
+TEMPLATE_VBOXLNXHOSTR3EXE_TOOL              = $(VBOX_GCC_TOOL)
+TEMPLATE_VBOXLNXHOSTR3EXE_ASTOOL            = YASM
+TEMPLATE_VBOXLNXHOSTR3EXE_DLLSUFF           = .so
+TEMPLATE_VBOXLNXHOSTR3EXE_ASFLAGS           = $(VBOX_ASFLAGS)
+TEMPLATE_VBOXLNXHOSTR3EXE_DEFS              = IN_RING3 $(ARCH_BITS_DEFS)
+TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS          = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -pipe $(VBOX_GCC_fno-stack-protector)
+TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.debug    = -fno-inline
+TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.release  = -O2 -fno-omit-frame-pointer -fno-strict-aliasing
+TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.profile  = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.release)
+TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.kprofile = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.release)
+TEMPLATE_VBOXLNXHOSTR3EXE_CFLAGS.release    = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.release)
+TEMPLATE_VBOXLNXHOSTR3EXE_CFLAGS.debug      = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.debug)
+TEMPLATE_VBOXLNXHOSTR3EXE_CFLAGS.profile    = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.profile)
+TEMPLATE_VBOXLNXHOSTR3EXE_CFLAGS.kprofile   = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.kprofile)
+TEMPLATE_VBOXLNXHOSTR3EXE_CFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_fno-stack-protector)
+TEMPLATE_VBOXLNXHOSTR3EXE_LIBS              = pthread m rt dl
+
+TEMPLATE_VBOXLNXHOSTR3LIB                   = Template for linux host libraries.
+TEMPLATE_VBOXLNXHOSTR3LIB_EXTENDS           = VBOXLNXHOSTR3EXE
+TEMPLATE_VBOXLNXHOSTR3LIB_INST              = $(INST_LIB)
+
 
 #
 # Template for building R3 programs for the guest additions.

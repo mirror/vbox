@@ -44,7 +44,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#ifndef IN_GUEST
+#if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 static DECLCALLBACK(void)     rtTimeNanoTSInternalBitch(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
 static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pData);
 static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA pData);
@@ -54,7 +54,7 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#ifndef IN_GUEST
+#if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 /** The previous timestamp value returned by RTTimeNanoTS. */
 static uint64_t         g_TimeNanoTSPrev = 0;
 
@@ -161,7 +161,7 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
     return g_apfnWorkers[iWorker](pData);
 }
 
-#endif /* !IN_GUEST */
+#endif /* !IN_GUEST && !RT_NO_GIP */
 
 
 /**
@@ -169,7 +169,7 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
  */
 DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
 {
-#ifndef IN_GUEST
+#if !defined(IN_GUEST) && !defined(RT_NO_GIP)
     return g_apfnWorkers[g_iWorker](&g_TimeNanoTSData);
 #else
     return RTTimeSystemNanoTS();
@@ -199,7 +199,7 @@ RTDECL(uint64_t) RTTimeMilliTS(void)
 }
 
 
-#ifndef IN_GUEST
+#if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 /**
  * Debugging the time api.
  *
@@ -242,4 +242,4 @@ RTDECL(uint32_t) RTTimeDbgRaces(void)
 {
     return g_TimeNanoTSData.cUpdateRaces;
 }
-#endif
+#endif /* !IN_GUEST && !RT_NO_GIP */

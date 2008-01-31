@@ -95,6 +95,15 @@ VBoxDDU_LDFLAGS.darwin   = -install_name @executable_path/VBoxDDU.dylib
 VBoxDDU_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDDU_LDFLAGS.l4       = -Wl,--no-undefined
 
+#
+# VBoxDDULnxHostR3 (Only needed for l4, currently for executing vditool on L4Linux.)
+#
+ifeq ($(BUILD_TARGET),l4)
+ LIBRARIES                += VBoxDDULnxHostR3
+ VBoxDDULnxHostR3_TEMPLATE = VBOXLNXHOSTR3LIB
+ VBoxDDULnxHostR3_DEFS     = IN_VBOXDDU
+ VBoxDDULnxHostR3_SOURCES  = $(VBoxDDU_SOURCES)
+endif
 
 #
 # VBoxDD (shared object)
