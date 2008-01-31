@@ -40,11 +40,17 @@ vditool_SOURCES  = vditool.cpp
 #
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS += tstVDI
- tstVDI_TEMPLATE = VBOXR3TSTEXE
+ ifeq ($(BUILD_TARGET),l4)
+  tstVDI_TEMPLATE = VBOXLNXHOSTR3EXE
+  tstVDI_LIBS     = \
+         $(PATH_LIB)/VBoxDDULnxHostR3.a \
+	 $(PATH_LIB)/RuntimeLnxHostR3.a
+ else
+  tstVDI_TEMPLATE = VBOXR3TSTEXE
+  tstVDI_LIBS     = $(vditool_LIBS)
+ endif
  tstVDI_SOURCES  = tstVDI.cpp
- tstVDI_LIBS     = $(vditool_LIBS)
 endif
-
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
