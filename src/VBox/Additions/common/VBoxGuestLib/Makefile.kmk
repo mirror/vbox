@@ -19,14 +19,16 @@ DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
 include	$(PATH_KBUILD)/subheader.kmk
 
-if1of ($(BUILD_TARGET),solaris)
+ifn1of ($(BUILD_TARGET),l4 linux windows)
  LIBRARIES += \
 	VBoxGuestR0Lib \
 	VBoxGuestR0LibBase
- ifneq ($(BUILD_TARGET),win)
-  LIBRARIES += \
+ LIBRARIES += \
 	VBoxGuestR3Lib \
 	VBoxGuestR3LibShared
+ if1of ($(BUILD_TARGET),freebsd linux netbsd openbsd)
+  LIBRARIES += \
+  	VBoxGuestR3LibXFree86
  endif
 else
  # As we build Windows Additions on Linux as well, we need a
@@ -52,12 +54,6 @@ else
 	VBoxGuestR3LibShared \
   	VBoxGuestR3LibXFree86 \
   	VBoxGuestR3LibLinux
- endif
- ifdef VBOX_WITH_OS2_ADDITIONS
-  LIBRARIES += \
- 	VBoxGuestR0LibOS2 \
- 	VBoxGuestR0LibBaseOS2 \
- 	VBoxGuestR3LibOS2
  endif
 endif
 
@@ -196,30 +192,6 @@ VBoxGuestR3LibLinux_TEMPLATE = VBOXLNX32GUESTR3LIB
 VBoxGuestR3LibLinux_CXXFLAGS = -fno-exceptions
 VBoxGuestR3LibLinux_SOURCES  = $(VBoxGuestR3Lib_SOURCES)
 VBoxGuestR3LibLinux_DEFS     = VBOX_HGCM
-
-
-#
-# VBoxGuestR0LibOS2
-#
-VBoxGuestR0LibOS2_TEMPLATE  = VBOXOS2GUESTR0LIB
-VBoxGuestR0LibOS2_SOURCES   = $(VBoxGuestR0Lib_SOURCES)
-VBoxGuestR0LibOS2_INCS      = $(VBoxGuestLib_INCS)
-VBoxGuestR0LibOS2_DEFS      = VBOX_HGCM
-
-#
-# VBoxGuestR0LibBaseOS2
-#
-VBoxGuestR0LibBaseOS2_TEMPLATE = VBOXOS2GUESTR0LIB
-VBoxGuestR0LibBaseOS2_SOURCES  = $(VBoxGuestR0LibBase_SOURCES)
-VBoxGuestR0LibBaseOS2_INCS     = $(VBoxGuestLib_INCS)
-VBoxGuestR0LibBaseOS2_DEFS     = VBOX_HGCM VBGL_VBOXGUEST
-
-#
-# VBoxGuestR3LibBaseOS2
-#
-VBoxGuestR3LibOS2_TEMPLATE = VBOXOS2GUESTR3LIB
-VBoxGuestR3LibOS2_DEFS     = VBOX_HGCM
-VBoxGuestR3LibOS2_SOURCES  = $(VBoxGuestR3Lib_SOURCES)
 
 
 include	$(PATH_KBUILD)/subfooter.kmk
