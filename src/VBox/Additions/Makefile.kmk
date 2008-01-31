@@ -43,53 +43,36 @@ include	$(PATH_KBUILD)/subheader.kmk
 ifdef VBOX_ADDITIONS_LINUX_ONLY
  VBOX_ADDITIONS_XYZ_ONLY = 1
  VBOX_WITH_LINUX_ADDITIONS = 1
- VBOX_REMOTE_LINUX_ADDITIONS_BUILD =
  VBOX_WITH_WIN32_ADDITIONS =
 else ifdef VBOX_ADDITIONS_WIN32_ONLY
  VBOX_ADDITIONS_XYZ_ONLY = 1
  VBOX_WITH_WIN32_ADDITIONS = 1
- VBOX_REMOTE_WIN32_ADDITIONS_BUILD =
  VBOX_WITH_LINUX_ADDITIONS =
 endif
 ifdef VBOX_WITH_WIN32_ADDITIONS
  VBOX_WITH_ADDITIONS_ISO.win.x86 = 1
 endif
-ifneq ($(VBOX_WITH_LINUX_ADDITIONS)$(VBOX_ADDITIONS_LINUX_CROSS),)
+ifdef VBOX_WITH_LINUX_ADDITIONS
  VBOX_WITH_ADDITIONS_ISO.linux.x86 = 1
 endif
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 ifdef VBOX_WITH_WIN32_ADDITIONS
- ifndef VBOX_REMOTE_WIN32_ADDITIONS_BUILD
-  include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
- endif
+ include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
 endif
-
+## @todo Convert linux and x11 to sub-makefiles too.
 ifdef VBOX_WITH_LINUX_ADDITIONS
- SUBDIRS += \
-	linux \
-	x11
- LINUXINSTALLER = $(VBOX_PATH_ADDITIONS)/VBoxLinuxAdditions.run
-endif
-LINUXINSTALLER_CROSS = $(PATH_OUT_BASE)/linux.x86/$(BUILD_TYPE)/bin/additions/VBoxLinuxAdditions.run
-ifdef VBOX_ADDITIONS_LINUX_CROSS
- OTHER_CLEAN   += $(LINUXINSTALLER_CROSS)
- LINUXINSTALLER = $(LINUXINSTALLER_CROSS)
+ SUBDIRS += linux x11
+else if1of ($(BUILD_TARGET), solaris)
+ SUBDIRS += x11
 endif
 
 # The packing target rule, but only if we're on the local build box.
 ifndef VBOX_WITHOUT_ADDITIONS_ISO
  ifndef VBOX_ADDITIONS_XYZ_ONLY
-  ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
-   PACKING += $(if $(VBOX_OSE),,$(PATH_BIN)/additions/VBoxGuestAdditions.iso)
-  endif
+  PACKING += $(PATH_BIN)/additions/VBoxGuestAdditions.iso
  endif
-endif
-
-# Solaris additions
-ifeq ($(BUILD_TARGET),solaris)
- SUBDIRS += x11
 endif
 
 include	$(PATH_KBUILD)/subfooter.kmk
@@ -128,8 +111,6 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 	driver/VBoxSF/VBoxSF.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxSF.sys \
 	driver/VBoxSF/VBoxMRXNP.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMRXNP.dll
  endif
- ## @todo remove GUESTADDITIONS_WIN32_DEPS when cleaning up later.
- GUESTADDITIONS_WIN32_DEPS := $(filter-out %=deleteme=,,$(subst =,=deleteme= ,$(GUESTADDITIONS_FILESPEC.win.x86)))
 endif
 
 #
@@ -162,11 +143,7 @@ endif
 # The x86 Linux .iso file spec.
 #
 ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
- ifneq ($(VBOX_ONLY_ADDITIONS)$(VBOX_ADDITIONS_LINUX_CROSS),)
-  VBOX_PATH_ADDITIONS.linux.x86 = $(PATH_OUT_BASE)/linux.x86/$(BUILD_TYPE)/bin/additions
- else
-  VBOX_PATH_ADDITIONS.linux.x86 = $(VBOX_PATH_ADDITIONS)
- endif
+ VBOX_PATH_ADDITIONS.linux.x86 = $(PATH_OUT_BASE)/linux.x86/$(BUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.linux.x86 = \
  	VBoxLinuxAdditions.run=$(VBOX_PATH_ADDITIONS.linux.x86)/VBoxLinuxAdditions.run
 endif
@@ -195,36 +172,4 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 		$(GUESTADDITIONS_FILESPEC.os2.x86)
 endif
 
-
-#
-# Remote building (to be obsoleted).
-#
-ifdef VBOX_REMOTE_WIN32_ADDITIONS_BUILD
-OTHER_CLEAN += $(PATH_TARGET)/ts-remote-build-win32-additions
-$(GUESTADDITIONS_WIN32_DEPS): $(PATH_TARGET)/ts-remote-build-win32-additions
-$(PATH_TARGET)/ts-remote-build-win32-additions:
-	$(RM) -f $@
-	$(VBOX_REMOTE_WIN32_ADDITIONS_BUILD)
-	$(APPEND) $@
-
-endif # VBOX_REMOTE_BUILD_WIN32_ADDITIONS
-
-build-win32-additions:
-ifneq ($(BUILD_TARGET),linux) # Nothing is signed here and wine is faster building it.
-	$(KMK) VBOX_ADDITIONS_WIN32_ONLY=1 -C ../Runtime
-endif
-	$(KMK) VBOX_ADDITIONS_WIN32_ONLY=1 -C . all packing
-
-
-# build the Linux installer on a remote machine
-# TODO: Move the VBOX_REMOTE_LINUX32_ADDITIONS_BUILD stuff into LocalConfig.kmk on the x86 box.
-VBOX_REMOTE_LINUX32_ADDITIONS_BUILD ?= ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions build-linux32-additions BUILD_TYPE=release"
-$(LINUXINSTALLER_CROSS):
-	$(VBOX_REMOTE_LINUX32_ADDITIONS_BUILD)
-
-test-build-linux32-additions: $(LINUXINSTALLER_CROSS)
-build-linux32-additions:
-	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1 -C ../Runtime
-	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1 -C common
-	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1 -C linux all packing
 
