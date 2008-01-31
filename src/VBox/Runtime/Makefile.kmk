@@ -38,9 +38,6 @@ ifdef VBOX_ONLY_ADDITIONS
   LIBRARIES = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
   #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
   #LIBRARIES.win = RuntimeW32NT4GuestR0
-  if1of ($(BUILD_TARGET), linux l4) ## @todo eliminate this.
-   LIBRARIES += RuntimeLnx32GuestR3
-  endif
   ifndef VBOX_WITH_ADDITION_DRIVERS
    if1of ($(BUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
     LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
@@ -53,8 +50,7 @@ ifdef VBOX_ONLY_ADDITIONS
  ## @todo Remove this tomorrow.
  #
 else ifdef VBOX_ADDITIONS_LINUX_ONLY
- LIBRARIES  = RuntimeLnx32GuestR3 \
-	RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
+ LIBRARIES  = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
 else ifdef VBOX_ADDITIONS_WIN32_ONLY
  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
 else
@@ -75,9 +71,6 @@ else
    LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
    #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
    #LIBRARIES.win = RuntimeW32NT4GuestR0
-   ifdef VBOX_WITH_LINUX_ADDITIONS ## @todo eliminate this ASAP
-    LIBRARIES += RuntimeLnx32GuestR3
-   endif
    ifndef VBOX_WITH_ADDITION_DRIVERS
     if1of ($(BUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
      LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
@@ -585,18 +578,6 @@ endif
 RuntimeW32GuestR3_SOURCES      = $(RuntimeR3_SOURCES.win) $(RuntimeR3_SOURCES)
 RuntimeW32GuestR3_INCS         = $(RuntimeR3_INCS.win)    $(RuntimeR3_INCS)
 
-
-#
-# RuntimeLnx32GuestR3 - 32-bit Linux guest program runtime. Obsoleted by RuntimeGuestR3.
-#
-RuntimeLnx32GuestR3_TEMPLATE   = VBOXLNX32GUESTR3LIB
-RuntimeLnx32GuestR3_DEFS       = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
-ifdef IPRT_WITH_KSTUFF
- RuntimeLnx32GuestR3_DEFS     += LDR_WITH_KLDR
-endif
-RuntimeLnx32GuestR3_SOURCES    = $(RuntimeR3_SOURCES.linux) $(RuntimeR3_SOURCES)
-RuntimeLnx32GuestR3_SOURCES   += VBox/logbackdoor.cpp
-RuntimeLnx32GuestR3_INCS       = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
 
 #
 # RuntimeLnxHostR3 Linux host program runtime
