@@ -500,21 +500,16 @@ vslick.h: include/VBox/cdefs.h Makefile
 	$(ECHO) "TODO: Merge ./vslick.h with your ~/.slickedit/x.y.z/unxcpp.h file."
 
 
-## add tools fetching to the 'up' / 'update' target.
-up update::
-# this doesn't work of course if kmk is updated:	svn$(HOSTSUFF_EXE) up $(PATH_KBUILD)
+#
+# Add fetching of the tools to the 'up[date][2]' targets.
+#
+up update up2 update2::
 ifndef VBOX_OSE
 	$(MAKE) -C tools fetch
 else
 	$(MAKE) -C tools -f Makefile-ose.kmk fetch
 endif
 
-up2 update2::
-	$(SVN) up src/lib/kStuff
-if1of ($(BUILD_PLATFORM),win os2)
-	$(ECHO) This may fail if kmk.exe is updated.
-endif
-	$(SVN) up kBuild
 
 #
 # Build the additions, all of them.
