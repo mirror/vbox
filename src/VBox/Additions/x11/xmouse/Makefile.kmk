@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VBox Linux Additions X.org mouse driver.
+# Makefile for the VBox Additions XFree86 and X.org mouse drivers.
 #
 
 #
@@ -18,18 +18,17 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
-if1of ($(BUILD_TARGET),linux l4)
-## @todo figure out vboxmouse_drv on solaris (seems to be a kernel module)
- SYSMODS  = vboxmouse_drv
-# for BUILD_TARGET=l4
+ifeq ($(BUILD_TARGET),l4)
+ # l4 cross build hack. Do we *really* need this now with the additions build box?
  SUFF_DLL = .so
 endif
-DLLS     = vboxmouse_drv_70 vboxmouse_drv_71 vboxmouse_drv_14
+
 
 #
 # vboxmouse_drv
 #
 if1of ($(BUILD_TARGET),linux l4)
+ SYSMODS += vboxmouse_drv
  vboxmouse_drv_TEMPLATE = VBOXLNX32GUESTR3EXE
  vboxmouse_drv_DEFS  = linux
  vboxmouse_drv_DEFS += \
@@ -54,7 +53,7 @@ if1of ($(BUILD_TARGET),linux l4)
 	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support/bus \
 	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/mi \
 	$(PATH_SUB_CURRENT)
- vboxmouse_drv_SOURCES  = \
+ vboxmouse_drv_SOURCES = \
 	mouse.c \
 	pnp.c \
 	VBoxUtils.c
@@ -66,25 +65,26 @@ endif
 #
 # vboxmouse_drv_70
 #
+DLLS += vboxmouse_drv_70
 if1of ($(BUILD_TARGET),linux l4)
  vboxmouse_drv_70_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+ ## @todo Remove PIC from DEFS.
 else
  vboxmouse_drv_70_TEMPLATE = VBOXGUESTR3DLL
 endif
-## @todo PIC should be defined in the template on linux
+if1of ($(BUILD_TARGET),linux l4)
+ vboxmouse_drv_70_CFLAGS = -std=c99
+ vboxmouse_drv_70_LDFLAGS = -s
+endif
 vboxmouse_drv_70_DEFS = \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT \
 	XORG_7X PIC
-if1of ($(BUILD_TARGET),linux l4)
- vboxmouse_drv_70_CFLAGS   = -std=c99
- vboxmouse_drv_70_LDFLAGS  = -s
-endif
 vboxmouse_drv_70_INCS := \
 	$(VBOX_PATH_X11_XORG_7_0) \
 	$(VBOX_PATH_X11_XORG_7_0)/X11 \
 	$(VBOX_PATH_X11_XORG_7_0)/xorg \
 	$(PATH_SUB_CURRENT)
-vboxmouse_drv_70_SOURCES  = \
+vboxmouse_drv_70_SOURCES = \
 	xorg70/mouse.c \
 	xorg70/pnp.c \
 	VBoxUtils.c
@@ -97,12 +97,15 @@ vboxmouse_drv_70_LIBS = \
 #
 # vboxmouse_drv_71
 #
+DLLS += vboxmouse_drv_71
 if1of ($(BUILD_TARGET),linux l4)
  vboxmouse_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
- vboxmouse_drv_71_CFLAGS   = -std=c99
- vboxmouse_drv_71_LDFLAGS  = -s
 else
  vboxmouse_drv_71_TEMPLATE = VBOXGUESTR3DLL
+endif
+if1of ($(BUILD_TARGET),linux l4)
+ vboxmouse_drv_71_CFLAGS = -std=c99
+ vboxmouse_drv_71_LDFLAGS = -s
 endif
 vboxmouse_drv_71_DEFS = $(vboxmouse_drv_70_DEFS)
 vboxmouse_drv_71_INCS = \
@@ -110,7 +113,7 @@ vboxmouse_drv_71_INCS = \
 	$(VBOX_PATH_X11_XORG_7_1)/X11 \
 	$(VBOX_PATH_X11_XORG_7_1)/xorg \
 	$(PATH_SUB_CURRENT)
-vboxmouse_drv_71_SOURCES  = \
+vboxmouse_drv_71_SOURCES = \
 	xorg71/mouse.c \
 	xorg71/pnp.c \
 	VBoxUtils.c
@@ -123,12 +126,15 @@ vboxmouse_drv_71_LIBS = \
 #
 # vboxmouse_drv_14
 #
+DLLS += vboxmouse_drv_14
 if1of ($(BUILD_TARGET),linux l4)
  vboxmouse_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
- vboxmouse_drv_14_CFLAGS   = -std=c99
- vboxmouse_drv_14_LDFLAGS  = -s
 else
  vboxmouse_drv_14_TEMPLATE = VBOXGUESTR3DLL
+endif
+if1of ($(BUILD_TARGET),linux l4)
+ vboxmouse_drv_14_CFLAGS = -std=c99
+ vboxmouse_drv_14_LDFLAGS = -s
 endif
 vboxmouse_drv_14_DEFS = $(vboxmouse_drv_70_DEFS)
 vboxmouse_drv_14_INCS = \
@@ -136,7 +142,7 @@ vboxmouse_drv_14_INCS = \
 	$(VBOX_PATH_X11_XORG_1_4)/X11 \
 	$(VBOX_PATH_X11_XORG_1_4)/xorg \
 	$(PATH_SUB_CURRENT)
-vboxmouse_drv_14_SOURCES  = \
+vboxmouse_drv_14_SOURCES = \
 	xorg14/mouse.c \
 	xorg14/pnp.c \
 	VBoxUtils.c
@@ -144,6 +150,7 @@ vboxmouse_drv_14_LIBS = \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
 	$(VBOX_LIB_VBGL_R3_SHARED)
+
 
 include	$(PATH_KBUILD)/footer.kmk
 
