@@ -1786,8 +1786,7 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
                 N_("No audio devices could be opened. Selecting the NULL audio backend "
                    "with the consequence that no sound is audible."));
     }
-    LogRel(("SB16\n"));
-    return 0;
+    return VINF_SUCCESS;
 }
 
 const PDMDEVREG g_DeviceSB16 =
