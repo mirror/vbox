@@ -1772,7 +1772,7 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log (("sb16: No attached driver!\n"));
     else if (VBOX_FAILURE(rc))
-        AssertMsgFailedReturn(("Failed to attach AB16 LUN #0! rc=%Vrc\n", rc), rc);
+        AssertMsgFailedReturn(("Failed to attach SB16 LUN #0! rc=%Vrc\n", rc), rc);
 
     AUD_register_card ("sb16", &s->card);
     legacy_reset (s);
