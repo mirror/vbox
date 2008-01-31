@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Quartz2D framebuffer implementation
+ * Qt GUI (aka VirtualBox) - Quartz2D framebuffer implementation.
  */
 
 /*
@@ -77,9 +76,15 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
     if (!rects)
         return E_POINTER;
 
+    /** @todo r=bird: Is this thread safe? If I remember the code flow correctly, the
+     * GUI thread could be happily jogging along paintEvent now on another cpu core.
+     * This function is called on the EMT (emulation thread). Which means, blocking
+     * execution waiting for a lock is out of the question. A quick solution using
+     * ASMAtomic(Cmp)XchgPtr and a struct { cAllocated; cRects; aRects[1]; }
+     * *mRegion, *mUnusedRegion; should suffice (and permit you to reuse allocations). */
     RTMemFree (mRegionRects);
     mRegionCount = 0;
-    mRegionRects = static_cast<CGRect*>(RTMemAlloc (sizeof (CGRect) * aCount));
+    mRegionRects = static_cast <CGRect*> (RTMemAlloc (sizeof (CGRect) * aCount));
 
     QRegion reg;
 //    printf ("Region rects follow...\n");
@@ -170,12 +175,12 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
         Q2DViewRect.setWidth (Q2DViewRect.width() - (mView->verticalScrollBar()->frameSize().width() + 2));
 
     /* Create the context to draw on */
-    WindowPtr window = static_cast<WindowPtr>(mView->viewport()->handle());
+    WindowPtr window = static_cast <WindowPtr> (mView->viewport()->handle());
     SetPortWindowPort (window);
     CGContextRef ctx;
     QDBeginCGContext (GetWindowPort (window), &ctx);
     /* We handle the seamless mode as a special case. */
-    if (static_cast<VBoxConsoleWnd*>(pMain)->isTrueSeamless())
+    if (static_cast <VBoxConsoleWnd*> (pMain)->isTrueSeamless())
     {
         /* Here we paint the windows without any wallpaper.
          * So the background would be set transparently. */
@@ -209,7 +214,8 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
         CGContextClipToRect (ctx, QRectToCGRect (Q2DViewRect));
         /* At this point draw the real vm image */
         CGContextDrawImage (ctx, QRectToCGRect (Q2DViewRect), subImage);
-    }else
+    }
+    else
     {
         /* Here we paint if we didn't care about any masks */
 
@@ -222,7 +228,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
 
         /* Ok, for more performance we set a clipping path of the
          * regions given by this paint event. */
-        QMemArray<QRect> a = pe->region().rects();
+        QMemArray <QRect> a = pe->region().rects();
         if (a.size() > 0)
         {
             /* Save state for display fliping */
@@ -277,8 +283,8 @@ void VBoxQuartz2DFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     /* Check if we support the pixel format/colordepth and can use the guest VRAM directly.
      * Mac OS X supports 16 bit also but not in the 565 mode. So we could use
      * 32 bit only. */
-    if (re->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB &&
-        re->bitsPerPixel() == 32)
+    if (   re->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB
+        && re->bitsPerPixel() == 32)
     {
 //        printf ("VRAM\n");
         CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
@@ -301,7 +307,7 @@ void VBoxQuartz2DFrameBuffer::resizeEvent (VBoxResizeEvent *re)
         mImage = CGImageCreate (mWdt, mHgt, 8, 32, bitmapBytesPerRow, cs,
                                kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little, dp, 0, false,
                                kCGRenderingIntentDefault);
-        mDataAddress = static_cast<uchar*>(mBitmapData);
+        mDataAddress = static_cast <uchar*> (mBitmapData);
         CGDataProviderRelease (dp);
     }
     CGColorSpaceRelease (cs);
