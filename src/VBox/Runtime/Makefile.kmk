@@ -33,7 +33,7 @@ ifdef VBOX_ONLY_ADDITIONS
  # Only build the additions, sort out the legacy names first.
  #
  ifeq ($(BUILD_TARGET),linux)
-  LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3 RuntimeGuestR3Mini
+  LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3 RuntimeGuestR3 RuntimeGuestR3Mini
  else ifeq ($(BUILD_TARGET),win)
   LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
  else
@@ -46,7 +46,7 @@ ifdef VBOX_ONLY_ADDITIONS
  # Remote cross building... Will be removed unless somebody speaks up!
  #
 else ifdef VBOX_ADDITIONS_LINUX_ONLY
- LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3 RuntimeGuestR3Mini
+ LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3 RuntimeGuestR3 RuntimeGuestR3Mini
 else ifdef VBOX_ADDITIONS_WIN32_ONLY
  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
 else
@@ -65,7 +65,7 @@ else
     LIBRARIES += RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
    endif
    ifdef VBOX_WITH_LINUX_ADDITIONS
-    LIBRARIES += RuntimeLnx32GuestR3 RuntimeGuestR3Mini
+    LIBRARIES += RuntimeLnx32GuestR3 RuntimeGuestR3 RuntimeGuestR3Mini
     ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
      LIBRARIES += RuntimeLnx32GuestR0
     endif
@@ -577,7 +577,7 @@ RuntimeW32GuestR3_INCS         = $(RuntimeR3_INCS.win)    $(RuntimeR3_INCS)
 
 
 #
-# RuntimeLnx32GuestR3 - 32-bit Linux guest program runtime.
+# RuntimeLnx32GuestR3 - 32-bit Linux guest program runtime. Obsoleted by RuntimeGuestR3.
 #
 RuntimeLnx32GuestR3_TEMPLATE   = VBOXLNX32GUESTR3LIB
 RuntimeLnx32GuestR3_DEFS       = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
@@ -1067,7 +1067,7 @@ RuntimeW32NT4GuestR0_SOURCES       = $(RuntimeW32GuestR0_SOURCES)
 
 #
 # RuntimeLnx32GuestR0 - 32-bit Linux guest driver runtime.
-# 
+#
 ## @todo remove this and use RuntimeGuestR0.
 RuntimeLnx32GuestR0_TEMPLATE      = VBOXLNX32GUESTR0
 RuntimeLnx32GuestR0_DEFS          = RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS IN_SUP_R0 \
