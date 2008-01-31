@@ -121,7 +121,7 @@ endif
 vboxvideo_drv_70_DEFS := \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XORG_7X RENDER=1
 ifeq ($(BUILD_TARGET),solaris) # don't use .solaris or anythinger here.
- vboxvideo_drv_70_DEFS += _XPG6
+ vboxvideo_drv_70_DEFS += _XPG6 __EXTENSIONS__
 endif
 vboxvideo_drv_70_INCS = \
 	$(VBOX_PATH_X11_XORG_7_0) \
