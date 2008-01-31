@@ -143,19 +143,18 @@ else ifdef VBOX_WITH_WIN32_ADDITIONS # for ssh cross builds -remove later!
 else ifdef VBOX_WITH_LINUX_ADDITIONS # for ssh cross builds - remove later!
  VBOX_WITH_ADDITIONS = 1
 endif
+# Build the optional ring-0 part of the additions for syntax checking.
+# (Ignored ifndef VBOX_WITH_ADDITIONS. Hack for 32/64 linux issues.)
+VBOX_WITH_ADDITION_DRIVERS = 1
 # Build win32 additions (cross building them on linux and l4 using wine).
 if1of ($(BUILD_TARGET),l4 linux win)
  VBOX_WITH_WIN32_ADDITIONS = 1
 endif
 # Build linux additions.
-# Note! VBOX_WITH_LINUX_ADDITIONS will be removed later and only VBOX_WITH_WIN32_ADDITIONS will
-# be kept around for cross building. That is, unless it is really needed for l4 development (the
-# build server will fetch the .iso from the additions build box).
+# Note! VBOX_WITH_LINUX_ADDITIONS will be removed later and only
+# VBOX_WITH_WIN32_ADDITIONS will be kept around for cross building.
 if1of ($(BUILD_TARGET),l4 linux)
  VBOX_WITH_LINUX_ADDITIONS = 1
- ifeq ($(BUILD_TARGET).$(BUILD_PLATFORM_ARCH),linux.x86)
-  VBOX_WITH_LINUX_ADDITIONS_32BIT_R0 = 1
- endif
 endif
 # Enable the building of shared folders in the windows additions.
 VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS = 1
@@ -2566,31 +2565,6 @@ endif
 
 
 #
-# Template for syntax checking the linux guest additions.
-# Not properly realized yet.
-#
-TEMPLATE_VBOXLNX32GUESTR0         = Template for *syntax checking* linux guest additions kernel modules
-TEMPLATE_VBOXLNX32GUESTR0_TOOL    = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXLNX32GUESTR0_BLD_TRG = linux
-TEMPLATE_VBOXLNX32GUESTR0_DEFS    = __KERNEL__ MODULE IN_GUEST IN_GUEST_R0 IN_RING0 IN_RT_R0
-TEMPLATE_VBOXLNX32GUESTR0_INCS    = $(VBOX_LINUX_INCS)
-TEMPLATE_VBOXLNX32GUESTR0_CFLAGS  = -nostdinc -iwithprefix include \
-	-O2 -Wall -Wstrict-prototypes -Wno-trigraphs $(VBOX_GCC_Wno-pointer-sign) \
-	$(VBOX_GCC_fno-stack-protector) -fno-strict-aliasing -fno-common \
-	-mpreferred-stack-boundary=2 -msoft-float
-TEMPLATE_VBOXLNX32GUESTR0_CXXFLAGS = $(filter-out -Wstrict-prototypes -Wno-pointer-sign,$(TEMPLATE_VBOXLNX32GUESTR0_CFLAGS)) -fno-exceptions -fno-rtti
-ifndef VBOX_LINUX_VERSION_2_4
-# 2.6
-TEMPLATE_VBOXLNX32GUESTR0_SYSSUFF = .ko
-TEMPLATE_VBOXLNX32GUESTR0_LDFLAGS = -m elf_i386 -r
-else
-# 2.4
-TEMPLATE_VBOXLNX32GUESTR0_SYSSUFF = .o
-TEMPLATE_VBOXLNX32GUESTR0_LDFLAGS = -r -s
-endif
-
-
-#
 # Templates for building 32-bit linux guest additions.
 #
 
@@ -2780,11 +2754,15 @@ endif
 TEMPLATE_VBOXGUESTR0            = VBox Guest Driver
 TEMPLATE_VBOXGUESTR0_EXTENDS    = VBOXR0DRV
 TEMPLATE_VBOXGUESTR0_INST       = $(INST_ADDITIONS)
-TEMPLATE_VBOXGUESTR0_BLD_TRG_ARCH   = x86
-TEMPLATE_VBOXGUESTR0_BLD_TRG_CPU    = blend
 TEMPLATE_VBOXGUESTR0_SDKS.win.x86   = WIN32SDK W2K3DDKX86
 TEMPLATE_VBOXGUESTR0_SDKS.win.amd64 = W2K3DDK WINPSDKINCS
-TEMPLATE_VBOXGUESTR0_DEFS       = $(filter-out $(ARCH_BITS_DEFS),$(TEMPLATE_VBOXR0DRV_DEFS)) IN_GUEST IN_GUEST_R0 HC_ARCH_BITS=32 GC_ARCH_BITS=32
+ifn1of ($(BUILD_TARGET),l4 linux) # must be same as the host.
+ TEMPLATE_VBOXGUESTR0_DEFS      = $(filter-out $(ARCH_BITS_DEFS),$(TEMPLATE_VBOXR0DRV_DEFS)) IN_GUEST IN_GUEST_R0 HC_ARCH_BITS=32 GC_ARCH_BITS=32
+ TEMPLATE_VBOXGUESTR0_BLD_TRG_ARCH = x86
+ TEMPLATE_VBOXGUESTR0_BLD_TRG_CPU = blend
+else
+ TEMPLATE_VBOXGUESTR0_DEFS      = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
+endif
 ifeq ($(BUILD_TARGET),l4) # cross building linux on l4.
  TEMPLATE_VBOXGUESTR0_BLD_TRG   = linux
  TEMPLATE_VBOXGUESTR0_SYSSUFF   = .ko

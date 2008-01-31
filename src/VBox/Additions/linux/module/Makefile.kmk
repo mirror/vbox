@@ -19,8 +19,8 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 INSTALLS = vboxmod-bin vboxmod-sh
-ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
-SYSMODS = vboxadd
+ifdef VBOX_WITH_ADDITION_DRIVERS
+ SYSMODS = vboxadd
 endif
 
 #
@@ -39,12 +39,20 @@ vboxmod-sh_SOURCES  = $(subst ",,$(FILES_VBOXADD_BIN))
 #
 # The module (for syntax checking).
 #
-vboxadd_TEMPLATE = VBOXLNX32GUESTR0
-vboxadd_DEFS     = KBUILD_MODNAME=KBUILD_STR\(vboxadd\) KBUILD_BASENAME=KBUILD_STR\(vboxadd\) MODULE IN_RING0 IN_RT_R0 VBGL_VBOXGUEST EXPORT_SYMTAB VBGL_HGCM VBOX_HGCM
-vboxadd_LIBS     = $(PATH_LIB)/VBoxGuestLibBaseLinux.a $(PATH_LIB)/RuntimeLnx32GuestR0.a
-vboxadd_SOURCES  = vboxmod.c cmc.c hgcmcall.c
-vboxadd_INCS     = $(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
+vboxadd_TEMPLATE = VBOXGUESTR0
 vboxadd_NOINST   = 1
+vboxadd_DEFS     = \
+	MODULE IN_RT_R0 VBGL_VBOXGUEST EXPORT_SYMTAB VBGL_HGCM VBOX_HGCM \
+	KBUILD_MODNAME=KBUILD_STR\(vboxadd\) \
+	KBUILD_BASENAME=KBUILD_STR\(vboxadd\)
+vboxadd_INCS     = $(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
+vboxadd_SOURCES  = \
+	vboxmod.c \
+	cmc.c \
+	hgcmcall.c
+vboxadd_LIBS     = \
+	$(VBOX_LIB_VBGL_R0BASE) \
+	$(VBOX_LIB_IPRT_GUEST_R0)
 
 include	$(PATH_KBUILD)/footer.kmk
 
