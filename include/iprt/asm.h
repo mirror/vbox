@@ -2607,26 +2607,26 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t *pu64, const uint64_t u
 #  if RT_INLINE_ASM_GNU_STYLE
     uint64_t u64Ret;
 #   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
-    __asm__ __volatile__("xchgl %%ebx, %1\n\t"
-                         "lock; cmpxchg8b %3\n\t"
-                         "xchgl %%ebx, %1\n\t"
-                         : "=A" (u64Ret)
+    __asm__ __volatile__("xchgl %%ebx, %2\n\t"
+                         "lock; cmpxchg8b %4\n\t"
+                         "xchgl %%ebx, %2\n\t"
+                         : "=A" (u64Ret),
+                           "=m" (*pu64)
                          : "DS" ((uint32_t)u64New),
                            "c" ((uint32_t)(u64New >> 32)),
                            "m" (*pu64),
-                           "0" (u64Old)
-                         : "memory" );
+                           "0" (u64Old));
 #   else /* !PIC */
-    __asm__ __volatile__("lock; cmpxchg8b %3\n\t"
-                         : "=A" (u64Ret)
+    __asm__ __volatile__("lock; cmpxchg8b %4\n\t"
+                         : "=A" (u64Ret),
+                           "=m" (*pu64)
                          : "b" ((uint32_t)u64New),
                            "c" ((uint32_t)(u64New >> 32)),
                            "m" (*pu64),
-                           "0" (u64Old)
-                         : "memory" );
+                           "0" (u64Old));
 #   endif
     *pu64Old = u64Ret;
-    return u64Ret != u64Old;
+    return u64Ret == u64Old;
 #  else
     uint32_t u32Ret;
     __asm
