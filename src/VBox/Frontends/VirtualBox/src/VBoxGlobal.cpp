@@ -677,7 +677,7 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
 {
     VBoxDefs::RenderMode mode = VBoxDefs::InvalidRenderMode;
 
-#if defined (Q_WS_MAC) && defined(VBOX_GUI_USE_QUARTZ2D)
+#if defined (Q_WS_MAC) && defined (VBOX_GUI_USE_QUARTZ2D)
     mode = VBoxDefs::Quartz2DMode;
 #elif (defined (Q_WS_WIN32) || defined (Q_WS_PM)) && defined (VBOX_GUI_USE_QIMAGE)
     mode = VBoxDefs::QImageMode;
