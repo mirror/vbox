@@ -180,7 +180,7 @@ public:
                      bool aEnableSelector /* for "permanent" checkbox */,
                      const SFoldersNameList &aUsedNames)
         : QDialog (aParent, "VBoxAddSFDialog", true /* modal */)
-        , mLePath (0), mLeName (0), mCbPermanent (0), mCbWritable (0)
+        , mLePath (0), mLeName (0), mCbPermanent (0), mCbReadonly (0)
         , mUsedNames (aUsedNames)
     {
         switch (aType)
@@ -224,9 +224,13 @@ public:
 
 		QHBoxLayout *cbLayout = new QHBoxLayout (0, "cbLayout");
         inputLayout->addMultiCellLayout (cbLayout, 2, 2, 0, 2);
-		mCbWritable = new QCheckBox (tr ("&Writable"), this);
-        mCbWritable->setChecked (true);
-        cbLayout->addWidget (mCbWritable);
+		mCbReadonly = new QCheckBox (tr ("&Read-only"), this);
+        QWhatsThis::add (mCbReadonly,
+            tr ("When checked, the guest OS will not be able to write to the "
+                "specified shared folder."));
+
+        mCbReadonly->setChecked (false);
+        cbLayout->addWidget (mCbReadonly);
         if (aEnableSelector)
         {
             mCbPermanent = new QCheckBox ( tr ("&Make Permanent"), this);
@@ -260,7 +264,7 @@ public:
     {
         return mCbPermanent ? mCbPermanent->isChecked() : true;
     }
-	bool getWritable() { return mCbWritable->isChecked(); }
+	bool getWritable() { return !mCbReadonly->isChecked(); }
 
     void setPath (const QString &aPath) { mLePath->setText (aPath); }
     void setName (const QString &aName) { mLeName->setText (aName); }
@@ -272,7 +276,7 @@ public:
             mCbPermanent->setEnabled (!aPermanent);
         }
     }
-	void setWritable (bool aWritable) { mCbWritable->setChecked (aWritable); }
+	void setWritable (bool aWritable) { mCbReadonly->setChecked (!aWritable); }
 
 private slots:
 
@@ -337,7 +341,7 @@ private:
     QLineEdit *mLePath;
     QLineEdit *mLeName;
     QCheckBox *mCbPermanent;
-    QCheckBox *mCbWritable;
+    QCheckBox *mCbReadonly;
     SFoldersNameList mUsedNames;
 };
 
