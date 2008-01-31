@@ -2429,7 +2429,6 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t *pi64, const int64_t i64, 
 }
 
 
-
 /** @def ASMAtomicCmpXchgSize
  * Atomically Compare and Exchange a value which size might differ
  * between platforms or compilers.
@@ -2469,6 +2468,253 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtr(void * volatile *ppv, void *pvNew, void *pv
     return ASMAtomicCmpXchgU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld);
 #elif ARCH_BITS == 64
     return ASMAtomicCmpXchgU64((volatile uint64_t *)(void *)ppv, (uint64_t)pvNew, (uint64_t)pvOld);
+#else
+# error "ARCH_BITS is bogus"
+#endif
+}
+
+
+/**
+ * Atomically Compare and Exchange an unsigned 32-bit value, additionally
+ * passes back old value.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pu32        Pointer to the value to update.
+ * @param   u32New      The new value to assigned to *pu32.
+ * @param   u32Old      The old value to *pu32 compare with.
+ * @param   pu32Old     Pointer store the old value at.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(bool) ASMAtomicCmpXchgExU32(volatile uint32_t *pu32, const uint32_t u32New, const uint32_t u32Old, uint32_t *pu32Old);
+#else
+DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t *pu32, const uint32_t u32New, const uint32_t u32Old, uint32_t *pu32Old)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    uint32_t u32Ret;
+    __asm__ __volatile__("lock; cmpxchgl %3, %0\n\t"
+                         "movl %%eax, %2\n\t"
+                         "setz  %%al\n\t"
+                         "movzbl %%al, %%eax\n\t"
+                         : "=m" (*pu32),
+                           "=a" (u32Ret),
+                           "=m" (*pu32Old)
+                         : "r" (u32New),
+                           "1" (u32Old));
+    return (bool)u32Ret;
+
+# elif RT_INLINE_ASM_USES_INTRIN
+    return (*pu32Old =_InterlockedCompareExchange((long *)pu32, u32New, u32Old)) == u32Old;
+
+# else
+    uint32_t u32Ret;
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+#  else
+        mov     edx, [pu32]
+#  endif
+        mov     eax, [u32Old]
+        mov     ecx, [u32New]
+#  ifdef RT_ARCH_AMD64
+        lock cmpxchg [rdx], ecx
+        mov     rdx, [pu32Old]
+        mov     [rdx], eax
+#  else
+        lock cmpxchg [edx], ecx
+        mov     edx, [pu32Old]
+        mov     [edx], eax
+#  endif
+        setz    al
+        movzx   eax, al
+        mov     [u32Ret], eax
+    }
+    return !!u32Ret;
+# endif
+}
+#endif
+
+
+/**
+ * Atomically Compare and Exchange a signed 32-bit value, additionally
+ * passes back old value.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pi32        Pointer to the value to update.
+ * @param   i32New      The new value to assigned to *pi32.
+ * @param   i32Old      The old value to *pi32 compare with.
+ * @param   pi32Old     Pointer store the old value at.
+ */
+DECLINLINE(bool) ASMAtomicCmpXchgExS32(volatile int32_t *pi32, const int32_t i32New, const int32_t i32Old, int32_t *pi32Old)
+{
+    return ASMAtomicCmpXchgExU32((volatile uint32_t *)pi32, (uint32_t)i32New, (uint32_t)i32Old, (uint32_t *)pi32Old);
+}
+
+
+/**
+ * Atomically Compare and exchange an unsigned 64-bit value, additionally
+ * passing back old value.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pu64    Pointer to the 64-bit variable to update.
+ * @param   u64New  The 64-bit value to assign to *pu64.
+ * @param   u64Old  The value to compare with.
+ * @param   pu32Old     Pointer store the old value at.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(bool) ASMAtomicCmpXchgExU64(volatile uint64_t *pu64, const uint64_t u64New, const uint64_t u64Old, uint64_t *pu64Old);
+#else
+DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t *pu64, const uint64_t u64New, const uint64_t u64Old, uint64_t *pu64Old)
+{
+# if RT_INLINE_ASM_USES_INTRIN
+   return (*pu64Old =_InterlockedCompareExchange64((__int64 *)pu64, u64New, u64Old)) == u64Old;
+
+# elif defined(RT_ARCH_AMD64)
+#  if RT_INLINE_ASM_GNU_STYLE
+    uint64_t u64Ret;
+    __asm__ __volatile__("lock; cmpxchgq %3, %0\n\t"
+                         "movq %%rax, %2\n\t"
+                         "setz  %%al\n\t"
+                         "movzbl %%al, %%eax\n\t"
+                         : "=m" (*pu64),
+                           "=a" (u64Ret),
+                           "=m" (*pu64Old)
+                         : "r" (u64New),
+                           "1" (u64Old));
+    return (bool)u64Ret;
+#  else
+    bool fRet;
+    __asm
+    {
+        mov     rdx, [pu32]
+        mov     rax, [u64Old]
+        mov     rcx, [u64New]
+        lock cmpxchg [rdx], rcx
+        mov     rdx, [pu64Old]
+        mov     [rdx], rax
+        setz    al
+        mov     [fRet], al
+    }
+    return fRet;
+#  endif
+# else /* !RT_ARCH_AMD64 */
+    uint32_t u32Ret;
+#  if RT_INLINE_ASM_GNU_STYLE
+    uint64_t u64Ret;
+#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
+    __asm__ __volatile__("xchgl %%ebx, %2\n\t"
+                         "lock; cmpxchg8b %1\n\t"
+                         "xchgl %%ebx, %2\n\t"
+                         : "=A" (u64Ret),
+                           "=m" (*pu64)
+                         : "DS" (u64New & 0xffffffff),
+                           "c" (u64New >> 32),
+                           "m" (*pu64),
+                           "a" (u64Old & 0xffffffff),
+                           "d" (u64Old >> 32) );
+#   else /* !PIC */
+    __asm__ __volatile__("lock; cmpxchg8b %3\n\t"
+                         : "=A" (u64Ret),
+                           "=m" (*pu64)
+                         : "b" (u64New & 0xffffffff),
+                           "c" (u64New >> 32),
+                           "m" (*pu64),
+                           "a" (u64Old & 0xffffffff),
+                           "d" (u64Old >> 32) );
+#   endif
+    *pu64Old = u64Ret;
+    return u64Ret != u64Old;
+#  else
+    __asm
+    {
+        mov     ebx, dword ptr [u64New]
+        mov     ecx, dword ptr [u64New + 4]
+        mov     edi, [pu64]
+        mov     eax, dword ptr [u64Old]
+        mov     edx, dword ptr [u64Old + 4]
+        lock cmpxchg8b [edi]
+        mov     ebx, [pu64Old]
+        mov     [ebx], eax
+        add     ebx, 8
+        mov     [ebx], edx
+        setz    al
+        movzx   eax, al
+        mov     dword ptr [u32Ret], eax
+    }
+    return !!u32Ret;
+#  endif
+# endif /* !RT_ARCH_AMD64 */
+}
+#endif
+
+
+/**
+ * Atomically Compare and exchange a signed 64-bit value, additionally
+ * passing back old value.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pi64    Pointer to the 64-bit variable to update.
+ * @param   i64     The 64-bit value to assign to *pu64.
+ * @param   i64Old  The value to compare with.
+ * @param   pi64Old Pointer store the old value at.
+ */
+DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64, const int64_t i64Old, int64_t *pi64Old)
+{
+    return ASMAtomicCmpXchgExU64((volatile uint64_t *)pi64, (uint64_t)i64, (uint64_t)i64Old, (uint64_t *)pi64Old);
+}
+
+
+/** @def ASMAtomicCmpXchgExSize
+ * Atomically Compare and Exchange a value which size might differ
+ * between platforms or compilers. Additionally passes back old value.
+ *
+ * @param   pu          Pointer to the value to update.
+ * @param   uNew        The new value to assigned to *pu.
+ * @param   uOld        The old value to *pu compare with.
+ * @param   fRc         Where to store the result.
+ * @param   uOldVal     Where to store the old value.
+ */
+#define ASMAtomicCmpXchgExSize(pu, uNew, uOld, fRc, uOldVal) \
+    do { \
+        switch (sizeof(*(pu))) { \
+            case 4: (fRc) = ASMAtomicCmpXchgExU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew), (uint32_t)(uOld), (uint32_t *)&(uOldVal)); \
+                break; \
+            case 8: (fRc) = ASMAtomicCmpXchgExU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew), (uint64_t)(uOld), (uint64_t *)&(uOldVal)); \
+                break; \
+            default: AssertMsgFailed(("ASMAtomicCmpXchgSize: size %d is not supported\n", sizeof(*(pu)))); \
+                (fRc) = false; \
+                (uOldVal) = 0; \
+                break; \
+        } \
+    } while (0)
+
+
+/**
+ * Atomically Compare and Exchange a pointer value, additionally
+ * passing back old value.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   ppv         Pointer to the value to update.
+ * @param   pvNew       The new value to assigned to *ppv.
+ * @param   pvOld       The old value to *ppv compare with.
+ * @param   ppvOld      Pointer store the old value at.
+ */
+DECLINLINE(bool) ASMAtomicCmpXchgExPtr(void * volatile *ppv, void *pvNew, void *pvOld, void **ppvOld)
+{
+#if ARCH_BITS == 32
+    return ASMAtomicCmpXchgExU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld, (uint32_t *)ppvOld);
+#elif ARCH_BITS == 64
+    return ASMAtomicCmpXchgExU64((volatile uint64_t *)(void *)ppv, (uint64_t)pvNew, (uint64_t)pvOld, (uint64_t *)ppvOld);
 #else
 # error "ARCH_BITS is bogus"
 #endif

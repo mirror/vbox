@@ -660,6 +660,64 @@ static void tstASMAtomicCmpXchgU64(void)
 }
 
 
+static void tstASMAtomicCmpXchgExU32(void)
+{
+    uint32_t u32 = 0xffffffff;
+    uint32_t u32Old = 0x80005111;
+
+    CHECKOP(ASMAtomicCmpXchgExU32(&u32, 0, 0, &u32Old), false, "%d", bool);
+    CHECKVAL(u32, 0xffffffff, "%x");
+    CHECKVAL(u32Old, 0xffffffff, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgExU32(&u32, 0, 0xffffffff, &u32Old), true, "%d", bool);
+    CHECKVAL(u32, 0, "%x");
+    CHECKVAL(u32Old, 0xffffffff, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgExU32(&u32, 0x8008efd, 0xffffffff, &u32Old), false, "%d", bool);
+    CHECKVAL(u32, 0, "%x");
+    CHECKVAL(u32Old, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgExU32(&u32, 0x8008efd, 0, &u32Old), true, "%d", bool);
+    CHECKVAL(u32, 0x8008efd, "%x");
+    CHECKVAL(u32Old, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgExU32(&u32, 0, 0x8008efd, &u32Old), true, "%d", bool);
+    CHECKVAL(u32, 0, "%x");
+    CHECKVAL(u32Old, 0x8008efd, "%x");
+}
+
+
+static void tstASMAtomicCmpXchgExU64(void)
+{
+    uint64_t u64 = 0xffffffffffffffffULL;
+    uint64_t u64Old = 0x8000000051111111ULL;
+
+    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0, 0, &u64Old), false, "%d", bool);
+    CHECKVAL(u64, 0xffffffffffffffffULL, "%llx");
+    CHECKVAL(u64Old, 0xffffffffffffffffULL, "%llx");
+
+    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0, 0xffffffffffffffffULL, &u64Old), true, "%d", bool);
+    CHECKVAL(u64, 0ULL, "%llx");
+    CHECKVAL(u64Old, 0xffffffffffffffffULL, "%llx");
+
+    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0x80040008008efdULL, 0xffffffff, &u64Old), false, "%d", bool);
+    CHECKVAL(u64, 0ULL, "%llx");
+    CHECKVAL(u64Old, 0ULL, "%llx");
+
+    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0x80040008008efdULL, 0xffffffff00000000ULL, &u64Old), false, "%d", bool);
+    CHECKVAL(u64, 0ULL, "%llx");
+    CHECKVAL(u64Old, 0ULL, "%llx");
+
+    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0x80040008008efdULL, 0, &u64Old), true, "%d", bool);
+    CHECKVAL(u64, 0x80040008008efdULL, "%llx");
+    CHECKVAL(u64Old, 0ULL, "%llx");
+
+    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0, 0x80040008008efdULL, &u64Old), true, "%d", bool);
+    CHECKVAL(u64, 0ULL, "%llx");
+    CHECKVAL(u64Old, 0x80040008008efdULL, "%llx");
+}
+
+
 static void tstASMAtomicReadU64(void)
 {
     uint64_t u64 = 0;
@@ -884,6 +942,8 @@ int main(int argc, char *argv[])
     tstASMAtomicXchgPtr();
     tstASMAtomicCmpXchgU32();
     tstASMAtomicCmpXchgU64();
+    tstASMAtomicCmpXchgExU32();
+    tstASMAtomicCmpXchgExU64();
     tstASMAtomicReadU64();
     tstASMAtomicDecIncS32();
     tstASMAtomicAndOrU32();
