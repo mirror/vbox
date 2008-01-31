@@ -49,6 +49,9 @@ __BEGIN_DECLS
 #define VUSB_DT_STRING                  0x03
 #define VUSB_DT_INTERFACE               0x04
 #define VUSB_DT_ENDPOINT                0x05
+#define VUSB_DT_DEVICE_QUALIFIER        0x06
+#define VUSB_DT_OTHER_SPEED_CFG         0x07
+#define VUSB_DT_INTERFACE_POWER         0x08
 /** @} */
 
 /** @name USB Descriptor minimum sizes (from spec)
