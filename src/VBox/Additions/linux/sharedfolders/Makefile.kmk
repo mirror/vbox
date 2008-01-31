@@ -18,8 +18,8 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
-ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
-SYSMODS  = vboxvfs
+ifdef VBOX_WITH_ADDITION_DRIVERS
+ SYSMODS  = vboxvfs
 endif
 PROGRAMS = mountvboxsf
 INSTALLS = vboxvfs-bin vboxvfs-sh
@@ -43,21 +43,24 @@ vboxvfs-sh_SOURCES      = $(subst ",,$(FILES_VBOXVFS_BIN))
 #
 # The module (for syntax checking).
 #
-vboxvfs_TEMPLATE        = VBOXLNX32GUESTR0
-vboxvfs_DEFS           := KBUILD_MODNAME=KBUILD_STR\(vboxadd\) \
-                          KBUILD_BASENAME=KBUILD_STR\(vboxadd\) \
-                          MODULE IN_RING0 IN_RT_R0 VBOXGUEST VBOX_HGCM
-vboxvfs_LIBS            = $(PATH_LIB)/VBoxGuestLibLinux.a $(PATH_LIB)/RuntimeLnx32GuestR0.a
+vboxvfs_TEMPLATE        = VBOXGUESTR0
+vboxvfs_NOINST          = 1
+vboxvfs_CFLAGS          = -fshort-wchar
+vboxvfs_DEFS            = \
+	MODULE IN_RT_R0 VBOXGUEST VBOX_HGCM \
+	KBUILD_MODNAME=KBUILD_STR\(vboxadd\) \
+        KBUILD_BASENAME=KBUILD_STR\(vboxadd\)
+vboxvfs_INCS            = \
+	../../common/VBoxGuestLib \
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
 vboxvfs_SOURCES         = \
 	vfsmod.c \
 	utils.c \
 	dirops.c \
 	regops.c
-vboxvfs_NOINST          = 1
-vboxvfs_CFLAGS         += -fshort-wchar
-vboxvfs_INCS           += \
-	../../common/VBoxGuestLib \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
+vboxvfs_LIBS            = \
+	$(VBOX_LIB_VBGL_R0) \
+	$(VBOX_LIB_IPRT_GUEST_R0)
 
 # detect fc6 2.6.18
 vboxvfs_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
@@ -75,10 +78,10 @@ vboxvfs_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
 # The mount util.
 #
 mountvboxsf_TEMPLATE    = VBOXLNX32GUESTR3EXENOCPP
+mountvboxsf_DEFS        = _GNU_SOURCE
 mountvboxsf_SOURCES     = \
 	vbsfmount.h \
 	mount.vboxsf.c
-mountvboxsf_DEFS        = _GNU_SOURCE
 
 
 include	$(PATH_KBUILD)/footer.kmk

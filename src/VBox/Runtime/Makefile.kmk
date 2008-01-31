@@ -32,21 +32,29 @@ ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
  #
- ifeq ($(BUILD_TARGET),linux)
-  LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3 RuntimeGuestR3 RuntimeGuestR3Mini
- else ifeq ($(BUILD_TARGET),win)
+ ifeq ($(BUILD_TARGET),win)
   LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
  else
   LIBRARIES = RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
   #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
   #LIBRARIES.win = RuntimeW32NT4GuestR0
+  if1of ($(BUILD_TARGET), linux l4) ## @todo eliminate this.
+   LIBRARIES += RuntimeLnx32GuestR3
+  endif
+  ifndef VBOX_WITH_ADDITION_DRIVERS
+   if1of ($(BUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
+    LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
+   endif
+  endif
  endif
 
  #
  # Remote cross building... Will be removed unless somebody speaks up!
+ ## @todo Remove this tomorrow.
  #
 else ifdef VBOX_ADDITIONS_LINUX_ONLY
- LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3 RuntimeGuestR3 RuntimeGuestR3Mini
+ LIBRARIES  = RuntimeLnx32GuestR3 \
+	RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
 else ifdef VBOX_ADDITIONS_WIN32_ONLY
  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
 else
@@ -60,19 +68,21 @@ else
   LIBRARIES += RuntimeR0Drv
  endif
  ifdef VBOX_WITH_ADDITIONS
-  if1of ($(BUILD_TARGET),linux l4 win)
-   ifdef VBOX_WITH_WIN32_ADDITIONS
-    LIBRARIES += RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
-   endif
-   ifdef VBOX_WITH_LINUX_ADDITIONS
-    LIBRARIES += RuntimeLnx32GuestR3 RuntimeGuestR3 RuntimeGuestR3Mini
-    ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
-     LIBRARIES += RuntimeLnx32GuestR0
-    endif
-   endif
-  else
+  ifdef VBOX_WITH_WIN32_ADDITIONS
+   LIBRARIES += RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
+  endif
+  ifneq ($(BUILD_TARGET),win)
    LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Mini
    #LIBRARIES.os2 = RuntimeOS2Warp3GuestR0
+   #LIBRARIES.win = RuntimeW32NT4GuestR0
+   ifdef VBOX_WITH_LINUX_ADDITIONS ## @todo eliminate this ASAP
+    LIBRARIES += RuntimeLnx32GuestR3
+   endif
+   ifndef VBOX_WITH_ADDITION_DRIVERS
+    if1of ($(BUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
+     LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
+    endif
+   endif
   endif
  endif # VBOX_WITH_ADDITIONS
  LIBRARIES.l4 = RuntimeR3L4 RuntimeLnxHostR3
@@ -1063,20 +1073,6 @@ RuntimeW32NT4GuestR0_SDKS          = $(RuntimeW32GuestR0_SDKS)
 RuntimeW32NT4GuestR0_DEFS          = $(RuntimeW32GuestR0_DEFS) IPRT_TARGET_NT4
 RuntimeW32NT4GuestR0_INCS          = $(RuntimeW32GuestR0_INCS)
 RuntimeW32NT4GuestR0_SOURCES       = $(RuntimeW32GuestR0_SOURCES)
-
-
-#
-# RuntimeLnx32GuestR0 - 32-bit Linux guest driver runtime.
-#
-## @todo remove this and use RuntimeGuestR0.
-RuntimeLnx32GuestR0_TEMPLATE      = VBOXLNX32GUESTR0
-RuntimeLnx32GuestR0_DEFS          = RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS IN_SUP_R0 \
-                                    MODULE KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\)
-RuntimeLnx32GuestR0_INCS          = $(RuntimeR0Drv_INCS.linux) $(RuntimeR0Drv_INCS)
-RuntimeLnx32GuestR0_SOURCES       = \
-	$(RuntimeR0Drv_SOURCES) \
-	$(RuntimeR0Drv_SOURCES.linux) \
-	VBox/logbackdoor.cpp
 
 
 #

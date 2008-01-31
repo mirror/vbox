@@ -19,6 +19,9 @@ DEPTH ?= ../../../../..
 SUB_DEPTH = ../..
 include	$(PATH_KBUILD)/subheader.kmk
 
+#
+# Target config.
+#
 ifn1of ($(BUILD_TARGET),l4 linux win)
  LIBRARIES += \
 	VBoxGuestR0Lib \
@@ -44,18 +47,22 @@ else
   endif
  endif
  ifdef VBOX_WITH_LINUX_ADDITIONS
-  ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
    LIBRARIES += \
-  	VBoxGuestLibLinux \
-  	VBoxGuestLibBaseLinux
-  endif
-   LIBRARIES += \
+	VBoxGuestR0Lib \
+	VBoxGuestR0LibBase \
   	VBoxGuestR3Lib \
 	VBoxGuestR3LibShared \
   	VBoxGuestR3LibXFree86 \
   	VBoxGuestR3LibLinux
  endif
 endif
+
+ifndef VBOX_WITH_ADDITION_DRIVERS
+ if1of ($(BUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
+  LIBRARIES := $(filter-out VBoxGuestR0Lib VBoxGuestR0LibBase, $(LIBRARIES))
+ endif
+endif
+
 
 #
 # VBoxGuestR0Lib
@@ -167,23 +174,6 @@ VBoxGuestLibBase_DEFS       = $(VBoxGuestLib_DEFS) VBGL_VBOXGUEST
 VBoxGuestLibBase_DEFS.win   = $(VBoxGuestLib_DEFS.win)
 #VBoxGuestLibBase_DEFS      += LOG_ENABLED
 
-
-#
-# VBoxGuestLibLinux
-#
-VBoxGuestLibLinux_TEMPLATE  = VBOXLNX32GUESTR0
-VBoxGuestLibLinux_SOURCES   = $(VBoxGuestR0Lib_SOURCES)
-VBoxGuestLibLinux_INCS      = $(VBoxGuestLib_INCS)
-VBoxGuestLibLinux_DEFS      = VBOX_HGCM LOG_TO_BACKDOOR
-
-
-#
-# VBoxGuestLibBaseLinux
-#
-VBoxGuestLibBaseLinux_TEMPLATE = VBOXLNX32GUESTR0
-VBoxGuestLibBaseLinux_SOURCES  = $(VBoxGuestR0LibBase_SOURCES)
-VBoxGuestLibBaseLinux_INCS     = $(VBoxGuestLib_INCS)
-VBoxGuestLibBaseLinux_DEFS     = VBOX_HGCM VBGL_VBOXGUEST LOG_TO_BACKDOOR
 
 #
 # VBoxGuestR3LibLinux
