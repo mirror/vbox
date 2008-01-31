@@ -95,15 +95,15 @@ enum { UPDATE_FREQ = 1000 / 60 }; // a-la 60Hz
 
 #if defined (Q_WS_WIN32)
 
-static HHOOK g_kbdhook = NULL;
-static VBoxConsoleView *g_view = 0;
+static HHOOK gKbdHook = NULL;
+static VBoxConsoleView *gView = 0;
 
 LRESULT CALLBACK VBoxConsoleView::lowLevelKeyboardProc (int nCode,
                                                         WPARAM wParam, LPARAM lParam)
 {
-    Assert (g_view);
-    if (g_view && nCode == HC_ACTION &&
-            g_view->winLowKeyboardEvent (wParam, *(KBDLLHOOKSTRUCT *) lParam))
+    Assert (gView);
+    if (gView && nCode == HC_ACTION &&
+            gView->winLowKeyboardEvent (wParam, *(KBDLLHOOKSTRUCT *) lParam))
         return 1;
 
     return CallNextHookEx (NULL, nCode, wParam, lParam);
@@ -752,11 +752,11 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
 
 #if defined (Q_WS_WIN)
-    g_view = this;
+    gView = this;
 #endif
 
 #if defined (Q_WS_PM)
-    bool ok = VBoxHlpInstallKbdHook (0, winId(), WM_CHAR);
+    bool ok = VBoxHlpInstallKbdHook (0, winId(), UM_PREACCEL_CHAR);
     Assert (ok);
     NOREF (ok);
 #endif
@@ -769,15 +769,15 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 VBoxConsoleView::~VBoxConsoleView()
 {
 #if defined (Q_WS_PM)
-    bool ok = VBoxHlpUninstallKbdHook (0, winId(), WM_CHAR);
+    bool ok = VBoxHlpUninstallKbdHook (0, winId(), UM_PREACCEL_CHAR);
     Assert (ok);
     NOREF (ok);
 #endif
 
 #if defined (Q_WS_WIN)
-    if (g_kbdhook)
-        UnhookWindowsHookEx (g_kbdhook);
-    g_view = 0;
+    if (gKbdHook)
+        UnhookWindowsHookEx (gKbdHook);
+    gView = 0;
     if (mAlphaCursor)
         DestroyIcon (mAlphaCursor);
 #endif
@@ -1268,8 +1268,94 @@ bool VBoxConsoleView::event (QEvent *e)
             }
 
             case QEvent::KeyPress:
+#ifdef Q_WS_PM
+            case QEvent::KeyRelease:
+            {
+                /// @todo temporary solution to send Alt+Tab and friends to
+                //  the guest. The proper solution is to write a keyboard
+                //  driver that will steal these combos from the host (it's
+                //  impossible to do so using hooks on OS/2).
+
+                QKeyEvent *ke = (QKeyEvent *) e;
+                if (mIsHostkeyPressed)
+                {
+                    bool pressed = e->type() == QEvent::KeyPress;
+                    CKeyboard keyboard = mConsole.GetKeyboard();
+
+                    /* whether the host key is Shift so that it will modify
+                     * the hot key values? Note that we don't distinguish
+                     * between left and right shift here (too much hassle) */
+                    const bool kShift = (gs.hostKey() == VK_SHIFT ||
+                                        gs.hostKey() == VK_LSHIFT) &&
+                                        (ke->state() & ShiftButton);
+                    /* define hot keys according to the Shift state */
+                    const int kAltTab      = kShift ? Key_Exclam     : Key_1;
+                    const int kAltShiftTab = kShift ? Key_At         : Key_2;
+                    const int kCtrlEsc     = kShift ? Key_AsciiTilde : Key_QuoteLeft;
+
+                    /* Simulate Alt+Tab on Host+1 and Alt+Shift+Tab on Host+2 */
+                    if (ke->key() == kAltTab || ke->key() == kAltShiftTab)
+                    {
+                        if (pressed)
+                        {
+                            /* Send the Alt press to the guest */
+                            if (!(mPressedKeysCopy [0x38] & IsKeyPressed))
+                            {
+                                /* store the press in *Copy to have it automatically
+                                 * released when the Host key is released */
+                                mPressedKeysCopy [0x38] |= IsKeyPressed;
+                                keyboard.PutScancode (0x38);
+                            }
+
+                            /* Make sure Shift is pressed if it's Key_2 and released
+                             * if it's Key_1 */
+                            if (ke->key() == kAltTab &&
+                                (mPressedKeysCopy [0x2A] & IsKeyPressed))
+                            {
+                                mPressedKeysCopy [0x2A] &= ~IsKeyPressed;
+                                keyboard.PutScancode (0xAA);
+                            }
+                            else
+                            if (ke->key() == kAltShiftTab &&
+                                !(mPressedKeysCopy [0x2A] & IsKeyPressed))
+                            {
+                                mPressedKeysCopy [0x2A] |= IsKeyPressed;
+                                keyboard.PutScancode (0x2A);
+                            }
+                        }
+
+                        keyboard.PutScancode (pressed ? 0x0F : 0x8F);
+
+                        ke->accept();
+                        return true;
+                    }
+
+                    /* Simulate Ctrl+Esc on Host+Tilde */
+                    if (ke->key() == kCtrlEsc)
+                    {
+                        /* Send the Ctrl press to the guest */
+                        if (pressed && !(mPressedKeysCopy [0x1d] & IsKeyPressed))
+                        {
+                            /* store the press in *Copy to have it automatically
+                             * released when the Host key is released */
+                            mPressedKeysCopy [0x1d] |= IsKeyPressed;
+                            keyboard.PutScancode (0x1d);
+                        }
+
+                        keyboard.PutScancode (pressed ? 0x01 : 0x81);
+
+                        ke->accept();
+                        return true;
+                    }
+                }
+                if (e->type() == QEvent::KeyRelease)
+                    break;
+
+                /* fall through for normal processing of KeyPress */
+#else
             {
                 QKeyEvent *ke = (QKeyEvent *) e;
+#endif
                 if (mIsHostkeyPressed)
                 {
                     if (ke->key() >= Key_F1 && ke->key() <= Key_F12)
@@ -1294,7 +1380,6 @@ bool VBoxConsoleView::event (QEvent *e)
                             Assert (0);
 
                         CKeyboard keyboard = mConsole.GetKeyboard();
-                        Assert (!keyboard.isNull());
                         keyboard.PutScancodes (combo, 6);
                     }
                     else if (ke->key() == Key_Home)
@@ -1415,17 +1500,17 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
              */
             case QEvent::WindowActivate:
             {
-                g_kbdhook = SetWindowsHookEx (WH_KEYBOARD_LL, lowLevelKeyboardProc,
+                gKbdHook = SetWindowsHookEx (WH_KEYBOARD_LL, lowLevelKeyboardProc,
                                               GetModuleHandle (NULL), 0);
-                AssertMsg (g_kbdhook, ("SetWindowsHookEx(): err=%d", GetLastError()));
+                AssertMsg (gKbdHook, ("SetWindowsHookEx(): err=%d", GetLastError()));
                 break;
             }
             case QEvent::WindowDeactivate:
             {
-                if (g_kbdhook)
+                if (gKbdHook)
                 {
-                    UnhookWindowsHookEx (g_kbdhook);
-                    g_kbdhook = NULL;
+                    UnhookWindowsHookEx (gKbdHook);
+                    gKbdHook = NULL;
                 }
                 break;
             }
@@ -1558,8 +1643,11 @@ bool VBoxConsoleView::winEvent (MSG *msg)
         return false;
 
     /* check for the special flag possibly set at the end of this function */
-    if ((msg->lParam >> 25) & 0x1)
+    if (msg->lParam & (0x1 << 25))
+    {
+        msg->lParam &= ~(0x1 << 25);
         return false;
+    }
 
 #if 0
     char buf [256];
@@ -1660,17 +1748,35 @@ bool VBoxConsoleView::winEvent (MSG *msg)
  */
 bool VBoxConsoleView::pmEvent (QMSG *aMsg)
 {
-    if (!mAttached || aMsg->msg != WM_CHAR)
+    if (!mAttached)
+        return false;
+
+    if (aMsg->msg == UM_PREACCEL_CHAR)
+    {
+        /* we are inside the input hook */
+
+        /* let the message go through the normal system pipeline */
+        if (!mKbdCaptured)
+            return false;
+    }
+
+    if (aMsg->msg != WM_CHAR &&
+        aMsg->msg != UM_PREACCEL_CHAR)
         return false;
 
     /* check for the special flag possibly set at the end of this function */
     if (SHORT2FROMMP (aMsg->mp2) & 0x8000)
+    {
+        aMsg->mp2 = MPFROM2SHORT (SHORT1FROMMP (aMsg->mp2),
+                                  SHORT2FROMMP (aMsg->mp2) & ~0x8000);
         return false;
+    }
 
 #if 0
     {
         char buf [256];
-        sprintf (buf, "*** WM_CHAR: f=%04X rep=%03d scan=%02X ch=%04X vk=%04X",
+        sprintf (buf, "*** %s: f=%04X rep=%03d scan=%02X ch=%04X vk=%04X",
+                 (aMsg->msg == WM_CHAR ? "WM_CHAR" : "UM_PREACCEL_CHAR"),
                  SHORT1FROMMP (aMsg->mp1), CHAR3FROMMP (aMsg->mp1),
                  CHAR4FROMMP (aMsg->mp1), SHORT1FROMMP (aMsg->mp2),
                  SHORT2FROMMP (aMsg->mp2));
@@ -1741,7 +1847,7 @@ bool VBoxConsoleView::pmEvent (QMSG *aMsg)
          * to let Qt process the message (to handle non-alphanumeric <HOST>+key
          * shortcuts for example). So send it direcltly to the window with the
          * special flag in the reserved area of lParam (to avoid recursion). */
-        ::WinSendMsg (aMsg->hwnd, aMsg->msg,
+        ::WinSendMsg (aMsg->hwnd, WM_CHAR,
                       aMsg->mp1,
                       MPFROM2SHORT (SHORT1FROMMP (aMsg->mp2),
                                     SHORT2FROMMP (aMsg->mp2) | 0x8000));
@@ -2348,8 +2454,9 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
     if (emitSignal)
         emitKeyboardStateChanged();
 
-    /* process HOST+<key> shortcuts. currently, <key> is limited to
-     * alphanumeric chars. */
+    /* Process Host+<key> shortcuts. currently, <key> is limited to
+     * alphanumeric chars. Other Host+<key> combinations are handled in
+     * event(). */
     if (hotkey)
     {
         bool processed = false;
