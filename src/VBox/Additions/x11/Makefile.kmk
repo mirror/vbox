@@ -20,7 +20,7 @@ include $(PATH_KBUILD)/subheader.kmk
 
 # Include sub-dirs.
 SUBDIRS =
-if1of ($(BUILD_TARGET),linux solaris)
+if1of ($(BUILD_TARGET),l4 linux solaris)
 SUBDIRS += \
 	xclient \
 	xgraphics \
