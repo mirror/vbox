@@ -282,6 +282,9 @@ private:
 #endif
 
     QPixmap mPausedShot;
+#if defined(Q_WS_MAC)
+    CGImageRef mVirtualBoxLogo;
+#endif
 };
 
 #endif // __VBoxConsoleView_h__

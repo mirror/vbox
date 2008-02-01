@@ -335,11 +335,9 @@ private:
 
 #ifdef Q_WS_MAC
     // Dock images.
-    CGImageRef dockImgStateRunning;
     CGImageRef dockImgStatePaused;
     CGImageRef dockImgStateSaving;
     CGImageRef dockImgStateRestoring;
-    CGImageRef dockImgBack75x75;
     CGImageRef dockImgBack100x75;
     CGImageRef dockImgOS;
     /* For the fade effect if the the window goes fullscreen */

@@ -121,11 +121,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , dbg_gui (NULL)
 #endif
 #ifdef Q_WS_MAC
-    , dockImgStateRunning (NULL)
     , dockImgStatePaused (NULL)
     , dockImgStateSaving (NULL)
     , dockImgStateRestoring (NULL)
-    , dockImgBack75x75 (NULL)
     , dockImgBack100x75 (NULL)
     , dockImgOS (NULL)
 #endif
@@ -581,14 +579,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
 #ifdef Q_WS_MAC
     /* prepare the dock images */
-    dockImgStateRunning   = ::DarwinCreateDockBadge ("state_running_16px.png");
     dockImgStatePaused    = ::DarwinCreateDockBadge ("state_paused_16px.png");
     dockImgStateSaving    = ::DarwinCreateDockBadge ("state_saving_16px.png");
     dockImgStateRestoring = ::DarwinCreateDockBadge ("state_restoring_16px.png");
-    dockImgBack75x75      = ::DarwinCreateDockBadge ("dock_0.png");
     dockImgBack100x75     = ::DarwinCreateDockBadge ("dock_1.png");
     SetApplicationDockTileImage (dockImgOS);
-    OverlayApplicationDockTileImage (dockImgStateRunning);
 #endif
     mMaskShift.scale (0, 0, QSize::ScaleFree);
 }
@@ -597,16 +592,12 @@ VBoxConsoleWnd::~VBoxConsoleWnd()
 {
 #ifdef Q_WS_MAC
     /* release the dock images */
-    if (dockImgStateRunning)
-        CGImageRelease (dockImgStateRunning);
     if (dockImgStatePaused)
         CGImageRelease (dockImgStatePaused);
     if (dockImgStateSaving)
         CGImageRelease (dockImgStateSaving);
     if (dockImgStateRestoring)
         CGImageRelease (dockImgStateRestoring);
-    if (dockImgBack75x75)
-        CGImageRelease (dockImgBack75x75);
     if (dockImgBack100x75)
         CGImageRelease (dockImgBack100x75);
     if (dockImgOS)
@@ -799,22 +790,19 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
 #ifdef Q_WS_MAC
     QString osTypeId = cmachine.GetOSTypeId();
-# if 0
-    QImage osImg75x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).convertToImage().smoothScale (75, 75);
-    QImage osImg = QImage::fromMimeSource ("dock_0.png");
-    bitBlt (&osImg, 25, 22,
-            &osImg75x75, 0, 0,
-            75, 75, /* conversion_flags */ 0);
-# else
     QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).convertToImage().smoothScale (100, 75);
     QImage osImg = QImage::fromMimeSource ("dock_1.png");
     bitBlt (&osImg, 14, 22,
             &osImg100x75, 0, 0,
             100, 75, /* conversion_flags */ 0);
-# endif
+    QImage VBoxOverlay = QImage::fromMimeSource ("VirtualBox_48px.png");
+    bitBlt (&osImg, osImg.width() - VBoxOverlay.width(), osImg.height() - VBoxOverlay.height(),
+            &VBoxOverlay, 0, 0,
+            VBoxOverlay.width(), VBoxOverlay.height(), /* conversion_flags */ 0);
     if (dockImgOS)
         CGImageRelease (dockImgOS);
     dockImgOS = ::DarwinQImageToCGImage (&osImg);
+    SetApplicationDockTileImage (dockImgOS);
 #endif
 
     /* set the correct initial machine_state value */
@@ -1908,13 +1896,6 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         else
             vmDisableMouseIntegrAction->setEnabled (false);
     }
-
-#ifdef Q_WS_MAC
-    SetApplicationDockTileImage (dockImgOS);
-    CGImageRef img = dockImageState();
-    if (img)
-        OverlayApplicationDockTileImage (img);
-#endif
 }
 
 /**
@@ -2190,9 +2171,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 CGImageRef VBoxConsoleWnd::dockImageState() const
 {
     CGImageRef img;
-    if (machine_state == CEnums::Running)
-        img = dockImgStateRunning;
-    else if (machine_state == CEnums::Paused)
+    if (machine_state == CEnums::Paused)
         img = dockImgStatePaused;
     else if (machine_state == CEnums::Restoring)
         img = dockImgStateRestoring;
@@ -3169,6 +3148,12 @@ void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
                 vboxProblem().cannotStopMachine (cconsole);
         }
     }
+
+#ifdef Q_WS_MAC
+    CGImageRef img = dockImageState();
+    if (img)
+        OverlayApplicationDockTileImage (img);
+#endif
 }
 
 void VBoxConsoleWnd::updateMouseState (int state)
