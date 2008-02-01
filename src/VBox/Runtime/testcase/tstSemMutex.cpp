@@ -34,31 +34,45 @@
 #include <iprt/initterm.h>
 #include <iprt/asm.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #define SECONDS 10
 
 static RTSEMMUTEX g_mutex;
 static uint64_t   g_au64[10];
 static bool       g_fTerminate;
+static bool       g_fYield = true;
 static uint32_t   g_cbConcurrent;
+
+static uint32_t volatile    g_cErrors;
+
+
+int PrintError(const char *pszFormat, ...)
+{
+    ASMAtomicIncU32(&g_cErrors);
+
+    RTPrintf("tstSemMutex: FAILURE - ");
+    va_list va;
+    va_start(va, pszFormat);
+    RTPrintfV(pszFormat, va);
+    va_end(va);
+
+    return 1;
+}
 
 
 int ThreadTest(RTTHREAD ThreadSelf, void *pvUser)
 {
-    uint64_t *pu64 = (uint64_t*) pvUser;
+    uint64_t *pu64 = (uint64_t *)pvUser;
     for (;;)
     {
         int rc = RTSemMutexRequestNoResume(g_mutex, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("%x: RTSemMutexRequestNoResume failed with %Vrc\n", rc);
+            PrintError("%x: RTSemMutexRequestNoResume failed with %Rrc\n", rc);
             break;
         }
         if (ASMAtomicIncU32(&g_cbConcurrent) != 1)
         {
-            RTPrintf("g_cbConcurrent=%d after request!\n", g_cbConcurrent);
+            PrintError("g_cbConcurrent=%d after request!\n", g_cbConcurrent);
             break;
         }
 
@@ -68,25 +82,26 @@ int ThreadTest(RTTHREAD ThreadSelf, void *pvUser)
         (*pu64)++;
 
         /*
-         * Check for correctness: Give other threads a chance. If the implementation is 
+         * Check for correctness: Give other threads a chance. If the implementation is
          * correct, no other thread will be able to enter this lock now.
          */
-        RTThreadYield();
+        if (g_fYield)
+            RTThreadYield();
         if (ASMAtomicDecU32(&g_cbConcurrent) != 0)
         {
-            RTPrintf("g_cbConcurrent=%d before release!\n", g_cbConcurrent);
+            PrintError("g_cbConcurrent=%d before release!\n", g_cbConcurrent);
             break;
         }
         rc = RTSemMutexRelease(g_mutex);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("%x: RTSemMutexRelease failed with %Vrc\n", rc);
+            PrintError("%x: RTSemMutexRelease failed with %Rrc\n", rc);
             break;
         }
         if (g_fTerminate)
             break;
     }
-    RTPrintf("Thread %08x exited with %lld\n", ThreadSelf, *pu64);
+    RTPrintf("tstSemMutex: Thread %08x exited with %lld\n", ThreadSelf, *pu64);
     return VINF_SUCCESS;
 }
 
@@ -94,39 +109,49 @@ int main()
 {
     int rc;
     unsigned u;
-    RTTHREAD Thread[ELEMENTS(g_au64)];
+    RTTHREAD aThreads[RT_ELEMENTS(g_au64)];
 
     rc = RTR3Init(false, 0);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("RTR3Init failed (rc=%Vrc)\n", rc);
-        exit(1);
+        RTPrintf("tstSemMutex: RTR3Init failed (rc=%Rrc)\n", rc);
+        return 1;
     }
+
+
     rc = RTSemMutexCreate(&g_mutex);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("RTSemMutexCreate failed (rc=%Vrc)\n", rc);
-        exit(1);
+        RTPrintf("tstSemMutex: RTSemMutexCreate failed (rc=%Rrc)\n", rc);
+        return 1;
     }
-    for (u=0; u<ELEMENTS(g_au64); u++)
+    for (u = 0; u < RT_ELEMENTS(g_au64); u++)
     {
-        rc = RTThreadCreate(&Thread[u], ThreadTest, &g_au64[u], 0, RTTHREADTYPE_DEFAULT, 0, "test");
+        rc = RTThreadCreate(&aThreads[u], ThreadTest, &g_au64[u], 0, RTTHREADTYPE_DEFAULT, 0, "test");
         if (RT_FAILURE(rc))
         {
-            RTPrintf("RTThreadCreate failed for thread %u (rc=%Vrc)\n", u, rc);
-            exit(1);
+            RTPrintf("tstSemMutex: RTThreadCreate failed for thread %u (rc=%Rrc)\n", u, rc);
+            return 1;
         }
     }
 
-    RTPrintf("%u Threads created. Waiting for %u seconds ...\n", ELEMENTS(g_au64), SECONDS);
+    RTPrintf("tstSemMutex: %zu Threads created. Racing them for %u seconds (%s) ...\n",
+             RT_ELEMENTS(g_au64), SECONDS, g_fYield ? "yielding" : "no yielding");
     RTThreadSleep(SECONDS * 1000);
     g_fTerminate = true;
     RTThreadSleep(100);
     RTSemMutexDestroy(g_mutex);
     RTThreadSleep(100);
 
-    for (u=1; u<ELEMENTS(g_au64); u++)
+    for (u = 1; u < RT_ELEMENTS(g_au64); u++)
         g_au64[0] += g_au64[u];
+    RTPrintf("tstSemMutex: Done. In total: %lld\n", g_au64[0]);
 
-    RTPrintf("Done. In total: %lld\n", g_au64[0]);
+
+    if (!g_cErrors)
+        RTPrintf("tstSemMutex: SUCCESS\n");
+    else
+        RTPrintf("tstSemMutex: FAILURE - %u errors\n", g_cErrors);
+    return g_cErrors != 0;
 }
+
