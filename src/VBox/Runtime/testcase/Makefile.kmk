@@ -71,7 +71,8 @@ PROGRAMS.linux = \
 	tstRTProcWait \
 	tstBitOperationsPIC3 \
 	tstInlineAsmPIC \
-	tstInlineAsmPIC3
+	tstInlineAsmPIC3 \
+	tstSemMutex
 PROGRAMS.l4 = \
 	tstIoCtl
 SYSMODS = \
@@ -110,6 +111,8 @@ tstLog_SOURCES  = tstLog.cpp
 tstPath_SOURCES = tstPath.cpp
 
 tstSems_SOURCES = tstSems.cpp
+
+tstSemMutex_SOURCES = tstSemMutex.cpp
 
 tstAvl_SOURCES  = tstAvl.cpp
 
