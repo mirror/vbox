@@ -38,7 +38,7 @@ fi
 #
 # Do the job.
 #
-$SUDO cp $DIR/vboxdrv.o $VBOXDRV_DIR/vboxdrv
+$SUDO cp $DIR/vboxdrv $VBOXDRV_DIR/vboxdrv
 $SUDO cp $script_dir/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf $VBOXDRV_CONF_DIR/vboxdrv.conf
 old_id=`/usr/sbin/modinfo | grep vbox | cut -f 1 -d ' ' `
 if test -n "$old_id"; then
