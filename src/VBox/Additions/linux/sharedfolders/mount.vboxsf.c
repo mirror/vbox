@@ -1,7 +1,5 @@
 /** @file
- *
- * vboxvfs -- VirtualBox Guest Additions for Linux:
- * mount(0) helper
+ * vboxvfs -- VirtualBox Guest Additions for Linux: mount(8) helper
  *
  * Parses options provided by mount (or user directly)
  * Packs them into struct vbsfmount and passes to mount(2)
