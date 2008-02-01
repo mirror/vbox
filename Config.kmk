@@ -2571,7 +2571,7 @@ endif
 #
 # Templates for building 32-bit linux guest additions.
 #
-
+## @todo Eliminate VBOXLNX32GUESTR3EXE and VBOXLNX32GUESTR3EXENOCPP.
 TEMPLATE_VBOXLNX32GUESTR3EXE                   = Template for building 32-bit linux guest additions programs.
 TEMPLATE_VBOXLNX32GUESTR3EXE_INST              = $(INST_ADDITIONS)
 TEMPLATE_VBOXLNX32GUESTR3EXE_BLD_TRG           = linux
