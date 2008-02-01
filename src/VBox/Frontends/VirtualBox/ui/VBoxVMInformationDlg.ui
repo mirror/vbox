@@ -140,6 +140,7 @@
 <slots>
     <slot access="protected">updateDetails()</slot>
     <slot access="protected">processStatistics()</slot>
+    <slot access="protected">onPageChanged( QWidget* )</slot>
 </slots>
 <functions>
     <function specifier="static">createInformationDlg( const CSession&amp;, VBoxConsoleView* )</function>
@@ -155,7 +156,9 @@
     <function access="protected">resizeEvent( QResizeEvent* )</function>
     <function returnType="QString" access="pritave">parseStatistics( const QString &amp; )</function>
     <function access="pritave">refreshStatistics()</function>
-    <function returnType="QString" access="pritave">composeArticle( const QString &amp;, int, int, int, int )</function>
+    <function returnType="QString" access="pritave">formatHardDisk( const QString &amp;, CEnums::DiskControllerType, LONG, int, int )</function>
+    <function returnType="QString" access="pritave">formatAdapter( const QString &amp;, ULONG, int, int )</function>
+    <function returnType="QString" access="pritave">composeArticle( const QString &amp;, int, int )</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>

@@ -35,7 +35,8 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
     if (mSelfArray.find (machine.GetName()) == mSelfArray.end())
     {
         /* creating new information dialog if there is no one existing */
-        mSelfArray [machine.GetName()] = new VBoxVMInformationDlg (0,
+        mSelfArray [machine.GetName()] = new VBoxVMInformationDlg (
+            aConsole->topLevelWidget(),
             "VBoxVMInformationDlg", WType_TopLevel | WDestructiveClose);
         /* read new machine data for this information dialog */
         mSelfArray [machine.GetName()]->setup (aSession, aConsole);
@@ -71,22 +72,21 @@ void VBoxVMInformationDlg::init()
 
     /* logs list creation */
     mInfoStack = new QTabWidget (mInfoFrame, "mInfoStack");
+    mInfoStack->setMargin (10);
     QVBoxLayout *infoFrameLayout = new QVBoxLayout (mInfoFrame);
     infoFrameLayout->addWidget (mInfoStack);
 
     /* details view creation */
     mDetailsText = new QTextBrowser();
-	mDetailsText->setFrameShape (QFrame::NoFrame);
-    mDetailsText->setMargin (3);
+    mDetailsText->setFrameShape (QFrame::NoFrame);
     mDetailsText->setPaper (backgroundBrush());
     mInfoStack->addTab (mDetailsText,
-                        VBoxGlobal::iconSet ("help_16px.png"),
+                        VBoxGlobal::iconSet ("settings_16px.png"),
                         QString::null);
 
     /* statistic view creation */
     mStatisticText = new QTextBrowser();
-	mStatisticText->setFrameShape (QFrame::NoFrame);
-    mStatisticText->setMargin (3);
+    mStatisticText->setFrameShape (QFrame::NoFrame);
     mStatisticText->setPaper (backgroundBrush());
     mInfoStack->addTab (mStatisticText,
                         VBoxGlobal::iconSet ("state_running_16px.png"),
@@ -94,8 +94,7 @@ void VBoxVMInformationDlg::init()
 
     /* full list of statistics counters to get total info */
     // mDefStatText = new QTextBrowser();
-	// mDefStatText->setFrameShape (QFrame::NoFrame);
-    // mDefStatText->setMargin (3);
+    // mDefStatText->setFrameShape (QFrame::NoFrame);
     // mDefStatText->setPaper (backgroundBrush());
     // mInfoStack->addTab (mDefStatText,
     //                     VBoxGlobal::iconSet ("show_logs_16px.png"),
@@ -104,13 +103,20 @@ void VBoxVMInformationDlg::init()
     /* applying language settings */
     languageChangeImp();
 
-    resize (800, 550);
+    /* make initial resize */
+    resize (600, 450);
+
+    /* show statistics page and make it focused */
+    connect (mInfoStack, SIGNAL (currentChanged (QWidget*)),
+             this, SLOT (onPageChanged (QWidget*)));
+    mInfoStack->showPage (mStatisticText);
 }
 
 
 void VBoxVMInformationDlg::destroy()
 {
-    mSelfArray.erase (mSession.GetMachine().GetName());
+    if (!mSession.isNull() && !mSession.GetMachine().isNull())
+        mSelfArray.erase (mSession.GetMachine().GetName());
 }
 
 
@@ -152,9 +158,9 @@ void VBoxVMInformationDlg::languageChangeImp()
         .arg (mSession.GetMachine().GetName()));
 
     /* Setup a tabwidget page names. */
-    mInfoStack->changeTab (mDetailsText, tr ("&Basic"));
+    mInfoStack->changeTab (mDetailsText, tr ("&Details"));
     mInfoStack->changeTab (mStatisticText, tr ("&Runtime"));
-    // mInfoStack->changeTab (mDefStatText, tr ("&Default Stat"));
+    // mInfoStack->changeTab (mDefStatText, tr ("De&fault Stat"));
 
     /* Clear counter names initially. */
     mNamesMap.clear();
@@ -182,8 +188,15 @@ void VBoxVMInformationDlg::languageChangeImp()
 
     mNamesMap ["/Devices/PCNet0/TransmitBytes"] = tr ("Amount of bytes transmitted");
     mNamesMap ["/Devices/PCNet0/ReceiveBytes"] = tr ("Amount of bytes received");
+
     mNamesMap ["/Devices/PCNet1/TransmitBytes"] = tr ("Amount of bytes transmitted");
     mNamesMap ["/Devices/PCNet1/ReceiveBytes"] = tr ("Amount of bytes received");
+
+    mNamesMap ["/Devices/PCNet2/TransmitBytes"] = tr ("Amount of bytes transmitted");
+    mNamesMap ["/Devices/PCNet2/ReceiveBytes"] = tr ("Amount of bytes received");
+
+    mNamesMap ["/Devices/PCNet3/TransmitBytes"] = tr ("Amount of bytes transmitted");
+    mNamesMap ["/Devices/PCNet3/ReceiveBytes"] = tr ("Amount of bytes received");
 
     /* Statistics page update. */
     refreshStatistics();
@@ -323,6 +336,13 @@ void VBoxVMInformationDlg::updateDetails()
 }
 
 
+void VBoxVMInformationDlg::onPageChanged (QWidget *aPage)
+{
+    /* focusing the browser on shown page */
+    aPage->setFocus();
+}
+
+
 void VBoxVMInformationDlg::processStatistics()
 {
     CMachineDebugger dbg = mSession.GetConsole().GetDebugger();
@@ -344,15 +364,14 @@ void VBoxVMInformationDlg::processStatistics()
     refreshStatistics();
 }
 
+
 QString VBoxVMInformationDlg::parseStatistics (const QString &aText)
 {
     /* Filters the statistic counters body. */
     QRegExp query ("^.+<Statistics>\n(.+)\n</Statistics>.*$");
     if (query.search (aText) == -1)
-    {
-	    AssertMsgFailed (("Statistics format doesn't match.\n"));
         return QString::null;
-    }
+
     QStringList wholeList = QStringList::split ("\n", query.cap (1));
 
     ULONG64 summa = 0;
@@ -385,6 +404,134 @@ QString VBoxVMInformationDlg::parseStatistics (const QString &aText)
     return QString::number (summa);
 }
 
+
+void VBoxVMInformationDlg::refreshStatistics()
+{
+    if (mSession.isNull())
+        return;
+
+    QString table = "<p><table border=0 cellspacing=0 cellpadding=0 width=100%>%1</table></p>";
+    QString hdrRow = "<tr><td align=left><img src='%1'></td><td colspan=2><b>%2</b></td></tr>";
+    QString bdyRow = "<tr><td></td><td><nobr>%1</nobr></td><td width=100%><nobr>%2</nobr></td></tr>";
+    QString paragraph = "<tr><td colspan=3></td></tr>";
+    QString interline = "<tr><td colspan=3><font size=1>&nbsp;</font></td></tr>";
+    QString result;
+
+    /* Screen & VT-X Runtime Parameters */
+    {
+        CConsole console = mSession.GetConsole();
+        ULONG bpp = console.GetDisplay().GetBitsPerPixel();
+        QString resolution = QString ("%1x%2")
+            .arg (console.GetDisplay().GetWidth())
+            .arg (console.GetDisplay().GetHeight());
+        if (bpp)
+            resolution += QString ("x%1").arg (bpp);
+        QString virt = console.GetDebugger().GetHWVirtExEnabled() ?
+            tr ("Enabled") : tr ("Disabled");
+
+        result += hdrRow.arg ("state_running_16px.png").arg (tr ("Runtime Attributes"));
+        result += bdyRow.arg (tr ("Screen Resolution")).arg (resolution) +
+                  bdyRow.arg (tr ("Hardware Virtualization")).arg (virt);
+        result += paragraph;
+    }
+
+    /* Hard Disk Statistics. */
+    result += hdrRow.arg ("hd_16px.png").arg (tr ("Hard Disks Statistics"));
+    result += formatHardDisk (tr ("Primary Master"), CEnums::IDE0Controller, 0, 0, 1);
+    result += interline;
+    result += formatHardDisk (tr ("Primary Slave"), CEnums::IDE0Controller, 1, 4, 5);
+    result += interline;
+    result += formatHardDisk (tr ("Secondary Master"), CEnums::IDE1Controller, 0, 8, 9);
+    result += interline;
+    result += formatHardDisk (tr ("Secondary Slave"), CEnums::IDE1Controller, 1, 12, 13);
+    result += paragraph;
+
+    /* Network Adapters Statistics. */
+    result += hdrRow.arg ("nw_16px.png").arg (tr ("Network Adapters Statistics"));
+    result += formatAdapter (tr ("Adapter 1"), 0, 16, 17);
+    result += interline;
+    result += formatAdapter (tr ("Adapter 2"), 1, 18, 19);
+    result += interline;
+    result += formatAdapter (tr ("Adapter 3"), 2, 20, 21);
+    result += interline;
+    result += formatAdapter (tr ("Adapter 4"), 3, 22, 23);
+
+    /* Show full composed page. */
+    mStatisticText->setText (table.arg (result));
+}
+
+
+QString VBoxVMInformationDlg::formatHardDisk (const QString &aName,
+                                              CEnums::DiskControllerType aType,
+                                              LONG aSlot, int aStart, int aFinish)
+{
+    if (mSession.isNull())
+        return QString::null;
+
+    QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
+    CMachine machine = mSession.GetMachine();
+
+    QString result = header.arg (aName);
+    CHardDisk hd = machine.GetHardDisk (aType, aSlot);
+    if (!hd.isNull() || (aType == CEnums::IDE1Controller && aSlot == 0))
+    {
+        result += composeArticle (QString::null, aStart, aFinish);
+        result += composeArticle ("B", aStart + 2, aFinish + 2);
+    }
+    else
+        result += composeArticle (tr ("Not attached"), -1, -1);
+    return result;
+}
+
+QString VBoxVMInformationDlg::formatAdapter (const QString &aName,
+                                             ULONG aSlot,
+                                             int aStart, int aFinish)
+
+{
+    if (mSession.isNull())
+        return QString::null;
+
+    QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
+    CMachine machine = mSession.GetMachine();
+
+    QString result = header.arg (aName);
+    CNetworkAdapter na = machine.GetNetworkAdapter (aSlot);
+    result += na.GetEnabled() ?
+        composeArticle ("B", aStart, aFinish) :
+        composeArticle (tr ("Disabled"), -1, -1);
+    return result;
+}
+
+
+QString VBoxVMInformationDlg::composeArticle (const QString &aUnits,
+                                              int aStart, int aFinish)
+{
+    QString body = "<tr><td></td><td><nobr>%1</nobr></td><td width=100%><nobr>%2</nobr></td></tr>";
+
+    QString result;
+
+    if (aStart == -1 && aFinish == -1)
+        result += body.arg (aUnits).arg (QString::null);
+    else for (int id = aStart; id <= aFinish; ++ id)
+    {
+        QString line = body;
+        if (mValuesMap.contains (mNamesMap.keys() [id]))
+        {
+            line = line.arg (mNamesMap.values() [id]);
+            ULONG64 value = mValuesMap.values() [id].toULongLong();
+            line = aUnits.isNull() ?
+                line.arg (QString ("%L1").arg (value)) :
+                line.arg (QString ("%L1 %2").arg (value).arg (aUnits));
+        }
+        result += line;
+    }
+
+    return result;
+}
+
+
+/* Old code for two columns support */
+#if 0
 void VBoxVMInformationDlg::refreshStatistics()
 {
     QString table = "<p><table border=0 cellspacing=0 cellpadding=0 width=100%>%1</table></p>";
@@ -410,7 +557,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         QString virt = console.GetDebugger().GetHWVirtExEnabled() ?
             tr ("Enabled") : tr ("Disabled");
 
-        result += hdrRow.arg ("settings_16px.png").arg (tr ("Runtime Attributes"));
+        result += hdrRow.arg ("state_running_16px.png").arg (tr ("Runtime Attributes"));
         result += bdyRow.arg (tr ("Screen Resolution")) .arg (resolution)
                         .arg (tr ("Hardware Virtualization")).arg (virt);
         result += paragraph;
@@ -438,6 +585,7 @@ void VBoxVMInformationDlg::refreshStatistics()
     mStatisticText->setText (table.arg (result));
 }
 
+
 QString VBoxVMInformationDlg::composeArticle (const QString &aUnits,
                                               int aStart1, int aFinish1,
                                               int aStart2, int aFinish2)
@@ -451,9 +599,11 @@ QString VBoxVMInformationDlg::composeArticle (const QString &aUnits,
     while (id1 <= aFinish1 || id2 <= aFinish2)
     {
         QString line = bdyRow;
+        /* Processing first column */
         if (id1 > aFinish1)
         {
-            line = line.arg (QString::null).arg (QString::null).arg (QString::null);
+            line = line.arg (QString::null).arg (QString::null)
+                       .arg (QString::null).arg (QString::null);
         }
         else if (mValuesMap.contains (mNamesMap.keys() [id1]))
         {
@@ -463,9 +613,11 @@ QString VBoxVMInformationDlg::composeArticle (const QString &aUnits,
                 line.arg (QString ("%L1").arg (value)) :
                 line.arg (QString ("%L1 %2").arg (value).arg (aUnits));
         }
+        /* Processing second column */
         if (id2 > aFinish2)
         {
-            line = line.arg (QString::null).arg (QString::null).arg (QString::null);
+            line = line.arg (QString::null).arg (QString::null)
+                       .arg (QString::null).arg (QString::null);
         }
         else if (mValuesMap.contains (mNamesMap.keys() [id2]))
         {
@@ -481,4 +633,5 @@ QString VBoxVMInformationDlg::composeArticle (const QString &aUnits,
 
     return result;
 }
+#endif
 
