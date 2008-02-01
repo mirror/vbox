@@ -305,15 +305,30 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/semrw-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
 	r3/posix/utf8-posix.cpp
 ifeq ($(BUILD_TARGET_ARCH),amd64)
- RuntimeR3_SOURCES.linux += r3/linux/sems-linux.cpp
+ ## @todo This causes VBoxGuestR3Lib to end up with the wrong stuff
+ #        when building 64-bit linux. This code won't work on 2.4.
+ RuntimeR3_SOURCES.linux += \
+	r3/linux/semevent-linux.cpp \
+	r3/linux/semeventmulti-linux.cpp
+ ifdef RT_NEW_LINUX_MUTEX_CODE
+  RuntimeR3_SOURCES.linux += \
+	r3/linux/semmutex-linux.cpp
+ else
+  RuntimeR3_SOURCES.linux += \
+	r3/posix/semmutex-posix.cpp
+ endif
 else
- RuntimeR3_SOURCES.linux += r3/posix/sems-posix.cpp
+ RuntimeR3_SOURCES.linux += \
+	r3/posix/semevent-posix.cpp \
+	r3/posix/semeventmulti-posix.cpp \
+	r3/posix/semmutex-posix.cpp
 endif
 
 RuntimeR3_SOURCES.os2   = \
@@ -375,7 +390,10 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
-	r3/posix/sems-posix.cpp \
+	r3/posix/semevent-posix.cpp \
+	r3/posix/semeventmulti-posix.cpp \
+	r3/posix/semmutex-posix.cpp \
+	r3/posix/semrw-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
@@ -404,7 +422,10 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
-	r3/posix/sems-posix.cpp \
+	r3/posix/semevent-posix.cpp \
+	r3/posix/semeventmulti-posix.cpp \
+	r3/posix/semmutex-posix.cpp \
+	r3/posix/semrw-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/time-posix.cpp \
@@ -433,7 +454,10 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
-	r3/posix/sems-posix.cpp \
+	r3/posix/semevent-posix.cpp \
+	r3/posix/semeventmulti-posix.cpp \
+	r3/posix/semmutex-posix.cpp \
+	r3/posix/semrw-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/time-posix.cpp \
