@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     STRUCT(SHFLDIRINFO, 128);
     STRUCT(SHFLVOLINFO, 40);
     STRUCT(VBoxSFQueryMappings, 52);
-    STRUCT(VBoxSFQueryMapName, 40); /* this was changed from 52 in 21976 after VBox-1.4) */
+    STRUCT(VBoxSFQueryMapName, 40); /* this was changed from 52 in 21976 after VBox-1.4. */
     STRUCT(VBoxSFMapFolder_Old, 52);
     STRUCT(VBoxSFMapFolder, 64);
     STRUCT(VBoxSFUnmapFolder, 28);
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
     STRUCT(VBoxSFRemove, 52);
     STRUCT(VBoxSFRename, 64);
 
-    /* The fofllowing requests are only available from the host */
+    /* The following requests are only available from the host. */
     STRUCT(VBoxSFAddMapping, 52);
     STRUCT(VBoxSFRemoveMapping, 28);
     STRUCT(VBoxSFSetStatusLed, 28);
