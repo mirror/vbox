@@ -624,12 +624,18 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mDarwinEventHandlerRef (NULL)
 # endif
     , mDarwinKeyModifiers (0)
+    , mVirtualBoxLogo (NULL)
 #endif
 {
     Assert (!mConsole.isNull() &&
             !mConsole.GetDisplay().isNull() &&
             !mConsole.GetKeyboard().isNull() &&
             !mConsole.GetMouse().isNull());
+
+#ifdef Q_WS_MAC
+    /* Overlay logo for the dock icon */
+    mVirtualBoxLogo = ::DarwinQPixmapFromMimeSourceToCGImage ("VirtualBox_48px.png");
+#endif
 
     /* enable MouseMove events */
     viewport()->setMouseTracking (true);
@@ -797,6 +803,10 @@ VBoxConsoleView::~VBoxConsoleView()
     }
 
     mConsole.UnregisterCallback (mCallback);
+
+#ifdef Q_WS_MAC
+    CGImageRelease (mVirtualBoxLogo);
+#endif
 }
 
 //
@@ -2929,12 +2939,12 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
                     CGImageRef ir =
                         static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
                     SetApplicationDockTileImage (
-                        ::DarwinCreateDockPreview (ir, mMainWnd->dockImageState()));
+                        ::DarwinCreateDockPreview (ir, mVirtualBoxLogo));
                 }
                 else
 # endif
                     SetApplicationDockTileImage (
-                        ::DarwinCreateDockPreview (mFrameBuf, mMainWnd->dockImageState()));
+                        ::DarwinCreateDockPreview (mFrameBuf, mVirtualBoxLogo));
             }
 #endif
             return;
@@ -2946,6 +2956,13 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
         pnt.drawPixmap (r.x(), r.y(), mPausedShot,
                         r.x() + contentsX(), r.y() + contentsY(),
                         r.width(), r.height());
+
+#ifdef Q_WS_MAC
+        SetApplicationDockTileImage (
+            ::DarwinCreateDockPreview (DarwinQPixmapToCGImage (&mPausedShot), 
+                                       mVirtualBoxLogo, 
+                                       mMainWnd->dockImageState()));
+#endif
     }
 }
 
