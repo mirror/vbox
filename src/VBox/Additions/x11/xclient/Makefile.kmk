@@ -39,16 +39,9 @@ VBoxClient_LIBPATH = \
 VBoxClient_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
-	$(VBOX_LIB_IPRT_GUEST_R3)
-if1of ($(BUILD_TARGET),linux l4) ## @todo solaris and linux has to agree upon something that works for both here, this is kinda silly.
- VBoxClient_LIBS += \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
 	X11 \
 	Xt
-else
- VBoxClient_LIBS += \
-	X11 \
-	Xt
-endif
 ifdef VBOX_X11_SEAMLESS_GUEST
  VBoxClient_DEFS += SEAMLESS_X11
  VBoxClient_SOURCES += \
