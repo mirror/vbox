@@ -174,7 +174,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
 {
     RTTIME Time;
     char sz[64];
-    int rc;
+    int rc = VINF_SUCCESS;
 
     unsigned cErrors = 0;
     for (;;)
