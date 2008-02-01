@@ -508,10 +508,36 @@ private:
     void *mBitmapData;
     ulong mPixelFormat;
     CGImageRef mImage;
+#if 1
     CGRect *mRegionRects;
     ULONG mRegionCount;
+#else
+    typedef struct
+    {
+        /** The size of this structure expressed in rcts entries. */
+        ULONG allocated;
+        /** The number of entries in the rcts array. */
+        ULONG used;
+        /** Variable sized array of the rectangle that makes up the region. */
+        CGRECT rcts[1];
+    } RegionRects;
+    /** The current valid region, all access is by atomic cmpxchg or atomic xchg.
+     *
+     * The protocol for updating and using this has to take into account that
+     * the producer (SetVisibleRegion) and consumer (paintEvent) are running
+     * on different threads. Therefore the producer will create a new RegionRects
+     * structure before atomically replace the existing one. While the consumer
+     * will read the value by atomically replace it by NULL, and then when its
+     * done try restore it by cmpxchg. If the producer has already put a new
+     * region there, it will be discarded (see mRegionUnused).
+     */
+    RegionRects volatile *mRegion;
+    /** For keeping the unused region and thus avoid some RTMemAlloc/RTMemFree calls.
+     * This is operated with atomic cmpxchg and atomic xchg. */
+    RegionRects volatile *mRegionUnused;
+#endif
 };
 
 #endif
 
-#endif // __VBoxFrameBuffer_h__
+#endif // !__VBoxFrameBuffer_h__
