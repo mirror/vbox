@@ -104,11 +104,12 @@ CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource)
  */
 CGImageRef DarwinCreateDockBadge (const char *aSource)
 {
-    /* instead of figuring out how to create a transparent 128x128 pixmap I've
-       just created one that I can load. The Qt gurus can fix this if they like :-) */
-    QPixmap back (QPixmap::fromMimeSource ("dock_128x128_transparent.png"));
-    Assert (!back.isNull());
-    Assert (back.width() == 128 && back.height() == 128);
+    /* Create a transparent image in size 128x128.
+     * This is unnecessary complicated in qt3. */
+    QImage transImage (128, 128, 32);
+    transImage.fill (qRgba (0, 0, 0, 0));
+    transImage.setAlphaBuffer (true);
+    QPixmap back (transImage); 
 
     /* load the badge */
     QPixmap badge = QPixmap::fromMimeSource (aSource);
@@ -120,11 +121,6 @@ CGImageRef DarwinCreateDockBadge (const char *aSource)
     copyBlt (&back, (back.width() - badge.width()) / 2.0, (back.height() - badge.height()) / 2.0,
              &badge, 0, 0,
              badge.width(), badge.height());
-//    copyBlt (&back, back.width() - badge.width(), back.height() - badge.height(),
-//             &badge, 0, 0,
-//             badge.width(), badge.height());
-    Assert (!back.isNull());
-    Assert (back.width() == 128 && back.height() == 128);
 
     /* Convert it to a CGImage. */
     return ::DarwinQPixmapToCGImage (&back);
