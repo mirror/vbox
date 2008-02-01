@@ -145,9 +145,7 @@ else ifdef VBOX_WITH_LINUX_ADDITIONS # for ssh cross builds - remove later!
 endif
 # Build the optional ring-0 part of the additions for syntax checking.
 # (Ignored ifndef VBOX_WITH_ADDITIONS. Hack for 32/64 linux issues.)
-ifneq ($(BUILD_TARGET),l4)
- VBOX_WITH_ADDITION_DRIVERS = 1
-endif
+VBOX_WITH_ADDITION_DRIVERS = 1
 # Build win32 additions (cross building them on linux and l4 using wine).
 if1of ($(BUILD_TARGET),l4 linux win)
  VBOX_WITH_WIN32_ADDITIONS = 1
@@ -289,6 +287,7 @@ endif # VBOX_QUICK
 # l4 have to skip a few things.
 ifeq ($(BUILD_TARGET),l4)
  VBOX_WITH_VBOXDRV=
+ VBOX_WITH_ADDITION_DRIVERS=
  VBOX_WITH_VRDP=
  VBOX_WITH_HEADLESS=
  VBOX_WITH_VBOXSDL=
