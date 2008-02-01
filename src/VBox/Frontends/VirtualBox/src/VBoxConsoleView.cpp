@@ -2938,13 +2938,11 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
                      * This saves some conversion time. */
                     CGImageRef ir =
                         static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
-                    SetApplicationDockTileImage (
-                        ::DarwinCreateDockPreview (ir, mVirtualBoxLogo));
+                    ::DarwinUpdateDockPreview (ir, mVirtualBoxLogo);
                 }
                 else
 # endif
-                    SetApplicationDockTileImage (
-                        ::DarwinCreateDockPreview (mFrameBuf, mVirtualBoxLogo));
+                    ::DarwinUpdateDockPreview (mFrameBuf, mVirtualBoxLogo);
             }
 #endif
             return;
@@ -2958,10 +2956,9 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
                         r.width(), r.height());
 
 #ifdef Q_WS_MAC
-        SetApplicationDockTileImage (
-            ::DarwinCreateDockPreview (DarwinQPixmapToCGImage (&mPausedShot), 
-                                       mVirtualBoxLogo, 
-                                       mMainWnd->dockImageState()));
+        ::DarwinUpdateDockPreview (DarwinQPixmapToCGImage (&mPausedShot), 
+                                   mVirtualBoxLogo, 
+                                   mMainWnd->dockImageState());
 #endif
     }
 }
