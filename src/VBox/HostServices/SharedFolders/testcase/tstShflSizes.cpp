@@ -75,8 +75,11 @@ int main(int argc, char **argv)
     STRUCT(VBoxSFInformation, 76);
     STRUCT(VBoxSFRemove, 52);
     STRUCT(VBoxSFRename, 64);
-    STRUCT(VBoxSFAddMapping, 52); /* changed after 1.5.4, not critical since only used by the host */
+
+    /* The fofllowing requests are only available from the host */
+    STRUCT(VBoxSFAddMapping, 52);
     STRUCT(VBoxSFRemoveMapping, 28);
+    STRUCT(VBoxSFSetStatusLed, 28);
 
     /*
      * The summary.
