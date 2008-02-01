@@ -865,11 +865,11 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
      */
     int32_t iOld;
     ASMAtomicCmpXchgExS32(&pIntMutexSem->iState, 1, 0, &iOld);
-    if (iOld != 0)
+    if (RT_UNLIKELY(iOld != 0))
     {
-	iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
-	while (iOld != 0)
-	{
+        iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
+        while (iOld != 0)
+        {
             /*
              * Go to sleep.
              */
@@ -883,11 +883,10 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
             if (rc == -ETIMEDOUT)
             {
                 Assert(pTimeout);
-	        iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
                 return VERR_TIMEOUT;
             }
-	    if (rc == 0)
-	        /* we'll leave the loop now unless another thread is faster */;
+            if (rc == 0)
+                /* we'll leave the loop now unless another thread is faster */;
             else if (rc == -EWOULDBLOCK)
                 /* retry with new value. */;
             else if (rc == -EINTR)
@@ -902,8 +901,8 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
                 return RTErrConvertFromErrno(rc);
             }
 
-	    iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
-	}
+            iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
+        }
     }
 
     /*
@@ -975,7 +974,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     if (iNew != 0)
     {
         /* somebody is waiting, try wake up one of them. */
-        pIntMutexSem->iState = 0;
+        ASMAtomicXchgS32(&pIntMutexSem->iState, 0);
         (void)sys_futex(&pIntMutexSem->iState, FUTEX_WAKE, 1, NULL, NULL, 0);
     }
     return VINF_SUCCESS;
