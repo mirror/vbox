@@ -49,18 +49,18 @@ public:
     };
 
     VBoxRichListItem (FormatType aFormat, QListView *aParent,
-                      const QString& aName, const QString& aNull,
-                      const QString& aKey) :
-        QListViewItem (aParent, aName, aNull, aKey), mFormat (aFormat)
+                      const QString& aName, const QString& aNull1,
+                      const QString& aNull2, const QString& aKey) :
+        QListViewItem (aParent, aName, aNull1, aNull2, aKey), mFormat (aFormat)
     {
     }
 
     VBoxRichListItem (FormatType aFormat, QListViewItem *aParent,
                       const QString& aName, const QString& aPath,
-                      const QString& aEdited, const QString& aWritable) :
-        QListViewItem (aParent, aName, aPath, aEdited, aWritable), mFormat (aFormat)
+                      const QString& aAccess, const QString& aEdited) :
+        QListViewItem (aParent, aName, aPath, aAccess, aEdited), mFormat (aFormat)
     {
-        mTextList << aName << aPath << aEdited << aWritable;
+        mTextList << aName << aPath << aAccess << aEdited;
     }
 
     int rtti() const { return QIRichListItemId; }
@@ -72,7 +72,7 @@ public:
             return QListViewItem::compare (aItem, 0, aAscending);
         /* Sorting the root items always by key: */
         else if (!parent() && !aItem->parent())
-            return QListViewItem::compare (aItem, 2, aAscending);
+            return QListViewItem::compare (aItem, 3, aAscending);
         else
             return QListViewItem::compare (aItem, aColumn, aAscending);
     }
@@ -222,9 +222,9 @@ public:
         inputLayout->addWidget (lbName,  1, 0);
         inputLayout->addMultiCellWidget (mLeName, 1, 1, 1, 2);
 
-		QHBoxLayout *cbLayout = new QHBoxLayout (0, "cbLayout");
+        QHBoxLayout *cbLayout = new QHBoxLayout (0, "cbLayout");
         inputLayout->addMultiCellLayout (cbLayout, 2, 2, 0, 2);
-		mCbReadonly = new QCheckBox (tr ("&Read-only"), this);
+        mCbReadonly = new QCheckBox (tr ("&Read-only"), this);
         QWhatsThis::add (mCbReadonly,
             tr ("When checked, the guest OS will not be able to write to the "
                 "specified shared folder."));
@@ -243,7 +243,7 @@ public:
         /* Setup Button layout */
         QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
         mBtOk = new QPushButton (tr ("&OK"), this, "btOk");
-        QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+        QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
         QPushButton *btCancel = new QPushButton (tr ("Cancel"), this, "btCancel");
         connect (mBtOk, SIGNAL (clicked()), this, SLOT (accept()));
         connect (btCancel, SIGNAL (clicked()), this, SLOT (reject()));
@@ -264,7 +264,7 @@ public:
     {
         return mCbPermanent ? mCbPermanent->isChecked() : true;
     }
-	bool getWritable() { return !mCbReadonly->isChecked(); }
+    bool getWritable() { return !mCbReadonly->isChecked(); }
 
     void setPath (const QString &aPath) { mLePath->setText (aPath); }
     void setName (const QString &aName) { mLeName->setText (aName); }
@@ -276,7 +276,7 @@ public:
             mCbPermanent->setEnabled (!aPermanent);
         }
     }
-	void setWritable (bool aWritable) { mCbReadonly->setChecked (!aWritable); }
+    void setWritable (bool aWritable) { mCbReadonly->setChecked (!aWritable); }
 
 private slots:
 
@@ -364,10 +364,50 @@ void VBoxSharedFoldersSettings::init()
     connect (tbRemove, SIGNAL (clicked()), this, SLOT (tbRemovePressed()));
     connect (listView, SIGNAL (currentChanged (QListViewItem *)),
              this, SLOT (processCurrentChanged (QListViewItem *)));
-    connect (listView, SIGNAL (onItem (QListViewItem *)),
-             this, SLOT (processOnItem (QListViewItem *)));
 
     mIsListViewChanged = false;
+
+    listView->viewport()->installEventFilter (this);
+
+    mTrFull = tr ("Full");
+    mTrReadOnly = tr ("Read-only");
+}
+
+bool VBoxSharedFoldersSettings::eventFilter (QObject *aObject, QEvent *aEvent)
+{
+    /* Process & show auto Tool-Tip for partially hidden listview items. */
+    if (aObject == listView->viewport() && aEvent->type() == QEvent::MouseMove)
+    {
+        QMouseEvent *e = static_cast<QMouseEvent*> (aEvent);
+        QListViewItem *i = listView->itemAt (e->pos());
+        VBoxRichListItem *item = i && i->rtti() == VBoxRichListItem::QIRichListItemId ?
+            static_cast<VBoxRichListItem*> (i) : 0;
+        if (item)
+        {
+            int delta = e->pos().x();
+            int id = 0;
+            for (; id < listView->columns(); ++ id)
+            {
+                if (delta < listView->columnWidth (id))
+                    break;
+                delta -= listView->columnWidth (id);
+            }
+
+            QString curText = QToolTip::textFor (listView->viewport());
+            QString newText = item->text (id) != item->getText (id) ?
+                              item->getText (id) : QString::null;
+
+            if (newText != curText)
+            {
+                QToolTip::remove (listView->viewport());
+                QToolTip::add (listView->viewport(), newText);
+            }
+        }
+        else
+            QToolTip::remove (listView->viewport());
+    }
+
+    return QWidget::eventFilter (aObject, aEvent);
 }
 
 void VBoxSharedFoldersSettings::setDialogType (int aType)
@@ -461,7 +501,7 @@ void VBoxSharedFoldersSettings::getFromGlobal()
     QString name = tr (" Global Folders");
     QString key (QString::number (GlobalType));
     VBoxRichListItem *root = new VBoxRichListItem (VBoxRichListItem::EllipsisEnd,
-                                                   listView, name, QString::null, key);
+        listView, name, QString::null, QString::null, key);
     getFrom (vboxGlobal().virtualBox().GetSharedFolders().Enumerate(), root);
     */
 }
@@ -472,7 +512,7 @@ void VBoxSharedFoldersSettings::getFromMachine (const CMachine &aMachine)
     QString name = tr (" Machine Folders");
     QString key (QString::number (MachineType));
     VBoxRichListItem *root = new VBoxRichListItem (VBoxRichListItem::EllipsisEnd,
-                                                   listView, name, QString::null, key);
+        listView, name, QString::null, QString::null, key);
     getFrom (mMachine.GetSharedFolders().Enumerate(), root);
 }
 
@@ -482,7 +522,7 @@ void VBoxSharedFoldersSettings::getFromConsole (const CConsole &aConsole)
     QString name = tr (" Transient Folders");
     QString key (QString::number (ConsoleType));
     VBoxRichListItem *root = new VBoxRichListItem (VBoxRichListItem::EllipsisEnd,
-                                                   listView, name, QString::null, key);
+        listView, name, QString::null, QString::null, key);
     getFrom (mConsole.GetSharedFolders().Enumerate(), root);
 }
 
@@ -494,8 +534,9 @@ void VBoxSharedFoldersSettings::getFrom (const CSharedFolderEnumerator &aEn,
     {
         CSharedFolder sf = aEn.GetNext();
         new VBoxRichListItem (VBoxRichListItem::EllipsisFile, aRoot,
-                              sf.GetName(), sf.GetHostPath(), "not edited",
-                              sf.GetWritable() ? "writable" : "readonly");
+                              sf.GetName(), sf.GetHostPath(),
+                              sf.GetWritable() ? mTrFull : mTrReadOnly,
+                              "not edited");
     }
     listView->setOpen (aRoot, true);
     listView->setCurrentItem (aRoot->firstChild() ? aRoot->firstChild() : aRoot);
@@ -513,7 +554,7 @@ void VBoxSharedFoldersSettings::putBackToGlobal()
     // This function is only available for GlobalType dialog
     Assert (mDialogType == GlobalType);
     // Searching for GlobalType item's root
-    QListViewItem *root = listView->findItem (QString::number (GlobalType), 2);
+    QListViewItem *root = listView->findItem (QString::number (GlobalType), 3);
     Assert (root);
     CSharedFolderEnumerator en = vboxGlobal().virtualBox().GetSharedFolders().Enumerate();
     putBackTo (en, root);
@@ -528,7 +569,7 @@ void VBoxSharedFoldersSettings::putBackToMachine()
     /* This function is only available for MachineType dialog */
     Assert (mDialogType & MachineType);
     /* Searching for MachineType item's root */
-    QListViewItem *root = listView->findItem (QString::number (MachineType), 2);
+    QListViewItem *root = listView->findItem (QString::number (MachineType), 3);
     Assert (root);
     CSharedFolderEnumerator en = mMachine.GetSharedFolders().Enumerate();
     putBackTo (en, root);
@@ -542,7 +583,7 @@ void VBoxSharedFoldersSettings::putBackToConsole()
     /* This function is only available for ConsoleType dialog */
     Assert (mDialogType & ConsoleType);
     /* Searching for ConsoleType item's root */
-    QListViewItem *root = listView->findItem (QString::number (ConsoleType), 2);
+    QListViewItem *root = listView->findItem (QString::number (ConsoleType), 3);
     Assert (root);
     CSharedFolderEnumerator en = mConsole.GetSharedFolders().Enumerate();
     putBackTo (en, root);
@@ -551,8 +592,8 @@ void VBoxSharedFoldersSettings::putBackToConsole()
 void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
                                            QListViewItem *aRoot)
 {
-    Assert (!aRoot->text (2).isNull());
-    SFDialogType type = (SFDialogType)aRoot->text (2).toInt();
+    Assert (!aRoot->text (3).isNull());
+    SFDialogType type = (SFDialogType)aRoot->text (3).toInt();
 
     /* deleting all changed folders of the list */
     while (aEn.HasMore())
@@ -568,7 +609,7 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
         {
             if (item->getText (0) == sf.GetName() &&
                 item->getText (1) == sf.GetHostPath() &&
-                item->getText (2) == "not edited")
+                item->getText (3) == "not edited")
                 break;
             item = item->nextSibling();
         }
@@ -585,9 +626,9 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
         if (iterator->rtti() == VBoxRichListItem::QIRichListItemId)
             item = static_cast<VBoxRichListItem*> (iterator);
         if (item && !item->getText (0).isNull() && !item->getText (1).isNull()
-            && item->getText (2) == "edited")
+            && item->getText (3) == "edited")
             createSharedFolder (item->getText (0), item->getText (1),
-            					item->getText (3) == "writable" ? true : false, type);
+                                item->getText (2) == mTrFull ? true : false, type);
         iterator = iterator->nextSibling();
     }
 }
@@ -596,11 +637,11 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
 QListViewItem* VBoxSharedFoldersSettings::searchRoot (bool aIsPermanent)
 {
     if (!aIsPermanent)
-        return listView->findItem (QString::number (ConsoleType), 2);
+        return listView->findItem (QString::number (ConsoleType), 3);
     else if (mDialogType & MachineType)
-        return listView->findItem (QString::number (MachineType), 2);
+        return listView->findItem (QString::number (MachineType), 3);
     else
-        return listView->findItem (QString::number (GlobalType), 2);
+        return listView->findItem (QString::number (GlobalType), 3);
 }
 
 void VBoxSharedFoldersSettings::tbAddPressed()
@@ -613,7 +654,7 @@ void VBoxSharedFoldersSettings::tbAddPressed()
         if ((*it)->parent() && (*it)->rtti() == VBoxRichListItem::QIRichListItemId)
         {
             VBoxRichListItem *item = static_cast<VBoxRichListItem*> (*it);
-            SFDialogType type = (SFDialogType)item->parent()->text (2).toInt();
+            SFDialogType type = (SFDialogType)item->parent()->text (3).toInt();
             usedList << qMakePair (item->getText (0), type);
         }
         ++ it;
@@ -634,8 +675,8 @@ void VBoxSharedFoldersSettings::tbAddPressed()
     Assert (root);
     /* Appending a new listview item to the root */
     VBoxRichListItem *item = new VBoxRichListItem (
-        VBoxRichListItem::EllipsisFile, root, name, path, "edited",
-        dlg.getWritable() ? "writable" : "readonly");
+        VBoxRichListItem::EllipsisFile, root, name, path,
+        dlg.getWritable() ? mTrFull : mTrReadOnly, "edited");
     /* Make the created item selected */
     listView->ensureItemVisible (item);
     listView->setCurrentItem (item);
@@ -656,7 +697,7 @@ void VBoxSharedFoldersSettings::tbEditPressed()
             (*it)->rtti() == VBoxRichListItem::QIRichListItemId)
         {
             VBoxRichListItem *item = static_cast<VBoxRichListItem*> (*it);
-            SFDialogType type = (SFDialogType)item->parent()->text (2).toInt();
+            SFDialogType type = (SFDialogType)item->parent()->text (3).toInt();
             usedList << qMakePair (item->getText (0), type);
         }
         ++ it;
@@ -674,9 +715,9 @@ void VBoxSharedFoldersSettings::tbEditPressed()
                          mDialogType & ConsoleType, usedList);
     dlg.setPath (item->getText (1));
     dlg.setName (item->getText (0));
-    dlg.setPermanent ((SFDialogType)item->parent()->text (2).toInt()
+    dlg.setPermanent ((SFDialogType)item->parent()->text (3).toInt()
                       != ConsoleType);
-    dlg.setWritable (item->getText (3) == "writable");
+    dlg.setWritable (item->getText (2) == mTrFull);
     if (dlg.exec() != QDialog::Accepted)
         return;
     QString name = dlg.getName();
@@ -688,8 +729,8 @@ void VBoxSharedFoldersSettings::tbEditPressed()
     QListViewItem *root = searchRoot (isPermanent);
     Assert (root);
     /* Updating an edited listview item */
-    item->updateText (3, dlg.getWritable() ? "writable" : "readonly");
-    item->updateText (2, "edited");
+    item->updateText (3, "edited");
+    item->updateText (2, dlg.getWritable() ? mTrFull : mTrReadOnly);
     item->updateText (1, path);
     item->updateText (0, name);
     if (item->parent() != root)
@@ -704,6 +745,7 @@ void VBoxSharedFoldersSettings::tbEditPressed()
         processCurrentChanged (item);
         listView->setFocus();
     }
+    item->repaint();
 
     mIsListViewChanged = true;
 }
@@ -716,31 +758,15 @@ void VBoxSharedFoldersSettings::tbRemovePressed()
 }
 
 
-void VBoxSharedFoldersSettings::processOnItem (QListViewItem *aItem)
-{
-    VBoxRichListItem *item = 0;
-    if (aItem->rtti() == VBoxRichListItem::QIRichListItemId)
-        item = static_cast<VBoxRichListItem*> (aItem);
-    Assert (item);
-    QString tip = tr ("<nobr>Name:&nbsp;&nbsp;%1</nobr><br>"
-		"<nobr>Path:&nbsp;&nbsp;%2</nobr><br>"
-		"<nobr>Access:&nbsp;&nbsp;%3</nobr>")
-		.arg (item->getText (0)).arg (item->getText (1)).arg (item->getText (3));
-    if (!item->getText (0).isNull() && !item->getText (1).isNull())
-        QToolTip::add (listView->viewport(), listView->itemRect (aItem), tip);
-    else
-        QToolTip::remove (listView->viewport());
-}
-
 void VBoxSharedFoldersSettings::processCurrentChanged (QListViewItem *aItem)
 {
     if (aItem && aItem->isSelectable() && listView->selectedItem() != aItem)
         listView->setSelected (aItem, true);
     bool addEnabled = aItem &&
-                      (isEditable (aItem->text (2)) ||
-                       (aItem->parent() && isEditable (aItem->parent()->text (2))));
+                      (isEditable (aItem->text (3)) ||
+                       (aItem->parent() && isEditable (aItem->parent()->text (3))));
     bool removeEnabled = aItem && aItem->parent() &&
-                         isEditable (aItem->parent()->text (2));
+                         isEditable (aItem->parent()->text (3));
     tbAdd->setEnabled (addEnabled);
     tbEdit->setEnabled (removeEnabled);
     tbRemove->setEnabled (removeEnabled);
@@ -749,7 +775,7 @@ void VBoxSharedFoldersSettings::processCurrentChanged (QListViewItem *aItem)
 void VBoxSharedFoldersSettings::processDoubleClick (QListViewItem *aItem)
 {
     bool editEnabled = aItem && aItem->parent() &&
-        isEditable (aItem->parent()->text (2));
+        isEditable (aItem->parent()->text (3));
     if (editEnabled)
         tbEditPressed();
 }
