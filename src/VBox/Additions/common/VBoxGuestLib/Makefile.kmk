@@ -52,8 +52,7 @@ else
 	VBoxGuestR0LibBase \
   	VBoxGuestR3Lib \
 	VBoxGuestR3LibShared \
-  	VBoxGuestR3LibXFree86 \
-  	VBoxGuestR3LibLinux
+  	VBoxGuestR3LibXFree86
  endif
 endif
 
@@ -173,15 +172,6 @@ VBoxGuestLibBase_INCS.win   = $(VBoxGuestLib_INCS.win)
 VBoxGuestLibBase_DEFS       = $(VBoxGuestLib_DEFS) VBGL_VBOXGUEST
 VBoxGuestLibBase_DEFS.win   = $(VBoxGuestLib_DEFS.win)
 #VBoxGuestLibBase_DEFS      += LOG_ENABLED
-
-
-#
-# VBoxGuestR3LibLinux
-#
-VBoxGuestR3LibLinux_TEMPLATE = VBOXLNX32GUESTR3LIB
-VBoxGuestR3LibLinux_CXXFLAGS = -fno-exceptions
-VBoxGuestR3LibLinux_SOURCES  = $(VBoxGuestR3Lib_SOURCES)
-VBoxGuestR3LibLinux_DEFS     = VBOX_HGCM
 
 
 include	$(PATH_KBUILD)/subfooter.kmk
