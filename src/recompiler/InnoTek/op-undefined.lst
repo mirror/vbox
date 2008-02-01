@@ -49,6 +49,7 @@ floatx80_to_int64
 floatx80_to_int64_round_to_zero
 fpu_raise_exception
 helper_cmpxchg8b
+helper_single_step
 helper_cpuid
 helper_divl_EAX_T0
 helper_enter_level
