@@ -86,12 +86,7 @@ VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t y
         rc = vbglR3GRPerform(&pReq->header);
         vbglR3GRFree(&pReq->header);
         if (RT_SUCCESS(rc))
-        {
-            if (RT_SUCCESS(pReq->header.rc))
-                return VINF_SUCCESS;
-
             rc = pReq->header.rc;
-        }
     }
     return rc;
 }
