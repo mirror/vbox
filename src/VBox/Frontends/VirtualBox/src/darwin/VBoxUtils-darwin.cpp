@@ -127,16 +127,15 @@ CGImageRef DarwinCreateDockBadge (const char *aSource)
 }
 
 /**
- * Creates a dock preview image.
+ * Updates the dock preview image.
  *
- * This method is a callback that creates a 128x128 preview image of the VM window.
+ * This method is a callback that updates the 128x128 preview image of the VM window in the dock.
  *
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aVMImage   the vm screen as a CGImageRef
  * @param   aOverlayImage   an optional icon overlay image to add at the bottom right of the icon
  * @param   aStateImage   an optional state overlay image to add at the center of the icon
  */
-CGImageRef DarwinCreateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage)
+void DarwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage)
 {
     Assert (aVMImage);
 
@@ -162,65 +161,62 @@ CGImageRef DarwinCreateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImag
     CGRect iconRect = CGRectMake ((targetWidth - scaledWidth) / 2.0,
                                   (targetHeight - scaledHeight) / 2.0,
                                   scaledWidth, scaledHeight);
-    /* Create a bitmap context to draw on */
-    CGImageRef dockImage = NULL;
-    int bitmapBytesPerRow = targetWidth * 4;
-    int bitmapByteCount = bitmapBytesPerRow * targetHeight;
-    void *bitmapData = RTMemAlloc (bitmapByteCount);
-    if (bitmapData)
-    {
-        CGContextRef context = CGBitmapContextCreate (bitmapData, targetWidth, targetHeight, 8, bitmapBytesPerRow, cs, kCGImageAlphaPremultipliedLast);
-        /* rounded corners */
+    /* Create the context to draw on */
+    CGContextRef context = BeginCGContextForApplicationDockTile();
+    Assert (context);
+    /* Clear the background */
+    CGContextClearRect (context, CGRectMake (0, 0, 128, 128));
+    /* rounded corners */
 //        CGContextSetLineJoin (context, kCGLineJoinRound);
 //        CGContextSetShadow (context, CGSizeMake (10, 5), 1);
 //        CGContextSetAllowsAntialiasing (context, true);
-        /* some little boarder */
-        iconRect = CGRectInset (iconRect, 1, 1);
-        /* gray stroke */
-        CGContextSetRGBStrokeColor (context, 225.0/255.0, 218.0/255.0, 211.0/255.0, 1);
-        iconRect = CGRectInset (iconRect, 6, 6);
-        CGContextStrokeRectWithWidth (context, iconRect, 12);
-        iconRect = CGRectInset (iconRect, 5, 5);
-        /* black stroke */
-        CGContextSetRGBStrokeColor (context, 0.0, 0.0, 0.0, 1.0);
-        CGContextStrokeRectWithWidth (context, iconRect, 2);
-        /* vm content */
-        iconRect = CGRectInset (iconRect, 1, 1);
-        CGContextDrawImage (context, iconRect, aVMImage);
-        /* the state image at center */
-        if (aStateImage)
-        {
-            CGRect stateRect = CGRectMake ((targetWidth - CGImageGetWidth (aStateImage)) / 2.0, (targetHeight - CGImageGetHeight (aStateImage)) / 2.0, CGImageGetWidth (aStateImage), CGImageGetHeight (aStateImage));
-            CGContextDrawImage (context, stateRect, aStateImage);
-        }
-        /* the overlay image at bottom/right */
-        if (aOverlayImage)
-        {
-            CGRect overlayRect = CGRectMake (targetWidth - CGImageGetWidth (aOverlayImage), 0, CGImageGetWidth (aOverlayImage), CGImageGetHeight (aOverlayImage));
-            CGContextDrawImage (context, overlayRect, aOverlayImage);
-        }
-        /* Create the preview image ref from the bitmap */
-        dockImage = CGBitmapContextCreateImage (context);
-        CGContextRelease (context);
-        RTMemFree (bitmapData);
+    /* some little boarder */
+    iconRect = CGRectInset (iconRect, 1, 1);
+    /* gray stroke */
+    CGContextSetRGBStrokeColor (context, 225.0/255.0, 218.0/255.0, 211.0/255.0, 1);
+    iconRect = CGRectInset (iconRect, 6, 6);
+    CGContextStrokeRectWithWidth (context, iconRect, 12);
+    iconRect = CGRectInset (iconRect, 5, 5);
+    /* black stroke */
+    CGContextSetRGBStrokeColor (context, 0.0, 0.0, 0.0, 1.0);
+    CGContextStrokeRectWithWidth (context, iconRect, 2);
+    /* vm content */
+    iconRect = CGRectInset (iconRect, 1, 1);
+    CGContextDrawImage (context, iconRect, aVMImage);
+    /* the state image at center */
+    if (aStateImage)
+    {
+        CGRect stateRect = CGRectMake ((targetWidth - CGImageGetWidth (aStateImage)) / 2.0, 
+                                       (targetHeight - CGImageGetHeight (aStateImage)) / 2.0, 
+                                       CGImageGetWidth (aStateImage), 
+                                       CGImageGetHeight (aStateImage));
+        CGContextDrawImage (context, stateRect, aStateImage);
     }
+    /* the overlay image at bottom/right */
+    if (aOverlayImage)
+    {
+        CGRect overlayRect = CGRectMake (targetWidth - CGImageGetWidth (aOverlayImage), 
+                                         0, 
+                                         CGImageGetWidth (aOverlayImage), 
+                                         CGImageGetHeight (aOverlayImage));
+        CGContextDrawImage (context, overlayRect, aOverlayImage);
+    }
+    /* This flush updates the dock icon */
+    CGContextFlush (context);
+    EndCGContextForApplicationDockTile (context);
 
     CGColorSpaceRelease (cs);
-
-    Assert (dockImage);
-    return dockImage;
 }
 
 /**
- * Creates a dock preview image.
+ * Updates the dock preview image.
  *
- * This method is a callback that creates a 128x128 preview image of the VM window.
+ * This method is a callback that updates the 128x128 preview image of the VM window in the dock.
  *
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aFrameBuffer    The guest frame buffer.
  * @param   aOverlayImage   an optional icon overlay image to add at the bottom right of the icon
  */
-CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage)
+void DarwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage)
 {
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
     Assert (cs);
@@ -230,14 +226,12 @@ CGImageRef DarwinCreateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aO
     CGImageRef ir = CGImageCreate (aFrameBuffer->width(), aFrameBuffer->height(), 8, 32, aFrameBuffer->bytesPerLine(), cs,
                                    kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
                                    kCGRenderingIntentDefault);
-    /* Create the preview icon */
-    CGImageRef dockImage = DarwinCreateDockPreview (ir, aOverlayImage);
+    /* Update the dock preview icon */
+    ::DarwinUpdateDockPreview (ir, aOverlayImage);
     /* Release the temp data and image */
     CGDataProviderRelease (dp);
     CGImageRelease (ir);
     CGColorSpaceRelease (cs);
-
-    return dockImage;
 }
 
 OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
