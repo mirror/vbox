@@ -80,7 +80,6 @@ vboxvfs_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
 mountvboxsf_TEMPLATE    = VBOXGUESTR3EXE
 mountvboxsf_DEFS        = _GNU_SOURCE
 mountvboxsf_SOURCES     = \
-	vbsfmount.h \
 	mount.vboxsf.c
 
 
