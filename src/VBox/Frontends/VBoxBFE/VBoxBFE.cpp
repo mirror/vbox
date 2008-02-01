@@ -176,6 +176,7 @@ static bool        g_fCSAM  = true;
 static bool        g_fRestoreState = false;
 static const char *g_pszShareDir[MaxSharedFolders];
 static const char *g_pszShareName[MaxSharedFolders];
+static bool        g_fShareReadOnly[MaxSharedFolders];
 static unsigned    g_uNumShares;
 static bool        g_fPreAllocRam = false;
 static int         g_iBootMenu = 2;
@@ -360,7 +361,8 @@ static void show_usage()
              "  -statefile <file>  Define the file name for VM save/restore\n"
              "  -restore           Restore the VM if the statefile exists, normal start otherwise\n"
              "  -nofstoggle        Forbid switching to/from fullscreen mode\n"
-             "  -share <dir><name> Share directory <dir> as name <name>\n"
+             "  -share <dir> <name> [readonly]\n"
+             "                     Share directory <dir> as name <name>. Optionally read-only.\n"
              "  -nohostkey         Disable hostkey\n"
              "  -[no]acpi          Enable or disable ACPI (default: enabled)\n"
              "  -[no]ioapic        Enable or disable the IO-APIC (default: disabled)\n"
@@ -542,6 +544,11 @@ int main(int argc, char **argv)
             if (++curArg >= argc)
                 return SyntaxError("missing 2nd argument for share!\n");
             g_pszShareName[g_uNumShares] = argv[curArg];
+            if (curArg < argc-1 && strcmp(argv[curArg+1], "readonly") == 0)
+            {
+                g_fShareReadOnly[g_uNumShares] = true;
+                curArg++;
+            }
             g_uNumShares++;
         }
         else if (strcmp(pszArg, "-fullscreen") == 0)
@@ -1171,7 +1178,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     {
         for (unsigned i=0; i<g_uNumShares; i++)
         {
-            VBOXHGCMSVCPARM  parms[2];
+            VBOXHGCMSVCPARM  parms[SHFL_CPARMS_ADD_MAPPING];
             SHFLSTRING      *pFolderName, *pMapName;
             int              cbString;
             PRTUCS2          aHostPath, aMapName;
@@ -1206,8 +1213,11 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             parms[1].u.pointer.addr = pMapName;
             parms[1].u.pointer.size = sizeof (SHFLSTRING) + cbString;
 
+            parms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
+            parms[2].u.uint32 = !g_fShareReadOnly[i];
+
             rc = gVMMDev->hgcmHostCall ("VBoxSharedFolders",
-                                        SHFL_FN_ADD_MAPPING, 2, &parms[0]);
+                                        SHFL_FN_ADD_MAPPING, SHFL_CPARMS_ADD_MAPPING, &parms[0]);
             AssertRC(rc);
             LogRel(("Added share %s: (%s)\n", g_pszShareName[i], g_pszShareDir[i]));
             RTMemFree (pFolderName);
