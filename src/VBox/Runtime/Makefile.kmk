@@ -490,14 +490,17 @@ RuntimeR3L4_SOURCES = \
 
 #
 # RuntimeGuestR3 - Guest Additions Runtime (static).
+# (The BUILD_PLATFORM inheritance here is for l4 crossbuilding the linux additions.)
 #
-RuntimeGuestR3_TEMPLATE             := VBOXGUESTR3LIB
-RuntimeGuestR3_SDKS.win             := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3_DEFS                 := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS))
-RuntimeGuestR3_DEFS.$(BUILD_TARGET) := $(RuntimeR3_DEFS.$(BUILD_TARGET))
-RuntimeGuestR3_INCS                 := $(RuntimeR3_INCS)
-RuntimeGuestR3_INCS.$(BUILD_TARGET) := $(RuntimeR3_INCS.$(BUILD_TARGET))
-RuntimeGuestR3_SOURCES              := $(filter-out \
+RuntimeGuestR3_TEMPLATE                 := VBOXGUESTR3LIB
+RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
+RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS))
+RuntimeGuestR3_DEFS.$(BUILD_TARGET)     := $(RuntimeR3_DEFS.$(BUILD_TARGET))
+RuntimeGuestR3_DEFS.$(BUILD_PLATFORM)	:= $(RuntimeR3_DEFS.$(BUILD_PLATFORM))
+RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
+RuntimeGuestR3_INCS.$(BUILD_TARGET)     := $(RuntimeR3_INCS.$(BUILD_TARGET))
+RuntimeGuestR3_INCS.$(BUILD_PLATFORM)   := $(RuntimeR3_INCS.$(BUILD_PLATFORM))
+RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
@@ -506,8 +509,10 @@ RuntimeGuestR3_SOURCES              := $(filter-out \
 RuntimeGuestR3_SOURCES              += \
 	common/time/timesysalias.cpp \
 	VBox/logbackdoor.cpp
-RuntimeGuestR3_SOURCES.$(BUILD_TARGET) := $(RuntimeR3_SOURCES.$(BUILD_TARGET))
-RuntimeGuestR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
+RuntimeGuestR3_SOURCES.$(BUILD_TARGET)  := $(RuntimeR3_SOURCES.$(BUILD_TARGET))
+RuntimeGuestR3_SOURCES.$(BUILD_PLATFORM):= $(RuntimeR3_SOURCES.$(BUILD_PLATFORM))
+RuntimeGuestR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
+RuntimeGuestR3_SOURCES.$(BUILD_PLATFORM).$(BUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(BUILD_PLATFORM).$(BUILD_TARGET_ARCH))
 
 
 #
@@ -515,15 +520,16 @@ RuntimeGuestR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR3_SOURC
 #                      initialization and can be linked into an .so. Intended
 #                      for X11 drivers, GRADD and similar.
 #
-RuntimeGuestR3Mini_TEMPLATE             := VBOXGUESTR3DLL
-RuntimeGuestR3Mini_INST                 := $(INST_ADDITIONS_LIB)
-RuntimeGuestR3Mini_SDKS.win             := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3Mini_DEFS                 := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS)) \
-                                           RT_MINI
-RuntimeGuestR3Mini_DEFS.$(BUILD_TARGET) := $(RuntimeR3_DEFS.$(BUILD_TARGET))
-RuntimeGuestR3Mini_INCS                 := $(RuntimeR3_INCS)
-RuntimeGuestR3Mini_INCS.$(BUILD_TARGET) := $(RuntimeR3_INCS.$(BUILD_TARGET))
-RuntimeGuestR3Mini_SOURCES               = \
+RuntimeGuestR3Mini_TEMPLATE                 := VBOXGUESTR3DLL
+RuntimeGuestR3Mini_INST                     := $(INST_ADDITIONS_LIB)
+RuntimeGuestR3Mini_SDKS.win                 := $(RuntimeR3_SDKS.win)
+RuntimeGuestR3Mini_DEFS                     := $(filter-out RTCRITSECT_STRICT, $(RuntimeR3_DEFS)) RT_MINI
+RuntimeGuestR3Mini_DEFS.$(BUILD_TARGET)     := $(RuntimeR3_DEFS.$(BUILD_TARGET))
+RuntimeGuestR3Mini_DEFS.$(BUILD_PLATFORM)   := $(RuntimeR3_DEFS.$(BUILD_PLATFORM))
+RuntimeGuestR3Mini_INCS                     := $(RuntimeR3_INCS)
+RuntimeGuestR3Mini_INCS.$(BUILD_TARGET)     := $(RuntimeR3_INCS.$(BUILD_TARGET))
+RuntimeGuestR3Mini_INCS.$(BUILD_PLATFORM)   := $(RuntimeR3_INCS.$(BUILD_PLATFORM))
+RuntimeGuestR3Mini_SOURCES = \
 	common/err/errmsg.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/log/logformat.cpp \
@@ -543,16 +549,16 @@ RuntimeGuestR3Mini_SOURCES               = \
 	r3/fileio.cpp \
 	r3/fs.cpp \
 	r3/path.cpp
-RuntimeGuestR3Mini_SOURCES.linux         = \
+RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/utf8-posix.cpp
-RuntimeGuestR3Mini_SOURCES.solaris       = \
+RuntimeGuestR3Mini_SOURCES.solaris = \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/utf8-posix.cpp
 # VBox specific stuff.
-RuntimeGuestR3Mini_SOURCES              += \
+RuntimeGuestR3Mini_SOURCES += \
 	VBox/logbackdoor.cpp \
 	VBox/logbackdoor-redirect.cpp \
 	VBox/strformat-vbox.cpp
