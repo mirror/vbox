@@ -867,9 +867,16 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
     ASMAtomicCmpXchgExS32(&pIntMutexSem->iState, 1, 0, &iOld);
     if (RT_UNLIKELY(iOld != 0))
     {
-        iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
-        while (iOld != 0)
+        for (;;)
         {
+            iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
+
+            /*
+             * Was the lock released in the meantime? This is unlikely (but possible)
+             */
+            if (RT_UNLIKELY(iOld == 0))
+                break;
+
             /*
              * Go to sleep.
              */
@@ -900,9 +907,16 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
                 AssertMsgFailed(("rc=%ld errno=%d\n", rc, errno));
                 return RTErrConvertFromErrno(rc);
             }
-
-            iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
         }
+
+        /*
+         * When leaving this loop, iState is set to 2. This means that we gained the
+         * Lock and there are _possibly_ some waiters. We don't know exactly as another
+         * Thread might entered this loop at nearly the same time. Therefore we will
+         * call futex_wakeup once too often (if _no_ other thread entered this loop).
+         * The key problem is the simple futex_wait test for x != y (iState != 2) in
+         * our case).
+         */
     }
 
     /*
