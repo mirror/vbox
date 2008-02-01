@@ -77,8 +77,7 @@ vboxvfs_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
 #
 # The mount util.
 #
-mountvboxsf_TEMPLATE    = VBOXLNX32GUESTR3EXENOCPP
-## @todo mountvboxsf_TEMPLATE    = VBOXGUESTR3EXE - somehow drop pthread dependency?
+mountvboxsf_TEMPLATE    = VBOXGUESTR3EXE
 mountvboxsf_DEFS        = _GNU_SOURCE
 mountvboxsf_SOURCES     = \
 	vbsfmount.h \
