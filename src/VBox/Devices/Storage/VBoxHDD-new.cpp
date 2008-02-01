@@ -817,8 +817,10 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
                 }
                 else
                     pBackend = NULL;
+
+                RTLdrClose(hPlugin);
             }
-            RTLdrClose(hPlugin);
+
             /*
              * We take the first plugin which can handle this file.
              */
