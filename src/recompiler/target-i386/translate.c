@@ -2341,7 +2341,7 @@ static void gen_eob(DisasContext *s)
     if (s->singlestep_enabled) {
         gen_op_debug();
     } else if (s->tf) {
-        gen_op_raise_exception(EXCP01_SSTP);
+        gen_op_single_step();
     } else {
         gen_op_movl_T0_0();
         gen_op_exit_tb();
@@ -3872,7 +3872,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
     case 0x1c7: /* cmpxchg8b */
         modrm = ldub_code(s->pc++);
         mod = (modrm >> 6) & 3;
-        if (mod == 3)
+        if ((mod == 3) || ((modrm & 0x38) != 0x8))
             goto illegal_op;
         if (s->cc_op != CC_OP_DYNAMIC)
             gen_op_set_cc_op(s->cc_op);
