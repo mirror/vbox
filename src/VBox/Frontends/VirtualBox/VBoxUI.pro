@@ -264,9 +264,7 @@ IMAGES	= images/tpixel.png \
 	images/welcome.png \
 	images/about.png \
 	images/about_tile.png \
-	images/dock_0.png \
 	images/dock_1.png \
-	images/dock_128x128_transparent.png \
 	images/VirtualBox_48px.png
 
 TRANSLATIONS = \
