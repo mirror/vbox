@@ -82,6 +82,17 @@
                             <bool>true</bool>
                         </property>
                     </column>
+                    <column>
+                        <property name="text">
+                            <string>Access</string>
+                        </property>
+                        <property name="clickable">
+                            <bool>true</bool>
+                        </property>
+                        <property name="resizable">
+                            <bool>true</bool>
+                        </property>
+                    </column>
                     <property name="name">
                         <cstring>listView</cstring>
                     </property>
@@ -226,17 +237,19 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <variable access="private">int mDialogType;</variable>
     <variable access="private">CMachine mMachine;</variable>
     <variable access="private">CConsole mConsole;</variable>
+    <variable access="private">QString mTrFull;</variable>
+    <variable access="private">QString mTrReadOnly;</variable>
 </variables>
 <slots>
     <slot>tbAddPressed()</slot>
     <slot>tbEditPressed()</slot>
     <slot>tbRemovePressed()</slot>
-    <slot>processOnItem( QListViewItem* )</slot>
     <slot>processCurrentChanged( QListViewItem* )</slot>
     <slot>processDoubleClick( QListViewItem* )</slot>
 </slots>
 <functions>
     <function access="private">init()</function>
+    <function returnType="bool" access="private">eventFilter( QObject*, QEvent* )</function>
     <function>setDialogType( int )</function>
     <function returnType="int">dialogType() {return mDialogType;}</function>
     <function access="private">removeSharedFolder( const QString &amp;, const QString &amp;, VBoxSharedFoldersSettings::SFDialogType )</function>
