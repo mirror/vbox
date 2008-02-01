@@ -945,6 +945,7 @@ typedef struct _VBoxSFAddMapping
     /** bool, in: Writable
      * True (default) if the folder is writable.
      */
+    HGCMFunctionParameter writable;
 
 } VBoxSFAddMapping;
 
