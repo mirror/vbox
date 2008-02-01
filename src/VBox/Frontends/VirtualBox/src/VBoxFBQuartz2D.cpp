@@ -40,8 +40,13 @@ VBoxQuartz2DFrameBuffer::VBoxQuartz2DFrameBuffer (VBoxConsoleView *aView) :
     mBitmapData(NULL),
     mPixelFormat(FramebufferPixelFormat_FOURCC_RGB),
     mImage(NULL),
+#if 1
     mRegionRects(NULL),
     mRegionCount(0)
+#else
+    mRegion (NULL),
+    mRegionUnused (NULL)
+#endif
 {
     Log (("Quartz2D: Creating\n"));
     resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
@@ -82,9 +87,28 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
      * execution waiting for a lock is out of the question. A quick solution using
      * ASMAtomic(Cmp)XchgPtr and a struct { cAllocated; cRects; aRects[1]; }
      * *mRegion, *mUnusedRegion; should suffice (and permit you to reuse allocations). */
+#if 1
     RTMemFree (mRegionRects);
     mRegionCount = 0;
     mRegionRects = static_cast <CGRect*> (RTMemAlloc (sizeof (CGRect) * aCount));
+#else
+    RegionRects *rgnRcts = (RegionRects *) ASMAtomicXchgPtr (&mRegionUnused, NULL);
+    if (rgnRcts && rgnRcts->allocated < aCount)
+    {
+        RTMemFree (rgnRcts);
+        rgnRcts = NULL;
+    }
+    if (!rgnRcts)
+    {
+        ULONG allocated = RT_ALIGN_32 (aCount + 1, 32);
+        allocated = RT_MAX (128, allocated);
+        rgnRcts = (RegionRects *) RTMemAlloc (RT_OFFSETOF (RgionRects, rcts[allocated]));
+        if (!rgnRcts)
+            return E_NOMEM;
+        rgnRcts->allocated = allocated;
+    }
+    rgnRcts->used = 0;
+#endif
 
     QRegion reg;
 //    printf ("Region rects follow...\n");
@@ -110,14 +134,30 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
         else
             continue;
 
+#if 1
         mRegionRects[mRegionCount].origin.x = rect.x();
         mRegionRects[mRegionCount].origin.y = rect.y();
         mRegionRects[mRegionCount].size.width = rect.width();
         mRegionRects[mRegionCount].size.height = rect.height();
 //        printf ("Region rect[%d - %d]: %d %d %d %d\n", mRegionCount, aCount, rect.x(), rect.y(), rect.height(), rect.width());
         ++mRegionCount;
+#else
+        CGRect *cgRct = &rgnRcts->rcts[rgnRcts->used];
+        cgRct->origin.x = rect.x();
+        cgRct->origin.y = rect.y();
+        cgRct->size.width = rect.width();
+        cgRct->size.height = rect.height();
+//        printf ("Region rect[%d - %d]: %d %d %d %d\n", rgnRcts->used, aCount, rect.x(), rect.y(), rect.height(), rect.width());
+        rgnRcts->used++;
+#endif
     }
 //    printf ("..................................\n");
+#if 0
+    void *pvOld = ASMAtomicXchgPtr(&mRegion, rgnRcts);
+    if (    pvOld
+        &&  !ASMAtomicCmpXchgPtr(*mRegionUnused, pvOld, NULL))
+        RTMemFree(pvOld);
+#endif
     QApplication::postEvent (mView, new VBoxSetRegionEvent (reg));
 
     return S_OK;
@@ -193,7 +233,12 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
         Rect winRect;
         GetPortBounds (GetWindowPort (window), &winRect);
         CGContextClearRect (ctx, CGRectMake (winRect.left, winRect.top, winRect.right - winRect.left, winRect.bottom - winRect.top));
+#if 1
         if (mRegionRects && mRegionCount > 0)
+#else
+        RegionRects *rgnRcts = (RegionRects *) ASMAtomicXchgPtr (&mRegion, NULL);
+        if (rgnRcts)
+#endif
         {
             /* Save state for display fliping */
             CGContextSaveGState (ctx);
@@ -203,7 +248,14 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
             /* Add the clipping rects all at once. They are defined in
              * SetVisibleRegion. */
             CGContextBeginPath (ctx);
+#if 1
             CGContextAddRects (ctx, mRegionRects, mRegionCount);
+#else
+            CGContextAddRects (ctx, rgnRects->rcts, rgnRects->used);
+            if (    !ASMAtomicCmpXchgPtr (&mRegion, rgnRects, NULL)
+                &&  !ASMAtomicCmpXchgPtr (&mRegionUnused, rgnRects, NULL))
+                RTMemFree(rgnRects);
+#endif
             /* Restore the context state. Note that the
              * current path isn't destroyed. */
             CGContextRestoreGState (ctx);
@@ -325,12 +377,25 @@ void VBoxQuartz2DFrameBuffer::clean()
         RTMemFree (mBitmapData);
         mBitmapData = NULL;
     }
+#if 1
     if (mRegionRects)
     {
         RTMemFree (mRegionRects);
         mRegionRects = NULL;
         mRegionCount = 0;
     }
+#else
+    if (mRegion)
+    {
+        RTMemFree (mRegion)
+        mRegion = NULL;
+    }
+    if (mRegionUnused)
+    {
+        RTMemFree (mRegionUnused)
+        mRegionUnused = NULL;
+    }
+#endif
 }
 
 #endif /* defined (VBOX_GUI_USE_QUARTZ2D) */
