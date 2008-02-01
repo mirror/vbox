@@ -166,37 +166,37 @@ void VBoxVMInformationDlg::languageChangeImp()
     mNamesMap.clear();
 
     /* HD statistics: */
-    mNamesMap ["/Devices/ATA0/Unit0/*DMA"] = tr ("Number of DMA transfers");
-    mNamesMap ["/Devices/ATA0/Unit0/*PIO"] = tr ("Number of PIO transfers");
-    mNamesMap ["/Devices/ATA0/Unit0/ReadBytes"] = tr ("Amount of data read");
-    mNamesMap ["/Devices/ATA0/Unit0/WrittenBytes"] = tr ("Amount of data written");
+    mNamesMap ["/Devices/ATA0/Unit0/*DMA"] = tr ("DMA transfers");
+    mNamesMap ["/Devices/ATA0/Unit0/*PIO"] = tr ("PIO transfers");
+    mNamesMap ["/Devices/ATA0/Unit0/ReadBytes"] = tr ("Data read");
+    mNamesMap ["/Devices/ATA0/Unit0/WrittenBytes"] = tr ("Data written");
 
-    mNamesMap ["/Devices/ATA0/Unit1/*DMA"] = tr ("Number of DMA transfers");
-    mNamesMap ["/Devices/ATA0/Unit1/*PIO"] = tr ("Number of PIO transfers");
-    mNamesMap ["/Devices/ATA0/Unit1/ReadBytes"] = tr ("Amount of data read");
-    mNamesMap ["/Devices/ATA0/Unit1/WrittenBytes"] = tr ("Amount of data written");
+    mNamesMap ["/Devices/ATA0/Unit1/*DMA"] = tr ("DMA transfers");
+    mNamesMap ["/Devices/ATA0/Unit1/*PIO"] = tr ("PIO transfers");
+    mNamesMap ["/Devices/ATA0/Unit1/ReadBytes"] = tr ("Data read");
+    mNamesMap ["/Devices/ATA0/Unit1/WrittenBytes"] = tr ("Data written");
 
-    mNamesMap ["/Devices/ATA1/Unit0/*DMA"] = tr ("Number of ATAPI DMA transfers");
-    mNamesMap ["/Devices/ATA1/Unit0/*PIO"] = tr ("Number of ATAPI PIO transfers");
-    mNamesMap ["/Devices/ATA1/Unit0/ReadBytes"] = tr ("Amount of data read");
-    mNamesMap ["/Devices/ATA1/Unit0/WrittenBytes"] = tr ("Amount of data written");
+    mNamesMap ["/Devices/ATA1/Unit0/*DMA"] = tr ("DMA transfers");
+    mNamesMap ["/Devices/ATA1/Unit0/*PIO"] = tr ("PIO transfers");
+    mNamesMap ["/Devices/ATA1/Unit0/ReadBytes"] = tr ("Data read");
+    mNamesMap ["/Devices/ATA1/Unit0/WrittenBytes"] = tr ("Data written");
 
-    mNamesMap ["/Devices/ATA1/Unit1/*DMA"] = tr ("Number of ATAPI DMA transfers");
-    mNamesMap ["/Devices/ATA1/Unit1/*PIO"] = tr ("Number of ATAPI PIO transfers");
-    mNamesMap ["/Devices/ATA1/Unit1/ReadBytes"] = tr ("Amount of data read");
-    mNamesMap ["/Devices/ATA1/Unit1/WrittenBytes"] = tr ("Amount of data written");
+    mNamesMap ["/Devices/ATA1/Unit1/*DMA"] = tr ("DMA transfers");
+    mNamesMap ["/Devices/ATA1/Unit1/*PIO"] = tr ("PIO transfers");
+    mNamesMap ["/Devices/ATA1/Unit1/ReadBytes"] = tr ("Data read");
+    mNamesMap ["/Devices/ATA1/Unit1/WrittenBytes"] = tr ("Data written");
 
-    mNamesMap ["/Devices/PCNet0/TransmitBytes"] = tr ("Amount of bytes transmitted");
-    mNamesMap ["/Devices/PCNet0/ReceiveBytes"] = tr ("Amount of bytes received");
+    mNamesMap ["/Devices/PCNet0/TransmitBytes"] = tr ("Data transmitted");
+    mNamesMap ["/Devices/PCNet0/ReceiveBytes"] = tr ("Data received");
 
-    mNamesMap ["/Devices/PCNet1/TransmitBytes"] = tr ("Amount of bytes transmitted");
-    mNamesMap ["/Devices/PCNet1/ReceiveBytes"] = tr ("Amount of bytes received");
+    mNamesMap ["/Devices/PCNet1/TransmitBytes"] = tr ("Data transmitted");
+    mNamesMap ["/Devices/PCNet1/ReceiveBytes"] = tr ("Data received");
 
-    mNamesMap ["/Devices/PCNet2/TransmitBytes"] = tr ("Amount of bytes transmitted");
-    mNamesMap ["/Devices/PCNet2/ReceiveBytes"] = tr ("Amount of bytes received");
+    mNamesMap ["/Devices/PCNet2/TransmitBytes"] = tr ("Data transmitted");
+    mNamesMap ["/Devices/PCNet2/ReceiveBytes"] = tr ("Data received");
 
-    mNamesMap ["/Devices/PCNet3/TransmitBytes"] = tr ("Amount of bytes transmitted");
-    mNamesMap ["/Devices/PCNet3/ReceiveBytes"] = tr ("Amount of bytes received");
+    mNamesMap ["/Devices/PCNet3/TransmitBytes"] = tr ("Data transmitted");
+    mNamesMap ["/Devices/PCNet3/ReceiveBytes"] = tr ("Data received");
 
     /* Statistics page update. */
     refreshStatistics();
