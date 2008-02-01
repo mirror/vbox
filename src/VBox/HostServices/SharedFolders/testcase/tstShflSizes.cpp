@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     STRUCT(VBoxSFInformation, 76);
     STRUCT(VBoxSFRemove, 52);
     STRUCT(VBoxSFRename, 64);
-    STRUCT(VBoxSFAddMapping, 44); /* changed after 1.5.4, not critical since only used by the host */
+    STRUCT(VBoxSFAddMapping, 52); /* changed after 1.5.4, not critical since only used by the host */
     STRUCT(VBoxSFRemoveMapping, 28);
 
     /*
