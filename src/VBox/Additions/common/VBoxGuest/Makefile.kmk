@@ -75,7 +75,6 @@ else if1of ($(BUILD_TARGET),solaris)
  vboxguest_TEMPLATE      = VBOXGUESTR0
  vboxguest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
  vboxguest_INCS         := $(PATH_SUB_CURRENT)
- vboxguest_INCS.solaris  = $(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris
  vboxguest_SOURCES       = \
  	VBoxGuest-$(BUILD_TARGET).c \
  	VBoxGuest.cpp
