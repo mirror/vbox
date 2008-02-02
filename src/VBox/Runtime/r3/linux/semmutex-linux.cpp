@@ -92,15 +92,15 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
     /*
      * Allocate semaphore handle.
      */
-    struct RTSEMMUTEXINTERNAL *pIntMutexSem = (struct RTSEMMUTEXINTERNAL *)RTMemAlloc(sizeof(struct RTSEMMUTEXINTERNAL));
-    if (pIntMutexSem)
+    struct RTSEMMUTEXINTERNAL *pThis = (struct RTSEMMUTEXINTERNAL *)RTMemAlloc(sizeof(struct RTSEMMUTEXINTERNAL));
+    if (pThis)
     {
-        pIntMutexSem->iMagic   = RTSEMMUTEX_MAGIC;
-        pIntMutexSem->iState   = 0;
-        pIntMutexSem->Owner    = (pthread_t)~0;
-        pIntMutexSem->cNesting = 0;
+        pThis->iMagic   = RTSEMMUTEX_MAGIC;
+        pThis->iState   = 0;
+        pThis->Owner    = (pthread_t)~0;
+        pThis->cNesting = 0;
 
-        *pMutexSem = pIntMutexSem;
+        *pMutexSem = pThis;
         return VINF_SUCCESS;
     }
 
@@ -115,28 +115,28 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
      */
     if (MutexSem == NIL_RTSEMMUTEX)
         return VERR_INVALID_HANDLE;
-    struct RTSEMMUTEXINTERNAL *pIntMutexSem = MutexSem;
-    AssertPtrReturn(pIntMutexSem, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pIntMutexSem->iMagic == RTSEMMUTEX_MAGIC,
-                    ("MutexSem=%p iMagic=%#x\n", pIntMutexSem, pIntMutexSem->iMagic),
+    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->iMagic == RTSEMMUTEX_MAGIC,
+                    ("MutexSem=%p iMagic=%#x\n", pThis, pThis->iMagic),
                     VERR_INVALID_HANDLE);
 
     /*
      * Invalidate the semaphore and wake up anyone waiting on it.
      */
-    ASMAtomicXchgSize(&pIntMutexSem->iMagic, RTSEMMUTEX_MAGIC + 1);
-    if (ASMAtomicXchgS32(&pIntMutexSem->iState, 0) > 0)
+    ASMAtomicXchgSize(&pThis->iMagic, RTSEMMUTEX_MAGIC + 1);
+    if (ASMAtomicXchgS32(&pThis->iState, 0) > 0)
     {
-        sys_futex(&pIntMutexSem->iState, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
+        sys_futex(&pThis->iState, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
         usleep(1000);
     }
-    pIntMutexSem->Owner    = (pthread_t)~0;
-    pIntMutexSem->cNesting = 0;
+    pThis->Owner    = (pthread_t)~0;
+    pThis->cNesting = 0;
 
     /*
      * Free the semaphore memory and be gone.
      */
-    RTMemFree(pIntMutexSem);
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 
@@ -146,20 +146,20 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
     /*
      * Validate input.
      */
-    struct RTSEMMUTEXINTERNAL *pIntMutexSem = MutexSem;
-    AssertPtrReturn(pIntMutexSem, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pIntMutexSem->iMagic == RTSEMMUTEX_MAGIC,
-                    ("MutexSem=%p iMagic=%#x\n", pIntMutexSem, pIntMutexSem->iMagic),
+    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->iMagic == RTSEMMUTEX_MAGIC,
+                    ("MutexSem=%p iMagic=%#x\n", pThis, pThis->iMagic),
                     VERR_INVALID_HANDLE);
 
     /*
      * Check if nested request.
      */
     pthread_t Self = pthread_self();
-    if (    pIntMutexSem->Owner == Self
-        &&  pIntMutexSem->cNesting > 0)
+    if (    pThis->Owner == Self
+        &&  pThis->cNesting > 0)
     {
-        pIntMutexSem->cNesting++;
+        pThis->cNesting++;
         return VINF_SUCCESS;
     }
 
@@ -178,11 +178,11 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
     /*
      * Lock the mutex.
      */
-    if (RT_UNLIKELY(!ASMAtomicCmpXchgS32(&pIntMutexSem->iState, 1, 0)))
+    if (RT_UNLIKELY(!ASMAtomicCmpXchgS32(&pThis->iState, 1, 0)))
     {
         for (;;)
         {
-            int32_t iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
+            int32_t iOld = ASMAtomicXchgS32(&pThis->iState, 2);
 
             /*
              * Was the lock released in the meantime? This is unlikely (but possible)
@@ -193,8 +193,8 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
             /*
              * Go to sleep.
              */
-            long rc = sys_futex(&pIntMutexSem->iState, FUTEX_WAIT, 2, pTimeout, NULL, 0);
-            if (RT_UNLIKELY(pIntMutexSem->iMagic != RTSEMMUTEX_MAGIC))
+            long rc = sys_futex(&pThis->iState, FUTEX_WAIT, 2, pTimeout, NULL, 0);
+            if (RT_UNLIKELY(pThis->iMagic != RTSEMMUTEX_MAGIC))
                 return VERR_SEM_DESTROYED;
 
             /*
@@ -235,8 +235,8 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
     /*
      * Set the owner and nesting.
      */
-    pIntMutexSem->Owner = Self;
-    ASMAtomicXchgU32(&pIntMutexSem->cNesting, 1);
+    pThis->Owner = Self;
+    ASMAtomicXchgU32(&pThis->cNesting, 1);
     return VINF_SUCCESS;
 }
 
@@ -260,48 +260,48 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Validate input.
      */
-    struct RTSEMMUTEXINTERNAL *pIntMutexSem = MutexSem;
-    AssertPtrReturn(pIntMutexSem, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pIntMutexSem->iMagic == RTSEMMUTEX_MAGIC,
-                    ("MutexSem=%p iMagic=%#x\n", pIntMutexSem, pIntMutexSem->iMagic),
+    struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->iMagic == RTSEMMUTEX_MAGIC,
+                    ("MutexSem=%p iMagic=%#x\n", pThis, pThis->iMagic),
                     VERR_INVALID_HANDLE);
 
     /*
      * Check if nested.
      */
     pthread_t Self = pthread_self();
-    if (RT_UNLIKELY(    pIntMutexSem->Owner != Self
-                    ||  pIntMutexSem->cNesting == 0))
+    if (RT_UNLIKELY(    pThis->Owner != Self
+                    ||  pThis->cNesting == 0))
     {
         AssertMsgFailed(("Not owner of mutex %p!! Self=%08x Owner=%08x cNesting=%d\n",
-                         pIntMutexSem, Self, pIntMutexSem->Owner, pIntMutexSem->cNesting));
+                         pThis, Self, pThis->Owner, pThis->cNesting));
         return VERR_NOT_OWNER;
     }
 
     /*
      * If nested we'll just pop a nesting.
      */
-    if (pIntMutexSem->cNesting > 1)
+    if (pThis->cNesting > 1)
     {
-        pIntMutexSem->cNesting--;
+        pThis->cNesting--;
         return VINF_SUCCESS;
     }
 
     /*
      * Clear the state. (cNesting == 1)
      */
-    pIntMutexSem->Owner = (pthread_t)~0;
-    ASMAtomicXchgU32(&pIntMutexSem->cNesting, 0);
+    pThis->Owner = (pthread_t)~0;
+    ASMAtomicXchgU32(&pThis->cNesting, 0);
 
     /*
      * Release the mutex.
      */
-    int32_t iNew = ASMAtomicDecS32(&pIntMutexSem->iState);
+    int32_t iNew = ASMAtomicDecS32(&pThis->iState);
     if (iNew != 0)
     {
         /* somebody is waiting, try wake up one of them. */
-        ASMAtomicXchgS32(&pIntMutexSem->iState, 0);
-        (void)sys_futex(&pIntMutexSem->iState, FUTEX_WAKE, 1, NULL, NULL, 0);
+        ASMAtomicXchgS32(&pThis->iState, 0);
+        (void)sys_futex(&pThis->iState, FUTEX_WAKE, 1, NULL, NULL, 0);
     }
     return VINF_SUCCESS;
 }
