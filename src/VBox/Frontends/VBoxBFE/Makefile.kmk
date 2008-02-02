@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for VBoxBFE (a basic frontend which doesn't make use of Main).
+# Sub-Makefile for VBoxBFE (a basic frontend which doesn't make use of Main).
 #
 
 #
@@ -15,10 +15,11 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../..
-include $(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include $(PATH_KBUILD)/subheader.kmk
 
-PROGRAMS = VBoxBFE
+PROGRAMS += VBoxBFE
 
 #
 # VBoxBFE
@@ -96,7 +97,7 @@ endif
 
 VBoxBFE_INCS = \
 	$(PATH_VBoxBFE) \
-	$(PATH_BIN)/sdk/include
+	$(VBOX_PATH_SDK)/include
 ifneq ($(filter-out win os2 l4 darwin,$(BUILD_TARGET)),) # X11
 VBoxBFE_INCS += \
 	$(VBOX_XCURSOR_INCS)
@@ -144,9 +145,9 @@ VBoxBFE_CFLAGS.linux += -O ## @todo what's this good for?
 VBoxBFE_SDLConsole.cpp_DEPS = $(PATH_VBoxBFE)/Ico64x01.h
 
 
-include $(PATH_KBUILD)/footer.kmk
+include $(PATH_KBUILD)/subfooter.kmk
 
 # Convert the pnm-file to a byte array.
-$(PATH_VBoxBFE)/Ico64x01.h: ico64x01.pnm $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_VBoxBFE))
+$(PATH_VBoxBFE)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x01.pnm $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_VBoxBFE))
 	$(call MSG_TOOL,bin2c,VBoxBFE,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@

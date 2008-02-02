@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the headless frontend.
+# Sub-Makefile for the headless frontend.
 #
 
 #
@@ -15,24 +15,23 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../..
-include $(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include $(PATH_KBUILD)/subheader.kmk
 
-PROGRAMS                = VBoxHeadless
-SUBDIRS_AFTER           = testcase
+PROGRAMS += VBoxHeadless
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ifdef VBOX_WITH_FFMPEG
+ include $(PATH_SUB_CURRENT)/VideoCapture/Makefile.kmk
+endif
 
 VBoxHeadless_TEMPLATE   = VBOXMAINCLIENTEXE
-VBoxHeadless_SOURCES    = VBoxHeadless.cpp
 VBoxHeadless_DEFS       = VBOX_FFMPEG
-
+VBoxHeadless_SOURCES    = VBoxHeadless.cpp
 ifdef VBOX_WITH_VRDP
-VBoxHeadless_SOURCES   += Framebuffer.cpp
-VBoxHeadless_DEFS      += VBOX_WITH_VRDP
+ VBoxHeadless_DEFS     += VBOX_WITH_VRDP
+ VBoxHeadless_SOURCES  += Framebuffer.cpp
 endif
 
-ifdef VBOX_WITH_FFMPEG
- SUBDIRS += VideoCapture
-endif
-
-include $(PATH_KBUILD)/footer.kmk
+include $(PATH_KBUILD)/subfooter.kmk
 

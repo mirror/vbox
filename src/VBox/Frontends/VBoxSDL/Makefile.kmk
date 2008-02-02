@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for VBoxSDL (a simple frontend based on SDL).
+# Sub-Makefile for VBoxSDL (a simple frontend based on SDL).
 #
 
 #
@@ -15,10 +15,11 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../..
-include $(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include $(PATH_KBUILD)/subheader.kmk
 
-PROGRAMS = VBoxSDL tstSDL
+PROGRAMS += VBoxSDL tstSDL
 
 
 #
@@ -141,11 +142,11 @@ tstSDL_CXXFLAGS.linux = \
 
 
 # generate rules
-include $(PATH_KBUILD)/footer.kmk
+include $(PATH_KBUILD)/subfooter.kmk
 
 
 # Convert the pnm-file to a byte array.
-$(PATH_VBoxSDL)/Ico64x01.h: ico64x01.pnm $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_VBoxSDL))
+$(PATH_VBoxSDL)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxSDL/ico64x01.pnm $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_VBoxSDL))
 	$(call MSG_TOOL,bin2c,VBoxSDL,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
 
