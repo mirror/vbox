@@ -38,11 +38,6 @@
 
 
 /*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-#define SECONDS 10
-
-/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 static RTSEMMUTEX           g_hMutex = NIL_RTSEMMUTEX;
@@ -151,7 +146,7 @@ static int Test1(unsigned cThreads, unsigned cSeconds, bool fYield, bool fQuiet)
 
     if (!fQuiet)
         RTPrintf("tstSemMutex: %zu Threads created. Racing them for %u seconds (%s) ...\n",
-                 cThreads, SECONDS, g_fYield ? "yielding" : "no yielding");
+                 cThreads, cSeconds, g_fYield ? "yielding" : "no yielding");
 
     uint64_t u64StartTS = RTTimeNanoTS();
     rc = RTSemMutexRelease(g_hMutex);
@@ -198,7 +193,7 @@ static int Test1(unsigned cThreads, unsigned cSeconds, bool fYield, bool fQuiet)
     RTPrintf("tstSemMutex: Threads: %u  Total: %llu  Per Sec: %llu  Avg: %llu ns  Max div: %llu%%\n",
              cThreads,
              Total,
-             Total / cThreads,
+             Total / cSeconds,
              ElapsedNS / Total,
              MaxDiviation * 100 / Normal
              );
