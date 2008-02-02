@@ -147,10 +147,8 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
      * Validate input.
      */
     struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->iMagic == RTSEMMUTEX_MAGIC,
-                    ("MutexSem=%p iMagic=%#x\n", pThis, pThis->iMagic),
-                    VERR_INVALID_HANDLE);
+    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMMUTEX_MAGIC,
+                 VERR_INVALID_HANDLE);
 
     /*
      * Check if nested request.
@@ -177,6 +175,7 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
 
     /*
      * Lock the mutex.
+     * Optimize for the uncontended case (makes 1-2 ns difference).
      */
     if (RT_UNLIKELY(!ASMAtomicCmpXchgS32(&pThis->iState, 1, 0)))
     {
@@ -224,7 +223,7 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
 
         /*
          * When leaving this loop, iState is set to 2. This means that we gained the
-         * Lock and there are _possibly_ some waiters. We don't know exactly as another
+         * lock and there are _possibly_ some waiters. We don't know exactly as another
          * thread might entered this loop at nearly the same time. Therefore we will
          * call futex_wakeup once too often (if _no_ other thread entered this loop).
          * The key problem is the simple futex_wait test for x != y (iState != 2) in
@@ -261,10 +260,8 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
      * Validate input.
      */
     struct RTSEMMUTEXINTERNAL *pThis = MutexSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->iMagic == RTSEMMUTEX_MAGIC,
-                    ("MutexSem=%p iMagic=%#x\n", pThis, pThis->iMagic),
-                    VERR_INVALID_HANDLE);
+    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMMUTEX_MAGIC,
+                 VERR_INVALID_HANDLE);
 
     /*
      * Check if nested.
@@ -297,7 +294,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
      * Release the mutex.
      */
     int32_t iNew = ASMAtomicDecS32(&pThis->iState);
-    if (iNew != 0)
+    if (RT_UNLIKELY(iNew != 0))
     {
         /* somebody is waiting, try wake up one of them. */
         ASMAtomicXchgS32(&pThis->iState, 0);
