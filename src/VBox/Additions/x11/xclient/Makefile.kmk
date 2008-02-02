@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VirtualBox Guest Addition X11 Client.
+# Sub-Makefile for the VirtualBox Guest Addition X11 Client.
 #
 
 #
@@ -15,8 +15,9 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
 #
 # VBoxClient - clipboard and seamless.
@@ -87,4 +88,4 @@ ifdef VBOX_X11_SEAMLESS_GUEST
  endif
 endif
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk

@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VBox Additions XFree86 and X.org mouse drivers.
+# Sub-Makefile for the VBox Additions XFree86 and X.org mouse drivers.
 #
 
 #
@@ -15,8 +15,9 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
 
 #
@@ -79,7 +80,7 @@ vboxmouse_drv_70_SOURCES = \
 DLLS += vboxmouse_drv_71
 vboxmouse_drv_71_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_71_DEFS := $(vboxmouse_drv_70_DEFS)
-vboxmouse_drv_71_INCS = \
+vboxmouse_drv_71_INCS := \
 	$(VBOX_PATH_X11_XORG_7_1) \
 	$(VBOX_PATH_X11_XORG_7_1)/X11 \
 	$(VBOX_PATH_X11_XORG_7_1)/xorg \
@@ -96,7 +97,7 @@ vboxmouse_drv_71_SOURCES = \
 DLLS += vboxmouse_drv_14
 vboxmouse_drv_14_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_14_DEFS := $(vboxmouse_drv_70_DEFS)
-vboxmouse_drv_14_INCS = \
+vboxmouse_drv_14_INCS := \
 	$(VBOX_PATH_X11_XORG_1_4) \
 	$(VBOX_PATH_X11_XORG_1_4)/X11 \
 	$(VBOX_PATH_X11_XORG_1_4)/xorg \
@@ -107,5 +108,5 @@ vboxmouse_drv_14_SOURCES = \
 	VBoxUtils.c
 
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 
