@@ -88,12 +88,12 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
     /*
      * Allocate semaphore handle.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pIntEventMultiSem = (struct RTSEMEVENTMULTIINTERNAL *)RTMemAlloc(sizeof(struct RTSEMEVENTMULTIINTERNAL));
-    if (pIntEventMultiSem)
+    struct RTSEMEVENTMULTIINTERNAL *pThis = (struct RTSEMEVENTMULTIINTERNAL *)RTMemAlloc(sizeof(struct RTSEMEVENTMULTIINTERNAL));
+    if (pThis)
     {
-        pIntEventMultiSem->iMagic = RTSEMEVENTMULTI_MAGIC;
-        pIntEventMultiSem->iState = 0;
-        *pEventMultiSem = pIntEventMultiSem;
+        pThis->iMagic = RTSEMEVENTMULTI_MAGIC;
+        pThis->iState = 0;
+        *pEventMultiSem = pThis;
         return VINF_SUCCESS;
     }
     return  VERR_NO_MEMORY;
@@ -105,24 +105,24 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pIntEventMultiSem = EventMultiSem;
-    AssertReturn(VALID_PTR(pIntEventMultiSem) && pIntEventMultiSem->iMagic == RTSEMEVENTMULTI_MAGIC,
+    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENTMULTI_MAGIC,
                  VERR_INVALID_HANDLE);
 
     /*
      * Invalidate the semaphore and wake up anyone waiting on it.
      */
-    ASMAtomicXchgSize(&pIntEventMultiSem->iMagic, RTSEMEVENTMULTI_MAGIC + 1);
-    if (ASMAtomicXchgS32(&pIntEventMultiSem->iState, -1) == 1)
+    ASMAtomicXchgSize(&pThis->iMagic, RTSEMEVENTMULTI_MAGIC + 1);
+    if (ASMAtomicXchgS32(&pThis->iState, -1) == 1)
     {
-        sys_futex(&pIntEventMultiSem->iState, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
+        sys_futex(&pThis->iState, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
         usleep(1000);
     }
 
     /*
      * Free the semaphore memory and be gone.
      */
-    RTMemFree(pIntEventMultiSem);
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 
@@ -132,17 +132,17 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pIntEventMultiSem = EventMultiSem;
-    AssertReturn(VALID_PTR(pIntEventMultiSem) && pIntEventMultiSem->iMagic == RTSEMEVENTMULTI_MAGIC,
+    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENTMULTI_MAGIC,
                  VERR_INVALID_HANDLE);
     /*
      * Signal it.
      */
-    int32_t iOld = ASMAtomicXchgS32(&pIntEventMultiSem->iState, -1);
+    int32_t iOld = ASMAtomicXchgS32(&pThis->iState, -1);
     if (iOld > 0)
     {
         /* wake up sleeping threads. */
-        long cWoken = sys_futex(&pIntEventMultiSem->iState, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
+        long cWoken = sys_futex(&pThis->iState, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
         AssertMsg(cWoken >= 0, ("%ld\n", cWoken)); NOREF(cWoken);
     }
     Assert(iOld == 0 || iOld == -1 || iOld == 1);
@@ -155,18 +155,18 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pIntEventMultiSem = EventMultiSem;
-    AssertReturn(VALID_PTR(pIntEventMultiSem) && pIntEventMultiSem->iMagic == RTSEMEVENTMULTI_MAGIC,
+    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENTMULTI_MAGIC,
                  VERR_INVALID_HANDLE);
 #ifdef RT_STRICT
-    int32_t i = pIntEventMultiSem->iState;
+    int32_t i = pThis->iState;
     Assert(i == 0 || i == -1 || i == 1);
 #endif
 
     /*
      * Reset it.
      */
-    ASMAtomicCmpXchgS32(&pIntEventMultiSem->iState, 0, -1);
+    ASMAtomicCmpXchgS32(&pThis->iState, 0, -1);
     return VINF_SUCCESS;
 }
 
@@ -176,14 +176,14 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pIntEventMultiSem = EventMultiSem;
-    AssertReturn(VALID_PTR(pIntEventMultiSem) && pIntEventMultiSem->iMagic == RTSEMEVENTMULTI_MAGIC,
+    struct RTSEMEVENTMULTIINTERNAL *pThis = EventMultiSem;
+    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENTMULTI_MAGIC,
                  VERR_INVALID_HANDLE);
 
     /*
      * Quickly check whether it's signaled.
      */
-    int32_t iCur = pIntEventMultiSem->iState;
+    int32_t iCur = pThis->iState;
     Assert(iCur == 0 || iCur == -1 || iCur == 1);
     if (iCur == -1)
         return VINF_SUCCESS;
@@ -211,13 +211,13 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
          * Start waiting. We only account for there being or having been
          * threads waiting on the semaphore to keep things simple.
          */
-        iCur = pIntEventMultiSem->iState;
+        iCur = pThis->iState;
         Assert(iCur == 0 || iCur == -1 || iCur == 1);
         if (    iCur == 1
-            ||  ASMAtomicCmpXchgS32(&pIntEventMultiSem->iState, 1, 0))
+            ||  ASMAtomicCmpXchgS32(&pThis->iState, 1, 0))
         {
-            long rc = sys_futex(&pIntEventMultiSem->iState, FUTEX_WAIT, 1, pTimeout, NULL, 0);
-            if (RT_UNLIKELY(pIntEventMultiSem->iMagic != RTSEMEVENTMULTI_MAGIC))
+            long rc = sys_futex(&pThis->iState, FUTEX_WAIT, 1, pTimeout, NULL, 0);
+            if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENTMULTI_MAGIC))
                 return VERR_SEM_DESTROYED;
             if (rc == 0)
                 return VINF_SUCCESS;

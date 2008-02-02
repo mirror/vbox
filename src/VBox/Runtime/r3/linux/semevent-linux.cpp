@@ -89,12 +89,12 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
     /*
      * Allocate semaphore handle.
      */
-    struct RTSEMEVENTINTERNAL *pIntEventSem = (struct RTSEMEVENTINTERNAL *)RTMemAlloc(sizeof(struct RTSEMEVENTINTERNAL));
-    if (pIntEventSem)
+    struct RTSEMEVENTINTERNAL *pThis = (struct RTSEMEVENTINTERNAL *)RTMemAlloc(sizeof(struct RTSEMEVENTINTERNAL));
+    if (pThis)
     {
-        pIntEventSem->iMagic = RTSEMEVENT_MAGIC;
-        pIntEventSem->cWaiters = 0;
-        *pEventSem = pIntEventSem;
+        pThis->iMagic = RTSEMEVENT_MAGIC;
+        pThis->cWaiters = 0;
+        *pEventSem = pThis;
         return VINF_SUCCESS;
     }
     return  VERR_NO_MEMORY;
@@ -106,24 +106,24 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     /*
      * Validate input.
      */
-    struct RTSEMEVENTINTERNAL *pIntEventSem = EventSem;
-    AssertReturn(VALID_PTR(pIntEventSem) && pIntEventSem->iMagic == RTSEMEVENT_MAGIC,
+    struct RTSEMEVENTINTERNAL *pThis = EventSem;
+    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENT_MAGIC,
                  VERR_INVALID_HANDLE);
 
     /*
      * Invalidate the semaphore and wake up anyone waiting on it.
      */
-    ASMAtomicXchgSize(&pIntEventSem->iMagic, RTSEMEVENT_MAGIC + 1);
-    if (ASMAtomicXchgS32(&pIntEventSem->cWaiters, INT32_MIN / 2) > 0)
+    ASMAtomicXchgSize(&pThis->iMagic, RTSEMEVENT_MAGIC + 1);
+    if (ASMAtomicXchgS32(&pThis->cWaiters, INT32_MIN / 2) > 0)
     {
-        sys_futex(&pIntEventSem->cWaiters, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
+        sys_futex(&pThis->cWaiters, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
         usleep(1000);
     }
 
     /*
      * Free the semaphore memory and be gone.
      */
-    RTMemFree(pIntEventSem);
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 
@@ -133,18 +133,18 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
     /*
      * Validate input.
      */
-    struct RTSEMEVENTINTERNAL *pIntEventSem = EventSem;
-    AssertReturn(VALID_PTR(pIntEventSem) && pIntEventSem->iMagic == RTSEMEVENT_MAGIC,
+    struct RTSEMEVENTINTERNAL *pThis = EventSem;
+    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENT_MAGIC,
                  VERR_INVALID_HANDLE);
     /*
      * Try signal it.
      */
     for (unsigned i = 0;; i++)
     {
-        int32_t iCur = pIntEventSem->cWaiters;
+        int32_t iCur = pThis->cWaiters;
         if (iCur == 0)
         {
-            if (ASMAtomicCmpXchgS32(&pIntEventSem->cWaiters, -1, 0))
+            if (ASMAtomicCmpXchgS32(&pThis->cWaiters, -1, 0))
                 break; /* nobody is waiting */
         }
         else if (iCur < 0)
@@ -152,10 +152,10 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
         else
         {
             /* somebody is waiting, try wake up one of them. */
-            long cWoken = sys_futex(&pIntEventSem->cWaiters, FUTEX_WAKE, 1, NULL, NULL, 0);
+            long cWoken = sys_futex(&pThis->cWaiters, FUTEX_WAKE, 1, NULL, NULL, 0);
             if (RT_LIKELY(cWoken == 1))
             {
-                ASMAtomicDecS32(&pIntEventSem->cWaiters);
+                ASMAtomicDecS32(&pThis->cWaiters);
                 break;
             }
             AssertMsg(cWoken == 0, ("%ld\n", cWoken));
@@ -179,7 +179,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
                 else if (!(i % 4))
                     pthread_yield();
                 else
-                    AssertReleaseMsg(i < 4096, ("iCur=%#x pIntEventSem=%p\n", iCur, pIntEventSem));
+                    AssertReleaseMsg(i < 4096, ("iCur=%#x pThis=%p\n", iCur, pThis));
             }
         }
     }
@@ -192,14 +192,14 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
     /*
      * Validate input.
      */
-    struct RTSEMEVENTINTERNAL *pIntEventSem = EventSem;
-    AssertReturn(VALID_PTR(pIntEventSem) && pIntEventSem->iMagic == RTSEMEVENT_MAGIC,
+    struct RTSEMEVENTINTERNAL *pThis = EventSem;
+    AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENT_MAGIC,
                  VERR_INVALID_HANDLE);
 
     /*
      * Quickly check whether it's signaled.
      */
-    if (ASMAtomicCmpXchgS32(&pIntEventSem->cWaiters, 0, -1))
+    if (ASMAtomicCmpXchgS32(&pThis->cWaiters, 0, -1))
         return VINF_SUCCESS;
 
     /*
@@ -222,7 +222,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
         /*
          * Announce that we're among the waiters.
          */
-        int32_t iNew = ASMAtomicIncS32(&pIntEventSem->cWaiters);
+        int32_t iNew = ASMAtomicIncS32(&pThis->cWaiters);
         if (iNew == 0)
             return VINF_SUCCESS;
         if (RT_LIKELY(iNew > 0))
@@ -230,8 +230,8 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
             /*
              * Go to sleep.
              */
-            long rc = sys_futex(&pIntEventSem->cWaiters, FUTEX_WAIT, iNew, pTimeout, NULL, 0);
-            if (RT_UNLIKELY(pIntEventSem->iMagic != RTSEMEVENT_MAGIC))
+            long rc = sys_futex(&pThis->cWaiters, FUTEX_WAIT, iNew, pTimeout, NULL, 0);
+            if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
                 return VERR_SEM_DESTROYED;
 
             /* Did somebody wake us up from RTSemEventSignal()? */
@@ -239,7 +239,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
                 return VINF_SUCCESS;
 
             /* No, then the kernel woke us up or we failed going to sleep. Adjust the accounting. */
-            iNew = ASMAtomicDecS32(&pIntEventSem->cWaiters);
+            iNew = ASMAtomicDecS32(&pThis->cWaiters);
             Assert(iNew >= 0);
 
             /*
@@ -267,7 +267,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
         else
         {
             /* this can't happen. */
-            if (RT_UNLIKELY(pIntEventSem->iMagic != RTSEMEVENT_MAGIC))
+            if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
                 return VERR_SEM_DESTROYED;
             AssertReleaseMsgFailed(("iNew=%d\n", iNew));
         }
