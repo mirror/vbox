@@ -556,6 +556,13 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			    /* Connected */
 			    so->so_state &= ~SS_ISFCONNECTING;
 
+                /*
+                 * This should be probably guarded by PROBE_CONN too. Anyway,
+                 * we disable it on OS/2 because the below send call returns
+                 * EFAULT which causes the opened TCP socket to close right
+                 * after it has been opened and connected.
+                 */
+#ifndef RT_OS_OS2
 			    ret = send(so->s, (const char *)&ret, 0, 0);
 			    if (ret < 0) {
 			      /* XXXXX Must fix, zero bytes is a NOP */
@@ -567,6 +574,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			      so->so_state = SS_NOFDREF;
 			    }
 			    /* else so->so_state &= ~SS_ISFCONNECTING; */
+#endif
 
 			    /*
 			     * Continue tcp_input
