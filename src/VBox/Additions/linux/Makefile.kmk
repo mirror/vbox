@@ -115,5 +115,5 @@ ifdef VBOX_SELINUX_CMPLD
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_SELINUX_CMPLD)                            $(PATH_TARGET)/install
 endif
 	$(QUIET)$(VBOX_MAKESELF) $(PATH_TARGET)/install $@ \
-	"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux installation" /bin/sh ./install.sh "> /dev/null"
+		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux installation" /bin/sh ./install.sh "> /dev/null"
 
