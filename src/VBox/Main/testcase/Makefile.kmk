@@ -15,20 +15,21 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../..
-include $(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include $(PATH_KBUILD)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS       = tstAPI
- PROGRAMS.linux = tstVBoxAPILinux
- PROGRAMS.win   = tstVBoxAPIWin
+ PROGRAMS       += tstAPI
+ PROGRAMS.linux += tstVBoxAPILinux
+ PROGRAMS.win   += tstVBoxAPIWin
 else ifeq ($(USERNAME),dmik)
- PROGRAMS       = tstAPI
- PROGRAMS.linux = tstVBoxAPILinux
- PROGRAMS.win   = tstVBoxAPIWin
+ PROGRAMS       += tstAPI
+ PROGRAMS.linux += tstVBoxAPILinux
+ PROGRAMS.win   += tstVBoxAPIWin
 endif # VBOX_WITH_TESTCASES
 
-INSTALLS = samples
+INSTALLS += samples
 
 #
 # The samples
@@ -49,6 +50,12 @@ endif
 #
 tstAPI_TEMPLATE = VBOXMAINCLIENTEXE
 tstAPI_SOURCES  = tstAPI.cpp
+ifeq ($(BUILD_TARGET),win) ## @todo just add this to the template.
+tstAPI_DEPS     = $(VBOX_PATH_SDK)/include/VirtualBox.h
+else
+tstAPI_DEPS     = $(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
+endif
+
 
 #
 # tstVBoxAPILinux
@@ -64,6 +71,8 @@ tstVBoxAPILinux_INCS     = \
 	$(PATH_BIN)/sdk/include
 tstVBoxAPILinux_LIBPATH  = $(LIBPATH_XPCOM)
 tstVBoxAPILinux_LIBS     = $(LIB_XPCOM)
+tstVBoxAPILinux_DEPS     = \
+	$(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
 
 #
 # tstVBoxAPIWin
@@ -72,7 +81,9 @@ tstVBoxAPIWin_TEMPLATE = VBOXMAINCLIENTEXE
 tstVBoxAPIWin_SOURCES  = \
 	tstVBoxAPIWin.cpp \
 	$(PATH_BIN)/sdk/lib/VirtualBox_i.c
+tstVBoxAPIWin_DEPS     = \
+	$(VBOX_PATH_SDK)/include/VirtualBox.h
 
 # generate rules.
-include $(PATH_KBUILD)/footer.kmk
+include $(PATH_KBUILD)/subfooter.kmk
 

@@ -17,46 +17,59 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/header.kmk
+include $(PATH_KBUILD)/subheader.kmk
 
-SUBDIRS_AFTER    = testcase
-ifdef VBOX_WITH_WEBSERVICES
- SUBDIRS_AFTER  += webservice
+# The KMK_OPTS_JOBS is a kmk v0.1.3 feature. Fake it for now.
+ifndef KMK_OPTS_JOBS
+ KMK_OPTS_JOBS = 1
 endif
 
-ifndef VBOX_OSE
- DEFS           += VBOX_WITH_E1000
+# Include sub-makefile(s) first if we're doing parallel building.
+# This is primarily a hack to try avoid idling all but one cpu when
+# building the gigant soap sources. 
+ifneq ($(KMK_OPTS_JOBS),1)
+ ifndef VBOX_OSE
+  include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
+ endif
+ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 endif
 
-LIBRARIES        = VBoxCOM
-DLLS             = VBoxSettings VBoxC
-PROGRAMS         = VBoxSVC
+# targets++
+LIBRARIES       += VBoxCOM
+DLLS            += VBoxSettings VBoxC
+PROGRAMS        += VBoxSVC
+VBOX_MAIN_DEFS   =
 ifneq ($(BUILD_TARGET),win)
  ifndef VBOX_WITH_XPCOM
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
  endif
  DLLS           += VBoxSVCM
  ifneq ($(BUILD_TARGET),os2)
-  DEFS          += VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+  VBOX_MAIN_DEFS+= VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
  endif
- DEFS           += VBOX_WITH_UNIXY_TAP_NETWORKING
+ VBOX_MAIN_DEFS += VBOX_WITH_UNIXY_TAP_NETWORKING
 endif
+ifndef VBOX_OSE
+VBOX_MAIN_DEFS  += VBOX_WITH_E1000
+endif
+## @todo eliminate or expand VBOX_MAIN_DEFS.
 
+#PROGRAMS        += tstCFGLdr
 
 ifeq ($(BUILD_TARGET),win)
- OTHERS          = $(PATH_BIN)/comregister.cmd
+ OTHERS         += $(PATH_BIN)/comregister.cmd
  IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox.idl
- OTHER_CLEAN     = \
-	$(PATH_BIN)/comregister.cmd \
-    $(VBOX_PATH_SDK)/include/VirtualBox.h \
-    $(IDLFILE) \
-    $(VBOX_PATH_SDK)/lib/VirtualBox.tlb \
-    $(VBOX_PATH_SDK)/lib/VirtualBox_i.c \
-    $(PATH_VBoxCOM)/VirtualBox.h \
-    $(PATH_VBoxCOM)/VirtualBox_i.c \
-    $(PATH_VBoxCOM)/VirtualBox.tlb
+ OTHER_CLEAN    += \
+ 	$(PATH_BIN)/comregister.cmd \
+ 	$(VBOX_PATH_SDK)/include/VirtualBox.h \
+ 	$(IDLFILE) \
+ 	$(VBOX_PATH_SDK)/lib/VirtualBox.tlb \
+ 	$(VBOX_PATH_SDK)/lib/VirtualBox_i.c \
+ 	$(PATH_VBoxCOM)/VirtualBox.h \
+ 	$(PATH_VBoxCOM)/VirtualBox_i.c \
+ 	$(PATH_VBoxCOM)/VirtualBox.tlb
 else
- INSTALLS        = xpcom-components
+ INSTALLS       += xpcom-components
  IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox_XPCOM.idl
  ifeq ($(BUILD_TARGET),linux)
   IDLTYPELIB     = $(PATH_BIN)/VirtualBox_XPCOM.xpt
@@ -64,12 +77,20 @@ else
   IDLTYPELIB     = $(PATH_BIN)/components/VirtualBox_XPCOM.xpt
  endif
  IDLHEADER       = $(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
- OTHERS          = $(IDLTYPELIB)
- OTHER_CLEAN     = \
+ OTHERS         += $(IDLTYPELIB)
+ OTHER_CLEAN    += \
     $(IDLFILE) \
     $(IDLHEADER) \
     $(IDLTYPELIB)
 
+endif
+
+# Include sub-makefile(s) last if we're not doing parallel building.
+ifeq ($(KMK_OPTS_JOBS),1)
+ ifndef VBOX_OSE
+  include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
+ endif
+ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 endif
 
 
@@ -98,9 +119,8 @@ $(call DIRDEP, $(PATH_OUT)/docs/Main):
 #
 # VBoxSVC executable
 #
-
 VBoxSVC_TEMPLATE = VBOXMAINEXE
-VBoxSVC_DEFS = VBOX_MAIN_SETTINGS_ADDONS
+VBoxSVC_DEFS = VBOX_MAIN_SETTINGS_ADDONS $(VBOX_MAIN_DEFS)
 ifdef VBOX_WITH_VRDP
 VBoxSVC_DEFS += VBOX_VRDP
 endif
@@ -235,14 +255,13 @@ win32/VBoxSVC.rc_DEPS = $(PATH_TARGET)/VBoxSVC.rgs
 #
 # VBoxSVC wrapper module
 #
-
 ifdef VBOX_WITH_XPCOM
 
 VBoxSVCM_TEMPLATE       = VBOXMAINDLL
 ifneq ($(BUILD_TARGET),linux)
 VBoxSVCM_INST           = $(INST_BIN)components/
 endif
-VBoxSVCM_DEFS           = IN_RING3
+VBoxSVCM_DEFS           = IN_RING3 $(VBOX_MAIN_DEFS)
 VBoxSVCM_INCS           = \
 	include \
 	$(PATH_VBoxC) \
@@ -266,13 +285,12 @@ endif # VBOX_WITH_XPCOM
 #
 # VBoxC module
 #
-
 VBoxC_TEMPLATE = VBOXMAINDLL
 ifneq ($(filter-out linux win,$(BUILD_TARGET)),)
 VBoxC_INST = $(INST_BIN)components/
 endif
 
-VBoxC_DEFS = IN_RING3
+VBoxC_DEFS = IN_RING3 $(VBOX_MAIN_DEFS)
 VBoxC_DEFS += VBOX_COM_INPROC
 
 ifdef VBOX_WITH_VRDP
@@ -389,7 +407,6 @@ win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs
 #
 # VBoxSettings
 #
-
 VBoxSettings_TEMPLATE	= VBOXMAINDLL
 VBoxSettings_NAME       = $(basename $(notdir $(LIB_SETTINGS)))
 VBoxSettings_SDKS       = VBOX_LIBXML2 VBOX_ZLIB
@@ -405,7 +422,6 @@ VBoxSettings_LDFLAGS.darwin = -install_name @executable_path/$(notdir $(LIB_SETT
 #
 # VBoxCOM - COM Abstraction Layer library
 #
-
 VBoxCOM_TEMPLATE        = VBOXMAINLIB
 VBoxCOM_SOURCES         = \
 	glue/com.cpp \
@@ -518,7 +534,7 @@ xpcom-components_SYMLINKS = \
 endif
 
 # generate
-include $(PATH_KBUILD)/footer.kmk
+include $(PATH_KBUILD)/subfooter.kmk
 
 
 #
@@ -572,7 +588,12 @@ $(PATH_TARGET)/VBoxC.rgs: win32/VirtualBox_rgs.xsl $(XIDLFILE)
 # and (b) generating more stuff *after* the maintarget has been completed.
 #
 # What needs to be done is to not depend on _i.c in the object subdir, but on all the final outputs.
-$(PATH_VBoxCOM)/VirtualBox_i.c: $(IDLFILE) | $(call DIRDEP,$(PATH_VBoxCOM))
+$(PATH_VBoxCOM)/VirtualBox_i.c \
++ $(VBOX_PATH_SDK)/lib/VirtualBox_i.c \
++ $(PATH_VBoxCOM)/VirtualBox.h \
++ $(VBOX_PATH_SDK)/include/VirtualBox.h \
++ $(PATH_VBoxCOM)/VirtualBox.tlb \
++ $(VBOX_PATH_SDK)/lib/VirtualBox.tlb: $(IDLFILE) | $(call DIRDEP,$(PATH_VBoxCOM))
 	$(MAIN_IDL) $(IDL_DEFS) \
 		/out $(subst /,\\,$(PATH_VBoxCOM)) \
 		/cpp_cmd $(subst /,\\,$(TOOL_$(VBOX_VCC_TOOL)_CC)) \
