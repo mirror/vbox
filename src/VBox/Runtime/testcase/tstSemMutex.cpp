@@ -201,7 +201,7 @@ static int Test1(unsigned cThreads, unsigned cSeconds, bool fYield, bool fQuiet)
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
     int rc = RTR3Init(false, 0);
     if (RT_FAILURE(rc))
@@ -211,15 +211,34 @@ int main()
     }
     RTPrintf("tstSemMutex: TESTING...\n");
 
-    /* threads, seconds, yield, quiet */
-    Test1(1, 1, true, false);
-    Test1(2, 1, true, false);
-    Test1(10, 1, true, false);
-    Test1(10, 10, false, false);
+    if (argc == 1)
+    {
+        /*    threads, seconds,  yield,  quiet */
+        Test1(      1,       1,   true,  false);
+        Test1(      2,       1,   true,  false);
+        Test1(     10,       1,   true,  false);
+        Test1(     10,      10,  false,  false);
 
-    RTPrintf("tstSemMutex: benchmarking... \n");
-    for (unsigned cThreads = 1; cThreads < 32; cThreads++)
-        Test1(cThreads, 2, false, true);
+        RTPrintf("tstSemMutex: benchmarking...\n");
+        for (unsigned cThreads = 1; cThreads < 32; cThreads++)
+            Test1(cThreads,  2,  false,   true);
+
+        /** @todo add a testcase where some stuff times out. */
+    }
+    else
+    {
+        /*    threads, seconds,  yield,  quiet */
+        RTPrintf("tstSemMutex: benchmarking...\n");
+        Test1(      1,       3,  false,   true);
+        Test1(      1,       3,  false,   true);
+        Test1(      1,       3,  false,   true);
+        Test1(      2,       3,  false,   true);
+        Test1(      2,       3,  false,   true);
+        Test1(      2,       3,  false,   true);
+        Test1(      3,       3,  false,   true);
+        Test1(      3,       3,  false,   true);
+        Test1(      3,       3,  false,   true);
+    }
 
     if (!g_cErrors)
         RTPrintf("tstSemMutex: SUCCESS\n");
