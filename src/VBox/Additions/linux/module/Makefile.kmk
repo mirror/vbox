@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VirtualBox Linux Guest Additions Kernel Module.
+# Sub-Makefile for the VirtualBox Linux Guest Additions Kernel Module.
 #
 
 #
@@ -15,18 +15,19 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
-INSTALLS = vboxmod-bin vboxmod-sh
+INSTALLS += vboxmod-bin vboxmod-sh
 ifdef VBOX_WITH_ADDITION_DRIVERS
- SYSMODS = vboxadd
+ SYSMODS += vboxadd
 endif
 
 #
 # Populate FILES_VBOXADD_NOBIN and FILES_VBOXADD_BIN
 #
-include files_vboxadd
+include $(PATH_SUB_CURRENT)/files_vboxadd
 
 vboxmod-bin_INST    = $(INST_ADDITIONS)/src/vboxadd/
 vboxmod-bin_MODE    = a+r,u+w
@@ -54,5 +55,5 @@ vboxadd_LIBS     = \
 	$(VBOX_LIB_VBGL_R0BASE) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 

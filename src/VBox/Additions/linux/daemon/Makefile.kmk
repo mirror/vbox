@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VirtualBox Linux Guest Addition Linux Daemon.
+# Sub-Makefile for the VirtualBox Linux Guest Addition Linux Daemon.
 #
 
 #
@@ -15,12 +15,13 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
 
 ## @todo Replace with VBoxService.
-PROGRAMS = vboxadd-timesync
+PROGRAMS += vboxadd-timesync
 
 vboxadd-timesync_TEMPLATE = VBOXGUESTR3EXE
 vboxadd-timesync_DEFS     = _GNU_SOURCE
@@ -31,5 +32,5 @@ vboxadd-timesync_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3)
 
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
 
