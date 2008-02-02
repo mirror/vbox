@@ -1098,7 +1098,7 @@ include $(PATH_OUT)/GCCConfig.kmk
 
 
 #
-# Coding Signing.
+# Code Signing.
 #
 ifdef VBOX_SIGNING_MODE
  ifeq ($(BUILD_PLATFORM),win)
@@ -1112,57 +1112,59 @@ ifdef VBOX_SIGNING_MODE
   VBOX_SIGNTOOL ?= $(VBOX_PATH_SELFSIGN)/SignTool.exe
   VBOX_INF2CAT  ?= $(VBOX_PATH_SELFSIGN)/Inf2Cat.exe
 
-  # There are three signing modes; 'self', 'development' and 'release'.
-  ifeq ($(strip $(VBOX_SIGNING_MODE)),self)
-   ## @todo Figure out selfsigning and put up some docs in the wiki.
+  # There are three signing modes; 'test', 'development' and 'release'.
+  ifeq ($(strip $(VBOX_SIGNING_MODE)),test)
+   VBOX_CERTIFICATE_SUBJECT_NAME ?= MyTestCertificate
+   VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= /n "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
   else if1of ($(VBOX_SIGNING_MODE),release development)
-   VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/MSCV-GlobalSign.cer
-   VBOX_CROSS_CERTIFICATE_FILE_ARGS ?= /ac "$(VBOX_CROSS_CERTIFICATE_FILE)"
    VBOX_CERTIFICATE_SUBJECT_NAME ?= innotek GmbH
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= /n "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
-   VBOX_CERTIFICATE_STORE ?= my
-   VBOX_CERTIFICATE_STORE_ARGS ?= /s "$(VBOX_CERTIFICATE_STORE)"
+   VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/MSCV-GlobalSign.cer
+   VBOX_CROSS_CERTIFICATE_FILE_ARGS ?= /ac "$(VBOX_CROSS_CERTIFICATE_FILE)"
    VBOX_TSA_URL ?= http://timestamp.verisign.com/scripts/timestamp.dll
    VBOX_TSA_URL_ARGS ?= /t "$(VBOX_TSA_URL)"
-   ## Commands for signing a driver image after link.
-   VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out)))
-   ## Sign a file.
-   # @param 1  The file to sign.
-   VBOX_SIGN_FILE_FN     ?= $(VBOX_SIGNTOOL) sign \
-		$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
-		$(VBOX_CERTIFICATE_STORE_ARGS) \
-		$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
-		$(VBOX_TSA_URL_ARGS) \
-		$(1)
-   ## Create a security catalog file.
-   # @param 1  The directory containing the stuff to sign.
-   # @param 2  The expected .cat name. (Inf2Cat lowercases it)
-   # @param 3  The list of OSes, separated by ';'.
-   VBOX_MAKE_CAT_HLP_FN ?= \
-		$(RM) -f $(2)\
-		$(NL)$(TAB)$(VBOX_INF2CAT) /driver:$(strip $(1)) /os:$(strip $(subst ;,$(COMMA),$(3))) /verbose \
-		$(NL)$(TAB)$(MV) $(2) $(2) \
-		$(NL)$(TAB)$(call VBOX_SIGN_FILE_FN,$(2))
-   VBOX_MAKE_CAT64_FN   ?= $(call VBOX_MAKE_CAT_HLP_FN,$(1),$(2),XP_X64;Server2003_X64;Vista_X64)
-   VBOX_MAKE_CAT32_FN   ?= $(call VBOX_MAKE_CAT_HLP_FN,$(1),$(2),2000;XP_X86;Server2003_X86;Vista_X86)
-   ifeq ($(BUILD_TARGET_ARCH),x86)
-    VBOX_MAKE_CAT_FN    ?= $(call VBOX_MAKE_CAT32_FN,$(1),$(2))
-   else
-    VBOX_MAKE_CAT_FN    ?= $(call VBOX_MAKE_CAT64_FN,$(1),$(2))
-   endif
-
-   # Go nuts, sign everything.
-   ifeq ($(strip $(VBOX_SIGNING_MODE)),release)
-    ## Commands for signing an executable or a dll image after link.
-    VBOX_SIGN_IMAGE_CMDS  ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out)))
-    ## Enable signing of the additions.
-    VBOX_SIGN_ADDITIONS   ?= 1
-   endif
-
   else
    $(error Unknown VBOX_SIGNING_MODE: $(VBOX_SIGNING_MODE))
   endif
+  VBOX_CERTIFICATE_STORE ?= my
+  VBOX_CERTIFICATE_STORE_ARGS ?= /s "$(VBOX_CERTIFICATE_STORE)"
+
+  ## Commands for signing a driver image after link.
+  VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out)))
+  ## Sign a file.
+  # @param 1  The file to sign.
+  VBOX_SIGN_FILE_FN     ?= $(VBOX_SIGNTOOL) sign \
+       	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
+       	$(VBOX_CERTIFICATE_STORE_ARGS) \
+       	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
+       	$(VBOX_TSA_URL_ARGS) \
+       	$(1)
+  ## Create a security catalog file.
+  # @param 1  The directory containing the stuff to sign.
+  # @param 2  The expected .cat name. (Inf2Cat lowercases it)
+  # @param 3  The list of OSes, separated by ';'.
+  VBOX_MAKE_CAT_HLP_FN ?= \
+       	$(RM) -f $(2)\
+       	$(NL)$(TAB)$(VBOX_INF2CAT) /driver:$(strip $(1)) /os:$(strip $(subst ;,$(COMMA),$(3))) /verbose \
+       	$(NL)$(TAB)$(MV) $(2) $(2) \
+       	$(NL)$(TAB)$(call VBOX_SIGN_FILE_FN,$(2))
+  VBOX_MAKE_CAT64_FN   ?= $(call VBOX_MAKE_CAT_HLP_FN,$(1),$(2),XP_X64;Server2003_X64;Vista_X64)
+  VBOX_MAKE_CAT32_FN   ?= $(call VBOX_MAKE_CAT_HLP_FN,$(1),$(2),2000;XP_X86;Server2003_X86;Vista_X86)
+  ifeq ($(BUILD_TARGET_ARCH),x86)
+   VBOX_MAKE_CAT_FN    ?= $(call VBOX_MAKE_CAT32_FN,$(1),$(2))
+  else
+   VBOX_MAKE_CAT_FN    ?= $(call VBOX_MAKE_CAT64_FN,$(1),$(2))
+  endif
+
+  # Go nuts, sign everything.
+  ifeq ($(strip $(VBOX_SIGNING_MODE)),release)
+   ## Commands for signing an executable or a dll image after link.
+   VBOX_SIGN_IMAGE_CMDS  ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out)))
+   ## Enable signing of the additions.
+   VBOX_SIGN_ADDITIONS   ?= 1
+  endif
  else
+  # Not windows build platform, ignore.
   VBOX_SIGNING_MODE :=
  endif
 endif
