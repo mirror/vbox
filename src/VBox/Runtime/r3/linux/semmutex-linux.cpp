@@ -87,28 +87,6 @@ static long sys_futex(int32_t volatile *uaddr, int op, int val, struct timespec 
 }
 
 
-/**
- * Validate a Mutex semaphore handle passed to one of the interface.
- *
- * @returns true if valid.
- * @returns false if invalid.
- * @param   pIntMutexSem    Pointer to the mutex semaphore to validate.
- */
-inline bool rtsemMutexValid(struct RTSEMMUTEXINTERNAL *pIntMutexSem)
-{
-    if ((uintptr_t)pIntMutexSem < 0x10000)
-        return false;
-
-    if (pIntMutexSem->iMagic != RTSEMMUTEX_MAGIC)
-        return false;
-
-    if (pIntMutexSem->cNesting == (uint32_t)~0)
-        return false;
-
-    return true;
-}
-
-
 RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
 {
     /*
@@ -132,15 +110,16 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
 
 RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
 {
-    struct RTSEMMUTEXINTERNAL *pIntMutexSem = MutexSem;
     /*
      * Validate input.
      */
-    if (!rtsemMutexValid(pIntMutexSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", MutexSem));
+    if (MutexSem == NIL_RTSEMMUTEX)
         return VERR_INVALID_HANDLE;
-    }
+    struct RTSEMMUTEXINTERNAL *pIntMutexSem = MutexSem;
+    AssertPtrReturn(pIntMutexSem, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pIntMutexSem->iMagic == RTSEMMUTEX_MAGIC,
+                    ("MutexSem=%p iMagic=%#x\n", pIntMutexSem, pIntMutexSem->iMagic),
+                    VERR_INVALID_HANDLE);
 
     /*
      * Invalidate the semaphore and wake up anyone waiting on it.
@@ -152,7 +131,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
         usleep(1000);
     }
     pIntMutexSem->Owner    = (pthread_t)~0;
-    pIntMutexSem->cNesting = ~0;
+    pIntMutexSem->cNesting = 0;
 
     /*
      * Free the semaphore memory and be gone.
@@ -168,11 +147,10 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
      * Validate input.
      */
     struct RTSEMMUTEXINTERNAL *pIntMutexSem = MutexSem;
-    if (!rtsemMutexValid(pIntMutexSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", MutexSem));
-        return VERR_INVALID_HANDLE;
-    }
+    AssertPtrReturn(pIntMutexSem, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pIntMutexSem->iMagic == RTSEMMUTEX_MAGIC,
+                    ("MutexSem=%p iMagic=%#x\n", pIntMutexSem, pIntMutexSem->iMagic),
+                    VERR_INVALID_HANDLE);
 
     /*
      * Check if nested request.
@@ -283,18 +261,17 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
      * Validate input.
      */
     struct RTSEMMUTEXINTERNAL *pIntMutexSem = MutexSem;
-    if (!rtsemMutexValid(pIntMutexSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", MutexSem));
-        return VERR_INVALID_HANDLE;
-    }
+    AssertPtrReturn(pIntMutexSem, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pIntMutexSem->iMagic == RTSEMMUTEX_MAGIC,
+                    ("MutexSem=%p iMagic=%#x\n", pIntMutexSem, pIntMutexSem->iMagic),
+                    VERR_INVALID_HANDLE);
 
     /*
      * Check if nested.
      */
     pthread_t Self = pthread_self();
-    if (    pIntMutexSem->Owner != Self
-        ||  pIntMutexSem->cNesting == (uint32_t)~0)
+    if (RT_UNLIKELY(    pIntMutexSem->Owner != Self
+                    ||  pIntMutexSem->cNesting == 0))
     {
         AssertMsgFailed(("Not owner of mutex %p!! Self=%08x Owner=%08x cNesting=%d\n",
                          pIntMutexSem, Self, pIntMutexSem->Owner, pIntMutexSem->cNesting));
