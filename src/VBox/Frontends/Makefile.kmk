@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VBox frontend base directory.
+# Top-level makefile for the VBox frontends.
 #
 
 #
@@ -16,29 +16,32 @@
 #
 
 DEPTH = ../../..
-include $(PATH_KBUILD)/header.kmk
+include $(PATH_KBUILD)/subheader.kmk
 
+# Include Sub-Makefiles
 ifdef VBOX_WITH_MAIN
-SUBDIRS += VBoxManage
+ include $(PATH_SUB_CURRENT)/VBoxManage/Makefile.kmk
 endif
 ifdef VBOX_WITH_VBOXSDL
-SUBDIRS += VBoxSDL
-endif
-ifdef VBOX_WITH_QTGUI
-SUBDIRS += VirtualBox
+ include $(PATH_SUB_CURRENT)/VBoxSDL/Makefile.kmk
 endif
 ifdef VBOX_WITH_VBOXBFE
-SUBDIRS += VBoxBFE
+ include $(PATH_SUB_CURRENT)/VBoxBFE/Makefile.kmk
 endif
 ifdef VBOX_WITH_VBOXFB
-SUBDIRS += VBoxFB
+ include $(PATH_SUB_CURRENT)/VBoxFB/Makefile.kmk
 endif
 ifdef VBOX_WITH_VRDP
-SUBDIRS += VBoxVRDP
+ include $(PATH_SUB_CURRENT)/VBoxVRDP/Makefile.kmk
 endif
 ifdef VBOX_WITH_HEADLESS
-SUBDIRS += VBoxHeadless
+ include $(PATH_SUB_CURRENT)/VBoxHeadless/Makefile.kmk
 endif
 
-include $(PATH_KBUILD)/footer.kmk
+# Sub-directory walk (qt is too much work for now)
+ifdef VBOX_WITH_QTGUI
+SUBDIRS_AFTER += VirtualBox
+endif
+
+include $(PATH_KBUILD)/subfooter.kmk
 

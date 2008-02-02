@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for VBoxManage (the cli frontend).
+# Sub-Makefile for VBoxManage (the cli frontend).
 #
 
 #
@@ -16,28 +16,28 @@
 #
 
 
-DEPTH = ../../../..
-include $(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include $(PATH_KBUILD)/subheader.kmk
 
-PROGRAMS = VBoxManage
-
-VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
-VBoxManage_SOURCES    = \
+PROGRAMS += VBoxManage
+VBoxManage_TEMPLATE    = VBOXMAINCLIENTEXE
+VBoxManage_DEFS       += $(if $(VBOX_WITH_VRDP),VBOX_VRDP,) \
+                         $(if $(VBOX_WITH_ALSA),VBOX_WITH_ALSA,) \
+                         $(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE,)
+VBoxManage_SOURCES     = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp \
 	VBoxManageSVN.cpp
 ifndef VBOX_OSE
-VBoxManage_SOURCES   += \
+ VBoxManage_SOURCES   += \
 	VBoxInternalManageVmdk.cpp
 endif
-VBoxManage_DEFS      += $(if $(VBOX_WITH_VRDP),VBOX_VRDP,) \
-                        $(if $(VBOX_WITH_ALSA),VBOX_WITH_ALSA,) \
-                        $(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE,)
-VBoxManage_LIBS      += $(LIB_DDU)
+VBoxManage_LIBS       += $(LIB_DDU)
 
 # VBoxManageSVN.cpp uses VBOX_SVN_REV.
 VBoxManageSVN.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxManageSVN.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
+include $(PATH_KBUILD)/subfooter.kmk
 
-include $(PATH_KBUILD)/footer.kmk

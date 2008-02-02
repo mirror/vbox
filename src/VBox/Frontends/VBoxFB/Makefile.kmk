@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for VBoxFB.
+# Sub-Makefile for VBoxFB.
 #
 
 #
@@ -15,10 +15,11 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../..
-include $(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include $(PATH_KBUILD)/subheader.kmk
 
-PROGRAMS = VBoxFB
+PROGRAMS += VBoxFB
 
 VBoxFB_SOURCES    = \
 	VBoxFB.cpp \
@@ -27,7 +28,7 @@ VBoxFB_SOURCES    = \
 VBoxFB_DEFS       = IN_RING3 IN_RT_R3 _GNU_SOURCE
 VBoxFB_INCS       = \
 	/usr/include/directfb \
-	$(PATH_BIN)/sdk/include \
+	$(VBOX_PATH_SDK)/include \
 	$(VBOX_XPCOM_INCS)
 VBoxFB_LIBS       = \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
@@ -44,5 +45,5 @@ VBoxFB_CXXFLAGS   =  \
 	-DNDEBUG -DTRIMMED -O -Wall -fno-rtti -fno-exceptions \
 	-Wno-non-virtual-dtor -Wno-long-long -fshort-wchar -pthread -pipe
 
-include $(PATH_KBUILD)/footer.kmk
+include $(PATH_KBUILD)/subfooter.kmk
 
