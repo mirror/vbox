@@ -167,6 +167,9 @@ VBOX_WITH_OS2_ADDITIONS_BIN = 1
 #VBOX_WITHOUT_ADDITIONS = 1
 # Only build the additions (for the additions build server).
 #VBOX_ONLY_ADDITIONS = 1
+ifdef VBOX_ADDITIONS_ONLY # typical mistake.
+ $(error It's VBOX_ONLY_ADDITIONS=1 not VBOX_ADDITIONS_ONLY!)
+endif
 # Don't create the additions ISO.
 # (Used by the additions build server, don't invert it.)
 #VBOX_WITHOUT_ADDITIONS_ISO = 1
