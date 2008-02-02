@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the vboxvfs (linux shared folders module).
+# Sub-Makefile for the vboxvfs (linux shared folders module).
 #
 
 #
@@ -15,19 +15,20 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
 ifdef VBOX_WITH_ADDITION_DRIVERS
- SYSMODS  = vboxvfs
+ SYSMODS += vboxvfs
 endif
-PROGRAMS = mountvboxsf
-INSTALLS = vboxvfs-bin vboxvfs-sh
+PROGRAMS += mountvboxsf
+INSTALLS += vboxvfs-bin vboxvfs-sh
 
 #
 # Populate FILES_VBOXVFS_NOBIN and FILES_VBOXVFS_BIN
 #
-include files_vboxvfs
+include $(PATH_SUB_CURRENT)/files_vboxvfs
 
 #
 # Install the source.
@@ -51,7 +52,7 @@ vboxvfs_DEFS            = \
 	KBUILD_MODNAME=KBUILD_STR\(vboxadd\) \
         KBUILD_BASENAME=KBUILD_STR\(vboxadd\)
 vboxvfs_INCS            = \
-	../../common/VBoxGuestLib \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
 vboxvfs_SOURCES         = \
 	vfsmod.c \
@@ -83,4 +84,4 @@ mountvboxsf_SOURCES     = \
 	mount.vboxsf.c
 
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk
