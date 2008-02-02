@@ -56,6 +56,8 @@
  */
 struct RTSEMMUTEXINTERNAL
 {
+    /** Magic value. */
+    intptr_t volatile   iMagic;
     /** The futex state variable.
      * 0 means unlocked.
      * 1 means locked, no waiters.
@@ -66,8 +68,6 @@ struct RTSEMMUTEXINTERNAL
     volatile pthread_t  Owner;
     /** Nesting count. */
     volatile uint32_t   cNesting;
-    /** Magic value. */
-    intptr_t volatile   iMagic;
 };
 
 
