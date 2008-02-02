@@ -311,23 +311,18 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
 	r3/posix/utf8-posix.cpp
-ifeq ($(BUILD_TARGET_ARCH),amd64)
- ## @todo This causes VBoxGuestR3Lib to end up with the wrong stuff
- #        when building 64-bit linux. This code won't work on 2.4.
- RuntimeR3_SOURCES.linux += \
-	r3/linux/semevent-linux.cpp \
-	r3/linux/semeventmulti-linux.cpp
- ifdef RT_NEW_LINUX_MUTEX_CODE
-  RuntimeR3_SOURCES.linux += \
-	r3/linux/semmutex-linux.cpp
- else
-  RuntimeR3_SOURCES.linux += \
-	r3/posix/semmutex-posix.cpp
- endif
-else
- RuntimeR3_SOURCES.linux += \
+RuntimeR3_SOURCES.linux.x86 += \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
+	r3/posix/semmutex-posix.cpp
+RuntimeR3_SOURCES.linux.amd64 += \
+	r3/linux/semevent-linux.cpp \
+	r3/linux/semeventmulti-linux.cpp
+ifdef RT_NEW_LINUX_MUTEX_CODE
+ RuntimeR3_SOURCES.linux.amd64 += \
+	r3/linux/semmutex-linux.cpp
+else
+ RuntimeR3_SOURCES.linux.amd64 += \
 	r3/posix/semmutex-posix.cpp
 endif
 
