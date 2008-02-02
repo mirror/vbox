@@ -601,8 +601,14 @@ RuntimeW32GuestR3_INCS         = $(RuntimeR3_INCS.win)    $(RuntimeR3_INCS)
 #
 RuntimeLnxHostR3_TEMPLATE      = VBOXLNXHOSTR3LIB
 RuntimeLnxHostR3_DEFS          = IN_RT_R3 IN_SUP_R3 RT_WITH_VBOX RT_NO_GIP
-RuntimeLnxHostR3_SOURCES       = $(RuntimeR3_SOURCES.linux) $(RuntimeR3_SOURCES)
-RuntimeLnxHostR3_INCS          = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
+RuntimeLnxHostR3_SOURCES       = \
+	$(RuntimeR3_SOURCES.linux.$(BUILD_TARGET_ARCH)) \
+	$(RuntimeR3_SOURCES.linux) \
+	$(RuntimeR3_SOURCES)
+RuntimeLnxHostR3_INCS          = \
+	$(RuntimeR3_INCS.linux.$(BUILD_TARGET_ARCH)) \
+	$(RuntimeR3_INCS.linux) \
+	$(RuntimeR3_INCS)
 
 
 #
