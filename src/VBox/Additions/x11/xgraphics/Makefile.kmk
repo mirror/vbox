@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Makefile for the VBox Linux Additions X.org graphics driver.
+# Sub-Makefile for the VBox Linux Additions X.org graphics driver.
 #
 
 #
@@ -15,8 +15,9 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-DEPTH = ../../../../..
-include	$(PATH_KBUILD)/header.kmk
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
 
 #
 # vboxvideo_drv
@@ -178,4 +179,4 @@ vboxvideo_drv_14_SOURCES  = \
 	vboxutils-new.c
 
 
-include	$(PATH_KBUILD)/footer.kmk
+include	$(PATH_KBUILD)/subfooter.kmk

@@ -18,13 +18,11 @@ DEPTH ?= ../../../..
 SUB_DEPTH = ..
 include $(PATH_KBUILD)/subheader.kmk
 
-# Include sub-dirs.
-SUBDIRS =
+# Include sub-makefiles.
 if1of ($(BUILD_TARGET),l4 linux solaris)
-SUBDIRS += \
-	xclient \
-	xgraphics \
-	xmouse
+ include $(PATH_SUB_CURRENT)/xclient/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/xgraphics/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/xmouse/Makefile.kmk
 endif
 
 include $(PATH_KBUILD)/subfooter.kmk

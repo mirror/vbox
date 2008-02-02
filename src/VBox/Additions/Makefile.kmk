@@ -55,11 +55,12 @@ include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 ifdef VBOX_WITH_WIN32_ADDITIONS
  include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
 endif
-## @todo Convert linux and x11 to sub-makefiles too.
 ifdef VBOX_WITH_LINUX_ADDITIONS
- SUBDIRS += linux x11
+ SUBDIRS += linux
+ #include $(PATH_SUB_CURRENT)/linux/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/x11/Makefile.kmk
 else if1of ($(BUILD_TARGET), solaris)
- SUBDIRS += x11
+ include $(PATH_SUB_CURRENT)/x11/Makefile.kmk
 endif
 
 # The packing target rule, but only if we're on the local build box.
