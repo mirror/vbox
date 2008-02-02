@@ -300,9 +300,10 @@ private slots:
 
     void showFileDialog()
     {
-        QString folder = vboxGlobal().getExistingDirectory (QDir::rootDirPath(),
-                                                  this, "addSharedFolderDialog",
-                                                  tr ("Select a folder to share"));
+        QString folder = vboxGlobal()
+            .getExistingDirectory (QDir::rootDirPath(),
+                                   this, "addSharedFolderDialog",
+                                   tr ("Select a folder to share"));
         if (folder.isNull())
             return;
 
@@ -319,9 +320,9 @@ private slots:
         {
             /* processing root folder */
             mLePath->setText (folderName);
-#if defined(Q_WS_WIN32)
+#if defined (Q_OS_WIN) || defined (Q_OS_OS2)
             mLeName->setText (rootRule.cap (2) + "_DRIVE");
-#elif defined(Q_WS_X11)
+#elif defined (Q_OS_UNIX)
             mLeName->setText ("ROOT");
 #endif
         }
