@@ -37,6 +37,11 @@
 // defines
 //
 
+#ifdef RT_OS_OS2
+# define VBOXSHAREDFOLDERS_DLL "VBoxSFld"
+#else
+# define VBOXSHAREDFOLDERS_DLL "VBoxSharedFolders"
+#endif
 
 //
 // globals
@@ -721,12 +726,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->pVMMDev->mpDrv = pData;
 
 #ifdef VBOX_HGCM
-    rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedFolders",
-#ifdef RT_OS_OS2
-                                          "VBoxSFld");
-#else
+    rc = pData->pVMMDev->hgcmLoadService (VBOXSHAREDFOLDERS_DLL,
                                           "VBoxSharedFolders");
-#endif
     pData->pVMMDev->fSharedFolderActive = VBOX_SUCCESS(rc);
     if (VBOX_SUCCESS(rc))
     {
