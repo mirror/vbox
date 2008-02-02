@@ -200,13 +200,11 @@ static int rtsemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies, bool fAutoR
     /*
      * Lock the mutex.
      */
-    int32_t iOld;
-    ASMAtomicCmpXchgExS32(&pIntMutexSem->iState, 1, 0, &iOld);
-    if (RT_UNLIKELY(iOld != 0))
+    if (RT_UNLIKELY(!ASMAtomicCmpXchgS32(&pIntMutexSem->iState, 1, 0)))
     {
         for (;;)
         {
-            iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
+            int32_t iOld = ASMAtomicXchgS32(&pIntMutexSem->iState, 2);
 
             /*
              * Was the lock released in the meantime? This is unlikely (but possible)
