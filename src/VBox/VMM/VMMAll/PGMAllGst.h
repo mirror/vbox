@@ -91,6 +91,13 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM);
 PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3);
 PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM);
 PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4);
+#ifndef IN_RING3
+PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+# if PGM_GST_TYPE == PGM_TYPE_PAE \
+  || PGM_GST_TYPE == PGM_TYPE_AMD64
+PGM_GST_DECL(int, PAEWriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+# endif
+#endif
 __END_DECLS
 
 
@@ -251,7 +258,7 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
                 return rc;
 
             unsigned iPTE = (GCPtr >> GST_PT_SHIFT) & GST_PT_MASK;
-            while (iPTE < ELEMENTS(pPT->a))
+            while (iPTE < RT_ELEMENTS(pPT->a))
             {
                 GSTPTE Pte = pPT->a[iPTE];
                 Pte.u = (Pte.u & (fMask | X86_PTE_PAE_PG_MASK))
@@ -474,10 +481,10 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             rc = PGMHandlerPhysicalModify(pVM, pVM->pgm.s.GCPhysGstCR3Monitored, GCPhysCR3, GCPhysCR3 + cbCR3Stuff - 1);
         else
             rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhysCR3, GCPhysCR3 + cbCR3Stuff - 1,
-                                              pVM->pgm.s.pfnHCGstWriteHandlerCR3, 0,
+                                              pVM->pgm.s.pfnR3GstWriteHandlerCR3, 0,
                                               pVM->pgm.s.pfnR0GstWriteHandlerCR3, 0,
                                               pVM->pgm.s.pfnGCGstWriteHandlerCR3, 0,
-                                              pVM->pgm.s.pszHCGstWriteHandlerCR3);
+                                              pVM->pgm.s.pszR3GstWriteHandlerCR3);
 # else  /* PGMPOOL_WITH_MIXED_PT_CR3 */
         rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool),
                                          pVM->pgm.s.enmShadowMode == PGMMODE_PAE
@@ -512,7 +519,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 else
                     rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhys + PAGE_SIZE - 1,
                                                       pVM->pgm.s.pfnR3GstPAEWriteHandlerCR3, 0,
-                                                      0, 0,
+                                                      pVM->pgm.s.pfnR0GstPAEWriteHandlerCR3, 0,
                                                       pVM->pgm.s.pfnGCGstPAEWriteHandlerCR3, 0,
                                                       pVM->pgm.s.pszR3GstPAEWriteHandlerCR3);
                 if (VBOX_SUCCESS(rc))
@@ -682,7 +689,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                 if (VBOX_SUCCESS(rc))
                 {
                     for (unsigned iPTE = (GCPtr >> GST_PT_SHIFT) & GST_PT_MASK;
-                         iPTE < ELEMENTS(pPT->a) && iPage < pCur->cPages;
+                         iPTE < RT_ELEMENTS(pPT->a) && iPage < pCur->cPages;
                          iPTE++, iPage++, GCPtr += PAGE_SIZE, offPage = 0)
                     {
                         GSTPTE      Pte = pPT->a[iPTE];
@@ -712,7 +719,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                     offPage = 0;
                     AssertRC(rc);
                     for (unsigned iPTE = (GCPtr >> GST_PT_SHIFT) & GST_PT_MASK;
-                         iPTE < ELEMENTS(pPT->a) && iPage < pCur->cPages;
+                         iPTE < RT_ELEMENTS(pPT->a) && iPage < pCur->cPages;
                          iPTE++, iPage++, GCPtr += PAGE_SIZE)
                     {
                         if (pCur->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
@@ -836,4 +843,238 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
     return false;
 #endif
 }
+
+
+#if PGM_GST_TYPE == PGM_TYPE_32BIT && !defined(IN_RING3)
+
+/**
+ * Write access handler for the Guest CR3 page in 32-bit mode.
+ *
+ * This will try interpret the instruction, if failure fail back to the recompiler.
+ * Check if the changed PDEs are marked present and conflicts with our
+ * mappings. If conflict, we'll switch to the host context and resolve it there
+ *
+ * @returns VBox status code (appropritate for trap handling and GC return).
+ * @param   pVM         VM Handle.
+ * @param   uErrorCode  CPU Error code.
+ * @param   pRegFrame   Trap register frame.
+ * @param   pvFault     The fault address (cr2).
+ * @param   GCPhysFault The GC physical address corresponding to pvFault.
+ * @param   pvUser      User argument.
+ */
+PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+{
+    AssertMsg(!pVM->pgm.s.fMappingsFixed, ("Shouldn't be registered when mappings are fixed!\n"));
+
+    /*
+     * Try interpret the instruction.
+     */
+    uint32_t cb;
+    int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
+    if (VBOX_SUCCESS(rc) && cb)
+    {
+        /*
+         * Check if the modified PDEs are present and mappings.
+         */
+        const RTGCUINTPTR offPD = GCPhysFault & PAGE_OFFSET_MASK;
+        const unsigned      iPD1  = offPD / sizeof(X86PDE);
+        const unsigned      iPD2  = (offPD + cb - 1) / sizeof(X86PDE);
+
+        Assert(cb > 0 && cb <= 8);
+        Assert(iPD1 < RT_ELEMENTS(pVM->pgm.s.CTXSUFF(pGuestPD)->a)); /// @todo R3/R0 separation.
+        Assert(iPD2 < RT_ELEMENTS(pVM->pgm.s.CTXSUFF(pGuestPD)->a));
+
+#ifdef DEBUG
+        Log(("pgmXXGst32BitWriteHandlerCR3: emulated change to PD %#x addr=%VGv\n", iPD1, iPD1 << X86_PD_SHIFT));
+        if (iPD1 != iPD2)
+            Log(("pgmXXGst32BitWriteHandlerCR3: emulated change to PD %#x addr=%VGv\n", iPD2, iPD2 << X86_PD_SHIFT));
+#endif
+
+        if (!pVM->pgm.s.fMappingsFixed)
+        {
+            PX86PD pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
+            if (    (   pPDSrc->a[iPD1].n.u1Present
+                     && pgmGetMapping(pVM, (RTGCPTR)(iPD1 << X86_PD_SHIFT)) )
+                ||  (   iPD1 != iPD2
+                     && pPDSrc->a[iPD2].n.u1Present
+                     && pgmGetMapping(pVM, (RTGCPTR)(iPD2 << X86_PD_SHIFT)) )
+               )
+            {
+                STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteConflict);
+                VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                if (rc == VINF_SUCCESS)
+                    rc = VINF_PGM_SYNC_CR3;
+                Log(("pgmXXGst32BitWriteHandlerCR3: detected conflict iPD1=%#x iPD2=%#x - returns %Rrc\n", iPD1, iPD2, rc));
+                return rc;
+            }
+        }
+
+        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteHandled);
+    }
+    else
+    {
+        Assert(VBOX_FAILURE(rc));
+        if (rc == VERR_EM_INTERPRETER)
+            rc = VINF_EM_RAW_EMULATE_INSTR_PD_FAULT;
+        Log(("pgmXXGst32BitWriteHandlerCR3: returns %Rrc\n", rc));
+        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteUnhandled);
+    }
+    return rc;
+}
+
+#endif /* PGM_TYPE_32BIT && !IN_RING3 */
+
+
+#if PGM_GST_TYPE == PGM_TYPE_PAE && !defined(IN_RING3)
+
+/**
+ * Write access handler for the Guest CR3 page in PAE mode.
+ *
+ * This will try interpret the instruction, if failure fail back to the recompiler.
+ * Check if the changed PDEs are marked present and conflicts with our
+ * mappings. If conflict, we'll switch to the host context and resolve it there
+ *
+ * @returns VBox status code (appropritate for trap handling and GC return).
+ * @param   pVM         VM Handle.
+ * @param   uErrorCode  CPU Error code.
+ * @param   pRegFrame   Trap register frame.
+ * @param   pvFault     The fault address (cr2).
+ * @param   GCPhysFault The GC physical address corresponding to pvFault.
+ * @param   pvUser      User argument.
+ */
+PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+{
+    AssertMsg(!pVM->pgm.s.fMappingsFixed, ("Shouldn't be registered when mappings are fixed!\n"));
+
+    /*
+     * Try interpret the instruction.
+     */
+    uint32_t cb;
+    int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
+    if (VBOX_SUCCESS(rc) && cb)
+    {
+        /*
+         * Check if any of the PDs have changed.
+         * We'll simply check all of them instead of figuring out which one/two to check.
+         */
+        for (unsigned i = 0; i < 4; i++)
+        {
+            if (    CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].n.u1Present
+                &&  (   CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].u & X86_PDPE_PG_MASK)
+                     != pVM->pgm.s.aGCPhysGstPaePDsMonitored[i])
+            {
+                /*
+                 * The PDPE has changed.
+                 * We will schedule a monitoring update for the next TLB Flush,
+                 * InvalidatePage or SyncCR3.
+                 *
+                 * This isn't perfect, because a lazy page sync might be dealing with an half
+                 * updated PDPE. However, we assume that the guest OS is disabling interrupts
+                 * and being extremely careful (cmpxchg8b) when updating a PDPE where it's
+                 * executing.
+                 */
+                pVM->pgm.s.fSyncFlags |= PGM_SYNC_MONITOR_CR3;
+                Log(("pgmXXGstPaeWriteHandlerCR3: detected updated PDPE; [%d] = %#llx, Old GCPhys=%VGp\n",
+                     i, CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].u, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]));
+            }
+        }
+
+        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteHandled);
+    }
+    else
+    {
+        Assert(VBOX_FAILURE(rc));
+        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteUnhandled);
+        if (rc == VERR_EM_INTERPRETER)
+            rc = VINF_EM_RAW_EMULATE_INSTR_PD_FAULT;
+    }
+    Log(("pgmXXGstPaeWriteHandlerCR3: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * Write access handler for the Guest PDs in PAE mode.
+ *
+ * This will try interpret the instruction, if failure fail back to the recompiler.
+ * Check if the changed PDEs are marked present and conflicts with our
+ * mappings. If conflict, we'll switch to the host context and resolve it there
+ *
+ * @returns VBox status code (appropritate for trap handling and GC return).
+ * @param   pVM         VM Handle.
+ * @param   uErrorCode  CPU Error code.
+ * @param   pRegFrame   Trap register frame.
+ * @param   pvFault     The fault address (cr2).
+ * @param   GCPhysFault The GC physical address corresponding to pvFault.
+ * @param   pvUser      User argument.
+ */
+PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+{
+    AssertMsg(!pVM->pgm.s.fMappingsFixed, ("Shouldn't be registered when mappings are fixed!\n"));
+
+    /*
+     * Try interpret the instruction.
+     */
+    uint32_t cb;
+    int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
+    if (VBOX_SUCCESS(rc) && cb)
+    {
+        /*
+         * Figure out which of the 4 PDs this is.
+         */
+        RTGCUINTPTR i;
+        for (i = 0; i < 4; i++)
+            if (CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].u == (GCPhysFault & X86_PTE_PAE_PG_MASK))
+            {
+                PX86PDPAE           pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPTR_SHIFT);
+                const RTGCUINTPTR offPD  = GCPhysFault & PAGE_OFFSET_MASK;
+                const unsigned      iPD1   = offPD / sizeof(X86PDEPAE);
+                const unsigned      iPD2   = (offPD + cb - 1) / sizeof(X86PDEPAE);
+
+                Assert(cb > 0 && cb <= 8);
+                Assert(iPD1 < X86_PG_PAE_ENTRIES);
+                Assert(iPD2 < X86_PG_PAE_ENTRIES);
+
+#ifdef DEBUG
+                Log(("pgmXXGstPaeWriteHandlerPD: emulated change to i=%d iPD1=%#05x (%VGv)\n",
+                     i, iPD1, (i << X86_PDPTR_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT)));
+                if (iPD1 != iPD2)
+                    Log(("pgmXXGstPaeWriteHandlerPD: emulated change to i=%d iPD2=%#05x (%VGv)\n",
+                         i, iPD2, (i << X86_PDPTR_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT)));
+#endif
+
+                if (!pVM->pgm.s.fMappingsFixed)
+                {
+                    if (    (   pPDSrc->a[iPD1].n.u1Present
+                             && pgmGetMapping(pVM, (RTGCPTR)((i << X86_PDPTR_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT))) )
+                        ||  (   iPD1 != iPD2
+                             && pPDSrc->a[iPD2].n.u1Present
+                             && pgmGetMapping(pVM, (RTGCPTR)((i << X86_PDPTR_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT))) )
+                       )
+                    {
+                        Log(("pgmXXGstPaeWriteHandlerPD: detected conflict iPD1=%#x iPD2=%#x\n", iPD1, iPD2));
+                        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteConflict);
+                        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                        return VINF_PGM_SYNC_CR3;
+                    }
+                }
+                break; /* ASSUMES no duplicate entries... */
+            }
+        Assert(i < 4);
+
+        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteHandled);
+    }
+    else
+    {
+        Assert(VBOX_FAILURE(rc));
+        if (rc == VERR_EM_INTERPRETER)
+            rc = VINF_EM_RAW_EMULATE_INSTR_PD_FAULT;
+        else
+            Log(("pgmXXGst32BitWriteHandlerCR3: returns %Rrc\n", rc));
+        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteUnhandled);
+    }
+    return rc;
+}
+
+#endif /* PGM_TYPE_PAE && !IN_RING3 */
 
