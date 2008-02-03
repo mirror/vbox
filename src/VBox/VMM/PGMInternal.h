@@ -111,7 +111,7 @@
  *
  * This requires PGMPOOL_WITH_USER_TRACKING and PGMPOOL_WITH_MONITORING.
  */
-//#define PGMPOOL_WITH_CACHE
+#define PGMPOOL_WITH_CACHE
 
 /** @def PGMPOOL_WITH_MIXED_PT_CR3
  * When defined, we'll deal with 'uncachable' pages.
