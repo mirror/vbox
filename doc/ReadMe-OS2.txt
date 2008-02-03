@@ -44,6 +44,7 @@ Current Issues / TODOs
 
 * Misc:
 
+  - Shared clipboard.
   - Starting more than one VM simultaneously.
   - Installer.
   - VMX support.
