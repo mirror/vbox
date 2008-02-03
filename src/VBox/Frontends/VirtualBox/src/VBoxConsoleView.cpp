@@ -1034,9 +1034,13 @@ bool VBoxConsoleView::event (QEvent *e)
                     focusEvent (false);
                 else
                 {
-                    /* release the host key even when paused */
-                    mIsHostkeyPressed = false;
-                    emitKeyboardStateChanged();
+                    /* release the host key and all other pressed keys too even
+                     * when paused (otherwise, we will get stuck keys in the
+                     * guest when doing sendChangedKeyStates() on resume because
+                     * key presses were already recorded in mPressedKeys but key
+                     * releases will most likely not reach us but the new focus
+                     * window instead). */
+                    releaseAllPressedKeys (true /* aReleaseHostKey */);
                 }
                 break;
             }
@@ -1278,15 +1282,16 @@ bool VBoxConsoleView::event (QEvent *e)
             }
 
             case QEvent::KeyPress:
-#ifdef Q_WS_PM
             case QEvent::KeyRelease:
             {
+                QKeyEvent *ke = (QKeyEvent *) e;
+
+#ifdef Q_WS_PM
                 /// @todo temporary solution to send Alt+Tab and friends to
                 //  the guest. The proper solution is to write a keyboard
                 //  driver that will steal these combos from the host (it's
                 //  impossible to do so using hooks on OS/2).
 
-                QKeyEvent *ke = (QKeyEvent *) e;
                 if (mIsHostkeyPressed)
                 {
                     bool pressed = e->type() == QEvent::KeyPress;
@@ -1358,15 +1363,12 @@ bool VBoxConsoleView::event (QEvent *e)
                         return true;
                     }
                 }
-                if (e->type() == QEvent::KeyRelease)
-                    break;
 
-                /* fall through for normal processing of KeyPress */
-#else
-            {
-                QKeyEvent *ke = (QKeyEvent *) e;
-#endif
-                if (mIsHostkeyPressed)
+                /* fall through to normal processing */
+
+#endif /* Q_WS_PM */
+
+                if (mIsHostkeyPressed && e->type() == QEvent::KeyPress)
                 {
                     if (ke->key() >= Key_F1 && ke->key() <= Key_F12)
                     {
@@ -1408,8 +1410,11 @@ bool VBoxConsoleView::event (QEvent *e)
                                        mMainWnd->menuBar());
                     }
                 }
-                else
+                else if (!mIsHostkeyPressed && e->type() == QEvent::KeyRelease)
                 {
+                    /* Show a possible warning on key release which seems to
+                     * be more expected by the end user */
+
                     if (isPaused())
                     {
                         /* if the reminder is disabled we pass the event to
@@ -1419,6 +1424,7 @@ bool VBoxConsoleView::event (QEvent *e)
                             break;
                     }
                 }
+
                 ke->accept();
                 return true;
             }
@@ -2956,8 +2962,8 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
                         r.width(), r.height());
 
 #ifdef Q_WS_MAC
-        ::DarwinUpdateDockPreview (DarwinQPixmapToCGImage (&mPausedShot), 
-                                   mVirtualBoxLogo, 
+        ::DarwinUpdateDockPreview (DarwinQPixmapToCGImage (&mPausedShot),
+                                   mVirtualBoxLogo,
                                    mMainWnd->dockImageState());
 #endif
     }
@@ -3135,7 +3141,7 @@ bool VBoxConsoleView::processHotKey (const QKeySequence &key,  QMenuData *data)
  *
  * @param aReleaseHostKey @c true to set the host key state to unpressed.
  */
-void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostKey)
+void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostKey /* = true*/)
 {
     AssertMsg (mAttached, ("Console must be attached"));
 
