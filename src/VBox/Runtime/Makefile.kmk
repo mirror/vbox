@@ -346,11 +346,11 @@ RuntimeR3_SOURCES.os2   = \
 	r3/os2/system-os2.cpp \
 	r3/os2/thread-os2.cpp \
 	r3/os2/time-os2.cpp \
+	r3/os2/filelock-os2.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
-	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
