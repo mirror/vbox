@@ -135,10 +135,10 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
     }
 //    printf ("..................................\n");
 
-    void *pvOld = ASMAtomicXchgPtr((void * volatile *)&mRegion, rgnRcts);
+    void *pvOld = ASMAtomicXchgPtr ((void * volatile *) &mRegion, rgnRcts);
     if (    pvOld
-        &&  !ASMAtomicCmpXchgPtr((void * volatile *)&mRegionUnused, pvOld, NULL))
-        RTMemFree(pvOld);
+        &&  !ASMAtomicCmpXchgPtr ((void * volatile *) &mRegionUnused, pvOld, NULL))
+        RTMemFree (pvOld);
 
     QApplication::postEvent (mView, new VBoxSetRegionEvent (reg));
 
@@ -191,27 +191,31 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
         Rect winRect;
         GetPortBounds (GetWindowPort (window), &winRect);
         CGContextClearRect (ctx, CGRectMake (winRect.left, winRect.top, winRect.right - winRect.left, winRect.bottom - winRect.top));
-//        ASMAtomicXchgPtr ((void * volatile *) &mRegion, &mRegionUnused);
+        /* Grab the current visible region. */
         RegionRects *rgnRcts = (RegionRects *) ASMAtomicXchgPtr ((void * volatile *) &mRegion, NULL);
         if (rgnRcts)
         {
-            /* Save state for display fliping */
-            CGContextSaveGState (ctx);
-            /* Flip the y-coord */
-            CGContextScaleCTM (ctx, 1.0, -1.0);
-            CGContextTranslateCTM (ctx, Q2DViewRect.x(), -Q2DViewRect.height() - Q2DViewRect.y());
-            /* Add the clipping rects all at once. They are defined in
-             * SetVisibleRegion. */
-            CGContextBeginPath (ctx);
-            CGContextAddRects (ctx, rgnRcts->rcts, rgnRcts->used);
+            if (rgnRcts->used > 0)
+            {
+                /* Save state for display fliping */
+                CGContextSaveGState (ctx);
+                /* Flip the y-coord */
+                CGContextScaleCTM (ctx, 1.0, -1.0);
+                CGContextTranslateCTM (ctx, Q2DViewRect.x(), -Q2DViewRect.height() - Q2DViewRect.y());
+                /* Add the clipping rects all at once. They are defined in
+                 * SetVisibleRegion. */
+                CGContextBeginPath (ctx);
+                CGContextAddRects (ctx, rgnRcts->rcts, rgnRcts->used);
+                /* Restore the context state. Note that the
+                 * current path isn't destroyed. */
+                CGContextRestoreGState (ctx);
+                /* Now convert the path to a clipping path. */
+                CGContextClip (ctx);
+            }
+            /* Put back the visible region, free if we cannot (2+ SetVisibleRegion calls). */
             if (    !ASMAtomicCmpXchgPtr ((void * volatile *) &mRegion, rgnRcts, NULL)
                 &&  !ASMAtomicCmpXchgPtr ((void * volatile *) &mRegionUnused, rgnRcts, NULL))
-            RTMemFree(rgnRcts);
-            /* Restore the context state. Note that the
-             * current path isn't destroyed. */
-            CGContextRestoreGState (ctx);
-            /* Now convert the path to a clipping path. */
-            CGContextClip (ctx);
+                RTMemFree (rgnRcts);
         }
         /* In any case clip the drawing to the view window */
         CGContextClipToRect (ctx, QRectToCGRect (Q2DViewRect));
