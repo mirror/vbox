@@ -859,7 +859,7 @@ int HGCMService::loadClientState (uint32_t u32ClientId, PSSMHANDLE pSSM)
  */
 /* static */ int HGCMService::LoadService (const char *pszServiceLibrary, const char *pszServiceName)
 {
-    LogFlowFunc(("name = %s, lib %s\n", pszServiceName, pszServiceLibrary));
+    LogFlowFunc(("lib %s, name = %s\n", pszServiceLibrary, pszServiceName));
 
     /* Look at already loaded services to avoid double loading. */
 
@@ -1683,7 +1683,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 LogFlowFunc(("HGCM_MSG_LOAD pszServiceName = %s, pMsg->pszServiceLibrary = %s\n",
                              pMsg->pszServiceName, pMsg->pszServiceLibrary));
 
-                rc = HGCMService::LoadService (pMsg->pszServiceName, pMsg->pszServiceLibrary);
+                rc = HGCMService::LoadService (pMsg->pszServiceLibrary, pMsg->pszServiceName);
             } break;
 
             case HGCM_MSG_HOSTCALL:
@@ -1831,16 +1831,16 @@ static HGCMTHREADHANDLE g_hgcmThread = 0;
 /* Load a HGCM service from the specified library.
  * Assign the specified name to the service.
  *
- * @param pszServiceName     The name to be assigned to the service.
  * @param pszServiceLibrary  The library to be loaded.
+ * @param pszServiceName     The name to be assigned to the service.
  * @return VBox rc.
  */
-int HGCMHostLoad (const char *pszServiceName,
-                  const char *pszServiceLibrary)
+int HGCMHostLoad (const char *pszServiceLibrary,
+                  const char *pszServiceName)
 {
-    LogFlowFunc(("name = %s, lib = %s\n", pszServiceName, pszServiceLibrary));
+    LogFlowFunc(("lib = %s, name = %s\n", pszServiceLibrary, pszServiceName));
 
-    if (!pszServiceName || !pszServiceLibrary)
+    if (!pszServiceLibrary || !pszServiceName)
     {
         return VERR_INVALID_PARAMETER;
     }
@@ -1856,8 +1856,8 @@ int HGCMHostLoad (const char *pszServiceName,
         HGCMMsgMainLoad *pMsg = (HGCMMsgMainLoad *)hgcmObjReference (hMsg, HGCMOBJ_MSG);
         AssertRelease(pMsg);
 
-        pMsg->pszServiceName    = pszServiceName;
         pMsg->pszServiceLibrary = pszServiceLibrary;
+        pMsg->pszServiceName    = pszServiceName;
 
         hgcmObjDereference (pMsg);
 

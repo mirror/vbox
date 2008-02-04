@@ -38,7 +38,7 @@ int HGCMHostShutdown (void);
 
 int HGCMHostReset (void);
 
-int HGCMHostLoad (const char *pszServiceName, const char *pszServiceLibrary);
+int HGCMHostLoad (const char *pszServiceLibrary, const char *pszServiceName);
 
 int HGCMHostRegisterServiceExtension (HGCMSVCEXTHANDLE *pHandle, const char *pszServiceName, PFNHGCMSVCEXT pfnExtension, void *pvExtension);
 void HGCMHostUnregisterServiceExtension (HGCMSVCEXTHANDLE handle);

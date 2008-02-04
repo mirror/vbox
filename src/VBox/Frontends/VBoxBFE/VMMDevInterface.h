@@ -43,7 +43,7 @@ public:
     int  SetMouseCapabilities(uint32_t mouseCaps);
     int  SetAbsoluteMouse(uint32_t mouseXAbs, uint32_t mouseYAbs);
 
-    int hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary);
+    int hgcmLoadService (const char *pszServiceLibrary, const char *pszServiceName);
     int hgcmHostCall (const char *pszServiceName, uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms);
 
 private:

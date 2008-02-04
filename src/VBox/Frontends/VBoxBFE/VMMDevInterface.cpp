@@ -319,9 +319,9 @@ static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uin
     return HGCMHostLoadState (pSSM);
 }
 
-int VMMDev::hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary)
+int VMMDev::hgcmLoadService (const char *pszServiceLibrary, const char *pszServiceName)
 {
-    return HGCMHostLoad (pszServiceName, pszServiceLibrary);
+    return HGCMHostLoad (pszServiceLibrary, pszServiceName);
 }
 
 int VMMDev::hgcmHostCall (const char *pszServiceName, uint32_t u32Function,
