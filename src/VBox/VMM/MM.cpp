@@ -87,6 +87,7 @@
 #include <VBox/gmm.h>
 #include "MMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 
@@ -106,10 +107,32 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int mmR3Term(PVM pVM, bool fKeepTheHeap);
 static DECLCALLBACK(int) mmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 
+
+/**
+ * Initializes the MM members of the UVM.
+ *
+ * This is currently only the ring-3 heap.
+ *
+ * @returns VBox status code.
+ * @param   pUVM    Pointer to the user mode VM structure.
+ */
+MMR3DECL(int) MMR3InitUVM(PUVM pUVM)
+{
+    /*
+     * Assert sizes and order.
+     */
+    AssertCompile(sizeof(pUVM->mm.s) <= sizeof(pUVM->mm.padding));
+    AssertRelease(sizeof(pUVM->mm.s) <= sizeof(pUVM->mm.padding));
+    Assert(!pUVM->mm.s.pHeap);
+
+    /*
+     * Init the heap.
+     */
+    return mmR3HeapCreateU(pUVM, &pUVM->mm.s.pHeap);
+}
 
 
 /**
@@ -148,16 +171,6 @@ MMR3DECL(int) MMR3Init(PVM pVM)
     pVM->mm.s.offLookupHyper = NIL_OFFSET;
 
     /*
-     * Init the heap (may already be initialized already if someone used it).
-     */
-    if (!pVM->mm.s.pHeap)
-    {
-        int rc = mmR3HeapCreate(pVM, &pVM->mm.s.pHeap);
-        if (!VBOX_SUCCESS(rc))
-            return rc;
-    }
-
-    /*
      * Init the page pool.
      */
     int rc = mmR3PagePoolInit(pVM);
@@ -181,7 +194,7 @@ MMR3DECL(int) MMR3Init(PVM pVM)
             /* .... failure .... */
         }
     }
-    mmR3Term(pVM, true /* keep the heap */);
+    MMR3Term(pVM);
     return rc;
 }
 
@@ -346,23 +359,6 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
  */
 MMR3DECL(int) MMR3Term(PVM pVM)
 {
-    return mmR3Term(pVM, false /* free the heap */);
-}
-
-
-/**
- * Worker for MMR3Term and MMR3Init.
- *
- * The tricky bit here is that we must not destroy the heap if we're
- * called from MMR3Init, otherwise we'll get into trouble when
- * CFGMR3Term is called later in the bailout process.
- *
- * @returns VBox status code.
- * @param   pVM             The VM to operate on.
- * @param   fKeepTheHeap    Whether or not to keep the heap.
- */
-static int mmR3Term(PVM pVM, bool fKeepTheHeap)
-{
     /*
      * Destroy the page pool. (first as it used the hyper heap)
      */
@@ -394,15 +390,6 @@ static int mmR3Term(PVM pVM, bool fKeepTheHeap)
     }
 
     /*
-     * Destroy the heap if requested.
-     */
-    if (!fKeepTheHeap)
-    {
-        mmR3HeapDestroy(pVM->mm.s.pHeap);
-        pVM->mm.s.pHeap = NULL;
-    }
-
-    /*
      * Zero stuff to detect after termination use of the MM interface
      */
     pVM->mm.s.offLookupHyper = NIL_OFFSET;
@@ -412,6 +399,25 @@ static int mmR3Term(PVM pVM, bool fKeepTheHeap)
     pVM->mm.s.offVM          = 0;       /* init assertion on this */
 
     return 0;
+}
+
+
+/**
+ * Terminates the UVM part of MM.
+ *
+ * Termination means cleaning up and freeing all resources,
+ * the VM it self is at this point powered off or suspended.
+ *
+ * @returns VBox status code.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ */
+MMR3DECL(void) MMR3TermUVM(PUVM pUVM)
+{
+    /*
+     * Destroy the heap.
+     */
+    mmR3HeapDestroy(pUVM->mm.s.pHeap);
+    pUVM->mm.s.pHeap = NULL;
 }
 
 

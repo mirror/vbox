@@ -993,7 +993,7 @@ static int pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename
     /*
      * Load it.
      */
-    int rc = pdmR3LoadR3(pVM, pszFilename, pszName);
+    int rc = pdmR3LoadR3U(pVM->pUVM, pszFilename, pszName);
     if (VBOX_SUCCESS(rc))
     {
         /*

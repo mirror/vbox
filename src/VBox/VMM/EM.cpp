@@ -2983,7 +2983,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
          */
         if (VM_FF_ISSET(pVM, VM_FF_REQUEST))
         {
-            rc2 = VMR3ReqProcess(pVM);
+            rc2 = VMR3ReqProcessU(pVM->pUVM);
             if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE)
             {
                 Log2(("emR3ForcedActions: returns %Vrc\n", rc2));

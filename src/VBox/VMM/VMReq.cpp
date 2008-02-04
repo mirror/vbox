@@ -24,6 +24,7 @@
 #include <VBox/vmm.h>
 #include "VMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -39,7 +40,40 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int  vmR3ReqProcessOne(PVM pVM, PVMREQ pReq);
+static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
+
+
+/**
+ * Allocate and queue a call request.
+ *
+ * If it's desired to poll on the completion of the request set cMillies
+ * to 0 and use VMR3ReqWait() to check for completation. In the other case
+ * use RT_INDEFINITE_WAIT.
+ * The returned request packet must be freed using VMR3ReqFree().
+ *
+ * @returns VBox status code.
+ *          Will not return VERR_INTERRUPTED.
+ * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
+ *
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   ppReq           Where to store the pointer to the request.
+ *                          This will be NULL or a valid request pointer not matter what happends.
+ * @param   cMillies        Number of milliseconds to wait for the request to
+ *                          be completed. Use RT_INDEFINITE_WAIT to only
+ *                          wait till it's completed.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ */
+VMR3DECL(int) VMR3ReqCallU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pUVM, ppReq, cMillies, VMREQFLAGS_VBOX_STATUS, pfnFunction, cArgs, va);
+    va_end(va);
+    return rc;
+}
 
 
 /**
@@ -69,7 +103,40 @@ VMR3DECL(int) VMR3ReqCall(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFu
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallV(pVM, ppReq, cMillies, VMREQFLAGS_VBOX_STATUS, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pVM->pUVM, ppReq, cMillies, VMREQFLAGS_VBOX_STATUS, pfnFunction, cArgs, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * Allocate and queue a call request to a void function.
+ *
+ * If it's desired to poll on the completion of the request set cMillies
+ * to 0 and use VMR3ReqWait() to check for completation. In the other case
+ * use RT_INDEFINITE_WAIT.
+ * The returned request packet must be freed using VMR3ReqFree().
+ *
+ * @returns VBox status code.
+ *          Will not return VERR_INTERRUPTED.
+ * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
+ *
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   ppReq           Where to store the pointer to the request.
+ *                          This will be NULL or a valid request pointer not matter what happends.
+ * @param   cMillies        Number of milliseconds to wait for the request to
+ *                          be completed. Use RT_INDEFINITE_WAIT to only
+ *                          wait till it's completed.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ */
+VMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pUVM, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -102,7 +169,7 @@ VMR3DECL(int) VMR3ReqCallVoid(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT p
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallV(pVM, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pVM->pUVM, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -137,7 +204,42 @@ VMR3DECL(int) VMR3ReqCallEx(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned 
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallV(pVM, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pVM->pUVM, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * Allocate and queue a call request to a void function.
+ *
+ * If it's desired to poll on the completion of the request set cMillies
+ * to 0 and use VMR3ReqWait() to check for completation. In the other case
+ * use RT_INDEFINITE_WAIT.
+ * The returned request packet must be freed using VMR3ReqFree().
+ *
+ * @returns VBox status code.
+ *          Will not return VERR_INTERRUPTED.
+ * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
+ *
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   ppReq           Where to store the pointer to the request.
+ *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
+ *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
+ * @param   cMillies        Number of milliseconds to wait for the request to
+ *                          be completed. Use RT_INDEFINITE_WAIT to only
+ *                          wait till it's completed.
+ * @param   fFlags          A combination of the VMREQFLAGS values.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ */
+VMR3DECL(int) VMR3ReqCallU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pUVM, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -155,7 +257,7 @@ VMR3DECL(int) VMR3ReqCallEx(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned 
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
- * @param   pVM             The VM handle.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -168,34 +270,30 @@ VMR3DECL(int) VMR3ReqCallEx(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned 
  *                          Stuff which differs in size from uintptr_t is gonna make trouble, so don't try!
  * @param   Args            Argument vector.
  */
-VMR3DECL(int) VMR3ReqCallV(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+VMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
     LogFlow(("VMR3ReqCallV: cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", cMillies, fFlags, pfnFunction, cArgs));
 
     /*
-     * Check input.
+     * Validate input.
      */
-    if (!pfnFunction || !pVM || (fFlags & ~(VMREQFLAGS_RETURN_MASK | VMREQFLAGS_NO_WAIT)))
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pfnFunction, VERR_INVALID_POINTER);
+    AssertPtrReturn(pUVM, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~(VMREQFLAGS_RETURN_MASK | VMREQFLAGS_NO_WAIT)), VERR_INVALID_PARAMETER);
     if (!(fFlags & VMREQFLAGS_NO_WAIT) || ppReq)
     {
-        Assert(ppReq);
+        AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
         *ppReq = NULL;
     }
     PVMREQ pReq = NULL;
-    if (cArgs * sizeof(uintptr_t) > sizeof(pReq->u.Internal.aArgs))
-    {
-        AssertMsgFailed(("cArg=%d\n", cArgs));
-        return VERR_TOO_MUCH_DATA;
-    }
+    AssertMsgReturn(cArgs * sizeof(uintptr_t) <= sizeof(pReq->u.Internal.aArgs),
+                    ("cArg=%d\n", cArgs),
+                    VERR_TOO_MUCH_DATA);
 
     /*
      * Allocate request
      */
-    int rc = VMR3ReqAlloc(pVM, &pReq, VMREQTYPE_INTERNAL);
+    int rc = VMR3ReqAllocU(pUVM, &pReq, VMREQTYPE_INTERNAL);
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -259,7 +357,7 @@ static void vmr3ReqJoinFreeSub(volatile PVMREQ *ppHead, PVMREQ pList)
 /**
  * Joins the list pList with whatever is linked up at *pHead.
  */
-static void vmr3ReqJoinFree(PVMINT pVMInt, PVMREQ pList)
+static void vmr3ReqJoinFree(PVMINTUSERPERVM pVMInt, PVMREQ pList)
 {
     /*
      * Split the list if it's too long.
@@ -271,15 +369,15 @@ static void vmr3ReqJoinFree(PVMINT pVMInt, PVMREQ pList)
         if (cReqs++ > 25)
         {
             const uint32_t i = pVMInt->iReqFree;
-            vmr3ReqJoinFreeSub(&pVMInt->apReqFree[(i + 2) % ELEMENTS(pVMInt->apReqFree)], pTail->pNext);
+            vmr3ReqJoinFreeSub(&pVMInt->apReqFree[(i + 2) % RT_ELEMENTS(pVMInt->apReqFree)], pTail->pNext);
 
             pTail->pNext = NULL;
-            vmr3ReqJoinFreeSub(&pVMInt->apReqFree[(i + 2 + (i == pVMInt->iReqFree)) % ELEMENTS(pVMInt->apReqFree)], pTail->pNext);
+            vmr3ReqJoinFreeSub(&pVMInt->apReqFree[(i + 2 + (i == pVMInt->iReqFree)) % RT_ELEMENTS(pVMInt->apReqFree)], pTail->pNext);
             return;
         }
         pTail = pTail->pNext;
     }
-    vmr3ReqJoinFreeSub(&pVMInt->apReqFree[(pVMInt->iReqFree + 2) % ELEMENTS(pVMInt->apReqFree)], pList);
+    vmr3ReqJoinFreeSub(&pVMInt->apReqFree[(pVMInt->iReqFree + 2) % RT_ELEMENTS(pVMInt->apReqFree)], pList);
 }
 
 
@@ -297,26 +395,42 @@ static void vmr3ReqJoinFree(PVMINT pVMInt, PVMREQ pList)
  */
 VMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
 {
+    return VMR3ReqAllocU(pVM->pUVM, ppReq, enmType);
+}
+
+
+/**
+ * Allocates a request packet.
+ *
+ * The caller allocates a request packet, fills in the request data
+ * union and queues the request.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   ppReq           Where to store the pointer to the allocated packet.
+ * @param   enmType         Package type.
+ */
+VMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType)
+{
     /*
      * Validate input.
      */
-    if (    enmType < VMREQTYPE_INVALID
-        ||  enmType > VMREQTYPE_MAX)
-    {
-        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusivly.\n",
-                         enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1));
-        return VERR_VM_REQUEST_INVALID_TYPE;
-    }
+    AssertMsgReturn(enmType > VMREQTYPE_INVALID && enmType < VMREQTYPE_MAX,
+                    ("Invalid package type %d valid range %d-%d inclusivly.\n",
+                     enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
+                    VERR_VM_REQUEST_INVALID_TYPE);
+    AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
 
     /*
      * Try get a recycled packet.
      * While this could all be solved with a single list with a lock, it's a sport
      * of mine to avoid locks.
      */
-    int cTries = ELEMENTS(pVM->vm.s.apReqFree) * 2;
+    int cTries = RT_ELEMENTS(pUVM->vm.s.apReqFree) * 2;
     while (--cTries >= 0)
     {
-        PVMREQ volatile *ppHead = &pVM->vm.s.apReqFree[ASMAtomicIncU32(&pVM->vm.s.iReqFree) % ELEMENTS(pVM->vm.s.apReqFree)];
+        PVMREQ volatile *ppHead = &pUVM->vm.s.apReqFree[ASMAtomicIncU32(&pUVM->vm.s.iReqFree) % RT_ELEMENTS(pUVM->vm.s.apReqFree)];
 #if 0 /* sad, but this won't work safely because the reading of pReq->pNext. */
         PVMREQ pNext = NULL;
         PVMREQ pReq = *ppHead;
@@ -336,11 +450,11 @@ VMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
             if (    pNext
                 &&  !ASMAtomicCmpXchgPtr((void * volatile *)ppHead, pNext, NULL))
             {
-                STAM_COUNTER_INC(&pVM->vm.s.StatReqAllocRaces);
-                vmr3ReqJoinFree(&pVM->vm.s, pReq->pNext);
+                STAM_COUNTER_INC(&pUVM->vm.s.StatReqAllocRaces);
+                vmr3ReqJoinFree(&pUVM->vm.s, pReq->pNext);
             }
 #endif
-            ASMAtomicDecU32(&pVM->vm.s.cReqFree);
+            ASMAtomicDecU32(&pUVM->vm.s.cReqFree);
 
             /*
              * Make sure the event sem is not signaled.
@@ -371,7 +485,7 @@ VMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
              */
             Assert(pReq->enmType == VMREQTYPE_INVALID);
             Assert(pReq->enmState == VMREQSTATE_FREE);
-            Assert(pReq->pVM == pVM);
+            Assert(pReq->pUVM == pUVM);
             ASMAtomicXchgSize(&pReq->pNext, NULL);
             pReq->enmState = VMREQSTATE_ALLOCATED;
             pReq->iStatus  = VERR_VM_REQUEST_STATUS_STILL_PENDING;
@@ -379,7 +493,7 @@ VMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
             pReq->enmType  = enmType;
 
             *ppReq = pReq;
-            STAM_COUNTER_INC(&pVM->vm.s.StatReqAllocRecycled);
+            STAM_COUNTER_INC(&pUVM->vm.s.StatReqAllocRecycled);
             LogFlow(("VMR3ReqAlloc: returns VINF_SUCCESS *ppReq=%p recycled\n", pReq));
             return VINF_SUCCESS;
         }
@@ -388,7 +502,7 @@ VMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
     /*
      * Ok allocate one.
      */
-    PVMREQ pReq = (PVMREQ)MMR3HeapAlloc(pVM, MM_TAG_VM_REQ, sizeof(*pReq));
+    PVMREQ pReq = (PVMREQ)MMR3HeapAllocU(pUVM, MM_TAG_VM_REQ, sizeof(*pReq));
     if (!pReq)
         return VERR_NO_MEMORY;
 
@@ -407,7 +521,7 @@ VMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
      * Initialize the packet and return it.
      */
     pReq->pNext    = NULL;
-    pReq->pVM      = pVM;
+    pReq->pUVM     = pUVM;
     pReq->enmState = VMREQSTATE_ALLOCATED;
     pReq->iStatus  = VERR_VM_REQUEST_STATUS_STILL_PENDING;
     pReq->fEventSemClear = true;
@@ -415,7 +529,7 @@ VMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
     pReq->enmType  = enmType;
 
     *ppReq = pReq;
-    STAM_COUNTER_INC(&pVM->vm.s.StatReqAllocNew);
+    STAM_COUNTER_INC(&pUVM->vm.s.StatReqAllocNew);
     LogFlow(("VMR3ReqAlloc: returns VINF_SUCCESS *ppReq=%p new\n", pReq));
     return VINF_SUCCESS;
 }
@@ -437,8 +551,6 @@ VMR3DECL(int) VMR3ReqFree(PVMREQ pReq)
     if (!pReq)
         return VINF_SUCCESS;
 
-    STAM_COUNTER_INC(&pReq->pVM->vm.s.StatReqFree);
-
     /*
      * Check packet state.
      */
@@ -459,11 +571,13 @@ VMR3DECL(int) VMR3ReqFree(PVMREQ pReq)
     pReq->iStatus  = VERR_VM_REQUEST_STATUS_FREED;
     pReq->enmType  = VMREQTYPE_INVALID;
 
-    PVM pVM = pReq->pVM;
-    if (pVM->vm.s.cReqFree < 128)
+    PUVM pUVM = pReq->pUVM;
+    STAM_COUNTER_INC(&pUVM->vm.s.StatReqFree);
+
+    if (pUVM->vm.s.cReqFree < 128)
     {
-        ASMAtomicIncU32(&pVM->vm.s.cReqFree);
-        PVMREQ volatile *ppHead = &pVM->vm.s.apReqFree[ASMAtomicIncU32(&pVM->vm.s.iReqFree) % ELEMENTS(pVM->vm.s.apReqFree)];
+        ASMAtomicIncU32(&pUVM->vm.s.cReqFree);
+        PVMREQ volatile *ppHead = &pUVM->vm.s.apReqFree[ASMAtomicIncU32(&pUVM->vm.s.iReqFree) % RT_ELEMENTS(pUVM->vm.s.apReqFree)];
         PVMREQ pNext;
         do
         {
@@ -473,7 +587,7 @@ VMR3DECL(int) VMR3ReqFree(PVMREQ pReq)
     }
     else
     {
-        STAM_COUNTER_INC(&pReq->pVM->vm.s.StatReqFreeOverflow);
+        STAM_COUNTER_INC(&pReq->pUVM->vm.s.StatReqFreeOverflow);
         RTSemEventDestroy(pReq->EventSem);
         MMR3HeapFree(pReq);
     }
@@ -505,33 +619,25 @@ VMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
     /*
      * Verify the supplied package.
      */
-    if (pReq->enmState != VMREQSTATE_ALLOCATED)
-    {
-        AssertMsgFailed(("Invalid state %d\n", pReq->enmState));
-        return VERR_VM_REQUEST_STATE;
-    }
-    if (   !pReq->pVM
-        ||  pReq->pNext
-        ||  !pReq->EventSem)
-    {
-        AssertMsgFailed(("Invalid request package! Anyone cooking their own packages???\n"));
-        return VERR_VM_REQUEST_INVALID_PACKAGE;
-    }
-    if (    pReq->enmType < VMREQTYPE_INVALID
-        || pReq->enmType > VMREQTYPE_MAX)
-    {
-        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusivly. This was verified on alloc too...\n",
-                         pReq->enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1));
-        return VERR_VM_REQUEST_INVALID_TYPE;
-    }
+    AssertMsgReturn(pReq->enmState == VMREQSTATE_ALLOCATED, ("%d\n", pReq->enmState), VERR_VM_REQUEST_STATE);
+    AssertMsgReturn(    VALID_PTR(pReq->pUVM)
+                    &&  !pReq->pNext
+                    &&  pReq->EventSem != NIL_RTSEMEVENT,
+                    ("Invalid request package! Anyone cooking their own packages???\n"),
+                    VERR_VM_REQUEST_INVALID_PACKAGE);
+    AssertMsgReturn(    pReq->enmType > VMREQTYPE_INVALID
+                    &&  pReq->enmType < VMREQTYPE_MAX,
+                    ("Invalid package type %d valid range %d-%d inclusivly. This was verified on alloc too...\n",
+                     pReq->enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
+                    VERR_VM_REQUEST_INVALID_TYPE);
 
     /*
      * Are we the EMT or not?
      * Also, store pVM (and fFlags) locally since pReq may be invalid after queuing it.
      */
     int rc = VINF_SUCCESS;
-    PVM pVM = ((VMREQ volatile *)pReq)->pVM;                    /* volatile paranoia */
-    if (pVM->NativeThreadEMT != RTThreadNativeSelf())
+    PUVM pUVM = ((VMREQ volatile *)pReq)->pUVM;                 /* volatile paranoia */
+    if (pUVM->vm.s.NativeThreadEMT != RTThreadNativeSelf())
     {
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
@@ -542,15 +648,16 @@ VMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         PVMREQ pNext;
         do
         {
-            pNext = pVM->vm.s.pReqs;
+            pNext = pUVM->vm.s.pReqs;
             pReq->pNext = pNext;
-        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pVM->vm.s.pReqs, (void *)pReq, (void *)pNext));
+        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->vm.s.pReqs, (void *)pReq, (void *)pNext));
 
         /*
          * Notify EMT.
          */
-        VM_FF_SET(pVM, VM_FF_REQUEST);
-        VMR3NotifyFF(pVM, false);
+        if (pUVM->pVM)
+            VM_FF_SET(pUVM->pVM, VM_FF_REQUEST);
+        VMR3NotifyFFU(pUVM, false);
 
         /*
          * Wait and return.
@@ -565,7 +672,7 @@ VMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
          * The requester was EMT, just execute it.
          */
         pReq->enmState = VMREQSTATE_QUEUED;
-        rc = vmR3ReqProcessOne(pVM, pReq);
+        rc = vmR3ReqProcessOneU(pUVM, pReq);
         LogFlow(("VMR3ReqQueue: returns %Vrc (processed)\n", rc));
     }
     return rc;
@@ -589,31 +696,27 @@ VMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
     /*
      * Verify the supplied package.
      */
-    if (    pReq->enmState != VMREQSTATE_QUEUED
-        &&  pReq->enmState != VMREQSTATE_PROCESSING
-        &&  pReq->enmState != VMREQSTATE_COMPLETED)
-    {
-        AssertMsgFailed(("Invalid state %d\n", pReq->enmState));
-        return VERR_VM_REQUEST_STATE;
-    }
-    if (    !pReq->pVM
-        ||  !pReq->EventSem)
-    {
-        AssertMsgFailed(("Invalid request package! Anyone cooking their own packages???\n"));
-        return VERR_VM_REQUEST_INVALID_PACKAGE;
-    }
-    if (    pReq->enmType < VMREQTYPE_INVALID
-        ||  pReq->enmType > VMREQTYPE_MAX)
-    {
-        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusivly. This was verified on alloc and queue too...\n",
-                         pReq->enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1));
-        return VERR_VM_REQUEST_INVALID_TYPE;
-    }
+    AssertMsgReturn(    pReq->enmState == VMREQSTATE_QUEUED
+                    ||  pReq->enmState == VMREQSTATE_PROCESSING
+                    ||  pReq->enmState == VMREQSTATE_COMPLETED,
+                    ("Invalid state %d\n", pReq->enmState),
+                    VERR_VM_REQUEST_STATE);
+    AssertMsgReturn(    VALID_PTR(pReq->pUVM)
+                    &&  pReq->EventSem != NIL_RTSEMEVENT,
+                    ("Invalid request package! Anyone cooking their own packages???\n"),
+                    VERR_VM_REQUEST_INVALID_PACKAGE);
+    AssertMsgReturn(    pReq->enmType > VMREQTYPE_INVALID
+                    &&  pReq->enmType < VMREQTYPE_MAX,
+                    ("Invalid package type %d valid range %d-%d inclusivly. This was verified on alloc too...\n",
+                     pReq->enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
+                    VERR_VM_REQUEST_INVALID_TYPE);
 
     /*
      * Check for deadlock condition
      */
-    AssertMsg(!VMMR3LockIsOwner(pReq->pVM), ("Waiting for EMT to process a request, but we own the global VM lock!?!?!?!\n"));
+    PUVM pUVM = pReq->pUVM;
+    AssertMsg(!pUVM->pVM || !VMMR3LockIsOwner(pUVM->pVM),
+              ("Waiting for EMT to process a request, but we own the global VM lock!?!?!?!\n"));
 
     /*
      * Wait on the package.
@@ -643,16 +746,16 @@ VMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
 /**
  * Process pending request(s).
  *
- * This function is called from a forced action handler in
- * the EMT.
+ * This function is called from a forced action handler in the EMT
+ * or from one of the EMT loops.
  *
  * @returns VBox status code.
  *
- * @param   pVM         VM handle.
+ * @param   pUVM            Pointer to the user mode VM structure.
  */
-VMR3DECL(int) VMR3ReqProcess(PVM pVM)
+VMR3DECL(int) VMR3ReqProcessU(PUVM pUVM)
 {
-    LogFlow(("VMR3ReqProcess: (enmVMState=%d)\n", pVM->enmVMState));
+    LogFlow(("VMR3ReqProcessU: (enmVMState=%d)\n", pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
 
     /*
      * Process loop.
@@ -666,8 +769,9 @@ VMR3DECL(int) VMR3ReqProcess(PVM pVM)
         /*
          * Get pending requests.
          */
-        VM_FF_CLEAR(pVM, VM_FF_REQUEST);
-        PVMREQ pReqs = (PVMREQ)ASMAtomicXchgPtr((void * volatile *)&pVM->vm.s.pReqs, NULL);
+        if (RT_LIKELY(pUVM->pVM))
+            VM_FF_CLEAR(pUVM->pVM, VM_FF_REQUEST);
+        PVMREQ pReqs = (PVMREQ)ASMAtomicXchgPtr((void * volatile *)&pUVM->vm.s.pReqs, NULL);
         if (!pReqs)
             break;
 
@@ -681,7 +785,7 @@ VMR3DECL(int) VMR3ReqProcess(PVM pVM)
         while (pReq)
         {
             Assert(pReq->enmState == VMREQSTATE_QUEUED);
-            Assert(pReq->pVM == pVM);
+            Assert(pReq->pUVM == pUVM);
             PVMREQ pCur = pReq;
             pReq = pReq->pNext;
             pCur->pNext = pReqs;
@@ -703,7 +807,7 @@ VMR3DECL(int) VMR3ReqProcess(PVM pVM)
             pReq->pNext = NULL;
 
             /* Process the request */
-            int rc2 = vmR3ReqProcessOne(pVM, pReq);
+            int rc2 = vmR3ReqProcessOneU(pUVM, pReq);
 
             /*
              * The status code handling extremely important yet very fragile. Should probably
@@ -717,7 +821,7 @@ VMR3DECL(int) VMR3ReqProcess(PVM pVM)
         }
     }
 
-    LogFlow(("VMR3ReqProcess: returns %Vrc (enmVMState=%d)\n", rc, pVM->enmVMState));
+    LogFlow(("VMR3ReqProcess: returns %Vrc (enmVMState=%d)\n", rc, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
     return rc;
 }
 
@@ -730,7 +834,7 @@ VMR3DECL(int) VMR3ReqProcess(PVM pVM)
  * @param   pVM         VM handle.
  * @param   pReq        Request packet to process.
  */
-static int  vmR3ReqProcessOne(PVM pVM, PVMREQ pReq)
+static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
 {
     LogFlow(("vmR3ReqProcessOne: pReq=%p type=%d fFlags=%#x\n", pReq, pReq->enmType, pReq->fFlags));
 

@@ -775,9 +775,6 @@ typedef struct PDM
     RTUINT                          offVM;
     RTUINT                          uPadding0; /**< Alignment padding.*/
 
-    /** Pointer to list of loaded modules. This is HC only! */
-    R3PTRTYPE(PPDMMOD)              pModules;
-
     /** List of registered devices. (FIFO) */
     R3PTRTYPE(PPDMDEV)              pDevs;
     /** List of devices instances. (FIFO) */
@@ -866,6 +863,19 @@ typedef struct PDM
 typedef PDM *PPDM;
 
 
+/**
+ * PDM data kept in the UVM.
+ */
+typedef struct PDMUSERPERVM
+{
+    /** Pointer to list of loaded modules. */
+    PPDMMOD                         pModules;
+    /** @todo move more stuff over here. */
+} PDMUSERPERVM;
+/** Pointer to the PDM data kept in the UVM. */
+typedef PDMUSERPERVM *PPDMUSERPERVM;
+
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -901,10 +911,10 @@ int         pdmR3DrvDetach(PPDMDRVINS pDrvIns);
 void        pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns);
 PPDMDRV     pdmR3DrvLookup(PVM pVM, const char *pszName);
 
-int         pdmR3LdrInit(PVM pVM);
-void        pdmR3LdrTerm(PVM pVM);
+int         pdmR3LdrInitU(PUVM pUVM);
+void        pdmR3LdrTermU(PUVM pUVM);
 char *      pdmR3FileR3(const char *pszFile, bool fShared = false);
-int         pdmR3LoadR3(PVM pVM, const char *pszFilename, const char *pszName);
+int         pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName);
 
 void        pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta);
 

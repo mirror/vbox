@@ -108,6 +108,7 @@
 #include <VBox/mm.h>
 #include <VBox/ssm.h>
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 #include <VBox/vmm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
@@ -137,6 +138,24 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(void) pdmR3PollerTimer(PVM pVM, PTMTIMER pTimer, void *pvUser);
 
+
+
+/**
+ * Initializes the PDM part of the UVM.
+ *
+ * This doesn't really do much right now but has to be here for the sake
+ * of completeness.
+ *
+ * @returns VBox status code.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ */
+PDMR3DECL(int) PDMR3InitUVM(PUVM pUVM)
+{
+    AssertCompile(sizeof(pUVM->pdm.s) <= sizeof(pUVM->pdm.padding));
+    AssertRelease(sizeof(pUVM->pdm.s) <= sizeof(pUVM->pdm.padding));
+    pUVM->pdm.s.pModules = NULL;
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -173,7 +192,7 @@ PDMR3DECL(int) PDMR3Init(PVM pVM)
         rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, "PDM");
         if (VBOX_SUCCESS(rc))
 #endif
-            rc = pdmR3LdrInit(pVM);
+            rc = pdmR3LdrInitU(pVM->pUVM);
         if (VBOX_SUCCESS(rc))
         {
             rc = pdmR3DrvInit(pVM);
@@ -425,7 +444,7 @@ PDMR3DECL(int) PDMR3Term(PVM pVM)
     /*
      * Free modules.
      */
-    pdmR3LdrTerm(pVM);
+    pdmR3LdrTermU(pVM->pUVM);
 
 #ifdef VBOX_WITH_PDM_LOCK
     /*
@@ -437,6 +456,27 @@ PDMR3DECL(int) PDMR3Term(PVM pVM)
     LogFlow(("PDMR3Term: returns %Vrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Terminates the PDM part of the UVM.
+ *
+ * This will unload any modules left behind.
+ *
+ * @param   pUVM        Pointer to the user mode VM structure.
+ */
+PDMR3DECL(void) PDMR3TermUVM(PUVM pUVM)
+{
+    /*
+     * In the normal cause of events we will now call pdmR3LdrTermU for
+     * the second time. In the case of init failure however, this might
+     * the first time, which is why we do it.
+     */
+    pdmR3LdrTermU(pUVM);
+}
+
+
+
 
 
 /**

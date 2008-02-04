@@ -42,6 +42,7 @@
 #include <VBox/hwaccm.h>
 #include "VMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 
 #include <VBox/sup.h>
 #include <VBox/dbg.h>
@@ -81,21 +82,22 @@ typedef VMATDTOR *PVMATDTOR;
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Pointer to the list of VMs. */
-static PVM          g_pVMsHead;
+static PUVM         g_pUVMsHead = NULL;
 
 /** Pointer to the list of at VM destruction callbacks. */
-static PVMATDTOR    g_pVMAtDtorHead;
+static PVMATDTOR    g_pVMAtDtorHead = NULL;
 /** Lock the g_pVMAtDtorHead list. */
 #define VM_ATDTOR_LOCK() do { } while (0)
 /** Unlock the g_pVMAtDtorHead list. */
 #define VM_ATDTOR_UNLOCK() do { } while (0)
 
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int  vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
-static void vmR3CallVMAtError(PFNVMATERROR pfnVMAtError, void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszError, ...);
-static int  vmR3InitRing3(PVM pVM);
+static int  vmR3CreateUVM(PUVM *ppUVM);
+static int  vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
+static int  vmR3InitRing3(PVM pVM, PUVM pUVM);
 static int  vmR3InitRing0(PVM pVM);
 static int  vmR3InitGC(PVM pVM);
 static int  vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
@@ -105,15 +107,17 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM);
 static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 static DECLCALLBACK(int) vmR3PowerOff(PVM pVM);
+static void vmR3DestroyUVM(PUVM pUVM);
 static void vmR3AtDtor(PVM pVM);
-static int  vmR3AtReset(PVM pVM);
+static int  vmR3AtResetU(PUVM pUVM);
 static DECLCALLBACK(int) vmR3Reset(PVM pVM);
-static DECLCALLBACK(int) vmR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser);
-static DECLCALLBACK(int) vmR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser);
-static DECLCALLBACK(int) vmR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser);
-static DECLCALLBACK(int) vmR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser);
-static DECLCALLBACK(int) vmR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
-static DECLCALLBACK(int) vmR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
+static DECLCALLBACK(int) vmR3AtStateRegisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser);
+static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser);
+static DECLCALLBACK(int) vmR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser);
+static DECLCALLBACK(int) vmR3AtErrorDeregisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser);
+static int               vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
+static DECLCALLBACK(int) vmR3AtRuntimeErrorRegisterU(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
+static DECLCALLBACK(int) vmR3AtRuntimeErrorDeregisterU(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 
 
 /**
@@ -126,14 +130,14 @@ VMR3DECL(int)   VMR3GlobalInit(void)
     /*
      * Only once.
      */
-    static bool fDone = false;
-    if (fDone)
+    static bool volatile s_fDone = false;
+    if (s_fDone)
         return VINF_SUCCESS;
 
     /*
      * We're done.
      */
-    fDone = true;
+    s_fDone = true;
     return VINF_SUCCESS;
 }
 
@@ -174,236 +178,242 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
     }
 
     /*
-     * Init support library and load the VMMR0.r0 module.
+     * Create the UVM so we can register the at-error callback
+     * and consoliate a bit of cleanup code.
      */
-    PSUPDRVSESSION pSession = 0;
-    int rc = SUPInit(&pSession, 0);
-    if (VBOX_SUCCESS(rc))
+    PUVM pUVM;
+    int rc = vmR3CreateUVM(&pUVM);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (pfnVMAtError)
+        rc = VMR3AtErrorRegisterU(pUVM, pfnVMAtError, pvUserVM);
+    if (RT_SUCCESS(rc))
     {
-        /** @todo This is isn't very nice, it would be preferrable to move the loader bits
-         * out of the VM structure and into a ring-3 only thing. There's a big deal of the
-         * error path that we now won't unload the VMMR0.r0 module in. This isn't such a
-         * big deal right now, but I'll have to get back to this later. UVM (bird) */
-        void *pvVMMR0Opaque;
-        rc = PDMR3LdrLoadVMMR0(&pvVMMR0Opaque);
+        /*
+         * Initialize the support library creating the session for this v
+         */
+        rc = SUPInit(&pUVM->vm.s.pSession, 0);
         if (RT_SUCCESS(rc))
         {
             /*
-             * Request GVMM to create a new VM for us.
+             * Call vmR3CreateU in the EMT thread and wait for it to finish.
              */
-            GVMMCREATEVMREQ CreateVMReq;
-            CreateVMReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-            CreateVMReq.Hdr.cbReq = sizeof(CreateVMReq);
-            CreateVMReq.pSession = pSession;
-            CreateVMReq.pVMR0 = NIL_RTR0PTR;
-            CreateVMReq.pVMR3 = NULL;
-            rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
+            PVMREQ pReq;
+            rc = VMR3ReqCallU(pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3CreateU,
+                              3, pUVM, pfnCFGMConstructor, pvUserCFGM);
             if (RT_SUCCESS(rc))
             {
-                PVM pVM = CreateVMReq.pVMR3;
-                AssertRelease(VALID_PTR(pVM));
-                Log(("VMR3Create: Created pVM=%p pVMR0=%p\n", pVM, pVM->pVMR0));
-                PDMR3LdrLoadVMMR0Part2(pVM, pvVMMR0Opaque);
-
-                /*
-                 * Do basic init of the VM structure.
-                 */
-                pVM->vm.s.offVM = RT_OFFSETOF(VM, vm.s);
-                pVM->vm.s.ppAtResetNext = &pVM->vm.s.pAtReset;
-                pVM->vm.s.ppAtStateNext = &pVM->vm.s.pAtState;
-                pVM->vm.s.ppAtErrorNext = &pVM->vm.s.pAtError;
-                pVM->vm.s.ppAtRuntimeErrorNext = &pVM->vm.s.pAtRuntimeError;
-                pVM->vm.s.enmHaltMethod = VMHALTMETHOD_1;
-                rc = RTSemEventCreate(&pVM->vm.s.EventSemWait);
+                rc = pReq->iStatus;
+                VMR3ReqFree(pReq);
                 if (RT_SUCCESS(rc))
                 {
                     /*
-                     * Initialize STAM.
+                     * Success!
                      */
-                    rc = STAMR3Init(pVM);
-                    if (VBOX_SUCCESS(rc))
-                    {
-                        /*
-                         * Create the EMT thread, it will start up and wait for requests to process.
-                         */
-                        VMEMULATIONTHREADARGS Args;
-                        Args.pVM = pVM;
-                        rc = RTThreadCreate(&pVM->ThreadEMT, vmR3EmulationThread, &Args, _1M,
-                                            RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
-                        if (VBOX_SUCCESS(rc))
-                        {
-                            /*
-                             * Issue a VM Create request and wait for it to complete.
-                             */
-                            PVMREQ pReq;
-                            rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Create, 5,
-                                             pVM, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM);
-                            if (VBOX_SUCCESS(rc))
-                            {
-                                rc = pReq->iStatus;
-                                VMR3ReqFree(pReq);
-                                if (VBOX_SUCCESS(rc))
-                                {
-                                    *ppVM = pVM;
-                                    LogFlow(("VMR3Create: returns VINF_SUCCESS *ppVM=%p\n", pVM));
-                                    return VINF_SUCCESS;
-                                }
-
-                                NoDmik(AssertMsgFailed(("vmR3Create failed rc=%Vrc\n", rc)));
-                            }
-                            else
-                                AssertMsgFailed(("VMR3ReqCall failed rc=%Vrc\n", rc));
-
-                            /*
-                             * An error occurred during VM creation. Set the error message directly
-                             * using the initial callback, as the callback list doesn't exist yet.
-                             */
-                            const char *pszError = NULL;
-                            switch (rc)
-                            {
-                                case VERR_VMX_IN_VMX_ROOT_MODE:
-#ifdef RT_OS_LINUX
-                                    pszError = N_("VirtualBox can't operate in VMX root mode. "
-                                                  "Please disable the KVM kernel extension, recompile your kernel and reboot");
-#else
-                                    pszError = N_("VirtualBox can't operate in VMX root mode");
-#endif
-                                    break;
-                                default:
-                                    /* XXX check if there was already an error message set! */
-                                    pszError = N_("Unknown error creating VM");
-                                    NoDmik(AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc)));
-                            }
-                            if (pszError)
-                                vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
-
-                            /* Forcefully terminate the emulation thread. */
-                            VM_FF_SET(pVM, VM_FF_TERMINATE);
-                            VMR3NotifyFF(pVM, false);
-                            RTThreadWait(pVM->ThreadEMT, 1000, NULL);
-                        }
-
-                        int rc2 = STAMR3Term(pVM);
-                        AssertRC(rc2);
-                    }
-
-                    RTSemEventDestroy(pVM->vm.s.EventSemWait);
+                    *ppVM = pUVM->pVM;
+                    LogFlow(("VMR3Create: returns VINF_SUCCESS *ppVM=%p\n", *ppVM));
+                    return VINF_SUCCESS;
                 }
-                /* cleanup the heap. */
-                int rc2 = MMR3Term(pVM);
-                AssertRC(rc2);
-
-                /* Tell GVMM that it can destroy the VM now. */
-                rc2 = SUPCallVMMR0Ex(CreateVMReq.pVMR0, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
-                AssertRC(rc2);
             }
             else
+                AssertMsgFailed(("VMR3ReqCall failed rc=%Vrc\n", rc));
+
+            /*
+             * An error occurred during VM creation. Set the error message directly
+             * using the initial callback, as the callback list doesn't exist yet.
+             */
+            const char *pszError = NULL;
+            switch (rc)
             {
-                PDMR3LdrLoadVMMR0Part2(NULL, pvVMMR0Opaque);
-                vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, N_("VM creation failed"));
-                AssertMsgFailed(("GMMR0CreateVMReq returned %Rrc\n", rc));
+                case VERR_VMX_IN_VMX_ROOT_MODE:
+#ifdef RT_OS_LINUX
+                    pszError = N_("VirtualBox can't operate in VMX root mode. "
+                                  "Please disable the KVM kernel extension, recompile your kernel and reboot");
+#else
+                    pszError = N_("VirtualBox can't operate in VMX root mode");
+#endif
+                    break;
+
+                default:
+                    pszError = N_("Unknown error creating VM");
+                    NoDmik(AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc)));
+                    break;
             }
+            vmR3SetErrorU(pUVM, rc, RT_SRC_POS, pszError, rc);
         }
         else
         {
-            vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, N_("Failed to load VMMR0.r0"));
-            AssertMsgFailed(("PDMR3LdrLoadVMMR0 returned %Rrc\n", rc));
+            /*
+             * An error occurred at support library initialization time (before the
+             * VM could be created). Set the error message directly using the
+             * initial callback, as the callback list doesn't exist yet.
+             */
+            const char *pszError;
+            switch (rc)
+            {
+                case VERR_VM_DRIVER_LOAD_ERROR:
+#ifdef RT_OS_LINUX
+                    pszError = N_("VirtualBox kernel driver not loaded. The vboxdrv kernel module "
+                                  "was either not loaded or /dev/vboxdrv is not set up properly. "
+                                  "Re-setup the kernel module by executing "
+                                  "'/etc/init.d/vboxdrv setup' as root");
+#else
+                    pszError = N_("VirtualBox kernel driver not loaded");
+#endif
+                    break;
+                case VERR_VM_DRIVER_OPEN_ERROR:
+                    pszError = N_("VirtualBox kernel driver cannot be opened");
+                    break;
+                case VERR_VM_DRIVER_NOT_ACCESSIBLE:
+#ifdef RT_OS_LINUX
+                    pszError = N_("The VirtualBox kernel driver is not accessible to the current "
+                                  "user. Make sure that the user has write permissions for "
+                                  "/dev/vboxdrv by adding them to the vboxusers groups. You "
+                                  "will need to logout for the change to take effect.");
+#else
+                    pszError = N_("VirtualBox kernel driver not accessible, permission problem");
+#endif
+                    break;
+                case VERR_VM_DRIVER_NOT_INSTALLED:
+#ifdef RT_OS_LINUX
+                    pszError = N_("VirtualBox kernel driver not installed. The vboxdrv kernel module "
+                                  "was either not loaded or /dev/vboxdrv was not created for some "
+                                  "reason. Re-setup the kernel module by executing "
+                                  "'/etc/init.d/vboxdrv setup' as root");
+#else
+                    pszError = N_("VirtualBox kernel driver not installed");
+#endif
+                    break;
+                case VERR_NO_MEMORY:
+                    pszError = N_("VirtualBox support library out of memory");
+                    break;
+                case VERR_VERSION_MISMATCH:
+                case VERR_VM_DRIVER_VERSION_MISMATCH:
+                    pszError = N_("The VirtualBox support driver which is running is from a different "
+                                  "version of VirtualBox.  You can correct this by stopping all "
+                                  "running instances of VirtualBox and reinstalling the software.");
+                    break;
+                default:
+                    pszError = N_("Unknown error initializing kernel driver");
+                    AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
+            }
+            vmR3SetErrorU(pUVM, rc, RT_SRC_POS, pszError, rc);
         }
-
-        /* terminate SUPLib */
-        int rc2 = SUPTerm(false);
-        AssertRC(rc2);
-    }
-    else
-    {
-        /*
-         * An error occurred at support library initialization time (before the
-         * VM could be created). Set the error message directly using the
-         * initial callback, as the callback list doesn't exist yet.
-         */
-        const char *pszError;
-        switch (rc)
-        {
-            case VERR_VM_DRIVER_LOAD_ERROR:
-#ifdef RT_OS_LINUX
-                pszError = N_("VirtualBox kernel driver not loaded. The vboxdrv kernel module "
-		              "was either not loaded or /dev/vboxdrv is not set up properly. "
-			      "Re-setup the kernel module by executing "
-			      "'/etc/init.d/vboxdrv setup' as root");
-#else
-                pszError = N_("VirtualBox kernel driver not loaded");
-#endif
-                break;
-            case VERR_VM_DRIVER_OPEN_ERROR:
-                pszError = N_("VirtualBox kernel driver cannot be opened");
-                break;
-            case VERR_VM_DRIVER_NOT_ACCESSIBLE:
-#ifdef RT_OS_LINUX
-                pszError = N_("The VirtualBox kernel driver is not accessible to the current "
-		              "user. Make sure that the user has write permissions for "
-			      "/dev/vboxdrv by adding them to the vboxusers groups. You "
-			      "will need to logout for the change to take effect.");
-#else
-                pszError = N_("VirtualBox kernel driver not accessible, permission problem");
-#endif
-                break;
-            case VERR_VM_DRIVER_NOT_INSTALLED:
-#ifdef RT_OS_LINUX
-                pszError = N_("VirtualBox kernel driver not installed. The vboxdrv kernel module "
-		              "was either not loaded or /dev/vboxdrv was not created for some "
-			      "reason. Re-setup the kernel module by executing "
-			      "'/etc/init.d/vboxdrv setup' as root");
-#else
-                pszError = N_("VirtualBox kernel driver not installed");
-#endif
-                break;
-            case VERR_NO_MEMORY:
-                pszError = N_("VirtualBox support library out of memory");
-                break;
-            case VERR_VERSION_MISMATCH:
-            case VERR_VM_DRIVER_VERSION_MISMATCH:
-                pszError = N_("The VirtualBox support driver which is running is from a different "
-                              "version of VirtualBox.  You can correct this by stopping all "
-                              "running instances of VirtualBox and reinstalling the software.");
-                break;
-            default:
-                pszError = N_("Unknown error initializing kernel driver");
-                AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
-        }
-        vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
     }
 
+    /* cleanup */
+    vmR3DestroyUVM(pUVM);
     LogFlow(("VMR3Create: returns %Vrc\n", rc));
     return rc;
 }
 
 
 /**
- * Wrapper for getting a correct va_list.
+ * Creates the UVM.
+ *
+ * This will not initialize the support library even if vmR3DestroyUVM
+ * will terminate that.
+ *
+ * @returns VBox status code.
+ * @param   ppUVM   Where to store the UVM pointer.
  */
-static void vmR3CallVMAtError(PFNVMATERROR pfnVMAtError, void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszError, ...)
+static int vmR3CreateUVM(PUVM *ppUVM)
 {
-    if (!pfnVMAtError)
-        return;
-    va_list va;
-    va_start(va, pszError);
-    pfnVMAtError(NULL, pvUser, rc, RT_SRC_POS_ARGS, pszError, va);
-    va_end(va);
+    /*
+     * Create the UVM, initialize the fundamental stuff (VM+MMR3Heap+STAM)
+     * and start the emulation thread (EMT).
+     */
+    PUVM pUVM = (PUVM)RTMemAllocZ(sizeof(*pUVM));
+    AssertReturn(pUVM, VERR_NO_MEMORY);
+    pUVM->u32Magic = UVM_MAGIC;
+
+    AssertCompile(sizeof(pUVM->vm.s) <= sizeof(pUVM->vm.padding));
+    AssertRelease(sizeof(pUVM->vm.s) <= sizeof(pUVM->vm.padding));
+
+    pUVM->vm.s.ppAtResetNext = &pUVM->vm.s.pAtReset;
+    pUVM->vm.s.ppAtStateNext = &pUVM->vm.s.pAtState;
+    pUVM->vm.s.ppAtErrorNext = &pUVM->vm.s.pAtError;
+    pUVM->vm.s.ppAtRuntimeErrorNext = &pUVM->vm.s.pAtRuntimeError;
+    pUVM->vm.s.enmHaltMethod = VMHALTMETHOD_BOOTSTRAP;
+    int rc = RTSemEventCreate(&pUVM->vm.s.EventSemWait);
+    if (RT_SUCCESS(rc))
+    {
+        rc = STAMR3InitUVM(pUVM);
+        if (RT_SUCCESS(rc))
+        {
+            rc = MMR3InitUVM(pUVM);
+            if (RT_SUCCESS(rc))
+            {
+                rc = PDMR3InitUVM(pUVM);
+                if (RT_SUCCESS(rc))
+                {
+
+                    rc = RTThreadCreate(&pUVM->vm.s.ThreadEMT, vmR3EmulationThread, pUVM, _1M,
+                                        RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
+                    if (RT_SUCCESS(rc))
+                    {
+                        *ppUVM = pUVM;
+                        return VINF_SUCCESS;
+                    }
+
+                    /* bail out. */
+                    PDMR3TermUVM(pUVM);
+                }
+                MMR3TermUVM(pUVM);
+            }
+            STAMR3TermUVM(pUVM);
+        }
+        RTSemEventDestroy(pUVM->vm.s.EventSemWait);
+    }
+    RTMemFree(pUVM);
+    return rc;
 }
 
 
 /**
- * Initializes the VM.
+ * Creates and initializes the VM.
+ *
+ * @thread EMT
  */
-static int vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM)
+static int vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM)
 {
     int rc = VINF_SUCCESS;
 
-    /* Register error callback if specified. */
-    if (pfnVMAtError)
-        rc = VMR3AtErrorRegister(pVM, pfnVMAtError, pvUserVM);
-    if (VBOX_SUCCESS(rc))
+    /*
+     * Load the VMMR0.r0 module so that we can call GVMMR0CreateVM.
+     */
+    rc = PDMR3LdrLoadVMMR0U(pUVM);
+    if (RT_FAILURE(rc))
+        return vmR3SetErrorU(pUVM, rc, RT_SRC_POS, N_("Failed to load VMMR0.r0"));
+
+    /*
+     * Request GVMM to create a new VM for us.
+     */
+    GVMMCREATEVMREQ CreateVMReq;
+    CreateVMReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    CreateVMReq.Hdr.cbReq = sizeof(CreateVMReq);
+    CreateVMReq.pSession = pUVM->vm.s.pSession;
+    CreateVMReq.pVMR0 = NIL_RTR0PTR;
+    CreateVMReq.pVMR3 = NULL;
+    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
+    if (RT_SUCCESS(rc))
     {
+        PVM pVM = pUVM->pVM = CreateVMReq.pVMR3;
+        AssertRelease(VALID_PTR(pVM));
+        AssertRelease(pVM->pVMR0 == CreateVMReq.pVMR0);
+        AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
+
+        Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x \n", pUVM, pVM, pVM->pVMR0, pVM->hSelf));
+
+        /*
+         * Initialize the VM structure and our internal data (VMINT).
+         */
+        pVM->pUVM = pUVM;
+        pVM->ThreadEMT = pUVM->vm.s.ThreadEMT;
+        pVM->NativeThreadEMT = pUVM->vm.s.NativeThreadEMT;
+
+        pVM->vm.s.offVM = RT_OFFSETOF(VM, vm.s);
+
         /*
          * Init the configuration.
          */
@@ -423,82 +433,80 @@ static int vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFG
             }
 
             /*
-             * Check if the required minimum of resources are available.
+             * Init the Ring-3 components and do a round of relocations with 0 delta.
              */
-            /** @todo Check if the required minimum of resources are available. */
+            rc = vmR3InitRing3(pVM, pUVM);
             if (VBOX_SUCCESS(rc))
             {
+                VMR3Relocate(pVM, 0);
+                LogFlow(("Ring-3 init succeeded\n"));
+
                 /*
-                 * Init the Ring-3 components and do a round of relocations with 0 delta.
+                 * Init the Ring-0 components.
                  */
-                rc = vmR3InitRing3(pVM);
+                rc = vmR3InitRing0(pVM);
                 if (VBOX_SUCCESS(rc))
                 {
+                    /* Relocate again, because some switcher fixups depends on R0 init results. */
                     VMR3Relocate(pVM, 0);
-                    LogFlow(("Ring-3 init succeeded\n"));
-
-                    /*
-                     * Init the Ring-0 components.
-                     */
-                    rc = vmR3InitRing0(pVM);
-                    if (VBOX_SUCCESS(rc))
-                    {
-                        /* Relocate again, because some switcher fixups depends on R0 init results. */
-                        VMR3Relocate(pVM, 0);
 
 #ifdef VBOX_WITH_DEBUGGER
-                        /*
-                         * Init the tcp debugger console if we're building
-                         * with debugger support.
-                         */
-                        void *pvUser = NULL;
-                        rc = DBGCTcpCreate(pVM, &pvUser);
-                        if (    VBOX_SUCCESS(rc)
-                            ||  rc == VERR_NET_ADDRESS_IN_USE)
-                        {
-                            pVM->vm.s.pvDBGC = pvUser;
+                    /*
+                     * Init the tcp debugger console if we're building
+                     * with debugger support.
+                     */
+                    void *pvUser = NULL;
+                    rc = DBGCTcpCreate(pVM, &pvUser);
+                    if (    VBOX_SUCCESS(rc)
+                        ||  rc == VERR_NET_ADDRESS_IN_USE)
+                    {
+                        pUVM->vm.s.pvDBGC = pvUser;
 #endif
+                        /*
+                         * Init the Guest Context components.
+                         */
+                        rc = vmR3InitGC(pVM);
+                        if (VBOX_SUCCESS(rc))
+                        {
                             /*
-                             * Init the Guest Context components.
+                             * Now we can safely set the VM halt method to default.
                              */
-                            rc = vmR3InitGC(pVM);
-                            if (VBOX_SUCCESS(rc))
+                            rc = vmR3SetHaltMethodU(pUVM, VMHALTMETHOD_DEFAULT);
+                            if (RT_SUCCESS(rc))
                             {
                                 /*
-                                 * Now we can safely set the VM halt method to default.
+                                 * Set the state and link into the global list.
                                  */
-                                rc = vmR3SetHaltMethod(pVM, VMHALTMETHOD_DEFAULT);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    /*
-                                     * Set the state and link into the global list.
-                                     */
-                                    vmR3SetState(pVM, VMSTATE_CREATED);
-                                    pVM->pNext = g_pVMsHead;
-                                    g_pVMsHead = pVM;
-                                    return VINF_SUCCESS;
-                                }
+                                vmR3SetState(pVM, VMSTATE_CREATED);
+                                pUVM->pNext = g_pUVMsHead;
+                                g_pUVMsHead = pUVM;
+                                return VINF_SUCCESS;
                             }
-#ifdef VBOX_WITH_DEBUGGER
-                            DBGCTcpTerminate(pVM, pVM->vm.s.pvDBGC);
-                            pVM->vm.s.pvDBGC = NULL;
                         }
-#endif
-                        //..
+#ifdef VBOX_WITH_DEBUGGER
+                        DBGCTcpTerminate(pVM, pUVM->vm.s.pvDBGC);
+                        pUVM->vm.s.pvDBGC = NULL;
                     }
-                    vmR3Destroy(pVM);
+#endif
+                    //..
                 }
-                //..
+                vmR3Destroy(pVM);
             }
+            //..
 
             /* Clean CFGM. */
             int rc2 = CFGMR3Term(pVM);
             AssertRC(rc2);
         }
-        //..
-    }
 
-    LogFlow(("vmR3Create: returns %Vrc\n", rc));
+        /* Tell GVMM that it can destroy the VM now. */
+        int rc2 = SUPCallVMMR0Ex(CreateVMReq.pVMR0, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
+        AssertRC(rc2);
+    }
+    else
+        vmR3SetErrorU(pUVM, rc, RT_SRC_POS, N_("VM creation failed (GVMM)"));
+
+    LogFlow(("vmR3Create: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -507,7 +515,7 @@ static int vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFG
 /**
  * Initializes all R3 components of the VM
  */
-static int vmR3InitRing3(PVM pVM)
+static int vmR3InitRing3(PVM pVM, PUVM pUVM)
 {
     int rc;
 
@@ -520,12 +528,6 @@ static int vmR3InitRing3(PVM pVM)
         STAM_REG(pVM, &pVM->StatTotalInGC,          STAMTYPE_PROFILE_ADV, "/PROF/VM/InGC",          STAMUNIT_TICKS_PER_CALL,    "Profiling the total time spent in GC.");
         STAM_REG(pVM, &pVM->StatSwitcherToGC,       STAMTYPE_PROFILE_ADV, "/PROF/VM/SwitchToGC",    STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
         STAM_REG(pVM, &pVM->StatSwitcherToHC,       STAMTYPE_PROFILE_ADV, "/PROF/VM/SwitchToHC",    STAMUNIT_TICKS_PER_CALL,    "Profiling switching to HC.");
-
-        STAM_REL_REG(pVM, &pVM->vm.s.StatHaltYield, STAMTYPE_PROFILE,     "/PROF/VM/Halt/Yield",    STAMUNIT_TICKS_PER_CALL,    "Profiling halted state yielding.");
-        STAM_REL_REG(pVM, &pVM->vm.s.StatHaltBlock, STAMTYPE_PROFILE,     "/PROF/VM/Halt/Block",    STAMUNIT_TICKS_PER_CALL,    "Profiling halted state blocking.");
-        STAM_REL_REG(pVM, &pVM->vm.s.StatHaltTimers,STAMTYPE_PROFILE,     "/PROF/VM/Halt/Timers",   STAMUNIT_TICKS_PER_CALL,    "Profiling halted state timer tasks.");
-        STAM_REL_REG(pVM, &pVM->vm.s.StatHaltPoll,  STAMTYPE_PROFILE,     "/PROF/VM/Halt/Poll",     STAMUNIT_TICKS_PER_CALL,    "Profiling halted state poll tasks.");
-
         STAM_REG(pVM, &pVM->StatSwitcherSaveRegs,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/SaveRegs", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
         STAM_REG(pVM, &pVM->StatSwitcherSysEnter,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/SysEnter", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
         STAM_REG(pVM, &pVM->StatSwitcherDebug,      STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/Debug",    STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
@@ -538,11 +540,16 @@ static int vmR3InitRing3(PVM pVM)
         STAM_REG(pVM, &pVM->StatSwitcherJmpCR3,     STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/JmpCR3",   STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
         STAM_REG(pVM, &pVM->StatSwitcherRstrRegs,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/RstrRegs", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
 
-        STAM_REG(pVM, &pVM->vm.s.StatReqAllocNew,   STAMTYPE_COUNTER,     "/VM/Req/AllocNew",       STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc returning a new packet.");
-        STAM_REG(pVM, &pVM->vm.s.StatReqAllocRaces, STAMTYPE_COUNTER,     "/VM/Req/AllocRaces",     STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc causing races.");
-        STAM_REG(pVM, &pVM->vm.s.StatReqAllocRecycled, STAMTYPE_COUNTER,  "/VM/Req/AllocRecycled",  STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc returning a recycled packet.");
-        STAM_REG(pVM, &pVM->vm.s.StatReqFree,       STAMTYPE_COUNTER,     "/VM/Req/Free",           STAMUNIT_OCCURENCES,        "Number of VMR3ReqFree calls.");
-        STAM_REG(pVM, &pVM->vm.s.StatReqFreeOverflow, STAMTYPE_COUNTER,   "/VM/Req/FreeOverflow",   STAMUNIT_OCCURENCES,        "Number of times the request was actually freed.");
+        STAM_REL_REG(pVM, &pUVM->vm.s.StatHaltYield, STAMTYPE_PROFILE,     "/PROF/VM/Halt/Yield",    STAMUNIT_TICKS_PER_CALL,    "Profiling halted state yielding.");
+        STAM_REL_REG(pVM, &pUVM->vm.s.StatHaltBlock, STAMTYPE_PROFILE,     "/PROF/VM/Halt/Block",    STAMUNIT_TICKS_PER_CALL,    "Profiling halted state blocking.");
+        STAM_REL_REG(pVM, &pUVM->vm.s.StatHaltTimers,STAMTYPE_PROFILE,     "/PROF/VM/Halt/Timers",   STAMUNIT_TICKS_PER_CALL,    "Profiling halted state timer tasks.");
+        STAM_REL_REG(pVM, &pUVM->vm.s.StatHaltPoll,  STAMTYPE_PROFILE,     "/PROF/VM/Halt/Poll",     STAMUNIT_TICKS_PER_CALL,    "Profiling halted state poll tasks.");
+
+        STAM_REG(pVM, &pUVM->vm.s.StatReqAllocNew,   STAMTYPE_COUNTER,     "/VM/Req/AllocNew",       STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc returning a new packet.");
+        STAM_REG(pVM, &pUVM->vm.s.StatReqAllocRaces, STAMTYPE_COUNTER,     "/VM/Req/AllocRaces",     STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc causing races.");
+        STAM_REG(pVM, &pUVM->vm.s.StatReqAllocRecycled, STAMTYPE_COUNTER,  "/VM/Req/AllocRecycled",  STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc returning a recycled packet.");
+        STAM_REG(pVM, &pUVM->vm.s.StatReqFree,       STAMTYPE_COUNTER,     "/VM/Req/Free",           STAMUNIT_OCCURENCES,        "Number of VMR3ReqFree calls.");
+        STAM_REG(pVM, &pUVM->vm.s.StatReqFreeOverflow, STAMTYPE_COUNTER,   "/VM/Req/FreeOverflow",   STAMUNIT_OCCURENCES,        "Number of times the request was actually freed.");
 
         rc = CPUMR3Init(pVM);
         if (VBOX_SUCCESS(rc))
@@ -755,7 +762,7 @@ VMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * The order here is very important!
      */
     PGMR3Relocate(pVM, offDelta);
-    PDMR3LdrRelocate(pVM, offDelta);
+    PDMR3LdrRelocateU(pVM->pUVM, offDelta);
     PGMR3Relocate(pVM, 0);              /* Repeat after PDM relocation. */
     CPUMR3Relocate(pVM);
     HWACCMR3Relocate(pVM);
@@ -1331,8 +1338,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
  * The VM must be powered off (or never really powered on) to call this function.
  * The VM handle is destroyed and can no longer be used up successful return.
  *
- * @returns 0 on success.
- * @returns VBox error code on failure.
+ * @returns VBox status code.
  * @param   pVM     VM which should be destroyed.
  * @thread      Any thread but the emulation thread.
  * @vmstate     Off, Created
@@ -1347,36 +1353,31 @@ VMR3DECL(int)   VMR3Destroy(PVM pVM)
      */
     if (!pVM)
         return VERR_INVALID_PARAMETER;
-    if (    pVM->enmVMState != VMSTATE_OFF
-        &&  pVM->enmVMState != VMSTATE_CREATED)
-    {
-        AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
-        return VERR_VM_INVALID_VM_STATE;
-    }
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertMsgReturn(   pVM->enmVMState == VMSTATE_OFF
+                    || pVM->enmVMState == VMSTATE_CREATED,
+                    ("Invalid VM state %d\n", pVM->enmVMState),
+                    VERR_VM_INVALID_VM_STATE);
 
     /*
-     * Unlink the VM and change it's state to destroying.
+     * Change VM state to destroying and unlink the VM.
      */
-/** @todo lock this when we start having multiple machines in a process... */
-    PVM pPrev = NULL;
-    PVM pCur = g_pVMsHead;
-    while (pCur && pCur != pVM)
-    {
-        pPrev = pCur;
-        pCur = pCur->pNext;
-    }
-    if (!pCur)
-    {
-        AssertMsgFailed(("pVM=%p is INVALID!\n", pVM));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (pPrev)
-        pPrev->pNext = pCur->pNext;
-    else
-        g_pVMsHead = pCur->pNext;
-
     vmR3SetState(pVM, VMSTATE_DESTROYING);
 
+    /** @todo lock this when we start having multiple machines in a process... */
+    PUVM pUVM = pVM->pUVM; AssertPtr(pUVM);
+    if (g_pUVMsHead == pUVM)
+        g_pUVMsHead = pUVM->pNext;
+    else
+    {
+        PUVM pPrev = g_pUVMsHead;
+        while (pPrev && pPrev->pNext != pUVM)
+            pPrev = pPrev->pNext;
+        AssertMsgReturn(pPrev, ("pUVM=%p / pVM=%p  is INVALID!\n", pUVM, pVM), VERR_INVALID_PARAMETER);
+
+        pPrev->pNext = pUVM->pNext;
+    }
+    pUVM->pNext = NULL;
 
     /*
      * Notify registered at destruction listeners.
@@ -1384,15 +1385,13 @@ VMR3DECL(int)   VMR3Destroy(PVM pVM)
      */
     vmR3AtDtor(pVM);
 
-    pVM->pNext = g_pVMsHead;
-    g_pVMsHead = pVM;
-
     /*
      * If we are the EMT we'll delay the cleanup till later.
      */
     if (VM_IS_EMT(pVM))
     {
-        pVM->vm.s.fEMTDoesTheCleanup = true;
+        pUVM->vm.s.fEMTDoesTheCleanup = true;
+        pUVM->vm.s.fTerminateEMT = true;
         VM_FF_SET(pVM, VM_FF_TERMINATE);
     }
     else
@@ -1401,30 +1400,23 @@ VMR3DECL(int)   VMR3Destroy(PVM pVM)
          * Request EMT to do the larger part of the destruction.
          */
         PVMREQ pReq = NULL;
-        int rc = VMR3ReqCall(pVM, &pReq, 0, (PFNRT)vmR3Destroy, 1, pVM);
-        while (rc == VERR_TIMEOUT)
-            rc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-        if (VBOX_SUCCESS(rc))
+        int rc = VMR3ReqCallU(pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3Destroy, 1, pVM);
+        if (RT_SUCCESS(rc))
             rc = pReq->iStatus;
+        AssertRC(rc);
         VMR3ReqFree(pReq);
 
         /*
          * Wait for the EMT thread to terminate.
          */
-        VM_FF_SET(pVM, VM_FF_TERMINATE);
-        uint64_t u64Start = RTTimeMilliTS();
-        do
-        {
-            VMR3NotifyFF(pVM, false);
-            rc = RTThreadWait(pVM->ThreadEMT, 1000, NULL);
-        } while (   RTTimeMilliTS() - u64Start < 30000 /* 30 sec */
-                 && rc == VERR_TIMEOUT);
-        AssertMsgRC(rc, ("EMT thread wait failed, rc=%Vrc\n", rc));
+        Assert(pUVM->vm.s.fTerminateEMT);
+        rc = RTThreadWait(pUVM->vm.s.ThreadEMT, 30000, NULL);
+        AssertMsgRC(rc, ("EMT thread wait failed, rc=%Rrc\n", rc));
 
         /*
          * Now do the final bit where the heap and VM structures are freed up.
          */
-        vmR3DestroyFinalBit(pVM);
+        vmR3DestroyUVM(pUVM);
     }
 
     LogFlow(("VMR3Destroy: returns VINF_SUCCESS\n"));
@@ -1433,15 +1425,17 @@ VMR3DECL(int)   VMR3Destroy(PVM pVM)
 
 
 /**
- * Internal destruction worker. This will do nearly all of the
- * job, including quitting the emulation thread.
+ * Internal destruction worker.
+ *
+ * This will do nearly all of the job, including sacking the EMT.
  *
  * @returns VBox status.
  * @param   pVM     VM handle.
  */
 DECLCALLBACK(int) vmR3Destroy(PVM pVM)
 {
-    LogFlow(("vmR3Destroy: pVM=%p\n", pVM));
+    PUVM pUVM = pVM->pUVM;
+    LogFlow(("vmR3Destroy: pVM=%p pUVM=%p\n", pVM, pUVM));
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -1466,8 +1460,8 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
     int rc = TMR3Term(pVM);
     AssertRC(rc);
 #ifdef VBOX_WITH_DEBUGGER
-    rc = DBGCTcpTerminate(pVM, pVM->vm.s.pvDBGC);
-    pVM->vm.s.pvDBGC = NULL;
+    rc = DBGCTcpTerminate(pVM, pUVM->vm.s.pvDBGC);
+    pVM->pUVM->vm.s.pvDBGC = NULL;
 #endif
     AssertRC(rc);
     rc = DBGFR3Term(pVM);
@@ -1496,58 +1490,114 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
     AssertRC(rc);
     rc = CPUMR3Term(pVM);
     AssertRC(rc);
-    rc = STAMR3Term(pVM);
-    AssertRC(rc);
     rc = PDMR3CritSectTerm(pVM);
     AssertRC(rc);
-    /* MM is destroyed later in vmR3DestroyFinalBit() for heap reasons. */
+    rc = MMR3Term(pVM);
+    AssertRC(rc);
 
     /*
-     * We're done in this thread.
+     * We're done in this thread (EMT).
      */
-    pVM->fForcedActions = VM_FF_TERMINATE;
+    ASMAtomicUoWriteBool(&pVM->pUVM->vm.s.fTerminateEMT, true);
+    ASMAtomicWriteU32(&pVM->fForcedActions, VM_FF_TERMINATE);
     LogFlow(("vmR3Destroy: returning %Vrc\n", VINF_EM_TERMINATE));
     return VINF_EM_TERMINATE;
 }
 
 
 /**
- * Does the final part of the VM destruction.
- * This is called by EMT in it's final stage or by the VMR3Destroy caller.
+ * Destroys the shared VM structure, leaving only UVM behind.
+ *
+ * This is called by EMT right before terminating.
+ *
+ * @param   pUVM        The UVM handle.
+ */
+void vmR3DestroyFinalBitFromEMT(PUVM pUVM)
+{
+    if (pUVM->pVM)
+    {
+        /*
+         * Modify state and then terminate MM.
+         * (MM must be delayed until this point so we don't destroy the callbacks and the request packet.)
+         */
+        vmR3SetState(pUVM->pVM, VMSTATE_TERMINATED);
+
+        /*
+         * Tell GVMM to destroy the VM and free its resources.
+         */
+        int rc = SUPCallVMMR0Ex(pUVM->pVM->pVMR0, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
+        AssertRC(rc);
+        pUVM->pVM = NULL;
+    }
+
+    /*
+     * Did EMT call VMR3Destroy and have to do it all?
+     */
+    if (pUVM->vm.s.fEMTDoesTheCleanup)
+        vmR3DestroyUVM(pUVM);
+}
+
+
+/**
+ * Destroys the UVM portion.
+ *
+ * This is called as the final step in the VM destruction or as the cleanup
+ * in case of a creation failure. If EMT called VMR3Destroy, meaning
+ * VMINTUSERPERVM::fEMTDoesTheCleanup is true, it will call this as
+ * vmR3DestroyFinalBitFromEMT completes.
  *
  * @param   pVM     VM Handle.
  */
-void vmR3DestroyFinalBit(PVM pVM)
+static void vmR3DestroyUVM(PUVM pUVM)
 {
+    /*
+     * Terminate the EMT if still running (creation failure only).
+     */
+    if (!pUVM->vm.s.fTerminateEMT)
+    {
+        ASMAtomicUoWriteBool(&pUVM->vm.s.fTerminateEMT, true);
+        if (pUVM->pVM)
+        {
+            VM_FF_SET(pUVM->pVM, VM_FF_TERMINATE);
+            VMR3NotifyFF(pUVM->pVM, false);
+        }
+        RTSemEventSignal(pUVM->vm.s.EventSemWait);
+
+        int rc2 = RTThreadWait(pUVM->vm.s.ThreadEMT, 2000, NULL);
+        AssertRC(rc2);
+    }
+    RTSemEventDestroy(pUVM->vm.s.EventSemWait);
+    pUVM->vm.s.EventSemWait = NIL_RTSEMEVENT;
+
     /*
      * Free the event semaphores associated with the request packets.
      */
     unsigned cReqs = 0;
-    for (unsigned i = 0; i < ELEMENTS(pVM->vm.s.apReqFree); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pUVM->vm.s.apReqFree); i++)
     {
-        PVMREQ pReq = pVM->vm.s.apReqFree[i];
-        pVM->vm.s.apReqFree[i] = NULL;
+        PVMREQ pReq = pUVM->vm.s.apReqFree[i];
+        pUVM->vm.s.apReqFree[i] = NULL;
         for (; pReq; pReq = pReq->pNext, cReqs++)
         {
             pReq->enmState = VMREQSTATE_INVALID;
             RTSemEventDestroy(pReq->EventSem);
         }
     }
-    Assert(cReqs == pVM->vm.s.cReqFree); NOREF(cReqs);
+    Assert(cReqs == pUVM->vm.s.cReqFree); NOREF(cReqs);
 
     /*
      * Kill all queued requests. (There really shouldn't be any!)
      */
     for (unsigned i = 0; i < 10; i++)
     {
-        PVMREQ pReqHead = (PVMREQ)ASMAtomicXchgPtr((void *volatile *)&pVM->vm.s.pReqs, NULL);
+        PVMREQ pReqHead = (PVMREQ)ASMAtomicXchgPtr((void *volatile *)&pUVM->vm.s.pReqs, NULL);
         AssertMsg(!pReqHead, ("This isn't supposed to happen! VMR3Destroy caller has to serialize this.\n"));
         if (!pReqHead)
             break;
         for (PVMREQ pReq = pReqHead; pReq; pReq = pReq->pNext)
         {
-            ASMAtomicXchgSize(&pReq->iStatus, VERR_INTERNAL_ERROR);
-            ASMAtomicXchgSize(&pReq->enmState, VMREQSTATE_INVALID);
+            ASMAtomicUoWriteSize(&pReq->iStatus, VERR_INTERNAL_ERROR);
+            ASMAtomicWriteSize(&pReq->enmState, VMREQSTATE_INVALID);
             RTSemEventSignal(pReq->EventSem);
             RTThreadSleep(2);
             RTSemEventDestroy(pReq->EventSem);
@@ -1557,20 +1607,28 @@ void vmR3DestroyFinalBit(PVM pVM)
     }
 
     /*
-     * Modify state and then terminate MM.
-     * (MM must be delayed until this point so we don't destroy the callbacks and the request packet.)
+     * Make sure the VMMR0.r0 module and whatever else is unloaded.
      */
-    vmR3SetState(pVM, VMSTATE_TERMINATED);
-    int rc = MMR3Term(pVM);
-    AssertRC(rc);
+    PDMR3TermUVM(pUVM);
 
     /*
-     * Tell GVMM that it can destroy the VM now.
+     * Terminate the support library if initialized.
      */
-    rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
-    AssertRC(rc);
-    rc = SUPTerm();
-    AssertRC(rc);
+    if (pUVM->vm.s.pSession)
+    {
+        int rc = SUPTerm();
+        AssertRC(rc);
+        pUVM->vm.s.pSession = NIL_RTR0PTR;
+    }
+
+    /*
+     * Destroy the MM heap and free the UVM structure.
+     */
+    MMR3TermUVM(pUVM);
+    STAMR3TermUVM(pUVM);
+
+    ASMAtomicUoWriteU32(&pUVM->u32Magic, UINT32_MAX);
+    RTMemFree(pUVM);
 
     RTLogFlush(NULL);
 }
@@ -1590,9 +1648,12 @@ VMR3DECL(PVM)   VMR3EnumVMs(PVM pVMPrev)
      * This is quick and dirty. It has issues with VM being
      * destroyed during the enumeration.
      */
+    PUVM pNext;
     if (pVMPrev)
-        return pVMPrev->pNext;
-    return g_pVMsHead;
+        pNext = pVMPrev->pUVM->pNext;
+    else
+        pNext = g_pUVMsHead;
+    return pNext ? pNext->pVM : NULL;
 }
 
 
@@ -1780,7 +1841,7 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
     PDMR3Reset(pVM);
     SELMR3Reset(pVM);
     TRPMR3Reset(pVM);
-    vmR3AtReset(pVM);
+    vmR3AtResetU(pVM->pUVM);
     REMR3Reset(pVM);
     IOMR3Reset(pVM);
     CPUMR3Reset(pVM);
@@ -1812,15 +1873,15 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
  *
  * @returns VBox status code.
  *          Any failure is fatal.
- * @param   pVM     The VM which is being reset.
+ * @param   pUVM        Pointe to the user mode VM structure.
  */
-static int vmR3AtReset(PVM pVM)
+static int vmR3AtResetU(PUVM pUVM)
 {
     /*
      * Walk the list and call them all.
      */
     int rc = VINF_SUCCESS;
-    for (PVMATRESET pCur = pVM->vm.s.pAtReset; pCur; pCur = pCur->pNext)
+    for (PVMATRESET pCur = pUVM->vm.s.pAtReset; pCur; pCur = pCur->pNext)
     {
         /* do the call */
         switch (pCur->enmType)
@@ -1829,7 +1890,7 @@ static int vmR3AtReset(PVM pVM)
                 rc = pCur->u.Dev.pfnCallback(pCur->u.Dev.pDevIns, pCur->pvUser);
                 break;
             case VMATRESETTYPE_INTERNAL:
-                rc = pCur->u.Internal.pfnCallback(pVM, pCur->pvUser);
+                rc = pCur->u.Internal.pfnCallback(pUVM->pVM, pCur->pvUser);
                 break;
             case VMATRESETTYPE_EXTERNAL:
                 pCur->u.External.pfnCallback(pCur->pvUser);
@@ -1853,12 +1914,12 @@ static int vmR3AtReset(PVM pVM)
 /**
  * Internal registration function
  */
-static int vmr3AtResetRegister(PVM pVM, void *pvUser, const char *pszDesc, PVMATRESET *ppNew)
+static int vmr3AtResetRegisterU(PUVM pUVM, void *pvUser, const char *pszDesc, PVMATRESET *ppNew)
 {
     /*
      * Allocate restration structure.
      */
-    PVMATRESET pNew = (PVMATRESET)MMR3HeapAlloc(pVM, MM_TAG_VM,  sizeof(*pNew));
+    PVMATRESET pNew = (PVMATRESET)MMR3HeapAllocU(pUVM, MM_TAG_VM,  sizeof(*pNew));
     if (pNew)
     {
         /* fill data. */
@@ -1867,8 +1928,8 @@ static int vmr3AtResetRegister(PVM pVM, void *pvUser, const char *pszDesc, PVMAT
         pNew->pvUser    = pvUser;
 
         /* insert */
-        *pVM->vm.s.ppAtResetNext = pNew;
-        pVM->vm.s.ppAtResetNext = &pNew->pNext;
+        *pUVM->vm.s.ppAtResetNext = pNew;
+        pUVM->vm.s.ppAtResetNext = &pNew->pNext;
 
         *ppNew = pNew;
         return VINF_SUCCESS;
@@ -1902,7 +1963,7 @@ VMR3DECL(int)   VMR3AtResetRegister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET p
      * Create the new entry.
      */
     PVMATRESET pNew;
-    int rc = vmr3AtResetRegister(pVM, pvUser, pszDesc, &pNew);
+    int rc = vmr3AtResetRegisterU(pVM->pUVM, pvUser, pszDesc, &pNew);
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -1941,7 +2002,7 @@ VMR3DECL(int)   VMR3AtResetRegisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback
      * Create the new entry.
      */
     PVMATRESET pNew;
-    int rc = vmr3AtResetRegister(pVM, pvUser, pszDesc, &pNew);
+    int rc = vmr3AtResetRegisterU(pVM->pUVM, pvUser, pszDesc, &pNew);
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -1979,7 +2040,7 @@ VMR3DECL(int)   VMR3AtResetRegisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback
      * Create the new entry.
      */
     PVMATRESET pNew;
-    int rc = vmr3AtResetRegister(pVM, pvUser, pszDesc, &pNew);
+    int rc = vmr3AtResetRegisterU(pVM->pUVM, pvUser, pszDesc, &pNew);
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -1997,11 +2058,11 @@ VMR3DECL(int)   VMR3AtResetRegisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback
  * Unlinks and frees a callback.
  *
  * @returns Pointer to the next callback structure.
- * @param   pVM             The VM.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pCur            The one to free.
  * @param   pPrev           The one before pCur.
  */
-static PVMATRESET vmr3AtResetFree(PVM pVM, PVMATRESET pCur, PVMATRESET pPrev)
+static PVMATRESET vmr3AtResetFreeU(PUVM pUVM, PVMATRESET pCur, PVMATRESET pPrev)
 {
     /*
      * Unlink it.
@@ -2011,13 +2072,13 @@ static PVMATRESET vmr3AtResetFree(PVM pVM, PVMATRESET pCur, PVMATRESET pPrev)
     {
         pPrev->pNext = pNext;
         if (!pNext)
-            pVM->vm.s.ppAtResetNext = &pPrev->pNext;
+            pUVM->vm.s.ppAtResetNext = &pPrev->pNext;
     }
     else
     {
-        pVM->vm.s.pAtReset = pNext;
+        pUVM->vm.s.pAtReset = pNext;
         if (!pNext)
-            pVM->vm.s.ppAtResetNext = &pVM->vm.s.pAtReset;
+            pUVM->vm.s.ppAtResetNext = &pUVM->vm.s.pAtReset;
     }
 
     /*
@@ -2041,14 +2102,14 @@ VMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET
 {
     int         rc = VERR_VM_ATRESET_NOT_FOUND;
     PVMATRESET  pPrev = NULL;
-    PVMATRESET  pCur = pVM->vm.s.pAtReset;
+    PVMATRESET  pCur = pVM->pUVM->vm.s.pAtReset;
     while (pCur)
     {
         if (    pCur->enmType == VMATRESETTYPE_DEV
             &&  pCur->u.Dev.pDevIns == pDevInst
             &&  (!pfnCallback || pCur->u.Dev.pfnCallback == pfnCallback))
         {
-            pCur = vmr3AtResetFree(pVM, pCur, pPrev);
+            pCur = vmr3AtResetFreeU(pVM->pUVM, pCur, pPrev);
             rc = VINF_SUCCESS;
         }
         else
@@ -2074,13 +2135,13 @@ VMR3DECL(int)   VMR3AtResetDeregisterInternal(PVM pVM, PFNVMATRESETINT pfnCallba
 {
     int         rc = VERR_VM_ATRESET_NOT_FOUND;
     PVMATRESET  pPrev = NULL;
-    PVMATRESET  pCur = pVM->vm.s.pAtReset;
+    PVMATRESET  pCur = pVM->pUVM->vm.s.pAtReset;
     while (pCur)
     {
         if (    pCur->enmType == VMATRESETTYPE_INTERNAL
             &&  pCur->u.Internal.pfnCallback == pfnCallback)
         {
-            pCur = vmr3AtResetFree(pVM, pCur, pPrev);
+            pCur = vmr3AtResetFreeU(pVM->pUVM, pCur, pPrev);
             rc = VINF_SUCCESS;
         }
         else
@@ -2106,13 +2167,13 @@ VMR3DECL(int)   VMR3AtResetDeregisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallba
 {
     int         rc = VERR_VM_ATRESET_NOT_FOUND;
     PVMATRESET  pPrev = NULL;
-    PVMATRESET  pCur = pVM->vm.s.pAtReset;
+    PVMATRESET  pCur = pVM->pUVM->vm.s.pAtReset;
     while (pCur)
     {
         if (    pCur->enmType == VMATRESETTYPE_INTERNAL
             &&  pCur->u.External.pfnCallback == pfnCallback)
         {
-            pCur = vmr3AtResetFree(pVM, pCur, pPrev);
+            pCur = vmr3AtResetFreeU(pVM->pUVM, pCur, pPrev);
             rc = VINF_SUCCESS;
         }
         else
@@ -2185,7 +2246,7 @@ void vmR3SetState(PVM pVM, VMSTATE enmStateNew)
     /*
      * Call the at state change callbacks.
      */
-    for (PVMATSTATE pCur = pVM->vm.s.pAtState; pCur; pCur = pCur->pNext)
+    for (PVMATSTATE pCur = pVM->pUVM->vm.s.pAtState; pCur; pCur = pCur->pNext)
     {
         pCur->pfnAtState(pVM, enmStateNew, enmStateOld, pCur->pvUser);
         if (pVM->enmVMState == VMSTATE_DESTROYING)
@@ -2228,7 +2289,7 @@ VMR3DECL(int)   VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUs
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateRegister, 3, pVM, pfnAtState, pvUser);
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateRegisterU, 3, pVM->pUVM, pfnAtState, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2243,18 +2304,18 @@ VMR3DECL(int)   VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUs
  * Registers a VM state change callback.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pfnAtState      Pointer to callback.
  * @param   pvUser          User argument.
  * @thread  EMT
  */
-static DECLCALLBACK(int) vmR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser)
+static DECLCALLBACK(int) vmR3AtStateRegisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser)
 {
     /*
      * Allocate a new record.
      */
 
-    PVMATSTATE pNew = (PVMATSTATE)MMR3HeapAlloc(pVM, MM_TAG_VM, sizeof(*pNew));
+    PVMATSTATE pNew = (PVMATSTATE)MMR3HeapAllocU(pUVM, MM_TAG_VM, sizeof(*pNew));
     if (!pNew)
         return VERR_NO_MEMORY;
 
@@ -2264,8 +2325,8 @@ static DECLCALLBACK(int) vmR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, v
     pNew->pNext      = NULL;
 
     /* insert */
-    *pVM->vm.s.ppAtStateNext = pNew;
-    pVM->vm.s.ppAtStateNext = &pNew->pNext;
+    *pUVM->vm.s.ppAtStateNext = pNew;
+    pUVM->vm.s.ppAtStateNext = &pNew->pNext;
 
     return VINF_SUCCESS;
 }
@@ -2297,7 +2358,7 @@ VMR3DECL(int)   VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pv
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateDeregister, 3, pVM, pfnAtState, pvUser);
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateDeregisterU, 3, pVM->pUVM, pfnAtState, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2312,20 +2373,20 @@ VMR3DECL(int)   VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pv
  * Deregisters a VM state change callback.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pfnAtState      Pointer to callback.
  * @param   pvUser          User argument.
  * @thread  EMT
  */
-static DECLCALLBACK(int) vmR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser)
+static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser)
 {
-    LogFlow(("vmR3AtStateDeregister: pfnAtState=%p pvUser=%p\n", pfnAtState, pvUser));
+    LogFlow(("vmR3AtStateDeregisterU: pfnAtState=%p pvUser=%p\n", pfnAtState, pvUser));
 
     /*
      * Search the list for the entry.
      */
     PVMATSTATE pPrev = NULL;
-    PVMATSTATE pCur = pVM->vm.s.pAtState;
+    PVMATSTATE pCur = pUVM->vm.s.pAtState;
     while (     pCur
            &&   pCur->pfnAtState == pfnAtState
            &&   pCur->pvUser == pvUser)
@@ -2346,13 +2407,13 @@ static DECLCALLBACK(int) vmR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState,
     {
         pPrev->pNext = pCur->pNext;
         if (!pCur->pNext)
-            pVM->vm.s.ppAtStateNext = &pPrev->pNext;
+            pUVM->vm.s.ppAtStateNext = &pPrev->pNext;
     }
     else
     {
-        pVM->vm.s.pAtState = pCur->pNext;
+        pUVM->vm.s.pAtState = pCur->pNext;
         if (!pCur->pNext)
-            pVM->vm.s.ppAtStateNext = &pVM->vm.s.pAtState;
+            pUVM->vm.s.ppAtStateNext = &pUVM->vm.s.pAtState;
     }
 
     /*
@@ -2377,22 +2438,29 @@ static DECLCALLBACK(int) vmR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState,
  */
 VMR3DECL(int)   VMR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser)
 {
-    LogFlow(("VMR3AtErrorRegister: pfnAtError=%p pvUser=%p\n", pfnAtError, pvUser));
+    return VMR3AtErrorRegisterU(pVM->pUVM, pfnAtError, pvUser);
+}
 
-    /*
-     * Validate input.
-     */
-    if (!pfnAtError)
-    {
-        AssertMsgFailed(("callback is required\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+
+/**
+ * Registers a VM error callback.
+ *
+ * @returns VBox status code.
+ * @param   pUVM            The VM handle.
+ * @param   pfnAtError      Pointer to callback.
+ * @param   pvUser          User argument.
+ * @thread  Any.
+ */
+VMR3DECL(int)   VMR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser)
+{
+    LogFlow(("VMR3AtErrorRegister: pfnAtError=%p pvUser=%p\n", pfnAtError, pvUser));
+    AssertPtrReturn(pfnAtError, VERR_INVALID_PARAMETER);
 
     /*
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtErrorRegister, 3, pVM, pfnAtError, pvUser);
+    int rc = VMR3ReqCallU(pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3AtErrorRegisterU, 3, pUVM, pfnAtError, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2407,18 +2475,18 @@ VMR3DECL(int)   VMR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUs
  * Registers a VM error callback.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pfnAtError      Pointer to callback.
  * @param   pvUser          User argument.
  * @thread  EMT
  */
-static DECLCALLBACK(int)    vmR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser)
+static DECLCALLBACK(int) vmR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser)
 {
     /*
      * Allocate a new record.
      */
 
-    PVMATERROR pNew = (PVMATERROR)MMR3HeapAlloc(pVM, MM_TAG_VM, sizeof(*pNew));
+    PVMATERROR pNew = (PVMATERROR)MMR3HeapAllocU(pUVM, MM_TAG_VM, sizeof(*pNew));
     if (!pNew)
         return VERR_NO_MEMORY;
 
@@ -2428,8 +2496,8 @@ static DECLCALLBACK(int)    vmR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError
     pNew->pNext      = NULL;
 
     /* insert */
-    *pVM->vm.s.ppAtErrorNext = pNew;
-    pVM->vm.s.ppAtErrorNext = &pNew->pNext;
+    *pUVM->vm.s.ppAtErrorNext = pNew;
+    pUVM->vm.s.ppAtErrorNext = &pNew->pNext;
 
     return VINF_SUCCESS;
 }
@@ -2461,7 +2529,7 @@ VMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pv
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtErrorDeregister, 3, pVM, pfnAtError, pvUser);
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtErrorDeregisterU, 3, pVM->pUVM, pfnAtError, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2476,20 +2544,20 @@ VMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pv
  * Deregisters a VM error callback.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pfnAtError      Pointer to callback.
  * @param   pvUser          User argument.
  * @thread  EMT
  */
-static DECLCALLBACK(int)    vmR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser)
+static DECLCALLBACK(int)    vmR3AtErrorDeregisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser)
 {
-    LogFlow(("vmR3AtErrorDeregister: pfnAtError=%p pvUser=%p\n", pfnAtError, pvUser));
+    LogFlow(("vmR3AtErrorDeregisterU: pfnAtError=%p pvUser=%p\n", pfnAtError, pvUser));
 
     /*
      * Search the list for the entry.
      */
     PVMATERROR pPrev = NULL;
-    PVMATERROR pCur = pVM->vm.s.pAtError;
+    PVMATERROR pCur = pUVM->vm.s.pAtError;
     while (     pCur
            &&   pCur->pfnAtError == pfnAtError
            &&   pCur->pvUser == pvUser)
@@ -2510,13 +2578,13 @@ static DECLCALLBACK(int)    vmR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtErr
     {
         pPrev->pNext = pCur->pNext;
         if (!pCur->pNext)
-            pVM->vm.s.ppAtErrorNext = &pPrev->pNext;
+            pUVM->vm.s.ppAtErrorNext = &pPrev->pNext;
     }
     else
     {
-        pVM->vm.s.pAtError = pCur->pNext;
+        pUVM->vm.s.pAtError = pCur->pNext;
         if (!pCur->pNext)
-            pVM->vm.s.ppAtErrorNext = &pVM->vm.s.pAtError;
+            pUVM->vm.s.ppAtErrorNext = &pUVM->vm.s.pAtError;
     }
 
     /*
@@ -2582,22 +2650,43 @@ VMR3DECL(void) VMR3SetErrorWorker(PVM pVM)
     /*
      * Call the at error callbacks.
      */
-    for (PVMATERROR pCur = pVM->vm.s.pAtError; pCur; pCur = pCur->pNext)
+    for (PVMATERROR pCur = pVM->pUVM->vm.s.pAtError; pCur; pCur = pCur->pNext)
         vmR3SetErrorWorkerDoCall(pVM, pCur, rc, RT_SRC_POS_ARGS, "%s", pszMessage);
+}
+
+
+/**
+ * Creation time wrapper for vmR3SetErrorUV.
+ *
+ * @returns rc.
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   rc              The VBox status code.
+ * @param   RT_SRC_POS_DECL The source position of this error.
+ * @param   pszFormat       Format string.
+ * @param   ...             The arguments.
+ * @thread  Any thread.
+ */
+static int vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    vmR3SetErrorUV(pUVM, rc, pszFile, iLine, pszFunction, pszFormat, &va);
+    va_end(va);
+    return rc;
 }
 
 
 /**
  * Worker which calls everyone listening to the VM error messages.
  *
- * @param   pVM             The VM handle.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   rc              The VBox status code.
  * @param   RT_SRC_POS_DECL The source position of this error.
  * @param   pszFormat       Format string.
  * @param   pArgs           Pointer to the format arguments.
  * @thread  EMT
  */
-DECLCALLBACK(void) vmR3SetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *pArgs)
+DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *pArgs)
 {
 #ifdef LOG_ENABLED
     /*
@@ -2614,16 +2703,17 @@ DECLCALLBACK(void) vmR3SetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *p
     /*
      * Make a copy of the message.
      */
-    vmSetErrorCopy(pVM, rc, RT_SRC_POS_ARGS, pszFormat, *pArgs);
+    if (pUVM->pVM)
+        vmSetErrorCopy(pUVM->pVM, rc, RT_SRC_POS_ARGS, pszFormat, *pArgs);
 
     /*
      * Call the at error callbacks.
      */
-    for (PVMATERROR pCur = pVM->vm.s.pAtError; pCur; pCur = pCur->pNext)
+    for (PVMATERROR pCur = pUVM->vm.s.pAtError; pCur; pCur = pCur->pNext)
     {
         va_list va2;
         va_copy(va2, *pArgs);
-        pCur->pfnAtError(pVM, pCur->pvUser, rc, RT_SRC_POS_ARGS, pszFormat, va2);
+        pCur->pfnAtError(pUVM->pVM, pCur->pvUser, rc, RT_SRC_POS_ARGS, pszFormat, va2);
         va_end(va2);
     }
 }
@@ -2655,7 +2745,7 @@ VMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRun
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorRegister, 3, pVM, pfnAtRuntimeError, pvUser);
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorRegisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2670,18 +2760,18 @@ VMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRun
  * Registers a VM runtime error callback.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pfnAtRuntimeError   Pointer to callback.
  * @param   pvUser              User argument.
  * @thread  EMT
  */
-static DECLCALLBACK(int)    vmR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
+static DECLCALLBACK(int)    vmR3AtRuntimeErrorRegisterU(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
 {
     /*
      * Allocate a new record.
      */
 
-    PVMATRUNTIMEERROR pNew = (PVMATRUNTIMEERROR)MMR3HeapAlloc(pVM, MM_TAG_VM, sizeof(*pNew));
+    PVMATRUNTIMEERROR pNew = (PVMATRUNTIMEERROR)MMR3HeapAllocU(pUVM, MM_TAG_VM, sizeof(*pNew));
     if (!pNew)
         return VERR_NO_MEMORY;
 
@@ -2691,8 +2781,8 @@ static DECLCALLBACK(int)    vmR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEER
     pNew->pNext             = NULL;
 
     /* insert */
-    *pVM->vm.s.ppAtRuntimeErrorNext = pNew;
-    pVM->vm.s.ppAtRuntimeErrorNext = &pNew->pNext;
+    *pUVM->vm.s.ppAtRuntimeErrorNext = pNew;
+    pUVM->vm.s.ppAtRuntimeErrorNext = &pNew->pNext;
 
     return VINF_SUCCESS;
 }
@@ -2724,7 +2814,7 @@ VMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtR
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorDeregister, 3, pVM, pfnAtRuntimeError, pvUser);
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorDeregisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2739,20 +2829,20 @@ VMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtR
  * Deregisters a VM runtime error callback.
  *
  * @returns VBox status code.
- * @param   pVM                 The VM handle.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pfnAtRuntimeError   Pointer to callback.
  * @param   pvUser              User argument.
  * @thread  EMT
  */
-static DECLCALLBACK(int)    vmR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
+static DECLCALLBACK(int)    vmR3AtRuntimeErrorDeregisterU(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
 {
-    LogFlow(("vmR3AtRuntimeErrorDeregister: pfnAtRuntimeError=%p pvUser=%p\n", pfnAtRuntimeError, pvUser));
+    LogFlow(("vmR3AtRuntimeErrorDeregisterU: pfnAtRuntimeError=%p pvUser=%p\n", pfnAtRuntimeError, pvUser));
 
     /*
      * Search the list for the entry.
      */
     PVMATRUNTIMEERROR pPrev = NULL;
-    PVMATRUNTIMEERROR pCur = pVM->vm.s.pAtRuntimeError;
+    PVMATRUNTIMEERROR pCur = pUVM->vm.s.pAtRuntimeError;
     while (     pCur
            &&   pCur->pfnAtRuntimeError == pfnAtRuntimeError
            &&   pCur->pvUser == pvUser)
@@ -2773,13 +2863,13 @@ static DECLCALLBACK(int)    vmR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIME
     {
         pPrev->pNext = pCur->pNext;
         if (!pCur->pNext)
-            pVM->vm.s.ppAtRuntimeErrorNext = &pPrev->pNext;
+            pUVM->vm.s.ppAtRuntimeErrorNext = &pPrev->pNext;
     }
     else
     {
-        pVM->vm.s.pAtRuntimeError = pCur->pNext;
+        pUVM->vm.s.pAtRuntimeError = pCur->pNext;
         if (!pCur->pNext)
-            pVM->vm.s.ppAtRuntimeErrorNext = &pVM->vm.s.pAtRuntimeError;
+            pUVM->vm.s.ppAtRuntimeErrorNext = &pUVM->vm.s.pAtRuntimeError;
     }
 
     /*
@@ -2843,7 +2933,7 @@ VMR3DECL(void) VMR3SetRuntimeErrorWorker(PVM pVM)
     /*
      * Call the at runtime error callbacks.
      */
-    for (PVMATRUNTIMEERROR pCur = pVM->vm.s.pAtRuntimeError; pCur; pCur = pCur->pNext)
+    for (PVMATRUNTIMEERROR pCur = pVM->pUVM->vm.s.pAtRuntimeError; pCur; pCur = pCur->pNext)
         vmR3SetRuntimeErrorWorkerDoCall(pVM, pCur, fFatal, pszErrorID, "%s", pszMessage);
 }
 
@@ -2870,7 +2960,7 @@ DECLCALLBACK(void) vmR3SetRuntimeErrorV(PVM pVM, bool fFatal,
     /*
      * Call the at error callbacks.
      */
-    for (PVMATRUNTIMEERROR pCur = pVM->vm.s.pAtRuntimeError; pCur; pCur = pCur->pNext)
+    for (PVMATRUNTIMEERROR pCur = pVM->pUVM->vm.s.pAtRuntimeError; pCur; pCur = pCur->pNext)
     {
         va_list va2;
         va_copy(va2, *pArgs);

@@ -132,7 +132,6 @@ int main()
     CHECK_PADDING_VM(pdm);
     CHECK_PADDING_VM(pgm);
     CHECK_PADDING_VM(selm);
-    CHECK_PADDING_VM(stam);
     CHECK_PADDING_VM(tm);
     CHECK_PADDING_VM(trpm);
     CHECK_PADDING_VM(vm);

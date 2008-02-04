@@ -77,8 +77,8 @@ VMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat,
     va_list va2;
     va_copy(va2, args); /* Have to make a copy here or GCC will break. */
     PVMREQ pReq;
-    VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3SetErrorV, 7,  /* ASSUMES 3 source pos args! */
-                pVM, rc, RT_SRC_POS_ARGS, pszFormat, &va2);
+    VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3SetErrorUV, 7,   /* ASSUMES 3 source pos args! */
+                pVM->pUVM, rc, RT_SRC_POS_ARGS, pszFormat, &va2);
     VMR3ReqFree(pReq);
     va_end(va2);
 
@@ -201,7 +201,7 @@ void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_
  * It is used by the front-ends to show a proper message to the end user
  * containig possible actions (for example, Retry/Ignore). For this reason,
  * an error ID assigned once to some particular error condition should not
- * change in the future. The format of this parameter is "someErrorCondition". 
+ * change in the future. The format of this parameter is "someErrorCondition".
  *
  * @param   pVM             VM handle. Must be non-NULL.
  * @param   fFatal          Whether it is a fatal error or not.
@@ -213,11 +213,11 @@ void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_
  *          and delivered to callbacks or not).
  *
  * @thread  Any
- * @todo    r=bird: The pausing/suspending of the VM should be done here, we'll just end 
- *                  up duplicating code all over the place otherwise. In the case of 
- *                  devices/drivers/etc they might not be trusted to pause/suspend the 
+ * @todo    r=bird: The pausing/suspending of the VM should be done here, we'll just end
+ *                  up duplicating code all over the place otherwise. In the case of
+ *                  devices/drivers/etc they might not be trusted to pause/suspend the
  *                  vm even. Change fFatal to fFlags and define action flags and a fatal flag.
- *                      
+ *
  *                  Also, why a string ID and not an enum?
  */
 VMDECL(int) VMSetRuntimeError(PVM pVM, bool fFatal, const char *pszErrorID,

@@ -186,7 +186,6 @@ int main()
     GEN_CHECK_OFF(MM, cBasePages);
     GEN_CHECK_OFF(MM, cShadowPages);
     GEN_CHECK_OFF(MM, cFixedPages);
-    GEN_CHECK_OFF(MM, pHeap);
     GEN_CHECK_SIZE(MMHYPERSTAT);
     GEN_CHECK_SIZE(MMHYPERCHUNK);
     GEN_CHECK_SIZE(MMHYPERCHUNKFREE);
@@ -217,7 +216,6 @@ int main()
 
     GEN_CHECK_SIZE(PDM);
     GEN_CHECK_OFF(PDM, offVM);
-    GEN_CHECK_OFF(PDM, pModules);
     GEN_CHECK_OFF(PDM, pDevs);
     GEN_CHECK_OFF(PDM, pDevInstances);
     GEN_CHECK_OFF(PDM, pUsbDevs);
@@ -658,8 +656,6 @@ int main()
     GEN_CHECK_OFF(SELM, GCSelTss);
     GEN_CHECK_OFF(SELM, fGDTRangeRegistered);
     GEN_CHECK_OFF(SELM, StatUpdateFromCPUM);
-
-    GEN_CHECK_SIZE(STAM);
 
     GEN_CHECK_SIZE(TM);
     GEN_CHECK_OFF(TM, offVM);
