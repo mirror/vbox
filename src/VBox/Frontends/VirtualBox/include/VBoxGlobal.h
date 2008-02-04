@@ -348,6 +348,20 @@ public:
         return CEnums::AudioDriverType (it - audioDriverTypes.begin());
     }
 
+    QString toString (CEnums::AudioControllerType t) const
+    {
+        AssertMsg (!audioControllerTypes [t].isNull(), ("No text for %d", t));
+        return audioControllerTypes [t];
+    }
+
+    CEnums::AudioControllerType toAudioControllerType (const QString &s) const
+    {
+        QStringVector::const_iterator it =
+            qFind (audioControllerTypes.begin(), audioControllerTypes.end(), s);
+        AssertMsg (it != audioControllerTypes.end(), ("No value for {%s}", s.latin1()));
+        return CEnums::AudioControllerType (it - audioControllerTypes.begin());
+    }
+
     QString toString (CEnums::NetworkAttachmentType t) const
     {
         AssertMsg (!networkAttachmentTypes [t].isNull(), ("No text for %d", t));
@@ -605,6 +619,7 @@ private:
     QStringVector usbFilterActionTypes;
     QStringVector diskControllerDevices;
     QStringVector audioDriverTypes;
+    QStringVector audioControllerTypes;
     QStringVector networkAttachmentTypes;
     QStringVector clipboardTypes;
     QStringVector ideControllerTypes;
