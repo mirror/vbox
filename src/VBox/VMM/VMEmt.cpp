@@ -799,6 +799,8 @@ static DECLCALLBACK(int) vmR3BootstrapWait(PUVM pUVM)
         if (    pUVM->pVM
             &&  VM_FF_ISPENDING(pUVM->pVM, VM_FF_EXTERNAL_SUSPENDED_MASK))
             break;
+        if (pUVM->vm.s.fTerminateEMT)
+            break;
 
         /*
          * Wait for a while. Someone will wake us up or interrupt the call if
