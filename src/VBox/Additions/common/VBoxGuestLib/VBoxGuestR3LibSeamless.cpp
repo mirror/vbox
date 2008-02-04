@@ -68,7 +68,7 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
     int rc;
 
     AssertPtrReturn(pMode, VERR_INVALID_PARAMETER);
-    waitEvent.u32TimeoutIn = 0;
+    waitEvent.u32TimeoutIn = RT_INDEFINITE_WAIT;
     waitEvent.u32EventMaskIn = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
     rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
     if (RT_SUCCESS(rc))

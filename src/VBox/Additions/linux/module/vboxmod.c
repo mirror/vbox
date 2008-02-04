@@ -203,7 +203,7 @@ vboxadd_wait_for_event (VBoxGuestWaitEventInfo *info)
     uint32_t in_mask = info->u32EventMaskIn;
 
     info->u32Result = VBOXGUEST_WAITEVENT_OK;
-    if (0 != info->u32TimeoutIn) {
+    if (RT_INDEFINITE_WAIT != info->u32TimeoutIn) {
             timeleft = wait_event_interruptible_timeout
                            (vboxDev->eventq,
                                (vboxDev->u32Events & in_mask)
