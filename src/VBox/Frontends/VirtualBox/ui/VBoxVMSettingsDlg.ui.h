@@ -874,6 +874,9 @@ void VBoxVMSettingsDlg::init()
     cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::CoreAudioDriver));
 #endif
 
+    cbAudioController->insertItem (vboxGlobal().toString (CEnums::AC97));
+    cbAudioController->insertItem (vboxGlobal().toString (CEnums::SB16));
+
     /* Network Page */
 
     loadInterfacesList();
@@ -1889,6 +1892,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         CAudioAdapter audio = machine.GetAudioAdapter();
         grbAudio->setChecked (audio.GetEnabled());
         cbAudioDriver->setCurrentText (vboxGlobal().toString (audio.GetAudioDriver()));
+        cbAudioController->setCurrentText (vboxGlobal().toString (audio.GetAudioController()));
     }
 
     /* network */
@@ -2187,6 +2191,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     {
         CAudioAdapter audio = cmachine.GetAudioAdapter();
         audio.SetAudioDriver (vboxGlobal().toAudioDriverType (cbAudioDriver->currentText()));
+        audio.SetAudioController (vboxGlobal().toAudioControllerType (cbAudioController->currentText()));
         audio.SetEnabled (grbAudio->isChecked());
         AssertWrapperOk (audio);
     }

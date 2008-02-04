@@ -2076,11 +2076,11 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                         <property name="checked">
                             <bool>true</bool>
                         </property>
-                        <hbox>
+                        <grid>
                             <property name="name">
                                 <cstring>unnamed</cstring>
                             </property>
-                            <widget class="QLabel">
+                            <widget class="QLabel" row="0" column="0">
                                 <property name="name">
                                     <cstring>txAudioDriver</cstring>
                                 </property>
@@ -2091,7 +2091,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                     <cstring>cbAudioDriver</cstring>
                                 </property>
                             </widget>
-                            <widget class="QComboBox">
+                            <widget class="QComboBox" row="0" column="1">
                                 <property name="name">
                                     <cstring>cbAudioDriver</cstring>
                                 </property>
@@ -2108,7 +2108,34 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</string>
                                 </property>
                             </widget>
-                            <spacer>
+                            <widget class="QLabel" row="1" column="0">
+                                <property name="name">
+                                    <cstring>txAudioController</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>Guest Audio &amp;Controller</string>
+                                </property>
+                                <property name="buddy" stdset="0">
+                                    <cstring>cbAudioController</cstring>
+                                </property>
+                            </widget>
+                            <widget class="QComboBox" row="1" column="1">
+                                <property name="name">
+                                    <cstring>cbAudioController</cstring>
+                                </property>
+                                <property name="sizePolicy">
+                                    <sizepolicy>
+                                        <hsizetype>1</hsizetype>
+                                        <vsizetype>0</vsizetype>
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string>&lt;qt&gt;Selects the type of the emulated audio hardware.&lt;/qt&gt;</string>
+                                </property>
+                            </widget>
+                            <spacer row="0" column="2">
                                 <property name="name">
                                     <cstring>spacer36</cstring>
                                 </property>
@@ -2125,7 +2152,24 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                     </size>
                                 </property>
                             </spacer>
-                        </hbox>
+                            <spacer row="1" column="2">
+                                <property name="name">
+                                    <cstring>spacer37</cstring>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Horizontal</enum>
+                                </property>
+                                <property name="sizeType">
+                                    <enum>Expanding</enum>
+                                </property>
+                                <property name="sizeHint">
+                                    <size>
+                                        <width>30</width>
+                                        <height>20</height>
+                                    </size>
+                                </property>
+                            </spacer>
+                        </grid>
                     </widget>
                     <spacer>
                         <property name="name">

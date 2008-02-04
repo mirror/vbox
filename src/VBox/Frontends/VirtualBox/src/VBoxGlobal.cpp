@@ -746,6 +746,7 @@ VBoxGlobal::VBoxGlobal()
     , usbFilterActionTypes (CEnums::USBDeviceFilterAction_COUNT)
     , diskControllerDevices (3)
     , audioDriverTypes (CEnums::AudioDriverType_COUNT)
+    , audioControllerTypes (CEnums::AudioControllerType_COUNT)
     , networkAttachmentTypes (CEnums::NetworkAttachmentType_COUNT)
     , clipboardTypes (CEnums::ClipboardMode_COUNT)
     , ideControllerTypes (CEnums::IDEControllerType_COUNT)
@@ -1547,16 +1548,20 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         /* audio */
         {
             CAudioAdapter audio = m.GetAudioAdapter();
+			int rows = audio.GetEnabled() ? 3 : 2;
             if (audio.GetEnabled())
                 item = QString (sSectionItemTpl)
-                    .arg (tr ("Adapter", "details report (audio)"),
-                          toString (audio.GetAudioDriver()));
+	                   .arg (tr ("Adapter", "details report (audio)"),
+                             toString (audio.GetAudioDriver())) +
+                       QString (sSectionItemTpl)
+	                   .arg (tr ("Controller", "details report (audio)"),
+                             toString (audio.GetAudioController()));
             else
                 item = QString (sSectionItemTpl)
                     .arg (tr ("Disabled", "details report (audio)"), "");
 
             detailsReport += sectionTpl
-                .arg (2 + 1) /* rows */
+                .arg (rows + 1) /* rows */
                 .arg ("sound_16px.png", /* icon */
                       "#audio", /* link */
                       tr ("Audio", "details report"), /* title */
@@ -2231,6 +2236,11 @@ void VBoxGlobal::languageChange()
         tr ("CoreAudio", "AudioDriverType");
     audioDriverTypes [CEnums::PulseAudioDriver] =
         tr ("PulseAudio", "AudioDriverType");
+
+    audioControllerTypes [CEnums::AC97] =
+        tr ("AC97", "AudioControllerType");
+    audioControllerTypes [CEnums::SB16] =
+        tr ("SB16", "AudioControllerType");
 
     networkAttachmentTypes [CEnums::NoNetworkAttachment] =
         tr ("Not attached", "NetworkAttachmentType");
