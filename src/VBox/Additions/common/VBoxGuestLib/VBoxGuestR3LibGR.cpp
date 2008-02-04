@@ -20,23 +20,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifdef VBOX_VBGLR3_XFREE86
-/* For the definitions of standard X server library functions like xalloc. */
-/* Make the headers C++-compatible */
-# define class xf86_vbox_class
-# define bool xf86_vbox_bool
-# define private xf86_vbox_private
-# define new xf86_vbox_new
-extern "C"
-{
-# include "xf86.h"
-# include "xf86_OSproc.h"
-# include "xf86Resources.h"
-# include "xf86_ansic.h"
-}
-# undef class
-# undef bool
-# undef private
-# undef new
+/* Rather than try to resolve all the header file conflicts, I will just
+   prototype what we need here. */
+# define xalloc(size) Xalloc((unsigned long)(size))
+# define xfree(ptr) Xfree((pointer)(ptr))
+typedef void *pointer;
+extern "C" pointer Xalloc(unsigned long /*amount*/);
+extern "C" void Xfree(pointer /*ptr*/);
 #else
 # include <iprt/mem.h>
 # include <iprt/assert.h>
