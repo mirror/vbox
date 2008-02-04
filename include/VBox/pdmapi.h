@@ -110,8 +110,8 @@ PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR);
  * @{
  */
 
-PDMR3DECL(int)  PDMR3LdrLoadVMMR0(void **ppvOpaque);
-PDMR3DECL(void) PDMR3LdrLoadVMMR0Part2(PVM pVM, void *pvOpaque);
+PDMR3DECL(int) PDMR3InitUVM(PUVM pUVM);
+PDMR3DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM);
 
 /**
  * Initializes the PDM.
@@ -168,10 +168,10 @@ PDMR3DECL(void) PDMR3PowerOff(PVM pVM);
  * This must be done very early in the relocation
  * process so that components can resolve GC symbols during relocation.
  *
- * @param   pVM         VM handle.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
-PDMR3DECL(void) PDMR3LdrRelocate(PVM pVM, RTGCINTPTR offDelta);
+PDMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta);
 
 /**
  * Applies relocations to data and code managed by this
@@ -193,6 +193,7 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
  * @param   pVM         The VM to operate on.
  */
 PDMR3DECL(int) PDMR3Term(PVM pVM);
+PDMR3DECL(void) PDMR3TermUVM(PUVM pUVM);
 
 
 /**

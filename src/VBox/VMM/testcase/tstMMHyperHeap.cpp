@@ -21,18 +21,20 @@
 #include <VBox/mm.h>
 #include <VBox/stam.h>
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
+#include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
 
     /*
@@ -44,20 +46,39 @@ int main(int argc, char *argv[])
      * Create empty VM structure and call MMR3Init().
      */
     PVM         pVM;
+    RTR0PTR     pvR0;
+    SUPPAGE     aPages[RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT];
     int rc = SUPInit(NULL);
     if (VBOX_SUCCESS(rc))
-        rc = SUPPageAlloc((sizeof(*pVM) + PAGE_SIZE - 1) >> PAGE_SHIFT, (void **)&pVM);
+        rc = SUPLowAlloc(RT_ELEMENTS(aPages), (void **)&pVM, &pvR0, &aPages[0]);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("Fatal error: SUP Failure! rc=%Vrc\n", rc);
         return 1;
     }
-    rc = STAMR3Init(pVM);
+    memset(pVM, 0, sizeof(*pVM)); /* wtf? */
+    pVM->paVMPagesR3 = aPages;
+    pVM->pVMR0 = pvR0;
+
+    static UVM s_UVM;
+    PUVM pUVM = &s_UVM;
+    pUVM->pVM = pVM;
+    pVM->pUVM = pUVM;
+
+    rc = STAMR3InitUVM(pUVM);
     if (VBOX_FAILURE(rc))
     {
-        RTPrintf("Fatal error: STAMR3Init failed! rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: STAMR3Init failed. rc=%Vrc\n", rc);
         return 1;
     }
+
+    rc = MMR3InitUVM(pUVM);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("FAILURE: STAMR3Init failed. rc=%Vrc\n", rc);
+        return 1;
+    }
+
     rc = MMR3Init(pVM);
     if (VBOX_FAILURE(rc))
     {

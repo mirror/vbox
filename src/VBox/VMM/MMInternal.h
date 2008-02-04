@@ -116,7 +116,7 @@ typedef struct MMHEAP
     /** Heap per tag statistics tree. */
     PAVLULNODECORE      pStatTree;
     /** The VM handle. */
-    PVM                 pVM;
+    PUVM                pUVM;
     /** Heap global statistics. */
     MMHEAPSTAT          Stat;
 } MMHEAP;
@@ -674,13 +674,22 @@ typedef struct MM
 
     /** The head of the ROM ranges. */
     R3PTRTYPE(PMMROMRANGE)      pRomHead;
-
-    /** Pointer to the MM R3 Heap. */
-    R3PTRTYPE(PMMHEAP)          pHeap;
-
 } MM;
 /** Pointer to MM Data (part of VM). */
 typedef MM *PMM;
+
+
+/**
+ * MM data kept in the UVM.
+ */
+typedef struct MMUSERPERVM
+{
+    /** Pointer to the MM R3 Heap. */
+    R3PTRTYPE(PMMHEAP)          pHeap;
+} MMUSERPERVM;
+/** Pointer to the MM data kept in the UVM. */
+typedef MMUSERPERVM *PMMUSERPERVM;
+
 
 __BEGIN_DECLS
 
@@ -690,7 +699,7 @@ int  mmR3UpdateReservation(PVM pVM);
 int  mmR3PagePoolInit(PVM pVM);
 void mmR3PagePoolTerm(PVM pVM);
 
-int  mmR3HeapCreate(PVM pVM, PMMHEAP *ppHeap);
+int  mmR3HeapCreateU(PUVM pUVM, PMMHEAP *ppHeap);
 void mmR3HeapDestroy(PMMHEAP pHeap);
 
 int  mmR3HyperInit(PVM pVM);

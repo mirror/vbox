@@ -94,7 +94,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTH
                                                      PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
 
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, 
+static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
                                                                       PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc);
 #endif
 
@@ -302,7 +302,7 @@ static int pdmR3DrvLoad(PVM pVM, PPDMDRVREGCBINT pRegCB, const char *pszFilename
     /*
      * Load it.
      */
-    int rc = pdmR3LoadR3(pVM, pszFilename, pszName);
+    int rc = pdmR3LoadR3U(pVM->pUVM, pszFilename, pszName);
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -1074,7 +1074,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTH
 }
 
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, 
+static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
                                                                       PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
@@ -1084,7 +1084,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS
 
     int rc = PDMR3AsyncCompletionTemplateCreateDriver(pDrvIns->Internal.s.pVM, pDrvIns, ppTemplate, pfnCompleted, pszDesc);
 
-    LogFlow(("pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate: caller='%s'/%d: returns %Vrc *ppThread=%p\n", pDrvIns->pDrvReg->szDriverName, 
+    LogFlow(("pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate: caller='%s'/%d: returns %Vrc *ppThread=%p\n", pDrvIns->pDrvReg->szDriverName,
              pDrvIns->iInstance, rc, *ppTemplate));
     return rc;
 }

@@ -26,6 +26,7 @@
 #include <VBox/mm.h>
 #include <VBox/vmm.h>
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
@@ -58,8 +59,8 @@ typedef struct PDMGETIMPORTARGS
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) pdmr3GetImportGC(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
-static int      pdmR3LoadR0(PVM pVM, const char *pszFilename, const char *pszName);
+static DECLCALLBACK(int) pdmR3GetImportGC(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
+static int      pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName);
 static char *   pdmR3FileGC(const char *pszFile);
 static char *   pdmR3FileR0(const char *pszFile);
 static char *   pdmR3File(const char *pszFile, const char *pszDefaultExt, bool fShared);
@@ -68,90 +69,14 @@ static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const
 
 
 /**
- * Loads the VMMR0.r0 module before the VM is created.
- *
- * The opqaue VMMR0 module pointer is passed on to PDMR3Init later in
- * the init process or PDMR3LdrUnloadVMMR0 in case of some init failure before PDMR3Init.
+ * Loads the VMMR0.r0 module early in the init process.
  *
  * @returns VBox status code.
- * @param   ppvOpaque       Where to return the opaque VMMR0.r0 module handle one success.
- *
- * @remarks Yes, this is a kind of hacky and should go away. See @todo in VMR3Create.
+ * @param   pUVM            Pointer to the user mode VM structure.
  */
-PDMR3DECL(int) PDMR3LdrLoadVMMR0(void **ppvOpaque)
+PDMR3DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM)
 {
-    *ppvOpaque = NULL;
-
-    /*
-     * Resolve the filename and allocate the module list node.
-     */
-    char *pszFilename = pdmR3FileR0(VMMR0_MAIN_MODULE_NAME);
-    PPDMMOD pModule = (PPDMMOD)RTMemAllocZ(sizeof(*pModule) + strlen(pszFilename));
-    if (!pModule)
-    {
-        RTMemTmpFree(pszFilename);
-        return VERR_NO_MEMORY;
-    }
-    strcpy(pModule->szName, VMMR0_MAIN_MODULE_NAME);
-    pModule->eType = PDMMOD_TYPE_R0;
-    strcpy(pModule->szFilename, pszFilename);
-    RTMemTmpFree(pszFilename);
-
-    /*
-     * Ask the support library to load it.
-     */
-    void *pvImageBase;
-    int rc = SUPLoadModule(pModule->szFilename, pModule->szName, &pvImageBase);
-    if (RT_SUCCESS(rc))
-    {
-        pModule->hLdrMod = NIL_RTLDRMOD;
-        pModule->ImageBase = (uintptr_t)pvImageBase;
-        *ppvOpaque = pModule;
-
-        Log(("PDMR3LdrLoadVMMR0: Loaded %s at %VGvx (%s)\n", pModule->szName, (RTGCPTR)pModule->ImageBase, pModule->szFilename));
-        return VINF_SUCCESS;
-    }
-
-    LogRel(("PDMR3LdrLoadVMMR0: rc=%Vrc szName=%s szFilename=%s\n", rc, pModule->szName, pModule->szFilename));
-    RTMemFree(pModule);
-    return rc;
-}
-
-
-/**
- * Register the VMMR0.r0 module with the created VM or unload it if
- * we failed to create the VM (pVM == NULL).
- *
- * @param   pVM         The VM pointer. NULL if we failed to create the VM and
- *                      the module should be unloaded and freed.
- * @param   pvOpaque    The value returned by PDMR3LDrLoadVMMR0().
- *
- * @remarks Yes, this is a kind of hacky and should go away. See @todo in VMR3Create.
- */
-PDMR3DECL(void) PDMR3LdrLoadVMMR0Part2(PVM pVM, void *pvOpaque)
-{
-    PPDMMOD pModule = (PPDMMOD)pvOpaque;
-    AssertPtrReturnVoid(pModule);
-
-    if (pVM)
-    {
-        /*
-         * Register the R0 module loaded by PDMR3LdrLoadVMMR0
-         */
-        Assert(!pVM->pdm.s.pModules);
-        pModule->pNext = pVM->pdm.s.pModules;
-        pVM->pdm.s.pModules = pModule;
-    }
-    else
-    {
-        /*
-         * Failed, unload the module.
-         */
-        int rc2 = SUPFreeModule((void *)(uintptr_t)pModule->ImageBase);
-        AssertRC(rc2);
-        pModule->ImageBase = 0;
-        RTMemFree(pvOpaque);
-    }
+    return pdmR3LoadR0U(pUVM, NULL, VMMR0_MAIN_MODULE_NAME);
 }
 
 
@@ -162,10 +87,10 @@ PDMR3DECL(void) PDMR3LdrLoadVMMR0Part2(PVM pVM, void *pvOpaque)
  * Context VMM modules.
  *
  * @returns VBox stutus code.
- * @param   pVM         VM handle.
+ * @param   pUVM        Pointer to the user mode VM structure.
  * @param   pvVMMR0Mod  The opqaue returned by PDMR3LdrLoadVMMR0.
  */
-int pdmR3LdrInit(PVM pVM)
+int pdmR3LdrInitU(PUVM pUVM)
 {
 #ifdef PDMLDR_FAKE_MODE
     return VINF_SUCCESS;
@@ -175,7 +100,7 @@ int pdmR3LdrInit(PVM pVM)
     /*
      * Load the mandatory GC module, the VMMR0.r0 is loaded before VM creation.
      */
-    return PDMR3LoadGC(pVM, NULL, VMMGC_MAIN_MODULE_NAME);
+    return PDMR3LoadGC(pUVM->pVM, NULL, VMMGC_MAIN_MODULE_NAME);
 #endif
 }
 
@@ -186,13 +111,16 @@ int pdmR3LdrInit(PVM pVM)
  * This will unload and free all modules.
  *
  * @param   pVM         The VM handle.
+ *
+ * @remarks This is normally called twice during termination.
  */
-void pdmR3LdrTerm(PVM pVM)
+void pdmR3LdrTermU(PUVM pUVM)
 {
     /*
      * Free the modules.
      */
-    PPDMMOD pModule = pVM->pdm.s.pModules;
+    PPDMMOD pModule = pUVM->pdm.s.pModules;
+    pUVM->pdm.s.pModules = NULL;
     while (pModule)
     {
         /* free loader item. */
@@ -239,17 +167,17 @@ void pdmR3LdrTerm(PVM pVM)
  * This must be done very early in the relocation
  * process so that components can resolve GC symbols during relocation.
  *
- * @param   pVM         VM handle.
+ * @param   pUVM        Pointer to the user mode VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
-PDMR3DECL(void) PDMR3LdrRelocate(PVM pVM, RTGCINTPTR offDelta)
+PDMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
 {
     LogFlow(("PDMR3LdrRelocate: offDelta=%VGv\n", offDelta));
 
     /*
      * GC Modules.
      */
-    if (pVM->pdm.s.pModules)
+    if (pUVM->pdm.s.pModules)
     {
         /*
          * The relocation have to be done in two passes so imports
@@ -259,27 +187,27 @@ PDMR3DECL(void) PDMR3LdrRelocate(PVM pVM, RTGCINTPTR offDelta)
          */
         /* pass 1 */
         PPDMMOD pCur;
-        for (pCur = pVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
+        for (pCur = pUVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
         {
             if (pCur->eType == PDMMOD_TYPE_GC)
             {
                 pCur->OldImageBase = pCur->ImageBase;
-                pCur->ImageBase = MMHyperHC2GC(pVM, pCur->pvBits);
+                pCur->ImageBase = MMHyperHC2GC(pUVM->pVM, pCur->pvBits);
             }
         }
 
         /* pass 2 */
-        for (pCur = pVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
+        for (pCur = pUVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
         {
             if (pCur->eType == PDMMOD_TYPE_GC)
             {
                 PDMGETIMPORTARGS Args;
-                Args.pVM = pVM;
+                Args.pVM = pUVM->pVM;
                 Args.pModule = pCur;
                 int rc = RTLdrRelocate(pCur->hLdrMod, pCur->pvBits, pCur->ImageBase, pCur->OldImageBase,
-                                       pdmr3GetImportGC, &Args);
+                                       pdmR3GetImportGC, &Args);
                 AssertFatalMsgRC(rc, ("RTLdrRelocate failed, rc=%d\n", rc));
-                DBGFR3ModuleRelocate(pVM, pCur->OldImageBase, pCur->ImageBase, RTLdrSize(pCur->hLdrMod),
+                DBGFR3ModuleRelocate(pUVM->pVM, pCur->OldImageBase, pCur->ImageBase, RTLdrSize(pCur->hLdrMod),
                                      pCur->szFilename, pCur->szName);
             }
         }
@@ -300,16 +228,16 @@ PDMR3DECL(void) PDMR3LdrRelocate(PVM pVM, RTGCINTPTR offDelta)
  * when the VM terminates.
  *
  * @returns VBox status code.
- * @param   pVM             The VM to load it into.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pszFilename     Filename of the module binary.
  * @param   pszName         Module name. Case sensitive and the length is limited!
  */
-int pdmR3LoadR3(PVM pVM, const char *pszFilename, const char *pszName)
+int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
 {
     /*
      * Validate input.
      */
-    AssertMsg(pVM->pdm.s.offVM, ("bad init order!\n"));
+    AssertMsg(pUVM->pVM->pdm.s.offVM, ("bad init order!\n"));
     Assert(pszFilename);
     size_t cchFilename = strlen(pszFilename);
     Assert(pszName);
@@ -324,7 +252,7 @@ int pdmR3LoadR3(PVM pVM, const char *pszFilename, const char *pszName)
     /*
      * Try lookup the name and see if the module exists.
      */
-    for (pCur = pVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
+    for (pCur = pUVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
     {
         if (!strcmp(pCur->szName, pszName))
         {
@@ -352,14 +280,14 @@ int pdmR3LoadR3(PVM pVM, const char *pszFilename, const char *pszName)
     int rc = RTLdrLoad(pszFilename, &pModule->hLdrMod);
     if (VBOX_SUCCESS(rc))
     {
-        pModule->pNext = pVM->pdm.s.pModules;
-        pVM->pdm.s.pModules = pModule;
+        pModule->pNext = pUVM->pdm.s.pModules;
+        pUVM->pdm.s.pModules = pModule;
         return rc;
     }
 
     /* Something went wrong, most likely module not found. Don't consider other unlikely errors */
     RTMemFree(pModule);
-    return VMSetError(pVM, rc, RT_SRC_POS, N_("Unable to load R3 module %s"), pszFilename);
+    return VMSetError(pUVM->pVM, rc, RT_SRC_POS, N_("Unable to load R3 module %s"), pszFilename);
 }
 
 
@@ -374,7 +302,7 @@ int pdmR3LoadR3(PVM pVM, const char *pszFilename, const char *pszName)
  * @param   pValue          Where to store the symbol value (address).
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) pdmr3GetImportGC(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
+static DECLCALLBACK(int) pdmR3GetImportGC(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
 {
     PVM         pVM = ((PPDMGETIMPORTARGS)pvUser)->pVM;
     PPDMMOD     pModule = ((PPDMGETIMPORTARGS)pvUser)->pModule;
@@ -426,7 +354,7 @@ static DECLCALLBACK(int) pdmr3GetImportGC(RTLDRMOD hLdrMod, const char *pszModul
     /*
      * Search for module.
      */
-    PPDMMOD  pCur = pVM->pdm.s.pModules;
+    PPDMMOD  pCur = pVM->pUVM->pdm.s.pModules;
     while (pCur)
     {
         if (    pCur->eType == PDMMOD_TYPE_GC
@@ -477,7 +405,7 @@ PDMR3DECL(int) PDMR3LoadGC(PVM pVM, const char *pszFilename, const char *pszName
      * Validate input.
      */
     AssertMsg(pVM->pdm.s.offVM, ("bad init order!\n"));
-    PPDMMOD  pCur = pVM->pdm.s.pModules;
+    PPDMMOD  pCur = pVM->pUVM->pdm.s.pModules;
     while (pCur)
     {
         if (!strcmp(pCur->szName, pszName))
@@ -540,22 +468,23 @@ PDMR3DECL(int) PDMR3LoadGC(PVM pVM, const char *pszFilename, const char *pszName
                 PDMGETIMPORTARGS Args;
                 Args.pVM = pVM;
                 Args.pModule = pModule;
-                rc = RTLdrGetBits(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, pdmr3GetImportGC, &Args);
+                rc = RTLdrGetBits(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, pdmR3GetImportGC, &Args);
                 if (VBOX_SUCCESS(rc))
                 {
                     /*
                      * Insert the module.
                      */
-                    if (pVM->pdm.s.pModules)
+                    PUVM pUVM = pVM->pUVM;
+                    if (pUVM->pdm.s.pModules)
                     {
                         /* we don't expect this list to be very long, so rather save the tail pointer. */
-                        PPDMMOD pCur = pVM->pdm.s.pModules;
+                        PPDMMOD pCur = pUVM->pdm.s.pModules;
                         while (pCur->pNext)
                             pCur = pCur->pNext;
                         pCur->pNext = pModule;
                     }
                     else
-                        pVM->pdm.s.pModules = pModule; /* (pNext is zeroed by alloc) */
+                        pUVM->pdm.s.pModules = pModule; /* (pNext is zeroed by alloc) */
                     Log(("PDM: GC Module at %VGvx %s (%s)\n", (RTGCPTR)pModule->ImageBase, pszName, pszFilename));
                     RTMemTmpFree(pszFile);
                     return VINF_SUCCESS;
@@ -586,17 +515,16 @@ PDMR3DECL(int) PDMR3LoadGC(PVM pVM, const char *pszFilename, const char *pszName
  * Loads a module into the ring-0 context.
  *
  * @returns VBox status code.
- * @param   pVM             The VM to load it into.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pszFilename     Filename of the module binary.
  * @param   pszName         Module name. Case sensitive and the length is limited!
  */
-static int pdmR3LoadR0(PVM pVM, const char *pszFilename, const char *pszName)
+static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName)
 {
     /*
      * Validate input.
      */
-    AssertMsg(pVM->pdm.s.offVM, ("bad init order!\n"));
-    PPDMMOD  pCur = pVM->pdm.s.pModules;
+    PPDMMOD  pCur = pUVM->pdm.s.pModules;
     while (pCur)
     {
         if (!strcmp(pCur->szName, pszName))
@@ -607,7 +535,6 @@ static int pdmR3LoadR0(PVM pVM, const char *pszFilename, const char *pszName)
         /* next */
         pCur = pCur->pNext;
     }
-    AssertReturn(strcmp(pszName, VMMR0_MAIN_MODULE_NAME), VERR_INTERNAL_ERROR);
 
     /*
      * Find the file if not specified.
@@ -644,16 +571,16 @@ static int pdmR3LoadR0(PVM pVM, const char *pszFilename, const char *pszName)
         /*
          * Insert the module.
          */
-        if (pVM->pdm.s.pModules)
+        if (pUVM->pdm.s.pModules)
         {
             /* we don't expect this list to be very long, so rather save the tail pointer. */
-            PPDMMOD pCur = pVM->pdm.s.pModules;
+            PPDMMOD pCur = pUVM->pdm.s.pModules;
             while (pCur->pNext)
                 pCur = pCur->pNext;
             pCur->pNext = pModule;
         }
         else
-            pVM->pdm.s.pModules = pModule; /* (pNext is zeroed by alloc) */
+            pUVM->pdm.s.pModules = pModule; /* (pNext is zeroed by alloc) */
         Log(("PDM: GC Module at %VGvx %s (%s)\n", (RTGCPTR)pModule->ImageBase, pszName, pszFilename));
         RTMemTmpFree(pszFile);
         return VINF_SUCCESS;
@@ -661,11 +588,11 @@ static int pdmR3LoadR0(PVM pVM, const char *pszFilename, const char *pszName)
 
     RTMemFree(pModule);
     RTMemTmpFree(pszFile);
-    LogRel(("pdmR3LoadR0: pszName=\"%s\" rc=%Vrc\n", pszName, rc));
+    LogRel(("pdmR3LoadR0U: pszName=\"%s\" rc=%Vrc\n", pszName, rc));
 
     /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
-    if (VBOX_FAILURE(rc))
-        return VMSetError(pVM, rc, RT_SRC_POS, N_("Cannot load R0 module %s"), pszFilename);
+    if (VBOX_FAILURE(rc) && pUVM->pVM) /** @todo VMR3SetErrorU. */
+        return VMSetError(pUVM->pVM, rc, RT_SRC_POS, N_("Cannot load R0 module %s"), pszFilename);
     return rc;
 }
 
@@ -691,7 +618,7 @@ PDMR3DECL(int) PDMR3GetSymbolR3(PVM pVM, const char *pszModule, const char *pszS
     /*
      * Find the module.
      */
-    for (PPDMMOD pModule = pVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
+    for (PPDMMOD pModule = pVM->pUVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
     {
         if (    pModule->eType == PDMMOD_TYPE_R3
             &&  !strcmp(pModule->szName, pszModule))
@@ -746,7 +673,7 @@ PDMR3DECL(int) PDMR3GetSymbolR0(PVM pVM, const char *pszModule, const char *pszS
     /*
      * Find the module.
      */
-    for (PPDMMOD pModule = pVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
+    for (PPDMMOD pModule = pVM->pUVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
     {
         if (    pModule->eType == PDMMOD_TYPE_R0
             &&  !strcmp(pModule->szName, pszModule))
@@ -793,13 +720,13 @@ PDMR3DECL(int) PDMR3GetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *
     {
         AssertMsgReturn(!strpbrk(pszModule, "/\\:\n\r\t"), ("pszModule=%s\n", pszModule), VERR_INVALID_PARAMETER);
         PPDMMOD pModule;
-        for (pModule = pVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
+        for (pModule = pVM->pUVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
             if (    pModule->eType == PDMMOD_TYPE_R0
                 &&  !strcmp(pModule->szName, pszModule))
                 break;
         if (!pModule)
         {
-            int rc = pdmR3LoadR0(pVM, NULL, pszModule);
+            int rc = pdmR3LoadR0U(pVM->pUVM, NULL, pszModule);
             AssertMsgRCReturn(rc, ("pszModule=%s rc=%Vrc\n", pszModule, rc), VERR_MODULE_NOT_FOUND);
         }
     }
@@ -835,7 +762,7 @@ PDMR3DECL(int) PDMR3GetSymbolGC(PVM pVM, const char *pszModule, const char *pszS
     /*
      * Find the module.
      */
-    for (PPDMMOD pModule = pVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
+    for (PPDMMOD pModule = pVM->pUVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
     {
         if (    pModule->eType == PDMMOD_TYPE_GC
             &&  !strcmp(pModule->szName, pszModule))
@@ -890,7 +817,7 @@ PDMR3DECL(int) PDMR3GetSymbolGCLazy(PVM pVM, const char *pszModule, const char *
     {
         AssertMsgReturn(!strpbrk(pszModule, "/\\:\n\r\t"), ("pszModule=%s\n", pszModule), VERR_INVALID_PARAMETER);
         PPDMMOD pModule;
-        for (pModule = pVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
+        for (pModule = pVM->pUVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
             if (    pModule->eType == PDMMOD_TYPE_GC
                 &&  !strcmp(pModule->szName, pszModule))
                 break;
@@ -1077,7 +1004,7 @@ PDMR3DECL(int) PDMR3QueryModFromEIP(PVM pVM, uint32_t uEIP,
 {
     int     rc = VERR_MODULE_NOT_FOUND;
     PPDMMOD pCur;
-    for (pCur = pVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
+    for (pCur = pVM->pUVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
     {
         /* Skip anything which isn't in GC. */
         if (pCur->eType != PDMMOD_TYPE_GC)
@@ -1194,7 +1121,7 @@ static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const
 PDMR3DECL(int)  PDMR3EnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg)
 {
     PPDMMOD pCur;
-    for (pCur = pVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
+    for (pCur = pVM->pUVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
     {
         int rc = pfnCallback(pVM,
                              pCur->szFilename,

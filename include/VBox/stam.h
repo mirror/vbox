@@ -954,57 +954,12 @@ typedef const STAMRATIOU32 *PCSTAMRATIOU32;
  * @{
  */
 
-/**
- * Initializes the STAM.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-STAMR3DECL(int) STAMR3Init(PVM pVM);
-
-/**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate it self inside the GC.
- *
- * @param   pVM     The VM.
- */
-STAMR3DECL(void) STAMR3Relocate(PVM pVM);
-
-/**
- * Terminates the STAM.
- *
- * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-STAMR3DECL(int) STAMR3Term(PVM pVM);
-
-/**
- * Registers a sample with the statistics mamanger.
- *
- * Statistics are maintained on a per VM basis and should therefore
- * be registered during the VM init stage. However, there is not problem
- * registering temporary samples or samples for hotpluggable devices. Samples
- * can be deregisterd using the STAMR3Deregister() function, but note that
- * this is only necessary for temporary samples or hotpluggable devices.
- *
- * It is not possible to register the same sample twice.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   pvSample    Pointer to the sample.
- * @param   enmType     Sample type. This indicates what pvSample is pointing at.
- * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
- * @param   pszName     Sample name. The name is on this form "/<component>/<sample>".
- *                      Further nesting is possible.
- * @param   enmUnit     Sample unit.
- * @param   pszDesc     Sample description.
- */
-STAMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+STAMR3DECL(int) STAMR3InitUVM(PUVM pUVM);
+STAMR3DECL(void) STAMR3TermUVM(PUVM pUVM);
+STAMR3DECL(int) STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
                                 const char *pszName, STAMUNIT enmUnit, const char *pszDesc);
+STAMR3DECL(int) STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+                               const char *pszName, STAMUNIT enmUnit, const char *pszDesc);
 
 /** @def STAM_REL_REG
  * Registers a statistics sample.
@@ -1062,37 +1017,12 @@ STAMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMV
 #define STAM_REG_USED(pVM, pvSample, enmType, pszName, enmUnit, pszDesc) \
     STAM_STATS({ STAM_REL_REG_USED(pVM, pvSample, enmType, pszName, enmUnit, pszDesc); })
 
-/**
- * Same as STAMR3Register except that the name is specified in a
- * RTStrPrintf like fashion.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   pvSample    Pointer to the sample.
- * @param   enmType     Sample type. This indicates what pvSample is pointing at.
- * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
- * @param   enmUnit     Sample unit.
- * @param   pszDesc     Sample description.
- * @param   pszName     The sample name format string.
- * @param   ...         Arguments to the format string.
- */
+STAMR3DECL(int)  STAMR3RegisterFU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
+                                  const char *pszDesc, const char *pszName, ...);
 STAMR3DECL(int)  STAMR3RegisterF(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
                                  const char *pszDesc, const char *pszName, ...);
-
-/**
- * Same as STAMR3Register except that the name is specified in a
- * RTStrPrintfV like fashion.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   pvSample    Pointer to the sample.
- * @param   enmType     Sample type. This indicates what pvSample is pointing at.
- * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
- * @param   enmUnit     Sample unit.
- * @param   pszDesc     Sample description.
- * @param   pszName     The sample name format string.
- * @param   args        Arguments to the format string.
- */
+STAMR3DECL(int)  STAMR3RegisterVU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
+                                  const char *pszDesc, const char *pszName, va_list args);
 STAMR3DECL(int)  STAMR3RegisterV(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
                                  const char *pszDesc, const char *pszName, va_list args);
 
@@ -1117,56 +1047,13 @@ typedef void FNSTAMR3CALLBACKPRINT(PVM pVM, void *pvSample, char *pszBuf, size_t
 /** Pointer to a STAM sample print callback. */
 typedef FNSTAMR3CALLBACKPRINT *PFNSTAMR3CALLBACKPRINT;
 
-/**
- * Similar to STAMR3Register except for the two callbacks, the implied type (STAMTYPE_CALLBACK),
- * and name given in an RTStrPrintf like fashion.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   pvSample    Pointer to the sample.
- * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
- * @param   enmUnit     Sample unit.
- * @param   pfnReset    Callback for resetting the sample. NULL should be used if the sample can't be reset.
- * @param   pfnPrint    Print the sample.
- * @param   pszDesc     Sample description.
- * @param   pszName     The sample name format string.
- * @param   ...         Arguments to the format string.
- * @remark  There is currently no device or driver variant of this API. Add one if it should become necessary!
- */
 STAMR3DECL(int)  STAMR3RegisterCallback(PVM pVM, void *pvSample, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
                                         PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
                                         const char *pszDesc, const char *pszName, ...);
-
-/**
- * Same as STAMR3RegisterCallback() except for the ellipsis which is a va_list here.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   pvSample    Pointer to the sample.
- * @param   enmVisibility  Visibility type specifying whether unused statistics should be visible or not.
- * @param   enmUnit     Sample unit.
- * @param   pfnReset    Callback for resetting the sample. NULL should be used if the sample can't be reset.
- * @param   pfnPrint    Print the sample.
- * @param   pszDesc     Sample description.
- * @param   pszName     The sample name format string.
- * @param   args        Arguments to the format string.
- * @remark  There is currently no device or driver variant of this API. Add one if it should become necessary!
- */
 STAMR3DECL(int)  STAMR3RegisterCallbackV(PVM pVM, void *pvSample, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
                                          PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
                                          const char *pszDesc, const char *pszName, va_list args);
-
-/**
- * Deregisters all samples previously registered by STAMR3Register(),
- * STAMR3RegisterF(), STAMR3RegisterV() or STAMR3RegisterCallback().
- *
- * This is intended used for devices which can be unplugged and for
- * temporary samples.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   pvSample    Pointer to the register sample.
- */
+STAMR3DECL(int)  STAMR3DeregisterU(PUVM pUVM, void *pvSample);
 STAMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample);
 
 /** @def STAM_REL_DEREG
@@ -1186,73 +1073,18 @@ STAMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample);
 #define STAM_DEREG(pVM, pvSample) \
     STAM_STATS({ STAM_REL_DEREG(pVM, pvSample); })
 
-/**
- * Resets statistics for the specified VM.
- * It's possible to select a subset of the samples.
- *
- * @returns VBox status. (Basically, it cannot fail.)
- * @param   pVM         The VM handle.
- * @param   pszPat      The name matching pattern. See somewhere_where_this_is_described_in_detail.
- *                      If NULL all samples are reset.
- */
-STAMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat);
-
-/**
- * Get a snapshot of the statistics.
- * It's possible to select a subset of the samples.
- *
- * @returns VBox status. (Basically, it cannot fail.)
- * @param   pVM             The VM handle.
- * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
- *                          If NULL all samples are reset.
- * @param   fWithDesc       Whether to include the descriptions.
- * @param   ppszSnapshot    Where to store the pointer to the snapshot data.
- *                          The format of the snapshot should be XML, but that will have to be discussed
- *                          when this function is implemented.
- *                          The returned pointer must be freed by calling STAMR3SnapshotFree().
- * @param   pcchSnapshot    Where to store the size of the snapshot data. (Excluding the trailing '\0')
- */
+STAMR3DECL(int) STAMR3ResetU(PUVM pUVM, const char *pszPat);
+STAMR3DECL(int) STAMR3Reset(PVM pVM, const char *pszPat);
+STAMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
 STAMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
-
-/**
- * Releases a statistics snapshot returned by STAMR3Snapshot().
- *
- * @returns VBox status.
- * @param   pVM             The VM handle.
- * @param   pszSnapshot     The snapshot data pointer returned by STAMR3Snapshot().
- *                          NULL is allowed.
- */
-STAMR3DECL(int)  STAMR3SnapshotFree(PVM pVM, char *pszSnapshot);
-
-/**
- * Dumps the selected statistics to the log.
- *
- * @returns VBox status.
- * @param   pVM             The VM handle.
- * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
- *                          If NULL all samples are reset.
- */
-STAMR3DECL(int)  STAMR3Dump(PVM pVM, const char *pszPat);
-
-/**
- * Dumps the selected statistics to the release log.
- *
- * @returns VBox status.
- * @param   pVM             The VM handle.
- * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
- *                          If NULL all samples are written to the log.
- */
-STAMR3DECL(int)  STAMR3DumpToReleaseLog(PVM pVM, const char *pszPat);
-
-/**
- * Prints the selected statistics to standard out.
- *
- * @returns VBox status.
- * @param   pVM             The VM handle.
- * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
- *                          If NULL all samples are reset.
- */
-STAMR3DECL(int)  STAMR3Print(PVM pVM, const char *pszPat);
+STAMR3DECL(int) STAMR3SnapshotFreeU(PUVM pUVM, char *pszSnapshot);
+STAMR3DECL(int) STAMR3SnapshotFree(PVM pVM, char *pszSnapshot);
+STAMR3DECL(int) STAMR3DumpU(PUVM pUVM, const char *pszPat);
+STAMR3DECL(int) STAMR3Dump(PVM pVM, const char *pszPat);
+STAMR3DECL(int) STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat);
+STAMR3DECL(int) STAMR3DumpToReleaseLog(PVM pVM, const char *pszPat);
+STAMR3DECL(int) STAMR3PrintU(PUVM pUVM, const char *pszPat);
+STAMR3DECL(int) STAMR3Print(PVM pVM, const char *pszPat);
 
 /**
  * Callback function for STAMR3Enum().
@@ -1272,24 +1104,8 @@ typedef DECLCALLBACK(int) FNSTAMR3ENUM(const char *pszName, STAMTYPE enmType, vo
 /** Pointer to a FNSTAMR3ENUM(). */
 typedef FNSTAMR3ENUM *PFNSTAMR3ENUM;
 
-/**
- * Enumerate the statistics by the means of a callback function.
- *
- * @returns Whatever the callback returns.
- *
- * @param   pVM         The VM handle.
- * @param   pszPat      The pattern to match samples.
- * @param   pfnEnum     The callback function.
- * @param   pvUser      The pvUser argument of the callback function.
- */
+STAMR3DECL(int) STAMR3EnumU(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
 STAMR3DECL(int) STAMR3Enum(PVM pVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
-
-/**
- * Get the unit string.
- *
- * @returns Pointer to read only unit string.
- * @param   enmUnit     The unit.
- */
 STAMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit);
 
 /** @} */

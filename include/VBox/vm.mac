@@ -45,8 +45,8 @@ struc VM
     .enmVMState         resd 1
     .fForcedActions     resd 1
     .paVMPagesR3        RTR3PTR_RES 1
-    .pSession           RTR3PTR_RES 1
-    .pNext              RTHCPTR_RES 1
+    .pSession           RTR0PTR_RES 1
+    .pUVM               RTR3PTR_RES 1
     .pVMR3              RTR3PTR_RES 1
     .pVMR0              RTR0PTR_RES 1
     .pVMGC              RTGCPTR_RES 1

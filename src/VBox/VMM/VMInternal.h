@@ -191,6 +191,8 @@ typedef enum
 {
     /** The usual invalid value. */
     VMHALTMETHOD_INVALID = 0,
+    /** Use the method used during bootstrapping. */
+    VMHALTMETHOD_BOOTSTRAP,
     /** Use the default method. */
     VMHALTMETHOD_DEFAULT,
     /** The old spin/yield/block method. */
@@ -222,60 +224,59 @@ typedef struct VMINT
     /** Offset to the VM structure.
      * See VMINT2VM(). */
     RTINT                           offVM;
-
-    /** List of registered reset callbacks. */
-    R3PTRTYPE(PVMATRESET)           pAtReset;
-    /** List of registered reset callbacks. */
-    R3PTRTYPE(PVMATRESET *)         ppAtResetNext;
-
-    /** List of registered state change callbacks. */
-    R3PTRTYPE(PVMATSTATE)           pAtState;
-    /** List of registered state change callbacks. */
-    R3PTRTYPE(PVMATSTATE *)         ppAtStateNext;
-
-    /** List of registered error callbacks. */
-    R3PTRTYPE(PVMATERROR)           pAtError;
-    /** List of registered error callbacks. */
-    R3PTRTYPE(PVMATERROR *)         ppAtErrorNext;
-
-    /** List of registered error callbacks. */
-    R3PTRTYPE(PVMATRUNTIMEERROR)    pAtRuntimeError;
-    /** List of registered error callbacks. */
-    R3PTRTYPE(PVMATRUNTIMEERROR *)  ppAtRuntimeErrorNext;
-
-    /** Head of the request queue. Atomic. */
-    volatile R3PTRTYPE(PVMREQ)      pReqs;
-    /** The last index used during alloc/free. */
-    volatile uint32_t               iReqFree;
-    /** Array of pointers to lists of free request packets. Atomic. */
-    volatile R3PTRTYPE(PVMREQ)      apReqFree[9];
-    /** Number of free request packets. */
-    volatile uint32_t               cReqFree;
-
-    /** Wait/Idle indicator. */
-    volatile uint32_t               fWait;
-    /** Wait event semaphore. */
-    R3PTRTYPE(RTSEMEVENT)           EventSemWait;
-
     /** VM Error Message. */
     R3PTRTYPE(PVMERROR)             pErrorR3;
-
     /** VM Runtime Error Message. */
     R3PTRTYPE(PVMRUNTIMEERROR)      pRuntimeErrorR3;
+    /** Set by VMR3SuspendNoSave; cleared by VMR3Resume; signals the VM is in an inconsistent state and saving is not allowed. */
+    bool                            fPreventSaveState;
+} VMINT, *PVMINT;
 
-    /** Pointer to the DBGC instance data. */
-    R3PTRTYPE(void *)               pvDBGC;
 
+/**
+ * VM internal data kept in the UVM.
+ */
+typedef struct VMINTUSERPERVM
+{
+    /** Head of the request queue. Atomic. */
+    volatile PVMREQ                 pReqs;
+    /** The last index used during alloc/free. */
+    volatile uint32_t               iReqFree;
+    /** Number of free request packets. */
+    volatile uint32_t               cReqFree;
+    /** Array of pointers to lists of free request packets. Atomic. */
+    volatile PVMREQ                 apReqFree[9];
+
+#ifdef VBOX_WITH_STATISTICS
+    /** Number of VMR3ReqAlloc returning a new packet. */
+    STAMCOUNTER                     StatReqAllocNew;
+    /** Number of VMR3ReqAlloc causing races. */
+    STAMCOUNTER                     StatReqAllocRaces;
+    /** Number of VMR3ReqAlloc returning a recycled packet. */
+    STAMCOUNTER                     StatReqAllocRecycled;
+    /** Number of VMR3ReqFree calls. */
+    STAMCOUNTER                     StatReqFree;
+    /** Number of times the request was actually freed. */
+    STAMCOUNTER                     StatReqFreeOverflow;
+#endif
+
+    /** Pointer to the support library session.
+     * Mainly for creation and destruction.. */
+    PSUPDRVSESSION                  pSession;
+
+    /** The handle to the EMT thread. */
+    RTTHREAD                        ThreadEMT;
+    /** The native of the EMT thread. */
+    RTNATIVETHREAD                  NativeThreadEMT;
+    /** Wait event semaphore. */
+    RTSEMEVENT                      EventSemWait;
+    /** Wait/Idle indicator. */
+    bool volatile                   fWait;
+    /** Force EMT to terminate. */
+    bool volatile                   fTerminateEMT;
     /** If set the EMT does the final VM cleanup when it exits.
      * If clear the VMR3Destroy() caller does so. */
     bool                            fEMTDoesTheCleanup;
-
-    /** Set by VMR3SuspendNoSave; cleared by VMR3Resume; signals the VM is in an inconsistent state and saving is not allowed. */
-    bool                            fPreventSaveState;
-
-    /** vmR3EmulationThread longjmp buffer
-     * @todo r=bird: requires union with padding. See EMInternal.h. */
-    jmp_buf                         emtJumpEnv;
 
     /** @name Generic Halt data
      * @{
@@ -373,46 +374,55 @@ typedef struct VMINT
 #endif
     }                               Halt;
 
-    /** @} */
-
-    /** Number of VMR3ReqAlloc returning a new packet. */
-    STAMCOUNTER                     StatReqAllocNew;
-    /** Number of VMR3ReqAlloc causing races. */
-    STAMCOUNTER                     StatReqAllocRaces;
-    /** Number of VMR3ReqAlloc returning a recycled packet. */
-    STAMCOUNTER                     StatReqAllocRecycled;
-    /** Number of VMR3ReqFree calls. */
-    STAMCOUNTER                     StatReqFree;
-    /** Number of times the request was actually freed. */
-    STAMCOUNTER                     StatReqFreeOverflow;
-
-    /** Profiling the halted state; yielding vs blocking. */
+    /** Profiling the halted state; yielding vs blocking.
+     * @{ */
     STAMPROFILE                     StatHaltYield;
     STAMPROFILE                     StatHaltBlock;
     STAMPROFILE                     StatHaltTimers;
     STAMPROFILE                     StatHaltPoll;
-} VMINT, *PVMINT;
+    /** @} */
 
 
-/**
- * Emulation thread arguments.
- */
-typedef struct VMEMULATIONTHREADARGS
-{
-    /** Pointer to the VM structure. */
-    PVM     pVM;
-} VMEMULATIONTHREADARGS;
-/** Pointer to the emulation thread arguments. */
-typedef VMEMULATIONTHREADARGS *PVMEMULATIONTHREADARGS;
+    /** List of registered reset callbacks. */
+    PVMATRESET                      pAtReset;
+    /** List of registered reset callbacks. */
+    PVMATRESET                     *ppAtResetNext;
+
+    /** List of registered state change callbacks. */
+    PVMATSTATE                      pAtState;
+    /** List of registered state change callbacks. */
+    PVMATSTATE                     *ppAtStateNext;
+
+    /** List of registered error callbacks. */
+    PVMATERROR                      pAtError;
+    /** List of registered error callbacks. */
+    PVMATERROR                     *ppAtErrorNext;
+
+    /** List of registered error callbacks. */
+    PVMATRUNTIMEERROR               pAtRuntimeError;
+    /** List of registered error callbacks. */
+    PVMATRUNTIMEERROR              *ppAtRuntimeErrorNext;
+
+    /** Pointer to the DBGC instance data. */
+    void                           *pvDBGC;
+
+
+    /** vmR3EmulationThread longjmp buffer. Must be last in the structure. */
+    jmp_buf                         emtJumpEnv;
+} VMINTUSERPERVM;
+
+/** Pointer to the VM internal data kept in the UVM. */
+typedef VMINTUSERPERVM *PVMINTUSERPERVM;
+
 
 DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArg);
-int vmR3SetHaltMethod(PVM pVM, VMHALTMETHOD enmHaltMethod);
+int vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod);
 DECLCALLBACK(int) vmR3Destroy(PVM pVM);
-DECLCALLBACK(void) vmR3SetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *args);
+DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *args);
 void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args);
 DECLCALLBACK(void) vmR3SetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list *args);
 void vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list args);
-void vmR3DestroyFinalBit(PVM pVM);
+void vmR3DestroyFinalBitFromEMT(PUVM pUVM);
 void vmR3SetState(PVM pVM, VMSTATE enmStateNew);
 
 

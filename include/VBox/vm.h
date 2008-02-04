@@ -238,11 +238,8 @@ typedef struct VM
     R3PTRTYPE(PSUPPAGE)         paVMPagesR3;
     /** Session handle. For use when calling SUPR0 APIs. */
     PSUPDRVSESSION              pSession;
-    /** Pointer to the next VM.
-     * We keep a per process list of VM for the event that a process could
-     * contain more than one VM.
-     */
-    R3PTRTYPE(struct VM *)      pNext;
+    /** Pointer to the ring-3 VM structure. */
+    PUVM                        pUVM;
     /** Ring-3 Host Context VM Pointer. */
     R3PTRTYPE(struct VM *)      pVMR3;
     /** Ring-0 Host Context VM Pointer. */
@@ -496,15 +493,6 @@ typedef struct VM
 #endif
         char        padding[HC_ARCH_BITS == 32 ? 1888 : 1920];      /* multiple of 32 */
     } dbgf;
-
-    /** STAM part. */
-    union
-    {
-#ifdef ___STAMInternal_h
-        struct STAM s;
-#endif
-        char        padding[256];       /* multiple of 32 */
-    } stam;
 
     /** SSM part. */
     union

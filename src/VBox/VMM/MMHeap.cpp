@@ -21,9 +21,11 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_MM_HEAP
 #include <VBox/mm.h>
+#include <VBox/stam.h>
 #include <VBox/pgm.h>
 #include "MMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/log.h>
@@ -47,7 +49,7 @@ static void *mmR3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZer
  * @param   pVM     The handle to the VM the heap should be associated with.
  * @param   ppHeap  Where to store the heap pointer.
  */
-int mmR3HeapCreate(PVM pVM, PMMHEAP *ppHeap)
+int mmR3HeapCreateU(PUVM pUVM, PMMHEAP *ppHeap)
 {
     PMMHEAP pHeap = (PMMHEAP)RTMemAllocZ(sizeof(MMHEAP) + sizeof(MMHEAPSTAT));
     if (pHeap)
@@ -58,19 +60,18 @@ int mmR3HeapCreate(PVM pVM, PMMHEAP *ppHeap)
             /*
              * Initialize the global stat record.
              */
-            pHeap->pVM   = pVM;
-
+            pHeap->pUVM = pUVM;
             pHeap->Stat.pHeap = pHeap;
 #ifdef MMR3HEAP_WITH_STATISTICS
             PMMHEAPSTAT pStat = &pHeap->Stat;
-            STAMR3Register(pVM, &pStat->cAllocations,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cAllocations",     STAMUNIT_CALLS, "Number or MMR3HeapAlloc() calls.");
-            STAMR3Register(pVM, &pStat->cReallocations, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cReallocations",   STAMUNIT_CALLS, "Number of MMR3HeapRealloc() calls.");
-            STAMR3Register(pVM, &pStat->cFrees,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cFrees",           STAMUNIT_CALLS, "Number of MMR3HeapFree() calls.");
-            STAMR3Register(pVM, &pStat->cFailures,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cFailures",        STAMUNIT_COUNT, "Number of failures.");
-            STAMR3Register(pVM, &pStat->cbCurAllocated, sizeof(pStat->cbCurAllocated) == sizeof(uint32_t) ? STAMTYPE_U32 : STAMTYPE_U64,
-                                                                      STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cbCurAllocated",   STAMUNIT_BYTES, "Number of bytes currently allocated.");
-            STAMR3Register(pVM, &pStat->cbAllocated,    STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cbAllocated",      STAMUNIT_BYTES, "Total number of bytes allocated.");
-            STAMR3Register(pVM, &pStat->cbFreed,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cbFreed",          STAMUNIT_BYTES, "Total number of bytes freed.");
+            STAMR3RegisterU(pUVM, &pStat->cAllocations,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cAllocations",     STAMUNIT_CALLS, "Number or MMR3HeapAlloc() calls.");
+            STAMR3RegisterU(pUVM, &pStat->cReallocations, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cReallocations",   STAMUNIT_CALLS, "Number of MMR3HeapRealloc() calls.");
+            STAMR3RegisterU(pUVM, &pStat->cFrees,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cFrees",           STAMUNIT_CALLS, "Number of MMR3HeapFree() calls.");
+            STAMR3RegisterU(pUVM, &pStat->cFailures,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cFailures",        STAMUNIT_COUNT, "Number of failures.");
+            STAMR3RegisterU(pUVM, &pStat->cbCurAllocated, sizeof(pStat->cbCurAllocated) == sizeof(uint32_t) ? STAMTYPE_U32 : STAMTYPE_U64,
+                                                                        STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cbCurAllocated",   STAMUNIT_BYTES, "Number of bytes currently allocated.");
+            STAMR3RegisterU(pUVM, &pStat->cbAllocated,    STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cbAllocated",      STAMUNIT_BYTES, "Total number of bytes allocated.");
+            STAMR3RegisterU(pUVM, &pStat->cbFreed,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, "/MM/R3Heap/cbFreed",          STAMUNIT_BYTES, "Total number of bytes freed.");
 #endif
             *ppHeap = pHeap;
             return VINF_SUCCESS;
@@ -120,7 +121,31 @@ void mmR3HeapDestroy(PMMHEAP pHeap)
  *
  * The memory will be allocated from the default heap but a header
  * is added in which we keep track of which VM it belongs to and chain
- * all the allocations together so they can be freed in a one go.
+ * all the allocations together so they can be freed in one go.
+ *
+ * This interface is typically used for memory block which will not be
+ * freed during the life of the VM.
+ *
+ * @returns Pointer to allocated memory.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   enmTag      Statistics tag. Statistics are collected on a per tag
+ *                      basis in addition to a global one. Thus we can easily
+ *                      identify how memory is used by the VM.
+ * @param   cbSize      Size of the block.
+ */
+MMR3DECL(void *) MMR3HeapAllocU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
+{
+    Assert(pUVM->mm.s.pHeap);
+    return mmR3HeapAlloc(pUVM->mm.s.pHeap, enmTag, cbSize, false);
+}
+
+
+/**
+ * Allocate memory associating it with the VM for collective cleanup.
+ *
+ * The memory will be allocated from the default heap but a header
+ * is added in which we keep track of which VM it belongs to and chain
+ * all the allocations together so they can be freed in one go.
  *
  * This interface is typically used for memory block which will not be
  * freed during the life of the VM.
@@ -134,19 +159,36 @@ void mmR3HeapDestroy(PMMHEAP pHeap)
  */
 MMR3DECL(void *) MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize)
 {
-    if (!pVM->mm.s.pHeap)
+    return mmR3HeapAlloc(pVM->pUVM->mm.s.pHeap, enmTag, cbSize, false);
+}
+
+
+/**
+ * Same as MMR3HeapAllocU().
+ *
+ * @returns Pointer to allocated memory.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   enmTag      Statistics tag. Statistics are collected on a per tag
+ *                      basis in addition to a global one. Thus we can easily
+ *                      identify how memory is used by the VM.
+ * @param   cbSize      Size of the block.
+ * @param   ppv         Where to store the pointer to the allocated memory on success.
+ */
+MMR3DECL(int) MMR3HeapAllocExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv)
+{
+    Assert(pUVM->mm.s.pHeap);
+    void *pv = mmR3HeapAlloc(pUVM->mm.s.pHeap, enmTag, cbSize, false);
+    if (pv)
     {
-        int rc = mmR3HeapCreate(pVM, &pVM->mm.s.pHeap);
-        if (VBOX_FAILURE(rc))
-            return NULL;
+        *ppv = pv;
+        return VINF_SUCCESS;
     }
-    return mmR3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, false);
+    return VERR_NO_MEMORY;
 }
 
 
 /**
  * Same as MMR3HeapAlloc().
- *
  *
  * @returns Pointer to allocated memory.
  * @param   pVM         VM handle.
@@ -158,13 +200,7 @@ MMR3DECL(void *) MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize)
  */
 MMR3DECL(int) MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
 {
-    if (!pVM->mm.s.pHeap)
-    {
-        int rc = mmR3HeapCreate(pVM, &pVM->mm.s.pHeap);
-        if (VBOX_FAILURE(rc))
-            return rc;
-    }
-    void *pv = mmR3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, false);
+    void *pv = mmR3HeapAlloc(pVM->pUVM->mm.s.pHeap, enmTag, cbSize, false);
     if (pv)
     {
         *ppv = pv;
@@ -177,6 +213,21 @@ MMR3DECL(int) MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
 /**
  * Same as MMR3HeapAlloc() only the memory is zeroed.
  *
+ * @returns Pointer to allocated memory.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   enmTag      Statistics tag. Statistics are collected on a per tag
+ *                      basis in addition to a global one. Thus we can easily
+ *                      identify how memory is used by the VM.
+ * @param   cbSize      Size of the block.
+ */
+MMR3DECL(void *) MMR3HeapAllocZU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
+{
+    return mmR3HeapAlloc(pUVM->mm.s.pHeap, enmTag, cbSize, true);
+}
+
+
+/**
+ * Same as MMR3HeapAlloc() only the memory is zeroed.
  *
  * @returns Pointer to allocated memory.
  * @param   pVM         VM handle.
@@ -187,19 +238,36 @@ MMR3DECL(int) MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
  */
 MMR3DECL(void *) MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize)
 {
-    if (!pVM->mm.s.pHeap)
-    {
-        int rc = mmR3HeapCreate(pVM, &pVM->mm.s.pHeap);
-        if (VBOX_FAILURE(rc))
-            return NULL;
-    }
-    return mmR3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, true);
+    return mmR3HeapAlloc(pVM->pUVM->mm.s.pHeap, enmTag, cbSize, true);
 }
 
 
 /**
  * Same as MMR3HeapAllocZ().
  *
+ * @returns Pointer to allocated memory.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   enmTag      Statistics tag. Statistics are collected on a per tag
+ *                      basis in addition to a global one. Thus we can easily
+ *                      identify how memory is used by the VM.
+ * @param   cbSize      Size of the block.
+ * @param   ppv         Where to store the pointer to the allocated memory on success.
+ */
+MMR3DECL(int) MMR3HeapAllocZExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv)
+{
+    Assert(pUVM->mm.s.pHeap);
+    void *pv = mmR3HeapAlloc(pUVM->mm.s.pHeap, enmTag, cbSize, true);
+    if (pv)
+    {
+        *ppv = pv;
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_MEMORY;
+}
+
+
+/**
+ * Same as MMR3HeapAllocZ().
  *
  * @returns Pointer to allocated memory.
  * @param   pVM         VM handle.
@@ -211,13 +279,7 @@ MMR3DECL(void *) MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize)
  */
 MMR3DECL(int) MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
 {
-    if (!pVM->mm.s.pHeap)
-    {
-        int rc = mmR3HeapCreate(pVM, &pVM->mm.s.pHeap);
-        if (VBOX_FAILURE(rc))
-            return rc;
-    }
-    void *pv = mmR3HeapAlloc(pVM->mm.s.pHeap, enmTag, cbSize, true);
+    void *pv = mmR3HeapAlloc(pVM->pUVM->mm.s.pHeap, enmTag, cbSize, true);
     if (pv)
     {
         *ppv = pv;
@@ -238,7 +300,7 @@ MMR3DECL(int) MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
  * @param   cbSize      Size of the block.
  * @param   fZero       Whether or not to zero the memory block.
  */
-void * mmR3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZero)
+void *mmR3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZero)
 {
 #ifdef MMR3HEAP_WITH_STATISTICS
     RTCritSectEnter(&pHeap->Lock);
@@ -272,29 +334,29 @@ void * mmR3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZero)
         RTCritSectLeave(&pHeap->Lock);
 
         /* register the statistics */
-        PVM pVM = pHeap->pVM;
+        PUVM pUVM = pHeap->pUVM;
         char szName[80];
         const char *pszTag = mmR3GetTagName(enmTag);
         RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cAllocations", pszTag);
-        STAMR3Register(pVM, &pStat->cAllocations,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_CALLS, "Number or MMR3HeapAlloc() calls.");
+        STAMR3RegisterU(pUVM, &pStat->cAllocations,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_CALLS, "Number or MMR3HeapAlloc() calls.");
 
         RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cReallocations", pszTag);
-        STAMR3Register(pVM, &pStat->cReallocations, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_CALLS, "Number of MMR3HeapRealloc() calls.");
+        STAMR3RegisterU(pUVM, &pStat->cReallocations, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_CALLS, "Number of MMR3HeapRealloc() calls.");
 
         RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cFrees", pszTag);
-        STAMR3Register(pVM, &pStat->cFrees,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_CALLS, "Number of MMR3HeapFree() calls.");
+        STAMR3RegisterU(pUVM, &pStat->cFrees,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_CALLS, "Number of MMR3HeapFree() calls.");
 
         RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cFailures", pszTag);
-        STAMR3Register(pVM, &pStat->cFailures,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_COUNT, "Number of failures.");
+        STAMR3RegisterU(pUVM, &pStat->cFailures,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_COUNT, "Number of failures.");
 
         RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cbCurAllocated", pszTag);
-        STAMR3Register(pVM, &pStat->cbCurAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_BYTES, "Number of bytes currently allocated.");
+        STAMR3RegisterU(pUVM, &pStat->cbCurAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_BYTES, "Number of bytes currently allocated.");
 
         RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cbAllocated", pszTag);
-        STAMR3Register(pVM, &pStat->cbAllocated,    STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_BYTES, "Total number of bytes allocated.");
+        STAMR3RegisterU(pUVM, &pStat->cbAllocated,    STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_BYTES, "Total number of bytes allocated.");
 
         RTStrPrintf(szName, sizeof(szName), "/MM/R3Heap/%s/cbFreed", pszTag);
-        STAMR3Register(pVM, &pStat->cbFreed,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_BYTES, "Total number of bytes freed.");
+        STAMR3RegisterU(pUVM, &pStat->cbFreed,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName,  STAMUNIT_BYTES, "Total number of bytes freed.");
     }
 #endif
 
@@ -451,13 +513,38 @@ MMR3DECL(void *) MMR3HeapRealloc(void *pv, size_t cbNewSize)
 #ifdef MMR3HEAP_WITH_STATISTICS
     RTCritSectEnter(&pHeap->Lock);
     pHdrNew->pStat->cbAllocated += cbNewSize - pHdrNew->cbSize;
-    pHeap->Stat.cbAllocated   += cbNewSize - pHdrNew->cbSize;
+    pHeap->Stat.cbAllocated += cbNewSize - pHdrNew->cbSize;
     RTCritSectLeave(&pHeap->Lock);
 #endif
 
     pHdrNew->cbSize = cbNewSize;
 
     return pHdrNew + 1;
+}
+
+
+/**
+ * Duplicates the specified string.
+ *
+ * @returns Pointer to the duplicate.
+ * @returns NULL on failure or when input NULL.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   enmTag      Statistics tag. Statistics are collected on a per tag
+ *                      basis in addition to a global one. Thus we can easily
+ *                      identify how memory is used by the VM.
+ * @param   psz         The string to duplicate. NULL is allowed.
+ */
+MMR3DECL(char *) MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz)
+{
+    if (!psz)
+        return NULL;
+    AssertPtr(psz);
+
+    size_t cch = strlen(psz) + 1;
+    char *pszDup = (char *)MMR3HeapAllocU(pUVM, enmTag, cch);
+    if (pszDup)
+        memcpy(pszDup, psz, cch);
+    return pszDup;
 }
 
 
@@ -474,14 +561,7 @@ MMR3DECL(void *) MMR3HeapRealloc(void *pv, size_t cbNewSize)
  */
 MMR3DECL(char *) MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz)
 {
-    if (!psz)
-        return NULL;
-    Assert(VALID_PTR(psz));
-    size_t cch = strlen(psz) + 1;
-    char *pszDup = (char *)MMR3HeapAlloc(pVM, enmTag, cch);
-    if (pszDup)
-        memcpy(pszDup, psz, cch);
-    return pszDup;
+    return MMR3HeapStrDupU(pVM->pUVM, enmTag, psz);
 }
 
 

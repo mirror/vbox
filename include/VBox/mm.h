@@ -339,13 +339,15 @@ MMDECL(void *)      MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange
  * @{
  */
 
+MMR3DECL(int)       MMR3InitUVM(PUVM pUVM);
 MMR3DECL(int)       MMR3Init(PVM pVM);
 MMR3DECL(int)       MMR3InitPaging(PVM pVM);
 MMR3DECL(int)       MMR3HyperInitFinalize(PVM pVM);
 MMR3DECL(int)       MMR3Term(PVM pVM);
+MMR3DECL(void)      MMR3TermUVM(PUVM pUVM);
 MMR3DECL(void)      MMR3Reset(PVM pVM);
 MMR3DECL(int)       MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages);
-MMR3DECL(int)       MMR3IncreateFixedReservation(PVM pVM, uint32_t cAddFixedPages);
+MMR3DECL(int)       MMR3IncreaseFixedReservation(PVM pVM, uint32_t cAddFixedPages);
 MMR3DECL(int)       MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages);
 
 MMR3DECL(int)       MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv);
@@ -403,11 +405,16 @@ MMR3DECL(RTHCPHYS)  MMR3PageDummyHCPhys(PVM pVM);
  * @ingroup grp_mm_r3
  * @{ */
 MMR3DECL(void *)    MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize);
+MMR3DECL(void *)    MMR3HeapAllocU(PUVM pUVM, MMTAG enmTag, size_t cbSize);
 MMR3DECL(int)       MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv);
+MMR3DECL(int)       MMR3HeapAllocExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv);
 MMR3DECL(void *)    MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize);
+MMR3DECL(void *)    MMR3HeapAllocZU(PUVM pUVM, MMTAG enmTag, size_t cbSize);
 MMR3DECL(int)       MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv);
+MMR3DECL(int)       MMR3HeapAllocZExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv);
 MMR3DECL(void *)    MMR3HeapRealloc(void *pv, size_t cbNewSize);
 MMR3DECL(char *)    MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz);
+MMR3DECL(char *)    MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz);
 MMR3DECL(void)      MMR3HeapFree(void *pv);
 /** @} */
 

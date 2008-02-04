@@ -94,23 +94,10 @@ typedef const STAMDESC  *PCSTAMDESC;
 
 
 /**
- * Converts a STAM pointer into a VM pointer.
- * @returns Pointer to the VM structure the STAM is part of.
- * @param   pSTAM   Pointer to STAM instance data.
+ * STAM data kept in the UVM.
  */
-#define STAM2VM(pSTAM)  ( (PVM)((char*)pSTAM - pSTAM->offVM) )
-
-
-/**
- * The stam data in the VM.
- */
-struct STAM
+typedef struct STAMUSERPERVM
 {
-    /** Offset to the VM structure.
-     * See STAM2VM(). */
-    RTINT                   offVM;
-    /** Alignment padding. */
-    RTUINT                  uPadding;
     /** Pointer to the first sample. */
     R3PTRTYPE(PSTAMDESC)    pHead;
     /** RW Lock for the list. */
@@ -118,16 +105,19 @@ struct STAM
 
     /** The copy of the GVMM statistics. */
     GVMMSTATS               GVMMStats;
-};
+} STAMUSERPERVM;
+/** Pointer to the STAM data kept in the UVM. */
+typedef STAMUSERPERVM *PSTAMUSERPERVM;
+
 
 /** Locks the sample descriptors for reading. */
-#define STAM_LOCK_RD(pVM)       do { int rcSem = RTSemRWRequestRead(pVM->stam.s.RWSem, RT_INDEFINITE_WAIT);  AssertRC(rcSem); } while (0)
+#define STAM_LOCK_RD(pUVM)      do { int rcSem = RTSemRWRequestRead(pUVM->stam.s.RWSem, RT_INDEFINITE_WAIT);  AssertRC(rcSem); } while (0)
 /** Locks the sample descriptors for writing. */
-#define STAM_LOCK_WR(pVM)       do { int rcSem = RTSemRWRequestWrite(pVM->stam.s.RWSem, RT_INDEFINITE_WAIT); AssertRC(rcSem); } while (0)
+#define STAM_LOCK_WR(pUVM)      do { int rcSem = RTSemRWRequestWrite(pUVM->stam.s.RWSem, RT_INDEFINITE_WAIT); AssertRC(rcSem); } while (0)
 /** UnLocks the sample descriptors after reading. */
-#define STAM_UNLOCK_RD(pVM)     do { int rcSem = RTSemRWReleaseRead(pVM->stam.s.RWSem);  AssertRC(rcSem); } while (0)
+#define STAM_UNLOCK_RD(pUVM)    do { int rcSem = RTSemRWReleaseRead(pUVM->stam.s.RWSem);  AssertRC(rcSem); } while (0)
 /** UnLocks the sample descriptors after writing. */
-#define STAM_UNLOCK_WR(pVM)     do { int rcSem = RTSemRWReleaseWrite(pVM->stam.s.RWSem); AssertRC(rcSem); } while (0)
+#define STAM_UNLOCK_WR(pUVM)    do { int rcSem = RTSemRWReleaseWrite(pUVM->stam.s.RWSem); AssertRC(rcSem); } while (0)
 
 /** @} */
 

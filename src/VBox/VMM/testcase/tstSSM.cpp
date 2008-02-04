@@ -572,7 +572,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    rc = STAMR3Init(pVM);
+///@todo    rc = STAMR3Init(pVM);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("Fatal error: STAMR3Init failed! rc=%Vrc\n", rc);
