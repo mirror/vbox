@@ -833,13 +833,16 @@ static int VBoxAddSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred
  */
 static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
 {
+    LogFlow((DEVICE_NAME ":VBoxGuestSolarisAddIRQ %p\n", pvState));
+
+    VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
 #if 0
     /*
      * These calls are supposedly deprecated. But Sun seems to use them all over
      * the place. Anyway, once this works we will switch to the highly elaborate
      * and non-obsolete way of setting up IRQs.
      */
-    rc = ddi_get_iblock_cookie(pDip, 0, &pState->BlockCookie);
+    int rc = ddi_get_iblock_cookie(pDip, 0, &pState->BlockCookie);
     if (rc == DDI_SUCCESS)
     {
         mutex_init(&pState->Mtx, "VBoxGuest Driver Mutex", MUTEX_DRIVER, (void *)pState->BlockCookie);
@@ -850,13 +853,9 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
     else
         Log((DEVICE_NAME ":ddi_get_iblock_cookie failed. Cannot set IRQ for VMMDev.\n"));
     return rc;
-#endif
-    int rc;
+#else
     int IntrType;
-    VBoxAddDevState *pState = (VBoxAddDevState *)pvState;
-    LogFlow((DEVICE_NAME ":VBoxGuestSolarisAddIRQ %p\n", pvState));
-
-    rc = ddi_intr_get_supported_types(pDip, &IntrType);
+    int rc = ddi_intr_get_supported_types(pDip, &IntrType);
     if (rc == DDI_SUCCESS)
     {
         /* We won't need to bother about MSIs. */
@@ -936,6 +935,7 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
     else
         LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get supported interrupt types\n"));
     return rc;
+#endif
 }
 
 
@@ -953,7 +953,7 @@ static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState)
 #if 0
     ddi_remove_intr(pDip, 0, pState->BlockCookie);
     mutex_destroy(&pState->Mtx);
-#endif
+#else
     for (int i = 0; i < pState->cIntr; i++)
     {
         int rc = ddi_intr_disable(pState->pIntr[i]);
@@ -966,6 +966,7 @@ static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState)
     }
     RTMemFree(pState->pIntr);
     mutex_destroy(&pState->Mtx);
+#endif
 }
 
 
