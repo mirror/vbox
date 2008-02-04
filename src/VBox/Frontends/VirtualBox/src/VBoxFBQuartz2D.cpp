@@ -134,12 +134,12 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
         rgnRcts->used++;
     }
 //    printf ("..................................\n");
-#if 0
-    void *pvOld = ASMAtomicXchgPtr(&mRegion, rgnRcts);
+
+    void *pvOld = ASMAtomicXchgPtr((void * volatile *)&mRegion, rgnRcts);
     if (    pvOld
-        &&  !ASMAtomicCmpXchgPtr(*mRegionUnused, pvOld, NULL))
+        &&  !ASMAtomicCmpXchgPtr((void * volatile *)&mRegionUnused, pvOld, NULL))
         RTMemFree(pvOld);
-#endif
+
     QApplication::postEvent (mView, new VBoxSetRegionEvent (reg));
 
     return S_OK;
