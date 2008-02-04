@@ -28,6 +28,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/assert.h>
 /** @todo #include <iprt/param.h> for PAGE_SIZE. */
 /** @def RT_INLINE_ASM_USES_INTRIN
  * Defined as 1 if we're using a _MSC_VER 1400.
@@ -97,6 +98,17 @@
 
 /** @defgroup grp_asm       ASM - Assembly Routines
  * @ingroup grp_rt
+ *
+ * @remarks The difference between ordered and unordered atomic operations are that
+ *          the former will complete outstanding reads and writes before continuing
+ *          while the latter doesn't make any promisses about the order. Ordered
+ *          operations doesn't, it seems, make any 100% promise wrt to whether
+ *          the operation will complete before any subsequent memory access.
+ *          (please, correct if wrong.)
+ *
+ *          ASMAtomicSomething operations are all ordered, while ASMAtomicUoSomething
+ *          are unordered (note the Uo).
+ *
  * @{
  */
 
@@ -1613,7 +1625,7 @@ DECLINLINE(void) ASMCompilerBarrier(void)
 
 
 /**
- * Writes a 8-bit unsigned integer to an I/O port.
+ * Writes a 8-bit unsigned integer to an I/O port, ordered.
  *
  * @param   Port    I/O port to read from.
  * @param   u8      8-bit integer to write.
@@ -1644,7 +1656,7 @@ DECLINLINE(void) ASMOutU8(RTIOPORT Port, uint8_t u8)
 
 
 /**
- * Gets a 8-bit unsigned integer from an I/O port.
+ * Gets a 8-bit unsigned integer from an I/O port, ordered.
  *
  * @returns 8-bit integer.
  * @param   Port    I/O port to read from.
@@ -1677,7 +1689,7 @@ DECLINLINE(uint8_t) ASMInU8(RTIOPORT Port)
 
 
 /**
- * Writes a 16-bit unsigned integer to an I/O port.
+ * Writes a 16-bit unsigned integer to an I/O port, ordered.
  *
  * @param   Port    I/O port to read from.
  * @param   u16     16-bit integer to write.
@@ -1708,7 +1720,7 @@ DECLINLINE(void) ASMOutU16(RTIOPORT Port, uint16_t u16)
 
 
 /**
- * Gets a 16-bit unsigned integer from an I/O port.
+ * Gets a 16-bit unsigned integer from an I/O port, ordered.
  *
  * @returns 16-bit integer.
  * @param   Port    I/O port to read from.
@@ -1741,7 +1753,7 @@ DECLINLINE(uint16_t) ASMInU16(RTIOPORT Port)
 
 
 /**
- * Writes a 32-bit unsigned integer to an I/O port.
+ * Writes a 32-bit unsigned integer to an I/O port, ordered.
  *
  * @param   Port    I/O port to read from.
  * @param   u32     32-bit integer to write.
@@ -1772,7 +1784,7 @@ DECLINLINE(void) ASMOutU32(RTIOPORT Port, uint32_t u32)
 
 
 /**
- * Gets a 32-bit unsigned integer from an I/O port.
+ * Gets a 32-bit unsigned integer from an I/O port, ordered.
  *
  * @returns 32-bit integer.
  * @param   Port    I/O port to read from.
@@ -1803,9 +1815,11 @@ DECLINLINE(uint32_t) ASMInU32(RTIOPORT Port)
 }
 #endif
 
+/** @todo string i/o */
+
 
 /**
- * Atomically Exchange an unsigned 8-bit value.
+ * Atomically Exchange an unsigned 8-bit value, ordered.
  *
  * @returns Current *pu8 value
  * @param   pu8    Pointer to the 8-bit variable to update.
@@ -1843,7 +1857,7 @@ DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t *pu8, uint8_t u8)
 
 
 /**
- * Atomically Exchange a signed 8-bit value.
+ * Atomically Exchange a signed 8-bit value, ordered.
  *
  * @returns Current *pu8 value
  * @param   pi8     Pointer to the 8-bit variable to update.
@@ -1856,7 +1870,7 @@ DECLINLINE(int8_t) ASMAtomicXchgS8(volatile int8_t *pi8, int8_t i8)
 
 
 /**
- * Atomically Exchange a bool value.
+ * Atomically Exchange a bool value, ordered.
  *
  * @returns Current *pf value
  * @param   pf      Pointer to the 8-bit variable to update.
@@ -1873,7 +1887,7 @@ DECLINLINE(bool) ASMAtomicXchgBool(volatile bool *pf, bool f)
 
 
 /**
- * Atomically Exchange an unsigned 16-bit value.
+ * Atomically Exchange an unsigned 16-bit value, ordered.
  *
  * @returns Current *pu16 value
  * @param   pu16    Pointer to the 16-bit variable to update.
@@ -1911,7 +1925,7 @@ DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t *pu16, uint16_t u16)
 
 
 /**
- * Atomically Exchange a signed 16-bit value.
+ * Atomically Exchange a signed 16-bit value, ordered.
  *
  * @returns Current *pu16 value
  * @param   pi16    Pointer to the 16-bit variable to update.
@@ -1924,7 +1938,7 @@ DECLINLINE(int16_t) ASMAtomicXchgS16(volatile int16_t *pi16, int16_t i16)
 
 
 /**
- * Atomically Exchange an unsigned 32-bit value.
+ * Atomically Exchange an unsigned 32-bit value, ordered.
  *
  * @returns Current *pu32 value
  * @param   pu32    Pointer to the 32-bit variable to update.
@@ -1966,7 +1980,7 @@ DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t *pu32, uint32_t u32)
 
 
 /**
- * Atomically Exchange a signed 32-bit value.
+ * Atomically Exchange a signed 32-bit value, ordered.
  *
  * @returns Current *pu32 value
  * @param   pi32    Pointer to the 32-bit variable to update.
@@ -1979,7 +1993,7 @@ DECLINLINE(int32_t) ASMAtomicXchgS32(volatile int32_t *pi32, int32_t i32)
 
 
 /**
- * Atomically Exchange an unsigned 64-bit value.
+ * Atomically Exchange an unsigned 64-bit value, ordered.
  *
  * @returns Current *pu64 value
  * @param   pu64    Pointer to the 64-bit variable to update.
@@ -2057,7 +2071,7 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
 
 
 /**
- * Atomically Exchange an signed 64-bit value.
+ * Atomically Exchange an signed 64-bit value, ordered.
  *
  * @returns Current *pi64 value
  * @param   pi64    Pointer to the 64-bit variable to update.
@@ -2071,7 +2085,7 @@ DECLINLINE(int64_t) ASMAtomicXchgS64(volatile int64_t *pi64, int64_t i64)
 
 #ifdef RT_ARCH_AMD64
 /**
- * Atomically Exchange an unsigned 128-bit value.
+ * Atomically Exchange an unsigned 128-bit value, ordered.
  *
  * @returns Current *pu128.
  * @param   pu128   Pointer to the 128-bit variable to update.
@@ -2131,89 +2145,8 @@ DECLINLINE(uint128_t) ASMAtomicXchgU128(volatile uint128_t *pu128, uint128_t u12
 
 
 /**
- * Atomically Reads a unsigned 64-bit value.
- *
- * @returns Current *pu64 value
- * @param   pu64    Pointer to the 64-bit variable to read.
- *                  The memory pointed to must be writable.
- * @remark  This will fault if the memory is read-only!
- */
-#if RT_INLINE_ASM_EXTERNAL
-DECLASM(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64);
-#else
-DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
-{
-    uint64_t u64;
-# ifdef RT_ARCH_AMD64
-#  if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("movq %1, %0\n\t"
-                         : "=r" (u64)
-                         : "m" (*pu64));
-#  else
-    __asm
-    {
-        mov     rdx, [pu64]
-        mov     rax, [rdx]
-        mov     [u64], rax
-    }
-#  endif
-# else /* !RT_ARCH_AMD64 */
-#  if RT_INLINE_ASM_GNU_STYLE
-#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
-    uint32_t u32EBX = 0;
-    __asm__ __volatile__("xchgl %%ebx, %3\n\t"
-                         "lock; cmpxchg8b (%5)\n\t"
-                         "xchgl %%ebx, %3\n\t"
-                         : "=A" (u64),
-                           "=m" (*pu64)
-                         : "0" (0),
-                           "m" (u32EBX),
-                           "c" (0),
-                           "S" (pu64));
-#   else /* !PIC */
-    __asm__ __volatile__("lock; cmpxchg8b %1\n\t"
-                         : "=A" (u64),
-                           "=m" (*pu64)
-                         : "0" (0),
-                           "b" (0),
-                           "c" (0));
-#   endif
-#  else
-    __asm
-    {
-        xor     eax, eax
-        xor     edx, edx
-        mov     edi, pu64
-        xor     ecx, ecx
-        xor     ebx, ebx
-        lock cmpxchg8b [edi]
-        mov     dword ptr [u64], eax
-        mov     dword ptr [u64 + 4], edx
-    }
-#  endif
-# endif /* !RT_ARCH_AMD64 */
-    return u64;
-}
-#endif
-
-
-/**
- * Atomically Reads a signed 64-bit value.
- *
- * @returns Current *pi64 value
- * @param   pi64    Pointer to the 64-bit variable to read.
- *                  The memory pointed to must be writable.
- * @remark  This will fault if the memory is read-only!
- */
-DECLINLINE(int64_t) ASMAtomicReadS64(volatile int64_t *pi64)
-{
-    return (int64_t)ASMAtomicReadU64((volatile uint64_t *)pi64);
-}
-
-
-/**
  * Atomically Exchange a value which size might differ
- * between platforms or compilers.
+ * between platforms or compilers, ordered.
  *
  * @param   pu      Pointer to the variable to update.
  * @param   uNew    The value to assign to *pu.
@@ -2231,7 +2164,7 @@ DECLINLINE(int64_t) ASMAtomicReadS64(volatile int64_t *pi64)
 
 
 /**
- * Atomically Exchange a pointer value.
+ * Atomically Exchange a pointer value, ordered.
  *
  * @returns Current *ppv value
  * @param   ppv    Pointer to the pointer variable to update.
@@ -2250,7 +2183,7 @@ DECLINLINE(void *) ASMAtomicXchgPtr(void * volatile *ppv, void *pv)
 
 
 /**
- * Atomically Compare and Exchange an unsigned 32-bit value.
+ * Atomically Compare and Exchange an unsigned 32-bit value, ordered.
  *
  * @returns true if xchg was done.
  * @returns false if xchg wasn't done.
@@ -2304,7 +2237,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t *pu32, const uint32_t u32
 
 
 /**
- * Atomically Compare and Exchange a signed 32-bit value.
+ * Atomically Compare and Exchange a signed 32-bit value, ordered.
  *
  * @returns true if xchg was done.
  * @returns false if xchg wasn't done.
@@ -2320,7 +2253,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS32(volatile int32_t *pi32, const int32_t i32Ne
 
 
 /**
- * Atomically Compare and exchange an unsigned 64-bit value.
+ * Atomically Compare and exchange an unsigned 64-bit value, ordered.
  *
  * @returns true if xchg was done.
  * @returns false if xchg wasn't done.
@@ -2412,7 +2345,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
 
 
 /**
- * Atomically Compare and exchange a signed 64-bit value.
+ * Atomically Compare and exchange a signed 64-bit value, ordered.
  *
  * @returns true if xchg was done.
  * @returns false if xchg wasn't done.
@@ -2429,7 +2362,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t *pi64, const int64_t i64, 
 
 /** @def ASMAtomicCmpXchgSize
  * Atomically Compare and Exchange a value which size might differ
- * between platforms or compilers.
+ * between platforms or compilers, ordered.
  *
  * @param   pu          Pointer to the value to update.
  * @param   uNew        The new value to assigned to *pu.
@@ -2451,7 +2384,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t *pi64, const int64_t i64, 
 
 
 /**
- * Atomically Compare and Exchange a pointer value.
+ * Atomically Compare and Exchange a pointer value, ordered.
  *
  * @returns true if xchg was done.
  * @returns false if xchg wasn't done.
@@ -2474,7 +2407,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtr(void * volatile *ppv, void *pvNew, void *pv
 
 /**
  * Atomically Compare and Exchange an unsigned 32-bit value, additionally
- * passes back old value.
+ * passes back old value, ordered.
  *
  * @returns true if xchg was done.
  * @returns false if xchg wasn't done.
@@ -2535,7 +2468,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t *pu32, const uint32_t u
 
 /**
  * Atomically Compare and Exchange a signed 32-bit value, additionally
- * passes back old value.
+ * passes back old value, ordered.
  *
  * @returns true if xchg was done.
  * @returns false if xchg wasn't done.
@@ -2553,7 +2486,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS32(volatile int32_t *pi32, const int32_t i32
 
 /**
  * Atomically Compare and exchange an unsigned 64-bit value, additionally
- * passing back old value.
+ * passing back old value, ordered.
  *
  * @returns true if xchg was done.
  * @returns false if xchg wasn't done.
@@ -2652,7 +2585,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t *pu64, const uint64_t u
 
 /**
  * Atomically Compare and exchange a signed 64-bit value, additionally
- * passing back old value.
+ * passing back old value, ordered.
  *
  * @returns true if xchg was done.
  * @returns false if xchg wasn't done.
@@ -2695,7 +2628,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
 
 /**
  * Atomically Compare and Exchange a pointer value, additionally
- * passing back old value.
+ * passing back old value, ordered.
  *
  * @returns true if xchg was done.
  * @returns false if xchg wasn't done.
@@ -2718,7 +2651,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExPtr(void * volatile *ppv, void *pvNew, void *
 
 
 /**
- * Atomically increment a 32-bit value.
+ * Atomically increment a 32-bit value, ordered.
  *
  * @returns The new value.
  * @param   pu32        Pointer to the value to increment.
@@ -2760,7 +2693,7 @@ DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile *pu32)
 
 
 /**
- * Atomically increment a signed 32-bit value.
+ * Atomically increment a signed 32-bit value, ordered.
  *
  * @returns The new value.
  * @param   pi32        Pointer to the value to increment.
@@ -2772,7 +2705,7 @@ DECLINLINE(int32_t) ASMAtomicIncS32(int32_t volatile *pi32)
 
 
 /**
- * Atomically decrement an unsigned 32-bit value.
+ * Atomically decrement an unsigned 32-bit value, ordered.
  *
  * @returns The new value.
  * @param   pu32        Pointer to the value to decrement.
@@ -2814,7 +2747,7 @@ DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile *pu32)
 
 
 /**
- * Atomically decrement a signed 32-bit value.
+ * Atomically decrement a signed 32-bit value, ordered.
  *
  * @returns The new value.
  * @param   pi32        Pointer to the value to decrement.
@@ -2826,7 +2759,7 @@ DECLINLINE(int32_t) ASMAtomicDecS32(int32_t volatile *pi32)
 
 
 /**
- * Atomically Or an unsigned 32-bit value.
+ * Atomically Or an unsigned 32-bit value, ordered.
  *
  * @param   pu32   Pointer to the pointer variable to OR u32 with.
  * @param   u32    The value to OR *pu32 with.
@@ -2861,7 +2794,7 @@ DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile *pu32, uint32_t u32)
 
 
 /**
- * Atomically Or a signed 32-bit value.
+ * Atomically Or a signed 32-bit value, ordered.
  *
  * @param   pi32   Pointer to the pointer variable to OR u32 with.
  * @param   i32    The value to OR *pu32 with.
@@ -2873,7 +2806,7 @@ DECLINLINE(void) ASMAtomicOrS32(int32_t volatile *pi32, int32_t i32)
 
 
 /**
- * Atomically And an unsigned 32-bit value.
+ * Atomically And an unsigned 32-bit value, ordered.
  *
  * @param   pu32   Pointer to the pointer variable to AND u32 with.
  * @param   u32    The value to AND *pu32 with.
@@ -2908,7 +2841,7 @@ DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile *pu32, uint32_t u32)
 
 
 /**
- * Atomically And a signed 32-bit value.
+ * Atomically And a signed 32-bit value, ordered.
  *
  * @param   pi32   Pointer to the pointer variable to AND i32 with.
  * @param   i32    The value to AND *pi32 with.
@@ -2917,6 +2850,771 @@ DECLINLINE(void) ASMAtomicAndS32(int32_t volatile *pi32, int32_t i32)
 {
     ASMAtomicAndU32((uint32_t volatile *)pi32, (uint32_t)i32);
 }
+
+
+/**
+ * Memory fence, waits for any pending writes and reads to complete.
+ */
+DECLINLINE(void) ASMMemoryFence(void)
+{
+    /** @todo use mfence? check if all cpus we care for support it. */
+    uint32_t volatile u32;
+    ASMAtomicXchgU32(&u32, 0);
+}
+
+
+/**
+ * Write fence, waits for any pending writes to complete.
+ */
+DECLINLINE(void) ASMWriteFence(void)
+{
+    /** @todo use sfence? check if all cpus we care for support it. */
+    ASMMemoryFence();
+}
+
+
+/**
+ * Read fence, waits for any pending reads to complete.
+ */
+DECLINLINE(void) ASMReadFence(void)
+{
+    /** @todo use lfence? check if all cpus we care for support it. */
+    ASMMemoryFence();
+}
+
+
+/**
+ * Atomically reads an unsigned 8-bit value, ordered.
+ *
+ * @returns Current *pu8 value
+ * @param   pu8    Pointer to the 8-bit variable to read.
+ */
+DECLINLINE(uint8_t) ASMAtomicReadU8(volatile uint8_t *pu8)
+{
+    ASMMemoryFence();
+    return *pu8;    /* byte reads are atomic on x86 */
+}
+
+
+/**
+ * Atomically reads an unsigned 8-bit value, unordered.
+ *
+ * @returns Current *pu8 value
+ * @param   pu8    Pointer to the 8-bit variable to read.
+ */
+DECLINLINE(uint8_t) ASMAtomicUoReadU8(volatile uint8_t *pu8)
+{
+    return *pu8;    /* byte reads are atomic on x86 */
+}
+
+
+/**
+ * Atomically reads a signed 8-bit value, ordered.
+ *
+ * @returns Current *pi8 value
+ * @param   pi8    Pointer to the 8-bit variable to read.
+ */
+DECLINLINE(int8_t) ASMAtomicReadS8(volatile int8_t *pi8)
+{
+    ASMMemoryFence();
+    return *pi8;    /* byte reads are atomic on x86 */
+}
+
+
+/**
+ * Atomically reads a signed 8-bit value, unordered.
+ *
+ * @returns Current *pi8 value
+ * @param   pi8    Pointer to the 8-bit variable to read.
+ */
+DECLINLINE(int8_t) ASMAtomicUoReadS8(volatile int8_t *pi8)
+{
+    return *pi8;    /* byte reads are atomic on x86 */
+}
+
+
+/**
+ * Atomically reads an unsigned 16-bit value, ordered.
+ *
+ * @returns Current *pu16 value
+ * @param   pu16    Pointer to the 16-bit variable to read.
+ */
+DECLINLINE(uint16_t) ASMAtomicReadU16(volatile uint16_t *pu16)
+{
+    ASMMemoryFence();
+    Assert(!((uintptr_t)pu16 & 1));
+    return *pu16;
+}
+
+
+/**
+ * Atomically reads an unsigned 16-bit value, unordered.
+ *
+ * @returns Current *pu16 value
+ * @param   pu16    Pointer to the 16-bit variable to read.
+ */
+DECLINLINE(uint16_t) ASMAtomicUoReadU16(volatile uint16_t *pu16)
+{
+    Assert(!((uintptr_t)pu16 & 1));
+    return *pu16;
+}
+
+
+/**
+ * Atomically reads a signed 16-bit value, ordered.
+ *
+ * @returns Current *pi16 value
+ * @param   pi16    Pointer to the 16-bit variable to read.
+ */
+DECLINLINE(int16_t) ASMAtomicReadS16(volatile int16_t *pi16)
+{
+    ASMMemoryFence();
+    Assert(!((uintptr_t)pi16 & 1));
+    return *pi16;
+}
+
+
+/**
+ * Atomically reads a signed 16-bit value, unordered.
+ *
+ * @returns Current *pi16 value
+ * @param   pi16    Pointer to the 16-bit variable to read.
+ */
+DECLINLINE(int16_t) ASMAtomicUoReadS16(volatile int16_t *pi16)
+{
+    Assert(!((uintptr_t)pi16 & 1));
+    return *pi16;
+}
+
+
+/**
+ * Atomically reads an unsigned 32-bit value, ordered.
+ *
+ * @returns Current *pu32 value
+ * @param   pu32    Pointer to the 32-bit variable to read.
+ */
+DECLINLINE(uint32_t) ASMAtomicReadU32(volatile uint32_t *pu32)
+{
+    ASMMemoryFence();
+    Assert(!((uintptr_t)pu32 & 3));
+    return *pu32;
+}
+
+
+/**
+ * Atomically reads an unsigned 32-bit value, unordered.
+ *
+ * @returns Current *pu32 value
+ * @param   pu32    Pointer to the 32-bit variable to read.
+ */
+DECLINLINE(uint32_t) ASMAtomicUoReadU32(volatile uint32_t *pu32)
+{
+    Assert(!((uintptr_t)pu32 & 3));
+    return *pu32;
+}
+
+
+/**
+ * Atomically reads a signed 32-bit value, ordered.
+ *
+ * @returns Current *pi32 value
+ * @param   pi32    Pointer to the 32-bit variable to read.
+ */
+DECLINLINE(int32_t) ASMAtomicReadS32(volatile int32_t *pi32)
+{
+    ASMMemoryFence();
+    Assert(!((uintptr_t)pi32 & 3));
+    return *pi32;
+}
+
+
+/**
+ * Atomically reads a signed 32-bit value, unordered.
+ *
+ * @returns Current *pi32 value
+ * @param   pi32    Pointer to the 32-bit variable to read.
+ */
+DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t *pi32)
+{
+    Assert(!((uintptr_t)pi32 & 3));
+    return *pi32;
+}
+
+
+/**
+ * Atomically reads an unsigned 64-bit value, ordered.
+ *
+ * @returns Current *pu64 value
+ * @param   pu64    Pointer to the 64-bit variable to read.
+ *                  The memory pointed to must be writable.
+ * @remark  This will fault if the memory is read-only!
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64);
+#else
+DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
+{
+    uint64_t u64;
+# ifdef RT_ARCH_AMD64
+#  if RT_INLINE_ASM_GNU_STYLE
+    Assert(!((uintptr_t)pu64 & 7));
+    __asm__ __volatile__(  "mfence\n\t"
+                           "movq %1, %0\n\t"
+                         : "=r" (u64)
+                         : "m" (*pu64));
+#  else
+    __asm
+    {
+        mfence
+        mov     rdx, [pu64]
+        mov     rax, [rdx]
+        mov     [u64], rax
+    }
+#  endif
+# else /* !RT_ARCH_AMD64 */
+#  if RT_INLINE_ASM_GNU_STYLE
+#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
+    uint32_t u32EBX = 0;
+    Assert(!((uintptr_t)pu64 & 7));
+    __asm__ __volatile__("xchgl %%ebx, %3\n\t"
+                         "lock; cmpxchg8b (%5)\n\t"
+                         "xchgl %%ebx, %3\n\t"
+                         : "=A" (u64),
+                           "=m" (*pu64)
+                         : "0" (0),
+                           "m" (u32EBX),
+                           "c" (0),
+                           "S" (pu64));
+#   else /* !PIC */
+    __asm__ __volatile__("lock; cmpxchg8b %1\n\t"
+                         : "=A" (u64),
+                           "=m" (*pu64)
+                         : "0" (0),
+                           "b" (0),
+                           "c" (0));
+#   endif
+#  else
+    Assert(!((uintptr_t)pu64 & 7));
+    __asm
+    {
+        xor     eax, eax
+        xor     edx, edx
+        mov     edi, pu64
+        xor     ecx, ecx
+        xor     ebx, ebx
+        lock cmpxchg8b [edi]
+        mov     dword ptr [u64], eax
+        mov     dword ptr [u64 + 4], edx
+    }
+#  endif
+# endif /* !RT_ARCH_AMD64 */
+    return u64;
+}
+#endif
+
+
+/**
+ * Atomically reads an unsigned 64-bit value, unordered.
+ *
+ * @returns Current *pu64 value
+ * @param   pu64    Pointer to the 64-bit variable to read.
+ *                  The memory pointed to must be writable.
+ * @remark  This will fault if the memory is read-only!
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64);
+#else
+DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
+{
+    uint64_t u64;
+# ifdef RT_ARCH_AMD64
+#  if RT_INLINE_ASM_GNU_STYLE
+    Assert(!((uintptr_t)pu64 & 7));
+    __asm__ __volatile__("movq %1, %0\n\t"
+                         : "=r" (u64)
+                         : "m" (*pu64));
+#  else
+    __asm
+    {
+        mov     rdx, [pu64]
+        mov     rax, [rdx]
+        mov     [u64], rax
+    }
+#  endif
+# else /* !RT_ARCH_AMD64 */
+#  if RT_INLINE_ASM_GNU_STYLE
+#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
+    uint32_t u32EBX = 0;
+    Assert(!((uintptr_t)pu64 & 7));
+    __asm__ __volatile__("xchgl %%ebx, %3\n\t"
+                         "lock; cmpxchg8b (%5)\n\t"
+                         "xchgl %%ebx, %3\n\t"
+                         : "=A" (u64),
+                           "=m" (*pu64)
+                         : "0" (0),
+                           "m" (u32EBX),
+                           "c" (0),
+                           "S" (pu64));
+#   else /* !PIC */
+    __asm__ __volatile__("cmpxchg8b %1\n\t"
+                         : "=A" (u64),
+                           "=m" (*pu64)
+                         : "0" (0),
+                           "b" (0),
+                           "c" (0));
+#   endif
+#  else
+    Assert(!((uintptr_t)pu64 & 7));
+    __asm
+    {
+        xor     eax, eax
+        xor     edx, edx
+        mov     edi, pu64
+        xor     ecx, ecx
+        xor     ebx, ebx
+        lock cmpxchg8b [edi]
+        mov     dword ptr [u64], eax
+        mov     dword ptr [u64 + 4], edx
+    }
+#  endif
+# endif /* !RT_ARCH_AMD64 */
+    return u64;
+}
+#endif
+
+
+/**
+ * Atomically reads a signed 64-bit value, ordered.
+ *
+ * @returns Current *pi64 value
+ * @param   pi64    Pointer to the 64-bit variable to read.
+ *                  The memory pointed to must be writable.
+ * @remark  This will fault if the memory is read-only!
+ */
+DECLINLINE(int64_t) ASMAtomicReadS64(volatile int64_t *pi64)
+{
+    return (int64_t)ASMAtomicReadU64((volatile uint64_t *)pi64);
+}
+
+
+/**
+ * Atomically reads a signed 64-bit value, unordered.
+ *
+ * @returns Current *pi64 value
+ * @param   pi64    Pointer to the 64-bit variable to read.
+ *                  The memory pointed to must be writable.
+ * @remark  This will fault if the memory is read-only!
+ */
+DECLINLINE(int64_t) ASMAtomicUoReadS64(volatile int64_t *pi64)
+{
+    return (int64_t)ASMAtomicUoReadU64((volatile uint64_t *)pi64);
+}
+
+
+/**
+ * Atomically reads a pointer value, ordered.
+ *
+ * @returns Current *pv value
+ * @param   ppv     Pointer to the pointer variable to read.
+ */
+DECLINLINE(void *) ASMAtomicReadPtr(void * volatile *ppv)
+{
+#if ARCH_BITS == 32
+    return (void *)ASMAtomicReadU32((volatile uint32_t *)(void *)ppv);
+#elif ARCH_BITS == 64
+    return (void *)ASMAtomicReadU64((volatile uint64_t *)(void *)ppv);
+#else
+# error "ARCH_BITS is bogus"
+#endif
+}
+
+
+/**
+ * Atomically reads a pointer value, unordered.
+ *
+ * @returns Current *pv value
+ * @param   ppv     Pointer to the pointer variable to read.
+ */
+DECLINLINE(void *) ASMAtomicUoReadPtr(void * volatile *ppv)
+{
+#if ARCH_BITS == 32
+    return (void *)ASMAtomicUoReadU32((volatile uint32_t *)(void *)ppv);
+#elif ARCH_BITS == 64
+    return (void *)ASMAtomicUoReadU64((volatile uint64_t *)(void *)ppv);
+#else
+# error "ARCH_BITS is bogus"
+#endif
+}
+
+
+/**
+ * Atomically reads a boolean value, ordered.
+ *
+ * @returns Current *pf value
+ * @param   pf      Pointer to the boolean variable to read.
+ */
+DECLINLINE(bool) ASMAtomicReadBool(volatile bool *pf)
+{
+    ASMMemoryFence();
+    return *pf;     /* byte reads are atomic on x86 */
+}
+
+
+/**
+ * Atomically reads a boolean value, unordered.
+ *
+ * @returns Current *pf value
+ * @param   pf      Pointer to the boolean variable to read.
+ */
+DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
+{
+    return *pf;     /* byte reads are atomic on x86 */
+}
+
+
+/**
+ * Atomically read a value which size might differ
+ * between platforms or compilers, ordered.
+ *
+ * @param   pu      Pointer to the variable to update.
+ * @param   puRes   Where to store the result.
+ */
+#define ASMAtomicReadSize(pu, puRes) \
+    do { \
+        switch (sizeof(*(pu))) { \
+            case 1: *(uint8_t  *)(puRes) = ASMAtomicReadU8( (volatile uint8_t  *)(void *)(pu)); break; \
+            case 2: *(uint16_t *)(puRes) = ASMAtomicReadU16((volatile uint16_t *)(void *)(pu)); break; \
+            case 4: *(uint32_t *)(puRes) = ASMAtomicReadU32((volatile uint32_t *)(void *)(pu)); break; \
+            case 8: *(uint64_t *)(puRes) = ASMAtomicReadU64((volatile uint64_t *)(void *)(pu)); break; \
+            default: AssertMsgFailed(("ASMAtomicReadSize: size %d is not supported\n", sizeof(*(pu)))); \
+        } \
+    } while (0)
+
+
+/**
+ * Atomically read a value which size might differ
+ * between platforms or compilers, unordered.
+ *
+ * @param   pu      Pointer to the variable to update.
+ * @param   puRes   Where to store the result.
+ */
+#define ASMAtomicUoReadSize(pu, puRes) \
+    do { \
+        switch (sizeof(*(pu))) { \
+            case 1: *(uint8_t  *)(puRes) = ASMAtomicUoReadU8( (volatile uint8_t  *)(void *)(pu)); break; \
+            case 2: *(uint16_t *)(puRes) = ASMAtomicUoReadU16((volatile uint16_t *)(void *)(pu)); break; \
+            case 4: *(uint32_t *)(puRes) = ASMAtomicUoReadU32((volatile uint32_t *)(void *)(pu)); break; \
+            case 8: *(uint64_t *)(puRes) = ASMAtomicUoReadU64((volatile uint64_t *)(void *)(pu)); break; \
+            default: AssertMsgFailed(("ASMAtomicReadSize: size %d is not supported\n", sizeof(*(pu)))); \
+        } \
+    } while (0)
+
+
+/**
+ * Atomically writes an unsigned 8-bit value, ordered.
+ *
+ * @param   pu8     Pointer to the 8-bit variable.
+ * @param   u8      The 8-bit value to assign to *pu8.
+ */
+DECLINLINE(void) ASMAtomicWriteU8(volatile uint8_t *pu8, uint8_t u8)
+{
+    ASMAtomicXchgU8(pu8, u8);
+}
+
+
+/**
+ * Atomically writes an unsigned 8-bit value, unordered.
+ *
+ * @param   pu8     Pointer to the 8-bit variable.
+ * @param   u8      The 8-bit value to assign to *pu8.
+ */
+DECLINLINE(void) ASMAtomicUoWriteU8(volatile uint8_t *pu8, uint8_t u8)
+{
+    *pu8 = u8;      /* byte writes are atomic on x86 */
+}
+
+
+/**
+ * Atomically writes a signed 8-bit value, ordered.
+ *
+ * @param   pi8     Pointer to the 8-bit variable to read.
+ * @param   u8      The 8-bit value to assign to *pu8.
+ */
+DECLINLINE(void) ASMAtomicWriteS8(volatile int8_t *pi8, int8_t i8)
+{
+    ASMAtomicXchgS8(pi8, i8);
+}
+
+
+/**
+ * Atomically writes a signed 8-bit value, unordered.
+ *
+ * @param   pi8     Pointer to the 8-bit variable to read.
+ * @param   u8      The 8-bit value to assign to *pu8.
+ */
+DECLINLINE(void) ASMAtomicUoWriteS8(volatile int8_t *pi8, int8_t i8)
+{
+    *pi8 = i8;      /* byte writes are atomic on x86 */
+}
+
+
+/**
+ * Atomically writes an unsigned 16-bit value, ordered.
+ *
+ * @param   pu16    Pointer to the 16-bit variable.
+ * @param   u16     The 16-bit value to assign to *pu16.
+ */
+DECLINLINE(void) ASMAtomicWriteU16(volatile uint16_t *pu16, uint16_t u16)
+{
+    ASMAtomicXchgU16(pu16, u16);
+}
+
+
+/**
+ * Atomically writes an unsigned 16-bit value, unordered.
+ *
+ * @param   pu16    Pointer to the 16-bit variable.
+ * @param   u16     The 16-bit value to assign to *pu16.
+ */
+DECLINLINE(void) ASMAtomicUoWriteU16(volatile uint16_t *pu16, uint16_t u16)
+{
+    Assert(!((uintptr_t)pu16 & 1));
+    *pu16 = u16;
+}
+
+
+/**
+ * Atomically writes a signed 16-bit value, ordered.
+ *
+ * @param   pi16    Pointer to the 16-bit variable to read.
+ * @param   u16     The 16-bit value to assign to *pu16.
+ */
+DECLINLINE(void) ASMAtomicWriteS16(volatile int16_t *pi16, int16_t i16)
+{
+    ASMAtomicXchgS16(pi16, i16);
+}
+
+
+/**
+ * Atomically writes a signed 16-bit value, unordered.
+ *
+ * @param   pi16    Pointer to the 16-bit variable to read.
+ * @param   u16     The 16-bit value to assign to *pu16.
+ */
+DECLINLINE(void) ASMAtomicUoWriteS16(volatile int16_t *pi16, int16_t i16)
+{
+    Assert(!((uintptr_t)pi16 & 1));
+    *pi16 = i16;
+}
+
+
+/**
+ * Atomically writes an unsigned 32-bit value, ordered.
+ *
+ * @param   pu32    Pointer to the 32-bit variable.
+ * @param   u32     The 32-bit value to assign to *pu32.
+ */
+DECLINLINE(void) ASMAtomicWriteU32(volatile uint32_t *pu32, uint32_t u32)
+{
+    ASMAtomicXchgU32(pu32, u32);
+}
+
+
+/**
+ * Atomically writes an unsigned 32-bit value, unordered.
+ *
+ * @param   pu32    Pointer to the 32-bit variable.
+ * @param   u32     The 32-bit value to assign to *pu32.
+ */
+DECLINLINE(void) ASMAtomicUoWriteU32(volatile uint32_t *pu32, uint32_t u32)
+{
+    Assert(!((uintptr_t)pu32 & 3));
+    *pu32 = u32;
+}
+
+
+/**
+ * Atomically writes a signed 32-bit value, ordered.
+ *
+ * @param   pi32    Pointer to the 32-bit variable to read.
+ * @param   u32     The 32-bit value to assign to *pu32.
+ */
+DECLINLINE(void) ASMAtomicWriteS32(volatile int32_t *pi32, int32_t i32)
+{
+    ASMAtomicXchgS32(pi32, i32);
+}
+
+
+/**
+ * Atomically writes a signed 32-bit value, unordered.
+ *
+ * @param   pi32    Pointer to the 32-bit variable to read.
+ * @param   u32     The 32-bit value to assign to *pu32.
+ */
+DECLINLINE(void) ASMAtomicUoWriteS32(volatile int32_t *pi32, int32_t i32)
+{
+    Assert(!((uintptr_t)pi32 & 3));
+    *pi32 = i32;
+}
+
+
+/**
+ * Atomically writes an unsigned 64-bit value, ordered.
+ *
+ * @param   pu64    Pointer to the 64-bit variable.
+ * @param   u64     The 64-bit value to assign to *pu64.
+ */
+DECLINLINE(void) ASMAtomicWriteU64(volatile uint64_t *pu64, uint64_t u64)
+{
+    ASMAtomicXchgU64(pu64, u64);
+}
+
+
+/**
+ * Atomically writes an unsigned 64-bit value, unordered.
+ *
+ * @param   pu64    Pointer to the 64-bit variable.
+ * @param   u64     The 64-bit value to assign to *pu64.
+ */
+DECLINLINE(void) ASMAtomicUoWriteU64(volatile uint64_t *pu64, uint64_t u64)
+{
+    Assert(!((uintptr_t)pu64 & 7));
+#if ARCH_BITS == 64
+    *pu64 = u64;
+#else
+    ASMAtomicXchgU64(pu64, u64);
+#endif
+}
+
+
+/**
+ * Atomically writes a signed 64-bit value, ordered.
+ *
+ * @param   pi64    Pointer to the 64-bit variable.
+ * @param   u64     The 64-bit value to assign to *pu64.
+ */
+DECLINLINE(void) ASMAtomicWriteS64(volatile int64_t *pi64, int64_t i64)
+{
+    ASMAtomicXchgS64(pi64, i64);
+}
+
+
+/**
+ * Atomically writes a signed 64-bit value, unordered.
+ *
+ * @param   pi64    Pointer to the 64-bit variable.
+ * @param   u64     The 64-bit value to assign to *pu64.
+ */
+DECLINLINE(void) ASMAtomicUoWriteS64(volatile int64_t *pi64, int64_t i64)
+{
+    Assert(!((uintptr_t)pi64 & 7));
+#if ARCH_BITS == 64
+    *pi64 = i64;
+#else
+    ASMAtomicXchgS64(pi64, i64);
+#endif
+}
+
+
+/**
+ * Atomically writes a boolean value, unordered.
+ *
+ * @param   pf      Pointer to the boolean variable.
+ * @param   f       The boolean value to assign to *pf.
+ */
+DECLINLINE(void) ASMAtomicWriteBool(volatile bool *pf, bool f)
+{
+    ASMAtomicWriteU8((uint8_t volatile *)pf, f);
+}
+
+
+/**
+ * Atomically writes a boolean value, unordered.
+ *
+ * @param   pf      Pointer to the boolean variable.
+ * @param   f       The boolean value to assign to *pf.
+ */
+DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool *pf, bool f)
+{
+    *pf = f;    /* byte writes are atomic on x86 */
+}
+
+
+/**
+ * Atomically writes a pointer value, ordered.
+ *
+ * @returns Current *pv value
+ * @param   ppv     Pointer to the pointer variable.
+ * @param   pv      The pointer value to assigne to *ppv.
+ */
+DECLINLINE(void) ASMAtomicWritePtr(void * volatile *ppv, void *pv)
+{
+#if ARCH_BITS == 32
+    ASMAtomicWriteU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
+#elif ARCH_BITS == 64
+    ASMAtomicWriteU64((volatile uint64_t *)(void *)ppv, (uint64_t)pv);
+#else
+# error "ARCH_BITS is bogus"
+#endif
+}
+
+
+/**
+ * Atomically writes a pointer value, unordered.
+ *
+ * @returns Current *pv value
+ * @param   ppv     Pointer to the pointer variable.
+ * @param   pv      The pointer value to assigne to *ppv.
+ */
+DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, void *pv)
+{
+#if ARCH_BITS == 32
+    ASMAtomicUoWriteU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
+#elif ARCH_BITS == 64
+    ASMAtomicUoWriteU64((volatile uint64_t *)(void *)ppv, (uint64_t)pv);
+#else
+# error "ARCH_BITS is bogus"
+#endif
+}
+
+
+/**
+ * Atomically write a value which size might differ
+ * between platforms or compilers, ordered.
+ *
+ * @param   pu      Pointer to the variable to update.
+ * @param   uNew    The value to assign to *pu.
+ */
+#define ASMAtomicWriteSize(pu, uNew) \
+    do { \
+        switch (sizeof(*(pu))) { \
+            case 1: ASMAtomicWriteU8( (volatile uint8_t  *)(void *)(pu), (uint8_t )(uNew)); break; \
+            case 2: ASMAtomicWriteU16((volatile uint16_t *)(void *)(pu), (uint16_t)(uNew)); break; \
+            case 4: ASMAtomicWriteU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew)); break; \
+            case 8: ASMAtomicWriteU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew)); break; \
+            default: AssertMsgFailed(("ASMAtomicWriteSize: size %d is not supported\n", sizeof(*(pu)))); \
+        } \
+    } while (0)
+
+/**
+ * Atomically write a value which size might differ
+ * between platforms or compilers, unordered.
+ *
+ * @param   pu      Pointer to the variable to update.
+ * @param   uNew    The value to assign to *pu.
+ */
+#define ASMAtomicUoWriteSize(pu, uNew) \
+    do { \
+        switch (sizeof(*(pu))) { \
+            case 1: ASMAtomicUoWriteU8( (volatile uint8_t  *)(void *)(pu), (uint8_t )(uNew)); break; \
+            case 2: ASMAtomicUoWriteU16((volatile uint16_t *)(void *)(pu), (uint16_t)(uNew)); break; \
+            case 4: ASMAtomicUoWriteU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew)); break; \
+            case 8: ASMAtomicUoWriteU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew)); break; \
+            default: AssertMsgFailed(("ASMAtomicWriteSize: size %d is not supported\n", sizeof(*(pu)))); \
+        } \
+    } while (0)
+
+
 
 
 /**
@@ -3467,7 +4165,7 @@ DECLINLINE(void) ASMBitSet(volatile void *pvBitmap, int32_t iBit)
 
 
 /**
- * Atomically sets a bit in a bitmap.
+ * Atomically sets a bit in a bitmap, ordered.
  *
  * @param   pvBitmap    Pointer to the bitmap.
  * @param   iBit        The bit to set.
@@ -3540,7 +4238,7 @@ DECLINLINE(void) ASMBitClear(volatile void *pvBitmap, int32_t iBit)
 
 
 /**
- * Atomically clears a bit in a bitmap.
+ * Atomically clears a bit in a bitmap, ordered.
  *
  * @param   pvBitmap    Pointer to the bitmap.
  * @param   iBit        The bit to toggle set.
@@ -3611,7 +4309,7 @@ DECLINLINE(void) ASMBitToggle(volatile void *pvBitmap, int32_t iBit)
 
 
 /**
- * Atomically toggles a bit in a bitmap.
+ * Atomically toggles a bit in a bitmap, ordered.
  *
  * @param   pvBitmap    Pointer to the bitmap.
  * @param   iBit        The bit to test and set.
@@ -3691,7 +4389,7 @@ DECLINLINE(bool) ASMBitTestAndSet(volatile void *pvBitmap, int32_t iBit)
 
 
 /**
- * Atomically tests and sets a bit in a bitmap.
+ * Atomically tests and sets a bit in a bitmap, ordered.
  *
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
@@ -3782,7 +4480,7 @@ DECLINLINE(bool) ASMBitTestAndClear(volatile void *pvBitmap, int32_t iBit)
 
 
 /**
- * Atomically tests and clears a bit in a bitmap.
+ * Atomically tests and clears a bit in a bitmap, ordered.
  *
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
@@ -3875,7 +4573,7 @@ DECLINLINE(bool) ASMBitTestAndToggle(volatile void *pvBitmap, int32_t iBit)
 
 
 /**
- * Atomically tests and toggles a bit in a bitmap.
+ * Atomically tests and toggles a bit in a bitmap, ordered.
  *
  * @returns true if the bit was set.
  * @returns false if the bit was clear.
