@@ -920,6 +920,34 @@ void tstASMMath(void)
 #endif
 }
 
+/*
+ * Make this static. We don't want to have this located on the stack.
+ */
+static volatile uint32_t g_u32;
+
+#define BENCH(ins, str)  \
+    RTThreadYield(); \
+    u64Start = ASMReadTSC(); \
+    for (i = cRounds; i > 0; i--) \
+        ins; \
+    u64Stop = ASMReadTSC(); \
+    RTPrintf(" %-10s %3llu cycles\n", str, (u64Stop - u64Start) / cRounds);
+
+void tstASMBench()
+{
+    register unsigned i;
+    const unsigned cRounds = 1000000;
+    register uint64_t u64Start, u64Stop;
+
+    RTPrintf("Benchmarking some low-level instructions:\n");
+
+    BENCH(g_u32 = 0,                         "mov:");
+    BENCH(ASMAtomicXchgU32(&g_u32, 0),       "xchg:");
+    BENCH(ASMAtomicCmpXchgU32(&g_u32, 0, 0), "cmpxchg:");
+
+    RTPrintf("Done.\n");
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -949,6 +977,7 @@ int main(int argc, char *argv[])
     tstASMAtomicAndOrU32();
     tstASMMemZeroPage();
     tstASMMath();
+    tstASMBench();
 
     /*
      * Show the result.
