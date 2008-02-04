@@ -2238,9 +2238,9 @@ void VBoxGlobal::languageChange()
         tr ("PulseAudio", "AudioDriverType");
 
     audioControllerTypes [CEnums::AC97] =
-        tr ("AC97", "AudioControllerType");
+        tr ("ICH AC97", "AudioControllerType");
     audioControllerTypes [CEnums::SB16] =
-        tr ("SB16", "AudioControllerType");
+        tr ("SoundBlaster 16", "AudioControllerType");
 
     networkAttachmentTypes [CEnums::NoNetworkAttachment] =
         tr ("Not attached", "NetworkAttachmentType");
