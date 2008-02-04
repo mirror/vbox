@@ -78,7 +78,7 @@ public:
     bool interruptEvent(void);
 };
 
-#if defined(RT_OS_LINUX)
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
 # include "seamless-x11.h"  /* for VBoxGuestSeamlessGuestImpl */
 #else
 # error Port me
