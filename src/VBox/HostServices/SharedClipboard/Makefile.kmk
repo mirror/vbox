@@ -32,33 +32,28 @@ VBoxSharedClipboard_SOURCES = \
 	service.cpp
 VBoxSharedClipboard_SOURCES.win = \
 	win32.cpp
-ifndef VBOX_HEADLESS
-VBoxSharedClipboard_SOURCES.linux = \
+if1of ($(BUILD_TARGET),linux solaris)
+ ifndef VBOX_HEADLESS
+  VBoxSharedClipboard_SOURCES += \
 	linux.cpp
-VBoxSharedClipboard_SOURCES.solaris = \
-	linux.cpp
-else
-VBoxSharedClipboard_SOURCES.linux = \
+ else
+  VBoxSharedClipboard_SOURCES += \
 	linux-stub.cpp
-VBoxSharedClipboard_SOURCES.solaris = \
-	linux-stub.cpp
+ endif
 endif
 
 VBoxSharedClipboard_LIBS = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME) \
 	$(LIB_REM)
-ifndef VBOX_HEADLESS
-VBoxSharedClipboard_LIBPATH.linux = \
+if1of ($(BUILD_TARGET),linux solaris)
+ ifndef VBOX_HEADLESS
+  VBoxSharedClipboard_LIBPATH = \
 	$(VBOX_LIBPATH_X11)
-VBoxSharedClipboard_LIBPATH.solaris = \
-	$(VBOX_LIBPATH_X11)
-VBoxSharedClipboard_LIBS.linux = \
+  VBoxSharedClipboard_LIBS += \
 	Xt \
 	X11
-VBoxSharedClipboard_LIBS.solaris = \
-	Xt \
-	X11
+ endif
 endif
 
 include $(PATH_KBUILD)/subfooter.kmk
