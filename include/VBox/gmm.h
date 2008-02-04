@@ -136,7 +136,7 @@ typedef enum GMMPRIORITY
      * When running out of memory, save or kill these VMs. */
     GMMPRIORITY_LOW,
     /** The end of the valid priority range. */
-    GMMPRIORITY_END = 0,
+    GMMPRIORITY_END,
     /** The custom 32-bit type blowup. */
     GMMPRIORITY_32BIT_HACK = 0x7fffffff
 } GMMPRIORITY;
