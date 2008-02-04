@@ -20,6 +20,8 @@
 /* VBox includes */
 #include "VBoxFrameBuffer.h"
 #include "VBoxConsoleView.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxGlobal.h"
 /* Needed for checking against seamless mode */
 #include "VBoxConsoleWnd.h"
 
@@ -40,13 +42,8 @@ VBoxQuartz2DFrameBuffer::VBoxQuartz2DFrameBuffer (VBoxConsoleView *aView) :
     mBitmapData(NULL),
     mPixelFormat(FramebufferPixelFormat_FOURCC_RGB),
     mImage(NULL),
-#if 1
-    mRegionRects(NULL),
-    mRegionCount(0)
-#else
     mRegion (NULL),
     mRegionUnused (NULL)
-#endif
 {
     Log (("Quartz2D: Creating\n"));
     resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
@@ -87,12 +84,7 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
      * execution waiting for a lock is out of the question. A quick solution using
      * ASMAtomic(Cmp)XchgPtr and a struct { cAllocated; cRects; aRects[1]; }
      * *mRegion, *mUnusedRegion; should suffice (and permit you to reuse allocations). */
-#if 1
-    RTMemFree (mRegionRects);
-    mRegionCount = 0;
-    mRegionRects = static_cast <CGRect*> (RTMemAlloc (sizeof (CGRect) * aCount));
-#else
-    RegionRects *rgnRcts = (RegionRects *) ASMAtomicXchgPtr (&mRegionUnused, NULL);
+    RegionRects *rgnRcts = (RegionRects *) ASMAtomicXchgPtr ((void * volatile *) &mRegionUnused, NULL);
     if (rgnRcts && rgnRcts->allocated < aCount)
     {
         RTMemFree (rgnRcts);
@@ -102,13 +94,12 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
     {
         ULONG allocated = RT_ALIGN_32 (aCount + 1, 32);
         allocated = RT_MAX (128, allocated);
-        rgnRcts = (RegionRects *) RTMemAlloc (RT_OFFSETOF (RgionRects, rcts[allocated]));
+        rgnRcts = (RegionRects *) RTMemAlloc (RT_OFFSETOF (RegionRects, rcts[allocated]));
         if (!rgnRcts)
-            return E_NOMEM;
+            return E_OUTOFMEMORY;
         rgnRcts->allocated = allocated;
     }
     rgnRcts->used = 0;
-#endif
 
     QRegion reg;
 //    printf ("Region rects follow...\n");
@@ -134,14 +125,6 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
         else
             continue;
 
-#if 1
-        mRegionRects[mRegionCount].origin.x = rect.x();
-        mRegionRects[mRegionCount].origin.y = rect.y();
-        mRegionRects[mRegionCount].size.width = rect.width();
-        mRegionRects[mRegionCount].size.height = rect.height();
-//        printf ("Region rect[%d - %d]: %d %d %d %d\n", mRegionCount, aCount, rect.x(), rect.y(), rect.height(), rect.width());
-        ++mRegionCount;
-#else
         CGRect *cgRct = &rgnRcts->rcts[rgnRcts->used];
         cgRct->origin.x = rect.x();
         cgRct->origin.y = rect.y();
@@ -149,7 +132,6 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
         cgRct->size.height = rect.height();
 //        printf ("Region rect[%d - %d]: %d %d %d %d\n", rgnRcts->used, aCount, rect.x(), rect.y(), rect.height(), rect.width());
         rgnRcts->used++;
-#endif
     }
 //    printf ("..................................\n");
 #if 0
@@ -162,30 +144,6 @@ STDMETHODIMP VBoxQuartz2DFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG
 
     return S_OK;
 }
-
-/* Saved for later optimization */
-//#define BEST_BYTE_ALIGNMENT 16
-//#define COMPUTE_BEST_BYTES_PER_ROW (bpr)    ( ( (bpr) + (BEST_BYTE_ALIGNMENT-1) ) & ~(BEST_BYTE_ALIGNMENT-1) )
-//CGImageRef createImageFromImageInRect(CGImageRef* img, const QRect& rect)
-//{
-//    const int sx = qRound(sr.x()), sy = qRound(sr.y()), sw = qRound(sr.width()), sh = qRound(sr.height());
-//    const QMacPixmapData *pmData = static_cast<const QMacPixmapData*>(pm.data);
-//    quint32 *pantherData = pmData->pixels + (sy * pm.width() + sx);
-//
-//    QCFType<CGDataProviderRef> provider = CGDataProviderCreateWithData(0, pantherData, sw*sh*sizeof(uint), 0);
-//
-//
-//    CGDataProviderRef dp = CGDataProviderCreateWithData(NULL, mBitmapData, bitmapByteCount, NULL);
-//    mImage = CGImageCreate(mWdt, mHgt, 8, 32, bitmapBytesPerRow, cs,
-//                           kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, 0,
-//                           kCGRenderingIntentDefault);
-//
-//    CGDataProviderRef dp = CGDataProviderCreateWithData(aFrameBuffer, aFrameBuffer->address(), aFrameBuffer->bitsPerPixel() / 8 * aFrameBuffer->width() * aFrameBuffer->height() , NULL);
-//    image = CGImageCreate(sw, sh, 8, 32, pm.width() * sizeof(uint),
-//                          macGenericColorSpace(),
-//                          kCGImageAlphaPremultipliedFirst, provider, 0, 0,
-//                          kCGRenderingIntentDefault);
-//}
 
 void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
 {
@@ -233,12 +191,9 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
         Rect winRect;
         GetPortBounds (GetWindowPort (window), &winRect);
         CGContextClearRect (ctx, CGRectMake (winRect.left, winRect.top, winRect.right - winRect.left, winRect.bottom - winRect.top));
-#if 1
-        if (mRegionRects && mRegionCount > 0)
-#else
-        RegionRects *rgnRcts = (RegionRects *) ASMAtomicXchgPtr (&mRegion, NULL);
+//        ASMAtomicXchgPtr ((void * volatile *) &mRegion, &mRegionUnused);
+        RegionRects *rgnRcts = (RegionRects *) ASMAtomicXchgPtr ((void * volatile *) &mRegion, NULL);
         if (rgnRcts)
-#endif
         {
             /* Save state for display fliping */
             CGContextSaveGState (ctx);
@@ -248,14 +203,10 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
             /* Add the clipping rects all at once. They are defined in
              * SetVisibleRegion. */
             CGContextBeginPath (ctx);
-#if 1
-            CGContextAddRects (ctx, mRegionRects, mRegionCount);
-#else
-            CGContextAddRects (ctx, rgnRects->rcts, rgnRects->used);
-            if (    !ASMAtomicCmpXchgPtr (&mRegion, rgnRects, NULL)
-                &&  !ASMAtomicCmpXchgPtr (&mRegionUnused, rgnRects, NULL))
-                RTMemFree(rgnRects);
-#endif
+            CGContextAddRects (ctx, rgnRcts->rcts, rgnRcts->used);
+            if (    !ASMAtomicCmpXchgPtr ((void * volatile *) &mRegion, rgnRcts, NULL)
+                &&  !ASMAtomicCmpXchgPtr ((void * volatile *) &mRegionUnused, rgnRcts, NULL))
+            RTMemFree(rgnRcts);
             /* Restore the context state. Note that the
              * current path isn't destroyed. */
             CGContextRestoreGState (ctx);
@@ -330,6 +281,8 @@ void VBoxQuartz2DFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     mWdt = re->width();
     mHgt = re->height();
 
+    bool remind = false;
+
     /* We need a color space in any case */
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
     /* Check if we support the pixel format/colordepth and can use the guest VRAM directly.
@@ -350,9 +303,13 @@ void VBoxQuartz2DFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     }
     else
     {
+        remind = true;
 //        printf ("No VRAM\n");
-        /* Create the memory we need for our image copy */
-        int bitmapBytesPerRow = (mWdt * 4);
+        /* Create the memory we need for our image copy
+         * Read somewhere that an alignment of 16 is 
+         * best for optimal performance. So why not. */
+//        int bitmapBytesPerRow = RT_ALIGN (mWdt * 4, 16);
+        int bitmapBytesPerRow = mWdt * 4;
         int bitmapByteCount = (bitmapBytesPerRow * mHgt);
         mBitmapData = RTMemAlloc (bitmapByteCount);
         CGDataProviderRef dp = CGDataProviderCreateWithData (NULL, mBitmapData, bitmapByteCount, NULL);
@@ -363,6 +320,22 @@ void VBoxQuartz2DFrameBuffer::resizeEvent (VBoxResizeEvent *re)
         CGDataProviderRelease (dp);
     }
     CGColorSpaceRelease (cs);
+
+//    if (remind)
+//    {
+//        class RemindEvent : public VBoxAsyncEvent
+//        {
+//            ulong mRealBPP;
+//        public:
+//            RemindEvent (ulong aRealBPP)
+//                : mRealBPP (aRealBPP) {}
+//            void handle()
+//            {
+//                vboxProblem().remindAboutWrongColorDepth (mRealBPP, 32);
+//            }
+//        };
+//        (new RemindEvent (re->bitsPerPixel()))->post();
+//    }
 }
 
 void VBoxQuartz2DFrameBuffer::clean()
@@ -377,25 +350,16 @@ void VBoxQuartz2DFrameBuffer::clean()
         RTMemFree (mBitmapData);
         mBitmapData = NULL;
     }
-#if 1
-    if (mRegionRects)
-    {
-        RTMemFree (mRegionRects);
-        mRegionRects = NULL;
-        mRegionCount = 0;
-    }
-#else
     if (mRegion)
     {
-        RTMemFree (mRegion)
+        RTMemFree ((void *) mRegion);
         mRegion = NULL;
     }
     if (mRegionUnused)
     {
-        RTMemFree (mRegionUnused)
+        RTMemFree ((void *) mRegionUnused);
         mRegionUnused = NULL;
     }
-#endif
 }
 
 #endif /* defined (VBOX_GUI_USE_QUARTZ2D) */
