@@ -509,7 +509,8 @@ RuntimeR3L4_SOURCES = \
 
 #
 # RuntimeGuestR3 - Guest Additions Runtime (static).
-# (The BUILD_PLATFORM inheritance here is for l4 crossbuilding the linux additions.)
+# (The BUILD_PLATFORM inheritance here is for l4 cross building the linux
+# additions, while .x86 is for cross building x86 while targeting amd64.)
 #
 RuntimeGuestR3_TEMPLATE                 := VBOXGUESTR3LIB
 RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
@@ -532,6 +533,8 @@ RuntimeGuestR3_SOURCES.$(BUILD_TARGET)  := $(RuntimeR3_SOURCES.$(BUILD_TARGET))
 RuntimeGuestR3_SOURCES.$(BUILD_PLATFORM):= $(RuntimeR3_SOURCES.$(BUILD_PLATFORM))
 RuntimeGuestR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)   := $(RuntimeR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
 RuntimeGuestR3_SOURCES.$(BUILD_PLATFORM).$(BUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(BUILD_PLATFORM).$(BUILD_TARGET_ARCH))
+RuntimeGuestR3_SOURCES.$(BUILD_TARGET).x86 := $(RuntimeR3_SOURCES.$(BUILD_TARGET).x86)
+RuntimeGuestR3_SOURCES.$(BUILD_PLATFORM).x86 := $(RuntimeR3_SOURCES.$(BUILD_PLATFORM).x86)
 
 
 #
