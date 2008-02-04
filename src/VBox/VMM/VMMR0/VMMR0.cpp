@@ -82,9 +82,7 @@ VMMR0DECL(int) ModuleInit(void)
     int rc = GVMMR0Init();
     if (RT_SUCCESS(rc))
     {
-//#ifdef VBOX_WITH_NEW_PHYS_CODE /* need to test on windows, solaris and darwin. */
         rc = GMMR0Init();
-//#endif
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_INTERNAL_NETWORKING
@@ -133,9 +131,7 @@ VMMR0DECL(void) ModuleTerm(void)
     /*
      * Destroy the GMM and GVMM instances.
      */
-//#ifdef VBOX_WITH_NEW_PHYS_CODE
     GMMR0Term();
-//#endif
     GVMMR0Term();
 
     LogFlow(("ModuleTerm: returns\n"));
@@ -205,32 +201,27 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
     }
 
     /*
-     * Associate the ring-0 EMT thread with the GVM
-     * and initalize the GVMM and GMM per VM data.
+     * nitalize the per VM data for GVMM and GMM.
      */
-    int rc = GVMMR0AssociateEMTWithVM(pVM);
+    int rc = GVMMR0InitVM(pVM);
+//    if (RT_SUCCESS(rc))
+//        rc = GMMR0InitPerVMData(pVM);
     if (RT_SUCCESS(rc))
     {
-        rc = GVMMR0InitVM(pVM);
-        //if (RT_SUCCESS(rc))
-        //    rc = GMMR0InitVM(pVM);
+        /*
+         * Init HWACCM.
+         */
+        RTCCUINTREG fFlags = ASMIntDisableFlags();
+        rc = HWACCMR0Init(pVM);
+        ASMSetFlags(fFlags);
         if (RT_SUCCESS(rc))
         {
             /*
-             * Init HWACCM.
+             * Init CPUM.
              */
-            RTCCUINTREG fFlags = ASMIntDisableFlags();
-            rc = HWACCMR0Init(pVM);
-            ASMSetFlags(fFlags);
+            rc = CPUMR0Init(pVM);
             if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Init CPUM.
-                 */
-                rc = CPUMR0Init(pVM);
-                if (RT_SUCCESS(rc))
-                    return rc;
-            }
+                return rc;
         }
     }
 
@@ -253,7 +244,6 @@ static int VMMR0Term(PVM pVM)
     /*
      * Deregister the logger.
      */
-    GVMMR0DisassociateEMTFromVM(pVM);
     RTLogSetDefaultInstanceThread(NULL, 0);
     return VINF_SUCCESS;
 }

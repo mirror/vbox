@@ -485,11 +485,13 @@ GVMMR0DECL(int) GVMMR0CreateVMReq(PGVMMCREATEVMREQ pReq)
 /**
  * Allocates the VM structure and registers it with GVM.
  *
+ * The caller will become the VM owner and there by the EMT.
+ *
  * @returns VBox status code.
  * @param   pSession    The support driver session.
  * @param   ppVM        Where to store the pointer to the VM structure.
  *
- * @thread  Any thread.
+ * @thread  EMT.
  */
 GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
 {
@@ -500,7 +502,8 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
     AssertPtrReturn(ppVM, VERR_INVALID_POINTER);
     *ppVM = NULL;
 
-    AssertReturn(RTThreadNativeSelf() != NIL_RTNATIVETHREAD, VERR_INTERNAL_ERROR);
+    RTNATIVETHREAD hEMT = RTThreadNativeSelf();
+    AssertReturn(hEMT != NIL_RTNATIVETHREAD, VERR_INTERNAL_ERROR);
 
     /*
      * The whole allocation process is protected by the lock.
@@ -608,8 +611,9 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
 
                                         pHandle->pVM = pVM;
                                         pHandle->pGVM = pGVM;
+                                        pHandle->hEMT = hEMT;
                                         pGVM->pVM = pVM;
-
+                                        pGVM->hEMT = hEMT;
 
                                         gvmmR0UsedUnlock(pGVMM);
                                         gvmmR0CreateDestroyUnlock(pGVMM);
@@ -677,67 +681,6 @@ static void gvmmR0InitPerVMData(PGVM pGVM)
 
 
 /**
- * Associates an EMT thread with a VM.
- *
- * This is called early during the ring-0 VM initialization so assertions later in
- * the process can be handled gracefully.
- *
- * @returns VBox status code.
- *
- * @param   pVM         The VM instance data (aka handle), ring-0 mapping of course.
- * @thread  EMT.
- */
-GVMMR0DECL(int) GVMMR0AssociateEMTWithVM(PVM pVM)
-{
-    LogFlow(("GVMMR0AssociateEMTWithVM: pVM=%p\n", pVM));
-    PGVMM pGVMM;
-    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
-
-    /*
-     * Validate the VM structure, state and handle.
-     */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
-    AssertReturn(!((uintptr_t)pVM & PAGE_OFFSET_MASK), VERR_INVALID_POINTER);
-    AssertMsgReturn(pVM->enmVMState == VMSTATE_CREATING, ("%d\n", pVM->enmVMState), VERR_WRONG_ORDER);
-
-    RTNATIVETHREAD hEMT = RTThreadNativeSelf();
-    AssertReturn(hEMT != NIL_RTNATIVETHREAD, VERR_NOT_SUPPORTED);
-
-    const uint16_t hGVM = pVM->hSelf;
-    AssertReturn(hGVM != NIL_GVM_HANDLE, VERR_INVALID_HANDLE);
-    AssertReturn(hGVM < RT_ELEMENTS(pGVMM->aHandles), VERR_INVALID_HANDLE);
-
-    PGVMHANDLE pHandle = &pGVMM->aHandles[hGVM];
-    AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
-
-    /*
-     * Take the lock, validate the handle and update the structure members.
-     */
-    int rc = gvmmR0CreateDestroyLock(pGVMM);
-    AssertRCReturn(rc, rc);
-    rc = gvmmR0UsedLock(pGVMM);
-    AssertRC(rc);
-
-    if (    pHandle->pVM == pVM
-        &&  VALID_PTR(pHandle->pvObj)
-        &&  VALID_PTR(pHandle->pSession)
-        &&  VALID_PTR(pHandle->pGVM)
-        &&  pHandle->pGVM->u32Magic == GVM_MAGIC)
-    {
-        pHandle->hEMT = hEMT;
-        pHandle->pGVM->hEMT = hEMT;
-    }
-    else
-        rc = VERR_INTERNAL_ERROR;
-
-    gvmmR0UsedUnlock(pGVMM);
-    gvmmR0CreateDestroyUnlock(pGVMM);
-    LogFlow(("GVMMR0AssociateEMTWithVM: returns %Vrc (hEMT=%RTnthrd)\n", rc, hEMT));
-    return rc;
-}
-
-
-/**
  * Does the VM initialization.
  *
  * @returns VBox status code.
@@ -766,74 +709,6 @@ GVMMR0DECL(int) GVMMR0InitVM(PVM pVM)
     }
 
     LogFlow(("GVMMR0InitVM: returns %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Disassociates the EMT thread from a VM.
- *
- * This is called last in the ring-0 VM termination. After this point anyone is
- * allowed to destroy the VM. Ideally, we should associate the VM with the thread
- * that's going to call GVMMR0DestroyVM for optimal security, but that's impractical
- * at present.
- *
- * @returns VBox status code.
- *
- * @param   pVM         The VM instance data (aka handle), ring-0 mapping of course.
- * @thread  EMT.
- */
-GVMMR0DECL(int) GVMMR0DisassociateEMTFromVM(PVM pVM)
-{
-    LogFlow(("GVMMR0DisassociateEMTFromVM: pVM=%p\n", pVM));
-    PGVMM pGVMM;
-    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
-
-    /*
-     * Validate the VM structure, state and handle.
-     */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
-    AssertReturn(!((uintptr_t)pVM & PAGE_OFFSET_MASK), VERR_INVALID_POINTER);
-    AssertMsgReturn(pVM->enmVMState >= VMSTATE_CREATING && pVM->enmVMState <= VMSTATE_DESTROYING, ("%d\n", pVM->enmVMState), VERR_WRONG_ORDER);
-
-    RTNATIVETHREAD hEMT = RTThreadNativeSelf();
-    AssertReturn(hEMT != NIL_RTNATIVETHREAD, VERR_NOT_SUPPORTED);
-
-    const uint16_t hGVM = pVM->hSelf;
-    AssertReturn(hGVM != NIL_GVM_HANDLE, VERR_INVALID_HANDLE);
-    AssertReturn(hGVM < RT_ELEMENTS(pGVMM->aHandles), VERR_INVALID_HANDLE);
-
-    PGVMHANDLE pHandle = &pGVMM->aHandles[hGVM];
-    AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
-
-    /*
-     * Take the lock, validate the handle and update the structure members.
-     */
-    int rc = gvmmR0CreateDestroyLock(pGVMM);
-    AssertRCReturn(rc, rc);
-    rc = gvmmR0UsedLock(pGVMM);
-    AssertRC(rc);
-
-    if (    VALID_PTR(pHandle->pvObj)
-        &&  VALID_PTR(pHandle->pSession)
-        &&  VALID_PTR(pHandle->pGVM)
-        &&  pHandle->pGVM->u32Magic == GVM_MAGIC)
-    {
-        if (    pHandle->pVM == pVM
-            &&  pHandle->hEMT == hEMT)
-        {
-            pHandle->hEMT = NIL_RTNATIVETHREAD;
-            pHandle->pGVM->hEMT = NIL_RTNATIVETHREAD;
-        }
-        else
-            rc = VERR_NOT_OWNER;
-    }
-    else
-        rc = VERR_INVALID_HANDLE;
-
-    gvmmR0UsedUnlock(pGVMM);
-    gvmmR0CreateDestroyUnlock(pGVMM);
-    LogFlow(("GVMMR0DisassociateEMTFromVM: returns %Vrc (hEMT=%RTnthrd)\n", rc, hEMT));
     return rc;
 }
 
