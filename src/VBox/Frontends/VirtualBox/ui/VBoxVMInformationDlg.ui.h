@@ -411,10 +411,10 @@ void VBoxVMInformationDlg::refreshStatistics()
         return;
 
     QString table = "<p><table border=0 cellspacing=0 cellpadding=0 width=100%>%1</table></p>";
-    QString hdrRow = "<tr><td align=left><img src='%1'></td><td colspan=2><b>%2</b></td></tr>";
-    QString bdyRow = "<tr><td></td><td><nobr>%1</nobr></td><td width=100%><nobr>%2</nobr></td></tr>";
-    QString paragraph = "<tr><td colspan=3></td></tr>";
-    QString interline = "<tr><td colspan=3><font size=1>&nbsp;</font></td></tr>";
+    QString hdrRow = "<tr><td align=left><img src='%1'></td><td colspan=3><b>%2</b></td></tr>";
+    QString bdyRow = "<tr><td></td><td><nobr>%1</nobr></td><td colspan=2><nobr>%2</nobr></td></tr>";
+    QString paragraph = "<tr><td colspan=4></td></tr>";
+    QString interline = "<tr><td colspan=4><font size=1>&nbsp;</font></td></tr>";
     QString result;
 
     /* Screen & VT-X Runtime Parameters */
@@ -436,14 +436,18 @@ void VBoxVMInformationDlg::refreshStatistics()
     }
 
     /* Hard Disk Statistics. */
-    result += hdrRow.arg ("hd_16px.png").arg (tr ("Hard Disks Statistics"));
+    result += hdrRow.arg ("hd_16px.png").arg (tr ("IDE Hard Disk Statistics"));
     result += formatHardDisk (tr ("Primary Master"), CEnums::IDE0Controller, 0, 0, 1);
     result += interline;
     result += formatHardDisk (tr ("Primary Slave"), CEnums::IDE0Controller, 1, 4, 5);
     result += interline;
-    result += formatHardDisk (tr ("Secondary Master"), CEnums::IDE1Controller, 0, 8, 9);
-    result += interline;
     result += formatHardDisk (tr ("Secondary Slave"), CEnums::IDE1Controller, 1, 12, 13);
+    result += paragraph;
+
+    /* CD/DVD-ROM Statistics. */
+    result += hdrRow.arg ("cd_16px.png").arg (tr ("CD/DVD-ROM Statistics"));
+    result += formatHardDisk (QString::null /* tr ("Secondary Master") */,
+                              CEnums::IDE1Controller, 0, 8, 9);
     result += paragraph;
 
     /* Network Adapters Statistics. */
@@ -468,10 +472,10 @@ QString VBoxVMInformationDlg::formatHardDisk (const QString &aName,
     if (mSession.isNull())
         return QString::null;
 
-    QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
+    QString header = "<tr><td></td><td colspan=3><nobr><u>%1</u></nobr></td></tr>";
     CMachine machine = mSession.GetMachine();
 
-    QString result = header.arg (aName);
+    QString result = aName.isNull() ? QString::null : header.arg (aName);
     CHardDisk hd = machine.GetHardDisk (aType, aSlot);
     if (!hd.isNull() || (aType == CEnums::IDE1Controller && aSlot == 0))
     {
@@ -491,7 +495,7 @@ QString VBoxVMInformationDlg::formatAdapter (const QString &aName,
     if (mSession.isNull())
         return QString::null;
 
-    QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
+    QString header = "<tr><td></td><td colspan=3><nobr><u>%1</u></nobr></td></tr>";
     CMachine machine = mSession.GetMachine();
 
     QString result = header.arg (aName);
@@ -506,22 +510,24 @@ QString VBoxVMInformationDlg::formatAdapter (const QString &aName,
 QString VBoxVMInformationDlg::composeArticle (const QString &aUnits,
                                               int aStart, int aFinish)
 {
-    QString body = "<tr><td></td><td><nobr>%1</nobr></td><td width=100%><nobr>%2</nobr></td></tr>";
+    QString body = "<tr><td></td><td><nobr>%1</nobr></td><td align=right><nobr>%2%3</nobr></td><td width=100%></td></tr>";
 
     QString result;
 
     if (aStart == -1 && aFinish == -1)
-        result += body.arg (aUnits).arg (QString::null);
+        result += body.arg (aUnits).arg (QString::null).arg (QString::null);
     else for (int id = aStart; id <= aFinish; ++ id)
     {
         QString line = body;
         if (mValuesMap.contains (mNamesMap.keys() [id]))
         {
-            line = line.arg (mNamesMap.values() [id]);
             ULONG64 value = mValuesMap.values() [id].toULongLong();
+            line = line.arg (mNamesMap.values() [id])
+                       .arg (QString ("%L1").arg (value));
             line = aUnits.isNull() ?
-                line.arg (QString ("%L1").arg (value)) :
-                line.arg (QString ("%L1 %2").arg (value).arg (aUnits));
+                line.arg (QString ("<img src=tpixel.png width=%1 height=1>")
+                          .arg (QApplication::fontMetrics().width (" B"))) :
+                line.arg (QString (" %1").arg (aUnits));
         }
         result += line;
     }
