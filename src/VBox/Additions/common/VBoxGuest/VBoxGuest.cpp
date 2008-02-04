@@ -603,7 +603,7 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWai
     if (!pInfo->u32TimeoutIn)
     {
         pInfo->u32Result = VBOXGUEST_WAITEVENT_TIMEOUT;
-        Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns VINF_TIMEOUT\n"));
+        Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns VERR_TIMEOUT\n"));
         return VERR_TIMEOUT;
     }
 
@@ -667,7 +667,7 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWai
     else if (rc == VERR_TIMEOUT)
     {
         pInfo->u32Result = VBOXGUEST_WAITEVENT_TIMEOUT;
-        Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns VINF_TIMEOUT\n"));
+        Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns VERR_TIMEOUT\n"));
     }
     else if (rc == VERR_INTERRUPTED)
     {

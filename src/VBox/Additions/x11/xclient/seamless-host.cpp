@@ -134,7 +134,7 @@ void VBoxGuestSeamlessHost::updateRects(std::auto_ptr<std::vector<RTRECT> > pRec
         LogRelThisFunc(("ERROR: called with null pointer!\n"));
         return;
     }
-    VbglR3SeamlessSendRects(pRects.get()->size(), pRects.get()->data());
+    VbglR3SeamlessSendRects(pRects.get()->size(), pRects.get()->empty() ? NULL : &pRects.get()->front());
 }
 
 /**

@@ -110,7 +110,7 @@ VBGLR3DECL(int) VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects)
     VMMDevVideoSetVisibleRegion *pReq;
     int rc;
 
-    if (0 == cRects)
+    if (!cRects || !pRects)
         return VINF_SUCCESS;
     rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq,
                        sizeof(VMMDevVideoSetVisibleRegion) + (cRects - 1) * sizeof(RTRECT),
