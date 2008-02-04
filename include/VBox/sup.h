@@ -519,6 +519,8 @@ SUPR3DECL(int) SUPContFree(void *pv, size_t cPages);
 /**
  * Allocated non contiguous physical memory below 4GB.
  *
+ * The memory isn't zeroed.
+ *
  * @returns VBox status code.
  * @returns NULL on failure.
  * @param   cPages      Number of pages to allocate.
