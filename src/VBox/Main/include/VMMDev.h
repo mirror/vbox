@@ -48,7 +48,7 @@ public:
 
     PPDMIVMMDEVPORT getVMMDevPort();
 
-    int hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary);
+    int hgcmLoadService (const char *pszServiceLibrary, const char *pszServiceName);
     int hgcmHostCall (const char *pszServiceName, uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms);
     void hgcmShutdown (void);
 
