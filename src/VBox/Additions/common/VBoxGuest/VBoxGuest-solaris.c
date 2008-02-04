@@ -156,10 +156,10 @@ typedef struct
     off_t                   cbMMIO;
     /** VMMDev Version. */
     uint32_t                u32Version;
-    /** Interrupt handle vector */
+    /** Pointer to the interrupt handle vector */
     ddi_intr_handle_t       *pIntr;
-    /** Number of interrupt handles */
-    size_t                  cIntr;
+    /** Number of actually allocated interrupt handles */
+    size_t                  cIntrAllocated;
 #ifndef USE_SESSION_HASH
     /** Pointer to the session handle. */
     PVBOXGUESTSESSION       pSession;
@@ -869,9 +869,8 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
                 rc = ddi_intr_get_navail(pDip, IntrType, &IntrAvail);
                 if (rc == DDI_SUCCESS)
                 {
-                    /* Allocated kernel memory for the interrupt handles. */
-                    pState->cIntr = IntrCount;
-                    pState->pIntr = RTMemAlloc(pState->cIntr * sizeof(ddi_intr_handle_t));
+                    /* Allocated kernel memory for the interrupt handles. The allocation size is stored internally. */
+                    pState->pIntr = RTMemAlloc(IntrCount * sizeof(ddi_intr_handle_t));
                     if (pState->pIntr)
                     {
                         int IntrAllocated;
@@ -879,7 +878,7 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
                         if (   rc == DDI_SUCCESS
                             && IntrAllocated > 0)
                         {
-                            pState->cIntr = IntrAllocated;
+                            pState->cIntrAllocated = IntrAllocated;
                             uint_t uIntrPriority;
                             rc = ddi_intr_get_pri(pState->pIntr[0], &uIntrPriority);
                             if (rc == DDI_SUCCESS)
@@ -913,7 +912,7 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
                                 LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get priority of interrupt. rc=%d\n", rc));
 
                             /* Remove allocated IRQs, too bad we can free only one handle at a time. */
-                            for (int k = 0; k < pState->cIntr; k++)
+                            for (int k = 0; k < pState->cIntrAllocated; k++)
                                 ddi_intr_free(pState->pIntr[k]);
                         }
                         else
@@ -954,7 +953,7 @@ static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState)
     ddi_remove_intr(pDip, 0, pState->BlockCookie);
     mutex_destroy(&pState->Mtx);
 #else
-    for (int i = 0; i < pState->cIntr; i++)
+    for (int i = 0; i < pState->cIntrAllocated; i++)
     {
         int rc = ddi_intr_disable(pState->pIntr[i]);
         if (rc == DDI_SUCCESS)
@@ -984,7 +983,7 @@ static uint_t VBoxGuestSolarisISR(caddr_t Arg)
     bool fOurIRQ = VBoxGuestCommonISR(&g_DevExt);
     mutex_exit(&pState->Mtx);
 
-    return fOurIRQ ? DDI_INTR_CLAIMED : DDI_INTR_CLAIMED;
+    return fOurIRQ ? DDI_INTR_CLAIMED : DDI_INTR_UNCLAIMED;
 }
 
 
