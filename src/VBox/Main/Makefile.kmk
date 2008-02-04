@@ -28,7 +28,7 @@ endif
 # This is primarily a hack to try avoid idling all but one cpu when
 # building the gigant soap sources. 
 ifneq ($(KMK_OPTS_JOBS),1)
- ifndef VBOX_OSE
+ ifdef VBOX_WITH_WEBSERVICES
   include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
@@ -535,7 +535,7 @@ endif
 # process new targets.
 #
 ifeq ($(KMK_OPTS_JOBS),1)
- ifndef VBOX_OSE
+ ifdef VBOX_WITH_WEBSERVICES
   include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
