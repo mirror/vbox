@@ -205,6 +205,21 @@
 #endif
 
 
+/** @def VM_ASSERT_EMT_RETURN
+ * Asserts that the current thread IS the emulation thread (EMT) and returns if it isn't.
+ */
+#ifdef IN_GC
+# define VM_ASSERT_EMT_RETURN(pVM, rc)  AssertReturn(VM_IS_EMT(pVM), (rc))
+#elif defined(IN_RING0)
+# define VM_ASSERT_EMT_RETURN(pVM, rc)  AssertReturn(VM_IS_EMT(pVM), (rc))
+#else
+# define VM_ASSERT_EMT_RETURN(pVM, rc) \
+    AssertMsgReturn(VM_IS_EMT(pVM), \
+        ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd\n", RTThreadNativeSelf(), pVM->NativeThreadEMT), \
+        (rc))
+#endif
+
+
 /**
  * Asserts that the current thread is NOT the emulation thread.
  */
