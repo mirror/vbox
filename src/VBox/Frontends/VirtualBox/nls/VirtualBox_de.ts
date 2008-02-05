@@ -376,6 +376,14 @@
         <source>&amp;Make Permanent</source>
         <translation>&amp;Permanent erzeugen</translation>
     </message>
+    <message>
+        <source>&amp;Read-only</source>
+        <translation>Nur &amp;lesbar</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
+        <translation>Der Gast erhält nur lesenden Zugriff auf das Verzeichnis.</translation>
+    </message>
 </context>
 <context>
     <name>VBoxCloseVMDlg</name>
@@ -867,10 +875,6 @@
         <translation>&amp;Inhalt...</translation>
     </message>
     <message>
-        <source>F1</source>
-        <translation>F1</translation>
-    </message>
-    <message>
         <source>Show the online help contents</source>
         <translation>Zeigt die Online-Hilfe</translation>
     </message>
@@ -881,6 +885,14 @@
     <message>
         <source>Open VirtualBox registration form</source>
         <translation>Öffnet das Formular zur Registrierung von VirtualBox</translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation Dialog</source>
+        <translation>Session-I&amp;nformationen</translation>
+    </message>
+    <message>
+        <source>Show Session Information Dialog</source>
+        <translation>Zeigt einen Dialog mit Session-Informationen</translation>
     </message>
 </context>
 <context>
@@ -1330,7 +1342,7 @@
     <message>
         <source>Adapter</source>
         <comment>details report (audio)</comment>
-        <translation>Adapter</translation>
+        <translation>Host-Treiber</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -1759,6 +1771,71 @@
         <comment>DiskStorageType</comment>
         <translation>Anderes Format</translation>
     </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation>VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation>Aktiviert</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation>Deaktiviert</translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details report (audio)</comment>
+        <translation>Gast-Controller</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (parallel ports)</comment>
+        <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (parallel ports)</comment>
+        <translation>Deaktiviert</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <comment>details report</comment>
+        <translation>Parallel-Ports</translation>
+    </message>
+    <message>
+        <source>VHD Image</source>
+        <comment>DiskStorageType</comment>
+        <translation>VHD-Abbild</translation>
+    </message>
+    <message>
+        <source>PulseAudio</source>
+        <comment>AudioDriverType</comment>
+        <translation>PulseAudio</translation>
+    </message>
+    <message>
+        <source>ICH AC97</source>
+        <comment>AudioControllerType</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>SoundBlaster 16</source>
+        <comment>AudioControllerType</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>PIIX3</source>
+        <comment>IDEControllerType</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>PIIX4</source>
+        <comment>IDEControllerType</comment>
+        <translation></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -2020,7 +2097,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Zeigt den Pfad für voreingestellte VDI Ordner. Falls nicht anders festgelegt wird dieser Ordner benutzt, wenn vorhandene benutzt oder neue virtuelle Medien hinzugefügt werden.</translation>
+        <translation>Zeigt den Pfad für voreingestellte VDI Ordner. Sofern nicht anders festgelegt, wird dieser Ordner benutzt, wenn vorhandene benutzt oder neue virtuelle Medien hinzugefügt werden.</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
@@ -2171,19 +2248,6 @@ bzw. auf &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.
         <translation type="unfinished">Erstellen einer virtuellen Festplatte</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
-of space on your physical hard disk. It will grow dynamically (up to
-the size specified) as the Guest OS claims disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
-the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wählen Sie den Typ der virtuellen Festplatte.&lt;/p&gt;
-&lt;p&gt;Ein &lt;b&gt;dynamisch expandierendes Medium&lt;/b&gt; belegt bei der Erzeugung nur sehr wenig Platz
-auf der physischen Festplatte. Es wächst in dem Maße dynamisch (bis zur festgelegten Größe), wie
-das Gastsystem Blöcke auf der virtuellen Platte beschreibt.&lt;/p&gt;
-&lt;p&gt;Ein &lt;b&gt;Medium fester Größe&lt;/b&gt; wächst nicht zur Laufzeit, sondern wird mit der endgültigen Größe erzeugt.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>Image Type</source>
         <translation>Plattentyp</translation>
     </message>
@@ -2254,6 +2318,18 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     <message>
         <source>Select a file for the new hard disk image file</source>
         <translation>Wählen Sie eine Datei für ein neues Festplatten-Abbild aus</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
+of space on your physical hard disk. It will grow dynamically (up to
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
+the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
+time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Wählen Sie den Typ der virtuellen Festplatte.&lt;/p&gt;
+&lt;p&gt;Ein &lt;b&gt;dynamisch expandierendes Medium&lt;/b&gt; belegt bei der Erzeugung nur sehr wenig Platz auf der physischen Festplatte. Es wächst in dem Maße dynamisch (bis zur festgelegten Größe), wie das Gastsystem Blöcke auf der virtuellen Platte beschreibt.&lt;/p&gt;
+&lt;p&gt;Ein &lt;b&gt;Medium fester Größe&lt;/b&gt; wächst nicht zur Laufzeit, sondern wird mit der endültigen Größe erzeugt. Das Erstellen eines Mediums fester Größe kann in Abhängigkeit von der Größe und der Schreibrate der Festplatte sehr lange (Minuten) dauern.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2547,10 +2623,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;Das Medienabbild &lt;b&gt;%1&lt;/b&gt; ist bereits vorhanden. Sie können keine neue virtuelle Maschine erzeugen, die diese Datei benutzt, weil sie bereits von einer anderen virtuellen Maschine benutzt sein könnte.&lt;/p&gt;&lt;p&gt;Bitte wählen Sie einen anderen Dateinamen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Möchten Sie dieses Plattenabbild &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wirklich löschen?&lt;/p&gt;&lt;p&gt;Falls Sie &lt;b&gt;Nein&lt;/b&gt; antworten, dann wird die Registrierung der virtuellen Platte aufgehoben und aus der Sammlung entfernt, aber das Abbild verbleibt auf der physischen Festplatte.&lt;/p&gt;&lt;p&gt;Wenn Sie &lt;b&gt;Ja&lt;/b&gt; wählen, dann wird das Abbild unwiderruflich gelöscht. Diese Operation kann nicht rückgängig gemacht werden.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Das virtuelle Plattenabbild &lt;b&gt;%1&lt;/b&gt; konnte nicht gelöscht werden.</translation>
     </message>
@@ -2645,10 +2717,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die virtuelle Maschine ist momentan &lt;b&gt;angehalten&lt;/b&gt; und nimmt deshalb keine Maus- und Tastatureingaben entgegen. Um mit der Arbeit der virtuellen Maschine fortzufahren, müssen Sie die virtuelle Maschine weiterlaufen lassen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Mindestens eines der registrierten virtuellen Medien ist momentan nicht zugreifbar. Virtuelle Maschinen, die auf eines dieser Medien zugreifen, können so lange nicht gestartet werden, bis dieses Medium wieder zugreifbar wird.&lt;/p&gt;&lt;/p&gt;Bestätigen Sie mit &lt;b&gt;OK&lt;/b&gt; um den Manager für virtuelle Medien zu starten und zu überprüfen, welche Medien nicht zugreifbar sind. Oder drücken Sie &lt;b&gt;Ignorieren&lt;/b&gt; um diese Meldung zu ignorieren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -2808,6 +2876,98 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die Registrierung des Produkts VirtualBox ist fehlgeschlagen&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Delete</source>
+        <comment>machine</comment>
+        <translation>Löschen</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation>Freigeben</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation>Verwerfen</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>detach image</comment>
+        <translation>Fortfahren</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Möchten Sie das Plattenabbild &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wirklich löschen?&lt;/p&gt;&lt;p&gt;Falls Sie &lt;b&gt;Löschen&lt;/b&gt; auswählen, wird die Datei unwiderruflich gelöscht und die Registrierung des Abbildes aufgehoben. Diese Operation kann nicht rückgängig gemacht werden.&lt;/p&gt;&lt;/p&gt;Wenn Sie &lt;b&gt;Freigeben&lt;/b&gt; auswählen, wird die Registrierung des Abbildes aufgehoben und das Abbild aus der Liste entfernt, aber die Datei verbleibt auf der physischen Festplatte.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk</comment>
+        <translation>Löschen</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>hard disk</comment>
+        <translation>Freigeben</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation>Herunterladen</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation>Einbinden</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation>&lt;p&gt;Die Host-Taste ist momentan auf &lt;b&gt;%1&lt;/b&gt; eingestellt.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation>Fangen</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Mindestens eines der registrierten virtuellen Medien ist momentan nicht zugreifbar. Virtuelle Maschinen, die auf eines dieser Medien zugreifen, können so lange nicht gestartet werden, bis dieses Medium wieder zugreifbar wird.&lt;/p&gt;&lt;p&gt;Bestätigen Sie mit &lt;b&gt;Überprüfen&lt;/b&gt; um den Manager für virtuelle Medien zu starten und zu überprüfen, welche Medien nicht zugreifbar sind. Oder betätigen Sie &lt;b&gt;Ignorieren&lt;/b&gt; um diese Meldung zu ignorieren.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation>Überprüfen</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation>Einschalten</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation>Einschalten</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Möchten Sie die virtuelle Maschine wirklich zurücksetzen?&lt;/p&gt;&lt;p&gt;Dabei gehen ungesicherte Daten aller noch offenen Anwendungen des Gaste verloren.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation>Zurücksetzen</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation>Forfahren</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation>Zurück</translation>
+    </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
@@ -2858,6 +3018,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Could not locate the registration form on the server (response: %1).</source>
         <translation>Das Formular zur Registrierung konnte auf dem Server nicht gefunden werden (Antwort: %1).</translation>
+    </message>
+    <message>
+        <source>Could not perform connection handshake.</source>
+        <translation>Der Server lieferte nicht die erwarteten Daten als Antwort.</translation>
     </message>
 </context>
 <context>
@@ -3159,10 +3323,6 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>Transiente Ordner</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Pfad:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
-    </message>
-    <message>
         <source>Edits the selected shared folder definition.</source>
         <translation>Ändert den ausgewählten gemeinsamen Ordner.</translation>
     </message>
@@ -3180,20 +3340,32 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>Fügt einen neuen gemeinsamen Ordner hinzu (Ins)</translation>
     </message>
     <message>
-        <source>Space</source>
-        <translation>Space</translation>
-    </message>
-    <message>
-        <source>Edit the selected shared folder (Space)</source>
-        <translation>Ändert den ausgewählten gemeinsamen Ordner (Leertaste)</translation>
-    </message>
-    <message>
         <source>Del</source>
         <translation>Del</translation>
     </message>
     <message>
         <source>Remove the selected shared folder (Del)</source>
         <translation>Entfernt den ausgewählten gemeinsamen Ordner (Entf)</translation>
+    </message>
+    <message>
+        <source>Access</source>
+        <translation>Zugriff</translation>
+    </message>
+    <message>
+        <source>Ctrl+Space</source>
+        <translation>Ctrl+Space</translation>
+    </message>
+    <message>
+        <source>Edit the selected shared folder (Ctrl+Space)</source>
+        <translation>Ausgewählten Ordner editieren (Strg+Leertaste)</translation>
+    </message>
+    <message>
+        <source>Full</source>
+        <translation>Voll</translation>
+    </message>
+    <message>
+        <source>Read-only</source>
+        <translation>Nur lesbar</translation>
     </message>
 </context>
 <context>
@@ -3294,10 +3466,6 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>Einzelheiten &amp;zeigen</translation>
     </message>
     <message>
-        <source>Space</source>
-        <translation>Space</translation>
-    </message>
-    <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
         <translation>Aktueller Zustand (verändert)</translation>
@@ -3388,6 +3556,10 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>Zeigt Einzelheiten des ausgewählten Sicherungspunktes</translation>
+    </message>
+    <message>
+        <source>Ctrl+Space</source>
+        <translation>Ctrl+Space</translation>
     </message>
 </context>
 <context>
@@ -3706,6 +3878,129 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
+    <name>VBoxVMInformationDlg</name>
+    <message>
+        <source>Session Information Dialog</source>
+        <translation>Session-Informationen</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation>&amp;Schließen</translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <translation>Alt+S</translation>
+    </message>
+    <message>
+        <source>%1 - Session Information</source>
+        <translation>%1 - Session-Informationen</translation>
+    </message>
+    <message>
+        <source>&amp;Details</source>
+        <translation>&amp;Basis</translation>
+    </message>
+    <message>
+        <source>&amp;Runtime</source>
+        <translation>&amp;Laufzeit</translation>
+    </message>
+    <message>
+        <source>DMA transfers</source>
+        <translation>DMA-Übertragungen</translation>
+    </message>
+    <message>
+        <source>PIO transfers</source>
+        <translation>PIO-Übertragungen</translation>
+    </message>
+    <message>
+        <source>Data read</source>
+        <translation>Daten gelesen</translation>
+    </message>
+    <message>
+        <source>Data written</source>
+        <translation>Daten geschrieben</translation>
+    </message>
+    <message>
+        <source>Data transmitted</source>
+        <translation>Daten gesendet</translation>
+    </message>
+    <message>
+        <source>Data received</source>
+        <translation>Daten empfangen</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <translation>Aktiviert</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation>Deaktiviert</translation>
+    </message>
+    <message>
+        <source>Runtime Attributes</source>
+        <translation>Laufzeit-Attribute</translation>
+    </message>
+    <message>
+        <source>Screen Resolution</source>
+        <translation>Auflösung</translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization</source>
+        <translation>Hardware-Virtualisierung</translation>
+    </message>
+    <message>
+        <source>IDE Hard Disk Statistics</source>
+        <translation>IDE-Festplatten</translation>
+    </message>
+    <message>
+        <source>Primary Master</source>
+        <translation>Primärer Master</translation>
+    </message>
+    <message>
+        <source>Primary Slave</source>
+        <translation>Primärer Slave</translation>
+    </message>
+    <message>
+        <source>Secondary Slave</source>
+        <translation>Sekundärer Slave</translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Statistics</source>
+        <translation>CD/DVD-ROM</translation>
+    </message>
+    <message>
+        <source>Network Adapters Statistics</source>
+        <translation>Netzwerk-Adapter</translation>
+    </message>
+    <message>
+        <source>Adapter 1</source>
+        <translation>Adapter 1</translation>
+    </message>
+    <message>
+        <source>Adapter 2</source>
+        <translation>Adapter 2</translation>
+    </message>
+    <message>
+        <source>Adapter 3</source>
+        <translation>Adapter 3</translation>
+    </message>
+    <message>
+        <source>Adapter 4</source>
+        <translation>Adapter 4</translation>
+    </message>
+    <message>
+        <source>Not attached</source>
+        <translation>Nicht angeschlossen</translation>
+    </message>
+    <message>
+        <source>Hard Disks Statistics</source>
+        <translation>Festplatten</translation>
+    </message>
+    <message>
+        <source>Secondary Master</source>
+        <translation>Sekundärer Master</translation>
+    </message>
+</context>
+<context>
     <name>VBoxVMListBox</name>
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
@@ -3866,6 +4161,61 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}. Das zweite Zeichen muss eine gerate Zahl sein.</translation>
+    </message>
+    <message>
+        <source>&amp;Network Name</source>
+        <translation>&amp;Netzwerkname</translation>
+    </message>
+    <message>
+        <source>Displays the name of the internal network selected for this adapter.</source>
+        <translation>Zeigt den Namen des internen Netzwerks für den ausgewählten Adapter.</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMParallelPortSettings</name>
+    <message>
+        <source>VBoxVMParallelPortSettings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Parallel Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, enables the given parallel port of the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port &amp;Number</source>
+        <translation type="unfinished">Port&amp;nummer</translation>
+    </message>
+    <message>
+        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;IRQ</source>
+        <translation type="unfinished">&amp;IRQ</translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt</source>
+        <translation type="unfinished">I/O-Po&amp;rt</translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port &amp;Path</source>
+        <translation type="unfinished">Port&amp;pfad</translation>
+    </message>
+    <message>
+        <source>Displays the host parallel device name.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4608,6 +4958,55 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
+        <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>10</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source> Parallel Ports </source>
+        <translation>Parallele Schnittstellen</translation>
+    </message>
+    <message>
+        <source>#parallelPorts</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&amp;IDE Controller Type</source>
+        <translation>&amp;IDE-Controller im Gast</translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation>Wählt den Typ des virtuellen IDE-Controllers. Abhängig von dieser Einstellung emuliert VirtualBox unterschiedliche IDE-Hardware für den Gast.</translation>
+    </message>
+    <message>
+        <source>Guest Audio &amp;Controller</source>
+        <translation>Audio-&amp;Controller im Gast</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Selects the type of the emulated audio hardware.&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;Wählt den Typ der emulierten Audio-Hardware.&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Enable USB E&amp;HCI Controller</source>
+        <translation>E&amp;HCI-Controller aktivieren</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <translation>Aktiviert den virtuellen USB-EHCI-Controller für diese Maschine und damit USB-2.0-Unterstützung.</translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation>Der Name des internen Netzwerkes ist nicht gesetzt</translation>
+    </message>
+    <message>
+        <source>Port path is not specified </source>
+        <translation>Der Pfad für den Port fehlt</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>parallel ports</comment>
         <translation>Port %1</translation>
     </message>
 </context>
