@@ -110,19 +110,20 @@ OS/2 Specific Features
 This section describes the features that are specific to the OS/2 version
 of VirtualBox and may be absent in versions for other platforms.
 
-1. System key combinations such as Alt+Tab, Ctrl+Esc are crrently always
+1. System key combinations such as Alt+Tab, Ctrl+Esc are currently always
    grabbed by the host and never reach the guest even when the keyboard
-   is captured. In order to send these combinations, use the following
-   shortcuts (where Host is the host key defined in the global settings):
+   is captured. In order to send these combinations to the guest OS, use
+   the following shortcuts (where Host is the host key defined in the
+   global settings dialog):
 
    Host+` (Tilde/Backquote)  =>  Ctrl+Esc
    Host+1                    =>  Alt+Tab
    Host+2                    =>  Alt+Shift+Tab
 
 2. If you use two or more keyboard layouts on the OS/2 host (e.g. English
-   and Russian), make sure that the keyboard is switched to the Elglsh
+   and Russian), make sure that the keyboard is switched to the English
    layer when you work in the VirtualBox VM console window. Otherwise, some
-   shortcuts that involve the Host key (in particluar, all Host+<laiin_letter>
+   shortcuts that involve the Host key (in particluar, all Host+<latin_letter>
    shortcuts like Host+Q) may not work. Please note that the guest keyboard
    layout has nothing to do with the host layout so you will still be able to
    switch layouts in the guest using its own means.
