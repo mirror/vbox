@@ -744,7 +744,6 @@ static int mmR3HyperHeapDestroy(PVM pVM, PMMHYPERHEAP pHeap)
 MMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv)
 {
     AssertMsg(cb >= 8, ("Hey! Do you really mean to allocate less than 8 bytes?! cb=%d\n", cb));
-    AssertMsg(cb <= _4M, ("Allocating more than 4MB!? (cb=%#x) HMA limit might need adjusting if you allocate more.\n", cb));
 
     /*
      * Choose between allocating a new chunk of HMA memory
@@ -758,7 +757,7 @@ MMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MMT
         if (    rc != VERR_MM_HYPER_NO_MEMORY
             ||  cb <= 8*_1K)
         {
-            Log2(("MMR3HyperAllocOnceNoRel: cb=%#x uAlignment=%#x returns %Rrc and *ppv=%p\n",
+            Log2(("MMR3HyperAllocOnceNoRel: cb=%#zx uAlignment=%#x returns %Rrc and *ppv=%p\n",
                   cb, uAlignment, rc, *ppv));
             return rc;
         }
@@ -797,12 +796,29 @@ MMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MMT
                   cb, uAlignment, *ppv));
             return rc;
         }
+        AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cb, rc));
         SUPPageFree(pvPages, cb >> PAGE_SHIFT);
+
+        /*
+         * HACK ALERT! Try allocate it off the heap so that we don't freak
+         * out during vga/vmmdev mmio2 allocation with certain ram sizes.
+         */
+        /** @todo make a proper fix for this so we will never end up in this kind of situation! */
+        Log(("MMR3HyperAllocOnceNoRel: MMR3HyperMapHCRam failed with rc=%Rrc, try MMHyperAlloc(,%#d,,) instead\n",  rc, cb));
+        int rc2 = MMHyperAlloc(pVM, cb, uAlignment, enmTag, ppv);
+        if (RT_SUCCESS(rc2))
+        {
+            Log2(("MMR3HyperAllocOnceNoRel: cb=%#x uAlignment=%#x returns %Rrc and *ppv=%p\n",
+                  cb, uAlignment, rc, *ppv));
+            return rc;
+        }
     }
+    else
+        AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cb, rc));
+
     if (rc == VERR_NO_MEMORY)
         rc = VERR_MM_HYPER_NO_MEMORY;
-    Log2(("MMR3HyperAllocOnceNoRel: cb=%#x uAlignment=%#x returns %Rrc\n", cb, uAlignment, rc));
-    AssertMsgFailed(("Failed to allocate %d bytes!\n", cb));
+    LogRel(("MMR3HyperAllocOnceNoRel: cb=%#zx uAlignment=%#x returns %Rrc\n", cb, uAlignment, rc));
     return rc;
 }
 
