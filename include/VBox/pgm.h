@@ -1424,6 +1424,8 @@ PGMR3DECL(int) PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
 PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
 #endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
+PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const char *pszDesc);
+
 /**
  * Interface that the MMR3RamRegister(), MMR3RomRegister() and MMIO handler
  * registration APIs calls to inform PGM about memory registrations.
