@@ -165,22 +165,25 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 ||  VM_FF_ISSET(pVM, VM_FF_TERMINATE)
                 ||  pUVM->vm.s.fTerminateEMT)
                 break;
-
-            /*
-             * Some requests (both VMR3Req* and the DBGF) can potentially
-             * resume or start the VM, in that case we'll get a change in
-             * VM status indicating that we're now running.
-             */
-            if (    VBOX_SUCCESS(rc)
-                &&  enmBefore != pVM->enmVMState
-                &&  (pVM->enmVMState == VMSTATE_RUNNING))
-            {
-                rc = EMR3ExecuteVM(pVM);
-                Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Vrc, enmVMState=%d\n", rc, pVM->enmVMState));
-                if (EMGetState(pVM) == EMSTATE_GURU_MEDITATION)
-                    vmR3SetState(pVM, VMSTATE_GURU_MEDITATION);
-            }
         }
+
+        /*
+         * Some requests (both VMR3Req* and the DBGF) can potentially
+         * resume or start the VM, in that case we'll get a change in
+         * VM status indicating that we're now running.
+         */
+        if (    VBOX_SUCCESS(rc)
+            &&  pUVM->pVM
+            &&  enmBefore != pUVM->pVM->enmVMState
+            &&  pUVM->pVM->enmVMState == VMSTATE_RUNNING)
+        {
+            PVM pVM = pUVM->pVM;
+            rc = EMR3ExecuteVM(pVM);
+            Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Vrc, enmVMState=%d\n", rc, pVM->enmVMState));
+            if (EMGetState(pVM) == EMSTATE_GURU_MEDITATION)
+                vmR3SetState(pVM, VMSTATE_GURU_MEDITATION);
+        }
+
     } /* forever */
 
 
@@ -335,7 +338,7 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVM pUVM, const uint32_t fMask, uint
      */
     PVM pVM = pUVM->pVM;
     int rc = VINF_SUCCESS;
-    ASMAtomicUoWriteBool(&pUVM->vm.s.fWait, true);
+    ASMAtomicWriteBool(&pUVM->vm.s.fWait, true);
     //unsigned cLoops = 0;
     for (;;)
     {
@@ -534,7 +537,7 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVM pUVM, const uint32_t fMask, ui
      * Halt loop.
      */
     int rc = VINF_SUCCESS;
-    ASMAtomicUoWriteBool(&pUVM->vm.s.fWait, true);
+    ASMAtomicWriteBool(&pUVM->vm.s.fWait, true);
     unsigned cLoops = 0;
     for (;; cLoops++)
     {
@@ -651,7 +654,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVM pUVM, const uint32_t fMask, ui
      * Halt loop.
      */
     int rc = VINF_SUCCESS;
-    ASMAtomicUoWriteBool(&pUVM->vm.s.fWait, true);
+    ASMAtomicWriteBool(&pUVM->vm.s.fWait, true);
     unsigned cLoops = 0;
     for (;; cLoops++)
     {
@@ -725,7 +728,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVM pUVM, const uint32_t fMask, ui
  */
 static DECLCALLBACK(int) vmR3HaltGlobal1Wait(PUVM pUVM)
 {
-    ASMAtomicUoWriteBool(&pUVM->vm.s.fWait, true);
+    ASMAtomicWriteBool(&pUVM->vm.s.fWait, true);
 
     PVM pVM = pUVM->pVM;
     int rc = VINF_SUCCESS;
@@ -786,7 +789,7 @@ static DECLCALLBACK(void) vmR3HaltGlobal1NotifyFF(PUVM pUVM, bool fNotifiedREM)
  */
 static DECLCALLBACK(int) vmR3BootstrapWait(PUVM pUVM)
 {
-    ASMAtomicUoWriteBool(&pUVM->vm.s.fWait, true);
+    ASMAtomicWriteBool(&pUVM->vm.s.fWait, true);
 
     int rc = VINF_SUCCESS;
     for (;;)
@@ -851,7 +854,7 @@ static DECLCALLBACK(void) vmR3BootstrapNotifyFF(PUVM pUVM, bool fNotifiedREM)
  */
 static DECLCALLBACK(int) vmR3DefaultWait(PUVM pUVM)
 {
-    ASMAtomicUoWriteBool(&pUVM->vm.s.fWait, true);
+    ASMAtomicWriteBool(&pUVM->vm.s.fWait, true);
 
     PVM pVM = pUVM->pVM;
     int rc = VINF_SUCCESS;
