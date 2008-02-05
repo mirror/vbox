@@ -1340,7 +1340,7 @@
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <source>Adapter</source>
+        <source>Host Driver</source>
         <comment>details report (audio)</comment>
         <translation>Host-Treiber</translation>
     </message>
@@ -1789,7 +1789,7 @@
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation>Gast-Controller</translation>
+        <translation>Controller</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3904,27 +3904,27 @@ value.&lt;/qt&gt;</source>
         <translation>&amp;Laufzeit</translation>
     </message>
     <message>
-        <source>DMA transfers</source>
+        <source>DMA Transfers</source>
         <translation>DMA-Übertragungen</translation>
     </message>
     <message>
-        <source>PIO transfers</source>
+        <source>PIO Transfers</source>
         <translation>PIO-Übertragungen</translation>
     </message>
     <message>
-        <source>Data read</source>
+        <source>Data Read</source>
         <translation>Daten gelesen</translation>
     </message>
     <message>
-        <source>Data written</source>
+        <source>Data Written</source>
         <translation>Daten geschrieben</translation>
     </message>
     <message>
-        <source>Data transmitted</source>
+        <source>Data Transmitted</source>
         <translation>Daten gesendet</translation>
     </message>
     <message>
-        <source>Data received</source>
+        <source>Data Received</source>
         <translation>Daten empfangen</translation>
     </message>
     <message>
@@ -3968,7 +3968,7 @@ value.&lt;/qt&gt;</source>
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <source>Network Adapters Statistics</source>
+        <source>Network Adapter Statistics</source>
         <translation>Netzwerk-Adapter</translation>
     </message>
     <message>
@@ -4981,8 +4981,8 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Wählt den Typ des virtuellen IDE-Controllers. Abhängig von dieser Einstellung emuliert VirtualBox unterschiedliche IDE-Hardware für den Gast.</translation>
     </message>
     <message>
-        <source>Guest Audio &amp;Controller</source>
-        <translation>Audio-&amp;Controller im Gast</translation>
+        <source>Audio &amp;Controller</source>
+        <translation>Audio-&amp;Controller</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Selects the type of the emulated audio hardware.&lt;/qt&gt;</source>
