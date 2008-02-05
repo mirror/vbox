@@ -583,7 +583,7 @@ void VBoxVMInformationDlg::refreshStatistics()
     result += paragraph;
 
     /* Network Adapters Statistics. Counters are currently missed. */
-    result += hdrRow.arg ("nw_16px.png").arg (tr ("Network Adapters Statistics"));
+    result += hdrRow.arg ("nw_16px.png").arg (tr ("Network Adapter Statistics"));
     result += subRow.arg (tr ("Adapter 1")).arg (tr ("Adapter 2"));
     result += composeArticle ("B", 16, 17, 18, 19);
 
