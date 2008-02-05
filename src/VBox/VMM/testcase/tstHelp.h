@@ -67,7 +67,7 @@ __END_DECLS
     { \
         if ( RT_OFFSETOF(strct, member) & ((align) - 1) ) \
         { \
-            printf("%s::%s offset=%u expected alignment %x, meaning %u off\n", #strct, #member, (unsigned)RT_OFFSETOF(strct, member), \
+            printf("%s::%s offset=%#x expected alignment %x, meaning %#x off\n", #strct, #member, (unsigned)RT_OFFSETOF(strct, member), \
                    (unsigned)(align), (unsigned)(RT_OFFSETOF(strct, member) & ((align) - 1))); \
             rc++; \
         } \
