@@ -1551,7 +1551,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 			int rows = audio.GetEnabled() ? 3 : 2;
             if (audio.GetEnabled())
                 item = QString (sSectionItemTpl)
-	                   .arg (tr ("Adapter", "details report (audio)"),
+	                   .arg (tr ("Host Driver", "details report (audio)"),
                              toString (audio.GetAudioDriver())) +
                        QString (sSectionItemTpl)
 	                   .arg (tr ("Controller", "details report (audio)"),

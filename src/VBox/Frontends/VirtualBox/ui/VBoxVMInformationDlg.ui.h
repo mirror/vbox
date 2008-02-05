@@ -166,37 +166,37 @@ void VBoxVMInformationDlg::languageChangeImp()
     mNamesMap.clear();
 
     /* HD statistics: */
-    mNamesMap ["/Devices/ATA0/Unit0/*DMA"] = tr ("DMA transfers");
-    mNamesMap ["/Devices/ATA0/Unit0/*PIO"] = tr ("PIO transfers");
-    mNamesMap ["/Devices/ATA0/Unit0/ReadBytes"] = tr ("Data read");
-    mNamesMap ["/Devices/ATA0/Unit0/WrittenBytes"] = tr ("Data written");
+    mNamesMap ["/Devices/ATA0/Unit0/*DMA"] = tr ("DMA Transfers");
+    mNamesMap ["/Devices/ATA0/Unit0/*PIO"] = tr ("PIO Transfers");
+    mNamesMap ["/Devices/ATA0/Unit0/ReadBytes"] = tr ("Data Read");
+    mNamesMap ["/Devices/ATA0/Unit0/WrittenBytes"] = tr ("Data Written");
 
-    mNamesMap ["/Devices/ATA0/Unit1/*DMA"] = tr ("DMA transfers");
-    mNamesMap ["/Devices/ATA0/Unit1/*PIO"] = tr ("PIO transfers");
-    mNamesMap ["/Devices/ATA0/Unit1/ReadBytes"] = tr ("Data read");
-    mNamesMap ["/Devices/ATA0/Unit1/WrittenBytes"] = tr ("Data written");
+    mNamesMap ["/Devices/ATA0/Unit1/*DMA"] = tr ("DMA Transfers");
+    mNamesMap ["/Devices/ATA0/Unit1/*PIO"] = tr ("PIO Transfers");
+    mNamesMap ["/Devices/ATA0/Unit1/ReadBytes"] = tr ("Data Read");
+    mNamesMap ["/Devices/ATA0/Unit1/WrittenBytes"] = tr ("Data Written");
 
-    mNamesMap ["/Devices/ATA1/Unit0/*DMA"] = tr ("DMA transfers");
-    mNamesMap ["/Devices/ATA1/Unit0/*PIO"] = tr ("PIO transfers");
-    mNamesMap ["/Devices/ATA1/Unit0/ReadBytes"] = tr ("Data read");
-    mNamesMap ["/Devices/ATA1/Unit0/WrittenBytes"] = tr ("Data written");
+    mNamesMap ["/Devices/ATA1/Unit0/*DMA"] = tr ("DMA Transfers");
+    mNamesMap ["/Devices/ATA1/Unit0/*PIO"] = tr ("PIO Transfers");
+    mNamesMap ["/Devices/ATA1/Unit0/ReadBytes"] = tr ("Data Read");
+    mNamesMap ["/Devices/ATA1/Unit0/WrittenBytes"] = tr ("Data Written");
 
-    mNamesMap ["/Devices/ATA1/Unit1/*DMA"] = tr ("DMA transfers");
-    mNamesMap ["/Devices/ATA1/Unit1/*PIO"] = tr ("PIO transfers");
-    mNamesMap ["/Devices/ATA1/Unit1/ReadBytes"] = tr ("Data read");
-    mNamesMap ["/Devices/ATA1/Unit1/WrittenBytes"] = tr ("Data written");
+    mNamesMap ["/Devices/ATA1/Unit1/*DMA"] = tr ("DMA Transfers");
+    mNamesMap ["/Devices/ATA1/Unit1/*PIO"] = tr ("PIO Transfers");
+    mNamesMap ["/Devices/ATA1/Unit1/ReadBytes"] = tr ("Data Read");
+    mNamesMap ["/Devices/ATA1/Unit1/WrittenBytes"] = tr ("Data Written");
 
-    mNamesMap ["/Devices/PCNet0/TransmitBytes"] = tr ("Data transmitted");
-    mNamesMap ["/Devices/PCNet0/ReceiveBytes"] = tr ("Data received");
+    mNamesMap ["/Devices/PCNet0/TransmitBytes"] = tr ("Data Transmitted");
+    mNamesMap ["/Devices/PCNet0/ReceiveBytes"] = tr ("Data Received");
 
-    mNamesMap ["/Devices/PCNet1/TransmitBytes"] = tr ("Data transmitted");
-    mNamesMap ["/Devices/PCNet1/ReceiveBytes"] = tr ("Data received");
+    mNamesMap ["/Devices/PCNet1/TransmitBytes"] = tr ("Data Transmitted");
+    mNamesMap ["/Devices/PCNet1/ReceiveBytes"] = tr ("Data Received");
 
-    mNamesMap ["/Devices/PCNet2/TransmitBytes"] = tr ("Data transmitted");
-    mNamesMap ["/Devices/PCNet2/ReceiveBytes"] = tr ("Data received");
+    mNamesMap ["/Devices/PCNet2/TransmitBytes"] = tr ("Data Transmitted");
+    mNamesMap ["/Devices/PCNet2/ReceiveBytes"] = tr ("Data Received");
 
-    mNamesMap ["/Devices/PCNet3/TransmitBytes"] = tr ("Data transmitted");
-    mNamesMap ["/Devices/PCNet3/ReceiveBytes"] = tr ("Data received");
+    mNamesMap ["/Devices/PCNet3/TransmitBytes"] = tr ("Data Transmitted");
+    mNamesMap ["/Devices/PCNet3/ReceiveBytes"] = tr ("Data Received");
 
     /* Statistics page update. */
     refreshStatistics();
@@ -451,7 +451,7 @@ void VBoxVMInformationDlg::refreshStatistics()
     result += paragraph;
 
     /* Network Adapters Statistics. */
-    result += hdrRow.arg ("nw_16px.png").arg (tr ("Network Adapters Statistics"));
+    result += hdrRow.arg ("nw_16px.png").arg (tr ("Network Adapter Statistics"));
     result += formatAdapter (tr ("Adapter 1"), 0, 16, 17);
     result += interline;
     result += formatAdapter (tr ("Adapter 2"), 1, 18, 19);

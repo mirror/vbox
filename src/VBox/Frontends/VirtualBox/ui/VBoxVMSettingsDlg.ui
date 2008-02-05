@@ -2113,7 +2113,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                     <cstring>txAudioController</cstring>
                                 </property>
                                 <property name="text">
-                                    <string>Guest Audio &amp;Controller</string>
+                                    <string>Audio &amp;Controller</string>
                                 </property>
                                 <property name="buddy" stdset="0">
                                     <cstring>cbAudioController</cstring>
