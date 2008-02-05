@@ -854,20 +854,22 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
         Log((DEVICE_NAME ":ddi_get_iblock_cookie failed. Cannot set IRQ for VMMDev.\n"));
     return rc;
 #else
-    int IntrType;
+    int IntrType = 0;
     int rc = ddi_intr_get_supported_types(pDip, &IntrType);
     if (rc == DDI_SUCCESS)
     {
         /* We won't need to bother about MSIs. */
         if (IntrType & DDI_INTR_TYPE_FIXED)
         {
-            int IntrCount;
+            int IntrCount = 0;
             rc = ddi_intr_get_nintrs(pDip, IntrType, &IntrCount);
-            if (rc == DDI_SUCCESS)
+            if (   rc == DDI_SUCCESS
+                && IntrCount > 0)
             {
-                int IntrAvail;
+                int IntrAvail = 0;
                 rc = ddi_intr_get_navail(pDip, IntrType, &IntrAvail);
-                if (rc == DDI_SUCCESS)
+                if (   rc == DDI_SUCCESS
+                    && IntrAvail > 0)
                 {
                     /* Allocated kernel memory for the interrupt handles. The allocation size is stored internally. */
                     pState->pIntr = RTMemAlloc(IntrCount * sizeof(ddi_intr_handle_t));
@@ -923,13 +925,13 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
                         LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to allocated IRQs. count=%d\n", IntrCount));
                 }
                 else
-                    LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get available IRQs. rc=%d\n", rc));
+                    LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get or insufficient available IRQs. rc=%d IntrAvail=%d\n", rc, IntrAvail));
             }
             else
-                LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get number of IRQs. rc=%d\n", rc));
+                LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get or insufficient number of IRQs. rc=%d IntrCount=%d\n", rc, IntrCount));
         }
         else
-            LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: invalid irq type. IntrType=%d\n", IntrType));
+            LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: invalid irq type. IntrType=%#x\n", IntrType));
     }
     else
         LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ: failed to get supported interrupt types\n"));
