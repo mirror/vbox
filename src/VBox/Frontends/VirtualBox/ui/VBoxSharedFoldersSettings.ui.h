@@ -84,7 +84,7 @@ public:
             static_cast<VBoxRichListItem*> (item) : 0;
     }
 
-    QString getText (int aIndex)
+    QString getText (int aIndex) const
     {
         return aIndex >= 0 && aIndex < (int)mTextList.size() ?
             mTextList [aIndex] : QString::null;
@@ -103,6 +103,12 @@ protected:
     {
         processColumn (aColumn, aWidth);
         QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
+    }
+
+    int width (const QFontMetrics &aFontMetrics, const QListView *, int aColumn) const
+    {
+        return aFontMetrics.boundingRect (getText (aColumn)).width() +
+               aFontMetrics.width ("...x") /* indent size */ ;
     }
 
     void processColumn (int aColumn, int aWidth)
@@ -222,20 +228,18 @@ public:
         inputLayout->addWidget (lbName,  1, 0);
         inputLayout->addMultiCellWidget (mLeName, 1, 1, 1, 2);
 
-        QHBoxLayout *cbLayout = new QHBoxLayout (0, "cbLayout");
-        inputLayout->addMultiCellLayout (cbLayout, 2, 2, 0, 2);
         mCbReadonly = new QCheckBox (tr ("&Read-only"), this);
         QWhatsThis::add (mCbReadonly,
             tr ("When checked, the guest OS will not be able to write to the "
                 "specified shared folder."));
-
         mCbReadonly->setChecked (false);
-        cbLayout->addWidget (mCbReadonly);
+        inputLayout->addMultiCellWidget (mCbReadonly, 2, 2, 0, 2);
+
         if (aEnableSelector)
         {
-            mCbPermanent = new QCheckBox ( tr ("&Make Permanent"), this);
+            mCbPermanent = new QCheckBox (tr ("&Make Permanent"), this);
             mCbPermanent->setChecked (true);
-            cbLayout->addWidget (mCbPermanent);
+            inputLayout->addMultiCellWidget (mCbPermanent, 3, 3, 0, 2);
             connect (mCbPermanent, SIGNAL (toggled (bool)),
                      this, SLOT (validate()));
         }
@@ -374,6 +378,39 @@ void VBoxSharedFoldersSettings::init()
     mTrReadOnly = tr ("Read-only");
 }
 
+void VBoxSharedFoldersSettings::showEvent (QShowEvent *aEvent)
+{
+    QWidget::showEvent (aEvent);
+
+    /* Adjusting size after all pending show events are processed. */
+    QTimer::singleShot (0, this, SLOT (adjustList()));
+}
+
+
+void VBoxSharedFoldersSettings::adjustList()
+{
+    /* Adjust two columns size.
+     * Watching columns 0&2 to feat 1/3 of total width. */
+    int total = listView->columnWidth (0) +
+                listView->columnWidth (1) +
+                listView->columnWidth (2);
+
+    listView->adjustColumn (0);
+    int w0 = listView->columnWidth (0) < total / 3 ?
+             listView->columnWidth (0) : total / 3;
+
+    listView->adjustColumn (2);
+    int w2 = listView->columnWidth (2) < total / 3 ?
+             listView->columnWidth (2) : total / 3;
+
+    /* We are adjusting columns 0 and 2 and resizing column 1 to feat
+     * visible listView' width according two adjusted columns. Due to 
+     * adjusting column 2 influent column 0 restoring all widths. */
+    listView->setColumnWidth (0, w0);
+    listView->setColumnWidth (1, total - w0 - w2);
+    listView->setColumnWidth (2, w2);
+}
+    
 bool VBoxSharedFoldersSettings::eventFilter (QObject *aObject, QEvent *aEvent)
 {
     /* Process & show auto Tool-Tip for partially hidden listview items. */
