@@ -46,6 +46,7 @@
  * PGMR3PhysReadByte/Word/Dword
  * PGMR3PhysWriteByte/Word/Dword
  */
+/** @todo rename and add U64. */
 
 #define PGMPHYSFN_READNAME  PGMR3PhysReadByte
 #define PGMPHYSFN_WRITENAME PGMR3PhysWriteByte
@@ -65,6 +66,119 @@
 #define PGMPHYS_DATATYPE    uint32_t
 #include "PGMPhys.h"
 
+
+
+/**
+ * Sets up a range RAM.
+ *
+ * This will check for conflicting registrations, make a resource
+ * reservation for the memory (with GMM), and setup the per-page
+ * tracking structures (PGMPAGE).
+ *
+ * @returns VBox stutus code.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   GCPhys          The physical address of the RAM.
+ * @param   cb              The size of the RAM.
+ * @param   pszDesc         The description - not copied, so, don't free or change it.
+ */
+PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const char *pszDesc)
+{
+   /*
+     * Validate input.
+     */
+    Log(("PGMR3PhysRegisterRam: GCPhys=%RGp cb=%RGp pszDesc=%s\n", GCPhys, cb, pszDesc));
+    AssertReturn(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys, VERR_INVALID_PARAMETER);
+    AssertReturn(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb, VERR_INVALID_PARAMETER);
+    AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
+    RTGCPHYS GCPhysLast = GCPhys + (cb - 1);
+    AssertMsgReturn(GCPhysLast > GCPhys, ("The range wraps! GCPhys=%RGp cb=%RGp\n", GCPhys, cb), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+
+    /*
+     * Find range location and check for conflicts.
+     * (We don't lock here because the locking by EMT is only required on update.)
+     */
+    PPGMRAMRANGE    pPrev = NULL;
+    PPGMRAMRANGE    pCur = pVM->pgm.s.pRamRangesHC;
+    while (pCur && GCPhysLast >= pCur->GCPhys)
+    {
+        if (    GCPhys     <= pCur->GCPhysLast
+            &&  GCPhysLast >= pCur->GCPhys)
+            AssertLogRelMsgFailedReturn(("%RGp-%RGp (%s) conflicts with existing %RGp-%RGp (%s)\n",
+                                         GCPhys, GCPhysLast, pszDesc,
+                                         pCur->GCPhys, pCur->GCPhysLast, pCur->pszDesc),
+                                        VERR_PGM_RAM_CONFLICT);
+
+        /* next */
+        pPrev = pCur;
+        pCur = pCur->pNextHC;
+    }
+
+    /*
+     * Register it with GMM (the API bitches).
+     */
+    const RTGCPHYS cPages = cb >> PAGE_SHIFT;
+    int rc = MMR3IncreaseBaseReservation(pVM, cPages);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Allocate RAM range.
+     */
+    const size_t cbRamRange = RT_OFFSETOF(PGMRAMRANGE, aPages[cPages]);
+    PPGMRAMRANGE pNew;
+    rc = MMR3HyperAllocOnceNoRel(pVM, cbRamRange, 0, MM_TAG_PGM_PHYS, (void **)&pNew);
+    AssertLogRelMsgRCReturn(rc, ("cbRamRange=%zd\n", cbRamRange), rc);
+
+    /*
+     * Initialize the range.
+     */
+    pNew->GCPhys        = GCPhys;
+    pNew->GCPhysLast    = GCPhysLast;
+    pNew->pszDesc       = pszDesc;
+    pNew->cb            = cb;
+    pNew->fFlags        = 0;
+
+    pNew->pavHCChunkHC  = NULL;
+    pNew->pavHCChunkGC  = 0;
+    pNew->pvHC          = NULL;
+
+    RTGCPHYS iPage = cPages;
+    while (iPage-- > 0)
+    {
+        pNew->aPages[iPage].HCPhys = pVM->pgm.s.HCPhysZeroPg;
+        pNew->aPages[iPage].u2State = PGM_PAGE_STATE_ZERO;
+        pNew->aPages[iPage].fWrittenTo = 0;
+        pNew->aPages[iPage].fSomethingElse = 0;
+        pNew->aPages[iPage].idPage = NIL_GMM_PAGEID;
+        pNew->aPages[iPage].u32B = 0;
+    }
+
+    /*
+     * Insert the new RAM range.
+     * (Take the lock just so that we're playing by the rules.)
+     */
+    pgmLock(pVM);
+    pNew->pNextHC = pCur;
+    //pNew->pNextR0 = pCur ? MMHyperCCToR0(pVM, pCur) : NIL_RTR0PTR;
+    pNew->pNextGC = pCur ? MMHyperCCToGC(pVM, pCur) : NIL_RTGCPTR;
+    if (pPrev)
+    {
+        pPrev->pNextHC = pNew;
+        //pPrev->pNextR0 = MMHyperCCToR0(pVM, pNew);
+        pPrev->pNextGC = MMHyperCCToGC(pVM, pNew);
+    }
+    else
+    {
+        pVM->pgm.s.pRamRangesHC = pNew;
+        //pVM->pgm.s.pRamRangesR0 = MMHyperCCToR0(pVM, pNew);
+        pVM->pgm.s.pRamRangesGC = MMHyperCCToGC(pVM, pNew);
+    }
+    pgmUnlock(pVM);
+
+    return VINF_SUCCESS;
+}
 
 
 

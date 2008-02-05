@@ -667,6 +667,11 @@ typedef struct PGMRAMRANGE
     /** Start of the HC mapping of the range.
      * For pure MMIO and dynamically allocated ranges this is NULL, while for all ranges this is a valid pointer. */
     R3PTRTYPE(void *)                   pvHC;
+    /** The range description. */
+    R3PTRTYPE(const char *)             pszDesc;
+
+    /** Padding to make aPage aligned on sizeof(PGMPAGE). */
+    RTR3PTR                             apvReserved[HC_ARCH_BITS == 32 ? 2 : 1];
 
     /** Array of physical guest page tracking structures. */
     PGMPAGE                             aPages[1];
