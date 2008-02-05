@@ -459,6 +459,7 @@ vslick.h: include/VBox/cdefs.h Makefile
 	echo '#define GCPTRTYPE(GCType)               GCType ' >> $@.tmp
 	echo '#define GCTYPE(GCType, HCType)          GCType ' >> $@.tmp
 	echo '#define HCPTRTYPE(HCType)               HCType ' >> $@.tmp
+	echo '#define R3R0PTRTYPE(HCType)             HCType ' >> $@.tmp
 	echo '#define R0PTRTYPE(R3Type)               R3Type ' >> $@.tmp
 	echo '#define R3PTRTYPE(R0Type)               R0Type ' >> $@.tmp
 	echo '#define RT_SRC_POS                      __FILE__, __LINE__, __PRETTY_FUNCTION__ ' >> $@.tmp
