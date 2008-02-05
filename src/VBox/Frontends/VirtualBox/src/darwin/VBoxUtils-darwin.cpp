@@ -68,6 +68,19 @@ CGImageRef DarwinQImageToCGImage (const QImage *aImage)
 }
 
 /**
+ * Loads an image using Qt and converts it to a CGImage.
+ *
+ * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
+ * @param   aSource     The source name.
+ */
+CGImageRef DarwinQImageFromMimeSourceToCGImage (const char *aSource)
+{
+    QImage qim = QImage::fromMimeSource (aSource);
+    Assert (!qim.isNull());
+    return DarwinQImageToCGImage (&qim);
+}
+
+/**
  * Converts a QPixmap to a CGImage.
  *
  * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
@@ -165,6 +178,7 @@ void DarwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGI
     CGContextRef context = BeginCGContextForApplicationDockTile();
     Assert (context);
     /* Clear the background */
+    CGContextSetBlendMode (context, kCGBlendModeNormal);
     CGContextClearRect (context, CGRectMake (0, 0, 128, 128));
     /* rounded corners */
 //        CGContextSetLineJoin (context, kCGLineJoinRound);
@@ -195,6 +209,7 @@ void DarwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGI
     /* the overlay image at bottom/right */
     if (aOverlayImage)
     {
+
         CGRect overlayRect = CGRectMake (targetWidth - CGImageGetWidth (aOverlayImage),
                                          0,
                                          CGImageGetWidth (aOverlayImage),
