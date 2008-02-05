@@ -251,6 +251,7 @@ class QImage;
 class QPixmap;
 class VBoxFrameBuffer;
 CGImageRef DarwinQImageToCGImage (const QImage *aImage);
+CGImageRef DarwinQImageFromMimeSourceToCGImage (const char *aSource);
 CGImageRef DarwinQPixmapToCGImage (const QPixmap *aPixmap);
 CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource);
 CGImageRef DarwinCreateDockBadge (const char *aSource);
