@@ -300,7 +300,7 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
             return VMSetError(pVM, rc, RT_SRC_POS,
                               N_("Insufficient free memory to start the VM (cbRam=%#RX64 enmPolicy=%d enmPriority=%d)"),
                               cbRam, enmPolicy, enmPriority);
-        return VMSetError(pVM, rc, RT_SRC_POS, "GMMR3InitialReservation(,%#RX64,0,0,%d,%d).",
+        return VMSetError(pVM, rc, RT_SRC_POS, "GMMR3InitialReservation(,%#RX64,0,0,%d,%d)",
                           cbRam >> PAGE_SHIFT, enmPolicy, enmPriority);
     }
 
@@ -320,7 +320,7 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
     rc = PGMR3PhysRegisterRam(pVM, 0, cbRam, "Base RAM");
     if (RT_SUCCESS(rc) && fPreAlloc)
     {
-        /** @todo implement RamPreAlloc if it makes sense. */
+        /** @todo implement RamPreAlloc if it is *really* needed - in PGM preferably. (lazy bird) */
         return VM_SET_ERROR(pVM, VERR_NOT_IMPLEMENTED, "TODO: RamPreAlloc");
     }
 
@@ -547,10 +547,16 @@ int mmR3UpdateReservation(PVM pVM)
  */
 MMR3DECL(int) MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
 {
-    LogFlow(("MMR3IncreaseBaseReservation: +%RU64 (%RU64 -> %RU64\n", cAddBasePages,
-             pVM->mm.s.cBasePages, pVM->mm.s.cBasePages + cAddBasePages));
+    uint64_t cOld = pVM->mm.s.cBasePages;
     pVM->mm.s.cBasePages += cAddBasePages;
-    return mmR3UpdateReservation(pVM);
+    LogFlow(("MMR3IncreaseBaseReservation: +%RU64 (%RU64 -> %RU64\n", cAddBasePages, cOld, pVM->mm.s.cBasePages));
+    int rc = mmR3UpdateReservation(pVM);
+    if (RT_FAILURE(rc))
+    {
+        VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to reserved physical memory for the RAM (%#RX64 -> %#RX64)"), cOld, pVM->mm.s.cBasePages);
+        pVM->mm.s.cBasePages = cOld;
+    }
+    return rc;
 }
 
 
@@ -563,12 +569,18 @@ MMR3DECL(int) MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
  * @param   pVM             The shared VM structure.
  * @param   cAddFixedPages  The number of pages to add.
  */
-MMR3DECL(int) MMR3AddFixedReservation(PVM pVM, uint32_t cAddFixedPages)
+MMR3DECL(int) MMR3IncreaseFixedReservation(PVM pVM, uint32_t cAddFixedPages)
 {
-    LogFlow(("MMR3AddFixedReservation: +%u (%u -> %u)\n", cAddFixedPages,
-             pVM->mm.s.cFixedPages, pVM->mm.s.cFixedPages + cAddFixedPages));
+    const uint32_t cOld = pVM->mm.s.cFixedPages;
     pVM->mm.s.cFixedPages += cAddFixedPages;
-    return mmR3UpdateReservation(pVM);
+    LogFlow(("MMR3AddFixedReservation: +%u (%u -> %u)\n", cAddFixedPages, cOld, pVM->mm.s.cFixedPages));
+    int rc = mmR3UpdateReservation(pVM);
+    if (RT_FAILURE(rc))
+    {
+        VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to reserve physical memory (%#x -> %#x)"), cOld, pVM->mm.s.cFixedPages);
+        pVM->mm.s.cFixedPages = cOld;
+    }
+    return rc;
 }
 
 
@@ -583,9 +595,16 @@ MMR3DECL(int) MMR3AddFixedReservation(PVM pVM, uint32_t cAddFixedPages)
  */
 MMR3DECL(int) MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages)
 {
-    LogFlow(("MMR3UpdateShadowReservation: %u -> %u\n", pVM->mm.s.cShadowPages, cShadowPages));
+    const uint32_t cOld = pVM->mm.s.cShadowPages;
     pVM->mm.s.cShadowPages = cShadowPages;
-    return mmR3UpdateReservation(pVM);
+    LogFlow(("MMR3UpdateShadowReservation: %u -> %u\n", cOld, pVM->mm.s.cShadowPages));
+    int rc = mmR3UpdateReservation(pVM);
+    if (RT_FAILURE(rc))
+    {
+        VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to reserve physical memory for shadow page tables (%#x -> %#x)"), cOld, pVM->mm.s.cShadowPages);
+        pVM->mm.s.cShadowPages = cOld;
+    }
+    return rc;
 }
 
 
