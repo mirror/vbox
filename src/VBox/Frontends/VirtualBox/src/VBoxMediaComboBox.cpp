@@ -49,12 +49,12 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, const char *aName,
     connect (this, SIGNAL (activated (int)),
              this, SLOT (processActivated (int)));
 
-	/* in some qt themes embedded list-box is not used by default, so create it */
-	if (!listBox())
-		setListBox (new QListBox (this));
-	if (listBox())
-	    connect (listBox(), SIGNAL (onItem (QListBoxItem*)),
-	             this, SLOT (processOnItem (QListBoxItem*)));
+    /* in some qt themes embedded list-box is not used by default, so create it */
+    if (!listBox())
+        setListBox (new QListBox (this));
+    if (listBox())
+        connect (listBox(), SIGNAL (onItem (QListBoxItem*)),
+                 this, SLOT (processOnItem (QListBoxItem*)));
 
     /* cache pixmaps as class members */
     QImage img;
