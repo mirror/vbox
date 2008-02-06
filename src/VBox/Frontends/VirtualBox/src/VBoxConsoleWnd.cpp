@@ -667,7 +667,10 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     CMachine cmachine = csession.GetMachine();
 
     /* Set the VM-specific application icon */
+    /* Not on Mac OS X. The dock icon is handled below. */
+#ifndef Q_WS_MAC
     setIcon (vboxGlobal().vmGuestOSTypeIcon (cmachine.GetOSTypeId()));
+#endif 
 
     /* restore the position of the window and some options */
     {
@@ -1601,6 +1604,10 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         setCaption (cmachine.GetName() + snapshotName +
                     " [" + vboxGlobal().toString (machine_state) + "] - " +
                     caption_prefix);
+//#ifdef Q_WS_MAC
+//        SetWindowTitleWithCFString (reinterpret_cast <WindowPtr> (this->winId()), CFSTR("sfds"));
+//SetWindowAlternateTitle 
+//#endif 
     }
     if (element & FloppyStuff)
     {
