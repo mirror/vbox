@@ -927,7 +927,7 @@ int main (int argc, char **argv)
          * and all other relevant options.
          */
         const char *apszArgs[7];
-        int i = 0;
+        unsigned i = 0;
         apszArgs[i++] = argv[0];
         apszArgs[i++] = "--pipe";
         char szPipeArg[32];
@@ -940,7 +940,7 @@ int main (int argc, char **argv)
         }
         if (gAutoShutdown)
             apszArgs[i++] = "--auto-shutdown";
-        apszArgs[i++] = NULL; Assert(i <= (int)RT_ELEMENTS(apszArgs));
+        apszArgs[i++] = NULL; Assert(i <= RT_ELEMENTS(apszArgs));
         execv (apszArgs[0], (char * const *)apszArgs);
         exit (0);
 # endif
