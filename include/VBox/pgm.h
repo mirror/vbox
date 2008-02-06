@@ -271,6 +271,32 @@ typedef enum PGMMODE
     PGMMODE_32BIT_HACK = 0x7fffffff
 } PGMMODE;
 
+/**
+ * The current ROM page protection.
+ */
+typedef enum PGMROMPROT
+{
+    /** The customary invalid value. */
+    PGMROMPROT_INVALID = 0,
+    /** Read from the virgin ROM page, ignore writes.
+     * Map the virgin page, use write access handler to ignore writes. */
+    PGMROMPROT_READ_ROM_WRITE_IGNORE,
+    /** Read from the virgin ROM page, write to the shadow RAM.
+     * Map the virgin page, use write access handler change the RAM. */
+    PGMROMPROT_READ_ROM_WRITE_RAM,
+    /** Read from the shadow ROM page, ignore writes.
+     * Map the shadow page read-only, use write access handler to ignore writes. */
+    PGMROMPROT_READ_RAM_WRITE_IGNORE,
+    /** Read from the shadow ROM page, ignore writes.
+     * Map the shadow page read-write, no access handler. */
+    PGMROMPROT_READ_RAM_WRITE_RAM,
+    /** The end of valid values. */
+    PGMROMPROT_END,
+    /** The usual 32-bit type size hack. */
+    PGMROMPROT_32BIT_HACK = 0x7fffffff
+} PGMROMPROT;
+
+
 PGMDECL(uint32_t) PGMGetHyperCR3(PVM pVM);
 PGMDECL(uint32_t) PGMGetHyper32BitCR3(PVM pVM);
 PGMDECL(uint32_t) PGMGetHyperPaeCR3(PVM pVM);
@@ -438,6 +464,19 @@ PGMR3DECL(int)  PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
 PGMR3DECL(int)  PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
 #endif /* !VBOX_WITH_NEW_PHYS_CODE */
 PGMR3DECL(int)  PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const char *pszDesc);
+
+/** @group PGMR3PhysRegisterRom flags.
+ * @{ */
+/** Inidicates that ROM shadowing should be enabled. */
+#define PGMPHYS_ROM_FLAG_SHADOWED           RT_BIT_32(0)
+/** Indicates that what pvBinary points to won't go away
+ * and can be used for strictness checks. */
+#define PGMPHYS_ROM_FLAG_PERMANENT_BINARY   RT_BIT_32(1)
+/** @} */
+
+PGMR3DECL(int)  PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                     const void *pvBinary, uint32_t fFlags, const char *pszDesc);
+PGMR3DECL(int)  PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROMPROT enmProt);
 PGMR3DECL(int)  PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t cb, unsigned fFlags, const SUPPAGE *paPages, const char *pszDesc);
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 PGMR3DECL(int)  PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t cb, unsigned fFlags, const SUPPAGE *paPages, const char *pszDesc);

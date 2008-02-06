@@ -469,6 +469,39 @@ typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
 
 
 /**
+ * Page type.
+ * @remarks This enum has to fit in a 3-bit field (see PGMPAGE::u3Type).
+ */
+typedef enum PGMPAGETYPE
+{
+    /** The usual invalid zero entry. */
+    PGMPAGETYPE_INVALID = 0,
+    /** RAM page. (RWX) */
+    PGMPAGETYPE_RAM,
+    /** MMIO2 page. (RWX) */
+    PGMPAGETYPE_MMIO2,
+    /** Shadowed ROM in PGMROMPROT_READ_RAM_WRITE_RAM mode. (RWX) */
+    PGMPAGETYPE_ROM_RAM,
+    /** ROM page. (R-X) */
+    PGMPAGETYPE_ROM,
+    /** MMIO page. (---) */
+    PGMPAGETYPE_MMIO,
+    /** End of valid entries. */
+    PGMPAGETYPE_END
+} PGMPAGETYPE;
+AssertCompile(PGMPAGETYPE_END < 7);
+
+/** @name Page type predicates.
+ * @{ */
+#define PGMPAGETYPE_IS_READABLE(type)   ( (type) <= PGMPAGETYPE_ROM )
+#define PGMPAGETYPE_IS_WRITEABLE(type)  ( (type) <= PGMPAGETYPE_ROM_RAM )
+#define PGMPAGETYPE_IS_RWX(type)        ( (type) <= PGMPAGETYPE_ROM_RAM )
+#define PGMPAGETYPE_IS_ROX(type)        ( (type) == PGMPAGETYPE_ROM )
+#define PGMPAGETYPE_IS_NP(type)         ( (type) == PGMPAGETYPE_MMIO )
+/** @} */
+
+
+/**
  * A Physical Guest Page tracking structure.
  *
  * The format of this structure is complicated because we have to fit a lot
@@ -487,9 +520,13 @@ typedef struct PGMPAGE
     uint32_t    fWrittenTo : 1;
     /** For later. */
     uint32_t    fSomethingElse : 1;
-    /** The Page ID. */
+    /** The Page ID.
+     * @todo  Merge with HCPhys once we've liberated HCPhys of its stuff.
+     *        The HCPhys will be 100% static. */
     uint32_t    idPage : 28;
-    uint32_t    u32B;
+    /** The page type (PGMPAGETYPE). */
+    uint32_t    u3Type : 3;
+    uint32_t    u29B : 29;
 } PGMPAGE;
 AssertCompileSize(PGMPAGE, 16);
 /** Pointer to a physical guest page. */
@@ -606,6 +643,23 @@ typedef PPGMPAGE *PPPGMPAGE;
 #endif
 */
 
+
+/**
+ * Gets the page type.
+ * @returns The page type.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_TYPE(pPage)        (pPage)->u3Type
+
+/**
+ * Sets the page type.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ * @param   _enmType    The new page type (PGMPAGETYPE).
+ */
+#define PGM_PAGE_SET_TYPE(pPage, _enmType) \
+                                        do { (pPage)->u3Type = (_enmType); } while (0)
+
+
 /**
  * Checks if the page is 'reserved'.
  * @returns true/false.
@@ -633,7 +687,6 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_IS_SHARED(pPage)        ( (pPage)->u2State == PGM_PAGE_STATE_SHARED )
-
 
 
 /**
@@ -668,8 +721,7 @@ typedef struct PGMRAMRANGE
     /** HC virtual lookup ranges for chunks. Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
     R3R0PTRTYPE(PRTHCPTR)               pavHCChunkHC;
 #endif
-    /** Start of the HC mapping of the range.
-     * For pure MMIO and dynamically allocated ranges this is NULL, while for all ranges this is a valid pointer. */
+    /** Start of the HC mapping of the range. This is only used for MMIO2. */
     R3PTRTYPE(void *)                   pvHC;
     /** The range description. */
     R3PTRTYPE(const char *)             pszDesc;
@@ -694,6 +746,71 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 #define PGMRAMRANGE_GETHCPTR(pRam, off) \
     (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC) ? (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[(off >> PGM_DYNAMIC_CHUNK_SHIFT)] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK))  \
                                                 : (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + off);
+
+/**
+ * Per page tracking structure for ROM image.
+ *
+ * This is in addition to PGMPAGE, which will be set up with one
+ * of the two pages described here.
+ */
+typedef struct PGMROMPAGE
+{
+    /** The virgin page (read-only). */
+    RTHCPHYS    HCPhysVirgin;
+    /** The shadow page (read-write). */
+    RTHCPHYS    HCPhysShadow;
+    /** The page id of the virgin page. NIL_GMM_PAGEID if it's the zero page. */
+    uint32_t    idPageVirgin;
+    /** The page id of the shadow page. NIL_GMM_PAGEID if it's the zero page. */
+    uint32_t    idPageShadow;
+    /** The current protection status. */
+    PGMROMPROT  enmProt;
+    uint32_t    u32Padding;             /**< Structure size padding.*/
+} PGMROMPAGE;
+
+
+/**
+ * A registered ROM image.
+ *
+ * This is needed to keep track of ROM image since they generally
+ * intrude into a PGMRAMRANGE. It also keeps track of additional
+ * info like the two page sets (read-only virgin and read-write shadow),
+ * the current state of each page.
+ *
+ * Because access handlers cannot easily be executed in a different
+ * context, the ROM ranges needs to be accessible and in all contexts.
+ */
+typedef struct PGMROMRANGE
+{
+    /** Pointer to the next range - R3. */
+    R3PTRTYPE(struct PGMROMRANGE *) pNextR3;
+    /** Pointer to the next range - R0. */
+    R0PTRTYPE(struct PGMROMRANGE *) pNextR0;
+    /** Pointer to the next range - R0. */
+    GCPTRTYPE(struct PGMROMRANGE *) pNextGC;
+    /** Address of the range. */
+    RTGCPHYS                        GCPhys;
+    /** Address of the last byte in the range. */
+    RTGCPHYS                        GCPhysLast;
+    /** Size of the range. */
+    RTGCPHYS                        cb;
+    /** The flags (PGMPHYS_ROM_FLAG_*). */
+    uint32_t                        fFlags;
+     /**< Alignment padding ensuring that aPages is sizeof(PGMROMPAGE) aligned. */
+    uint32_t                        au32Alignemnt[HC_ARCH_BITS == 32 ? 7 : 3];
+    /** Pointer to the original bits when PGMPHYS_ROM_FLAG_PERMANENT_BINARY was specified.
+     * This is used for strictness checks. */
+    R3PTRTYPE(const void *)         pvOriginal;
+    /** The ROM description. */
+    R3PTRTYPE(const char *)         pszDesc;
+    /** The per page tracking structures. */
+    PGMROMPAGE                      aPages[1];
+} PGMROMRANGE;
+/** Pointer to a ROM range. */
+typedef PGMROMRANGE *PPGMROMRANGE;
+
+
+
 
 /** @todo r=bird: fix typename. */
 /**
@@ -1711,11 +1828,8 @@ typedef struct PGM
      * The index into this table is made up from */
     R3PTRTYPE(PPGMMODEDATA)         paModeData;
 
-
     /** Pointer to the list of RAM ranges (Phys GC -> Phys HC conversion) - for R3.
-     * This is sorted by physical address and contains no overlaps.
-     * The memory locks and other conversions are managed by MM at the moment.
-     */
+     * This is sorted by physical address and contains no overlapping ranges. */
     R3PTRTYPE(PPGMRAMRANGE)         pRamRangesR3;
     /** R0 pointer corresponding to PGM::pRamRangesR3. */
     R0PTRTYPE(PPGMRAMRANGE)         pRamRangesR0;
@@ -1723,6 +1837,16 @@ typedef struct PGM
     GCPTRTYPE(PPGMRAMRANGE)         pRamRangesGC;
     /** The configured RAM size. */
     RTUINT                          cbRamSize;
+
+    /** Pointer to the list of ROM ranges - for R3.
+     * This is sorted by physical address and contains no overlapping ranges. */
+    R3PTRTYPE(PPGMROMRANGE)         pRomRangesR3;
+    /** R0 pointer corresponding to PGM::pRomRangesR3. */
+    R0PTRTYPE(PPGMRAMRANGE)         pRomRangesR0;
+    /** GC pointer corresponding to PGM::pRomRangesR3. */
+    GCPTRTYPE(PPGMRAMRANGE)         pRomRangesGC;
+    /** Alignment padding. */
+    RTGCPTR                         GCPtrPadding2;
 
     /** PGM offset based trees - HC Ptr. */
     R3R0PTRTYPE(PPGMTREES)          pTreesHC;

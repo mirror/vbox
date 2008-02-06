@@ -69,6 +69,71 @@
 
 
 /**
+ * Links a new RAM range into the list.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pNew        Pointer to the new list entry.
+ * @param   pPrev       Pointer to the previous list entry. If NULL, insert as head.
+ */
+static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev)
+{
+    pgmLock(pVM);
+
+    PPGMRAMRANGE pRam = pPrev ? pPrev->pNextR3 : pVM->pgm.s.pRamRangesR3;
+    pNew->pNextR3 = pRam;
+    pNew->pNextR0 = pRam ? MMHyperCCToR0(pVM, pRam) : NIL_RTR0PTR;
+    pNew->pNextGC = pRam ? MMHyperCCToGC(pVM, pRam) : NIL_RTGCPTR;
+
+    if (pPrev)
+    {
+        pPrev->pNextR3 = pNew;
+        pPrev->pNextR0 = MMHyperCCToR0(pVM, pNew);
+        pPrev->pNextGC = MMHyperCCToGC(pVM, pNew);
+    }
+    else
+    {
+        pVM->pgm.s.pRamRangesR3 = pNew;
+        pVM->pgm.s.pRamRangesR0 = MMHyperCCToR0(pVM, pNew);
+        pVM->pgm.s.pRamRangesGC = MMHyperCCToGC(pVM, pNew);
+    }
+
+    pgmUnlock(pVM);
+}
+
+
+/**
+ * Links a new RAM range into the list.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pRam        Pointer to the new list entry.
+ * @param   pPrev       Pointer to the previous list entry. If NULL, insert as head.
+ */
+static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pPrev)
+{
+    Assert(pPrev ? pPrev->pNextR3 == pRam : pVM->pgm.s.pRamRangesR3 == pRam);
+
+    pgmLock(pVM);
+
+    PPGMRAMRANGE pNext = pRam->pNextR3;
+    if (pPrev)
+    {
+        pPrev->pNextR3 = pNext;
+        pPrev->pNextR0 = pNext ? MMHyperCCToR0(pVM, pNext) : NIL_RTR0PTR;
+        pPrev->pNextGC = pNext ? MMHyperCCToGC(pVM, pNext) : NIL_RTGCPTR;
+    }
+    else
+    {
+        pVM->pgm.s.pRamRangesR3 = pNext;
+        pVM->pgm.s.pRamRangesR0 = pNext ? MMHyperCCToR0(pVM, pNext) : NIL_RTR0PTR;
+        pVM->pgm.s.pRamRangesGC = pNext ? MMHyperCCToGC(pVM, pNext) : NIL_RTGCPTR;
+    }
+
+    pgmUnlock(pVM);
+}
+
+
+
+/**
  * Sets up a range RAM.
  *
  * This will check for conflicting registrations, make a resource
@@ -100,19 +165,19 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
      * (We don't lock here because the locking by EMT is only required on update.)
      */
     PPGMRAMRANGE    pPrev = NULL;
-    PPGMRAMRANGE    pCur = pVM->pgm.s.pRamRangesR3;
-    while (pCur && GCPhysLast >= pCur->GCPhys)
+    PPGMRAMRANGE    pRam = pVM->pgm.s.pRamRangesR3;
+    while (pRam && GCPhysLast >= pRam->GCPhys)
     {
-        if (    GCPhys     <= pCur->GCPhysLast
-            &&  GCPhysLast >= pCur->GCPhys)
+        if (    GCPhys     <= pRam->GCPhysLast
+            &&  GCPhysLast >= pRam->GCPhys)
             AssertLogRelMsgFailedReturn(("%RGp-%RGp (%s) conflicts with existing %RGp-%RGp (%s)\n",
                                          GCPhys, GCPhysLast, pszDesc,
-                                         pCur->GCPhys, pCur->GCPhysLast, pCur->pszDesc),
+                                         pRam->GCPhys, pRam->GCPhysLast, pRam->pszDesc),
                                         VERR_PGM_RAM_CONFLICT);
 
         /* next */
-        pPrev = pCur;
-        pCur = pCur->pNextR3;
+        pPrev = pRam;
+        pRam = pRam->pNextR3;
     }
 
     /*
@@ -139,10 +204,10 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     pNew->pszDesc       = pszDesc;
     pNew->cb            = cb;
     pNew->fFlags        = 0;
+    pNew->pvHC          = NULL;
 
     pNew->pavHCChunkHC  = NULL;
     pNew->pavHCChunkGC  = 0;
-    pNew->pvHC          = NULL;
 
 #ifndef VBOX_WITH_NEW_PHYS_CODE
     /* Allocate memory for chunk to HC ptr lookup array. */
@@ -160,34 +225,18 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
 #else
         pNew->aPages[iPage].HCPhys = 0;
 #endif
-        pNew->aPages[iPage].u2State = PGM_PAGE_STATE_ZERO;
         pNew->aPages[iPage].fWrittenTo = 0;
         pNew->aPages[iPage].fSomethingElse = 0;
-        pNew->aPages[iPage].idPage = NIL_GMM_PAGEID;
-        pNew->aPages[iPage].u32B = 0;
+        pNew->aPages[iPage].u29B = 0;
+        PGM_PAGE_SET_TYPE(&pNew->aPages[iPage],   PGMPAGETYPE_RAM);
+        PGM_PAGE_SET_STATE(&pNew->aPages[iPage],  PGM_PAGE_STATE_ZERO);
+        PGM_PAGE_SET_PAGEID(&pNew->aPages[iPage], NIL_GMM_PAGEID);
     }
 
     /*
      * Insert the new RAM range.
-     * (Take the lock just so that we're playing by the rules.)
      */
-    pgmLock(pVM);
-    pNew->pNextR3 = pCur;
-    pNew->pNextR0 = pCur ? MMHyperCCToR0(pVM, pCur) : NIL_RTR0PTR;
-    pNew->pNextGC = pCur ? MMHyperCCToGC(pVM, pCur) : NIL_RTGCPTR;
-    if (pPrev)
-    {
-        pPrev->pNextR3 = pNew;
-        pPrev->pNextR0 = MMHyperCCToR0(pVM, pNew);
-        pPrev->pNextGC = MMHyperCCToGC(pVM, pNew);
-    }
-    else
-    {
-        pVM->pgm.s.pRamRangesR3 = pNew;
-        pVM->pgm.s.pRamRangesR0 = MMHyperCCToR0(pVM, pNew);
-        pVM->pgm.s.pRamRangesGC = MMHyperCCToGC(pVM, pNew);
-    }
-    pgmUnlock(pVM);
+    pgmR3PhysLinkRamRange(pVM, pNew, pPrev);
 
     /*
      * Notify REM.
@@ -201,6 +250,301 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Registers a ROM image.
+ *
+ * Shadowed ROM images requires double the amount of backing memory, so,
+ * don't use that unless you have to. Shadowing of ROM images is process
+ * where we can select where the reads go and where the writes go. On real
+ * hardware the chipset provides means to configure this. We provide
+ * PGMR3PhysProtectROM() for this purpose.
+ *
+ * A read-only copy of the ROM image will always be kept around while we
+ * will allocate RAM pages for the changes on demand (unless all memory
+ * is configured to be preallocated).
+ *
+ * @returns VBox status.
+ * @param   pVM                 VM Handle.
+ * @param   pDevIns             The device instance owning the ROM.
+ * @param   GCPhys              First physical address in the range.
+ *                              Must be page aligned!
+ * @param   cbRange             The size of the range (in bytes).
+ *                              Must be page aligned!
+ * @param   pvBinary            Pointer to the binary data backing the ROM image.
+ *                              This must be exactly \a cbRange in size.
+ * @param   fFlags              Mask of flags. PGMPHYS_ROM_FLAG_SHADOWED
+ *                              and/or PGMPHYS_ROM_FLAG_PERMANENT_BINARY.
+ * @param   pszDesc             Pointer to description string. This must not be freed.
+ *
+ * @remark  There is no way to remove the rom, automatically on device cleanup or
+ *          manually from the device yet. This isn't difficult in any way, it's
+ *          just not something we expect to be necessary for a while.
+ */
+PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                    const void *pvBinary, uint32_t fFlags, const char *pszDesc)
+{
+    Log(("PGMR3PhysRomRegister: pDevIns=%p GCPhys=%RGp(-%RGp) cb=%RGp pvBinary=%p fFlags=%#x pszDesc=%s\n",
+         pDevIns, GCPhys, GCPhys + cb, cb, pvBinary, fFlags, pszDesc));
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
+    AssertReturn(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys, VERR_INVALID_PARAMETER);
+    AssertReturn(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb, VERR_INVALID_PARAMETER);
+    RTGCPHYS GCPhysLast = GCPhys + (cb - 1);
+    AssertReturn(GCPhysLast > GCPhys, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pvBinary, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~(PGMPHYS_ROM_FLAG_SHADOWED | PGMPHYS_ROM_FLAG_PERMANENT_BINARY)), VERR_INVALID_PARAMETER);
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
+
+    const uint32_t cPages = cb >> PAGE_SHIFT;
+
+    /*
+     * Find the ROM location in the ROM list first.
+     */
+    PPGMROMRANGE    pRomPrev = NULL;
+    PPGMROMRANGE    pRom = pVM->pgm.s.pRomRangesR3;
+    while (pRom && GCPhysLast >= pRom->GCPhys)
+    {
+        if (    GCPhys     <= pRom->GCPhysLast
+            &&  GCPhysLast >= pRom->GCPhys)
+            AssertLogRelMsgFailedReturn(("%RGp-%RGp (%s) conflicts with existing %RGp-%RGp (%s)\n",
+                                         GCPhys, GCPhysLast, pszDesc,
+                                         pRom->GCPhys, pRom->GCPhysLast, pRom->pszDesc),
+                                        VERR_PGM_RAM_CONFLICT);
+        /* next */
+        pRomPrev = pRom;
+        pRom = pRom->pNextR3;
+    }
+
+    /*
+     * Find the RAM location and check for conflicts.
+     *
+     * Conflict detection is a bit different than for RAM
+     * registration since a ROM can be located within a RAM
+     * range. So, what we have to check for is other memory
+     * types (other than RAM that is) and that we don't span
+     * more than one RAM range (layz).
+     */
+    bool            fRamExists = false;
+    PPGMRAMRANGE    pRamPrev = NULL;
+    PPGMRAMRANGE    pRam = pVM->pgm.s.pRamRangesR3;
+    while (pRam && GCPhysLast >= pRam->GCPhys)
+    {
+        if (    GCPhys     <= pRam->GCPhysLast
+            &&  GCPhysLast >= pRam->GCPhys)
+        {
+            /* completely within? */
+            AssertLogRelMsgReturn(   GCPhys     >= pRam->GCPhys
+                                  && GCPhysLast <= pRam->GCPhysLast,
+                                  ("%RGp-%RGp (%s) falls partly outside %RGp-%RGp (%s)\n",
+                                   GCPhys, GCPhysLast, pszDesc,
+                                   pRam->GCPhys, pRam->GCPhysLast, pRam->pszDesc),
+                                  VERR_PGM_RAM_CONFLICT);
+            fRamExists = true;
+            break;
+        }
+
+        /* next */
+        pRamPrev = pRam;
+        pRam = pRam->pNextR3;
+    }
+    if (fRamExists)
+    {
+        PPGMPAGE pPage = &pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
+        uint32_t cPagesLeft = cPages;
+        while (cPagesLeft-- > 0)
+        {
+            AssertLogRelMsgReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM,
+                                  ("%RGp isn't a RAM page (%d) - registering %RGp-%RGp (%s).\n",
+                                   GCPhys, PGM_PAGE_GET_TYPE(pPage), GCPhys, GCPhysLast, pszDesc),
+                                  VERR_PGM_RAM_CONFLICT);
+            Assert(PGM_PAGE_IS_ZERO(pPage));
+        }
+    }
+
+    /*
+     * Update the base memory reservation if necessary.
+     */
+    uint32_t cExtraBaseCost = fRamExists ? cPages : 0;
+    if (fFlags & PGMPHYS_ROM_FLAG_SHADOWED)
+        cExtraBaseCost += cPages;
+    if (cExtraBaseCost)
+    {
+        int rc = MMR3IncreaseBaseReservation(pVM, cExtraBaseCost);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * Allocate memory for the virgin copy of the RAM.
+     */
+    PGMMALLOCATEPAGESREQ pReq;
+    int rc = GMMR3AllocatePagesPrepare(pVM, &pReq, cPages, GMMACCOUNT_BASE);
+    AssertRCReturn(rc, rc);
+
+    for (uint32_t iPage = 0; iPage < cPages; iPage++)
+    {
+        pReq->aPages[iPage].HCPhysGCPhys = GCPhys + (iPage << PAGE_SHIFT);
+        pReq->aPages[iPage].idPage = NIL_GMM_PAGEID;
+        pReq->aPages[iPage].idSharedPage = NIL_GMM_PAGEID;
+    }
+
+    pgmLock(pVM);
+    rc = GMMR3AllocatePagesPerform(pVM, pReq);
+    pgmUnlock(pVM);
+    if (RT_FAILURE(rc))
+    {
+        GMMR3AllocatePagesCleanup(pReq);
+        return rc;
+    }
+
+    /*
+     * Allocate the new ROM range and RAM range (if necessary).
+     */
+    PPGMROMRANGE pRomNew;
+    rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMROMRANGE, aPages[cPages]), sizeof(PGMROMPAGE), MM_TAG_PGM_PHYS, (void **)pRomNew);
+    if (RT_SUCCESS(rc))
+    {
+        PPGMRAMRANGE pRamNew = NULL;
+        if (!fRamExists)
+            rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMRAMRANGE, aPages[cPages]), sizeof(PGMPAGE), MM_TAG_PGM_PHYS, (void **)pRamNew);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Initialize and insert the RAM range (if required).
+             */
+            if (!fRamExists)
+            {
+                pRamNew->GCPhys        = GCPhys;
+                pRamNew->GCPhysLast    = GCPhysLast;
+                pRamNew->pszDesc       = pszDesc;
+                pRamNew->cb            = cb;
+                pRamNew->fFlags        = 0;
+                pRamNew->pvHC          = NULL;
+
+                PPGMPAGE pPage = &pRamNew->aPages[0];
+                for (uint32_t iPage = 0; iPage < cPages; iPage++)
+                {
+                    pPage->fWrittenTo = 0;
+                    pPage->fSomethingElse = 0;
+                    pPage->u29B = 0;
+                    PGM_PAGE_SET_TYPE(pPage,   PGMPAGETYPE_ROM);
+                    PGM_PAGE_SET_HCPHYS(pPage, pReq->aPages[iPage].HCPhysGCPhys);
+                    PGM_PAGE_SET_STATE(pPage,  PGM_PAGE_STATE_ALLOCATED);
+                    PGM_PAGE_SET_PAGEID(pPage, pReq->aPages[iPage].idPage);
+                }
+
+                pgmR3PhysLinkRamRange(pVM, pRamNew, pRamPrev);
+            }
+            else
+            {
+                PPGMPAGE pPage = &pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
+                for (uint32_t iPage = 0; iPage < cPages; iPage++)
+                {
+                    PGM_PAGE_SET_TYPE(pPage,   PGMPAGETYPE_ROM);
+                    PGM_PAGE_SET_HCPHYS(pPage, pReq->aPages[iPage].HCPhysGCPhys);
+                    PGM_PAGE_SET_STATE(pPage,  PGM_PAGE_STATE_ALLOCATED);
+                    PGM_PAGE_SET_PAGEID(pPage, pReq->aPages[iPage].idPage);
+                }
+
+                pRamNew = pRam;
+            }
+
+            /*
+             * Register the write access handler for the range (PGMROMPROT_READ_ROM_WRITE_IGNORE).
+             */
+            rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhysLast,
+                                              NULL, NULL, /** @todo we actually need a ring-3 write handler here for shadowed ROMs, so hack REM! */
+                                              NULL, "pgmGuestROMWriteHandler", 0,
+                                              NULL, "pgmGuestROMWriteHandler", 0, pszDesc);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Copy the image over to the virgin pages.
+                 * This must be done after linking in the RAM range.
+                 */
+                for (uint32_t iPage = 0; iPage < cPages; iPage++)
+                {
+                    void *pvDst;
+                    PGMPAGEMAPLOCK Lock;
+                    int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhys + (iPage << PAGE_SHIFT), &pvDst, &Lock);
+                    if (RT_FAILURE(rc))
+                    {
+                        VMSetError(pVM, rc, RT_SRC_POS, "Failed to map virgin ROM page at %RGp", GCPhys);
+                        break;
+                    }
+                    memcpy(pvDst, (const uint8_t *)pvBinary + (iPage << PAGE_SHIFT), PAGE_SIZE);
+                    PGMPhysReleasePageMappingLock(pVM, &Lock);
+                }
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Initialize the ROM range.
+                     */
+                    pRomNew->GCPhys = GCPhys;
+                    pRomNew->GCPhysLast = GCPhysLast;
+                    pRomNew->cb = cb;
+                    pRomNew->fFlags = fFlags;
+                    pRomNew->pvOriginal = fFlags & PGMPHYS_ROM_FLAG_PERMANENT_BINARY ? pvBinary : NULL;
+                    pRomNew->pszDesc = pszDesc;
+
+                    for (unsigned iPage = 0; iPage < cPages; iPage++)
+                    {
+                        pRomNew->aPages[iPage].HCPhysVirgin = pReq->aPages[iPage].HCPhysGCPhys;
+                        pRomNew->aPages[iPage].HCPhysShadow = NIL_RTHCPHYS;
+                        pRomNew->aPages[iPage].idPageVirgin = pReq->aPages[iPage].idPage;
+                        pRomNew->aPages[iPage].idPageShadow = NIL_GMM_PAGEID;
+                        pRomNew->aPages[iPage].enmProt = PGMROMPROT_READ_ROM_WRITE_IGNORE;
+                    }
+
+                    /*
+                     * Insert the ROM range, tell REM and return successfully.
+                     */
+                    pRomNew->pNextR3 = pRom;
+                    pRomNew->pNextR0 = pRom ? MMHyperCCToR0(pVM, pRom) : NIL_RTR0PTR;
+                    pRomNew->pNextGC = pRom ? MMHyperCCToGC(pVM, pRom) : NIL_RTGCPTR;
+
+                    if (pRomPrev)
+                    {
+                        pRomPrev->pNextR3 = pRomNew;
+                        pRomPrev->pNextR0 = MMHyperCCToR0(pVM, pRomNew);
+                        pRomPrev->pNextGC = MMHyperCCToGC(pVM, pRomNew);
+                    }
+                    else
+                    {
+                        pVM->pgm.s.pRomRangesR3 = pRomNew;
+                        pVM->pgm.s.pRomRangesR0 = MMHyperCCToR0(pVM, pRomNew);
+                        pVM->pgm.s.pRomRangesGC = MMHyperCCToGC(pVM, pRomNew);
+                    }
+
+                    REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, false); /** @todo fix shadowing and REM. */
+
+                    GMMR3AllocatePagesCleanup(pReq);
+                    return VINF_SUCCESS;
+                }
+
+                /* bail out */
+
+                int rc2 = PGMHandlerPhysicalDeregister(pVM, GCPhys);
+                AssertRC(rc2);
+            }
+
+            pgmR3PhysUnlinkRamRange(pVM, pRamNew, pRamPrev);
+            if (pRamNew)
+                MMHyperFree(pVM, pRamNew);
+        }
+        MMHyperFree(pVM, pRomNew);
+    }
+
+    /** @todo free the memory! */
+
+    GMMR3AllocatePagesCleanup(pReq);
+    return rc;
+}
 
 
 /**
@@ -323,11 +667,12 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
             while (iPage-- > 0)
             {
                 pNew->aPages[iPage].HCPhys = (paPages[iPage].Phys & X86_PTE_PAE_PG_MASK) | fFlags; /** @todo PAGE FLAGS */
-                pNew->aPages[iPage].u2State = PGM_PAGE_STATE_ALLOCATED;
                 pNew->aPages[iPage].fWrittenTo = 0;
                 pNew->aPages[iPage].fSomethingElse = 0;
-                pNew->aPages[iPage].idPage = 0;
-                pNew->aPages[iPage].u32B = 0;
+                pNew->aPages[iPage].u29B = 0;
+                PGM_PAGE_SET_PAGEID(&pNew->aPages[iPage],   NIL_GMM_PAGEID);
+                PGM_PAGE_SET_TYPE(&pNew->aPages[iPage],     fFlags & MM_RAM_FLAGS_MMIO2 ? PGMPAGETYPE_MMIO2 : PGMPAGETYPE_RAM);
+                PGM_PAGE_SET_STATE(&pNew->aPages[iPage],    PGM_PAGE_STATE_ALLOCATED);
             }
         }
         else if (fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
@@ -343,11 +688,12 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
             while (iPage-- > 0)
             {
                 pNew->aPages[iPage].HCPhys = fFlags; /** @todo PAGE FLAGS */
-                pNew->aPages[iPage].u2State = PGM_PAGE_STATE_ZERO;
                 pNew->aPages[iPage].fWrittenTo = 0;
                 pNew->aPages[iPage].fSomethingElse = 0;
-                pNew->aPages[iPage].idPage = 0;
-                pNew->aPages[iPage].u32B = 0;
+                pNew->aPages[iPage].u29B = 0;
+                PGM_PAGE_SET_PAGEID(&pNew->aPages[iPage],   NIL_GMM_PAGEID);
+                PGM_PAGE_SET_TYPE(&pNew->aPages[iPage],     PGMPAGETYPE_RAM);
+                PGM_PAGE_SET_STATE(&pNew->aPages[iPage],    PGM_PAGE_STATE_ZERO);
             }
         }
         else
@@ -357,11 +703,12 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
             while (iPage-- > 0)
             {
                 pNew->aPages[iPage].HCPhys = HCPhysDummyPage; /** @todo PAGE FLAGS */
-                pNew->aPages[iPage].u2State = PGM_PAGE_STATE_ZERO;
                 pNew->aPages[iPage].fWrittenTo = 0;
                 pNew->aPages[iPage].fSomethingElse = 0;
-                pNew->aPages[iPage].idPage = 0;
-                pNew->aPages[iPage].u32B = 0;
+                pNew->aPages[iPage].u29B = 0;
+                PGM_PAGE_SET_PAGEID(&pNew->aPages[iPage],   NIL_GMM_PAGEID);
+                PGM_PAGE_SET_TYPE(&pNew->aPages[iPage],     PGMPAGETYPE_MMIO);
+                PGM_PAGE_SET_STATE(&pNew->aPages[iPage],    PGM_PAGE_STATE_ZERO);
             }
         }
 
