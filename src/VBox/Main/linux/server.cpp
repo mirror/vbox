@@ -757,13 +757,16 @@ int main (int argc, char **argv)
 {
     const struct option options[] =
     {
-        { "automate",  no_argument,       NULL, 'a' },
-        { "daemonize", no_argument,       NULL, 'd' },
-        { "pidfile",   required_argument, NULL, 'p' },
+        { "automate",       no_argument,        NULL, 'a' },
 #ifdef RT_OS_DARWIN
-        { "pipe",      required_argument, NULL, 'P' },
+        { "auto-shutdown",  no_argument,        NULL, 'A' },
 #endif
-        { NULL,        0,                 NULL,  0  }
+        { "daemonize",      no_argument,        NULL, 'd' },
+        { "pidfile",        required_argument,  NULL, 'p' },
+#ifdef RT_OS_DARWIN
+        { "pipe",           required_argument,  NULL, 'P' },
+#endif
+        { NULL,             0,                  NULL,  0  }
     };
     int c;
 
@@ -788,6 +791,15 @@ int main (int argc, char **argv)
                 fDaemonize = true;
                 break;
             }
+
+#ifdef RT_OS_DARWIN
+            /* Used together with '-P', see below. Internal use only. */
+            case 'A':
+            {
+                gAutoShutdown = true;
+                break;
+            }
+#endif
 
             case 'd':
             {
@@ -911,24 +923,26 @@ int main (int argc, char **argv)
         /*
          * On leopard we're no longer allowed to use some of the core API's
          * after forking - this will cause us to hit an int3.
-         * So, we'll have to execv VBoxSVC once again and hand it the pipe.
+         * So, we'll have to execv VBoxSVC once again and hand it the pipe
+         * and all other relevant options.
          */
-        const char *apszArgs[6];
-        apszArgs[0] = argv[0];
-        apszArgs[1] = "--pipe";
+        const char *apszArgs[7];
+        int i = 0;
+        apszArgs[i++] = argv[0];
+        apszArgs[i++] = "--pipe";
         char szPipeArg[32];
-        RTStrPrintf(szPipeArg, sizeof(szPipeArg), "%d", daemon_pipe_fds[1]);
-        apszArgs[2] = szPipeArg;
+        RTStrPrintf (szPipeArg, sizeof (szPipeArg), "%d", daemon_pipe_fds[1]);
+        apszArgs[i++] = szPipeArg;
         if (pszPidFile)
         {
-            apszArgs[3] = "--pidfile";
-            apszArgs[4] = pszPidFile;
-            apszArgs[5] = NULL;
+            apszArgs[i++] = "--pidfile";
+            apszArgs[i++] = pszPidFile;
         }
-        else
-            apszArgs[3] = NULL;
-        execv(apszArgs[0], (char * const *)apszArgs);
-        exit(0);
+        if (gAutoShutdown)
+            apszArgs[i++] = "--auto-shutdown";
+        apszArgs[i++] = NULL; Assert(i <= RT_ELEMENTS(apszArgs));
+        execv (apszArgs[0], (char * const *)apszArgs);
+        exit (0);
 # endif
     }
 
