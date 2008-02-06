@@ -940,7 +940,7 @@ int main (int argc, char **argv)
         }
         if (gAutoShutdown)
             apszArgs[i++] = "--auto-shutdown";
-        apszArgs[i++] = NULL; Assert(i <= RT_ELEMENTS(apszArgs));
+        apszArgs[i++] = NULL; Assert(i <= (int)RT_ELEMENTS(apszArgs));
         execv (apszArgs[0], (char * const *)apszArgs);
         exit (0);
 # endif
