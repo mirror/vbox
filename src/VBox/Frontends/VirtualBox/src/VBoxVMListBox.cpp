@@ -98,11 +98,11 @@ BOOL CALLBACK EnumWindowsProc (HWND hwnd, LPARAM lParam)
 
 #endif
 
-/** 
+/**
  * Searches for a main window of the given process.
- * 
+ *
  * @param aPid process ID to search for
- * 
+ *
  * @return window ID on success or <tt>(WId) ~0</tt> otherwise.
  */
 static WId FindWindowIdFromPid (ULONG aPid)
@@ -121,12 +121,12 @@ static WId FindWindowIdFromPid (ULONG aPid)
 
 #elif defined (Q_WS_MAC)
 
-    /** @todo Figure out how to get access to another windows of another process... 
+    /** @todo Figure out how to get access to another windows of another process...
      * Or at least check that it's not a VBoxVRDP process. */
     NOREF (aPid);
     return (WId) 0;
 
-#else   
+#else
 
     return (WId) ~0;
 
@@ -514,7 +514,7 @@ int VBoxVMListBoxItem::height (const QListBox *) const
     return marg + QMAX (pmOSType.height(), strHeight) + marg;
 }
 
-/** 
+/**
  * Returns @a true if we can activate and bring the VM console window to
  * foreground, and @a false otherwise.
  */
@@ -528,9 +528,9 @@ bool VBoxVMListBoxItem::canSwitchTo() const
 #endif
 }
 
-/** 
+/**
  * Tries to switch to the main window of the VM process.
- * 
+ *
  * @return true if successfully switched and false otherwise.
  */
 bool VBoxVMListBoxItem::switchTo()
@@ -539,7 +539,7 @@ bool VBoxVMListBoxItem::switchTo()
     ULONG64 id = mMachine.ShowConsoleWindow();
 #else
     WId id = (WId) mMachine.ShowConsoleWindow();
-#endif 
+#endif
     AssertWrapperOk (mMachine);
     if (!mMachine.isOk())
         return false;
@@ -555,7 +555,7 @@ bool VBoxVMListBoxItem::switchTo()
 
 #elif defined (Q_WS_MAC)
     /*
-     * This is just for the case were the other process cannot steal 
+     * This is just for the case were the other process cannot steal
      * the focus from us. It will send us a PSN so we can try.
      */
     ProcessSerialNumber psn;
@@ -701,8 +701,6 @@ void VBoxVMListBoxItem::paint (QPainter *aP)
 
     /* draw the OS type icon with border, vertically centered */
     aP->drawPixmap (marg, osTypeY, pmOSType);
-    qDrawShadePanel (aP, marg, osTypeY, pmOSType.width(), pmOSType.height(),
-                     cg, false, 1);
 
     aP->setPen (isSelected() ? cg.highlightedText() : cg.text());
 
