@@ -3771,7 +3771,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     {
         const unsigned  cb = 1 << pData->iLog2DescSize;
         RTGCPHYS        GCPhys = pData->GCTDRA;
-        unsigned        i = CSR_RCVRL(pData);
+        unsigned        i = CSR_XMTRL(pData);
         while (i-- > 0)
         {
             TMD tmd;
