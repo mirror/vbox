@@ -69,12 +69,6 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                                     <verstretch>0</verstretch>
                                 </sizepolicy>
                             </property>
-                            <property name="frameShape">
-                                <enum>Panel</enum>
-                            </property>
-                            <property name="frameShadow">
-                                <enum>Raised</enum>
-                            </property>
                             <property name="pixmap">
                                 <pixmap>os_other.png</pixmap>
                             </property>

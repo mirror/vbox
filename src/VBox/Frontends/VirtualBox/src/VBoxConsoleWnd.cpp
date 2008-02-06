@@ -133,8 +133,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     idle_timer = new QTimer (this);
 
-    /* application icon */
-    setIcon( QPixmap::fromMimeSource( "ico40x01.png" ) );
+    /* default application icon (will change to the VM-specific icon in
+     * openView()) */
+    setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
 
     /* ensure status bar is created */
     new QIStatusBar (this, "statusBar");
@@ -664,6 +665,9 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     static_cast<QGridLayout*>(centralWidget()->layout())->addWidget(console, 1, 1, AlignVCenter | AlignHCenter);
 
     CMachine cmachine = csession.GetMachine();
+
+    /* Set the VM-specific application icon */
+    setIcon (vboxGlobal().vmGuestOSTypeIcon (cmachine.GetOSTypeId()));
 
     /* restore the position of the window and some options */
     {

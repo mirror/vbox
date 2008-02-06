@@ -336,12 +336,6 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
                                         <verstretch>0</verstretch>
                                     </sizepolicy>
                                 </property>
-                                <property name="frameShape">
-                                    <enum>Panel</enum>
-                                </property>
-                                <property name="frameShadow">
-                                    <enum>Raised</enum>
-                                </property>
                                 <property name="lineWidth">
                                     <number>1</number>
                                 </property>
