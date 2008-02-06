@@ -32,10 +32,6 @@
 /** @defgroup grp_rt_assert     Assert - Assertions
  * @ingroup grp_rt
  *
- * WARNING! Each project has its own specific guidelines on how to use
- * assertions, so the following is just the general idea from the IPRT
- * point of view.
- *
  * Assertions are generally used to check precoditions and other
  * assumptions. Sometimes it is also used to catch odd errors or errors
  * that one would like to inspect in the debugger. They should not be
@@ -68,6 +64,10 @@
  * coding guidelines wrt to macros supposedly being all uppercase
  * and  underscored. For various  reasons they don't, and it nobody
  * has complained yet. Wonder why... :-)
+ *
+ * @remarks Each project has its own specific guidelines on how to use
+ * assertions, so the above is just trying to give you the general idea
+ * from the IPRT point of view.
  *
  * @{
  */
