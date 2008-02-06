@@ -1090,9 +1090,9 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pS
     /*
      * Find the guest address.
      */
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTXSUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
          pRam;
-         pRam = pRam->CTXSUFF(pNext))
+         pRam = CTXALLSUFF(pRam->pNext))
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
@@ -2162,13 +2162,13 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             Log2(("SyncPT:   BIG %VGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} Shw=%VGv GCPhys=%VGp %s\n",
                   GCPtrPage, PdeSrc.b.u1Present, PdeSrc.b.u1Write, PdeSrc.b.u1User, (uint64_t)PdeSrc.u, GCPtr,
                   GCPhys, PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
-            PPGMRAMRANGE        pRam   = CTXSUFF(pVM->pgm.s.pRamRanges);
+            PPGMRAMRANGE        pRam   = CTXALLSUFF(pVM->pgm.s.pRamRanges);
             unsigned            iPTDst = 0;
             while (iPTDst < ELEMENTS(pPTDst->a))
             {
                 /* Advance ram range list. */
                 while (pRam && GCPhys > pRam->GCPhysLast)
-                    pRam = CTXSUFF(pRam->pNext);
+                    pRam = CTXALLSUFF(pRam->pNext);
                 if (pRam && GCPhys >= pRam->GCPhys)
                 {
                     unsigned iHCPage = (GCPhys - pRam->GCPhys) >> PAGE_SHIFT;

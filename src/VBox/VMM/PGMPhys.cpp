@@ -100,7 +100,7 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
      * (We don't lock here because the locking by EMT is only required on update.)
      */
     PPGMRAMRANGE    pPrev = NULL;
-    PPGMRAMRANGE    pCur = pVM->pgm.s.pRamRangesHC;
+    PPGMRAMRANGE    pCur = pVM->pgm.s.pRamRangesR3;
     while (pCur && GCPhysLast >= pCur->GCPhys)
     {
         if (    GCPhys     <= pCur->GCPhysLast
@@ -112,7 +112,7 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
 
         /* next */
         pPrev = pCur;
-        pCur = pCur->pNextHC;
+        pCur = pCur->pNextR3;
     }
 
     /*
@@ -160,19 +160,19 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
      * (Take the lock just so that we're playing by the rules.)
      */
     pgmLock(pVM);
-    pNew->pNextHC = pCur;
-    //pNew->pNextR0 = pCur ? MMHyperCCToR0(pVM, pCur) : NIL_RTR0PTR;
+    pNew->pNextR3 = pCur;
+    pNew->pNextR0 = pCur ? MMHyperCCToR0(pVM, pCur) : NIL_RTR0PTR;
     pNew->pNextGC = pCur ? MMHyperCCToGC(pVM, pCur) : NIL_RTGCPTR;
     if (pPrev)
     {
-        pPrev->pNextHC = pNew;
-        //pPrev->pNextR0 = MMHyperCCToR0(pVM, pNew);
+        pPrev->pNextR3 = pNew;
+        pPrev->pNextR0 = MMHyperCCToR0(pVM, pNew);
         pPrev->pNextGC = MMHyperCCToGC(pVM, pNew);
     }
     else
     {
-        pVM->pgm.s.pRamRangesHC = pNew;
-        //pVM->pgm.s.pRamRangesR0 = MMHyperCCToR0(pVM, pNew);
+        pVM->pgm.s.pRamRangesR3 = pNew;
+        pVM->pgm.s.pRamRangesR0 = MMHyperCCToR0(pVM, pNew);
         pVM->pgm.s.pRamRangesGC = MMHyperCCToGC(pVM, pNew);
     }
     pgmUnlock(pVM);
@@ -228,7 +228,7 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
      * Find range location and check for conflicts.
      */
     PPGMRAMRANGE    pPrev = NULL;
-    PPGMRAMRANGE    pCur = pVM->pgm.s.pRamRangesHC;
+    PPGMRAMRANGE    pCur = pVM->pgm.s.pRamRangesR3;
     while (pCur)
     {
         if (GCPhys <= pCur->GCPhysLast && GCPhysLast >= pCur->GCPhys)
@@ -241,7 +241,7 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
 
         /* next */
         pPrev = pCur;
-        pCur = pCur->pNextHC;
+        pCur = pCur->pNextR3;
     }
 
     /*
@@ -348,16 +348,19 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
          * Insert the new RAM range.
          */
         pgmLock(pVM);
-        pNew->pNextHC = pCur;
-        pNew->pNextGC = pCur ? MMHyperHC2GC(pVM, pCur) : 0;
+        pNew->pNextR3 = pCur;
+        pNew->pNextR0 = pCur ? MMHyperCCToR0(pVM, pCur) : NIL_RTR0PTR;
+        pNew->pNextGC = pCur ? MMHyperCCToGC(pVM, pCur) : NIL_RTGCPTR;
         if (pPrev)
         {
-            pPrev->pNextHC = pNew;
+            pPrev->pNextR3 = pNew;
+            pPrev->pNextR0 = MMHyperCCToR0(pVM, pNew);
             pPrev->pNextGC = GCPtrNew;
         }
         else
         {
-            pVM->pgm.s.pRamRangesHC = pNew;
+            pVM->pgm.s.pRamRangesR3 = pNew;
+            pVM->pgm.s.pRamRangesR0 = MMHyperCCToR0(pVM, pNew);
             pVM->pgm.s.pRamRangesGC = GCPtrNew;
         }
         pgmUnlock(pVM);
@@ -414,7 +417,7 @@ PGMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, siz
     /*
      * Find existing range location.
      */
-    PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+    PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
     while (pRam)
     {
         RTGCPHYS off = GCPhys - pRam->GCPhys;
@@ -422,7 +425,7 @@ PGMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, siz
             &&  (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC))
             break;
 
-        pRam = CTXSUFF(pRam->pNext);
+        pRam = CTXALLSUFF(pRam->pNext);
     }
     AssertReturn(pRam, VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS);
 
@@ -457,7 +460,7 @@ PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
      */
     pgmLock(pVM);
 
-    PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+    PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
     while (pRam)
     {
         RTGCPHYS off = GCPhys - pRam->GCPhys;
@@ -477,7 +480,7 @@ PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
             return pgmr3PhysGrowRange(pVM, GCPhys);
         }
 
-        pRam = CTXSUFF(pRam->pNext);
+        pRam = CTXALLSUFF(pRam->pNext);
     }
     pgmUnlock(pVM);
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
@@ -604,7 +607,7 @@ PGMR3DECL(int) PGMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew
      */
     pgmLock(pVM);
     PPGMRAMRANGE    pPrev = NULL;
-    PPGMRAMRANGE    pCur = pVM->pgm.s.pRamRangesHC;
+    PPGMRAMRANGE    pCur = pVM->pgm.s.pRamRangesR3;
     while (pCur)
     {
         if (pCur->GCPhys == GCPhysOld && pCur->cb == cb)
@@ -612,16 +615,18 @@ PGMR3DECL(int) PGMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew
 
         /* next */
         pPrev = pCur;
-        pCur = pCur->pNextHC;
+        pCur = pCur->pNextR3;
     }
     if (pPrev)
     {
-        pPrev->pNextHC = pCur->pNextHC;
+        pPrev->pNextR3 = pCur->pNextR3;
+        pPrev->pNextR0 = pCur->pNextR0;
         pPrev->pNextGC = pCur->pNextGC;
     }
     else
     {
-        pVM->pgm.s.pRamRangesHC = pCur->pNextHC;
+        pVM->pgm.s.pRamRangesR3 = pCur->pNextR3;
+        pVM->pgm.s.pRamRangesR0 = pCur->pNextR0;
         pVM->pgm.s.pRamRangesGC = pCur->pNextGC;
     }
 
@@ -636,7 +641,7 @@ PGMR3DECL(int) PGMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew
      * Find range location and check for conflicts.
      */
     pPrev = NULL;
-    pCur = pVM->pgm.s.pRamRangesHC;
+    pCur = pVM->pgm.s.pRamRangesR3;
     while (pCur)
     {
         if (GCPhysNew <= pCur->GCPhysLast && GCPhysLast >= pCur->GCPhys)
@@ -650,23 +655,26 @@ PGMR3DECL(int) PGMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew
 
         /* next */
         pPrev = pCur;
-        pCur = pCur->pNextHC;
+        pCur = pCur->pNextR3;
     }
 
     /*
      * Reinsert the RAM range.
      */
-    pNew->pNextHC = pCur;
-    pNew->pNextGC = pCur ? MMHyperHC2GC(pVM, pCur) : 0;
+    pNew->pNextR3 = pCur;
+    pNew->pNextR0 = pCur ? MMHyperCCToR0(pVM, pCur) : 0;
+    pNew->pNextGC = pCur ? MMHyperCCToGC(pVM, pCur) : 0;
     if (pPrev)
     {
-        pPrev->pNextHC = pNew;
-        pPrev->pNextGC = MMHyperHC2GC(pVM, pNew);
+        pPrev->pNextR3 = pNew;
+        pPrev->pNextR0 = MMHyperCCToR0(pVM, pNew);
+        pPrev->pNextGC = MMHyperCCToGC(pVM, pNew);
     }
     else
     {
-        pVM->pgm.s.pRamRangesHC = pNew;
-        pVM->pgm.s.pRamRangesGC = MMHyperHC2GC(pVM, pNew);
+        pVM->pgm.s.pRamRangesR3 = pNew;
+        pVM->pgm.s.pRamRangesR0 = MMHyperCCToR0(pVM, pNew);
+        pVM->pgm.s.pRamRangesGC = MMHyperCCToGC(pVM, pNew);
     }
 
     pgmUnlock(pVM);
@@ -702,9 +710,9 @@ PGMR3DECL(int) PGMR3PhysSetFlags(PVM pVM, RTGCPHYS GCPhys, size_t cb, unsigned f
     /*
      * Lookup the range.
      */
-    PPGMRAMRANGE    pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+    PPGMRAMRANGE    pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
     while (pRam && GCPhys > pRam->GCPhysLast)
-        pRam = CTXSUFF(pRam->pNext);
+        pRam = CTXALLSUFF(pRam->pNext);
     if (    !pRam
         ||  GCPhys > pRam->GCPhysLast
         ||  GCPhysLast < pRam->GCPhys)

@@ -114,9 +114,9 @@ PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
      * We require the range to be within registered ram.
      * There is no apparent need to support ranges which cover more than one ram range.
      */
-    PPGMRAMRANGE    pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+    PPGMRAMRANGE    pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
     while (pRam && GCPhys > pRam->GCPhysLast)
-        pRam = CTXSUFF(pRam->pNext);
+        pRam = CTXALLSUFF(pRam->pNext);
     if (    !pRam
         ||  GCPhysLast < pRam->GCPhys
         ||  GCPhys > pRam->GCPhysLast)
@@ -137,9 +137,9 @@ PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
                 return rc;
 
             /* search again. */
-            pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+            pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
             while (pRam && GCPhys > pRam->GCPhysLast)
-                pRam = CTXSUFF(pRam->pNext);
+                pRam = CTXALLSUFF(pRam->pNext);
         }
 
         if (    !pRam
@@ -504,9 +504,9 @@ PGMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
              * We require the range to be within registered ram.
              * There is no apparent need to support ranges which cover more than one ram range.
              */
-            PPGMRAMRANGE    pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+            PPGMRAMRANGE    pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
             while (pRam && GCPhys > pRam->GCPhysLast)
-                pRam = CTXSUFF(pRam->pNext);
+                pRam = CTXALLSUFF(pRam->pNext);
             if (    pRam
                 &&  GCPhys <= pRam->GCPhysLast
                 &&  GCPhysLast >= pRam->GCPhys)
@@ -796,9 +796,9 @@ PGMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                  * Set the flags and flush shadow PT entries.
                  */
                 STAM_COUNTER_INC(&pVM->pgm.s.StatHandlePhysicalReset);
-                PPGMRAMRANGE    pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+                PPGMRAMRANGE    pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
                 while (pRam && GCPhys > pRam->GCPhysLast)
-                    pRam = CTXSUFF(pRam->pNext);
+                    pRam = CTXALLSUFF(pRam->pNext);
                 int rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
                 if (rc == VINF_PGM_GCPHYS_ALIASED)
                 {
