@@ -313,19 +313,17 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
         return VINF_SUCCESS;
     }
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     /*
      * Setup the base ram (PGM).
      */
     rc = PGMR3PhysRegisterRam(pVM, 0, cbRam, "Base RAM");
+#ifdef VBOX_WITH_NEW_PHYS_CODE
     if (RT_SUCCESS(rc) && fPreAlloc)
     {
-        /** @todo implement RamPreAlloc if it is *really* needed - in PGM preferably. (lazy bird) */
+        /** @todo RamPreAlloc should be handled at the very end of the VM creation. (lazy bird) */
         return VM_SET_ERROR(pVM, VERR_NOT_IMPLEMENTED, "TODO: RamPreAlloc");
     }
-
 #else
-    rc = MMR3PhysRegisterEx(pVM, NULL, 0, cbRam, MM_RAM_FLAGS_DYNAMIC_ALLOC, MM_PHYS_TYPE_NORMAL, "Main Memory");
     if (RT_SUCCESS(rc))
     {
         /*

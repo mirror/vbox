@@ -144,10 +144,22 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     pNew->pavHCChunkGC  = 0;
     pNew->pvHC          = NULL;
 
+#ifndef VBOX_WITH_NEW_PHYS_CODE
+    /* Allocate memory for chunk to HC ptr lookup array. */
+    rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->pavHCChunkHC);
+    AssertRCReturn(rc, rc);
+    pNew->pavHCChunkGC = MMHyperCCToGC(pVM, pNew->pavHCChunkHC);
+    pNew->fFlags |= MM_RAM_FLAGS_DYNAMIC_ALLOC;
+
+#endif
     RTGCPHYS iPage = cPages;
     while (iPage-- > 0)
     {
+#ifdef VBOX_WITH_NEW_PHYS_CODE
         pNew->aPages[iPage].HCPhys = pVM->pgm.s.HCPhysZeroPg;
+#else
+        pNew->aPages[iPage].HCPhys = 0;
+#endif
         pNew->aPages[iPage].u2State = PGM_PAGE_STATE_ZERO;
         pNew->aPages[iPage].fWrittenTo = 0;
         pNew->aPages[iPage].fSomethingElse = 0;
@@ -176,6 +188,15 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
         pVM->pgm.s.pRamRangesGC = MMHyperCCToGC(pVM, pNew);
     }
     pgmUnlock(pVM);
+
+    /*
+     * Notify REM.
+     */
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, 0);
+#else
+    REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, MM_RAM_FLAGS_DYNAMIC_ALLOC);
+#endif
 
     return VINF_SUCCESS;
 }
