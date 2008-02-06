@@ -204,6 +204,8 @@ typedef DECLCALLBACK(void) FNVMATSTATE(PVM pVM, VMSTATE enmState, VMSTATE enmOld
 /** Pointer to a VM state callback. */
 typedef FNVMATSTATE *PFNVMATSTATE;
 
+VMDECL(const char *) VMGetStateName(VMSTATE enmState);
+
 
 /**
  * Request type.

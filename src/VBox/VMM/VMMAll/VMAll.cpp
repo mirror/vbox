@@ -345,3 +345,32 @@ void vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID,
 #endif
 }
 
+
+/**
+ * Gets the name of VM state.
+ *
+ * @returns Pointer to a read-only string with the state name.
+ * @param   enmState    The state.
+ */
+VMDECL(const char *) VMGetStateName(VMSTATE enmState)
+{
+    switch (enmState)
+    {
+#define MY_CASE(enm) case VMSTATE_##enm: return #enm;
+        MY_CASE(CREATING);
+        MY_CASE(CREATED);
+        MY_CASE(RUNNING);
+        MY_CASE(LOADING);
+        MY_CASE(LOAD_FAILURE);
+        MY_CASE(SAVING);
+        MY_CASE(SUSPENDED);
+        MY_CASE(RESETTING);
+        MY_CASE(GURU_MEDITATION);
+        MY_CASE(OFF);
+        MY_CASE(DESTROYING);
+        MY_CASE(TERMINATED);
+#undef MY_CASE
+        default:
+            return "Unknown";
+    }
+}
