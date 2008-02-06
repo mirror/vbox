@@ -1547,15 +1547,19 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Ram ranges.
      */
-    if (pVM->pgm.s.pRamRangesHC)
+    if (pVM->pgm.s.pRamRangesR3)
     {
-        pVM->pgm.s.pRamRangesGC = MMHyperHC2GC(pVM, pVM->pgm.s.pRamRangesHC);
-        for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesHC; pCur->pNextHC; pCur = pCur->pNextHC)
+        pVM->pgm.s.pRamRangesGC = MMHyperHC2GC(pVM, pVM->pgm.s.pRamRangesR3);
+        for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3; pCur->pNextR3; pCur = pCur->pNextR3)
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+            pCur->pNextGC = MMHyperR3ToGC(pVM, pCur->pNextR3);
+#else
         {
-            pCur->pNextGC = MMHyperHC2GC(pVM, pCur->pNextHC);
+            pCur->pNextGC = MMHyperR3ToGC(pVM, pCur->pNextR3);
             if (pCur->pavHCChunkGC)
                 pCur->pavHCChunkGC = MMHyperHC2GC(pVM, pCur->pavHCChunkHC);
         }
+#endif
     }
 
     /*
@@ -1685,7 +1689,7 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM)
     /*
      * Zero memory.
      */
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesHC; pRam; pRam = pRam->pNextHC)
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
@@ -1790,7 +1794,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
      * Ram range flags and bits.
      */
     i = 0;
-    for (PPGMRAMRANGE pRam = pPGM->pRamRangesHC; pRam; pRam = pRam->pNextHC, i++)
+    for (PPGMRAMRANGE pRam = pPGM->pRamRangesR3; pRam; pRam = pRam->pNextR3, i++)
     {
         /** @todo MMIO ranges may move (PCI reconfig), we currently assume they don't. */
 
@@ -1957,7 +1961,7 @@ LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc)
      * Ram range flags and bits.
      */
     i = 0;
-    for (PPGMRAMRANGE pRam = pPGM->pRamRangesHC; pRam; pRam = pRam->pNextHC, i++)
+    for (PPGMRAMRANGE pRam = pPGM->pRamRangesR3; pRam; pRam = pRam->pNextR3, i++)
     {
         /** @todo MMIO ranges may move (PCI reconfig), we currently assume they don't. */
         /* Check the seqence number / separator. */
@@ -2156,12 +2160,13 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                     sizeof(RTGCPHYS) * 4 + 1, "GC Phys Range                    ",
                     sizeof(RTHCPTR) * 2,      "pvHC            ");
 
-    for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesHC; pCur; pCur = pCur->pNextHC)
+    for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
         pHlp->pfnPrintf(pHlp,
-                        "%VGp-%VGp %VHv\n",
+                        "%RGp-%RGp %RHv %s\n",
                         pCur->GCPhys,
                         pCur->GCPhysLast,
-                        pCur->pvHC);
+                        pCur->pvHC,
+                        pCur->pszDesc);
 }
 
 /**
@@ -3542,7 +3547,7 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
      */
     int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "From     - To (incl) pvHC\n");
     PPGMRAMRANGE pRam;
-    for (pRam = pVM->pgm.s.pRamRangesHC; pRam; pRam = pRam->pNextHC)
+    for (pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
     {
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
             "%VGp - %VGp  %p\n",

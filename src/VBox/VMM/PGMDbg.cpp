@@ -55,9 +55,9 @@ PGMR3DECL(int) PGMR3DbgHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
     return VERR_NOT_IMPLEMENTED;
 
 #else
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
          pRam;
-         pRam = CTXSUFF(pRam->pNext))
+         pRam = CTXALLSUFF(pRam->pNext))
     {
         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
@@ -108,9 +108,9 @@ PGMR3DECL(int) PGMR3DbgHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
     return VERR_NOT_IMPLEMENTED;
 
 #else
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
          pRam;
-         pRam = CTXSUFF(pRam->pNext))
+         pRam = CTXALLSUFF(pRam->pNext))
     {
         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
@@ -175,9 +175,9 @@ PGMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys
     if (HCPhys == 0)
         return VERR_INVALID_POINTER;
 
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
          pRam;
-         pRam = CTXSUFF(pRam->pNext))
+         pRam = CTXALLSUFF(pRam->pNext))
     {
         uint32_t iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
@@ -341,9 +341,9 @@ PDMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
      * Search the memory - ignore MMIO and zero pages, also don't
      * bother to match across ranges.
      */
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
          pRam;
-         pRam = CTXSUFF(pRam->pNext))
+         pRam = CTXALLSUFF(pRam->pNext))
     {
         /*
          * If the search range starts prior to the current ram range record,

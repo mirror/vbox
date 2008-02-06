@@ -1570,7 +1570,7 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
     /*
      * Check the RAM flags against the handlers.
      */
-    for (PPGMRAMRANGE pRam = CTXSUFF(pPGM->pRamRanges); pRam; pRam = CTXSUFF(pRam->pNext))
+    for (PPGMRAMRANGE pRam = CTXALLSUFF(pPGM->pRamRanges); pRam; pRam = CTXALLSUFF(pRam->pNext))
     {
         const unsigned cPages = pRam->cb >> PAGE_SHIFT;
         for (unsigned iPage = 0; iPage < cPages; iPage++)

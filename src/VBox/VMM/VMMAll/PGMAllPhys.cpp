@@ -475,13 +475,13 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
      * Find the ram range.
      * 99.8% of requests are expected to be in the first range.
      */
-    PPGMRAMRANGE pRam = CTXSUFF(pPGM->pRamRanges);
+    PPGMRAMRANGE pRam = CTXALLSUFF(pPGM->pRamRanges);
     RTGCPHYS off = GCPhys - pRam->GCPhys;
     if (RT_UNLIKELY(off >= pRam->cb))
     {
         do
         {
-            pRam = CTXSUFF(pRam->pNext);
+            pRam = CTXALLSUFF(pRam->pNext);
             if (!pRam)
                 return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
             off = GCPhys - pRam->GCPhys;
@@ -1027,23 +1027,23 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
     /*
      * Copy loop on ram ranges.
      */
-    PPGMRAMRANGE    pCur = CTXSUFF(pVM->pgm.s.pRamRanges);
+    PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
     for (;;)
     {
         /* Find range. */
-        while (pCur && GCPhys > pCur->GCPhysLast)
-            pCur = CTXSUFF(pCur->pNext);
+        while (pRam && GCPhys > pRam->GCPhysLast)
+            pRam = CTXALLSUFF(pRam->pNext);
         /* Inside range or not? */
-        if (pCur && GCPhys >= pCur->GCPhys)
+        if (pRam && GCPhys >= pRam->GCPhys)
         {
             /*
              * Must work our way thru this page by page.
              */
-            RTGCPHYS off = GCPhys - pCur->GCPhys;
-            while (off < pCur->cb)
+            RTGCPHYS off = GCPhys - pRam->GCPhys;
+            while (off < pRam->cb)
             {
                 unsigned iPage = off >> PAGE_SHIFT;
-                PPGMPAGE pPage = &pCur->aPages[iPage];
+                PPGMPAGE pPage = &pRam->aPages[iPage];
                 size_t   cb;
 
                 /* Physical chunk in dynamically allocated range not present? */
@@ -1078,7 +1078,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                             PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvSrc);
                             pvSrc = (char *)pvSrc + (off & PAGE_OFFSET_MASK);
 #else
-                            void *pvSrc = PGMRAMRANGE_GETHCPTR(pCur, off)
+                            void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
                             cb = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
                             if (cb >= cbRead)
@@ -1127,7 +1127,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                                 if (cb > cbRead)
                                     cb = cbRead;
 
-                                void *pvSrc = PGMRAMRANGE_GETHCPTR(pCur, off)
+                                void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 
                                 /** @note Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
                                 rc = pNode->pfnHandlerR3(pVM, GCPhys, pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, pNode->pvUserR3);
@@ -1140,7 +1140,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                                 PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvSrc);
                                 pvSrc = (char *)pvSrc + (off & PAGE_OFFSET_MASK);
 #else
-                                void *pvSrc = PGMRAMRANGE_GETHCPTR(pCur, off)
+                                void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
 
                                 if (cb >= cbRead)
@@ -1174,7 +1174,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                                 RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pNode->GCPtr & PAGE_BASE_GC_MASK)
                                                   + (iPage << PAGE_SHIFT) + (off & PAGE_OFFSET_MASK);
 
-                                void *pvSrc = PGMRAMRANGE_GETHCPTR(pCur, off)
+                                void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 
                                 /** @note Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
                                 rc = pNode->pfnHandlerHC(pVM, (RTGCPTR)GCPtr, pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, 0);
@@ -1187,7 +1187,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                                 PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvSrc);
                                 pvSrc = (char *)pvSrc + (off & PAGE_OFFSET_MASK);
 #else
-                                void *pvSrc = PGMRAMRANGE_GETHCPTR(pCur, off)
+                                void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
                                 if (cb >= cbRead)
                                 {
@@ -1224,7 +1224,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                 pvBuf   = (char *)pvBuf + cb;
             }
 
-            GCPhys = pCur->GCPhysLast + 1;
+            GCPhys = pRam->GCPhysLast + 1;
         }
         else
         {
@@ -1234,8 +1234,8 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
              * Unassigned address space.
              */
             size_t cb;
-            if (    !pCur
-                ||  (cb = pCur->GCPhys - GCPhys) >= cbRead)
+            if (    !pRam
+                ||  (cb = pRam->GCPhys - GCPhys) >= cbRead)
             {
                 memset(pvBuf, 0, cbRead);
                 goto end;
@@ -1289,23 +1289,23 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
     /*
      * Copy loop on ram ranges.
      */
-    PPGMRAMRANGE    pCur = CTXSUFF(pVM->pgm.s.pRamRanges);
+    PPGMRAMRANGE    pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
     for (;;)
     {
         /* Find range. */
-        while (pCur && GCPhys > pCur->GCPhysLast)
-            pCur = CTXSUFF(pCur->pNext);
+        while (pRam && GCPhys > pRam->GCPhysLast)
+            pRam = CTXALLSUFF(pRam->pNext);
         /* Inside range or not? */
-        if (pCur && GCPhys >= pCur->GCPhys)
+        if (pRam && GCPhys >= pRam->GCPhys)
         {
             /*
              * Must work our way thru this page by page.
              */
-            unsigned off = GCPhys - pCur->GCPhys;
-            while (off < pCur->cb)
+            unsigned off = GCPhys - pRam->GCPhys;
+            while (off < pRam->cb)
             {
                 unsigned iPage = off >> PAGE_SHIFT;
-                PPGMPAGE pPage = &pCur->aPages[iPage];
+                PPGMPAGE pPage = &pRam->aPages[iPage];
 
                 /* Physical chunk in dynamically allocated range not present? */
                 if (RT_UNLIKELY(!PGM_PAGE_GET_HCPHYS(pPage)))
@@ -1317,7 +1317,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         pgmUnlock(pVM);
                         rc = pgmr3PhysGrowRange(pVM, GCPhys);
                         if (rc == VINF_SUCCESS)
-                            PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite); /* try again; can't assume pCur is still valid (paranoia) */
+                            PGMPhysWrite(pVM, GCPhys, pvBuf, cbWrite); /* try again; can't assume pRam is still valid (paranoia) */
                         return;
                     }
                     rc = pgmr3PhysGrowRange(pVM, GCPhys);
@@ -1344,7 +1344,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                         pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
 #else
-                        void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
+                        void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
                         cb = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
                         if (cb >= cbWrite)
@@ -1391,7 +1391,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                             if (cb > cbWrite)
                                 cb = cbWrite;
 
-                            void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
+                            void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 
                             /** @note Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
                             rc = pNode->pfnHandlerR3(pVM, GCPhys, pvDst, (void *)pvBuf, cb, PGMACCESSTYPE_WRITE, pNode->pvUserR3);
@@ -1404,7 +1404,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                             PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                             pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
 #else
-                            void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
+                            void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
                             if (cb >= cbWrite)
                             {
@@ -1439,7 +1439,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                             RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pNode->GCPtr & PAGE_BASE_GC_MASK)
                                               + (iPage << PAGE_SHIFT) + (off & PAGE_OFFSET_MASK);
 
-                            void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
+                            void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 
                             /** @note Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
                             rc = pNode->pfnHandlerHC(pVM, (RTGCPTR)GCPtr, pvDst, (void *)pvBuf, cb, PGMACCESSTYPE_WRITE, 0);
@@ -1452,7 +1452,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                             PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                             pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
 #else
-                            void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
+                            void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
                             if (cb >= cbWrite)
                             {
@@ -1488,7 +1488,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                             if (cb > cbWrite)
                                 cb = cbWrite;
 
-                            void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
+                            void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 
                             /** @note Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
                             rc = pPhysNode->pfnHandlerR3(pVM, GCPhys, pvDst, (void *)pvBuf, cb, PGMACCESSTYPE_WRITE, pPhysNode->pvUserR3);
@@ -1508,7 +1508,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                             RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pVirtNode->GCPtr & PAGE_BASE_GC_MASK)
                                               + (iPage << PAGE_SHIFT) + (off & PAGE_OFFSET_MASK);
 
-                            void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
+                            void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 
                             /** @note Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
                             rc2 = pVirtNode->pfnHandlerHC(pVM, (RTGCPTR)GCPtr, pvDst, (void *)pvBuf, cb, PGMACCESSTYPE_WRITE, 0);
@@ -1526,7 +1526,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                             PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                             pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
 #else
-                            void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
+                            void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
                             if (cb >= cbWrite)
                             {
@@ -1565,7 +1565,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                 pvBuf   = (const char *)pvBuf + cb;
             }
 
-            GCPhys = pCur->GCPhysLast + 1;
+            GCPhys = pRam->GCPhysLast + 1;
         }
         else
         {
@@ -1573,8 +1573,8 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
              * Unassigned address space.
              */
             size_t cb;
-            if (    !pCur
-                ||  (cb = pCur->GCPhys - GCPhys) >= cbWrite)
+            if (    !pRam
+                ||  (cb = pRam->GCPhys - GCPhys) >= cbWrite)
                 goto end;
 
             cbWrite -= cb;
@@ -1613,9 +1613,9 @@ PGMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
     /*
      * Loop ram ranges.
      */
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
          pRam;
-         pRam = pRam->CTXSUFF(pNext))
+         pRam = CTXALLSUFF(pRam->pNext))
     {
         RTGCPHYS off = GCPhysSrc - pRam->GCPhys;
         if (off < pRam->cb)
@@ -1697,9 +1697,9 @@ PGMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
     /*
      * Loop ram ranges.
      */
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
          pRam;
-         pRam = pRam->CTXSUFF(pNext))
+         pRam = CTXALLSUFF(pRam->pNext))
     {
         RTGCPHYS off = GCPhysDst - pRam->GCPhys;
         if (off < pRam->cb)

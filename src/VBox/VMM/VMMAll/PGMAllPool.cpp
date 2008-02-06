@@ -753,8 +753,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     /*
      * Not worth it, so flush it.
      *
-     * If we considered it to be reused, don't to back to ring-3 
-     * to emulate failed instructions since we usually cannot 
+     * If we considered it to be reused, don't to back to ring-3
+     * to emulate failed instructions since we usually cannot
      * interpret then. This may be a bit risky, in which case
      * the reuse detection must be fixed.
      */
@@ -1630,9 +1630,9 @@ void pgmPoolClearAll(PVM pVM)
     /*
      * Clear all the GCPhys links and rebuild the phys ext free list.
      */
-    for (PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTXSUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTXALLSUFF(pRamRanges);
          pRam;
-         pRam = pRam->CTXSUFF(pNext))
+         pRam = CTXALLSUFF(pRam->pNext))
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
@@ -2624,7 +2624,7 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
     /*
      * Walk range list.
      */
-    PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTXSUFF(pRamRanges);
+    PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTXALLSUFF(pRamRanges);
     while (pRam)
     {
         RTGCPHYS off = GCPhys - pRam->GCPhys;
@@ -2640,7 +2640,7 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
             }
             break;
         }
-        pRam = CTXSUFF(pRam->pNext);
+        pRam = CTXALLSUFF(pRam->pNext);
     }
     AssertFatalMsgFailed(("HCPhys=%VHp GCPhys=%VGp\n", HCPhys, GCPhys));
 }
@@ -2659,7 +2659,7 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
     /*
      * Walk range list.
      */
-    PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTXSUFF(pRamRanges);
+    PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTXALLSUFF(pRamRanges);
     while (pRam)
     {
         RTGCPHYS off = GCPhysHint - pRam->GCPhys;
@@ -2675,14 +2675,14 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
             }
             break;
         }
-        pRam = CTXSUFF(pRam->pNext);
+        pRam = CTXALLSUFF(pRam->pNext);
     }
 
     /*
      * Damn, the hint didn't work. We'll have to do an expensive linear search.
      */
     STAM_COUNTER_INC(&pPool->StatTrackLinearRamSearches);
-    pRam = pPool->CTXSUFF(pVM)->pgm.s.CTXSUFF(pRamRanges);
+    pRam = pPool->CTXSUFF(pVM)->pgm.s.CTXALLSUFF(pRamRanges);
     while (pRam)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
@@ -2696,7 +2696,7 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
                 return;
             }
         }
-        pRam = CTXSUFF(pRam->pNext);
+        pRam = CTXALLSUFF(pRam->pNext);
     }
 
     AssertFatalMsgFailed(("HCPhys=%VHp GCPhysHint=%VGp\n", HCPhys, GCPhysHint));
@@ -3096,9 +3096,9 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     /*
      * Clear all the GCPhys links and rebuild the phys ext free list.
      */
-    for (PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTXSUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTXALLSUFF(pRamRanges);
          pRam;
-         pRam = pRam->CTXSUFF(pNext))
+         pRam = CTXALLSUFF(pRam->pNext))
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
