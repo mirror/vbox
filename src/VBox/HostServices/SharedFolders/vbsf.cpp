@@ -630,6 +630,8 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
     SHFLFILEHANDLE *pHandle = 0;
     /* Open or create a file. */
     unsigned fOpen = 0;
+	bool fNoError = false;
+
     int rc = vbsfConvertFileOpenFlags(pParms->CreateFlags, &fOpen);
     if (RT_SUCCESS(rc))
     {
@@ -663,11 +665,16 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
                 pParms->Info = info;
             }
             pParms->Result = SHFL_FILE_EXISTS;
+
+			/* This actually isn't an error, because the file simply already exists, 
+			   so correct the rc before return later, to make the driver (VBoxSF.sys) happy. */
+			fNoError = true;	
             break;
         default:
             pParms->Result = SHFL_NO_RESULT;
         }
     }
+
     if (RT_SUCCESS(rc))
     {
         /** @note The shared folder status code is very approximate, as the runtime
@@ -737,6 +744,11 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
     {
         pParms->Handle = handle;
     }
+
+	/* Report the driver that all is okay, we're done here */
+	if (fNoError) 
+		rc = VINF_SUCCESS;
+
     LogFlow(("vbsfOpenFile: rc = %Vrc\n", rc));
     return rc;
 }
@@ -796,8 +808,8 @@ static int vbsfOpenDir (const char *pszPath, SHFLCREATEPARMS *pParms)
             }
         }
         if (   RT_SUCCESS(rc)
-            || (   SHFL_CF_ACT_OPEN_IF_EXISTS
-                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS)))
+            || (SHFL_CF_ACT_OPEN_IF_EXISTS == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
+			|| (SHFL_FILE_EXISTS == pParms->Result))	/* Call of RTDirCreate() avbove failed, because already existing? */
         {
             /* Open the directory now */
             rc = RTDirOpen (&pHandle->dir.Handle, pszPath);
