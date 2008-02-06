@@ -249,14 +249,6 @@ GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChun
 GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3);
 
 
-GMMR3DECL(int)  GMMR3InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
-                                        GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority);
-GMMR3DECL(int)  GMMR3UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages);
-GMMR3DECL(int)  GMMR3DeflatedBalloon(PVM pVM, uint32_t cPages);
-GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
-GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
-
-
 
 /**
  * Request buffer for GMMR0InitialReservationReq / VMMR0_DO_GMM_INITIAL_RESERVATION.
@@ -381,6 +373,23 @@ typedef GMMMAPUNMAPCHUNKREQ *PGMMMAPUNMAPCHUNKREQ;
 
 GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq);
 
+
+#ifdef IN_RING3
+/** @defgroup grp_gmm_r3    The Global Memory Manager Ring-3 API Wrappers
+ * @ingroup grp_gmm
+ * @{
+ */
+GMMR3DECL(int)  GMMR3InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
+                                        GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority);
+GMMR3DECL(int)  GMMR3UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages);
+GMMR3DECL(int)  GMMR3AllocatePagesPrepare(PVM pVM, PGMMALLOCATEPAGESREQ *ppReq, uint32_t cPages, GMMACCOUNT enmAccount);
+GMMR3DECL(int)  GMMR3AllocatePagesPerform(PVM pVM, PGMMALLOCATEPAGESREQ pReq);
+GMMR3DECL(void) GMMR3AllocatePagesCleanup(PGMMALLOCATEPAGESREQ pReq);
+GMMR3DECL(int)  GMMR3DeflatedBalloon(PVM pVM, uint32_t cPages);
+GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
+GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
+/** @} */
+#endif /* IN_RING3 */
 
 /** @} */
 

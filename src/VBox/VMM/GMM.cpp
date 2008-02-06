@@ -24,6 +24,9 @@
 #include <VBox/vm.h>
 #include <VBox/sup.h>
 #include <VBox/err.h>
+#include <VBox/param.h>
+
+#include <iprt/mem.h>
 
 
 /**
@@ -59,16 +62,71 @@ GMMR3DECL(int)  GMMR3UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
 }
 
 
-#if 0 /* impractical */
-GMMR3DECL(int)  GMMR3AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
+/**
+ * Prepares a GMMR0AllocatePages request.
+ */
+GMMR3DECL(int) GMMR3AllocatePagesPrepare(PVM pVM, PGMMALLOCATEPAGESREQ *ppReq, uint32_t cPages, GMMACCOUNT enmAccount)
 {
-    GMMALLOCATEPAGESREQ Req;
-    Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
+    uint32_t cb = RT_OFFSETOF(GMMALLOCATEPAGESREQ, aPages[cPages]);
+    PGMMALLOCATEPAGESREQ pReq = (PGMMALLOCATEPAGESREQ)RTMemTmpAllocZ(cb);
+    if (!pReq)
+        return VERR_NO_TMP_MEMORY;
 
-    return SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_ALLOCATE_PAGES, 0, &Req.Hdr);
+    pReq->Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    pReq->Hdr.cbReq = cb;
+    pReq->enmAccount = enmAccount;
+    pReq->cPages = cPages;
+    NOREF(pVM);
+    return VINF_SUCCESS;
 }
-#endif
+
+
+/**
+ * Performs a GMMR0AllocatePages request.
+ * This will call VMSetError on failure.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pReq        Pointer to the request (returned by GMMR3AllocatePagesPrepare).
+ */
+GMMR3DECL(int) GMMR3AllocatePagesPerform(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
+{
+    for (unsigned i = 0; ; i++)
+    {
+        int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_ALLOCATE_PAGES, 0, &pReq->Hdr);
+        if (RT_SUCCESS(rc))
+            return rc;
+        if (rc != VERR_GMM_SEED_ME)
+            return VMSetError(pVM, rc, RT_SRC_POS,
+                              N_("GMMR0AllocatePages failed to allocate %u pages"),
+                              pReq->cPages);
+        Assert(i < pReq->cPages);
+
+        /*
+         * Seed another chunk.
+         */
+        void *pvChunk;
+        rc = SUPPageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
+        if (VBOX_FAILURE(rc))
+            return VMSetError(pVM, rc, RT_SRC_POS,
+                              N_("Out of memory (SUPPageAlloc) seeding a %u pages allocation request"),
+                              pReq->cPages);
+
+        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
+        if (RT_FAILURE(rc))
+            return VMSetError(pVM, rc, RT_SRC_POS, N_("GMM seeding failed"));
+    }
+}
+
+
+/**
+ * Cleans up a GMMR0AllocatePages request.
+ * @param   pReq        Pointer to the request (returned by GMMR3AllocatePagesPrepare).
+ */
+GMMR3DECL(void) GMMR3AllocatePagesCleanup(PGMMALLOCATEPAGESREQ pReq)
+{
+    RTMemTmpFree(pReq);
+}
 
 
 #if 0 /* impractical */
