@@ -204,7 +204,6 @@
         ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd\n", RTThreadNativeSelf(), pVM->NativeThreadEMT))
 #endif
 
-
 /** @def VM_ASSERT_EMT_RETURN
  * Asserts that the current thread IS the emulation thread (EMT) and returns if it isn't.
  */
@@ -219,12 +218,28 @@
         (rc))
 #endif
 
-
 /**
  * Asserts that the current thread is NOT the emulation thread.
  */
 #define VM_ASSERT_OTHER_THREAD(pVM) \
     AssertMsg(!VM_IS_EMT(pVM), ("Not other thread!!\n"))
+
+
+/** @def VM_ASSERT_STATE_RETURN
+ * Asserts a certain VM state.
+ */
+#define VM_ASSERT_STATE(pVM, _enmState) \
+        AssertMsg((pVM)->enmVMState == (_enmState), \
+                  ("state %s, expected %s\n", VMGetStateName(pVM->enmVMState), VMGetStateName(_enmState)))
+
+/** @def VM_ASSERT_STATE_RETURN
+ * Asserts a certain VM state and returns if it doesn't match.
+ */
+#define VM_ASSERT_STATE_RETURN(pVM, _enmState, rc) \
+        AssertMsgReturn((pVM)->enmVMState == (_enmState), \
+                        ("state %s, expected %s\n", VMGetStateName(pVM->enmVMState), VMGetStateName(_enmState)), \
+                        (rc))
+
 
 
 
