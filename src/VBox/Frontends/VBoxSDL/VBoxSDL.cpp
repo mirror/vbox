@@ -4376,7 +4376,7 @@ static Uint32 ResizeTimer(Uint32 interval, void *param)
  */
 static Uint32 QuitTimer(Uint32 interval, void *param)
 {
-    PRBool fHandled = FALSE;
+    BOOL fHandled = FALSE;
 
     gSdlQuitTimer = NULL;
     if (gConsole)
