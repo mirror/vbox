@@ -652,9 +652,17 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
         {
         case VERR_FILE_NOT_FOUND:
             pParms->Result = SHFL_FILE_NOT_FOUND;
+
+            /* This actually isn't an error, so correct the rc before return later, 
+               because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
+            fNoError = true;
             break;
         case VERR_PATH_NOT_FOUND:
             pParms->Result = SHFL_PATH_NOT_FOUND;
+
+            /* This actually isn't an error, so correct the rc before return later, 
+               because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
+            fNoError = true;
             break;
         case VERR_ALREADY_EXISTS:
             RTFSOBJINFO info;
@@ -666,8 +674,8 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
             }
             pParms->Result = SHFL_FILE_EXISTS;
 
-            /* This actually isn't an error, because the file simply already exists, 
-               so correct the rc before return later, to make the driver (VBoxSF.sys) happy. */
+            /* This actually isn't an error, so correct the rc before return later, 
+               because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
             fNoError = true;    
             break;
         default:
