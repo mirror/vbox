@@ -27,6 +27,7 @@
 
 #include "SUPDRV.h" /* for KBUILD_STR */
 #include "the-linux-kernel.h"
+#include <linux/vermagic.h>
 
 MODULE_INFO(vermagic, VERMAGIC_STRING);
 
