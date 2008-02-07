@@ -41,6 +41,13 @@
 #include <iprt/string.h>
 
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+/*static - shut up warning */
+DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
+
+
 
 /*
  * PGMR3PhysReadByte/Word/Dword
@@ -406,7 +413,7 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      * Allocate the new ROM range and RAM range (if necessary).
      */
     PPGMROMRANGE pRomNew;
-    rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMROMRANGE, aPages[cPages]), sizeof(PGMROMPAGE), MM_TAG_PGM_PHYS, (void **)pRomNew);
+    rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMROMRANGE, aPages[cPages]), 0, MM_TAG_PGM_PHYS, (void **)pRomNew);
     if (RT_SUCCESS(rc))
     {
         PPGMRAMRANGE pRamNew = NULL;
@@ -414,9 +421,12 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
             rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMRAMRANGE, aPages[cPages]), sizeof(PGMPAGE), MM_TAG_PGM_PHYS, (void **)pRamNew);
         if (RT_SUCCESS(rc))
         {
+            pgmLock(pVM);
+
             /*
              * Initialize and insert the RAM range (if required).
              */
+            PPGMROMPAGE pRomPage = &pRomNew->aPages[0];
             if (!fRamExists)
             {
                 pRamNew->GCPhys        = GCPhys;
@@ -427,7 +437,7 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                 pRamNew->pvHC          = NULL;
 
                 PPGMPAGE pPage = &pRamNew->aPages[0];
-                for (uint32_t iPage = 0; iPage < cPages; iPage++)
+                for (uint32_t iPage = 0; iPage < cPages; iPage++, pPage++, pRomPage++)
                 {
                     pPage->fWrittenTo = 0;
                     pPage->fSomethingElse = 0;
@@ -436,6 +446,8 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                     PGM_PAGE_SET_HCPHYS(pPage, pReq->aPages[iPage].HCPhysGCPhys);
                     PGM_PAGE_SET_STATE(pPage,  PGM_PAGE_STATE_ALLOCATED);
                     PGM_PAGE_SET_PAGEID(pPage, pReq->aPages[iPage].idPage);
+
+                    pRomPage->Virgin = *pPage;
                 }
 
                 pgmR3PhysLinkRamRange(pVM, pRamNew, pRamPrev);
@@ -443,47 +455,58 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
             else
             {
                 PPGMPAGE pPage = &pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
-                for (uint32_t iPage = 0; iPage < cPages; iPage++)
+                for (uint32_t iPage = 0; iPage < cPages; iPage++, pPage++, pRomPage++)
                 {
                     PGM_PAGE_SET_TYPE(pPage,   PGMPAGETYPE_ROM);
                     PGM_PAGE_SET_HCPHYS(pPage, pReq->aPages[iPage].HCPhysGCPhys);
                     PGM_PAGE_SET_STATE(pPage,  PGM_PAGE_STATE_ALLOCATED);
                     PGM_PAGE_SET_PAGEID(pPage, pReq->aPages[iPage].idPage);
+
+                    pRomPage->Virgin = *pPage;
                 }
 
                 pRamNew = pRam;
             }
+            pgmUnlock(pVM);
+
 
             /*
              * Register the write access handler for the range (PGMROMPROT_READ_ROM_WRITE_IGNORE).
              */
             rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhysLast,
-                                              NULL, NULL, /** @todo we actually need a ring-3 write handler here for shadowed ROMs, so hack REM! */
-                                              NULL, "pgmGuestROMWriteHandler", 0,
-                                              NULL, "pgmGuestROMWriteHandler", 0, pszDesc);
+#if 0 /** @todo we actually need a ring-3 write handler here for shadowed ROMs, so hack REM! */
+                                              pgmR3PhysRomWriteHandler, pRomNew,
+#else
+                                              NULL, NULL,
+#endif
+                                              NULL, "pgmGuestROMWriteHandler", MMHyperCCToR0(pVM, pRomNew),
+                                              NULL, "pgmGuestROMWriteHandler", MMHyperCCToGC(pVM, pRomNew), pszDesc);
             if (RT_SUCCESS(rc))
             {
+                pgmLock(pVM);
+
                 /*
                  * Copy the image over to the virgin pages.
                  * This must be done after linking in the RAM range.
                  */
-                for (uint32_t iPage = 0; iPage < cPages; iPage++)
+                PPGMPAGE pRamPage = &pRamNew->aPages[(GCPhys - pRamNew->GCPhys) >> PAGE_SHIFT];
+                for (uint32_t iPage = 0; iPage < cPages; iPage++, pRamPage++)
                 {
-                    void *pvDst;
-                    PGMPAGEMAPLOCK Lock;
-                    int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhys + (iPage << PAGE_SHIFT), &pvDst, &Lock);
+                    void *pvDstPage;
+                    PPGMPAGEMAP pMapIgnored;
+                    rc = pgmPhysPageMap(pVM, pRamPage, GCPhys + (iPage << PAGE_SHIFT), &pMapIgnored, &pvDstPage);
                     if (RT_FAILURE(rc))
                     {
                         VMSetError(pVM, rc, RT_SRC_POS, "Failed to map virgin ROM page at %RGp", GCPhys);
                         break;
                     }
-                    memcpy(pvDst, (const uint8_t *)pvBinary + (iPage << PAGE_SHIFT), PAGE_SIZE);
-                    PGMPhysReleasePageMappingLock(pVM, &Lock);
+                    memcpy(pvDstPage, (const uint8_t *)pvBinary + (iPage << PAGE_SHIFT), PAGE_SIZE);
                 }
                 if (RT_SUCCESS(rc))
                 {
                     /*
                      * Initialize the ROM range.
+                     * Note that the Virgin member of the pages has already been initialized above.
                      */
                     pRomNew->GCPhys = GCPhys;
                     pRomNew->GCPhysLast = GCPhysLast;
@@ -494,10 +517,16 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 
                     for (unsigned iPage = 0; iPage < cPages; iPage++)
                     {
-                        pRomNew->aPages[iPage].HCPhysVirgin = pReq->aPages[iPage].HCPhysGCPhys;
-                        pRomNew->aPages[iPage].HCPhysShadow = NIL_RTHCPHYS;
-                        pRomNew->aPages[iPage].idPageVirgin = pReq->aPages[iPage].idPage;
-                        pRomNew->aPages[iPage].idPageShadow = NIL_GMM_PAGEID;
+                        PPGMROMPAGE pPage = &pRomNew->aPages[iPage];
+
+                        pPage->Shadow.HCPhys = 0;
+                        pPage->Shadow.fWrittenTo = 0;
+                        pPage->Shadow.fSomethingElse = 0;
+                        pPage->Shadow.u29B = 0;
+                        PGM_PAGE_SET_TYPE(  &pPage->Shadow, PGMPAGETYPE_ROM_SHADOW);
+                        PGM_PAGE_SET_STATE( &pPage->Shadow, PGM_PAGE_STATE_ZERO);
+                        PGM_PAGE_SET_PAGEID(&pPage->Shadow, pReq->aPages[iPage].idPage);
+
                         pRomNew->aPages[iPage].enmProt = PGMROMPROT_READ_ROM_WRITE_IGNORE;
                     }
 
@@ -524,13 +553,16 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                     REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, false); /** @todo fix shadowing and REM. */
 
                     GMMR3AllocatePagesCleanup(pReq);
+                    pgmUnlock(pVM);
                     return VINF_SUCCESS;
                 }
 
                 /* bail out */
 
+                pgmUnlock(pVM);
                 int rc2 = PGMHandlerPhysicalDeregister(pVM, GCPhys);
                 AssertRC(rc2);
+                pgmLock(pVM);
             }
 
             pgmR3PhysUnlinkRamRange(pVM, pRamNew, pRamPrev);
@@ -543,7 +575,286 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     /** @todo Purge the mapping cache or something... */
     GMMR3FreeAllocatedPages(pVM, pReq);
     GMMR3AllocatePagesCleanup(pReq);
+    pgmUnlock(pVM);
     return rc;
+}
+
+
+/**
+ * \#PF Handler callback for ROM write accesses.
+ *
+ * @returns VINF_SUCCESS if the handler have carried out the operation.
+ * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
+ * @param   pVM             VM Handle.
+ * @param   GCPhys          The physical address the guest is writing to.
+ * @param   pvPhys          The HC mapping of that address.
+ * @param   pvBuf           What the guest is reading/writing.
+ * @param   cbBuf           How much it's reading/writing.
+ * @param   enmAccessType   The access type.
+ * @param   pvUser          User argument.
+ */
+/*static - shut up warning */
+ DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+{
+    PPGMROMRANGE    pRom = (PPGMROMRANGE)pvUser;
+    const uint32_t  iPage = GCPhys - pRom->GCPhys;
+    Assert(iPage < (pRom->cb >> PAGE_SHIFT));
+    PPGMROMPAGE     pRomPage = &pRom->aPages[iPage];
+    switch (pRomPage->enmProt)
+    {
+        /*
+         * Ignore.
+         */
+        case PGMROMPROT_READ_ROM_WRITE_IGNORE:
+        case PGMROMPROT_READ_RAM_WRITE_IGNORE:
+            return VINF_SUCCESS;
+
+        /*
+         * Write to the ram page.
+         */
+        case PGMROMPROT_READ_ROM_WRITE_RAM:
+        case PGMROMPROT_READ_RAM_WRITE_RAM: /* yes this will get here too, it's *way* simpler that way. */
+        {
+            /* This should be impossible now, pvPhys doesn't work cross page anylonger. */
+            Assert(((GCPhys - pRom->GCPhys + cbBuf - 1) >> PAGE_SHIFT) == iPage);
+
+            /*
+             * Take the lock, do lazy allocation, map the page and copy the data.
+             *
+             * Note that we have to bypass the mapping TLB since it works on
+             * guest physical addresses and entering the shadow page would
+             * kind of screw things up...
+             */
+            int rc = pgmLock(pVM);
+            AssertRC(rc);
+
+            if (RT_UNLIKELY(PGM_PAGE_GET_STATE(&pRomPage->Shadow) != PGM_PAGE_STATE_ALLOCATED))
+            {
+                rc = pgmPhysPageMakeWritable(pVM, &pRomPage->Shadow, GCPhys);
+                if (RT_FAILURE(rc))
+                {
+                    pgmUnlock(pVM);
+                    return rc;
+                }
+            }
+
+            void *pvDstPage;
+            PPGMPAGEMAP pMapIgnored;
+            rc = pgmPhysPageMap(pVM, &pRomPage->Shadow, GCPhys & X86_PTE_PG_MASK, &pMapIgnored, &pvDstPage);
+            if (RT_SUCCESS(rc))
+                memcpy((uint8_t *)pvDstPage + (GCPhys & PAGE_OFFSET_MASK), pvBuf, cbBuf);
+
+            pgmUnlock(pVM);
+            return rc;
+        }
+
+        default:
+            AssertMsgFailedReturn(("enmProt=%d iPage=%d GCPhys=%RGp\n",
+                                   pRom->aPages[iPage].enmProt, iPage, GCPhys),
+                                  VERR_INTERNAL_ERROR);
+    }
+}
+
+
+
+/**
+ * Called by PGMR3Reset to reset the shadow, switch to the virgin,
+ * and verify that the virgin part is untouched.
+ *
+ * This is done after the normal memory has been cleared.
+ *
+ * @param   pVM         The VM handle.
+ */
+int pgmR3PhysRomReset(PVM pVM)
+{
+    for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
+    {
+        const uint32_t cPages = pRom->cb >> PAGE_SHIFT;
+
+        if (pRom->fFlags & PGMPHYS_ROM_FLAG_SHADOWED)
+        {
+            /*
+             * Reset the physical handler.
+             */
+            int rc = PGMR3PhysRomProtect(pVM, pRom->GCPhys, pRom->cb, PGMROMPROT_READ_ROM_WRITE_IGNORE);
+            AssertRCReturn(rc, rc);
+
+            /*
+             * What we do with the shadow pages depends on the memory
+             * preallocation option. If not enabled, we'll just throw
+             * out all the dirty pages and replace them by the zero page.
+             */
+            if (1)///@todo !pVM->pgm.f.fRamPreAlloc)
+            {
+                /* Count dirty shadow pages. */
+                uint32_t cDirty = 0;
+                uint32_t iPage = cPages;
+                while (iPage-- > 0)
+                    if (PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO)
+                        cDirty++;
+                if (cDirty)
+                {
+                    /* Free the dirty pages. */
+                    PGMMFREEPAGESREQ pReq;
+                    rc = GMMR3FreePagesPrepare(pVM, &pReq, cDirty, GMMACCOUNT_BASE);
+                    AssertRCReturn(rc, rc);
+
+                    uint32_t iReqPage = 0;
+                    for (iPage = 0; iPage < cPages; iPage++)
+                        if (PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO)
+                        {
+                            pReq->aPages[iReqPage].idPage = PGM_PAGE_GET_PAGEID(&pRom->aPages[iPage].Shadow);
+                            iReqPage++;
+                        }
+
+                    rc = GMMR3FreePagesPerform(pVM, pReq);
+                    GMMR3FreePagesCleanup(pReq);
+                    AssertRCReturn(rc, rc);
+
+                    /* setup the zero page. */
+                    for (iPage = 0; iPage < cPages; iPage++)
+                        if (PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO)
+                        {
+                            PGM_PAGE_SET_STATE( &pRom->aPages[iPage].Shadow, PGM_PAGE_STATE_ZERO);
+                            PGM_PAGE_SET_HCPHYS(&pRom->aPages[iPage].Shadow, pVM->pgm.s.HCPhysZeroPg);
+                            PGM_PAGE_SET_PAGEID(&pRom->aPages[iPage].Shadow, NIL_GMM_PAGEID);
+                            pRom->aPages[iPage].Shadow.fWrittenTo = false;
+                            iReqPage++;
+                        }
+                }
+            }
+            else
+            {
+                /* clear all the pages. */
+                pgmLock(pVM);
+                for (uint32_t iPage = 0; iPage < cPages; iPage++)
+                {
+                    const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
+                    rc = pgmPhysPageMakeWritable(pVM, &pRom->aPages[iPage].Shadow, GCPhys);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    void *pvDstPage;
+                    PPGMPAGEMAP pMapIgnored;
+                    rc = pgmPhysPageMap(pVM, &pRom->aPages[iPage].Shadow, GCPhys, &pMapIgnored, &pvDstPage);
+                    if (RT_FAILURE(rc))
+                        break;
+                    memset(pvDstPage, 0, PAGE_SIZE);
+                }
+                pgmUnlock(pVM);
+                AssertRCReturn(rc, rc);
+            }
+        }
+
+#ifdef VBOX_STRICT
+        /*
+         * Verify that the virgin page is unchanged if possible.
+         */
+        if (pRom->pvOriginal)
+        {
+            uint8_t const *pbSrcPage = (uint8_t const *)pRom->pvOriginal;
+            for (uint32_t iPage = 0; iPage < cPages; iPage++, pbSrcPage += PAGE_SIZE)
+            {
+                const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
+                PPGMPAGEMAP pMapIgnored;
+                void *pvDstPage;
+                int rc = pgmPhysPageMap(pVM, &pRom->aPages[iPage].Virgin, GCPhys, &pMapIgnored, &pvDstPage);
+                if (RT_FAILURE(rc))
+                    break;
+                if (memcmp(pvDstPage, pbSrcPage, PAGE_SIZE))
+                    LogRel(("pgmR3PhysRomReset: %RGp rom page changed (%s) - loaded saved state?\n",
+                            GCPhys, pRom->pszDesc));
+            }
+        }
+#endif
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Change the shadowing of a range of ROM pages.
+ *
+ * This is intended for implementing chipset specific memory registers
+ * and will not be very strict about the input. It will silently ignore
+ * any pages that are not the part of a shadowed ROM.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   GCPhys      Where to start. Page aligned.
+ * @param   cb          How much to change. Page aligned.
+ * @param   enmProt     The new ROM protection.
+ */
+PGMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROMPROT enmProt)
+{
+    /*
+     * Check input
+     */
+    if (!cb)
+        return VINF_SUCCESS;
+    AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(!(cb & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    RTGCPHYS GCPhysLast = GCPhys + (cb - 1);
+    AssertReturn(GCPhysLast > GCPhys, VERR_INVALID_PARAMETER);
+    AssertReturn(enmProt >= PGMROMPROT_INVALID && enmProt <= PGMROMPROT_END, VERR_INVALID_PARAMETER);
+
+    /*
+     * Process the request.
+     */
+    bool fFlushedPool = false;
+    for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
+        if (    GCPhys     <= pRom->GCPhysLast
+            &&  GCPhysLast >= pRom->GCPhys)
+        {
+            /*
+             * Iterate the relevant pages and the ncessary make changes.
+             */
+            bool fChanges = false;
+            uint32_t const cPages = pRom->GCPhysLast > GCPhysLast
+                                  ? pRom->cb >> PAGE_SHIFT
+                                  : (GCPhysLast - pRom->GCPhys) >> PAGE_SHIFT;
+            for (uint32_t iPage = (GCPhys - pRom->GCPhys) >> PAGE_SHIFT;
+                 iPage < cPages;
+                 iPage++)
+            {
+                PPGMROMPAGE pRomPage = &pRom->aPages[iPage];
+                if (PGMROMPROT_IS_ROM(pRomPage->enmProt) != PGMROMPROT_IS_ROM(enmProt))
+                {
+                    fChanges = true;
+
+                    /* flush the page pool first so we don't leave any usage references dangling. */
+                    if (!fFlushedPool)
+                    {
+                        pgmPoolFlushAll(pVM);
+                        fFlushedPool = true;
+                    }
+
+                    PPGMPAGE pOld = PGMROMPROT_IS_ROM(pRomPage->enmProt) ? &pRomPage->Virgin : &pRomPage->Shadow;
+                    PPGMPAGE pNew = PGMROMPROT_IS_ROM(pRomPage->enmProt) ? &pRomPage->Shadow : &pRomPage->Virgin;
+                    PPGMPAGE pRamPage = pgmPhysGetPage(&pVM->pgm.s, pRom->GCPhys + (iPage << PAGE_SHIFT));
+
+                    *pOld = *pRamPage;
+                    *pRamPage = *pNew;
+                    /** @todo sync the volatile flags (handlers) when these have been moved out of HCPhys. */
+                }
+            }
+
+            /*
+             * Reset the access handler if we made changes, no need
+             * to optimize this.
+             */
+            if (fChanges)
+            {
+                int rc = PGMHandlerPhysicalReset(pVM, pRom->GCPhys);
+                AssertRCReturn(rc, rc);
+            }
+
+            /* Advance - cb isn't updated. */
+            GCPhys = pRom->GCPhys + (cPages << PAGE_SHIFT);
+        }
+
+    return VINF_SUCCESS;
 }
 
 

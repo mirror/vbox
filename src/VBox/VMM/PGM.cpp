@@ -1711,6 +1711,13 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM)
         }
     }
 
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+    /*
+     * Zero shadow ROM pages.
+     */
+    rc = pgmR3PhysRomReset(pVM);
+#endif
+
     /*
      * Switch mode back to real mode.
      */

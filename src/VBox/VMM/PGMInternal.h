@@ -480,8 +480,8 @@ typedef enum PGMPAGETYPE
     PGMPAGETYPE_RAM,
     /** MMIO2 page. (RWX) */
     PGMPAGETYPE_MMIO2,
-    /** Shadowed ROM in PGMROMPROT_READ_RAM_WRITE_RAM mode. (RWX) */
-    PGMPAGETYPE_ROM_RAM,
+    /** Shadowed ROM. (RWX) */
+    PGMPAGETYPE_ROM_SHADOW,
     /** ROM page. (R-X) */
     PGMPAGETYPE_ROM,
     /** MMIO page. (---) */
@@ -494,8 +494,8 @@ AssertCompile(PGMPAGETYPE_END < 7);
 /** @name Page type predicates.
  * @{ */
 #define PGMPAGETYPE_IS_READABLE(type)   ( (type) <= PGMPAGETYPE_ROM )
-#define PGMPAGETYPE_IS_WRITEABLE(type)  ( (type) <= PGMPAGETYPE_ROM_RAM )
-#define PGMPAGETYPE_IS_RWX(type)        ( (type) <= PGMPAGETYPE_ROM_RAM )
+#define PGMPAGETYPE_IS_WRITEABLE(type)  ( (type) <= PGMPAGETYPE_ROM_SHADOW )
+#define PGMPAGETYPE_IS_RWX(type)        ( (type) <= PGMPAGETYPE_ROM_SHADOW )
 #define PGMPAGETYPE_IS_ROX(type)        ( (type) == PGMPAGETYPE_ROM )
 #define PGMPAGETYPE_IS_NP(type)         ( (type) == PGMPAGETYPE_MMIO )
 /** @} */
@@ -633,10 +633,10 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The page index.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)   ( (pPage)->idPage & (RT_BIT_32(GMM_CHUNKID_SHIFT) - 1) )
+#define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)   ( (pPage)->idPage & GMM_PAGEID_IDX_MASK )
 /* later:
 #if GMM_CHUNKID_SHIFT <= 12
-# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (uint32_t)((pPage)->HCPhys & (RT_BIT_32(GMM_CHUNKID_SHIFT) - 1)) )
+# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (uint32_t)((pPage)->HCPhys & GMM_PAGEID_IDX_MASK) )
 #else
 # define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  (   (uint32_t)((pPage)->HCPhys & 0xfff) \
                                              |  ( (uint32_t)((pPage)->HCPhys >> 48) & (RT_BIT_32(GMM_CHUNKID_SHIFT - 12) - 1) ) )
@@ -750,23 +750,25 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 /**
  * Per page tracking structure for ROM image.
  *
- * This is in addition to PGMPAGE, which will be set up with one
- * of the two pages described here.
+ * A ROM image may have a shadow page, in which case we may have
+ * two pages backing it. This structure contains the PGMPAGE for
+ * both while PGMRAMRANGE have a copy of the active one. It is
+ * important that these aren't out of sync in any regard other
+ * than page pool tracking data.
  */
 typedef struct PGMROMPAGE
 {
-    /** The virgin page (read-only). */
-    RTHCPHYS    HCPhysVirgin;
-    /** The shadow page (read-write). */
-    RTHCPHYS    HCPhysShadow;
-    /** The page id of the virgin page. NIL_GMM_PAGEID if it's the zero page. */
-    uint32_t    idPageVirgin;
-    /** The page id of the shadow page. NIL_GMM_PAGEID if it's the zero page. */
-    uint32_t    idPageShadow;
-    /** The current protection status. */
+    /** The page structure for the virgin ROM page. */
+    PGMPAGE     Virgin;
+    /** The page structure for the shadow RAM page. */
+    PGMPAGE     Shadow;
+    /** The current protection setting. */
     PGMROMPROT  enmProt;
-    uint32_t    u32Padding;             /**< Structure size padding.*/
+    /** Pad the structure size to a multiple of 8. */
+    uint32_t    u32Padding;
 } PGMROMPAGE;
+/** Pointer to a ROM page tracking structure. */
+typedef PGMROMPAGE *PPGMROMPAGE;
 
 
 /**
@@ -2329,8 +2331,11 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
 
 
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
+int             pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
+int             pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv);
 #ifdef IN_RING3
 int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk);
+int             pgmR3PhysRomReset(PVM pVM);
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 int             pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
 #endif
