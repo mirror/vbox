@@ -68,7 +68,6 @@
 
 // XXX TODO:
 //  1. add thread affinity field to SETUP messages
-//  2. support array parameters
 
 //-----------------------------------------------------------------------------
 
@@ -84,10 +83,6 @@ static const nsID kDConnectTargetID = DCONNECT_IPC_TARGETID;
 //-----------------------------------------------------------------------------
 
 #define DCON_WAIT_TIMEOUT PR_INTERVAL_NO_TIMEOUT
-
-// used elsewhere like nsAtomTable to safely represent the integral value
-// of an address.
-typedef unsigned long PtrBits;
 
 //-----------------------------------------------------------------------------
 
@@ -273,7 +268,7 @@ public:
     }
     return count;
   }
-  
+
 private:
   nsAutoRefCnt               mRefCnt;
   nsAutoRefCnt               mRefCntIPC;
@@ -409,14 +404,14 @@ SerializeParam(ipcMessageWriter &writer, const nsXPTType &t, const nsXPTCMiniVar
       break;
 
     case nsXPTType::T_ARRAY:
-      LOG(("array types are not yet supported\n"));
-      return NS_ERROR_NOT_IMPLEMENTED;
+      // arrays are serialized after all other params outside this routine
+      break;
 
     case nsXPTType::T_VOID:
     case nsXPTType::T_PSTRING_SIZE_IS:
     case nsXPTType::T_PWSTRING_SIZE_IS:
     default:
-      LOG(("unexpected parameter type\n"));
+      LOG(("unexpected parameter type: %d\n", t.TagPart()));
       return NS_ERROR_UNEXPECTED;
   }
   return NS_OK;
@@ -476,8 +471,8 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
       {
         nsID *buf = (nsID *) nsMemory::Alloc(sizeof(nsID));
         reader.GetBytes(buf, sizeof(nsID));
-        v.val.p = v.ptr = buf;
-        v.flags = nsXPTCVariant::PTR_IS_DATA | nsXPTCVariant::VAL_IS_ALLOCD;
+        v.val.p = buf;
+        v.SetValIsAllocated();
       }
       break;
 
@@ -487,8 +482,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
         if (len == (PRUint32) -1)
         {
           // it's a null string
-          v.val.p = v.ptr = 0;
-          v.flags = nsXPTCVariant::PTR_IS_DATA;
+          v.val.p = nsnull;
         }
         else
         {
@@ -496,8 +490,8 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
           reader.GetBytes(buf, len);
           buf[len] = char(0);
 
-          v.val.p = v.ptr = buf;
-          v.flags = nsXPTCVariant::PTR_IS_DATA | nsXPTCVariant::VAL_IS_ALLOCD;
+          v.val.p = buf;
+          v.SetValIsAllocated();
         }
       }
       break;
@@ -508,8 +502,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
         if (len == (PRUint32) -1)
         {
           // it's a null string
-          v.val.p = v.ptr = 0;
-          v.flags = nsXPTCVariant::PTR_IS_DATA;
+          v.val.p = nsnull;
         }
         else
         {
@@ -517,8 +510,8 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
           reader.GetBytes(buf, len);
           buf[len / 2] = PRUnichar(0);
 
-          v.val.p = v.ptr = buf;
-          v.flags = nsXPTCVariant::PTR_IS_DATA | nsXPTCVariant::VAL_IS_ALLOCD;
+          v.val.p = buf;
+          v.SetValIsAllocated();
         }
       }
       break;
@@ -526,9 +519,9 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
     case nsXPTType::T_INTERFACE:
     case nsXPTType::T_INTERFACE_IS:
       {
-        reader.GetBytes(&v.ptr, sizeof(void *));
-        v.val.p = nsnull;
-        v.flags = nsXPTCVariant::PTR_IS_DATA;
+        reader.GetBytes(&v.val.p, sizeof(void *));
+        // stub creation will be handled outside this routine.  we only
+        // deserialize the DConAddr into v.val.p temporarily.
       }
       break;
 
@@ -542,8 +535,8 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
         PRUnichar *buf = str->BeginWriting();
         reader.GetBytes(buf, len);
 
-        v.val.p = v.ptr = str;
-        v.flags = nsXPTCVariant::PTR_IS_DATA | nsXPTCVariant::VAL_IS_DOMSTR;
+        v.val.p = str;
+        v.SetValIsDOMString();
       }
       break;
 
@@ -557,20 +550,19 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
         char *buf = str->BeginWriting();
         reader.GetBytes(buf, len);
 
-        v.val.p = v.ptr = str;
-        v.flags = nsXPTCVariant::PTR_IS_DATA;
+        v.val.p = str;
 
         // this distinction here is pretty pointless
         if (t.TagPart() == nsXPTType::T_CSTRING)
-          v.flags |= nsXPTCVariant::VAL_IS_CSTR;
+          v.SetValIsCString();
         else
-          v.flags |= nsXPTCVariant::VAL_IS_UTF8STR;
+          v.SetValIsUTF8String();
       }
       break;
 
     case nsXPTType::T_ARRAY:
-      LOG(("array types are not yet supported\n"));
-      return NS_ERROR_NOT_IMPLEMENTED;
+      // arrays are deserialized after all other params outside this routine
+      break;
 
     case nsXPTType::T_VOID:
     case nsXPTType::T_PSTRING_SIZE_IS:
@@ -590,27 +582,26 @@ SetupParam(const nsXPTParamInfo &p, nsXPTCVariant &v)
   if (p.IsIn() && p.IsDipper())
   {
     v.ptr = nsnull;
+    v.flags = 0;
 
     switch (t.TagPart())
     {
       case nsXPTType::T_ASTRING:
       case nsXPTType::T_DOMSTRING:
-        v.ptr = new nsString();
-        if (!v.ptr)
+        v.val.p = new nsString();
+        if (!v.val.p)
           return NS_ERROR_OUT_OF_MEMORY;
-        v.val.p = v.ptr;
         v.type = t;
-        v.flags = nsXPTCVariant::PTR_IS_DATA | nsXPTCVariant::VAL_IS_DOMSTR;
+        v.SetValIsDOMString();
         break;
 
       case nsXPTType::T_UTF8STRING:
       case nsXPTType::T_CSTRING:
-        v.ptr = new nsCString();
-        if (!v.ptr)
+        v.val.p = new nsCString();
+        if (!v.val.p)
           return NS_ERROR_OUT_OF_MEMORY;
-        v.val.p = v.ptr;
         v.type = t;
-        v.flags = nsXPTCVariant::PTR_IS_DATA | nsXPTCVariant::VAL_IS_CSTR;
+        v.SetValIsCString();
         break;
 
       default:
@@ -623,18 +614,23 @@ SetupParam(const nsXPTParamInfo &p, nsXPTCVariant &v)
     memset(&v.val, 0, sizeof(v.val));
     v.ptr = &v.val;
     v.type = t;
-    v.flags = nsXPTCVariant::PTR_IS_DATA;
+    v.flags = 0;
+    v.SetPtrIsData();
 
-    // nsID, string and wstring types are not understood as dippers (see
-    // DIPPER_TYPE in xpidl.h) but they behave like dippers too. Therefore we
-    // need to treat them so manually.
+    // the ownership of output nsID, string, wstring, interface pointers and
+    // arrays is transferred to the receiving party. Therefore, we need to
+    // instruct FinishParam() to perform a cleanup after serializing them.
     switch (t.TagPart())
     {
       case nsXPTType::T_IID:
       case nsXPTType::T_CHAR_STR:
       case nsXPTType::T_WCHAR_STR:
-        // add VAL_IS_ALLOCD to cause FinishParam() to do cleanup
-        v.flags |= nsXPTCVariant::VAL_IS_ALLOCD;
+      case nsXPTType::T_ARRAY:
+        v.SetValIsAllocated();
+        break;
+      case nsXPTType::T_INTERFACE:
+      case nsXPTType::T_INTERFACE_IS:
+        v.SetValIsInterface();
         break;
       default:
         break;
@@ -651,7 +647,7 @@ FinishParam(nsXPTCVariant &v)
     return;
 
   if (v.IsValAllocated())
-      nsMemory::Free(v.val.p);
+    nsMemory::Free(v.val.p);
   else if (v.IsValInterface())
     ((nsISupports *) v.val.p)->Release();
   else if (v.IsValDOMString())
@@ -796,8 +792,8 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
       break;
 
     case nsXPTType::T_ARRAY:
-      LOG(("array types are not yet supported\n"));
-      return NS_ERROR_NOT_IMPLEMENTED;
+      // arrays are deserialized after all other params outside this routine
+      break;
 
     case nsXPTType::T_VOID:
     case nsXPTType::T_PSTRING_SIZE_IS:
@@ -807,6 +803,402 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
       return NS_ERROR_UNEXPECTED;
   }
   return NS_OK;
+}
+
+//-----------------------------------------------------------------------------
+//
+// Returns an element from the nsXPTCMiniVariant array by properly casting it to
+// nsXPTCVariant when requested
+#define GET_PARAM(params, isXPTCVariantArray, idx) \
+    (isXPTCVariantArray ? ((nsXPTCVariant *) params) [idx] : params [idx])
+
+// isResult is PR_TRUE if the size_is and length_is params are out or retval
+// so that nsXPTCMiniVariants contain pointers to their locations instead of the
+// values themselves.
+static nsresult
+GetArrayParamInfo(nsIInterfaceInfo *iinfo, uint16 methodIndex,
+                  const nsXPTMethodInfo &methodInfo, nsXPTCMiniVariant *params,
+                  PRBool isXPTCVariantArray, const nsXPTParamInfo &paramInfo,
+                  PRBool isResult, PRUint32 &size, PRUint32 &length,
+                  nsXPTType &elemType)
+{
+  // XXX multidimensional arrays are not supported so dimension is always 0 for
+  // getting the size_is argument number of the array itself and 1 for getting
+  // the type of elements stored in the array.
+
+  nsresult rv;
+
+  // get the array size
+  PRUint8 sizeArg;
+  rv = iinfo->GetSizeIsArgNumberForParam(methodIndex, &paramInfo, 0, &sizeArg);
+  if (NS_FAILED(rv))
+    return rv;
+
+  // get the number of valid elements
+  PRUint8 lenArg;
+  rv = iinfo->GetLengthIsArgNumberForParam(methodIndex, &paramInfo, 0, &lenArg);
+  if (NS_FAILED(rv))
+    return rv;
+
+  // according to XPT specs
+  // (http://www.mozilla.org/scriptable/typelib_file.html), size_is and
+  // length_is for arrays is always uint32. Check this too.
+  {
+    nsXPTParamInfo pi = methodInfo.GetParam (sizeArg);
+    if (pi.GetType().TagPart() != nsXPTType::T_U32)
+    {
+      LOG(("unexpected size_is() parameter type: $d\n",
+           pi.GetType().TagPart()));
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    pi = methodInfo.GetParam (lenArg);
+    if (pi.GetType().TagPart() != nsXPTType::T_U32)
+    {
+      LOG(("unexpected length_is() parameter type: $d\n",
+           pi.GetType().TagPart()));
+      return NS_ERROR_UNEXPECTED;
+    }
+  }
+
+  if (isResult)
+  {
+    length = *((PRUint32 *) GET_PARAM(params,isXPTCVariantArray, lenArg).val.p);
+    size = *((PRUint32 *) GET_PARAM(params, isXPTCVariantArray, sizeArg).val.p);
+  }
+  else
+  {
+    length = GET_PARAM(params, isXPTCVariantArray, lenArg).val.u32;
+    size = GET_PARAM(params, isXPTCVariantArray, sizeArg).val.u32;
+  }
+
+  if (length > size)
+  {
+    NS_WARNING("length_is() value is greater than size_is() value");
+    length = size;
+  }
+
+  // get type of array elements
+  rv = iinfo->GetTypeForParam(methodIndex, &paramInfo, 1, &elemType);
+  if (NS_FAILED(rv))
+    return rv;
+
+  if (elemType.IsArithmetic() &&
+      (elemType.IsPointer() || elemType.IsUniquePointer() ||
+       elemType.IsReference()))
+  {
+    LOG(("arrays of pointers and references to arithmetic types are "
+         "not yet supported\n"));
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (elemType.IsArray())
+  {
+    LOG(("multidimensional arrays are not yet supported\n"));
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  return NS_OK;
+}
+
+static nsresult
+GetTypeSize(const nsXPTType &type, PRUint32 &size, PRBool &isSimple)
+{
+  // get the type size in bytes
+  size = 0;
+  isSimple = PR_TRUE;
+  switch (type.TagPart())
+  {
+    case nsXPTType::T_I8:             size = sizeof(PRInt8);      break;
+    case nsXPTType::T_I16:            size = sizeof(PRInt16);     break;
+    case nsXPTType::T_I32:            size = sizeof(PRInt32);     break;
+    case nsXPTType::T_I64:            size = sizeof(PRInt64);     break;
+    case nsXPTType::T_U8:             size = sizeof(PRUint8);     break;
+    case nsXPTType::T_U16:            size = sizeof(PRUint16);    break;
+    case nsXPTType::T_U32:            size = sizeof(PRUint32);    break;
+    case nsXPTType::T_U64:            size = sizeof(PRUint64);    break;
+    case nsXPTType::T_FLOAT:          size = sizeof(float);       break;
+    case nsXPTType::T_DOUBLE:         size = sizeof(double);      break;
+    case nsXPTType::T_BOOL:           size = sizeof(PRBool);      break;
+    case nsXPTType::T_CHAR:           size = sizeof(char);        break;
+    case nsXPTType::T_WCHAR:          size = sizeof(PRUnichar);   break;
+    case nsXPTType::T_IID:            /* fall through */
+    case nsXPTType::T_CHAR_STR:       /* fall through */
+    case nsXPTType::T_WCHAR_STR:      /* fall through */
+    case nsXPTType::T_INTERFACE:      /* fall through */
+    case nsXPTType::T_INTERFACE_IS:   /* fall through */
+    case nsXPTType::T_ASTRING:        /* fall through */
+    case nsXPTType::T_DOMSTRING:      /* fall through */
+    case nsXPTType::T_UTF8STRING:     /* fall through */
+    case nsXPTType::T_CSTRING:        /* fall through */
+      size = sizeof(void *);
+      isSimple = PR_FALSE;
+      break;
+    default:
+      LOG(("unexpected parameter type: %d\n", type.TagPart()));
+      return NS_ERROR_UNEXPECTED;
+  }
+
+  return NS_OK;
+}
+
+static nsresult
+SerializeArrayParam(ipcDConnectService *dConnect,
+                    ipcMessageWriter &writer, PRUint32 peerID,
+                    nsIInterfaceInfo *iinfo, uint16 methodIndex,
+                    const nsXPTMethodInfo &methodInfo,
+                    nsXPTCMiniVariant *params, PRBool isXPTCVariantArray,
+                    const nsXPTParamInfo &paramInfo,
+                    void *array, nsVoidArray &wrappers)
+{
+  if (!array)
+  {
+    // put 0 to indicate null array
+    writer.PutInt8(0);
+    return NS_OK;
+  }
+
+  // put 1 to indicate non-null array
+  writer.PutInt8(1);
+
+  PRUint32 size = 0;
+  PRUint32 length = 0;
+  nsXPTType elemType;
+
+  nsresult rv = GetArrayParamInfo(iinfo, methodIndex, methodInfo, params,
+                                  isXPTCVariantArray, paramInfo, PR_FALSE,
+                                  size, length, elemType);
+  if (NS_FAILED (rv))
+      return rv;
+
+  PRUint32 elemSize = 0;
+  PRBool isSimple = PR_TRUE;
+  rv = GetTypeSize(elemType, elemSize, isSimple);
+  if (NS_FAILED (rv))
+      return rv;
+
+  if (isSimple)
+  {
+    // this is a simple arithmetic type, write the whole array at once
+    writer.PutBytes(array, length * elemSize);
+    return NS_OK;
+  }
+
+  // iterate over valid (length_is) elements of the array
+  // and serialize each of them
+  nsXPTCMiniVariant v;
+  for (PRUint32 i = 0; i < length; ++i)
+  {
+    v.val.p = ((void **) array) [i];
+
+    if (elemType.IsInterfacePointer())
+    {
+      nsID iid;
+      rv = dConnect->GetIIDForMethodParam(iinfo, &methodInfo, paramInfo, elemType,
+                                          methodIndex, params, isXPTCVariantArray,
+                                          iid);
+      if (NS_SUCCEEDED(rv))
+        rv = dConnect->SerializeInterfaceParam(writer, peerID, iid,
+                                               (nsISupports *) v.val.p,
+                                               wrappers);
+    }
+    else
+      rv = SerializeParam(writer, elemType, v);
+
+    if (NS_FAILED(rv))
+        return rv;
+  }
+
+  return NS_OK;
+}
+
+// isResult is PR_TRUE if the array param is out or retval
+static nsresult
+DeserializeArrayParam(ipcDConnectService *dConnect,
+                      ipcMessageReader &reader, PRUint32 peerID,
+                      nsIInterfaceInfo *iinfo, uint16 methodIndex,
+                      const nsXPTMethodInfo &methodInfo,
+                      nsXPTCMiniVariant *params, PRBool isXPTCVariantArray,
+                      const nsXPTParamInfo &paramInfo,
+                      PRBool isResult, void *&array)
+{
+  PRUint32 size = 0;
+  PRUint32 length = 0;
+  nsXPTType elemType;
+
+  nsresult rv = GetArrayParamInfo(iinfo, methodIndex, methodInfo, params,
+                                  isXPTCVariantArray, paramInfo, isResult,
+                                  size, length, elemType);
+  if (NS_FAILED(rv))
+    return rv;
+
+  PRUint8 prefix = reader.GetInt8();
+  if (prefix == 0)
+  {
+    // it's a null array
+    array = nsnull;
+    return NS_OK;
+  }
+  // sanity
+  if (prefix != 1)
+  {
+    LOG(("unexpected array prefix: %u\n", prefix));
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  PRUint32 elemSize = 0;
+  PRBool isSimple = PR_TRUE;
+  rv = GetTypeSize(elemType, elemSize, isSimple);
+  if (NS_FAILED (rv))
+      return rv;
+
+  void *arr = nsMemory::Alloc(size * elemSize);
+  if (arr == nsnull)
+    return NS_ERROR_OUT_OF_MEMORY;
+
+  // initialize the unused space of the array with zeroes
+  if (length < size)
+    memset(((PRUint8 *) arr) + length * elemSize, 0,
+           (size - length) * elemSize);
+
+  if (isSimple)
+  {
+    // this is a simple arithmetic type, read the whole array at once
+    reader.GetBytes(arr, length * elemSize);
+
+    array = arr;
+    return NS_OK;
+  }
+
+  // iterate over valid (length_is) elements of the array
+  // and deserialize each of them individually
+  nsXPTCVariant v;
+  for (PRUint32 i = 0; i < length; ++i)
+  {
+    rv = DeserializeParam(reader, elemType, v);
+
+    if (NS_SUCCEEDED(rv) && elemType.IsInterfacePointer())
+    {
+      // grab the DConAddr value temporarily stored in the param
+      PtrBits bits = (PtrBits) v.val.p;
+
+      // DeserializeInterfaceParamBits needs IID only if it's a remote object
+      nsID iid;
+      if (bits & PTRBITS_REMOTE_BIT)
+        rv = dConnect->GetIIDForMethodParam(iinfo, &methodInfo, paramInfo,
+                                            elemType, methodIndex,
+                                            params, isXPTCVariantArray, iid);
+      if (NS_SUCCEEDED(rv))
+      {
+        nsISupports *obj = nsnull;
+        rv = dConnect->DeserializeInterfaceParamBits(bits, peerID, iid, obj);
+        if (NS_SUCCEEDED(rv))
+          v.val.p = obj;
+      }
+    }
+
+    if (NS_FAILED(rv))
+      break;
+
+    // note that we discard extended param informaton provided by nsXPTCVariant
+    // and will have to "reconstruct" it from the type tag in FinishArrayParam()
+    ((void **) arr) [i] = v.val.p;
+  }
+
+  if (NS_FAILED(rv))
+    nsMemory::Free(arr);
+  else
+    array = arr;
+
+  return rv;
+}
+
+static void
+FinishArrayParam(nsIInterfaceInfo *iinfo, uint16 methodIndex,
+                 const nsXPTMethodInfo &methodInfo, nsXPTCMiniVariant *params,
+                 PRBool isXPTCVariantArray, const nsXPTParamInfo &paramInfo,
+                 const nsXPTCMiniVariant &arrayVal)
+{
+  // nothing to do for a null array
+  void *arr = arrayVal.val.p;
+  if (!arr)
+    return;
+
+  PRUint32 size = 0;
+  PRUint32 length = 0;
+  nsXPTType elemType;
+
+  // note that FinishArrayParam is called only from OnInvoke to free memory
+  // after the call has been served. When OnInvoke sets up out and retval
+  // parameters for the real method, it passes pointers to the nsXPTCMiniVariant
+  // elements of the params array themselves so that they will eventually
+  // receive the returned values. For this reason, both in 'in' param and
+  // 'out/retaval' param cases, size_is and length_is may be read by
+  // GetArrayParamInfo() by value. Therefore, isResult is always PR_FALSE.
+  nsresult rv = GetArrayParamInfo(iinfo, methodIndex, methodInfo, params,
+                                  isXPTCVariantArray, paramInfo, PR_FALSE,
+                                  size, length, elemType);
+  if (NS_FAILED (rv))
+      return;
+
+  nsXPTCVariant v;
+  v.ptr = nsnull;
+  v.flags = 0;
+
+  // iterate over valid (length_is) elements of the array
+  // and free each of them
+  for (PRUint32 i = 0; i < length; ++i)
+  {
+    v.type = elemType.TagPart();
+
+    switch (elemType.TagPart())
+    {
+      case nsXPTType::T_I8:             /* fall through */
+      case nsXPTType::T_I16:            /* fall through */
+      case nsXPTType::T_I32:            /* fall through */
+      case nsXPTType::T_I64:            /* fall through */
+      case nsXPTType::T_U8:             /* fall through */
+      case nsXPTType::T_U16:            /* fall through */
+      case nsXPTType::T_U32:            /* fall through */
+      case nsXPTType::T_U64:            /* fall through */
+      case nsXPTType::T_FLOAT:          /* fall through */
+      case nsXPTType::T_DOUBLE:         /* fall through */
+      case nsXPTType::T_BOOL:           /* fall through */
+      case nsXPTType::T_CHAR:           /* fall through */
+      case nsXPTType::T_WCHAR:          /* fall through */
+        // nothing to free for arithmetic types
+        continue;
+      case nsXPTType::T_IID:            /* fall through */
+      case nsXPTType::T_CHAR_STR:       /* fall through */
+      case nsXPTType::T_WCHAR_STR:      /* fall through */
+        v.val.p = ((void **) arr) [i];
+        v.SetValIsAllocated();
+        break;
+      case nsXPTType::T_INTERFACE:      /* fall through */
+      case nsXPTType::T_INTERFACE_IS:   /* fall through */
+        v.val.p = ((void **) arr) [i];
+        v.SetValIsInterface();
+        break;
+      case nsXPTType::T_ASTRING:        /* fall through */
+      case nsXPTType::T_DOMSTRING:      /* fall through */
+        v.val.p = ((void **) arr) [i];
+        v.SetValIsDOMString();
+        break;
+      case nsXPTType::T_UTF8STRING:     /* fall through */
+        v.val.p = ((void **) arr) [i];
+        v.SetValIsUTF8String();
+        break;
+      case nsXPTType::T_CSTRING:        /* fall through */
+        v.val.p = ((void **) arr) [i];
+        v.SetValIsCString();
+        break;
+      default:
+        LOG(("unexpected parameter type: %d\n", elemType.TagPart()));
+        return;
+    }
+
+    FinishParam(v);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -994,9 +1386,9 @@ public:
   DConnectStubKey::Key GetKey() {
     return DConnectStubKey::Key(mPeerID, mInstance);
   }
-  
+
   NS_IMETHOD_(nsrefcnt) AddRefIPC();
-  
+
 private:
   nsCOMPtr<nsIInterfaceInfo> mIInfo;
 
@@ -1005,10 +1397,10 @@ private:
 
   // the "client id" of our IPC peer.  this guy owns the real object.
   PRUint32 mPeerID;
-  
+
   // cached nsISupports stub for this object
   DConnectStub *mCachedISupports;
-  
+
   // stack of reference counter values (protected by
   // ipcDConnectService::StubLock())
   nsDeque mRefCntLevels;
@@ -1160,7 +1552,7 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
       // trying wrappers.AppendElement() to make sure ReleaseIPC() will remove
       // the wrapper from the instance map on failure)
       wrapper->AddRefIPC();
-        
+
       if (!wrappers.AppendElement(wrapper))
       {
         wrapper->ReleaseIPC();
@@ -1170,14 +1562,59 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
 
       // wrapper remains referenced when passing it to the client
       // (will be released upon DCON_OP_RELEASE)
-      
-      // send address of the instance wrapper, and set the low bit
-      // to indicate that this is an instance wrapper.
-      PtrBits bits = ((PtrBits) wrapper) | 0x1;
+
+      // send address of the instance wrapper, and set the low bit to indicate
+      // to the remote party that this is a remote instance wrapper.
+      PtrBits bits = ((PtrBits) wrapper) | PTRBITS_REMOTE_BIT;
       writer.PutBytes(&bits, sizeof(bits));
     }
     NS_IF_RELEASE(stub);
   }
+  return NS_OK;
+}
+
+// NOTE: peer and iid are ignored if bits doesn't contain PTRBITS_REMOTE_BIT
+nsresult
+ipcDConnectService::DeserializeInterfaceParamBits(PtrBits bits, PRUint32 peer,
+                                                  const nsID &iid,
+                                                  nsISupports *&obj)
+{
+  nsresult rv;
+
+  obj = nsnull;
+
+  if (bits & PTRBITS_REMOTE_BIT)
+  {
+    // pointer is to a remote object.  we need to build a stub.
+
+    bits &= ~PTRBITS_REMOTE_BIT;
+
+    DConnectStub *stub;
+    rv = CreateStub(iid, peer, (DConAddr) bits, &stub);
+    if (NS_SUCCEEDED(rv))
+      obj = stub;
+  }
+  else if (bits)
+  {
+    // pointer is to one of our instance wrappers. Replace it with the
+    // real instance.
+
+    DConnectInstance *wrapper = (DConnectInstance *) bits;
+    // make sure we've been sent a valid wrapper
+    if (!CheckInstanceAndAddRef(wrapper))
+    {
+      NS_NOTREACHED("instance wrapper not found");
+      return NS_ERROR_INVALID_ARG;
+    }
+    obj = wrapper->RealInstance();
+    NS_ADDREF(obj);
+    NS_RELEASE(wrapper);
+  }
+  else
+  {
+    // obj is alredy nsnull
+  }
+
   return NS_OK;
 }
 
@@ -1433,7 +1870,7 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
         // trying wrappers.AppendElement() to make sure ReleaseIPC() will remove
         // the wrapper from the instance map on failure)
         wrapper->AddRefIPC();
-        
+
         if (!wrappers.AppendElement(wrapper))
         {
           wrapper->ReleaseIPC();
@@ -1444,9 +1881,9 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
         // wrapper remains referenced when passing it to the client
         // (will be released upon DCON_OP_RELEASE)
 
-        // send address of the instance wrapper, and set the low bit
-        // to indicate that this is an instance wrapper.
-        PtrBits bits = ((PtrBits) wrapper) | 0x1;
+        // send address of the instance wrapper, and set the low bit to indicate
+        // to the remote party that this is a remote instance wrapper.
+        PtrBits bits = ((PtrBits) wrapper) | PTRBITS_REMOTE_BIT;
         writer.PutBytes(&bits, sizeof(bits));
 
         // we want to cache fields to minimize the number of IPC calls when
@@ -1543,7 +1980,7 @@ ipcDConnectService::DeserializeException(const PRUint8 *data,
 
   PtrBits bits = (PtrBits) (instance);
 
-  if (bits & 0x1)
+  if (bits & PTRBITS_REMOTE_BIT)
   {
     // pointer is a peer-side exception instance wrapper,
     // read cahced exception data and create a stub for it.
@@ -1584,7 +2021,7 @@ ipcDConnectService::DeserializeException(const PRUint8 *data,
       rv = NS_ERROR_INVALID_ARG;
     else
     {
-      DConAddr addr = (DConAddr) (bits & ~0x1);
+      DConAddr addr = (DConAddr) (bits & ~PTRBITS_REMOTE_BIT);
       nsRefPtr<DConnectStub> stub;
       rv = CreateStub(nsIException::GetIID(), peer, addr,
                       getter_AddRefs(stub));
@@ -1647,8 +2084,8 @@ DConnectStub::~DConnectStub()
   mIInfo->GetNameShared(&name);
   LOG(("{%p} DConnectStub::<dtor>(): peer=%d instance=%p {%s}\n",
        this, mPeerID, mInstance, name));
-#endif    
-    
+#endif
+
   // release the cached nsISupports instance if it's not the same object
   if (mCachedISupports != 0 && mCachedISupports != this)
     NS_RELEASE(mCachedISupports);
@@ -1686,7 +2123,7 @@ DConnectStub::Release()
     if (mRefCntLevels.GetSize() > 0)
     {
       nsrefcnt top = (nsrefcnt) (long) mRefCntLevels.Peek();
-      NS_ASSERTION(top <= count + 1, "refcount is beyond the top level"); 
+      NS_ASSERTION(top <= count + 1, "refcount is beyond the top level");
 
       if (top == count + 1)
       {
@@ -1707,7 +2144,7 @@ DConnectStub::Release()
 
         // leave the lock before sending a message
         stubLock.unlock();
-      
+
         nsresult rv;
 
         DConnectRelease msg;
@@ -1715,7 +2152,7 @@ DConnectStub::Release()
         msg.opcode_minor = 0;
         msg.request_index = 0; // not used, set to some unused value
         msg.instance = mInstance;
-    
+
         // fire off asynchronously... we don't expect any response to this message.
         rv = IPC_SendMessage(mPeerID, kDConnectTargetID,
                            (const PRUint8 *) &msg, sizeof(msg));
@@ -1729,7 +2166,7 @@ DConnectStub::Release()
     count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
     NS_LOG_RELEASE(this, count, "DConnectStub");
   }
-  
+
   if (0 == count)
   {
     mRefCnt = 1; /* stabilize */
@@ -1829,7 +2266,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
 
     // stub lock remains held until we've queried the peer
   }
-  
+
   // else, we need to query the peer object by making an IPC call
 
 #ifdef IPC_LOGGING
@@ -1900,13 +2337,13 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   if (NS_FAILED (rv))
     return rv;
   nsCOMPtr <nsIExceptionManager> em;
-  rv = es->GetCurrentExceptionManager (getter_AddRefs(em));  
+  rv = es->GetCurrentExceptionManager (getter_AddRefs(em));
   if (NS_FAILED (rv))
     return rv;
   rv = em->SetCurrentException(NULL);
   if (NS_FAILED (rv))
     return rv;
-    
+
   // ensure ipcDConnectService is not deleted before we finish
   nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
   if (!dConnect)
@@ -1950,7 +2387,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
       {
         nsID iid;
         rv = dConnect->GetIIDForMethodParam(mIInfo, aInfo, paramInfo, type,
-                                             aMethodIndex, i, aParams, PR_FALSE, iid);
+                                             aMethodIndex, aParams, PR_FALSE, iid);
         if (NS_SUCCEEDED(rv))
           rv = dConnect->SerializeInterfaceParam(writer, mPeerID, iid,
                                                  (nsISupports *) aParams[i].val.p,
@@ -1966,6 +2403,24 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
     {
       // report error early if NULL pointer is passed as an output parameter
       return NS_ERROR_NULL_POINTER;
+    }
+  }
+
+  // serialize input array parameters after everything else since the
+  // deserialization procedure will need to get a size_is value which may be
+  // stored in any preceeding or following param
+  for (i=0; i<paramCount; ++i)
+  {
+    const nsXPTParamInfo &paramInfo = aInfo->GetParam(i);
+
+    if (paramInfo.GetType().IsArray() &&
+        paramInfo.IsIn() && !paramInfo.IsDipper())
+    {
+      rv = SerializeArrayParam(dConnect, writer, mPeerID, mIInfo, aMethodIndex,
+                               *aInfo, aParams, PR_FALSE, paramInfo,
+                               aParams[i].val.p, wrappers);
+      if (NS_FAILED(rv))
+        return rv;
     }
   }
 
@@ -2010,7 +2465,8 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   rv = completion.GetResult();
   if (NS_FAILED(rv))
   {
-    NS_ASSERTION(completion.ParamsLen() >= sizeof(void*),
+    NS_ASSERTION(completion.ParamsLen() == 0 ||
+                 completion.ParamsLen() >= sizeof(void*),
                  "invalid nsIException serialization length");
     if (completion.ParamsLen() >= sizeof(void*))
     {
@@ -2046,53 +2502,43 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
     }
 
     // fixup any interface pointers using a second pass so we can properly
-    // handle INTERFACE_IS referencing an IID that is an out param!
+    // handle INTERFACE_IS referencing an IID that is an out param! This pass is
+    // also used to deserialize arrays (array data goes after all other params).
     for (i=0; i<paramCount && NS_SUCCEEDED(rv); ++i)
     {
       const nsXPTParamInfo &paramInfo = aInfo->GetParam(i);
       if (aParams[i].val.p && (paramInfo.IsOut() || paramInfo.IsRetval()))
       {
+        void **pptr = (void **) aParams[i].val.p;
         const nsXPTType &type = paramInfo.GetType();
         if (type.IsInterfacePointer())
         {
-          PtrBits bits = (PtrBits) *((void **) aParams[i].val.p);
-          if (bits & 0x1)
-          {
-            *((void **) aParams[i].val.p) = (void *) (bits & ~0x1);
+          // grab the DConAddr value temporarily stored in the param
+          PtrBits bits = (PtrBits) *pptr;
+          *pptr = nsnull;
 
-            nsID iid;
+          // DeserializeInterfaceParamBits needs IID only if it's a remote object
+          nsID iid;
+          if (bits & PTRBITS_REMOTE_BIT)
             rv = dConnect->GetIIDForMethodParam(mIInfo, aInfo, paramInfo, type,
-                                                 aMethodIndex, i, aParams, PR_FALSE, iid);
-            if (NS_SUCCEEDED(rv))
-            {
-              DConnectStub *stub;
-              void **pptr = (void **) aParams[i].val.p;
-              rv = dConnect->CreateStub(iid, mPeerID, (DConAddr) *pptr, &stub);
+                                                aMethodIndex, aParams, PR_FALSE,
+                                                iid);
+          if (NS_SUCCEEDED(rv))
+          {
+              nsISupports *obj = nsnull;
+              rv = dConnect->DeserializeInterfaceParamBits(bits, mPeerID, iid, obj);
               if (NS_SUCCEEDED(rv))
-                *((nsISupports **) aParams[i].val.p) = stub;
-            }
+                *pptr = obj;
           }
-          else if (bits)
-          {
-            // pointer is to one of our instance wrappers. Replace it with the
-            // real instance.
-            DConnectInstance *wrapper = (DConnectInstance *) bits;
-            if (dConnect->CheckInstanceAndAddRef(wrapper))
-            {
-              *((void **) aParams[i].val.p) = wrapper->RealInstance();
-              NS_ADDREF(wrapper->RealInstance());
-              wrapper->Release();
-            }
-            else
-            {
-              NS_NOTREACHED("instance wrapper not found");
-              rv = NS_ERROR_INVALID_ARG;
-            }
-          }
-          else
-          {
-            *((void **) aParams[i].val.p) = nsnull;
-          }
+        }
+        else if (type.IsArray())
+        {
+          void *array = nsnull;
+          rv = DeserializeArrayParam(dConnect, reader, mPeerID, mIInfo,
+                                     aMethodIndex, *aInfo, aParams, PR_FALSE,
+                                     paramInfo, PR_TRUE, array);
+          if (NS_SUCCEEDED(rv))
+            *pptr = array;
         }
       }
     }
@@ -2378,7 +2824,7 @@ EnumerateInstanceMapAndDelete (const DConnectInstanceKey::Key &aKey,
   // this method is to be called on ipcDConnectService shutdown only
   // (after which no DConnectInstances may exist), so forcibly delete them
   // disregarding the reference counter
-    
+
 #ifdef IPC_LOGGING
   const char *name;
   aData->InterfaceInfo()->GetNameShared(&name);
@@ -2489,6 +2935,8 @@ ipcDConnectService::Shutdown()
 #if defined(DCONNECT_STATS)
   printf("ipcDConnectService Stats\n");
   printf(" => number of worker threads: %d\n", mWorkers.Count());
+  LOG(("ipcDConnectService Stats\n"));
+  LOG((" => number of worker threads: %d\n", mWorkers.Count()));
 #endif
 
   // destroy all worker threads
@@ -2530,9 +2978,8 @@ ipcDConnectService::GetIIDForMethodParam(nsIInterfaceInfo *iinfo,
                                          const nsXPTParamInfo &paramInfo,
                                          const nsXPTType &type,
                                          PRUint16 methodIndex,
-                                         PRUint8 paramIndex,
                                          nsXPTCMiniVariant *dispatchParams,
-                                         PRBool isFullVariantArray,
+                                         PRBool isXPTCVariantArray,
                                          nsID &result)
 {
   PRUint8 argnum, tag = type.TagPart();
@@ -2555,11 +3002,7 @@ ipcDConnectService::GetIIDForMethodParam(nsIInterfaceInfo *iinfo,
     if (!arg_type.IsPointer() || arg_type.TagPart() != nsXPTType::T_IID)
       return NS_ERROR_UNEXPECTED;
 
-    nsID *p;
-    if (isFullVariantArray)
-      p = (nsID *) ((nsXPTCVariant *) dispatchParams)[argnum].val.p;
-    else
-      p = (nsID *) dispatchParams[argnum].val.p;
+    nsID *p = (nsID *) GET_PARAM(dispatchParams, isXPTCVariantArray, argnum).val.p;
     if (!p)
       return NS_ERROR_UNEXPECTED;
 
@@ -3129,7 +3572,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
 void
 ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
 {
-  LOG(("ipcDConnectService::OnRelease [peer=%u instance=%p]\n", 
+  LOG(("ipcDConnectService::OnRelease [peer=%u instance=%p]\n",
        peer, release->instance));
 
   DConnectInstance *wrapper = release->instance;
@@ -3215,6 +3658,8 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
     const nsXPTParamInfo &paramInfo = methodInfo->GetParam(i);
 
     // XXX are inout params an issue?
+    // yes, we will need to do v.ptr = &v.val for them (DeserializeParam doesn't
+    // currently do that) to let the callee correctly pick it up and change.
 
     if (paramInfo.IsIn() && !paramInfo.IsDipper())
       rv = DeserializeParam(reader, paramInfo.GetType(), params[i]);
@@ -3226,56 +3671,50 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
   }
 
   // fixup any interface pointers.  we do this with a second pass so that
-  // we can properly handle INTERFACE_IS.
+  // we can properly handle INTERFACE_IS. This pass is also used to deserialize
+  // arrays (array data goes after all other params).
   for (i=0; i<paramCount; ++i)
   {
     const nsXPTParamInfo &paramInfo = methodInfo->GetParam(i);
-    const nsXPTType &type = paramInfo.GetType();
-
-    if (paramInfo.IsIn() && type.IsInterfacePointer())
+    if (paramInfo.IsIn())
     {
-      PtrBits bits = (PtrBits) params[i].ptr;
-      if (bits & 0x1)
+      const nsXPTType &type = paramInfo.GetType();
+      if (type.IsInterfacePointer())
       {
-        // pointer is to a remote object.  we need to build a stub.
-        params[i].ptr = (void *) (bits & ~0x1);
+        // grab the DConAddr value temporarily stored in the param
+        PtrBits bits = (PtrBits) params[i].val.p;
 
+        // DeserializeInterfaceParamBits needs IID only if it's a remote object
         nsID iid;
-        rv = GetIIDForMethodParam(iinfo, methodInfo, paramInfo, type,
-                                  invoke->method_index, i, params, PR_TRUE, iid);
-        if (NS_SUCCEEDED(rv))
+        if (bits & PTRBITS_REMOTE_BIT)
         {
-          DConnectStub *stub;
-          rv = CreateStub(iid, peer, (DConAddr) params[i].ptr, &stub);
-          if (NS_SUCCEEDED(rv))
-          {
-            params[i].val.p = params[i].ptr = stub;
-            params[i].SetValIsInterface();
-          }
+          rv = GetIIDForMethodParam(iinfo, methodInfo, paramInfo, type,
+                                    invoke->method_index, params, PR_TRUE, iid);
+          if (NS_FAILED(rv))
+            goto end;
         }
+
+        nsISupports *obj = nsnull;
+        rv = DeserializeInterfaceParamBits(bits, peer, iid, obj);
         if (NS_FAILED(rv))
           goto end;
-      }
-      else if (bits)
-      {
-        // pointer is to one of our instance wrappers.
 
-        DConnectInstance *wrapper = (DConnectInstance *) params[i].ptr;
-        // make sure we've been sent a valid wrapper
-        if (!CheckInstanceAndAddRef(wrapper))
-        {
-          NS_NOTREACHED("instance wrapper not found");
-          rv = NS_ERROR_INVALID_ARG;
-          goto end;
-        }
-        params[i].val.p = params[i].ptr = wrapper->RealInstance();
-        wrapper->Release();
-        // do not mark as an interface -- doesn't need to be freed
+        params[i].val.p = obj;
+        // mark as interface to let FinishParam() release this param
+        params[i].SetValIsInterface();
       }
-      else
+      else if (type.IsArray())
       {
-        params[i].val.p = params[i].ptr = nsnull;
-        // do not mark as an interface -- doesn't need to be freed
+        void *array = nsnull;
+        rv = DeserializeArrayParam(this, reader, peer, iinfo,
+                                   invoke->method_index, *methodInfo, params,
+                                   PR_TRUE, paramInfo, PR_FALSE, array);
+        if (NS_FAILED(rv))
+          goto end;
+
+        params[i].val.p = array;
+        // mark to let FinishParam() free this param
+        params[i].SetValIsAllocated();
       }
     }
   }
@@ -3312,7 +3751,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
 
 end:
   LOG(("sending INVOKE_REPLY: rv=%x\n", rv));
-  
+
   // balance CheckInstanceAndAddRef()
   if (wrapper)
     wrapper->Release();
@@ -3349,14 +3788,10 @@ end:
         {
           nsID iid;
           rv = GetIIDForMethodParam(iinfo, methodInfo, paramInfo, type,
-                                    invoke->method_index, i, params, PR_TRUE, iid);
+                                    invoke->method_index, params, PR_TRUE, iid);
           if (NS_SUCCEEDED(rv))
             rv = SerializeInterfaceParam(writer, peer, iid,
                                          (nsISupports *) params[i].val.p, wrappers);
-
-          // mark as an interface to let FinishParam() to release this param
-          if (NS_SUCCEEDED(rv))
-            params[i].SetValIsInterface();
         }
         else
           rv = SerializeParam(writer, type, params[i]);
@@ -3365,6 +3800,30 @@ end:
         {
           reply.result = rv;
           break;
+        }
+      }
+    }
+
+    if (NS_SUCCEEDED(rv))
+    {
+      // serialize output array parameters after everything else since the
+      // deserialization procedure will need to get a size_is value which may be
+      // stored in any preceeding or following param
+      for (i=0; i<paramCount; ++i)
+      {
+        const nsXPTParamInfo &paramInfo = methodInfo->GetParam(i);
+
+        if (paramInfo.GetType().IsArray() &&
+            (paramInfo.IsRetval() || paramInfo.IsOut()))
+        {
+          rv = SerializeArrayParam(this, writer, peer, iinfo, invoke->method_index,
+                                   *methodInfo, params, PR_TRUE, paramInfo,
+                                   params[i].val.p, wrappers);
+          if (NS_FAILED(rv))
+          {
+            reply.result = rv;
+            break;
+          }
         }
       }
     }
@@ -3382,6 +3841,16 @@ end:
 
   if (params)
   {
+    // free individual elements of arrays (note: before freeing arrays
+    // themselves in FinishParam())
+    for (i=0; i<paramUsed; ++i)
+    {
+      const nsXPTParamInfo &paramInfo = methodInfo->GetParam(i);
+      if (paramInfo.GetType().IsArray())
+        FinishArrayParam(iinfo, invoke->method_index, *methodInfo,
+                         params, PR_TRUE, paramInfo, params[i]);
+    }
+
     for (i=0; i<paramUsed; ++i)
       FinishParam(params[i]);
     delete[] params;
