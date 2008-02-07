@@ -385,6 +385,10 @@ GMMR3DECL(int)  GMMR3UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
 GMMR3DECL(int)  GMMR3AllocatePagesPrepare(PVM pVM, PGMMALLOCATEPAGESREQ *ppReq, uint32_t cPages, GMMACCOUNT enmAccount);
 GMMR3DECL(int)  GMMR3AllocatePagesPerform(PVM pVM, PGMMALLOCATEPAGESREQ pReq);
 GMMR3DECL(void) GMMR3AllocatePagesCleanup(PGMMALLOCATEPAGESREQ pReq);
+GMMR3DECL(int)  GMMR3FreePagesPrepare(PVM pVM, PGMMFREEPAGESREQ *ppReq, uint32_t cPages, GMMACCOUNT enmAccount);
+GMMR3DECL(int)  GMMR3FreePagesPerform(PVM pVM, PGMMFREEPAGESREQ pReq);
+GMMR3DECL(void) GMMR3FreePagesCleanup(PGMMFREEPAGESREQ pReq);
+GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAllocReq);
 GMMR3DECL(int)  GMMR3DeflatedBalloon(PVM pVM, uint32_t cPages);
 GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);

@@ -64,6 +64,12 @@ GMMR3DECL(int)  GMMR3UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
 
 /**
  * Prepares a GMMR0AllocatePages request.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_TMP_MEMORY.
+ * @param       pVM         Pointer to the shared VM structure.
+ * @param[out]  ppReq       Where to store the pointer to the request packet.
+ * @param       cPages      The number of pages that's to be allocated.
+ * @param       enmAccount  The account to charge.
  */
 GMMR3DECL(int) GMMR3AllocatePagesPrepare(PVM pVM, PGMMALLOCATEPAGESREQ *ppReq, uint32_t cPages, GMMACCOUNT enmAccount)
 {
@@ -129,16 +135,91 @@ GMMR3DECL(void) GMMR3AllocatePagesCleanup(PGMMALLOCATEPAGESREQ pReq)
 }
 
 
-#if 0 /* impractical */
-GMMR3DECL(int)  GMMR3FreePages(PVM pVM, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
+/**
+ * Prepares a GMMR0FreePages request.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_TMP_MEMORY.
+ * @param       pVM         Pointer to the shared VM structure.
+ * @param[out]  ppReq       Where to store the pointer to the request packet.
+ * @param       cPages      The number of pages that's to be freed.
+ * @param       enmAccount  The account to charge.
+ */
+GMMR3DECL(int) GMMR3FreePagesPrepare(PVM pVM, PGMMFREEPAGESREQ *ppReq, uint32_t cPages, GMMACCOUNT enmAccount)
 {
-    GMMFREEPAGESREQ Req;
-    Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
+    uint32_t cb = RT_OFFSETOF(GMMFREEPAGESREQ, aPages[cPages]);
+    PGMMFREEPAGESREQ pReq = (PGMMFREEPAGESREQ)RTMemTmpAllocZ(cb);
+    if (!pReq)
+        return VERR_NO_TMP_MEMORY;
 
-    return SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_FREE_PAGES, 0, &Req.Hdr);
+    pReq->Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    pReq->Hdr.cbReq = cb;
+    pReq->enmAccount = enmAccount;
+    pReq->cPages = cPages;
+    NOREF(pVM);
+    return VINF_SUCCESS;
 }
-#endif
+
+
+/**
+ * Performs a GMMR0FreePages request.
+ * This will call VMSetError on failure.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pReq        Pointer to the request (returned by GMMR3FreePagesPrepare).
+ */
+GMMR3DECL(int) GMMR3FreePagesPerform(PVM pVM, PGMMFREEPAGESREQ pReq)
+{
+    int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_FREE_PAGES, 0, &pReq->Hdr);
+    if (RT_SUCCESS(rc))
+        return rc;
+    AssertRC(rc);
+    return VMSetError(pVM, rc, RT_SRC_POS,
+                      N_("GMMR0FreePages failed to free %u pages"),
+                      pReq->cPages);
+}
+
+
+/**
+ * Cleans up a GMMR0FreePages request.
+ * @param   pReq        Pointer to the request (returned by GMMR3FreePagesPrepare).
+ */
+GMMR3DECL(void) GMMR3FreePagesCleanup(PGMMFREEPAGESREQ pReq)
+{
+    RTMemTmpFree(pReq);
+}
+
+
+/**
+ * Frees allocated pages, for bailing out on failure.
+ *
+ * This will not call VMSetError on failure but will use AssertLogRel instead.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pAllocReq   The allocation request to undo.
+ */
+GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAllocReq)
+{
+    uint32_t cb = RT_OFFSETOF(GMMFREEPAGESREQ, aPages[pAllocReq->cPages]);
+    PGMMFREEPAGESREQ pReq = (PGMMFREEPAGESREQ)RTMemTmpAllocZ(cb);
+    AssertLogRelReturnVoid(pReq);
+
+    pReq->Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    pReq->Hdr.cbReq = cb;
+    pReq->enmAccount = pAllocReq->enmAccount;
+    pReq->cPages = pAllocReq->cPages;
+    uint32_t iPage = pAllocReq->cPages;
+    while (iPage-- > 0)
+    {
+        Assert(pAllocReq->aPages[iPage].idPage != NIL_GMM_PAGEID);
+        pReq->aPages[iPage].idPage = pAllocReq->aPages[iPage].idPage;
+    }
+
+    int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_FREE_PAGES, 0, &pReq->Hdr);
+    AssertLogRelRC(rc);
+
+    RTMemTmpFree(pReq);
+}
 
 
 #if 0 /* impractical */
