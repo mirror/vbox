@@ -180,6 +180,7 @@ struct ACPIState
      *  acpiBatIndexWrite() for handling this. */
     uint8_t             u8IndexShift;
     uint8_t             u8UseIOApic;
+    bool                fPowerButtonHandled;
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -740,7 +741,15 @@ static int acpiPowerDown (ACPIState *s)
 static DECLCALLBACK(int) acpiPowerButtonPress(PPDMIACPIPORT pInterface)
 {
     ACPIState *s = IACPIPORT_2_ACPISTATE(pInterface);
+    s->fPowerButtonHandled = false;
     update_pm1a (s, s->pm1a_sts | PWRBTN_STS, s->pm1a_en);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) acpiGetPowerButtonHandled(PPDMIACPIPORT pInterface, bool *pfHandled)
+{
+    ACPIState *s = IACPIPORT_2_ACPISTATE(pInterface);
+    *pfHandled = s->fPowerButtonHandled;
     return VINF_SUCCESS;
 }
 
@@ -783,6 +792,8 @@ static uint32_t acpiPm1aStsReadw (ACPIState *s, uint32_t addr)
 static void acpiPM1aStsWritew (ACPIState *s, uint32_t addr, uint32_t val)
 {
     Log (("acpi: acpiPM1aStsWritew <- %#x (%#x)\n", val, val & ~(RSR_STS | IGN_STS)));
+    if (val & PWRBTN_STS)
+        s->fPowerButtonHandled = true; /* Remember that the guest handled the last power button event */
     val = s->pm1a_sts & ~(val & ~(RSR_STS | IGN_STS));
     update_pm1a (s, val, s->pm1a_en);
 }
@@ -1062,7 +1073,6 @@ IO_READ_PROTO (acpiBatDataRead)
         default:
             return VERR_IOM_IOPORT_UNUSED;
     }
-//    LogRel(("Query %04x => %08x\n", s->uBatteryIndex, *pu32));
     return VINF_SUCCESS;
 }
 
@@ -1675,10 +1685,11 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Interfaces
      */
     /* IBase */
-    s->IBase.pfnQueryInterface         = acpiQueryInterface;
+    s->IBase.pfnQueryInterface            = acpiQueryInterface;
     /* IACPIPort */
-    s->IACPIPort.pfnSleepButtonPress   = acpiSleepButtonPress;
-    s->IACPIPort.pfnPowerButtonPress   = acpiPowerButtonPress;
+    s->IACPIPort.pfnSleepButtonPress      = acpiSleepButtonPress;
+    s->IACPIPort.pfnPowerButtonPress      = acpiPowerButtonPress;
+    s->IACPIPort.pfnGetPowerButtonHandled = acpiGetPowerButtonHandled;
 
    /*
     * Get the corresponding connector interface

@@ -1559,6 +1559,43 @@ STDMETHODIMP Console::PowerButton()
     return rc;
 }
 
+STDMETHODIMP Console::GetPowerButtonHandled(PRBool *aHandled)
+{
+    LogFlowThisFuncEnter();
+
+    AutoCaller autoCaller (this);
+
+    AutoLock lock (this);
+
+    if (mMachineState != MachineState_Running)
+        return E_FAIL;
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller (this);
+    CheckComRCReturnRC (autoVMCaller.rc());
+
+    PPDMIBASE pBase;
+    int vrc = PDMR3QueryDeviceLun (mpVM, "acpi", 0, 0, &pBase);
+    bool handled = false;
+    if (VBOX_SUCCESS (vrc))
+    {
+        Assert (pBase);
+        PPDMIACPIPORT pPort =
+            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        vrc = pPort ? pPort->pfnGetPowerButtonHandled(pPort, &handled) : VERR_INVALID_POINTER;
+    }
+
+    HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
+        setError (E_FAIL,
+            tr ("Checking if poweroff was handled failed (%Vrc)"), vrc);
+
+    *aHandled = handled;
+
+    LogFlowThisFunc (("rc=%08X\n", rc));
+    LogFlowThisFuncLeave();
+    return rc;
+}
+
 STDMETHODIMP Console::SleepButton()
 {
     LogFlowThisFuncEnter();

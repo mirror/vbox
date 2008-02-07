@@ -3767,6 +3767,11 @@
       <desc>Send the ACPI sleep button event to the guest.</desc>
     </method>
 
+    <method name="getPowerButtonHandled">
+      <desc>Check if the last power button event was handled by guest.</desc>
+      <param name="handled" type="boolean" dir="return"/>
+    </method>
+
     <method name="saveState">
       <desc>
         Saves the current execution state of a running virtual machine
