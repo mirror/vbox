@@ -63,6 +63,10 @@
 #include <linux/slab.h>
 #include <asm/semaphore.h>
 #include <linux/module.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# include <linux/moduleparam.h>
+#endif
+#include <linux/vermagic.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fs.h>
@@ -79,6 +83,10 @@
 #include <linux/delay.h>
 #include <linux/interrupt.h>
 #include <linux/completion.h>
+#include <linux/compiler.h>
+#ifndef HAVE_UNLOCKED_IOCTL /* linux/fs.h defines this */
+# include <linux/smp_lock.h>
+#endif
 /* For the shared folders module */
 #include <linux/vmalloc.h>
 #define wchar_t linux_wchar_t
@@ -225,6 +233,14 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
  * Stop using the linux bool type.
  */
 #undef bool
+
+/*
+ * There are post-2.6.24 kernels (confusingly with unchanged version number)
+ * which eliminate macros which were marked as deprecated.
+ */
+#ifndef __attribute_used__
+#define __attribute_used__ __used
+#endif
 
 #endif
 

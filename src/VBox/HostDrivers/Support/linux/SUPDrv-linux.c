@@ -29,6 +29,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "SUPDRV.h"
+#include "the-linux-kernel.h"
 #include "version-generated.h"
 
 #include <iprt/assert.h>
@@ -39,23 +40,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 
-#include <linux/module.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# include <linux/moduleparam.h>
-#endif
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/fs.h>
-#include <linux/mm.h>
-#include <linux/pagemap.h>
 #include <linux/sched.h>
-#include <linux/slab.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# include <linux/jiffies.h>
-#endif
-#include <asm/mman.h>
-#include <asm/io.h>
-#include <asm/uaccess.h>
 #ifdef CONFIG_DEVFS_FS
 # include <linux/devfs_fs_kernel.h>
 #endif
@@ -68,14 +53,8 @@
 #  include <asm/nmi.h>
 # endif
 #endif
-#ifndef HAVE_UNLOCKED_IOCTL /* linux/fs.h defines this */
-# include <linux/smp_lock.h>
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-# ifndef page_to_pfn
-#  define page_to_pfn(page) ((page) - mem_map)
-# endif
 # include <asm/pgtable.h>
 # define global_flush_tlb __flush_tlb_global
 #endif
