@@ -92,20 +92,24 @@ ifeq ($(KERNELRELEASE),)
  endif
 
  # guess kernel version (24 or 26)
- ifeq ($(shell if grep '"2.4.' $(KERN_INCL)/linux/version.h > /dev/null; then echo yes; fi),yes)
- KERN_VERSION := 24
+ ifeq ($(shell if grep '"2\.4\.' $(KERN_INCL)/linux/version.h > /dev/null; then echo yes; fi),yes)
+  KERN_VERSION := 24
  else
- KERN_VERSION := 26
+  KERN_VERSION := 26
  endif
- # KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
 
 else # neq($(KERNELRELEASE),)
 
  #
- # building from Linux-2.6-kbuild (make -C <kernel_directory> M=`pwd`)
+ # building from kbuild (make -C <kernel_directory> M=`pwd`)
  #
 
- KERN_VERSION := 26
+ # guess kernel version (24 or 26)
+ ifeq ($(shell if grep '"2\.4\.' $(PWD)/include/linux/version.h > /dev/null; then echo yes; fi),yes)
+  KERN_VERSION := 24
+ else
+  KERN_VERSION := 26
+ endif
 
 endif # neq($(KERNELRELEASE),)
 

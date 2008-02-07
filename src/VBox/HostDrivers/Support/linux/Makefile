@@ -167,10 +167,11 @@ ifeq ($(KERNELRELEASE),)
 else # neq($(KERNELRELEASE),)
 
  #
- # building from Linux-2.6-kbuild (make -C <kernel_directory> M=`pwd`)
+ # building from kbuild (make -C <kernel_directory> M=`pwd`)
  #
 
- KERN_VERSION := 26
+ # guess kernel version (24 or 26)
+ KERN_VERSION := $(if $(wildcard $(PWD)/Rules.make),24,26)
 
 endif # neq($(KERNELRELEASE),)
 
