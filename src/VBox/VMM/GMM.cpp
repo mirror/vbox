@@ -19,6 +19,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_GMM
 #include <VBox/gmm.h>
 #include <VBox/vmm.h>
 #include <VBox/vm.h>
@@ -26,6 +27,8 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 
+#include <iprt/assert.h>
+#include <VBox/log.h>
 #include <iprt/mem.h>
 
 
