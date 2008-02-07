@@ -184,6 +184,13 @@ private:
   const Key mKey;
 };
 
+// used elsewhere like nsAtomTable to safely represent the integral value
+// of an address.
+typedef unsigned long PtrBits;
+
+// bit flag that defines if a PtrBits value represents a remote object
+#define PTRBITS_REMOTE_BIT 0x1
+
 class DConnectStub;
 typedef nsDataHashtable<DConnectStubKey, DConnectStub *> DConnectStubMap;
 
@@ -208,15 +215,17 @@ public:
                                             const nsXPTParamInfo &paramInfo,
                                             const nsXPTType &type,
                                             PRUint16 methodIndex,
-                                            PRUint8 paramIndex,
                                             nsXPTCMiniVariant *dispatchParams,
-                                            PRBool isFullVariantArray,
+                                            PRBool isXPTCVariantArray,
                                             nsID &result);
 
   NS_HIDDEN_(nsresult) SerializeInterfaceParam(ipcMessageWriter &writer,
                                                PRUint32 peer, const nsID &iid,
                                                nsISupports *obj,
                                                nsVoidArray &wrappers);
+  NS_HIDDEN_(nsresult) DeserializeInterfaceParamBits(PtrBits bits, PRUint32 peer,
+                                                     const nsID &iid,
+                                                     nsISupports *&obj);
 
   NS_HIDDEN_(nsresult) SerializeException(ipcMessageWriter &writer,
                                           PRUint32 peer, nsIException *xcpt,
@@ -240,7 +249,7 @@ public:
 
   PRLock *StubLock() { return mStubLock; }
   PRLock *StubQILock() { return mStubQILock; }
-  
+
   static nsRefPtr <ipcDConnectService> GetInstance() {
     return nsRefPtr <ipcDConnectService> (mInstance);
   }
@@ -292,7 +301,7 @@ private:
 
   // our IPC client ID
   PRUint32 mSelfID;
-  
+
   // global lock to protect access to protect DConnectStub::QueryInterface()
   // (we cannot use mStubLock because it isn't supposed to be held long,
   // like in case of an IPC call and such)
