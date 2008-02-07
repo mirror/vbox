@@ -288,13 +288,23 @@ typedef enum PGMROMPROT
      * Map the shadow page read-only, use write access handler to ignore writes. */
     PGMROMPROT_READ_RAM_WRITE_IGNORE,
     /** Read from the shadow ROM page, ignore writes.
-     * Map the shadow page read-write, no access handler. */
+     * Map the shadow page read-write, disabled write access handler. */
     PGMROMPROT_READ_RAM_WRITE_RAM,
     /** The end of valid values. */
     PGMROMPROT_END,
     /** The usual 32-bit type size hack. */
     PGMROMPROT_32BIT_HACK = 0x7fffffff
 } PGMROMPROT;
+
+/**
+ * Is the ROM mapped (true) or is the shadow RAM mapped (false).
+ *
+ * @returns boolean.
+ * @param   enmProt     The PGMROMPROT value, must be valid.
+ */
+#define PGMROMPROT_IS_ROM(enmProt) \
+    (    (enmProt) == PGMROMPROT_READ_ROM_WRITE_IGNORE \
+      || (enmProt) == PGMROMPROT_READ_ROM_WRITE_RAM )
 
 
 PGMDECL(uint32_t) PGMGetHyperCR3(PVM pVM);
