@@ -139,6 +139,7 @@ static void    HandleGuestCapsChanged(void);
 static int     HandleHostKey(const SDL_KeyboardEvent *pEv);
 static Uint32  StartupTimer(Uint32 interval, void *param);
 static Uint32  ResizeTimer(Uint32 interval, void *param);
+static Uint32  QuitTimer(Uint32 interval, void *param);
 static int     WaitSDLEvent(SDL_Event *event);
 
 
@@ -190,6 +191,7 @@ static SDL_Cursor *gpCustomCursor = NULL;
 static WMcursor   *gpCustomOrigWMcursor = NULL;
 static SDL_Cursor *gpOffCursor = NULL;
 static SDL_TimerID gSdlResizeTimer = NULL;
+static SDL_TimerID gSdlQuitTimer = NULL;
 
 #ifdef VBOXSDL_WITH_X11
 static SDL_SysWMinfo gSdlInfo;
@@ -2209,11 +2211,11 @@ int main(int argc, char *argv[])
              */
             case SDL_QUIT:
             {
-                if (!gfACPITerm)
+                if (!gfACPITerm || gSdlQuitTimer)
                     goto leave;
                 if (gConsole)
                     gConsole->PowerButton();
-                gfACPITerm = false; /* don't try a second time */
+                gSdlQuitTimer = SDL_AddTimer(1000, QuitTimer, NULL);
                 break;
             }
 
@@ -4365,6 +4367,31 @@ static Uint32 ResizeTimer(Uint32 interval, void *param)
     event.type      = SDL_USEREVENT;
     event.user.type = SDL_USER_EVENT_WINDOW_RESIZE_DONE;
     PushSDLEventForSure(&event);
+    /* one-shot */
+    return 0;
+}
+
+/**
+ * Timer callback function to check if an ACPI power button event was handled by the guest.
+ */
+static Uint32 QuitTimer(Uint32 interval, void *param)
+{
+    PRBool fHandled = FALSE;
+
+    gSdlQuitTimer = NULL;
+    if (gConsole)
+    {
+        int rc = gConsole->GetPowerButtonHandled(&fHandled);
+        LogRel(("QuitTimer: rc=%d handled=%d\n", rc, fHandled));
+        if (VBOX_FAILURE(rc) || !fHandled)
+        {
+            /* event was not handled, power down the guest */
+            gfACPITerm = FALSE;
+            SDL_Event event = {0};
+            event.type = SDL_QUIT;
+            PushSDLEventForSure(&event);
+        }
+    }
     /* one-shot */
     return 0;
 }

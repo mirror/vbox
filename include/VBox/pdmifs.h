@@ -1676,6 +1676,15 @@ typedef struct PDMIACPIPORT
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      */
     DECLR3CALLBACKMEMBER(int, pfnSleepButtonPress,(PPDMIACPIPORT pInterface));
+
+    /**
+     * Check if the last power button event was handled by the guest.
+     *
+     * @returns VBox status code
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pfHandled       Is set to true if the last power button event was handled, false otherwise.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetPowerButtonHandled,(PPDMIACPIPORT pInterface, bool *pfHandled));
 } PDMIACPIPORT;
 
 /** Pointer to an ACPI connector interface. */
