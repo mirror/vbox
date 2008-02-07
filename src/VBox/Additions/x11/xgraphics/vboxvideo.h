@@ -190,7 +190,8 @@ extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
 
 extern Bool vboxDisableVbva(ScrnInfoPtr pScrn);
 
-extern Bool vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
-                            uint32_t *pcBits, uint32_t fEventAck, uint32_t iDisplay);
+extern Bool vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx,
+                                        uint32_t *pcy, uint32_t *pcBits,
+                                        uint32_t *piDisplay);
 
 #endif /* _VBOXVIDEO_H_ */

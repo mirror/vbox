@@ -118,23 +118,21 @@ VBGLR3DECL(int) VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq)
  * @param   pcx         Where to store the horizontal pixel resolution (0 = do not change).
  * @param   pcy         Where to store the vertical pixel resolution (0 = do not change).
  * @param   pcBits      Where to store the bits per pixel (0 = do not change).
- * @param   fEventAck   Flag that the request is an acknowlegement for the
- *                      VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
- *                      Values:
- *                          0                                   - just querying,
- *                          VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
- * @param   iDisplay    0 for primary display, 1 for the first secondary, etc.
+ * @param   iDisplay    Where to store the display number the request was for - 0 for the
+ *                      primary display, 1 for the first secondary, etc.
  */
-VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
-                                              uint32_t fEventAck, uint32_t iDisplay)
+VBGLR3DECL(int) VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
+                                                 uint32_t *piDisplay)
 {
-    VMMDevDisplayChangeRequest2 Req;
-    vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
-    Req.xres = 0;
-    Req.yres = 0;
-    Req.bpp = 0;
-    Req.eventAck = fEventAck;
-    Req.display = iDisplay;
+    VMMDevDisplayChangeRequest2 Req = { { 0 } };
+
+#ifndef VBOX_VBGLR3_XFREE86
+    AssertPtrReturn(pcx, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcy, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcBits, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(piDisplay, VERR_INVALID_PARAMETER);
+#endif
+vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
     int rc = vbglR3GRPerform(&Req.header);
     if (RT_SUCCESS(rc))
         rc = Req.header.rc;
@@ -143,6 +141,7 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint
         *pcx = Req.xres;
         *pcy = Req.yres;
         *pcBits = Req.bpp;
+        *piDisplay = Req.display;
     }
     return rc;
 }

@@ -822,18 +822,14 @@ vboxDisableVbva(ScrnInfoPtr pScrn)
  * @param   pcx         Where to store the horizontal pixel resolution (0 = do not change).
  * @param   pcy         Where to store the vertical pixel resolution (0 = do not change).
  * @param   pcBits      Where to store the bits per pixel (0 = do not change).
- * @param   fEventAck   Flag that the request is an acknowlegement for the
- *                      VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
- *                      Values:
- *                          0                                   - just querying,
- *                          VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
- * @param   iDisplay    0 for primary display, 1 for the first secondary, etc.
+ * @param   iDisplay    Where to store the display number the request was for - 0 for the
+ *                      primary display, 1 for the first secondary, etc.
  */
 Bool
 vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
-                            uint32_t *pcBits, uint32_t fEventAck, uint32_t iDisplay)
+                            uint32_t *pcBits, uint32_t *piDisplay)
 {
-    int rc = VbglR3GetDisplayChangeRequest(pcx, pcy, pcBits, fEventAck, iDisplay);
+    int rc = VbglR3GetLastDisplayChangeRequest(pcx, pcy, pcBits, piDisplay);
     if (RT_SUCCESS(rc))
         return TRUE;
     xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to obtain the last resolution requested by the guest, rc=%d.\n", rc);

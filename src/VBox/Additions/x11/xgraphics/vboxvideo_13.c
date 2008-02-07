@@ -397,23 +397,20 @@ vbox_output_add_mode (DisplayModePtr *pModes, const char *pszName, int x, int y,
 static DisplayModePtr
 vbox_output_get_modes (xf86OutputPtr output)
 {
-    uint32_t x, y, bpp;
+    uint32_t x, y, bpp, display;
     bool rc;
     DisplayModePtr pModes = NULL;
     ScrnInfoPtr pScrn = output->scrn;
 
     TRACE;
-    rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, 0, 0);
+    rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display);
+    /* @todo - check the display number once we support multiple displays. */
     if (rc && (0 != x) && (0 != y)) {
         vbox_output_add_mode(&pModes, NULL, x, y, TRUE);
-        vbox_output_add_mode(&pModes, "1024x768", 1024, 768, FALSE);
-        vbox_output_add_mode(&pModes, "800x600", 800, 600, FALSE);
-        vbox_output_add_mode(&pModes, "640x480", 640, 480, FALSE);
-    } else {
-        vbox_output_add_mode(&pModes, "1024x768", 1024, 768, FALSE);
-        vbox_output_add_mode(&pModes, "800x600", 800, 600, FALSE);
-        vbox_output_add_mode(&pModes, "640x480", 640, 480, FALSE);
     }
+    vbox_output_add_mode(&pModes, "1024x768", 1024, 768, FALSE);
+    vbox_output_add_mode(&pModes, "800x600", 800, 600, FALSE);
+    vbox_output_add_mode(&pModes, "640x480", 640, 480, FALSE);
     TRACE2;
     return pModes;
 }
