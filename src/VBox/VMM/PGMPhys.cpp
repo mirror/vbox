@@ -540,8 +540,8 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         MMHyperFree(pVM, pRomNew);
     }
 
-    /** @todo free the memory! */
-
+    /** @todo Purge the mapping cache or something... */
+    GMMR3FreeAllocatedPages(pVM, pReq);
     GMMR3AllocatePagesCleanup(pReq);
     return rc;
 }
