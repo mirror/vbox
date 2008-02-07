@@ -479,8 +479,8 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 #else
                                               NULL, NULL,
 #endif
-                                              NULL, "pgmGuestROMWriteHandler", MMHyperCCToR0(pVM, pRomNew),
-                                              NULL, "pgmGuestROMWriteHandler", MMHyperCCToGC(pVM, pRomNew), pszDesc);
+                                              NULL, "pgmPhysRomWriteHandler", MMHyperCCToR0(pVM, pRomNew),
+                                              NULL, "pgmPhysRomWriteHandler", MMHyperCCToGC(pVM, pRomNew), pszDesc);
             if (RT_SUCCESS(rc))
             {
                 pgmLock(pVM);
