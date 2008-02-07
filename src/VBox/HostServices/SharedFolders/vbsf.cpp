@@ -816,8 +816,7 @@ static int vbsfOpenDir (const char *pszPath, SHFLCREATEPARMS *pParms)
             }
         }
         if (   RT_SUCCESS(rc)
-            || (SHFL_CF_ACT_OPEN_IF_EXISTS == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
-            || (SHFL_FILE_EXISTS == pParms->Result))    /* Call of RTDirCreate() avbove failed, because already existing? */
+            || (SHFL_CF_ACT_OPEN_IF_EXISTS == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS)))
         {
             /* Open the directory now */
             rc = RTDirOpen (&pHandle->dir.Handle, pszPath);
@@ -1023,6 +1022,7 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
                 {
                     pParms->CreateFlags |= SHFL_CF_DIRECTORY;
                 }
+
                 /**
                   * @todo This should be in the Windows Guest Additions, as no-one else
                   *       needs it.
@@ -1055,10 +1055,15 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
 
             if (RT_SUCCESS(rc))
             {
-                if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
+                if (   BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY)
+                    && RTFS_IS_DIRECTORY(info.Attr.fMode))
+                {
                     rc = vbsfOpenDir (pszFullPath, pParms);
+                }
                 else
+                {
                     rc = vbsfOpenFile (pszFullPath, pParms);
+                }
             }
         }
 
