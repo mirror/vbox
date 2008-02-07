@@ -368,8 +368,8 @@ MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, 
          */
         rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhys + cbRange - 1,
                                           NULL, NULL,
-                                          NULL, "pgmGuestROMWriteHandler", 0,
-                                          NULL, "pgmGuestROMWriteHandler", 0, pszDesc);
+                                          NULL, "pgmPhysRomWriteHandler", 0,
+                                          NULL, "pgmPhysRomWriteHandler", 0, pszDesc);
         AssertRC(rc);
     }
 
@@ -540,8 +540,8 @@ MMR3DECL(int) MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
                 cbRange = pCur->cbRange;
                 int rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhys + cbRange - 1,
                                                       NULL, NULL,
-                                                      NULL, "pgmGuestROMWriteHandler", 0,
-                                                      NULL, "pgmGuestROMWriteHandler", 0, pCur->pszDesc);
+                                                      NULL, "pgmPhysRomWriteHandler", 0,
+                                                      NULL, "pgmPhysRomWriteHandler", 0, pCur->pszDesc);
                 AssertRCReturn(rc, rc);
                 pCur->fWritable = false;
 
