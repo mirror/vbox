@@ -11,7 +11,7 @@
 
 /*
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -125,7 +125,7 @@ public:
     <xsl:for-each select="*/enum">
         <xsl:text>    enum </xsl:text>
         <xsl:value-of select="@name"/>
-        <xsl:text> {&#x0A;</xsl:text>
+        <xsl:text>&#x0A;    {&#x0A;</xsl:text>
         <xsl:for-each select="const">
             <xsl:text>        </xsl:text>
             <xsl:value-of select="@name"/>
@@ -359,7 +359,7 @@ public:
     <!-- assignment taking CUnknown -->
     <xsl:text>    C</xsl:text>
     <xsl:value-of select="substring(@name,2)"/>
-    <xsl:text> &amp; operator = (const CUnknown &amp; that) {&#x0A;        return (C</xsl:text>
+    <xsl:text> &amp; operator = (const CUnknown &amp; that)&#x0A;    {&#x0A;        return (C</xsl:text>
     <xsl:value-of select="substring(@name,2)"/>
     <xsl:text> &amp;) Base::operator = (that);&#x0A;    }&#x0A;&#x0A;</xsl:text>
 
@@ -430,7 +430,14 @@ public:
 
 </xsl:template>
 
+<!-- attribute declarations -->
 <xsl:template match="interface//attribute | collection//attribute" mode="declare">
+    <xsl:if test="@array">
+        <xsl:message terminate="yes">
+            <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
+            <xsl:text>'array' attributes are not supported, use 'safearray="yes"' instead.</xsl:text>
+        </xsl:message>
+    </xsl:if>
     <xsl:apply-templates select="parent::node()" mode="begin"/>
     <xsl:apply-templates select="@if" mode="begin"/>
     <xsl:call-template name="composeMethod">
@@ -445,6 +452,7 @@ public:
     <xsl:apply-templates select="parent::node()" mode="end"/>
 </xsl:template>
 
+<!-- method declarations -->
 <xsl:template match="interface//method | collection//method" mode="declare">
     <xsl:apply-templates select="parent::node()" mode="begin"/>
     <xsl:apply-templates select="@if" mode="begin"/>
@@ -467,7 +475,7 @@ public:
         <!-- GetCount -->
         <xsl:text>inline ULONG C</xsl:text>
         <xsl:value-of select="substring(@name,2)"/>
-        <xsl:text>::GetCount () const {&#x0A;</xsl:text>
+        <xsl:text>::GetCount () const&#x0A;{&#x0A;</xsl:text>
         <xsl:text>    ULONG count = 0;&#x0A;</xsl:text>
         <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
         <xsl:text>    if (!mIface)&#x0A;        return count;&#x0A;</xsl:text>
@@ -480,7 +488,7 @@ public:
         <xsl:apply-templates select="@type"/>
         <xsl:text> C</xsl:text>
         <xsl:value-of select="substring(@name,2)"/>
-        <xsl:text>::GetItemAt (ULONG index) const {&#x0A;</xsl:text>
+        <xsl:text>::GetItemAt (ULONG index) const&#x0A;{&#x0A;</xsl:text>
         <xsl:text>    </xsl:text><xsl:apply-templates select="@type"/>
         <xsl:text> item;&#x0A;</xsl:text>
         <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
@@ -494,7 +502,7 @@ public:
         <xsl:apply-templates select="@enumerator"/>
         <xsl:text> C</xsl:text>
         <xsl:value-of select="substring(@name,2)"/>
-        <xsl:text>::Enumerate () const {&#x0A;</xsl:text>
+        <xsl:text>::Enumerate () const&#x0A;{&#x0A;</xsl:text>
         <xsl:text>    </xsl:text><xsl:apply-templates select="@enumerator"/>
         <xsl:text> enumerator;&#x0A;</xsl:text>
         <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
@@ -509,7 +517,7 @@ public:
         <!-- HasMore -->
         <xsl:text>inline BOOL C</xsl:text>
         <xsl:value-of select="substring(@name,2)"/>
-        <xsl:text>::HasMore () const {&#x0A;</xsl:text>
+        <xsl:text>::HasMore () const&#x0A;{&#x0A;</xsl:text>
         <xsl:text>    BOOL more = FALSE;&#x0A;</xsl:text>
         <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
         <xsl:text>    if (!mIface)&#x0A;        return more;&#x0A;</xsl:text>
@@ -522,7 +530,7 @@ public:
         <xsl:apply-templates select="@type"/>
         <xsl:text> C</xsl:text>
         <xsl:value-of select="substring(@name,2)"/>
-        <xsl:text>::GetNext () const {&#x0A;</xsl:text>
+        <xsl:text>::GetNext () const&#x0A;{&#x0A;</xsl:text>
         <xsl:text>    </xsl:text><xsl:apply-templates select="@type"/>
         <xsl:text> next;&#x0A;</xsl:text>
         <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
@@ -544,6 +552,7 @@ public:
     <xsl:apply-templates select=".//method[not(@internal='yes')]" mode="define"/>
 </xsl:template>
 
+<!-- attribute definitions -->
 <xsl:template match="interface//attribute | collection//attribute" mode="define">
     <xsl:apply-templates select="parent::node()" mode="begin"/>
     <xsl:apply-templates select="@if" mode="begin"/>
@@ -562,6 +571,7 @@ public:
     <xsl:text>&#x0A;</xsl:text>
 </xsl:template>
 
+<!-- method definitions -->
 <xsl:template match="interface//method | collection//method" mode="define">
     <xsl:apply-templates select="parent::node()" mode="begin"/>
     <xsl:apply-templates select="@if" mode="begin"/>
@@ -624,7 +634,7 @@ public:
                 <xsl:with-param name="isSetter" select="'yes'"/>
             </xsl:call-template>
             <xsl:if test="$define">
-                <xsl:text> {&#x0A;</xsl:text>
+                <xsl:text>&#x0A;{&#x0A;</xsl:text>
                 <!-- iface assertion -->
                 <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
                 <xsl:text>    if (!mIface)&#x0A;        return;&#x0A;</xsl:text>
@@ -657,35 +667,28 @@ public:
             </xsl:if>
             <xsl:call-template name="composeMethodDecl"/>
             <xsl:if test="$define">
-                <xsl:text> {&#x0A;    </xsl:text>
+                <xsl:text>&#x0A;{&#x0A;    </xsl:text>
                 <xsl:apply-templates select="$return/@type"/>
-                <xsl:text> a_</xsl:text>
-                <!-- ### xsl:call-template name="capitalize">
+                <xsl:text> a</xsl:text>
+                <xsl:call-template name="capitalize">
                     <xsl:with-param name="str" select="$return/@name"/>
-                </xsl:call-template-->
-                <!--
-                    using one of the blocks marked with ### causes sabcmd on RedHat
-                    to stupidly fail, so we use <value-of> instead.
-                -->
-                <xsl:value-of select="$return/@name"/>
+                </xsl:call-template>
                 <xsl:apply-templates select="$return/@type" mode="initializer"/>
                 <xsl:text>;&#x0A;</xsl:text>
                 <!-- iface assertion -->
                 <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
-                <xsl:text>    if (!mIface)&#x0A;        return a_</xsl:text>
-                <!-- ### xsl:call-template name="capitalize">
+                <xsl:text>    if (!mIface)&#x0A;        return a</xsl:text>
+                <xsl:call-template name="capitalize">
                     <xsl:with-param name="str" select="$return/@name"/>
-                </xsl:call-template-->
-                <xsl:value-of select="$return/@name"/>
+                </xsl:call-template>
                 <xsl:text>;&#x0A;</xsl:text>
                 <!-- method call -->
                 <xsl:call-template name="composeMethodCall"/>
                 <!-- return statement -->
-                <xsl:text>    return a_</xsl:text>
-                <!-- ### xsl:call-template name="capitalize">
+                <xsl:text>    return a</xsl:text>
+                <xsl:call-template name="capitalize">
                     <xsl:with-param name="str" select="$return/@name"/>
-                </xsl:call-template -->
-                <xsl:value-of select="$return/@name"/>
+                </xsl:call-template>
                 <xsl:text>;&#x0A;}&#x0A;</xsl:text>
             </xsl:if>
             <xsl:if test="not($define)">
@@ -719,11 +722,10 @@ public:
                     <xsl:text> (</xsl:text>
                     <!-- parameter -->
                     <xsl:apply-templates select="@type" mode="param"/>
-                    <xsl:text> a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
+                    <xsl:text> a</xsl:text>
+                    <xsl:call-template name="capitalize">
                         <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
-                    <xsl:value-of select="@name"/>
+                    </xsl:call-template>
                     <xsl:text>)</xsl:text>
                 </xsl:when>
                 <xsl:otherwise>
@@ -748,11 +750,10 @@ public:
             <!-- parameters -->
             <xsl:for-each select="param[@dir!='return']">
                 <xsl:apply-templates select="@type" mode="param"/>
-                <xsl:text> a_</xsl:text>
-                <!-- ###  xsl:call-template name="capitalize">
+                <xsl:text> a</xsl:text>
+                <xsl:call-template name="capitalize">
                     <xsl:with-param name="str" select="@name"/>
-                </xsl:call-template -->
-                <xsl:value-of select="@name"/>
+                </xsl:call-template>
                 <xsl:if test="position() != last()">
                     <xsl:text>, </xsl:text>
                 </xsl:if>
@@ -766,6 +767,23 @@ public:
 
 <xsl:template name="composeMethodCall">
     <xsl:param name="isSetter" select="''"/>
+    <!-- apply 'pre-call' hooks -->
+    <xsl:choose>
+        <xsl:when test="name()='attribute'">
+            <xsl:call-template name="hooks">
+                <xsl:with-param name="when" select="'pre-call'"/>
+                <xsl:with-param name="isSetter" select="$isSetter"/>
+            </xsl:call-template>
+        </xsl:when>
+        <xsl:when test="name()='method'">
+            <xsl:for-each select="param">
+                <xsl:call-template name="hooks">
+                    <xsl:with-param name="when" select="'pre-call'"/>
+                </xsl:call-template>
+            </xsl:for-each>
+        </xsl:when>
+    </xsl:choose>
+    <!-- start the call -->
     <xsl:text>    mRC = mIface-></xsl:text>
     <xsl:choose>
         <!-- attribute method call -->
@@ -806,6 +824,23 @@ public:
         </xsl:when>
     </xsl:choose>
     <xsl:text>);&#x0A;</xsl:text>
+    <!-- apply 'post-call' hooks -->
+    <xsl:choose>
+        <xsl:when test="name()='attribute'">
+            <xsl:call-template name="hooks">
+                <xsl:with-param name="when" select="'post-call'"/>
+                <xsl:with-param name="isSetter" select="$isSetter"/>
+            </xsl:call-template>
+        </xsl:when>
+        <xsl:when test="name()='method'">
+            <xsl:for-each select="param">
+                <xsl:call-template name="hooks">
+                    <xsl:with-param name="when" select="'post-call'"/>
+                </xsl:call-template>
+            </xsl:for-each>
+        </xsl:when>
+    </xsl:choose>
+    <!-- -->
     <xsl:call-template name="tryComposeFetchErrorInfo"/>
 </xsl:template>
 
@@ -854,7 +889,7 @@ public:
         </xsl:when>
         <xsl:otherwise>
             <xsl:if test="$supports='strict' or $supports='yes'">
-                <xsl:text>    if (FAILED (mRC)) {&#x0A;</xsl:text>
+                <xsl:text>    if (FAILED (mRC))&#x0A;    {&#x0A;</xsl:text>
                 <xsl:text>        fetchErrorInfo (mIface, &amp;COM_IIDOF (Base::Iface));&#x0A;</xsl:text>
                 <xsl:if test="$supports='strict'">
                     <xsl:text>        AssertMsg (errInfo.isFullAvailable(), </xsl:text>
@@ -867,29 +902,43 @@ public:
 </xsl:template>
 
 <xsl:template name="composeMethodCallParam">
+
     <xsl:param name="isIn" select="@dir='in'"/>
     <xsl:param name="isOut" select="@dir='out' or @dir='return'"/>
 
     <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
     <xsl:choose>
-        <!-- string types -->
-        <xsl:when test="@type = 'wstring'">
+        <!-- safearrays -->
+        <xsl:when test="@safearray='yes'">
             <xsl:choose>
                 <xsl:when test="$isIn">
-                    <xsl:text>BSTRIn (a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
-                        <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
+                    <xsl:text>ComSafeArrayAsInParam (</xsl:text>
                     <xsl:value-of select="@name"/>
                     <xsl:text>)</xsl:text>
                 </xsl:when>
                 <xsl:when test="$isOut">
-                    <xsl:text>BSTROut (a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
-                        <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
+                    <xsl:text>ComSafeArrayAsOutParam (</xsl:text>
                     <xsl:value-of select="@name"/>
+                    <xsl:text>)</xsl:text>
+                </xsl:when>
+            </xsl:choose>
+        </xsl:when>
+        <!-- string types -->
+        <xsl:when test="@type = 'wstring'">
+            <xsl:choose>
+                <xsl:when test="$isIn">
+                    <xsl:text>BSTRIn (a</xsl:text>
+                    <xsl:call-template name="capitalize">
+                        <xsl:with-param name="str" select="@name"/>
+                    </xsl:call-template>
+                    <xsl:text>)</xsl:text>
+                </xsl:when>
+                <xsl:when test="$isOut">
+                    <xsl:text>BSTROut (a</xsl:text>
+                    <xsl:call-template name="capitalize">
+                        <xsl:with-param name="str" select="@name"/>
+                    </xsl:call-template>
                     <xsl:text>)</xsl:text>
                 </xsl:when>
             </xsl:choose>
@@ -898,19 +947,17 @@ public:
         <xsl:when test="@type = 'uuid'">
             <xsl:choose>
                 <xsl:when test="$isIn">
-                    <xsl:text>GUIDIn (a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
+                    <xsl:text>GUIDIn (a</xsl:text>
+                    <xsl:call-template name="capitalize">
                         <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
-                    <xsl:value-of select="@name"/>
+                    </xsl:call-template>
                     <xsl:text>)</xsl:text>
                 </xsl:when>
                 <xsl:when test="$isOut">
-                    <xsl:text>GUIDOut (a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
+                    <xsl:text>GUIDOut (a</xsl:text>
+                    <xsl:call-template name="capitalize">
                         <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
-                    <xsl:value-of select="@name"/>
+                    </xsl:call-template>
                     <xsl:text>)</xsl:text>
                 </xsl:when>
             </xsl:choose>
@@ -924,22 +971,20 @@ public:
                 <xsl:when test="$isIn">
                     <xsl:text>(</xsl:text>
                     <xsl:value-of select="@type"/>
-                    <xsl:text>_T) a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
+                    <xsl:text>_T) a</xsl:text>
+                    <xsl:call-template name="capitalize">
                         <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
-                    <xsl:value-of select="@name"/>
+                    </xsl:call-template>
                 </xsl:when>
                 <xsl:when test="$isOut">
                     <xsl:text>ENUMOut &lt;CEnums::</xsl:text>
                     <xsl:value-of select="@type"/>
                     <xsl:text>, </xsl:text>
                     <xsl:value-of select="@type"/>
-                    <xsl:text>_T&gt; (a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
+                    <xsl:text>_T&gt; (a</xsl:text>
+                    <xsl:call-template name="capitalize">
                         <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
-                    <xsl:value-of select="@name"/>
+                    </xsl:call-template>
                     <xsl:text>)</xsl:text>
                 </xsl:when>
             </xsl:choose>
@@ -959,11 +1004,10 @@ public:
         ">
             <xsl:choose>
                 <xsl:when test="$isIn">
-                    <xsl:text>a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
+                    <xsl:text>a</xsl:text>
+                    <xsl:call-template name="capitalize">
                         <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
-                    <xsl:value-of select="@name"/>
+                    </xsl:call-template>
                     <xsl:choose>
                         <xsl:when test="@type='$unknown'">
                             <xsl:text>.iface()</xsl:text>
@@ -974,11 +1018,10 @@ public:
                     </xsl:choose>
                 </xsl:when>
                 <xsl:when test="$isOut">
-                    <xsl:text>&amp;a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
+                    <xsl:text>&amp;a</xsl:text>
+                    <xsl:call-template name="capitalize">
                         <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
-                    <xsl:value-of select="@name"/>
+                    </xsl:call-template>
                     <xsl:choose>
                         <xsl:when test="@type='$unknown'">
                             <xsl:text>.ifaceRef()</xsl:text>
@@ -1002,18 +1045,16 @@ public:
         <xsl:otherwise>
             <xsl:choose>
                 <xsl:when test="$isIn">
-                    <xsl:text>a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
+                    <xsl:text>a</xsl:text>
+                    <xsl:call-template name="capitalize">
                         <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
-                    <xsl:value-of select="@name"/>
+                    </xsl:call-template>
                 </xsl:when>
                 <xsl:when test="$isOut">
-                    <xsl:text>&amp;a_</xsl:text>
-                    <!-- ### xsl:call-template name="capitalize">
+                    <xsl:text>&amp;a</xsl:text>
+                    <xsl:call-template name="capitalize">
                         <xsl:with-param name="str" select="@name"/>
-                    </xsl:call-template -->
-                    <xsl:value-of select="@name"/>
+                    </xsl:call-template>
                 </xsl:when>
             </xsl:choose>
         </xsl:otherwise>
@@ -1022,7 +1063,7 @@ public:
 
 
 <!--
- *  attribute/parameter type conversion (plain type name)
+ *  attribute/parameter type conversion (returns plain Qt type name)
 -->
 <xsl:template match="
     attribute/@type | param/@type |
@@ -1030,19 +1071,32 @@ public:
 ">
     <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
-    <xsl:if test="name(..)='param' and ../@array and ../@dir='return'">
+    <xsl:if test="../@array and ../@safearray='yes'">
+        <xsl:message terminate="yes">
+                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+            <xsl:text>either 'array' or 'safearray="yes"' attribute is allowed, but not both!</xsl:text>
+        </xsl:message>
+    </xsl:if>
+
+    <xsl:if test="../@array and ((name(..)='param' and ../@dir='return') or (name(..)='attribute'))">
         <xsl:message terminate="yes">
             <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-            <xsl:text>return array parameters are not currently supported</xsl:text>
+            <xsl:text>return 'array' parameters and 'array' attributes are not supported, use 'safearray="yes"' instead.</xsl:text>
         </xsl:message>
     </xsl:if>
 
     <xsl:choose>
         <!-- modifiers (ignored for 'enumeration' attributes)-->
         <xsl:when test="name(current())='type' and ../@mod">
+            <xsl:if test="../@safearray">
+                <xsl:message terminate="yes">
+                      <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                    <xsl:text>either 'safearray' or 'mod' attribute is allowed, but not both!</xsl:text>
+                </xsl:message>
+            </xsl:if>
             <xsl:if test="../@array">
                 <xsl:message terminate="yes">
-                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                    <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
                     <xsl:text>either 'array' or 'mod' attribute is allowed, but not both!</xsl:text>
                 </xsl:message>
             </xsl:if>
@@ -1078,13 +1132,16 @@ public:
                     <xsl:message terminate="yes">
                         <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
                         <xsl:value-of select="concat('value &quot;',../@mod,'&quot; ')"/>
-                        <xsl:text>of attibute 'mod' is invalid!</xsl:text>
+                        <xsl:text>of attribute 'mod' is invalid!</xsl:text>
                     </xsl:message>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:when>
         <!-- no modifiers -->
         <xsl:otherwise>
+            <xsl:if test="../@safearray">
+                <xsl:text>QValueVector &lt;</xsl:text>
+            </xsl:if>
             <xsl:choose>
                 <!-- standard types -->
                 <xsl:when test=".='result'">HRESULT</xsl:when>
@@ -1138,6 +1195,9 @@ public:
                     </xsl:choose>
                 </xsl:otherwise>
             </xsl:choose>
+            <xsl:if test="../@safearray">
+                <xsl:text>&gt;</xsl:text>
+            </xsl:if>
         </xsl:otherwise>
     </xsl:choose>
 </xsl:template>
@@ -1156,14 +1216,11 @@ public:
     <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
     <xsl:choose>
+        <!-- safearrays don't need initializers -->
+        <xsl:when test="../@safearray">
+        </xsl:when>
         <!-- modifiers (ignored for 'enumeration' attributes)-->
         <xsl:when test="name(current())='type' and ../@mod">
-            <xsl:if test="../@array">
-                <xsl:message terminate="yes">
-                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-                    <xsl:text>either 'array' or 'mod' attribute is allowed, but not both!</xsl:text>
-                </xsl:message>
-            </xsl:if>
             <xsl:choose>
                 <xsl:when test="../@mod='ptr'">
                     <xsl:choose>
@@ -1196,7 +1253,7 @@ public:
                     <xsl:message terminate="yes">
                         <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
                         <xsl:value-of select="concat('value &quot;',../@mod,'&quot; ')"/>
-                        <xsl:text>of attibute 'mod' is invalid!</xsl:text>
+                        <xsl:text>of attribute 'mod' is invalid!</xsl:text>
                     </xsl:message>
                 </xsl:otherwise>
             </xsl:choose>
@@ -1246,6 +1303,7 @@ public:
         <xsl:when test="
             .='string' or
             .='wstring' or
+            ../@safearray='yes' or
             ((ancestor::library/enum[@name=current()]) or
              (ancestor::library/if[@target=$self_target]/enum[@name=current()])
             ) or
@@ -1269,12 +1327,6 @@ public:
                 </xsl:when>
                 <!-- <param> context -->
                 <xsl:when test="name(..)='param'">
-                    <xsl:if test="../@array">
-                        <xsl:message terminate="yes">
-                            <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-                            <xsl:text>arrays of non-scalar types are not currently supported</xsl:text>
-                        </xsl:message>
-                    </xsl:if>
                     <xsl:choose>
                         <xsl:when test="../@dir='in'">
                             <xsl:text>const </xsl:text>
@@ -1320,6 +1372,187 @@ public:
             </xsl:choose>
         </xsl:otherwise>
     </xsl:choose>
+</xsl:template>
+
+
+<!--
+ *  attribute/parameter type conversion (returns plain COM type name)
+ *  (basically, copied from midl.xsl)
+-->
+<xsl:template match="
+    attribute/@type | param/@type |
+    enumerator/@type | collection/@type | collection/@enumerator
+" mode="com">
+
+    <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
+
+    <xsl:choose>
+        <!-- modifiers (ignored for 'enumeration' attributes)-->
+        <xsl:when test="name(current())='type' and ../@mod">
+            <xsl:choose>
+                <xsl:when test="../@mod='ptr'">
+                    <xsl:choose>
+                        <!-- standard types -->
+                        <!--xsl:when test=".='result'">??</xsl:when-->
+                        <xsl:when test=".='boolean'">BOOL *</xsl:when>
+                        <xsl:when test=".='octet'">BYTE *</xsl:when>
+                        <xsl:when test=".='short'">SHORT *</xsl:when>
+                        <xsl:when test=".='unsigned short'">USHORT *</xsl:when>
+                        <xsl:when test=".='long'">LONG *</xsl:when>
+                        <xsl:when test=".='long long'">LONG64 *</xsl:when>
+                        <xsl:when test=".='unsigned long'">ULONG *</xsl:when>
+                        <xsl:when test=".='unsigned long long'">ULONG64 *</xsl:when>
+                        <xsl:when test=".='char'">CHAR *</xsl:when>
+                        <!--xsl:when test=".='string'">??</xsl:when-->
+                        <xsl:when test=".='wchar'">OLECHAR *</xsl:when>
+                        <!--xsl:when test=".='wstring'">??</xsl:when-->
+                        <xsl:otherwise>
+                            <xsl:message terminate="yes">
+                                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                                <xsl:text>attribute 'mod=</xsl:text>
+                                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                                <xsl:text>' cannot be used with type </xsl:text>
+                                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
+                            </xsl:message>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:message terminate="yes">
+                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                        <xsl:value-of select="concat('value &quot;',../@mod,'&quot; ')"/>
+                        <xsl:text>of attribute 'mod' is invalid!</xsl:text>
+                    </xsl:message>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:when>
+        <!-- no modifiers -->
+        <xsl:otherwise>
+            <xsl:choose>
+                <!-- standard types -->
+                <xsl:when test=".='result'">HRESULT</xsl:when>
+                <xsl:when test=".='boolean'">BOOL</xsl:when>
+                <xsl:when test=".='octet'">BYTE</xsl:when>
+                <xsl:when test=".='short'">SHORT</xsl:when>
+                <xsl:when test=".='unsigned short'">USHORT</xsl:when>
+                <xsl:when test=".='long'">LONG</xsl:when>
+                <xsl:when test=".='long long'">LONG64</xsl:when>
+                <xsl:when test=".='unsigned long'">ULONG</xsl:when>
+                <xsl:when test=".='unsigned long long'">ULONG64</xsl:when>
+                <xsl:when test=".='char'">CHAR</xsl:when>
+                <xsl:when test=".='string'">CHAR *</xsl:when>
+                <xsl:when test=".='wchar'">OLECHAR</xsl:when>
+                <xsl:when test=".='wstring'">BSTR</xsl:when>
+                <!-- UUID type -->
+                <xsl:when test=".='uuid'">GUID</xsl:when>
+                <!-- system interface types -->
+                <xsl:when test=".='$unknown'">IUnknown *</xsl:when>
+                <xsl:otherwise>
+                    <xsl:choose>
+                        <!-- enum types -->
+                        <xsl:when test="
+                            (ancestor::library/enum[@name=current()]) or
+                            (ancestor::library/if[@target=$self_target]/enum[@name=current()])
+                        ">
+                            <xsl:value-of select="."/>
+                        </xsl:when>
+                        <!-- custom interface types -->
+                        <xsl:when test="
+                            (name(current())='enumerator' and
+                             ((ancestor::library/enumerator[@name=current()]) or
+                              (ancestor::library/if[@target=$self_target]/enumerator[@name=current()]))
+                            ) or
+                            ((ancestor::library/interface[@name=current()]) or
+                             (ancestor::library/if[@target=$self_target]/interface[@name=current()])
+                            ) or
+                            ((ancestor::library/collection[@name=current()]) or
+                             (ancestor::library/if[@target=$self_target]/collection[@name=current()])
+                            )
+                        ">
+                            <xsl:value-of select="."/><xsl:text> *</xsl:text>
+                        </xsl:when>
+                        <!-- other types -->
+                        <xsl:otherwise>
+                            <xsl:message terminate="yes">
+                                <xsl:text>Unknown parameter type: </xsl:text>
+                                <xsl:value-of select="."/>
+                            </xsl:message>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:otherwise>
+    </xsl:choose>
+</xsl:template>
+
+
+<!--
+ *  attribute/parameter type additional hooks.
+ *
+ *  Called in the context of <attribute> or <param> elements.
+ *
+ *  @param when     When the hook is being called:
+ *                  'pre-call'  - right before the method call
+ *                  'post-call' - right after the method call
+ *  @param isSetter Non-empty if called in the cotext of the attribute setter
+ *                  call.
+-->
+<xsl:template name="hooks">
+
+    <xsl:param name="when" select="''"/>
+    <xsl:param name="isSetter" select="''"/>
+
+    <xsl:choose>
+        <xsl:when test="$when='pre-call'">
+            <xsl:choose>
+                <xsl:when test="@safearray='yes'">
+                    <!-- declare a SafeArray variable -->
+                    <xsl:text>    com::SafeArray &lt;</xsl:text>
+                    <xsl:apply-templates select="@type" mode="com"/>
+                    <xsl:text>&gt; </xsl:text>
+                    <xsl:value-of select="@name"/>
+                    <xsl:text>;&#x0A;</xsl:text>
+                    <xsl:if test="(name()='attribute' and $isSetter) or
+                                  (name()='param' and @dir='in')">
+                        <!-- convert QValueVector to SafeArray -->
+                        <xsl:text>    ToSafeArray (</xsl:text>
+                        <xsl:text>a</xsl:text>
+                        <xsl:call-template name="capitalize">
+                            <xsl:with-param name="str" select="@name"/>
+                        </xsl:call-template>
+                        <xsl:text>, </xsl:text>
+                        <xsl:value-of select="@name"/>
+                        <xsl:text>);&#x0A;</xsl:text>
+                    </xsl:if>
+                </xsl:when>
+            </xsl:choose>
+        </xsl:when>
+        <xsl:when test="$when='post-call'">
+            <xsl:choose>
+                <xsl:when test="@safearray='yes'">
+                    <xsl:if test="(name()='attribute' and not($isSetter)) or
+                                  (name()='param' and (@dir='out' or @dir='return'))">
+                        <!-- convert SafeArray to QValueVector -->
+                        <xsl:text>    FromSafeArray (</xsl:text>
+                        <xsl:value-of select="@name"/>
+                        <xsl:text>, </xsl:text>
+                        <xsl:text>a</xsl:text>
+                        <xsl:call-template name="capitalize">
+                            <xsl:with-param name="str" select="@name"/>
+                        </xsl:call-template>
+                        <xsl:text>);&#x0A;</xsl:text>
+                    </xsl:if>
+                </xsl:when>
+            </xsl:choose>
+        </xsl:when>
+      <xsl:otherwise>
+          <xsl:message terminate="yes">
+              <xsl:text>Invalid when value: </xsl:text>
+              <xsl:value-of select="$when"/>
+          </xsl:message>
+      </xsl:otherwise>
+    </xsl:choose>
+
 </xsl:template>
 
 

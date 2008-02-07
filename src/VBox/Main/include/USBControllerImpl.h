@@ -136,7 +136,7 @@ private:
     /** specialization for IUSBDeviceFilter */
     ComObjPtr <USBDeviceFilter> getDependentChild (IUSBDeviceFilter *aFilter)
     {
-        VirtualBoxBase *child = VirtualBoxBaseWithChildren::
+        VirtualBoxBase *child = VirtualBoxBaseWithChildrenNEXT::
                                 getDependentChild (ComPtr <IUnknown> (aFilter));
         return child ? static_cast <USBDeviceFilter *> (child)
                      : NULL;

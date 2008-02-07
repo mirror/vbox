@@ -27,6 +27,19 @@
 -->
 
 <!--
+ *  capitalizes the first letter
+-->
+<xsl:template name="capitalize">
+    <xsl:param name="str" select="."/>
+    <xsl:value-of select="
+        concat(
+            translate(substring($str,1,1),'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+            substring($str,2)
+        )
+    "/>
+</xsl:template>
+
+<!--
  *  uncapitalizes the first letter only if the second one is not capital
  *  otherwise leaves the string unchanged
 -->
@@ -213,20 +226,72 @@
  *  attributes
 -->
 <xsl:template match="interface//attribute | collection//attribute">
+    <xsl:if test="@array">
+        <xsl:message terminate="yes">
+            <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
+            <xsl:text>'array' attributes are not supported, use 'safearray="yes"' instead.</xsl:text>
+        </xsl:message>
+    </xsl:if>
     <xsl:apply-templates select="@if" mode="begin"/>
     <xsl:if test="@mod='ptr'">
         <!-- attributes using native types must be non-scriptable -->
         <xsl:text>    [noscript]&#x0A;</xsl:text>
     </xsl:if>
-    <xsl:text>    </xsl:text>
-    <xsl:if test="@readonly='yes'">
-        <xsl:text>readonly </xsl:text>
-    </xsl:if>
-    <xsl:text>attribute </xsl:text>
-    <xsl:apply-templates select="@type"/>
-    <xsl:text> </xsl:text>
-    <xsl:value-of select="@name"/>
-    <xsl:text>;&#x0A;</xsl:text>
+    <xsl:choose>
+        <!-- safearray pseudo attribute -->
+        <xsl:when test="@safearray='yes'">
+            <!-- getter -->
+            <xsl:text>    void get</xsl:text>
+            <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="@name"/>
+            </xsl:call-template>
+            <xsl:text> (&#x0A;</xsl:text>
+            <!-- array size -->
+            <xsl:text>        out unsigned long </xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:text>Size,&#x0A;</xsl:text>
+            <!-- array pointer -->
+            <xsl:text>        [array, size_is(</xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:text>Size), retval] out </xsl:text>
+            <xsl:apply-templates select="@type"/>
+            <xsl:text> </xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:text>&#x0A;    );&#x0A;</xsl:text>
+            <!-- setter -->
+            <xsl:if test="not(@readonly='yes')">
+                <xsl:text>    void set</xsl:text>
+                <xsl:call-template name="capitalize">
+                    <xsl:with-param name="str" select="@name"/>
+                </xsl:call-template>
+                <xsl:text> (&#x0A;</xsl:text>
+                <!-- array size -->
+                <xsl:text>        in unsigned long </xsl:text>
+                <xsl:value-of select="@name"/>
+                <xsl:text>Size,&#x0A;</xsl:text>
+                <!-- array pointer -->
+                <xsl:text>        [array, size_is(</xsl:text>
+                <xsl:value-of select="@name"/>
+                <xsl:text>Size)] in </xsl:text>
+                <xsl:apply-templates select="@type"/>
+                <xsl:text> </xsl:text>
+                <xsl:value-of select="@name"/>
+                <xsl:text>&#x0A;    );&#x0A;</xsl:text>
+            </xsl:if>
+        </xsl:when>
+        <!-- normal attribute -->
+        <xsl:otherwise>
+            <xsl:text>    </xsl:text>
+            <xsl:if test="@readonly='yes'">
+                <xsl:text>readonly </xsl:text>
+            </xsl:if>
+            <xsl:text>attribute </xsl:text>
+            <xsl:apply-templates select="@type"/>
+            <xsl:text> </xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:text>;&#x0A;</xsl:text>
+        </xsl:otherwise>
+    </xsl:choose>
     <xsl:apply-templates select="@if" mode="end"/>
     <xsl:text>&#x0A;</xsl:text>
 </xsl:template>
@@ -407,52 +472,77 @@
  *  method parameters
 -->
 <xsl:template match="method/param">
-    <xsl:if test="@array">
-        <xsl:if test="@dir='return'">
-            <xsl:message terminate="yes">
-                <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-                <xsl:text>return array parameters are not currently supported</xsl:text>
-            </xsl:message>
-        </xsl:if>
-        <xsl:text>[array, </xsl:text>
-        <xsl:choose>
-            <xsl:when test="../param[@name=current()/@array]">
-                <xsl:if test="../param[@name=current()/@array]/@dir != @dir">
+    <xsl:choose>
+        <!-- safearray parameters -->
+        <xsl:when test="@safearray='yes'">
+            <!-- array size -->
+            <xsl:choose>
+                <xsl:when test="@dir='in'">in </xsl:when>
+                <xsl:when test="@dir='out'">out </xsl:when>
+                <xsl:when test="@dir='return'">out </xsl:when>
+                <xsl:otherwise>in </xsl:otherwise>
+            </xsl:choose>
+            <xsl:text>unsigned long </xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:text>Size,&#x0A;</xsl:text>
+            <!-- array pointer -->
+            <xsl:text>        [array, size_is(</xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:text>Size)</xsl:text>
+            <xsl:choose>
+                <xsl:when test="@dir='in'">] in </xsl:when>
+                <xsl:when test="@dir='out'">] out </xsl:when>
+                <xsl:when test="@dir='return'"> , retval] out </xsl:when>
+                <xsl:otherwise>] in </xsl:otherwise>
+            </xsl:choose>
+            <xsl:apply-templates select="@type"/>
+            <xsl:text> </xsl:text>
+            <xsl:value-of select="@name"/>
+        </xsl:when>
+        <!-- normal and array parameters -->
+        <xsl:otherwise>
+            <xsl:if test="@array">
+                <xsl:if test="@dir='return'">
                     <xsl:message terminate="yes">
-                        <xsl:value-of select="concat(../../@name,'::',../@name,': ')"/>
-                        <xsl:value-of select="concat(@name,' and ',../param[@name=current()/@array]/@name)"/>
-                        <xsl:text> must have the same direction</xsl:text>
+                        <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
+                        <xsl:text>return 'array' parameters are not supported, use 'safearray="yes"' instead.</xsl:text>
                     </xsl:message>
                 </xsl:if>
-                <xsl:text>size_is(</xsl:text>
-                    <xsl:if test="@dir='out'">
-                        <xsl:text>, </xsl:text>
-                    </xsl:if>
-                    <xsl:if test="../param[@name=current()/@array]/@dir='out'">
-                        <xsl:text>*</xsl:text>
-                    </xsl:if>
-                    <xsl:value-of select="@array"/>
-                <xsl:text>)</xsl:text>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:message terminate="yes">
-                    <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-                    <xsl:text>array attribute refers to non-existent param: </xsl:text>
-                    <xsl:value-of select="@array"/>
-                </xsl:message>
-            </xsl:otherwise>
-        </xsl:choose>
-        <xsl:text>] </xsl:text>
-    </xsl:if>
-    <xsl:choose>
-        <xsl:when test="@dir='in'">in </xsl:when>
-        <xsl:when test="@dir='out'">out </xsl:when>
-        <xsl:when test="@dir='return'">[retval] out </xsl:when>
-        <xsl:otherwise>in</xsl:otherwise>
+                <xsl:text>[array, </xsl:text>
+                <xsl:choose>
+                    <xsl:when test="../param[@name=current()/@array]">
+                        <xsl:if test="../param[@name=current()/@array]/@dir != @dir">
+                            <xsl:message terminate="yes">
+                                <xsl:value-of select="concat(../../@name,'::',../@name,': ')"/>
+                                <xsl:value-of select="concat(@name,' and ',../param[@name=current()/@array]/@name)"/>
+                                <xsl:text> must have the same direction</xsl:text>
+                            </xsl:message>
+                        </xsl:if>
+                        <xsl:text>size_is(</xsl:text>
+                            <xsl:value-of select="@array"/>
+                        <xsl:text>)</xsl:text>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:message terminate="yes">
+                            <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
+                            <xsl:text>array attribute refers to non-existent param: </xsl:text>
+                            <xsl:value-of select="@array"/>
+                        </xsl:message>
+                    </xsl:otherwise>
+                </xsl:choose>
+                <xsl:text>] </xsl:text>
+            </xsl:if>
+            <xsl:choose>
+                <xsl:when test="@dir='in'">in </xsl:when>
+                <xsl:when test="@dir='out'">out </xsl:when>
+                <xsl:when test="@dir='return'">[retval] out </xsl:when>
+                <xsl:otherwise>in </xsl:otherwise>
+            </xsl:choose>
+            <xsl:apply-templates select="@type"/>
+            <xsl:text> </xsl:text>
+            <xsl:value-of select="@name"/>
+        </xsl:otherwise>
     </xsl:choose>
-    <xsl:apply-templates select="@type"/>
-    <xsl:text> </xsl:text>
-    <xsl:value-of select="@name"/>
 </xsl:template>
 
 
@@ -465,15 +555,16 @@
 ">
     <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
+    <xsl:if test="../@array and ../@safearray='yes'">
+        <xsl:message terminate="yes">
+            <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+            <xsl:text>either 'array' or 'safearray="yes"' attribute is allowed, but not both!</xsl:text>
+        </xsl:message>
+    </xsl:if>
+
     <xsl:choose>
         <!-- modifiers (ignored for 'enumeration' attributes)-->
         <xsl:when test="name(current())='type' and ../@mod">
-            <xsl:if test="../@array">
-                <xsl:message terminate="yes">
-                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-                    <xsl:text>either 'array' or 'mod' attribute is allowed, but not both!</xsl:text>
-                </xsl:message>
-            </xsl:if>
             <xsl:choose>
                 <xsl:when test="../@mod='ptr'">
                     <xsl:choose>
@@ -506,7 +597,7 @@
                     <xsl:message terminate="yes">
                         <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
                         <xsl:value-of select="concat('value &quot;',../@mod,'&quot; ')"/>
-                        <xsl:text>of attibute 'mod' is invalid!</xsl:text>
+                        <xsl:text>of attribute 'mod' is invalid!</xsl:text>
                     </xsl:message>
                 </xsl:otherwise>
             </xsl:choose>

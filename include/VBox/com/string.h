@@ -183,9 +183,9 @@ public:
     BSTR mutableRaw() { return bstr; }
 
     /**
-     *  Intended to assign instances to |BSTR| out parameters from within the
-     *  interface method. Transfers the ownership of the duplicated string to
-     *  the caller.
+     *  Intended to assign copies of instances to |BSTR| out parameters from
+     *  within the interface method. Transfers the ownership of the duplicated
+     *  string to the caller.
      */
     const Bstr &cloneTo (BSTR *pstr) const
     {
@@ -198,9 +198,24 @@ public:
     }
 
     /**
-     *  Intended to assign instances to |char *| out parameters from within the
-     *  interface method. Transfers the ownership of the duplicated string to
-     *  the caller.
+     *  Intended to assign instances to |BSTR| out parameters from within the
+     *  interface method. Transfers the ownership of the original string to the
+     *  caller and resets the instance to null.
+     *
+     *  As opposed to cloneTo(), this method doesn't create a copy of the
+     *  string.
+     */
+    Bstr &detachTo (BSTR *pstr)
+    {
+        *pstr = bstr;
+        bstr = NULL;
+        return *this;
+    }
+
+    /**
+     *  Intended to assign copies of instances to |char *| out parameters from
+     *  within the interface method. Transfers the ownership of the duplicated
+     *  string to the caller.
      */
     const Bstr &cloneTo (char **pstr) const;
 
@@ -210,7 +225,7 @@ public:
      */
     BSTR *asOutParam() { setNull(); return &bstr; }
 
-    /** 
+    /**
      *  Static immutable null object. May be used for comparison purposes.
      */
     static const Bstr Null;
@@ -404,6 +419,21 @@ public:
     }
 
     /**
+     *  Intended to assign instances to |char *| out parameters from within the
+     *  interface method. Transfers the ownership of the original string to the
+     *  caller and resets the instance to null.
+     *
+     *  As opposed to cloneTo(), this method doesn't create a copy of the
+     *  string.
+     */
+    Utf8Str &detachTo (char **pstr)
+    {
+        *pstr = str;
+        str = NULL;
+        return *this;
+    }
+
+    /**
      *  Intended to assign instances to |BSTR| out parameters from within the
      *  interface method. Transfers the ownership of the duplicated string to the
      *  caller.
@@ -424,7 +454,7 @@ public:
      */
     char **asOutParam() { setNull(); return &str; }
 
-    /** 
+    /**
      *  Static immutable null object. May be used for comparison purposes.
      */
     static const Utf8Str Null;

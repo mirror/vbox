@@ -5,7 +5,7 @@
  *  from the generic interface definition expressed in XML.
 
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -198,24 +198,49 @@
 -->
 <xsl:template match="interface//attribute | collection//attribute">
     <xsl:apply-templates select="@if" mode="begin"/>
+    <xsl:if test="@array">
+        <xsl:message terminate="yes">
+            <xsl:value-of select="concat(../@name,'::',@name,': ')"/>
+            <xsl:text>'array' attributes are not supported, use 'safearray="yes"' instead.</xsl:text>
+        </xsl:message>
+    </xsl:if>
+    <!-- getter -->
     <xsl:text>    [propget] HRESULT </xsl:text>
     <xsl:call-template name="capitalize">
         <xsl:with-param name="str" select="@name"/>
     </xsl:call-template>
     <xsl:text> ([out, retval] </xsl:text>
+    <xsl:if test="@safearray='yes'">
+        <xsl:text>SAFEARRAY(</xsl:text>
+    </xsl:if>
     <xsl:apply-templates select="@type"/>
+    <xsl:if test="@safearray='yes'">
+        <xsl:text>)</xsl:text>
+    </xsl:if>
     <xsl:text> * a</xsl:text>
     <xsl:call-template name="capitalize">
         <xsl:with-param name="str" select="@name"/>
     </xsl:call-template>
     <xsl:text>);&#x0A;</xsl:text>
+    <!-- setter -->
     <xsl:if test="not(@readonly='yes')">
         <xsl:text>    [propput] HRESULT </xsl:text>
         <xsl:call-template name="capitalize">
             <xsl:with-param name="str" select="@name"/>
         </xsl:call-template>
-        <xsl:text> ([in] </xsl:text>
+        <xsl:text> ([in</xsl:text>
+        <xsl:if test="@safearray='yes'">
+            <!-- VB supports only [in, out], [out] and [out, retval] arrays -->
+            <xsl:text>, out</xsl:text>
+        </xsl:if>
+        <xsl:text>] </xsl:text>
+        <xsl:if test="@safearray='yes'">
+            <xsl:text>SAFEARRAY(</xsl:text>
+        </xsl:if>
         <xsl:apply-templates select="@type"/>
+        <xsl:if test="@safearray='yes'">
+            <xsl:text>) *</xsl:text>
+        </xsl:if>
         <xsl:text> a</xsl:text>
         <xsl:call-template name="capitalize">
             <xsl:with-param name="str" select="@name"/>
@@ -391,11 +416,15 @@
         <xsl:when test="@dir='return'">out, retval</xsl:when>
         <xsl:otherwise>in</xsl:otherwise>
     </xsl:choose>
+    <xsl:if test="@safearray='yes'">
+        <!-- VB supports only [in, out], [out] and [out, retval] arrays -->
+        <xsl:if test="@dir='in'">, out</xsl:if>
+    </xsl:if>
     <xsl:if test="@array">
         <xsl:if test="@dir='return'">
             <xsl:message terminate="yes">
                 <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-                <xsl:text>return array parameters are not currently supported</xsl:text>
+                <xsl:text>return 'array' parameters are not supported, use 'safearray="yes"' instead.</xsl:text>
             </xsl:message>
         </xsl:if>
         <xsl:choose>
@@ -409,12 +438,8 @@
                 </xsl:if>
                 <xsl:text>, size_is(</xsl:text>
                     <xsl:if test="@dir='out'">
-                        <xsl:text>, </xsl:text>
+                        <xsl:text>, *</xsl:text>
                     </xsl:if>
-                    <xsl:if test="../param[@name=current()/@array]/@dir='out'">
-                        <xsl:text>*</xsl:text>
-                    </xsl:if>
-                    <!--xsl:value-of select="@array"/-->
                     <xsl:text>a</xsl:text>
                     <xsl:call-template name="capitalize">
                         <xsl:with-param name="str" select="@array"/>
@@ -431,16 +456,20 @@
         </xsl:choose>
     </xsl:if>
     <xsl:text>] </xsl:text>
+    <xsl:if test="@safearray='yes'">
+        <xsl:text>SAFEARRAY(</xsl:text>
+    </xsl:if>
     <xsl:apply-templates select="@type"/>
-    <xsl:text> </xsl:text>
+    <xsl:if test="@safearray='yes'">
+        <xsl:text>)</xsl:text>
+    </xsl:if>
     <xsl:if test="@array">
-        <xsl:text>* </xsl:text>
+        <xsl:text> *</xsl:text>
     </xsl:if>
-    <xsl:if test="@dir='out' or @dir='return'">
-        <xsl:text>* </xsl:text>
+    <xsl:if test="@dir='out' or @dir='return' or @safearray='yes'">
+        <xsl:text> *</xsl:text>
     </xsl:if>
-    <!--xsl:value-of select="@name"/-->
-    <xsl:text>a</xsl:text>
+    <xsl:text> a</xsl:text>
     <xsl:call-template name="capitalize">
         <xsl:with-param name="str" select="@name"/>
     </xsl:call-template>
@@ -456,15 +485,16 @@
 ">
     <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
+    <xsl:if test="../@array and ../@safearray='yes'">
+        <xsl:message terminate="yes">
+            <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+            <xsl:text>either 'array' or 'safearray="yes"' attribute is allowed, but not both!</xsl:text>
+        </xsl:message>
+    </xsl:if>
+
     <xsl:choose>
         <!-- modifiers (ignored for 'enumeration' attributes)-->
         <xsl:when test="name(current())='type' and ../@mod">
-            <xsl:if test="../@array">
-                <xsl:message terminate="yes">
-                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-                    <xsl:text>either 'array' or 'mod' attribute is allowed, but not both!</xsl:text>
-                </xsl:message>
-            </xsl:if>
             <xsl:choose>
                 <xsl:when test="../@mod='ptr'">
                     <xsl:choose>
@@ -497,7 +527,7 @@
                     <xsl:message terminate="yes">
                         <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
                         <xsl:value-of select="concat('value &quot;',../@mod,'&quot; ')"/>
-                        <xsl:text>of attibute 'mod' is invalid!</xsl:text>
+                        <xsl:text>of attribute 'mod' is invalid!</xsl:text>
                     </xsl:message>
                 </xsl:otherwise>
             </xsl:choose>

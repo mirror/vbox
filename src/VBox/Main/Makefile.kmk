@@ -393,7 +393,7 @@ Version.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 ConsoleImpl.cpp_DEFS = VBOX_BUILD_TARGET=\"$(BUILD_TARGET).$(BUILD_TARGET_ARCH)\"
 
-win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs
+win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs $(PATH_VBoxCOM)/VirtualBox.tlb
 
 
 #

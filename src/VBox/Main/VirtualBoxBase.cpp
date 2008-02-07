@@ -931,10 +931,199 @@ void VirtualBoxBaseWithChildren::removeDependentChild (const ComPtr <IUnknown> &
     NOREF (result);
 }
 
-#if defined VBOX_MAIN_SETTINGS_ADDONS
+// VirtualBoxBaseWithChildrenNEXT methods
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Uninitializes all dependent children registered with #addDependentChild().
+ * 
+ * Typically called from the uninit() method. Note that this method will call 
+ * uninit() methods of child objects. If these methods need to call the parent 
+ * object during initialization, uninitDependentChildren() must be called before 
+ * the relevant part of the parent is uninitialized, usually at the begnning of 
+ * the parent uninitialization sequence. 
+ */
+void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
+{
+    LogFlowThisFuncEnter();
+
+    AutoLock mapLock (mMapLock);
+
+    LogFlowThisFunc (("count=%u...\n", mDependentChildren.size()));
+
+    if (mDependentChildren.size())
+    {
+        /* We keep the lock until we have enumerated all children.
+         * Those ones that will try to call removeDependentChild() from a
+         * different thread will have to wait */
+
+        Assert (mUninitDoneSem == NIL_RTSEMEVENT);
+        int vrc = RTSemEventCreate (&mUninitDoneSem);
+        AssertRC (vrc);
+
+        Assert (mChildrenLeft == 0);
+        mChildrenLeft = mDependentChildren.size();
+
+        for (DependentChildren::iterator it = mDependentChildren.begin();
+            it != mDependentChildren.end(); ++ it)
+        {
+            VirtualBoxBase *child = (*it).second;
+            Assert (child);
+            if (child)
+                child->uninit();
+        }
+
+        mDependentChildren.clear();
+    }
+
+    /* Wait until all children that called uninit() on their own on other
+     * threads but stuck waiting for the map lock in removeDependentChild() have
+     * finished uninitialization. */
+
+    if (mUninitDoneSem != NIL_RTSEMEVENT)
+    {
+        /* let stuck children run */
+        mapLock.leave();
+
+        LogFlowThisFunc (("Waiting for uninitialization of all children...\n"));
+
+        RTSemEventWait (mUninitDoneSem, RT_INDEFINITE_WAIT);
+
+        mapLock.enter();
+
+        RTSemEventDestroy (mUninitDoneSem);
+        mUninitDoneSem = NIL_RTSEMEVENT;
+        Assert (mChildrenLeft == 0);
+    }
+
+    LogFlowThisFuncLeave();
+}
+
+/**
+ * Returns a pointer to the dependent child corresponding to the given
+ * interface pointer (used as a key in the map of dependent children) or NULL
+ * if the interface pointer doesn't correspond to any child registered using 
+ * #addDependentChild(). 
+ *  
+ * Note that ComPtr <IUnknown> is used as an argument instead of IUnknown * in 
+ * order to guarantee IUnknown identity and disambiguation by doing 
+ * QueryInterface (IUnknown) rather than a regular C cast. 
+ *
+ * @param aUnk  Pointer to map to the dependent child object.
+ * @return      Pointer to the dependent child object.
+ */
+VirtualBoxBaseNEXT *
+VirtualBoxBaseWithChildrenNEXT::getDependentChild (const ComPtr <IUnknown> &aUnk)
+{
+    AssertReturn (!!aUnk, NULL);
+
+    AutoLock alock (mMapLock);
+
+    /* return NULL if uninitDependentChildren() is in action */
+    if (mUninitDoneSem != NIL_RTSEMEVENT)
+        return NULL;
+
+    DependentChildren::const_iterator it = mDependentChildren.find (aUnk);
+    if (it == mDependentChildren.end())
+        return NULL;
+    return (*it).second;
+}
+
+void VirtualBoxBaseWithChildrenNEXT::doAddDependentChild (
+    IUnknown *aUnk, VirtualBoxBaseNEXT *aChild)
+{
+    AssertReturnVoid (aUnk && aChild);
+
+    AutoLock alock (mMapLock);
+
+    if (mUninitDoneSem != NIL_RTSEMEVENT)
+    {
+        /* uninitDependentChildren() is being run. For this very unlikely case,
+         * we have to increase the number of children left, for symmetry with
+         * a later #removeDependentChild() call. */
+        ++ mChildrenLeft;
+        return;
+    }
+
+    std::pair <DependentChildren::iterator, bool> result =
+        mDependentChildren.insert (DependentChildren::value_type (aUnk, aChild));
+    AssertMsg (result.second, ("Failed to insert a child to the map\n"));
+}
+
+void VirtualBoxBaseWithChildrenNEXT::doRemoveDependentChild (IUnknown *aUnk)
+{
+    AssertReturnVoid (aUnk);
+
+    AutoLock alock (mMapLock);
+
+    if (mUninitDoneSem != NIL_RTSEMEVENT)
+    {
+        /* uninitDependentChildren() is being run. Just decrease the number of
+         * children left and signal a semaphore if it reaches zero. */
+        Assert (mChildrenLeft != 0);
+        -- mChildrenLeft;
+        if (mChildrenLeft == 0)
+        {
+            int vrc = RTSemEventSignal (mUninitDoneSem);
+            AssertRC (vrc);
+        }
+        return;
+    }
+
+    DependentChildren::size_type result = mDependentChildren.erase (aUnk);
+    AssertMsg (result == 1, ("Failed to remove the child %p from the map\n",
+                             aUnk));
+    NOREF (result);
+}
+
+// VirtualBoxBaseWithTypedChildrenNEXT methods
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Uninitializes all dependent children registered with 
+ * #addDependentChild(). 
+ *
+ * @note This method will call uninit() methods of children. If these 
+ *       methods access the parent object, uninitDependentChildren() must be
+ *       called either at the beginning of the parent uninitialization
+ *       sequence (when it is still operational) or after setReady(false) is
+ *       called to indicate the parent is out of action.
+ */
+template <class C>
+void VirtualBoxBaseWithTypedChildrenNEXT <C>::uninitDependentChildren()
+{
+    AutoLock mapLock (mMapLock);
+
+    if (mDependentChildren.size())
+    {
+        /* set flag to ignore #removeDependentChild() called from
+         * child->uninit() */
+        mInUninit = true;
+
+        /* leave the locks to let children waiting for
+         * #removeDependentChild() run */
+        mapLock.leave();
+
+        for (typename DependentChildren::iterator it = mDependentChildren.begin();
+            it != mDependentChildren.end(); ++ it)
+        {
+            C *child = (*it);
+            Assert (child);
+            if (child)
+                child->uninit();
+        }
+        mDependentChildren.clear();
+
+        mapLock.enter();
+
+        mInUninit = false;
+    }
+}
 
 // Settings API additions
 ////////////////////////////////////////////////////////////////////////////////
+
+#if defined VBOX_MAIN_SETTINGS_ADDONS
 
 namespace settings
 {

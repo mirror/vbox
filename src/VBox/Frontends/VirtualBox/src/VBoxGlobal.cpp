@@ -189,14 +189,14 @@ public:
 
     STDMETHOD(OnMachineStateChange) (IN_GUIDPARAM id, MachineState_T state)
     {
-        postEvent (new VBoxMachineStateChangeEvent (COMBase::toQUuid (id),
+        postEvent (new VBoxMachineStateChangeEvent (COMBase::ToQUuid (id),
                                                     (CEnums::MachineState) state));
         return S_OK;
     }
 
     STDMETHOD(OnMachineDataChange) (IN_GUIDPARAM id)
     {
-        postEvent (new VBoxMachineDataChangeEvent (COMBase::toQUuid (id)));
+        postEvent (new VBoxMachineDataChangeEvent (COMBase::ToQUuid (id)));
         return S_OK;
     }
 
@@ -207,7 +207,7 @@ public:
         if (!error || !allowChange)
             return E_INVALIDARG;
 
-        if (COMBase::toQUuid (id).isNull())
+        if (COMBase::ToQUuid (id).isNull())
         {
             /* it's a global extra data key someone wants to change */
             QString sKey = QString::fromUcs2 (key);
@@ -256,7 +256,7 @@ public:
     STDMETHOD(OnExtraDataChange) (IN_GUIDPARAM id,
                                   IN_BSTRPARAM key, IN_BSTRPARAM value)
     {
-        if (COMBase::toQUuid (id).isNull())
+        if (COMBase::ToQUuid (id).isNull())
         {
             QString sKey = QString::fromUcs2 (key);
             QString sVal = QString::fromUcs2 (value);
@@ -299,38 +299,38 @@ public:
 
     STDMETHOD(OnMachineRegistered) (IN_GUIDPARAM id, BOOL registered)
     {
-        postEvent (new VBoxMachineRegisteredEvent (COMBase::toQUuid (id),
+        postEvent (new VBoxMachineRegisteredEvent (COMBase::ToQUuid (id),
                                                    registered));
         return S_OK;
     }
 
     STDMETHOD(OnSessionStateChange) (IN_GUIDPARAM id, SessionState_T state)
     {
-        postEvent (new VBoxSessionStateChangeEvent (COMBase::toQUuid (id),
+        postEvent (new VBoxSessionStateChangeEvent (COMBase::ToQUuid (id),
                                                     (CEnums::SessionState) state));
         return S_OK;
     }
 
     STDMETHOD(OnSnapshotTaken) (IN_GUIDPARAM aMachineId, IN_GUIDPARAM aSnapshotId)
     {
-        postEvent (new VBoxSnapshotEvent (COMBase::toQUuid (aMachineId),
-                                          COMBase::toQUuid (aSnapshotId),
+        postEvent (new VBoxSnapshotEvent (COMBase::ToQUuid (aMachineId),
+                                          COMBase::ToQUuid (aSnapshotId),
                                           VBoxSnapshotEvent::Taken));
         return S_OK;
     }
 
     STDMETHOD(OnSnapshotDiscarded) (IN_GUIDPARAM aMachineId, IN_GUIDPARAM aSnapshotId)
     {
-        postEvent (new VBoxSnapshotEvent (COMBase::toQUuid (aMachineId),
-                                          COMBase::toQUuid (aSnapshotId),
+        postEvent (new VBoxSnapshotEvent (COMBase::ToQUuid (aMachineId),
+                                          COMBase::ToQUuid (aSnapshotId),
                                           VBoxSnapshotEvent::Discarded));
         return S_OK;
     }
 
     STDMETHOD(OnSnapshotChange) (IN_GUIDPARAM aMachineId, IN_GUIDPARAM aSnapshotId)
     {
-        postEvent (new VBoxSnapshotEvent (COMBase::toQUuid (aMachineId),
-                                          COMBase::toQUuid (aSnapshotId),
+        postEvent (new VBoxSnapshotEvent (COMBase::ToQUuid (aMachineId),
+                                          COMBase::ToQUuid (aSnapshotId),
                                           VBoxSnapshotEvent::Changed));
         return S_OK;
     }
@@ -1933,7 +1933,7 @@ void VBoxGlobal::startEnumeratingMedia()
         virtual void run()
         {
             LogFlow (("MediaEnumThread started.\n"));
-            COMBase::initializeCOM();
+            COMBase::InitializeCOM();
 
             CVirtualBox mVBox = vboxGlobal().virtualBox();
             QObject *target = &vboxGlobal();
@@ -2009,7 +2009,7 @@ void VBoxGlobal::startEnumeratingMedia()
             if (!sVBoxGlobalInCleanup)
                 QApplication::postEvent (target, new VBoxEnumerateMediaEvent());
 
-            COMBase::cleanupCOM();
+            COMBase::CleanupCOM();
             LogFlow (("MediaEnumThread finished.\n"));
         }
 
@@ -3769,7 +3769,7 @@ void VBoxGlobal::init()
 #ifdef Q_WS_WIN
     /* COM for the main thread is initialized in main() */
 #else
-    HRESULT rc = COMBase::initializeCOM();
+    HRESULT rc = COMBase::InitializeCOM();
     if (FAILED (rc))
     {
         vboxProblem().cannotInitCOM (rc);
@@ -4029,7 +4029,7 @@ void VBoxGlobal::cleanup()
 #ifdef Q_WS_WIN
     /* COM for the main thread is shutdown in main() */
 #else
-    COMBase::cleanupCOM();
+    COMBase::CleanupCOM();
 #endif
 
     mValid = false;
