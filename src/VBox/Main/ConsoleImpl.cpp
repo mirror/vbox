@@ -1559,7 +1559,7 @@ STDMETHODIMP Console::PowerButton()
     return rc;
 }
 
-STDMETHODIMP Console::GetPowerButtonHandled(PRBool *aHandled)
+STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
 {
     LogFlowThisFuncEnter();
 
