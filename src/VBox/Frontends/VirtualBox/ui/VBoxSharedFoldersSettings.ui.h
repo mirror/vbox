@@ -391,9 +391,7 @@ void VBoxSharedFoldersSettings::adjustList()
 {
     /* Adjust two columns size.
      * Watching columns 0&2 to feat 1/3 of total width. */
-    int total = listView->columnWidth (0) +
-                listView->columnWidth (1) +
-                listView->columnWidth (2);
+    int total = listView->viewport()->width();
 
     listView->adjustColumn (0);
     int w0 = listView->columnWidth (0) < total / 3 ?
