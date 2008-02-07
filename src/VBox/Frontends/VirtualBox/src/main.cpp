@@ -137,7 +137,7 @@ int main (int argc, char **argv)
      * leave STA by calling CoUninitialize() and re-enter MTA on those systems
      * for some unknown reason), see also src/VBox/Main/glue/initterm.cpp. */
     /// @todo find a proper solution that satisfies both OLE and VBox
-    HRESULT hrc = COMBase::initializeCOM();
+    HRESULT hrc = COMBase::InitializeCOM();
 #endif
 
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
@@ -266,7 +266,7 @@ int main (int argc, char **argv)
 #ifdef Q_WS_WIN
     /* See COMBase::initializeCOM() above */
     if (SUCCEEDED (hrc))
-        COMBase::cleanupCOM();
+        COMBase::CleanupCOM();
 #endif
 
     LogFlowFunc (("rc=%d\n", rc));

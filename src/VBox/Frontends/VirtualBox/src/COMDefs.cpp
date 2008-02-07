@@ -85,7 +85,7 @@ private:
 /**
  *  Initializes COM/XPCOM.
  */
-HRESULT COMBase::initializeCOM()
+HRESULT COMBase::InitializeCOM()
 {
     LogFlowFuncEnter();
 
@@ -125,7 +125,7 @@ HRESULT COMBase::initializeCOM()
 #endif /* defined (VBOX_WITH_XPCOM) */
 
     if (FAILED (rc))
-        cleanupCOM();
+        CleanupCOM();
 
     AssertComRC (rc);
 
@@ -138,7 +138,7 @@ HRESULT COMBase::initializeCOM()
 /**
  *  Cleans up COM/XPCOM.
  */
-HRESULT COMBase::cleanupCOM()
+HRESULT COMBase::CleanupCOM()
 {
     LogFlowFuncEnter();
 
@@ -179,6 +179,28 @@ HRESULT COMBase::cleanupCOM()
     LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
     return rc;
+}
+
+/* static */
+void COMBase::ToSafeArray (const QValueVector <QString> &aVec,
+                           com::SafeArray <BSTR> &aArr)
+{
+    aArr.reset (aVec.size());
+    size_t i = 0;
+    for (QValueVector <QString>::const_iterator it = aVec.begin();
+         it != aVec.end(); ++ it, ++ i)
+        aArr [i] = SysAllocString ((const OLECHAR *) (*it).ucs2());
+}
+
+/* static */
+void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
+                             QValueVector <QString> &aVec)
+{
+    aVec = QValueVector <QString> (aArr.size());
+    size_t i = 0;
+    for (QValueVector <QString>::iterator it = aVec.begin();
+         it != aVec.end(); ++ it, ++ i)
+        *it = QString::fromUcs2 (aArr [i]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -350,7 +372,7 @@ void COMErrorInfo::fetchFromCurrentThread (IUnknown *callee, const GUID *calleeI
 
     if (callee && calleeIID && mIsBasicAvailable)
     {
-        mCalleeIID = COMBase::toQUuid (*calleeIID);
+        mCalleeIID = COMBase::ToQUuid (*calleeIID);
         mCalleeName = getInterfaceNameFromIID (mCalleeIID);
     }
 }

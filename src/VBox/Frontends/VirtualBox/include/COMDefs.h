@@ -23,12 +23,54 @@
 #ifndef __COMDefs_h__
 #define __COMDefs_h__
 
+/** @defgroup   grp_QT_COM  Qt-COM Support Layer
+ * @{
+ *
+ * The Qt-COM support layer provides a set of defintions and smart classes for
+ * writing simple, clean and platform-independent code to access COM/XPCOM
+ * components through exposed COM interfaces. This layer is based on the
+ * COM/XPCOM Abstarction Layer library (the VBoxCOM glue library defined in
+ * include/VBox/com and implemented in src/VBox/Main/glue).
+ *
+ * ...
+ *
+ * @defgroup   grp_QT_COM_arrays    Arrays
+ * @{
+ *
+ * COM/XPCOM arrays are mapped to QValueVector objects. QValueVector templates
+ * declared with a type that corresponds to the COM type of elements in the
+ * array using normal Qt-COM type mapping rules. Here is a code example that
+ * demonstrates how to call interface methods that take and return arrays (this
+ * example is based on examples given in @ref grp_COM_arrays):
+ * @code
+
+    CSomething component;
+
+    // ...
+
+    QValueVector <LONG> in (3);
+    in [0] = -1;
+    in [1] = -2;
+    in [2] = -3;
+
+    QValueVector <LONG> out;
+    QValueVector <LONG> ret;
+
+    ret = component.TestArrays (in, out);
+
+    for (size_t i = 0; i < ret.size(); ++ i)
+        LogFlow (("*** ret[%u]=%d\n", i, ret [i]));
+
+ * @endcode
+ * @}
+ */
 
 /* Both VBox/com/assert.h and qglobal.h contain a definition of ASSERT.
  * Either of them can be already included here, so try to shut them up.  */
 #undef ASSERT
 
 #include <VBox/com/com.h>
+#include <VBox/com/array.h>
 #include <VBox/com/assert.h>
 
 #undef ASSERT
@@ -36,6 +78,7 @@
 #include <qglobal.h>
 #include <qstring.h>
 #include <quuid.h>
+#include <qvaluevector.h>
 
 #include <iprt/memory> // for auto_copy_ptr
 
@@ -138,30 +181,8 @@ class COMBase
 {
 public:
 
-    static HRESULT initializeCOM();
-    static HRESULT cleanupCOM();
-
-#if !defined (VBOX_WITH_XPCOM)
-
-    /** Converts a GUID value to QUuid */
-    static QUuid toQUuid (const GUID &id)
-    {
-        return QUuid (id.Data1, id.Data2, id.Data3,
-                      id.Data4[0], id.Data4[1], id.Data4[2], id.Data4[3],
-                      id.Data4[4], id.Data4[5], id.Data4[6], id.Data4[7]);
-    }
-
-#else /* !defined (VBOX_WITH_XPCOM) */
-
-    /** Converts a GUID value to QUuid */
-    static QUuid toQUuid (const nsID &id)
-    {
-        return QUuid (id.m0, id.m1, id.m2,
-                      id.m3[0], id.m3[1], id.m3[2], id.m3[3],
-                      id.m3[4], id.m3[5], id.m3[6], id.m3[7]);
-    }
-
-#endif /* !defined (VBOX_WITH_XPCOM) */
+    static HRESULT InitializeCOM();
+    static HRESULT CleanupCOM();
 
     /**
      *  Returns the result code of the last interface method called
@@ -176,6 +197,111 @@ public:
      *  represents a failure (i.e. CInterface::isOk() is false).
      */
     virtual COMErrorInfo errorInfo() const { return COMErrorInfo(); }
+
+#if !defined (VBOX_WITH_XPCOM)
+
+    /** Converts a GUID value to QUuid */
+    static QUuid ToQUuid (const GUID &id)
+    {
+        return QUuid (id.Data1, id.Data2, id.Data3,
+                      id.Data4[0], id.Data4[1], id.Data4[2], id.Data4[3],
+                      id.Data4[4], id.Data4[5], id.Data4[6], id.Data4[7]);
+    }
+
+#else /* !defined (VBOX_WITH_XPCOM) */
+
+    /** Converts a GUID value to QUuid */
+    static QUuid ToQUuid (const nsID &id)
+    {
+        return QUuid (id.m0, id.m1, id.m2,
+                      id.m3[0], id.m3[1], id.m3[2], id.m3[3],
+                      id.m3[4], id.m3[5], id.m3[6], id.m3[7]);
+    }
+
+#endif /* !defined (VBOX_WITH_XPCOM) */
+
+    /* Arrays of arbitrary types */
+
+    template <typename QT, typename CT>
+    static void ToSafeArray (const QValueVector <QT> &aVec, com::SafeArray <CT> &aArr)
+    {
+        AssertMsgFailedReturnVoid (("No conversion!\n"));
+    }
+
+    template <typename CT, typename QT>
+    static void FromSafeArray (const com::SafeArray <CT> &aArr, QValueVector <QT> &aVec)
+    {
+        AssertMsgFailedReturnVoid (("No conversion!\n"));
+    }
+
+    template <typename QT, typename CT>
+    static void ToSafeArray (const QValueVector <QT *> &aVec, com::SafeArray <CT *> &aArr)
+    {
+        AssertMsgFailedReturnVoid (("No conversion!\n"));
+    }
+
+    template <typename CT, typename QT>
+    static void FromSafeArray (const com::SafeArray <CT *> &aArr, QValueVector <QT *> &aVec)
+    {
+        AssertMsgFailedReturnVoid (("No conversion!\n"));
+    }
+
+    /* Arrays of equal types */
+
+    template <typename T>
+    static void ToSafeArray (const QValueVector <T> &aVec, com::SafeArray <T> &aArr)
+    {
+        aArr.reset (aVec.size());
+        size_t i = 0;
+        for (typename QValueVector <T>::const_iterator it = aVec.begin();
+             it != aVec.end(); ++ it, ++ i)
+            aArr [i] = *it;
+    }
+
+    template <typename T>
+    static void FromSafeArray (const com::SafeArray <T> &aArr, QValueVector <T> &aVec)
+    {
+        aVec = QValueVector <T> (aArr.size());
+        size_t i = 0;
+        for (typename QValueVector <T>::iterator it = aVec.begin();
+             it != aVec.end(); ++ it, ++ i)
+            *it = aArr [i];
+    }
+
+    /* Arrays of interface pointers */
+
+    template <class CI, class I>
+    static void ToSafeArray (const QValueVector <CI> &aVec,
+                             com::SafeArray <I *> &aArr)
+    {
+        aArr.reset (aVec.size());
+        size_t i = 0;
+        for (typename QValueVector <CI>::const_iterator it = aVec.begin();
+             it != aVec.end(); ++ it, ++ i)
+        {
+            aArr [i] = (*it).iface();
+            if (aArr [i])
+                aArr [i]->AddRef();
+        }
+    }
+
+    template <class I, class CI>
+    void FromSafeArray (const com::SafeArray <I *> &aArr,
+                        QValueVector <CI> &aVec)
+    {
+        aVec = QValueVector <CI> (aArr.size());
+        size_t i = 0;
+        for (typename QValueVector <CI>::iterator it = aVec.begin();
+             it != aVec.end(); ++ it, ++ i)
+            (*it).attach (aArr [i]);
+    }
+
+    /* Arrays of strings */
+
+    static void ToSafeArray (const QValueVector <QString> &aVec,
+                             com::SafeArray <BSTR> &aArr);
+    static void FromSafeArray (const com::SafeArray <BSTR> &aArr,
+                               QValueVector <QString> &aVec);
 
 protected:
 
@@ -229,20 +355,25 @@ protected:
         BSTR bstr;
     };
 
-    /** Adapter to pass CEnums enums as output VirtualBox enum params (*_T) */
-    template <typename CE, typename VE>
+    /**
+     * Adapter to pass CEnums enums as output COM enum params (*_T).
+     *
+     * @param QE    CEnums enum.
+     * @param CE    COM enum.
+     */
+    template <typename QE, typename CE>
     class ENUMOut
     {
     public:
 
-        ENUMOut (CE &e) : ce (e), ve ((VE) 0) {}
-        ~ENUMOut() { ce = (CE) ve; }
-        operator VE *() { return &ve; }
+        ENUMOut (QE &e) : qe (e), ce ((CE) 0) {}
+        ~ENUMOut() { qe = (QE) ce; }
+        operator CE *() { return &ce; }
 
     private:
 
-        CE &ce;
-        VE ve;
+        QE &qe;
+        CE ce;
     };
 
 #if !defined (VBOX_WITH_XPCOM)
@@ -603,5 +734,7 @@ inline CInterface <I, B> &CInterface <I, B>::operator =(const CUnknown &that)
 
 /* include the generated header containing concrete wrapper definitions */
 #include "COMWrappers.h"
+
+/** @} */
 
 #endif // __COMDefs_h__
