@@ -1427,8 +1427,8 @@ VBGLR3DECL(int)     VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq);
 
 /** @name Display
  * @{ */
-VBGLR3DECL(int)     VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
-                                                  uint32_t fEventAck, uint32_t iDisplay);
+VBGLR3DECL(int)     VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy,
+                                                      uint32_t *pcBits,uint32_t *piDisplay);
 VBGLR3DECL(int)     VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
                                                  uint32_t *piDisplay);
 /** @}  */
