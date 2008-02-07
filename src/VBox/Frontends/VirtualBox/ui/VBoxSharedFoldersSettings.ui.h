@@ -105,10 +105,12 @@ protected:
         QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
     }
 
-    int width (const QFontMetrics &aFontMetrics, const QListView *, int aColumn) const
+    int width (const QFontMetrics &aFontMetrics, const QListView *aItem, int aColumn) const
     {
-        return aFontMetrics.boundingRect (getText (aColumn)).width() +
-               aFontMetrics.width ("...x") /* indent size */ ;
+        return aColumn ?
+               aFontMetrics.boundingRect (getText (aColumn)).width() +
+               aFontMetrics.width ("...x") /* indent size */ :
+               QListViewItem::width (aFontMetrics, aItem, aColumn);
     }
 
     void processColumn (int aColumn, int aWidth)
