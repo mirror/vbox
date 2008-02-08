@@ -259,6 +259,78 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
 
 
 /**
+ * This is the interface IOM is using to register an MMIO region.
+ *
+ * It will check for conflicts and ensure that a RAM range structure
+ * is present before calling the PGMR3HandlerPhysicalRegister API to
+ * register the callbacks.
+ *
+ */
+PDMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
+{
+    return -1;
+}
+
+
+/**
+ * This is the interface IOM is using to register an MMIO region.
+ *
+ * It will validate the MMIO region, call PGMHandlerPhysicalDeregister,
+ * and free the RAM range if one was allocated specially for this MMIO
+ * region.
+ */
+PDMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
+{
+    return -1;
+}
+
+
+/**
+ * Allocate and register a MMIO2 region.
+ *
+ * As mentioned elsewhere, MMIO2 is just RAM spelled differently. It's
+ * RAM associated with a device. It is also non-shared memory with a
+ * permanent ring-3 mapping and page backing (presently).
+ *
+ * A MMIO2 range may overlap with base memory if a lot of RAM
+ * is configured for the VM, in which case we'll drop the base
+ * memory pages. Presently we will make no attempt to preserve
+ * anything that happens to be present in the base memory that
+ * is replaced, this is of course incorrectly but it's too much
+ * effort.
+ */
+PDMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cb, void **ppv, const char *pszDesc)
+{
+    return -1;
+}
+
+
+/**
+ * Reallocates a MMIO2 region.
+ *
+ * This is done when a guest / the bios / state loading changes the
+ * PCI config. The replacing of base memory has the same restrictions
+ * as during registration, of course.
+ */
+PDMR3DECL(int) PGMR3PhysMMIO2Relocate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew)
+{
+    return -1;
+}
+
+
+/**
+ * Deregisters and frees a MMIO2 region.
+ *
+ * Any physical (and virtual) access handlers registered for the region must
+ * be deregistered before calling this function.
+ */
+PDMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, RTGCPHYS GCPhys, void *pv)
+{
+    return -1;
+}
+
+
+/**
  * Registers a ROM image.
  *
  * Shadowed ROM images requires double the amount of backing memory, so,
