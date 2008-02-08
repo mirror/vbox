@@ -226,19 +226,7 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
 #endif
     RTGCPHYS iPage = cPages;
     while (iPage-- > 0)
-    {
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-        pNew->aPages[iPage].HCPhys = pVM->pgm.s.HCPhysZeroPg;
-#else
-        pNew->aPages[iPage].HCPhys = 0;
-#endif
-        pNew->aPages[iPage].fWrittenTo = 0;
-        pNew->aPages[iPage].fSomethingElse = 0;
-        pNew->aPages[iPage].u29B = 0;
-        PGM_PAGE_SET_TYPE(&pNew->aPages[iPage],   PGMPAGETYPE_RAM);
-        PGM_PAGE_SET_STATE(&pNew->aPages[iPage],  PGM_PAGE_STATE_ZERO);
-        PGM_PAGE_SET_PAGEID(&pNew->aPages[iPage], NIL_GMM_PAGEID);
-    }
+        PGM_PAGE_INIT_ZERO(&pNew->aPages[iPage], pVM, PGMPAGETYPE_RAM);
 
     /*
      * Insert the new RAM range.
@@ -511,13 +499,11 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                 PPGMPAGE pPage = &pRamNew->aPages[0];
                 for (uint32_t iPage = 0; iPage < cPages; iPage++, pPage++, pRomPage++)
                 {
-                    pPage->fWrittenTo = 0;
-                    pPage->fSomethingElse = 0;
-                    pPage->u29B = 0;
-                    PGM_PAGE_SET_TYPE(pPage,   PGMPAGETYPE_ROM);
-                    PGM_PAGE_SET_HCPHYS(pPage, pReq->aPages[iPage].HCPhysGCPhys);
-                    PGM_PAGE_SET_STATE(pPage,  PGM_PAGE_STATE_ALLOCATED);
-                    PGM_PAGE_SET_PAGEID(pPage, pReq->aPages[iPage].idPage);
+                    PGM_PAGE_INIT(pPage,
+                                  pReq->aPages[iPage].HCPhysGCPhys,
+                                  pReq->aPages[iPage].idPage,
+                                  PGMPAGETYPE_ROM,
+                                  PGM_PAGE_STATE_ALLOCATED);
 
                     pRomPage->Virgin = *pPage;
                 }
@@ -590,16 +576,8 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                     for (unsigned iPage = 0; iPage < cPages; iPage++)
                     {
                         PPGMROMPAGE pPage = &pRomNew->aPages[iPage];
-
-                        pPage->Shadow.HCPhys = 0;
-                        pPage->Shadow.fWrittenTo = 0;
-                        pPage->Shadow.fSomethingElse = 0;
-                        pPage->Shadow.u29B = 0;
-                        PGM_PAGE_SET_TYPE(  &pPage->Shadow, PGMPAGETYPE_ROM_SHADOW);
-                        PGM_PAGE_SET_STATE( &pPage->Shadow, PGM_PAGE_STATE_ZERO);
-                        PGM_PAGE_SET_PAGEID(&pPage->Shadow, pReq->aPages[iPage].idPage);
-
-                        pRomNew->aPages[iPage].enmProt = PGMROMPROT_READ_ROM_WRITE_IGNORE;
+                        pPage->enmProt = PGMROMPROT_READ_ROM_WRITE_IGNORE;
+                        PGM_PAGE_INIT_ZERO_REAL(&pPage->Shadow, pVM, PGMPAGETYPE_ROM_SHADOW);
                     }
 
                     /*
@@ -786,13 +764,7 @@ int pgmR3PhysRomReset(PVM pVM)
                     /* setup the zero page. */
                     for (iPage = 0; iPage < cPages; iPage++)
                         if (PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO)
-                        {
-                            PGM_PAGE_SET_STATE( &pRom->aPages[iPage].Shadow, PGM_PAGE_STATE_ZERO);
-                            PGM_PAGE_SET_HCPHYS(&pRom->aPages[iPage].Shadow, pVM->pgm.s.HCPhysZeroPg);
-                            PGM_PAGE_SET_PAGEID(&pRom->aPages[iPage].Shadow, NIL_GMM_PAGEID);
-                            pRom->aPages[iPage].Shadow.fWrittenTo = false;
-                            iReqPage++;
-                        }
+                            PGM_PAGE_INIT_ZERO_REAL(&pRom->aPages[iPage].Shadow, pVM, PGMPAGETYPE_ROM_SHADOW);
                 }
             }
             else
@@ -908,7 +880,7 @@ PGMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
 
                     *pOld = *pRamPage;
                     *pRamPage = *pNew;
-                    /** @todo sync the volatile flags (handlers) when these have been moved out of HCPhys. */
+                    /** @todo preserve the volatile flags (handlers) when these have been moved out of HCPhys! */
                 }
             }
 
@@ -1049,13 +1021,10 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         {
             while (iPage-- > 0)
             {
-                pNew->aPages[iPage].HCPhys = (paPages[iPage].Phys & X86_PTE_PAE_PG_MASK) | fFlags; /** @todo PAGE FLAGS */
-                pNew->aPages[iPage].fWrittenTo = 0;
-                pNew->aPages[iPage].fSomethingElse = 0;
-                pNew->aPages[iPage].u29B = 0;
-                PGM_PAGE_SET_PAGEID(&pNew->aPages[iPage],   NIL_GMM_PAGEID);
-                PGM_PAGE_SET_TYPE(&pNew->aPages[iPage],     fFlags & MM_RAM_FLAGS_MMIO2 ? PGMPAGETYPE_MMIO2 : PGMPAGETYPE_RAM);
-                PGM_PAGE_SET_STATE(&pNew->aPages[iPage],    PGM_PAGE_STATE_ALLOCATED);
+                PGM_PAGE_INIT(&pNew->aPages[iPage], paPages[iPage].Phys & X86_PTE_PAE_PG_MASK, NIL_GMM_PAGEID,
+                              fFlags & MM_RAM_FLAGS_MMIO2 ? PGMPAGETYPE_MMIO2 : PGMPAGETYPE_RAM,
+                              PGM_PAGE_STATE_ALLOCATED);
+                pNew->aPages[iPage].HCPhys |= fFlags; /** @todo PAGE FLAGS*/
             }
         }
         else if (fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
@@ -1070,28 +1039,18 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
             /* Physical memory will be allocated on demand. */
             while (iPage-- > 0)
             {
+                PGM_PAGE_INIT(&pNew->aPages[iPage], 0, NIL_GMM_PAGEID, PGMPAGETYPE_RAM, PGM_PAGE_STATE_ZERO);
                 pNew->aPages[iPage].HCPhys = fFlags; /** @todo PAGE FLAGS */
-                pNew->aPages[iPage].fWrittenTo = 0;
-                pNew->aPages[iPage].fSomethingElse = 0;
-                pNew->aPages[iPage].u29B = 0;
-                PGM_PAGE_SET_PAGEID(&pNew->aPages[iPage],   NIL_GMM_PAGEID);
-                PGM_PAGE_SET_TYPE(&pNew->aPages[iPage],     PGMPAGETYPE_RAM);
-                PGM_PAGE_SET_STATE(&pNew->aPages[iPage],    PGM_PAGE_STATE_ZERO);
             }
         }
         else
         {
             Assert(fFlags == (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO));
-            RTHCPHYS HCPhysDummyPage = (MMR3PageDummyHCPhys(pVM) & X86_PTE_PAE_PG_MASK) | fFlags; /** @todo PAGE FLAGS */
+            RTHCPHYS HCPhysDummyPage = MMR3PageDummyHCPhys(pVM);
             while (iPage-- > 0)
             {
-                pNew->aPages[iPage].HCPhys = HCPhysDummyPage; /** @todo PAGE FLAGS */
-                pNew->aPages[iPage].fWrittenTo = 0;
-                pNew->aPages[iPage].fSomethingElse = 0;
-                pNew->aPages[iPage].u29B = 0;
-                PGM_PAGE_SET_PAGEID(&pNew->aPages[iPage],   NIL_GMM_PAGEID);
-                PGM_PAGE_SET_TYPE(&pNew->aPages[iPage],     PGMPAGETYPE_MMIO);
-                PGM_PAGE_SET_STATE(&pNew->aPages[iPage],    PGM_PAGE_STATE_ZERO);
+                PGM_PAGE_INIT(&pNew->aPages[iPage], HCPhysDummyPage, NIL_GMM_PAGEID, PGMPAGETYPE_MMIO, PGM_PAGE_STATE_ZERO);
+                pNew->aPages[iPage].HCPhys |= fFlags; /** @todo PAGE FLAGS*/
             }
         }
 

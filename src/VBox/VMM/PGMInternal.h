@@ -507,23 +507,23 @@ AssertCompile(PGMPAGETYPE_END < 7);
  * The format of this structure is complicated because we have to fit a lot
  * of information into as few bits as possible. The format is also subject
  * to change (there is one comming up soon). Which means that for we'll be
- * using PGM_PAGE_GET_* and PGM_PAGE_SET_* macros for all accessess to the
- * structure.
+ * using PGM_PAGE_GET_*, PGM_PAGE_IS_ and PGM_PAGE_SET_* macros for *all*
+ * accessess to the structure.
  */
 typedef struct PGMPAGE
 {
     /** The physical address and a whole lot of other stuff. All bits are used! */
     RTHCPHYS    HCPhys;
     /** The page state. */
-    uint32_t    u2State : 2;
+    uint32_t    u2StateX : 2;
     /** Flag indicating that a write monitored page was written to when set. */
-    uint32_t    fWrittenTo : 1;
+    uint32_t    fWrittenToX : 1;
     /** For later. */
     uint32_t    fSomethingElse : 1;
     /** The Page ID.
      * @todo  Merge with HCPhys once we've liberated HCPhys of its stuff.
      *        The HCPhys will be 100% static. */
-    uint32_t    idPage : 28;
+    uint32_t    idPageX : 28;
     /** The page type (PGMPAGETYPE). */
     uint32_t    u3Type : 3;
     uint32_t    u29B : 29;
@@ -536,7 +536,54 @@ typedef const PGMPAGE *PCPGMPAGE;
 /** Pointer to a physical guest page pointer. */
 typedef PPGMPAGE *PPPGMPAGE;
 
-/** @name The Page state, PGMPAGE::u2State.
+
+/**
+ * Clears the page structure.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_CLEAR(pPage) \
+    do { \
+        (pPage)->HCPhys         = 0; \
+        (pPage)->u2StateX       = 0; \
+        (pPage)->fWrittenToX    = 0; \
+        (pPage)->fSomethingElse = 0; \
+        (pPage)->idPageX        = 0; \
+        (pPage)->u3Type         = 0; \
+        (pPage)->u29B           = 0; \
+    } while (0)
+
+/**
+ * Clears the page structure.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_INIT(pPage, _HCPhys, _idPage, _uType, _uState) \
+    do { \
+        (pPage)->HCPhys         = (_HCPhys); \
+        (pPage)->u2StateX       = (_uState); \
+        (pPage)->fWrittenToX    = 0; \
+        (pPage)->fSomethingElse = 0; \
+        (pPage)->idPageX        = (_idPage); \
+        (pPage)->u3Type         = (_uType); \
+        (pPage)->u29B           = 0; \
+    } while (0)
+
+/**
+ * Clears the page structure.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+# define PGM_PAGE_INIT_ZERO(pPage, pVM, _uType)  \
+    PGM_PAGE_INIT(pPage, (pVM)->pgm.s.HCPhysZeroPg, NIL_GMM_PAGEID, PGM_PAGE_STATE_ZERO, (_uType))
+#else
+# define PGM_PAGE_INIT_ZERO(pPage, pVM, _uType)  \
+    PGM_PAGE_INIT(pPage, 0, NIL_GMM_PAGEID, PGM_PAGE_STATE_ZERO, (_uType))
+#endif
+/** Temporary hack. Replaced by PGM_PAGE_INIT_ZERO once the old code is kicked out. */
+# define PGM_PAGE_INIT_ZERO_REAL(pPage, pVM, _uType)  \
+    PGM_PAGE_INIT(pPage, (pVM)->pgm.s.HCPhysZeroPg, NIL_GMM_PAGEID, PGM_PAGE_STATE_ZERO, (_uType))
+
+
+/** @name The Page state, PGMPAGE::u2StateX.
  * @{ */
 /** The zero page.
  * This is a per-VM page that's never ever mapped writable. */
@@ -561,7 +608,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns page state (PGM_PAGE_STATE_*).
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_STATE(pPage)       ( (pPage)->u2State )
+#define PGM_PAGE_GET_STATE(pPage)       ( (pPage)->u2StateX )
 
 /**
  * Sets the page state.
@@ -569,7 +616,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   _uState     The new page state.
  */
 #define PGM_PAGE_SET_STATE(pPage, _uState) \
-                                        do { (pPage)->u2State = (_uState); } while (0)
+                                        do { (pPage)->u2StateX = (_uState); } while (0)
 
 
 /**
@@ -593,7 +640,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The Page ID; NIL_GMM_PAGEID if it's a ZERO page.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGEID(pPage)      ( (pPage)->idPage )
+#define PGM_PAGE_GET_PAGEID(pPage)      ( (pPage)->idPageX )
 /* later:
 #define PGM_PAGE_GET_PAGEID(pPage)      (   ((uint32_t)(pPage)->HCPhys >> (48 - 12))
                                          |  ((uint32_t)(pPage)->HCPhys & 0xfff) )
@@ -602,7 +649,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * Sets the Page ID.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->idPage = (_idPage); } while (0)
+#define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->idPageX = (_idPage); } while (0)
 /* later:
 #define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->HCPhys = (((pPage)->HCPhys) & UINT64_C(0x0000fffffffff000)) \
                                                                   | ((_idPage) & 0xfff) \
@@ -614,7 +661,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The Chunk ID; NIL_GMM_CHUNKID if it's a ZERO page.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_CHUNKID(pPage)     ( (pPage)->idPage >> GMM_CHUNKID_SHIFT )
+#define PGM_PAGE_GET_CHUNKID(pPage)     ( (pPage)->idPageX >> GMM_CHUNKID_SHIFT )
 /* later:
 #if GMM_CHUNKID_SHIFT == 12
 # define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhys >> 48) )
@@ -633,7 +680,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The page index.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)   ( (pPage)->idPage & GMM_PAGEID_IDX_MASK )
+#define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)   ( (pPage)->idPageX & GMM_PAGEID_IDX_MASK )
 /* later:
 #if GMM_CHUNKID_SHIFT <= 12
 # define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (uint32_t)((pPage)->HCPhys & GMM_PAGEID_IDX_MASK) )
@@ -679,15 +726,34 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_IS_ZERO(pPage)         ( (pPage)->u2State == PGM_PAGE_STATE_ZERO )
+#define PGM_PAGE_IS_ZERO(pPage)         ( (pPage)->u2StateX == PGM_PAGE_STATE_ZERO )
 
 /**
  * Checks if the page is backed by a SHARED page.
  * @returns true/false.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_IS_SHARED(pPage)        ( (pPage)->u2State == PGM_PAGE_STATE_SHARED )
+#define PGM_PAGE_IS_SHARED(pPage)        ( (pPage)->u2StateX == PGM_PAGE_STATE_SHARED )
 
+
+/**
+ * Marks the paget as written to (for GMM change monitoring).
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_SET_WRITTEN_TO(pPage)      do { (pPage)->fWrittenToX = 1; } while (0)
+
+/**
+ * Clears the written-to indicator.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_CLEAR_WRITTEN_TO(pPage)    do { (pPage)->fWrittenToX = 0; } while (0)
+
+/**
+ * Checks if the page was marked as written-to.
+ * @returns true/false.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_WRITTEN_TO(pPage)       ( (pPage)->fWrittenToX )
 
 /**
  * Ram range for GC Phys to HC Phys conversion.
