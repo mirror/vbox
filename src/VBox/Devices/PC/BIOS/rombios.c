@@ -761,6 +761,7 @@ typedef struct {
 #endif // BX_ELTORITO_BOOT
 #ifdef VBOX
     unsigned char uForceBootDrive;
+    unsigned char uForceBootDevice;
 #endif /* VBOX */
 
     } ebda_data_t;
@@ -8076,8 +8077,8 @@ Bit8u bseqnr;
   bootseq|=((inb_cmos(0x38) & 0xf0) << 4);
 #ifdef VBOX
   bootseq|=((inb_cmos(0x3c) & 0x0f) << 12);
-  if (read_byte(ebda_seg, &EbdaData->uForceBootDrive))
-      bootseq = read_byte(ebda_seg, &EbdaData->uForceBootDrive);
+  if (read_byte(ebda_seg, &EbdaData->uForceBootDevice))
+      bootseq = read_byte(ebda_seg, &EbdaData->uForceBootDevice);
   /* Boot delay hack. */
   if (bseqnr == 1)
       delay_boot((inb_cmos(0x3c) & 0xf0) >> 4); /* Implemented in logo.c */
@@ -8094,9 +8095,23 @@ Bit8u bseqnr;
   bootlan=0;
 #endif /* VBOX */
   switch(bootseq & 0x0f) {
-    case 0x01: bootdrv=0x00; bootcd=0; break;
-    case 0x02: bootdrv=0x80; bootcd=0; break;
-    case 0x03: bootdrv=0x00; bootcd=1; break;
+    case 0x01:
+        bootdrv=0x00;
+        bootcd=0;
+        break;
+    case 0x02:
+    {
+        // Get the Boot drive.
+        Bit8u boot_drive = read_byte(ebda_seg, &EbdaData->uForceBootDrive);
+
+        bootdrv = boot_drive + 0x80;
+        bootcd=0;
+        break;
+    }
+    case 0x03:
+        bootdrv=0x00;
+        bootcd=1;
+        break;
 #ifdef VBOX
     case 0x04: bootlan=1; break;
 #endif /* VBOX */
@@ -10909,6 +10924,15 @@ post_default_ints:
 #endif
   call rom_scan
 
+#if BX_USE_ATADRV
+  ;;
+  ;; ATA/ATAPI driver setup
+  ;;
+  call _ata_init
+  call _ata_detect
+  ;;
+#endif
+
   call _print_bios_banner
 
   ;;
@@ -10916,27 +10940,10 @@ post_default_ints:
   ;;
   call floppy_drive_post
 
-#if BX_USE_ATADRV
-
   ;;
   ;; Hard Drive setup
   ;;
   call hard_drive_post
-
-  ;;
-  ;; ATA/ATAPI driver setup
-  ;;
-  call _ata_init
-  call _ata_detect
-  ;;
-#else // BX_USE_ATADRV
-
-  ;;
-  ;; Hard Drive setup
-  ;;
-  call hard_drive_post
-
-#endif // BX_USE_ATADRV
 
 #if BX_ELTORITO_BOOT
   ;;
