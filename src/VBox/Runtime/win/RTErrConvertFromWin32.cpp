@@ -185,6 +185,7 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case ERROR_INVALID_ADDRESS:         return VERR_INVALID_POINTER; ///@todo fix ERROR_INVALID_ADDRESS translation - dbghelp returns it on some line number queries.
 
         case ERROR_CANCELLED:               return VERR_CANCELLED;
+        case ERROR_DIRECTORY:               return VERR_NOT_A_DIRECTORY;
 
         /*
          * Winsocket errors are mostly BSD errno.h wrappers.
