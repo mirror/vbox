@@ -553,6 +553,110 @@ Bit16u read_logo_word(offset)
 #define VID_SEG         0xA000
 #define TMP_SEG         0x1000
 
+void clear_screen()
+{
+// Hide cursor, clear screen and move cursor to starting position
+ASM_START
+    push bx
+    push cx
+    push dx
+
+    mov  ax, #0x100
+    mov  cx, #0x1000
+    int  #0x10
+
+    mov  ax, #0x700
+    mov  bh, #7
+    xor  cx, cx
+    mov  dx, #0x184f
+    int  #0x10
+
+    mov  ax, #0x200
+    xor  bx, bx
+    xor  dx, dx
+    int  #0x10
+
+    pop  dx
+    pop  cx
+    pop  bx
+ASM_END
+}
+
+void print_detected_harddisks()
+{
+    Bit16u ebda_seg=read_word(0x0040,0x000E);
+    Bit8u actual_device;
+    Bit8u detected_devices = 0;
+    Bit8u first_ctrl_printed = 0;
+    Bit8u second_ctrl_printed = 0;
+
+    for (actual_device = 0; actual_device < BX_MAX_ATA_DEVICES; actual_device++)
+    {
+        Bit8u device_position;
+        Bit8u device = read_byte(ebda_seg, &EbdaData->ata.devices[actual_device].device);
+
+        if (device == 0xff) /* logo.c is included before ATA_DEVICE_HD is defined */
+        {
+            if ((actual_device < 4) && (first_ctrl_printed == 0))
+            {
+                printf("IDE controller:\n");
+                first_ctrl_printed = 1;
+            }
+            else if ((actual_device >= 4) && (second_ctrl_printed == 0))
+            {
+                printf("AHCI controller:\n");
+                second_ctrl_printed = 1;
+            }
+
+            detected_devices++;
+
+            printf("\n    %d) ", detected_devices);
+
+            /* If actual_device bigger than or equal 4
+             * this is the next controller and
+             * the positions start at the beginning.
+             */
+            device_position = actual_device;
+            if (actual_device >= 4)
+                device_position -= 4;
+
+            if (device_position / 2)
+                printf("Secondary ");
+            else
+                printf("Primary ");
+
+            if (device_position % 2)
+                printf("Slave");
+            else
+                printf("Master");
+        }
+    }
+
+    printf("\n");
+}
+
+Bit8u get_boot_drive(scode)
+   Bit8u scode;
+{
+    Bit16u ebda_seg=read_word(0x0040,0x000E);
+    Bit8u actual_device;
+    Bit8u detected_devices = 0;
+
+    for (actual_device = 0; actual_device < BX_MAX_ATA_DEVICES; actual_device++)
+    {
+        Bit8u device = read_byte(ebda_seg, &EbdaData->ata.devices[actual_device].device);
+
+        if (device == 0xff) /* logo.c is included before ATA_DEVICE_HD is defined */
+            detected_devices++;
+    }
+
+    if ((scode-0x01) <= detected_devices)
+        return scode-0x02;
+
+    /* Scancode is higher than number of available devices */
+    return 0x08;
+}
+
 void show_logo()
 {
     Bit16u ebda_seg=read_word(0x0040,0x000E);
@@ -973,7 +1077,7 @@ error:
 done:
 
     // Clear forced boot drive setting.
-    write_byte(ebda_seg,&EbdaData->uForceBootDrive, 0);
+    write_byte(ebda_seg,&EbdaData->uForceBootDevice, 0);
 
     // Don't restore previous video mode
     // The default text mode should be set up. (defect #1235)
@@ -1003,42 +1107,27 @@ done:
         // If F12 pressed, show boot menu
         if (f12_pressed)
         {
-            // Hide cursor, clear screen and move cursor to starting position
-            ASM_START
-                push bx
-                push cx
-                push dx
+            Bit8u boot_device = 0;
+            Bit8u boot_drive = 0;
 
-                mov  ax, #0x100
-                mov  cx, #0x1000
-                int  #0x10
-
-                mov  ax, #0x700
-                mov  bh, #7
-                xor  cx, cx
-                mov  dx, #0x184f
-                int  #0x10
-
-                mov  ax, #0x200
-                xor  bx, bx
-                xor  dx, dx
-                int  #0x10
-
-                pop  dx
-                pop  cx
-                pop  bx
-            ASM_END
+            clear_screen();
 
             // Show menu
             printf("\n"
                    "VirtualBox temporary boot device selection\n"
                    "\n"
-                   " 1) Floppy\n"
-                   " 2) Hard Disk\n"
-                   " 3) CD-ROM\n"
-                   " 4) LAN\n"
+                   "Detected Hard disks:\n"
+                   "\n");
+            print_detected_harddisks();
+            printf("\n"
+                   "Other boot devices:\n"
+                   " f) Floppy\n"
+                   " c) CD-ROM\n"
+                   " l) LAN\n"
                    "\n"
-                   " 0) Continue booting\n");
+                   " b) Continue booting\n");
+
+
 
             // Wait for keystroke
             for (;;)
@@ -1048,17 +1137,53 @@ done:
                     scode = wait(WAIT_HZ, 1);
                 } while (scode == 0);
 
-                // Change first boot device code to selected one
-                if (scode >= 0x02 && scode <= 0x05)
+                if (scode == 0x30)
                 {
-                    write_byte(ebda_seg,&EbdaData->uForceBootDrive, scode-1);
+                    // 'b' ... continue
                     break;
                 }
 
-                // '0' ... continue
-                if (scode == 0x0b)
+                // Check if hard disk was selected
+                if ((scode >= 0x02) && (scode <= 0x09))
+                {
+                    boot_drive = get_boot_drive(scode);
+
+                    /*
+                     * We support a maximum of 8 boot drives.
+                     * If this value is bigger than 7 not all
+                     * values are used and the user pressed
+                     * and invalid key.
+                     * Wait for the next pressed key.
+                     */
+                    if (boot_drive > 7)
+                        continue;
+
+                    write_byte(ebda_seg, &EbdaData->uForceBootDrive, boot_drive);
+                    boot_device = 0x02;
+                    break;
+                }
+
+                switch (scode)
+                {
+                    case 0x21:
+                        // Floppy
+                        boot_device = 0x01;
+                        break;
+                    case 0x2e:
+                        // CD-ROM
+                        boot_device = 0x03;
+                        break;
+                    case 0x26:
+                        // LAN
+                        boot_device = 0x04;
+                        break;
+                }
+
+                if (boot_device != 0)
                     break;
             }
+
+            write_byte(ebda_seg, &EbdaData->uForceBootDevice, boot_device);
 
             // Switch to text mode. Clears screen and enables cursor again.
             set_mode(0x0003);
