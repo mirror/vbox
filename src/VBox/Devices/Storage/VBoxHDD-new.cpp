@@ -745,9 +745,9 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
             break;
 
         PRTDIRENTRY pPluginDirEntry = NULL;
-        unsigned cbPluginDirEntry;
+        unsigned cbPluginDirEntry = sizeof(RTDIRENTRY);
         pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(sizeof(RTDIRENTRY));
-        if (!pPluginDir)
+        if (!pPluginDirEntry)
         {
             rc = VERR_NO_MEMORY;
             break;
