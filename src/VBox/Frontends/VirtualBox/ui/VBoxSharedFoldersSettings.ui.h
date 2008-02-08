@@ -101,8 +101,23 @@ protected:
     void paintCell (QPainter *aPainter, const QColorGroup &aColorGroup,
                     int aColumn, int aWidth, int aAlign)
     {
-        processColumn (aColumn, aWidth);
-        QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
+		/* Make parental cells splitted. */
+        if (!parent())
+        {
+            /* Other columns except main should be semi-transparent. */
+            if (aColumn)
+                aPainter->setRasterOp (Qt::AndROP);
+            /* Main column's painter width should take all other's. */
+            else
+                aWidth = listView()->viewport()->width();
+            QListViewItem::paintCell (aPainter, aColorGroup, aColumn,
+                                      aWidth, aAlign);
+        }
+        else
+        {
+            processColumn (aColumn, aWidth);
+            QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
+        }
     }
 
     int width (const QFontMetrics &aFontMetrics, const QListView *aItem, int aColumn) const
@@ -372,6 +387,10 @@ void VBoxSharedFoldersSettings::init()
     connect (listView, SIGNAL (currentChanged (QListViewItem *)),
              this, SLOT (processCurrentChanged (QListViewItem *)));
 
+	/* Make after-paining list update to ensure all columns repainted correctly. */
+    connect (listView->header(), SIGNAL (sizeChange (int, int, int)),
+             this, SLOT (updateList()));
+
     mIsListViewChanged = false;
 
     listView->viewport()->installEventFilter (this);
@@ -389,6 +408,12 @@ void VBoxSharedFoldersSettings::showEvent (QShowEvent *aEvent)
 }
 
 
+void VBoxSharedFoldersSettings::updateList()
+{
+    /* Updating list after all pending cell-repaint enevts. */
+    QTimer::singleShot (0, listView, SLOT (updateContents()));
+}
+
 void VBoxSharedFoldersSettings::adjustList()
 {
     /* Adjust two columns size.
@@ -404,13 +429,13 @@ void VBoxSharedFoldersSettings::adjustList()
              listView->columnWidth (2) : total / 3;
 
     /* We are adjusting columns 0 and 2 and resizing column 1 to feat
-     * visible listView' width according two adjusted columns. Due to 
+     * visible listView' width according two adjusted columns. Due to
      * adjusting column 2 influent column 0 restoring all widths. */
     listView->setColumnWidth (0, w0);
     listView->setColumnWidth (1, total - w0 - w2);
     listView->setColumnWidth (2, w2);
 }
-    
+
 bool VBoxSharedFoldersSettings::eventFilter (QObject *aObject, QEvent *aEvent)
 {
     /* Process & show auto Tool-Tip for partially hidden listview items. */
