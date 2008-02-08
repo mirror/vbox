@@ -818,8 +818,7 @@ PGMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
                     break;
 
                 case PGMPHYSHANDLERTYPE_MMIO:
-                case PGMPHYSHANDLERTYPE_PHYSICAL:
-                    AssertMsgFailed(("Cannot disable an MMIO or natural PHYSICAL access handler! enmType=%d\n", pCur->enmType));
+                    AssertMsgFailed(("Cannot disable an MMIO access handler! enmType=%d\n", pCur->enmType));
                     return VERR_ACCESS_DENIED;
 
                 default:
@@ -882,8 +881,7 @@ PGMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
                     break;
 
                 case PGMPHYSHANDLERTYPE_MMIO:
-                case PGMPHYSHANDLERTYPE_PHYSICAL:
-                    AssertMsgFailed(("Cannot enable an MMIO or natural PHYSICAL access handler! enmType=%d\n", pCur->enmType));
+                    AssertMsgFailed(("Cannot reset an MMIO access handler! enmType=%d\n", pCur->enmType));
                     return VERR_ACCESS_DENIED;
 
                 default:
@@ -935,7 +933,6 @@ PGMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
             {
                 case PGMPHYSHANDLERTYPE_PHYSICAL_WRITE:
                 case PGMPHYSHANDLERTYPE_PHYSICAL_ALL:
-                case PGMPHYSHANDLERTYPE_PHYSICAL:
                 case PGMPHYSHANDLERTYPE_MMIO:
                     return true;
 
@@ -1600,7 +1597,6 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                     {
                         switch (pPhys->enmType)
                         {
-                            case PGMPHYSHANDLERTYPE_PHYSICAL:       State.fFlagsFound |= MM_RAM_FLAGS_PHYSICAL_HANDLER; break;
                             case PGMPHYSHANDLERTYPE_PHYSICAL_WRITE: State.fFlagsFound |= MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE; break;
                             case PGMPHYSHANDLERTYPE_MMIO:
                             case PGMPHYSHANDLERTYPE_PHYSICAL_ALL:   State.fFlagsFound |= MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_ALL; break;

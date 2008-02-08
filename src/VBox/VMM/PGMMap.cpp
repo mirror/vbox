@@ -1155,7 +1155,6 @@ static DECLCALLBACK(int) pgmR3DumpMappingsPhysicalCB(PAVLROGCPHYSNODECORE pNode,
     switch (pCur->enmType)
     {
         case PGMPHYSHANDLERTYPE_MMIO:           pszType = "MMIO   "; break;
-        case PGMPHYSHANDLERTYPE_PHYSICAL:       pszType = "Natural"; break;
         case PGMPHYSHANDLERTYPE_PHYSICAL_WRITE: pszType = "Write  "; break;
         case PGMPHYSHANDLERTYPE_PHYSICAL_ALL:   pszType = "All    "; break;
         default:                                pszType = "????"; break;

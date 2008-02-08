@@ -94,7 +94,6 @@ PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
     switch (enmType)
     {
         case PGMPHYSHANDLERTYPE_MMIO:
-        case PGMPHYSHANDLERTYPE_PHYSICAL:
         case PGMPHYSHANDLERTYPE_PHYSICAL_WRITE:
         case PGMPHYSHANDLERTYPE_PHYSICAL_ALL:
             break;
@@ -813,7 +812,6 @@ PGMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
             /*
              * Invalid.
              */
-            case PGMPHYSHANDLERTYPE_PHYSICAL:
             case PGMPHYSHANDLERTYPE_MMIO:
                 AssertMsgFailed(("Can't reset type %d!\n",  pCur->enmType));
                 pgmUnlock(pVM);
