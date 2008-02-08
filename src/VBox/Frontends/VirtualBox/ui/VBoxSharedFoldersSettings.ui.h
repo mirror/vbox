@@ -101,15 +101,14 @@ protected:
     void paintCell (QPainter *aPainter, const QColorGroup &aColorGroup,
                     int aColumn, int aWidth, int aAlign)
     {
-		/* Make parental cells splitted. */
+        /* Make parental cells combined. */
         if (!parent())
         {
-            /* Other columns except main should be semi-transparent. */
+            /* Do not paint other columns except the first one. */
             if (aColumn)
-                aPainter->setRasterOp (Qt::AndROP);
+                return;
             /* Main column's painter width should take all other's. */
-            else
-                aWidth = listView()->viewport()->width();
+            aWidth = listView()->viewport()->width();
             QListViewItem::paintCell (aPainter, aColorGroup, aColumn,
                                       aWidth, aAlign);
         }
@@ -120,12 +119,11 @@ protected:
         }
     }
 
-    int width (const QFontMetrics &aFontMetrics, const QListView *aItem, int aColumn) const
+    int width (const QFontMetrics &aFontMetrics, const QListView *, int aColumn) const
     {
-        return aColumn ?
+        return parent() ?
                aFontMetrics.boundingRect (getText (aColumn)).width() +
-               aFontMetrics.width ("...x") /* indent size */ :
-               QListViewItem::width (aFontMetrics, aItem, aColumn);
+               aFontMetrics.width ("...x") /* indent size */ : 0;
     }
 
     void processColumn (int aColumn, int aWidth)
