@@ -3045,9 +3045,6 @@ DECLINLINE(unsigned) pgmHandlerPhysicalCalcFlags(PPGMPHYSHANDLER pCur)
 {
     switch (pCur->enmType)
     {
-        case PGMPHYSHANDLERTYPE_PHYSICAL:
-            return MM_RAM_FLAGS_PHYSICAL_HANDLER;
-
         case PGMPHYSHANDLERTYPE_PHYSICAL_WRITE:
             return MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE;
 

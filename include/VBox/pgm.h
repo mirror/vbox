@@ -101,8 +101,6 @@ typedef enum PGMPHYSHANDLERTYPE
 {
     /** MMIO range. Pages are not present, all access is done in interpreter or recompiler. */
     PGMPHYSHANDLERTYPE_MMIO = 1,
-    /** Handle all normal page faults for a physical page range. */
-    PGMPHYSHANDLERTYPE_PHYSICAL,
     /** Handler all write access to a physical page range. */
     PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
     /** Handler all access to a physical page range. */
