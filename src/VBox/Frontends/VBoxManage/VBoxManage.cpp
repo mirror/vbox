@@ -3541,6 +3541,7 @@ static int handleCreateVM(int argc, char *argv[],
     RTUUID id;
     bool fRegister = false;
 
+    RTUuidClear(&id);
     for (int i = 0; i < argc; i++)
     {
         if (strcmp(argv[i], "-basefolder") == 0)
