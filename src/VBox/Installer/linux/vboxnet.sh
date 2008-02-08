@@ -200,8 +200,17 @@ start_network() {
             (test -z "$4" || expr match "$4" "#" > /dev/null) &&
             (valid_ifname "$1"))
         then
+          case $user in
+            +*)
+                group=`echo $2 | cut -c2-`
+                cmd="VBoxTunctl -t $1 -g $group"
+                ;;
+            *)
+                cmd="VBoxTunctl -t $1 -u $2"
+                ;;
+          esac
           # Try to create the interface
-          if VBoxTunctl -t "$1" -u "$2" > /dev/null 2>&1
+          if $cmd > /dev/null 2>&1
           then
             # On SUSE Linux Enterprise Server, the interface does not
             # appear immediately, so we loop trying to bring it up.

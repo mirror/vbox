@@ -23,6 +23,11 @@
 appname=`basename $0`
 interface=$1
 user=$2
+if [ "$user" = "-g" ]; then
+  shift;
+  group=$2
+  user=+$group
+fi
 bridge=$3
 
 appadd="VBoxAddIF"
@@ -37,9 +42,11 @@ usage() {
   if [ "$appname" = "$appadd" ]
   then
     echo 1>&2 ""
-    echo 1>&2 "Usage: $appname <interface name> <user name> [<bridge name>]"
+    echo 1>&2 "Usage: $appname <interface name>"
+    echo 1>&2 "                [<user name>| -g <group name>] [<bridge name>]"
     echo 1>&2 "Create and register the permanent interface <interface name> for use by user"
-    echo 1>&2 "<user name> on the host system.  Optionally attach the interface to the network"
+    echo 1>&2 "<user name> (or group <group name> for linux kernels which support this)"
+    echo 1>&2 "on the host system.  Optionally attach the interface to the network"
     echo 1>&2 "bridge <bridge name>.  <interface name> should take the form vbox<0-99>."
   elif [ "$appname" = "$appdel" ]
   then
@@ -173,7 +180,11 @@ if [ "$appname" = "$appadd" ]
 then
   echo "$interface" "$user" "$bridge" >> /etc/vbox/interfaces
   echo ""
-  echo "Creating the permanent host networking interface \"$interface\" for user $user."
+  if [ -n "$group" ]; then
+      echo "Creating the permanent host networking interface \"$interface\" for group $group."
+  else
+      echo "Creating the permanent host networking interface \"$interface\" for user $user."
+  fi
 fi
 
 # Remove the old interface (if it exists) from any bridge it was a part of and
@@ -198,12 +209,22 @@ else
   # Create the new interface and bring it up if we are adding it
   if [ "$appname" = "$appadd" ]
   then
-    if ! VBoxTunctl -t "$interface" -u "$user" > /dev/null 2>&1
-    then
-      echo 1>&2 ""
-      echo 1>&2 "Failed to create the interface \"$interface\" for user $user.  Please check"
-      echo 1>&2 "that you currently have sufficient permissions to do this."
-      exit 1
+    if [ -n "$group" ]; then
+      if ! VBoxTunctl -t "$interface" -g "$group" > /dev/null 2>&1
+      then
+        echo 1>&2 ""
+        echo 1>&2 "Failed to create the interface \"$interface\" for group $group.  Please check"
+        echo 1>&2 "that you currently have sufficient permissions to do this."
+        exit 1
+      fi
+    else
+      if ! VBoxTunctl -t "$interface" -u "$user" > /dev/null 2>&1
+      then
+        echo 1>&2 ""
+        echo 1>&2 "Failed to create the interface \"$interface\" for user $user.  Please check"
+        echo 1>&2 "that you currently have sufficient permissions to do this."
+        exit 1
+      fi
     fi
     # On SUSE Linux Enterprise Server, the tunctl command does not take
     # effect at once, so we loop until it does.
