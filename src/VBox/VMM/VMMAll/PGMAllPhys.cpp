@@ -424,11 +424,11 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  */
 int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 {
-    switch (pPage->u2State)
+    switch (PGM_PAGE_GET_STATE(pPage))
     {
         case PGM_PAGE_STATE_WRITE_MONITORED:
-            pPage->fWrittenTo = true;
-            pPage->u2State = PGM_PAGE_STATE_ALLOCATED;
+            PGM_PAGE_SET_WRITTEN_TO(pPage);
+            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
             /* fall thru */
         default: /* to shut up GCC */
         case PGM_PAGE_STATE_ALLOCATED:
@@ -640,7 +640,7 @@ PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
          * it must be converted to an page that's writable if possible.
          */
         PPGMPAGE pPage = pTlbe->pPage;
-        if (RT_UNLIKELY(pPage->u2State != PGM_PAGE_STATE_ALLOCATED))
+        if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
         {
             rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
             /** @todo stuff is missing here! */
