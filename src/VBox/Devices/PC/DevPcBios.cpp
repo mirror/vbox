@@ -27,6 +27,7 @@
 #include <iprt/alloc.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 
@@ -826,11 +827,34 @@ static DECLCALLBACK(int) logoIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  *
  * @param   table           pointer to DMI table.
  */
-#define STRCPY(p, s) do { memcpy (p, s, sizeof(s)); p += sizeof(s); } while (0)
-static void pcbiosPlantDMITable(uint8_t *pTable, PRTUUID puuid)
+#define STRCPY(p, s) do { memcpy (p, s, strlen(s)+1); p += strlen(s)+1; } while (0)
+#define READCFG(name, variable, default_value) \
+    do { \
+        rc = CFGMR3QueryStringAlloc(pCfgHandle, name, & variable); \
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
+            variable = MMR3HeapStrDup(PDMDevHlpGetVM(pDevIns), MM_TAG_CFGM, default_value); \
+        else if (VBOX_FAILURE(rc)) \
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
+                    N_("Configuration error: Querying \"" name "\" as a string failed")); \
+    } while (0)
+
+static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, PRTUUID puuid, PCFGMNODE pCfgHandle)
 {
     char *pszStr = (char*)pTable;
     int iStrNr;
+    int rc;
+    char *pszDmiVendor, *pszDmiProduct, *pszDmiVersion, *pszDmiRelease, *pszDmiSerial, *pszDmiUuid = NULL, *pszDmiFamily;
+
+    READCFG("DmiVendor",  pszDmiVendor,  "innotek GmbH");
+    READCFG("DmiProduct", pszDmiProduct, "VirtualBox");
+    READCFG("DmiVersion", pszDmiVersion, "1.2");
+    READCFG("DmiRelease", pszDmiRelease, "12/01/2006");
+    READCFG("DmiSerial",  pszDmiSerial,  "0");
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "DmiUuid", &pszDmiUuid);
+    if (VBOX_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Querying \"DmiUuid\" as a string failed"));
+    READCFG("DmiFamily",  pszDmiFamily,   "Virtual Machine");
 
     PDMIBIOSINF pBIOSInf         = (PDMIBIOSINF)pszStr;
     pszStr                       = (char*)(pBIOSInf+1);
@@ -839,12 +863,12 @@ static void pcbiosPlantDMITable(uint8_t *pTable, PRTUUID puuid)
     pBIOSInf->header.u8Length    = sizeof(*pBIOSInf);
     pBIOSInf->header.u16Handle   = 0x0000;
     pBIOSInf->u8Vendor           = iStrNr++;
-    STRCPY(pszStr, "innotek GmbH");
+    STRCPY(pszStr, pszDmiVendor);
     pBIOSInf->u8Version          = iStrNr++;
-    STRCPY(pszStr, "VirtualBox");
+    STRCPY(pszStr, pszDmiProduct);
     pBIOSInf->u16Start           = 0xE000;
     pBIOSInf->u8Release          = iStrNr++;
-    STRCPY(pszStr, "12/01/2006");
+    STRCPY(pszStr, pszDmiRelease);
     pBIOSInf->u8ROMSize          = 1; /* 128K */
     pBIOSInf->u64Characteristics = RT_BIT(4)   /* ISA is supported */
                                  | RT_BIT(7)   /* PCI is supported */
@@ -870,24 +894,49 @@ static void pcbiosPlantDMITable(uint8_t *pTable, PRTUUID puuid)
     pSystemInf->header.u8Length  = sizeof(*pSystemInf);
     pSystemInf->header.u16Handle = 0x0001;
     pSystemInf->u8Manufacturer   = iStrNr++;
-    STRCPY(pszStr, "innotek GmbH");
+    STRCPY(pszStr, pszDmiVendor);
     pSystemInf->u8ProductName    = iStrNr++;
-    STRCPY(pszStr, "VirtualBox");
+    STRCPY(pszStr, pszDmiProduct);
     pSystemInf->u8Version        = iStrNr++;
-    STRCPY(pszStr, "1.2");
+    STRCPY(pszStr, pszDmiVersion);
     pSystemInf->u8SerialNumber   = iStrNr++;
-    STRCPY(pszStr, "0");
+    STRCPY(pszStr, pszDmiSerial);
+
+    RTUUID uuid;
+    if (pszDmiUuid)
+    {
+        int rc = RTUuidFromStr(&uuid, pszDmiUuid);
+        if (VBOX_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Invalid UUID for DMI tables specified"));
+        uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
+        uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
+        uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
+        puuid = &uuid;
+    }
     memcpy(pSystemInf->au8Uuid, puuid, sizeof(RTUUID));
+
     pSystemInf->u8WakeupType     = 6; /* Power Switch */
     pSystemInf->u8SKUNumber      = 0;
     pSystemInf->u8Family         = iStrNr++;
-    STRCPY(pszStr, "Virtual Machine");
+    STRCPY(pszStr, pszDmiFamily);
     *pszStr++                    = '\0';
 
-    AssertMsg(pszStr - (char*)pTable == VBOX_DMI_TABLE_SIZE,
-              ("VBOX_DMI_TABLE_SIZE=%d, actual DMI table size is %d",
-              VBOX_DMI_TABLE_SIZE, pszStr - (char*)pTable));
+    MMR3HeapFree(pszDmiVendor);
+    MMR3HeapFree(pszDmiProduct);
+    MMR3HeapFree(pszDmiVersion);
+    MMR3HeapFree(pszDmiRelease);
+    MMR3HeapFree(pszDmiSerial);
+    MMR3HeapFree(pszDmiUuid);
+    MMR3HeapFree(pszDmiFamily);
+
+    if (pszStr - (char*)pTable > VBOX_DMI_TABLE_SIZE)
+        return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
+                                   N_("DMI table too long (have=%d, max=%d)"), pszStr - (char*)pTable, VBOX_DMI_TABLE_SIZE);
+
+    return VINF_SUCCESS;
 }
+#undef STRCPY
 AssertCompile(VBOX_DMI_TABLE_ENTR == 2);
 
 
@@ -1216,24 +1265,10 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Validate configuration.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle,
-                              "BootDevice0\0"
-                              "BootDevice1\0"
-                              "BootDevice2\0"
-                              "BootDevice3\0"
-                              "RamSize\0"
-                              "HardDiskDevice\0"
-                              "FloppyDevice\0"
-                              "FadeIn\0"
-                              "FadeOut\0"
-                              "LogoTime\0"
-                              "LogoFile\0"
-                              "ShowBootMenu\0"
-                              "DelayBoot\0"
-                              "BiosRom\0"
-                              "LanBootRom\0"
-                              "PXEDebug\0"
-                              "UUID\0"
-                              "IOAPIC\0"))
+                              "BootDevice0\0BootDevice1\0BootDevice2\0BootDevice3\0"
+                              "RamSize\0HardDiskDevice\0FloppyDevice\0FadeIn\0FadeOut\0LogoTime\0LogoFile\0"
+                              "ShowBootMenu\0DelayBoot\0BiosRom\0LanBootRom\0PXEDebug\0UUID\0IOAPIC\0"
+                              "DmiVendor\0DmiProduct\0DmiVersion\0DmiSerial\0DmiUuid\0DmiFamily\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for  device pcbios device"));
 
@@ -1297,7 +1332,9 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
     uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
-    pcbiosPlantDMITable(pData->au8DMIPage, &uuid);
+    rc = pcbiosPlantDMITable(pDevIns, pData->au8DMIPage, &uuid, pCfgHandle);
+    if (VBOX_FAILURE(rc))
+        return rc;
     if (pData->u8IOAPIC)
         pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + 0x100);
 
