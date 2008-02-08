@@ -59,8 +59,26 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 static unsigned keyc2scan[256];
+static int log_kb_1 = 0;
+static int log_kb_2 = 0;
+
+#define LOG_KB_1(a) \
+do { \
+    if (log_kb_1) { \
+        printf a; \
+    } \
+} while (0)
+
+#define LOG_KB_2(a) \
+do { \
+    if (log_kb_2) { \
+        printf a; \
+    } \
+} while (0)
 
 /* Keyboard layout tables for guessing the current keyboard layout. */
 #include "keyboard-tables.h"
@@ -144,7 +162,7 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, int min_keycode,
     /** The keycode of the last key that we matched.  This is used to
         determine the direction that the keycodes are running in. */
     int pkey = -1;
-    TRACE("Attempting to match against \"%s\"\n", main_key_tab[current].comment);
+    LOG_KB_2(("Attempting to match against \"%s\"\n", main_key_tab[current].comment));
     for (keyc = min_keycode; keyc <= max_keycode; keyc++) {
       if (0 != ckey[keyc][0]) {
         /** The candidate key in the current layout for this keycode. */
@@ -188,14 +206,13 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, int min_keycode,
           if ((ckey[keyc][0] > 32) && (ckey[keyc][0] < 127)) {
               str[0] = ckey[keyc][0];
           }
-          TRACE_(key)("mismatch for keycode %d, keysym \"%s\" (0x%.2hx 0x%.2hx)\n",
-                       keyc, str, ckey[keyc][0], ckey[keyc][1]);
+          LOG_KB_2(("Mismatch for keycode %d, keysym \"%s\" (0x%.2hx 0x%.2hx)\n",
+                       keyc, str, ckey[keyc][0], ckey[keyc][1]));
 #endif /* DEBUG defined */
 	}
       }
     }
-    TRACE("matches=%d, seq=%d\n",
-	   match, seq);
+    LOG_KB_2(("Matches=%d, seq=%d\n", match, seq));
     if (   (match > max_score)
 	|| ((match == max_score) && (seq > max_seq))
        ) {
@@ -206,8 +223,8 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, int min_keycode,
     }
   }
   /* we're done, report results if necessary */
-  TRACE("detected layout is \"%s\", matches=%d, seq=%d\n",
-        main_key_tab[kbd_layout].comment, max_score, max_seq);
+  LOG_KB_1(("Detected layout is \"%s\", matches=%d, seq=%d\n",
+        main_key_tab[kbd_layout].comment, max_score, max_seq));
   return kbd_layout;
 }
 
@@ -231,6 +248,14 @@ int X11DRV_InitKeyboard(Display *display)
     int kbd_layout;
     unsigned matches = 0, entries = 0;
 
+    /* Should we log to standard output? */
+    if (NULL != getenv("LOG_KB_PRIMARY")) {
+        log_kb_1 = 1;
+    }
+    if (NULL != getenv("LOG_KB_SECONDARY")) {
+        log_kb_1 = 1;
+        log_kb_2 = 1;
+    }
     XDisplayKeycodes(display, &min_keycode, &max_keycode);
 
     /* Detect the keyboard layout */
@@ -278,7 +303,6 @@ int X11DRV_InitKeyboard(Display *display)
 		scan = main_key_scan[keyn - 1];
 		++matches;
 	      }
-#ifdef DEBUG
               if (0 == scan) {
                 /* print spaces instead of \0's */
                 char str[3] = "  ";
@@ -288,10 +312,20 @@ int X11DRV_InitKeyboard(Display *display)
                 if ((shifted > 32) && (shifted < 127)) {
                     str[1] = shifted;
                 }
-                TRACE_(key)("No match found for keycode %d, keysym \"%s\" (0x%x 0x%x)\n",
-                             keyc, str, unshifted, shifted);
-            }
-#endif /* DEBUG defined */
+                LOG_KB_1(("No match found for keycode %d, keysym \"%s\" (0x%x 0x%x)\n",
+                             keyc, str, unshifted, shifted));
+              } else if ((keyc > 8) && (keyc < 97) && (keyc - scan != 8)) {
+                /* print spaces instead of \0's */
+                char str[3] = "  ";
+                if ((unshifted > 32) && (unshifted < 127)) {
+                    str[0] = unshifted;
+                }
+                if ((shifted > 32) && (shifted < 127)) {
+                    str[1] = shifted;
+                }
+                LOG_KB_1(("Warning - keycode %d, keysym \"%s\" (0x%x 0x%x) was matched to scancode %d\n",
+                             keyc, str, unshifted, shifted, scan));
+              }
 	    }
         }
         keyc2scan[keyc] = scan;
@@ -304,7 +338,7 @@ int X11DRV_InitKeyboard(Display *display)
             ++entries;
         }
     }
-    TRACE("Finished mapping keyboard, matches=%d, entries=%d\n", matches, entries);
+    LOG_KB_1(("Finished mapping keyboard, matches=%d, entries=%d\n", matches, entries));
     if (matches != entries)
     {
         return 0;

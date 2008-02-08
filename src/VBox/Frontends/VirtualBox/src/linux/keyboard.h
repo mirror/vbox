@@ -21,8 +21,8 @@
  * Lesser General Public License for more details.
  */
 
-#ifndef __H_KEYBOARD_OUTOFWINE
-#define __H_KEYBOARD_OUTOFWINE
+#ifndef __H_KEYBOARD
+#define __H_KEYBOARD
 
 #include <X11/Xlib.h>
 
@@ -41,26 +41,4 @@ extern CCALL int X11DRV_InitKeyboard(Display *dpy);
 extern CCALL unsigned X11DRV_KeyEvent(KeyCode code);
 #endif
 
-/* debug macros */
-#if 0 && defined(DEBUG)
-# include <stdio.h>
-# define noop printf
-#else
-#ifdef __cplusplus
-inline static void noop(char *, ...)
-#else
-inline static void noop(char *arg, ...)
-#endif
-{
-}
-#endif
-
-#define TRACE noop
-/* #define TRACE printf */
-#define TRACE_(a) noop
-/* #define TRACE_(ch) printf */
-#define TRACE_ON(a) 0
-#define WARN noop
-#define ERR noop
-
-#endif /* __H_KEYBOARD_OUTOFWINE */
+#endif /* __H_KEYBOARD */
