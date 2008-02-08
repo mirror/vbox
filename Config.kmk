@@ -156,6 +156,15 @@ endif
 if1of ($(BUILD_TARGET),l4 linux)
  VBOX_WITH_LINUX_ADDITIONS = 1
 endif
+# Build X11 additions. Can be disabled separately.
+ifndef VBOX_WITH_X11_ADDITIONS
+ ifdef VBOX_WITH_LINUX_ADDITIONS
+  VBOX_WITH_X11_ADDITIONS = 1
+ endif
+ if1of ($(BUILD_TARGET), solaris)
+  VBOX_WITH_X11_ADDITIONS = 1
+ endif
+endif
 # Enable the building of shared folders in the windows additions.
 VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS = 1
 # Take the binaries of the OS/2 Additions.
