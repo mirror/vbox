@@ -825,9 +825,30 @@ static DECLCALLBACK(int) logoIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 /**
  * Construct the DMI table.
  *
- * @param   table           pointer to DMI table.
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pTable      Where to create the DMI table.
+ * @param   cbMax       The max size of the DMI table.
+ * @param   pUuid       Pointer to the UUID to use if the DmiUuid
+ *                      configuration string isn't present.
+ * @param   pCfgHandle  The handle to our config node.
  */
-#define STRCPY(p, s) do { memcpy (p, s, strlen(s)+1); p += strlen(s)+1; } while (0)
+static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PRTUUID pUuid, PCFGMNODE pCfgHandle)
+{
+    char *pszStr = (char *)pTable;
+    int iStrNr;
+    int rc;
+    char *pszDmiVendor, *pszDmiProduct, *pszDmiVersion, *pszDmiRelease, *pszDmiSerial, *pszDmiUuid, *pszDmiFamily;
+
+#define STRCPY(p, s) \
+    do { \
+        size_t _len = strlen(s) + 1; \
+        if (pszStr + _len - (char *)pTable >= cbMax) \
+            return PDMDevHlpVMSetError(pDevIns, VERR_TOO_MUCH_DATA, RT_SRC_POS, \
+                    N_("DMI string too long (%zu): \"%s\""), _len, s); \
+        memcpy(p, s, _len); \
+        p += _len; \
+    } while (0)
 #define READCFG(name, variable, default_value) \
     do { \
         rc = CFGMR3QueryStringAlloc(pCfgHandle, name, & variable); \
@@ -838,12 +859,6 @@ static DECLCALLBACK(int) logoIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     N_("Configuration error: Querying \"" name "\" as a string failed")); \
     } while (0)
 
-static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, PRTUUID puuid, PCFGMNODE pCfgHandle)
-{
-    char *pszStr = (char*)pTable;
-    int iStrNr;
-    int rc;
-    char *pszDmiVendor, *pszDmiProduct, *pszDmiVersion, *pszDmiRelease, *pszDmiSerial, *pszDmiUuid = NULL, *pszDmiFamily;
 
     READCFG("DmiVendor",  pszDmiVendor,  "innotek GmbH");
     READCFG("DmiProduct", pszDmiProduct, "VirtualBox");
@@ -851,13 +866,15 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, PRTUUID puui
     READCFG("DmiRelease", pszDmiRelease, "12/01/2006");
     READCFG("DmiSerial",  pszDmiSerial,  "0");
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "DmiUuid", &pszDmiUuid);
-    if (VBOX_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pszDmiUuid = NULL;
+    else if (VBOX_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"DmiUuid\" as a string failed"));
     READCFG("DmiFamily",  pszDmiFamily,   "Virtual Machine");
 
     PDMIBIOSINF pBIOSInf         = (PDMIBIOSINF)pszStr;
-    pszStr                       = (char*)(pBIOSInf+1);
+    pszStr                       = (char *)(pBIOSInf + 1);
     iStrNr                       = 1;
     pBIOSInf->header.u8Type      = 0; /* BIOS Information */
     pBIOSInf->header.u8Length    = sizeof(*pBIOSInf);
@@ -888,7 +905,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, PRTUUID puui
 
 
     PDMISYSTEMINF pSystemInf     = (PDMISYSTEMINF)pszStr;
-    pszStr                       = (char*)(pSystemInf+1);
+    pszStr                       = (char *)(pSystemInf + 1);
     iStrNr                       = 1;
     pSystemInf->header.u8Type    = 1; /* System Information */
     pSystemInf->header.u8Length  = sizeof(*pSystemInf);
@@ -912,15 +929,23 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, PRTUUID puui
         uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
         uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
         uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
-        puuid = &uuid;
+        pUuid = &uuid;
     }
-    memcpy(pSystemInf->au8Uuid, puuid, sizeof(RTUUID));
+    memcpy(pSystemInf->au8Uuid, pUuid, sizeof(RTUUID));
 
     pSystemInf->u8WakeupType     = 6; /* Power Switch */
     pSystemInf->u8SKUNumber      = 0;
     pSystemInf->u8Family         = iStrNr++;
     STRCPY(pszStr, pszDmiFamily);
     *pszStr++                    = '\0';
+
+#undef STRCPY
+#undef READCFG
+
+    if (pszStr - (char *)pTable > VBOX_DMI_TABLE_SIZE)
+        return PDMDevHlpVMSetError(pDevIns, VERR_BUFFER_OVERFLOW, RT_SRC_POS,
+                                   N_("DMI table too long (have=%d, max=%d)"),
+                                   pszStr - (char *)pTable, VBOX_DMI_TABLE_SIZE);
 
     MMR3HeapFree(pszDmiVendor);
     MMR3HeapFree(pszDmiProduct);
@@ -930,13 +955,8 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, PRTUUID puui
     MMR3HeapFree(pszDmiUuid);
     MMR3HeapFree(pszDmiFamily);
 
-    if (pszStr - (char*)pTable > VBOX_DMI_TABLE_SIZE)
-        return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
-                                   N_("DMI table too long (have=%d, max=%d)"), pszStr - (char*)pTable, VBOX_DMI_TABLE_SIZE);
-
     return VINF_SUCCESS;
 }
-#undef STRCPY
 AssertCompile(VBOX_DMI_TABLE_ENTR == 2);
 
 
@@ -1090,8 +1110,8 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     {
         pu8PcBiosBinary = g_abPcBiosBinary;
         cbPcBiosBinary  = g_cbPcBiosBinary;
-    } 
-    else 
+    }
+    else
     {
         pu8PcBiosBinary = pData->pu8PcBios;
         cbPcBiosBinary  = pData->cbPcBios;
@@ -1265,10 +1285,30 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Validate configuration.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle,
-                              "BootDevice0\0BootDevice1\0BootDevice2\0BootDevice3\0"
-                              "RamSize\0HardDiskDevice\0FloppyDevice\0FadeIn\0FadeOut\0LogoTime\0LogoFile\0"
-                              "ShowBootMenu\0DelayBoot\0BiosRom\0LanBootRom\0PXEDebug\0UUID\0IOAPIC\0"
-                              "DmiVendor\0DmiProduct\0DmiVersion\0DmiSerial\0DmiUuid\0DmiFamily\0"))
+                              "BootDevice0\0"
+                              "BootDevice1\0"
+                              "BootDevice2\0"
+                              "BootDevice3\0"
+                              "RamSize\0"
+                              "HardDiskDevice\0"
+                              "FloppyDevice\0"
+                              "FadeIn\0"
+                              "FadeOut\0"
+                              "LogoTime\0"
+                              "LogoFile\0"
+                              "ShowBootMenu\0"
+                              "DelayBoot\0"
+                              "BiosRom\0"
+                              "LanBootRom\0"
+                              "PXEDebug\0"
+                              "UUID\0"
+                              "IOAPIC\0"
+                              "DmiVendor\0"
+                              "DmiProduct\0"
+                              "DmiVersion\0"
+                              "DmiSerial\0"
+                              "DmiUuid\0"
+                              "DmiFamily\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for  device pcbios device"));
 
@@ -1332,7 +1372,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
     uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
-    rc = pcbiosPlantDMITable(pDevIns, pData->au8DMIPage, &uuid, pCfgHandle);
+    rc = pcbiosPlantDMITable(pDevIns, pData->au8DMIPage, 0x100 /* see below */, &uuid, pCfgHandle);
     if (VBOX_FAILURE(rc))
         return rc;
     if (pData->u8IOAPIC)
@@ -1442,8 +1482,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         pu8PcBiosBinary = g_abPcBiosBinary;
         cbPcBiosBinary  = g_cbPcBiosBinary;
-    } 
-    else 
+    }
+    else
     {
         pu8PcBiosBinary = pData->pu8PcBios;
         cbPcBiosBinary  = pData->cbPcBios;
@@ -1460,11 +1500,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertReleaseMsg(RT_ALIGN_Z(cbPcBiosBinary, _64K) == cbPcBiosBinary,
                      ("cbPcBiosBinary=%#x\n", cbPcBiosBinary));
     cb = RT_MIN(cbPcBiosBinary, 128 * _1K); /* Effectively either 64 or 128K. */
-    rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &pu8PcBiosBinary[cbPcBiosBinary - cb], 
+    rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &pu8PcBiosBinary[cbPcBiosBinary - cb],
                               false /* fShadow */, "PC BIOS - 0xfffff");
     if (VBOX_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-(int32_t)cbPcBiosBinary, cbPcBiosBinary, pu8PcBiosBinary, 
+    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-(int32_t)cbPcBiosBinary, cbPcBiosBinary, pu8PcBiosBinary,
                               false /* fShadow */, "PC BIOS - 0xffffffff");
     if (VBOX_FAILURE(rc))
         return rc;
@@ -1692,8 +1732,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         pu8LanBootBinary = g_abNetBiosBinary;
         cbLanBootBinary  = g_cbNetBiosBinary;
-    } 
-    else 
+    }
+    else
     {
         pu8LanBootBinary = pData->pu8LanBoot;
         cbLanBootBinary  = cbFileLanBoot;
@@ -1705,7 +1745,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * the (up to) 32 kb ROM image.
      */
     if (pu8LanBootBinary)
-        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, pu8LanBootBinary, 
+        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, pu8LanBootBinary,
                                   true /* fShadow */, "Net Boot ROM");
 
     rc = CFGMR3QueryU8(pCfgHandle, "DelayBoot", &pData->uBootDelay);
