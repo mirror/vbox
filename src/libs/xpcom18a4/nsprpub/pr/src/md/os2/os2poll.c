@@ -88,7 +88,7 @@ PRInt32 _PR_MD_PR_POLL(PRPollDesc *pds, PRIntn npds, PRIntervalTime timeout)
     rd = 0;
     wt = 0;
     ex = 0;
-    socks = (int) PR_MALLOC( npds * 3 * sizeof(int) );
+    socks = (int *) PR_MALLOC( npds * 3 * sizeof(int) );
     
     if (!socks)
     {
