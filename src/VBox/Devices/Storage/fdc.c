@@ -2622,6 +2622,15 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
     else {
         AssertMsg (rc == VERR_PDM_NO_ATTACHED_DRIVER,
                    ("Failed to attach LUN#%d. rc=%Vrc\n", drv->iLUN, rc));
+        switch (rc)
+        {
+            case VERR_ACCESS_DENIED:
+                /* Error already catched by DrvHostBase */
+                return rc;
+            default:
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("The floppy controller cannot attach to the floppy drive"));
+        }
     }
 
     if (VBOX_FAILURE (rc)) {
