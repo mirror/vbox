@@ -35,6 +35,7 @@ endif
 
 ifndef VBOX_OSE
 SUBDIRS_LIBRARIES += Storage/VBoxHDDFormats
+SUBDIRS_CLEAN     += Storage/VBoxHDDFormats
 endif
 
 #
@@ -274,7 +275,8 @@ endif
 ifdef VBOX_WITH_AHCI
 DevicesR3_DEFS	       += VBOX_WITH_AHCI IN_AHCI_R3
 DevicesR3_SOURCES      += \
-	Storage/DevAHCI.cpp
+	Storage/DevAHCI.cpp \
+	Storage/ATAController.cpp
 endif
 
 ifdef VBOX_WITH_USB
@@ -349,7 +351,8 @@ endif
 ifdef VBOX_WITH_AHCI
 VBoxDDGC_DEFS          += VBOX_WITH_AHCI IN_AHCI_GC
 VBoxDDGC_SOURCES       += \
-	Storage/DevAHCI.cpp
+	Storage/DevAHCI.cpp \
+	Storage/ATAController.cpp
 endif
 
 ifeq ($(VBOX_LDR_FMT32),pe)
@@ -398,7 +401,8 @@ endif
 ifdef VBOX_WITH_AHCI
 VBoxDDR0_DEFS          += VBOX_WITH_AHCI IN_AHCI_R0
 VBoxDDR0_SOURCES       += \
-	Storage/DevAHCI.cpp
+	Storage/DevAHCI.cpp \
+	Storage/ATAController.cpp
 endif
 
 ifeq ($(VBOX_LDR_FMT32),pe)
