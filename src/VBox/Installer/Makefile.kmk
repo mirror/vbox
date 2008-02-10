@@ -19,7 +19,7 @@ DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
 ifeq ($(BUILD_PLATFORM),win) # guard when cross-compiling.
- SUBDIRS.win = win32
+ SUBDIRS.win = win
 endif
 ifeq ($(BUILD_PLATFORM),linux)
  SUBDIRS.linux = linux
