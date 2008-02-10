@@ -585,51 +585,52 @@ ASM_END
 void print_detected_harddisks()
 {
     Bit16u ebda_seg=read_word(0x0040,0x000E);
-    Bit8u actual_device;
-    Bit8u detected_devices = 0;
+    Bit8u actual_device = 0;
     Bit8u first_ctrl_printed = 0;
     Bit8u second_ctrl_printed = 0;
+    Bit8u device;
 
-    for (actual_device = 0; actual_device < BX_MAX_ATA_DEVICES; actual_device++)
+    device = read_byte(ebda_seg, &EbdaData->ata.hdidmap[actual_device]);
+
+    while ((actual_device < BX_MAX_ATA_DEVICES) && (device < BX_MAX_ATA_DEVICES))
     {
         Bit8u device_position;
-        Bit8u device = read_byte(ebda_seg, &EbdaData->ata.devices[actual_device].device);
 
-        if (device == 0xff) /* logo.c is included before ATA_DEVICE_HD is defined */
+        device_position = device;
+
+        if ((device_position < 4) && (first_ctrl_printed == 0))
         {
-            if ((actual_device < 4) && (first_ctrl_printed == 0))
-            {
-                printf("IDE controller:\n");
-                first_ctrl_printed = 1;
-            }
-            else if ((actual_device >= 4) && (second_ctrl_printed == 0))
-            {
-                printf("AHCI controller:\n");
-                second_ctrl_printed = 1;
-            }
-
-            detected_devices++;
-
-            printf("\n    %d) ", detected_devices);
-
-            /* If actual_device bigger than or equal 4
-             * this is the next controller and
-             * the positions start at the beginning.
-             */
-            device_position = actual_device;
-            if (actual_device >= 4)
-                device_position -= 4;
-
-            if (device_position / 2)
-                printf("Secondary ");
-            else
-                printf("Primary ");
-
-            if (device_position % 2)
-                printf("Slave");
-            else
-                printf("Master");
+            printf("IDE controller:\n");
+            first_ctrl_printed = 1;
         }
+        else if ((device_position >= 4) && (second_ctrl_printed == 0))
+        {
+            printf("\n\nAHCI controller:\n");
+            second_ctrl_printed = 1;
+        }
+
+        printf("\n    %d) ", actual_device+1);
+
+        /*
+         * If actual_device is bigger than or equal 4
+         * this is the next controller and
+         * the positions start at the beginning.
+         */
+        if (device_position >= 4)
+            device_position -= 4;
+
+        if (device_position / 2)
+            printf("Primary ");
+        else
+            printf("Secondary ");
+
+        if (device_position % 2)
+            printf("Slave");
+        else
+            printf("Master");
+
+        actual_device++;
+        device = read_byte(ebda_seg, &EbdaData->ata.hdidmap[actual_device]);
     }
 
     printf("\n");
@@ -644,14 +645,15 @@ Bit8u get_boot_drive(scode)
 
     for (actual_device = 0; actual_device < BX_MAX_ATA_DEVICES; actual_device++)
     {
-        Bit8u device = read_byte(ebda_seg, &EbdaData->ata.devices[actual_device].device);
+        Bit8u device = read_byte(ebda_seg, &EbdaData->ata.hdidmap[actual_device]);
 
-        if (device == 0xff) /* logo.c is included before ATA_DEVICE_HD is defined */
-            detected_devices++;
+        if (device < BX_MAX_ATA_DEVICES)
+        {
+            scode--;
+            if (scode == 0x01)
+                return actual_device;
+        }
     }
-
-    if ((scode-0x01) <= detected_devices)
-        return scode-0x02;
 
     /* Scancode is higher than number of available devices */
     return 0x08;
