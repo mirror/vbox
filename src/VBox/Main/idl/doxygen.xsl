@@ -6,7 +6,7 @@
  *  generate the documentation using Doxygen.
 
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -392,6 +392,12 @@ owns the object will most likely fail or crash your application.
  *  attributes
 -->
 <xsl:template match="interface//attribute | collection//attribute">
+  <xsl:if test="@array">
+      <xsl:message terminate="yes">
+          <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
+          <xsl:text>'array' attributes are not supported, use 'safearray="yes"' instead.</xsl:text>
+      </xsl:message>
+  </xsl:if>
     <xsl:apply-templates select="@if" mode="begin"/>
     <xsl:apply-templates select="desc"/>
     <xsl:text>    </xsl:text>
@@ -525,7 +531,7 @@ owns the object will most likely fail or crash your application.
         <xsl:if test="@dir='return'">
             <xsl:message terminate="yes">
                 <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-                <xsl:text>return array parameters are not currently supported</xsl:text>
+                <xsl:text>return 'array' parameters are not supported, use 'safearray="yes"' instead.</xsl:text>
             </xsl:message>
         </xsl:if>
         <xsl:text>[array, </xsl:text>
@@ -579,15 +585,16 @@ owns the object will most likely fail or crash your application.
 ">
     <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
+    <xsl:if test="../@array and ../@safearray='yes'">
+        <xsl:message terminate="yes">
+            <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+            <xsl:text>either 'array' or 'safearray="yes"' attribute is allowed, but not both!</xsl:text>
+        </xsl:message>
+    </xsl:if>
+
     <xsl:choose>
         <!-- modifiers (ignored for 'enumeration' attributes)-->
         <xsl:when test="name(current())='type' and ../@mod">
-            <xsl:if test="../@array">
-                <xsl:message terminate="yes">
-                        <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-                    <xsl:text>either 'array' or 'mod' attribute is allowed, but not both!</xsl:text>
-                </xsl:message>
-            </xsl:if>
             <xsl:choose>
                 <xsl:when test="../@mod='ptr'">
                     <xsl:choose>
@@ -682,6 +689,9 @@ owns the object will most likely fail or crash your application.
             </xsl:choose>
         </xsl:otherwise>
     </xsl:choose>
+  <xsl:if test="../@safearray='yes'">
+    <xsl:text>[]</xsl:text>
+  </xsl:if>
 </xsl:template>
 
 </xsl:stylesheet>
