@@ -27,6 +27,8 @@
 #ifndef ___VBox_com_array_h
 #define ___VBox_com_array_h
 
+#include <VBox/com/ptr.h>
+
 /** @defgroup   grp_COM_arrays    COM/XPCOM Arrays
  * @{
  *
@@ -124,15 +126,32 @@
 
  * @endcode
  *
- * Implementation declarations and function bodies of attribute getters and
- * setters are very similar to the examples shown above and therefore not
- * explained separately.
+ * For interoperability with standard C++ containers, there is a template
+ * constructor that takes such a container as argument and performs a deep copy
+ * of its contents. This can be used in method implementations like this:
+ * @code
+
+    STDMETHODIMP Component::COMGETTER(Values) (ComSafeArrayOut (int, aValues))
+    {
+        // ... assume there is a |std::list <int> mValues| data member
+
+        com::SafeArray <int> values (mValues);
+        values.detachTo (ComSafeArrayOutArg (aValues));
+
+        return S_OK;
+    }
+
+ * @endcode
  *
  * The current implementation of the SafeArray layer supports all types normally
- * allowed in XIDL as array element types (including 'wstring', 'uuid' types and
- * interface pointers). However 'pointer-to' types (e.g. 'long *', 'wstrig *',
- * 'IUnknown **') are not supported and therefore cannot be used as element
- * types.
+ * allowed in XIDL as array element types (including 'wstring' and 'uuid').
+ * However, 'pointer-to-...' types (e.g. 'long *', 'wstring *') are not
+ * supported and therefore cannot be used as element types.
+ *
+ * Arrays of interface pointers are also supported but they require to use a
+ * special SafeArray implementation, com::SafeIfacePointer, which takes the
+ * interface class name as a template argument (e.g. com::SafeIfacePointer
+ * <IUnknown>). This implementation functions identically to com::SafeArray.
  */
 
 #if defined (VBOX_WITH_XPCOM)
@@ -192,13 +211,21 @@ struct SafeArrayTraits
 {
     static void Init (T &aElem) { aElem = 0; }
     static void Uninit (T &aElem) { aElem = 0; }
+    static void Copy (const T &aFrom, T &aTo) { aTo = aFrom; }
 
-    /* Magic to workaround strict rules of par. 4.4.4 of the C++ standard.
-     * Then initial reason for this magic is that XPIDL declares input strings
+    /* Magic to workaround strict rules of par. 4.4.4 of the C++ standard (that
+     * in particular forbid casts of 'char **' to 'const char **'). Then initial
+     * reason for this magic is that XPIDL declares input strings
      * (char/PRUnichar pointers) as const but doesn't do so for pointers to
      * arrays. */
     static T *__asInParam_Arr (T *aArr) { return aArr; }
     static T *__asInParam_Arr (const T *aArr) { return const_cast <T *> (aArr); }
+};
+
+template <typename T>
+struct SafeArrayTraits <T *>
+{
+    // Arbitrary pointers are not supported
 };
 
 template<>
@@ -212,6 +239,12 @@ struct SafeArrayTraits <PRUnichar *>
             ::SysFreeString (aElem);
             aElem = NULL;
         }
+    }
+
+    static void Copy (const PRUnichar * aFrom, PRUnichar * &aTo)
+    {
+        AssertCompile (sizeof (PRUnichar) == sizeof (OLECHAR));
+        aTo = aFrom ? ::SysAllocString ((const OLECHAR *) aFrom) : NULL;
     }
 
     /* Magic to workaround strict rules of par. 4.4.4 of the C++ standard */
@@ -232,25 +265,32 @@ struct SafeArrayTraits <PRUnichar *>
 template <typename T>
 struct SafeArrayTraits
 {
-    static VARTYPE VarType() { AssertMsgFailedReturn ("Not supported", VT_EMPTY) }
+    // Arbitrary types are not supported
 };
 
 template<>
 struct SafeArrayTraits <LONG>
 {
     static VARTYPE VarType() { return VT_I4; }
+    static void Copy (LONG aFrom, LONG &aTo) { aTo = aFrom; }
 };
 
 template<>
 struct SafeArrayTraits <ULONG>
 {
     static VARTYPE VarType() { return VT_UI4; }
+    static void Copy (ULONG aFrom, ULONG &aTo) { aTo = aFrom; }
 };
 
 template<>
 struct SafeArrayTraits <BSTR>
 {
     static VARTYPE VarType() { return VT_BSTR; }
+
+    static void Copy (BSTR aFrom, BSTR &aTo)
+    {
+        aTo = aFrom ? ::SysAllocString ((const OLECHAR *) aFrom) : NULL;
+    }
 };
 
 #endif /* defined (VBOX_WITH_XPCOM) */
@@ -283,8 +323,8 @@ struct SafeArrayTraits <BSTR>
  *
  * @note This class is not thread-safe.
  */
-template  <typename T>
-class SafeArray : public SafeArrayTraits <T>
+template  <typename T, class Traits = SafeArrayTraits <T> >
+class SafeArray : protected Traits
 {
 public:
 
@@ -357,10 +397,34 @@ public:
     }
 
     /**
+     * Creates a deep copy of the goven standard C++ container.
+     *
+     * @param aCntr Container object to copy.
+     *
+     * @param C     Standard C++ container template class (normally deduced from
+     *              @c aCntr).
+     */
+    template <template <class> class C>
+    SafeArray (const C <T> & aCntr)
+    {
+        reset (aCntr.size());
+        AssertReturnVoid (!isNull());
+
+        int i = 0;
+        for (typename C <T>::const_iterator it = aCntr.begin();
+             it != aCntr.end(); ++ it, ++ i)
+#if defined (VBOX_WITH_XPCOM)
+            Copy (*it, m.arr [i]);
+#else
+            Copy (*it, m.raw [i]);
+#endif
+    }
+
+    /**
      * Destroys this instance after calling #setNull() to release allocated
      * resources. See #setNull() for more details.
      */
-    ~SafeArray() { setNull(); }
+    virtual ~SafeArray() { setNull(); }
 
     /**
      * Returns @c true if this instance represents a null array.
@@ -375,7 +439,7 @@ public:
      *       the corresponding cleanup routine for the element type before the
      *       array itself is destroyed.
      */
-    void setNull() { m.uninit(); }
+    virtual void setNull() { m.uninit(); }
 
     /**
      * Returns @c true if this instance is weak. A weak instance doesn't own the
@@ -408,7 +472,7 @@ public:
      * @return          @c true on success and false if there is not enough
      *                  memory for resizing.
      */
-    bool resize (size_t aNewSize)
+    virtual bool resize (size_t aNewSize)
     {
         /// @todo Implement me!
         AssertFailedReturn (false);
@@ -422,7 +486,7 @@ public:
      * @return          @c true on success and false if there is not enough
      *                  memory for resizing.
      */
-    bool reset (size_t aNewSize)
+    virtual bool reset (size_t aNewSize)
     {
         m.uninit();
 
@@ -531,7 +595,7 @@ public:
      *
      * @param aArg  Output method parameter to clone to.
      */
-    const SafeArray &cloneTo (ComSafeArrayOut (T, aArg)) const
+    virtual const SafeArray &cloneTo (ComSafeArrayOut (T, aArg)) const
     {
         /// @todo Implement me!
         AssertFailedReturn (*this);
@@ -552,7 +616,7 @@ public:
      *
      * @param aArg  Output method parameter to detach to.
      */
-    SafeArray &detachTo (ComSafeArrayOut (T, aArg))
+    virtual SafeArray &detachTo (ComSafeArrayOut (T, aArg))
     {
         AssertReturn (m.isWeak == false, *this);
 
@@ -610,7 +674,7 @@ public:
 
     static const SafeArray Null;
 
-private:
+protected:
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(SafeArray)
 
@@ -696,6 +760,249 @@ private:
     };
 
     Data m;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+#if defined (VBOX_WITH_XPCOM)
+
+template <class I>
+struct SafeIfaceArrayTraits
+{
+    static void Init (I * &aElem) { aElem = NULL; }
+    static void Uninit (I * &aElem)
+    {
+        if (aElem)
+        {
+            aElem->Release();
+            aElem = NULL;
+        }
+    }
+
+    static void Copy (I * aFrom, I * &aTo)
+    {
+        if (aFrom != NULL)
+        {
+            aTo = aFrom;
+            aTo->AddRef();
+        }
+        else
+            aTo = NULL;
+    }
+
+    /* Magic to workaround strict rules of par. 4.4.4 of the C++ standard. */
+    static I **__asInParam_Arr (I **aArr) { return aArr; }
+    static I **__asInParam_Arr (const I **aArr) { return const_cast <I **> (aArr); }
+};
+
+#else /* defined (VBOX_WITH_XPCOM) */
+
+template <class I>
+struct SafeIfaceArrayTraits
+{
+    static VARTYPE VarType() { return VT_UNKNOWN; }
+
+    static void Copy (I * aFrom, I * &aTo)
+    {
+        if (aFrom != NULL)
+        {
+            aTo = aFrom;
+            aTo->AddRef();
+        }
+        else
+            aTo = NULL;
+    }
+};
+
+#endif /* defined (VBOX_WITH_XPCOM) */
+
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Version of com::SafeArray for arrays of interface pointers.
+ *
+ * Except that it manages arrays of interface pointers, the usage of this class
+ * is identical to com::SafeArray.
+ *
+ * @param I     Interface class (no asterisk).
+ */
+template <class I>
+class SafeIfaceArray : public SafeArray <I *, SafeIfaceArrayTraits <I> >
+{
+public:
+
+    typedef SafeArray <I *, SafeIfaceArrayTraits <I> > Base;
+
+    /**
+     * Creates a null array.
+     */
+    SafeIfaceArray() {}
+
+    /**
+     * Creates a new array of the given size. All elements of the newly created
+     * array initialized with null values.
+     *
+     * @param aSize     Initial number of elements in the array. Must be greater
+     *                  than 0.
+     *
+     * @note If this object remains null after construction it means that there
+     *       was not enough memory for creating an array of the requested size.
+     *       The constructor will also assert in this case.
+     */
+    SafeIfaceArray (size_t aSize) { reset (aSize); }
+
+    /**
+     * Weakly attaches this instance to the existing array passed in a method
+     * parameter declared using the ComSafeArrayIn macro. When using this call,
+     * always wrap the parameter name in the ComSafeArrayOutArg macro call like
+     * this:
+     * <pre>
+     *  SafeArray safeArray (ComSafeArrayInArg (aArg));
+     * </pre>
+     *
+     * Note that this constructor doesn't take the ownership of the array. In
+     * particular, it means that operations that operate on the ownership (e.g.
+     * #detachTo()) are forbidden and will assert.
+     *
+     * @param aArg  Input method parameter to attach to.
+     */
+    SafeIfaceArray (ComSafeArrayIn (I *, aArg))
+    {
+#if defined (VBOX_WITH_XPCOM)
+
+        AssertReturnVoid (aArg != NULL);
+
+        Base::m.size = aArgSize;
+        Base::m.arr = aArg;
+        Base::m.isWeak = true;
+
+#else /* defined (VBOX_WITH_XPCOM) */
+
+        AssertReturnVoid (aArg != NULL);
+        SAFEARRAY *arg = *aArg;
+
+        if (arg)
+        {
+            AssertReturnVoid (arg->cDims == 1);
+
+            VARTYPE vt;
+            HRESULT rc = SafeArrayGetVartype (arg, &vt);
+            AssertComRCReturnVoid (rc);
+            AssertMsgReturnVoid (vt == VT_UNKNOWN,
+                                 ("Expected vartype VT_UNKNOWN, got %d.\n",
+                                  VarType(), vt));
+            GUID guid;
+            rc = SafeArrayGetIID (arg, &guid);
+            AssertComRCReturnVoid (rc);
+            AssertMsgReturnVoid (InlineIsEqualGUID (_ATL_IIDOF (I), guid),
+                                 ("Expected IID {%Vuuid}, got {%Vuuid}.\n",
+                                  &_ATL_IIDOF (I), &guid));
+        }
+
+        m.arr = arg;
+        m.isWeak = true;
+
+        AssertReturnVoid (accessRaw() != NULL);
+
+#endif /* defined (VBOX_WITH_XPCOM) */
+    }
+
+    /**
+     * Creates a deep copy of the given standard C++ container that stores
+     * interface pointers as objects of the ComPtr <I> class.
+     *
+     * @param aCntr Container object to copy.
+     *
+     * @param C     Standard C++ container template class (normally deduced from
+     *              @c aCntr).
+     * @param A     Standard C++ allocator class (deduced from @c aCntr).
+     * @param OI    Argument to the ComPtr template (deduced from @c aCntr).
+     */
+    template <template <typename, typename> class C, class A, class OI>
+    SafeIfaceArray (const C <ComPtr <OI>, A> & aCntr)
+    {
+        typedef C <ComPtr <OI>, A> List;
+
+        reset (aCntr.size());
+        AssertReturnVoid (!Base::isNull());
+
+        int i = 0;
+        for (typename List::const_iterator it = aCntr.begin();
+             it != aCntr.end(); ++ it, ++ i)
+#if defined (VBOX_WITH_XPCOM)
+            Copy (*it, Base::m.arr [i]);
+#else
+            Copy (*it, Base::m.raw [i]);
+#endif
+    }
+
+    /**
+     * Creates a deep copy of the given standard C++ container that stores
+     * interface pointers as objects of the ComObjPtr <I> class.
+     *
+     * @param aCntr Container object to copy.
+     *
+     * @param C     Standard C++ container template class (normally deduced from
+     *              @c aCntr).
+     * @param A     Standard C++ allocator class (deduced from @c aCntr).
+     * @param OI    Argument to the ComObjPtr template (deduced from @c aCntr).
+     */
+    template <template <typename, typename> class C, class A, class OI>
+    SafeIfaceArray (const C <ComObjPtr <OI>, A> & aCntr)
+    {
+        typedef C <ComObjPtr <OI>, A> List;
+
+        reset (aCntr.size());
+        AssertReturnVoid (!Base::isNull());
+
+        int i = 0;
+        for (typename List::const_iterator it = aCntr.begin();
+             it != aCntr.end(); ++ it, ++ i)
+#if defined (VBOX_WITH_XPCOM)
+            Copy (*it, Base::m.arr [i]);
+#else
+            Copy (*it, Base::m.raw [i]);
+#endif
+    }
+
+    /**
+     * Reinitializes this instance by preallocating space for the given number
+     * of elements. The previous array contents is lost.
+     *
+     * @param aNewSize  New number of elements in the array.
+     * @return          @c true on success and false if there is not enough
+     *                  memory for resizing.
+     */
+    virtual bool reset (size_t aNewSize)
+    {
+        Base::m.uninit();
+
+#if defined (VBOX_WITH_XPCOM)
+
+        AssertReturn (aNewSize > 0, false);
+
+        Base::m.arr = (I **) nsMemory::Alloc (aNewSize * sizeof (I *));
+        AssertReturn (Base::m.arr != NULL, false);
+
+        Base::m.size = aNewSize;
+
+        for (size_t i = 0; i < Base::m.size; ++ i)
+            Init (Base::m.arr [i]);
+
+#else
+
+        AssertReturn (aNewSize > 0, false);
+
+        SAFEARRAYBOUND bound = { aNewSize, 0 };
+        m.arr = SafeArrayCreateEx (VT_UNKNOWN, 1, &bound,
+                                   (PVOID) &_ATL_IIDOF (I));
+        AssertReturn (m.arr != NULL, false);
+
+        AssertReturn (accessRaw() != NULL, false);
+
+#endif
+        return true;
+    }
 };
 
 } /* namespace com */
