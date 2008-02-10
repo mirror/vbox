@@ -19,7 +19,7 @@
 #define DEV_PCBIOS_H
 
 #define VBOX_DMI_TABLE_ENTR          2
-#define VBOX_DMI_TABLE_SIZE          180 /* XXX make this variable */
+#define VBOX_DMI_TABLE_SIZE          0x100 /* XXX make this variable */
 #define VBOX_DMI_TABLE_BASE          0xe1000
 #define VBOX_DMI_TABLE_VER           0x23
 

@@ -843,9 +843,10 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
 #define STRCPY(p, s) \
     do { \
         size_t _len = strlen(s) + 1; \
-        if (pszStr + _len - (char *)pTable >= cbMax) \
+        size_t _max = (unsigned)(pszStr + _len - (char *)pTable) + 1; \
+        if (_max > cbMax) \
             return PDMDevHlpVMSetError(pDevIns, VERR_TOO_MUCH_DATA, RT_SRC_POS, \
-                    N_("DMI string too long (%zu): \"%s\""), _len, s); \
+                    N_("One of the DMI strings is too long. Check all bios/Dmi* configuration entries. At least %zu bytes are needed but there is no space for more than %d bytes"), _max, cbMax); \
         memcpy(p, s, _len); \
         p += _len; \
     } while (0)
@@ -873,6 +874,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
                                    N_("Configuration error: Querying \"DmiUuid\" as a string failed"));
     READCFG("DmiFamily",  pszDmiFamily,   "Virtual Machine");
 
+    /* DMI BIOS information */
     PDMIBIOSINF pBIOSInf         = (PDMIBIOSINF)pszStr;
     pszStr                       = (char *)(pBIOSInf + 1);
     iStrNr                       = 1;
@@ -903,7 +905,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
                                      ;
     *pszStr++                    = '\0';
 
-
+    /* DMI system information */
     PDMISYSTEMINF pSystemInf     = (PDMISYSTEMINF)pszStr;
     pszStr                       = (char *)(pSystemInf + 1);
     iStrNr                       = 1;
@@ -939,13 +941,10 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     STRCPY(pszStr, pszDmiFamily);
     *pszStr++                    = '\0';
 
+    /* If more fields are added here, fix the size check in STRCPY */
+
 #undef STRCPY
 #undef READCFG
-
-    if (pszStr - (char *)pTable > VBOX_DMI_TABLE_SIZE)
-        return PDMDevHlpVMSetError(pDevIns, VERR_BUFFER_OVERFLOW, RT_SRC_POS,
-                                   N_("DMI table too long (have=%d, max=%d)"),
-                                   pszStr - (char *)pTable, VBOX_DMI_TABLE_SIZE);
 
     MMR3HeapFree(pszDmiVendor);
     MMR3HeapFree(pszDmiProduct);
@@ -1372,11 +1371,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
     uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
-    rc = pcbiosPlantDMITable(pDevIns, pData->au8DMIPage, 0x100 /* see below */, &uuid, pCfgHandle);
+    rc = pcbiosPlantDMITable(pDevIns, pData->au8DMIPage, VBOX_DMI_TABLE_SIZE, &uuid, pCfgHandle);
     if (VBOX_FAILURE(rc))
         return rc;
     if (pData->u8IOAPIC)
-        pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + 0x100);
+        pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + VBOX_DMI_TABLE_SIZE);
 
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, 0x1000, pData->au8DMIPage, false /* fShadow */, "DMI tables");
     if (VBOX_FAILURE(rc))
