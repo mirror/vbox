@@ -2370,6 +2370,7 @@ void ata_detect( )
       outb(iobase1+ATA_CB_DH, slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0);
       sc = inb(iobase1+ATA_CB_SC);
       sn = inb(iobase1+ATA_CB_SN);
+
       if ((sc==0x01) && (sn==0x01)) {
         cl = inb(iobase1+ATA_CB_CL);
         ch = inb(iobase1+ATA_CB_CH);
@@ -2451,9 +2452,27 @@ void ata_detect( )
       }
       else
       {
+          Bit32u temp_sectors = sectors;
+
+          //FIXME: only valid for LBA translation
+          lspt = 63;
+          temp_sectors /= 63;
+          lheads = temp_sectors / 1024;
+          if (lheads>128) lheads = 255;
+          else if (lheads>64) lheads = 128;
+          else if (lheads>32) lheads = 64;
+          else if (lheads>16) lheads = 32;
+          else lheads=16;
+          lcylinders = temp_sectors / lheads;
+
+          // clip to 1024 cylinders
+          if (lcylinders > 1024) lcylinders=1024;
+
+#if 0
           lcylinders = 0;
           lheads = 0;
           lspt = 0;
+#endif
       }
       BX_INFO("ata%d-%d: PCHS=%u/%d/%d LCHS=%u/%u/%u\n", channel, slave, cylinders, heads, spt, lcylinders, lheads, lspt);
 #endif /* VBOX */
