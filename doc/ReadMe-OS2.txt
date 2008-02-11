@@ -127,7 +127,11 @@ of VirtualBox and may be absent in versions for other platforms.
    shortcuts like Host+Q) may not work. Please note that the guest keyboard
    layout has nothing to do with the host layout so you will still be able to
    switch layouts in the guest using its own means.
-   
+
+3. Make sure you do not do 'set LIBPATHSTRICT=T' in the environment you start
+   VirtualBox from: it will make the VirtualBox keyboard hook screw up your
+   host desktop (a workaround is to be found).
+
 
 History of Changes
 ------------------
@@ -135,3 +139,11 @@ History of Changes
 * 03.02.2008
 
   - Initial release.
+
+* XX.XX.XXXX
+
+  - Fixed: VirtualBox would hang or crash frequently on SMP machines in
+    ACPI mode.
+
+  - Fixed: VBoxSDL keyboard key event to scan code conversion [contributed
+    by Paul Smedley].
