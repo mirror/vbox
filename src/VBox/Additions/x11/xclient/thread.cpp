@@ -58,7 +58,11 @@ VBoxGuestThread::~VBoxGuestThread(void)
     if (NIL_RTTHREAD != mSelf)
     {
         LogRelThisFunc(("Warning!  Stopping thread %s, as it is still running!\n", mName));
-        stop(1000, 0);
+        try
+        {
+            stop(1000, 0);
+        }
+        catch(...) {}
     }
 }
 

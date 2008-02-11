@@ -160,7 +160,11 @@ public:
         if (mRunning)  /* Assertion */
         {
             LogRel(("VBoxService: seamless host object still running!  Stopping...\n"));
-            stop();
+            try
+            {
+                stop();
+            }
+            catch(...) {}
         }
     }
 };
