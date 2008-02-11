@@ -475,6 +475,7 @@ public:
     virtual bool resize (size_t aNewSize)
     {
         /// @todo Implement me!
+        NOREF (aNewSize);
         AssertFailedReturn (false);
     }
 
@@ -598,6 +599,12 @@ public:
     virtual const SafeArray &cloneTo (ComSafeArrayOut (T, aArg)) const
     {
         /// @todo Implement me!
+#if defined (VBOX_WITH_XPCOM)
+        NOREF (aArgSize);
+        NOREF (aArg);
+#else
+        NOREF (aArg);
+#endif
         AssertFailedReturn (*this);
     }
 
