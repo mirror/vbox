@@ -2608,7 +2608,7 @@ static bool UseAbsoluteMouse(void)
     return (gfAbsoluteMouseHost && gfAbsoluteMouseGuest);
 }
 
-#if defined(RT_OS_DARWIN)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_OS2)
 /**
  * Fallback keycode conversion using SDL symbols.
  *
@@ -3055,6 +3055,8 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
     RTPrintf("scancode=%#x -> %#x\n", ev->keysym.scancode, keycode);
 #endif
 
+#elif RT_OS_OS2
+	keycode = Keyevent2KeycodeFallback(ev);
 #endif /* RT_OS_DARWIN */
     return keycode;
 }
