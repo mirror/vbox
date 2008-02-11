@@ -20,6 +20,7 @@
 
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
+#include <VBox/com/array.h>
 #include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/EventQueue.h>
@@ -221,7 +222,7 @@ int main(int argc, char *argv[])
 
     Utf8Str nullUtf8Str;
     printf ("nullUtf8Str='%s'\n", nullUtf8Str.raw());
-    
+
     Utf8Str simpleUtf8Str = "simpleUtf8Str";
     printf ("simpleUtf8Str='%s'\n", simpleUtf8Str.raw());
 
@@ -247,7 +248,7 @@ int main(int argc, char *argv[])
         break;
     }
 
-#if 1
+#if 0
     // IUnknown identity test
     ////////////////////////////////////////////////////////////////////////////
     {
@@ -332,6 +333,29 @@ int main(int argc, char *argv[])
         Bstr version;
         CHECK_ERROR_BREAK (virtualBox, COMGETTER(Version) (version.asOutParam()));
         printf ("VirtualBox version = %ls\n", version.raw());
+    }
+#endif
+
+#if 1
+    // Array test
+    ////////////////////////////////////////////////////////////////////////////
+    {
+        printf ("Calling IVirtualBox::Machines...\n");
+
+        com::SafeArray <ULONG> aaa (10);
+
+        com::SafeIfaceArray <IMachine> machines;
+        CHECK_ERROR_BREAK (virtualBox,
+                           COMGETTER(Machines2) (ComSafeArrayAsOutParam (machines)));
+
+        printf ("%u machines registered.\n", machines.size());
+
+        for (size_t i = 0; i < machines.size(); ++ i)
+        {
+            Bstr name;
+            CHECK_ERROR_BREAK (machines [i], COMGETTER(Name) (name.asOutParam()));
+            printf ("machines[%u]='%s'\n", i, Utf8Str (name).raw());
+        }
     }
 #endif
 

@@ -56,6 +56,7 @@
 #include <VBox/version.h>
 
 #include <VBox/com/com.h>
+#include <VBox/com/array.h>
 
 #include <algorithm>
 #include <set>
@@ -466,7 +467,8 @@ STDMETHODIMP VirtualBox::COMGETTER(Host) (IHost **aHost)
     return S_OK;
 }
 
-STDMETHODIMP VirtualBox::COMGETTER(SystemProperties) (ISystemProperties **aSystemProperties)
+STDMETHODIMP
+VirtualBox::COMGETTER(SystemProperties) (ISystemProperties **aSystemProperties)
 {
     if (!aSystemProperties)
         return E_POINTER;
@@ -478,7 +480,9 @@ STDMETHODIMP VirtualBox::COMGETTER(SystemProperties) (ISystemProperties **aSyste
     return S_OK;
 }
 
-/** @note Locks this object for reading. */
+/**
+ * @note Locks this object for reading.
+ */
 STDMETHODIMP VirtualBox::COMGETTER(Machines) (IMachineCollection **aMachines)
 {
     if (!aMachines)
@@ -497,7 +501,29 @@ STDMETHODIMP VirtualBox::COMGETTER(Machines) (IMachineCollection **aMachines)
     return S_OK;
 }
 
-/** @note Locks this object for reading. */
+/**
+ * @note Locks this object for reading.
+ */
+STDMETHODIMP
+VirtualBox::COMGETTER(Machines2) (ComSafeArrayOut (IMachine *, aMachines))
+{
+    if (ComSafeArrayOutIsNull (aMachines))
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    SafeIfaceArray <IMachine> machines (mData.mMachines);
+    machines.detachTo (ComSafeArrayOutArg (aMachines));
+
+    return S_OK;
+}
+
+/**
+ * @note Locks this object for reading.
+ */
 STDMETHODIMP VirtualBox::COMGETTER(HardDisks) (IHardDiskCollection **aHardDisks)
 {
     if (!aHardDisks)
@@ -516,7 +542,9 @@ STDMETHODIMP VirtualBox::COMGETTER(HardDisks) (IHardDiskCollection **aHardDisks)
     return S_OK;
 }
 
-/** @note Locks this object for reading. */
+/**
+ * @note Locks this object for reading.
+ */
 STDMETHODIMP VirtualBox::COMGETTER(DVDImages) (IDVDImageCollection **aDVDImages)
 {
     if (!aDVDImages)
@@ -535,7 +563,9 @@ STDMETHODIMP VirtualBox::COMGETTER(DVDImages) (IDVDImageCollection **aDVDImages)
     return S_OK;
 }
 
-/** @note Locks this object for reading. */
+/**
+ * @note Locks this object for reading.
+ */
 STDMETHODIMP VirtualBox::COMGETTER(FloppyImages) (IFloppyImageCollection **aFloppyImages)
 {
     if (!aFloppyImages)
@@ -554,7 +584,9 @@ STDMETHODIMP VirtualBox::COMGETTER(FloppyImages) (IFloppyImageCollection **aFlop
     return S_OK;
 }
 
-/** @note Locks this object for reading. */
+/**
+ * @note Locks this object for reading.
+ */
 STDMETHODIMP VirtualBox::COMGETTER(ProgressOperations) (IProgressCollection **aOperations)
 {
     if (!aOperations)
@@ -573,7 +605,9 @@ STDMETHODIMP VirtualBox::COMGETTER(ProgressOperations) (IProgressCollection **aO
     return S_OK;
 }
 
-/** @note Locks this object for reading. */
+/**
+ * @note Locks this object for reading.
+ */
 STDMETHODIMP VirtualBox::COMGETTER(GuestOSTypes) (IGuestOSTypeCollection **aGuestOSTypes)
 {
     if (!aGuestOSTypes)
@@ -4060,10 +4094,10 @@ HRESULT VirtualBox::updateSettings (const char *aOldPath, const char *aNewPath)
     return rc;
 }
 
-/** 
+/**
  * Helper method to load the setting tree and turn expected exceptions into
  * COM errors, according to arguments.
- * 
+ *
  * Note that this method will not catch unexpected errors so it may still
  * throw something.
  *
@@ -4119,13 +4153,13 @@ HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
     return S_OK;
 }
 
-/** 
+/**
  * Helper method to save the settings tree and turn expected exceptions to COM
  * errors.
  *
  * Note that this method will not catch unexpected errors so it may still
  * throw something.
- * 
+ *
  * @param aTree Tree to save.
  * @param aFile File to save the tree to.
  */
@@ -4150,7 +4184,7 @@ HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
     return S_OK;
 }
 
-/** 
+/**
  * Handles unexpected exceptions by turning them into COM errors in release
  * builds or by hitting a breakpoint in the release builds.
  *
@@ -4169,7 +4203,7 @@ HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
             rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
         }
  * @endcode
- * 
+ *
  * @param RT_SRC_POS_DECL "RT_SRC_POS" macro instantiation.
  */
 /* static */

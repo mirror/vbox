@@ -111,6 +111,7 @@ public:
     STDMETHOD(COMGETTER(Host)) (IHost **aHost);
     STDMETHOD(COMGETTER(SystemProperties)) (ISystemProperties **aSystemProperties);
     STDMETHOD(COMGETTER(Machines)) (IMachineCollection **aMachines);
+    STDMETHOD(COMGETTER(Machines2)) (ComSafeArrayOut (IMachine *, aMachines));
     STDMETHOD(COMGETTER(HardDisks)) (IHardDiskCollection **aHardDisks);
     STDMETHOD(COMGETTER(DVDImages)) (IDVDImageCollection **aDVDImages);
     STDMETHOD(COMGETTER(FloppyImages)) (IFloppyImageCollection **aFloppyImages);
@@ -268,7 +269,7 @@ public:
                                      bool aCatchLoadErrors,
                                      bool aAddDefaults);
 
-    /** 
+    /**
      * Shortcut to loadSettingsTree (aTree, aFile, true, true, true).
      *
      * Used when the settings file is to be loaded for the first time for the
@@ -280,7 +281,7 @@ public:
         return loadSettingsTree (aTree, aFile, true, true, true);
     }
 
-    /** 
+    /**
      * Shortcut to loadSettingsTree (aTree, aFile, true, false, true).
      *
      * Used when the settings file is loaded again (after it has been fully
@@ -294,7 +295,7 @@ public:
         return loadSettingsTree (aTree, aFile, true, false, true);
     }
 
-    /** 
+    /**
      * Shortcut to loadSettingsTree (aTree, aFile, true, false, false).
      *
      * Used when the settings file is loaded again (after it has been fully
