@@ -311,9 +311,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
             rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
             if (VBOX_SUCCESS(rc))
             {
-                if (pPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_HANDLER)) /** @todo PAGE FLAGS */
+                if (PGM_PAGE_HAVE_ANY_HANDLERS(pPage))
                 {
-                    if (pPage->HCPhys & MM_RAM_FLAGS_PHYSICAL_HANDLER) /** @todo PAGE FLAGS */
+                    if (PGM_PAGE_HAVE_ANY_PHYSICAL_HANDLERS(pPage))
                     {
                         /*
                          * Physical page access handler.
@@ -474,8 +474,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                      */
                     STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersUnhandled);
 
-                    if (    !(pPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL)) /** @todo PAGE FLAGS */
-                        && !(uErr & X86_TRAP_PF_P))
+                    if (    !(pPage->HCPhys & (MM_RAM_FLAGS_VIRTUAL_ALL)) /** @todo PAGE FLAGS */
+                        &&  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) < PGM_PAGE_HNDL_PHYS_STATE_ALL
+                        &&  !(uErr & X86_TRAP_PF_P))
                     {
                         rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
                         if (    VBOX_FAILURE(rc)
@@ -494,9 +495,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                      *        It's writing to an unhandled part of the LDT page several million times.
                      */
                     rc = PGMInterpretInstruction(pVM, pRegFrame, pvFault);
-                    LogFlow(("PGM: PGMInterpretInstruction -> rc=%d HCPhys=%VHp%s%s\n",
-                             rc, pPage->HCPhys, pPage->HCPhys & MM_RAM_FLAGS_PHYSICAL_HANDLER ? " phys" : "",
-                             pPage->HCPhys & MM_RAM_FLAGS_VIRTUAL_HANDLER ? " virt" : ""));
+                    LogFlow(("PGM: PGMInterpretInstruction -> rc=%d HCPhys=%RHp%s%s\n",
+                             rc, pPage->HCPhys,
+                             PGM_PAGE_HAVE_ANY_PHYSICAL_HANDLERS(pPage) ? " phys" : "",
+                             PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS(pPage)  ? " virt" : ""));
                     STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
                     STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eHndUnhandled; });
                     return rc;
@@ -1196,15 +1198,17 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
              */
             const RTHCPHYS HCPhys = pPage->HCPhys; /** @todo FLAGS */
             SHWPTE PteDst;
-            if (HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE))
+            if (    PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) >= PGM_PAGE_HNDL_PHYS_STATE_WRITE
+                ||  (HCPhys & (MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_VIRTUAL_WRITE)))
             {
                 /** @todo r=bird: Are we actually handling dirty and access bits for pages with access handlers correctly? No. */
-                if (!(HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL)))
+                if (    PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) <= PGM_PAGE_HNDL_PHYS_STATE_WRITE
+                    &&  !(HCPhys & MM_RAM_FLAGS_VIRTUAL_ALL))
                     PteDst.u = (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT | X86_PTE_RW))
                              | (HCPhys & X86_PTE_PAE_PG_MASK);
                 else
                 {
-                    LogFlow(("SyncPageWorker: monitored page (%VGp) -> mark not present\n", (HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL))));
+                    LogFlow(("SyncPageWorker: monitored page (%VGp) -> mark not present\n", HCPhys));
                     PteDst.u = 0;
                 }
                 /** @todo count these two kinds. */
@@ -1422,13 +1426,14 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                                  * and executed using a conforming code selector - And marked as readonly.
                                  * Also assume that if we're monitoring a page, it's of no interest to CSAM.
                                  */
+                                PPGMPAGE pPage;
                                 if (    ((PdeSrc.u & PteSrc.u) & (X86_PTE_RW | X86_PTE_US))
                                     ||  iPTDst == ((GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK)   /* always sync GCPtrPage */
                                     ||  !CSAMDoesPageNeedScanning(pVM, (RTGCPTR)GCPtrCurPage)
-                                    ||  pgmRamTestFlags(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK,
-                                                        MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)
+                                    ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK))
+                                         && PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage))
                                    )
-#endif
+#endif /* else: CSAM not active */
                                     PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                                 Log2(("SyncPage: 4K+ %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
                                       GCPtrCurPage, PteSrc.n.u1Present,
@@ -1477,13 +1482,13 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                     /*
                      * Make shadow PTE entry.
                      */
-                    RTHCPHYS HCPhys = pPage->HCPhys; /** @todo PAGE FLAGS */
+                    const RTHCPHYS HCPhys = pPage->HCPhys; /** @todo PAGE FLAGS */
                     SHWPTE PteDst;
                     PteDst.u = (PdeSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
                              | (HCPhys & X86_PTE_PAE_PG_MASK);
-                    if (HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE))
+                    if (PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage))
                     {
-                        if (!(HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL)))
+                        if (!PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage))
                             PteDst.n.u1Write = 0;
                         else
                             PteDst.u = 0;
@@ -1843,7 +1848,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
 #  ifdef VBOX_STRICT
                         PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & GST_PTE_PG_MASK);
                         if (pPage)
-                            AssertMsg(!(pPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)), /** @todo PAGE FLAGS */
+                            AssertMsg(!PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage),
                                       ("Unexpected dirty bit tracking on monitored page %VGv (phys %VGp)!!!!!!\n", GCPtrPage, pPteSrc->u & X86_PTE_PAE_PG_MASK));
 #  endif
                         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,DirtyPageTrap));
@@ -2091,10 +2096,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                          * and executed using a conforming code selector - And marked as readonly.
                          * Also assume that if we're monitoring a page, it's of no interest to CSAM.
                          */
+                        PPGMPAGE pPage;
                         if (    ((PdeSrc.u & pPTSrc->a[iPTSrc].u) & (X86_PTE_RW | X86_PTE_US))
                             ||  !CSAMDoesPageNeedScanning(pVM, (RTGCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)))
-                            ||  pgmRamTestFlags(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK,
-                                                MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)
+                            ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK))
+                                 &&  PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage))
                            )
 #endif
                             PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
@@ -2193,9 +2199,9 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                             }
                         }
 
-                        if (pPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)) /** @todo PAGE FLAGS */
+                        if (PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage))
                         {
-                            if (!(pPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL))) /** @todo PAGE FLAGS */
+                            if (!PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage))
                             {
                                 PteDst.u = PGM_PAGE_GET_HCPHYS(pPage) | PteDstBase.u;
                                 PteDst.n.u1Write = 0;
@@ -3213,9 +3219,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                     }
 
                     /* flags */
-                    if (pPhysPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)) /** @todo PAGE FLAGS */
+                    if (PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPhysPage))
                     {
-                        if (pPhysPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)) /** @todo PAGE FLAGS */
+                        if (!PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPhysPage))
                         {
                             if (PteDst.n.u1Write)
                             {
@@ -3442,11 +3448,11 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                     }
 
                     /* flags */
-                    if (pPhysPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)) /** @todo PAGE FLAGS */
+                    if (PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPhysPage))
                     {
-                        if (pPhysPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)) /** @todo PAGE FLAGS */
+                        if (!PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPhysPage))
                         {
-                            if (!(pPhysPage->HCPhys & MM_RAM_FLAGS_PHYSICAL_TEMP_OFF)) /** @todo PAGE FLAGS */
+                            if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPhysPage) != PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
                             {
                                 if (PteDst.n.u1Write)
                                 {

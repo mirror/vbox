@@ -2033,9 +2033,9 @@ LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc)
         {
             uint16_t    u16 = 0;
             SSMR3GetU16(pSSM, &u16);
-            u16 &= PAGE_OFFSET_MASK & ~( MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_VIRTUAL_ALL
-                                       | MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL
-                                       | MM_RAM_FLAGS_PHYSICAL_TEMP_OFF );
+            u16 &= PAGE_OFFSET_MASK & ~(  MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_VIRTUAL_ALL
+                                        | RT_BIT(7) | RT_BIT(8) | RT_BIT(9) | RT_BIT(10) );
+                   // &= MM_RAM_FLAGS_DYNAMIC_ALLOC | MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2
             pRam->aPages[iPage].HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) | (RTHCPHYS)u16; /** @todo PAGE FLAGS */
         }
 

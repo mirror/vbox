@@ -82,14 +82,6 @@ __BEGIN_DECLS
 #define MM_RAM_FLAGS_VIRTUAL_WRITE      RT_BIT(5)
 /** PGM has virtual page access handler(s) for all access. */
 #define MM_RAM_FLAGS_VIRTUAL_ALL        RT_BIT(6)
-/** PGM has physical page access handler(s) defined for pages with this flag. */
-#define MM_RAM_FLAGS_PHYSICAL_HANDLER   RT_BIT(7)
-/** PGM has physical page access handler(s) for write access. */
-#define MM_RAM_FLAGS_PHYSICAL_WRITE     RT_BIT(8)
-/** PGM has physical page access handler(s) for all access. */
-#define MM_RAM_FLAGS_PHYSICAL_ALL       RT_BIT(9)
-/** PGM has physical page access handler(s) for this page and has temporarily disabled it. */
-#define MM_RAM_FLAGS_PHYSICAL_TEMP_OFF  RT_BIT(10)
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 /** Physical backing memory is allocated dynamically. Not set implies a one time static allocation. */
 #define MM_RAM_FLAGS_DYNAMIC_ALLOC      RT_BIT(11)

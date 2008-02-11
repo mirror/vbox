@@ -198,6 +198,7 @@ PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
             Log(("PGMHandlerPhysicalRegisterEx: returns %Vrc (%VGp-%VGp)\n", rc, GCPhys, GCPhysLast));
         return rc;
     }
+
     pgmUnlock(pVM);
 
 #if defined(IN_RING3) && defined(VBOX_STRICT)
@@ -218,6 +219,7 @@ PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
  *          the guest page aliased or/and mapped by multiple PTs.
  * @param   pVM     The VM handle.
  * @param   pCur    The physical handler.
+ * @param   pRam    The RAM range.
  */
 static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDLER pCur, PPGMRAMRANGE pRam)
 {
@@ -231,7 +233,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
 #else
     const int       rc = VINF_PGM_GCPHYS_ALIASED;
 #endif
-    const unsigned  fFlags = pgmHandlerPhysicalCalcFlags(pCur); Assert(!(fFlags & X86_PTE_PAE_PG_MASK));
+    const unsigned  uState = pgmHandlerPhysicalCalcState(pCur);
     RTUINT          cPages = pCur->cPages;
     RTUINT          i = (pCur->Core.Key - pRam->GCPhys) >> PAGE_SHIFT;
     for (;;)
@@ -249,11 +251,12 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
                 return rc2;
         }
 
-        if ((pRam->aPages[i].HCPhys & fFlags) != fFlags) /** @todo PAGE FLAGS */
+        /* Only do upgrades. */
+        PPGMPAGE pPage = &pRam->aPages[i];
+        if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) < uState)
         {
-            pRam->aPages[i].HCPhys |= fFlags; /** @todo PAGE FLAGS */
-
-            Assert(PGM_PAGE_GET_HCPHYS(&pRam->aPages[i]));
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState);
+            Assert(PGM_PAGE_GET_HCPHYS(pPage));
 
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
             /* This code also makes ASSUMPTIONS about the cRefs and stuff. */
@@ -263,17 +266,17 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
             {
                 if ((u16 >> (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT)) != MM_RAM_FLAGS_CREFS_PHYSEXT)
                     pgmPoolTrackFlushGCPhysPT(pVM,
-                                              &pRam->aPages[i],
+                                              pPage,
                                               u16 & MM_RAM_FLAGS_IDX_MASK,
                                               u16 >> (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT));
                 else if (u16 != ((MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT)) | MM_RAM_FLAGS_IDX_OVERFLOWED))
-                    pgmPoolTrackFlushGCPhysPTs(pVM, &pRam->aPages[i], u16 & MM_RAM_FLAGS_IDX_MASK);
+                    pgmPoolTrackFlushGCPhysPTs(pVM, pPage, u16 & MM_RAM_FLAGS_IDX_MASK);
                 else
-                    rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, &pRam->aPages[i]);
+                    rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPage);
                 fFlushTLBs = true;
             }
 #elif defined(PGMPOOL_WITH_CACHE)
-            rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, &pRam->aPages[i]);
+            rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPage);
             fFlushTLBs = true;
 #endif
         }
@@ -340,13 +343,21 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
 
     /*
      * Page align the range.
+     *
+     * Since we've reset (recalculated) the physical handler state of all pages
+     * we can make use of the page states to figure out whether a page should be
+     * included in the REM notification or not.
      */
     if (    (pCur->Core.Key & PAGE_OFFSET_MASK)
         ||  ((pCur->Core.KeyLast + 1) & PAGE_OFFSET_MASK))
     {
+        Assert(pCur->enmType != PGMPHYSHANDLERTYPE_MMIO);
+
         if (GCPhysStart & PAGE_OFFSET_MASK)
         {
-            if (pgmRamTestFlags(&pVM->pgm.s, GCPhysStart, MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_TEMP_OFF))
+            PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysStart);
+            if (    pPage
+                &&  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE)
             {
                 RTGCPHYS GCPhys = (GCPhysStart + (PAGE_SIZE - 1)) & X86_PTE_PAE_PG_MASK;
                 if (    GCPhys > GCPhysLast
@@ -355,20 +366,25 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
                 GCPhysStart = GCPhys;
             }
             else
-                GCPhysStart = GCPhysStart & X86_PTE_PAE_PG_MASK;
+                GCPhysStart &= X86_PTE_PAE_PG_MASK;
+            Assert(!pPage || PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO); /* these are page aligned atm! */
         }
+
         if (GCPhysLast & PAGE_OFFSET_MASK)
         {
-            if (pgmRamTestFlags(&pVM->pgm.s, GCPhysLast, MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_TEMP_OFF))
+            PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysLast);
+            if (    pPage
+                &&  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE)
             {
-                RTGCPHYS GCPhys = (GCPhysStart & X86_PTE_PAE_PG_MASK) - 1;
+                RTGCPHYS GCPhys = (GCPhysLast & X86_PTE_PAE_PG_MASK) - 1;
                 if (    GCPhys < GCPhysStart
                     ||  GCPhys > GCPhysLast)
                     return;
                 GCPhysLast = GCPhys;
             }
             else
-                GCPhysLast += PAGE_SIZE - 1 - (GCPhysLast & PAGE_OFFSET_MASK);
+                GCPhysLast |= PAGE_OFFSET_MASK;
+            Assert(!pPage || PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO); /* these are page aligned atm! */
         }
     }
 
@@ -382,6 +398,51 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
 #else
     REMR3NotifyHandlerPhysicalDeregister(pVM, pCur->enmType, GCPhysStart, GCPhysLast - GCPhysStart + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
 #endif
+}
+
+
+/**
+ * pgmHandlerPhysicalResetRamFlags helper that checks for
+ * other handlers on edge pages.
+ */
+DECLINLINE(void) pgmHandlerPhysicalRecalcPageState(PPGM pPGM, RTGCPHYS GCPhys, bool fAbove, PPGMRAMRANGE *ppRamHint)
+{
+    /*
+     * Look for other handlers.
+     */
+    unsigned uState = PGM_PAGE_HNDL_PHYS_STATE_NONE;
+    for (;;)
+    {
+        PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pPGM->CTXSUFF(pTrees)->PhysHandlers, GCPhys, fAbove);
+        if (    !pCur
+            ||  ((fAbove ? pCur->Core.Key : pCur->Core.KeyLast) >> PAGE_SHIFT) != (GCPhys >> PAGE_SHIFT))
+            break;
+        unsigned uThisState = pgmHandlerPhysicalCalcState(pCur);
+        uState = RT_MAX(uState, uThisState);
+
+        /* next? */
+        RTGCPHYS GCPhysNext = fAbove
+                            ? pCur->Core.KeyLast + 1
+                            : pCur->Core.Key - 1;
+        if ((GCPhysNext >> PAGE_SHIFT) != (GCPhys >> PAGE_SHIFT))
+            break;
+        GCPhys = GCPhysNext;
+    }
+
+    /*
+     * Update if we found something that is a higher priority
+     * state than the current.
+     */
+    if (uState != PGM_PAGE_HNDL_PHYS_STATE_NONE)
+    {
+        PPGMPAGE pPage;
+        int rc = pgmPhysGetPageWithHintEx(pPGM, GCPhys, &pPage, ppRamHint);
+        if (    RT_SUCCESS(rc)
+            &&  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) < uState)
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState);
+        else
+            AssertRC(rc);
+    }
 }
 
 
@@ -400,8 +461,7 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
 static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
 {
     /*
-     * Iterate the guest ram pages updating the flags and flushing PT entries
-     * mapping the page.
+     * Iterate the guest ram pages updating the state.
      */
     RTUINT          cPages = pCur->cPages;
     RTGCPHYS        GCPhys = pCur->Core.Key;
@@ -409,9 +469,13 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
     PPGM            pPGM = &pVM->pgm.s;
     for (;;)
     {
-        pgmRamFlagsClearByGCPhysWithHint(pPGM, GCPhys,
-                                         MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL,
-                                         &pRamHint);
+        PPGMPAGE pPage;
+        int rc = pgmPhysGetPageWithHintEx(pPGM, GCPhys, &pPage, &pRamHint);
+        if (RT_SUCCESS(rc))
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_NONE);
+        else
+            AssertRC(rc);
+
         /* next */
         if (--cPages == 0)
             break;
@@ -419,48 +483,12 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
     }
 
     /*
-     * Check for partial start page.
+     * Check for partial start and end pages.
      */
     if (pCur->Core.Key & PAGE_OFFSET_MASK)
-    {
-        RTGCPHYS GCPhys = pCur->Core.Key - 1;
-        for (;;)
-        {
-            PPGMPHYSHANDLER pBelow = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys, false);
-            if (    !pBelow
-                ||  (pBelow->Core.KeyLast >> PAGE_SHIFT) != (pCur->Core.Key >> PAGE_SHIFT))
-                break;
-            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pCur), &pRamHint);
-
-            /* next? */
-            if (    (pBelow->Core.Key >> PAGE_SHIFT) != (pCur->Core.Key >> PAGE_SHIFT)
-                ||  !(pBelow->Core.Key & PAGE_OFFSET_MASK))
-                break;
-            GCPhys = pBelow->Core.Key - 1;
-        }
-    }
-
-    /*
-     * Check for partial end page.
-     */
+        pgmHandlerPhysicalRecalcPageState(pPGM, pCur->Core.Key - 1, false /* fAbove */, &pRamHint);
     if ((pCur->Core.KeyLast & PAGE_OFFSET_MASK) != PAGE_SIZE - 1)
-    {
-        RTGCPHYS GCPhys = pCur->Core.KeyLast + 1;
-        for (;;)
-        {
-            PPGMPHYSHANDLER pAbove = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys, true);
-            if (    !pAbove
-                ||  (pAbove->Core.Key >> PAGE_SHIFT) != (pCur->Core.KeyLast >> PAGE_SHIFT))
-                break;
-            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pCur), &pRamHint);
-
-            /* next? */
-            if (    (pAbove->Core.KeyLast >> PAGE_SHIFT) != (pCur->Core.KeyLast >> PAGE_SHIFT)
-                ||  (pAbove->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_SIZE - 1)
-                break;
-            GCPhys = pAbove->Core.KeyLast + 1;
-        }
-    }
+        pgmHandlerPhysicalRecalcPageState(pPGM, pCur->Core.KeyLast + 1, true /* fAbove */, &pRamHint);
 }
 
 
@@ -731,6 +759,7 @@ PGMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
                         MMHyperFree(pVM, pCur2);
                         return VINF_SUCCESS;
                     }
+
                     Assert(pCur3 == pCur2);
                     rc = VERR_INTERNAL_ERROR;
                 }
@@ -768,7 +797,7 @@ PGMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
  * Resets any modifications to individual pages in a physical
  * page access handler region.
  *
- * This is used in pair with PGMHandlerPhysicalModify().
+ * This is used in pair with PGMHandlerPhysicalPageTempOff().
  *
  * @returns VBox status code.
  * @param   pVM         VM Handle
@@ -776,10 +805,12 @@ PGMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
  */
 PGMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
 {
+    pgmLock(pVM);
+
     /*
      * Find the handler.
      */
-    pgmLock(pVM);
+    int rc;
     PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
@@ -795,9 +826,8 @@ PGMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                  * Set the flags and flush shadow PT entries.
                  */
                 STAM_COUNTER_INC(&pVM->pgm.s.StatHandlePhysicalReset);
-                PPGMRAMRANGE    pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
-                while (pRam && GCPhys > pRam->GCPhysLast)
-                    pRam = CTXALLSUFF(pRam->pNext);
+                PPGMRAMRANGE pRam = pgmPhysGetRange(&pVM->pgm.s, GCPhys);
+                Assert(pRam);
                 int rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
                 if (rc == VINF_PGM_GCPHYS_ALIASED)
                 {
@@ -805,8 +835,9 @@ PGMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                     VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
                 }
                 pVM->pgm.s.fPhysCacheFlushPending = true;
-                pgmUnlock(pVM);
-                return VINF_SUCCESS;
+
+                rc = VINF_SUCCESS;
+                break;
             }
 
             /*
@@ -814,18 +845,23 @@ PGMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
              */
             case PGMPHYSHANDLERTYPE_MMIO:
                 AssertMsgFailed(("Can't reset type %d!\n",  pCur->enmType));
-                pgmUnlock(pVM);
-                return VERR_INTERNAL_ERROR;
+                rc = VERR_INTERNAL_ERROR;
+                break;
 
             default:
                 AssertMsgFailed(("Invalid type %d! Corruption!\n",  pCur->enmType));
-                pgmUnlock(pVM);
-                return VERR_INTERNAL_ERROR;
+                rc = VERR_INTERNAL_ERROR;
+                break;
         }
     }
+    else
+    {
+        AssertMsgFailed(("Didn't find MMIO Range starting at %#x\n", GCPhys));
+        rc = VERR_PGM_HANDLER_NOT_FOUND;
+    }
+
     pgmUnlock(pVM);
-    AssertMsgFailed(("Didn't find MMIO Range starting at %#x\n", GCPhys));
-    return VERR_PGM_HANDLER_NOT_FOUND;
+    return rc;
 }
 
 

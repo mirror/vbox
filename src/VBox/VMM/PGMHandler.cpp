@@ -161,7 +161,13 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode
     PPGM            pPGM = &((PVM)pvUser)->pgm.s;
     for (;;)
     {
-        pgmRamFlagsClearByGCPhysWithHint(pPGM, GCPhys, MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL, &pRamHint);
+        PPGMPAGE pPage;
+        int rc = pgmPhysGetPageWithHintEx(pPGM, GCPhys, &pPage, &pRamHint);
+        if (RT_SUCCESS(rc))
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_NONE);
+        else
+            AssertRC(rc);
+
         if (--cPages == 0)
             return 0;
         GCPhys += PAGE_SIZE;
@@ -179,14 +185,20 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode
 static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, void *pvUser)
 {
     PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)pNode;
-    unsigned        fFlags = pgmHandlerPhysicalCalcFlags(pCur);
+    unsigned        uState = pgmHandlerPhysicalCalcState(pCur);
     PPGMRAMRANGE    pRamHint = NULL;
     RTGCPHYS        GCPhys = pCur->Core.Key;
     RTUINT          cPages = pCur->cPages;
     PPGM            pPGM = &((PVM)pvUser)->pgm.s;
     for (;;)
     {
-        pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, fFlags, &pRamHint);
+        PPGMPAGE pPage;
+        int rc = pgmPhysGetPageWithHintEx(pPGM, GCPhys, &pPage, &pRamHint);
+        if (RT_SUCCESS(rc))
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState);
+        else
+            AssertRC(rc);
+
         if (--cPages == 0)
             return 0;
         GCPhys += PAGE_SIZE;
