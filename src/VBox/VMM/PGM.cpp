@@ -3884,7 +3884,7 @@ PGMR3DECL(int) PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable)
 {
     pVM->pgm.s.fDisableMappings = !fEnable;
 
-    size_t cb;
+    uint32_t cb;
     int rc = PGMR3MappingsSize(pVM, &cb);
     AssertRCReturn(rc, rc);
 

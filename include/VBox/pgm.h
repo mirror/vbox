@@ -487,10 +487,10 @@ PGMR3DECL(int)  PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, si
 PGMR3DECL(int)  PGMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, size_t cb);
 PGMR3DECL(int)  PGMR3PhysSetFlags(PVM pVM, RTGCPHYS GCPhys, size_t cb, unsigned fFlags, unsigned fMask);
 PGMDECL(void)   PGMR3PhysSetA20(PVM pVM, bool fEnable);
-PGMR3DECL(int)  PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, size_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc);
+PGMR3DECL(int)  PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc);
 PGMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr);
-PGMR3DECL(int)  PGMR3MappingsSize(PVM pVM, size_t *pcb);
-PGMR3DECL(int)  PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, size_t cb);
+PGMR3DECL(int)  PGMR3MappingsSize(PVM pVM, uint32_t *pcb);
+PGMR3DECL(int)  PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
 PGMR3DECL(int)  PGMR3MappingsUnfix(PVM pVM);
 PGMR3DECL(int)  PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages);
 PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint32_t cr3, bool fRawR0);
@@ -515,7 +515,6 @@ PGMR3DECL(int)  PGMR3DumpHierarchyHC(PVM pVM, uint32_t cr3, uint32_t cr4, bool f
 #endif
 PGMR3DECL(int)  PGMR3DumpHierarchyGC(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCPHYS PhysSearch);
 PGMR3DECL(void) PGMR3DumpPD(PVM pVM, PVBOXPD pPD);
-PGMR3DECL(void) PGMR3DumpMappings(PVM pVM);
 
 /** @todo r=bird: s/Byte/U8/ s/Word/U16/ s/Dword/U32/ to match other functions names and returned types. */
 PGMR3DECL(uint8_t) PGMR3PhysReadByte(PVM pVM, RTGCPHYS GCPhys);
