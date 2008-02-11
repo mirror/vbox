@@ -434,7 +434,7 @@ void SDLConsole::eventQuit()
     doEventQuit();
 }
 
-#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_OS2)
 /**
  * Fallback keycode conversion using SDL symbols.
  *
@@ -873,7 +873,7 @@ uint8_t SDLConsole::keyEventToKeyCode(const SDL_KeyboardEvent *ev)
     RTPrintf("scancode=%#x -> %#x\n", ev->keysym.scancode, keycode);
 #endif
 
-#elif defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_OS2)
     /*
      * For now, just use the fallback code.
      */
