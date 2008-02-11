@@ -2467,14 +2467,17 @@ typedef struct PGM
 
 __BEGIN_DECLS
 
+int             pgmLock(PVM pVM);
+void            pgmUnlock(PVM pVM);
+
 PGMGCDECL(int)  pgmGCGuestPDWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 PGMDECL(int)    pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+int             pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode);
+
 int             pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PVBOXPD pPDSrc, int iPDOld);
 PPGMMAPPING     pgmGetMapping(PVM pVM, RTGCPTR GCPtr);
 void            pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, int iPDOld, int iPDNew);
-int             pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode);
-int             pgmLock(PVM pVM);
-void            pgmUnlock(PVM pVM);
+DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 void            pgmR3HandlerPhysicalUpdateAll(PVM pVM);
 int             pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *ppVirt, unsigned *piPage);

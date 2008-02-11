@@ -514,15 +514,16 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     /*
      * Test input.
      */
-    PGMHANDLERINFOARG Args = { pHlp, true };
+    PGMHANDLERINFOARG Args = { pHlp, /* .fStats = */ true };
     bool fPhysical = !pszArgs  || !*pszArgs;
     bool fVirtual = fPhysical;
     bool fHyper = fPhysical;
     if (!fPhysical)
     {
-        fPhysical = strstr(pszArgs, "phys") != NULL;
-        fVirtual = strstr(pszArgs, "virt") != NULL;
-        fHyper = strstr(pszArgs, "hyper") != NULL;
+        bool fAll = strstr(pszArgs, "all") != NULL;
+        fPhysical   = fAll || strstr(pszArgs, "phys") != NULL;
+        fVirtual    = fAll || strstr(pszArgs, "virt") != NULL;
+        fHyper      = fAll || strstr(pszArgs, "hyper")!= NULL;
         Args.fStats = strstr(pszArgs, "nost") == NULL;
     }
 
