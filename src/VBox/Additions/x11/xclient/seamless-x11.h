@@ -134,17 +134,26 @@ class VBoxGuestX11Display
 private:
     Display *mDisplay;
 public:
-    VBoxGuestX11Display(void) {}
-    bool init(char *name = 0)
+    VBoxGuestX11Display(void) { mDisplay = NULL; }
+    bool init(char *name = NULL)
     {
         mDisplay = XOpenDisplay(name);
-        return (0 != mDisplay);
+        return (mDisplay != NULL);
     }
     operator Display *() { return mDisplay; }
     Display *get(void) { return mDisplay; }
-    bool isValid(void) { return (0 != mDisplay); }
-    int close(void) { return XCloseDisplay(mDisplay); }
-    ~VBoxGuestX11Display() { close(); }
+    bool isValid(void) { return (mDisplay != NULL); }
+    int close(void)
+    {
+        int rc = XCloseDisplay(mDisplay);
+        mDisplay = NULL;
+        return rc;
+    }
+    ~VBoxGuestX11Display()
+    {
+        if (mDisplay != NULL)
+            close();
+    }
 };
 
 /** Structure containing information about a guest window's position and visible area.
@@ -203,7 +212,11 @@ public:
     ~VBoxGuestWindowList()
     {
         /* We use post-increment in the operation to prevent the iterator from being invalidated. */
-        for (iterator it = begin(); it != end(); removeWindow(it++));
+        try
+        {
+            for (iterator it = begin(); it != end(); removeWindow(it++));
+        }
+        catch(...) {}
     }
 
     // Standard operations
@@ -326,7 +339,14 @@ public:
         mObserver = 0; mcRects = 0; mEnabled = false; mSupportsShape = false;
     }
 
-    ~VBoxGuestSeamlessX11() { uninit(); }
+    ~VBoxGuestSeamlessX11()
+    {
+        try
+        {
+            uninit();
+        }
+        catch(...) {}
+    }
 };
 
 typedef VBoxGuestSeamlessX11 VBoxGuestSeamlessGuestImpl;
