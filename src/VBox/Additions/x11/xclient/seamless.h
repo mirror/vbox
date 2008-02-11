@@ -22,7 +22,7 @@
 #include "seamless-guest.h"
 #include "seamless-glue.h"
 
-/** Thread function class for VBoxGuestSeamlessX11. */
+/** Thread function class for VBoxGuestSeamlessGuest. */
 class VBoxGuestSeamlessGuestThread: public VBoxGuestThreadFunction
 {
 private:
