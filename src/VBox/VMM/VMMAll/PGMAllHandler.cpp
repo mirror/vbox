@@ -828,7 +828,7 @@ PGMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                 STAM_COUNTER_INC(&pVM->pgm.s.StatHandlePhysicalReset);
                 PPGMRAMRANGE pRam = pgmPhysGetRange(&pVM->pgm.s, GCPhys);
                 Assert(pRam);
-                int rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
+                rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
                 if (rc == VINF_PGM_GCPHYS_ALIASED)
                 {
                     pVM->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
