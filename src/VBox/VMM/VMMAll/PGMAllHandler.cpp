@@ -1099,6 +1099,7 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
     /*
      * Calc flags.
      */
+    Assert(pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR);
     unsigned        fFlags;
     switch (pCur->enmType)
     {

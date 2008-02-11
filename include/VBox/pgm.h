@@ -185,7 +185,6 @@ typedef enum PGMVIRTHANDLERTYPE
      * This is used to catch the guest trying to write to LDT, TSS and any other
      * system structure which the brain dead intel guys let unprivilegde code find. */
     PGMVIRTHANDLERTYPE_HYPERVISOR
-
 } PGMVIRTHANDLERTYPE;
 
 /**

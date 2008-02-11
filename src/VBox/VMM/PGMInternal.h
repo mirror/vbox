@@ -1561,7 +1561,8 @@ typedef struct PGMTREES
     AVLROGCPTRTREE                  VirtHandlers;
     /** Virtual access handlers (Phys range AVL range + offsetptr tree). */
     AVLROGCPHYSTREE                 PhysToVirtHandlers;
-    uint32_t auPadding[1];
+    /** Virtual access handlers for the hypervisor (AVL range + GC ptr tree). */
+    AVLROGCPTRTREE                  HyperVirtHandlers;
 } PGMTREES;
 /** Pointer to PGM trees. */
 typedef PGMTREES *PPGMTREES;

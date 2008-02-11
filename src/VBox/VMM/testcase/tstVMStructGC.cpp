@@ -565,7 +565,7 @@ int main()
     GEN_CHECK_OFF(PGMTREES, PhysHandlers);
     GEN_CHECK_OFF(PGMTREES, VirtHandlers);
     GEN_CHECK_OFF(PGMTREES, PhysToVirtHandlers);
-    GEN_CHECK_OFF(PGMTREES, auPadding);
+    GEN_CHECK_OFF(PGMTREES, HyperVirtHandlers);
     GEN_CHECK_SIZE(PGMPOOLPAGE);
     GEN_CHECK_OFF(PGMPOOLPAGE, Core);
     GEN_CHECK_OFF(PGMPOOLPAGE, GCPhys);
