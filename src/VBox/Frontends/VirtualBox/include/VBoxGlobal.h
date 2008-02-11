@@ -414,7 +414,7 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
-    CSession openSession (const QUuid &id);
+    CSession openSession (const QUuid &id, bool aExisting = false);
 
     bool startMachine (const QUuid &id);
 
