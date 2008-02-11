@@ -25,6 +25,7 @@
 
 #include <qapplication.h>
 #include <qmainwindow.h>
+#include <qlistbox.h>
 #include <qgroupbox.h>
 #include <qaction.h>
 
@@ -66,6 +67,7 @@ public slots:
     void vmDelete();
     void vmStart();
     void vmDiscard();
+    void vmPause (bool);
     void vmRefresh();
     void vmShowLogs();
 
@@ -73,6 +75,8 @@ public slots:
     void refreshVMItem (const QUuid &aID, bool aDetails,
                                           bool aSnapshots,
                                           bool aDescription);
+
+    void showContextMenu (QListBoxItem *, const QPoint &);
 
 protected:
 
@@ -104,6 +108,9 @@ private slots:
 
 private:
 
+    /* context menu */
+    QPopupMenu *mVmMenu;
+
     /* actions */
     QAction *fileDiskMgrAction;
     QAction *fileSettingsAction;
@@ -113,6 +120,7 @@ private:
     QAction *vmDeleteAction;
     QAction *vmStartAction;
     QAction *vmDiscardAction;
+    QAction *vmPauseAction;
     QAction *vmRefreshAction;
     QAction *vmShowLogsAction;
     QAction *helpContentsAction;

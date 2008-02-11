@@ -1827,7 +1827,7 @@ bool VBoxGlobal::showVirtualBoxLicense()
  *  If this method succeeds, don't forget to close the returned session when
  *  it is no more necessary.
  */
-CSession VBoxGlobal::openSession (const QUuid &id)
+CSession VBoxGlobal::openSession (const QUuid &id, bool aExisting)
 {
     CSession session;
     session.createInstance (CLSID_Session);
@@ -1837,7 +1837,8 @@ CSession VBoxGlobal::openSession (const QUuid &id)
         return session;
     }
 
-    mVBox.OpenSession (session, id);
+    aExisting ? mVBox.OpenExistingSession (session, id) :
+		        mVBox.OpenSession (session, id);
     if (!mVBox.isOk())
     {
         CMachine machine = CVirtualBox (mVBox).GetMachine (id);

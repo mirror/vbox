@@ -417,6 +417,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmDiscardAction->setIconSet (VBoxGlobal::iconSetEx (
         "vm_discard.png", "discard_16px.png",
         "vm_discard_dis.png", "discard_dis_16px.png"));
+    vmPauseAction = new QAction (this, "vmPauseAction");
+    vmPauseAction->setToggleAction (true);
+    vmPauseAction->setIconSet (VBoxGlobal::iconSet (
+        "pause_16px.png", "pause_16px.png"));
     vmRefreshAction = new QAction (this, "vmRefreshAction");
     vmRefreshAction->setIconSet (VBoxGlobal::iconSet (
         "refresh_16px.png", "refresh_disabled_16px.png"));
@@ -510,19 +514,21 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     menuBar()->insertItem( QString::null, fileMenu, 1);
 
-    QPopupMenu *vmMenu = new QPopupMenu (this, "vmMenu");
-    vmNewAction->addTo (vmMenu);
-    vmConfigAction->addTo (vmMenu);
-    vmDeleteAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
-    vmStartAction->addTo (vmMenu);
-    vmDiscardAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
-    vmRefreshAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
-    vmShowLogsAction->addTo (vmMenu);
+    mVmMenu = new QPopupMenu (this, "mVmMenu");
+    vmNewAction->addTo (mVmMenu);
+    vmConfigAction->addTo (mVmMenu);
+    vmDeleteAction->addTo (mVmMenu);
+    mVmMenu->insertSeparator();
+    vmStartAction->addTo (mVmMenu);
+    vmDiscardAction->addTo (mVmMenu);
+    mVmMenu->insertSeparator();
+    vmPauseAction->addTo (mVmMenu);
+    mVmMenu->insertSeparator();
+    vmRefreshAction->addTo (mVmMenu);
+    mVmMenu->insertSeparator();
+    vmShowLogsAction->addTo (mVmMenu);
 
-    menuBar()->insertItem (QString::null, vmMenu, 2);
+    menuBar()->insertItem (QString::null, mVmMenu, 2);
 
     QPopupMenu *helpMenu = new QPopupMenu( this, "helpMenu" );
     helpContentsAction->addTo (helpMenu);
@@ -595,6 +601,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     connect (vmDeleteAction, SIGNAL (activated()), this, SLOT (vmDelete()));
     connect (vmStartAction, SIGNAL (activated()), this, SLOT (vmStart()));
     connect (vmDiscardAction, SIGNAL (activated()), this, SLOT (vmDiscard()));
+    connect (vmPauseAction, SIGNAL (toggled (bool)), this, SLOT (vmPause (bool)));
     connect (vmRefreshAction, SIGNAL (activated()), this, SLOT (vmRefresh()));
     connect (vmShowLogsAction, SIGNAL (activated()), this, SLOT (vmShowLogs()));
 
@@ -615,6 +622,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
              this, SLOT (vmListBoxCurrentChanged()));
     connect (vmListBox, SIGNAL (selected (QListBoxItem *)),
              this, SLOT (vmStart()));
+    connect (vmListBox, SIGNAL (contextMenuRequested (QListBoxItem *, const QPoint &)),
+             this, SLOT (showContextMenu (QListBoxItem *, const QPoint &)));
 
     connect (vmDetailsView, SIGNAL (linkClicked (const QString &)),
             this, SLOT (vmSettings (const QString &)));
@@ -661,7 +670,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
         QListBoxItem *item = vmListBox->selectedItem();
         QString curVMId = item ?
             QString (static_cast<VBoxVMListBoxItem*> (item)->id()) :
-		    QString::null;
+            QString::null;
         vbox.SetExtraData (VBoxDefs::GUI_LastVMSelected, curVMId);
     }
 }
@@ -959,6 +968,37 @@ void VBoxSelectorWnd::vmDiscard()
     session.Close();
 }
 
+void VBoxSelectorWnd::vmPause (bool aPause)
+{
+    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+
+    AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
+
+    CSession session = vboxGlobal().openSession (item->id(), true);
+    if (session.isNull())
+        return;
+
+    CConsole console = session.GetConsole();
+    if (console.isNull())
+        return;
+
+    if (aPause)
+        console.Pause();
+    else
+        console.Resume();
+
+    bool ok = console.isOk();
+    if (!ok)
+    {
+        if (aPause)
+            vboxProblem().cannotPauseMachine (console);
+        else
+            vboxProblem().cannotResumeMachine (console);
+    }
+
+    session.Close();
+}
+
 void VBoxSelectorWnd::vmRefresh()
 {
     VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
@@ -992,6 +1032,12 @@ void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
     VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
     if (item && item->id() == aID)
         vmListBoxCurrentChanged (aDetails, aSnapshots, aDescription);
+}
+
+void VBoxSelectorWnd::showContextMenu (QListBoxItem *aItem, const QPoint &aPoint)
+{
+    if (aItem)
+        mVmMenu->exec (aPoint);
 }
 
 // Protected members
@@ -1209,6 +1255,8 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         vmConfigAction->setEnabled (modifyEnabled);
         vmDeleteAction->setEnabled (modifyEnabled);
         vmDiscardAction->setEnabled (state == CEnums::Saved && !running);
+        vmPauseAction->setEnabled (state == CEnums::Running ||
+                                   state == CEnums::Paused);
 
         /* change the Start button text accordingly */
         if (state >= CEnums::Running)
@@ -1228,6 +1276,30 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
                 tr ("Start the selected virtual machine"));
 
             vmStartAction->setEnabled (!running);
+        }
+
+        /* change the Pause/Resume button text accordingly */
+        if (state == CEnums::Paused)
+        {
+            vmPauseAction->setMenuText (tr ("R&esume"));
+            vmPauseAction->setText (tr ("Resume"));
+            vmPauseAction->setAccel (tr ("Ctrl+P"));
+            vmPauseAction->setStatusTip (
+                tr ("Resume the execution of the virtual machine"));
+            vmPauseAction->blockSignals (true);
+            vmPauseAction->setOn (true);
+            vmPauseAction->blockSignals (false);
+        }
+        else
+        {
+            vmPauseAction->setMenuText (tr ("&Pause"));
+            vmPauseAction->setText (tr ("Pause"));
+            vmPauseAction->setAccel (tr ("Ctrl+P"));
+            vmPauseAction->setStatusTip (
+                tr ("Suspend the execution of the virtual machine"));
+            vmPauseAction->blockSignals (true);
+            vmPauseAction->setOn (false);
+            vmPauseAction->blockSignals (false);
         }
 
         /* disable Refresh for accessible machines */
@@ -1285,6 +1357,7 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         vmConfigAction->setEnabled (false);
         vmDeleteAction->setEnabled (item != NULL);
         vmDiscardAction->setEnabled (false);
+        vmPauseAction->setEnabled (false);
 
         /* change the Start button text accordingly */
         vmStartAction->setMenuText (tr ("S&tart"));
