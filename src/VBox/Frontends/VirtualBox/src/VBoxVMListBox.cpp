@@ -227,12 +227,10 @@ void VBoxVMListBox::refresh()
 {
     clear();
 
-    CMachineEnumerator en = mVBox.GetMachines().Enumerate();
-    while (en.HasMore())
-    {
-        CMachine m = en.GetNext();
-        new VBoxVMListBoxItem (this, m);
-    }
+    CMachineVector vec = mVBox.GetMachines2();
+    for (CMachineVector::ConstIterator m = vec.begin();
+         m != vec.end(); ++ m)
+        new VBoxVMListBoxItem (this, *m);
 
     sort();
     setCurrentItem (0);

@@ -42,7 +42,7 @@
  *    (Main API TypeLib block for the WiX installer)
  *
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -813,8 +813,9 @@
      uuid="64f652cb-7fdf-482d-ae19-4dbb289a5ca0"
      wsmap="managed"
      >
-    <desc> The main interface exposed by the product that provides virtual
-      machine management.
+    <desc>
+      The IVirtualBox interface represents the main interface exposed by the
+      product that provides virtual machine management.
 
       An instance of IVirtualBox is required for the product to do anything
       useful. Even though the interface does not expose this, internally, IVirtualBox
@@ -858,16 +859,28 @@
       <desc>Associated system information object.</desc>
     </attribute>
 
-    <attribute name="machines" type="IMachineCollection" readonly="yes"/>
+	<attribute name="machines" type="IMachineCollection" readonly="yes">
+      <desc>
+        Collection of machine objects registered within this VirtualBox
+        instance.
+      </desc>
+    </attribute>
+
+    <attribute name="machines2" type="IMachine" readonly="yes" safearray="yes">
+      <desc>
+        Array of machine objects registered within this VirtualBox instance.
+      </desc>
+    </attribute>
 
     <attribute name="hardDisks" type="IHardDiskCollection" readonly="yes">
       <desc>
-        A collection of hard disk objects registered within this
-        VirtualBox instance.
-        This collection contains only "top-level" (basic or independent)
-        hard disk images, but not differencing ones. All differencing
-        images of the given top-level image (i.e. all its children) can
-        be enumerated using <link to="IHardDisk::children"/>.
+        Collection of hard disk objects registered within this VirtualBox
+        instance.
+
+        This collection contains only "top-level" (basic or independent) hard
+        disk images, but not differencing ones. All differencing images of the
+        given top-level image (i.e. all its children) can be enumerated using
+        <link to="IHardDisk::children"/>.
       </desc>
     </attribute>
 
@@ -9063,7 +9076,7 @@
         this property is read.
       </desc>
     </attribute>
-    
+
     <attribute name="writable" type="boolean" readonly="yes">
       <desc>
         Whether the folder defined by the host path is writable or

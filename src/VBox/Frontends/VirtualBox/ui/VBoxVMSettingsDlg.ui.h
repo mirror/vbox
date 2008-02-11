@@ -1027,21 +1027,23 @@ void VBoxVMSettingsDlg::loadNetworksList()
 {
     /* clear inner list */
     mNetworksList.clear();
-    /* loading internal networks list */
+
+    /* load internal network list */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     ulong count = vbox.GetSystemProperties().GetNetworkAdapterCount();
-    CMachineEnumerator en = vbox.GetMachines().Enumerate();
-    while (en.HasMore())
+    CMachineVector vec =  vbox.GetMachines2();
+    for (CMachineVector::ConstIterator m = vec.begin();
+         m != vec.end(); ++ m)
     {
-        CMachine machine = en.GetNext();
         for (ulong slot = 0; slot < count; ++ slot)
         {
-            CNetworkAdapter adapter = machine.GetNetworkAdapter (slot);
+            CNetworkAdapter adapter = m->GetNetworkAdapter (slot);
             if (adapter.GetAttachmentType() == CEnums::InternalNetworkAttachment &&
                 !mNetworksList.contains (adapter.GetInternalNetwork()))
                 mNetworksList << adapter.GetInternalNetwork();
         }
     }
+
     mLockNetworkListUpdate = false;
 }
 
