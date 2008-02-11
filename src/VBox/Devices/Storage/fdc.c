@@ -2627,6 +2627,9 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
             case VERR_ACCESS_DENIED:
                 /* Error already catched by DrvHostBase */
                 return rc;
+            case VERR_PDM_NO_ATTACHED_DRIVER:
+                /* Legal on architectures without a floppy controller */
+                return rc;
             default:
                 return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                            N_("The floppy controller cannot attach to the floppy drive"));
