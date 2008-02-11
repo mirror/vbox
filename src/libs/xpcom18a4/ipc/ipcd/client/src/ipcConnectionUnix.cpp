@@ -382,7 +382,8 @@ ConnThread(void *arg)
     }
     else
     {
-      LOG(("PR_Poll returned an error\n"));
+      LOG(("PR_Poll returned error %d (%s), os error %d\n", PR_GetError(),
+           PR_ErrorToName(PR_GetError()), PR_GetOSError()));
       rv = NS_ERROR_UNEXPECTED;
     }
   }
