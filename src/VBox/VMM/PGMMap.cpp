@@ -37,7 +37,6 @@
 *******************************************************************************/
 static void              pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, int iOldPDE);
 static void              pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, int iNewPDE);
-static DECLCALLBACK(int) pgmR3DumpMappingsPhysicalCB(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 static int               pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cPages, PX86PT pPTDefault, PX86PTPAE pPTPaeDefault);
 static void              pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPhys, unsigned cPages, PX86PT pPTDefault, PX86PTPAE pPTPaeDefault);
 
@@ -1077,86 +1076,18 @@ PGMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 
 
 /**
- * Dumps one virtual handler range.
+ * Info callback for 'pgmhandlers'.
  *
- * @returns 0
- * @param   pNode   Pointer to a PGMVIRTHANDLER.
- * @param   pvUser  Pointer to command helper functions.
+ * @param   pHlp        The output helpers.
+ * @param   pszArgs     The arguments. phys or virt.
  */
-static DECLCALLBACK(int) pgmVirtHandlerDump(PAVLROGCPTRNODECORE pNode, void *pvUser)
+DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)pNode;
-
-    switch (pCur->enmType)
-    {
-        case PGMVIRTHANDLERTYPE_WRITE:
-            RTLogPrintf("WRITE    %RGv-%RGv size %RGv %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->cb, pCur->pszDesc);
-            break;
-        case PGMVIRTHANDLERTYPE_ALL:
-            RTLogPrintf("ALL      %RGv-%RGv size %RGv %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->cb, pCur->pszDesc);
-            break;
-        case PGMVIRTHANDLERTYPE_HYPERVISOR:
-            RTLogPrintf("WRITEHYP %RGv-%RGv size %RGv %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->cb, pCur->pszDesc);
-            break;
-    }
-    if (pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR)
-        for (unsigned i = 0; i < pCur->cPages; i++)
-            RTLogPrintf("Physical page %#05d %VGp\n", i, pCur->aPhysToVirt[i].Core.Key);
-    return 0;
-}
-
-/**
- * Dumps the current mappings to the log
- *
- * @returns VBox status.
- * @param   pVM         Pointer to the current VM (if any).
- *
- */
-PGMR3DECL(void) PGMR3DumpMappings(PVM pVM)
-{
-    /*
-     * Print message about the fixedness of the mappings and dump them.
-     */
-    RTLogPrintf(pVM->pgm.s.fMappingsFixed ? "\nThe mappings are FIXED.\n" : "\nThe mappings are FLOATING.\n");
-
+    pHlp->pfnPrintf(pHlp, pVM->pgm.s.fMappingsFixed 
+                    ? "\nThe mappings are FIXED.\n" 
+                    : "\nThe mappings are FLOATING.\n");
     PPGMMAPPING pCur;
     for (pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
-        RTLogPrintf("%VGv - %VGv  %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc);
-
-/** @todo The handler stuff is totally alien here. This should be converted into a 'info' function. 
- * There are now, just kill this. */
-    RTLogPrintf("\nVirtual handlers:\n");
-    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesHC->VirtHandlers, true, pgmVirtHandlerDump, pVM);
-
-    RTLogPrintf("\n"
-                "Physical handlers: (PhysHandlers=%d (%#x))\n"
-                "From     - To (incl) HandlerHC UserHC    HandlerHC UserHC    HandlerGC UserGC    Type     Description\n",
-                pVM->pgm.s.pTreesHC->PhysHandlers, pVM->pgm.s.pTreesHC->PhysHandlers);
-    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysHandlers, true, pgmR3DumpMappingsPhysicalCB, NULL);
-}
-
-
-/**
- * Dumps one physical handler range.
- *
- * @returns 0
- * @param   pNode   Pointer to a PGMPHYSHANDLER.
- * @param   pvUser  Ignored.
- */
-static DECLCALLBACK(int) pgmR3DumpMappingsPhysicalCB(PAVLROGCPHYSNODECORE pNode, void *pvUser)
-{
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)pNode; NOREF(pvUser);
-    const char *pszType;
-    switch (pCur->enmType)
-    {
-        case PGMPHYSHANDLERTYPE_MMIO:           pszType = "MMIO   "; break;
-        case PGMPHYSHANDLERTYPE_PHYSICAL_WRITE: pszType = "Write  "; break;
-        case PGMPHYSHANDLERTYPE_PHYSICAL_ALL:   pszType = "All    "; break;
-        default:                                pszType = "????"; break;
-    }
-    RTLogPrintf("%VGp - %VGp  %VHv  %VHv  %VHv  %VHv  %VGv  %VGv  %s  %s\n",
-                pCur->Core.Key, pCur->Core.KeyLast, pCur->pfnHandlerR3, pCur->pvUserR3, pCur->pfnHandlerR0, pCur->pvUserR0,
-                pCur->pfnHandlerGC, pCur->pvUserGC, pszType, pCur->pszDesc);
-    return 0;
+        pHlp->pfnPrintf(pHlp, "%VGv - %VGv  %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc);
 }
 

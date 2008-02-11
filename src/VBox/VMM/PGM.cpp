@@ -940,9 +940,12 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
                                    pgmR3PhysInfo);
         DBGFR3InfoRegisterInternal(pVM, "handlers",
                                    "Dumps physical, virtual and hyper virtual handlers. "
-                                   "Pass 'phys', 'virt', 'hyper' as argument if only one kind is wanted. "
-                                   "Add 'nost' if the statistics are unwanted.",
+                                   "Pass 'phys', 'virt', 'hyper' as argument if only one kind is wanted."
+                                   "Add 'nost' if the statistics are unwanted, use together with 'all' or explicit selection.",
                                    pgmR3InfoHandlers);
+        DBGFR3InfoRegisterInternal(pVM, "mappings",
+                                   "Dumps guest mappings.",
+                                   pgmR3MapInfo);
 
         STAM_REL_REG(pVM, &pVM->pgm.s.cGuestModeChanges, STAMTYPE_COUNTER, "/PGM/cGuestModeChanges", STAMUNIT_OCCURENCES, "Number of guest mode changes.");
 #ifdef VBOX_WITH_STATISTICS
@@ -1691,7 +1694,8 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM)
     int rc = PGM_GST_PFN(UnmonitorCR3, pVM)(pVM);
     AssertRC(rc);
 #ifdef DEBUG
-    PGMR3DumpMappings(pVM);
+    DBGFR3InfoLog(pVM, "mappings", NULL);
+    DBGFR3InfoLog(pVM, "handlers", "all nostat");
 #endif
 
     /*
