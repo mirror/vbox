@@ -1191,6 +1191,12 @@ include $(PATH_KBUILD)/footer.kmk
 
 ifneq ($(wildcard /usr/bin/chcon),)
 # this is needed for testcases executed at build time
+## @todo Could someone that's able to test this change it to
+# VBoxRT_POST_CMDS = chcon -t texrel_shlib_t $(out) || true
+# instead. This will cause the command to be executed at link
+# time instead of installation time, but hopefully that isn't
+# going to make much difference. However, this is causing warnings
+# that alarms some people.
 $(PATH_BIN)/VBoxRT.so:
 	$(INSTALL) $(out) $@
 	chcon -t texrel_shlib_t $@ || true
