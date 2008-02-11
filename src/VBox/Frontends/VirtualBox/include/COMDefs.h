@@ -268,11 +268,25 @@ public:
             *it = aArr [i];
     }
 
-    /* Arrays of interface pointers */
+    /* Arrays of strings */
+
+    static void ToSafeArray (const QValueVector <QString> &aVec,
+                             com::SafeArray <BSTR> &aArr);
+    static void FromSafeArray (const com::SafeArray <BSTR> &aArr,
+                               QValueVector <QString> &aVec);
+
+    /* Arrays of interface pointers. Note: we need a separate pair of names
+     * only because the MSVC8 template matching algorithm is poor and tries to
+     * instantiate a com::SafeIfaceArray <BSTR> (!!!) template otherwise for
+     * *no* reason and fails. Note that it's also not possible to choose the
+     * correct function by specifying template arguments explicitly because then
+     * it starts to try to instantiate the com::SafeArray <I> template for
+     * *no* reason again and fails too. Definitely, broken. Works in GCC like a
+     * charm. */
 
     template <class CI, class I>
-    static void ToSafeArray (const QValueVector <CI> &aVec,
-                             com::SafeArray <I *> &aArr)
+    static void ToSafeIfaceArray (const QValueVector <CI> &aVec,
+                                  com::SafeIfaceArray <I> &aArr)
     {
         aArr.reset (aVec.size());
         size_t i = 0;
@@ -286,8 +300,8 @@ public:
     }
 
     template <class I, class CI>
-    void FromSafeArray (const com::SafeArray <I *> &aArr,
-                        QValueVector <CI> &aVec)
+    static void FromSafeIfaceArray (const com::SafeIfaceArray <I> &aArr,
+                                    QValueVector <CI> &aVec)
     {
         aVec = QValueVector <CI> (aArr.size());
         size_t i = 0;
@@ -295,13 +309,6 @@ public:
              it != aVec.end(); ++ it, ++ i)
             (*it).attach (aArr [i]);
     }
-
-    /* Arrays of strings */
-
-    static void ToSafeArray (const QValueVector <QString> &aVec,
-                             com::SafeArray <BSTR> &aArr);
-    static void FromSafeArray (const com::SafeArray <BSTR> &aArr,
-                               QValueVector <QString> &aVec);
 
 protected:
 
