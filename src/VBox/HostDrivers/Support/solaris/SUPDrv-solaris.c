@@ -182,7 +182,7 @@ static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
  */
 int _init(void)
 {
-    cmn_err(CE_CONT, "VBoxDrvSolaris _init");
+    dprintf(("VBoxDrvSolaris _init"));
 
     int rc = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof(vbox_devstate_t), 8);
     if (!rc)
@@ -201,7 +201,7 @@ int _init(void)
 
 int _fini(void)
 {
-    cmn_err(CE_CONT, "VBoxDrvSolaris _fini");
+    dprintf(("VBoxDrvSolaris _fini"));
 
     int e = mod_remove(&g_VBoxDrvSolarisModLinkage);
     if (e != 0)
@@ -214,9 +214,9 @@ int _fini(void)
 
 int _info(struct modinfo *pModInfo)
 {
-    cmn_err(CE_CONT, "VBoxDrvSolaris _info");
+    dprintf(("VBoxDrvSolaris _info"));
     int e = mod_info(&g_VBoxDrvSolarisModLinkage, pModInfo);
-    cmn_err(CE_CONT, "VBoxDrvSolaris _info returns %d", e);
+    dprintf(("VBoxDrvSolaris _info returns %d", e));
     return e;
 }
 
@@ -231,7 +231,7 @@ int _info(struct modinfo *pModInfo)
  */
 static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
-    cmn_err(CE_CONT, "VBoxDrvSolarisAttach");
+    dprintf(("VBoxDrvSolarisAttach"));
 
     switch (enmCmd)
     {
@@ -334,7 +334,7 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
     int rc = VINF_SUCCESS;
 
 
-    cmn_err(CE_CONT, "VBoxDrvSolarisDetach");
+    dprintf(("VBoxDrvSolarisDetach"));
     switch (enmCmd)
     {
         case DDI_DETACH:
@@ -357,7 +357,7 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             RTR0Term();
 
             memset(&g_DevExt, 0, sizeof(g_DevExt));
-            cmn_err(CE_CONT, "VBoxDrvSolarisDetach: Clean Up Done.");
+            dprintf(("VBoxDrvSolarisDetach: Clean Up Done."));
             return DDI_SUCCESS;
         }
 
@@ -453,7 +453,7 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         pSession->pNextHash = g_apSessionHashTab[iHash];
         g_apSessionHashTab[iHash] = pSession;
         RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
-        cmn_err(CE_NOTE,"VBoxDrvSolarisOpen success");
+        OSDBGPRINT(("VBoxDrvSolarisOpen success"));
     }
 
     int instance;
@@ -559,14 +559,14 @@ static int VBoxDrvSolarisClose(dev_t Dev, int flag, int otyp, cred_t *cred)
 
 static int VBoxDrvSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
-    cmn_err(CE_CONT, "VBoxDrvSolarisRead");
+    dprintf(("VBoxDrvSolarisRead"));
     return 0;
 }
 
 
 static int VBoxDrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
-    cmn_err(CE_CONT, "VBoxDrvSolarisWrite");
+    dprintf(("VBoxDrvSolarisWrite"));
     return 0;
 }
 
