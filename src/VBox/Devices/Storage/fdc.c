@@ -2619,24 +2619,27 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
             rc = VERR_PDM_MISSING_INTERFACE;
         }
     }
-    else {
+    else
+    {
         AssertMsg (rc == VERR_PDM_NO_ATTACHED_DRIVER,
                    ("Failed to attach LUN#%d. rc=%Vrc\n", drv->iLUN, rc));
         switch (rc)
         {
             case VERR_ACCESS_DENIED:
                 /* Error already catched by DrvHostBase */
-                return rc;
+                break;
             case VERR_PDM_NO_ATTACHED_DRIVER:
                 /* Legal on architectures without a floppy controller */
-                return rc;
+                break;
             default:
-                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                           N_("The floppy controller cannot attach to the floppy drive"));
+                rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                         N_("The floppy controller cannot attach to the floppy drive"));
+                break;
         }
     }
 
-    if (VBOX_FAILURE (rc)) {
+    if (VBOX_FAILURE (rc))
+    {
         drv->pDrvBase = NULL;
         drv->pDrvBlock = NULL;
         drv->pDrvBlockBios = NULL;
