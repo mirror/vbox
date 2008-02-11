@@ -177,10 +177,8 @@ typedef FNPGMR3PHYSHANDLER *PFNPGMR3PHYSHANDLER;
  */
 typedef enum PGMVIRTHANDLERTYPE
 {
-    /** Natural traps only. */
-    PGMVIRTHANDLERTYPE_NORMAL = 1,
     /** Write access handled. */
-    PGMVIRTHANDLERTYPE_WRITE,
+    PGMVIRTHANDLERTYPE_WRITE = 1,
     /** All access handled. */
     PGMVIRTHANDLERTYPE_ALL,
     /** Hypervisor write access handled.
