@@ -1502,20 +1502,55 @@ public:
     <xsl:param name="when" select="''"/>
     <xsl:param name="isSetter" select="''"/>
 
+    <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
+
+    <xsl:variable name="is_iface" select="(
+      ((ancestor::library/enumerator[@name=current()/@type]) or
+       (ancestor::library/if[@target=$self_target]/enumerator[@name=current()/@type])
+      ) or
+      ((ancestor::library/interface[@name=current()/@type]) or
+       (ancestor::library/if[@target=$self_target]/interface[@name=current()/@type])
+      ) or
+      ((ancestor::library/collection[@name=current()/@type]) or
+       (ancestor::library/if[@target=$self_target]/collection[@name=current()/@type])
+      )
+    )"/>
+
     <xsl:choose>
         <xsl:when test="$when='pre-call'">
             <xsl:choose>
                 <xsl:when test="@safearray='yes'">
                     <!-- declare a SafeArray variable -->
-                    <xsl:text>    com::SafeArray &lt;</xsl:text>
-                    <xsl:apply-templates select="@type" mode="com"/>
-                    <xsl:text>&gt; </xsl:text>
+                    <xsl:choose>
+                        <!-- interface types need special treatment here -->
+                        <xsl:when test="@type='$unknown'">
+                            <xsl:text>    com::SafeIfaceArray &lt;IUnknown&gt; </xsl:text>
+                        </xsl:when>
+                        <xsl:when test="$is_iface">
+                            <xsl:text>    com::SafeIfaceArray &lt;</xsl:text>
+                            <xsl:value-of select="@type"/>
+                            <xsl:text>&gt; </xsl:text>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:text>    com::SafeArray &lt;</xsl:text>
+                            <xsl:apply-templates select="@type" mode="com"/>
+                            <xsl:text>&gt; </xsl:text>
+                        </xsl:otherwise>
+                    </xsl:choose>
                     <xsl:value-of select="@name"/>
                     <xsl:text>;&#x0A;</xsl:text>
                     <xsl:if test="(name()='attribute' and $isSetter) or
                                   (name()='param' and @dir='in')">
                         <!-- convert QValueVector to SafeArray -->
-                        <xsl:text>    ToSafeArray (</xsl:text>
+                        <xsl:choose>
+                            <!-- interface types need special treatment here -->
+                            <xsl:when test="@type='$unknown' or $is_iface">
+                                <xsl:text>    ToSafeIfaceArray (</xsl:text>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:text>    ToSafeArray (</xsl:text>
+                            </xsl:otherwise>
+                        </xsl:choose>
                         <xsl:text>a</xsl:text>
                         <xsl:call-template name="capitalize">
                             <xsl:with-param name="str" select="@name"/>
@@ -1533,7 +1568,15 @@ public:
                     <xsl:if test="(name()='attribute' and not($isSetter)) or
                                   (name()='param' and (@dir='out' or @dir='return'))">
                         <!-- convert SafeArray to QValueVector -->
-                        <xsl:text>    FromSafeArray (</xsl:text>
+                        <xsl:choose>
+                            <!-- interface types need special treatment here -->
+                            <xsl:when test="@type='$unknown' or $is_iface">
+                                <xsl:text>    FromSafeIfaceArray (</xsl:text>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:text>    FromSafeArray (</xsl:text>
+                            </xsl:otherwise>
+                        </xsl:choose>
                         <xsl:value-of select="@name"/>
                         <xsl:text>, </xsl:text>
                         <xsl:text>a</xsl:text>
