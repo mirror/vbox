@@ -1006,7 +1006,6 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
         {
             /* Query path information. */
             RTFSOBJINFO info;
-            memset (&info, 0, sizeof(RTFSOBJINFO));
 
             rc = RTPathQueryInfo (pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
             LogFlow(("RTPathQueryInfo returned %Vrc\n", rc));
@@ -1059,11 +1058,6 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
                 if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
                 {
                     rc = vbsfOpenDir (pszFullPath, pParms);
-
-                    /* The Windows driver sometimes reports files with the flag SHFL_CF_DIRECTORY,
-                       which actually isn't an error. */
-                    if (rc == VERR_NOT_A_DIRECTORY)
-                        rc = VINF_SUCCESS;
                 }
                 else
                 {
