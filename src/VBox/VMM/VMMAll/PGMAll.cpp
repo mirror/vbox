@@ -1576,7 +1576,7 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                                 break;
                             unsigned uState2 = pgmHandlerPhysicalCalcState(pPhys2);
                             uState = RT_MAX(uState, uState2);
-                            pPhys2 = pPhys2;
+                            pPhys = pPhys2;
                         }
 
                         /* compare.*/
