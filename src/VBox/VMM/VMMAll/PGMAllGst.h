@@ -658,7 +658,6 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
     unsigned    fFlags;
     switch (pCur->enmType)
     {
-        case PGMVIRTHANDLERTYPE_EIP:
         case PGMVIRTHANDLERTYPE_NORMAL:     fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER; break;
         case PGMVIRTHANDLERTYPE_WRITE:      fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE; break;
         case PGMVIRTHANDLERTYPE_ALL:        fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_ALL; break;

@@ -183,8 +183,6 @@ typedef enum PGMVIRTHANDLERTYPE
     PGMVIRTHANDLERTYPE_WRITE,
     /** All access handled. */
     PGMVIRTHANDLERTYPE_ALL,
-    /** By eip - Natural traps only. */
-    PGMVIRTHANDLERTYPE_EIP,
     /** Hypervisor write access handled.
      * This is used to catch the guest trying to write to LDT, TSS and any other
      * system structure which the brain dead intel guys let unprivilegde code find. */
