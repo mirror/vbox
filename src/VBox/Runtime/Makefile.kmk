@@ -855,7 +855,6 @@ RuntimeR0Drv_SOURCES    = \
 	common/misc/sanity-cpp.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
-	common/string/strpbrk.cpp \
 	common/string/strprintf.cpp \
 	common/string/strtonum.cpp \
 	common/table/avlpv.cpp \
@@ -869,6 +868,7 @@ RuntimeR0Drv_SOURCES    = \
 
 RuntimeR0Drv_SOURCES.linux = \
 	common/alloc/heapsimple.cpp \
+	common/string/strpbrk.cpp \
 	common/err/RTErrConvertToErrno.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
@@ -887,6 +887,7 @@ RuntimeR0Drv_SOURCES.linux = \
 RuntimeR0Drv_SOURCES.win = \
 	common/misc/thread.cpp \
 	common/string/strncmp.cpp \
+	common/string/strpbrk.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/memobj-r0drv.cpp \
@@ -912,6 +913,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
+	common/string/strpbrk.cpp \
 	darwin/RTErrConvertFromDarwinIO.cpp \
 	darwin/RTErrConvertFromDarwinKern.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
@@ -943,6 +945,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	common/string/strcpy.cpp \
 	common/string/strlen.cpp \
 	common/string/strncmp.cpp \
+	common/string/strpbrk.cpp \
 	\
 	common/misc/thread.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -974,6 +977,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	common/err/RTErrConvertToErrno.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
+	common/string/strpbrk.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
