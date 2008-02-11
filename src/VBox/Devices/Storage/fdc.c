@@ -1224,7 +1224,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 
             cur_drv->Led.Actual.s.fReading = 0;
 
-            if (VBOX_FAILURE (rc)) {
+            if (RT_FAILURE (rc)) {
                 AssertMsgFailed (
                     ("Floppy: error getting sector %d, rc = %Vrc",
                      fd_sector (cur_drv), rc));
@@ -1289,7 +1289,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 
             cur_drv->Led.Actual.s.fWriting = 0;
 
-            if (VBOX_FAILURE (rc)) {
+            if (RT_FAILURE (rc)) {
                 AssertMsgFailed (("Floppy: error writing sector %d. rc=%Vrc",
                                   fd_sector (cur_drv), rc));
                 fdctrl_stop_transfer (fdctrl, 0x60, 0x00, 0x00);
@@ -1446,7 +1446,7 @@ transfer_error:
 
             cur_drv->Led.Actual.s.fReading = 0;
 
-            if (VBOX_FAILURE (rc)) {
+            if (RT_FAILURE (rc)) {
                 AssertMsgFailed (
                     ("Floppy: error getting sector %d. rc=%Vrc\n",
                      fd_sector(cur_drv), rc));
@@ -1488,7 +1488,7 @@ transfer_error:
 
                 cur_drv->Led.Actual.s.fWriting = 0;
 
-                if (VBOX_FAILURE (rc)) {
+                if (RT_FAILURE (rc)) {
                     AssertMsgFailed (
                         ("Floppy: error writting sector %d. rc=%Vrc\n",
                          fd_sector(cur_drv), rc));
@@ -1623,7 +1623,7 @@ static uint32_t fdctrl_read_data (fdctrl_t *fdctrl)
 
             cur_drv->Led.Actual.s.fReading = 0;
 
-            if (VBOX_FAILURE (rc)) {
+            if (RT_FAILURE (rc)) {
                 AssertMsgFailed (
                     ("Floppy: Failure to read sector %d. rc=%Vrc",
                      fd_sector (cur_drv), rc));
@@ -1714,7 +1714,7 @@ static void fdctrl_format_sector (fdctrl_t *fdctrl)
 
         cur_drv->Led.Actual.s.fWriting = 0;
 
-        if (VBOX_FAILURE (rc)) {
+        if (RT_FAILURE (rc)) {
             AssertMsgFailed (("Floppy: error formating sector %d. rc=%Vrc\n",
                               fd_sector (cur_drv), rc));
             fdctrl_stop_transfer(fdctrl, 0x60, 0x00, 0x00);
@@ -1782,7 +1782,7 @@ static void fdctrl_write_data (fdctrl_t *fdctrl, uint32_t value)
 
             cur_drv->Led.Actual.s.fWriting = 0;
 
-            if (VBOX_FAILURE (rc)) {
+            if (RT_FAILURE (rc)) {
                 AssertMsgFailed (
                     ("Floppy: failed to write sector %d. rc=%Vrc\n",
                      fd_sector (cur_drv), rc));
@@ -2517,7 +2517,7 @@ static DECLCALLBACK(int) fdcStatusQueryStatusLed (PPDMILEDPORTS pInterface,
 {
     fdctrl_t *fdctrl = (fdctrl_t *)
         ((uintptr_t )pInterface - RT_OFFSETOF (fdctrl_t, ILeds));
-    if (iLUN < ELEMENTS(fdctrl->drives)) {
+    if (iLUN < RT_ELEMENTS(fdctrl->drives)) {
         *ppLed = &fdctrl->drives[iLUN].Led;
         Assert ((*ppLed)->u32Magic == PDMLED_MAGIC);
         return VINF_SUCCESS;
@@ -2565,7 +2565,7 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
     /*
      * Reset the LED just to be on the safe side.
      */
-    Assert (ELEMENTS(descs) > drv->iLUN);
+    Assert (RT_ELEMENTS(descs) > drv->iLUN);
     Assert (drv->Led.u32Magic == PDMLED_MAGIC);
     drv->Led.Actual.u32 = 0;
     drv->Led.Asserted.u32 = 0;
@@ -2574,8 +2574,7 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
      * Try attach the block device and get the interfaces.
      */
     rc = PDMDevHlpDriverAttach (pDevIns, drv->iLUN, &drv->IBase, &drv->pDrvBase, descs[drv->iLUN]);
-    if (VBOX_SUCCESS (rc))
-    {
+    if (VBOX_SUCCESS (rc)) {
         drv->pDrvBlock = drv->pDrvBase->pfnQueryInterface (
             drv->pDrvBase,
             PDMINTERFACE_BLOCK
@@ -2601,45 +2600,38 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
                     drv->last_sect = 0;
                     drv->max_track = 0;
                     drv->fMediaPresent = false;
-                }
-                else {
+                } else {
                     AssertMsgFailed (("Configuration error: LUN#%d without mountable interface!\n", drv->iLUN));
                     rc = VERR_PDM_MISSING_INTERFACE;
                 }
 
-            }
-            else {
+            } else {
                 AssertMsgFailed (("Configuration error: LUN#%d hasn't a block BIOS interface!\n", drv->iLUN));
                 rc = VERR_PDM_MISSING_INTERFACE;
             }
 
-        }
-        else {
+        } else {
             AssertMsgFailed (("Configuration error: LUN#%d hasn't a block interface!\n", drv->iLUN));
             rc = VERR_PDM_MISSING_INTERFACE;
         }
-    }
-    else
-    {
+    } else {
         AssertMsg (rc == VERR_PDM_NO_ATTACHED_DRIVER,
                    ("Failed to attach LUN#%d. rc=%Vrc\n", drv->iLUN, rc));
-        switch (rc)
-        {
-            case VERR_ACCESS_DENIED:
-                /* Error already catched by DrvHostBase */
-                break;
-            case VERR_PDM_NO_ATTACHED_DRIVER:
-                /* Legal on architectures without a floppy controller */
-                break;
-            default:
-                rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                         N_("The floppy controller cannot attach to the floppy drive"));
-                break;
+        switch (rc) {
+        case VERR_ACCESS_DENIED:
+            /* Error already catched by DrvHostBase */
+            break;
+        case VERR_PDM_NO_ATTACHED_DRIVER:
+            /* Legal on architectures without a floppy controller */
+            break;
+        default:
+            rc = PDMDevHlpVMSetError (pDevIns, rc, RT_SRC_POS,
+                                      N_ ("The floppy controller cannot attach to the floppy drive"));
+            break;
         }
     }
 
-    if (VBOX_FAILURE (rc))
-    {
+    if (RT_FAILURE (rc)) {
         drv->pDrvBase = NULL;
         drv->pDrvBlock = NULL;
         drv->pDrvBlockBios = NULL;
@@ -2749,7 +2741,7 @@ static DECLCALLBACK(void) fdcReset (PPDMDEVINS pDevIns)
     fdctrl_reset(fdctrl, 0);
     fdctrl->state = FD_CTRL_ACTIVE;
 
-    for (i = 0; i < ELEMENTS(fdctrl->drives); i++) {
+    for (i = 0; i < RT_ELEMENTS(fdctrl->drives); i++) {
         fd_revalidate(&fdctrl->drives[i]);
     }
 }
@@ -2794,8 +2786,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     rc = CFGMR3QueryU8 (pCfgHandle, "IRQ", &irq_lvl);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         irq_lvl = 6;
-    else if (VBOX_FAILURE (rc))
-    {
+    else if (RT_FAILURE (rc)) {
         AssertMsgFailed (("Configuration error: Failed to read U8 IRQ, rc=%Vrc\n", rc));
         return rc;
     }
@@ -2803,8 +2794,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     rc = CFGMR3QueryU8 (pCfgHandle, "DMA", &dma_chann);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         dma_chann = 2;
-    else if (VBOX_FAILURE (rc))
-    {
+    else if (RT_FAILURE (rc)) {
         AssertMsgFailed (("Configuration error: Failed to read U8 DMA, rc=%Vrc\n", rc));
         return rc;
     }
@@ -2812,8 +2802,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     rc = CFGMR3QueryU16 (pCfgHandle, "IOBase", &io_base);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         io_base = 0x3f0;
-    else if (VBOX_FAILURE (rc))
-    {
+    else if (RT_FAILURE (rc)) {
         AssertMsgFailed (("Configuration error: Failed to read U16 IOBase, rc=%Vrc\n", rc));
         return rc;
     }
@@ -2821,8 +2810,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     rc = CFGMR3QueryBool (pCfgHandle, "MemMapped", &mem_mapped);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         mem_mapped = false;
-    else if (VBOX_FAILURE (rc))
-    {
+    else if (RT_FAILURE (rc)) {
         AssertMsgFailed (("Configuration error: Failed to read bool value MemMapped rc=%Vrc\n", rc));
         return rc;
     }
@@ -2841,8 +2829,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     fdctrl->IBaseStatus.pfnQueryInterface = fdcStatusQueryInterface;
     fdctrl->ILeds.pfnQueryStatusLed = fdcStatusQueryStatusLed;
 
-    for (i = 0; i < ELEMENTS(fdctrl->drives); ++i)
-    {
+    for (i = 0; i < RT_ELEMENTS(fdctrl->drives); ++i) {
         fdrive_t *drv = &fdctrl->drives[i];
 
         drv->drive = FDRIVE_DRV_NONE;
@@ -2858,27 +2845,24 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
      * Create the FDC timer.
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, fdc_timer, "FDC Timer", &fdctrl->result_timer);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return rc;
 
     /*
      * Register DMA channel.
      */
-    if (fdctrl->dma_chann != 0xff)
-    {
+    if (fdctrl->dma_chann != 0xff) {
         fdctrl->dma_en = 1;
         rc = PDMDevHlpDMARegister (pDevIns, dma_chann, &fdctrl_transfer_handler, fdctrl);
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
             return rc;
-    }
-    else
+    } else
         fdctrl->dma_en = 0;
 
     /*
      * IO / MMIO.
      */
-    if (mem_mapped)
-    {
+    if (mem_mapped) {
         AssertMsgFailed (("Memory mapped floppy not support by now\n"));
         return VERR_NOT_SUPPORTED;
 #if 0
@@ -2886,17 +2870,15 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
         io_mem = cpu_register_io_memory(0, fdctrl_mem_read, fdctrl_mem_write);
         cpu_register_physical_memory(base, 0x08, io_mem);
 #endif
-    }
-    else
-    {
+    } else {
         rc = PDMDevHlpIOPortRegister (pDevIns, io_base + 0x1, 5, fdctrl,
                                       fdc_io_write, fdc_io_read, NULL, NULL, "FDC#1");
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
             return rc;
 
         rc = PDMDevHlpIOPortRegister (pDevIns, io_base + 0x7, 1, fdctrl,
                                       fdc_io_write, fdc_io_read, NULL, NULL, "FDC#2");
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
             return rc;
     }
 
@@ -2905,7 +2887,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
      */
     rc = PDMDevHlpSSMRegister (pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1, sizeof(*fdctrl),
                                NULL, SaveExec, NULL, NULL, LoadExec, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -2915,8 +2897,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     if (VBOX_SUCCESS (rc)) {
         fdctrl->pLedsConnector =
             pBase->pfnQueryInterface (pBase, PDMINTERFACE_LED_CONNECTORS);
-    }
-    else if (rc != VERR_PDM_NO_ATTACHED_DRIVER) {
+    } else if (rc != VERR_PDM_NO_ATTACHED_DRIVER) {
         AssertMsgFailed (("Failed to attach to status driver. rc=%Vrc\n",
                           rc));
         return rc;
@@ -2925,13 +2906,11 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     /*
      * Initialize drives.
      */
-    for (i = 0; i < ELEMENTS(fdctrl->drives); i++)
-    {
+    for (i = 0; i < RT_ELEMENTS(fdctrl->drives); i++) {
         fdrive_t *drv = &fdctrl->drives[i];
         rc = fdConfig (drv, pDevIns);
-        if (    VBOX_FAILURE (rc)
-            &&  rc != VERR_PDM_NO_ATTACHED_DRIVER)
-        {
+        if (    RT_FAILURE (rc)
+            &&  rc != VERR_PDM_NO_ATTACHED_DRIVER) {
             AssertMsgFailed (("Configuration error: failed to configure drive %d, rc=%Vrc\n", rc));
             return rc;
         }
@@ -2940,7 +2919,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     fdctrl_reset(fdctrl, 0);
     fdctrl->state = FD_CTRL_ACTIVE;
 
-    for (i = 0; i < ELEMENTS(fdctrl->drives); i++)
+    for (i = 0; i < RT_ELEMENTS(fdctrl->drives); i++)
         fd_revalidate(&fdctrl->drives[i]);
 
     return VINF_SUCCESS;
