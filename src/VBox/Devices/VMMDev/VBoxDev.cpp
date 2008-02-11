@@ -718,10 +718,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 VMMDevReqHypervisorInfo *hypervisorInfo = (VMMDevReqHypervisorInfo*)pRequestHeader;
                 PVM pVM = PDMDevHlpGetVM(pDevIns);
-                size_t hypervisorSize = 0;
-                pRequestHeader->rc = PGMR3MappingsSize(pVM, &hypervisorSize);
-                hypervisorInfo->hypervisorSize = (uint32_t)hypervisorSize;
-                Assert(hypervisorInfo->hypervisorSize == hypervisorSize);
+                pRequestHeader->rc = PGMR3MappingsSize(pVM, &hypervisorInfo->hypervisorSize);
             }
             break;
         }
@@ -741,18 +738,17 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevReqHypervisorInfo *hypervisorInfo = (VMMDevReqHypervisorInfo*)pRequestHeader;
                 PVM pVM = PDMDevHlpGetVM(pDevIns);
                 if (hypervisorInfo->hypervisorStart == 0)
-                {
                     pRequestHeader->rc = PGMR3MappingsUnfix(pVM);
-                } else
+                else
                 {
                     /* only if the client has queried the size before! */
-                    size_t mappingsSize;
+                    uint32_t mappingsSize;
                     pRequestHeader->rc = PGMR3MappingsSize(pVM, &mappingsSize);
-                    if (VBOX_SUCCESS(pRequestHeader->rc) && (hypervisorInfo->hypervisorSize == mappingsSize))
+                    if (VBOX_SUCCESS(pRequestHeader->rc) && hypervisorInfo->hypervisorSize == mappingsSize)
                     {
                         /* new reservation */
                         pRequestHeader->rc = PGMR3MappingsFix(pVM, hypervisorInfo->hypervisorStart,
-                                                             hypervisorInfo->hypervisorSize);
+                                                              hypervisorInfo->hypervisorSize);
                         LogRel(("Guest reported fixed hypervisor window at 0x%p (size = 0x%x, rc = %Vrc)\n",
                                 hypervisorInfo->hypervisorStart,
                                 hypervisorInfo->hypervisorSize,

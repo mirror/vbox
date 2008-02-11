@@ -53,7 +53,7 @@ static void              pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, 
  * @param   pvUser          User argument to the callback.
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
-PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, size_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc)
+PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc)
 {
     LogFlow(("PGMR3MapPT: GCPtr=%#x cb=%d pfnRelocate=%p pvUser=%p pszDesc=%s\n", GCPtr, cb, pfnRelocate, pvUser, pszDesc));
     AssertMsg(pVM->pgm.s.pInterPD && pVM->pgm.s.pHC32BitPD, ("Paging isn't initialized, init order problems!\n"));
@@ -66,7 +66,7 @@ PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, size_t cb, PFNPGMRELOCATE pfnR
         AssertMsgFailed(("Serious? cb=%d\n", cb));
         return VERR_INVALID_PARAMETER;
     }
-    cb = RT_ALIGN_Z(cb, _4M);
+    cb = RT_ALIGN_32(cb, _4M);
     RTGCPTR GCPtrLast = GCPtr + cb - 1;
     if (GCPtrLast < GCPtr)
     {
@@ -274,13 +274,14 @@ PGMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
  * @param   pVM     The VM.
  * @param   pcb     Where to store the size.
  */
-PGMR3DECL(int) PGMR3MappingsSize(PVM pVM, size_t *pcb)
+PGMR3DECL(int) PGMR3MappingsSize(PVM pVM, uint32_t *pcb)
 {
-    size_t cb = 0;
+    RTGCUINTPTR cb = 0;
     for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
         cb += pCur->cb;
 
     *pcb = cb;
+    AssertReturn(*pcb != cb, VERR_NUMBER_TOO_BIG);
     Log(("PGMR3MappingsSize: return %d (%#x) bytes\n", cb, cb));
     return VINF_SUCCESS;
 }
@@ -294,7 +295,7 @@ PGMR3DECL(int) PGMR3MappingsSize(PVM pVM, size_t *pcb)
  * @param   GCPtrBase   The address of the reserved range of guest memory.
  * @param   cb          The size of the range starting at GCPtrBase.
  */
-PGMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, size_t cb)
+PGMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
 {
     Log(("PGMR3MappingsFix: GCPtrBase=%#x cb=%#x\n", GCPtrBase, cb));
 
