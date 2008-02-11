@@ -232,6 +232,22 @@ public:
         <xsl:text>;&#x0A;</xsl:text>
     </xsl:for-each>
     <xsl:text>&#x0A;</xsl:text>
+    <!-- array typedefs -->
+    <xsl:text>// array typedefs&#x0A;&#x0A;</xsl:text>
+    <xsl:for-each select="interface[not(@internal='yes')]">
+        <xsl:if test="
+            (//attribute[@safearray='yes' and not(@internal='yes') and @type=current()/@name])
+            or
+            (//param[@safearray='yes' and not(../@internal='yes') and @type=current()/@name])
+        ">
+            <xsl:text>typedef QValueVector &lt;C</xsl:text>
+            <xsl:value-of select="substring(@name,2)"/>
+            <xsl:text>&gt; C</xsl:text>
+            <xsl:value-of select="substring(@name,2)"/>
+            <xsl:text>Vector;&#x0A;</xsl:text>
+        </xsl:if>
+    </xsl:for-each>
+    <xsl:text>&#x0A;</xsl:text>
     <!-- wrapper declarations -->
     <xsl:text>// wrapper declarations&#x0A;&#x0A;</xsl:text>
     <xsl:apply-templates select="
