@@ -337,10 +337,10 @@ ifeq ($(BUILD_TARGET),solaris)
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
- VBOX_WITH_TESTSUITE=
+ VBOX_WITH_OGL=
+ ## @todo These two should be removed ASAP - should be simple.
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=
- VBOX_WITH_OGL=
 endif
 
 ifeq ($(BUILD_TARGET),freebsd)
