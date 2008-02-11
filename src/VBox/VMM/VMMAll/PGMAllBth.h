@@ -198,7 +198,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                  */
                 PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->VirtHandlers, pvFault);
                 if (    pCur
-                    &&  pCur->enmType != PGMVIRTHANDLERTYPE_EIP
                     &&  (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb
                     &&  (    uErr & X86_TRAP_PF_RW
                          ||  (   pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
@@ -215,35 +214,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     STAM_COUNTER_INC(&pVM->pgm.s.StatTrap0eMapHandler);
                     STAM_PROFILE_STOP(&pVM->pgm.s.StatMapping, a);
                     return rc;
-                }
-
-                /*
-                 * Check if the EIP is in a virtual page access handler range.
-                 */
-                if (cpl == 0)
-                {
-                    RTGCPTR pvEIP;
-                    rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pvEIP);
-                    if (VBOX_SUCCESS(rc))
-                    {
-                        PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->VirtHandlers, pvEIP);
-                        if (    pCur
-                            &&  pCur->enmType == PGMVIRTHANDLERTYPE_EIP
-                            &&  (RTGCUINTPTR)pvEIP - (RTGCUINTPTR)pCur->GCPtr < pCur->cb)
-                        {
-#  ifdef IN_GC
-                            STAM_PROFILE_START(&pCur->Stat, h);
-                            rc = CTXSUFF(pCur->pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvEIP - (RTGCUINTPTR)pCur->GCPtr);
-                            STAM_PROFILE_STOP(&pCur->Stat, h);
-#  else
-                            AssertFailed();
-                            rc = VINF_EM_RAW_EMULATE_INSTR; /* can't happen with VMX */
-#  endif
-                            STAM_COUNTER_INC(&pVM->pgm.s.StatTrap0eMapHandler);
-                            STAM_PROFILE_STOP(&pVM->pgm.s.StatMapping, a);
-                            return rc;
-                        }
-                    }
                 }
 
                 /*
@@ -411,8 +381,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                            || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
                                       ("Unexpected trap for virtual handler: %VGv (phys=%VGp) HCPhys=%HGp uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
 
-                            if (    pCur->enmType != PGMVIRTHANDLERTYPE_EIP
-                                &&  (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb
+                            if (    (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb
                                 &&  (    uErr & X86_TRAP_PF_RW
                                      ||  (   pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
                                           && pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR) ) ) /** @todo r=bird: _HYPERVISOR is impossible here because of mapping check. */
@@ -440,7 +409,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                                                  &pCur, &iPage);
                             Assert(VBOX_SUCCESS(rc) || !pCur);
                             if (    pCur
-                                &&  pCur->enmType != PGMVIRTHANDLERTYPE_EIP
                                 &&  (   uErr & X86_TRAP_PF_RW
                                     ||  (   pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
                                         &&  pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR) ) )
@@ -523,8 +491,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                        || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
                                   ("Unexpected trap for virtual handler: %08X (phys=%08x) HCPhys=%X uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
 
-                        if (    pCur->enmType != PGMVIRTHANDLERTYPE_EIP
-                            &&  (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb
+                        if (    (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb
                             &&  (    uErr & X86_TRAP_PF_RW
                                  ||  (   pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
                                       && pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR) ) ) /** @todo r=bird: _HYPERVISOR is impossible here because of mapping check. */
@@ -758,39 +725,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
 
 # if PGM_WITH_PAGING(PGM_GST_TYPE)
-    /*
-     * Check if it's in a EIP based virtual page access handler range.
-     * This is only used for supervisor pages in flat mode.
-     */
-    /** @todo this stuff is completely broken by the out-of-sync stuff. since we don't use this stuff, that's not really a problem yet. */
-    STAM_PROFILE_START(&pVM->pgm.s.StatEIPHandlers, d);
-    if (cpl == 0)
-    {
-        RTGCPTR pvEIP;
-        rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &pvEIP);
-        if (    VBOX_SUCCESS(rc)
-            &&  pvEIP == (RTGCPTR)pRegFrame->eip)
-        {
-            PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->VirtHandlers, pvEIP);
-            if (    pCur
-                &&  pCur->enmType == PGMVIRTHANDLERTYPE_EIP
-                &&  (RTGCUINTPTR)pvEIP - (RTGCUINTPTR)pCur->GCPtr < pCur->cb)
-            {
-                LogFlow(("EIP handler\n"));
-#  ifdef IN_GC
-                STAM_PROFILE_START(&pCur->Stat, h);
-                rc = CTXSUFF(pCur->pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvEIP - (RTGCUINTPTR)pCur->GCPtr);
-                STAM_PROFILE_STOP(&pCur->Stat, h);
-#  else
-                rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
-#  endif
-                STAM_PROFILE_STOP(&pVM->pgm.s.StatEIPHandlers, d);
-                return rc;
-            }
-        }
-    }
-    STAM_PROFILE_STOP(&pVM->pgm.s.StatEIPHandlers, d);
-
     /*
      * Conclusion, this is a guest trap.
      */
