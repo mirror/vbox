@@ -135,8 +135,11 @@ public:
       */
     int start(void);
 
-    /** Stops the service. */
-    void stop(void);
+    /**
+     * Stops the service.
+     * @param cMillies how long to wait for the thread to exit
+     */
+    void stop(unsigned cMillies = RT_INDEFINITE_WAIT);
 
     /** Returns the current state of the host - i.e. requesting seamless or not. */
     meEvent getState(void) { return mState; }
@@ -162,7 +165,7 @@ public:
             LogRel(("VBoxService: seamless host object still running!  Stopping...\n"));
             try
             {
-                stop();
+                stop(2000);
             }
             catch(...) {}
         }

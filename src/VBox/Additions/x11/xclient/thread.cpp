@@ -19,13 +19,7 @@
 
 #include "thread.h"
 
-/** Stop the thread using its stop method and get the exit value.
- * @returns iprt status code
- * @param   cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
- *                              an indefinite wait.  Only relevant if the thread is
- *                              waitable.
- * @param   prc             Where to store the return code of the thread. Optional.
- */
+/** Stop the thread using its stop method and get the exit value. */
 int VBoxGuestThread::stop(unsigned cMillies, int *prc)
 {
     int rc = VINF_SUCCESS;
@@ -60,7 +54,7 @@ VBoxGuestThread::~VBoxGuestThread(void)
         LogRelThisFunc(("Warning!  Stopping thread %s, as it is still running!\n", mName));
         try
         {
-            stop(1000, 0);
+            stop(2000, 0);
         }
         catch(...) {}
     }

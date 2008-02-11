@@ -66,14 +66,14 @@ int VBoxGuestSeamlessHost::start(void)
 }
 
 /** Stops the service. */
-void VBoxGuestSeamlessHost::stop(void)
+void VBoxGuestSeamlessHost::stop(unsigned cMillies /* = RT_INDEFINITE_WAIT */)
 {
     if (!mRunning)  /* Assertion */
     {
         LogRel(("VBoxService: tried to stop seamless service which is not running!\n"));
         return;
     }
-    mThread.stop(0, 0);
+    mThread.stop(cMillies, 0);
     VbglR3CtlFilterMask(0, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST);
     VbglR3SeamlessSetCap(false);
     mRunning = false;
