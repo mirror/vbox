@@ -471,6 +471,7 @@ typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
 /**
  * Page type.
  * @remarks This enum has to fit in a 3-bit field (see PGMPAGE::u3Type).
+ * @todo convert to \#defines.
  */
 typedef enum PGMPAGETYPE
 {
@@ -526,7 +527,9 @@ typedef struct PGMPAGE
     uint32_t    idPageX : 28;
     /** The page type (PGMPAGETYPE). */
     uint32_t    u3Type : 3;
-    uint32_t    u29B : 29;
+    /** The physical handler state (PGM_PAGE_HNDL_PHYS_STATE*) */
+    uint32_t    u2HandlerPhysStateX : 2;
+    uint32_t    u29B : 27;
 } PGMPAGE;
 AssertCompileSize(PGMPAGE, 16);
 /** Pointer to a physical guest page. */
@@ -754,6 +757,94 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_IS_WRITTEN_TO(pPage)       ( (pPage)->fWrittenToX )
+
+
+/** @name Physical Access Handler State values (PGMPAGE::u2HandlerPhysStateX).
+ *
+ * @remarks The values are assigned in order of priority, so we can calculate
+ *          the correct state for a page with different handlers installed.
+ * @{ */
+/** No handler installed. */
+#define PGM_PAGE_HNDL_PHYS_STATE_NONE       0
+/** Monitoring is temporarily disabled. */
+#define PGM_PAGE_HNDL_PHYS_STATE_DISABLED   1
+/** Write access is monitored. */
+#define PGM_PAGE_HNDL_PHYS_STATE_WRITE      2
+/** All access is monitored. */
+#define PGM_PAGE_HNDL_PHYS_STATE_ALL        3
+/** @} */
+
+/**
+ * Gets the physical access handler state of a page.
+ * @returns PGM_PAGE_HNDL_PHYS_STATE_* value.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_HNDL_PHYS_STATE(pPage)     ( (pPage)->u2HandlerPhysStateX )
+
+/**
+ * Sets the physical access handler state of a page.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ * @param   _uState     The new state value.
+ */
+#define PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, _uState) \
+    do { (pPage)->u2HandlerPhysStateX = (_uState); } while (0)
+
+/**
+ * Checks if the page has any access handlers, including temporarily disabled ones.
+ * @returns true/false
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_HAVE_ANY_HANDLERS(pPage) \
+    (   (pPage)->u2HandlerPhysStateX != PGM_PAGE_HNDL_PHYS_STATE_NONE \
+     || ((pPage)->HCPhys & MM_RAM_FLAGS_VIRTUAL_HANDLER) )
+
+/**
+ * Checks if the page has any active access handlers.
+ * @returns true/false
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage) \
+    (   (pPage)->u2HandlerPhysStateX >= PGM_PAGE_HNDL_PHYS_STATE_WRITE \
+     || ((pPage)->HCPhys & MM_RAM_FLAGS_VIRTUAL_HANDLER) )
+
+/**
+ * Checks if the page has any active access handlers catching all accesses.
+ * @returns true/false
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage) \
+    (   (pPage)->u2HandlerPhysStateX == PGM_PAGE_HNDL_PHYS_STATE_ALL \
+     || ((pPage)->HCPhys & MM_RAM_FLAGS_VIRTUAL_ALL) )
+
+/**
+ * Checks if the page has any physical access handlers, including temporariliy disabled ones.
+ * @returns true/false
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_HAVE_ANY_PHYSICAL_HANDLERS(pPage)      ( (pPage)->u2HandlerPhysStateX != PGM_PAGE_HNDL_PHYS_STATE_NONE )
+
+/**
+ * Checks if the page has any active physical access handlers.
+ * @returns true/false
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_HAVE_ACTIVE_PHYSICAL_HANDLERS(pPage)   ( (pPage)->u2HandlerPhysStateX >= PGM_PAGE_HNDL_PHYS_STATE_WRITE )
+
+/**
+ * Checks if the page has any virtual access handlers.
+ * @returns true/false
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS(pPage)    ( (pPage)->HCPhys & MM_RAM_FLAGS_VIRTUAL_HANDLER )
+
+/**
+ * Same as PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS - can't disable pages in
+ * virtual handlers.
+ * @returns true/false
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_HAVE_ACTIVE_VIRTUAL_HANDLERS(pPage) PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS(pPage)
+
 
 /**
  * Ram range for GC Phys to HC Phys conversion.
@@ -2377,7 +2468,6 @@ __BEGIN_DECLS
 
 PGMGCDECL(int)  pgmGCGuestPDWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 PGMDECL(int)    pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
-PGMGCDECL(int)  pgmCachePTWriteGC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 int             pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PVBOXPD pPDSrc, int iPDOld);
 PPGMMAPPING     pgmGetMapping(PVM pVM, RTGCPTR GCPtr);
 void            pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, int iPDOld, int iPDNew);
@@ -2443,6 +2533,36 @@ int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 #endif
 
 __END_DECLS
+
+
+/**
+ * Gets the PGMRAMRANGE structure for a guest page.
+ *
+ * @returns Pointer to the RAM range on success.
+ * @returns NULL on a VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS condition.
+ *
+ * @param   pPGM        PGM handle.
+ * @param   GCPhys      The GC physical address.
+ */
+DECLINLINE(PPGMRAMRANGE) pgmPhysGetRange(PPGM pPGM, RTGCPHYS GCPhys)
+{
+    /*
+     * Optimize for the first range.
+     */
+    PPGMRAMRANGE pRam = CTXALLSUFF(pPGM->pRamRanges);
+    RTGCPHYS off = GCPhys - pRam->GCPhys;
+    if (RT_UNLIKELY(off >= pRam->cb))
+    {
+        do
+        {
+            pRam = CTXALLSUFF(pRam->pNext);
+            if (RT_UNLIKELY(!pRam))
+                break;
+            off = GCPhys - pRam->GCPhys;
+        } while (off >= pRam->cb);
+    }
+    return pRam;
+}
 
 
 /**
@@ -3102,21 +3222,21 @@ DECLINLINE(bool) pgmRamTestFlags(PPGM pPGM, RTGCPHYS GCPhys, uint64_t fFlags)
 
 
 /**
- * Gets the ram flags for a handler.
+ * Gets the page state for a physical handler.
  *
- * @returns The ram flags.
+ * @returns The physical handler page state.
  * @param   pCur    The physical handler in question.
  */
-DECLINLINE(unsigned) pgmHandlerPhysicalCalcFlags(PPGMPHYSHANDLER pCur)
+DECLINLINE(unsigned) pgmHandlerPhysicalCalcState(PPGMPHYSHANDLER pCur)
 {
     switch (pCur->enmType)
     {
         case PGMPHYSHANDLERTYPE_PHYSICAL_WRITE:
-            return MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE;
+            return PGM_PAGE_HNDL_PHYS_STATE_WRITE;
 
         case PGMPHYSHANDLERTYPE_MMIO:
         case PGMPHYSHANDLERTYPE_PHYSICAL_ALL:
-            return MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_ALL;
+            return PGM_PAGE_HNDL_PHYS_STATE_ALL;
 
         default:
             AssertFatalMsgFailed(("Invalid type %d\n", pCur->enmType));
