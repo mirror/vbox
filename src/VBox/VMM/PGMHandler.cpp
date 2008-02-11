@@ -267,8 +267,11 @@ PGMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
  * @param   pfnHandlerHC    The HC handler.
  * @param   pfnHandlerGC    The GC handler.
  * @param   pszDesc         Pointer to description string. This must not be freed.
+ * @thread  EMT
  */
 /** @todo rename this to PGMR3HandlerVirtualRegisterEx. */
+/** @todo create a template for virtual handlers (see async i/o), we're wasting space 
+ * duplicating the function pointers now. (Or we will once we add the missing callbacks.) */
 PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
                                          PFNPGMHCVIRTINVALIDATE pfnInvalidateHC,
                                          PFNPGMHCVIRTHANDLER pfnHandlerHC, RTGCPTR pfnHandlerGC,
@@ -348,13 +351,20 @@ PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
      * The current implementation doesn't allow multiple handlers for
      * the same range this makes everything much simpler and faster.
      */
+    AVLROGCPTRTREE *pRoot = enmType != PGMVIRTHANDLERTYPE_HYPERVISOR 
+                          ? &pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers
+                          : &pVM->pgm.s.CTXSUFF(pTrees)->HyperVirtHandlers;
     pgmLock(pVM);
-    if (pVM->pgm.s.pTreesHC->VirtHandlers != 0)
+    if (*pRoot != 0)
     {
-        PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGetBestFit(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, pNew->Core.Key, true);
-        if (!pCur || GCPtr > pCur->GCPtrLast || GCPtrLast < pCur->GCPtr)
-            pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGetBestFit(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, pNew->Core.Key, false);
-        if (pCur && GCPtr <= pCur->GCPtrLast && GCPtrLast >= pCur->GCPtr)
+        PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGetBestFit(pRoot, pNew->Core.Key, true);
+        if (    !pCur 
+            ||  GCPtr     > pCur->GCPtrLast 
+            ||  GCPtrLast < pCur->GCPtr)
+            pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGetBestFit(pRoot, pNew->Core.Key, false);
+        if (    pCur 
+            &&  GCPtr     <= pCur->GCPtrLast 
+            &&  GCPtrLast >= pCur->GCPtr)
         {
             /*
              * The LDT sometimes conflicts with the IDT and LDT ranges while being
@@ -367,7 +377,7 @@ PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
             return VERR_PGM_HANDLER_VIRTUAL_CONFLICT;
         }
     }
-    if (RTAvlroGCPtrInsert(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, &pNew->Core))
+    if (RTAvlroGCPtrInsert(pRoot, &pNew->Core))
     {
         if (enmType != PGMVIRTHANDLERTYPE_HYPERVISOR)
         {
@@ -385,6 +395,7 @@ PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
 #endif
         return VINF_SUCCESS;
     }
+
     pgmUnlock(pVM);
     AssertFailed();
     MMHyperFree(pVM, pNew);
@@ -393,13 +404,14 @@ PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
 
 
 /**
- * Modify the page invalidation callback handler for a registered virtual range
+ * Modify the page invalidation callback handler for a registered virtual range.
  * (add more when needed)
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   GCPtr           Start address.
  * @param   pfnInvalidateHC The HC invalidate callback (can be 0)
+ * @remarks Doesn't work with the hypervisor access handler type.
  */
 PGMDECL(int) PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, PFNPGMHCVIRTINVALIDATE pfnInvalidateHC)
 {
@@ -423,19 +435,22 @@ PGMDECL(int) PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, P
  * @returns VBox status code.
  * @param   pVM         VM handle.
  * @param   GCPtr       Start address.
+ * @thread  EMT
  */
 PGMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
 {
+    pgmLock(pVM);
+
     /*
      * Find the handler.
      * We naturally assume GCPtr is a unique specification.
      */
-    pgmLock(pVM);
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRemove(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, GCPtr);
-    if (pCur)
+    if (RT_LIKELY(pCur))
     {
-        Log(("PGMR3HandlerVirtualDeregister: Removing Virtual (%d) Range %#x-%#x %s\n", pCur->enmType,
+        Log(("PGMHandlerVirtualDeregister: Removing Virtual (%d) Range %#x-%#x %s\n", pCur->enmType,
              pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc));
+        Assert(pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR);
 
         /*
          * Reset the flags and remove phys2virt nodes.
@@ -446,21 +461,33 @@ PGMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
                 pgmHandlerVirtualClearPage(pPGM, pCur, iPage);
 
         /*
-         * Schedule CR3 sync (if required) and the memory.
+         * Schedule CR3 sync.
          */
-        STAM_DEREG(pVM, &pCur->Stat);
-        if (pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR)
-        {
-            pVM->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL | PGM_SYNC_CLEAR_PGM_POOL;
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-        }
-        MMHyperFree(pVM, pCur);
-        pgmUnlock(pVM);
-        return VINF_SUCCESS;
+        pVM->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL | PGM_SYNC_CLEAR_PGM_POOL;
+        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
     }
+    else
+    {
+        /* must be a hypervisor one then. */
+        pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRemove(&pVM->pgm.s.CTXSUFF(pTrees)->HyperVirtHandlers, GCPtr);
+        if (RT_UNLIKELY(!pCur))
+        {
+            pgmUnlock(pVM);
+            AssertMsgFailed(("Range %#x not found!\n", GCPtr));
+            return VERR_INVALID_PARAMETER;
+        }
+
+        Log(("PGMHandlerVirtualDeregister: Removing Hyper Virtual (%d) Range %#x-%#x %s\n", pCur->enmType,
+             pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc));
+        Assert(pCur->enmType == PGMVIRTHANDLERTYPE_HYPERVISOR);
+    }
+
     pgmUnlock(pVM);
-    AssertMsgFailed(("Range %#x not found!\n", GCPtr));
-    return VERR_INVALID_PARAMETER;
+    
+    STAM_DEREG(pVM, &pCur->Stat);
+    MMHyperFree(pVM, pCur);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -490,10 +517,12 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     PGMHANDLERINFOARG Args = { pHlp, true };
     bool fPhysical = !pszArgs  || !*pszArgs;
     bool fVirtual = fPhysical;
+    bool fHyper = fPhysical;
     if (!fPhysical)
     {
         fPhysical = strstr(pszArgs, "phys") != NULL;
         fVirtual = strstr(pszArgs, "virt") != NULL;
+        fHyper = strstr(pszArgs, "hyper") != NULL;
         Args.fStats = strstr(pszArgs, "nost") == NULL;
     }
 
@@ -515,6 +544,14 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
             "Virtual handlers:\n"
             "From     - To (excl) HandlerHC HandlerGC Type     Description\n");
         RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesHC->VirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
+    }
+
+    if (fHyper)
+    {
+        pHlp->pfnPrintf(pHlp,
+            "Hypervisor Virtual handlers:\n"
+            "From     - To (excl) HandlerHC HandlerGC Type     Description\n");
+        RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesHC->HyperVirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
     }
 }
 
@@ -567,10 +604,10 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
     const char *pszType;
     switch (pCur->enmType)
     {
-        case PGMVIRTHANDLERTYPE_WRITE:  pszType = "Write  "; break;
-        case PGMVIRTHANDLERTYPE_ALL:    pszType = "All    "; break;
+        case PGMVIRTHANDLERTYPE_WRITE:      pszType = "Write  "; break;
+        case PGMVIRTHANDLERTYPE_ALL:        pszType = "All    "; break;
         case PGMVIRTHANDLERTYPE_HYPERVISOR: pszType = "WriteHyp "; break;
-        default:                        pszType = "????"; break;
+        default:                            pszType = "????"; break;
     }
     pHlp->pfnPrintf(pHlp, "%08x - %08x  %08x  %08x  %s  %s\n",
         pCur->GCPtr, pCur->GCPtrLast, pCur->pfnHandlerHC, pCur->pfnHandlerGC, pszType, pCur->pszDesc);

@@ -1092,11 +1092,11 @@ static DECLCALLBACK(int) pgmVirtHandlerDump(PAVLROGCPTRNODECORE pNode, void *pvU
         case PGMVIRTHANDLERTYPE_WRITE:
             RTLogPrintf("WRITE    %RGv-%RGv size %RGv %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->cb, pCur->pszDesc);
             break;
-        case PGMVIRTHANDLERTYPE_HYPERVISOR:
-            RTLogPrintf("WRITEHYP %RGv-%RGv size %RGv %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->cb, pCur->pszDesc);
-            break;
         case PGMVIRTHANDLERTYPE_ALL:
             RTLogPrintf("ALL      %RGv-%RGv size %RGv %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->cb, pCur->pszDesc);
+            break;
+        case PGMVIRTHANDLERTYPE_HYPERVISOR:
+            RTLogPrintf("WRITEHYP %RGv-%RGv size %RGv %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->cb, pCur->pszDesc);
             break;
     }
     if (pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR)
@@ -1123,7 +1123,8 @@ PGMR3DECL(void) PGMR3DumpMappings(PVM pVM)
     for (pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
         RTLogPrintf("%VGv - %VGv  %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc);
 
-/** @todo The handler stuff is totally alien here. This should be converted into a 'info' function. */
+/** @todo The handler stuff is totally alien here. This should be converted into a 'info' function. 
+ * There are now, just kill this. */
     RTLogPrintf("\nVirtual handlers:\n");
     RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesHC->VirtHandlers, true, pgmVirtHandlerDump, pVM);
 

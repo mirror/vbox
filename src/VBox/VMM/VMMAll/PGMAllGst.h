@@ -643,6 +643,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
 {
     PPGMVIRTHANDLER pCur  = (PPGMVIRTHANDLER)pNode;
     PPGMHVUSTATE    pState = (PPGMHVUSTATE)pvUser;
+    Assert(pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR);
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
     PX86PD          pPDSrc = pState->pVM->pgm.s.CTXSUFF(pGuestPD);

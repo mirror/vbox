@@ -520,6 +520,7 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int) pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
+static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
 #ifdef VBOX_STRICT
 static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
 #endif
@@ -938,8 +939,9 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
                                    "Dumps all the physical address ranges. No arguments.",
                                    pgmR3PhysInfo);
         DBGFR3InfoRegisterInternal(pVM, "handlers",
-                                   "Dumps physical and virtual handlers. "
-                                   "Pass 'phys' or 'virt' as argument if only one kind is wanted.",
+                                   "Dumps physical, virtual and hyper virtual handlers. "
+                                   "Pass 'phys', 'virt', 'hyper' as argument if only one kind is wanted. "
+                                   "Add 'nost' if the statistics are unwanted.",
                                    pgmR3InfoHandlers);
 
         STAM_REL_REG(pVM, &pVM->pgm.s.cGuestModeChanges, STAMTYPE_COUNTER, "/PGM/cGuestModeChanges", STAMUNIT_OCCURENCES, "Number of guest mode changes.");
@@ -1598,6 +1600,7 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysHandlers, true, pgmR3RelocatePhysHandler, &offDelta);
     RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesHC->VirtHandlers, true, pgmR3RelocateVirtHandler, &offDelta);
+    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesHC->HyperVirtHandlers, true, pgmR3RelocateHyperVirtHandler, &offDelta);
 
     /*
      * The page pool.
@@ -1638,6 +1641,27 @@ static DECLCALLBACK(int) pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, voi
 {
     PPGMVIRTHANDLER pHandler = (PPGMVIRTHANDLER)pNode;
     RTGCINTPTR      offDelta = *(PRTGCINTPTR)pvUser;
+    Assert(     pHandler->enmType == PGMVIRTHANDLERTYPE_ALL
+           ||   pHandler->enmType == PGMVIRTHANDLERTYPE_WRITE);
+    Assert(pHandler->pfnHandlerGC);
+    pHandler->pfnHandlerGC  += offDelta;
+    return 0;
+}
+
+
+/**
+ * Callback function for relocating a virtual access handler for the hypervisor mapping.
+ *
+ * @returns 0 (continue enum)
+ * @param   pNode       Pointer to a PGMVIRTHANDLER node.
+ * @param   pvUser      Pointer to the offDelta. This is a pointer to the delta since we're
+ *                      not certain the delta will fit in a void pointer for all possible configs.
+ */
+static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser)
+{
+    PPGMVIRTHANDLER pHandler = (PPGMVIRTHANDLER)pNode;
+    RTGCINTPTR      offDelta = *(PRTGCINTPTR)pvUser;
+    Assert(pHandler->enmType == PGMVIRTHANDLERTYPE_HYPERVISOR);
     Assert(pHandler->pfnHandlerGC);
     pHandler->pfnHandlerGC  += offDelta;
     return 0;
@@ -3832,6 +3856,10 @@ PDMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->VirtHandlers,       true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
     Args.fLeftToRight = false;
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->VirtHandlers,       false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
+    Args.fLeftToRight = true;
+    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->HyperVirtHandlers,  true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
+    Args.fLeftToRight = false;
+    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->HyperVirtHandlers,  false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
     Args.fLeftToRight = true;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysToVirtHandlers, true,  pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
     Args.fLeftToRight = false;
