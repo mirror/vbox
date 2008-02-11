@@ -1563,6 +1563,11 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
 {
     LogFlowThisFuncEnter();
 
+    if (!aHandled)
+        return E_POINTER;
+
+    *aHandled = FALSE;
+
     AutoCaller autoCaller (this);
 
     AutoLock lock (this);
@@ -1587,7 +1592,8 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
         setError (E_FAIL,
-            tr ("Checking if poweroff was handled failed (%Vrc)"), vrc);
+            tr ("Checking if the ACPI Power Button event was handled by the "
+                "guest OS failed (%Vrc)"), vrc);
 
     *aHandled = handled;
 
