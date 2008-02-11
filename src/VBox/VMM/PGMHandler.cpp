@@ -281,7 +281,6 @@ PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
      */
     switch (enmType)
     {
-        case PGMVIRTHANDLERTYPE_NORMAL:
         case PGMVIRTHANDLERTYPE_ALL:
         case PGMVIRTHANDLERTYPE_WRITE:
             if (!pfnHandlerHC)
@@ -568,7 +567,6 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
     const char *pszType;
     switch (pCur->enmType)
     {
-        case PGMVIRTHANDLERTYPE_NORMAL: pszType = "Natural"; break;
         case PGMVIRTHANDLERTYPE_WRITE:  pszType = "Write  "; break;
         case PGMVIRTHANDLERTYPE_ALL:    pszType = "All    "; break;
         case PGMVIRTHANDLERTYPE_HYPERVISOR: pszType = "WriteHyp "; break;

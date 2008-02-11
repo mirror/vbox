@@ -1102,7 +1102,6 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
     unsigned        fFlags;
     switch (pCur->enmType)
     {
-        case PGMVIRTHANDLERTYPE_NORMAL: fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER; break;
         case PGMVIRTHANDLERTYPE_WRITE:  fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE; break;
         case PGMVIRTHANDLERTYPE_ALL:    fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_ALL; break;
         /* hypervisor handlers need no flags and wouldn't have nowhere to put them in any case. */
@@ -1230,7 +1229,6 @@ static DECLCALLBACK(int) pgmVirtHandlerVerifyOneByPhysAddr(PAVLROGCPTRNODECORE p
         {
             switch (pCur->enmType)
             {
-                case PGMVIRTHANDLERTYPE_NORMAL:     pState->fFlagsFound |= MM_RAM_FLAGS_VIRTUAL_HANDLER; break;
                 case PGMVIRTHANDLERTYPE_WRITE:      pState->fFlagsFound |= MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE; break;
                 case PGMVIRTHANDLERTYPE_ALL:        pState->fFlagsFound |= MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_ALL; break;
                 /* hypervisor handlers need no flags and wouldn't have nowhere to put them in any case. */
@@ -1273,7 +1271,6 @@ static DECLCALLBACK(int) pgmVirtHandlerVerifyOne(PAVLROGCPTRNODECORE pNode, void
     unsigned    fFlags;
     switch (pVirt->enmType)
     {
-        case PGMVIRTHANDLERTYPE_NORMAL:     fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER; break;
         case PGMVIRTHANDLERTYPE_WRITE:      fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE; break;
         case PGMVIRTHANDLERTYPE_ALL:        fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_ALL; break;
         /* hypervisor handlers need no flags and wouldn't have nowhere to put them in any case. */
