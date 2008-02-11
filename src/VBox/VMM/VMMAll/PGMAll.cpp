@@ -1476,7 +1476,8 @@ static DECLCALLBACK(int) pgmVirtHandlerVerifyOne(PAVLROGCPTRNODECORE pNode, void
         RTGCPHYS   GCPhysGst;
         uint64_t   fGst;
         int rc = PGMGstGetPage(pVM, (RTGCPTR)GCPtr, &fGst, &GCPhysGst);
-        if (rc == VERR_PAGE_NOT_PRESENT)
+        if (    rc == VERR_PAGE_NOT_PRESENT
+            ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
         {
             if (pVirt->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
             {
@@ -1590,7 +1591,9 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
 
 #ifdef IN_RING3
                         /* validate that REM is handling it. */
-                        if (!REMR3IsPageAccessHandled(pVM, State.GCPhys))
+                        if (    !REMR3IsPageAccessHandled(pVM, State.GCPhys)
+                                /* ignore shadowed ROM for the time being. */ /// @todo PAGE FLAGS
+                            &&  (pPage->HCPhys & (MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2)) != (MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2))
                         {
                             AssertMsgFailed(("ram range vs phys handler REM mismatch. GCPhys=%RGp state=%d %s\n",
                                              State.GCPhys, PGM_PAGE_GET_HNDL_PHYS_STATE(pPage), pPhys->pszDesc));
