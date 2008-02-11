@@ -41,6 +41,12 @@
 #include "HGCM.h"
 #endif
 
+#ifdef RT_OS_OS2
+# define VBOXSHAREDFOLDERS_DLL "VBoxSFld"
+#else
+# define VBOXSHAREDFOLDERS_DLL "VBoxSharedFolders"
+#endif
+
 #ifdef RT_OS_L4
 #include <l4/util/util.h> /* for l4_sleep */
 #endif
@@ -467,7 +473,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 #ifdef VBOX_HGCM
     if (fActivateHGCM())
     {
-        rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedFolders", "VBoxSharedFolders");
+        rc = pData->pVMMDev->hgcmLoadService (VBOXSHAREDFOLDERS_DLL, "VBoxSharedFolders");
         pData->pVMMDev->fSharedFolderActive = VBOX_SUCCESS(rc);
         if (VBOX_SUCCESS(rc))
             LogRel(("Shared Folders service loaded.\n"));
