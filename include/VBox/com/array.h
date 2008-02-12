@@ -493,9 +493,11 @@ public:
 
 #if defined (VBOX_WITH_XPCOM)
 
-        AssertReturn (aNewSize > 0, false);
+        /* Note: for zero-sized arrays, we use the size of 1 because whether
+         * malloc(0) returns a null pointer or not (which is used in isNull())
+         * is implementation-dependent according to the C standard. */
 
-        m.arr = (T *) nsMemory::Alloc (aNewSize * sizeof (T));
+        m.arr = (T *) nsMemory::Alloc (RT_MAX (aNewSize, 1) * sizeof (T));
         AssertReturn (m.arr != NULL, false);
 
         m.size = aNewSize;
@@ -504,8 +506,6 @@ public:
             Init (m.arr [i]);
 
 #else
-
-        AssertReturn (aNewSize > 0, false);
 
         SAFEARRAYBOUND bound = { aNewSize, 0 };
         m.arr = SafeArrayCreate (VarType(), 1, &bound);
@@ -986,9 +986,11 @@ public:
 
 #if defined (VBOX_WITH_XPCOM)
 
-        AssertReturn (aNewSize > 0, false);
+        /* Note: for zero-sized arrays, we use the size of 1 because whether
+         * malloc(0) returns a null pointer or not (which is used in isNull())
+         * is implementation-dependent according to the C standard. */
 
-        Base::m.arr = (I **) nsMemory::Alloc (aNewSize * sizeof (I *));
+        Base::m.arr = (I **) nsMemory::Alloc (RT_MAX (aNewSize, 1) * sizeof (I *));
         AssertReturn (Base::m.arr != NULL, false);
 
         Base::m.size = aNewSize;
@@ -997,8 +999,6 @@ public:
             Init (Base::m.arr [i]);
 
 #else
-
-        AssertReturn (aNewSize > 0, false);
 
         SAFEARRAYBOUND bound = { aNewSize, 0 };
         m.arr = SafeArrayCreateEx (VT_UNKNOWN, 1, &bound,
