@@ -342,13 +342,12 @@ int main(int argc, char *argv[])
     {
         printf ("Calling IVirtualBox::Machines...\n");
 
-        com::SafeArray <ULONG> aaa (10);
-
         com::SafeIfaceArray <IMachine> machines;
         CHECK_ERROR_BREAK (virtualBox,
                            COMGETTER(Machines2) (ComSafeArrayAsOutParam (machines)));
 
-        printf ("%u machines registered.\n", machines.size());
+        printf ("%u machines registered (machines.isNull()=%d).\n",
+                machines.size(), machines.isNull());
 
         for (size_t i = 0; i < machines.size(); ++ i)
         {
