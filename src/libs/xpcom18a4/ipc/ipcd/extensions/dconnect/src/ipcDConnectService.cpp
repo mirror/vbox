@@ -1052,7 +1052,10 @@ DeserializeArrayParam(ipcDConnectService *dConnect,
   if (NS_FAILED (rv))
       return rv;
 
-  void *arr = nsMemory::Alloc(size * elemSize);
+  // Note: for zero-sized arrays, we use the size of 1 because whether
+  // malloc(0) returns a null pointer or not (which is used in isNull())
+  // is implementation-dependent according to the C standard
+  void *arr = nsMemory::Alloc((size ? size : 1) * elemSize);
   if (arr == nsnull)
     return NS_ERROR_OUT_OF_MEMORY;
 
