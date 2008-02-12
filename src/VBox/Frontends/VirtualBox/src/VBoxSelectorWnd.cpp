@@ -494,6 +494,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmTools->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
 
     vmNewAction->addTo (vmTools);
+    vmTools->addSeparator();
     vmConfigAction->addTo (vmTools);
     vmDeleteAction->addTo (vmTools);
     vmTools->addSeparator();
@@ -514,8 +515,24 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     menuBar()->insertItem( QString::null, fileMenu, 1);
 
+    QPopupMenu *vmMenu = new QPopupMenu (this, "vmMenu");
+    vmNewAction->addTo (vmMenu);
+    vmMenu->insertSeparator();
+    vmConfigAction->addTo (vmMenu);
+    vmDeleteAction->addTo (vmMenu);
+    vmMenu->insertSeparator();
+    vmStartAction->addTo (vmMenu);
+    vmDiscardAction->addTo (vmMenu);
+    vmMenu->insertSeparator();
+    vmPauseAction->addTo (vmMenu);
+    vmMenu->insertSeparator();
+    vmRefreshAction->addTo (vmMenu);
+    vmMenu->insertSeparator();
+    vmShowLogsAction->addTo (vmMenu);
+
+    menuBar()->insertItem (QString::null, vmMenu, 2);
+
     mVmMenu = new QPopupMenu (this, "mVmMenu");
-    vmNewAction->addTo (mVmMenu);
     vmConfigAction->addTo (mVmMenu);
     vmDeleteAction->addTo (mVmMenu);
     mVmMenu->insertSeparator();
@@ -527,8 +544,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmRefreshAction->addTo (mVmMenu);
     mVmMenu->insertSeparator();
     vmShowLogsAction->addTo (mVmMenu);
-
-    menuBar()->insertItem (QString::null, mVmMenu, 2);
 
     QPopupMenu *helpMenu = new QPopupMenu( this, "helpMenu" );
     helpContentsAction->addTo (helpMenu);
