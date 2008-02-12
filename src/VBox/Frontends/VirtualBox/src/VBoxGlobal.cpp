@@ -1826,8 +1826,13 @@ bool VBoxGlobal::showVirtualBoxLicense()
  *  and returns a null CSession object in case of any error.
  *  If this method succeeds, don't forget to close the returned session when
  *  it is no more necessary.
+ *
+ *  @param aId          Machine ID.
+ *  @param aExisting    @c true to open an existing session with the machine
+ *                      which is already running, @c false to open a new direct
+ *                      session.
  */
-CSession VBoxGlobal::openSession (const QUuid &id, bool aExisting)
+CSession VBoxGlobal::openSession (const QUuid &aId, bool aExisting /* = false */)
 {
     CSession session;
     session.createInstance (CLSID_Session);
@@ -1837,11 +1842,12 @@ CSession VBoxGlobal::openSession (const QUuid &id, bool aExisting)
         return session;
     }
 
-    aExisting ? mVBox.OpenExistingSession (session, id) :
-		        mVBox.OpenSession (session, id);
+    aExisting ? mVBox.OpenExistingSession (session, aId) :
+                mVBox.OpenSession (session, aId);
+
     if (!mVBox.isOk())
     {
-        CMachine machine = CVirtualBox (mVBox).GetMachine (id);
+        CMachine machine = CVirtualBox (mVBox).GetMachine (aId);
         vboxProblem().cannotOpenSession (mVBox, machine);
         session.detach();
     }

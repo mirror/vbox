@@ -414,7 +414,10 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
-    CSession openSession (const QUuid &id, bool aExisting = false);
+    CSession openSession (const QUuid &aId, bool aExisting = false);
+
+    /** Shortcut to openSession (aId, true). */
+    CSession openExistingSession (const QUuid &aId) { return openSession (aId, true); }
 
     bool startMachine (const QUuid &id);
 

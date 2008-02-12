@@ -974,7 +974,7 @@ void VBoxSelectorWnd::vmPause (bool aPause)
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
-    CSession session = vboxGlobal().openSession (item->id(), true);
+    CSession session = vboxGlobal().openExistingSession (item->id());
     if (session.isNull())
         return;
 
