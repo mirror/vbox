@@ -281,7 +281,7 @@ PGMR3DECL(int) PGMR3MappingsSize(PVM pVM, uint32_t *pcb)
         cb += pCur->cb;
 
     *pcb = cb;
-    AssertReturn(*pcb != cb, VERR_NUMBER_TOO_BIG);
+    AssertReturn(*pcb == cb, VERR_NUMBER_TOO_BIG);
     Log(("PGMR3MappingsSize: return %d (%#x) bytes\n", cb, cb));
     return VINF_SUCCESS;
 }
