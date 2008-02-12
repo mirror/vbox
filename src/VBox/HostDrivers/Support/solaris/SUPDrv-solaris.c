@@ -500,7 +500,7 @@ static int VBoxDrvSolarisClose(dev_t Dev, int flag, int otyp, cred_t *cred)
         OSDBGPRINT(("VBoxDrvSolarisClose: no session in state data for %#x (%d)\n", Dev, getminor(Dev)));
         return EFAULT;
     }
-    OSDBGPRINT(("VBoxDrvSolarisClose: Dev=%#x pSession=%p pid=%d r0proc=%p thread=%p\n", Dev, pSession, RTProcSelf(), RTR0ProcHandleSelf(), RTThreadNativeSelf() ));
+    dprintf(("VBoxDrvSolarisClose: Dev=%#x pSession=%p pid=%d r0proc=%p thread=%p\n", Dev, pSession, RTProcSelf(), RTR0ProcHandleSelf(), RTThreadNativeSelf() ));
 
 #else
     RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
@@ -552,7 +552,7 @@ static int VBoxDrvSolarisClose(dev_t Dev, int flag, int otyp, cred_t *cred)
      * Close the session.
      */
     supdrvCloseSession(&g_DevExt, pSession);
-    OSDBGPRINT(("VBoxDrvSolarisClose: returns\n"));
+    dprintf(("VBoxDrvSolarisClose: returns\n"));
     return 0;
 }
 
