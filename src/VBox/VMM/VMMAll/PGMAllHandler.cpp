@@ -1025,8 +1025,7 @@ int pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *p
         *ppVirt = (PPGMVIRTHANDLER)((uintptr_t)pCur + pCur->offVirtHandler);
         *piPage = pCur - &(*ppVirt)->aPhysToVirt[0];
 
-        LogFlow(("PHYS2VIRT: found match for %VGp -> %VGv *piPage=%#x\n",
-                 GCPhys, (*ppVirt)->GCPtr, *piPage));
+        LogFlow(("PHYS2VIRT: found match for %VGp -> %VGv *piPage=%#x\n", GCPhys, (*ppVirt)->GCPtr, *piPage));
         STAM_PROFILE_STOP(CTXSUFF(&pVM->pgm.s.StatVirtHandleSearchByPhys), a);
         return VINF_SUCCESS;
     }
@@ -1040,6 +1039,9 @@ int pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *p
 /**
  * Deal with aliases in phys2virt.
  *
+ * As pointed out by the various todos, this currently only deals with
+ * aliases where the two ranges match 100%.
+ *
  * @param   pVM             The VM handle.
  * @param   pPhys2Virt      The node we failed insert.
  */
@@ -1049,23 +1051,20 @@ static void pgmHandlerVirtualInsertAliased(PVM pVM, PPGMPHYS2VIRTHANDLER pPhys2V
      * First find the node which is conflicting with us.
      */
     /** @todo Deal with partial overlapping. (Unlikly situation, so I'm too lazy to do anything about it now.) */
+    /** @todo check if the current head node covers the ground we do. This is highly unlikely
+     * and I'm too lazy to implement this now as it will require sorting the list and stuff like that. */
     PPGMPHYS2VIRTHANDLER pHead = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key);
-    if (!pHead)
-    {
-        /** @todo do something clever here... */
-#ifdef IN_RING3
-        LogRel(("pgmHandlerVirtualInsertAliased: %VGp-%VGp\n", pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast));
-#endif
-        pPhys2Virt->offNextAlias = 0;
-        return;
-    }
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
     AssertReleaseMsg(pHead != pPhys2Virt, ("%VGp-%VGp offVirtHandler=%#RX32\n",
                                            pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast, pPhys2Virt->offVirtHandler));
 #endif
-
-    /** @todo check if the current head node covers the ground we do. This is highly unlikely
-     * and I'm too lazy to implement this now as it will require sorting the list and stuff like that. */
+    if (RT_UNLIKELY(!pHead || pHead->Core.KeyLast != pPhys2Virt->Core.KeyLast))
+    {
+        /** @todo do something clever here... */
+        LogRel(("pgmHandlerVirtualInsertAliased: %VGp-%VGp\n", pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast));
+        pPhys2Virt->offNextAlias = 0;
+        return;
+    }
 
     /*
      * Insert ourselves as the next node.
@@ -1087,6 +1086,11 @@ static void pgmHandlerVirtualInsertAliased(PVM pVM, PPGMPHYS2VIRTHANDLER pPhys2V
 /**
  * Resets one virtual handler range.
  *
+ * This is called by HandlerVirtualUpdate when it has detected some kind of
+ * problem and have started clearing the virtual handler page states (or
+ * when there have been registration/deregistrations). For this reason this
+ * function will only update the page status if it's lower than desired.
+ *
  * @returns 0
  * @param   pNode   Pointer to a PGMVIRTHANDLER.
  * @param   pvUser  The VM handle.
@@ -1097,25 +1101,9 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
     PVM             pVM = (PVM)pvUser;
 
     /*
-     * Calc flags.
+     * Iterate the pages and apply the new state.
      */
-    Assert(pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR);
-    unsigned        fFlags;
-    switch (pCur->enmType)
-    {
-        case PGMVIRTHANDLERTYPE_WRITE:  fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE; break;
-        case PGMVIRTHANDLERTYPE_ALL:    fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_ALL; break;
-        /* hypervisor handlers need no flags and wouldn't have nowhere to put them in any case. */
-        case PGMVIRTHANDLERTYPE_HYPERVISOR:
-            return 0;
-        default:
-            AssertMsgFailed(("Invalid type %d\n", pCur->enmType));
-            return 0;
-    }
-
-    /*
-     * Iterate the pages and apply the flags.
-     */
+    unsigned        uState   = pgmHandlerVirtualCalcState(pCur);
     PPGMRAMRANGE    pRamHint = NULL;
     RTGCUINTPTR     offPage  = ((RTGCUINTPTR)pCur->GCPtr & PAGE_OFFSET_MASK);
     RTGCUINTPTR     cbLeft   = pCur->cb;
@@ -1124,11 +1112,20 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
         PPGMPHYS2VIRTHANDLER pPhys2Virt = &pCur->aPhysToVirt[iPage];
         if (pPhys2Virt->Core.Key != NIL_RTGCPHYS)
         {
-            /* Update the flags. */
-            int rc = pgmRamFlagsSetByGCPhysWithHint(&pVM->pgm.s, pPhys2Virt->Core.Key, fFlags, &pRamHint);
-            AssertRC(rc);
+            /*
+             * Update the page state wrt virtual handlers.
+             */
+            PPGMPAGE pPage;
+            int rc = pgmPhysGetPageWithHintEx(&pVM->pgm.s, pPhys2Virt->Core.Key, &pPage, &pRamHint);
+            if (    RT_SUCCESS(rc)
+                &&  PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < uState)
+                PGM_PAGE_SET_HNDL_VIRT_STATE(pPage, uState);
+            else
+                AssertRC(rc);
 
-            /* Need to insert the page in the Phys2Virt lookup tree? */
+            /*
+             * Need to insert the page in the Phys2Virt lookup tree?
+             */
             if (pPhys2Virt->Core.KeyLast == NIL_RTGCPHYS)
             {
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
@@ -1199,19 +1196,20 @@ void pgmHandlerVirtualDumpPhysPages(PVM pVM)
  */
 typedef struct PGMAHAFIS
 {
-    /** The VM handle. */
-    PVM         pVM;
-    /** Number of errors. */
-    unsigned    cErrors;
-    /** The flags we've found. */
-    unsigned    fFlagsFound;
-    /** The flags we're matching up to.
-     * This is also on the stack as a const, thus only valid during enumeration. */
-    unsigned    fFlags;
     /** The current physical address. */
     RTGCPHYS    GCPhys;
+    /** The state we've calculated. */
+    unsigned    uVirtStateFound;
+    /** The state we're matching up to. */
+    unsigned    uVirtState;
+    /** Number of errors. */
+    unsigned    cErrors;
+    /** The VM handle. */
+    PVM         pVM;
 } PGMAHAFIS, *PPGMAHAFIS;
 
+
+#if 0 /* unused */
 /**
  * Verify virtual handler by matching physical address.
  *
@@ -1219,7 +1217,7 @@ typedef struct PGMAHAFIS
  * @param   pNode   Pointer to a PGMVIRTHANDLER.
  * @param   pvUser  Pointer to user parameter.
  */
-static DECLCALLBACK(int) pgmVirtHandlerVerifyOneByPhysAddr(PAVLROGCPTRNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) pgmHandlerVirtualVerifyOneByPhysAddr(PAVLROGCPTRNODECORE pNode, void *pvUser)
 {
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)pNode;
     PPGMAHAFIS      pState = (PPGMAHAFIS)pvUser;
@@ -1228,62 +1226,73 @@ static DECLCALLBACK(int) pgmVirtHandlerVerifyOneByPhysAddr(PAVLROGCPTRNODECORE p
     {
         if ((pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) == pState->GCPhys)
         {
-            switch (pCur->enmType)
+            unsigned uState = pgmHandlerVirtualCalcState(pCur);
+            if (pState->uVirtState < uState)
             {
-                case PGMVIRTHANDLERTYPE_WRITE:      pState->fFlagsFound |= MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE; break;
-                case PGMVIRTHANDLERTYPE_ALL:        pState->fFlagsFound |= MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_ALL; break;
-                /* hypervisor handlers need no flags and wouldn't have nowhere to put them in any case. */
-                case PGMVIRTHANDLERTYPE_HYPERVISOR:
-                    return 0;
+                error
             }
-            if (    (pState->fFlags & (MM_RAM_FLAGS_VIRTUAL_HANDLER  | MM_RAM_FLAGS_VIRTUAL_WRITE  | MM_RAM_FLAGS_VIRTUAL_ALL))
-                ==  pState->fFlagsFound)
-                break;
+
+            if (pState->uVirtState == uState)
+                break; //??
         }
     }
     return 0;
 }
+#endif /* unused */
 
 
 /**
- * Verify a virtual handler.
+ * Verify a virtual handler (enumeration callback).
+ *
+ * Called by PGMAssertHandlerAndFlagsInSync to check the sanity of all
+ * the virtual handlers, esp. that the physical addresses matches up.
  *
  * @returns 0
  * @param   pNode   Pointer to a PGMVIRTHANDLER.
- * @param   pvUser  Pointer to user parameter.
+ * @param   pvUser  Pointer to a PPGMAHAFIS structure.
  */
-static DECLCALLBACK(int) pgmVirtHandlerVerifyOne(PAVLROGCPTRNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, void *pvUser)
 {
     PPGMVIRTHANDLER pVirt   = (PPGMVIRTHANDLER)pNode;
-    PPGMAHAFIS      pState = (PPGMAHAFIS)pvUser;
+    PPGMAHAFIS      pState  = (PPGMAHAFIS)pvUser;
     PVM             pVM     = pState->pVM;
 
-    if (    pVirt->aPhysToVirt[0].Core.Key != NIL_RTGCPHYS
-        &&  (pVirt->aPhysToVirt[0].Core.Key & PAGE_OFFSET_MASK) != ((RTGCUINTPTR)pVirt->GCPtr & PAGE_OFFSET_MASK))
+    /*
+     * Validate the type and calc state.
+     */
+    switch (pVirt->enmType)
     {
-        AssertMsgFailed(("virt handler phys out has incorrect key! %VGp %VGv %s\n",
+        case PGMVIRTHANDLERTYPE_WRITE:
+        case PGMVIRTHANDLERTYPE_ALL:
+            break;
+        default:
+            AssertMsgFailed(("unknown/wrong enmType=%d\n", pVirt->enmType));
+            pState->cErrors++;
+            return 0;
+    }
+    const unsigned uState = pgmHandlerVirtualCalcState(pVirt);
+
+    /*
+     * Check key alignment.
+     */
+    if (    (pVirt->aPhysToVirt[0].Core.Key & PAGE_OFFSET_MASK) != ((RTGCUINTPTR)pVirt->GCPtr & PAGE_OFFSET_MASK)
+        &&  pVirt->aPhysToVirt[0].Core.Key != NIL_RTGCPHYS)
+    {
+        AssertMsgFailed(("virt handler phys has incorrect key! %VGp %VGv %s\n",
                          pVirt->aPhysToVirt[0].Core.Key, pVirt->GCPtr, HCSTRING(pVirt->pszDesc)));
         pState->cErrors++;
     }
 
-    /*
-     * Calc flags.
-     */
-    unsigned    fFlags;
-    switch (pVirt->enmType)
+    if (    (pVirt->aPhysToVirt[pVirt->cPages - 1].Core.KeyLast & PAGE_OFFSET_MASK) != ((RTGCUINTPTR)pVirt->GCPtrLast & PAGE_OFFSET_MASK)
+        &&  pVirt->aPhysToVirt[pVirt->cPages - 1].Core.Key != NIL_RTGCPHYS)
     {
-        case PGMVIRTHANDLERTYPE_WRITE:      fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE; break;
-        case PGMVIRTHANDLERTYPE_ALL:        fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_ALL; break;
-        /* hypervisor handlers need no flags and wouldn't have nowhere to put them in any case. */
-        case PGMVIRTHANDLERTYPE_HYPERVISOR:
-            return 0;
-        default:
-            AssertMsgFailed(("unknown enmType=%d\n", pVirt->enmType));
-            return 0;
+        AssertMsgFailed(("virt handler phys has incorrect key! %VGp %VGv %s\n",
+                         pVirt->aPhysToVirt[pVirt->cPages - 1].Core.KeyLast, pVirt->GCPtrLast, HCSTRING(pVirt->pszDesc)));
+        pState->cErrors++;
     }
 
     /*
-     * Check pages against flags.
+     * Check pages for sanity and state.
      */
     RTGCUINTPTR   GCPtr = (RTGCUINTPTR)pVirt->GCPtr;
     for (unsigned iPage = 0; iPage < pVirt->cPages; iPage++, GCPtr += PAGE_SIZE)
@@ -1321,10 +1330,10 @@ static DECLCALLBACK(int) pgmVirtHandlerVerifyOne(PAVLROGCPTRNODECORE pNode, void
             continue;
         }
 
-        if ((pPage->HCPhys & fFlags) != fFlags) /** @todo PAGE FLAGS */
+        if (PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < uState)
         {
-            AssertMsgFailed(("virt handler flags mismatch. HCPhys=%VHp fFlags=%#x GCPhysGst=%VGp iPage=%#x %VGv %s\n",
-                             pPage->HCPhys, fFlags, GCPhysGst, iPage, GCPtr, HCSTRING(pVirt->pszDesc)));
+            AssertMsgFailed(("virt handler state mismatch. HCPhys=%VHp GCPhysGst=%VGp iPage=%#x %VGv state=%d expected>=%d %s\n",
+                             pPage->HCPhys, GCPhysGst, iPage, GCPtr, PGM_PAGE_GET_HNDL_VIRT_STATE(pPage), uState, HCSTRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
         }
@@ -1345,8 +1354,11 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
 {
     PPGM        pPGM = &pVM->pgm.s;
     PGMAHAFIS   State;
+    State.GCPhys = 0;
+    State.uVirtState = 0;
+    State.uVirtStateFound = 0;
     State.cErrors = 0;
-    State.pVM     = pVM;
+    State.pVM = pVM;
 
     /*
      * Check the RAM flags against the handlers.
@@ -1360,7 +1372,6 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
             if (PGM_PAGE_HAVE_ANY_HANDLERS(pPage))
             {
                 State.GCPhys = pRam->GCPhys + (iPage << PAGE_SHIFT);
-                State.fFlagsFound = 0; /* build flags and compare. */
 
                 /*
                  * Physical first - calculate the state based on the handlers
@@ -1423,27 +1434,63 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                     }
                 }
 
-                /* virtual flags. */
+                /*
+                 * Virtual handlers.
+                 */
                 if (PGM_PAGE_HAVE_ACTIVE_VIRTUAL_HANDLERS(pPage))
                 {
-                    State.fFlags = pPage->HCPhys & (MM_RAM_FLAGS_VIRTUAL_HANDLER  | MM_RAM_FLAGS_VIRTUAL_WRITE  | MM_RAM_FLAGS_VIRTUAL_ALL); /// @todo PAGE FLAGS
-                    RTAvlroGCPtrDoWithAll(CTXSUFF(&pVM->pgm.s.pTrees)->VirtHandlers, true, pgmVirtHandlerVerifyOneByPhysAddr, &State);
-                    if (State.fFlags !=  State.fFlagsFound)
+                    State.uVirtState = PGM_PAGE_GET_HNDL_VIRT_STATE(pPage);
+#if 1
+                    /* locate all the matching physical ranges. */
+                    State.uVirtStateFound = PGM_PAGE_HNDL_VIRT_STATE_NONE;
+                    RTGCPHYS GCPhysKey = State.GCPhys;
+                    for (;;)
                     {
-                        AssertMsgFailed(("ram range vs virt handler flags mismatch. GCPhys=%RGp fFlags=%#x fFlagsFound=%#x\n",
-                                         State.GCPhys, State.fFlags, State.fFlagsFound));
+                        PPGMPHYS2VIRTHANDLER pPhys2Virt = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGetBestFit(&CTXSUFF(pVM->pgm.s.pTrees)->PhysToVirtHandlers,
+                                                                                                        GCPhysKey, true /* above-or-equal */);
+                        if (    !pPhys2Virt
+                            ||  (pPhys2Virt->Core.Key & X86_PTE_PAE_PG_MASK) != State.GCPhys)
+                            break;
+
+                        /* the head */
+                        GCPhysKey = pPhys2Virt->Core.KeyLast;
+                        PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)((uintptr_t)pPhys2Virt + pPhys2Virt->offVirtHandler);
+                        unsigned uState = pgmHandlerVirtualCalcState(pCur);
+                        State.uVirtStateFound = RT_MAX(State.uVirtStateFound, uState);
+
+                        /* any aliases */
+                        while (pPhys2Virt->offNextAlias & PGMPHYS2VIRTHANDLER_OFF_MASK)
+                        {
+                            pPhys2Virt = (PPGMPHYS2VIRTHANDLER)((uintptr_t)pPhys2Virt + (pPhys2Virt->offNextAlias & PGMPHYS2VIRTHANDLER_OFF_MASK));
+                            pCur = (PPGMVIRTHANDLER)((uintptr_t)pPhys2Virt + pPhys2Virt->offVirtHandler);
+                            uState = pgmHandlerVirtualCalcState(pCur);
+                            State.uVirtStateFound = RT_MAX(State.uVirtStateFound, uState);
+                        }
+
+                        /* done? */
+                        if ((GCPhysKey & X86_PTE_PAE_PG_MASK) != State.GCPhys)
+                            break;
+                    }
+#else
+                    /* very slow */
+                    RTAvlroGCPtrDoWithAll(CTXSUFF(&pVM->pgm.s.pTrees)->VirtHandlers, true, pgmHandlerVirtualVerifyOneByPhysAddr, &State);
+#endif
+                    if (State.uVirtState != State.uVirtStateFound)
+                    {
+                        AssertMsgFailed(("ram range vs virt handler flags mismatch. GCPhys=%RGp uVirtState=%#x uVirtStateFound=%#x\n",
+                                         State.GCPhys, State.uVirtState, State.uVirtStateFound));
                         State.cErrors++;
                     }
-
                 }
             }
         } /* foreach page in ram range. */
     } /* foreach ram range. */
 
     /*
-     * Check that the physical addresses of the virtual handlers matches up.
+     * Check that the physical addresses of the virtual handlers matches up
+     * and that they are otherwise sane.
      */
-    RTAvlroGCPtrDoWithAll(CTXSUFF(&pVM->pgm.s.pTrees)->VirtHandlers, true, pgmVirtHandlerVerifyOne, &State);
+    RTAvlroGCPtrDoWithAll(CTXSUFF(&pVM->pgm.s.pTrees)->VirtHandlers, true, pgmHandlerVirtualVerifyOne, &State);
 
     /*
      * Do the reverse check for physical handlers.

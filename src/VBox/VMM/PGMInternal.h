@@ -404,8 +404,8 @@ typedef struct PGMPHYS2VIRTHANDLER
     /** Core node for the tree based on physical ranges. */
     AVLROGCPHYSNODECORE                 Core;
     /** Offset from this struct to the PGMVIRTHANDLER structure. */
-    RTGCINTPTR                          offVirtHandler;
-    /** Offset of the next alias relativer to this one.
+    int32_t                             offVirtHandler;
+    /** Offset of the next alias relative to this one.
      * Bit 0 is used for indicating whether we're in the tree.
      * Bit 1 is used for indicating that we're the head node.
      */
@@ -529,7 +529,9 @@ typedef struct PGMPAGE
     uint32_t    u3Type : 3;
     /** The physical handler state (PGM_PAGE_HNDL_PHYS_STATE*) */
     uint32_t    u2HandlerPhysStateX : 2;
-    uint32_t    u29B : 27;
+    /** The virtual handler state (PGM_PAGE_HNDL_VIRT_STATE*) */
+    uint32_t    u2HandlerVirtStateX : 2;
+    uint32_t    u29B : 25;
 } PGMPAGE;
 AssertCompileSize(PGMPAGE, 16);
 /** Pointer to a physical guest page. */
@@ -790,33 +792,6 @@ typedef PPGMPAGE *PPPGMPAGE;
     do { (pPage)->u2HandlerPhysStateX = (_uState); } while (0)
 
 /**
- * Checks if the page has any access handlers, including temporarily disabled ones.
- * @returns true/false
- * @param   pPage       Pointer to the physical guest page tracking structure.
- */
-#define PGM_PAGE_HAVE_ANY_HANDLERS(pPage) \
-    (   (pPage)->u2HandlerPhysStateX != PGM_PAGE_HNDL_PHYS_STATE_NONE \
-     || ((pPage)->HCPhys & MM_RAM_FLAGS_VIRTUAL_HANDLER) )
-
-/**
- * Checks if the page has any active access handlers.
- * @returns true/false
- * @param   pPage       Pointer to the physical guest page tracking structure.
- */
-#define PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage) \
-    (   (pPage)->u2HandlerPhysStateX >= PGM_PAGE_HNDL_PHYS_STATE_WRITE \
-     || ((pPage)->HCPhys & MM_RAM_FLAGS_VIRTUAL_HANDLER) )
-
-/**
- * Checks if the page has any active access handlers catching all accesses.
- * @returns true/false
- * @param   pPage       Pointer to the physical guest page tracking structure.
- */
-#define PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage) \
-    (   (pPage)->u2HandlerPhysStateX == PGM_PAGE_HNDL_PHYS_STATE_ALL \
-     || ((pPage)->HCPhys & MM_RAM_FLAGS_VIRTUAL_ALL) )
-
-/**
  * Checks if the page has any physical access handlers, including temporariliy disabled ones.
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
@@ -830,12 +805,42 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_HAVE_ACTIVE_PHYSICAL_HANDLERS(pPage)   ( (pPage)->u2HandlerPhysStateX >= PGM_PAGE_HNDL_PHYS_STATE_WRITE )
 
+
+/** @name Virtual Access Handler State values (PGMPAGE::u2HandlerVirtStateX).
+ *
+ * @remarks The values are assigned in order of priority, so we can calculate
+ *          the correct state for a page with different handlers installed.
+ * @{ */
+/** No handler installed. */
+#define PGM_PAGE_HNDL_VIRT_STATE_NONE       0
+/* 1 is reserved so the lineup is identical with the physical ones. */
+/** Write access is monitored. */
+#define PGM_PAGE_HNDL_VIRT_STATE_WRITE      2
+/** All access is monitored. */
+#define PGM_PAGE_HNDL_VIRT_STATE_ALL        3
+/** @} */
+
+/**
+ * Gets the virtual access handler state of a page.
+ * @returns PGM_PAGE_HNDL_VIRT_STATE_* value.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_HNDL_VIRT_STATE(pPage)     ( (pPage)->u2HandlerVirtStateX )
+
+/**
+ * Sets the virtual access handler state of a page.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ * @param   _uState     The new state value.
+ */
+#define PGM_PAGE_SET_HNDL_VIRT_STATE(pPage, _uState) \
+    do { (pPage)->u2HandlerVirtStateX = (_uState); } while (0)
+
 /**
  * Checks if the page has any virtual access handlers.
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS(pPage)    ( (pPage)->HCPhys & MM_RAM_FLAGS_VIRTUAL_HANDLER )
+#define PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS(pPage)    ( (pPage)->u2HandlerVirtStateX != PGM_PAGE_HNDL_VIRT_STATE_NONE )
 
 /**
  * Same as PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS - can't disable pages in
@@ -844,6 +849,35 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_HAVE_ACTIVE_VIRTUAL_HANDLERS(pPage) PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS(pPage)
+
+
+
+/**
+ * Checks if the page has any access handlers, including temporarily disabled ones.
+ * @returns true/false
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_HAVE_ANY_HANDLERS(pPage) \
+    (   (pPage)->u2HandlerPhysStateX != PGM_PAGE_HNDL_PHYS_STATE_NONE \
+     || (pPage)->u2HandlerVirtStateX != PGM_PAGE_HNDL_VIRT_STATE_NONE )
+
+/**
+ * Checks if the page has any active access handlers.
+ * @returns true/false
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage) \
+    (   (pPage)->u2HandlerPhysStateX >= PGM_PAGE_HNDL_PHYS_STATE_WRITE \
+     || (pPage)->u2HandlerVirtStateX >= PGM_PAGE_HNDL_VIRT_STATE_WRITE )
+
+/**
+ * Checks if the page has any active access handlers catching all accesses.
+ * @returns true/false
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage) \
+    (   (pPage)->u2HandlerPhysStateX == PGM_PAGE_HNDL_PHYS_STATE_ALL \
+     || (pPage)->u2HandlerVirtStateX == PGM_PAGE_HNDL_VIRT_STATE_ALL )
 
 
 /**
@@ -2454,7 +2488,7 @@ typedef struct PGM
 /** @name PGM::fSyncFlags Flags
  * @{
  */
-/** Updates the MM_RAM_FLAGS_VIRTUAL_HANDLER page bit. */
+/** Updates the virtual access handler state bit in PGMPAGE. */
 #define PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL        RT_BIT(0)
 /** Always sync CR3. */
 #define PGM_SYNC_ALWAYS                         RT_BIT(1)
@@ -3249,11 +3283,35 @@ DECLINLINE(unsigned) pgmHandlerPhysicalCalcState(PPGMPHYSHANDLER pCur)
 
 
 /**
+ * Gets the page state for a virtual handler.
+ *
+ * @returns The virtual handler page state.
+ * @param   pCur    The virtual handler in question.
+ * @remarks This should never be used on a hypervisor access handler.
+ */
+DECLINLINE(unsigned) pgmHandlerVirtualCalcState(PPGMVIRTHANDLER pCur)
+{
+    switch (pCur->enmType)
+    {
+        case PGMVIRTHANDLERTYPE_WRITE:
+            return PGM_PAGE_HNDL_VIRT_STATE_WRITE;
+        case PGMVIRTHANDLERTYPE_ALL:
+            return PGM_PAGE_HNDL_VIRT_STATE_ALL;
+        default:
+            AssertFatalMsgFailed(("Invalid type %d\n", pCur->enmType));
+    }
+}
+
+
+/**
  * Clears one physical page of a virtual handler
  *
  * @param   pPGM    Pointer to the PGM instance.
  * @param   pCur    Virtual handler structure
  * @param   iPage   Physical page index
+ *
+ * @remark  Only used when PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL is being set, so no
+ *          need to care about other handlers in the same page.
  */
 DECLINLINE(void) pgmHandlerVirtualClearPage(PPGM pPGM, PPGMVIRTHANDLER pCur, unsigned iPage)
 {
@@ -3344,9 +3402,9 @@ DECLINLINE(void) pgmHandlerVirtualClearPage(PPGM pPGM, PPGMVIRTHANDLER pCur, uns
     /*
      * Clear the ram flags for this page.
      */
-    int rc = pgmRamFlagsClearByGCPhys(pPGM, pPhys2Virt->Core.Key,
-                                      MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_VIRTUAL_WRITE);
-    AssertRC(rc);
+    PPGMPAGE pPage = pgmPhysGetPage(pPGM, pPhys2Virt->Core.Key);
+    AssertReturnVoid(pPage);
+    PGM_PAGE_SET_HNDL_VIRT_STATE(pPage, PGM_PAGE_HNDL_VIRT_STATE_NONE);
 }
 
 

@@ -656,16 +656,6 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
         return 0;
 #endif
 
-    unsigned    fFlags;
-    switch (pCur->enmType)
-    {
-        case PGMVIRTHANDLERTYPE_WRITE:      fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE; break;
-        case PGMVIRTHANDLERTYPE_ALL:        fFlags = MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_ALL; break;
-        /* hypervisor handlers need no flags and wouldn't have nowhere to put them in any case. */
-        case PGMVIRTHANDLERTYPE_HYPERVISOR:
-            return 0;
-    }
-
     unsigned    offPage = GCPtr & PAGE_OFFSET_MASK;
     unsigned    iPage = 0;
     while (iPage < pCur->cPages)

@@ -76,12 +76,6 @@ __BEGIN_DECLS
  */
 #define MM_RAM_FLAGS_MMIO2              RT_BIT(3)
 
-/** PGM has virtual page access handler(s) defined for pages with this flag. */
-#define MM_RAM_FLAGS_VIRTUAL_HANDLER    RT_BIT(4)
-/** PGM has virtual page access handler(s) for write access. */
-#define MM_RAM_FLAGS_VIRTUAL_WRITE      RT_BIT(5)
-/** PGM has virtual page access handler(s) for all access. */
-#define MM_RAM_FLAGS_VIRTUAL_ALL        RT_BIT(6)
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 /** Physical backing memory is allocated dynamically. Not set implies a one time static allocation. */
 #define MM_RAM_FLAGS_DYNAMIC_ALLOC      RT_BIT(11)

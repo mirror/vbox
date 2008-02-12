@@ -92,9 +92,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 # endif
 
 # if PGM_WITH_PAGING(PGM_GST_TYPE)
-    /* Determine current privilege level */
-    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
-
 #  ifdef PGM_SYNC_DIRTY_BIT
     /*
      * If we successfully correct the write protection fault due to dirty bit
@@ -344,7 +341,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                          * the pages. If the fault was caused by a read, then restart the instruction.
                          * In case of write access continue to the GC write handler.
                          */
-                        if (    (pPage->HCPhys & (MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_VIRTUAL_ALL)) == MM_RAM_FLAGS_VIRTUAL_WRITE /** @todo PAGE FLAGS */
+                        if (    PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < PGM_PAGE_HNDL_PHYS_STATE_ALL
                             && !(uErr & X86_TRAP_PF_P))
                         {
                             rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
@@ -438,8 +435,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                      */
                     STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersUnhandled);
 
-                    if (    !(pPage->HCPhys & (MM_RAM_FLAGS_VIRTUAL_ALL)) /** @todo PAGE FLAGS */
-                        &&  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) < PGM_PAGE_HNDL_PHYS_STATE_ALL
+                    if (    !PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage)
                         &&  !(uErr & X86_TRAP_PF_P))
                     {
                         rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
@@ -538,7 +534,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  endif /* LOG_ENABLED */
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE) && !defined(IN_RING0)
-                if (cpl == 0)
+                if (CPUMGetGuestCPL(pVM, pRegFrame) == 0)
                 {
                     uint64_t fPageGst;
                     rc = PGMGstGetPage(pVM, pvFault, &fPageGst, NULL);
@@ -1127,12 +1123,10 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
              */
             const RTHCPHYS HCPhys = pPage->HCPhys; /** @todo FLAGS */
             SHWPTE PteDst;
-            if (    PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) >= PGM_PAGE_HNDL_PHYS_STATE_WRITE
-                ||  (HCPhys & (MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_VIRTUAL_WRITE)))
+            if (PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage))
             {
                 /** @todo r=bird: Are we actually handling dirty and access bits for pages with access handlers correctly? No. */
-                if (    PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) <= PGM_PAGE_HNDL_PHYS_STATE_WRITE
-                    &&  !(HCPhys & MM_RAM_FLAGS_VIRTUAL_ALL))
+                if (!PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage))
                     PteDst.u = (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT | X86_PTE_RW))
                              | (HCPhys & X86_PTE_PAE_PG_MASK);
                 else
