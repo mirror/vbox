@@ -664,6 +664,11 @@ ifdef VBOX_WITH_USB
  Drivers_SOURCES.win  += \
 	USB/USBProxyDevice.cpp \
 	USB/win32/USBProxyDevice-win32.cpp
+
+ Drivers_DEFS.solaris    += VUSB_HAVE_USBPROXY_DEVICE
+ Drivers_SOURCES.solaris += \
+	USB/USBProxyDevice.cpp \
+	USB/USBProxyDevice-stub.cpp
 endif # VBOX_WITH_USB
 
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
