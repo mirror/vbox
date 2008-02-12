@@ -103,6 +103,94 @@
  *         executing with CR0.WP at that time.
  *      -# CR3 allows a 32-byte aligned address in legacy mode, while in long mode
  *         a page aligned one is required.
+ *
+ *
+ * @section         sec_pgm_handlers        Access Handlers
+ *
+ * Placeholder.
+ *
+ *
+ * @subsection      sec_pgm_handlers_virt   Virtual Access Handlers
+ *
+ * Placeholder.
+ *
+ *
+ * @subsection      sec_pgm_handlers_virt   Virtual Access Handlers
+ *
+ * We currently implement three types of virtual access handlers:  ALL, WRITE
+ * and HYPERVISOR (WRITE). See PGMVIRTHANDLERTYPE for some more details.
+ *
+ * The HYPERVISOR access handlers is kept in a separate tree since it doesn't apply
+ * to physical pages (PGMTREES::HyperVirtHandlers) and only needs to be consulted in
+ * a special \#PF case. The ALL and WRITE are in the PGMTREES::VirtHandlers tree, the
+ * rest of this section is going to be about these handlers.
+ *
+ * We'll go thru the life cycle of a handler and try make sense of it all, don't know
+ * how successfull this is gonna be...
+ *
+ * 1. A handler is registered thru the PGMR3HandlerVirtualRegister and
+ * PGMHandlerVirtualRegisterEx APIs. We check for conflicting virtual handlers
+ * and create a new node that is inserted into the AVL tree (range key). Then
+ * a full PGM resync is flagged (clear pool, sync cr3, update virtual bit of PGMPAGE).
+ *
+ * 2. The following PGMSyncCR3/SyncCR3 operation will first make invoke HandlerVirtualUpdate.
+ *
+ * 2a. HandlerVirtualUpdate will will lookup all the pages covered by virtual handlers
+ * via the current guest CR3 and update the physical page -> virtual handler
+ * translation. Needless to say, this doesn't exactly scale very well. If any changes
+ * are detected, it will flag a virtual bit update just like we did on registration.
+ * PGMPHYS pages with changes will have their virtual handler state reset to NONE.
+ *
+ * 2b. The virtual bit update process will iterate all the pages covered by all the
+ * virtual handlers and update the PGMPAGE virtual handler state to the max of all
+ * virtual handlers on that page.
+ *
+ * 2c. Back in SyncCR3 we will now flush the entire shadow page cache to make sure
+ * we don't miss any alias mappings of the monitored pages.
+ *
+ * 2d. SyncCR3 will then proceed with syncing the CR3 table.
+ *
+ * 3. \#PF(np,read) on a page in the range. This will cause it to be synced
+ * read-only and resumed if it's a WRITE handler. If it's an ALL handler we
+ * will call the handlers like in the next step. If the physical mapping has
+ * changed we will - some time in the future - perform a handler callback
+ * (optional) and update the physical -> virtual handler cache.
+ *
+ * 4. \#PF(,write) on a page in the range. This will cause the handler to
+ * be invoked.
+ *
+ * 5. The guest invalidates the page and changes the physical backing or
+ * unmaps it. This should cause the invalidation callback to be invoked
+ * (it might not yet be 100% perfect). Exactly what happens next... is
+ * this where we mess up and end up out of sync for a while?
+ *
+ * 6. The handler is deregistered by the client via PGMHandlerVirtualDeregister.
+ * We will then set all PGMPAGEs in the physical -> virtual handler cache for
+ * this handler to NONE and trigger a full PGM resync (basically the same
+ * as int step 1). Which means 2 is executed again.
+ *
+ *
+ * @subsubsection   sub_sec_pgm_handler_virt_todo   TODOs
+ *
+ * There is a bunch of things that needs to be done to make the virtual handlers
+ * work 100% correctly and work more efficiently.
+ *
+ * The first bit hasn't been implemented yet because it's going to slow the
+ * whole mess down even more, and besides it seems to be working reliably for
+ * our current uses. OTOH, some of the optimizations might end up more or less
+ * implementing the missing bits, so we'll see.
+ *
+ * On the optimization side, the first thing to do is to try avoid unnecessary
+ * cache flushing. Then try team up with the shadowing code to track changes
+ * in mappings by means of access to them (shadow in), updates to shadows pages,
+ * invlpg, and shadow PT discarding (perhaps).
+ *
+ * Some idea that have popped up for optimization for current and new features:
+ *    - bitmap indicating where there are virtual handlers installed.
+ *      (4KB => 2**20 pages, page 2**12 => covers 32-bit address space 1:1!)
+ *    - Further optimize this by min/max (needs min/max avl getters).
+ *    - Shadow page table entry bit (if any left)?
+ *
  */
 
 
