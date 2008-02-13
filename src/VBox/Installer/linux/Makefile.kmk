@@ -167,7 +167,7 @@ LINUXARCHFILES := $(LINUXSTRIPBIN) $(LINUXSTRIPOBJ) $(LINUXNOSTRIP)
 DBGPATH        := usr/lib/debug/opt/VirtualBox-$(VBOX_VERSION_STRING)
 
 OTHER_CLEAN += $(addprefix $(PATH_TARGET)/archive/,$(LINUXARCHFILES)) \
-	       $(addprefix $(PATH_TARGET)/archive-dbg/$(DBGPATH)/$(LINUXSTRIPBIN))
+	       $(addprefix $(PATH_TARGET)/archive-dbg/$(DBGPATH)/,$(LINUXSTRIPBIN))
 
 include $(PATH_KBUILD)/footer.kmk
 
