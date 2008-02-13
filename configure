@@ -1311,6 +1311,7 @@ Paths:
 
 Build type:
   -d, --build-debug        build with debugging symbols and assertions
+  --build-profile          build with profiling support
   --build-headless         build headless (without any X11 frontend)
 EOF
   exit 0
@@ -1372,6 +1373,9 @@ for option in $*; do
       ;;
     --build-debug|-d)
       BUILD_TYPE=debug
+      ;;
+    --build-profile)
+      BUILD_TYPE=profile
       ;;
     --build-libxml2)
       BUILD_LIBXML2=1
@@ -1446,6 +1450,8 @@ fi
 
 if [ "$BUILD_TYPE" = "debug" ]; then
   echo "Creating DEBUG build!" >> $LOG
+elif [ "$BUILD_TYPE" = "profile" ]; then
+  echo "Creating PROFILE build!" >> $LOG
 fi
 
 # first determine our environment
