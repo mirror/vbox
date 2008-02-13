@@ -2306,8 +2306,8 @@ int main(int argc, char *argv[])
             {
                 if (gDisplay)
                 {
-#ifdef VBOX_SECURELABEL
                     uResizeWidth  = event.resize.w;
+#ifdef VBOX_SECURELABEL
                     uResizeHeight = RT_MAX(0, event.resize.h - SECURE_LABEL_HEIGHT);
 #else
                     uResizeHeight = event.resize.h;
