@@ -10,9 +10,10 @@
 	<key>CFBundleExecutable</key>               <string>VirtualBoxVM</string>
 	<key>CFBundleVersion</key>                  <string>@VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@</string>
 	<key>CFBundleShortVersionString</key>       <string>@VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@</string>
-	<key>CFBundleGetInfoString</key>            <string>VirtualBox VM @VBOX_VERSION_STRING@, © 2007 innotek GmbH</string>
+	<key>CFBundleGetInfoString</key>            <string>VirtualBox VM @VBOX_VERSION_STRING@, © 2008 innotek GmbH</string>
 	<key>CFBundleIconFile</key>                 <string>virtualbox</string>
 	<key>CFBundleInfoDictionaryVersion</key>    <string>6.0</string>
+    <key>LSCanProvideIMVideoDataSource</key>    <true/>
 </dict>
 </plist>
 
