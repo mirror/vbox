@@ -109,8 +109,11 @@ protected:
                 return;
             /* Main column's painter width should take all other's. */
             aWidth = listView()->viewport()->width();
-            QListViewItem::paintCell (aPainter, aColorGroup, aColumn,
-                                      aWidth, aAlign);
+            QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
+
+            if (aPainter->window().width()  != listView()->viewport()->width() ||
+                aPainter->window().height() != listView()->viewport()->height())
+                repaint();
         }
         else
         {
