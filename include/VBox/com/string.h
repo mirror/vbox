@@ -29,7 +29,7 @@
 #ifndef ___VBox_com_string_h
 #define ___VBox_com_string_h
 
-#if !defined(RT_OS_WINDOWS)
+#if defined (VBOX_WITH_XPCOM)
 #include <nsMemory.h>
 #endif
 
@@ -323,7 +323,7 @@ public:
     {
         if (str)
         {
-#if defined (RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
             ::RTStrFree (str);
 #else
             nsMemory::Free (str);
@@ -337,7 +337,7 @@ public:
     {
         if (str && *str == 0)
         {
-#if defined (RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
             ::RTStrFree (str);
 #else
             nsMemory::Free (str);
@@ -357,7 +357,7 @@ public:
         setNull();
         if (aSize)
         {
-#if defined (RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
             str = (char *) ::RTMemTmpAlloc (aSize);
 #else
             str = (char *) nsMemory::Alloc (aSize);
@@ -473,7 +473,7 @@ private:
     inline static void raw_copy (char *&ls, const char *rs)
     {
         if (rs)
-#if defined (RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
             ::RTStrDupEx (&ls, rs);
 #else
             ls = (char *) nsMemory::Clone (rs, strlen (rs) + 1);
@@ -484,7 +484,7 @@ private:
     {
         if (rs)
         {
-#if defined (RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
             ::RTStrUcs2ToUtf8 (&ls, (PRTUCS2) rs);
 #else
             char *s = NULL;

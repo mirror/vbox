@@ -29,7 +29,7 @@
 #ifndef ___VBox_com_Guid_h
 #define ___VBox_com_Guid_h
 
-#if !defined (RT_OS_WINDOWS)
+#if defined (VBOX_WITH_XPCOM)
 #include <nsMemory.h>
 #endif
 
@@ -112,7 +112,7 @@ public:
     /* to pass instances to RTUuid*() as a constant argument */
     operator const RTUUID * () const { return &uuid; }
 
-#if defined(RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
 
     /* to assign instances to GUIDPARAMOUT parameters from within the
      *  interface method */
@@ -163,7 +163,7 @@ public:
         return ::RTUuidIsNull ((PRTUUID) &guid) != 0;
     }
 
-    /** 
+    /**
      *  Static immutable empty object. May be used for comparison purposes.
      */
     static const Guid Empty;

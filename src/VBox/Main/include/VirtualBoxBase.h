@@ -40,7 +40,7 @@ using util::AutoMultiLock;
 #include <list>
 #include <map>
 
-#if defined (RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
 
 #include <atlcom.h>
 
@@ -116,7 +116,7 @@ public:
 	CComPtr<IUnknown> m_spObj;
 };
 
-#endif // defined (RT_OS_WINDOWS)
+#endif // !defined (VBOX_WITH_XPCOM)
 
 // macros
 ////////////////////////////////////////////////////////////////////////////////
@@ -431,7 +431,7 @@ namespace stdx
 ////////////////////////////////////////////////////////////////////////////////
 
 class ATL_NO_VTABLE VirtualBoxBaseNEXT_base
-#ifdef RT_OS_WINDOWS
+#if !defined (VBOX_WITH_XPCOM)
     : public CComObjectRootEx <CComMultiThreadModel>
 #else
     : public CComObjectRootEx
@@ -475,7 +475,7 @@ public:
     {
         return addCaller (aState, true /* aLimited */);
     }
-    
+
     /**
      *  Smart class that automatically increases the number of callers of the
      *  given VirtualBoxBase object when an instance is constructed and decreases
@@ -496,7 +496,7 @@ public:
      *
      *  @note It is preferrable to use the AutoCaller and AutoLimitedCaller
      *        classes than specify the @a aLimited argument, for better
-     *        self-descriptiveness. 
+     *        self-descriptiveness.
      */
     template <bool aLimited>
     class AutoCallerBase
@@ -612,7 +612,7 @@ public:
      *  See AutoCallerBase for more information about auto caller functionality.
      */
     typedef AutoCallerBase <false> AutoCaller;
-    
+
     /**
      *  Smart class that automatically increases the number of limited callers
      *  of the given VirtualBoxBase object when an instance is constructed and
@@ -637,7 +637,7 @@ public:
      *  See AutoCallerBase for more information about auto caller functionality.
      */
     typedef AutoCallerBase <true> AutoLimitedCaller;
-    
+
 protected:
 
     /**
@@ -691,7 +691,7 @@ protected:
     public:
 
         enum Status { Failed = 0x0, Succeeded = 0x1, Limited = 0x2 };
-    
+
         AutoInitSpan (VirtualBoxBaseNEXT_base *aObj, Status aStatus = Failed);
         ~AutoInitSpan();
 
@@ -725,7 +725,7 @@ protected:
         void setFailed() { mStatus = Failed; }
 
         /** Returns the current initialization status. */
-        Status status() { return mStatus; } 
+        Status status() { return mStatus; }
 
     private:
 
@@ -927,7 +927,7 @@ private:
 
 /// @todo (dmik) remove after we switch to VirtualBoxBaseNEXT completely
 class ATL_NO_VTABLE VirtualBoxBase : public VirtualBoxBaseNEXT_base
-//#ifdef RT_OS_WINDOWS
+//#if !defined (VBOX_WITH_XPCOM)
 //    : public CComObjectRootEx<CComMultiThreadModel>
 //#else
 //    : public CComObjectRootEx
@@ -1097,7 +1097,7 @@ class VirtualBoxSupportErrorInfoImplBase
 
 protected:
 
-    inline static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
+    static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
                                     const Bstr &aComponent,
                                     const Bstr &aText)
     {
@@ -1105,7 +1105,7 @@ protected:
                                  false /* aPreserve */);
     }
 
-    inline static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
+    static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
                                     const Bstr &aComponent,
                                     const Bstr &aText)
     {
@@ -1158,14 +1158,14 @@ protected:
 template <class C, class I>
 class ATL_NO_VTABLE VirtualBoxSupportErrorInfoImpl
     : protected VirtualBoxSupportErrorInfoImplBase
-#if defined (RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
     , public ISupportErrorInfo
 #else
 #endif
 {
 public:
 
-#if defined (RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
     STDMETHOD(InterfaceSupportsErrorInfo) (REFIID riid)
     {
         const _ATL_INTMAP_ENTRY* pEntries = C::_GetEntries();
@@ -1196,7 +1196,7 @@ public:
 
         return bSupports ? S_OK : S_FALSE;
     }
-#endif // defined (RT_OS_WINDOWS)
+#endif // !defined (VBOX_WITH_XPCOM)
 
 protected:
 
@@ -1240,9 +1240,9 @@ protected:
      *      creating error info itself, that error is returned instead of the
      *      error argument.
      */
-    inline static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
-                                    const wchar_t *aComponent,
-                                    const char *aText, ...)
+    static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
+                             const wchar_t *aComponent,
+                             const char *aText, ...)
     {
         va_list args;
         va_start (args, aText);
@@ -1258,9 +1258,9 @@ protected:
      *  method is called by storing it in the IVirtualBoxErrorInfo::next
      *  attribute of the new error info object.
      */
-    inline static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
-                                    const wchar_t *aComponent,
-                                    const char *aText, ...)
+    static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
+                             const wchar_t *aComponent,
+                             const char *aText, ...)
     {
         va_list args;
         va_start (args, aText);
@@ -1293,7 +1293,7 @@ protected:
      *      return rc;
      *  </code>
      */
-    inline static HRESULT setError (HRESULT aResultCode, const char *aText, ...)
+    static HRESULT setError (HRESULT aResultCode, const char *aText, ...)
     {
         va_list args;
         va_start (args, aText);
@@ -1309,7 +1309,7 @@ protected:
      *  method is called by storing it in the IVirtualBoxErrorInfo::next
      *  attribute of the new error info object.
      */
-    inline static HRESULT addError (HRESULT aResultCode, const char *aText, ...)
+    static HRESULT addError (HRESULT aResultCode, const char *aText, ...)
     {
         va_list args;
         va_start (args, aText);
@@ -1328,8 +1328,8 @@ protected:
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  and #setError (HRESULT, const char *, ...)  for details.
      */
-    inline static HRESULT setErrorV (HRESULT aResultCode, const char *aText,
-                                     va_list aArgs)
+    static HRESULT setErrorV (HRESULT aResultCode, const char *aText,
+                              va_list aArgs)
     {
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
             (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs);
@@ -1342,8 +1342,8 @@ protected:
      *  method is called by storing it in the IVirtualBoxErrorInfo::next
      *  attribute of the new error info object.
      */
-    inline static HRESULT addErrorV (HRESULT aResultCode, const char *aText,
-                                     va_list aArgs)
+    static HRESULT addErrorV (HRESULT aResultCode, const char *aText,
+                              va_list aArgs)
     {
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
             (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs);
@@ -1357,12 +1357,12 @@ protected:
      *  (a value of C::getComponentName()).
      *
      *  This method is preferred iy you have a ready (translated and formatted)
-     *  Bstr string, because it omits an extra conversion Utf8Str -> Bstr. 
+     *  Bstr string, because it omits an extra conversion Utf8Str -> Bstr.
      *
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  and #setError (HRESULT, const char *, ...)  for details.
      */
-    inline static HRESULT setErrorBstr (HRESULT aResultCode, const Bstr &aText)
+    static HRESULT setErrorBstr (HRESULT aResultCode, const Bstr &aText)
     {
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
             (aResultCode, COM_IIDOF(I), C::getComponentName(), aText);
@@ -1375,7 +1375,7 @@ protected:
      *  method is called by storing it in the IVirtualBoxErrorInfo::next
      *  attribute of the new error info object.
      */
-    inline static HRESULT addErrorBstr (HRESULT aResultCode, const Bstr &aText)
+    static HRESULT addErrorBstr (HRESULT aResultCode, const Bstr &aText)
     {
         HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
             (aResultCode, COM_IIDOF(I), C::getComponentName(), aText);
@@ -1391,8 +1391,8 @@ protected:
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  for details.
      */
-    inline static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
-                                    const char *aText, ...)
+    static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
+                             const char *aText, ...)
     {
         va_list args;
         va_start (args, aText);
@@ -1408,8 +1408,8 @@ protected:
      *  method is called by storing it in the IVirtualBoxErrorInfo::next
      *  attribute of the new error info object.
      */
-    inline static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
-                                    const char *aText, ...)
+    static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
+                             const char *aText, ...)
     {
         va_list args;
         va_start (args, aText);
@@ -1470,7 +1470,7 @@ private:
  *  Because of weak referencing, deadlocks and assertions are very likely
  *  if #addDependentChild() or #removeDependentChild() are used incorrectly
  *  (called at inappropriate times). Check the above rules once more.
- *  
+ *
  *  @deprecated Use VirtualBoxBaseWithChildrenNEXT for new classes.
  */
 class VirtualBoxBaseWithChildren : public VirtualBoxBase
@@ -1548,15 +1548,15 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  
- * Base class to track VirtualBoxBaseNEXT chlidren of the component.
- *  
- * This class is a preferrable VirtualBoxBase replacement for components that 
- * operate with collections of child components. It gives two useful 
- * possibilities: 
  *
- * <ol><li> 
- *      Given an IUnknown instance, it's possible to quickly determine 
+ * Base class to track VirtualBoxBaseNEXT chlidren of the component.
+ *
+ * This class is a preferrable VirtualBoxBase replacement for components that
+ * operate with collections of child components. It gives two useful
+ * possibilities:
+ *
+ * <ol><li>
+ *      Given an IUnknown instance, it's possible to quickly determine
  *      whether this instance represents a child object created by the given
  *      component, and if so, get a valid VirtualBoxBase pointer to the child
  *      object. The returned pointer can be then safely casted to the
@@ -1594,17 +1594,17 @@ private:
  * </li></ol>
  *
  * Note that children added by #addDependentChild() are <b>weakly</b> referenced
- * (i.e. AddRef() is not called), so when a child object is deleted externally 
- * (because it's reference count goes to zero), it will automatically remove 
+ * (i.e. AddRef() is not called), so when a child object is deleted externally
+ * (because it's reference count goes to zero), it will automatically remove
  * itself from the map of dependent children provided that it follows the rules
- * described here. 
+ * described here.
  *
- * @note Once again: because of weak referencing, deadlocks and assertions are 
+ * @note Once again: because of weak referencing, deadlocks and assertions are
  *       very likely if #addDependentChild() or #removeDependentChild() are used
  *       incorrectly (called at inappropriate times). Check the above rules once
  *       more.
- *  
- * @todo This is a VirtualBoxBaseWithChildren equivalent that uses the 
+ *
+ * @todo This is a VirtualBoxBaseWithChildren equivalent that uses the
  *       VirtualBoxBaseNEXT implementation. Will completely supercede
  *       VirtualBoxBaseWithChildren after the old VirtualBoxBase implementation
  *       has gone.
@@ -1621,14 +1621,14 @@ public:
     {}
 
     /**
-     * Adds the given child to the map of dependent children. 
+     * Adds the given child to the map of dependent children.
      *
      * Typically called from the child's init() method, from within the
      * AutoInitSpan scope.  Otherwise, VirtualBoxBase::AutoCaller must be
-     * used on @a aChild to make sure it is not uninitialized during this 
+     * used on @a aChild to make sure it is not uninitialized during this
      * method's call.
      *
-     * @param aChild    Child object to add (must inherit VirtualBoxBase AND 
+     * @param aChild    Child object to add (must inherit VirtualBoxBase AND
      *                  implement some interface).
      */
     template <class C>
@@ -1639,14 +1639,14 @@ public:
     }
 
     /**
-     * Removes the given child from the map of dependent children. 
-     *  
-     * Make sure this method is called after the child has successfully entered 
-     * AutoUninitSpan and outside the child lock. 
-     *  
-     * If called not from within the AutoUninitSpan scope, 
-     * VirtualBoxBase::AutoCaller must be used on @a aChild to make sure it is 
-     * not uninitialized during this method's call. 
+     * Removes the given child from the map of dependent children.
+     *
+     * Make sure this method is called after the child has successfully entered
+     * AutoUninitSpan and outside the child lock.
+     *
+     * If called not from within the AutoUninitSpan scope,
+     * VirtualBoxBase::AutoCaller must be used on @a aChild to make sure it is
+     * not uninitialized during this method's call.
      *
      * @param aChild    Child object to remove (must inherit VirtualBoxBase AND
      *                  implement some interface).
@@ -1706,7 +1706,7 @@ private:
  *
  *  @param C    type of child objects (must inherit VirtualBoxBase AND
  *              implement some interface)
- *  
+ *
  *  @deprecated Use VirtualBoxBaseWithTypedChildrenNEXT for new classes.
  */
 template <class C>
@@ -1843,21 +1843,21 @@ private:
 /**
  * Base class to track component's chlidren of the particular type.
  *
- * This class is similar to VirtualBoxBaseWithChildren, with the exception that 
- * all children must be of the same type. For this reason, it's not necessary to 
- * use a map to store children, so a list is used instead. 
+ * This class is similar to VirtualBoxBaseWithChildren, with the exception that
+ * all children must be of the same type. For this reason, it's not necessary to
+ * use a map to store children, so a list is used instead.
  *
  * As opposed to VirtualBoxBaseWithChildren, children added by
- * #addDependentChild() are <b>strongly</b> referenced, so that they cannot be 
- * externally deleted until #removeDependentChild() is called. For this 
- * reason, strict rules of calling #removeDependentChild() don't apply to 
- * instances of this class -- it can be called anywhere in the child's uninit() 
- * implementation. 
+ * #addDependentChild() are <b>strongly</b> referenced, so that they cannot be
+ * externally deleted until #removeDependentChild() is called. For this
+ * reason, strict rules of calling #removeDependentChild() don't apply to
+ * instances of this class -- it can be called anywhere in the child's uninit()
+ * implementation.
  *
- * @param C Type of child objects (must inherit VirtualBoxBase AND implementsome 
+ * @param C Type of child objects (must inherit VirtualBoxBase AND implementsome
  *          interface).
- *  
- * @todo This is a VirtualBoxBaseWithChildren equivalent that uses the 
+ *
+ * @todo This is a VirtualBoxBaseWithChildren equivalent that uses the
  *       VirtualBoxBaseNEXT implementation. Will completely supercede
  *       VirtualBoxBaseWithChildren after the old VirtualBoxBase implementation
  *       has gone.
@@ -1874,9 +1874,9 @@ public:
     virtual ~VirtualBoxBaseWithTypedChildrenNEXT() {}
 
     /**
-     * Adds the given child to the list of dependent children. 
-     * 
-     * VirtualBoxBase::AutoCaller must be used on @a aChild to make sure it is 
+     * Adds the given child to the list of dependent children.
+     *
+     * VirtualBoxBase::AutoCaller must be used on @a aChild to make sure it is
      * not uninitialized during this method's call.
      *
      *  @param aChild   Child object to add (must inherit VirtualBoxBase AND
@@ -1894,10 +1894,10 @@ public:
     }
 
     /**
-     * Removes the given child from the list of dependent children. 
-     * 
-     * VirtualBoxBase::AutoCaller must be used on @a aChild to make sure it is 
-     * not uninitialized during this method's call. 
+     * Removes the given child from the list of dependent children.
+     *
+     * VirtualBoxBase::AutoCaller must be used on @a aChild to make sure it is
+     * not uninitialized during this method's call.
      *
      *  @param aChild   the child object to remove (must inherit VirtualBoxBase
      *                  AND implement some interface).
@@ -1916,19 +1916,19 @@ public:
 protected:
 
     /**
-     * Returns an internal lock handle used to lock the list of children 
-     * returned by #dependentChildren(). This lock is to be used by AutoLock as 
-     * follows: 
-     * <code> 
+     * Returns an internal lock handle used to lock the list of children
+     * returned by #dependentChildren(). This lock is to be used by AutoLock as
+     * follows:
+     * <code>
      *      AutoLock alock (dependentChildrenLock());
      * </code>
      */
     AutoLock::Handle &dependentChildrenLock() const { return mMapLock; }
 
     /**
-     * Returns the read-only list of all dependent children. 
-     *  
-     * @note Access the returned list (iterate, get size etc.) only after doing 
+     * Returns the read-only list of all dependent children.
+     *
+     * @note Access the returned list (iterate, get size etc.) only after doing
      *       AutoLock alock (dependentChildrenLock())!
      */
     const DependentChildren &dependentChildren() const { return mDependentChildren; }
@@ -2209,7 +2209,7 @@ protected:
 
 #if defined VBOX_MAIN_SETTINGS_ADDONS
 
-/** 
+/**
  * Settinsg API additions.
  */
 namespace settings

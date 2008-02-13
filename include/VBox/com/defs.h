@@ -69,70 +69,70 @@
 #define GUIDPARAMOUT        GUID*
 
 /**
- * Declares an input safearray parameter in the COM method implementation. Also 
- * used to declare the COM attribute setter parameter. Corresponds to either of 
- * the following XIDL definitions: 
+ * Declares an input safearray parameter in the COM method implementation. Also
+ * used to declare the COM attribute setter parameter. Corresponds to either of
+ * the following XIDL definitions:
  * <pre>
  *  <param name="arg" ... dir="in" safearray="yes"/>
  *  ...
  *  <attribute name="arg" ... safearray="yes"/>
- * </pre> 
- * 
- * The method implementation should use the com::SafeArray helper class to work 
- * with parameters declared using this define. 
- *  
+ * </pre>
+ *
+ * The method implementation should use the com::SafeArray helper class to work
+ * with parameters declared using this define.
+ *
  * @param aType Array element type.
  * @param aArg  Parameter/attribute name.
  */
 #define ComSafeArrayIn(aType, aArg)     SAFEARRAY **aArg
 
-/** 
- * Expands to @true if the given input safearray parameter is a "null pointer" 
- * which makes it impossible to use it for reading safearray data. 
- */ 
+/**
+ * Expands to @true if the given input safearray parameter is a "null pointer"
+ * which makes it impossible to use it for reading safearray data.
+ */
 #define ComSafeArrayInIsNull(aArg)      (aArg == NULL)
 
-/** 
+/**
  * Wraps the given parameter name to generate an expression that is suitable for
- * passing the parameter to functions that take input safearray parameters 
- * declared using the ComSafeArrayIn marco. 
- *  
- * @param aArg  Parameter name to wrap. The given parameter must be declared 
+ * passing the parameter to functions that take input safearray parameters
+ * declared using the ComSafeArrayIn marco.
+ *
+ * @param aArg  Parameter name to wrap. The given parameter must be declared
  *              within the calling function using the ComSafeArrayIn macro.
  */
 #define ComSafeArrayInArg(aArg)         aArg
 
 /**
- * Declares an output safearray parameter in the COM method implementation. Also 
- * used to declare the COM attribute getter parameter. Corresponds to either of 
+ * Declares an output safearray parameter in the COM method implementation. Also
+ * used to declare the COM attribute getter parameter. Corresponds to either of
  * the following XIDL definitions:
  * <pre>
  *  <param name="arg" ... dir="out" safearray="yes"/>
  *  <param name="arg" ... dir="return" safearray="yes"/>
  *  ...
  *  <attribute name="arg" ... safearray="yes"/>
- * </pre> 
- *  
- * The method implementation should use the com::SafeArray helper class to work 
- * with parameters declared using this define. 
- *  
+ * </pre>
+ *
+ * The method implementation should use the com::SafeArray helper class to work
+ * with parameters declared using this define.
+ *
  * @param aType Array element type.
  * @param aArg  Parameter/attribute name.
  */
 #define ComSafeArrayOut(aType, aArg)    SAFEARRAY **aArg
 
-/** 
- * Expands to @true if the given output safearray parameter is a "null pointer" 
+/**
+ * Expands to @true if the given output safearray parameter is a "null pointer"
  * which makes it impossible to use it for returning a safearray.
- */ 
+ */
 #define ComSafeArrayOutIsNull(aArg)     (aArg == NULL)
 
-/** 
+/**
  * Wraps the given parameter name to generate an expression that is suitable for
- * passing the parameter to functions that take output safearray parameters 
- * declared using the ComSafeArrayOut marco. 
- *  
- * @param aArg  Parameter name to wrap. The given parameter must be declared 
+ * passing the parameter to functions that take output safearray parameters
+ * declared using the ComSafeArrayOut marco.
+ *
+ * @param aArg  Parameter name to wrap. The given parameter must be declared
  *              within the calling function using the ComSafeArrayOut macro.
  */
 #define ComSafeArrayOutArg(aArg)        aArg
@@ -367,7 +367,7 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
     return rv;                                                                \
 }
 
-#endif /* !defined (RT_OS_WINDOWS) */
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
 /**
  *  Declares a whar_t string literal from the argument.
