@@ -124,10 +124,8 @@ typedef struct DRVTAP
     RTFILE                  PipeWrite;
     /** The read end of the control pipe. */
     RTFILE                  PipeRead;
-    /** The thread state. */
-    ASYNCSTATE volatile     enmState;
     /** Reader thread. */
-    RTTHREAD                Thread;
+    PPDMTHREAD              pThread;
     /** We are waiting for more receive buffers. */
     uint32_t volatile       fOutOfSpace;
     /** Event semaphore for blocking on receive. */
@@ -281,10 +279,14 @@ static DECLCALLBACK(void) drvTAPNotifyCanReceive(PPDMINETWORKCONNECTOR pInterfac
  * @param   Thread          Thread handle.
  * @param   pvUser          Pointer to a DRVTAP structure.
  */
-static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAP pData = (PDRVTAP)pvUser;
+    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
     LogFlow(("drvTAPAsyncIoThread: pData=%p\n", pData));
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
     STAM_PROFILE_ADV_START(&pData->StatReceive, a);
 
     int rc = RTSemEventCreate(&pData->EventOutOfSpace);
@@ -293,7 +295,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
     /*
      * Polling loop.
      */
-    for (;;)
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         /*
          * Wait for something to become available.
@@ -308,6 +310,11 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
         STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
         errno=0;
         rc = poll(&aFDs[0], ELEMENTS(aFDs), -1 /* infinite */);
+
+        /* this might have changed in the meantime */
+        if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+            break;
+
         STAM_PROFILE_ADV_START(&pData->StatReceive, a);
         if (    rc > 0
             &&  (aFDs[0].revents & (POLLIN | POLLPRI))
@@ -349,7 +356,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
                     STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
                     STAM_PROFILE_START(&pData->StatRecvOverflows, b);
                     while (   cbMax == 0
-                           && pData->enmState != ASYNCSTATE_TERMINATE)
+                           && pThread->enmState == PDMTHREADSTATE_RUNNING)
                     {
                         LogFlow(("drvTAPAsyncIoThread: cbMax=%d cbRead=%d waiting...\n", cbMax, cbRead));
 #if 1
@@ -364,7 +371,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
                     ASMAtomicXchgU32(&pData->fOutOfSpace, false);
                     STAM_PROFILE_STOP(&pData->StatRecvOverflows, b);
                     STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-                    if (pData->enmState == ASYNCSTATE_TERMINATE)
+                    if (pThread->enmState == PDMTHREADSTATE_RUNNING)
                         break;
                 }
 
@@ -396,9 +403,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
         else if (   rc > 0
                  && aFDs[1].revents)
         {
-            LogFlow(("drvTAPAsyncIoThread: Control message: enmState=%d revents=%#x\n", pData->enmState, aFDs[1].revents));
-            if (pData->enmState == ASYNCSTATE_TERMINATE)
-                break;
+            LogFlow(("drvTAPAsyncIoThread: Control message: enmState=%d revents=%#x\n", pThread->enmState, aFDs[1].revents));
             if (aFDs[1].revents & (POLLHUP | POLLERR | POLLNVAL))
                 break;
 
@@ -431,7 +436,30 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
     return VINF_SUCCESS;
 }
 
-#else
+
+/**
+ * Unblock the send thread so it can respond to a state change.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The pcnet device instance.
+ * @param   pThread     The send thread.
+ */
+static DECLCALLBACK(int) drvTapAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
+
+    /* Ensure that it does not spin in the CanReceive loop */
+    if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
+        RTSemEventSignal(pData->EventOutOfSpace);
+
+    int rc = RTFileWrite(pData->PipeWrite, "", 1, NULL);
+    AssertRC(rc);
+
+    return VINF_SUCCESS;
+}
+
+#else /* !ASYNC_NET */
+
 /**
  * Poller callback.
  */
@@ -491,7 +519,7 @@ static DECLCALLBACK(void) drvTAPPoller(PPDMDRVINS pDrvIns)
 
     STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
 }
-#endif
+#endif /* ASYNC_NET */
 
 
 #if defined(RT_OS_SOLARIS)
@@ -921,23 +949,6 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
 
 #ifdef ASYNC_NET
     /*
-     * Terminate the Async I/O Thread.
-     */
-    ASMAtomicXchgSize(&pData->enmState, ASYNCSTATE_TERMINATE);
-    if (pData->Thread != NIL_RTTHREAD)
-    {
-        /* Ensure that it does not spin in the CanReceive loop */
-        if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
-            RTSemEventSignal(pData->EventOutOfSpace);
-
-        int rc = RTFileWrite(pData->PipeWrite, "", 1, NULL);
-        AssertRC(rc);
-        rc = RTThreadWait(pData->Thread, 5000, NULL);
-        AssertRC(rc);
-        pData->Thread = NIL_RTTHREAD;
-    }
-
-    /*
      * Terminate the control pipe.
      */
     if (pData->PipeWrite != NIL_RTFILE)
@@ -1024,10 +1035,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 #endif
     pData->pszSetupApplication          = NULL;
     pData->pszTerminateApplication      = NULL;
-#ifdef ASYNC_NET
-    pData->Thread                       = NIL_RTTHREAD;
-    pData->enmState                     = ASYNCSTATE_RUNNING;
-#endif
+
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvTAPQueryInterface;
     /* INetwork */
@@ -1159,7 +1167,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Create the async I/O thread.
      */
-    rc = RTThreadCreate(&pData->Thread, drvTAPAsyncIoThread, pData, 128*_1K, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "TAP");
+    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pThread, pData, drvTAPAsyncIoThread, drvTapAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "TAP");
     AssertRCReturn(rc, rc);
 #else
     /*
