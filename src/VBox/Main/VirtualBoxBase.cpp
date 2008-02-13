@@ -18,10 +18,8 @@
  */
 
 #if !defined (VBOX_WITH_XPCOM)
-#if defined (RT_OS_WINDOWS)
 #include <windows.h>
 #include <dbghelp.h>
-#endif
 #else // !defined (VBOX_WITH_XPCOM)
 #include <nsIServiceManager.h>
 #include <nsIExceptionService.h>
@@ -671,7 +669,6 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
         CheckComRCBreakRC (rc);
 
 #if !defined (VBOX_WITH_XPCOM)
-#if defined (RT_OS_WINDOWS)
 
         ComPtr <IVirtualBoxErrorInfo> curInfo;
         if (aPreserve)
@@ -707,7 +704,6 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
         if (SUCCEEDED (rc))
             rc = ::SetErrorInfo (0, err);
 
-#endif
 #else // !defined (VBOX_WITH_XPCOM)
 
         nsCOMPtr <nsIExceptionService> es;
@@ -936,12 +932,12 @@ void VirtualBoxBaseWithChildren::removeDependentChild (const ComPtr <IUnknown> &
 
 /**
  * Uninitializes all dependent children registered with #addDependentChild().
- * 
- * Typically called from the uninit() method. Note that this method will call 
- * uninit() methods of child objects. If these methods need to call the parent 
- * object during initialization, uninitDependentChildren() must be called before 
- * the relevant part of the parent is uninitialized, usually at the begnning of 
- * the parent uninitialization sequence. 
+ *
+ * Typically called from the uninit() method. Note that this method will call
+ * uninit() methods of child objects. If these methods need to call the parent
+ * object during initialization, uninitDependentChildren() must be called before
+ * the relevant part of the parent is uninitialized, usually at the begnning of
+ * the parent uninitialization sequence.
  */
 void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
 {
@@ -1002,12 +998,12 @@ void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
 /**
  * Returns a pointer to the dependent child corresponding to the given
  * interface pointer (used as a key in the map of dependent children) or NULL
- * if the interface pointer doesn't correspond to any child registered using 
- * #addDependentChild(). 
- *  
- * Note that ComPtr <IUnknown> is used as an argument instead of IUnknown * in 
- * order to guarantee IUnknown identity and disambiguation by doing 
- * QueryInterface (IUnknown) rather than a regular C cast. 
+ * if the interface pointer doesn't correspond to any child registered using
+ * #addDependentChild().
+ *
+ * Note that ComPtr <IUnknown> is used as an argument instead of IUnknown * in
+ * order to guarantee IUnknown identity and disambiguation by doing
+ * QueryInterface (IUnknown) rather than a regular C cast.
  *
  * @param aUnk  Pointer to map to the dependent child object.
  * @return      Pointer to the dependent child object.
@@ -1080,10 +1076,10 @@ void VirtualBoxBaseWithChildrenNEXT::doRemoveDependentChild (IUnknown *aUnk)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Uninitializes all dependent children registered with 
- * #addDependentChild(). 
+ * Uninitializes all dependent children registered with
+ * #addDependentChild().
  *
- * @note This method will call uninit() methods of children. If these 
+ * @note This method will call uninit() methods of children. If these
  *       methods access the parent object, uninitDependentChildren() must be
  *       called either at the beginning of the parent uninitialization
  *       sequence (when it is still operational) or after setReady(false) is
@@ -1187,7 +1183,7 @@ template<> com::Guid FromString <com::Guid> (const char *aValue)
     int vrc = RTUuidFromStr (&uuid, buf);
     if (RT_FAILURE (vrc))
         throw ENoConversion (FmtStr ("'%s' is not Guid (%Vrc)", aValue, vrc));
-        
+
     return com::Guid (uuid);
 }
 

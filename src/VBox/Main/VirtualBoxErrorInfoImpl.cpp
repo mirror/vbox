@@ -83,7 +83,6 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(Next) (IVirtualBoxErrorInfo **aNext)
 }
 
 #if !defined (VBOX_WITH_XPCOM)
-#if defined (RT_OS_WINDOWS)
 
 /**
  *  Initializes itself by fetching error information from the given error info
@@ -138,7 +137,6 @@ STDMETHODIMP VirtualBoxErrorInfo::GetSource (BSTR *source)
     return COMGETTER(Component) (source);
 }
 
-#endif // defined (RT_OS_WINDOWS)
 #else // !defined (VBOX_WITH_XPCOM)
 
 /**

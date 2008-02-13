@@ -69,7 +69,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /* Note: hardcoded assumption about number of slots; see rom bios */
     bool afPciDeviceNo[15] = {false};
 
-#if defined(RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
     {
         /* initialize COM */
         HRESULT hrc = CoInitializeEx(NULL,

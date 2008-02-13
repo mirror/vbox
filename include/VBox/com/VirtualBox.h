@@ -41,7 +41,7 @@
 
 // generated VirtualBox COM library definition file
 #if !defined (VBOXCOM_NOINCLUDE)
-#if defined (RT_OS_WINDOWS)
+#if !defined (VBOX_WITH_XPCOM)
 #include <VirtualBox.h>
 #else
 #include <VirtualBox_XPCOM.h>
