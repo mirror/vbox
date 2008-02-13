@@ -420,7 +420,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmPauseAction = new QAction (this, "vmPauseAction");
     vmPauseAction->setToggleAction (true);
     vmPauseAction->setIconSet (VBoxGlobal::iconSet (
-        "pause_16px.png", "pause_16px.png"));
+        "pause_16px.png", "pause_disabled_16px.png"));
     vmRefreshAction = new QAction (this, "vmRefreshAction");
     vmRefreshAction->setIconSet (VBoxGlobal::iconSet (
         "refresh_16px.png", "refresh_disabled_16px.png"));
@@ -532,18 +532,18 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     menuBar()->insertItem (QString::null, vmMenu, 2);
 
-    mVmMenu = new QPopupMenu (this, "mVmMenu");
-    vmConfigAction->addTo (mVmMenu);
-    vmDeleteAction->addTo (mVmMenu);
-    mVmMenu->insertSeparator();
-    vmStartAction->addTo (mVmMenu);
-    vmDiscardAction->addTo (mVmMenu);
-    mVmMenu->insertSeparator();
-    vmPauseAction->addTo (mVmMenu);
-    mVmMenu->insertSeparator();
-    vmRefreshAction->addTo (mVmMenu);
-    mVmMenu->insertSeparator();
-    vmShowLogsAction->addTo (mVmMenu);
+    mVMCtxtMenu = new QPopupMenu (this, "mVMCtxtMenu");
+    vmConfigAction->addTo (mVMCtxtMenu);
+    vmDeleteAction->addTo (mVMCtxtMenu);
+    mVMCtxtMenu->insertSeparator();
+    vmStartAction->addTo (mVMCtxtMenu);
+    vmDiscardAction->addTo (mVMCtxtMenu);
+    mVMCtxtMenu->insertSeparator();
+    vmPauseAction->addTo (mVMCtxtMenu);
+    mVMCtxtMenu->insertSeparator();
+    vmRefreshAction->addTo (mVMCtxtMenu);
+    mVMCtxtMenu->insertSeparator();
+    vmShowLogsAction->addTo (mVMCtxtMenu);
 
     QPopupMenu *helpMenu = new QPopupMenu( this, "helpMenu" );
     helpContentsAction->addTo (helpMenu);
@@ -1052,7 +1052,7 @@ void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
 void VBoxSelectorWnd::showContextMenu (QListBoxItem *aItem, const QPoint &aPoint)
 {
     if (aItem)
-        mVmMenu->exec (aPoint);
+        mVMCtxtMenu->exec (aPoint);
 }
 
 // Protected members

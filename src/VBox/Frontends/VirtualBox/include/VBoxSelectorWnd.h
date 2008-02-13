@@ -108,8 +108,8 @@ private slots:
 
 private:
 
-    /* context menu */
-    QPopupMenu *mVmMenu;
+    /** VM list context menu */
+    QPopupMenu *mVMCtxtMenu;
 
     /* actions */
     QAction *fileDiskMgrAction;

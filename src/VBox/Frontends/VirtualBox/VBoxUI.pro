@@ -126,6 +126,7 @@ IMAGES	= images/tpixel.png \
 	images/reset_16px.png \
 	images/reset_disabled_16px.png \
 	images/pause_16px.png \
+	images/pause_disabled_16px.png \
 	images/fullscreen_16px.png \
 	images/fullscreen_disabled_16px.png \
 	images/acpi_16px.png \
