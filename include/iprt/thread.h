@@ -359,6 +359,134 @@ RTR3DECL(uint64_t) RTThreadGetAffinity(void);
  */
 RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask);
 
+
+/** @name Thread Local Storage
+ * @{
+ */
+/** A TLS index. */
+typedef int             RTTLS;
+/** Pointer to a TLS index. */
+typedef RTTLS          *PRTTLS;
+/** Pointer to a const TLS index. */
+typedef RTTLS const    *PCRTTLS;
+/** NIL TLS index value. */
+#define NIL_RTTLS       (-1)
+
+/**
+ * Allocates a TLS entry.
+ *
+ * @returns the index of the allocated TLS entry.
+ * @returns NIL_RTTLS on failure.
+ */
+RTR3DECL(int) RTTlsAlloc(void);
+
+/**
+ * Allocates a TLS entry (with status code).
+ *
+ * @returns IPRT status code.
+ * @param   piTls       Where to store the index of the allocated TLS entry.
+ *                      This is set to NIL_RTTLS on failure.
+ */
+RTR3DECL(int) RTTlsAllocEx(PRTTLS piTls);
+
+/**
+ * Frees a TLS entry.
+ *
+ * @returns IPRT status code.
+ * @param   iTls        The index of the TLS entry.
+ */
+RTR3DECL(int) RTTlsFree(RTTLS iTls);
+
+/**
+ * Get the value stored in a TLS entry.
+ *
+ * @returns value in given TLS entry.
+ * @returns NULL on failure.
+ * @param   iTls        The index of the TLS entry.
+ */
+RTR3DECL(void *) RTTlsGet(RTTLS iTls);
+
+/**
+ * Get the value stored in a TLS entry.
+ *
+ * @returns IPRT status code.
+ * @param   iTls        The index of the TLS entry.
+ * @param   ppvValue    Where to store the value.
+ */
+RTR3DECL(int) RTTlsGetEx(RTTLS iTls, void **ppvValue);
+
+/**
+ * Set the value stored in an allocated TLS entry.
+ *
+ * @returns IPRT status.
+ * @param   iTls        The index of the TLS entry.
+ * @param   pvValue     The value to store.
+ *
+ * @remarks Note that NULL is considered to special value.
+ */
+RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue);
+
+/**
+ * Thread termination callback for destroying a non-zero TLS entry.
+ *
+ * Registered and deregisterd by RTTlsSetDestructor().
+ *
+ * @remarks It is not permittable to use any RTTls APIs at this time. Doing so
+ *          may lead to endless loops, crashes, and other bad stuff.
+ *
+ * @param   pvValue     The current value.
+ * @param   iTls        The index of TLS entry.
+ * @param   fFlags      Reserved for the future.
+ */
+typedef DECLCALLBACK(void) FNRTTLSDTOR(void *pvValue, RTTLS iTls, uint32_t fFlags);
+/** Pointer to a FNRTTLSDTOR. */
+typedef FNRTTLSDTOR *PFNRTTLSDTOR;
+
+/**
+ * Register a thread termination destructor for a TLS entry.
+ *
+ * The destructor function will be called when a thread terminates
+ * in a normal fashion and the TLS entry iTls of that thread is
+ * not NULL.
+ *
+ * @remarks This is an optional feature and may therefore not be implemented
+ *          on all platforms. VERR_NOT_SUPPORTED is returned then.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if not supported on this platform.
+ *
+ * @param   iTls            The index of the TLS entry.
+ * @param   pfnDestructor   Callback function. Use NULL to unregister a previously
+ *                          registered destructor.
+ *
+ *                          It's pvValue argument is the non-zero value in the
+ *                          TLS entry for the thread it's called on.
+ *
+ *                          It's fFlags argument is reserved for future use, it will
+ *                          always be zero when the fFlags parameter to this API is zero.
+ *
+ * @param   fFlags          Flags reserved for future use. At the moment
+ *                          only ZERO is allowed.
+ *
+ */
+RTR3DECL(int) RTTlsSetDestructor(RTTLS iTls, PFNRTTLSDTOR pfnDestructor, uint32_t fFlags);
+
+/**
+ * Get pointer to the destructor function registered for the given TLS entry.
+ *
+ * @remarks This may not necessarily be implemented even if RTTlsSetDestructor is.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if not supported on this platform.
+ *
+ * @param   iTls            The index of the TLS entry.
+ * @param   ppfnDestructor  Where to store the destructor address.
+ * @param   pfFlags         Where to store the flags supplied to RTTlsSetDestructor(). NULL is fine.
+ */
+PFNRTTLSDTOR RTTlsGetDestructor(RTTLS iTls, PFNRTTLSDTOR *ppfnDestructor, uint32_t *pfFlags);
+
+/** @} */
+
 #endif /* IN_RING3 */
 
 /** @} */
@@ -366,3 +494,4 @@ RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask);
 __END_DECLS
 
 #endif
+
