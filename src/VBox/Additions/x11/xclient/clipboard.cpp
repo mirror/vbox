@@ -62,6 +62,11 @@ using std::endl;
 
 #include "clipboard.h"
 
+#if defined(LOG_TO_BACKDOOR) && !defined(DEBUG_CLIPBOARD)
+# undef LogFlow
+# define LogFlow(a)
+#endif
+
 #define VBOX_INIT_CALL(__a, __b, __c) do {                                                             \
     (__a)->hdr.result      = VINF_SUCCESS;                                                             \
     (__a)->hdr.u32ClientID = (__c);                                                       \
@@ -1437,7 +1442,7 @@ static int vboxClipboardThread(RTTHREAD /* ThreadSelf */, void * /* pvUser */)
 
                 if (VBOX_SUCCESS (rc))
                 {
-                    Log(("vboxClipboardHostEvent u32Msg %d, u32Formats %d\n", u32Msg, u32Formats));
+                    LogFlowFunc(("vboxClipboardHostEvent u32Msg %d, u32Formats %d\n", u32Msg, u32Formats));
 
                     switch (u32Msg)
                     {
@@ -1484,7 +1489,7 @@ static int vboxClipboardThread(RTTHREAD /* ThreadSelf */, void * /* pvUser */)
             continue;
         }
 
-        Log(("processed host event rc = %d\n", rc));
+        LogFlowFunc(("processed host event rc = %d\n", rc));
     }
     LogFlowFunc(("rc=%d\n", rc));
     return rc;
