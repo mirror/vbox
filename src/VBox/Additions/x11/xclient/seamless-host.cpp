@@ -35,18 +35,18 @@ int VBoxGuestSeamlessHost::start(void)
 
     if (mRunning)  /* Assertion */
     {
-        LogRel(("VBoxService: seamless service started twice!\n"));
+        LogRel(("VBoxClient: seamless service started twice!\n"));
         return VERR_INTERNAL_ERROR;
     }
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
     {
-        LogRel(("VBoxService (seamless): failed to set the guest IRQ filter mask, rc=%Rrc\n", rc));
+        LogRel(("VBoxClient (seamless): failed to set the guest IRQ filter mask, rc=%Rrc\n", rc));
     }
     rc = VbglR3SeamlessSetCap(true);
     if (RT_SUCCESS(rc))
     {
-        Log(("VBoxService: enabled seamless capability on host.\n"));
+        Log(("VBoxClient: enabled seamless capability on host.\n"));
         rc = mThread.start();
         if (RT_SUCCESS(rc))
         {
@@ -54,13 +54,13 @@ int VBoxGuestSeamlessHost::start(void)
         }
         else
         {
-            LogRel(("VBoxService: failed to start seamless event thread, rc=%Rrc.  Disabled seamless capability on host again.\n", rc));
+            LogRel(("VBoxClient: failed to start seamless event thread, rc=%Rrc.  Disabled seamless capability on host again.\n", rc));
             VbglR3SeamlessSetCap(false);
         }
     }
     if (RT_FAILURE(rc))
     {
-        Log(("VBoxService (seamless): failed to enable seamless capability on host, rc=%Rrc\n", rc));
+        Log(("VBoxClient (seamless): failed to enable seamless capability on host, rc=%Rrc\n", rc));
     }
     return rc;
 }
@@ -70,7 +70,7 @@ void VBoxGuestSeamlessHost::stop(unsigned cMillies /* = RT_INDEFINITE_WAIT */)
 {
     if (!mRunning)  /* Assertion */
     {
-        LogRel(("VBoxService: tried to stop seamless service which is not running!\n"));
+        LogRel(("VBoxClient: tried to stop seamless service which is not running!\n"));
         return;
     }
     mThread.stop(cMillies, 0);
@@ -97,21 +97,21 @@ int VBoxGuestSeamlessHost::nextEvent(void)
             /* A simplified seamless mode, obtained by making the host VM window borderless and
               making the guest desktop transparent. */
     #ifdef DEBUG
-                LogRelFunc(("VMMDev_Seamless_Visible_Region request received (VBoxService).\n"));
+                LogRelFunc(("VMMDev_Seamless_Visible_Region request received (VBoxClient).\n"));
     #endif
                 mState = ENABLE;
                 mObserver->notify();
                 break;
             case VMMDev_Seamless_Host_Window:
             /* One host window represents one guest window.  Not yet implemented. */
-                LogRelFunc(("Warning: VMMDev_Seamless_Host_Window request received (VBoxService).\n"));
+                LogRelFunc(("Warning: VMMDev_Seamless_Host_Window request received (VBoxClient).\n"));
                 /* fall through to default */
             default:
-                LogRelFunc(("Warning: unsupported VMMDev_Seamless request %d received (VBoxService).\n", newMode));
+                LogRelFunc(("Warning: unsupported VMMDev_Seamless request %d received (VBoxClient).\n", newMode));
                 /* fall through to case VMMDev_Seamless_Disabled */
             case VMMDev_Seamless_Disabled:
     #ifdef DEBUG
-                LogRelFunc(("VMMDev_Seamless_Disabled set (VBoxService).\n"));
+                LogRelFunc(("VMMDev_Seamless_Disabled set (VBoxClient).\n"));
     #endif
                 mState = DISABLE;
                 mObserver->notify();
@@ -119,7 +119,7 @@ int VBoxGuestSeamlessHost::nextEvent(void)
     }
     else
     {
-        LogFunc(("VbglR3SeamlessWaitEvent returned %Rrc (VBoxService)\n", rc));
+        LogFunc(("VbglR3SeamlessWaitEvent returned %Rrc (VBoxClient)\n", rc));
     }
     return rc;
 }

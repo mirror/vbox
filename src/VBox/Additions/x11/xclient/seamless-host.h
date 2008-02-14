@@ -122,7 +122,7 @@ public:
     {
         if (mObserver != 0)  /* Assertion */
         {
-            LogRel(("VBoxService: ERROR: attempt to initialise seamless host object twice!\n"));
+            LogRel(("VBoxClient: ERROR: attempt to initialise seamless host object twice!\n"));
             return VERR_INTERNAL_ERROR;
         }
         mObserver = pObserver;
@@ -150,7 +150,7 @@ public:
     void updateRects(std::auto_ptr<std::vector<RTRECT> > pRects);
 
     VBoxGuestSeamlessHost(void) : mThreadFunction(this),
-                                  mThread(&mThreadFunction, 0, RTTHREADTYPE_MAIN_WORKER,
+                                  mThread(&mThreadFunction, 0, RTTHREADTYPE_MSG_PUMP,
                                   RTTHREADFLAGS_WAITABLE, "Host events")
     {
         mObserver = 0;
@@ -162,7 +162,7 @@ public:
     {
         if (mRunning)  /* Assertion */
         {
-            LogRel(("VBoxService: seamless host object still running!  Stopping...\n"));
+            LogRel(("VBoxClient: seamless host object still running!  Stopping...\n"));
             try
             {
                 stop(2000);
