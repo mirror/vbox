@@ -320,19 +320,18 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
  */
 static int vboxadd_control_filter_mask(VBoxGuestFilterMaskInfo *pInfo)
 {
-    VMMDevCtlGuestFilterMask *pReq;
+    VMMDevCtlGuestFilterMask *pReq = NULL;
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_CtlGuestFilterMask);
+
+    LogFlow(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: request received, u32OrMask=0x%x, u32NotMask=0x%x\n", pInfo->u32OrMask, pInfo->u32NotMask));
     if (RT_FAILURE(rc))
+        Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: failed to allocate %u (%#x) bytes to cache the request. rc=%d!!\n", sizeof(*pReq), sizeof(*pReq), rc));
+    else
     {
-        Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: failed to allocate %u (%#x) bytes to cache the request. rc=%d!!\n",
-             sizeof(*pReq), sizeof(*pReq), rc));
-        return rc;
+        pReq->u32OrMask = pInfo->u32OrMask;
+        pReq->u32NotMask = pInfo->u32NotMask;
+        rc = VbglGRPerform(&pReq->header);
     }
-
-    pReq->u32OrMask = pInfo->u32OrMask;
-    pReq->u32NotMask = pInfo->u32NotMask;
-
-    rc = VbglGRPerform(&pReq->header);
     if (RT_FAILURE(rc))
         Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: VbglGRPerform failed, rc=%Rrc!\n", rc));
     else if (RT_FAILURE(pReq->header.rc))
@@ -340,8 +339,8 @@ static int vboxadd_control_filter_mask(VBoxGuestFilterMaskInfo *pInfo)
         Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: The request failed; VMMDev rc=%Rrc!\n", pReq->header.rc));
         rc = pReq->header.rc;
     }
-
-    VbglGRFree(&pReq->header);
+    if (pReq)
+        VbglGRFree(&pReq->header);
     return rc;
 }
 
@@ -482,7 +481,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
         case VBOXGUEST_IOCTL_CTL_FILTER_MASK:
         {
                 VBoxGuestFilterMaskInfo info;
-                if (copy_to_user((void*)arg, (void*)&info, sizeof(info)))
+                if (copy_from_user((void*)&info, (void*)arg, sizeof(info)))
                 {
                     LogRelFunc(("VBOXGUEST_IOCTL_CTL_FILTER_MASK: error getting parameters from user space!\n"));
                     rc = -EFAULT;
