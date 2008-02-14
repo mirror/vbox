@@ -511,31 +511,32 @@
      wsmap="suppress"
      >
     <desc>
-      The IVirtualBoxErrorInfo interface represent extended error information.
+      The IVirtualBoxErrorInfo interface represents extended error information.
 
-      Such extended error information can be set by VirtualBox components
-      after unsuccessful method invocation. This can then be returned to the
-      client in addition to a plain result code.
+      Extended error information can be set by VirtualBox components after
+      unsuccessful or partially successful method invocation. This information
+      can be retrievefd by the calling party as an IVirtualBoxErrorInfo object
+      and then shown to the client in addition to the plain 32-bit result code.
 
       In MS COM, this interface extends the IErrorInfo interface,
       in XPCOM, it extends the nsIException interface. In both cases,
       it provides a set of common attributes to retrieve error
       information.
 
-      Sometimes invocation of some component's method may involve
-      methods of other components that may also fail (independently of
-      this method's failure), or a series of non-fatal errors may
-      precede a fatal error that causes method failure. In cases like
-      that, it may be desirable to preserve information about all errors
-      happened during method invocation and deliver it to the
-      caller. The <link to="#next"/> attribute is intended specifically
-      for this purpose and allows to represent a chain of errors through
-      a single IVirtualBoxErrorInfo instance set after method
-      invocation. Note that errors are stored to a chain in the reverse
-      order, i.e. the initial error object you query right after method
-      invocation is the last error set by the callee, the object it
-      points to in the @a next attribute is the previous error and so
-      on, up to the first error (which is the last in the chain).
+      Sometimes invocation of some component's method may involve methods of
+      other components that may also fail (independently of this method's
+      failure), or a series of non-fatal errors may precede a fatal error that
+      causes method failure. In cases like that, it may be desirable to preserve
+      information about all errors happened during method invocation and deliver
+      it to the caller. The <link to="#next"/> attribute is intended
+      specifically for this purpose and allows to represent a chain of errors
+      through a single IVirtualBoxErrorInfo object set after method invocation.
+
+      Note that errors are stored to a chain in the reverse order, i.e. the
+      initial error object you query right after method invocation is the last
+      error set by the callee, the object it points to in the @a next attribute
+      is the previous error and so on, up to the first error (which is the last
+      in the chain).
     </desc>
 
     <attribute name="resultCode" type="result" readonly="yes">
@@ -2542,7 +2543,17 @@
     </attribute>
 
     <attribute name="USBController" type="IUSBController" readonly="yes">
-      <desc>Associated USB controller object.</desc>
+      <desc>
+        Associated USB controller object.
+
+        <note>
+          This method may set a @ref com_warnings "warning result code".
+        </note>
+        <note>
+          If USB functionality is not avaliable in the given edition of
+          VirtualBox, this method will set the result code to @c E_NOTIMPL.
+        </note>
+      </desc>
     </attribute>
 
     <attribute name="audioAdapter" type="IAudioAdapter" readonly="yes">
@@ -4387,6 +4398,14 @@
         List of USB devices currently attached to the host.
         Once a new device is physically attached to the host computer,
         it appears in this list and remains there until detached.
+
+        <note>
+          This method may set a @ref com_warnings "warning result code".
+        </note>
+        <note>
+          If USB functionality is not avaliable in the given edition of
+          VirtualBox, this method will set the result code to @c E_NOTIMPL.
+        </note>
       </desc>
     </attribute>
 
@@ -4402,6 +4421,14 @@
         Unless the device is ignored by these filters, filters of all
         currently running virtual machines
         (<link to="IUSBController::deviceFilters"/>) are applied to it.
+
+        <note>
+          This method may set a @ref com_warnings "warning result code".
+        </note>
+        <note>
+          If USB functionality is not avaliable in the given edition of
+          VirtualBox, this method will set the result code to @c E_NOTIMPL.
+        </note>
 
         <see>IHostUSBDeviceFilter, USBDeviceState</see>
       </desc>
@@ -4524,6 +4551,13 @@
           filter that is already in the list, will return an
           error.
         </note>
+        <note>
+          This method may set a @ref com_warnings "warning result code".
+        </note>
+        <note>
+          If USB functionality is not avaliable in the given edition of
+          VirtualBox, this method will set the result code to @c E_NOTIMPL.
+        </note>
 
         <see>#USBDeviceFilters</see>
       </desc>
@@ -4543,6 +4577,14 @@
         Positions are numbered starting from <tt>0</tt>. Specifying a
         position equal to or greater than the number of elements in
         the list will produce an error.
+
+        <note>
+          This method may set a @ref com_warnings "warning result code".
+        </note>
+        <note>
+          If USB functionality is not avaliable in the given edition of
+          VirtualBox, this method will set the result code to @c E_NOTIMPL.
+        </note>
 
         <see>#USBDeviceFilters</see>
       </desc>

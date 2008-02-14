@@ -73,7 +73,6 @@ extern "C" char *getfullrawname(char *);
 #include "HostDVDDriveImpl.h"
 #include "HostFloppyDriveImpl.h"
 #include "HostUSBDeviceImpl.h"
-#include "USBControllerImpl.h"
 #include "USBDeviceFilterImpl.h"
 #include "USBProxyService.h"
 #include "VirtualBoxImpl.h"
@@ -541,7 +540,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                                            &dwKeyType, (LPBYTE) name.mutableRaw(), &len);
                 if (status == ERROR_SUCCESS)
                 {
-RTLogPrintf("Connection name %ls\n", name.mutableRaw());
+                    RTLogPrintf("Connection name %ls\n", name.mutableRaw());
                     /* put a trailing zero, just in case (see MSDN) */
                     name.mutableRaw() [uniLen] = 0;
                     /* create a new object and add it to the list */
@@ -575,14 +574,15 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
     AutoLock alock (this);
     CHECK_READY();
 
-    HRESULT rc = checkUSBProxyService();
+    MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
 
     ComObjPtr <HostUSBDeviceCollection> collection;
     collection.createObject();
     collection->init (mUSBDevices);
     collection.queryInterfaceTo (aUSBDevices);
-    return S_OK;
+
+    return rc;
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -591,7 +591,7 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
 #endif
 }
 
-STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (IHostUSBDeviceFilterCollection ** aUSBDeviceFilters)
+STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (IHostUSBDeviceFilterCollection **aUSBDeviceFilters)
 {
 #ifdef VBOX_WITH_USB
     if (!aUSBDeviceFilters)
@@ -600,14 +600,15 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (IHostUSBDeviceFilterCollection *
     AutoLock alock (this);
     CHECK_READY();
 
-    HRESULT rc = checkUSBProxyService();
+    MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
 
     ComObjPtr <HostUSBDeviceFilterCollection> collection;
     collection.createObject();
     collection->init (mUSBDeviceFilters);
     collection.queryInterfaceTo (aUSBDeviceFilters);
-    return S_OK;
+
+    return rc;
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -950,12 +951,9 @@ STDMETHODIMP Host::CreateUSBDeviceFilter (INPTR BSTR aName, IHostUSBDeviceFilter
     AutoLock lock (this);
     CHECK_READY();
 
-    HRESULT rc = checkUSBProxyService();
-    CheckComRCReturnRC (rc);
-
     ComObjPtr <HostUSBDeviceFilter> filter;
     filter.createObject();
-    rc = filter->init (this, aName);
+    HRESULT rc = filter->init (this, aName);
     ComAssertComRCRet (rc, rc);
     rc = filter.queryInterfaceTo (aFilter);
     AssertComRCReturn (rc, rc);
@@ -977,7 +975,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     AutoLock alock (this);
     CHECK_READY();
 
-    HRESULT rc = checkUSBProxyService();
+    MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
 
     ComObjPtr <HostUSBDeviceFilter> filter = getDependentChild (aFilter);
@@ -998,7 +996,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     filter->mInList = true;
 
     /* notify the proxy (only when the filter is active) */
-    if (filter->data().mActive)
+    if (mUSBProxyService->isActive() && filter->data().mActive)
     {
         ComAssertRet (filter->id() == NULL, E_FAIL);
 #ifndef VBOX_WITH_USBFILTER
@@ -1011,7 +1009,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
 
     /* save the global settings */
     alock.unlock();
-    return mParent->saveSettings();
+    return rc = mParent->saveSettings();
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -1029,7 +1027,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     AutoLock alock (this);
     CHECK_READY();
 
-    HRESULT rc = checkUSBProxyService();
+    MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
 
     if (!mUSBDeviceFilters.size())
@@ -1056,7 +1054,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     filter.queryInterfaceTo (aFilter);
 
     /* notify the proxy (only when the filter is active) */
-    if (filter->data().mActive)
+    if (mUSBProxyService->isActive() && filter->data().mActive)
     {
         ComAssertRet (filter->id() != NULL, E_FAIL);
         mUSBProxyService->removeFilter (filter->id());
@@ -1065,7 +1063,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
 
     /* save the global settings */
     alock.unlock();
-    return mParent->saveSettings();
+    return rc = mParent->saveSettings();
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -2323,6 +2321,9 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
  *  corresponding error message otherwise. Intended to be used by methods
  *  that rely on the Proxy Service availability.
  *
+ *  @note This method may return a warning result code. It is recommended to use
+ *        MultiError to store the return value.
+ *
  *  @note Locks this object for reading.
  */
 HRESULT Host::checkUSBProxyService()
@@ -2339,12 +2340,12 @@ HRESULT Host::checkUSBProxyService()
 
         Assert (VBOX_FAILURE (mUSBProxyService->getLastError()));
         if (mUSBProxyService->getLastError() == VERR_FILE_NOT_FOUND)
-            return setError (E_FAIL,
+            return setWarning (E_FAIL,
                 tr ("Could not load the Host USB Proxy Service (%Vrc). "
                     "The service might be not installed on the host computer"),
                 mUSBProxyService->getLastError());
         else
-            return setError (E_FAIL,
+            return setWarning (E_FAIL,
                 tr ("Could not load the Host USB Proxy service (%Vrc)"),
                 mUSBProxyService->getLastError());
     }
