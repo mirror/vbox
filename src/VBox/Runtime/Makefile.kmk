@@ -311,6 +311,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/thread-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
+	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
 RuntimeR3_SOURCES.linux.x86 += \
 	r3/posix/semevent-posix.cpp \
@@ -393,6 +394,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
+	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
 
 ## @todo Make BSD sched.
@@ -427,6 +429,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
+	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
 
 RuntimeR3_SOURCES.solaris = \
@@ -459,6 +462,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
+	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp \
 	r3/solaris/alloc-solaris.cpp
 
