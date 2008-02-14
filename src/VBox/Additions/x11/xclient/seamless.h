@@ -141,7 +141,7 @@ public:
 
         if (isInitialised)  /* Assertion */
         {
-            LogRelFunc(("error: called a second time! (VBoxService)\n"));
+            LogRelFunc(("error: called a second time! (VBoxClient)\n"));
             rc = VERR_INTERNAL_ERROR;
         }
         if (RT_SUCCESS(rc))
@@ -162,7 +162,7 @@ public:
         }
         if (RT_FAILURE(rc))
         {
-            LogFunc(("returning %Rrc (VBoxService)\n", rc));
+            LogFunc(("returning %Rrc (VBoxClient)\n", rc));
         }
         return rc;
     }

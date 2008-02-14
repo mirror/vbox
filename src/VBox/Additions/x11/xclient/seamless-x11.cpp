@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,18 +71,18 @@ int VBoxGuestSeamlessX11::init(VBoxGuestSeamlessObserver *pObserver)
 
     if (0 != mObserver)  /* Assertion */
     {
-        LogRel(("VBoxService: ERROR: attempt to initialise seamless guest object twice!\n"));
+        LogRel(("VBoxClient: ERROR: attempt to initialise seamless guest object twice!\n"));
         return VERR_INTERNAL_ERROR;
     }
     if (!mDisplay.init())
     {
-        LogRel(("VBoxService: seamless guest object failed to acquire a connection to the display.\n"));
+        LogRel(("VBoxClient: seamless guest object failed to acquire a connection to the display.\n"));
         return VERR_ACCESS_DENIED;
     }
     if (0 == XXGetProperty(mDisplay, DefaultRootWindow(mDisplay.get()), XA_WINDOW,
                            NET_CLIENT_LIST, &nItems).get())
     {
-        LogRel(("VBoxService: _NET_CLIENT_LIST property not supported by guest window manager.  Seamless mode will not be enabled.\n"));
+        LogRel(("VBoxClient: _NET_CLIENT_LIST property not supported by guest window manager.  Seamless mode will not be enabled.\n"));
     }
     mObserver = pObserver;
     return rc;
@@ -166,7 +166,7 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
 
     if (!XGetWindowAttributes(mDisplay, hWin, &winAttrib))
     {
-        LogRelFunc(("VBoxService: Failed to get the window attributes for window %d\n", hWin));
+        LogRelFunc(("VBoxClient: Failed to get the window attributes for window %d\n", hWin));
         return;
     }
     if (mSupportsShape)
