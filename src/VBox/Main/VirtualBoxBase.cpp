@@ -638,27 +638,60 @@ bool VirtualBoxSupportTranslationBase::cutClassNameFrom__PRETTY_FUNCTION__ (char
 // VirtualBoxSupportErrorInfoImplBase methods
 ////////////////////////////////////////////////////////////////////////////////
 
+RTTLS VirtualBoxSupportErrorInfoImplBase::MultiResult::sCounter = NIL_RTTLS;
+
+void VirtualBoxSupportErrorInfoImplBase::MultiResult::init()
+{
+    if (sCounter == NIL_RTTLS)
+    {
+        sCounter = RTTlsAlloc();
+        AssertReturnVoid (sCounter != NIL_RTTLS);
+    }
+
+    uintptr_t counter = (uintptr_t) RTTlsGet (sCounter);
+    ++ counter;
+    RTTlsSet (sCounter, (void *) counter);
+}
+
+VirtualBoxSupportErrorInfoImplBase::MultiResult::~MultiResult()
+{
+    uintptr_t counter = (uintptr_t) RTTlsGet (sCounter);
+    AssertReturnVoid (counter != 0);
+    -- counter;
+    RTTlsSet (sCounter, (void *) counter);
+}
+
 /**
  *  Sets error info for the current thread. This is an internal function that
- *  gets eventually called by all public variants.  If @a aPreserve is
- *  @c true, then the current error info object set on the thread before this
- *  method is called will be preserved in the IVirtualBoxErrorInfo::next
- *  attribute of the new error info object that will be then set as the
- *  current error info object.
+ *  gets eventually called by all public variants.  If @a aWarning is
+ *  @c true, then the highest (31) bit in the @a aResultCode value which
+ *  indicates the error severity is reset to zero to make sure the receiver will
+ *  recognize that the created error info object represents a warning rather
+ *  than an error.
  */
-// static
+/* static */
 HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
     HRESULT aResultCode, const GUID &aIID,
     const Bstr &aComponent, const Bstr &aText,
-    bool aPreserve)
+    bool aWarning)
 {
+    /* whether multi-error mode is turned on */
+    bool preserve = ((uintptr_t) RTTlsGet (MultiResult::sCounter)) > 0;
+
     LogRel (("ERROR [COM]: aRC=%#08x aIID={%Vuuid} aComponent={%ls} aText={%ls} "
-             "aPreserve=%RTbool\n",
-             aResultCode, &aIID, aComponent.raw(), aText.raw(), aPreserve));
+             "aWarning=%RTbool, preserve=%RTbool\n",
+             aResultCode, &aIID, aComponent.raw(), aText.raw(), aWarning,
+             preserve));
 
     /* these are mandatory, others -- not */
-    AssertReturn (FAILED (aResultCode), E_FAIL);
+    AssertReturn ((!aWarning && FAILED (aResultCode)) ||
+                  (aWarning && aResultCode != S_OK),
+                  E_FAIL);
     AssertReturn (!aText.isEmpty(), E_FAIL);
+
+    /* reset the error severity bit if it's a warning */
+    if (aWarning)
+        aResultCode &= ~0x80000000;
 
     HRESULT rc = S_OK;
 
@@ -671,7 +704,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
 #if !defined (VBOX_WITH_XPCOM)
 
         ComPtr <IVirtualBoxErrorInfo> curInfo;
-        if (aPreserve)
+        if (preserve)
         {
             /* get the current error info if any */
             ComPtr <IErrorInfo> err;
@@ -715,7 +748,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
             CheckComRCBreakRC (rc);
 
             ComPtr <IVirtualBoxErrorInfo> curInfo;
-            if (aPreserve)
+            if (preserve)
             {
                 /* get the current error info if any */
                 ComPtr <nsIException> ex;

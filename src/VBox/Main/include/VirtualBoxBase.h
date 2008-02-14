@@ -36,6 +36,7 @@ using util::AutoMultiLock;
 
 #include <iprt/cdefs.h>
 #include <iprt/critsect.h>
+#include <iprt/thread.h>
 
 #include <list>
 #include <map>
@@ -1093,24 +1094,147 @@ class VirtualBoxSupportErrorInfoImplBase
 {
     static HRESULT setErrorInternal (HRESULT aResultCode, const GUID &aIID,
                                      const Bstr &aComponent, const Bstr &aText,
-                                     bool aPreserve);
+                                     bool aWarning);
 
 protected:
 
+    /**
+     * The MultiResult class is a com::LWResult enhancement that also acts as a
+     * switch to turn on multi-error mode for #setError() or #setWarning()
+     * calls.
+     *
+     * When an instance of this class is created, multi-error mode is turned on
+     * for the current thread and the turn-on counter is increased by one. In
+     * multi-error mode, a call to #setError() or #setWarning() does not
+     * overwrite the current error or warning info object possibly set on the
+     * current thread by other method calls, but instead it stores this old
+     * object in the IVirtualBoxErrorInfo::next attribute of the new error
+     * object being set.
+     *
+     * This way, error/warning objects are stacked together and form a chain of
+     * errors where the most recent error is the first one retrieved by the
+     * calling party, the preceeding error is what the
+     * IVirtualBoxErrorInfo::next attribute of the first error points to, and so
+     * on, upto the first error or warning occured which is the last in the
+     * chain. See IVirtualBoxErrorInfo documentation for more info.
+     *
+     * When the instance of the MultiResult class goes out of scope and gets
+     * destroyed, it automatically decreases the turn-on counter by one. If
+     * the counter drops to zero, multi-error mode for the current thread is
+     * turned off and the thread switches back to single-error mode where every
+     * next error or warning object overwrites the previous one.
+     *
+     * Note that the caller of a COM methid uses a non-S_OK result code to
+     * decide if the method has returned an error (negative codes) or a warning
+     * (positive non-zero codes) and will query extended error info only in
+     * these two cases. However, since multi-error mode implies that the method
+     * doesn't return control return to the caller immediately after the first
+     * error or warning but continues its execution, the functionality provided
+     * by the base com::LWResult class becomes very useful because it allows to
+     * preseve the error or the warning result code even if it is later assigned
+     * a S_OK value multiple times. See com::LWResult for details.
+     *
+     * Here is the typical usage pattern:
+     *  <code>
+
+        HRESULT Bar::method()
+        {
+            // assume multi-errors are turned off here...
+
+            if (something)
+            {
+                // Turn on multi-error mode and make sure severity is preserved
+                MultiResult rc = foo->method1();
+
+                // return on fatal error, but continue on warning or on success
+                CheckComRCReturnRC (rc);
+
+                rc = foo->method2();
+                // no matter what result, stack it and continue
+
+                // ...
+
+                // return the last worst result code (it will be preserved even if
+                // foo->method2() returns S_OK.
+                return rc;
+            }
+
+            // multi-errors are turned off here again...
+
+            return S_OK;
+        }
+
+     *  </code>
+     *
+     *
+     * @note This class is intended to be instantiated on the stack, therefore
+     *       You cannot create them using new(). Although it is possible to copy
+     *       instances of MultiResult or return them by value, please never do
+     *       that as it is breaks the class semantics (and will assert);
+     */
+    class MultiResult : public com::LWResult
+    {
+    public:
+
+        /**
+         * @see com::LWResult::LWResult().
+         */
+        MultiResult (HRESULT aRC = E_FAIL) : LWResult (aRC) { init(); }
+
+        MultiResult (const MultiResult &aThat) : LWResult (aThat)
+        {
+            /* We need this copy constructor only for GCC that wants to have
+             * it in case of expressions like |MultiResult rc = E_FAIL;|. But
+             * we assert since the optimizer should actually avoid the
+             * temporary and call the other constructor directly istead. */
+            AssertFailed();
+            init();
+        }
+
+        ~MultiResult();
+
+        MultiResult &operator= (HRESULT aRC)
+        {
+            com::LWResult::operator= (aRC);
+            return *this;
+        }
+
+        MultiResult &operator= (const MultiResult &aThat)
+        {
+            /* We need this copy constructor only for GCC that wants to have
+             * it in case of expressions like |MultiResult rc = E_FAIL;|. But
+             * we assert since the optimizer should actually avoid the
+             * temporary and call the other constructor directly istead. */
+            AssertFailed();
+            com::LWResult::operator= (aThat);
+            return *this;
+        }
+
+    private:
+
+        DECLARE_CLS_NEW_DELETE_NOOP (MultiResult)
+
+        void init();
+
+        static RTTLS sCounter;
+
+        friend class VirtualBoxSupportErrorInfoImplBase;
+    };
+
     static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
                                     const Bstr &aComponent,
                                     const Bstr &aText)
     {
         return setErrorInternal (aResultCode, aIID, aComponent, aText,
-                                 false /* aPreserve */);
+                                 false /* aWarning */);
     }
 
-    static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
-                                    const Bstr &aComponent,
-                                    const Bstr &aText)
+    static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
+                               const Bstr &aComponent,
+                               const Bstr &aText)
     {
         return setErrorInternal (aResultCode, aIID, aComponent, aText,
-                                 true /* aPreserve */);
+                                 true /* aWarning */);
     }
 
     static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
@@ -1119,16 +1243,16 @@ protected:
     {
         return setErrorInternal (aResultCode, aIID, aComponent,
                                  Utf8StrFmtVA (aText, aArgs),
-                                 false /* aPreserve */);
+                                 false /* aWarning */);
     }
 
-    static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
-                             const Bstr &aComponent,
-                             const char *aText, va_list aArgs)
+    static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
+                               const Bstr &aComponent,
+                               const char *aText, va_list aArgs)
     {
         return setErrorInternal (aResultCode, aIID, aComponent,
                                  Utf8StrFmtVA (aText, aArgs),
-                                 true /* aPreserve */);
+                                 true /* aWarning */);
     }
 };
 
@@ -1253,18 +1377,21 @@ protected:
     }
 
     /**
-     *  This method is the same as #setError() except that it preserves the
-     *  error info object (if any) set for the current thread before this
-     *  method is called by storing it in the IVirtualBoxErrorInfo::next
-     *  attribute of the new error info object.
+     *  This method is the same as #setError() except that it makes sure @a
+     *  aResultCode doesn't have the error severty bit (31) set when passed
+     *  down to the created IVirtualBoxErrorInfo object.
+     *
+     *  The error severity bit is always cleared by this call, thereofe you can
+     *  use ordinary E_XXX result code constancs, for convenience. However, this
+     *  behavior may be non-stanrard on some COM platforms.
      */
-    static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
-                             const wchar_t *aComponent,
-                             const char *aText, ...)
+    static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
+                               const wchar_t *aComponent,
+                               const char *aText, ...)
     {
         va_list args;
         va_start (args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
             (aResultCode, aIID, aComponent, aText, args);
         va_end (args);
         return rc;
@@ -1304,16 +1431,19 @@ protected:
     }
 
     /**
-     *  This method is the same as #setError() except that it preserves the
-     *  error info object (if any) set for the current thread before this
-     *  method is called by storing it in the IVirtualBoxErrorInfo::next
-     *  attribute of the new error info object.
+     *  This method is the same as #setError() except that it makes sure @a
+     *  aResultCode doesn't have the error severty bit (31) set when passed
+     *  down to the created IVirtualBoxErrorInfo object.
+     *
+     *  The error severity bit is always cleared by this call, thereofe you can
+     *  use ordinary E_XXX result code constancs, for convenience. However, this
+     *  behavior may be non-stanrard on some COM platforms.
      */
-    static HRESULT addError (HRESULT aResultCode, const char *aText, ...)
+    static HRESULT setWarning (HRESULT aResultCode, const char *aText, ...)
     {
         va_list args;
         va_start (args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
             (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args);
         va_end (args);
         return rc;
@@ -1337,15 +1467,18 @@ protected:
     }
 
     /**
-     *  This method is the same as #setErrorV() except that it preserves the
-     *  error info object (if any) set for the current thread before this
-     *  method is called by storing it in the IVirtualBoxErrorInfo::next
-     *  attribute of the new error info object.
+     *  This method is the same as #setErrorV() except that it makes sure @a
+     *  aResultCode doesn't have the error severty bit (31) set when passed
+     *  down to the created IVirtualBoxErrorInfo object.
+     *
+     *  The error severity bit is always cleared by this call, thereofe you can
+     *  use ordinary E_XXX result code constancs, for convenience. However, this
+     *  behavior may be non-stanrard on some COM platforms.
      */
-    static HRESULT addErrorV (HRESULT aResultCode, const char *aText,
-                              va_list aArgs)
+    static HRESULT setWarningV (HRESULT aResultCode, const char *aText,
+                                va_list aArgs)
     {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
             (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs);
         return rc;
     }
@@ -1370,14 +1503,17 @@ protected:
     }
 
     /**
-     *  This method is the same as #setErrorBstr() except that it preserves the
-     *  error info object (if any) set for the current thread before this
-     *  method is called by storing it in the IVirtualBoxErrorInfo::next
-     *  attribute of the new error info object.
+     *  This method is the same as #setErrorBstr() except that it makes sure @a
+     *  aResultCode doesn't have the error severty bit (31) set when passed
+     *  down to the created IVirtualBoxErrorInfo object.
+     *
+     *  The error severity bit is always cleared by this call, thereofe you can
+     *  use ordinary E_XXX result code constancs, for convenience. However, this
+     *  behavior may be non-stanrard on some COM platforms.
      */
-    static HRESULT addErrorBstr (HRESULT aResultCode, const Bstr &aText)
+    static HRESULT setWarningBstr (HRESULT aResultCode, const Bstr &aText)
     {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
             (aResultCode, COM_IIDOF(I), C::getComponentName(), aText);
         return rc;
     }
@@ -1403,17 +1539,20 @@ protected:
     }
 
     /**
-     *  This method is the same as #setError() except that it preserves the
-     *  error info object (if any) set for the current thread before this
-     *  method is called by storing it in the IVirtualBoxErrorInfo::next
-     *  attribute of the new error info object.
+     *  This method is the same as #setError() except that it makes sure @a
+     *  aResultCode doesn't have the error severty bit (31) set when passed
+     *  down to the created IVirtualBoxErrorInfo object.
+     *
+     *  The error severity bit is always cleared by this call, thereofe you can
+     *  use ordinary E_XXX result code constancs, for convenience. However, this
+     *  behavior may be non-stanrard on some COM platforms.
      */
-    static HRESULT addError (HRESULT aResultCode, const GUID &aIID,
-                             const char *aText, ...)
+    static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
+                               const char *aText, ...)
     {
         va_list args;
         va_start (args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::addError
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
             (aResultCode, aIID, C::getComponentName(), aText, args);
         va_end (args);
         return rc;
