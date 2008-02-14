@@ -39,8 +39,6 @@
 
 #ifdef RT_OS_OS2
 # define VBOXSHAREDFOLDERS_DLL "VBoxSFld"
-#elif defined(RT_OS_DARWIN)
-# define VBOXSHAREDFOLDERS_DLL "VirtualBox.app/Contents/MacOS/VBoxSharedFolders"
 #else
 # define VBOXSHAREDFOLDERS_DLL "VBoxSharedFolders"
 #endif
