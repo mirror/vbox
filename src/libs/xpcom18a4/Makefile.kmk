@@ -285,7 +285,7 @@ OTHER_CLEAN = \
 #      obsoleted files in the $(INST_SDK) directory.
 #
 
-NSPRPUB-HEADERS_INST = $(INST_SDK)/include/xpcom/nsprpub/
+NSPRPUB-HEADERS_INST = $(INST_SDK)include/xpcom/nsprpub/
 NSPRPUB-HEADERS_IFFLAGS = -m 644
 NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/nspr.h \
@@ -338,7 +338,7 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prwin16.h \
 	nsprpub/pr/include/md/_vbox.cfg=>prcpucfg.h \
 
-NSPRPUB-MD-HEADERS_INST = $(INST_SDK)/include/xpcom/nsprpub/md
+NSPRPUB-MD-HEADERS_INST = $(INST_SDK)include/xpcom/nsprpub/md
 NSPRPUB-MD-HEADERS_IFFLAGS = -m 644
 NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_darwin.h \
@@ -367,7 +367,7 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_solaris64.cfg \
 	nsprpub/pr/include/md/_l4v2.cfg
 
-NSPRPUB-OBS-HEADERS_INST = $(INST_SDK)/include/xpcom/nsprpub/obsolete
+NSPRPUB-OBS-HEADERS_INST = $(INST_SDK)include/xpcom/nsprpub/obsolete
 NSPRPUB-OBS-HEADERS_IFFLAGS = -m 644
 NSPRPUB-OBS-HEADERS_SOURCES = \
 	nsprpub/pr/include/obsolete/pralarm.h \
@@ -375,14 +375,14 @@ NSPRPUB-OBS-HEADERS_SOURCES = \
 	nsprpub/pr/include/obsolete/protypes.h \
 	nsprpub/pr/include/obsolete/prsem.h
 
-NSPRPUB-PRIV-HEADERS_INST = $(INST_SDK)/include/xpcom/nsprpub/private
+NSPRPUB-PRIV-HEADERS_INST = $(INST_SDK)include/xpcom/nsprpub/private
 NSPRPUB-PRIV-HEADERS_IFFLAGS = -m 644
 NSPRPUB-PRIV-HEADERS_SOURCES = \
 	nsprpub/pr/include/private/pprio.h \
 	nsprpub/pr/include/private/pprthred.h \
 	nsprpub/pr/include/private/prpriv.h
 
-STRING-HEADERS_INST = $(INST_SDK)/include/xpcom/string
+STRING-HEADERS_INST = $(INST_SDK)include/xpcom/string
 STRING-HEADERS_IFFLAGS = -m 644
 STRING-HEADERS_SOURCES = \
 	xpcom/string/public/nsAString.h \
@@ -416,7 +416,7 @@ STRING-HEADERS_SOURCES = \
 	xpcom/string/public/string-template-def-unichar.h \
 	xpcom/string/public/string-template-undef.h
 
-XPCOM-HEADERS_INST = $(INST_SDK)/include/xpcom/xpcom
+XPCOM-HEADERS_INST = $(INST_SDK)include/xpcom/xpcom
 XPCOM-HEADERS_IFFLAGS = -m 644
 XPCOM-HEADERS_SOURCES = \
 	xpcom/base/nsAgg.h \
@@ -535,7 +535,7 @@ XPCOM-HEADERS_SOURCES = \
 	\
 	xpcom-config.h
 
-IPCD-HEADERS_INST = $(INST_SDK)/include/xpcom/ipcd
+IPCD-HEADERS_INST = $(INST_SDK)include/xpcom/ipcd
 IPCD-HEADERS_IFFLAGS = -m 644
 IPCD-HEADERS_SOURCES = \
 	ipc/ipcd/client/public/ipcCID.h \
@@ -556,7 +556,7 @@ IPCD-HEADERS_SOURCES = \
 xpidl_TEMPLATE = XPCOMBLDPROG
 xpidl_DEFS = EXPORT_XPT_API
 ## @todo This assumes HOST == TARGET.
-xpidl_INST = $(INST_SDK)/bin/
+xpidl_INST = $(INST_SDK)bin/
 xpidl_SOURCES = \
 	xpcom/typelib/xpidl/xpidl.c \
 	xpcom/typelib/xpidl/xpidl_idl.c \
@@ -1060,7 +1060,7 @@ VBoxXPCOMGlue_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES) \
                          xpcom/glue/standalone/nsGREDirServiceProvider.cpp
 VBoxXPCOMGlue_SOURCES += \
 	$(TARGET_VBox-xpcom-string)
-#VBoxXPCOMGlue_INST     = lib/ $(INST_SDK)/lib/
+#VBoxXPCOMGlue_INST     = lib/ $(INST_SDK)lib/
 
 
 #
