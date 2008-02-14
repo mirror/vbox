@@ -376,6 +376,7 @@ void VBoxSharedFoldersSettings::init()
     new QIListViewSelectionPreserver (this, listView);
     listView->setShowToolTips (false);
     listView->setRootIsDecorated (true);
+    listView->header()->setMovingEnabled (false);
     tbAdd->setIconSet (VBoxGlobal::iconSet ("add_shared_folder_16px.png",
                                             "add_shared_folder_disabled_16px.png"));
     tbEdit->setIconSet (VBoxGlobal::iconSet ("edit_shared_folder_16px.png",
@@ -388,7 +389,7 @@ void VBoxSharedFoldersSettings::init()
     connect (listView, SIGNAL (currentChanged (QListViewItem *)),
              this, SLOT (processCurrentChanged (QListViewItem *)));
 
-	/* Make after-paining list update to ensure all columns repainted correctly. */
+    /* Make after-paining list update to ensure all columns repainted correctly. */
     connect (listView->header(), SIGNAL (sizeChange (int, int, int)),
              this, SLOT (updateList()));
 
