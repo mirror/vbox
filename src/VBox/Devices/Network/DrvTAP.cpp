@@ -80,13 +80,6 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef enum ASYNCSTATE
-{
-    //ASYNCSTATE_SUSPENDED = 1,
-    ASYNCSTATE_RUNNING,
-    ASYNCSTATE_TERMINATE
-} ASYNCSTATE;
-
 /**
  * Block driver instance data.
  */
@@ -428,8 +421,10 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         }
     }
 
+
     rc = RTSemEventDestroy(pData->EventOutOfSpace);
     AssertRC(rc);
+    pData->EventOutOfSpace = NIL_RTSEMEVENT;
 
     LogFlow(("drvTAPAsyncIoThread: returns %Vrc\n", VINF_SUCCESS));
     STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
@@ -448,7 +443,8 @@ static DECLCALLBACK(int) drvTapAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 {
     PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
 
-    /* Ensure that it does not spin in the CanReceive loop */
+    /* Ensure that it does not spin in the CanReceive loop.
+       (May assert in IPRT if we're really unlucky.) */
     if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
         RTSemEventSignal(pData->EventOutOfSpace);
 
@@ -547,10 +543,10 @@ static int drvTAPSetupApplication(PDRVTAP pData)
     }
     szMacAddress[sizeof(szMacAddress) - 1] =  0;
 
-    RTStrPrintf(szCommand, sizeof(szCommand), "%s %s %s", pData->pszSetupApplication, 
+    RTStrPrintf(szCommand, sizeof(szCommand), "%s %s %s", pData->pszSetupApplication,
             szMacAddress, pData->fStatic ? pData->pszDeviceName : "");
 #else
-    RTStrPrintf(szCommand, sizeof(szCommand), "%s %s", pData->pszSetupApplication, 
+    RTStrPrintf(szCommand, sizeof(szCommand), "%s %s", pData->pszSetupApplication,
             pData->fStatic ? pData->pszDeviceName : "");
 #endif
 
@@ -709,7 +705,7 @@ static int SolarisOpenVNIC(PDRVTAP pData)
     }
     else
         rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                         N_("Failed to obtain VNIC info")); 
+                                         N_("Failed to obtain VNIC info"));
     dlpi_close(pData->pDeviceHandle);
     return rc;
 }
