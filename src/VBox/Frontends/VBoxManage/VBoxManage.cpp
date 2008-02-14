@@ -332,7 +332,11 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-floppy disabled|empty|<uuid>|\n"
                  "                                     <filename>|host:<drive>]\n"
                  "                            [-nic<1-N> none|null|nat|hostif|intnet]\n"
-                 "                            [-nictype<1-N> Am79C970A|Am79C973]\n"
+                 "                            [-nictype<1-N> Am79C970A|Am79C973"
+#ifdef VBOX_WITH_E1000
+                                                                              "|82540EM"
+#endif
+                 "]\n"
                  "                            [-cableconnected<1-N> on|off]\n"
                  "                            [-nictrace<1-N> on|off]\n"
                  "                            [-nictracefile<1-N> <filename>]\n"
@@ -1276,6 +1280,11 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 case NetworkAdapterType_NetworkAdapterAm79C973:
                     strNICType = "Am79C973";
                     break;
+#ifdef VBOX_WITH_E1000
+                case NetworkAdapterType_NetworkAdapter82540EM:
+                    strNICType = "82540EM";
+                    break;
+#endif
                 default:
                     strNICType = "unknown";
                     break;
@@ -4950,6 +4959,12 @@ static int handleModifyVM(int argc, char *argv[],
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapterAm79C973), 1);
                 }
+#ifdef VBOX_WITH_E1000
+                else if (strcmp(nictype[n], "82540EM") == 0)
+                {
+                    CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapter82540EM), 1);
+                }
+#endif
                 else
                 {
                     errorArgument("Invalid NIC type '%s' specified for NIC %lu", nictype[n], n + 1);
