@@ -228,12 +228,27 @@ RTR3DECL(int) RTTlsAlloc(void)
 }
 
 
-RTR3DECL(int) RTTlsAllocEx(PRTTLS piTls)
+RTR3DECL(int) RTTlsAllocEx(PRTTLS piTls, PFNRTTLSDTOR pfnDestructor)
 {
+    int rc;
     int iTls = __libc_TLSAlloc();
     if (iTls != -1)
-        return iTls;
-    return RTErrConvertFromErrno(errno);
+    {
+        if (    !pfnDestructor
+            ||  __libc_TLSDestructor(iTls, (void (*)(void *, int, unsigned))pfnDestructor, fFlags) != -1)
+        {
+            *piTls = iTls;
+            return VINF_SUCCESS;
+        }
+
+        rc = RTErrConvertFromErrno(errno);
+        __libc_TLSFree(iTls);
+    }
+    else
+        rc = RTErrConvertFromErrno(errno);
+
+    *piTls = NIL_RTTLS;
+    return rc;
 }
 
 
@@ -275,25 +290,5 @@ RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue)
     if (__libc_TLSSet(iTls, pvValue) != -1)
         return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);
-}
-
-
-RTR3DECL(int) RTTlsSetDestructor(RTTLS iTls, PFNRTTLSDTOR pfnDestructor)
-{
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER)
-    if (__libc_TLSDestructor(iTls, (void (*)(void *, int, unsigned))pfnDestructor, fFlags) == -1)
-        return VINF_SUCCESS;
-    return RTErrConvertFromErrno(errno);
-}
-
-
-PFNRTTLSDTOR RTTlsGetDestructor(RTTLS iTls, PFNRTTLSDTOR *ppfnDestructor)
-{
-    unsigned fFlags;
-    errno = 0;
-    *ppfnDestructor = (PFNRTTLSDTOR)__libc_TLSGetDestructor(iTls, &fFlags);
-    if (!*ppfnDestructor && errno)
-        return RTErrConvertFromErrno(errno);
-    return VINF_SUCCESS;
 }
 

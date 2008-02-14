@@ -373,6 +373,18 @@ typedef RTTLS const    *PCRTTLS;
 #define NIL_RTTLS       (-1)
 
 /**
+ * Thread termination callback for destroying a non-zero TLS entry.
+ *
+ * @remarks It is not permittable to use any RTTls APIs at this time. Doing so
+ *          may lead to endless loops, crashes, and other bad stuff.
+ *
+ * @param   pvValue     The current value.
+ */
+typedef DECLCALLBACK(void) FNRTTLSDTOR(void *pvValue);
+/** Pointer to a FNRTTLSDTOR. */
+typedef FNRTTLSDTOR *PFNRTTLSDTOR;
+
+/**
  * Allocates a TLS entry.
  *
  * @returns the index of the allocated TLS entry.
@@ -384,10 +396,16 @@ RTR3DECL(RTTLS) RTTlsAlloc(void);
  * Allocates a TLS entry (with status code).
  *
  * @returns IPRT status code.
- * @param   piTls       Where to store the index of the allocated TLS entry.
- *                      This is set to NIL_RTTLS on failure.
+ * @retval  VERR_NOT_SUPPORTED if pfnDestructor is non-NULL and the platform
+ *          doesn't support this feature.
+ *
+ * @param   piTls           Where to store the index of the allocated TLS entry.
+ *                          This is set to NIL_RTTLS on failure.
+ * @param   pfnDestructor   Optional callback function for cleaning up on
+ *                          thread termination. WARNING! This feature may not
+ *                          be implemented everywhere.
  */
-RTR3DECL(int) RTTlsAllocEx(PRTTLS piTls);
+RTR3DECL(int) RTTlsAllocEx(PRTTLS piTls, PFNRTTLSDTOR pfnDestructor);
 
 /**
  * Frees a TLS entry.
@@ -425,53 +443,6 @@ RTR3DECL(int) RTTlsGetEx(RTTLS iTls, void **ppvValue);
  * @remarks Note that NULL is considered to special value.
  */
 RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue);
-
-/**
- * Thread termination callback for destroying a non-zero TLS entry.
- *
- * Registered and deregisterd by RTTlsSetDestructor().
- *
- * @remarks It is not permittable to use any RTTls APIs at this time. Doing so
- *          may lead to endless loops, crashes, and other bad stuff.
- *
- * @param   pvValue     The current value.
- */
-typedef DECLCALLBACK(void) FNRTTLSDTOR(void *pvValue);
-/** Pointer to a FNRTTLSDTOR. */
-typedef FNRTTLSDTOR *PFNRTTLSDTOR;
-
-/**
- * Register a thread termination destructor for a TLS entry.
- *
- * The destructor function will be called when a thread terminates
- * in a normal fashion and the TLS entry iTls of that thread is
- * not NULL.
- *
- * @remarks This is an optional feature and may therefore not be implemented
- *          on all platforms. VERR_NOT_SUPPORTED is returned then.
- *
- * @returns IPRT status code.
- * @retval  VERR_NOT_SUPPORTED if not supported on this platform.
- *
- * @param   iTls            The index of the TLS entry.
- * @param   pfnDestructor   Callback function. Use NULL to unregister a previously
- *                          registered destructor.
- *
- */
-RTR3DECL(int) RTTlsSetDestructor(RTTLS iTls, PFNRTTLSDTOR pfnDestructor);
-
-/**
- * Get pointer to the destructor function registered for the given TLS entry.
- *
- * @remarks This may not necessarily be implemented even if RTTlsSetDestructor is.
- *
- * @returns IPRT status code.
- * @retval  VERR_NOT_SUPPORTED if not supported on this platform.
- *
- * @param   iTls            The index of the TLS entry.
- * @param   ppfnDestructor  Where to store the destructor address.
- */
-PFNRTTLSDTOR RTTlsGetDestructor(RTTLS iTls, PFNRTTLSDTOR *ppfnDestructor);
 
 /** @} */
 
