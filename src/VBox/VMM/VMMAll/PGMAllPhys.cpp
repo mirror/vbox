@@ -1061,6 +1061,8 @@ static void pgmPhysCacheAdd(PVM pVM, PGMPHYSCACHE *pCache, RTGCPHYS GCPhys, uint
 {
     uint32_t iCacheIndex;
 
+    Assert(VM_IS_EMT(pVM));
+
     GCPhys = PAGE_ADDRESS(GCPhys);
     pbHC   = (uint8_t *)PAGE_ADDRESS(pbHC);
 
