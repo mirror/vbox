@@ -78,6 +78,10 @@ typedef enum RTTHREADSTATE
 
 /** Max thread name length. */
 #define RTTHREAD_NAME_LEN 16
+#ifdef IPRT_WITH_GENERIC_TLS
+/** The number of TLS entries for the generic implementation. */
+# define RTTHREAD_TLS_ENTRIES 64
+#endif
 
 /**
  * Internal represenation of a thread.
@@ -132,6 +136,10 @@ typedef struct RTTHREADINT
     /** Where we're blocking. */
     RTUINTPTR volatile      uBlockId;
 #endif /* IN_RING3 */
+#ifdef IPRT_WITH_GENERIC_TLS
+    /** The TLS entries for this thread. */
+    void                   *apvTlsEntries[RTTHREAD_TLS_ENTRIES];
+#endif
     /** Thread name. */
     char                    szName[RTTHREAD_NAME_LEN];
 } RTTHREADINT, *PRTTHREADINT;
@@ -221,6 +229,10 @@ void rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread);
 #ifdef IN_RING3
 int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority);
 #endif /* !IN_RING0 */
+#ifdef IPRT_WITH_GENERIC_TLS
+void rtThreadClearTlsEntry(RTTLS iTls);
+void rtThreadTlsDestruction(PRTTHREADINT pThread); /* in tls-generic.cpp */
+#endif
 
 __END_DECLS
 

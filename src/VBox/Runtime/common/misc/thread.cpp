@@ -547,6 +547,13 @@ void rtThreadTerminate(PRTTHREADINT pThread, int rc)
 {
     Assert(pThread->cRefs >= 1);
 
+#ifdef IPRT_WITH_GENERIC_TLS
+    /*
+     * Destroy TLS entries.
+     */
+    rtThreadTlsDestruction(pThread);
+#endif /* IPRT_WITH_GENERIC_TLS */
+
     /*
      * Set the rc, mark it terminated and signal anyone waiting.
      */
@@ -1317,4 +1324,39 @@ void rtThreadUnblocked(PRTTHREADINT pThread, RTTHREADSTATE enmCurState)
 }
 
 #endif /* IN_RING3 */
+
+
+#ifdef IPRT_WITH_GENERIC_TLS
+
+/**
+ * Thread enumerator - clears a TLS entry.
+ *
+ * @returns 0.
+ * @param   pNode   The thread node.
+ * @param   pvUser  The TLS index.
+ */
+static DECLCALLBACK(int) rtThreadClearTlsEntryCallback(PAVLPVNODECORE pNode, void *pvUser)
+{
+    PRTTHREADINT pThread = (PRTTHREADINT)pNode;
+    RTTLS iTls = (RTTLS)(uintptr_t)pvUser;
+    ASMAtomicWritePtr(&pThread->apvTlsEntries[iTls], NULL);
+    return 0;
+}
+
+
+/**
+ * Helper for the generic TLS implementation that clears a given TLS
+ * entry on all threads.
+ *
+ * @param   iTls        The TLS entry. (valid)
+ */
+void rtThreadClearTlsEntry(RTTLS iTls)
+{
+    RT_THREAD_LOCK_TMP(Tmp);
+    RT_THREAD_LOCK_RD(Tmp);
+    RTAvlPVDoWithAll(&g_ThreadTree, true /* fFromLeft*/, rtThreadClearTlsEntryCallback, (void *)(uintptr_t)iTls);
+    RT_THREAD_UNLOCK_RD(Tmp);
+}
+
+#endif /* IPRT_WITH_GENERIC_TLS */
 
