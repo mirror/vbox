@@ -1261,22 +1261,21 @@ STDMETHODIMP Machine::COMGETTER(AudioAdapter)(IAudioAdapter **audioAdapter)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController * *a_ppUSBController)
+STDMETHODIMP Machine::COMGETTER(USBController) (IUSBController **aUSBController)
 {
 #ifdef VBOX_WITH_USB
-    if (!a_ppUSBController)
+    if (!aUSBController)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    HRESULT rc = mParent->host()->checkUSBProxyService();
+    MultiResult rc = mParent->host()->checkUSBProxyService();
     CheckComRCReturnRC (rc);
 
     AutoReaderLock alock (this);
 
-    mUSBController.queryInterfaceTo (a_ppUSBController);
-    return S_OK;
+    return rc = mUSBController.queryInterfaceTo (aUSBController);
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -1285,9 +1284,9 @@ STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController * *a_ppUSBControll
 #endif
 }
 
-STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *filePath)
+STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *aFilePath)
 {
-    if (!filePath)
+    if (!aFilePath)
         return E_POINTER;
 
     AutoLimitedCaller autoCaller (this);
@@ -1295,13 +1294,13 @@ STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *filePath)
 
     AutoReaderLock alock (this);
 
-    mData->mConfigFileFull.cloneTo (filePath);
+    mData->mConfigFileFull.cloneTo (aFilePath);
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *modified)
+STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *aModified)
 {
-    if (!modified)
+    if (!aModified)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -1318,11 +1317,11 @@ STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *modified)
          *  if we're ready and isConfigLocked() is FALSE then it means
          *  that no config file exists yet, so always return TRUE
          */
-        *modified = TRUE;
+        *aModified = TRUE;
     }
     else
     {
-        *modified = isModified();
+        *aModified = isModified();
     }
 
     return S_OK;
@@ -5122,7 +5121,7 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
                 hwNode.zap();
             /* then recreate it */
             hwNode = machineNode.createKey ("Hardware");
-            
+
             rc = saveHardware (hwNode);
             CheckComRCThrowRC (rc);
         }
