@@ -378,7 +378,7 @@ typedef RTTLS const    *PCRTTLS;
  * @returns the index of the allocated TLS entry.
  * @returns NIL_RTTLS on failure.
  */
-RTR3DECL(int) RTTlsAlloc(void);
+RTR3DECL(RTTLS) RTTlsAlloc(void);
 
 /**
  * Allocates a TLS entry (with status code).
@@ -435,10 +435,8 @@ RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue);
  *          may lead to endless loops, crashes, and other bad stuff.
  *
  * @param   pvValue     The current value.
- * @param   iTls        The index of TLS entry.
- * @param   fFlags      Reserved for the future.
  */
-typedef DECLCALLBACK(void) FNRTTLSDTOR(void *pvValue, RTTLS iTls, uint32_t fFlags);
+typedef DECLCALLBACK(void) FNRTTLSDTOR(void *pvValue);
 /** Pointer to a FNRTTLSDTOR. */
 typedef FNRTTLSDTOR *PFNRTTLSDTOR;
 
@@ -459,17 +457,8 @@ typedef FNRTTLSDTOR *PFNRTTLSDTOR;
  * @param   pfnDestructor   Callback function. Use NULL to unregister a previously
  *                          registered destructor.
  *
- *                          It's pvValue argument is the non-zero value in the
- *                          TLS entry for the thread it's called on.
- *
- *                          It's fFlags argument is reserved for future use, it will
- *                          always be zero when the fFlags parameter to this API is zero.
- *
- * @param   fFlags          Flags reserved for future use. At the moment
- *                          only ZERO is allowed.
- *
  */
-RTR3DECL(int) RTTlsSetDestructor(RTTLS iTls, PFNRTTLSDTOR pfnDestructor, uint32_t fFlags);
+RTR3DECL(int) RTTlsSetDestructor(RTTLS iTls, PFNRTTLSDTOR pfnDestructor);
 
 /**
  * Get pointer to the destructor function registered for the given TLS entry.
@@ -481,9 +470,8 @@ RTR3DECL(int) RTTlsSetDestructor(RTTLS iTls, PFNRTTLSDTOR pfnDestructor, uint32_
  *
  * @param   iTls            The index of the TLS entry.
  * @param   ppfnDestructor  Where to store the destructor address.
- * @param   pfFlags         Where to store the flags supplied to RTTlsSetDestructor(). NULL is fine.
  */
-PFNRTTLSDTOR RTTlsGetDestructor(RTTLS iTls, PFNRTTLSDTOR *ppfnDestructor, uint32_t *pfFlags);
+PFNRTTLSDTOR RTTlsGetDestructor(RTTLS iTls, PFNRTTLSDTOR *ppfnDestructor);
 
 /** @} */
 
