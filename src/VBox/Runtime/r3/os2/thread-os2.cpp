@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <InnoTekLIBC/FastInfoBlocks.h>
+#include <InnoTekLIBC/thread.h>
 
 #include <iprt/thread.h>
 #include <iprt/log.h>
@@ -217,5 +218,84 @@ RTDECL(int) RTThreadSetAffinity(uint64_t u64Mask)
     if (!rc)
         return VINF_SUCCESS;
     return RTErrConvertFromOS2(rc);
+}
+
+
+RTR3DECL(int) RTTlsAlloc(void)
+{
+    AssertCompile(NIL_RTTLS == -1);
+    return __libc_TLSAlloc();
+}
+
+
+RTR3DECL(int) RTTlsAllocEx(PRTTLS piTls)
+{
+    int iTls = __libc_TLSAlloc();
+    if (iTls != -1)
+        return iTls;
+    return RTErrConvertFromErrno(errno);
+}
+
+
+RTR3DECL(int) RTTlsFree(RTTLS iTls)
+{
+    if (iTls == NIL_RTTLS)
+        return VINF_SUCCESS;
+    if (__libc_TLSFree(iTls) != -1)
+        return VINF_SUCCESS;
+    return RTErrConvertFromErrno(errno);
+}
+
+
+RTR3DECL(void *) RTTlsGet(RTTLS iTls)
+{
+    return __libc_TLSGet(iTls);
+}
+
+
+RTR3DECL(int) RTTlsGetEx(RTTLS iTls, void **ppvValue)
+{
+    int rc = VINF_SUCCESS;
+    void *pv = __libc_TLSGet(iTls);
+    if (RT_UNLIKELY(!pv))
+    {
+        errno = 0;
+        pv = __libc_TLSGet(iTls);
+        if (!pv && errno)
+            rc = RTErrConvertFromErrno(errno);
+    }
+
+    *ppvValue = pv;
+    return rc;
+}
+
+
+RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue)
+{
+    if (__libc_TLSSet(iTls, pvValue) != -1)
+        return VINF_SUCCESS;
+    return RTErrConvertFromErrno(errno);
+}
+
+
+RTR3DECL(int) RTTlsSetDestructor(RTTLS iTls, PFNRTTLSDTOR pfnDestructor, uint32_t fFlags)
+{
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER)
+    if (__libc_TLSDestructor(iTls, pfnDestructor, fFlags) == -1)
+        return VINF_SUCCESS;
+    return RTErrConvertFromErrno(errno);
+}
+
+
+PFNRTTLSDTOR RTTlsGetDestructor(RTTLS iTls, PFNRTTLSDTOR *ppfnDestructor, uint32_t *pfFlags)
+{
+    uint32_t fFlags;
+    if (!pfFlags)
+        pfFlags = &fFlags;
+    errno = 0;
+    *ppfnDestructor = __libc_TLSGetDestructor(iTls, pFlags);
+    if (!*ppfnDestructor && errno)
+        return RTErrConvertFromErrno(errno);
+    return VINF_SUCCESS;
 }
 
