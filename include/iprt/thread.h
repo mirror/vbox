@@ -363,15 +363,6 @@ RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask);
 /** @name Thread Local Storage
  * @{
  */
-/** A TLS index. */
-typedef int             RTTLS;
-/** Pointer to a TLS index. */
-typedef RTTLS          *PRTTLS;
-/** Pointer to a const TLS index. */
-typedef RTTLS const    *PCRTTLS;
-/** NIL TLS index value. */
-#define NIL_RTTLS       (-1)
-
 /**
  * Thread termination callback for destroying a non-zero TLS entry.
  *
