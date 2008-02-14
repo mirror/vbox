@@ -45,7 +45,7 @@
 
 
 /*******************************************************************************
-*   Header Files                                                               *
+*   Global Variables                                                           *
 *******************************************************************************/
 /** The pthread key in which we store the pointer to our own PRTTHREAD structure. */
 static pthread_key_t    g_SelfKey;
