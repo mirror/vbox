@@ -101,19 +101,28 @@ protected:
     void paintCell (QPainter *aPainter, const QColorGroup &aColorGroup,
                     int aColumn, int aWidth, int aAlign)
     {
-        /* Make parental cells combined. */
         if (!parent())
         {
-            /* Do not paint other columns except the first one. */
-            if (aColumn)
-                return;
-            /* Main column's painter width should take all other's. */
+            /* Make root items occupy the whole width */
             aWidth = listView()->viewport()->width();
-            QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
 
-            if (aPainter->window().width()  != listView()->viewport()->width() ||
-                aPainter->window().height() != listView()->viewport()->height())
-                repaint();
+            if (aColumn > 0)
+            {
+                /* For columns other than the first one, paint the overlapping
+                 * portion of the first column after correcting the window */
+                aPainter->save();
+                QRect wnd = aPainter->window();
+                int dx = -listView()->treeStepSize();
+                for (int i = 0; i < aColumn; ++ i)
+                    dx += listView()->columnWidth (i);
+                wnd.moveBy (dx, 0);
+                aPainter->setWindow (wnd);
+                QListViewItem::paintCell (aPainter, aColorGroup, 0, aWidth, aAlign);
+                aPainter->restore();
+                return;
+            }
+
+            QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
         }
         else
         {
