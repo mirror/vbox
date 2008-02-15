@@ -229,7 +229,18 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
     if (hFile == INVALID_HANDLE_VALUE)
         return RTErrConvertFromWin32(GetLastError());
 
+    /*
+     * Turn off indexing of directory through Windows Indexing Service
+     */
+    if (   (dwCreationDisposition == OPEN_ALWAYS)
+        || (dwCreationDisposition == CREATE_NEW)
+        || (dwCreationDisposition == CREATE_ALWAYS))
+    {
+        if (FALSE == SetFileAttributes(pszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+            return RTErrConvertFromWin32(GetLastError());
+    }
 #else
+
     PRTUCS2 pwszFilename;
     rc = RTStrToUtf16(pszFilename, &pwszFilename);
     if (RT_FAILURE(rc))
@@ -248,6 +259,22 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
         RTUtf16Free(pwszFilename);
         return rc;
     }
+
+    /*
+     * Turn off indexing of directory through Windows Indexing Service
+     */
+    if (   (dwCreationDisposition == OPEN_ALWAYS)
+        || (dwCreationDisposition == CREATE_NEW)
+        || (dwCreationDisposition == CREATE_ALWAYS))
+    {
+        if (FALSE == SetFileAttributesW(pwszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+            RTUtf16Free(pwszFilename);
+            return rc;
+        }
+    }
+
     RTUtf16Free(pwszFilename);
 #endif
 

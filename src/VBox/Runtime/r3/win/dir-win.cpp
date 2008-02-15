@@ -98,6 +98,17 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
             else
                 rc = RTErrConvertFromWin32(GetLastError());
 
+            /*
+             * Turn off indexing of directory through Windows Indexing Service
+             */
+            if (RT_SUCCESS(rc))
+            {
+                if (SetFileAttributesW((LPCWSTR)pucszString, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+                    rc = VINF_SUCCESS;
+                else
+                    rc = RTErrConvertFromWin32(GetLastError());
+            }
+
             RTStrUcs2Free(pucszString);
         }
     }
