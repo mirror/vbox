@@ -185,6 +185,13 @@ typedef struct _CLIPRECTS {
     RECTL  arcl[64];
 } CLIPRECTS;
 
+typedef struct _VRDPCLIPRECTS
+{
+    RECTL rclDstOrig; /* Original bounding rectancle. */
+    RECTL rclDst;     /* Bounding rectangle of all rects. */
+    CLIPRECTS rects;  /* Rectangles to update. */
+} VRDPCLIPRECTS;
+
 
 BOOL vboxVbvaEnable (PPDEV ppdev);
 void vboxVbvaDisable (PPDEV ppdev);
@@ -243,6 +250,25 @@ BOOL vbvaFindChangedRect (SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, PO
 
 void vrdpReportDirtyRect (PPDEV ppdev, RECTL *prcl);
 void vbvaReportDirtyRect (PPDEV ppdev, RECTL *prcl);
+
+#define VRDP_TEXT_MAX_GLYPH_SIZE 0x100
+#define VRDP_TEXT_MAX_GLYPHS     0xfe
+ 
+BOOL vboxReportText (PPDEV ppdev,
+                     VRDPCLIPRECTS *pClipRects,
+                     STROBJ   *pstro,
+                     FONTOBJ  *pfo,
+                     RECTL    *prclOpaque,
+                     ULONG    ulForeRGB,
+                     ULONG    ulBackRGB
+                    );
+
+BOOL vrdpReportOrderGeneric (PPDEV ppdev,
+                             const VRDPCLIPRECTS *pClipRects,
+                             const void *pvOrder,
+                             unsigned cbOrder,
+                             unsigned code);
+
 
 #include <iprt/assert.h>
 

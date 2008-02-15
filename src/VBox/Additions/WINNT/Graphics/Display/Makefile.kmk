@@ -43,6 +43,7 @@ VBoxDisp_SOURCES     = \
 	vbva.c \
 	vrdp.c \
 	vrdpbmp.c \
+	vrdptext.c \
 	vbox.c \
 	VBoxDisp.def \
 	VBoxDisp.rc

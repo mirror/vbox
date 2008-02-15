@@ -43,13 +43,6 @@ typedef struct _VRDPBRUSH
    } u;
 } VRDPBRUSH;
 
-typedef struct _VRDPCLIPRECTS
-{
-    RECTL rclDstOrig; /* Original bounding rectancle. */
-    RECTL rclDst;     /* Bounding rectangle of all rects. */
-    CLIPRECTS rects;  /* Rectangles to update. */
-} VRDPCLIPRECTS;
-
 #define VRDP_CLIP_OK              0
 #define VRDP_CLIP_NO_INTERSECTION 1
 #define VRDP_CLIP_TOO_MANY_RECTS  2
@@ -632,11 +625,11 @@ static BOOL vrdpGetIntersectingRects (CLIPRECTS *pRects,
     return fReportOrder;
 }
 
-static BOOL vrdpReportOrderGeneric (PPDEV ppdev,
-                                    const VRDPCLIPRECTS *pClipRects,
-                                    const void *pvOrder,
-                                    unsigned cbOrder,
-                                    unsigned code)
+BOOL vrdpReportOrderGeneric (PPDEV ppdev,
+                             const VRDPCLIPRECTS *pClipRects,
+                             const void *pvOrder,
+                             unsigned cbOrder,
+                             unsigned code)
 {
     BOOL bRc;
 
@@ -1177,7 +1170,7 @@ void vrdpTextOut(
     else if (   pstro->pwszOrg == NULL
              || prclExtra != NULL
              || (pfo->flFontType & FO_TYPE_RASTER) == 0
-             || pstro->cGlyphs > 256
+             || pstro->cGlyphs > VRDP_TEXT_MAX_GLYPHS
              || (pboOpaque && pboOpaque->iSolidColor == 0xFFFFFFFF)
              || pfo->iUniq == 0
             )
@@ -1190,9 +1183,24 @@ void vrdpTextOut(
     else
     {
 #if 0
+        /* Testing: report a red rectangle for the text area. */
         vrdpReportSolidRect (ppdev, &clipRects, 0x0000FF);
 #else
+        /* Try to report the text order. */
+#if 0
+        ULONG ulForeRGB = pboFore? vrdpColor2RGB (pso, pboFore->iSolidColor): 0;
+        ULONG ulBackRGB = pboOpaque? vrdpColor2RGB (pso, pboOpaque->iSolidColor): 0;
+        
+        DISPDBG((1, "VRDP::vrdpTextOut: calling vboxReportText fg %x bg %x\n",
+                    ulForeRGB, ulBackRGB));
+                    
+        if (!vboxReportText (ppdev, &clipRects, pstro, pfo, prclOpaque, ulForeRGB, ulBackRGB))
+        {
+            vrdpReportDirtyRects (ppdev, &clipRects);
+        }
+#else
         vrdpReportDirtyRects (ppdev, &clipRects);
+#endif
 #endif
     }
 
