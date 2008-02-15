@@ -28,13 +28,8 @@ VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_HGCM
 VBoxClient_DEFS.linux += _GNU_SOURCE
 VBoxClient_SOURCES = \
 	main.cpp
-if1of ($(BUILD_TARGET),linux l4) ## @todo use clipboard-new.cpp everywhere.
- VBoxClient_SOURCES += \
-	clipboard.cpp
-else
- VBoxClient_SOURCES += \
+VBoxClient_SOURCES += \
 	clipboard-new.cpp
-endif
 VBoxClient_LIBPATH = \
 	$(VBOX_LIBPATH32_X11)
 VBoxClient_LIBS = \
@@ -44,11 +39,12 @@ VBoxClient_LIBS = \
 	X11 \
 	Xt
 ifdef VBOX_X11_SEAMLESS_GUEST
- VBoxClient_DEFS += SEAMLESS_X11
+ VBoxClient_DEFS += SEAMLESS_GUEST DYNAMIC_RESIZE
  VBoxClient_SOURCES += \
 	seamless-host.cpp \
 	seamless-x11.cpp \
-	thread.cpp
+	thread.cpp \
+	displaychange-x11.cpp
  VBoxClient_LIBS += \
 	Xext
 endif
