@@ -35,8 +35,11 @@
 
 #include "clipboard.h"
 
-#ifdef SEAMLESS_X11
-# include "seamless.h"
+#ifdef DYNAMIC_RESIZE
+# include "displaychange.h"
+# ifdef SEAMLESS_GUEST
+#  include "seamless.h"
+# endif
 #endif
 
 static bool gbDaemonise = true;
@@ -109,10 +112,14 @@ int vboxClientXLibIOErrorHandler(Display *pDisplay)
 int main(int argc, char *argv[])
 {
     int rcClipboard, rc;
-#ifdef SEAMLESS_X11
-    /** Our instance of the seamless class. */
+#ifdef DYNAMIC_RESIZE
+    VBoxGuestDisplayChangeMonitor displayChange;
+# ifdef SEAMLESS_GUEST
+    /** Our instance of the seamless class.  This only makes sense if dynamic resizing
+        is enabled. */
     VBoxGuestSeamless seamless;
-#endif
+# endif /* SEAMLESS_GUEST defined */
+#endif /* DYNAMIC_RESIZE */
 
     /* Parse our option(s) */
 /** @todo r=bird: use RTGetOpt */
@@ -183,15 +190,27 @@ int main(int argc, char *argv[])
         LogRel(("VBoxClient: vboxClipboardConnect failed with rc = %Rrc\n", rc));
     }
 #endif  /* VBOX_X11_CLIPBOARD defined */
-#ifdef SEAMLESS_X11
     try
     {
-        LogRel(("VBoxClient: starting seamless Guest Additions...\n"));
-        rc = seamless.init();
+#ifdef DYNAMIC_RESIZE
+        LogRel(("VBoxClient: starting dynamic guest resizing...\n"));
+        rc = displayChange.init();
         if (RT_FAILURE(rc))
         {
-            LogRel(("VBoxClient: failed to initialise seamless Additions, rc = %Rrc\n", rc));
+            LogRel(("VBoxClient: failed to start dynamic guest resizing, rc = %Rrc\n", rc));
         }
+# ifdef SEAMLESS_GUEST
+        if (RT_SUCCESS(rc))
+        {
+            LogRel(("VBoxClient: starting seamless Guest Additions...\n"));
+            rc = seamless.init();
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("VBoxClient: failed to start seamless Additions, rc = %Rrc\n", rc));
+            }
+        }
+# endif /* SEAMLESS_GUEST defined */
+#endif /* DYNAMIC_RESIZE defined */
     }
     catch (std::exception e)
     {
@@ -203,7 +222,6 @@ int main(int argc, char *argv[])
         LogRel(("VBoxClient: failed to initialise seamless Additions - caught unknown exception.\n"));
         rc = VERR_UNRESOLVED_ERROR;
     }
-#endif /* SEAMLESS_X11 defined */
 #ifdef VBOX_X11_CLIPBOARD
     if (RT_SUCCESS(rcClipboard))
     {
@@ -216,10 +234,14 @@ int main(int argc, char *argv[])
     pause();
     LogRel(("VBoxClient: exiting...\n"));
 #endif  /* VBOX_X11_CLIPBOARD not defined */
-#ifdef SEAMLESS_X11
     try
     {
+#ifdef DYNAMIC_RESIZE
+        displayChange.uninit();
+# ifdef SEAMLESS_GUEST
         seamless.uninit();
+# endif /* SEAMLESS_GUEST defined */
+#endif /* DYNAMIC_RESIZE defined */
     }
     catch (std::exception e)
     {
@@ -231,7 +253,6 @@ int main(int argc, char *argv[])
         LogRel(("VBoxClient: error shutting down seamless Additions - caught unknown exception.\n"));
         rc = VERR_UNRESOLVED_ERROR;
     }
-#endif /* SEAMLESS_X11 defined */
     VbglR3Term();
     return RT_SUCCESS(rc) ? 0 : 1;
 }
