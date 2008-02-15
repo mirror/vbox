@@ -194,7 +194,8 @@ public:
     /**
      *  Returns error info set by the last unsuccessfully invoked interface
      *  method. Returned error info is useful only if CInterface::lastRC()
-     *  represents a failure (i.e. CInterface::isOk() is false).
+     *  represents a failure or a warning (i.e. CInterface::isReallyOk() is
+     *  false).
      */
     virtual COMErrorInfo errorInfo() const { return COMErrorInfo(); }
 
@@ -472,7 +473,8 @@ public:
     /**
      *  Returns error info set by the last unsuccessfully invoked interface
      *  method. Returned error info is useful only if CInterface::lastRC()
-     *  represents a failure (i.e. CInterface::isOk() is false).
+     *  represents a failure or a warning (i.e. CInterface::isReallyOk() is
+     *  false).
      */
     COMErrorInfo errorInfo() const { return mErrInfo; }
 
@@ -516,7 +518,23 @@ public:
     }
 
     bool isNull() const { return mErrInfo.isNull(); }
-    bool isOk() const { return mErrInfo.isNull() && SUCCEEDED (mRC); }
+
+    /**
+     * Returns @c true if the result code repesents success (with or without
+     * warnings).
+     */
+    bool isOk() const { return SUCCEEDED (mRC); }
+
+    /**
+     * Returns @c true if the result code represends success with one or more
+     * warnings.
+     */
+    bool isWarning() const { return SUCCEEDED_WARNING (mRC); }
+
+    /**
+     * Returns @c true if the result code represends success with no warnings.
+     */
+    bool isReallyOk() const { return mRC == S_OK; }
 
     COMErrorInfo errorInfo() const { return mErrInfo; }
     HRESULT rc() const { return mRC; }
@@ -623,7 +641,22 @@ public:
 
     bool isNull() const { return mIface == NULL; }
 
+    /**
+     * Returns @c true if the result code repesents success (with or without
+     * warnings).
+     */
     bool isOk() const { return !isNull() && SUCCEEDED (B::mRC); }
+
+    /**
+     * Returns @c true if the result code represends success with one or more
+     * warnings.
+     */
+    bool isWarning() const { return !isNull() && SUCCEEDED_WARNING (B::mRC); }
+
+    /**
+     * Returns @c true if the result code represends success with no warnings.
+     */
+    bool isReallyOk() const { return !isNull() && B::mRC == S_OK; }
 
     /* utility operators */
 

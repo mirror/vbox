@@ -905,7 +905,7 @@ public:
         </xsl:when>
         <xsl:otherwise>
             <xsl:if test="$supports='strict' or $supports='yes'">
-                <xsl:text>    if (FAILED (mRC))&#x0A;    {&#x0A;</xsl:text>
+                <xsl:text>    if (mRC != S_OK)&#x0A;    {&#x0A;</xsl:text>
                 <xsl:text>        fetchErrorInfo (mIface, &amp;COM_IIDOF (Base::Iface));&#x0A;</xsl:text>
                 <xsl:if test="$supports='strict'">
                     <xsl:text>        AssertMsg (errInfo.isFullAvailable(), </xsl:text>

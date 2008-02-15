@@ -1931,6 +1931,12 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     {
         CUSBController ctl = machine.GetUSBController();
 
+        /* Show an error message (if there is any).
+         * Note that we don't use the generic cannotLoadMachineSettings()
+         * call here because we want this message to be suppressable. */
+        if (!machine.isReallyOk())
+            vboxProblem().cannotAccessUSB (machine);
+
         if (ctl.isNull())
         {
             /* disable the USB controller category if the USB controller is
@@ -1943,11 +1949,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
 
             /* disable validators if any */
             pageUSB->setEnabled (false);
-
-            /* Show an error message (if there is any).
-             * Note that we don't use the generic cannotLoadMachineSettings()
-             * call here because we want this message to be suppressable. */
-            vboxProblem().cannotAccessUSB (machine);
         }
         else
         {

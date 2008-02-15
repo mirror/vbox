@@ -434,7 +434,7 @@ void VBoxGlobalSettingsDlg::init()
     wvalKeyboard->revalidate();
 }
 
-/** 
+/**
  *  Returns a path to the given page of this settings dialog. See ::path() for
  *  details.
  */
@@ -624,6 +624,12 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
 #ifdef DEBUG_dmik
     CHost host = vboxGlobal().virtualBox().GetHost();
     CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
+
+    /* Show an error message (if there is any).
+     * This message box may be suppressed if the user wishes so. */
+    if (!host.isReallyOk())
+        vboxProblem().cannotAccessUSB (host);
+
     if (coll.isNull())
     {
 #endif
@@ -638,9 +644,6 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
         pageUSB->setEnabled (false);
 
 #ifdef DEBUG_dmik
-        /* Show an error message (if there is any).
-         * This message box may be suppressed if the user wishes so. */
-        vboxProblem().cannotAccessUSB (host);
     }
     else
     {
