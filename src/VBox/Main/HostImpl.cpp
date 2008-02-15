@@ -2338,7 +2338,6 @@ HRESULT Host::checkUSBProxyService()
         /* disable the USB controller completely to avoid assertions if the
          * USB proxy service could not start. */
 
-        Assert (VBOX_FAILURE (mUSBProxyService->getLastError()));
         if (mUSBProxyService->getLastError() == VERR_FILE_NOT_FOUND)
             return setWarning (E_FAIL,
                 tr ("Could not load the Host USB Proxy Service (%Vrc). "
