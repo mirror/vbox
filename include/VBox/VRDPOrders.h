@@ -76,6 +76,7 @@ typedef struct _VRDPORDERCODE
 #define VRDP_ORDER_POLYLINE       (12)
 #define VRDP_ORDER_ELLIPSE        (13)
 #define VRDP_ORDER_SAVESCREEN     (14)
+#define VRDP_ORDER_TEXT           (15)
 
 typedef struct _VRDPORDERPOINT
 {
@@ -235,6 +236,52 @@ typedef struct _VRDPORDERSAVESCREEN
     uint8_t ident;
     uint8_t restore;
 } VRDPORDERSAVESCREEN;
+
+typedef struct _VRDPORDERGLYPH
+{
+    uint32_t o32NextGlyph;
+    uint64_t u64Handle;
+    
+    /* The glyph origin position on the screen. */
+    int16_t  x;
+    int16_t  y;
+    
+    /* The glyph bitmap dimensions. Note w == h == 0 for the space character. */
+    uint16_t w;
+    uint16_t h;
+
+    /* The character origin in the bitmap. */
+    int16_t  xOrigin;
+    int16_t  yOrigin;
+    
+    /* 1BPP bitmap. Rows are byte aligned. Size is (((w + 7)/8) * h + 3) & ~3. */
+    uint8_t au8Bitmap[1];
+} VRDPORDERGLYPH;
+
+typedef struct _VRDPORDERTEXT
+{
+    uint32_t cbOrder;
+
+    int16_t  xBkGround;
+    int16_t  yBkGround;
+    uint16_t wBkGround;
+    uint16_t hBkGround;
+
+    int16_t  xOpaque;
+    int16_t  yOpaque;
+    uint16_t wOpaque;
+    uint16_t hOpaque;
+
+    uint16_t u16MaxGlyph;
+
+    uint8_t  u8Glyphs;
+    uint8_t  u8Flags;
+    uint16_t u8CharInc;
+    uint32_t u32FgRGB;
+    uint32_t u32BgRGB;
+
+    /* u8Glyphs glyphs follow. Size of each glyph structure may vary. */
+} VRDPORDERTEXT;
 #pragma pack()
 
 #endif
