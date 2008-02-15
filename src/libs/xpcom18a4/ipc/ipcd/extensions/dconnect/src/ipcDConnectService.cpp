@@ -2466,7 +2466,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   while (completion.IsPending());
 
   rv = completion.GetResult();
-  if (NS_FAILED(rv))
+  if (rv != NS_OK)
   {
     NS_ASSERTION(completion.ParamsLen() == 0 ||
                  completion.ParamsLen() >= sizeof(void*),
@@ -2581,14 +2581,14 @@ public:
 
     LOG(("got SETUP_REPLY: status=%x instance=%p\n", reply->status, reply->instance));
 
-    if (NS_FAILED(reply->status))
+    if (reply->status != NS_OK)
     {
       mStatus = reply->status;
 
       const PRUint8 *params = ((const PRUint8 *) op) + sizeof (DConnectSetupReply);
       const PRUint32 paramsLen = opLen - sizeof (DConnectSetupReply);
 
-      NS_ASSERTION(paramsLen >= sizeof(void*),
+      NS_ASSERTION(paramsLen == 0 || paramsLen >= sizeof(void*),
                    "invalid nsIException serialization length");
       if (paramsLen >= sizeof(void*))
       {
@@ -3531,7 +3531,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
 
   writer.PutBytes(&msg, sizeof(msg));
 
-  if (NS_FAILED(rv))
+  if (rv != NS_OK)
   {
     // try to fetch an nsIException possibly set by one of the setup methods
     // and send it instead of the failed instance (even if it is null)
@@ -3727,7 +3727,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
                           paramCount,
                           params);
 
-  if (NS_FAILED(rv))
+  if (rv != NS_OK)
   {
     // try to fetch an nsIException possibly set by the method
     nsresult invoke_rv = rv;
