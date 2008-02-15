@@ -28,6 +28,7 @@
 #include <stdlib.h>       /* For exit */
 #include <unistd.h>
 #include <getopt.h>
+#include <errno.h>
 
 #include <X11/Xlib.h>
 #include <X11/Intrinsic.h>
@@ -39,6 +40,31 @@
 #endif
 
 static bool gbDaemonise = true;
+static int (*gpfnOldIOErrorHandler)(Display *) = NULL;
+
+/**
+ * Drop the programmes privileges to the caller's.
+ * @returns IPRT status code
+ * @todo move this into the R3 guest library
+ */
+int vboxClientDropPrivileges(void)
+{
+    int rc = VINF_SUCCESS;
+    int rcSystem, rcErrno;
+
+#ifdef _POSIX_SAVED_IDS
+    rcSystem = setuid(getuid());
+#else
+    rcSystem = setreuid(-1, getuid());
+#endif
+    if (rcSystem < 0)
+    {
+        rcErrno = errno;
+        rc = RTErrConvertFromErrno(rcErrno);
+        LogRel(("VBoxClient: failed to drop privileges, error %Rrc.\n", rc));
+    }
+    return rc;
+}
 
 /**
  * Xlib error handler for certain errors that we can't avoid.
@@ -51,27 +77,38 @@ int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
     {
         /* This can be triggered in debug builds if a guest application passes a bad atom
            in its list of supported clipboard formats.  As such it is harmless. */
-        Log(("VBoxService: ignoring BadAtom error and returning\n"));
+        Log(("VBoxClient: ignoring BadAtom error and returning\n"));
         return 0;
     }
     if (pError->error_code == BadWindow)
     {
         /* This can be triggered if a guest application destroys a window before we notice. */
-        Log(("VBoxService: ignoring BadWindow error and returning\n"));
+        Log(("VBoxClient: ignoring BadWindow error and returning\n"));
         return 0;
     }
 #ifdef VBOX_X11_CLIPBOARD
     vboxClipboardDisconnect();
 #endif
     XGetErrorText(pDisplay, pError->error_code, errorText, sizeof(errorText));
-    LogRel(("VBoxService: an X Window protocol error occurred: %s.  Request code: %d, minor code: %d, serial number: %d\n",
-         pError->error_code, pError->request_code, pError->minor_code, pError->serial));
+    LogRel(("VBoxClient: an X Window protocol error occurred: %s (error code %d).  Request code: %d, minor code: %d, serial number: %d\n", errorText, pError->error_code, pError->request_code, pError->minor_code, pError->serial));
+    VbglR3Term();
     exit(1);
+}
+
+/**
+ * Xlib error handler for fatal errors.  This often means that the programme is still running
+ * when X exits.
+ */
+int vboxClientXLibIOErrorHandler(Display *pDisplay)
+{
+    Log(("VBoxClient: a fatal guest X Window error occurred.  This may just mean that the Window system was shut down while the client was still running.\n"));
+    VbglR3Term();
+    return gpfnOldIOErrorHandler(pDisplay);
 }
 
 int main(int argc, char *argv[])
 {
-    int rc;
+    int rcClipboard, rc;
 #ifdef SEAMLESS_X11
     /** Our instance of the seamless class. */
     VBoxGuestSeamless seamless;
@@ -113,65 +150,71 @@ int main(int argc, char *argv[])
         rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
         if (RT_FAILURE(rc))
         {
-            LogRel(("VBoxService: failed to daemonize. exiting."));
+            std::cout << "VBoxClient: failed to daemonize. exiting."<< std::endl;
             return 1;
         }
     }
     /* Initialise our runtime before all else. */
     RTR3Init(false);
-    rc = VbglR3Init();
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(VbglR3Init()))
     {
         std::cout << "Failed to connect to the VirtualBox kernel service" << std::endl;
         return 1;
     }
-    LogRel(("VBoxService: starting...\n"));
+    if (RT_FAILURE(vboxClientDropPrivileges()))
+        return 1;
+    LogRel(("VBoxClient: starting...\n"));
     /* Initialise threading in X11 and in Xt. */
     if (!XInitThreads() || !XtToolkitThreadInitialize())
     {
-        LogRel(("VBoxService: error initialising threads in X11, exiting."));
+        LogRel(("VBoxClient: error initialising threads in X11, exiting."));
         return 1;
     }
     /* Set an X11 error handler, so that we don't die when we get unavoidable errors. */
     XSetErrorHandler(vboxClientXLibErrorHandler);
+    /* Set an X11 I/O error handler, so that we can shutdown properly on fatal errors. */
+    gpfnOldIOErrorHandler = XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
 #ifdef VBOX_X11_CLIPBOARD
     /* Connect to the host clipboard. */
-    LogRel(("VBoxService: starting clipboard Guest Additions...\n"));
-    rc = vboxClipboardConnect();
-    if (RT_SUCCESS(rc))
+    LogRel(("VBoxClient: starting clipboard Guest Additions...\n"));
+    rcClipboard = vboxClipboardConnect();
+    if (RT_FAILURE(rcClipboard))
     {
-        LogRel(("VBoxService: vboxClipboardConnect failed with rc = %Rrc\n", rc));
+        LogRel(("VBoxClient: vboxClipboardConnect failed with rc = %Rrc\n", rc));
     }
 #endif  /* VBOX_X11_CLIPBOARD defined */
 #ifdef SEAMLESS_X11
     try
     {
-        LogRel(("VBoxService: starting seamless Guest Additions...\n"));
+        LogRel(("VBoxClient: starting seamless Guest Additions...\n"));
         rc = seamless.init();
         if (RT_FAILURE(rc))
         {
-            LogRel(("VBoxService: failed to initialise seamless Additions, rc = %Rrc\n", rc));
+            LogRel(("VBoxClient: failed to initialise seamless Additions, rc = %Rrc\n", rc));
         }
     }
     catch (std::exception e)
     {
-        LogRel(("VBoxService: failed to initialise seamless Additions - caught exception: %s\n", e.what()));
+        LogRel(("VBoxClient: failed to initialise seamless Additions - caught exception: %s\n", e.what()));
         rc = VERR_UNRESOLVED_ERROR;
     }
     catch (...)
     {
-        LogRel(("VBoxService: failed to initialise seamless Additions - caught unknown exception.\n"));
+        LogRel(("VBoxClient: failed to initialise seamless Additions - caught unknown exception.\n"));
         rc = VERR_UNRESOLVED_ERROR;
     }
 #endif /* SEAMLESS_X11 defined */
 #ifdef VBOX_X11_CLIPBOARD
-    LogRel(("VBoxService: connecting to the shared clipboard service.\n"));
-    vboxClipboardMain();
-    vboxClipboardDisconnect();
+    if (RT_SUCCESS(rcClipboard))
+    {
+        LogRel(("VBoxClient: connecting to the shared clipboard service.\n"));
+        vboxClipboardMain();
+        vboxClipboardDisconnect();
+    }
 #else  /* VBOX_X11_CLIPBOARD not defined */
-    LogRel(("VBoxService: sleeping...\n"));
+    LogRel(("VBoxClient: sleeping...\n"));
     pause();
-    LogRel(("VBoxService: exiting...\n"));
+    LogRel(("VBoxClient: exiting...\n"));
 #endif  /* VBOX_X11_CLIPBOARD not defined */
 #ifdef SEAMLESS_X11
     try
@@ -180,14 +223,15 @@ int main(int argc, char *argv[])
     }
     catch (std::exception e)
     {
-        LogRel(("VBoxService: error shutting down seamless Additions - caught exception: %s\n", e.what()));
+        LogRel(("VBoxClient: error shutting down seamless Additions - caught exception: %s\n", e.what()));
         rc = VERR_UNRESOLVED_ERROR;
     }
     catch (...)
     {
-        LogRel(("VBoxService: error shutting down seamless Additions - caught unknown exception.\n"));
+        LogRel(("VBoxClient: error shutting down seamless Additions - caught unknown exception.\n"));
         rc = VERR_UNRESOLVED_ERROR;
     }
 #endif /* SEAMLESS_X11 defined */
-    return rc;
+    VbglR3Term();
+    return RT_SUCCESS(rc) ? 0 : 1;
 }

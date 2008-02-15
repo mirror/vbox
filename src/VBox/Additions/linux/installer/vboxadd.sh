@@ -109,6 +109,8 @@ kdir=/lib/modules/`uname -r`/misc
 dev=/dev/vboxadd
 modname=vboxadd
 module=$kdir/$modname
+owner=vboxadd
+group=1
 
 file=""
 test -f $module.o  && file=$module.o
@@ -165,6 +167,11 @@ start() {
             fail "Cannot create device $dev with major $maj and minor $min"
         }
     fi
+
+    chown $owner:$group $dev 2>/dev/null || {
+        rmmod $modname 2>/dev/null
+        fail "Cannot change owner $owner:$group for device $dev"
+    }
 
     succ_msg
     return 0
