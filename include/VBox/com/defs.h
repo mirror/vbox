@@ -55,6 +55,9 @@
 #define NS_DECL_IMACHINECOLLECTION
 #define NS_DECL_IMACHINE
 
+/** Returns @c true if @a rc represents a warning result code */
+#define SUCCEEDED_WARNING(rc)   (SUCCEEDED (rc) && (rc) != S_OK)
+
 /* input pointer argument to method */
 #define INPTR
 
@@ -190,10 +193,11 @@
 #define COM_INTERFACE_ENTRY2(a,b)
 #define END_COM_MAP(a)
 
-#define HRESULT nsresult
-#define SUCCEEDED NS_SUCCEEDED
-#define FAILED NS_FAILED
-#define NS_NULL nsnull
+#define HRESULT     nsresult
+#define SUCCEEDED   NS_SUCCEEDED
+#define FAILED      NS_FAILED
+
+#define SUCCEEDED_WARNING(rc)   (NS_SUCCEEDED (rc) && (rc) != NS_OK)
 
 #define IUnknown nsISupports
 
