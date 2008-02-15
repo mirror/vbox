@@ -578,7 +578,7 @@ void VBoxProblemReporter::cannotAccessUSB (const COMBase &obj)
     if (res.rc() == E_NOTIMPL && !res.errorInfo().isBasicAvailable())
         return;
 
-    message (mainWindowShown(), Error,
+    message (mainWindowShown(), res.isWarning() ? Warning : Error,
              tr ("Failed to access the USB subsystem."),
              formatErrorInfo (res),
              "cannotAccessUSB");
@@ -1896,21 +1896,26 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
         if (haveResultCode)
         {
 #if defined (Q_WS_WIN)
-            /* format the error code, masking off the top 16 bits */
-            PCRTWINERRMSG msg;
-            msg = RTErrWinGet(aInfo.resultCode());
+            /* format the error code */
+            PCRTWINERRMSG msg = NULL;
+            /* first, try as is (only set bit 31 bit for warnings) */
+            if (SUCCEEDED_WARNING (aInfo.resultCode()))
+                msg = RTErrWinGet (aInfo.resultCode() | 0x80000000);
+            else
+                msg = RTErrWinGet (aInfo.resultCode());
             /* try again with masked off top 16bit if not found */
-            if (!msg->iCode)
-                msg = RTErrWinGet(aInfo.resultCode() & 0xFFFF);
-            formatted += QString ("<tr><td>%1</td><td><tt>%2 (0x%3)</tt></td></tr>")
-                .arg (tr ("Result&nbsp;Code: ", "error info"))
-                .arg (msg->pszDefine)
-                .arg (uint (aInfo.resultCode()), 8, 16);
-#else
+            if (msg == NULL || !msg->iCode)
+                msg = RTErrWinGet (aInfo.resultCode() & 0xFFFF);
+            if (msg != NULL)
+                formatted += QString ("<tr><td>%1</td><td><tt>%2 (0x%3)</tt></td></tr>")
+                    .arg (tr ("Result&nbsp;Code: ", "error info"))
+                    .arg (msg->pszDefine)
+                    .arg (QString().sprintf ("%08X", uint (aInfo.resultCode())));
+            else
+#endif
             formatted += QString ("<tr><td>%1</td><td><tt>0x%2</tt></td></tr>")
                 .arg (tr ("Result&nbsp;Code: ", "error info"))
-                .arg (uint (aInfo.resultCode()), 8, 16);
-#endif
+                .arg (QString().sprintf ("%08X", uint (aInfo.resultCode())));
         }
 
         if (haveComponent)
@@ -1941,20 +1946,25 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
     {
 #if defined (Q_WS_WIN)
         /* format the error code */
-        PCRTWINERRMSG msg;
-        msg = RTErrWinGet(aWrapperRC);
+        PCRTWINERRMSG msg = NULL;
+        /* first, try as is (only set bit 31 bit for warnings) */
+        if (SUCCEEDED_WARNING (aWrapperRC))
+            msg = RTErrWinGet (aWrapperRC | 0x80000000);
+        else
+            msg = RTErrWinGet (aWrapperRC);
         /* try again with masked off top 16bit if not found */
-        if (!msg->iCode)
-            msg = RTErrWinGet(aWrapperRC & 0xFFFF);
-        formatted += QString ("<tr><td>%1</td><td><tt>%2 (0x%3)</tt></td></tr>")
-            .arg (tr ("Callee&nbsp;RC: ", "error info"))
-            .arg (msg->pszDefine)
-            .arg (uint (aWrapperRC), 8, 16);
-#else
+        if (msg == NULL || !msg->iCode)
+            msg = RTErrWinGet (aWrapperRC & 0xFFFF);
+        if (msg != NULL)
+            formatted += QString ("<tr><td>%1</td><td><tt>%2 (0x%3)</tt></td></tr>")
+                .arg (tr ("Callee&nbsp;RC: ", "error info"))
+                .arg (msg->pszDefine)
+                .arg (QString().sprintf ("%08X", uint (aWrapperRC)));
+        else
+#endif
         formatted += QString ("<tr><td>%1</td><td><tt>0x%2</tt></td></tr>")
             .arg (tr ("Callee&nbsp;RC: ", "error info"))
-            .arg (uint (aWrapperRC), 8, 16);
-#endif
+            .arg (QString().sprintf ("%08X", uint (aWrapperRC)));
     }
     formatted += "</table>";
 

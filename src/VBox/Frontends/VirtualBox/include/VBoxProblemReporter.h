@@ -288,13 +288,13 @@ public:
 
     static QString formatErrorInfo (const COMBase &aWrapper)
     {
-        Assert (FAILED (aWrapper.lastRC()));
+        Assert (aWrapper.lastRC() != S_OK);
         return formatErrorInfo (aWrapper.errorInfo(), aWrapper.lastRC());
     }
 
     static QString formatErrorInfo (const COMResult &aRC)
     {
-        Assert (FAILED (aRC.rc()));
+        Assert (aRC.rc() != S_OK);
         return formatErrorInfo (aRC.errorInfo(), aRC.rc());
     }
 
