@@ -126,8 +126,10 @@ endif
 ifdef VBOX_WITH_ISCSI
  VBoxDD_DEFS           += VBOX_WITH_ISCSI
 endif
-ifndef VBOX_OSE
+ifdef VBOX_WITH_E1000
  VBoxDD_DEFS           += VBOX_WITH_E1000
+endif
+ifndef VBOX_OSE
  VBoxDD_DEFS           += VBOX_WITH_INIP
 endif
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
@@ -234,15 +236,20 @@ DevicesR3_SOURCES       = \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
 
+ifdef VBOX_WITH_E1000
+DevicesR3_SOURCES      += \
+	Network/DevE1000.cpp \
+	Network/DevE1000Phy.cpp \
+	Network/DevEEPROM.cpp
+DevicesR3_DEFS	       += VBOX_WITH_E1000
+endif
+
 ifndef VBOX_OSE
 DevicesR3_INCS         += \
 	Network/lwip/src/include \
 	Network/lwip/src/include/ipv4 \
 	Network/lwip/vbox/include
 DevicesR3_SOURCES      += \
-	Network/DevE1000.cpp \
-	Network/DevE1000Phy.cpp \
-	Network/DevEEPROM.cpp \
 	Network/lwip/src/api/api_lib.c \
 	Network/lwip/src/api/api_msg.c \
 	Network/lwip/src/api/err.c \
@@ -268,7 +275,6 @@ DevicesR3_SOURCES      += \
 	Network/lwip/src/netif/etharp.c \
 	Network/lwip/vbox/sys_arch.c \
 	Network/DevINIP.cpp
-DevicesR3_DEFS	       += VBOX_WITH_E1000
 DevicesR3_DEFS	       += VBOX_WITH_INIP
 endif
 
