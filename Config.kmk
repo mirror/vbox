@@ -275,11 +275,12 @@ VBOX_DO_STRIP_MODULES = 1
 if1of ($(BUILD_TARGET),darwin os2)
 IPRT_WITH_KSTUFF = 1
 endif
+# Use $ORIGIN and avoid setting LD_LIBRARY_PATH at runtime for Solaris.
+VBOX_ORIGIN = $$ORIGIN
 # Enable Crossbow support for Solaris.
 VBOX_WITH_CROSSBOW = 1
 # Enable setuid wrapper for Solaris.
 #VBOX_WITH_SUID_WRAPPER = 1
-
 
 #
 # Skip stuff.
@@ -1857,6 +1858,7 @@ TEMPLATE_VBOXR3EXE_INCS               += \
  else ifeq ($(BUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG _REENTRANT # Avoid the GNU libiconv, for now at least.
+TEMPLATE_VBOXR3EXE_LDFLAGS            += '-R$$(VBOX_ORIGIN)'
 TEMPLATE_VBOXR3EXE_LIBS                = rt socket
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
@@ -1881,6 +1883,9 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
   TEMPLATE_VBOXR3_CXXFLAGS = $(TEMPLATE_VBOXR3EXE_CXXFLAGS) -fPIC
   TEMPLATE_VBOXR3_LDFLAGS = $(TEMPLATE_VBOXR3EXE_LDFLAGS) -fPIC
  endif
+endif
+ifeq ($(BUILD_TARGET),solaris)
+ TEMPLATE_VBOXR3_LDFLAGS += '-R$$(VBOX_ORIGIN)'
 endif
 
 #
@@ -1919,6 +1924,10 @@ ifneq ($(BUILD_TARGET),win)
  TEMPLATE_VBOXR3NPEXE_CXXFLAGS            = $(filter-out -pedantic,$(TEMPLATE_VBOXR3EXE_CXXFLAGS))
  TEMPLATE_VBOXR3NPEXE_CFLAGS              = $(filter-out -pedantic -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3EXE_CFLAGS))
 endif
+ifeq ($(BUILD_TARGET),solaris)
+ TEMPLATE_VBOXR3NPEXE_LDFLAGS             += '-R$$(VBOX_ORIGIN)'
+endif
+
 
 #
 # Template for building bad C/C++ style R3 shared libraries / Dlls (no -pedantic).
@@ -2105,6 +2114,7 @@ TEMPLATE_VBOXMAINEXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXMAINEXE_DEFS               += _REENTRANT
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt
+TEMPLATE_VBOXMAINEXE_LDFLAGS            += '-R$$(VBOX_ORIGIN)'
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_LIBS                =
@@ -2142,6 +2152,9 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
  endif
 endif
 TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin))
+ifeq ($(BUILD_TARGET),solaris)
+ TEMPLATE_VBOXMAINDLL_LDFLAGS += '-R$$(VBOX_ORIGIN)/..'
+endif
 
 #
 # Template for building the Main static libraries.
@@ -2306,6 +2319,7 @@ else # the gcc guys:
 	/usr/local/include
   endif
   ifeq ($(BUILD_TARGET),solaris)
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '-R$$(VBOX_ORIGIN):$$(VBOX_ORIGIN)/qtgcc/lib'
    TEMPLATE_VBOXQTGUIEXE_LIBS += \
 	rt socket nsl
   endif
