@@ -356,19 +356,19 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
         /* Deal with variable size ioctls first. */
         if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0))
             == VBOXGUEST_IOCTL_STRIP_SIZE(cmd)) {
-                char *pszMessage = kmalloc(VBOXGUEST_IOCTL_SIZE(cmd), GFP_KERNEL);
+                char *pszMessage = kmalloc(_IOC_SIZE(cmd), GFP_KERNEL);
                 if (NULL == pszMessage) {
                         LogRelFunc(("VBOXGUEST_IOCTL_LOG: cannot allocate %d bytes of memory!\n",
-                                    VBOXGUEST_IOCTL_SIZE(cmd)));
+                                    _IOC_SIZE(cmd)));
                         rc = -ENOMEM;
                 }
                 if (   (0 == rc)
-                    && copy_from_user(pszMessage, (void*)arg, VBOXGUEST_IOCTL_SIZE(cmd))) {
+                    && copy_from_user(pszMessage, (void*)arg, _IOC_SIZE(cmd))) {
                         LogRelFunc(("VBOXGUEST_IOCTL_LOG: copy_from_user failed!\n"));
                         rc = -EFAULT;
                 }
                 if (0 == rc) {
-                    Log(("%.*s", VBOXGUEST_IOCTL_SIZE(cmd), pszMessage));
+                    Log(("%.*s", _IOC_SIZE(cmd), pszMessage));
                 }
                 if (NULL != pszMessage) {
                     kfree(pszMessage);
