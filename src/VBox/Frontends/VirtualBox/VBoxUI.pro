@@ -42,18 +42,22 @@ FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 
 IMAGES	= images/tpixel.png \
 	images/transparent_16px.png \
-	images/vm_new.png \
-	images/vm_new_dis.png \
-	images/vm_settings.png \
-	images/vm_settings_dis.png \
-	images/vm_delete.png \
-	images/vm_delete_dis.png \
-	images/vm_start.png \
-	images/vm_start_dis.png \
-	images/vm_discard.png \
-	images/vm_discard_dis.png \
-	images/vm_pause_s.png \
-	images/vm_pause_16px.png \
+	images/vm_delete_32px.png \
+	images/vm_delete_disabled_32px.png \
+	images/vm_discard_32px.png \
+	images/vm_discard_disabled_32px.png \
+	images/vm_new_32px.png \
+	images/vm_new_disabled_32px.png \
+	images/vm_pause_32px.png \
+	images/vm_pause_disabled_32px.png \
+	images/vm_refresh_32px.png \
+	images/vm_refresh_disabled_32px.png \
+	images/vm_settings_32px.png \
+	images/vm_settings_disabled_32px.png \
+	images/vm_show_logs_32px.png \
+	images/vm_show_logs_disabled_32px.png \
+	images/vm_start_32px.png \
+	images/vm_start_disabled_32px.png \
 	images/os_freebsd.png \
 	images/os_openbsd.png \
 	images/os_netbsd.png \
