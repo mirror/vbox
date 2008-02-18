@@ -141,6 +141,10 @@ int rtFileRecalcAndValidateFlags(unsigned *pfOpen)
         ||  (fOpen & ~RTFILE_O_VALID_MASK)
 #endif
         ||  (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_WRITE)) == RTFILE_O_TRUNCATE
+        ||  (   fOpen & RTFILE_O_NOT_CONTENT_INDEXED
+             && !(   (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE
+                  || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE
+                  || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE))
        )
     {
         AssertMsgFailed(("Invalid parameters! fOpen=%#x\n", fOpen));
@@ -218,12 +222,12 @@ RTR3DECL(uint64_t)  RTFileTell(RTFILE File)
 
 
 /**
- * Determine the maximum file size. 
- *  
- * @returns The max size of the file. 
+ * Determine the maximum file size.
+ *
+ * @returns The max size of the file.
  *          -1 on failure, the file position is undefined.
- * @param   File        Handle to the file. 
- * @see     RTFileGetMaxSizeEx. 
+ * @param   File        Handle to the file.
+ * @see     RTFileGetMaxSizeEx.
  */
 RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File)
 {
@@ -234,17 +238,17 @@ RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File)
 
 
 /**
- * Determine the maximum file size. 
- *  
+ * Determine the maximum file size.
+ *
  * @returns IPRT status code.
- * @param   File        Handle to the file. 
- * @param   pcbMax      Where to store the max file size. 
+ * @param   File        Handle to the file.
+ * @param   pcbMax      Where to store the max file size.
  * @see     RTFileGetMaxSize.
  */
 RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax)
 {
-    /* 
-     * Save the current location 
+    /*
+     * Save the current location
      */
     uint64_t offOld;
     int rc = RTFileSeek(File, 0, RTFILE_SEEK_CURRENT, &offOld);
@@ -252,17 +256,17 @@ RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax)
         return rc;
 
     /*
-     * Perform a binary search for the max file size. 
+     * Perform a binary search for the max file size.
      */
     uint64_t offLow  =       0;
     uint64_t offHigh = 8 * _1T; /* we don't need bigger files */
-    /** @todo r=bird: This isn't doing the trick for windows (at least not vista). 
-     * Close to offHigh is returned regardless of NTFS or FAT32. 
-     * We might have to make this code OS specific... 
-     * In the worse case, we'll have to try GetVolumeInformationByHandle on vista and fall 
+    /** @todo r=bird: This isn't doing the trick for windows (at least not vista).
+     * Close to offHigh is returned regardless of NTFS or FAT32.
+     * We might have to make this code OS specific...
+     * In the worse case, we'll have to try GetVolumeInformationByHandle on vista and fall
      * back on NtQueryVolumeInformationFile(,,,, FileFsAttributeInformation) else where, and
      * check for known file system names. (For LAN shares we'll have to figure out the remote
-     * file system.) */ 
+     * file system.) */
     //uint64_t offHigh = INT64_MAX;
     for (;;)
     {
