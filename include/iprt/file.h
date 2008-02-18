@@ -93,7 +93,7 @@ __BEGIN_DECLS
 /** Action mask. */
 #define RTFILE_O_ACTION_MASK        0x00000300
 
-/** Turns off indexing of files on Windows hosts.
+/** Turns off indexing of files on Windows hosts, *CREATE* only.
  * @remark  This might not be implemented on all platforms,
  *          and will be ignored on those.
  */
@@ -269,31 +269,31 @@ RTR3DECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize);
 RTR3DECL(int)  RTFileGetSize(RTFILE File, uint64_t *pcbSize);
 
 /**
- * Determine the maximum file size. 
- *  
- * @returns The max size of the file. 
+ * Determine the maximum file size.
+ *
+ * @returns The max size of the file.
  *          -1 on failure, the file position is undefined.
- * @param   File        Handle to the file. 
- * @see     RTFileGetMaxSizeEx. 
+ * @param   File        Handle to the file.
+ * @see     RTFileGetMaxSizeEx.
  */
 RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
 
 /**
- * Determine the maximum file size. 
- *  
+ * Determine the maximum file size.
+ *
  * @returns IPRT status code.
- * @param   File        Handle to the file. 
- * @param   pcbMax      Where to store the max file size. 
+ * @param   File        Handle to the file.
+ * @param   pcbMax      Where to store the max file size.
  * @see     RTFileGetMaxSize.
  */
 RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax);
 
 /**
- * Determine the maximum file size depending on the file system the file is stored on. 
- *  
- * @returns The max size of the file. 
+ * Determine the maximum file size depending on the file system the file is stored on.
+ *
+ * @returns The max size of the file.
  *          -1 on failure.
- * @param   File        Handle to the file.         
+ * @param   File        Handle to the file.
  */
 RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
 
