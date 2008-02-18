@@ -104,7 +104,7 @@ void VBoxVMInformationDlg::init()
     languageChangeImp();
 
     /* make initial resize */
-    resize (600, 450);
+    resize (500, 450);
 
     /* show statistics page and make it focused */
     connect (mInfoStack, SIGNAL (currentChanged (QWidget*)),
