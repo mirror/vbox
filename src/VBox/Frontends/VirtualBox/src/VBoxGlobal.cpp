@@ -747,6 +747,7 @@ VBoxGlobal::VBoxGlobal()
     , diskControllerDevices (3)
     , audioDriverTypes (CEnums::AudioDriverType_COUNT)
     , audioControllerTypes (CEnums::AudioControllerType_COUNT)
+    , networkAdapterTypes (CEnums::NetworkAdapterType_COUNT)
     , networkAttachmentTypes (CEnums::NetworkAttachmentType_COUNT)
     , clipboardTypes (CEnums::ClipboardMode_COUNT)
     , ideControllerTypes (CEnums::IDEControllerType_COUNT)
@@ -2248,6 +2249,13 @@ void VBoxGlobal::languageChange()
         tr ("ICH AC97", "AudioControllerType");
     audioControllerTypes [CEnums::SB16] =
         tr ("SoundBlaster 16", "AudioControllerType");
+
+    networkAdapterTypes [CEnums::NetworkAdapterAm79C970A] =
+        tr ("PCnet-PCI II (Am79C970A)", "NetworkAdapterType");
+    networkAdapterTypes [CEnums::NetworkAdapterAm79C973] =
+        tr ("PCnet-FAST III (Am79C973)", "NetworkAdapterType");
+    networkAdapterTypes [CEnums::NetworkAdapter82540EM] =
+        tr ("E1000 PRO MT Desktop (82540EM)", "NetworkAdapterType");
 
     networkAttachmentTypes [CEnums::NoNetworkAttachment] =
         tr ("Not attached", "NetworkAttachmentType");
