@@ -1035,12 +1035,15 @@ void VBoxVMSettingsDlg::loadNetworksList()
     for (CMachineVector::ConstIterator m = vec.begin();
          m != vec.end(); ++ m)
     {
-        for (ulong slot = 0; slot < count; ++ slot)
+        if (m->GetAccessible())
         {
-            CNetworkAdapter adapter = m->GetNetworkAdapter (slot);
-            if (adapter.GetAttachmentType() == CEnums::InternalNetworkAttachment &&
-                !mNetworksList.contains (adapter.GetInternalNetwork()))
-                mNetworksList << adapter.GetInternalNetwork();
+            for (ulong slot = 0; slot < count; ++ slot)
+            {
+                CNetworkAdapter adapter = m->GetNetworkAdapter (slot);
+                if (adapter.GetAttachmentType() == CEnums::InternalNetworkAttachment &&
+                        !mNetworksList.contains (adapter.GetInternalNetwork()))
+                    mNetworksList << adapter.GetInternalNetwork();
+            }
         }
     }
 
