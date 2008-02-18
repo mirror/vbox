@@ -580,6 +580,25 @@
 #define OP_MOV_DR       600
 #define OP_MOV_TR       601
 
+
+/* 64 bits prefix bytes */
+#define OP_REX          0x40
+#define OP_REX_B        0x41
+#define OP_REX_X        0x42
+#define OP_REX_XB       0x43
+#define OP_REX_R        0x44
+#define OP_REX_RB       0x45
+#define OP_REX_RX       0x46
+#define OP_REX_RXB      0x47
+#define OP_REX_W        0x48
+#define OP_REX_WB       0x49
+#define OP_REX_WX       0x4A
+#define OP_REX_WXB      0x4B
+#define OP_REX_WR       0x4C
+#define OP_REX_WRB      0x4D
+#define OP_REX_WRX      0x4E
+#define OP_REX_WRXB     0x4F
+
 /** @} */
 
 
