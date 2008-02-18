@@ -100,5 +100,4 @@ FILES_VBOXDRV_NOBIN=" \
 "
 
 FILES_VBOXDRV_BIN=" \
-    ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/build_in_tmp=>build_in_tmp \
 "

@@ -24,6 +24,27 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
+# Attempt to build using DKMS first
+DKMS=`which dkms` 
+if [ -n "$DKMS" ]
+then
+    echo "Attempting to install using DKMS"
+    status=`$DKMS status -m vboxdrv -v _VERSION_`
+    if echo $status | grep added > /dev/null ||
+        echo $status | grep built > /dev/null ||
+        echo $status | grep installed > /dev/null
+    then
+        $DKMS remove -m vboxdrv -v _VERSION_ --all
+    fi
+    if $DKMS add -m vboxdrv -v _VERSION_ &&
+        $DKMS build -m vboxdrv -v _VERSION_ &&
+        $DKMS install -m vboxdrv -v _VERSION_ --force
+    then
+        exit 0
+    fi
+    echo "Failed to install using DKMS, attempting to install without"
+fi
+
 # find a unique temp directory
 num=0
 while true; do

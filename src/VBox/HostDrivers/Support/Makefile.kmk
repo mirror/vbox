@@ -42,6 +42,9 @@ SYSMODS.linux   += vboxdrv
 SYSMODS.win     += VBoxDrv
 SYSMODS.os2     += VBoxDrv
 SYSMODS.solaris += vboxdrv
+OTHERS.linux    += \
+        $(PATH_BIN)/src/build_in_tmp \
+        $(if $(VBOX_OSE),,$(PATH_BIN)/src/dkms.conf)
 endif
 
 INSTALLS.linux = vboxmod-bin vboxmod-sh
@@ -63,6 +66,19 @@ vboxmod-bin_SOURCES = $(subst ",,$(FILES_VBOXDRV_NOBIN)) #"
 vboxmod-sh_INST     = bin/src/
 vboxmod-sh_MODE     = a+rx,u+w
 vboxmod-sh_SOURCES  = $(subst ",,$(FILES_VBOXDRV_BIN)) #"
+
+# Scripts needed for building the kernel modules
+
+$(PATH_BIN)/src/build_in_tmp: \
+		Support/linux/build_in_tmp
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
+	$(QUIET)chmod 0755 $@
+
+$(PATH_BIN)/src/dkms.conf: \
+		Support/linux/dkms.conf
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
 
 #
 # The Ring-3 Support Library (this is linked into the IPRT dll, VBoxRT).
