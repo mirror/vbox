@@ -2132,7 +2132,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                     </sizepolicy>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>&lt;qt&gt;Selects the type of the emulated audio hardware.&lt;/qt&gt;</string>
+                                    <string>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</string>
                                 </property>
                             </widget>
                             <spacer row="0" column="2">

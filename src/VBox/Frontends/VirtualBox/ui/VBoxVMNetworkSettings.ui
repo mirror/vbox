@@ -150,7 +150,7 @@
                                 </sizepolicy>
                             </property>
                             <property name="text">
-                                <string>Adapter &amp;type</string>
+                                <string>Adapter &amp;Type</string>
                             </property>
                             <property name="buddy" stdset="0">
                                 <cstring>cbAdapterType</cstring>
@@ -161,7 +161,7 @@
                                 <cstring>cbAdapterType</cstring>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>Type of the virtual network adapter. Depending on this value, VirtualBox will provide a different virtual network hardware to the guest.</string>
+                                <string>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</string>
                             </property>
                         </widget>
                         <widget class="QComboBox" row="1" column="1" rowspan="1" colspan="2">
