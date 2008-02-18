@@ -766,6 +766,9 @@ static void vboxClipboardGetProc(Widget, XtPointer pClientData, Atom * /* select
     /* The X Toolkit may have failed to get the clipboard selection for us. */
     if (*atomType == XT_CONVERT_FAIL)
         return;
+    /* The clipboard selection may have changed before we could get it. */
+    if (NULL == pValue)
+        return;
     /* We grab this mutex whenever an asynchronous clipboard operation completes and while
        disconnecting a client from the clipboard to stop these operations colliding. */
     RTSemMutexRequest(g_ctx.asyncMutex, RT_INDEFINITE_WAIT);
