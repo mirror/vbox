@@ -971,41 +971,41 @@ typedef VBGLBIGREQ *PVBGLBIGREQ;
 typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 
 /** The VBGLBIGREQ::u32Magic value (Ryuu Murakami). */
-#define VBGLBIGREQ_MAGIC                            0x19520219
+#define VBGLBIGREQ_MAGIC                        0x19520219
 
 
 #if defined(RT_OS_WINDOWS)
+  /* legacy encoding. */
 # define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
     ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
 
 #elif defined(RT_OS_OS2)
-# define VBOXGUEST_IOCTL_CATEGORY                   0xc2
-# define VBOXGUEST_IOCTL_CODE(Function, Size)       ((unsigned char)(Function))
-# define VBOXGUEST_IOCTL_CATEGORY_FAST              0xc3 /**< Also defined in VBoxGuestA-os2.asm. */
-# define VBOXGUEST_IOCTL_CODE_FAST(Function)        ((unsigned char)(Function))
-# define VBOXGUEST_IOCTL_STRIP_SIZE(Function)       (Function)
-
-#elif defined(RT_OS_LINUX)
-# include <linux/ioctl.h>
-/* Note that we can't use the Linux header _IOWR macro directly, as it expects
-   a "type" argument, whereas we provide "sizeof(type)". */
-/* VBOXGUEST_IOCTL_CODE(Function, sizeof(type)) == _IOWR('V', (Function) | VBOXGUEST_IOCTL_FLAG, (type)) */
-# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOC(_IOC_READ|_IOC_WRITE, 'V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
-# define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
-# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       VBOXGUEST_IOCTL_CODE(_IOC_NR((Code)), 0)
-# define VBOXGUEST_IOCTL_SIZE(Code)             (_IOC_SIZE((Code)))
+  /* No automatic buffering, size not encoded. */
+# define VBOXGUEST_IOCTL_CATEGORY               0xc2
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   ((unsigned char)(Function))
+# define VBOXGUEST_IOCTL_CATEGORY_FAST          0xc3 /**< Also defined in VBoxGuestA-os2.asm. */
+# define VBOXGUEST_IOCTL_CODE_FAST(Function)    ((unsigned char)(Function))
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       (Code)
 
 #elif defined(RT_OS_SOLARIS)
+  /* No automatic buffering, size limited to 255 bytes => use VBGLBIGREQ for everything. */
 # include <sys/ioccom.h>
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWRN('V', (Function) | VBOXGUEST_IOCTL_FLAG, sizeof(VBGLBIGREQ))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
-# define VBOXGUEST_IOCTL_STRIP_SIZE(Function)   (Function)
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       (Code)
 
-#elif 0 /* BSD style - needs some adjusting _IORW takes a type and not a size. */
+#elif defined(RT_OS_LINUX)
+  /* No automatic buffering, size limited to 16KB. */
+# include <linux/ioctl.h>
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOC(_IOC_READ|_IOC_WRITE, 'V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
+# define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       VBOXGUEST_IOCTL_CODE(_IOC_NR((Code)), 0)
+
+#elif 0 /* BSD style - needs some adjusting since _IORW takes a type and not a size. */
 # include <sys/ioccom.h>
 # define VBOXGUEST_IOCTL_CODE(Function, Size)   _IORW('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
-# define VBOXGUEST_IOCTL_STRIP_SIZE(Function)   ((Function) - IOCPARM_LEN((Function)))
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       IOCBASECMD(Code)
 
 #else
 /* PORTME */
