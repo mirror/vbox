@@ -275,8 +275,6 @@ VBOX_DO_STRIP_MODULES = 1
 if1of ($(BUILD_TARGET),darwin os2)
 IPRT_WITH_KSTUFF = 1
 endif
-# Use $ORIGIN and avoid setting LD_LIBRARY_PATH at runtime for Solaris.
-VBOX_ORIGIN = $$ORIGIN
 # Enable Crossbow support for Solaris.
 VBOX_WITH_CROSSBOW = 1
 # Enable setuid wrapper for Solaris.
@@ -1000,6 +998,14 @@ VBOX_PATH_X11_XORG_7_0  = $(VBOX_PATH_X11_ROOT)/7.0
 VBOX_PATH_X11_XORG_7_1  = $(VBOX_PATH_X11_ROOT)/7.1
 VBOX_PATH_X11_XORG_1_3  = $(VBOX_PATH_X11_ROOT)/1.3
 VBOX_PATH_X11_XORG_1_4  = $(VBOX_PATH_X11_ROOT)/1.4
+
+#
+# Various other variables.
+#
+
+# Use $ORIGIN to avoid having to set LD_LIBRARY_PATH at runtime for Solaris.
+# (Similar to the -install_name @executable_path/... on darwin.)
+VBOX_ORIGIN = $$ORIGIN
 
 
 #
@@ -1896,6 +1902,7 @@ TEMPLATE_VBOXR3TSTEXE  = VBox Ring 3 Testcase Exe
 TEMPLATE_VBOXR3TSTEXE_EXTENDS = VBOXR3EXE
 TEMPLATE_VBOXR3TSTEXE_INST    = $(INST_TESTCASE)
 TEMPLATE_VBOXR3TSTEXE_LIBS    = $(LIB_RUNTIME) $(TEMPLATE_VBOXR3EXE_LIBS)
+TEMPLATE_VBOXR3TSTEXE_LDFLAGS.solaris = $(TEMPLATE_VBOXR3EXE_LDFLAGS.solaris) '-R$$(VBOX_ORIGIN)/..'
 ifeq ($(BUILD_TARGET),win)
  ifdef VBOX_SIGNING_MODE
   TEMPLATE_VBOXR3TSTEXE_POST_CMDS =
@@ -2114,7 +2121,7 @@ TEMPLATE_VBOXMAINEXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXMAINEXE_DEFS               += _REENTRANT
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt
-TEMPLATE_VBOXMAINEXE_LDFLAGS            += '-R$$(VBOX_ORIGIN)'
+TEMPLATE_VBOXMAINEXE_LDFLAGS.solaris     = '-R$$(VBOX_ORIGIN)'
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_LIBS                =
@@ -2152,9 +2159,7 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
  endif
 endif
 TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin))
-ifeq ($(BUILD_TARGET),solaris)
- TEMPLATE_VBOXMAINDLL_LDFLAGS += '-R$$(VBOX_ORIGIN)/..'
-endif
+TEMPLATE_VBOXMAINDLL_LDFLAGS.solaris = $(NO_SUCH_VARIABLE) # Must be set on individual targets.
 
 #
 # Template for building the Main static libraries.
