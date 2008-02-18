@@ -46,10 +46,12 @@ DLLS      += VBoxDDU VBoxDD VBoxDD2
 SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 
 
-##
-## Enable the pdm lock (experimental).
-##
-#DEFS += VBOX_WITH_PDM_LOCK
+#
+# Enable the pdm lock (experimental).
+#
+ifdef VBOX_WITH_PDM_LOCK
+ DEFS += VBOX_WITH_PDM_LOCK
+endif
 
 
 #
