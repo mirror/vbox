@@ -82,6 +82,7 @@ struct DConnectRequest : public ipcListNode<DConnectRequest>
 #endif // DCONNECT_MULTITHREADED
 
 class nsIException;
+class ipcMessageReader;
 class ipcMessageWriter;
 
 // a key class used to identify DConnectInstance objects stored in a hash table
@@ -230,7 +231,7 @@ public:
   NS_HIDDEN_(nsresult) SerializeException(ipcMessageWriter &writer,
                                           PRUint32 peer, nsIException *xcpt,
                                           nsVoidArray &wrappers);
-  NS_HIDDEN_(nsresult) DeserializeException(const PRUint8 *data, PRUint32 dataLen,
+  NS_HIDDEN_(nsresult) DeserializeException(ipcMessageReader &reader,
                                             PRUint32 peer, nsIException **xcpt);
 
   NS_HIDDEN_(void)     ReleaseWrappers(nsVoidArray &wrappers);
