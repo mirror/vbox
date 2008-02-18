@@ -20,7 +20,9 @@ include	$(PATH_KBUILD)/subheader.kmk
 
 ## @todo get rid of these.
 # Enable the PDM lock.
-#DEFS += VBOX_WITH_PDM_LOCK
+ifdef VBOX_WITH_PDM_LOCK
+DEFS += VBOX_WITH_PDM_LOCK
+endif
 ifdef VBOX_WITH_INTERNAL_NETWORKING
 DEFS += VBOX_WITH_INTERNAL_NETWORKING
 endif
