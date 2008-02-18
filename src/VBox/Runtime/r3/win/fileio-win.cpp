@@ -232,9 +232,7 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
     /*
      * Turn off indexing of directory through Windows Indexing Service
      */
-    if (   (dwCreationDisposition == OPEN_ALWAYS)
-        || (dwCreationDisposition == CREATE_NEW)
-        || (dwCreationDisposition == CREATE_ALWAYS))
+    if (fOpen & RTFILE_O_NOT_CONTENT_INDEXED)
     {
         if (FALSE == SetFileAttributes(pszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
             return RTErrConvertFromWin32(GetLastError());
@@ -263,9 +261,7 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
     /*
      * Turn off indexing of directory through Windows Indexing Service
      */
-    if (   (dwCreationDisposition == OPEN_ALWAYS)
-        || (dwCreationDisposition == CREATE_NEW)
-        || (dwCreationDisposition == CREATE_ALWAYS))
+    if (fOpen & RTFILE_O_NOT_CONTENT_INDEXED)
     {
         if (FALSE == SetFileAttributesW(pwszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
         {

@@ -93,6 +93,11 @@ __BEGIN_DECLS
 /** Action mask. */
 #define RTFILE_O_ACTION_MASK        0x00000300
 
+/** Turns off indexing of files on Windows hosts.
+ * @remark  This might not be implemented on all platforms,
+ *          and will be ignored on those.
+ */
+#define RTFILE_O_NOT_CONTENT_INDEXED 0x00000800
 /** Truncate the file.
  * @remark  This will not truncate files opened for read-only.
  * @remark  The trunction doesn't have to be atomically, so anyone
@@ -112,11 +117,10 @@ __BEGIN_DECLS
  *          and will be ignored on those.
  */
 #define RTFILE_O_WRITE_THROUGH      0x00008000
-
 /** Mask of all valid flags.
  * @remark  This doesn't validate the access mode properly.
  */
-#define RTFILE_O_VALID_MASK         0x0000F333
+#define RTFILE_O_VALID_MASK         0x0000FB73
 
 /** @} */
 
