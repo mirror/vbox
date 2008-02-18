@@ -416,7 +416,7 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
     /* create file */
     int rc = RTFileOpen(&pImage->File,
                         pszFilename,
-                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL);
+                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL | RTFILE_O_NOT_CONTENT_INDEXED);
     if (VBOX_SUCCESS(rc))
     {
         /* Lock image exclusively to close any wrong access by VDI API calls. */
@@ -1938,7 +1938,7 @@ VBOXDDU_DECL(int) VDICopyImage(const char *pszDstFilename, const char *pszSrcFil
     RTFILE File;
     rc = RTFileOpen(&File,
                     pszDstFilename,
-                    RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL);
+                    RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL | RTFILE_O_NOT_CONTENT_INDEXED);
     if (VBOX_SUCCESS(rc))
     {
         /* lock new image exclusively to close any wrong access by VDI API calls. */
