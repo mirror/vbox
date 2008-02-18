@@ -279,6 +279,9 @@ endif
 VBOX_WITH_CROSSBOW = 1
 # Enable setuid wrapper for Solaris.
 #VBOX_WITH_SUID_WRAPPER = 1
+# Enable the PDM Lock and let I/O threads call into the PICs.
+#VBOX_WITH_PDM_LOCK = 1
+
 
 #
 # Skip stuff.
