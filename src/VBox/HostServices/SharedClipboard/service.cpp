@@ -233,29 +233,10 @@ static DECLCALLBACK(int) svcUnload (void)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) svcConnect (uint32_t u32ClientID, void *pvClient)
-{
-    VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
-
-    /* Register the client. */
-    int rc = VINF_SUCCESS;
-
-    memset (pClient, 0, sizeof (*pClient));
-
-    pClient->u32ClientID = u32ClientID;
-
-    rc = vboxClipboardConnect (pClient);
-    
-    if (VBOX_SUCCESS (rc))
-    {
-        g_pClient = pClient;
-    }
-    
-    Log(("vboxClipboardConnect: rc = %Vrc\n", rc));
-
-    return rc;
-}
-
+/**
+ * Disconnect the host side of the shared clipboard and send a "host disconnected" message
+ * to the guest side.
+ */
 static DECLCALLBACK(int) svcDisconnect (uint32_t u32ClientID, void *pvClient)
 {
     VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
@@ -267,8 +248,41 @@ static DECLCALLBACK(int) svcDisconnect (uint32_t u32ClientID, void *pvClient)
     memset (pClient, 0, sizeof (*pClient));
 
     g_pClient = NULL;
-        
+
     return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) svcConnect (uint32_t u32ClientID, void *pvClient)
+{
+    VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
+
+    int rc = VINF_SUCCESS;
+
+    /* If there is already a client connected then we want to release it first. */
+    if (g_pClient != NULL)
+    {
+        uint32_t u32ClientID = g_pClient->u32ClientID;
+
+        svcDisconnect(u32ClientID, g_pClient);
+        /* And free the resources in the hgcm subsystem. */
+        g_pHelpers->pfnDisconnectClient(g_pHelpers->pvInstance, u32ClientID);
+    }
+
+    /* Register the client. */
+    memset (pClient, 0, sizeof (*pClient));
+
+    pClient->u32ClientID = u32ClientID;
+
+    rc = vboxClipboardConnect (pClient);
+
+    if (VBOX_SUCCESS (rc))
+    {
+        g_pClient = pClient;
+    }
+
+    Log(("vboxClipboardConnect: rc = %Vrc\n", rc));
+
+    return rc;
 }
 
 static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle,

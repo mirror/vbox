@@ -51,6 +51,7 @@
  * 2.1->2.2 Because pfnSaveState and pfnLoadState were added
  * 2.2->3.1 Because pfnHostCall is now synchronous, returns rc, and parameters were changed
  * 3.1->3.2 Because pfnRegisterExtension was added
+ * 3.2->3.3 Because pfnDisconnectClient helper was added
  */
 #define VBOX_HGCM_SVC_VERSION_MAJOR (0x0003)
 #define VBOX_HGCM_SVC_VERSION_MINOR (0x0002)
@@ -68,6 +69,9 @@ typedef struct _VBOXHGCMSVCHELPERS
     DECLR3CALLBACKMEMBER(void, pfnCallComplete, (VBOXHGCMCALLHANDLE callHandle, int32_t rc));
 
     void *pvInstance;
+
+    /** The service disconnects the client. */
+    DECLR3CALLBACKMEMBER(void, pfnDisconnectClient, (void *pvInstance, uint32_t u32ClientID));
 } VBOXHGCMSVCHELPERS;
 
 typedef VBOXHGCMSVCHELPERS *PVBOXHGCMSVCHELPERS;
