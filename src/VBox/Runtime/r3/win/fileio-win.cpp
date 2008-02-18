@@ -107,8 +107,8 @@ DECLINLINE(bool) IsBeyondLimit(RTFILE File, uint64_t offSeek, unsigned uMethod)
      * Get the current file position and try set the new one.
      * If it fails with a seek error it's because we hit the file system limit.
      */
-/** @todo r=bird: I'd be very interested to know on which versions of windows and on which file systems 
- * this supposedly works. The fastfat sources in the latest WDK makes no limit checks during 
+/** @todo r=bird: I'd be very interested to know on which versions of windows and on which file systems
+ * this supposedly works. The fastfat sources in the latest WDK makes no limit checks during
  * file seeking, only at the time of writing (and some other odd ones we cannot make use of). */
     uint64_t offCurrent;
     if (MySetFilePointer(File, 0, &offCurrent, FILE_CURRENT))
@@ -234,8 +234,12 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
      */
     if (fOpen & RTFILE_O_NOT_CONTENT_INDEXED)
     {
-        if (FALSE == SetFileAttributes(pszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
-            return RTErrConvertFromWin32(GetLastError());
+        if (!SetFileAttributes(pszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+            CloseHandle(hFile);
+            return rc;
+        }
     }
 #else
 
@@ -263,9 +267,10 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
      */
     if (fOpen & RTFILE_O_NOT_CONTENT_INDEXED)
     {
-        if (FALSE == SetFileAttributesW(pwszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+        if (!SetFileAttributesW(pwszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
         {
             rc = RTErrConvertFromWin32(GetLastError());
+            CloseHandle(hFile);
             RTUtf16Free(pwszFilename);
             return rc;
         }
