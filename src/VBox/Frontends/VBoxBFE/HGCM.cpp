@@ -29,9 +29,9 @@
 #include <iprt/avl.h>
 #include <iprt/critsect.h>
 #include <iprt/asm.h>
+#include <iprt/ldr.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
-#include <iprt/ldr.h>
 #include <iprt/string.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
@@ -125,7 +125,8 @@ class HGCMService
         ~HGCMService () {};
 
         static DECLCALLBACK(void) svcHlpCallComplete (VBOXHGCMCALLHANDLE callHandle, int32_t rc);
-
+        static DECLCALLBACK(void) svcHlpDisconnectClient (void *pvInstance, uint32_t u32ClientId);
+        
     public:
 
         /*
@@ -146,7 +147,7 @@ class HGCMService
         static int LoadState (PSSMHANDLE pSSM);
 
         int CreateAndConnectClient (uint32_t *pu32ClientIdOut, uint32_t u32ClientIdIn);
-        int DisconnectClient (uint32_t u32ClientId);
+        int DisconnectClient (uint32_t u32ClientId, bool fFromService);
 
         int HostCall (uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM *paParms);
 
@@ -764,6 +765,16 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
    }
 }
 
+/* static */ DECLCALLBACK(void) HGCMService::svcHlpDisconnectClient (void *pvInstance, uint32_t u32ClientId)
+{
+     HGCMService *pService = static_cast <HGCMService *> (pvInstance);
+     
+     if (pService)
+     {
+         pService->DisconnectClient (u32ClientId, true);
+     }
+}
+
 static DECLCALLBACK(void) hgcmMsgCompletionCallback (int32_t result, HGCMMsgCore *pMsgCore)
 {
     /* Call the VMMDev port interface to issue IRQ notification. */
@@ -811,8 +822,9 @@ int HGCMService::instanceCreate (const char *pszServiceLibrary, const char *pszS
         else
         {
             /* Initialize service helpers table. */
-            m_svcHelpers.pfnCallComplete = svcHlpCallComplete;
-            m_svcHelpers.pvInstance      = this;
+            m_svcHelpers.pfnCallComplete     = svcHlpCallComplete;
+            m_svcHelpers.pvInstance          = this;
+            m_svcHelpers.pfnDisconnectClient = svcHlpDisconnectClient;
 
             /* Execute the load request on the service thread. */
             HGCMMSGHANDLE hMsg;
@@ -1115,7 +1127,7 @@ void HGCMService::ReleaseService (void)
         while (pSvc->m_cClients && pSvc->m_paClientIds)
         {
             LogFlowFunc(("handle %d\n", pSvc->m_paClientIds[0]));
-            pSvc->DisconnectClient (pSvc->m_paClientIds[0]);
+            pSvc->DisconnectClient (pSvc->m_paClientIds[0], false);
         }
 
         pSvc = pSvc->m_pSvcNext;
@@ -1374,26 +1386,34 @@ int HGCMService::CreateAndConnectClient (uint32_t *pu32ClientIdOut, uint32_t u32
  * @param u32ClientId  The handle of the client.
  * @return VBox rc.
  */
-int HGCMService::DisconnectClient (uint32_t u32ClientId)
+int HGCMService::DisconnectClient (uint32_t u32ClientId, bool fFromService)
 {
-    LogFlowFunc(("client id = %d\n", u32ClientId));
+    int rc = VINF_SUCCESS;
 
-    /* Call the service. */
-    HGCMMSGHANDLE hMsg;
+    LogFlowFunc(("client id = %d, fFromService = %d\n", u32ClientId, fFromService));
 
-    int rc = hgcmMsgAlloc (m_thread, &hMsg, SVC_MSG_DISCONNECT, hgcmMessageAllocSvc);
-
-    if (VBOX_SUCCESS(rc))
+    if (!fFromService)
     {
-        HGCMMsgSvcDisconnect *pMsg = (HGCMMsgSvcDisconnect *)hgcmObjReference (hMsg, HGCMOBJ_MSG);
-        AssertRelease(pMsg);
+        /* Call the service. */
+        HGCMMSGHANDLE hMsg;
 
-        pMsg->u32ClientId = u32ClientId;
+        rc = hgcmMsgAlloc (m_thread, &hMsg, SVC_MSG_DISCONNECT, hgcmMessageAllocSvc);
 
-        hgcmObjDereference (pMsg);
+        if (VBOX_SUCCESS(rc))
+        {
+            HGCMMsgSvcDisconnect *pMsg = (HGCMMsgSvcDisconnect *)hgcmObjReference (hMsg, HGCMOBJ_MSG);
+            AssertRelease(pMsg);
 
-        rc = hgcmMsgSend (hMsg);
+            pMsg->u32ClientId = u32ClientId;
 
+            hgcmObjDereference (pMsg);
+
+            rc = hgcmMsgSend (hMsg);
+        }
+    }
+
+    if (VBOX_SUCCESS (rc))
+    {
         /* Remove the client id from the array in any case. */
         int i;
 
@@ -1729,7 +1749,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 HGCMService *pService = pClient->pService;
 
                 /* Call the service instance to disconnect the client. */
-                rc = pService->DisconnectClient (pMsg->u32ClientId);
+                rc = pService->DisconnectClient (pMsg->u32ClientId, false);
 
                 hgcmObjDereference (pClient);
             } break;
