@@ -2333,7 +2333,12 @@ HRESULT Host::checkUSBProxyService()
     CHECK_READY();
 
     AssertReturn (mUSBProxyService, E_FAIL);
-    if (!mUSBProxyService->isActive())
+
+    /* consider !isActive() and VBOX_SUCCESS (getLastError()) as a special
+     * normal state and don't report warnings */
+
+    if (!mUSBProxyService->isActive() &&
+        VBOX_FAILURE (mUSBProxyService->getLastError()))
     {
         /* disable the USB controller completely to avoid assertions if the
          * USB proxy service could not start. */
