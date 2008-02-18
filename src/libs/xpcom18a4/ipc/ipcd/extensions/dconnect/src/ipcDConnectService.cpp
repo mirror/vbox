@@ -87,15 +87,17 @@ static const nsID kDConnectTargetID = DCONNECT_IPC_TARGETID;
 //-----------------------------------------------------------------------------
 
 //
-// +--------------------------------+
-// | opcode : 1 byte                |
-// +--------------------------------+
-// | flags  : 1 byte                |
-// +--------------------------------+
-// .                                .
-// . variable payload               .
-// .                                .
-// +--------------------------------+
+// +--------------------------------------+
+// | major opcode : 1 byte                |
+// +--------------------------------------+
+// | minor opcode : 1 byte                |
+// +--------------------------------------+
+// | flags        : 2 bytes               |
+// +--------------------------------------+
+// .                                      .
+// . variable payload                     .
+// .                                      .
+// +--------------------------------------+
 //
 
 // dconnect major opcodes
@@ -116,12 +118,16 @@ static const nsID kDConnectTargetID = DCONNECT_IPC_TARGETID;
 // dconnect minor opcodes for RELEASE
 // dconnect minor opcodes for INVOKE
 
+// DCON_OP_SETUP_REPLY and DCON_OP_INVOKE_REPLY flags
+#define DCON_OP_FLAGS_REPLY_EXCEPTION   0x0001
+
 #pragma pack(1)
 
 struct DConnectOp
 {
   PRUint8  opcode_major;
   PRUint8  opcode_minor;
+  PRUint16 flags;
   PRUint32 request_index; // initialized with NewRequestIndex
 };
 
@@ -153,8 +159,9 @@ struct DConnectSetupReply : DConnectOp
 {
   DConAddr instance;
   nsresult status;
-  // followed by a specially serialized nsIException instance if
-  // NS_FAILED(status) (see ipcDConnectService::SerializeException)
+  // optionally followed by a specially serialized nsIException instance (see
+  // ipcDConnectService::SerializeException) if DCON_OP_FLAGS_REPLY_EXCEPTION is
+  // present in flags
 };
 
 // RELEASE struct
@@ -178,9 +185,10 @@ struct DConnectInvoke : DConnectOp
 struct DConnectInvokeReply : DConnectOp
 {
   nsresult result;
-  // followed by an array of out-param blobs if NS_SUCCEEDED(result), or by a
-  // specially serialized nsIException instance if NS_FAILED(result)
-  // (see ipcDConnectService::SerializeException)
+  // followed by an array of out-param blobs if NS_SUCCEEDED(result), and
+  // optionally by a specially serialized nsIException instance (see
+  // ipcDConnectService::SerializeException) if DCON_OP_FLAGS_REPLY_EXCEPTION is
+  // present in flags
 };
 
 #pragma pack()
@@ -1962,16 +1970,13 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
 }
 
 nsresult
-ipcDConnectService::DeserializeException(const PRUint8 *data,
-                                         PRUint32 dataLen,
+ipcDConnectService::DeserializeException(ipcMessageReader &reader,
                                          PRUint32 peer,
                                          nsIException **xcpt)
 {
   NS_ASSERTION (xcpt, "NULL");
   if (!xcpt)
     return NS_ERROR_INVALID_POINTER;
-
-  ipcMessageReader reader(data, dataLen);
 
   nsresult rv;
   PRUint32 len;
@@ -2153,6 +2158,7 @@ DConnectStub::Release()
         DConnectRelease msg;
         msg.opcode_major = DCON_OP_RELEASE;
         msg.opcode_minor = 0;
+        msg.flags = 0;
         msg.request_index = 0; // not used, set to some unused value
         msg.instance = mInstance;
 
@@ -2366,6 +2372,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   DConnectInvoke invoke;
   invoke.opcode_major = DCON_OP_INVOKE;
   invoke.opcode_minor = 0;
+  invoke.flags = 0;
   invoke.request_index = NewRequestIndex();
   invoke.instance = mInstance;
   invoke.method_index = aMethodIndex;
@@ -2465,34 +2472,11 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   }
   while (completion.IsPending());
 
+  ipcMessageReader reader(completion.Params(), completion.ParamsLen());
+
   rv = completion.GetResult();
-  if (rv != NS_OK)
+  if (NS_SUCCEEDED(rv))
   {
-    NS_ASSERTION(completion.ParamsLen() == 0 ||
-                 completion.ParamsLen() >= sizeof(void*),
-                 "invalid nsIException serialization length");
-    if (completion.ParamsLen() >= sizeof(void*))
-    {
-      LOG(("got nsIException instance (%p), will create a stub\n",
-           *((void **) completion.Params())));
-
-      nsIException *xcpt = nsnull;
-      nsresult rv2; // preserve rv for returning to the caller
-      rv2 = dConnect->DeserializeException (completion.Params(),
-                                            completion.ParamsLen(),
-                                            mPeerID, &xcpt);
-      if (NS_SUCCEEDED(rv2))
-      {
-        rv2 = em->SetCurrentException(xcpt);
-        NS_IF_RELEASE(xcpt);
-      }
-      NS_ASSERTION(NS_SUCCEEDED(rv2), "failed to deserialize/set exception");
-    }
-  }
-  else if (completion.ParamsLen() > 0)
-  {
-    ipcMessageReader reader(completion.Params(), completion.ParamsLen());
-
     PRUint8 i;
 
     // handle out-params and retvals: DCON_OP_INVOKE_REPLY has the data
@@ -2528,10 +2512,10 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
                                                 iid);
           if (NS_SUCCEEDED(rv))
           {
-              nsISupports *obj = nsnull;
-              rv = dConnect->DeserializeInterfaceParamBits(bits, mPeerID, iid, obj);
-              if (NS_SUCCEEDED(rv))
-                *pptr = obj;
+            nsISupports *obj = nsnull;
+            rv = dConnect->DeserializeInterfaceParamBits(bits, mPeerID, iid, obj);
+            if (NS_SUCCEEDED(rv))
+              *pptr = obj;
           }
         }
         else if (type.IsArray())
@@ -2547,7 +2531,21 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
     }
   }
 
-  return rv;
+  if (completion.Reply()->flags & DCON_OP_FLAGS_REPLY_EXCEPTION)
+  {
+    LOG(("got nsIException instance, will create a stub\n"));
+
+    nsIException *xcpt = nsnull;
+    rv = dConnect->DeserializeException (reader, mPeerID, &xcpt);
+    if (NS_SUCCEEDED(rv))
+    {
+      rv = em->SetCurrentException(xcpt);
+      NS_IF_RELEASE(xcpt);
+    }
+    NS_ASSERTION(NS_SUCCEEDED(rv), "failed to deserialize/set exception");
+  }
+
+  return NS_SUCCEEDED(rv) ? completion.GetResult() : rv;
 }
 
 //-----------------------------------------------------------------------------
@@ -2581,50 +2579,9 @@ public:
 
     LOG(("got SETUP_REPLY: status=%x instance=%p\n", reply->status, reply->instance));
 
-    if (reply->status != NS_OK)
-    {
-      mStatus = reply->status;
+    mStatus = reply->status;
 
-      const PRUint8 *params = ((const PRUint8 *) op) + sizeof (DConnectSetupReply);
-      const PRUint32 paramsLen = opLen - sizeof (DConnectSetupReply);
-
-      NS_ASSERTION(paramsLen == 0 || paramsLen >= sizeof(void*),
-                   "invalid nsIException serialization length");
-      if (paramsLen >= sizeof(void*))
-      {
-        LOG(("got nsIException instance (%p), will create a stub\n",
-             *((void **) params)));
-
-        nsresult rv;
-        nsCOMPtr <nsIExceptionService> es;
-        es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rv);
-        if (NS_SUCCEEDED(rv))
-        {
-          nsCOMPtr <nsIExceptionManager> em;
-          rv = es->GetCurrentExceptionManager (getter_AddRefs(em));
-          if (NS_SUCCEEDED(rv))
-          {
-            // ensure ipcDConnectService is not deleted before we finish
-            nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
-            if (dConnect)
-            {
-              nsIException *xcpt = nsnull;
-              rv = dConnect->DeserializeException (params, paramsLen,
-                                                   sender, &xcpt);
-              if (NS_SUCCEEDED(rv))
-              {
-                rv = em->SetCurrentException(xcpt);
-                NS_IF_RELEASE(xcpt);
-              }
-            }
-            else
-              rv = NS_ERROR_UNEXPECTED;
-          }
-        }
-        NS_ASSERTION(NS_SUCCEEDED(rv), "failed to deserialize/set exception");
-      }
-    }
-    else
+    if (NS_SUCCEEDED(reply->status))
     {
       // ensure ipcDConnectService is not deleted before we finish
       nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
@@ -2634,6 +2591,45 @@ public:
                                   getter_AddRefs(mStub));
       else
         rv = NS_ERROR_FAILURE;
+      if (NS_FAILED(rv))
+        mStatus = rv;
+    }
+
+    if (reply->flags & DCON_OP_FLAGS_REPLY_EXCEPTION)
+    {
+      const PRUint8 *params = ((const PRUint8 *) op) + sizeof (DConnectSetupReply);
+      const PRUint32 paramsLen = opLen - sizeof (DConnectSetupReply);
+
+      ipcMessageReader reader(params, paramsLen);
+
+      LOG(("got nsIException instance, will create a stub\n"));
+
+      nsresult rv;
+      nsCOMPtr <nsIExceptionService> es;
+      es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rv);
+      if (NS_SUCCEEDED(rv))
+      {
+        nsCOMPtr <nsIExceptionManager> em;
+        rv = es->GetCurrentExceptionManager (getter_AddRefs(em));
+        if (NS_SUCCEEDED(rv))
+        {
+          // ensure ipcDConnectService is not deleted before we finish
+          nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
+          if (dConnect)
+          {
+            nsIException *xcpt = nsnull;
+            rv = dConnect->DeserializeException (reader, sender, &xcpt);
+            if (NS_SUCCEEDED(rv))
+            {
+              rv = em->SetCurrentException(xcpt);
+              NS_IF_RELEASE(xcpt);
+            }
+          }
+          else
+            rv = NS_ERROR_UNEXPECTED;
+        }
+      }
+      NS_ASSERTION(NS_SUCCEEDED(rv), "failed to deserialize/set exception");
       if (NS_FAILED(rv))
         mStatus = rv;
     }
@@ -2664,6 +2660,7 @@ SetupPeerInstance(PRUint32 aPeerID, DConnectSetup *aMsg, PRUint32 aMsgLen,
   *aInstancePtr = nsnull;
 
   aMsg->opcode_major = DCON_OP_SETUP;
+  aMsg->flags = 0;
   aMsg->request_index = NewRequestIndex();
 
   // temporarily disable the DConnect target observer to block normal processing
@@ -2687,7 +2684,7 @@ SetupPeerInstance(PRUint32 aPeerID, DConnectSetup *aMsg, PRUint32 aMsgLen,
   do
   {
     rv = IPC_WaitMessage(IPC_SENDER_ANY, kDConnectTargetID,
-			 &completion.GetSelector(), &completion,
+                         &completion.GetSelector(), &completion,
                          DCON_WAIT_TIMEOUT);
     if (NS_FAILED(rv))
       break;
@@ -3520,41 +3517,54 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
 
   NS_IF_RELEASE(instance);
 
+  nsCOMPtr <nsIException> exception;
+  PRBool got_exception = PR_FALSE;
+
+  if (rv != NS_OK)
+  {
+    // try to fetch an nsIException possibly set by one of the setup methods
+    nsresult rv2;
+    nsCOMPtr <nsIExceptionService> es;
+    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rv2);
+    if (NS_SUCCEEDED(rv2))
+    {
+      nsCOMPtr <nsIExceptionManager> em;
+      rv2 = es->GetCurrentExceptionManager (getter_AddRefs (em));
+      if (NS_SUCCEEDED(rv2))
+      {
+        nsCOMPtr <nsIException> exception;
+        rv2 = em->GetCurrentException (getter_AddRefs (exception));
+        if (NS_SUCCEEDED(rv2))
+        {
+          LOG(("got nsIException instance, will serialize\n"));
+          got_exception = PR_TRUE;
+        }
+      }
+    }
+    NS_ASSERTION(NS_SUCCEEDED(rv2), "failed to get/serialize exception");
+    if (NS_FAILED(rv2))
+      rv = rv2;
+  }
+
   ipcMessageWriter writer(64);
 
   DConnectSetupReply msg;
   msg.opcode_major = DCON_OP_SETUP_REPLY;
   msg.opcode_minor = 0;
+  msg.flags = 0;
   msg.request_index = setup->request_index;
   msg.instance = wrapper;
   msg.status = rv;
 
+  if (got_exception)
+    msg.flags |= DCON_OP_FLAGS_REPLY_EXCEPTION;
+
   writer.PutBytes(&msg, sizeof(msg));
 
-  if (rv != NS_OK)
+  if (got_exception)
   {
-    // try to fetch an nsIException possibly set by one of the setup methods
-    // and send it instead of the failed instance (even if it is null)
-    nsCOMPtr <nsIExceptionService> es;
-    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rv);
-    if (NS_SUCCEEDED(rv))
-    {
-      nsCOMPtr <nsIExceptionManager> em;
-      rv = es->GetCurrentExceptionManager (getter_AddRefs (em));
-      if (NS_SUCCEEDED(rv))
-      {
-        nsCOMPtr <nsIException> exception;
-        rv = em->GetCurrentException (getter_AddRefs (exception));
-        if (NS_SUCCEEDED(rv))
-        {
-          LOG(("got nsIException instance (%p), will serialize\n",
-               (nsIException *)exception));
-
-          rv = SerializeException(writer, peer, exception, wrappers);
-        }
-      }
-    }
-    NS_ASSERTION(NS_SUCCEEDED(rv), "failed to get/serialze exception");
+    rv = SerializeException(writer, peer, exception, wrappers);
+    NS_ASSERTION(NS_SUCCEEDED(rv), "failed to get/serialize exception");
   }
 
   // fire off SETUP_REPLY, don't wait for a response
@@ -3730,26 +3740,26 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
   if (rv != NS_OK)
   {
     // try to fetch an nsIException possibly set by the method
-    nsresult invoke_rv = rv;
+    nsresult rv2;
     nsCOMPtr <nsIExceptionService> es;
-    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rv);
-    if (NS_SUCCEEDED(rv))
+    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rv2);
+    if (NS_SUCCEEDED(rv2))
     {
       nsCOMPtr <nsIExceptionManager> em;
-      rv = es->GetCurrentExceptionManager (getter_AddRefs (em));
-      if (NS_SUCCEEDED(rv))
+      rv2 = es->GetCurrentExceptionManager (getter_AddRefs (em));
+      if (NS_SUCCEEDED(rv2))
       {
-        rv = em->GetCurrentException (getter_AddRefs (exception));
-        if (NS_SUCCEEDED(rv))
+        rv2 = em->GetCurrentException (getter_AddRefs (exception));
+        if (NS_SUCCEEDED(rv2))
         {
-          LOG(("got nsIException instance (%p), will serialize\n",
-               (nsIException *)exception));
+          LOG(("got nsIException instance, will serialize\n"));
           got_exception = PR_TRUE;
-          // restore the method's result
-          rv = invoke_rv;
         }
       }
     }
+    NS_ASSERTION(NS_SUCCEEDED(rv2), "failed to get/serialize exception");
+    if (NS_FAILED(rv2))
+      rv = rv2;
   }
 
 end:
@@ -3764,19 +3774,18 @@ end:
   DConnectInvokeReply reply;
   reply.opcode_major = DCON_OP_INVOKE_REPLY;
   reply.opcode_minor = 0;
+  reply.flags = 0;
   reply.request_index = invoke->request_index;
   reply.result = rv;
+
+  if (got_exception)
+    reply.flags |= DCON_OP_FLAGS_REPLY_EXCEPTION;
 
   writer.PutBytes(&reply, sizeof(reply));
 
   nsVoidArray wrappers;
 
-  if (got_exception)
-  {
-    rv = SerializeException(writer, peer, exception, wrappers);
-    NS_ASSERTION(NS_SUCCEEDED(rv), "failed to get/serialze exception");
-  }
-  else if (NS_SUCCEEDED(rv) && params)
+  if (NS_SUCCEEDED(rv) && params)
   {
     // serialize out-params and retvals
     for (i=0; i<paramCount; ++i)
@@ -3830,6 +3839,12 @@ end:
         }
       }
     }
+  }
+
+  if (got_exception)
+  {
+    rv = SerializeException(writer, peer, exception, wrappers);
+    NS_ASSERTION(NS_SUCCEEDED(rv), "failed to get/serialize exception");
   }
 
   if (NS_FAILED(rv))
