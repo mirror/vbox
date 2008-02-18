@@ -65,31 +65,59 @@ typedef enum
 #define PREFIX_REP                      16
 /** rep(e) prefix (not a prefix, but we'll treat is as one). */
 #define PREFIX_REPNE                    32
+/** REX prefix (64 bits) */
+#define PREFIX_REX                      64
+/** @} */
+
+/** 64 bits prefix byte flags 
+ * @{
+ */
+#define PREFIX_REX_OP_2_FLAGS(a)        (a - OP_REX)
+#define PREFIX_REX_FLAGS                PREFIX_REX_OP_2_FLAGS(OP_REX)
+#define PREFIX_REX_FLAGS_B              PREFIX_REX_OP_2_FLAGS(OP_REX_B)
+#define PREFIX_REX_FLAGS_X              PREFIX_REX_OP_2_FLAGS(OP_REX_X)
+#define PREFIX_REX_FLAGS_XB             PREFIX_REX_OP_2_FLAGS(OP_REX_XB)
+#define PREFIX_REX_FLAGS_R              PREFIX_REX_OP_2_FLAGS(OP_REX_R)
+#define PREFIX_REX_FLAGS_RB             PREFIX_REX_OP_2_FLAGS(OP_REX_RB)
+#define PREFIX_REX_FLAGS_RX             PREFIX_REX_OP_2_FLAGS(OP_REX_RX)
+#define PREFIX_REX_FLAGS_RXB            PREFIX_REX_OP_2_FLAGS(OP_REX_RXB)
+#define PREFIX_REX_FLAGS_W              PREFIX_REX_OP_2_FLAGS(OP_REX_W)
+#define PREFIX_REX_FLAGS_WB             PREFIX_REX_OP_2_FLAGS(OP_REX_WB)
+#define PREFIX_REX_FLAGS_WX             PREFIX_REX_OP_2_FLAGS(OP_REX_WX)
+#define PREFIX_REX_FLAGS_WXB            PREFIX_REX_OP_2_FLAGS(OP_REX_WXB)
+#define PREFIX_REX_FLAGS_WR             PREFIX_REX_OP_2_FLAGS(OP_REX_WR)
+#define PREFIX_REX_FLAGS_WRB            PREFIX_REX_OP_2_FLAGS(OP_REX_WRB)
+#define PREFIX_REX_FLAGS_WRX            PREFIX_REX_OP_2_FLAGS(OP_REX_WRX)
+#define PREFIX_REX_FLAGS_WRXB           PREFIX_REX_OP_2_FLAGS(OP_REX_WRXB)
 /** @} */
 
 /**
  * Operand type.
  */
-#define OPTYPE_INVALID               RT_BIT(0)
-#define OPTYPE_HARMLESS              RT_BIT(1)
-#define OPTYPE_CONTROLFLOW           RT_BIT(2)
-#define OPTYPE_POTENTIALLY_DANGEROUS RT_BIT(3)
-#define OPTYPE_DANGEROUS             RT_BIT(4)
-#define OPTYPE_PORTIO                RT_BIT(5)
-#define OPTYPE_PRIVILEGED            RT_BIT(6)
-#define OPTYPE_PRIVILEGED_NOTRAP     RT_BIT(7)
-#define OPTYPE_UNCOND_CONTROLFLOW    RT_BIT(8)
-#define OPTYPE_RELATIVE_CONTROLFLOW  RT_BIT(9)
-#define OPTYPE_COND_CONTROLFLOW      RT_BIT(10)
-#define OPTYPE_INTERRUPT             RT_BIT(11)
-#define OPTYPE_ILLEGAL               RT_BIT(12)
-#define OPTYPE_RRM_DANGEROUS         RT_BIT(14) /**< Some additional dangerouse ones when recompiling raw r0. */
-#define OPTYPE_RRM_DANGEROUS_16      RT_BIT(15) /**< Some additional dangerouse ones when recompiling 16-bit raw r0. */
-#define OPTYPE_RRM_MASK              (OPTYPE_RRM_DANGEROUS | OPTYPE_RRM_DANGEROUS_16)
-#define OPTYPE_INHIBIT_IRQS          RT_BIT(16) /**< Will or can inhibit irqs (sti, pop ss, mov ss) */
-#define OPTYPE_PORTIO_READ           RT_BIT(17)
-#define OPTYPE_PORTIO_WRITE          RT_BIT(18)
-#define OPTYPE_ALL                   (0xffffffff)
+#define OPTYPE_INVALID                  RT_BIT(0)
+#define OPTYPE_HARMLESS                 RT_BIT(1)
+#define OPTYPE_CONTROLFLOW              RT_BIT(2)
+#define OPTYPE_POTENTIALLY_DANGEROUS    RT_BIT(3)
+#define OPTYPE_DANGEROUS                RT_BIT(4)
+#define OPTYPE_PORTIO                   RT_BIT(5)
+#define OPTYPE_PRIVILEGED               RT_BIT(6)
+#define OPTYPE_PRIVILEGED_NOTRAP        RT_BIT(7)
+#define OPTYPE_UNCOND_CONTROLFLOW       RT_BIT(8)
+#define OPTYPE_RELATIVE_CONTROLFLOW     RT_BIT(9)
+#define OPTYPE_COND_CONTROLFLOW         RT_BIT(10)
+#define OPTYPE_INTERRUPT                RT_BIT(11)
+#define OPTYPE_ILLEGAL                  RT_BIT(12)
+#define OPTYPE_RRM_DANGEROUS            RT_BIT(14)  /**< Some additional dangerouse ones when recompiling raw r0. */
+#define OPTYPE_RRM_DANGEROUS_16         RT_BIT(15)  /**< Some additional dangerouse ones when recompiling 16-bit raw r0. */
+#define OPTYPE_RRM_MASK                 (OPTYPE_RRM_DANGEROUS | OPTYPE_RRM_DANGEROUS_16)
+#define OPTYPE_INHIBIT_IRQS             RT_BIT(16)  /**< Will or can inhibit irqs (sti, pop ss, mov ss) */
+#define OPTYPE_PORTIO_READ              RT_BIT(17)
+#define OPTYPE_PORTIO_WRITE             RT_BIT(18)
+#define OPTYPE_INVALID_64               RT_BIT(19)  /**< Invalid in 64 bits mode */
+#define OPTYPE_ONLY_64                  RT_BIT(20)  /**< Only valid in 64 bits mode */
+#define OPTYPE_DEFAULT_64_OP_SIZE       RT_BIT(21)  /**< Default 64 bits operand size */
+#define OPTYPE_FORCED_64_OP_SIZE        RT_BIT(22)  /**< Forced 64 bits operand size; regardless of prefix bytes */ 
+#define OPTYPE_ALL                      (0xffffffff)
 
 /** Parameter usage flags.
  * @{
@@ -347,6 +375,8 @@ typedef struct _DISCPUSTATE
     uint32_t        prefix;
     /** segment prefix value. */
     uint32_t        prefix_seg;
+    /** rex prefix value (64 bits only */
+    uint32_t        prefix_rex;
     /** addressing mode (16 or 32 bits). (CPUMODE_*) */
     uint32_t        addrmode;
     /** operand mode (16 or 32 bits). (CPUMODE_*) */
