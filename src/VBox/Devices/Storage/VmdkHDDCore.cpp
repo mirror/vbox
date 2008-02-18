@@ -2167,7 +2167,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const char *pszFilename,
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new extent list in '%s'"), pszFilename);
         pExtent = &pImage->pExtents[0];
         rc = RTFileOpen(&pImage->File, pszFilename,
-                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
+                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED);
         if (VBOX_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pszFilename);
 
@@ -2238,7 +2238,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const char *pszFilename,
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new extent list in '%s'"), pszFilename);
 
         rc = RTFileOpen(&pImage->File, pszFilename,
-                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
+                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED);
         if (VBOX_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pszFilename);
 
@@ -2308,7 +2308,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const char *pszFilename,
                 pExtent->fMetaDirty = false;
 
                 rc = RTFileOpen(&pExtent->File, pExtent->pszFullname,
-                                RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
+                                RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED);
                 if (VBOX_FAILURE(rc))
                     return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new partition data file '%s'"), pExtent->pszFullname);
                 rc = RTFileWriteAt(pExtent->File,
@@ -2425,7 +2425,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, const char *pszFilename,
     if (cExtents != 1 || enmType == VD_IMAGE_TYPE_FIXED)
     {
         rc = RTFileOpen(&pImage->File, pszFilename,
-                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
+                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED);
         if (VBOX_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new sparse descriptor file '%s'"), pszFilename);
         pImage->pszFilename = RTStrDup(pszFilename);
@@ -2494,7 +2494,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, const char *pszFilename,
 
         /* Create file for extent. */
         rc = RTFileOpen(&pExtent->File, pExtent->pszFullname,
-                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
+                        RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED);
         if (VBOX_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pExtent->pszFullname);
         if (enmType == VD_IMAGE_TYPE_FIXED)
