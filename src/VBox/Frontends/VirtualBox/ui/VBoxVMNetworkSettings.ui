@@ -77,7 +77,7 @@
                         <property name="name">
                             <cstring>unnamed</cstring>
                         </property>
-                        <widget class="QLabel" row="1" column="0">
+                        <widget class="QLabel" row="2" column="0">
                             <property name="name">
                                 <cstring>txHostInterface_WIN</cstring>
                             </property>
@@ -96,7 +96,7 @@
                                 <cstring>cbHostInterfaceName</cstring>
                             </property>
                         </widget>
-                        <widget class="QLabel" row="2" column="0">
+                        <widget class="QLabel" row="3" column="0">
                             <property name="name">
                                 <cstring>txInternalNetwork</cstring>
                             </property>
@@ -115,7 +115,7 @@
                                 <cstring>cbInternalNetworkName</cstring>
                             </property>
                         </widget>
-                        <widget class="QLineEdit" row="3" column="1">
+                        <widget class="QLineEdit" row="4" column="1">
                             <property name="name">
                                 <cstring>leMACAddress</cstring>
                             </property>
@@ -137,15 +137,42 @@
                                         <string>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</string>
                             </property>
                         </widget>
+                        <widget class="QLabel" row="0" column="0">
+                            <property name="name">
+                                <cstring>txAdapterType</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>0</hsizetype>
+                                    <vsizetype>0</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="text">
+                                <string>Adapter &amp;type</string>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>cbAdapterType</cstring>
+                            </property>
+                        </widget>
                         <widget class="QComboBox" row="0" column="1" rowspan="1" colspan="2">
+                            <property name="name">
+                                <cstring>cbAdapterType</cstring>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Type of the virtual network adapter. Depending on this value, VirtualBox will provide a different virtual network hardware to the guest.</string>
+                            </property>
+                        </widget>
+                        <widget class="QComboBox" row="1" column="1" rowspan="1" colspan="2">
                             <property name="name">
                                 <cstring>cbNetworkAttachment</cstring>
                             </property>
                             <property name="whatsThis" stdset="0">
-	                            <string>Controls the way how this virtual adapter is attached to the real network of the Host OS.</string>
+                                <string>Controls the way how this virtual adapter is attached to the real network of the Host OS.</string>
                             </property>
                         </widget>
-                        <widget class="QToolButton" row="3" column="2">
+                        <widget class="QToolButton" row="4" column="2">
                             <property name="name">
                                 <cstring>pbGenerateMAC</cstring>
                             </property>
@@ -167,7 +194,7 @@
                                 <string>Generates a new random MAC address.</string>
                             </property>
                         </widget>
-                        <widget class="QLabel" row="0" column="0">
+                        <widget class="QLabel" row="1" column="0">
                             <property name="name">
                                 <cstring>txNetworkAttachment</cstring>
                             </property>
@@ -186,7 +213,7 @@
                                 <cstring>cbNetworkAttachment</cstring>
                             </property>
                         </widget>
-                        <widget class="QLabel" row="3" column="0">
+                        <widget class="QLabel" row="4" column="0">
                             <property name="name">
                                 <cstring>txMACAddress</cstring>
                             </property>
@@ -205,7 +232,7 @@
                                 <cstring>leMACAddress</cstring>
                             </property>
                         </widget>
-                        <widget class="QComboBox" row="1" column="1" rowspan="1" colspan="2">
+                        <widget class="QComboBox" row="2" column="1" rowspan="1" colspan="2">
                             <property name="name">
                                 <cstring>cbHostInterfaceName</cstring>
                             </property>
@@ -213,7 +240,7 @@
                                 <string>Displays the name of the host interface selected for this adapter.</string>
                             </property>
                         </widget>
-                        <widget class="QComboBox" row="2" column="1" rowspan="1" colspan="2">
+                        <widget class="QComboBox" row="3" column="1" rowspan="1" colspan="2">
                             <property name="name">
                                 <cstring>cbInternalNetworkName</cstring>
                             </property>

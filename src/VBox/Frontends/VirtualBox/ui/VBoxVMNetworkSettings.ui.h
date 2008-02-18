@@ -27,6 +27,10 @@
 
 void VBoxVMNetworkSettings::init()
 {
+    cbAdapterType->insertItem (vboxGlobal().toString (CEnums::NetworkAdapterAm79C970A));
+    cbAdapterType->insertItem (vboxGlobal().toString (CEnums::NetworkAdapterAm79C973));
+    cbAdapterType->insertItem (vboxGlobal().toString (CEnums::NetworkAdapter82540EM));
+
     leMACAddress->setValidator (new QRegExpValidator
                                 (QRegExp ("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
 
@@ -134,6 +138,9 @@ void VBoxVMNetworkSettings::getFromAdapter (const CNetworkAdapter &adapter)
 
     grbEnabled->setChecked (adapter.GetEnabled());
 
+    cbAdapterType->setCurrentText (vboxGlobal().
+        toString (adapter.GetAdapterType()));
+
     CEnums::NetworkAttachmentType type = adapter.GetAttachmentType();
     cbNetworkAttachment->setCurrentItem (0);
     for (int i = 0; i < cbNetworkAttachment->count(); i ++)
@@ -173,6 +180,9 @@ void VBoxVMNetworkSettings::getFromAdapter (const CNetworkAdapter &adapter)
 void VBoxVMNetworkSettings::putBackToAdapter()
 {
     cadapter.SetEnabled (grbEnabled->isChecked());
+
+    cadapter.SetAdapterType (vboxGlobal().
+        toNetworkAdapterType (cbAdapterType->currentText()));
 
     CEnums::NetworkAttachmentType type =
         vboxGlobal().toNetworkAttachmentType (cbNetworkAttachment->currentText());
