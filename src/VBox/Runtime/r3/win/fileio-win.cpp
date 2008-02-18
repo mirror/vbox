@@ -226,23 +226,7 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
                               dwCreationDisposition,
                               dwFlagsAndAttributes,
                               NULL);
-    if (hFile == INVALID_HANDLE_VALUE)
-        return RTErrConvertFromWin32(GetLastError());
-
-    /*
-     * Turn off indexing of directory through Windows Indexing Service.
-     */
-    if (fOpen & RTFILE_O_NOT_CONTENT_INDEXED)
-    {
-        if (!SetFileAttributes(pszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
-        {
-            rc = RTErrConvertFromWin32(GetLastError());
-            CloseHandle(hFile);
-            return rc;
-        }
-    }
 #else
-
     PRTUCS2 pwszFilename;
     rc = RTStrToUtf16(pszFilename, &pwszFilename);
     if (RT_FAILURE(rc))
@@ -255,47 +239,54 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
                                dwCreationDisposition,
                                dwFlagsAndAttributes,
                                NULL);
-    if (hFile == INVALID_HANDLE_VALUE)
+#endif
+    if (hFile != INVALID_HANDLE_VALUE)
     {
-        rc = RTErrConvertFromWin32(GetLastError()); /* get error first! */
-        RTUtf16Free(pwszFilename);
-        return rc;
-    }
+        bool fCreated = dwCreationDisposition == CREATE_ALWAYS
+                     || dwCreationDisposition == CREATE_NEW
+                     || (dwCreationDisposition == OPEN_ALWAYS && GetLastError() == 0);
 
-    /*
-     * Turn off indexing of directory through Windows Indexing Service.
-     */
-    if (fOpen & RTFILE_O_NOT_CONTENT_INDEXED)
-    {
-        if (!SetFileAttributesW(pwszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+        /*
+         * Turn off indexing of directory through Windows Indexing Service.
+         */
+        if (    fCreated
+            &&  (fOpen & RTFILE_O_NOT_CONTENT_INDEXED))
         {
-            rc = RTErrConvertFromWin32(GetLastError());
-            CloseHandle(hFile);
-            RTUtf16Free(pwszFilename);
-            return rc;
+#ifdef RT_DONT_CONVERT_FILENAMES
+            if (!SetFileAttributes(pszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+#else
+            if (!SetFileAttributesW(pwszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+#endif
+                rc = RTErrConvertFromWin32(GetLastError());
         }
-    }
+        /*
+         * Do we need to truncate the file?
+         */
+        else if (    !fCreated
+                 &&     (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_ACTION_MASK))
+                     == (RTFILE_O_TRUNCATE | RTFILE_O_OPEN_CREATE))
+        {
+            if (!SetEndOfFile(hFile))
+                rc = RTErrConvertFromWin32(GetLastError());
+        }
+        if (RT_SUCCESS(rc))
+        {
+            *pFile = (RTFILE)hFile;
+            Assert((HANDLE)*pFile == hFile);
+#ifndef RT_DONT_CONVERT_FILENAMES
+            RTUtf16Free(pwszFilename);
+#endif
+            return VINF_SUCCESS;
+        }
 
+        CloseHandle(hFile);
+    }
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
+#ifndef RT_DONT_CONVERT_FILENAMES
     RTUtf16Free(pwszFilename);
 #endif
-
-    /*
-     * Do we need to truncate the file?
-     */
-    if (    (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_ACTION_MASK))
-        ==  (RTFILE_O_TRUNCATE | RTFILE_O_OPEN_CREATE))
-    {
-        if (!SetEndOfFile(hFile))
-        {
-            rc = RTErrConvertFromWin32(GetLastError()); /* get error first! */
-            CloseHandle(hFile);
-            return rc;
-        }
-    }
-
-    *pFile = (RTFILE)hFile;
-    Assert((HANDLE)*pFile == hFile);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
