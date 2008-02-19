@@ -40,6 +40,11 @@
 
 #include "clipboard.h"
 
+/* #define DEBUG_CLIPBOARD */
+#ifndef DEBUG_CLIPBOARD
+# undef LogFlow
+# define LogFlow(a)
+#endif
 
 /** The formats which we support in the guest. These can be deactivated in order to test specific code paths. */
 #define USE_UTF16
@@ -313,7 +318,7 @@ static void vboxClipboardGetUtf16(XtPointer pValue, size_t cwSourceLen)
         LogFlowFunc(("sending empty data and returning\n"));
         return;
     }
-    Log2(("vboxClipboardGetUtf16: converted string is %.*ls\n", cwDestLen, pu16DestText));
+    LogFlow(("vboxClipboardGetUtf16: converted string is %.*ls\n", cwDestLen, pu16DestText));
     vboxClipboardSendData(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
                             reinterpret_cast<void *>(pu16DestText), cwDestLen * 2);
     RTMemFree(reinterpret_cast<void *>(pu16DestText));
@@ -337,7 +342,7 @@ static void vboxClipboardGetUtf8(XtPointer pValue, size_t cbSourceLen)
     int rc;
 
     LogFlowFunc(("\n"));
-    Log2(("vboxClipboardGetUtf8: converting Utf-8 to Utf-16LE. Original is %.*s\n", cbSourceLen,
+    LogFlow(("vboxClipboardGetUtf8: converting Utf-8 to Utf-16LE. Original is %.*s\n", cbSourceLen,
            pu8SourceText));
     /* First convert the UTF8 to UTF16 */
     rc = RTStrToUtf16Ex(pu8SourceText, cbSourceLen, &pu16SourceText, 0, &cwSourceLen);
@@ -357,7 +362,7 @@ static void vboxClipboardGetUtf8(XtPointer pValue, size_t cbSourceLen)
         LogFlowFunc(("sending empty data and returning\n"));
         return;
     }
-    Log2(("vboxClipboardGetUtf8: converted string is %.*ls\n", cwDestLen, pu16DestText));
+    LogFlow(("vboxClipboardGetUtf8: converted string is %.*ls\n", cwDestLen, pu16DestText));
     vboxClipboardSendData(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
                             reinterpret_cast<void *>(pu16DestText), cwDestLen * 2);
     RTMemFree(reinterpret_cast<void *>(pu16SourceText));
@@ -383,7 +388,7 @@ static void vboxClipboardGetCText(XtPointer pValue, size_t cbSourceLen)
     int rc, cProps;
 
     LogFlowFunc(("\n"));
-    Log2(("vboxClipboardGetCText: converting compound text to Utf-16LE. Original is %.*s\n",
+    LogFlow(("vboxClipboardGetCText: converting compound text to Utf-16LE. Original is %.*s\n",
            cbSourceLen, pValue));
     /* First convert the compound text to Utf8 */
     property.value = reinterpret_cast<unsigned char *>(pValue);
@@ -436,7 +441,7 @@ static void vboxClipboardGetCText(XtPointer pValue, size_t cbSourceLen)
         LogFlowFunc(("sending empty data and returning\n"));
         return;
     }
-    Log2(("vboxClipboardGetCText: converted string is %.*ls\n", cwDestLen, pu16DestText));
+    LogFlow(("vboxClipboardGetCText: converted string is %.*ls\n", cwDestLen, pu16DestText));
     vboxClipboardSendData(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
                             reinterpret_cast<void *>(pu16DestText), cwDestLen * 2);
     RTMemFree(reinterpret_cast<void *>(pu16DestText));
@@ -471,7 +476,7 @@ static void vboxClipboardGetLatin1(XtPointer pValue, size_t cbSourceLen)
     if (pu16DestText == 0)
     {
         XtFree(reinterpret_cast<char *>(pValue));
-        Log2(("vboxClipboardGetLatin1: failed to allocate %d bytes!\n", cwDestLen * 2));
+        LogFlow(("vboxClipboardGetLatin1: failed to allocate %d bytes!\n", cwDestLen * 2));
         vboxClipboardSendData(0, NULL, 0);
         LogFlowFunc(("sending empty data and returning\n"));
         return;
@@ -492,7 +497,7 @@ static void vboxClipboardGetLatin1(XtPointer pValue, size_t cbSourceLen)
             break;
     }
     pu16DestText[cwDestPos] = 0;
-    Log2(("vboxClipboardGetLatin1: converted text is %.*ls\n", cwDestPos, pu16DestText));
+    LogFlow(("vboxClipboardGetLatin1: converted text is %.*ls\n", cwDestPos, pu16DestText));
     vboxClipboardSendData(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
                             reinterpret_cast<void *>(pu16DestText), cwDestPos * 2);
     RTMemFree(reinterpret_cast<void *>(pu16DestText));
@@ -638,18 +643,18 @@ static void vboxClipboardTargetsProc(Widget, XtPointer, Atom * /* selection */, 
         if (atomBestTarget != None)
         {
             char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), atomBestTarget);
-            Log2(("vboxClipboardTargetsProc: switching to guest text target %s.  Available targets are:\n", szAtomName));
+            LogFlow(("vboxClipboardTargetsProc: switching to guest text target %s.  Available targets are:\n", szAtomName));
             XFree(szAtomName);
         }
         else
-            Log2(("vboxClipboardTargetsProc: no supported host text target found.  Available targets are:\n"));
+            LogFlow(("vboxClipboardTargetsProc: no supported host text target found.  Available targets are:\n"));
 
         for (unsigned i = 0; i < cAtoms; ++i)
         {
             char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), atomTargets[i]);
             if (szAtomName != 0)
             {
-                Log2(("vboxClipboardTargetsProc:     %s\n", szAtomName));
+                LogFlow(("vboxClipboardTargetsProc:     %s\n", szAtomName));
                 XFree(szAtomName);
             }
         }
@@ -704,7 +709,7 @@ static Boolean vboxClipboardConvertTargets(Atom *atomTypeReturn, XtPointer *pVal
     unsigned cTargets = 0;
 
     LogFlowFunc(("\n"));
-    Log2(("vboxClipboardConvertTargets: uListSize=%u\n", uListSize));
+    LogFlow(("vboxClipboardConvertTargets: uListSize=%u\n", uListSize));
     for (unsigned i = 0; i < uListSize; ++i)
     {
         if (   ((g_ctx.hostFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT) != 0)
@@ -723,7 +728,7 @@ static Boolean vboxClipboardConvertTargets(Atom *atomTypeReturn, XtPointer *pVal
         char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), atomTargets[i]);
         if (szAtomName != 0)
         {
-            Log2(("vboxClipboardConvertTargets: returning target %s\n", szAtomName));
+            LogFlow(("vboxClipboardConvertTargets: returning target %s\n", szAtomName));
             XFree(szAtomName);
         }
         else
@@ -878,7 +883,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
                                    reinterpret_cast<void **>(&pu16HostText), &cbHostText);
     if ((rc != VINF_SUCCESS) || cbHostText == 0)
     {
-        Log(("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbHostText));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbHostText));
         g_ctx.hostFormats = 0;
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -895,14 +900,14 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
     rc = vboxClipboardUtf16WinToLin(pu16HostText, cwHostText, pu16GuestText, cwGuestText);
     if (rc != VINF_SUCCESS)
     {
-        Log2(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
         RTMemFree(reinterpret_cast<void *>(pu16HostText));
         XtFree(reinterpret_cast<char *>(pu16GuestText));
         LogFlowFunc(("rc = false\n"));
         return false;
     }
-    Log2(("vboxClipboardConvertUtf16: returning Unicode, original text is %.*ls\n", cwHostText, pu16HostText));
-    Log2(("vboxClipboardConvertUtf16: converted text is %.*ls\n", cwGuestText - 1, pu16GuestText + 1));
+    LogFlow(("vboxClipboardConvertUtf16: returning Unicode, original text is %.*ls\n", cwHostText, pu16HostText));
+    LogFlow(("vboxClipboardConvertUtf16: converted text is %.*ls\n", cwGuestText - 1, pu16GuestText + 1));
     RTMemFree(reinterpret_cast<void *>(pu16HostText));
     *atomTypeReturn = g_ctx.atomUtf16;
     *pValReturn = reinterpret_cast<XtPointer>(pu16GuestText);
@@ -938,13 +943,13 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
                                    reinterpret_cast<void **>(&pu16HostText), &cbHostText);
     if ((rc != VINF_SUCCESS) || cbHostText == 0)
     {
-        Log(("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbGuestText));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbGuestText));
         g_ctx.hostFormats = 0;
         LogFlowFunc(("rc = false\n"));
         return false;
     }
     cwHostText = cbHostText / 2;
-    Log2(("vboxClipboardConvertUtf8: original text is %.*ls\n", cwHostText, pu16HostText));
+    LogFlow(("vboxClipboardConvertUtf8: original text is %.*ls\n", cwHostText, pu16HostText));
     cwGuestText = vboxClipboardUtf16GetLinSize(pu16HostText, cwHostText);
     pu16GuestText = reinterpret_cast<PRTUTF16>(RTMemAlloc(cwGuestText * 2));
     if (pu16GuestText == 0)
@@ -957,7 +962,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
     RTMemFree(reinterpret_cast<char *>(pu16HostText));
     if (rc != VINF_SUCCESS)
     {
-        Log2(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
         RTMemFree(reinterpret_cast<char *>(pu16GuestText));
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -980,7 +985,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
         LogFlowFunc(("rc = false\n"));
         return false;
     }
-    Log2(("vboxClipboardConvertUtf8: converted text is %.*s\n", cbGuestText, pcGuestText));
+    LogFlow(("vboxClipboardConvertUtf8: converted text is %.*s\n", cbGuestText, pcGuestText));
     *atomTypeReturn = g_ctx.atomUtf8;
     *pValReturn = reinterpret_cast<XtPointer>(pcGuestText);
     *pcLenReturn = cbGuestText;
@@ -1016,12 +1021,12 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
                                    reinterpret_cast<void **>(&pu16HostText), &cbHostText);
     if ((rc != VINF_SUCCESS) || cbHostText == 0)
     {
-        Log(("vboxClipboardConvertCText: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbHostText));
+        LogFlow(("vboxClipboardConvertCText: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbHostText));
         g_ctx.hostFormats = 0;
         LogFlowFunc(("rc = false\n"));
         return false;
     }
-    Log2(("vboxClipboardConvertCText: original text is %.*ls\n", cwHostText, pu16HostText));
+    LogFlow(("vboxClipboardConvertCText: original text is %.*ls\n", cwHostText, pu16HostText));
     cwHostText = cbHostText / 2;
     cwGuestText = vboxClipboardUtf16GetLinSize(pu16HostText, cwHostText);
     pu16GuestText = reinterpret_cast<PRTUTF16>(RTMemAlloc(cwGuestText * 2));
@@ -1036,7 +1041,7 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
     RTMemFree(reinterpret_cast<char *>(pu16HostText));
     if (rc != VINF_SUCCESS)
     {
-        Log2(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
         RTMemFree(reinterpret_cast<char *>(pu16GuestText));
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -1093,7 +1098,7 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
         LogFlowFunc(("rc = false\n"));
         return false;
     }
-    Log2(("vboxClipboardConvertCText: converted text is %s\n", property.value));
+    LogFlow(("vboxClipboardConvertCText: converted text is %s\n", property.value));
     *atomTypeReturn = property.encoding;
     *pValReturn = reinterpret_cast<XtPointer>(property.value);
     *pcLenReturn = property.nitems;
@@ -1133,7 +1138,7 @@ static Boolean vboxClipboardConvertProc(Widget, Atom *atomSelection, Atom *atomT
     char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), *atomTarget);
     if (szAtomName != 0)
     {
-        Log2(("vboxClipboardConvertProc: request for format %s\n", szAtomName));
+        LogFlow(("vboxClipboardConvertProc: request for format %s\n", szAtomName));
         XFree(szAtomName);
     }
     else
@@ -1203,14 +1208,14 @@ void vboxClipboardFormatAnnounce (uint32_t u32Formats)
         LogFlowFunc(("returning\n"));
         return;
     }
-    Log2(("vboxClipboardFormatAnnounce: giving the host clipboard ownership\n"));
+    LogFlow(("vboxClipboardFormatAnnounce: giving the host clipboard ownership\n"));
     g_ctx.eOwner = HOST;
     g_ctx.guestTextFormat = INVALID;
     g_ctx.guestBitmapFormat = INVALID;
     if (XtOwnSelection(g_ctx.widget, g_ctx.atomClipboard, CurrentTime, vboxClipboardConvertProc,
                        vboxClipboardLoseProc, 0) != True)
     {
-        Log2(("vboxClipboardFormatAnnounce: returning clipboard ownership to the guest\n"));
+        LogFlow(("vboxClipboardFormatAnnounce: returning clipboard ownership to the guest\n"));
         g_ctx.notifyHost = true;
         g_ctx.eOwner = GUEST;
     }
@@ -1331,7 +1336,7 @@ static int vboxClipboardThread(RTTHREAD /* ThreadSelf */, void * /* pvUser */)
             continue;
         }
 
-        Log(("processed host event rc = %d\n", rc));
+        LogFlow(("processed host event rc = %d\n", rc));
     }
     LogFlowFunc(("rc=%d\n", rc));
     return rc;
@@ -1405,7 +1410,7 @@ static void vboxClipboardAddFormat(const char *pszName, g_eClipboardFormat eForm
     LogFlowFunc(("pszName=%s, eFormat=%d, hostFormat=%u\n", pszName, eFormat, hostFormat));
     /* Get an atom from the X server for that target format */
     Atom atomFormat = XInternAtom(XtDisplay(g_ctx.widget), pszName, false);
-    Log2(("vboxClipboardAddFormat: atomFormat=%d\n", atomFormat));
+    LogFlow(("vboxClipboardAddFormat: atomFormat=%d\n", atomFormat));
     if (atomFormat == 0)
     {
         LogFlowFunc(("atomFormat=0!  returning...\n"));
