@@ -840,13 +840,11 @@ int main()
 #ifdef VBOX_WITH_AHCI
     /* Storage/DevAHCI.cpp */
     GEN_CHECK_SIZE(AHCIPORTTASKSTATE);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, pAhciPortHC);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, uTag);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, fPending);
-    GEN_CHECK_OFF(AHCIPORTTASKSTATE, fProcessing);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, fQueued);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, cmdHdr);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, cmdFis);
+    GEN_CHECK_OFF(AHCIPORTTASKSTATE, cmdFis[AHCI_CMDFIS_TYPE_H2D_SIZE-1]);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, GCPhysCmdHdrAddr);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, uLBAStartSector);
     GEN_CHECK_OFF(AHCIPORTTASKSTATE, cSectors);
@@ -876,9 +874,12 @@ int main()
     GEN_CHECK_OFF(AHCIPort, fAsyncInterface);
     GEN_CHECK_OFF(AHCIPort, pAsyncIOThread);
     GEN_CHECK_OFF(AHCIPort, AsyncIORequestSem);
-    GEN_CHECK_OFF(AHCIPort, ahciPortTasks);
-    GEN_CHECK_OFF(AHCIPort, ahciPortTasks[AHCI_NR_COMMAND_SLOTS-1]);
-    GEN_CHECK_OFF(AHCIPort, iTasksActive);
+    GEN_CHECK_OFF(AHCIPort, ahciIOTasks);
+    GEN_CHECK_OFF(AHCIPort, ahciIOTasks[AHCI_NR_COMMAND_SLOTS-1]);
+    GEN_CHECK_OFF(AHCIPort, uActWritePos);
+    GEN_CHECK_OFF(AHCIPort, uActReadPos);
+    GEN_CHECK_OFF(AHCIPort, fPoweredOn);
+    GEN_CHECK_OFF(AHCIPort, fSpunUp);
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
     GEN_CHECK_OFF(AHCIPort, pDrvBlock);
     GEN_CHECK_OFF(AHCIPort, pDrvBlockAsync);
@@ -894,11 +895,10 @@ int main()
     GEN_CHECK_OFF(AHCIPort, fResetDevice);
     GEN_CHECK_OFF(AHCIPort, cbIOBuffer);
     GEN_CHECK_OFF(AHCIPort, pIOBufferHC);
-    GEN_CHECK_OFF(AHCIPort, pNotifierQueueHC);
-    GEN_CHECK_OFF(AHCIPort, pNotifierQueueGC);
     GEN_CHECK_OFF(AHCIPort, u32TasksFinished);
-    GEN_CHECK_OFF(AHCIPort, pNotifierQueueGC);
+    GEN_CHECK_OFF(AHCIPort, u32QueuedTasksFinished);
     GEN_CHECK_OFF(AHCIPort, pNotifierQueueHC);
+    GEN_CHECK_OFF(AHCIPort, pNotifierQueueGC);
     GEN_CHECK_OFF(AHCIPort, StatAsyncTime);
 
     GEN_CHECK_SIZE(AHCI);
@@ -911,9 +911,20 @@ int main()
     GEN_CHECK_OFF(AHCI, regHbaIs);
     GEN_CHECK_OFF(AHCI, regHbaPi);
     GEN_CHECK_OFF(AHCI, regHbaVs);
+    GEN_CHECK_OFF(AHCI, regHbaCccCtl);
+    GEN_CHECK_OFF(AHCI, regHbaCccPorts);
+    GEN_CHECK_OFF(AHCI, pHbaCccTimerHC);
+    GEN_CHECK_OFF(AHCI, pHbaCccTimerGC);
+    GEN_CHECK_OFF(AHCI, uCccPortNr);
+    GEN_CHECK_OFF(AHCI, uCccTimeout);
+    GEN_CHECK_OFF(AHCI, uCccNr);
+    GEN_CHECK_OFF(AHCI, uCccCurrentNr);
     GEN_CHECK_OFF(AHCI, ahciPort);
     GEN_CHECK_OFF(AHCI, ahciPort[AHCI_NR_PORTS_IMPL-1]);
+    GEN_CHECK_OFF(AHCI, aCts);
+    GEN_CHECK_OFF(AHCI, aCts[1]);
     GEN_CHECK_OFF(AHCI, u32PortsInterrupted);
+    GEN_CHECK_OFF(AHCI, fReset);
     GEN_CHECK_OFF(AHCI, f64BitAddr);
     GEN_CHECK_OFF(AHCI, fGCEnabled);
     GEN_CHECK_OFF(AHCI, fR0Enabled);
