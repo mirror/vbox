@@ -22,6 +22,7 @@
 #include <VBox/dis.h>
 #include <VBox/err.h>
 #include <stdio.h>
+#include <iprt/string.h>
 
 DECLASM(int) TestProc();
 //uint8_t aCode16[] = { 0x66, 0x67, 0x89, 0x07 };
@@ -41,9 +42,10 @@ int main(int argc, char **argv)
         for (int i=0;i<50;i++)
         {
             unsigned    cb;
-            DISCPUSTATE cpu = {0};
+            DISCPUSTATE cpu;
             char         szOutput[256];
 
+            memset(&cpu, 0, sizeof(cpu));
             cpu.mode = CPUMODE_32BIT;
             if (VBOX_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
                 printf(szOutput);

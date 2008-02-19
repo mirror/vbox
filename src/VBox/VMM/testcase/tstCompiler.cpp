@@ -27,6 +27,7 @@
 #include <iprt/stream.h>
 #include <iprt/err.h>
 #include <VBox/x86.h>
+#include <iprt/string.h>
 
 #if 1
 
@@ -197,7 +198,9 @@ static void DisasFunction(const char *pszName, PFNRT pv)
     RTPrintf("tstBitFields: Disassembly of %s:\n", pszName);
     RTUINTPTR uCur = (RTUINTPTR)pv;
     RTUINTPTR uCurMax = uCur + 256;
-    DISCPUSTATE Cpu = {0};
+    DISCPUSTATE Cpu;
+
+    memset(&Cpu, 0, sizeof(Cpu));
     Cpu.mode = CPUMODE_32BIT;
     do
     {

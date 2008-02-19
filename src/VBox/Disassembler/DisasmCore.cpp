@@ -294,14 +294,14 @@ DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *
  * @returns VBox status code.
  * @param   InstructionAddr Address of the instruction to decode. What this means
  *                          is left to the pfnReadBytes function.
- * @param   uCpuMode        The CPU mode. CPUMODE_32BIT, CPUMODE_16BIT, or CPUMODE_64BIT.
+ * @param   enmCpuMode      The CPU mode. CPUMODE_32BIT, CPUMODE_16BIT, or CPUMODE_64BIT.
  * @param   pfnReadBytes    Callback for reading instruction bytes.
  * @param   pvUser          User argument for the instruction reader. (Ends up in apvUserData[0].)
  * @param   pCpu            Pointer to cpu structure. Will be initialized.
  * @param   pcbInstruction  Where to store the size of the instruction.
  *                          NULL is allowed.
  */
-DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, unsigned uCpuMode, PFN_DIS_READBYTES pfnReadBytes, void *pvUser,
+DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_DIS_READBYTES pfnReadBytes, void *pvUser,
                           PDISCPUSTATE pCpu, unsigned *pcbInstruction)
 {
     /*
@@ -310,9 +310,9 @@ DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, unsigned uCpuMode, PFN_DIS_
     pCpu->prefix     = PREFIX_NONE;
     pCpu->prefix_seg = 0;
     pCpu->lastprefix = 0;
-    pCpu->mode       = uCpuMode;
-    pCpu->addrmode   = uCpuMode;
-    pCpu->opmode     = uCpuMode;
+    pCpu->mode       = enmCpuMode;
+    pCpu->addrmode   = enmCpuMode;
+    pCpu->opmode     = enmCpuMode;
     pCpu->ModRM      = 0;
     pCpu->SIB        = 0;
     pCpu->param1.parval = 0;

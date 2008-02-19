@@ -1463,7 +1463,9 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
              * Disassemble it.
              */
             RTLogPrintf("  %s: offCode=%#x cbCode=%#x\n", pszDesc, offCode, cbCode);
-            DISCPUSTATE Cpu = {0};
+            DISCPUSTATE Cpu;
+
+            memset(&Cpu, 0, sizeof(Cpu));
             Cpu.mode = CPUMODE_32BIT;
             while (cbCode > 0)
             {
