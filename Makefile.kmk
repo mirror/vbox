@@ -53,6 +53,7 @@ if1of ($(BUILD_TARGET), win os2)
   endif
  endif
 endif
+$(warning dbg - $(bin_SOURCES))
 
 
 # The Qt DLLs.
@@ -61,7 +62,7 @@ ifneq ($(VBOX_WITH_QTGUI),)
   #include $(PATH_KBUILD)/sdks/QT3.kmk
   #bin_SOURCES += \
   #	$(DLL_SDK_QT3_QT)
-  ifdef VBOX_DLL_QT
+  ifneq ($(strip $(VBOX_DLL_QT)),)
    bin_SOURCES += \
 	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
   endif
