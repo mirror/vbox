@@ -3175,7 +3175,9 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <tabstop>cbHostFloppy</tabstop>
     <tabstop>rbISOFloppy</tabstop>
     <tabstop>tbISOFloppy</tabstop>
+    <tabstop>grbAudio</tabstop>
     <tabstop>cbAudioDriver</tabstop>
+    <tabstop>cbAudioController</tabstop>
     <tabstop>cbEnableUSBController</tabstop>
     <tabstop>cbEnableUSBEhci</tabstop>
     <tabstop>lvUSBFilters</tabstop>
