@@ -473,12 +473,12 @@ PGMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      * Allocate the new ROM range and RAM range (if necessary).
      */
     PPGMROMRANGE pRomNew;
-    rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMROMRANGE, aPages[cPages]), 0, MM_TAG_PGM_PHYS, (void **)pRomNew);
+    rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMROMRANGE, aPages[cPages]), 0, MM_TAG_PGM_PHYS, (void **)&pRomNew);
     if (RT_SUCCESS(rc))
     {
         PPGMRAMRANGE pRamNew = NULL;
         if (!fRamExists)
-            rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMRAMRANGE, aPages[cPages]), sizeof(PGMPAGE), MM_TAG_PGM_PHYS, (void **)pRamNew);
+            rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMRAMRANGE, aPages[cPages]), sizeof(PGMPAGE), MM_TAG_PGM_PHYS, (void **)&pRamNew);
         if (RT_SUCCESS(rc))
         {
             pgmLock(pVM);
