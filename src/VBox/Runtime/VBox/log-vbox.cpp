@@ -389,7 +389,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
          * This is where you set your ring-0 logging preferences.
          */
 # if defined(DEBUG_bird) && !defined(IN_GUEST)
-        RTLogGroupSettings(pLogger, "all=~0");
+        RTLogGroupSettings(pLogger, "all=~0 -default.l6.l5.l4.l3");
         RTLogFlags(pLogger, "enabled unbuffered pid tid");
         pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
 # endif
@@ -403,7 +403,11 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
         RTLogFlags(pLogger, "enabled unbuffered");
         pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
 # endif
-
+# if 0 /* vboxdrv logging - ATTENTION: this is what we're refering to guys! Change to '# if 1'. */
+        RTLogGroupSettings(pLogger, "all=~0 -default.l6.l5.l4.l3");
+        RTLogFlags(pLogger, "enabled unbuffered tid");
+        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
+# endif
     }
 #endif /* IN_RING0 */
     return g_pLogger = RT_SUCCESS(rc) ? pLogger : NULL;
