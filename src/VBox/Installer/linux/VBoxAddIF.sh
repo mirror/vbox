@@ -60,15 +60,6 @@ usage() {
   fi
 }
 
-valid_ifname() {
-  if expr match "$1" "vbox[0-9][0-9]*$" > /dev/null 2>&1
-  then
-    return 0
-  else
-    return 1
-  fi
-}
-
 # Check which name we were called under, and exit if it was not recognised.
 if [ ! "$appname" = "$appadd" -a ! "$appname" = "$appdel" ]
 then
@@ -92,18 +83,6 @@ then
     exit 1
   fi
 fi
-# Check that the interface name is valid if we are adding it.  If we are
-# deleting it then the user will get a better error message later if it is
-# invalid as the interface will not exist.
-if [ "$appname" = "$appadd" ]
-then
-  if ! valid_ifname "$interface"
-  then
-    usage
-    exit 1
-  fi
-fi
-
 
 # Make sure that we can create files in the configuration directory
 if [ ! -r /etc/vbox -o ! -w /etc/vbox -o ! -x /etc/vbox ]
@@ -147,8 +126,7 @@ then
       # Check that the line is correctly formed (an interface name plus one
       # or two non-comment entries, possibly followed by a comment).
       if ((expr match "$2" "#" > /dev/null) ||
-          (! test -z "$4" && ! expr match "$4" "#" > /dev/null) ||
-          (! valid_ifname "$1"))
+          (! test -z "$4" && ! expr match "$4" "#" > /dev/null))
       then
         echo 1>&2 ""
         echo 1>&2 "Removing badly formed line $line in /etc/vbox/interfaces."
