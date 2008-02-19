@@ -111,7 +111,7 @@ int vboxClientXLibIOErrorHandler(Display *pDisplay)
 
 int main(int argc, char *argv[])
 {
-    int rcClipboard, rc;
+    int rcClipboard, rc = VINF_SUCCESS;
 #ifdef DYNAMIC_RESIZE
     VBoxGuestDisplayChangeMonitor displayChange;
 # ifdef SEAMLESS_GUEST
