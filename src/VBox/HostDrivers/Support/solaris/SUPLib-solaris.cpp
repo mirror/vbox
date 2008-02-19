@@ -56,8 +56,8 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Suffix must match the one in ddi_create_minor_node() (SUPDrv-solaris.c) */
-#define DEVICE_NAME     "/devices/pseudo/vboxdrv@0:vboxdrv"
+/** Solaris device link. */
+#define DEVICE_NAME     "/dev/vboxdrv"
 
 
 /*******************************************************************************
