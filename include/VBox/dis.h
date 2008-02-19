@@ -45,7 +45,9 @@ typedef enum
 {
     CPUMODE_16BIT = 1,
     CPUMODE_32BIT = 2,
-    CPUMODE_64BIT = 3
+    CPUMODE_64BIT = 3,
+    /** hack forcing the size of the enum to 32-bits. */
+    CPUMODE_MAKE_32BIT_HACK = 0x7fffffff
 } DISCPUMODE;
 /** @} */
 
@@ -369,7 +371,7 @@ typedef FNDISPARSE *PFNDISPARSE;
 typedef struct _DISCPUSTATE
 {
     /* Global setting */
-    uint32_t        mode;
+    DISCPUMODE      mode;
 
     /* Per instruction prefix settings */
     uint32_t        prefix;
@@ -378,9 +380,9 @@ typedef struct _DISCPUSTATE
     /** rex prefix value (64 bits only */
     uint32_t        prefix_rex;
     /** addressing mode (16 or 32 bits). (CPUMODE_*) */
-    uint32_t        addrmode;
+    DISCPUMODE      addrmode;
     /** operand mode (16 or 32 bits). (CPUMODE_*) */
-    uint32_t        opmode;
+    DISCPUMODE      opmode;
 
     OP_PARAMETER    param1;
     OP_PARAMETER    param2;
@@ -511,19 +513,19 @@ DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *
 
 /**
  * Parses one guest instruction.
- * * The result is found in pCpu and pcbInstruction.
+ * The result is found in pCpu and pcbInstruction.
  *
  * @returns VBox status code.
  * @param   InstructionAddr Address of the instruction to decode. What this means
  *                          is left to the pfnReadBytes function.
- * @param   CpuMode         The CPU mode. CPUMODE_32BIT, CPUMODE_16BIT, or CPUMODE_64BIT.
+ * @param   enmCpuMode      The CPU mode. CPUMODE_32BIT, CPUMODE_16BIT, or CPUMODE_64BIT.
  * @param   pfnReadBytes    Callback for reading instruction bytes.
- * @param   pvUser          User argument for the instruction reader. (Ends up in dwUserData[0].)
+ * @param   pvUser          User argument for the instruction reader. (Ends up in apvUserData[0].)
  * @param   pCpu            Pointer to cpu structure. Will be initialized.
  * @param   pcbInstruction  Where to store the size of the instruction.
  *                          NULL is allowed.
  */
-DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, unsigned CpuMode, PFN_DIS_READBYTES pfnReadBytes, void *pvUser,
+DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_DIS_READBYTES pfnReadBytes, void *pvUser,
                           PDISCPUSTATE pCpu, unsigned *pcbInstruction);
 
 DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam);

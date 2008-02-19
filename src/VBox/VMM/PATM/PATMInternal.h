@@ -219,7 +219,7 @@ typedef struct _PATCHINFO
 {
     uint32_t        uState;
     uint32_t        uOldState;
-    uint32_t        uOpMode;
+    DISCPUMODE      uOpMode;
 
     GCPTRTYPE(uint8_t *)  pPrivInstrGC;    //GC pointer of privileged instruction
     R3PTRTYPE(uint8_t *)  pPrivInstrHC;    //HC pointer of privileged instruction
