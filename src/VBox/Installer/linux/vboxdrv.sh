@@ -113,7 +113,6 @@ if [ "$system" = "other" ]; then
 fi
 
 
-kdir=/lib/modules/`uname -r`/misc
 dev=/dev/vboxdrv
 modname=vboxdrv
 groupname=vboxusers
@@ -134,7 +133,7 @@ running() {
 
 start() {
     begin "Starting VirtualBox kernel module "
-    test -f "$kdir/$modname.o" -o -f "$kdir/$modname.ko" || {
+    find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv || {
         fail "Kernel module not found"
     }
     running || {
