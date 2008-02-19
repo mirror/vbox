@@ -1549,13 +1549,13 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         /* audio */
         {
             CAudioAdapter audio = m.GetAudioAdapter();
-			int rows = audio.GetEnabled() ? 3 : 2;
+            int rows = audio.GetEnabled() ? 3 : 2;
             if (audio.GetEnabled())
                 item = QString (sSectionItemTpl)
-	                   .arg (tr ("Host Driver", "details report (audio)"),
+                       .arg (tr ("Host Driver", "details report (audio)"),
                              toString (audio.GetAudioDriver())) +
                        QString (sSectionItemTpl)
-	                   .arg (tr ("Controller", "details report (audio)"),
+                       .arg (tr ("Controller", "details report (audio)"),
                              toString (audio.GetAudioController()));
             else
                 item = QString (sSectionItemTpl)
@@ -2255,7 +2255,7 @@ void VBoxGlobal::languageChange()
     networkAdapterTypes [CEnums::NetworkAdapterAm79C973] =
         tr ("PCnet-FAST III (Am79C973)", "NetworkAdapterType");
     networkAdapterTypes [CEnums::NetworkAdapter82540EM] =
-        tr ("E1000 PRO MT Desktop (82540EM)", "NetworkAdapterType");
+        tr ("Intel PRO/1000 MT Desktop (82540EM)", "NetworkAdapterType");
 
     networkAttachmentTypes [CEnums::NoNetworkAttachment] =
         tr ("Not attached", "NetworkAttachmentType");
@@ -2960,10 +2960,10 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
     QString text = aStr;
 
     /* replace special entities, '&' -- first! */
-	text.replace ('&', "&amp;");
+    text.replace ('&', "&amp;");
     text.replace ('<', "&lt;");
-	text.replace ('>', "&gt;");
-	text.replace ('\"', "&quot;");
+    text.replace ('>', "&gt;");
+    text.replace ('\"', "&quot;");
 
     /* mark strings in single quotes with color */
     QRegExp rx = QRegExp ("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
