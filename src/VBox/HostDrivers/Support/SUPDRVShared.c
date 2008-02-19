@@ -39,6 +39,20 @@
 #include <iprt/process.h>
 #include <iprt/log.h>
 
+/*
+ * Logging assignments:
+ *      Log     - useful stuff, like failures.
+ *      LogFlow - program flow, except the really noisy bits.
+ *      Log2    - Cleanup and IDTE
+ *      Log3    - Loader flow noise.
+ *      Log4    - Call VMMR0 flow noise.
+ *      Log5    - Native yet-to-be-defined noise.
+ *      Log6    - Native ioctl flow noise.
+ *
+ * Logging requires BUILD_TYPE=debug and possibly changes to the logger
+ * instanciation in log-vbox.c(pp).
+ */
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -460,6 +474,8 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
                 }
                 RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
 
+                Log(("supdrvCleanupSession: destroying %p/%d (%p/%p) cpid=%RTproc pid=%RTproc dtor=%p\n",
+                     pObj, pObj->enmType, pObj->pvUser1, pObj->pvUser2, pObj->CreatorProcess, RTProcSelf(), pObj->pfnDestructor));
                 if (pObj->pfnDestructor)
                     pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
                 RTMemFree(pObj);
@@ -950,6 +966,9 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         {
             /* validate */
             PSUPCALLVMMR0 pReq = (PSUPCALLVMMR0)pReqHdr;
+            Log4(("SUP_IOCTL_CALL_VMMR0: op=%u in=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
+                  pReq->u.In.uOperation, pReq->Hdr.cbIn, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
+
             if (pReq->Hdr.cbIn == SUP_IOCTL_CALL_VMMR0_SIZE(0))
             {
                 REQ_CHECK_SIZES_EX(SUP_IOCTL_CALL_VMMR0, SUP_IOCTL_CALL_VMMR0_SIZE_IN(0), SUP_IOCTL_CALL_VMMR0_SIZE_OUT(0));
@@ -974,6 +993,15 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                 else
                     pReq->Hdr.rc = VERR_WRONG_ORDER;
             }
+
+            if (    RT_FAILURE(pReq->Hdr.rc)
+                &&  pReq->Hdr.rc != VERR_INTERRUPTED
+                &&  pReq->Hdr.rc != VERR_TIMEOUT)
+                Log(("SUP_IOCTL_CALL_VMMR0: rc=%Rrc op=%u out=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
+                     pReq->Hdr.rc, pReq->u.In.uOperation, pReq->Hdr.cbOut, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
+            else
+                Log4(("SUP_IOCTL_CALL_VMMR0: rc=%Rrc op=%u out=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
+                      pReq->Hdr.rc, pReq->u.In.uOperation, pReq->Hdr.cbOut, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
             return 0;
         }
 
@@ -1319,6 +1347,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
                     /*
                      * Object is to be destroyed, unlink it.
                      */
+                    pObj->u32Magic = SUPDRVOBJ_MAGIC + 1;
                     fDestroy = true;
                     if (pDevExt->pObjs == pObj)
                         pDevExt->pObjs = pObj->pNext;
@@ -1346,7 +1375,8 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
      */
     if (fDestroy)
     {
-        pObj->u32Magic++;
+        Log(("SUPR0ObjRelease: destroying %p/%d (%p/%p) cpid=%RTproc pid=%RTproc dtor=%p\n",
+             pObj, pObj->enmType, pObj->pvUser1, pObj->pvUser2, pObj->CreatorProcess, RTProcSelf(), pObj->pfnDestructor));
         if (pObj->pfnDestructor)
             pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
         RTMemFree(pObj);
@@ -3243,6 +3273,8 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             else
                 pImage->cUsage--;
         }
+        else
+            Log(("supdrvIOCtl_LdrFree: Dangling objects in %p/%s!\n", pImage->pvImage, pImage->szName));
     }
     else
     {
