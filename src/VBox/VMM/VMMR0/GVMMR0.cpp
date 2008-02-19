@@ -1189,7 +1189,7 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
     unsigned cHalted = 0;
     unsigned cTodo2nd = 0;
     unsigned cTodo3rd = 0;
-    for (unsigned i = pGVMM->iUsedHead;
+    for (unsigned i = pGVMM->iUsedHead, cGuard = 0;
          i != NIL_GVM_HANDLE && i < RT_ELEMENTS(pGVMM->aHandles);
          i = pGVMM->aHandles[i].iNext)
     {
@@ -1219,11 +1219,12 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
                 }
             }
         }
+        AssertLogRelBreak(cGuard++ < RT_ELEMENTS(pGVMM->aHandles));
     }
 
     if (cTodo2nd)
     {
-        for (unsigned i = pGVMM->iUsedHead;
+        for (unsigned i = pGVMM->iUsedHead, cGuard;
              i != NIL_GVM_HANDLE && i < RT_ELEMENTS(pGVMM->aHandles);
              i = pGVMM->aHandles[i].iNext)
         {
@@ -1240,12 +1241,13 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
                     cWoken++;
                 }
             }
+            AssertLogRelBreak(cGuard++ < RT_ELEMENTS(pGVMM->aHandles));
         }
     }
 
     if (cTodo3rd)
     {
-        for (unsigned i = pGVMM->iUsedHead;
+        for (unsigned i = pGVMM->iUsedHead, cGuard = 0;
              i != NIL_GVM_HANDLE && i < RT_ELEMENTS(pGVMM->aHandles);
              i = pGVMM->aHandles[i].iNext)
         {
@@ -1262,6 +1264,7 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
                     cWoken++;
                 }
             }
+            AssertLogRelBreak(cGuard++ < RT_ELEMENTS(pGVMM->aHandles));
         }
     }
 
