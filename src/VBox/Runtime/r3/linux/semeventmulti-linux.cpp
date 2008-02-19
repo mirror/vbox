@@ -112,7 +112,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
     /*
      * Invalidate the semaphore and wake up anyone waiting on it.
      */
-    ASMAtomicXchgSize(&pThis->iMagic, RTSEMEVENTMULTI_MAGIC + 1);
+    ASMAtomicWriteSize(&pThis->iMagic, RTSEMEVENTMULTI_MAGIC + 1);
     if (ASMAtomicXchgS32(&pThis->iState, -1) == 1)
     {
         sys_futex(&pThis->iState, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
@@ -183,7 +183,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
     /*
      * Quickly check whether it's signaled.
      */
-    int32_t iCur = pThis->iState;
+    int32_t iCur = ASMAtomicUoReadS32(&pThis->iState);
     Assert(iCur == 0 || iCur == -1 || iCur == 1);
     if (iCur == -1)
         return VINF_SUCCESS;
@@ -211,7 +211,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
          * Start waiting. We only account for there being or having been
          * threads waiting on the semaphore to keep things simple.
          */
-        iCur = pThis->iState;
+        iCur = ASMAtomicUoReadS32(&pThis->iState);
         Assert(iCur == 0 || iCur == -1 || iCur == 1);
         if (    iCur == 1
             ||  ASMAtomicCmpXchgS32(&pThis->iState, 1, 0))
