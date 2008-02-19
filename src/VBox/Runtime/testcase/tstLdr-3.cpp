@@ -207,7 +207,8 @@ int main(int argc, char **argv)
                              NearSym.aSyms[1].Value, NearSym.aSyms[1].szName, NearSym.aSyms[1].uSymbol);
                     if (NearSym.Addr - NearSym.aSyms[0].Value < 0x10000)
                     {
-                        DISCPUSTATE Cpu = {0};
+                        DISCPUSTATE Cpu;
+                        memset(&Cpu, 0, sizeof(Cpu));
                         Cpu.mode = CPUMODE_32BIT;
                         uint8_t *pbCode = (uint8_t *)pvBits + (NearSym.aSyms[0].Value - LoadAddr);
                         MyDisBlock(&Cpu, (uintptr_t)pbCode,
