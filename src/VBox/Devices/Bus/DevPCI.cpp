@@ -113,6 +113,8 @@ typedef struct PCIGLOBALS
     uint32_t            pci_bios_io_addr;
     /** The next MMIO address which the PCI BIOS will use. */
     uint32_t            pci_bios_mem_addr;
+    uint32_t            u32Padding; /**< Alignment padding. */
+
     /** I/O APIC usage flag */
     bool                fUseIoApic;
     /** I/O APIC irq levels */
@@ -285,7 +287,7 @@ static void pci_update_mappings(PCIDevice *d)
                         AssertMsg(VBOX_SUCCESS(rc) || !strcmp(d->name, "vga") || !strcmp(d->name, "VMMDev"), ("rc=%Vrc d=%s\n", rc, d->name)); NOREF(rc);
 #else /* less strict check */
                         AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_IOM_MMIO_RANGE_NOT_FOUND, ("rc=%Vrc d=%s\n", rc, d->name)); NOREF(rc);
-#endif 
+#endif
                     }
                 }
                 r->addr = new_addr;
@@ -771,7 +773,7 @@ static void pci_bios_init_device(PCIDevice *d)
     switch(devclass)
     {
     case 0x0101:
-        if (vendor_id == 0x8086 && 
+        if (vendor_id == 0x8086 &&
             (device_id == 0x7010 || device_id == 0x7111)) {
             /* PIIX3 or PIIX4 IDE */
             pci_config_writew(d, 0x40, 0x8000); /* enable IDE0 */
@@ -1082,7 +1084,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         {
             if (pData->devices[i])
             {
-                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pData->devices[i]->name, 
+                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pData->devices[i]->name,
                         PCIDevGetVendorId(pData->devices[i]), PCIDevGetDeviceId(pData->devices[i])));
                 if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
                     AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
@@ -1099,7 +1101,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         pDev = pData->devices[i];
         if (!pDev)
         {
-            LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i, 
+            LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
                     PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp)));
             if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
                 AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
@@ -1117,7 +1119,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
 
         /* commit the loaded device config. */
         memcpy(pDev->config, DevTmp.config, sizeof(pDev->config));
-        if (DevTmp.Int.s.iIrq >= PCI_DEVICES_MAX) 
+        if (DevTmp.Int.s.iIrq >= PCI_DEVICES_MAX)
         {
             LogRel(("Device %s: Too many devices %d (max=%d)\n", pDev->name, DevTmp.Int.s.iIrq, PCI_DEVICES_MAX));
             AssertFailedReturn(VERR_TOO_MUCH_DATA);
@@ -1325,10 +1327,10 @@ static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPci
 }
 
 
-/** 
+/**
  * @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksHC
  */
-static DECLCALLBACK(void) pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+static DECLCALLBACK(void) pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                 PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
     if (ppfnReadOld)
