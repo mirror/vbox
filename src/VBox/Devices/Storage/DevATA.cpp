@@ -73,6 +73,10 @@
 /** The maximum number of release log entries per device. */
 #define MAX_LOG_REL_ERRORS  1024
 
+/** Temporary instrumentation for tracking down potential virtual disk
+ * write performance issues. */
+#undef VBOX_INSTRUMENT_DMA_WRITES
+
 typedef struct ATADevState {
     /** Flag indicating whether the current command uses LBA48 mode. */
     bool fLBA48;
@@ -185,6 +189,10 @@ typedef struct ATADevState {
     STAMCOUNTER StatATAPIDMA;
     /* Release statistics: number of ATAPI PIO commands. */
     STAMCOUNTER StatATAPIPIO;
+#ifdef VBOX_INSTRUMENT_DMA_WRITES
+    /* Release statistics: number of DMA sector writes and the time spent. */
+    STAMPROFILEADV StatInstrVDWrites;
+#endif
 
     /** Statistics: number of read operations and the time spent reading. */
     STAMPROFILEADV  StatReads;
@@ -1349,7 +1357,15 @@ static int ataWriteSectors(ATADevState *s, uint64_t u64Sector, const void *pvBuf
 
     STAM_PROFILE_ADV_START(&s->StatWrites, w);
     s->Led.Asserted.s.fWriting = s->Led.Actual.s.fWriting = 1;
+#ifdef VBOX_INSTRUMENT_DMA_WRITES
+    if (s->fDMA)
+        STAM_PROFILE_ADV_START(&s->StatInstrVDWrites, vw);;
+#endif
     rc = s->pDrvBlock->pfnWrite(s->pDrvBlock, u64Sector * 512, pvBuf, cSectors * 512);
+#ifdef VBOX_INSTRUMENT_DMA_WRITES
+    if (s->fDMA)
+        STAM_PROFILE_ADV_STOP(&s->StatInstrVDWrites, vw);;
+#endif
     s->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&s->StatWrites, w);
 
@@ -6003,6 +6019,9 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatReads,        STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the read operations.", "/Devices/ATA%d/Unit%d/Reads", i, j);
 #endif
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatBytesRead,    STAMTYPE_COUNTER,     STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,           "Amount of data read.",              "/Devices/ATA%d/Unit%d/ReadBytes", i, j);
+#ifdef VBOX_INSTRUMENT_DMA_WRITES
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatInstrVDWrites,       STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the VD DMA write operations.","/Devices/ATA%d/Unit%d/InstrVDWrites", i, j);
+#endif
 #ifdef VBOX_WITH_STATISTICS
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatWrites,       STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the write operations.","/Devices/ATA%d/Unit%d/Writes", i, j);
 #endif
