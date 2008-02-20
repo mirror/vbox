@@ -85,13 +85,19 @@ public:
         return FindNode(mHead, id);
     }
 
-    void FindAndDelete(const nsID &id)
+    PRBool FindAndDelete(const nsID &id)
     {
         ipcIDNode *node = FindNodeBefore(mHead, id);
-        if (node)
+        if (node) {
             DeleteAfter(node);
-        else
+            return PR_TRUE;
+        }
+        else if (!IsEmpty()) {
             DeleteFirst();
+            return PR_TRUE;
+        }
+
+        return PR_FALSE;
     }
 
 private:

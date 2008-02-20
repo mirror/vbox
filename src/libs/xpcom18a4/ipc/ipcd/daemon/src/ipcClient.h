@@ -64,11 +64,11 @@ public:
     PRUint32 ID() const { return mID; }
 
     void   AddName(const char *name);
-    void   DelName(const char *name);
+    PRBool DelName(const char *name);
     PRBool HasName(const char *name) const { return mNames.Find(name) != NULL; }
 
     void   AddTarget(const nsID &target);
-    void   DelTarget(const nsID &target);
+    PRBool DelTarget(const nsID &target);
     PRBool HasTarget(const nsID &target) const { return mTargets.Find(target) != NULL; }
 
     // list iterators
@@ -95,13 +95,13 @@ public:
     // indicates the state of the socket.
     //
     // returns:
-    //   0             - to cancel client connection  
+    //   0             - to cancel client connection
     //   PR_POLL_READ  - to poll for a readable socket
     //   PR_POLL_WRITE - to poll for a writable socket
     //   (both flags)  - to poll for either a readable or writable socket
     //
     // the socket is non-blocking.
-    // 
+    //
     int Process(PRFileDesc *sockFD, int pollFlags);
 
     //
@@ -124,7 +124,7 @@ private:
     // the client from which a message originated.  each message has the PID
     // encoded in it.
     PRUint32      mPID;
-    
+
     // the hwnd of the client's message window.
     HWND          mHwnd;
 #endif

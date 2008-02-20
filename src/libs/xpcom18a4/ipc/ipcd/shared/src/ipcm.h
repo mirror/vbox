@@ -128,7 +128,7 @@ IPCM_GetType(const ipcMessage *msg)
 }
 
 //
-// return IPCM message request index.  
+// return IPCM message request index.
 //
 static inline PRUint32
 IPCM_GetRequestIndex(const ipcMessage *msg)
@@ -257,7 +257,7 @@ IPCM_NewRequestIndex();
 //
 // This request message has as its payload a null-terminated ASCII character
 // string indicating the client name to query.
-// 
+//
 
 // ACKNOWLEDGEMENTS
 
@@ -271,9 +271,12 @@ IPCM_NewRequestIndex();
 // Possible status codes are listed below (negative values indicate failure
 // codes):
 //
-#define IPCM_OK               0  // success: generic
-#define IPCM_ERROR_GENERIC   -1  // failure: generic
-#define IPCM_ERROR_NO_CLIENT -2  // failure: client does not exist
+#define IPCM_OK                      0  // success: generic
+#define IPCM_ERROR_GENERIC          -1  // failure: generic
+#define IPCM_ERROR_NO_CLIENT        -2  // failure: client does not exist
+#define IPCM_ERROR_INVALID_ARG      -3  // failure: invalid request argument
+#define IPCM_ERROR_NO_SUCH_DATA     -4  // failure: requested data does not exist
+#define IPCM_ERROR_ALREADY_EXISTS   -5  // failure: data to set already exists
 
 //
 // ack: IPCM_MSG_ACK_CLIENT_ID
@@ -309,7 +312,7 @@ IPCM_NewRequestIndex();
 //
 // This message is sent by the daemon to a client on behalf of another client.
 // The recipient is expected to unpack the contained message and process it.
-// 
+//
 // The payload of this message matches the payload of IPCM_MSG_REQ_FORWARD,
 // with the exception that the clientID field is set to the clientID of the
 // sender of the IPCM_MSG_REQ_FORWARD message.
@@ -322,7 +325,7 @@ IPCM_NewRequestIndex();
 //       and parsing IPCM messages.  Each class subclasses ipcMessage, but
 //       adds no additional member variables.  |operator new| should be used
 //       to allocate one of the IPCM helper classes, e.g.:
-//         
+//
 //          ipcMessage *msg = new ipcmMessageClientHello("foo");
 //
 //       Given an arbitrary ipcMessage, it can be parsed using logic similar
