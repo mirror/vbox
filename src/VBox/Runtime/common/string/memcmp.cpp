@@ -47,7 +47,7 @@
 # if _MSC_VER >= 1400
 __checkReturn int __cdecl memcmp(__in_bcount_opt(_Size) const void * pvDst, __in_bcount_opt(_Size) const void * pvSrc, __in size_t cb)
 # else
-int memcmp(const void *pvDst, const void *pvSrc, size_t cb)
+int __cdecl memcmp(const void *pvDst, const void *pvSrc, size_t cb)
 # endif
 #else
 int memcmp(const void *pvDst, const void *pvSrc, size_t cb)
