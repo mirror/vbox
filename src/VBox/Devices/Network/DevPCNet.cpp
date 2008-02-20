@@ -165,16 +165,18 @@ struct PCNetState_st
     RTGCPHYS                            GCUpperPhys;
 
     /** Transmit signaller */
-    GCPTRTYPE(PPDMQUEUE)                pXmitQueueGC;
     R3R0PTRTYPE(PPDMQUEUE)              pXmitQueueHC;
+    GCPTRTYPE(PPDMQUEUE)                pXmitQueueGC;
 
     /** Receive signaller */
-    R3R0PTRTYPE(PPDMQUEUE)              pCanRxQueueHC;
     GCPTRTYPE(PPDMQUEUE)                pCanRxQueueGC;
-    /** Pointer to the device instance. */
-    GCPTRTYPE(PPDMDEVINS)               pDevInsGC;
+    R3R0PTRTYPE(PPDMQUEUE)              pCanRxQueueHC;
     /** Pointer to the device instance. */
     R3R0PTRTYPE(PPDMDEVINS)             pDevInsHC;
+    /** Pointer to the device instance. */
+    GCPTRTYPE(PPDMDEVINS)               pDevInsGC;
+    /** Alignment padding. */
+    RTGCPTR                             GCPtrAlignment0;
     /** Restore timer.
      *  This is used to disconnect and reconnect the link after a restore. */
     PTMTIMERR3                          pTimerRestore;
@@ -207,6 +209,9 @@ struct PCNetState_st
     /** The configured MAC address. */
     PDMMAC                              MacConfigured;
 
+#if HC_ARCH_BITS == 64
+    uint32_t                            u32Alignment0; /** Alignment padding. */
+#endif
     /** The LED. */
     PDMLED                              Led;
     /** The LED ports. */
@@ -2751,12 +2756,12 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
 
         case 2:
             /* PHY identifier 1. */
-            val = 0x22;     /* Am79C874 PHY */ 
+            val = 0x22;     /* Am79C874 PHY */
             break;
 
         case 3:
             /* PHY identifier 2. */
-            val = 0x561b;   /* Am79C874 PHY */  
+            val = 0x561b;   /* Am79C874 PHY */
             break;
 
         case 4:
@@ -2764,7 +2769,7 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
             val =   0x01e0  /* Try 100mbps FD/HD and 10mbps FD/HD. */
 #if 0
                 // Advertising flow control is a) not the default, and b) confuses
-                // the link speed detection routine in Windows PCnet driver 
+                // the link speed detection routine in Windows PCnet driver
                   | 0x0400  /* Try flow control. */
 #endif
                   | 0x0001; /* CSMA selector. */
