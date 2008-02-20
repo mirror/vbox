@@ -35,6 +35,34 @@
 #include "r0drv/alloc-r0drv.h"
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#ifdef RT_STRICT
+# define RTR0MEM_STRICT
+#endif
+
+#ifdef RTR0MEM_STRICT
+# define RTR0MEM_FENCE_EXTRA    16
+#else
+# define RTR0MEM_FENCE_EXTRA    0
+#endif
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef RTR0MEM_STRICT
+/** Fence data. */
+static uint8_t const g_abFence[RTR0MEM_FENCE_EXTRA] =
+{
+    0x77, 0x88, 0x66, 0x99,  0x55, 0xaa, 0x44, 0xbb,
+    0x33, 0xcc, 0x22, 0xdd,  0x11, 0xee, 0x00, 0xff
+};
+#endif
+
+
+
 /**
  * Allocates temporary memory.
  *
@@ -88,9 +116,15 @@ RTDECL(void)    RTMemTmpFree(void *pv)
  */
 RTDECL(void *)  RTMemAlloc(size_t cb)
 {
-    PRTMEMHDR pHdr = rtMemAlloc(cb, 0);
+    PRTMEMHDR pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, 0);
     if (pHdr)
+    {
+#ifdef RTR0MEM_STRICT
+        pHdr->cbReq = cb;
+        memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], sizeof(g_abFence));
+#endif
         return pHdr + 1;
+    }
     return NULL;
 }
 
@@ -108,9 +142,17 @@ RTDECL(void *)  RTMemAlloc(size_t cb)
  */
 RTDECL(void *)  RTMemAllocZ(size_t cb)
 {
-    PRTMEMHDR pHdr = rtMemAlloc(cb, RTMEMHDR_FLAG_ZEROED);
+    PRTMEMHDR pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_ZEROED);
     if (pHdr)
+    {
+#ifdef RTR0MEM_STRICT
+        pHdr->cbReq = cb;
+        memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], sizeof(g_abFence));
+        return memset(pHdr + 1, 0, cb);
+#else
         return memset(pHdr + 1, 0, pHdr->cb);
+#endif
+    }
     return NULL;
 }
 
@@ -137,11 +179,22 @@ RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew)
             PRTMEMHDR pHdrNew;
             if (pHdrOld->cb >= cbNew && pHdrOld->cb - cbNew <= 128)
                 return pvOld;
-            pHdrNew = rtMemAlloc(cbNew, 0);
+            pHdrNew = rtMemAlloc(cbNew + RTR0MEM_FENCE_EXTRA, 0);
             if (pHdrNew)
             {
                 size_t cbCopy = RT_MIN(pHdrOld->cb, pHdrNew->cb);
                 memcpy(pHdrNew + 1, pvOld, cbCopy);
+#ifdef RTR0MEM_STRICT
+                pHdrNew->cbReq = cbNew;
+                memcpy((uint8_t *)(pHdrNew + 1) + cbNew, &g_abFence[0], sizeof(g_abFence));
+                AssertReleaseMsg(!memcmp((uint8_t *)(pHdrOld + 1) + pHdrOld->cbReq, &g_abFence[0], sizeof(g_abFence)),
+                                 ("pHdr=%p pvOld=%p cb=%zu cbNew=%zu\n"
+                                  "fence:    %.*Rhxs\n"
+                                  "expected: %.*Rhxs\n",
+                                  pHdrOld, pvOld, pHdrOld->cb, cbNew,
+                                  sizeof(g_abFence), (uint8_t *)(pHdrOld + 1) + pHdrOld->cb,
+                                  sizeof(g_abFence), &g_abFence[0]));
+#endif
                 rtMemFree(pHdrOld);
                 return pHdrNew + 1;
             }
@@ -168,6 +221,15 @@ RTDECL(void) RTMemFree(void *pv)
     if (pHdr->u32Magic == RTMEMHDR_MAGIC)
     {
         Assert(!(pHdr->fFlags & RTMEMHDR_FLAG_EXEC));
+#ifdef RTR0MEM_STRICT
+        AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], sizeof(g_abFence)),
+                         ("pHdr=%p pv=%p cb=%zu\n"
+                          "fence:    %.*Rhxs\n"
+                          "expected: %.*Rhxs\n",
+                          pHdr, pv, pHdr->cb, pv,
+                          sizeof(g_abFence), (uint8_t *)(pHdr + 1) + pHdr->cb,
+                          sizeof(g_abFence), &g_abFence[0]));
+#endif
         rtMemFree(pHdr);
     }
     else
@@ -186,7 +248,12 @@ RTDECL(void *)    RTMemExecAlloc(size_t cb)
 {
     PRTMEMHDR pHdr = rtMemAlloc(cb, RTMEMHDR_FLAG_EXEC);
     if (pHdr)
+    {
+#ifdef RTR0MEM_STRICT
+        memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], sizeof(g_abFence));
+#endif
         return pHdr + 1;
+    }
     return NULL;
 }
 
@@ -203,7 +270,18 @@ RTDECL(void)      RTMemExecFree(void *pv)
         return;
     pHdr = (PRTMEMHDR)pv - 1;
     if (pHdr->u32Magic == RTMEMHDR_MAGIC)
+    {
+#ifdef RTR0MEM_STRICT
+        AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], sizeof(g_abFence)),
+                         ("pHdr=%p pv=%p cb=%zu\n"
+                          "fence:    %.*Rhxs\n"
+                          "expected: %.*Rhxs\n",
+                          pHdr, pv, pHdr->cb,
+                          sizeof(g_abFence), (uint8_t *)(pHdr + 1) + pHdr->cb,
+                          sizeof(g_abFence), &g_abFence[0]));
+#endif
         rtMemFree(pHdr);
+    }
     else
         AssertMsgFailed(("pHdr->u32Magic=%RX32 pv=%p\n", pHdr->u32Magic, pv));
 }

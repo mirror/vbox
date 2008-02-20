@@ -50,7 +50,7 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
         pHdr->u32Magic   = RTMEMHDR_MAGIC;
         pHdr->fFlags     = fFlags;
         pHdr->cb         = cb;
-        pHdr->u32Padding = 0;
+        pHdr->cbReq      = cb;
         return pHdr;
     }
     return NULL;
