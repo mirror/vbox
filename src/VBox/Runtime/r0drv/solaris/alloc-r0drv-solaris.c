@@ -42,10 +42,14 @@
  */
 PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 {
+    size_t cbAllocated = cb;
     PRTMEMHDR pHdr;
 #ifdef RT_ARCH_AMD64
     if (fFlags & RTMEMHDR_FLAG_EXEC)
-        pHdr = (PRTMEMHDR)segkmem_alloc(heaptext_arena, RT_ALIGN_Z(cb + sizeof(*pHdr), PAGE_SIZE), KM_SLEEP);
+    {
+        cbAllocated = RT_ALIGN_Z(cb + sizeof(*pHdr), PAGE_SIZE) - sizeof(*pHdr);
+        pHdr = (PRTMEMHDR)segkmem_alloc(heaptext_arena, cbAllocated + sizeof(*pHdr), PAGE_SIZE), KM_SLEEP);
+    }
     else
 #endif
     if (fFlags & RTMEMHDR_FLAG_ZEROED)
@@ -56,11 +60,11 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
     {
         pHdr->u32Magic  = RTMEMHDR_MAGIC;
         pHdr->fFlags    = fFlags;
-        pHdr->cb        = cb;
-        pHdr->u32Padding= 0;
+        pHdr->cb        = cbAllocated;
+        pHdr->cbReq     = cb;
     }
     else
-        printf("rmMemAlloc(%#x, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
+        printf("rtMemAlloc(%#x, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
     return pHdr;
 }
 
@@ -73,22 +77,13 @@ void rtMemFree(PRTMEMHDR pHdr)
     pHdr->u32Magic += 1;
 #ifdef RT_ARCH_AMD64
     if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC)
-        segkmem_free(heaptext_arena, pHdr, RT_ALIGN_Z(pHdr->cb + sizeof(*pHdr), PAGE_SIZE));
+        segkmem_free(heaptext_arena, pHdr, pHdr->cb + sizeof(*pHdr), PAGE_SIZE));
     else
 #endif
         kmem_free(pHdr, pHdr->cb + sizeof(*pHdr));
 }
 
 
-/**
- * Allocates physical contiguous memory (below 4GB).
- * The allocation is page aligned and the content is undefined.
- *
- * @returns Pointer to the memory block. This is page aligned.
- * @param   pPhys   Where to store the physical address.
- * @param   cb      The allocation size in bytes. This is always
- *                  rounded up to PAGE_SIZE.
- */
 RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 {
     AssertPtr(pPhys);

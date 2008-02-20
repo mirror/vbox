@@ -42,10 +42,10 @@ typedef struct RTMEMHDR
     uint32_t    u32Magic;
     /** Block flags (RTMEMHDR_FLAG_*). */
     uint32_t    fFlags;
-    /** The size of the block. */
+    /** The actual size of the block. */
     uint32_t    cb;
-    /** Alignment padding. */
-    uint32_t    u32Padding;
+    /** The request allocation size. */
+    uint32_t    cbReq;
 } RTMEMHDR, *PRTMEMHDR;
 
 
