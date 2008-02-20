@@ -833,7 +833,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     {
         uint16_t iPrev = pGVMM->iUsedHead;
         int c = RT_ELEMENTS(pGVMM->aHandles) + 2;
-        while (!iPrev)
+        while (iPrev)
         {
             if (RT_UNLIKELY(iPrev >= RT_ELEMENTS(pGVMM->aHandles)))
             {
@@ -860,6 +860,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
             return;
         }
 
+        Assert(pGVMM->aHandles[iPrev].iNext == iHandle);
         pGVMM->aHandles[iPrev].iNext = pHandle->iNext;
     }
     pHandle->iNext = 0;
