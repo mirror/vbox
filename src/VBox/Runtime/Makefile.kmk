@@ -1044,10 +1044,10 @@ RuntimeGuestR0_SOURCES                 := $(filter-out generic/RTLogWriteUser-ge
 RuntimeGuestR0_SOURCES                 += VBox/logbackdoor.cpp
 RuntimeGuestR0_SOURCES.$(BUILD_TARGET) := $(RuntimeR0Drv_SOURCES.$(BUILD_TARGET))
 RuntimeGuestR0_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) := $(RuntimeR0Drv_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
+RuntimeGuestR0_SOURCES.win             += common/string/memcmp.cpp
 ifdef VBOX_USE_VCC80
 RuntimeGuestR0_SOURCES.win += \
 	common/string/memchr.cpp \
-	common/string/memcmp.cpp \
 	common/string/memcpy.cpp \
 	common/string/memset.cpp \
 	common/string/strlen.cpp
@@ -1070,11 +1070,11 @@ RuntimeW32GuestR0_DEFS.$(BUILD_TARGET) =
 RuntimeW32GuestR0_SOURCES       = \
 	$(filter-out generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
 	$(RuntimeR0Drv_SOURCES.win) \
-	VBox/logbackdoor.cpp
+	VBox/logbackdoor.cpp \
+	common/string/memcmp.cpp
 ifdef VBOX_USE_VCC80
 RuntimeW32GuestR0_SOURCES += \
 	common/string/memchr.cpp \
-	common/string/memcmp.cpp \
 	common/string/memcpy.cpp \
 	common/string/memset.cpp \
 	common/string/strlen.cpp
