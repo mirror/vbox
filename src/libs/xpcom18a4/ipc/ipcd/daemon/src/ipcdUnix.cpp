@@ -86,15 +86,19 @@ IPC_Sleep(int seconds)
 #define IPC_USE_FILE_LOCK
 #endif
 
-#ifdef VBOX
-static PRBool fatal = PR_FALSE;
-#endif
-
 #ifdef IPC_USE_FILE_LOCK
+
+enum Status
+{
+    EOk = 0,
+    ELockFileOpen = -1,
+    ELockFileLock = -2,
+
+};
 
 static int ipcLockFD = 0;
 
-static PRBool AcquireDaemonLock(const char *baseDir)
+static Status AcquireDaemonLock(const char *baseDir)
 {
     const char lockName[] = "lock";
 
@@ -116,15 +120,7 @@ static PRBool AcquireDaemonLock(const char *baseDir)
     free(lockFile);
 
     if (ipcLockFD == -1)
-#ifdef VBOX
-    {
-        // cannot open file --> this is fatal
-        fatal = PR_TRUE;
-#endif
-        return PR_FALSE;
-#ifdef VBOX
-    }
-#endif
+        return ELockFileOpen;
 
     //
     // we use fcntl for locking.  assumption: filesystem should be local.
@@ -138,10 +134,7 @@ static PRBool AcquireDaemonLock(const char *baseDir)
     lock.l_len = 0;
     lock.l_whence = SEEK_SET;
     if (fcntl(ipcLockFD, F_SETLK, &lock) == -1)
-#ifdef VBOX
-        // cannot grab file lock --> this is NOT fatal (other daemon running)
-#endif
-        return PR_FALSE;
+        return ELockFileLock;
 
     //
     // truncate lock file once we have exclusive access to it.
@@ -156,10 +149,10 @@ static PRBool AcquireDaemonLock(const char *baseDir)
     int nb = PR_snprintf(buf, sizeof(buf), "%u\n", (unsigned long) getpid());
     write(ipcLockFD, buf, nb);
 
-    return PR_TRUE;
+    return EOk;
 }
 
-static PRBool InitDaemonDir(const char *socketPath)
+static Status InitDaemonDir(const char *socketPath)
 {
     LOG(("InitDaemonDir [sock=%s]\n", socketPath));
 
@@ -177,15 +170,15 @@ static PRBool InitDaemonDir(const char *socketPath)
     // if we can't acquire the daemon lock, then another daemon
     // must be active, so bail.
     //
-    PRBool haveLock = AcquireDaemonLock(baseDir);
+    Status status = AcquireDaemonLock(baseDir);
 
     PL_strfree(baseDir);
 
-    if (haveLock) {
+    if (status == EOk) {
         // delete an existing socket to prevent bind from failing.
         unlink(socketPath);
     }
-    return haveLock;
+    return status;
 }
 
 static void ShutdownDaemonDir()
@@ -401,9 +394,6 @@ int main(int argc, char **argv)
 {
     PRFileDesc *listenFD = NULL;
     PRNetAddr addr;
-#ifdef VBOX
-    enum { None=0, Directory, All } successLevel = None;
-#endif
 
     //
     // ignore SIGINT so <ctrl-c> from terminal only kills the client
@@ -430,65 +420,57 @@ int main(int argc, char **argv)
         PL_strncpyz(addr.local.path, argv[1], sizeof(addr.local.path));
 
 #ifdef IPC_USE_FILE_LOCK
-    if (!InitDaemonDir(addr.local.path)) {
-        LOG(("InitDaemonDir failed\n"));
+    Status status = InitDaemonDir(addr.local.path);
+    if (status != EOk) {
+        if (status == ELockFileLock) {
+            LOG(("Another daemon is already running, exiting.\n"));
+            // send a signal to the blocked parent to indicate success
+            IPC_NotifyParent();
+            return 0;
+        }
+        else {
+            LOG(("InitDaemonDir failed (status=%d)\n", status));
+            // don't notify the parent to cause it to fail in PR_Read() after
+            // we terminate
 #ifdef VBOX
-        printf("Cannot create/open directory '%s'\n", addr.local.path);
+            printf("Cannot create a lock file for '%s'.\n"
+                   "Check permissions.\n", addr.local.path);
 #endif
-        goto end;
+            return 0;
+        }
     }
-#endif
-
-#ifdef VBOX
-    successLevel = Directory;
 #endif
 
     listenFD = PR_OpenTCPSocket(PR_AF_LOCAL);
     if (!listenFD) {
         LOG(("PR_OpenTCPSocket failed [%d]\n", PR_GetError()));
-        goto end;
     }
-
-    if (PR_Bind(listenFD, &addr) != PR_SUCCESS) {
+    else if (PR_Bind(listenFD, &addr) != PR_SUCCESS) {
         LOG(("PR_Bind failed [%d]\n", PR_GetError()));
-        goto end;
     }
+    else {
+        IPC_InitModuleReg(argv[0]);
 
-    IPC_InitModuleReg(argv[0]);
+        if (PR_Listen(listenFD, 5) != PR_SUCCESS) {
+            LOG(("PR_Listen failed [%d]\n", PR_GetError()));
+        }
+        else {
+            // redirect all standard file descriptors to /dev/null for
+            // proper daemonizing
+            PR_Close(PR_STDIN);
+            PR_Open("/dev/null", O_RDONLY, 0);
+            PR_Close(PR_STDOUT);
+            PR_Open("/dev/null", O_WRONLY, 0);
+            PR_Close(PR_STDERR);
+            PR_Open("/dev/null", O_WRONLY, 0);
 
-    if (PR_Listen(listenFD, 5) != PR_SUCCESS) {
-        LOG(("PR_Listen failed [%d]\n", PR_GetError()));
-        goto end;
+            IPC_NotifyParent();
+
+            PollLoop(listenFD);
+        }
+
+        IPC_ShutdownModuleReg();
     }
-
-    IPC_NotifyParent();
-
-#ifdef VBOX
-    /* redirect all standard file descriptors to /dev/null for daemonizing */
-    PR_Close(PR_STDIN);
-    PR_Open("/dev/null", O_RDONLY, 0);
-    PR_Close(PR_STDOUT);
-    PR_Open("/dev/null", O_WRONLY, 0);
-    PR_Close(PR_STDERR);
-    PR_Open("/dev/null", O_WRONLY, 0);
-#endif
-
-#ifdef VBOX
-    successLevel = All;
-#endif
-
-    PollLoop(listenFD);
-
-end:
-#ifdef VBOX
-    if (successLevel >= All)
-#endif
-    IPC_ShutdownModuleReg();
-
-#ifdef VBOX
-    if (successLevel >= All)
-#endif
-    IPC_NotifyParent();
 
     //IPC_Sleep(5);
 
@@ -497,9 +479,6 @@ end:
     // otherwise, a client might launch another daemon that would be unable
     // to acquire the lock and would then leave the client without a daemon.
 
-#ifdef VBOX
-    if (successLevel >= Directory)
-#endif
     ShutdownDaemonDir();
 #endif
 
@@ -507,18 +486,6 @@ end:
         LOG(("closing socket\n"));
         PR_Close(listenFD);
     }
-
-#ifdef VBOX
-    if (successLevel < All)
-    {
-        if (fatal)
-        {
-            /* Kill the parent which spawned us */
-            printf("Abnormal termination.\n");
-            kill(getppid(), SIGINT);
-        }
-    }
-#endif
 
     return 0;
 }
