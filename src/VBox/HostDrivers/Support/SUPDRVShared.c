@@ -142,6 +142,8 @@ static SUPFUNC g_aFunctions[] =
     { "RTSemMutexRelease",                      (void *)RTSemMutexRelease },
     { "RTSemMutexDestroy",                      (void *)RTSemMutexDestroy },
 */
+    { "RTProcSelf",                             (void *)RTProcSelf },
+    { "RTR0ProcHandleSelf",                     (void *)RTR0ProcHandleSelf },
     { "RTSemFastMutexCreate",                   (void *)RTSemFastMutexCreate },
     { "RTSemFastMutexDestroy",                  (void *)RTSemFastMutexDestroy },
     { "RTSemFastMutexRequest",                  (void *)RTSemFastMutexRequest },
