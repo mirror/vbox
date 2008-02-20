@@ -320,6 +320,8 @@ typedef struct ATACONTROLLER
     RTGCPHYS    pRedoDMABuffer;
     /** Size of current DMA buffer (for redo operations). */
     uint32_t    cbRedoDMABuffer;
+    /** Alignmnet padding. */
+    uint32_t    u32Alignment0;
 
     /** The ATA/ATAPI interfaces of this controller. */
     ATADevState aIfs[2];

@@ -51,12 +51,13 @@
 
 /** PIIX3 Bus Master DMA unit state. */
 typedef struct BMDMAState {
+    /** Address of the MMIO region in the guest's memory space. */
+    RTGCPHYS pvAddr;
     /** Command register. */
     uint8_t u8Cmd;
     /** Status register. */
     uint8_t u8Status;
-    /** Address of the MMIO region in the guest's memory space. */
-    RTGCPHYS pvAddr;
+    uint8_t au8Alignment[6]; /**< Alignment padding. */
 } BMDMAState;
 
 
@@ -66,6 +67,7 @@ typedef struct BMDMADesc {
     RTGCPHYS pBuffer;
     /** Size of the DMA source/target buffer. */
     uint32_t cbBuffer;
+    uint32_t u32Alignment; /**< Alignment padding. */
 } BMDMADesc;
 
 /** @} */
