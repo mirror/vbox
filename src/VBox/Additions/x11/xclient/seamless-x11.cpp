@@ -187,9 +187,6 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
     XWindowAttributes winAttrib;
     VBoxGuestX11Pointer<XRectangle> rects;
     int cRects = 0, iOrdering;
-    int x, y;
-    /** Dummy value for XTranslateCoordinates */
-    Window dummyWin;
 
     if (!XGetWindowAttributes(mDisplay, hWin, &winAttrib))
     {
@@ -206,9 +203,7 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
         }
     }
     XSelectInput(mDisplay, hWin, StructureNotifyMask);
-    XTranslateCoordinates(mDisplay, hWin, DefaultRootWindow(mDisplay.get()), winAttrib.x,
-                          winAttrib.y, &x, &y, &dummyWin);
-    mGuestWindows.addWindow(hWin, winAttrib.map_state != IsUnmapped, x, y,
+    mGuestWindows.addWindow(hWin, winAttrib.map_state != IsUnmapped, winAttrib.x, winAttrib.y,
                             winAttrib.width, winAttrib.height, cRects, rects);
 }
 
