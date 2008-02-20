@@ -241,12 +241,12 @@ typedef void FNCURSORDRAWLINE(struct VGAState *s, uint8_t *d, int y);
 typedef struct VGAState {
     VGA_STATE_COMMON
 #ifdef VBOX
-    /** end-of-common-state-marker */
+    /** end-of-common-state-marker + alignment. */
     uint32_t                    u32Marker;
-    /** Pointer to GC vram mapping. */
-    GCPTRTYPE(uint8_t *)        vram_ptrGC;
     /** The physical address the VRAM was assigned. */
     RTGCPHYS                    GCPhysVRAM;
+    /** Pointer to GC vram mapping. */
+    GCPTRTYPE(uint8_t *)        vram_ptrGC;
     /** LFB was updated flag. */
     bool                        fLFBUpdated;
     /** Indicates if the GC extensions are enabled or not. */
