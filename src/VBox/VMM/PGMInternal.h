@@ -367,8 +367,6 @@ typedef struct PGMMAPPING *PPGMMAPPING;
 typedef struct PGMPHYSHANDLER
 {
     AVLROGCPHYSNODECORE                 Core;
-    /** Alignment padding. */
-    uint32_t                            u32Padding;
     /** Access type. */
     PGMPHYSHANDLERTYPE                  enmType;
     /** Number of pages to update. */
@@ -896,6 +894,9 @@ typedef struct PGMRAMRANGE
     R0PTRTYPE(struct PGMRAMRANGE *)     pNextR0;
     /** Pointer to the next RAM range - for GC. */
     GCPTRTYPE(struct PGMRAMRANGE *)     pNextGC;
+#if GC_ARCH_BITS == 32
+    RTGCPTR                             GCPtrAlignment; /**< Pointer alignment. */
+#endif
     /** Start of the range. Page aligned. */
     RTGCPHYS                            GCPhys;
     /** Last address in the range (inclusive). Page aligned (-1). */
@@ -919,11 +920,11 @@ typedef struct PGMRAMRANGE
 
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
-    uint32_t                            au32Reserved[2];
+    uint32_t                            au32Reserved[1];
 #else
 # if HC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
-    uint32_t                            u32Reserved[2];
+    uint32_t                            u32Reserved[1];
 # endif
 #endif
 
@@ -981,6 +982,9 @@ typedef struct PGMROMRANGE
     R0PTRTYPE(struct PGMROMRANGE *) pNextR0;
     /** Pointer to the next range - R0. */
     GCPTRTYPE(struct PGMROMRANGE *) pNextGC;
+#if GC_ARCH_BITS == 32
+    RTGCPTR                         GCPtrAlignment; /**< Pointer alignment. */
+#endif
     /** Address of the range. */
     RTGCPHYS                        GCPhys;
     /** Address of the last byte in the range. */
@@ -1117,15 +1121,15 @@ typedef struct PGMPAGER3MAPTLBE
 {
     /** Address of the page. */
     RTGCPHYS volatile                    GCPhys;
-#if HC_ARCH_BITS == 64
-    uint32_t                             u32Padding; /**< alignment padding. */
-#endif
     /** The guest page. */
     R3R0PTRTYPE(PPGMPAGE) volatile       pPage;
     /** Pointer to the page mapping tracking structure, PGMCHUNKR3MAP. */
     R3R0PTRTYPE(PPGMCHUNKR3MAP) volatile pMap;
     /** The address */
     R3R0PTRTYPE(void *) volatile         pv;
+#if HC_ARCH_BITS == 32
+    uint32_t                             u32Padding; /**< alignment padding. */
+#endif
 } PGMPAGER3MAPTLBE;
 /** Pointer to an entry in the HC physical TLB. */
 typedef PGMPAGER3MAPTLBE *PPGMPAGER3MAPTLBE;
@@ -1378,9 +1382,9 @@ typedef struct PGMPOOLPAGE
      *       replaced by a list of pages which share access handler.
      */
     bool                fCR3Mix;
-#if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
-    bool                Alignment[4];   /**< Align the structure size on a 64-bit boundrary. */
-#endif
+//#if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
+//    bool                Alignment[4];   /**< Align the structure size on a 64-bit boundrary. */
+//#endif
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
 
 
@@ -1837,12 +1841,12 @@ typedef struct PGM
      * The first page is always the CR3 (in some form) while the 4 other pages
      * are used of the PDs in PAE mode. */
     RTGCPTR                     GCPtrCR3Mapping;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+    RTGCPTR                     GCPtrPadding0; /**< alignment padding. */
+#endif
     /** The physical address of the currently monitored guest CR3 page.
      * When this value is NIL_RTGCPHYS no page is being monitored. */
     RTGCPHYS                    GCPhysGstCR3Monitored;
-#if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64
-    RTGCPHYS                    GCPhysPadding0; /**< alignment padding. */
-#endif
 
     /** @name 32-bit Guest Paging.
      * @{ */
@@ -2122,9 +2126,6 @@ typedef struct PGM
      * PGMFlushTLB, and PGMR3Load. */
     RTUINT                          fSyncFlags;
 
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
-    RTUINT                          uPadding3; /**< alignment padding. */
-#endif
     /** PGM critical section.
      * This protects the physical & virtual access handlers, ram ranges,
      * and the page flag updating (some of it anyway).
