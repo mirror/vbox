@@ -46,7 +46,7 @@ ifdef VBOX_X11_SEAMLESS_GUEST
 	thread.cpp \
 	displaychange-x11.cpp
  VBoxClient_LIBS += \
-	Xext
+	Xext Xmu
 endif
 
 #
@@ -80,6 +80,7 @@ ifdef VBOX_X11_SEAMLESS_GUEST
   tstSeamlessX11_LIBS = \
   	$(LIB_RUNTIME) \
   	Xext \
+  	Xmu \
   	X11
  endif
 endif
