@@ -1156,10 +1156,8 @@ IPC_SpawnDaemon(const char *path)
   if (PR_CreateProcessDetached(path, argv, nsnull, attr) != PR_SUCCESS)
     goto end;
 
-  // on some platforms (e.g. OS/2), it is necessary to close the child end of
-  // the pipe in order to get notification at child termination instead of
-  // being infinitely blocked in PR_Write()/PR_Read(). On other platforms, it
-  // should not hurt, too.
+  // close the child end of the pipe in order to get notification on unexpected
+  // child termination instead of being infinitely blocked in PR_Read().
   PR_Close(writable);
   writable = nsnull;
 
