@@ -320,16 +320,14 @@ typedef struct ATACONTROLLER
     bool        fRedoDMALastDesc;
     /** The BusMaster DMA state. */
     BMDMAState  BmDma;
-    /** Pointer to first DMA descriptor. */
-    RTGCPHYS    pFirstDMADesc;
-    /** Pointer to last DMA descriptor. */
-    RTGCPHYS    pLastDMADesc;
-    /** Pointer to current DMA buffer (for redo operations). */
-    RTGCPHYS    pRedoDMABuffer;
+    /** (32 bit) GC phys pointer to first DMA descriptor. */
+    uint32_t    pFirstDMADesc;
+    /** (32 bit) GC phys pointer to last DMA descriptor. */
+    uint32_t    pLastDMADesc;
+    /** (32 bit) GC phys pointer to current DMA buffer (for redo operations). */
+    uint32_t    pRedoDMABuffer;
     /** Size of current DMA buffer (for redo operations). */
     uint32_t    cbRedoDMABuffer;
-    /** Alignmnet padding. */
-    uint32_t    u32Alignment0;
 
     /** The ATA/ATAPI interfaces of this controller. */
     ATADevState aIfs[2];
@@ -3910,7 +3908,7 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
     PPDMDEVINS pDevIns = CONTROLLER_2_DEVINS(pCtl);
     ATADevState *s = &pCtl->aIfs[pCtl->iAIOIf];
     bool fRedo;
-    RTGCPHYS pDesc;
+    uint32_t pDesc;
     uint32_t cbTotalTransfer, cbElementaryTransfer;
     uint32_t iIOBufferCur, iIOBufferEnd;
     uint32_t dmalen;
@@ -3940,7 +3938,7 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
     for (pDesc = pCtl->pFirstDMADesc; pDesc <= pCtl->pLastDMADesc; pDesc += sizeof(BMDMADesc))
     {
         BMDMADesc DMADesc;
-        RTGCPHYS pBuffer;
+        uint32_t pBuffer;
         uint32_t cbBuffer;
 
         if (RT_UNLIKELY(fRedo))
@@ -3968,7 +3966,7 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
             {
                 dmalen = RT_MIN(cbBuffer, iIOBufferEnd - iIOBufferCur);
                 Log2(("%s: DMA desc %#010x: addr=%#010x size=%#010x\n", __FUNCTION__,
-                       (int)pDesc, pBuffer, cbBuffer));
+                       pDesc, pBuffer, cbBuffer));
                 if (uTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
                     PDMDevHlpPhysWrite(pDevIns, pBuffer, s->CTXSUFF(pbIOBuffer) + iIOBufferCur, dmalen);
                 else
@@ -5624,9 +5622,9 @@ static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
         SSMR3PutBool(pSSMHandle, pData->aCts[i].fRedoIdle);
         SSMR3PutBool(pSSMHandle, pData->aCts[i].fRedoDMALastDesc);
         SSMR3PutMem(pSSMHandle, &pData->aCts[i].BmDma, sizeof(pData->aCts[i].BmDma));
-        SSMR3PutGCPhys(pSSMHandle, pData->aCts[i].pFirstDMADesc);
-        SSMR3PutGCPhys(pSSMHandle, pData->aCts[i].pLastDMADesc);
-        SSMR3PutGCPhys(pSSMHandle, pData->aCts[i].pRedoDMABuffer);
+        SSMR3PutU32(pSSMHandle, pData->aCts[i].pFirstDMADesc);
+        SSMR3PutU32(pSSMHandle, pData->aCts[i].pLastDMADesc);
+        SSMR3PutU32(pSSMHandle, pData->aCts[i].pRedoDMABuffer);
         SSMR3PutU32(pSSMHandle, pData->aCts[i].cbRedoDMABuffer);
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pData->aCts[i].aIfs); j++)
@@ -5729,9 +5727,9 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         SSMR3GetBool(pSSMHandle, (bool *)&pData->aCts[i].fRedoIdle);
         SSMR3GetBool(pSSMHandle, (bool *)&pData->aCts[i].fRedoDMALastDesc);
         SSMR3GetMem(pSSMHandle, &pData->aCts[i].BmDma, sizeof(pData->aCts[i].BmDma));
-        SSMR3GetGCPhys(pSSMHandle, &pData->aCts[i].pFirstDMADesc);
-        SSMR3GetGCPhys(pSSMHandle, &pData->aCts[i].pLastDMADesc);
-        SSMR3GetGCPhys(pSSMHandle, &pData->aCts[i].pRedoDMABuffer);
+        SSMR3GetU32(pSSMHandle, &pData->aCts[i].pFirstDMADesc);
+        SSMR3GetU32(pSSMHandle, &pData->aCts[i].pLastDMADesc);
+        SSMR3GetU32(pSSMHandle, &pData->aCts[i].pRedoDMABuffer);
         SSMR3GetU32(pSSMHandle, &pData->aCts[i].cbRedoDMABuffer);
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pData->aCts[i].aIfs); j++)
@@ -6107,7 +6105,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                 pIf->pDrvBlock = NULL;
                 pIf->cbIOBuffer = 0;
                 pIf->pbIOBufferHC = NULL;
-                pIf->pbIOBufferGC = NIL_RTGCPHYS;
+                pIf->pbIOBufferGC = NIL_RTGCPTR;
                 LogRel(("PIIX3 ATA: LUN#%d: no unit\n", pIf->iLUN));
             }
             else
