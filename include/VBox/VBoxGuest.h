@@ -464,7 +464,8 @@ typedef struct
     VMMDevRequestHeader header;
     uint32_t            cPages;
     uint32_t            fInflate;       /* true = inflate, false = defalte */
-    RTGCPHYS            aPhysPage[1];   /* variable size */
+    /** Physical address (RTGCPHYS) of each page, variable size. */
+    uint64_t            aPhysPage[1];
 } VMMDevChangeMemBalloon;
 
 /** guest statistics interval change request structure */
