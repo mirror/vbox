@@ -28,20 +28,20 @@
 #include "seamless-guest.h"
 
 #include <X11/Xatom.h>
+#include <X11/Xmu/WinUtil.h>
 
 /*****************************************************************************
 * Static functions                                                           *
 *****************************************************************************/
 
-static VBoxGuestX11Pointer<unsigned char> XXGetProperty (Display *aDpy, Window aWnd,
-                                                         Atom aPropType, const char *aPropName,
-                                                         unsigned long *nItems)
+static unsigned char *XXGetProperty (Display *aDpy, Window aWnd, Atom aPropType,
+                                    const char *aPropName, unsigned long *nItems)
 {
     Atom propNameAtom = XInternAtom (aDpy, aPropName,
                                      True /* only_if_exists */);
     if (propNameAtom == None)
     {
-        return VBoxGuestX11Pointer<unsigned char>(0);
+        return NULL;
     }
 
     Atom actTypeAtom = None;
@@ -53,9 +53,9 @@ static VBoxGuestX11Pointer<unsigned char> XXGetProperty (Display *aDpy, Window a
                                  aPropType, &actTypeAtom, &actFmt,
                                  nItems, &nBytesAfter, &propVal);
     if (rc != Success)
-        return VBoxGuestX11Pointer<unsigned char>(0);
+        return NULL;
 
-    return VBoxGuestX11Pointer<unsigned char>(propVal);
+    return propVal;
 }
 
 /**
@@ -66,8 +66,6 @@ static VBoxGuestX11Pointer<unsigned char> XXGetProperty (Display *aDpy, Window a
 int VBoxGuestSeamlessX11::init(VBoxGuestSeamlessObserver *pObserver)
 {
     int rc = VINF_SUCCESS;
-    /** Dummy value for XXGetProperty */
-    unsigned long nItems;
 
     if (0 != mObserver)  /* Assertion */
     {
@@ -78,11 +76,6 @@ int VBoxGuestSeamlessX11::init(VBoxGuestSeamlessObserver *pObserver)
     {
         LogRel(("VBoxClient: seamless guest object failed to acquire a connection to the display.\n"));
         return VERR_ACCESS_DENIED;
-    }
-    if (0 == XXGetProperty(mDisplay, DefaultRootWindow(mDisplay.get()), XA_WINDOW,
-                           NET_CLIENT_LIST, &nItems).get())
-    {
-        LogRel(("VBoxClient: _NET_CLIENT_LIST property not supported by guest window manager.  Seamless mode will not be enabled.\n"));
     }
     mObserver = pObserver;
     return rc;
@@ -128,32 +121,66 @@ void VBoxGuestSeamlessX11::unmonitorClientList(void)
     XSelectInput(mDisplay, DefaultRootWindow(mDisplay.get()), 0);
 }
 
+/**
+ * Recreate the table of toplevel windows of clients on the default root window of the
+ * X server.
+ */
 void VBoxGuestSeamlessX11::rebuildWindowTree(void)
 {
-    VBoxGuestX11Pointer<unsigned char> clientListRaw;
-    VBoxGuestX11Pointer<Window> clientList;
-    unsigned long nItems;
-
     freeWindowTree();
-    clientListRaw = XXGetProperty(mDisplay, DefaultRootWindow(mDisplay.get()), XA_WINDOW,
-                                  NET_CLIENT_LIST, &nItems);
-    clientList = reinterpret_cast<Window *>(clientListRaw.release());
-    for (unsigned i = 0; i < nItems; ++i)
-    {
-        VBoxGuestX11Pointer<unsigned char> windowTypeRaw;
-        VBoxGuestX11Pointer<Atom> windowType;
-        unsigned long ulCount;
+    addClients(DefaultRootWindow(mDisplay.get()));
+}
 
-        windowTypeRaw = XXGetProperty(mDisplay, clientList.get()[i], XA_ATOM,
-                                      WM_TYPE_PROP, &ulCount);
-        windowType = reinterpret_cast<Atom *>(windowTypeRaw.release());
-        if (   (ulCount != 0)
-            && (*windowType != XInternAtom(mDisplay, WM_TYPE_DESKTOP_PROP, True)))
-        {
-            addClientWindow(clientList.get()[i]);
-        }
+
+/**
+ * Look at the list of children of a virtual root window and add them to the list of clients
+ * if they belong to a client which is not a virtual root.
+ *
+ * @param hRoot the virtual root window to be examined
+ */
+void VBoxGuestSeamlessX11::addClients(const Window hRoot)
+{
+    /** Unused out parameters of XQueryTree */
+    Window hRealRoot, hParent;
+    /** The list of children of the root supplied, raw pointer */
+    Window *phChildrenRaw;
+    /** The list of children of the root supplied, auto-pointer */
+    VBoxGuestX11Pointer<Window> phChildren;
+    /** The number of children of the root supplied */
+    unsigned cChildren;
+
+    if (!XQueryTree(mDisplay.get(), hRoot, &hRealRoot, &hParent, &phChildrenRaw, &cChildren))
+        return;
+    phChildren = phChildrenRaw;
+    for (unsigned i = 0; i < cChildren; ++i)
+    {
+        Window hClient = XmuClientWindow(mDisplay.get(), phChildren.get()[i]);
+        if (hClient != phChildren.get()[i] && !isVirtualRoot(hClient))
+            addClientWindow(phChildren.get()[i]);
     }
 }
+
+
+/**
+ * Checks whether a window is a virtual root.
+ * @returns true if it is, false otherwise
+ * @param hWin the window to be examined
+ */
+bool VBoxGuestSeamlessX11::isVirtualRoot(Window hWin)
+{
+    unsigned char *windowTypeRaw;
+    VBoxGuestX11Pointer<Atom> windowType;
+    unsigned long ulCount;
+    bool rc = false;
+
+    windowTypeRaw = XXGetProperty(mDisplay, hWin, XA_ATOM, WM_TYPE_PROP, &ulCount);
+    windowType = reinterpret_cast<Atom *>(windowTypeRaw);
+    if (   (ulCount != 0)
+        && (*windowType == XInternAtom(mDisplay, WM_TYPE_DESKTOP_PROP, True)))
+        rc = true;
+    return rc;
+}
+
 
 void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
 {

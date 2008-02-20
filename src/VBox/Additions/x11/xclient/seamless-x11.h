@@ -293,6 +293,8 @@ private:
     void monitorClientList(void);
     void unmonitorClientList(void);
     void rebuildWindowTree(void);
+    void addClients(const Window hRoot);
+    bool isVirtualRoot(Window hWin);
     void addClientWindow(Window hWin);
     void freeWindowTree(void);
     void updateHostSeamlessInfo(void);
