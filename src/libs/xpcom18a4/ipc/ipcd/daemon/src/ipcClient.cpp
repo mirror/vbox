@@ -95,12 +95,12 @@ ipcClient::AddName(const char *name)
     mNames.Append(name);
 }
 
-void
+PRBool
 ipcClient::DelName(const char *name)
 {
     LOG(("deleting client name: %s\n", name));
 
-    mNames.FindAndDelete(name);
+    return mNames.FindAndDelete(name);
 }
 
 void
@@ -114,7 +114,7 @@ ipcClient::AddTarget(const nsID &target)
     mTargets.Append(target);
 }
 
-void
+PRBool
 ipcClient::DelTarget(const nsID &target)
 {
     LOG(("deleting client target\n"));
@@ -123,7 +123,9 @@ ipcClient::DelTarget(const nsID &target)
     // cannot remove the IPCM target
     //
     if (!target.Equals(IPCM_TARGET))
-        mTargets.FindAndDelete(target);
+        return mTargets.FindAndDelete(target);
+
+    return PR_FALSE;
 }
 
 #if defined(XP_UNIX) || defined(XP_OS2)
@@ -184,7 +186,7 @@ ipcClient::Process(PRFileDesc *fd, int inFlags)
             ptr += nread;
         }
     }
-  
+
     if (inFlags & PR_POLL_WRITE) {
         LOG(("client socket is now writable\n"));
 

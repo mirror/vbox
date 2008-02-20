@@ -61,7 +61,7 @@ struct ipcCommandModule
         size_t count = 0;
 
         const ipcStringNode *node;
-        
+
         for (node = nodes; node; node = node->mNext)
             count++;
 
@@ -83,7 +83,7 @@ struct ipcCommandModule
         size_t count = 0;
 
         const ipcIDNode *node;
-        
+
         for (node = nodes; node; node = node->mNext)
             count++;
 
@@ -132,13 +132,24 @@ struct ipcCommandModule
     {
         LOG(("got CLIENT_ADD_NAME\n"));
 
+        PRInt32 status = IPCM_OK;
+        PRUint32 requestIndex = IPCM_GetRequestIndex(rawMsg);
+
         ipcMessageCast<ipcmMessageClientAddName> msg(rawMsg);
         const char *name = msg->Name();
-        if (name)
-            client->AddName(name);
+        if (name) {
+            ipcClient *result = IPC_GetClientByName(msg->Name());
+            if (result) {
+                LOG(("  client with such name already exists (ID = %d)\n", result->ID()));
+                status = IPCM_ERROR_ALREADY_EXISTS;
+            }
+            else
+                client->AddName(name);
+        }
+        else
+            status = IPCM_ERROR_INVALID_ARG;
 
-        // TODO: send better status code (e.g., suppose name already defined for client)
-        IPC_SendMsg(client, new ipcmMessageResult(IPCM_GetRequestIndex(rawMsg), IPCM_OK));
+        IPC_SendMsg(client, new ipcmMessageResult(requestIndex, status));
     }
 
     static void
@@ -146,13 +157,21 @@ struct ipcCommandModule
     {
         LOG(("got CLIENT_DEL_NAME\n"));
 
+        PRInt32 status = IPCM_OK;
+        PRUint32 requestIndex = IPCM_GetRequestIndex(rawMsg);
+
         ipcMessageCast<ipcmMessageClientDelName> msg(rawMsg);
         const char *name = msg->Name();
-        if (name)
-            client->DelName(name);
+        if (name) {
+            if (!client->DelName(name)) {
+                LOG(("  client doesn't have name '%s'\n", name));
+                status = IPCM_ERROR_NO_SUCH_DATA;
+            }
+        }
+        else
+            status = IPCM_ERROR_INVALID_ARG;
 
-        // TODO: send better status code (e.g., suppose name not defined for client)
-        IPC_SendMsg(client, new ipcmMessageResult(IPCM_GetRequestIndex(rawMsg), IPCM_OK));
+        IPC_SendMsg(client, new ipcmMessageResult(requestIndex, status));
     }
 
     static void
@@ -160,11 +179,18 @@ struct ipcCommandModule
     {
         LOG(("got CLIENT_ADD_TARGET\n"));
 
-        ipcMessageCast<ipcmMessageClientAddTarget> msg(rawMsg);
-        client->AddTarget(msg->Target());
+        PRInt32 status = IPCM_OK;
+        PRUint32 requestIndex = IPCM_GetRequestIndex(rawMsg);
 
-        // TODO: send better status code (e.g., suppose target already defined for client)
-        IPC_SendMsg(client, new ipcmMessageResult(IPCM_GetRequestIndex(rawMsg), IPCM_OK));
+        ipcMessageCast<ipcmMessageClientAddTarget> msg(rawMsg);
+        if (client->HasTarget(msg->Target())) {
+            LOG(("  target already defined for client\n"));
+            status = IPCM_ERROR_ALREADY_EXISTS;
+        }
+        else
+            client->AddTarget(msg->Target());
+
+        IPC_SendMsg(client, new ipcmMessageResult(requestIndex, status));
     }
 
     static void
@@ -172,11 +198,16 @@ struct ipcCommandModule
     {
         LOG(("got CLIENT_DEL_TARGET\n"));
 
-        ipcMessageCast<ipcmMessageClientDelTarget> msg(rawMsg);
-        client->DelTarget(msg->Target());
+        PRInt32 status = IPCM_OK;
+        PRUint32 requestIndex = IPCM_GetRequestIndex(rawMsg);
 
-        // TODO: send better status code (e.g., suppose target not defined for client)
-        IPC_SendMsg(client, new ipcmMessageResult(IPCM_GetRequestIndex(rawMsg), IPCM_OK));
+        ipcMessageCast<ipcmMessageClientDelTarget> msg(rawMsg);
+        if (!client->DelTarget(msg->Target())) {
+            LOG(("  client doesn't have the given target\n"));
+            status = IPCM_ERROR_NO_SUCH_DATA;
+        }
+
+        IPC_SendMsg(client, new ipcmMessageResult(requestIndex, status));
     }
 
     static void
@@ -221,7 +252,7 @@ struct ipcCommandModule
         }
         else {
             LOG(("  client does not exist\n"));
-            IPC_SendMsg(client, new ipcmMessageError(IPCM_ERROR_CLIENT_NOT_FOUND, msg->RequestIndex()));
+            IPC_SendMsg(client, new ipcmMessageError(IPCM_ERROR_NO_CLIENT, msg->RequestIndex()));
         }
     }
 #endif
@@ -277,7 +308,7 @@ IPCM_HandleMsg(ipcClient *client, const ipcMessage *rawMsg)
     type &= ~IPCM_MSG_CLASS_REQ;
     type--;
     if (type < 0 || type >= (int) (sizeof(handlers)/sizeof(handlers[0]))) {
-        LOG(("unknown request -- ignoring message\n")); 
+        LOG(("unknown request -- ignoring message\n"));
         return;
     }
 

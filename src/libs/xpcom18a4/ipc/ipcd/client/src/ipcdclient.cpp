@@ -83,7 +83,7 @@ public:
 
   // the message observer is called via this event queue
   nsCOMPtr<nsIEventQueue> eventQ;
-  
+
   // incoming messages are added to this list
   ipcMessageQ pendingQ;
 
@@ -137,7 +137,7 @@ ipcTargetData::SetObserver(ipcIMessageObserver *aObserver, PRBool aOnCurrentThre
 
 /* ------------------------------------------------------------------------- */
 
-typedef nsRefPtrHashtable<nsIDHashKey, ipcTargetData> ipcTargetMap; 
+typedef nsRefPtrHashtable<nsIDHashKey, ipcTargetData> ipcTargetMap;
 
 class ipcClientState
 {
@@ -151,7 +151,7 @@ public:
   }
 
   //
-  // the monitor protects the targetMap and the connected and shutdown flags.  
+  // the monitor protects the targetMap and the connected and shutdown flags.
   //
   // NOTE: we use a PRMonitor for this instead of a PRLock because we need
   //       the lock to be re-entrant.  since we don't ever need to wait on
@@ -164,7 +164,7 @@ public:
   PRBool        shutdown;
 
   // our process's client id
-  PRUint32      selfID; 
+  PRUint32      selfID;
 
   nsCOMArray<ipcIClientObserver> clientObservers;
 
@@ -318,7 +318,7 @@ WaitTarget(const nsID           &aTarget,
     return NS_ERROR_INVALID_ARG; // bad aTarget
 
   PRBool isIPCMTarget = aTarget.Equals(IPCM_TARGET);
-  
+
   PRIntervalTime timeStart = PR_IntervalNow();
   PRIntervalTime timeEnd;
   if (aTimeout == PR_INTERVAL_NO_TIMEOUT)
@@ -341,9 +341,9 @@ WaitTarget(const nsID           &aTarget,
 
   // only the ICPM target is allowed to wait for a message after shutdown
   // (but before disconnection).  this gives client observers called from
-  // IPC_Shutdown a chance to use IPC_SendMessage to send necessary 
+  // IPC_Shutdown a chance to use IPC_SendMessage to send necessary
   // "last minute" messages to other clients.
-  
+
   while (gClientState->connected && (!gClientState->shutdown || isIPCMTarget))
   {
     NS_ASSERTION(!lastChecked, "oops");
@@ -374,13 +374,13 @@ WaitTarget(const nsID           &aTarget,
       // returns TRUE).  here we prevent this situation by using a special flag
       // to guarantee that every message is processed only once.
       //
-       
+
       if (!lastChecked->TestFlag(IPC_MSG_FLAG_IN_PROCESS))
       {
         lastChecked->SetFlag(IPC_MSG_FLAG_IN_PROCESS);
         PRBool accepted = (aSelector)(aArg, td, lastChecked);
         lastChecked->ClearFlag(IPC_MSG_FLAG_IN_PROCESS);
-	
+
         if (accepted)
         {
           // remove from pending queue
@@ -398,7 +398,7 @@ WaitTarget(const nsID           &aTarget,
       beforeLastChecked = lastChecked;
       lastChecked = lastChecked->mNext;
     }
-      
+
     if (*aMsg)
     {
       rv = NS_OK;
@@ -516,7 +516,7 @@ private:
 static void
 CallProcessPendingQ(const nsID &target, ipcTargetData *td)
 {
-  // we assume that we are inside td's monitor 
+  // we assume that we are inside td's monitor
 
   PLEvent *ev = new ipcEvent_ProcessPendingQ(target);
   if (!ev)
@@ -561,6 +561,27 @@ EnableMessageObserver(const nsID &aTarget)
 
 /* ------------------------------------------------------------------------- */
 
+// converts IPCM_ERROR_* status codes to NS_ERROR_* status codes
+static nsresult nsresult_from_ipcm_result(PRInt32 status)
+{
+  nsresult rv = NS_ERROR_FAILURE;
+
+  switch (status)
+  {
+    case IPCM_ERROR_GENERIC:        rv = NS_ERROR_FAILURE; break;
+    case IPCM_ERROR_INVALID_ARG:    rv = NS_ERROR_INVALID_ARG; break;
+    // TODO: select better mapping for the below codes
+    case IPCM_ERROR_NO_CLIENT:
+    case IPCM_ERROR_NO_SUCH_DATA:
+    case IPCM_ERROR_ALREADY_EXISTS: rv = NS_ERROR_FAILURE; break;
+    default:                        NS_ASSERTION(PR_FALSE, "No conversion");
+  }
+
+  return rv;
+}
+
+/* ------------------------------------------------------------------------- */
+
 // selects the next IPCM message with matching request index
 static PRBool
 WaitIPCMResponseSelector(void *arg, ipcTargetData *td, const ipcMessage *msg)
@@ -570,7 +591,7 @@ WaitIPCMResponseSelector(void *arg, ipcTargetData *td, const ipcMessage *msg)
 }
 
 // wait for an IPCM response message.  if responseMsg is null, then it is
-// assumed that the caller does not care to get a reference to the 
+// assumed that the caller does not care to get a reference to the
 // response itself.  if the response is an IPCM_MSG_ACK_RESULT, then the
 // status code is mapped to a nsresult and returned by this function.
 static nsresult
@@ -587,7 +608,7 @@ WaitIPCMResponse(PRUint32 requestIndex, ipcMessage **responseMsg = nsnull)
   {
     ipcMessageCast<ipcmMessageResult> result(msg);
     if (result->Status() < 0)
-      rv = NS_ERROR_FAILURE; // XXX nsresult_from_ipcm_result()
+      rv = nsresult_from_ipcm_result(result->Status());
     else
       rv = NS_OK;
   }
@@ -681,7 +702,7 @@ TryConnect()
   nsresult rv = GetDaemonPath(dpath);
   if (NS_FAILED(rv))
     return rv;
-  
+
   rv = IPC_Connect(dpath.get());
   if (NS_FAILED(rv))
     return rv;
@@ -741,13 +762,13 @@ IPC_Shutdown()
   NS_ENSURE_TRUE(gClientState, NS_ERROR_NOT_INITIALIZED);
 
   LOG(("IPC_Shutdown: connected=%d\n",gClientState->connected));
-  
+
   if (gClientState->connected)
   {
     {
       // first, set the shutdown flag and unblock any calls to WaitTarget.
       // all targets but IPCM will not be able to use WaitTarget any more.
-      
+
       nsAutoMonitor mon(gClientState->monitor);
       gClientState->shutdown = PR_TRUE;
       gClientState->targetMap.EnumerateRead(EnumerateTargetMapAndNotify, nsnull);
@@ -758,12 +779,12 @@ IPC_Shutdown()
     // fully operational at this point, so they can use IPC_SendMessage
     // (this is essential for the DConnect extension, for example, to do the
     // proper uninitialization).
-    
+
     ipcEvent_ClientState *ev = new ipcEvent_ClientState(IPC_SENDER_ANY,
                                                         IPCM_CLIENT_STATE_DOWN);
     ipcEvent_ClientState::HandleEvent (ev);
     ipcEvent_ClientState::DestroyEvent (ev);
-    
+
     IPC_Disconnect();
   }
 
@@ -895,7 +916,7 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
 
   // process the specially forwarded client state message to see if the
   // sender we're waiting a message from has died.
-  
+
   if (msg->Target().Equals(IPCM_TARGET))
   {
     switch (IPCM_GetType(msg))
@@ -909,12 +930,12 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
         {
           LOG(("sender (%d) we're waiting a message from (%d) has died\n",
                status->ClientID(), data->senderID));
-               
+
           if (data->senderID != IPC_SENDER_ANY)
           {
             // we're waiting on a particular client, so IPC_WaitMessage must
             // definitely fail with the NS_ERROR_xxx result.
-            
+
             data->senderDead = PR_TRUE;
             return PR_TRUE; // consume the message
           }
@@ -928,7 +949,7 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
             if (!obs)
               obs = td->observer;
             NS_ASSERTION(obs, "must at least have a default observer");
-            
+
             nsresult rv = obs->OnMessageAvailable(status->ClientID(), nsID(), 0, 0);
             if (rv != IPC_WAIT_NEXT_MESSAGE)
             {
@@ -985,11 +1006,11 @@ IPC_WaitMessage(PRUint32             aSenderID,
   nsresult rv = WaitTarget(aTarget, aTimeout, &msg, WaitMessageSelector, &data);
   if (NS_FAILED(rv))
     return rv;
-  
+
   // if the requested sender has died while waiting, return an error
   if (data.senderDead)
     return NS_ERROR_ABORT; // XXX better error code?
-  
+
   // if the selector has accepted some message, then we pass it to aConsumer
   // for safe processing.  The IPC susbsystem is quite stable here (i.e. we're
   // not inside any of the monitors, and the message has been already removed
@@ -1001,7 +1022,7 @@ IPC_WaitMessage(PRUint32             aSenderID,
                                   (const PRUint8 *) msg->Data(),
                                   msg->DataLen());
   }
-  
+
   delete msg;
 
   return NS_OK;
@@ -1080,7 +1101,7 @@ IPC_ResolveClientName(const char *aName, PRUint32 *aClientID)
     LOG(("unexpected IPCM response: type=%x\n", IPCM_GetType(msg)));
     rv = NS_ERROR_UNEXPECTED;
   }
-    
+
   delete msg;
   return rv;
 }
@@ -1224,7 +1245,7 @@ EnumerateTargetMapAndPlaceMsg(const nsID    &aKey,
     ipcMessage *msg = (ipcMessage *) userArg;
     PlaceOnPendingQ(aKey, aData, msg->Clone());
   }
-  
+
   return PL_DHASH_NEXT;
 }
 
@@ -1275,7 +1296,7 @@ IPC_OnMessageAvailable(ipcMessage *msg)
         ipcMessageCast<ipcmMessageClientState> status(msg);
         PostEventToMainThread(new ipcEvent_ClientState(status->ClientID(),
                                                        status->ClientState()));
-        
+
         // go through the target map, and place this message to every target's
         // pending event queue.  that unblocks all WaitTarget calls (on all
         // targets) giving them an opportuninty to finish wait cycle because of
@@ -1284,7 +1305,7 @@ IPC_OnMessageAvailable(ipcMessage *msg)
         gClientState->targetMap.EnumerateRead(EnumerateTargetMapAndPlaceMsg, msg);
 
         delete msg;
-        
+
         return;
       }
     }
@@ -1294,9 +1315,9 @@ IPC_OnMessageAvailable(ipcMessage *msg)
   if (GetTarget(msg->Target(), getter_AddRefs(td)))
   {
     // make copy of target since |msg| may end up pointing to free'd memory
-    // once we notify the monitor inside PlaceOnPendingQ(). 
+    // once we notify the monitor inside PlaceOnPendingQ().
     const nsID target = msg->Target();
-    
+
     PlaceOnPendingQ(target, td, msg);
   }
   else

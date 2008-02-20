@@ -91,13 +91,19 @@ public:
         return FindNode(mHead, str);
     }
 
-    void FindAndDelete(const char *str)
+    PRBool FindAndDelete(const char *str)
     {
         ipcStringNode *node = FindNodeBefore(mHead, str);
-        if (node)
+        if (node) {
             DeleteAfter(node);
-        else
+            return PR_TRUE;
+        }
+        else if (!IsEmpty()) {
             DeleteFirst();
+            return PR_TRUE;
+        }
+
+        return PR_FALSE;
     }
 
 private:
