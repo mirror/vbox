@@ -41,9 +41,11 @@
 #include "clipboard.h"
 
 /* #define DEBUG_CLIPBOARD */
-#ifndef DEBUG_CLIPBOARD
+#if !defined(DEBUG_CLIPBOARD) && !defined(LOG_TO_BACKDOOR)
+  /* Disabled unnecessary debug logging in the shared clipboard when
+     LOG_TO_BACKDOOR is defined (to be removed). */
 # undef LogFlow
-# define LogFlow(a)
+# define LogFlow(a) do {} while (0)
 #endif
 
 /** The formats which we support in the guest. These can be deactivated in order to test specific code paths. */
