@@ -243,21 +243,20 @@ typedef struct VGAState {
 #ifdef VBOX
     /** end-of-common-state-marker */
     uint32_t                    u32Marker;
-    /** The physical address the VRAM was assigned. */
-    RTGCPHYS                    GCPhysVRAM;
     /** Pointer to GC vram mapping. */
     GCPTRTYPE(uint8_t *)        vram_ptrGC;
-/** @todo r=bird: bool not RTUINT (my fault I guess). */
+    /** The physical address the VRAM was assigned. */
+    RTGCPHYS                    GCPhysVRAM;
     /** LFB was updated flag. */
-    RTUINT                      fLFBUpdated;
+    bool                        fLFBUpdated;
     /** Indicates if the GC extensions are enabled or not. */
-    RTUINT                      fGCEnabled;
+    bool                        fGCEnabled;
     /** Indicates if the R0 extensions are enabled or not. */
-    RTUINT                      fR0Enabled;
-    /** Pointer to vgaGCLFBAccessHandler(). */
-    RTGCPTR                     GCPtrLFBHandler;
+    bool                        fR0Enabled;
     /** Flag indicating that there are dirty bits. This is used to optimize the handler resetting. */
     bool                        fHaveDirtyBits;
+    /** Pointer to vgaGCLFBAccessHandler(). */
+    RTGCPTR                     GCPtrLFBHandler;
     /** Bitmap tracking dirty pages. */
     uint32_t                    au32DirtyBitmap[VGA_VRAM_MAX / PAGE_SIZE / 32];
     /** Pointer to the device instance - HC Ptr. */
