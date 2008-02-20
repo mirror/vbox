@@ -96,7 +96,7 @@
 #define PCNET_IOPORT_SIZE               0x20
 #define PCNET_PNPMMIO_SIZE              0x20
 
-#define PCNET_SAVEDSTATE_VERSION        7
+#define PCNET_SAVEDSTATE_VERSION        8
 
 #define BCR_MAX_RAP                     50
 #define MII_MAX_REG                     32
@@ -130,6 +130,10 @@ struct PCNetState_st
     /** Poll timer (address for guest context) */
     GCPTRTYPE(PTMTIMER)                 pTimerPollGC;
 #endif
+    /** Software Interrupt timer (address for host context) */
+    R3R0PTRTYPE(PTMTIMER)               pTimerSoftIntHC;
+    /** Software Interrupt timer (address for guest context) */
+    GCPTRTYPE(PTMTIMER)                 pTimerSoftIntGC;
     /** Register Address Pointer */
     uint32_t                            u32RAP;
     /** Internal interrupt service */
@@ -347,19 +351,21 @@ struct PCNetState_st
 #define CSR_INIT(S)      !!((S)->aCSR[0] & 0x0001)  /**< Init assertion */
 #define CSR_STRT(S)      !!((S)->aCSR[0] & 0x0002)  /**< Start assertion */
 #define CSR_STOP(S)      !!((S)->aCSR[0] & 0x0004)  /**< Stop assertion */
-#define CSR_TDMD(S)      !!((S)->aCSR[0] & 0x0008)  /**< Transmit demand. (perform xmit poll now
-                                                         (readable, settable, not clearable) */
+#define CSR_TDMD(S)      !!((S)->aCSR[0] & 0x0008)  /**< Transmit demand. (perform xmit poll now (readable, settable, not clearable) */
 #define CSR_TXON(S)      !!((S)->aCSR[0] & 0x0010)  /**< Transmit on (readonly) */
 #define CSR_RXON(S)      !!((S)->aCSR[0] & 0x0020)  /**< Receive On */
 #define CSR_INEA(S)      !!((S)->aCSR[0] & 0x0040)  /**< Interrupt Enable */
 #define CSR_LAPPEN(S)    !!((S)->aCSR[3] & 0x0020)  /**< Look Ahead Packet Processing Enable */
-#define CSR_DXSUFLO(S)   !!((S)->aCSR[3] & 0x0040)  /**< Disable Transmit Stop on
-                                                           Underflow error */
+#define CSR_DXSUFLO(S)   !!((S)->aCSR[3] & 0x0040)  /**< Disable Transmit Stop on Underflow error */
 #define CSR_ASTRP_RCV(S) !!((S)->aCSR[4] & 0x0400)  /**< Auto Strip Receive */
 #define CSR_DPOLL(S)     !!((S)->aCSR[4] & 0x1000)  /**< Disable Transmit Polling */
 #define CSR_SPND(S)      !!((S)->aCSR[5] & 0x0001)  /**< Suspend */
 #define CSR_LTINTEN(S)   !!((S)->aCSR[5] & 0x4000)  /**< Last Transmit Interrupt Enable */
 #define CSR_TOKINTD(S)   !!((S)->aCSR[5] & 0x8000)  /**< Transmit OK Interrupt Disable */
+
+#define CSR_STINT        !!((S)->aCSR[7] & 0x0800)  /**< Software Timer Interrupt */
+#define CSR_STINTE       !!((S)->aCSR[7] & 0x0400)  /**< Software Timer Interrupt Enable */
+
 #define CSR_DRX(S)       !!((S)->aCSR[15] & 0x0001) /**< Disable Receiver */
 #define CSR_DTX(S)       !!((S)->aCSR[15] & 0x0002) /**< Disable Transmit */
 #define CSR_LOOP(S)      !!((S)->aCSR[15] & 0x0004) /**< Loopback Enable */
@@ -1236,6 +1242,9 @@ static void pcnetUpdateIrq(PCNetState *pData)
         iISR = 1;
         csr0 |= 0x0080; /* INTR */
     }
+
+    if ((pData->aCSR[7] & 0x0C00) == 0x0C00)
+        iISR = 1;
 
     pData->aCSR[0] = csr0;
 
@@ -2426,6 +2435,15 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
 
                 return rc;
             }
+        case 7:
+            {
+                uint16_t csr7 = pData->aCSR[7];
+                csr7 &=        ~0x0400 ;
+                csr7 &= ~(val & 0x0800);
+                csr7 |=  (val & 0x0400);
+                pData->aCSR[7] = csr7;
+                return rc;
+            }
         case 1:  /* IADRL */
         case 2:  /* IADRH */
         case 8:  /* LADRF  0..15 */
@@ -2625,7 +2643,7 @@ static uint32_t pcnetCSRReadU16(PCNetState *pData, uint32_t u32RAP)
                     PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
     }
 #ifdef PCNET_DEBUG_CSR
-    Log(("#%d pcnetCSRReadU16: u32RAP=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log(("#%d pcnetCSRReadU16: rap=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          u32RAP, val));
 #endif
     return val;
@@ -2636,7 +2654,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
     int rc = VINF_SUCCESS;
     u32RAP &= 0x7f;
 #ifdef PCNET_DEBUG_BCR
-    Log2(("#%d pcnetBCRWriteU16: u32RAP=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetBCRWriteU16: rap=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          u32RAP, val));
 #endif
     switch (u32RAP)
@@ -2688,10 +2706,21 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
             pData->aBCR[u32RAP] = val;
             break;
 
+        case BCR_STVAL:
+            val &= 0xffff;
+            pData->aBCR[BCR_STVAL] = val;
+            if (pData->fAm79C973)
+                TMTimerSet(pData->CTXSUFF(pTimerSoftInt), (uint64_t)12800 * val);
+            break;
+
         case BCR_MIIMDR:
             LOG_REGISTER(("PCNet#%d: WRITE MII%d, %#06x\n",
                          PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             pData->aMII[pData->aBCR[BCR_MIIADDR] & 0x1f] = val;
+#ifdef PCNET_DEBUG_MII
+            Log(("#%d pcnet: mii write %d <- %#x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+                   pData->aBCR[BCR_MIIADDR] & 0x1f, val));
+#endif
             break;
 
         default:
@@ -2706,7 +2735,7 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
     bool autoneg, duplex, fast;
     STAM_COUNTER_INC(&pData->StatMIIReads);
 
-    autoneg = (pData->aBCR[BCR_MIICAS] & 0x20) != 0;
+    autoneg = (pData->aBCR[BCR_MIICAS] & 0x20) != 0 /*|| (pData->aMII[0] & 0x1000)*/;
     duplex  = (pData->aBCR[BCR_MIICAS] & 0x10) != 0;
     fast    = (pData->aBCR[BCR_MIICAS] & 0x08) != 0;
 
@@ -2720,7 +2749,7 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
             if (fast)
                 val |= 0x2000;  /* 100 Mbps */
             if (duplex) /* Full duplex forced */
-                val |= 0x0010;  /* Full duplex */
+                val |= 0x0100;  /* Full duplex */
             break;
 
         case 1:
@@ -2851,7 +2880,7 @@ static uint32_t pcnetBCRReadU16(PCNetState *pData, uint32_t u32RAP)
             break;
     }
 #ifdef PCNET_DEBUG_BCR
-    Log2(("#%d pcnetBCRReadU16: u32RAP=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetBCRReadU16: rap=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
          u32RAP, val));
 #endif
     return val;
@@ -2885,6 +2914,7 @@ static void pcnetHardReset(PCNetState *pData)
     pData->aBCR[BCR_FDC  ] = 0x0000;
     pData->aBCR[BCR_BSBC ] = 0x9001;
     pData->aBCR[BCR_EECAS] = 0x0002;
+    pData->aBCR[BCR_STVAL] = 0xffff;
     pData->aCSR[58       ] = /* CSR58 is an alias for BCR20 */
     pData->aBCR[BCR_SWS  ] = 0x0200;
     pData->iLog2DescSize   = 3;
@@ -3458,6 +3488,22 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
     STAM_PROFILE_ADV_STOP(&pData->StatTimer, a);
 }
 
+/**
+ * Software interrupt timer callback function.
+ *
+ * @param   pDevIns         Device instance of the device which registered the timer.
+ * @param   pTimer          The timer handle.
+ * @thread  EMT
+ */
+static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+{
+    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+
+    pData->aCSR[7] |= 0x0800;
+    pcnetUpdateIrq(pData);
+    TMTimerSet(pData->CTXSUFF(pTimerSoftInt), (uint64_t)12800 * (pData->aBCR[BCR_STVAL] & 0xffff));
+}
+
 
 /**
  * Restore timer callback.
@@ -3850,6 +3896,7 @@ static DECLCALLBACK(int) pcnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    int rc = VINF_SUCCESS;
 
     SSMR3PutBool(pSSMHandle, pData->fLinkUp);
     SSMR3PutU32(pSSMHandle, pData->u32RAP);
@@ -3869,8 +3916,13 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 #ifdef PCNET_NO_POLLING
     return VINF_SUCCESS;
 #else
-    return TMR3TimerSave(pData->CTXSUFF(pTimerPoll), pSSMHandle);
+    rc = TMR3TimerSave(pData->CTXSUFF(pTimerPoll), pSSMHandle);
+    if (VBOX_FAILURE(rc))
+        return rc;
 #endif
+    if (pData->fAm79C973)
+        rc = TMR3TimerSave(pData->CTXSUFF(pTimerSoftInt), pSSMHandle);
+    return rc;
 }
 
 
@@ -3904,7 +3956,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
     PDMMAC      Mac;
-    if (u32Version != PCNET_SAVEDSTATE_VERSION)
+    if (SSM_VERSION_MAJOR_CHANGED(u32Version, PCNET_SAVEDSTATE_VERSION))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /* restore data */
@@ -3928,6 +3980,12 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 #ifndef PCNET_NO_POLLING
     TMR3TimerLoad(pData->CTXSUFF(pTimerPoll), pSSMHandle);
 #endif
+    if (pData->fAm79C973)
+    {
+        if (   SSM_VERSION_MAJOR(u32Version) >  0
+            || SSM_VERSION_MINOR(u32Version) >= 8)
+            TMR3TimerLoad(pData->CTXSUFF(pTimerSoftInt), pSSMHandle);
+    }
 
     pData->iLog2DescSize = BCR_SWSTYLE(pData)
                          ? 4
@@ -4183,6 +4241,7 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 #else
     pData->pTimerPollGC  = TMTimerGCPtr(pData->pTimerPollHC);
 #endif
+    pData->pTimerSoftIntGC = TMTimerGCPtr(pData->pTimerSoftIntHC);
 }
 
 
@@ -4381,15 +4440,26 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 "PCNet Poll Timer", &pData->pTimerPollHC);
     if (VBOX_FAILURE(rc))
     {
-        AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
+        AssertMsgFailed(("pfnTMTimerCreate pcnetTimer -> %Vrc\n", rc));
         return rc;
     }
 #endif
+    if (pData->fAm79C973)
+    {
+        /* Software Interrupt timer */
+        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerSoftInt,
+                                   "PCNet SoftInt Timer", &pData->pTimerSoftIntHC);
+        if (VBOX_FAILURE(rc))
+        {
+            AssertMsgFailed(("pfnTMTimerCreate pcnetTimerSoftInt -> %Vrc\n", rc));
+            return rc;
+        }
+    }
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerRestore,
                                 "PCNet Restore Timer", &pData->pTimerRestore);
     if (VBOX_FAILURE(rc))
     {
-        AssertMsgFailed(("pfnTMTimerCreate -> %Vrc\n", rc));
+        AssertMsgFailed(("pfnTMTimerCreate pcnetTimerRestore -> %Vrc\n", rc));
         return rc;
     }
 /** @todo r=bird: we're not locking down pcnet properly during saving and loading! */
