@@ -79,7 +79,7 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
  ifdef VBOX_ONLY_ADDITIONS
   VBOX_PATH_ADDITIONS.win.x86 = $(PATH_OUT_BASE)/win.x86/$(BUILD_TYPE)/bin/additions
  else
-  VBOX_PATH_ADDITIONS.win.x86 = $(VBOX_PATH_ADDITIONS)
+  VBOX_PATH_ADDITIONS.win.x86 = $(VBOX_PATH_ADDITIONS) # 32-only hack
  endif
  ## @todo We're missing the .cat files and using the wrong .inf files here.
  GUESTADDITIONS_FILESPEC.win.x86 = \
@@ -137,7 +137,11 @@ endif
 # The x86 Linux .iso file spec.
 #
 ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
- VBOX_PATH_ADDITIONS.linux.x86 = $(PATH_OUT_BASE)/linux.x86/$(BUILD_TYPE)/bin/additions
+ ifdef VBOX_ONLY_ADDITIONS
+  VBOX_PATH_ADDITIONS.linux.x86 = $(PATH_OUT_BASE)/linux.x86/$(BUILD_TYPE)/bin/additions
+ else
+  VBOX_PATH_ADDITIONS.linux.x86 = $(VBOX_PATH_ADDITIONS) # 32-bit only hack
+ endif
  GUESTADDITIONS_FILESPEC.linux.x86 = \
  	VBoxLinuxAdditions.run=$(VBOX_PATH_ADDITIONS.linux.x86)/VBoxLinuxAdditions.run
 endif
