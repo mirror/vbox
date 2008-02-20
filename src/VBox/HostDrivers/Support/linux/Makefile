@@ -205,6 +205,8 @@ else
 endif
 ifeq ($(BUILD_TYPE),debug)
  KFLAGS  += -DDEBUG -DDEBUG_$(USER)
+ # IPRT_DEBUG_SEMS indicates thread wrt sems state via the comm field.
+ KFLAGS  += -DIPRT_DEBUG_SEMS
 endif
 
 #

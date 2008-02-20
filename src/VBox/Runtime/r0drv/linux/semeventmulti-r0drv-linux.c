@@ -25,7 +25,6 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -149,6 +148,9 @@ static int rtSemEventMultiWait(PRTSEMEVENTMULTIINTERNAL pThis, unsigned cMillies
     DEFINE_WAIT(Wait);
     int     rc       = VINF_SUCCESS;
     long    lTimeout = cMillies == RT_INDEFINITE_WAIT ? MAX_SCHEDULE_TIMEOUT : msecs_to_jiffies(cMillies);
+#ifdef IPRT_DEBUG_SEMS
+    snprintf(current->comm, TASK_COMM_LEN, "E%lx", IPRT_DEBUG_SEMS_ADDRESS(pThis));
+#endif
     for (;;)
     {
         /* make everything thru schedule() atomic scheduling wise. */
@@ -184,6 +186,9 @@ static int rtSemEventMultiWait(PRTSEMEVENTMULTIINTERNAL pThis, unsigned cMillies
     }
 
     finish_wait(&pThis->Head, &Wait);
+#ifdef IPRT_DEBUG_SEMS
+    snprintf(current->comm, TASK_COMM_LEN, "E%lx:%d", IPRT_DEBUG_SEMS_ADDRESS(pThis), rc);
+#endif
     return rc;
 }
 
