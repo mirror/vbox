@@ -548,7 +548,7 @@ typedef struct VM
 #ifdef ___REMInternal_h
         struct REM  s;
 #endif
-        char        padding[0x6f00];    /* multiple of 32 */
+        char        padding[HC_ARCH_BITS == 32 ? 0x6f00 : 0xbf00];    /* multiple of 32 */
     } rem;
 } VM;
 
