@@ -98,6 +98,15 @@ typedef struct _VRDPORDERAREA
     uint16_t h;
 } VRDPORDERAREA;
 
+typedef struct _VRDPORDERRECT
+{
+    int16_t left;
+    int16_t top;
+    int16_t right;
+    int16_t bottom;
+} VRDPORDERRECT;
+
+
 typedef struct _VRDPORDERBOUNDS
 {
     VRDPORDERPOINT pt1;
