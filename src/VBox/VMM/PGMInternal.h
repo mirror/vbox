@@ -921,13 +921,9 @@ typedef struct PGMRAMRANGE
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
     uint32_t                            au32Reserved[2];
 #else
-# if HC_ARCH_BITS == 32
+# if HC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
-#  ifdef RT_OS_WINDOWS
-    uint32_t                            u32Reserved[1];
-#  else
     uint32_t                            u32Reserved[2];
-#  endif
 # endif
 #endif
 
