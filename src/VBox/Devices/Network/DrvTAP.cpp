@@ -364,7 +364,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                     ASMAtomicXchgU32(&pData->fOutOfSpace, false);
                     STAM_PROFILE_STOP(&pData->StatRecvOverflows, b);
                     STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-                    if (pThread->enmState == PDMTHREADSTATE_RUNNING)
+                    if (pThread->enmState != PDMTHREADSTATE_RUNNING)
                         break;
                 }
 
