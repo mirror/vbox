@@ -124,15 +124,6 @@ running() {
     test -f "$VARFILE"
 }
 
-valid_ifname() {
-    if expr match "$1" "vbox[0-9][0-9]*$" > /dev/null 2>&1
-    then
-      return 0
-    else
-      return 1
-    fi
-}
-
 # Create all permanent TAP devices registered on the system, add them to a
 # bridge if required and keep a record of proceedings in the file
 # /var/run/VirtualBox/vboxnet.  If this file already exists, assume that the
@@ -197,8 +188,7 @@ start_network() {
         # Check that the line is correctly formed (an interface name plus one
         # or two non-comment entries, possibly followed by a comment).
         if ((! expr match "$2" "#" > /dev/null) &&
-            (test -z "$4" || expr match "$4" "#" > /dev/null) &&
-            (valid_ifname "$1"))
+            (test -z "$4" || expr match "$4" "#" > /dev/null))
         then
           case $user in
             +*)
