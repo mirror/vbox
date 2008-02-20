@@ -33,7 +33,7 @@
 #include <string.h>
 
 
-/** 
+/**
  * Global module initialization structure.
  *
  * The constructor and destructor of this structure are used to perform global
@@ -162,12 +162,16 @@ template<> bool FromString <bool> (const char *aValue)
         throw ENoValue();
 
     if (strcmp (aValue, "true") == 0 ||
-        strcmp (aValue, "yes") == 0 ||
-        strcmp (aValue, "on") == 0)
+        strcmp (aValue, "1") == 0)
+        /* This contradicts the XML Schema's interpretation of boolean: */
+        //strcmp (aValue, "yes") == 0 ||
+        //strcmp (aValue, "on") == 0)
         return true;
     else if (strcmp (aValue, "false") == 0 ||
-             strcmp (aValue, "no") == 0 ||
-             strcmp (aValue, "off") == 0)
+             strcmp (aValue, "0") == 0)
+            /* This contradicts the XML Schema's interpretation of boolean: */
+            //strcmp (aValue, "no") == 0 ||
+            //strcmp (aValue, "off") == 0)
         return false;
 
     throw ENoConversion (FmtStr ("'%s' is not bool", aValue));
@@ -283,6 +287,7 @@ stdx::char_auto_ptr ToStringInteger (uint64_t aValue, unsigned int aBase,
 template<> stdx::char_auto_ptr ToString <bool> (const bool &aValue,
                                                 unsigned int aExtra /* = 0 */)
 {
+    /* Convert to the canonical form according to XML Schema */
     stdx::char_auto_ptr result (duplicate_chars (aValue ? "true" : "false"));
     return result;
 }
@@ -764,7 +769,7 @@ public:
         RTStrFree (msg);
     }
 
-    /** 
+    /**
      * Composes a single message for the given error. The caller must free the
      * returned string using RTStrFree() when no more necessary.
      */
@@ -927,7 +932,7 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
                 throw LogicError (RT_SRC_POS);
 
             /* set our error handlers */
-            xmlSchemaSetParserErrors (schemaCtxt, ValidityErrorCallback, 
+            xmlSchemaSetParserErrors (schemaCtxt, ValidityErrorCallback,
                                       ValidityWarningCallback, &errorStr);
             xmlSchemaSetParserStructuredErrors (schemaCtxt,
                                                 StructuredErrorCallback,
@@ -1116,7 +1121,7 @@ int XmlTreeBackend::CloseCallback (void *aCtxt)
         ctxt->stream->close();
 #endif
 
-        /* perform cleanup when necessary */ 
+        /* perform cleanup when necessary */
         if (ctxt->deleteStreamOnClose)
             delete ctxt->stream;
 
@@ -1214,8 +1219,8 @@ void XmlTreeBackend::StructuredErrorCallback (void *aCtxt, xmlErrorPtr aErr)
 XmlTreeBackend *XmlTreeBackend::sThat = NULL;
 
 /* static */
-xmlParserInputPtr XmlTreeBackend::ExternalEntityLoader (const char *aURI, 
-                                                        const char *aID, 
+xmlParserInputPtr XmlTreeBackend::ExternalEntityLoader (const char *aURI,
+                                                        const char *aID,
                                                         xmlParserCtxtPtr aCtxt)
 {
     AssertReturn (sThat != NULL, NULL);
