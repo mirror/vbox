@@ -35,6 +35,9 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#ifdef IPRT_DEBUG_SEMS
+# include <iprt/thread.h>
+#endif
 
 #include "internal/magics.h"
 
@@ -51,6 +54,10 @@ typedef struct RTSEMFASTMUTEXINTERNAL
     uint32_t            u32Magic;
     /** the linux semaphore. */
     struct semaphore    Semaphore;
+#ifdef IPRT_DEBUG_SEMS
+    /** For check. */
+    RTNATIVETHREAD volatile Owner;
+#endif
 } RTSEMFASTMUTEXINTERNAL, *PRTSEMFASTMUTEXINTERNAL;
 
 
@@ -69,6 +76,9 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
      */
     pFastInt->u32Magic = RTSEMFASTMUTEX_MAGIC;
     sema_init(&pFastInt->Semaphore, 1);
+#ifdef IPRT_DEBUG_SEMS
+    pFastInt->Owner = NIL_RTNATIVETHREAD;
+#endif
     *pMutexSem = pFastInt;
     return VINF_SUCCESS;
 }
@@ -107,7 +117,15 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
         return VERR_INVALID_PARAMETER;
     }
 
+#ifdef IPRT_DEBUG_SEMS
+    snprintf(current->comm, TASK_COMM_LEN, "d%lx", IPRT_DEBUG_SEMS_ADDRESS(pFastInt));
+#endif
     down(&pFastInt->Semaphore);
+#ifdef IPRT_DEBUG_SEMS
+    snprintf(current->comm, TASK_COMM_LEN, "o%lx", IPRT_DEBUG_SEMS_ADDRESS(pFastInt));
+    AssertRelease(pFastInt->Owner == NIL_RTNATIVETHREAD);
+    ASMAtomicUoWriteSize(&pFastInt->Owner, RTThreadNativeSelf());
+#endif
     return VINF_SUCCESS;
 }
 
@@ -125,7 +143,14 @@ RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
         return VERR_INVALID_PARAMETER;
     }
 
+#ifdef IPRT_DEBUG_SEMS
+    AssertRelease(pFastInt->Owner == RTThreadNativeSelf());
+    ASMAtomicUoWriteSize(&pFastInt->Owner, NIL_RTNATIVETHREAD);
+#endif
     up(&pFastInt->Semaphore);
+#ifdef IPRT_DEBUG_SEMS
+    snprintf(current->comm, TASK_COMM_LEN, "u%lx", IPRT_DEBUG_SEMS_ADDRESS(pFastInt));
+#endif
     return VINF_SUCCESS;
 }
 
