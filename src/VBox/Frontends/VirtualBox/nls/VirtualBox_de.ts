@@ -2862,7 +2862,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Das ACPI-Ereignis &lt;i&gt;Netztaste gedrückt&lt;i&gt; konnte nicht an die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; übermittelt werden.</translation>
+        <translation>Das ACPI-Ereignis &lt;i&gt;Netztaste gedrückt&lt;/i&gt; konnte nicht an die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; übermittelt werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
