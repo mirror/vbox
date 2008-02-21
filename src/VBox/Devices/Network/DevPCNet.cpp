@@ -2735,7 +2735,7 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
     bool autoneg, duplex, fast;
     STAM_COUNTER_INC(&pData->StatMIIReads);
 
-    autoneg = (pData->aBCR[BCR_MIICAS] & 0x20) != 0 /*|| (pData->aMII[0] & 0x1000)*/;
+    autoneg = (pData->aBCR[BCR_MIICAS] & 0x20) != 0;
     duplex  = (pData->aBCR[BCR_MIICAS] & 0x10) != 0;
     fast    = (pData->aBCR[BCR_MIICAS] & 0x08) != 0;
 
