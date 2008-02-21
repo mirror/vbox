@@ -130,14 +130,15 @@ struct PCNetState_st
     /** Poll timer (address for guest context) */
     GCPTRTYPE(PTMTIMER)                 pTimerPollGC;
 #endif
-    /** Software Interrupt timer (address for host context) */
-    R3R0PTRTYPE(PTMTIMER)               pTimerSoftIntHC;
-    /** Software Interrupt timer (address for guest context) */
-    GCPTRTYPE(PTMTIMER)                 pTimerSoftIntGC;
 
 #if HC_ARCH_BITS == 64
     uint32_t                            Alignment;
 #endif
+
+    /** Software Interrupt timer (address for host context) */
+    R3R0PTRTYPE(PTMTIMER)               pTimerSoftIntHC;
+    /** Software Interrupt timer (address for guest context) */
+    GCPTRTYPE(PTMTIMER)                 pTimerSoftIntGC;
 
     /** Register Address Pointer */
     uint32_t                            u32RAP;
