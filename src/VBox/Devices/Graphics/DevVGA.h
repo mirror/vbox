@@ -241,22 +241,23 @@ typedef void FNCURSORDRAWLINE(struct VGAState *s, uint8_t *d, int y);
 typedef struct VGAState {
     VGA_STATE_COMMON
 #ifdef VBOX
-    /** end-of-common-state-marker + alignment. */
+    /** end-of-common-state-marker */
     uint32_t                    u32Marker;
     /** The physical address the VRAM was assigned. */
-    RTGCPHYS                    GCPhysVRAM;
+    RTGCPHYS32                  GCPhysVRAM;
     /** Pointer to GC vram mapping. */
     GCPTRTYPE(uint8_t *)        vram_ptrGC;
+/** @todo r=bird: bool not RTUINT (my fault I guess). */
     /** LFB was updated flag. */
-    bool                        fLFBUpdated;
+    RTUINT                      fLFBUpdated;
     /** Indicates if the GC extensions are enabled or not. */
-    bool                        fGCEnabled;
+    RTUINT                      fGCEnabled;
     /** Indicates if the R0 extensions are enabled or not. */
-    bool                        fR0Enabled;
-    /** Flag indicating that there are dirty bits. This is used to optimize the handler resetting. */
-    bool                        fHaveDirtyBits;
+    RTUINT                      fR0Enabled;
     /** Pointer to vgaGCLFBAccessHandler(). */
     RTGCPTR                     GCPtrLFBHandler;
+    /** Flag indicating that there are dirty bits. This is used to optimize the handler resetting. */
+    bool                        fHaveDirtyBits;
     /** Bitmap tracking dirty pages. */
     uint32_t                    au32DirtyBitmap[VGA_VRAM_MAX / PAGE_SIZE / 32];
     /** Pointer to the device instance - HC Ptr. */
@@ -280,6 +281,9 @@ typedef struct VGAState {
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
     uint32_t                    fRenderVRAM;
 
+#if HC_ARCH_BITS == 32
+    uint32_t                    Padding10;
+#endif
     /** The PCI device. */
     PCIDEVICE                   Dev;
 

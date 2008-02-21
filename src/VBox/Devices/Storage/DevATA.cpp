@@ -320,12 +320,12 @@ typedef struct ATACONTROLLER
     bool        fRedoDMALastDesc;
     /** The BusMaster DMA state. */
     BMDMAState  BmDma;
-    /** (32 bit) GC phys pointer to first DMA descriptor. */
-    uint32_t    pFirstDMADesc;
-    /** (32 bit) GC phys pointer to last DMA descriptor. */
-    uint32_t    pLastDMADesc;
-    /** (32 bit) GC phys pointer to current DMA buffer (for redo operations). */
-    uint32_t    pRedoDMABuffer;
+    /** Pointer to first DMA descriptor. */
+    RTGCPHYS32  pFirstDMADesc;
+    /** Pointer to last DMA descriptor. */
+    RTGCPHYS32  pLastDMADesc;
+    /** Pointer to current DMA buffer (for redo operations). */
+    RTGCPHYS32  pRedoDMABuffer;
     /** Size of current DMA buffer (for redo operations). */
     uint32_t    cbRedoDMABuffer;
 
@@ -3908,7 +3908,7 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
     PPDMDEVINS pDevIns = CONTROLLER_2_DEVINS(pCtl);
     ATADevState *s = &pCtl->aIfs[pCtl->iAIOIf];
     bool fRedo;
-    uint32_t pDesc;
+    RTGCPHYS32 pDesc;
     uint32_t cbTotalTransfer, cbElementaryTransfer;
     uint32_t iIOBufferCur, iIOBufferEnd;
     uint32_t dmalen;
@@ -3938,7 +3938,7 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
     for (pDesc = pCtl->pFirstDMADesc; pDesc <= pCtl->pLastDMADesc; pDesc += sizeof(BMDMADesc))
     {
         BMDMADesc DMADesc;
-        uint32_t pBuffer;
+        RTGCPHYS32 pBuffer;
         uint32_t cbBuffer;
 
         if (RT_UNLIKELY(fRedo))
@@ -3966,7 +3966,7 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
             {
                 dmalen = RT_MIN(cbBuffer, iIOBufferEnd - iIOBufferCur);
                 Log2(("%s: DMA desc %#010x: addr=%#010x size=%#010x\n", __FUNCTION__,
-                       pDesc, pBuffer, cbBuffer));
+                       (int)pDesc, pBuffer, cbBuffer));
                 if (uTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
                     PDMDevHlpPhysWrite(pDevIns, pBuffer, s->CTXSUFF(pbIOBuffer) + iIOBufferCur, dmalen);
                 else
@@ -5622,9 +5622,9 @@ static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
         SSMR3PutBool(pSSMHandle, pData->aCts[i].fRedoIdle);
         SSMR3PutBool(pSSMHandle, pData->aCts[i].fRedoDMALastDesc);
         SSMR3PutMem(pSSMHandle, &pData->aCts[i].BmDma, sizeof(pData->aCts[i].BmDma));
-        SSMR3PutU32(pSSMHandle, pData->aCts[i].pFirstDMADesc);
-        SSMR3PutU32(pSSMHandle, pData->aCts[i].pLastDMADesc);
-        SSMR3PutU32(pSSMHandle, pData->aCts[i].pRedoDMABuffer);
+        SSMR3PutGCPhys32(pSSMHandle, pData->aCts[i].pFirstDMADesc);
+        SSMR3PutGCPhys32(pSSMHandle, pData->aCts[i].pLastDMADesc);
+        SSMR3PutGCPhys32(pSSMHandle, pData->aCts[i].pRedoDMABuffer);
         SSMR3PutU32(pSSMHandle, pData->aCts[i].cbRedoDMABuffer);
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pData->aCts[i].aIfs); j++)
@@ -5727,9 +5727,9 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         SSMR3GetBool(pSSMHandle, (bool *)&pData->aCts[i].fRedoIdle);
         SSMR3GetBool(pSSMHandle, (bool *)&pData->aCts[i].fRedoDMALastDesc);
         SSMR3GetMem(pSSMHandle, &pData->aCts[i].BmDma, sizeof(pData->aCts[i].BmDma));
-        SSMR3GetU32(pSSMHandle, &pData->aCts[i].pFirstDMADesc);
-        SSMR3GetU32(pSSMHandle, &pData->aCts[i].pLastDMADesc);
-        SSMR3GetU32(pSSMHandle, &pData->aCts[i].pRedoDMABuffer);
+        SSMR3GetGCPhys32(pSSMHandle, &pData->aCts[i].pFirstDMADesc);
+        SSMR3GetGCPhys32(pSSMHandle, &pData->aCts[i].pLastDMADesc);
+        SSMR3GetGCPhys32(pSSMHandle, &pData->aCts[i].pRedoDMABuffer);
         SSMR3GetU32(pSSMHandle, &pData->aCts[i].cbRedoDMABuffer);
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pData->aCts[i].aIfs); j++)

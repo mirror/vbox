@@ -39,9 +39,9 @@
     hypervisor pointers from within guest additions */
 
 /** Hypervisor linear pointer size type */
-typedef uint32_t vmmDevHypPtr;
+typedef RTGCPTR vmmDevHypPtr;
 /** Hypervisor physical pointer size type */
-typedef uint32_t vmmDevHypPhys;
+typedef RTGCPHYS32 vmmDevHypPhys;
 
 #if defined(RT_OS_LINUX)
 /** The support device name. */

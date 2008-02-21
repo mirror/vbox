@@ -469,19 +469,19 @@ static void acpiWriteGenericAddr(ACPIGENADDR *g, uint8_t u8AddressSpaceId,
     g->u64Address          = RT_H2LE_U64(u64Address);
 }
 
-static void acpiPhyscpy (ACPIState *s, RTGCPHYS dst, const void * const src, size_t size)
+static void acpiPhyscpy (ACPIState *s, RTGCPHYS32 dst, const void * const src, size_t size)
 {
     PDMDevHlpPhysWrite (s->pDevIns, dst, src, size);
 }
 
 /* Differentiated System Description Table (DSDT) */
-static void acpiSetupDSDT (ACPIState *s, RTGCPHYS addr)
+static void acpiSetupDSDT (ACPIState *s, RTGCPHYS32 addr)
 {
     acpiPhyscpy (s, addr, AmlCode, sizeof(AmlCode));
 }
 
 /* Firmware ACPI Control Structure (FACS) */
-static void acpiSetupFACS (ACPIState *s, RTGCPHYS addr)
+static void acpiSetupFACS (ACPIState *s, RTGCPHYS32 addr)
 {
     ACPITBLFACS facs;
 
@@ -499,7 +499,7 @@ static void acpiSetupFACS (ACPIState *s, RTGCPHYS addr)
 }
 
 /* Fixed ACPI Description Table (FADT aka FACP) */
-static void acpiSetupFADT (ACPIState *s, RTGCPHYS addr, uint32_t facs_addr, uint32_t dsdt_addr)
+static void acpiSetupFADT (ACPIState *s, RTGCPHYS32 addr, uint32_t facs_addr, uint32_t dsdt_addr)
 {
     ACPITBLFADT fadt;
 
@@ -566,7 +566,7 @@ static void acpiSetupFADT (ACPIState *s, RTGCPHYS addr, uint32_t facs_addr, uint
  * The RSDT and XSDT tables are basically identical. The only difference is 32 vs 64 bits
  * addresses for description headers. RSDT is for ACPI 1.0. XSDT for ACPI 2.0 and up.
  */
-static int acpiSetupRSDT (ACPIState *s, RTGCPHYS addr, unsigned int nb_entries, uint32_t *addrs)
+static int acpiSetupRSDT (ACPIState *s, RTGCPHYS32 addr, unsigned int nb_entries, uint32_t *addrs)
 {
     ACPITBLRSDT *rsdt;
     const size_t size = sizeof(ACPITBLHEADER) + nb_entries * sizeof(rsdt->u32Entry[0]);
@@ -588,7 +588,7 @@ static int acpiSetupRSDT (ACPIState *s, RTGCPHYS addr, unsigned int nb_entries, 
 }
 
 /* Extended System Description Table. */
-static int acpiSetupXSDT (ACPIState *s, RTGCPHYS addr, unsigned int nb_entries, uint32_t *addrs)
+static int acpiSetupXSDT (ACPIState *s, RTGCPHYS32 addr, unsigned int nb_entries, uint32_t *addrs)
 {
     ACPITBLXSDT *xsdt;
     const size_t size = sizeof(ACPITBLHEADER) + nb_entries * sizeof(xsdt->u64Entry[0]);
@@ -630,7 +630,7 @@ static void acpiSetupRSDP (ACPITBLRSDP *rsdp, uint32_t rsdt_addr, uint64_t xsdt_
 /* Multiple APIC Description Table. */
 /** @todo All hardcoded, should set this up based on the actual VM config!!!!! */
 /** @note APIC without IO-APIC hangs Windows Vista therefore we setup both */
-static void acpiSetupMADT (ACPIState *s, RTGCPHYS addr)
+static void acpiSetupMADT (ACPIState *s, RTGCPHYS32 addr)
 {
     ACPITBLMADT madt;
 
@@ -1455,13 +1455,13 @@ static DECLCALLBACK(void *) acpiQueryInterface(PPDMIBASE pInterface, PDMINTERFAC
  */
 static int acpiPlantTables (ACPIState *s)
 {
-    int      rc;
-    uint32_t rsdt_addr, xsdt_addr, fadt_addr, facs_addr, dsdt_addr, last_addr, apic_addr = 0;
-    uint32_t addend = 0;
-    uint32_t rsdt_addrs[4];
-    uint32_t cAddr;
-    size_t   rsdt_tbl_len = sizeof(ACPITBLHEADER);
-    size_t   xsdt_tbl_len = sizeof(ACPITBLHEADER);
+    int        rc;
+    RTGCPHYS32 rsdt_addr, xsdt_addr, fadt_addr, facs_addr, dsdt_addr, last_addr, apic_addr = 0;
+    uint32_t   addend = 0;
+    RTGCPHYS32 rsdt_addrs[4];
+    uint32_t   cAddr;
+    size_t     rsdt_tbl_len = sizeof(ACPITBLHEADER);
+    size_t     xsdt_tbl_len = sizeof(ACPITBLHEADER);
 
     cAddr = 1;           /* FADT */
     if (s->u8UseIOApic)

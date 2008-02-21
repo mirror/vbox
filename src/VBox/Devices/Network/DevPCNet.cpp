@@ -141,9 +141,9 @@ struct PCNetState_st
     /** ??? */
     uint32_t                            u32Lnkst;
     /** Address of the RX descriptor table (ring). Loaded at init. */
-    RTGCPHYS                            GCRDRA;
+    RTGCPHYS32                          GCRDRA;
     /** Address of the TX descriptor table (ring). Loaded at init. */
-    RTGCPHYS                            GCTDRA;
+    RTGCPHYS32                          GCTDRA;
     uint8_t                             aPROM[16];
     uint16_t                            aCSR[CSR_MAX_REG];
     uint16_t                            aBCR[BCR_MAX_RAP];
@@ -166,21 +166,19 @@ struct PCNetState_st
     /** Size of a RX/TX descriptor (8 or 16 bytes according to SWSTYLE */
     int                                 iLog2DescSize;
     /** Bits 16..23 in 16-bit mode */
-    RTGCPHYS                            GCUpperPhys;
+    RTGCPHYS32                          GCUpperPhys;
 
     /** Transmit signaller */
-    R3R0PTRTYPE(PPDMQUEUE)              pXmitQueueHC;
     GCPTRTYPE(PPDMQUEUE)                pXmitQueueGC;
+    R3R0PTRTYPE(PPDMQUEUE)              pXmitQueueHC;
 
     /** Receive signaller */
-    GCPTRTYPE(PPDMQUEUE)                pCanRxQueueGC;
     R3R0PTRTYPE(PPDMQUEUE)              pCanRxQueueHC;
-    /** Pointer to the device instance. */
-    R3R0PTRTYPE(PPDMDEVINS)             pDevInsHC;
+    GCPTRTYPE(PPDMQUEUE)                pCanRxQueueGC;
     /** Pointer to the device instance. */
     GCPTRTYPE(PPDMDEVINS)               pDevInsGC;
-    /** Alignment padding. */
-    RTGCPTR                             GCPtrAlignment0;
+    /** Pointer to the device instance. */
+    R3R0PTRTYPE(PPDMDEVINS)             pDevInsHC;
     /** Restore timer.
      *  This is used to disconnect and reconnect the link after a restore. */
     PTMTIMERR3                          pTimerRestore;
@@ -195,7 +193,7 @@ struct PCNetState_st
     /** The network config port interface. */
     PDMINETWORKCONFIG                   INetworkConfig;
     /** Base address of the MMIO region. */
-    RTGCPHYS                            MMIOBase;
+    RTGCPHYS32                          MMIOBase;
     /** Base port of the I/O space region. */
     RTIOPORT                            IOPortBase;
     /** If set the link is currently up. */
@@ -213,9 +211,6 @@ struct PCNetState_st
     /** The configured MAC address. */
     PDMMAC                              MacConfigured;
 
-#if HC_ARCH_BITS == 64
-    uint32_t                            u32Alignment0; /** Alignment padding. */
-#endif
     /** The LED. */
     PDMLED                              Led;
     /** The LED ports. */
@@ -232,10 +227,10 @@ struct PCNetState_st
     PDMCRITSECT                         CritSect;
 
 #ifdef PCNET_NO_POLLING
-    RTGCPHYS                            TDRAPhysOld;
+    RTGCPHYS32                          TDRAPhysOld;
     uint32_t                            cbTDRAOld;
 
-    RTGCPHYS                            RDRAPhysOld;
+    RTGCPHYS32                          RDRAPhysOld;
     uint32_t                            cbRDRAOld;
 
     DECLGCCALLBACKMEMBER(int, pfnEMInterpretInstructionGC, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
@@ -581,7 +576,7 @@ AssertCompileSize(RMD, 16);
  * Load transmit message descriptor
  * Make sure we read the own flag first.
  */
-DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS addr)
+DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     uint8_t    ownbyte;
@@ -625,7 +620,7 @@ DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS addr)
  * Store transmit message descriptor and hand it over to the host (the VM guest).
  * Make sure that all data are transmitted before we clear the own flag.
  */
-DECLINLINE(void) pcnetTmdStorePassHost(PCNetState *pData, TMD *tmd, RTGCPHYS addr)
+DECLINLINE(void) pcnetTmdStorePassHost(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr)
 {
     STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatTmdStore), a);
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
@@ -667,7 +662,7 @@ DECLINLINE(void) pcnetTmdStorePassHost(PCNetState *pData, TMD *tmd, RTGCPHYS add
  * Load receive message descriptor
  * Make sure we read the own flag first.
  */
-DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS addr)
+DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     uint8_t    ownbyte;
@@ -710,7 +705,7 @@ DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS addr)
  * Store receive message descriptor and hand it over to the host (the VM guest).
  * Make sure that all data are transmitted before we clear the own flag.
  */
-DECLINLINE(void) pcnetRmdStorePassHost(PCNetState *pData, RMD *rmd, RTGCPHYS addr)
+DECLINLINE(void) pcnetRmdStorePassHost(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     if (!BCR_SWSTYLE(pData))
@@ -970,7 +965,7 @@ static int ladr_match(PCNetState *pData, const uint8_t *buf, int size)
 /**
  * Get the receive descriptor ring address with a given index.
  */
-DECLINLINE(RTGCPHYS) pcnetRdraAddr(PCNetState *pData, int idx)
+DECLINLINE(RTGCPHYS32) pcnetRdraAddr(PCNetState *pData, int idx)
 {
     return pData->GCRDRA + ((CSR_RCVRL(pData) - idx) << pData->iLog2DescSize);
 }
@@ -978,7 +973,7 @@ DECLINLINE(RTGCPHYS) pcnetRdraAddr(PCNetState *pData, int idx)
 /**
  * Get the transmit descriptor ring address with a given index.
  */
-DECLINLINE(RTGCPHYS) pcnetTdraAddr(PCNetState *pData, int idx)
+DECLINLINE(RTGCPHYS32) pcnetTdraAddr(PCNetState *pData, int idx)
 {
     return pData->GCTDRA + ((CSR_XMTRL(pData) - idx) << pData->iLog2DescSize);
 }
@@ -1302,10 +1297,10 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
      * 2) TDRA completely on same physical page as RDRA
      * 3) TDRA & RDRA overlap partly with different physical pages
      */
-    RTGCPHYS RDRAPageStart = pData->GCRDRA & ~PAGE_OFFSET_MASK;
-    RTGCPHYS RDRAPageEnd   = (pcnetRdraAddr(pData, 0) - 1) & ~PAGE_OFFSET_MASK;
-    RTGCPHYS TDRAPageStart = pData->GCTDRA & ~PAGE_OFFSET_MASK;
-    RTGCPHYS TDRAPageEnd   = (pcnetTdraAddr(pData, 0) - 1) & ~PAGE_OFFSET_MASK;
+    RTGCPHYS32 RDRAPageStart = pData->GCRDRA & ~PAGE_OFFSET_MASK;
+    RTGCPHYS32 RDRAPageEnd   = (pcnetRdraAddr(pData, 0) - 1) & ~PAGE_OFFSET_MASK;
+    RTGCPHYS32 TDRAPageStart = pData->GCTDRA & ~PAGE_OFFSET_MASK;
+    RTGCPHYS32 TDRAPageEnd   = (pcnetTdraAddr(pData, 0) - 1) & ~PAGE_OFFSET_MASK;
 
     if (    RDRAPageStart > TDRAPageEnd
         ||  TDRAPageStart > RDRAPageEnd)
@@ -1473,9 +1468,9 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
         /*
          * The current receive message descriptor.
          */
-        RMD      rmd;
-        int      i = CSR_RCVRC(pData);
-        RTGCPHYS addr;
+        RMD        rmd;
+        int        i = CSR_RCVRC(pData);
+        RTGCPHYS32 addr;
 
         if (i < 1)
             i = CSR_RCVRL(pData);
@@ -1567,7 +1562,7 @@ static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
     STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatTdtePoll), a);
     if (RT_LIKELY(pData->GCTDRA))
     {
-        RTGCPHYS cxda = pcnetTdraAddr(pData, CSR_XMTRC(pData));
+        RTGCPHYS32 cxda = pcnetTdraAddr(pData, CSR_XMTRC(pData));
 
         pcnetTmdLoad(pData, tmd, PHYSADDR(pData, cxda));
 
@@ -1669,7 +1664,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
                     PCNETSTATE_2_DEVINS(pData)->iInstance, CSR_RCVRC(pData)));
             /* Dump the status of all RX descriptors */
             const unsigned  cb = 1 << pData->iLog2DescSize;
-            RTGCPHYS        GCPhys = pData->GCRDRA;
+            RTGCPHYS32      GCPhys = pData->GCRDRA;
             i = CSR_RCVRL(pData);
             while (i-- > 0)
             {
@@ -1683,9 +1678,9 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
         }
         else
         {
-            uint8_t *src = &pData->abRecvBuf[8];
-            RTGCPHYS crda = CSR_CRDA(pData);
-            RTGCPHYS next_crda;
+            uint8_t   *src = &pData->abRecvBuf[8];
+            RTGCPHYS32 crda = CSR_CRDA(pData);
+            RTGCPHYS32 next_crda;
             RMD      rmd, next_rmd;
             int      pktcount = 0;
 
@@ -1714,7 +1709,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
                 rmd.rmd1.stp = 1;
 
             int count = RT_MIN(4096 - (int)rmd.rmd1.bcnt, size);
-            RTGCPHYS rbadr = PHYSADDR(pData, rmd.rmd0.rbadr);
+            RTGCPHYS32 rbadr = PHYSADDR(pData, rmd.rmd0.rbadr);
             PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
             src  += count;
             size -= count;
@@ -1859,7 +1854,7 @@ DECLINLINE(void) pcnetXmitZeroCopyFrame(PCNetState *pData, RTR3PTR pv, const uns
 /**
  * Reads the first part of a frame
  */
-DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS GCPhysFrame, const unsigned cbFrame)
+DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame)
 {
     Assert(cbFrame < sizeof(pData->abSendBuf));
 
@@ -1874,7 +1869,7 @@ DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS GCPhysFrame, const
 /**
  * Reads more into the current frame.
  */
-DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS GCPhysFrame, const unsigned cbFrame)
+DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame)
 {
     Assert(pData->SendFrame.cb + cbFrame < sizeof(pData->abSendBuf));
     PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame,
@@ -2785,12 +2780,12 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
 
         case 2:
             /* PHY identifier 1. */
-            val = 0x22;     /* Am79C874 PHY */
+            val = 0x22;     /* Am79C874 PHY */ 
             break;
 
         case 3:
             /* PHY identifier 2. */
-            val = 0x561b;   /* Am79C874 PHY */
+            val = 0x561b;   /* Am79C874 PHY */  
             break;
 
         case 4:
@@ -2798,7 +2793,7 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
             val =   0x01e0  /* Try 100mbps FD/HD and 10mbps FD/HD. */
 #if 0
                 // Advertising flow control is a) not the default, and b) confuses
-                // the link speed detection routine in Windows PCnet driver
+                // the link speed detection routine in Windows PCnet driver 
                   | 0x0400  /* Try flow control. */
 #endif
                   | 0x0001; /* CSMA selector. */
@@ -3781,7 +3776,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     if (fRcvRing)
     {
         const unsigned  cb = 1 << pData->iLog2DescSize;
-        RTGCPHYS        GCPhys = pData->GCRDRA;
+        RTGCPHYS32      GCPhys = pData->GCRDRA;
         unsigned        i = CSR_RCVRL(pData);
         while (i-- > 0)
         {
@@ -3821,7 +3816,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     if (fXmtRing)
     {
         const unsigned  cb = 1 << pData->iLog2DescSize;
-        RTGCPHYS        GCPhys = pData->GCTDRA;
+        RTGCPHYS32      GCPhys = pData->GCTDRA;
         unsigned        i = CSR_XMTRL(pData);
         while (i-- > 0)
         {
@@ -3902,8 +3897,8 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3PutU32(pSSMHandle, pData->u32RAP);
     SSMR3PutS32(pSSMHandle, pData->iISR);
     SSMR3PutU32(pSSMHandle, pData->u32Lnkst);
-    SSMR3PutGCPhys(pSSMHandle, pData->GCRDRA);
-    SSMR3PutGCPhys(pSSMHandle, pData->GCTDRA);
+    SSMR3PutGCPhys32(pSSMHandle, pData->GCRDRA);
+    SSMR3PutGCPhys32(pSSMHandle, pData->GCTDRA);
     SSMR3PutMem(pSSMHandle, pData->aPROM, sizeof(pData->aPROM));
     SSMR3PutMem(pSSMHandle, pData->aCSR, sizeof(pData->aCSR));
     SSMR3PutMem(pSSMHandle, pData->aBCR, sizeof(pData->aBCR));
@@ -3964,8 +3959,8 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3GetU32(pSSMHandle, &pData->u32RAP);
     SSMR3GetS32(pSSMHandle, &pData->iISR);
     SSMR3GetU32(pSSMHandle, &pData->u32Lnkst);
-    SSMR3GetGCPhys(pSSMHandle, &pData->GCRDRA);
-    SSMR3GetGCPhys(pSSMHandle, &pData->GCTDRA);
+    SSMR3GetGCPhys32(pSSMHandle, &pData->GCRDRA);
+    SSMR3GetGCPhys32(pSSMHandle, &pData->GCTDRA);
     SSMR3GetMem(pSSMHandle, &pData->aPROM, sizeof(pData->aPROM));
     SSMR3GetMem(pSSMHandle, &pData->aCSR, sizeof(pData->aCSR));
     SSMR3GetMem(pSSMHandle, &pData->aBCR, sizeof(pData->aBCR));

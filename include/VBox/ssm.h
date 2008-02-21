@@ -768,6 +768,15 @@ SSMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u);
 SSMR3DECL(int) SSMR3PutGCSInt(PSSMHANDLE pSSM, RTGCINT i);
 
 /**
+ * Saves a 32 bits GC physical address item to the current data unit.
+ *
+ * @returns VBox status.
+ * @param   pSSM            SSM operation handle.
+ * @param   GCPhys          The item to save
+ */
+SSMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys);
+
+/**
  * Saves a GC physical address item to the current data unit.
  *
  * @returns VBox status.
@@ -1002,6 +1011,15 @@ SSMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu);
  * @param   pi              Where to store the integer.
  */
 SSMR3DECL(int) SSMR3GetGCSInt(PSSMHANDLE pSSM, PRTGCINT pi);
+
+/**
+ * Loads a GC physical address item from the current data unit.
+ *
+ * @returns VBox status.
+ * @param   pSSM            SSM operation handle.
+ * @param   pGCPhys         Where to store the GC physical address.
+ */
+SSMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys);
 
 /**
  * Loads a GC physical address item from the current data unit.
