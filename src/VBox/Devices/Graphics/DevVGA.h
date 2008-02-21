@@ -281,9 +281,6 @@ typedef struct VGAState {
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
     uint32_t                    fRenderVRAM;
 
-#if HC_ARCH_BITS == 32
-    uint32_t                    Padding10;
-#endif
     /** The PCI device. */
     PCIDEVICE                   Dev;
 
