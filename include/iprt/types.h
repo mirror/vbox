@@ -740,7 +740,7 @@ typedef RTGCUINTPTR     *PRTGCUINTPTR;
 typedef const RTGCUINTPTR *PCRTGCUINTPTR;
 
 /** Guest Physical Memory Address.*/
-typedef uint64_t        RTGCPHYS;
+typedef uint32_t        RTGCPHYS;
 /** Pointer to Guest Physical Memory Address. */
 typedef RTGCPHYS       *PRTGCPHYS;
 /** Pointer to const Guest Physical Memory Address. */
