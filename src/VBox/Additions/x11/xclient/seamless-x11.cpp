@@ -155,7 +155,7 @@ void VBoxGuestSeamlessX11::addClients(const Window hRoot)
     for (unsigned i = 0; i < cChildren; ++i)
     {
         Window hClient = XmuClientWindow(mDisplay.get(), phChildren.get()[i]);
-        if (hClient != phChildren.get()[i] && !isVirtualRoot(hClient))
+        if (!isVirtualRoot(hClient))
             addClientWindow(phChildren.get()[i]);
     }
 }
@@ -243,7 +243,7 @@ void VBoxGuestSeamlessX11::nextEvent(void)
         doMapEvent(&event.xmap);
         break;
     case PropertyNotify:
-        doPropertyEvent(&event.xproperty);
+        // doPropertyEvent(&event.xproperty);
         break;
     case ShapeNotify:
         doShapeEvent(reinterpret_cast<XShapeEvent *>(&event));
@@ -282,13 +282,14 @@ void VBoxGuestSeamlessX11::doConfigureEvent(const XConfigureEvent *event)
  */
 void VBoxGuestSeamlessX11::doMapEvent(const XMapEvent *event)
 {
-    VBoxGuestWindowList::iterator iter;
+/*    VBoxGuestWindowList::iterator iter;
 
     iter = mGuestWindows.find(event->window);
     if (iter != mGuestWindows.end())
     {
         iter->second->mMapped = true;
-    }
+    } */
+    rebuildWindowTree();
 }
 
 /**
@@ -335,13 +336,14 @@ void VBoxGuestSeamlessX11::doShapeEvent(const XShapeEvent *event)
  */
 void VBoxGuestSeamlessX11::doUnmapEvent(const XUnmapEvent *event)
 {
-    VBoxGuestWindowList::iterator iter;
+/*    VBoxGuestWindowList::iterator iter;
 
     iter = mGuestWindows.find(event->window);
     if (iter != mGuestWindows.end())
     {
         iter->second->mMapped = true;
-    }
+    } */
+    rebuildWindowTree();
 }
 
 /**
