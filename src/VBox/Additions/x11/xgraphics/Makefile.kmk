@@ -125,7 +125,7 @@ vboxvideo_drv_70_INCS = \
 	$(VBOX_PATH_X11_XORG_7_0)/xorg
 vboxvideo_drv_70_SOURCES  = \
 	vboxvideo_70.c \
-	vboxutils-new.c
+	vboxutils.c
 
 
 #
@@ -141,7 +141,7 @@ vboxvideo_drv_71_INCS = \
 	$(VBOX_PATH_X11_XORG_7_1)/xorg
 vboxvideo_drv_71_SOURCES  = \
 	vboxvideo_70.c \
-	vboxutils-new.c
+	vboxutils.c
 
 
 #
@@ -157,7 +157,7 @@ vboxvideo_drv_13_INCS = \
 	$(VBOX_PATH_X11_XORG_1_3)/xorg
 vboxvideo_drv_13_SOURCES = \
 	vboxvideo_13.c \
-	vboxutils-new.c
+	vboxutils.c
 
 
 #
@@ -176,7 +176,7 @@ vboxvideo_drv_14_INCS = \
 	$(VBOX_PATH_X11_XORG_1_4)/xorg
 vboxvideo_drv_14_SOURCES  = \
 	vboxvideo_13.c \
-	vboxutils-new.c
+	vboxutils.c
 
 
 include	$(PATH_KBUILD)/subfooter.kmk
