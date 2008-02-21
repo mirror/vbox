@@ -29,7 +29,7 @@ VBoxClient_DEFS.linux += _GNU_SOURCE
 VBoxClient_SOURCES = \
 	main.cpp
 VBoxClient_SOURCES += \
-	clipboard-new.cpp
+	clipboard.cpp
 VBoxClient_LIBPATH = \
 	$(VBOX_LIBPATH32_X11)
 VBoxClient_LIBS = \
