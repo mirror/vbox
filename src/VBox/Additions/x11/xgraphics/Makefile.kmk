@@ -96,7 +96,7 @@ if1of ($(BUILD_TARGET),linux l4)
  endif
  vboxvideo_drv_SOURCES = \
 	vboxvideo_68.c \
-	vboxutils-new.c
+	vboxutils_68.c
 endif   # target linux, l4
 
 

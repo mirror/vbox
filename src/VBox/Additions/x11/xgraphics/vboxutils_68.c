@@ -30,7 +30,7 @@
 #include <asm/ioctl.h>
 #endif
 
-#include "vboxvideo.h"
+#include "vboxvideo_68.h"
 
 #define VBOX_MAX_CURSOR_WIDTH 64
 #define VBOX_MAX_CURSOR_HEIGHT 64
