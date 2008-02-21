@@ -134,6 +134,11 @@ struct PCNetState_st
     R3R0PTRTYPE(PTMTIMER)               pTimerSoftIntHC;
     /** Software Interrupt timer (address for guest context) */
     GCPTRTYPE(PTMTIMER)                 pTimerSoftIntGC;
+
+#if HC_ARCH_BITS == 64
+    uint32_t                            Alignment;
+#endif
+
     /** Register Address Pointer */
     uint32_t                            u32RAP;
     /** Internal interrupt service */
