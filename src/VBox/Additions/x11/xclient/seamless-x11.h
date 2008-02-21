@@ -27,10 +27,8 @@
 #include <map>
 #include <vector>
 
-#define VIRTUAL_ROOTS_PROP "_NET_VIRTUAL_ROOTS"
 #define WM_TYPE_PROP "_NET_WM_WINDOW_TYPE"
 #define WM_TYPE_DESKTOP_PROP "_NET_WM_WINDOW_TYPE_DESKTOP"
-#define NET_CLIENT_LIST "_NET_CLIENT_LIST"
 
 /**
  * Wrapper class around the VBoxGuestX11Pointer to provide reference semantics.
@@ -277,7 +275,6 @@ private:
     // Methods to handle X11 events
     void doConfigureEvent(const XConfigureEvent *event);
     void doMapEvent(const XMapEvent *event);
-    void doPropertyEvent(const XPropertyEvent *event);
     void doUnmapEvent(const XUnmapEvent *event);
     void doShapeEvent(const XShapeEvent *event);
 

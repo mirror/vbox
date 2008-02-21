@@ -240,9 +240,6 @@ void VBoxGuestSeamlessX11::nextEvent(void)
     case MapNotify:
         doMapEvent(&event.xmap);
         break;
-    case PropertyNotify:
-        // doPropertyEvent(&event.xproperty);
-        break;
     case ShapeNotify:
         doShapeEvent(reinterpret_cast<XShapeEvent *>(&event));
         break;
