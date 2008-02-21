@@ -312,6 +312,8 @@ int main()
     GEN_CHECK_OFF(PCNetState, pTimerPollHC);
     GEN_CHECK_OFF(PCNetState, pTimerPollGC);
 #endif
+    GEN_CHECK_OFF(PCNetState, pTimerSoftIntHC);
+    GEN_CHECK_OFF(PCNetState, pTimerSoftIntGC);
     GEN_CHECK_OFF(PCNetState, u32RAP);
     GEN_CHECK_OFF(PCNetState, iISR);
     GEN_CHECK_OFF(PCNetState, u32Lnkst);
