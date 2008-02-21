@@ -84,7 +84,7 @@ typedef struct VMMDevState
     /** HC pointer to VMMDev RAM area */
     VMMDevMemory *pVMMDevRAMHC;
     /** GC physical address of VMMDev RAM area */
-    RTGCPHYS GCPhysVMMDevRAM;
+    RTGCPHYS32 GCPhysVMMDevRAM;
 
     /** Information reported by guest via VMMDevReportGuestInfo generic request.
      * Until this information is reported the VMMDev refuses any other requests.

@@ -53,6 +53,10 @@ typedef enum PCICONFIGCOMMAND
  * PCI Address space specification.
  * This is used when registering a I/O region.
  */
+/** Note: There are all sorts of dirty dependencies on the values in the
+ *  pci device. Be careful when changing this.
+ *  @todo we should introduce 32 & 64 bits physical address types
+ */
 typedef enum PCIADDRESSSPACE
 {
     /** Memory. */

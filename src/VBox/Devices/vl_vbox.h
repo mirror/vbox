@@ -69,7 +69,7 @@ __BEGIN_DECLS
 /*
  * Misc types.
  */
-typedef RTGCPHYS                target_phys_addr_t;
+typedef RTGCPHYS32              target_phys_addr_t;
 typedef PCIDEVICE               PCIDevice;
 typedef RTGCUINTREG             target_ulong;
 

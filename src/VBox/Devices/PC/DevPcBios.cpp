@@ -1120,7 +1120,7 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
 
     /* the low ROM mapping. */
     unsigned cb = RT_MIN(cbPcBiosBinary, 128 * _1K);
-    RTGCPHYS GCPhys = 0x00100000 - cb;
+    RTGCPHYS32 GCPhys = 0x00100000 - cb;
     const uint8_t *pbVirgin = &pu8PcBiosBinary[cbPcBiosBinary - cb];
     while (GCPhys < 0x00100000)
     {

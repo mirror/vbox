@@ -63,15 +63,6 @@ typedef VBOXHCPTR  *PVBOXHCPTR;
  * @{
  */
 
-/** @deprecated
- * @{ */
-typedef RTGCPHYS    VBOXGCPHYS;
-typedef VBOXGCPHYS *PVBOXGCPHYS;
-#define NILVBOXGCPHYS NIL_RTGCPHYS
-typedef RTGCPTR     VBOXGCPTR;
-typedef VBOXGCPTR  *PVBOXGCPTR;
-/** @} */
-
 /** @} */
 
 

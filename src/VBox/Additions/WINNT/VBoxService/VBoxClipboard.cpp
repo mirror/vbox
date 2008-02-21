@@ -148,7 +148,7 @@ static void VBoxHGCMParmPtrSet (HGCMFunctionParameter *pParm, void *pv, uint32_t
 {
     pParm->type                    = VMMDevHGCMParmType_LinAddr;
     pParm->u.Pointer.size          = cb;
-    pParm->u.Pointer.u.linearAddr  = (VBOXGCPTR)pv;
+    pParm->u.Pointer.u.linearAddr  = (RTGCPTR)pv;
 }
 
 

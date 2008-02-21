@@ -565,7 +565,7 @@
 
 
 /** Saved state data unit version. */
-#define PGM_SAVED_STATE_VERSION     5
+#define PGM_SAVED_STATE_VERSION     6
 
 /*******************************************************************************
 *   Header Files                                                               *
