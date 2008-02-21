@@ -21,18 +21,6 @@
 #define LOG_GROUP LOG_GROUP_HGCM
 #include <VBox/log.h>
 
-/** Constants needed for string conversions done by the Linux clipboard code. */
-enum {
-    /** In Linux, lines end with a linefeed character. */
-    LINEFEED = 0xa,
-    /** In Windows, lines end with a carriage return and a linefeed character. */
-    CARRIAGERETURN = 0xd,
-    /** Little endian "real" Utf16 strings start with this marker. */
-    UTF16LEMARKER = 0xfeff,
-    /** Big endian "real" Utf16 strings start with this marker. */
-    UTF16BEMARKER = 0xfffe
-};
-
 enum {
     /** The number of milliseconds before the clipboard times out. */
     CLIPBOARDTIMEOUT = 2000

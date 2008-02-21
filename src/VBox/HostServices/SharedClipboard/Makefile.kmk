@@ -32,9 +32,14 @@ VBoxSharedClipboard_SOURCES = \
 	service.cpp
 VBoxSharedClipboard_SOURCES.win = \
 	win32.cpp
+VBoxSharedClipboard_SOURCES.darwin = \
+	darwin.cpp \
+    clipboard-helper.cpp \
+    darwin-pasteboard.cpp
 if1of ($(BUILD_TARGET),linux solaris)
  ifndef VBOX_HEADLESS
   VBoxSharedClipboard_SOURCES += \
+    clipboard-helper.cpp \
 	linux.cpp
  else
   VBoxSharedClipboard_SOURCES += \
@@ -55,6 +60,8 @@ if1of ($(BUILD_TARGET),linux solaris)
 	X11
  endif
 endif
+
+VBoxSharedClipboard_LDFLAGS.darwin =  -framework ApplicationServices
 
 include $(PATH_KBUILD)/subfooter.kmk
 
