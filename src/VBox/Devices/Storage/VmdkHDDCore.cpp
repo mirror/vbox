@@ -2166,6 +2166,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const char *pszFilename,
         if (VBOX_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new extent list in '%s'"), pszFilename);
         pExtent = &pImage->pExtents[0];
+	/* Create raw disk descriptor file. */
         rc = RTFileOpen(&pImage->File, pszFilename,
                         RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED);
         if (VBOX_FAILURE(rc))
@@ -2237,6 +2238,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const char *pszFilename,
         if (VBOX_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new extent list in '%s'"), pszFilename);
 
+        /* Create raw partition descriptor file. */
         rc = RTFileOpen(&pImage->File, pszFilename,
                         RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED);
         if (VBOX_FAILURE(rc))
@@ -2307,8 +2309,9 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const char *pszFilename,
                 pExtent->enmAccess = VMDKACCESS_READWRITE;
                 pExtent->fMetaDirty = false;
 
+                /* Create partition table flat image. */
                 rc = RTFileOpen(&pExtent->File, pExtent->pszFullname,
-                                RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED);
+                                RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED);
                 if (VBOX_FAILURE(rc))
                     return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new partition data file '%s'"), pExtent->pszFullname);
                 rc = RTFileWriteAt(pExtent->File,
@@ -2353,6 +2356,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const char *pszFilename,
                     pExtent->enmAccess = VMDKACCESS_READWRITE;
                     pExtent->fMetaDirty = false;
 
+                    /* Open flat image, the raw partition. */
                     rc = RTFileOpen(&pExtent->File, pExtent->pszFullname,
                                     RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
                     if (VBOX_FAILURE(rc))
