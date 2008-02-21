@@ -507,7 +507,7 @@ public:
 
 #else
 
-        SAFEARRAYBOUND bound = { aNewSize, 0 };
+        SAFEARRAYBOUND bound = { (ULONG)aNewSize, 0 };
         m.arr = SafeArrayCreate (VarType(), 1, &bound);
         AssertReturn (m.arr != NULL, false);
 
@@ -1000,7 +1000,7 @@ public:
 
 #else
 
-        SAFEARRAYBOUND bound = { aNewSize, 0 };
+        SAFEARRAYBOUND bound = { (ULONG)aNewSize, 0 };
         m.arr = SafeArrayCreateEx (VT_UNKNOWN, 1, &bound,
                                    (PVOID) &_ATL_IIDOF (I));
         AssertReturn (m.arr != NULL, false);
