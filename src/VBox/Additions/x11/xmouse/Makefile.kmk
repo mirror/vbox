@@ -49,7 +49,7 @@ if1of ($(BUILD_TARGET),linux l4)
  vboxmouse_drv_SOURCES = \
 	mouse.c \
 	pnp.c \
-	VBoxUtils.c
+	VBoxUtils_68.c
 endif
 
 
