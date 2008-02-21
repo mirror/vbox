@@ -113,7 +113,7 @@ void VBoxGuestSeamlessX11::stop(void)
 
 void VBoxGuestSeamlessX11::monitorClientList(void)
 {
-    XSelectInput(mDisplay, DefaultRootWindow(mDisplay.get()), PropertyChangeMask);
+    XSelectInput(mDisplay, DefaultRootWindow(mDisplay.get()), SubstructureNotifyMask);
 }
 
 void VBoxGuestSeamlessX11::unmonitorClientList(void)
@@ -202,7 +202,6 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
             cRects = 0;
         }
     }
-    XSelectInput(mDisplay, hWin, StructureNotifyMask);
     mGuestWindows.addWindow(hWin, winAttrib.map_state != IsUnmapped, winAttrib.x, winAttrib.y,
                             winAttrib.width, winAttrib.height, cRects, rects);
 }
@@ -216,7 +215,6 @@ void VBoxGuestSeamlessX11::freeWindowTree(void)
     for (VBoxGuestWindowList::iterator it = mGuestWindows.begin(); it != mGuestWindows.end();
                  mGuestWindows.removeWindow(it++))
     {
-        XSelectInput(mDisplay, it->first, 0);
         XShapeSelectInput(mDisplay, it->first, 0);
     }
 }
@@ -282,26 +280,12 @@ void VBoxGuestSeamlessX11::doConfigureEvent(const XConfigureEvent *event)
  */
 void VBoxGuestSeamlessX11::doMapEvent(const XMapEvent *event)
 {
-/*    VBoxGuestWindowList::iterator iter;
+    VBoxGuestWindowList::iterator iter;
 
     iter = mGuestWindows.find(event->window);
-    if (iter != mGuestWindows.end())
+    if (mGuestWindows.end() == iter)
     {
-        iter->second->mMapped = true;
-    } */
-    rebuildWindowTree();
-}
-
-/**
- * If the list of client windows changes, rebuild the list.
- *
- * @param event the X11 event structure
- */
-void VBoxGuestSeamlessX11::doPropertyEvent(const XPropertyEvent *event)
-{
-    if (XInternAtom(mDisplay, NET_CLIENT_LIST, true) == event->atom)
-    {
-        rebuildWindowTree();
+        addClientWindow(event->window);
     }
 }
 
@@ -336,14 +320,13 @@ void VBoxGuestSeamlessX11::doShapeEvent(const XShapeEvent *event)
  */
 void VBoxGuestSeamlessX11::doUnmapEvent(const XUnmapEvent *event)
 {
-/*    VBoxGuestWindowList::iterator iter;
+    VBoxGuestWindowList::iterator iter;
 
     iter = mGuestWindows.find(event->window);
-    if (iter != mGuestWindows.end())
+    if (mGuestWindows.end() != iter)
     {
-        iter->second->mMapped = true;
-    } */
-    rebuildWindowTree();
+        mGuestWindows.removeWindow(iter);
+    }
 }
 
 /**
