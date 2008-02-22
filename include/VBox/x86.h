@@ -119,6 +119,29 @@ typedef X86EFLAGS *PX86EFLAGS;
 /** Pointer to const EFLAGS. */
 typedef const X86EFLAGS *PCX86EFLAGS;
 
+/**
+ * RFLAGS (32 upper bits are reserved)
+ */
+typedef union X86RFLAGS
+{
+    /** The bitfield view. */
+    X86EFLAGSBITS   Bits;
+    /** The 8-bit view. */
+    uint8_t         au8[8];
+    /** The 16-bit view. */
+    uint16_t        au16[4];
+    /** The 32-bit view. */
+    uint32_t        au32[2];
+    /** The 64-bit view. */
+    uint64_t        au64[1];
+    /** The 64-bit view. */
+    uint32_t        u64;
+} X86RFLAGS;
+/** Pointer to RFLAGS. */
+typedef X86RFLAGS *PX86RFLAGS;
+/** Pointer to const RFLAGS. */
+typedef const X86RFLAGS *PCX86RFLAGS;
+
 
 /** @name EFLAGS
  * @{
@@ -1686,9 +1709,9 @@ typedef struct X86FXSTATE
         uint64_t    au64[2];
         /** 128-bit view. (yeah, very helpful) */
         uint128_t   au128[1];
-    } aXMM[8];
-    /* - offset 288 - */
-    uint32_t    au32RsrvdRest[(512 - 288) / sizeof(uint32_t)];
+    } aXMM[16]; /* 8 registers in 32 bits mode; 16 in long mode */
+    /* - offset 416 - */
+    uint32_t    au32RsrvdRest[(512 - 416) / sizeof(uint32_t)];
 } X86FXSTATE;
 #pragma pack()
 /** Pointer to a FPU Extended state. */

@@ -531,7 +531,6 @@ BEGINPROC VMMGCGuestToHostAsmGuestCtx
     ; general purpose registers (layout is pushad)
     push    eax
 
-    ; @todo do a rep movsd instead
     mov     eax, [esp + 4 + CPUMCTXCORE.eax]
     mov     [edx + CPUM.Guest.eax], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.ecx]
