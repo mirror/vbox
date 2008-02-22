@@ -4242,7 +4242,8 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 #else
     pData->pTimerPollGC  = TMTimerGCPtr(pData->pTimerPollHC);
 #endif
-    pData->pTimerSoftIntGC = TMTimerGCPtr(pData->pTimerSoftIntHC);
+    if (pData->fAm79C973)
+        pData->pTimerSoftIntGC = TMTimerGCPtr(pData->pTimerSoftIntHC);
 }
 
 
