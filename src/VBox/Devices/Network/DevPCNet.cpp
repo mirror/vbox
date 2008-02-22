@@ -1424,7 +1424,7 @@ static void pcnetInit(PCNetState *pData)
  */
 static void pcnetStart(PCNetState *pData)
 {
-    Log(("%#d pcnetStart:\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
+    Log(("#%d pcnetStart:\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
     if (!CSR_DTX(pData))
         pData->aCSR[0] |= 0x0010;    /* set TXON */
     if (!CSR_DRX(pData))
@@ -2339,9 +2339,13 @@ static void pcnetPollTimer(PCNetState *pData)
 
 #ifdef LOG_ENABLED
     TMD dummy;
-    Log2(("#%d pcnetPollTimer time=%#010x TDMD=%d TXON=%d POLL=%d TDTE=%d TDRA=%#x\n",
-          PCNETSTATE_2_DEVINS(pData)->iInstance, RTTimeMilliTS(), CSR_TDMD(pData), CSR_TXON(pData),
-          !CSR_DPOLL(pData), pcnetTdtePoll(pData, &dummy), pData->GCTDRA));
+    if (CSR_STOP(pData) || CSR_SPND(pData))
+        Log2(("#%d pcnetPollTimer time=%#010llx CSR_STOP=%d CSR_SPND=%d\n",
+             PCNETSTATE_2_DEVINS(pData)->iInstance, RTTimeMilliTS(), CSR_STOP(pData), CSR_SPND(pData)));
+    else
+        Log2(("#%d pcnetPollTimer time=%#010llx TDMD=%d TXON=%d POLL=%d TDTE=%d TDRA=%#x\n",
+             PCNETSTATE_2_DEVINS(pData)->iInstance, RTTimeMilliTS(), CSR_TDMD(pData), CSR_TXON(pData),
+             !CSR_DPOLL(pData), pcnetTdtePoll(pData, &dummy), pData->GCTDRA));
     Log2(("#%d pcnetPollTimer: CSR_CXDA=%#x CSR_XMTRL=%d CSR_XMTRC=%d\n",
           PCNETSTATE_2_DEVINS(pData)->iInstance, CSR_CXDA(pData), CSR_XMTRL(pData), CSR_XMTRC(pData)));
 #endif
@@ -2408,6 +2412,8 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
                 if ((val & 7) == 7)
                     val &= ~3;
 
+                Log(("#%d pcnetWriteCSR0: %#06x => %#06x\n", pData->aCSR[0], csr0));
+
 #ifndef IN_RING3
                 if (!(csr0 & 0x0001/*init*/) && (val & 1))
                 {
@@ -2434,15 +2440,6 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
                 if (CSR_TDMD(pData))
                     pcnetTransmit(pData);
 
-                return rc;
-            }
-        case 7:
-            {
-                uint16_t csr7 = pData->aCSR[7];
-                csr7 &=        ~0x0400 ;
-                csr7 &= ~(val & 0x0800);
-                csr7 |=  (val & 0x0400);
-                pData->aCSR[7] = csr7;
                 return rc;
             }
         case 1:  /* IADRL */
@@ -2506,6 +2503,15 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
             val &= ~0x0a90;
             val |= pData->aCSR[5] & 0x0a90;
             break;
+        case 7: /* Extended Control and Interrupt 2 */
+            {
+                uint16_t csr7 = pData->aCSR[7];
+                csr7 &=        ~0x0400 ;
+                csr7 &= ~(val & 0x0800);
+                csr7 |=  (val & 0x0400);
+                pData->aCSR[7] = csr7;
+                return rc;
+            }
         case 15: /* Mode */
             if ((pData->aCSR[15] & 0x8000) != (val & 0x8000) && pData->pDrv)
             {
