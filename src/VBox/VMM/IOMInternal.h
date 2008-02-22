@@ -42,12 +42,13 @@ typedef struct IOMMMIORANGER3
 {
     /** Avl node core with GCPhys as Key and GCPhys + cbSize - 1 as KeyLast. */
     AVLROGCPHYSNODECORE         Core;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
+    uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
+#endif
     /** Start physical address. */
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
     RTUINT                      cbSize;
-    /** Alignment. */
-    uint32_t                    u32Alignment;
     /** Pointer to user argument. */
     RTR3PTR                     pvUser;
     /** Pointer to device instance. */
@@ -71,12 +72,13 @@ typedef struct IOMMMIORANGER0
 {
     /** Avl node core with GCPhys as Key and GCPhys + cbSize - 1 as KeyLast. */
     AVLROGCPHYSNODECORE         Core;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
+    uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
+#endif
     /** Start physical address. */
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
-    uint32_t                    cbSize;
-    /** Alignment. */
-    uint32_t                    u32Alignment;
+    RTUINT                      cbSize;
     /** Pointer to user argument. */
     RTR0PTR                     pvUser;
     /** Pointer to device instance. */
@@ -100,6 +102,9 @@ typedef struct IOMMMIORANGEGC
 {
     /** Avl node core with GCPhys as Key and GCPhys + cbSize - 1 as KeyLast. */
     AVLROGCPHYSNODECORE         Core;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
+    uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
+#endif
     /** Start physical address. */
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
@@ -114,6 +119,9 @@ typedef struct IOMMMIORANGEGC
     GCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallback;
     /** Pointer to fill (memset) callback function. */
     GCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallback;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+    RTGCPTR                     GCPtrAlignment; /**< pszDesc is 8 byte aligned. */
+#endif 
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
 } IOMMMIORANGEGC;
@@ -257,7 +265,7 @@ typedef struct IOMIOPORTRANGEGC
     GCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     RTGCPTR                     GCPtrAlignment; /**< pszDesc is 8 byte aligned. */
-#endif
+#endif 
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
 } IOMIOPORTRANGEGC;

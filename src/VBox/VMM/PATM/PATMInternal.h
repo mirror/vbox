@@ -427,9 +427,6 @@ typedef struct PATM
     {
         RTGCPHYS            GCPhys;
         RTGCPTR             pCachedData;
-#if GC_ARCH_BITS == 32
-        RTGCPTR             Alignment0; /**< Align the structure size on a 8-byte boundrary. */
-#endif
     } mmio;
 
     /* Temporary storage during load/save state */
