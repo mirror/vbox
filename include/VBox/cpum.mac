@@ -33,16 +33,16 @@
 ; This is used internally in TRPM, VMMSwitcher_GuestToHost_GuestCtx
 ; and other places.
 struc CPUMCTXCORE
-    .edi            resd    1
-    .esi            resd    1
-    .ebp            resd    1
-    .eax            resd    1
-    .ebx            resd    1
-    .edx            resd    1
-    .ecx            resd    1
+    .edi            resq    1
+    .esi            resq    1
+    .ebp            resq    1
+    .eax            resq    1
+    .ebx            resq    1
+    .edx            resq    1
+    .ecx            resq    1
     .esp            resd    1
     .ss             resw    1
-    .ssPadding      resw    1
+    .ssPadding      resw    3
     .gs             resw    1
     .gsPadding      resw    1
     .fs             resw    1
@@ -53,8 +53,17 @@ struc CPUMCTXCORE
     .dsPadding      resw    1
     .cs             resw    1
     .csPadding      resw    1
-    .eflags         resd    1
-    .eip            resd    1
+    .eflags         resq    1
+    .eip            resq    1
+
+    .r8             resq    1
+    .r9             resq    1
+    .r10            resq    1
+    .r11            resq    1
+    .r12            resq    1
+    .r13            resq    1
+    .r14            resq    1
+    .r15            resq    1
 
     .esHid.u32Base      resd    1
     .esHid.u32Limit     resd    1
@@ -86,16 +95,16 @@ endstruc
 struc CPUMCTX
     .fpu            resb    512
 
-    .edi            resd    1
-    .esi            resd    1
-    .ebp            resd    1
-    .eax            resd    1
-    .ebx            resd    1
-    .edx            resd    1
-    .ecx            resd    1
+    .edi            resq    1
+    .esi            resq    1
+    .ebp            resq    1
+    .eax            resq    1
+    .ebx            resq    1
+    .edx            resq    1
+    .ecx            resq    1
     .esp            resd    1
     .ss             resw    1
-    .ssPadding      resw    1
+    .ssPadding      resw    3
     .gs             resw    1
     .gsPadding      resw    1
     .fs             resw    1
@@ -106,8 +115,18 @@ struc CPUMCTX
     .dsPadding      resw    1
     .cs             resw    1
     .csPadding      resw    1
-    .eflags         resd    1
-    .eip            resd    1
+    .eflags         resq    1
+    .eip            resq    1
+
+    .r8             resq    1
+    .r9             resq    1
+    .r10            resq    1
+    .r11            resq    1
+    .r12            resq    1
+    .r13            resq    1
+    .r14            resq    1
+    .r15            resq    1
+
     .esHid.u32Base      resd    1
     .esHid.u32Limit     resd    1
     .esHid.Attr         resd    1
@@ -133,19 +152,20 @@ struc CPUMCTX
     .gsHid.Attr         resd    1
 
 
-    .cr0            resd    1
-    .cr2            resd    1
-    .cr3            resd    1
-    .cr4            resd    1
+    .cr0            resq    1
+    .cr2            resq    1
+    .cr3            resq    1
+    .cr4            resq    1
+    .cr8            resq    1
 
-    .dr0            resd    1
-    .dr1            resd    1
-    .dr2            resd    1
-    .dr3            resd    1
-    .dr4            resd    1
-    .dr5            resd    1
-    .dr6            resd    1
-    .dr7            resd    1
+    .dr0            resq    1
+    .dr1            resq    1
+    .dr2            resq    1
+    .dr3            resq    1
+    .dr4            resq    1
+    .dr5            resq    1
+    .dr6            resq    1
+    .dr7            resq    1
 
     .gdtr           resb    6           ; GDT limit + linear address
     .gdtrPadding    resw    1

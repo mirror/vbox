@@ -81,17 +81,57 @@ typedef struct CPUMSYSENTER
 #pragma pack(1)
 typedef struct CPUMCTXCORE
 {
-    uint32_t        edi;
-    uint32_t        esi;
-    uint32_t        ebp;
-    uint32_t        eax;
-    uint32_t        ebx;
-    uint32_t        edx;
-    uint32_t        ecx;
-
-    uint32_t        esp;
-    RTSEL           ss;
-    RTSEL           ssPadding;
+    union
+    {
+        uint32_t        edi;
+        uint64_t        rdi;
+    };
+    union
+    {
+        uint32_t        esi;
+        uint64_t        rsi;
+    };
+    union
+    {
+        uint32_t        ebp;
+        uint64_t        rbp;
+    };
+    union
+    {
+        uint32_t        eax;
+        uint64_t        rax;
+    };
+    union
+    {
+        uint32_t        ebx;
+        uint64_t        rbx;
+    };
+    union
+    {
+        uint32_t        edx;
+        uint64_t        rdx;
+    };
+    union
+    {
+        uint32_t        ecx;
+        uint64_t        rcx;
+    };
+    union
+    {
+        /* Note: we rely on the exact layout, because we use lss esp, [] in the switcher */
+        struct
+        {
+            uint32_t        esp;
+            RTSEL           ss;
+            RTSEL           ssPadding;
+        };
+        struct
+        {
+            uint64_t        rsp;
+            RTSEL           ss64;
+            RTSEL           ss64Padding;
+        };
+    };
 
     RTSEL           gs;
     RTSEL           gsPadding;
@@ -104,8 +144,25 @@ typedef struct CPUMCTXCORE
     RTSEL           cs;
     RTSEL           csPadding;
 
-    X86EFLAGS       eflags;
-    uint32_t        eip;
+    union
+    {
+        X86EFLAGS       eflags;
+        X86RFLAGS       rflags;
+    };
+    union
+    {
+        uint32_t        eip;
+        uint64_t        rip;
+    };
+
+    uint64_t            r8;
+    uint64_t            r9;
+    uint64_t            r10;
+    uint64_t            r11;
+    uint64_t            r12;
+    uint64_t            r13;
+    uint64_t            r14;
+    uint64_t            r15;
 
     /** Hidden selector registers.
      * @{ */
@@ -137,17 +194,57 @@ typedef struct CPUMCTX
 
     /** CPUMCTXCORE Part.
      * @{ */
-    uint32_t        edi;
-    uint32_t        esi;
-    uint32_t        ebp;
-    uint32_t        eax;
-    uint32_t        ebx;
-    uint32_t        edx;
-    uint32_t        ecx;
-
-    uint32_t        esp;
-    RTSEL           ss;
-    RTSEL           ssPadding;
+    union
+    {
+        uint32_t        edi;
+        uint64_t        rdi;
+    };
+    union
+    {
+        uint32_t        esi;
+        uint64_t        rsi;
+    };
+    union
+    {
+        uint32_t        ebp;
+        uint64_t        rbp;
+    };
+    union
+    {
+        uint32_t        eax;
+        uint64_t        rax;
+    };
+    union
+    {
+        uint32_t        ebx;
+        uint64_t        rbx;
+    };
+    union
+    {
+        uint32_t        edx;
+        uint64_t        rdx;
+    };
+    union
+    {
+        uint32_t        ecx;
+        uint64_t        rcx;
+    };
+    union
+    {
+        /* Note: we rely on the exact layout, because we use lss esp, [] in the switcher */
+        struct
+        {
+            uint32_t        esp;
+            RTSEL           ss;
+            RTSEL           ssPadding;
+        };
+        struct
+        {
+            uint64_t        rsp;
+            RTSEL           ss64;
+            RTSEL           ss64Padding;
+        };
+    };
 
     RTSEL           gs;
     RTSEL           gsPadding;
@@ -160,8 +257,25 @@ typedef struct CPUMCTX
     RTSEL           cs;
     RTSEL           csPadding;
 
-    X86EFLAGS       eflags;
-    uint32_t        eip;
+    union
+    {
+        X86EFLAGS       eflags;
+        X86RFLAGS       rflags;
+    };
+    union
+    {
+        uint32_t        eip;
+        uint64_t        rip;
+    };
+
+    uint64_t            r8;
+    uint64_t            r9;
+    uint64_t            r10;
+    uint64_t            r11;
+    uint64_t            r12;
+    uint64_t            r13;
+    uint64_t            r14;
+    uint64_t            r15;
 
     /** Hidden selector registers.
      * @{ */
@@ -177,22 +291,24 @@ typedef struct CPUMCTX
 
     /** Control registers.
      * @{ */
-    uint32_t        cr0;
-    uint32_t        cr2;
-    uint32_t        cr3;
-    uint32_t        cr4;
+    uint64_t        cr0;
+    uint64_t        cr2;
+    uint64_t        cr3;
+    uint64_t        cr4;
+    uint64_t        cr8;
     /** @} */
 
     /** Debug registers.
      * @{ */
-    uint32_t        dr0;
-    uint32_t        dr1;
-    uint32_t        dr2;
-    uint32_t        dr3;
-    uint32_t        dr4; /**< @todo remove dr4 and dr5. */
-    uint32_t        dr5;
-    uint32_t        dr6;
-    uint32_t        dr7;
+    uint64_t        dr0;
+    uint64_t        dr1;
+    uint64_t        dr2;
+    uint64_t        dr3;
+    uint64_t        dr4; /**< @todo remove dr4 and dr5. */
+    uint64_t        dr5;
+    uint64_t        dr6;
+    uint64_t        dr7;
+    /* DR8-15 are currently not supported */
     /** @} */
 
     /** Global Descriptor Table register. */

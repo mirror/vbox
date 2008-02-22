@@ -630,27 +630,50 @@ BEGINPROC VMMGCGuestToHostAsmGuestCtx
     lea     esp, [esp + 4]
 
     ;
-    ; Guest Context (assumes CPUMCTXCORE layout).
+    ; Guest Context (assumes esp now points to CPUMCTXCORE structure).
     ;
     ; general purpose registers (layout is pushad)
-    pop     dword [edx + CPUM.Guest.edi]
-    pop     dword [edx + CPUM.Guest.esi]
-    pop     dword [edx + CPUM.Guest.ebp]
-    pop     dword [edx + CPUM.Guest.eax]
-    pop     dword [edx + CPUM.Guest.ebx]
-    pop     dword [edx + CPUM.Guest.edx]
-    pop     dword [edx + CPUM.Guest.ecx]
-    pop     dword [edx + CPUM.Guest.esp]
-    pop     dword [edx + CPUM.Guest.ss]
-    pop     dword [edx + CPUM.Guest.gs]
-    pop     dword [edx + CPUM.Guest.fs]
-    pop     dword [edx + CPUM.Guest.es]
-    pop     dword [edx + CPUM.Guest.ds]
-    pop     dword [edx + CPUM.Guest.cs]
+    push    eax                         ; save return code.
+    mov     eax, [esp + 4 + CPUMCTXCORE.edi]
+    mov     [edx + CPUM.Guest.edi], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.esi]
+    mov     [edx + CPUM.Guest.esi], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.ebp]
+    mov     [edx + CPUM.Guest.ebp], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.eax]
+    mov     [edx + CPUM.Guest.eax], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.ebx]
+    mov     [edx + CPUM.Guest.ebx], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.edx]
+    mov     [edx + CPUM.Guest.edx], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.ecx]
+    mov     [edx + CPUM.Guest.ecx], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.esp]
+    mov     [edx + CPUM.Guest.esp], eax
+    ; selectors
+    mov     eax, [esp + 4 + CPUMCTXCORE.ss]
+    mov     [edx + CPUM.Guest.ss], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.gs]
+    mov     [edx + CPUM.Guest.gs], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.fs]
+    mov     [edx + CPUM.Guest.fs], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.es]
+    mov     [edx + CPUM.Guest.es], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.ds]
+    mov     [edx + CPUM.Guest.ds], eax
+    mov     eax, [esp + 4 + CPUMCTXCORE.cs]
+    mov     [edx + CPUM.Guest.cs], eax
     ; flags
-    pop     dword [edx + CPUM.Guest.eflags]
+    mov     eax, [esp + 4 + CPUMCTXCORE.eflags]
+    mov     [edx + CPUM.Guest.eflags], eax
     ; eip
-    pop     dword [edx + CPUM.Guest.eip]
+    mov     eax, [esp + 4 + CPUMCTXCORE.eip]
+    mov     [edx + CPUM.Guest.eip], eax
+    ; jump to common worker code.
+    pop     eax                         ; restore return code.
+
+    add     esp, CPUMCTXCORE_size      ; skip CPUMCTXCORE structure
+
     jmp     vmmGCGuestToHostAsm_EIPDone
 ENDPROC VMMGCGuestToHostAsmGuestCtx
 

@@ -87,13 +87,7 @@ struc VM
     .StatSwitcherTSS      resb STAMPROFILEADV_size
 
     alignb 32
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-    .cpum                 resb 3648
-%elif HC_ARCH_BITS == 32
-    .cpum                 resb 3488
-%else
-    .cpum                 resb 3616
-%endif
+    .cpum                 resb 4096
     .vmm                  resb 1024
 
 endstruc
