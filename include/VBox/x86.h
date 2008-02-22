@@ -135,7 +135,7 @@ typedef union X86RFLAGS
     /** The 64-bit view. */
     uint64_t        au64[1];
     /** The 64-bit view. */
-    uint32_t        u64;
+    uint64_t        u64;
 } X86RFLAGS;
 /** Pointer to RFLAGS. */
 typedef X86RFLAGS *PX86RFLAGS;
