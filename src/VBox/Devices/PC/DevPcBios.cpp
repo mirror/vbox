@@ -36,6 +36,53 @@
 #include "DevPcBios.h"
 
 
+/*
+ * The BIOS uses a CMOS to store configuration data.
+ * It is currently used as followed:
+ *
+ *     Base memory:
+ *          0x15
+ *          0x16
+ *     Extended memory:
+ *          0x17
+ *          0x18
+ *          0x30
+ *          0x31
+ *     Amount of memory above 16M:
+ *          0x34
+ *          0x35
+ *     Boot device (BOCHS bios specific):
+ *          0x3d
+ *          0x38
+ *          0x3c
+ *     PXE debug:
+ *          0x3f
+ *     Floppy drive type:
+ *          0x10
+ *     Equipment byte:
+ *          0x14
+ *     First HDD:
+ *          0x19
+ *          0x1e - 0x25
+ *     Second HDD:
+ *          0x1a
+ *          0x26 - 0x2d
+ *     Third HDD:
+ *          0x67 - 0x6e
+ *     Fourth HDD:
+ *          0x70 - 0x77
+ *     Extended:
+ *          0x12
+ *     First Sata HDD:
+ *          0x40 - 0x47
+ *     Second Sata HDD:
+ *          0x48 - 0x4f
+ *     Third Sata HDD:
+ *          0x50 - 0x57
+ *     Fourth Sata HDD:
+ *          0x58 - 0x5f
+ */
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -70,6 +117,10 @@ typedef struct DEVPCBIOS
     char           *pszFDDevice;
     /** Harddisk device. */
     char           *pszHDDevice;
+    /** Sata harddisk device. */
+    char           *pszSataDevice;
+    /** LUN of the four harddisks which are emulated as IDE. */
+    uint32_t        iSataHDLUN[4];
     /** Bios message buffer. */
     char            szMsg[256];
     /** Bios message buffer index. */
@@ -361,6 +412,86 @@ static void pcbiosCmosInitHardDisk(PPDMDEVINS pDevIns, int offType, int offInfo,
     pcbiosCmosWrite(pDevIns, offInfo + 7, pLCHSGeometry->cSectors);
 }
 
+/**
+ * Set logical CHS geometry for a hard disk
+ *
+ * @returns VBox status code.
+ * @param   pBase         Base interface for the device.
+ * @param   pHardDisk     The hard disk.
+ * @param   pLCHSGeometry Where to store the geometry settings.
+ */
+static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIBLOCKBIOS pHardDisk, PPDMMEDIAGEOMETRY pLCHSGeometry)
+{
+    PDMMEDIAGEOMETRY LCHSGeometry;
+    int rc = VINF_SUCCESS;
+
+    rc = pHardDisk->pfnGetLCHSGeometry(pHardDisk, &LCHSGeometry);
+    if (   rc == VERR_PDM_GEOMETRY_NOT_SET
+        || LCHSGeometry.cCylinders == 0
+        || LCHSGeometry.cCylinders > 1024
+        || LCHSGeometry.cHeads == 0
+        || LCHSGeometry.cHeads > 255
+        || LCHSGeometry.cSectors == 0
+        || LCHSGeometry.cSectors > 63)
+    {
+        PPDMIBLOCK pBlock;
+        pBlock = (PPDMIBLOCK)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK);
+        /* No LCHS geometry, autodetect and set. */
+        rc = biosGuessDiskLCHS(pBlock, &LCHSGeometry);
+        if (VBOX_FAILURE(rc))
+        {
+            /* Try if PCHS geometry works, otherwise fall back. */
+            rc = pHardDisk->pfnGetPCHSGeometry(pHardDisk, &LCHSGeometry);
+        }
+        if (   VBOX_FAILURE(rc)
+            || LCHSGeometry.cCylinders == 0
+            || LCHSGeometry.cCylinders > 1024
+            || LCHSGeometry.cHeads == 0
+            || LCHSGeometry.cHeads > 16
+            || LCHSGeometry.cSectors == 0
+            || LCHSGeometry.cSectors > 63)
+        {
+            uint64_t cSectors = pBlock->pfnGetSize(pBlock) / 512;
+            if (cSectors / 16 / 63 <= 1024)
+            {
+                LCHSGeometry.cCylinders = RT_MAX(cSectors / 16 / 63, 1);
+                LCHSGeometry.cHeads = 16;
+            }
+            else if (cSectors / 32 / 63 <= 1024)
+            {
+                LCHSGeometry.cCylinders = RT_MAX(cSectors / 32 / 63, 1);
+                LCHSGeometry.cHeads = 32;
+            }
+            else if (cSectors / 64 / 63 <= 1024)
+            {
+                LCHSGeometry.cCylinders = cSectors / 64 / 63;
+                LCHSGeometry.cHeads = 64;
+            }
+            else if (cSectors / 128 / 63 <= 1024)
+            {
+                LCHSGeometry.cCylinders = cSectors / 128 / 63;
+                LCHSGeometry.cHeads = 128;
+            }
+            else
+            {
+                LCHSGeometry.cCylinders = RT_MIN(cSectors / 255 / 63, 1024);
+                LCHSGeometry.cHeads = 255;
+            }
+            LCHSGeometry.cSectors = 63;
+
+        }
+        rc = pHardDisk->pfnSetLCHSGeometry(pHardDisk, &LCHSGeometry);
+        if (rc == VERR_VDI_IMAGE_READ_ONLY)
+        {
+            LogRel(("DevPcBios: ATA failed to update LCHS geometry\n"));
+            rc = VINF_SUCCESS;
+        }
+    }
+
+    *pLCHSGeometry = LCHSGeometry;
+
+    return rc;
+}
 
 /**
  * Get BIOS boot code from enmBootDevice in order
@@ -516,69 +647,9 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
         if (apHDs[i])
         {
             PDMMEDIAGEOMETRY LCHSGeometry;
-            int rc = apHDs[i]->pfnGetLCHSGeometry(apHDs[i], &LCHSGeometry);
-            if (   rc == VERR_PDM_GEOMETRY_NOT_SET
-                || LCHSGeometry.cCylinders == 0
-                || LCHSGeometry.cCylinders > 1024
-                || LCHSGeometry.cHeads == 0
-                || LCHSGeometry.cHeads > 255
-                || LCHSGeometry.cSectors == 0
-                || LCHSGeometry.cSectors > 63)
-            {
-                PPDMIBLOCK pBlock;
-                pBlock = (PPDMIBLOCK)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK);
-                /* No LCHS geometry, autodetect and set. */
-                rc = biosGuessDiskLCHS(pBlock, &LCHSGeometry);
-                if (VBOX_FAILURE(rc))
-                {
-                    /* Try if PCHS geometry works, otherwise fall back. */
-                    rc = apHDs[i]->pfnGetPCHSGeometry(apHDs[i], &LCHSGeometry);
-                }
-                if (   VBOX_FAILURE(rc)
-                    || LCHSGeometry.cCylinders == 0
-                    || LCHSGeometry.cCylinders > 1024
-                    || LCHSGeometry.cHeads == 0
-                    || LCHSGeometry.cHeads > 16
-                    || LCHSGeometry.cSectors == 0
-                    || LCHSGeometry.cSectors > 63)
-                {
-                    uint64_t cSectors = pBlock->pfnGetSize(pBlock) / 512;
-                    if (cSectors / 16 / 63 <= 1024)
-                    {
-                        LCHSGeometry.cCylinders = RT_MAX(cSectors / 16 / 63, 1);
-                        LCHSGeometry.cHeads = 16;
-                    }
-                    else if (cSectors / 32 / 63 <= 1024)
-                    {
-                        LCHSGeometry.cCylinders = RT_MAX(cSectors / 32 / 63, 1);
-                        LCHSGeometry.cHeads = 32;
-                    }
-                    else if (cSectors / 64 / 63 <= 1024)
-                    {
-                        LCHSGeometry.cCylinders = cSectors / 64 / 63;
-                        LCHSGeometry.cHeads = 64;
-                    }
-                    else if (cSectors / 128 / 63 <= 1024)
-                    {
-                        LCHSGeometry.cCylinders = cSectors / 128 / 63;
-                        LCHSGeometry.cHeads = 128;
-                    }
-                    else
-                    {
-                        LCHSGeometry.cCylinders = RT_MIN(cSectors / 255 / 63, 1024);
-                        LCHSGeometry.cHeads = 255;
-                    }
-                    LCHSGeometry.cSectors = 63;
+            int rc = setLogicalDiskGeometry(pBase, apHDs[i], &LCHSGeometry);
+            AssertRC(rc);
 
-                }
-                rc = apHDs[i]->pfnSetLCHSGeometry(apHDs[i], &LCHSGeometry);
-                if (rc == VERR_VDI_IMAGE_READ_ONLY)
-                {
-                    LogRel(("DevPcBios: ATA LUN#%d: failed to update LCHS geometry\n", i));
-                    rc = VINF_SUCCESS;
-                }
-                AssertRC(rc);
-            }
             if (i < 4)
             {
                 /* Award BIOS extended drive types for first to fourth disk.
@@ -614,6 +685,56 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /* 0Fh means extended and points to 19h, 1Ah */
     u32 = (apHDs[0] ? 0xf0 : 0) | (apHDs[1] ? 0x0f : 0);
     pcbiosCmosWrite(pDevIns, 0x12, u32);
+
+    /*
+     * Sata Harddisks.
+     */
+    if (pData->pszSataDevice)
+    {
+        for (i = 0; i < ELEMENTS(apHDs); i++)
+        {
+            PPDMIBASE pBase;
+            int rc = PDMR3QueryLun(pVM, pData->pszSataDevice, 0, pData->iSataHDLUN[i], &pBase);
+            if (VBOX_SUCCESS(rc))
+                apHDs[i] = (PPDMIBLOCKBIOS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK_BIOS);
+            if (   apHDs[i]
+                && (   apHDs[i]->pfnGetType(apHDs[i]) != PDMBLOCKTYPE_HARD_DISK
+                    || !apHDs[i]->pfnIsVisible(apHDs[i])))
+                apHDs[i] = NULL;
+            if (apHDs[i])
+            {
+                PDMMEDIAGEOMETRY LCHSGeometry;
+                int rc = setLogicalDiskGeometry(pBase, apHDs[i], &LCHSGeometry);
+                AssertRC(rc);
+
+                if (i < 4)
+                {
+                    /* Award BIOS extended drive types for first to fourth disk.
+                     * Used by the BIOS for setting the logical geometry. */
+                    int offInfo;
+                    switch (i)
+                    {
+                        case 0:
+                            offInfo = 0x40;
+                            break;
+                        case 1:
+                            offInfo = 0x48;
+                            break;
+                        case 2:
+                            offInfo = 0x50;
+                            break;
+                        case 3:
+                        default:
+                            offInfo = 0x58;
+                            break;
+                    }
+                    pcbiosCmosInitHardDisk(pDevIns, 0x00, offInfo,
+                                           &LCHSGeometry);
+                }
+                LogRel(("DevPcBios: SATA LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
+            }
+        }
+    }
 
     LogFlow(("%s: returns VINF_SUCCESS\n", __FUNCTION__));
     return VINF_SUCCESS;
@@ -1290,6 +1411,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "BootDevice3\0"
                               "RamSize\0"
                               "HardDiskDevice\0"
+                              "SataHardDiskDevice\0"
+                              "SataPrimaryMasterLUN\0"
+                              "SataPrimarySlaveLUN\0"
+                              "SataSecondaryMasterLUN\0"
+                              "SataSecondarySlaveLUN\0"
                               "FloppyDevice\0"
                               "FadeIn\0"
                               "FadeOut\0"
@@ -1345,6 +1471,28 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"FloppyDevice\" as a string failed"));
 
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "SataHardDiskDevice", &pData->pszSataDevice);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->pszSataDevice = NULL;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"SataHardDiskDevice\" as a string failed"));
+
+    if (pData->pszSataDevice)
+    {
+        static const char * const s_apszSataDisks[] =
+            { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
+        Assert(ELEMENTS(s_apszSataDisks) == ELEMENTS(pData->iSataHDLUN));
+        for (i = 0; i < ELEMENTS(pData->iSataHDLUN); i++)
+        {
+            rc = CFGMR3QueryU32(pCfgHandle, s_apszSataDisks[i], &pData->iSataHDLUN[i]);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+                pData->iSataHDLUN[i] = i;
+            else if (VBOX_FAILURE(rc))
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("Configuration error: Querying \"%s\" as a string failed"), s_apszSataDisks);
+        }
+    }
     /*
      * Register I/O Ports and PC BIOS.
      */

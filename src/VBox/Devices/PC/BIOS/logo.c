@@ -620,9 +620,9 @@ void print_detected_harddisks()
             device_position -= 4;
 
         if (device_position / 2)
-            printf("Primary ");
-        else
             printf("Secondary ");
+        else
+            printf("Primary ");
 
         if (device_position % 2)
             printf("Slave");
