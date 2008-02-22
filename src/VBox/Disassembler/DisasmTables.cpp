@@ -190,7 +190,7 @@ const OPCODE g_aOneByteMapX86[256] =
     OP("pusha",              0,                  0,                 0,                  OP_PUSHA,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_INVALID_64),
     OP("popa",               0,                  0,                 0,                  OP_POPA,    OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_INVALID_64),
     OP("bound %Gv,%Ma",      IDX_ParseModRM,     IDX_UseModRM,      0,                  OP_BOUND,   OP_PARM_Gv,         OP_PARM_Ma,     OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_INVALID_64),
-    OP("arpl %Ew,%Rw",       IDX_ParseModRM,     IDX_UseModRM,      0,                  OP_ARPL,    OP_PARM_Ew,         OP_PARM_Rw,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("arpl %Ew,%Gw",       IDX_ParseModRM,     IDX_UseModRM,      0,                  OP_ARPL,    OP_PARM_Ew,         OP_PARM_Gw,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("SEG FS",             0,                  0,                 0,                  OP_SEG,     OP_PARM_REG_FS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("SEG GS",             0,                  0,                 0,                  OP_SEG,     OP_PARM_REG_GS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("OP SIZE",            0,                  0,                 0,                  OP_OPSIZE,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),

@@ -720,6 +720,7 @@
 #define OP_PARM_Gb      (OP_PARM_G+OP_PARM_b)
 #define OP_PARM_Gd      (OP_PARM_G+OP_PARM_d)
 #define OP_PARM_Gv      (OP_PARM_G+OP_PARM_v)
+#define OP_PARM_Gw      (OP_PARM_G+OP_PARM_w)
 #define OP_PARM_Ib      (OP_PARM_I+OP_PARM_b)
 #define OP_PARM_Id      (OP_PARM_I+OP_PARM_d)
 #define OP_PARM_Iq      (OP_PARM_I+OP_PARM_q)
