@@ -2027,27 +2027,30 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
 #   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
     uint32_t u32 = (uint32_t)u64;
     __asm__ __volatile__(/*"xchgl %%esi, %5\n\t"*/
-                         "xchgl %%ebx, %3\n\t"
+                         "xchgl %%ebx, %2\n\t"
                          "1:\n\t"
-                         "lock; cmpxchg8b (%5)\n\t"
+                         "movl  (%4), %%eax\n\t"
+                         "movl 4(%4), %%edx\n\t"
+                         "lock; cmpxchg8b (%4)\n\t"
                          "jnz 1b\n\t"
-                         "xchgl %%ebx, %3\n\t"
+                         "xchgl %%ebx, %2\n\t"
                          /*"xchgl %%esi, %5\n\t"*/
                          : "=A" (u64),
                            "=m" (*pu64)
-                         : "0" (*pu64),
-                           "m" ( u32 ),
+                         : "m" ( u32 ),
                            "c" ( (uint32_t)(u64 >> 32) ),
                            "S" (pu64) );
 #   else /* !PIC */
     __asm__ __volatile__("1:\n\t"
-                         "lock; cmpxchg8b %1\n\t"
+                         "movl  (%4), %%eax\n\t"
+                         "movl 4(%4), %%edx\n\t"
+                         "lock; cmpxchg8b (%4)\n\t"
                          "jnz 1b\n\t"
                          : "=A" (u64),
                            "=m" (*pu64)
-                         : "0" (*pu64),
-                           "b" ( (uint32_t)u64 ),
-                           "c" ( (uint32_t)(u64 >> 32) ));
+                         : "b" ( (uint32_t)u64 ),
+                           "c" ( (uint32_t)(u64 >> 32) ),
+                           "S" (pu64) );
 #   endif
 #  else
     __asm
@@ -2055,9 +2058,9 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
         mov     ebx, dword ptr [u64]
         mov     ecx, dword ptr [u64 + 4]
         mov     edi, pu64
+    retry:
         mov     eax, dword ptr [edi]
         mov     edx, dword ptr [edi + 4]
-    retry:
         lock cmpxchg8b [edi]
         jnz retry
         mov     dword ptr [u64], eax
@@ -2125,15 +2128,15 @@ DECLINLINE(uint128_t) ASMAtomicXchgU128(volatile uint128_t *pu128, uint128_t u12
         __asm
         {
             mov     rbx, dword ptr [u128]
-            mov     rcx, dword ptr [u128 + 4]
+            mov     rcx, dword ptr [u128 + 8]
             mov     rdi, pu128
-            mov     rax, dword ptr [rdi]
-            mov     rdx, dword ptr [rdi + 4]
         retry:
+            mov     rax, dword ptr [rdi]
+            mov     rdx, dword ptr [rdi + 8]
             lock cmpxchg16b [rdi]
             jnz retry
             mov     dword ptr [u128], rax
-            mov     dword ptr [u128 + 4], rdx
+            mov     dword ptr [u128 + 8], rdx
         }
 #  endif
     }
