@@ -178,7 +178,8 @@ struc CPUM
     .Hyper.ecx            resq    1
     .Hyper.esp            resd    1
     .Hyper.ss             resw    1
-    .Hyper.ssPadding      resw    3
+    .Hyper.ssPadding      resw    1
+    .Hyper.rsp            resq    1
     .Hyper.gs             resw    1
     .Hyper.gsPadding      resw    1
     .Hyper.fs             resw    1
@@ -188,7 +189,7 @@ struc CPUM
     .Hyper.ds             resw    1
     .Hyper.dsPadding      resw    1
     .Hyper.cs             resw    1
-    .Hyper.csPadding      resw    1
+    .Hyper.csPadding      resw    3
     .Hyper.eflags         resq    1
     .Hyper.eip            resq    1
     .Hyper.r8             resq    1
@@ -250,9 +251,9 @@ struc CPUM
     .Hyper.tr             resw    1
     .Hyper.trPadding      resw    1
 
-    .Hyper.SysEnter.cs    resb    8
-    .Hyper.SysEnter.eip   resb    8
-    .Hyper.SysEnter.esp   resb    8
+    .Hyper.SysEnter.cs        resb    8
+    .Hyper.SysEnter.eip       resb    8
+    .Hyper.SysEnter.esp       resb    8
 
     .Hyper.ldtrHid.u32Base    resd    1
     .Hyper.ldtrHid.u32Limit   resd    1
@@ -263,7 +264,7 @@ struc CPUM
     .Hyper.trHid.Attr         resd    1
 
     ; padding
-    .Hyper.padding            resd    6
+    .Hyper.padding            resd    4
 
 
 
@@ -283,7 +284,8 @@ struc CPUM
     .Guest.ecx            resq    1
     .Guest.esp            resd    1
     .Guest.ss             resw    1
-    .Guest.ssPadding      resw    3
+    .Guest.ssPadding      resw    1
+    .Guest.rsp            resq    1
     .Guest.gs             resw    1
     .Guest.gsPadding      resw    1
     .Guest.fs             resw    1
@@ -293,7 +295,7 @@ struc CPUM
     .Guest.ds             resw    1
     .Guest.dsPadding      resw    1
     .Guest.cs             resw    1
-    .Guest.csPadding      resw    1
+    .Guest.csPadding      resw    3
     .Guest.eflags         resq    1
     .Guest.eip            resq    1
     .Guest.r8             resq    1
@@ -355,9 +357,9 @@ struc CPUM
     .Guest.tr             resw    1
     .Guest.trPadding      resw    1
 
-    .Guest.SysEnter.cs    resb    8
-    .Guest.SysEnter.eip   resb    8
-    .Guest.SysEnter.esp   resb    8
+    .Guest.SysEnter.cs        resb    8
+    .Guest.SysEnter.eip       resb    8
+    .Guest.SysEnter.esp       resb    8
 
     .Guest.ldtrHid.u32Base    resd    1
     .Guest.ldtrHid.u32Limit   resd    1
@@ -368,7 +370,7 @@ struc CPUM
     .Guest.trHid.Attr         resd    1
 
     ; padding
-    .Guest.padding            resd    6
+    .Guest.padding            resd    4
 
 
 

@@ -42,7 +42,8 @@ struc CPUMCTXCORE
     .ecx            resq    1
     .esp            resd    1
     .ss             resw    1
-    .ssPadding      resw    3
+    .ssPadding      resw    1
+    .rsp            resq    1
     .gs             resw    1
     .gsPadding      resw    1
     .fs             resw    1
@@ -52,7 +53,7 @@ struc CPUMCTXCORE
     .ds             resw    1
     .dsPadding      resw    1
     .cs             resw    1
-    .csPadding      resw    1
+    .csPadding      resw    3
     .eflags         resq    1
     .eip            resq    1
 
@@ -104,7 +105,8 @@ struc CPUMCTX
     .ecx            resq    1
     .esp            resd    1
     .ss             resw    1
-    .ssPadding      resw    3
+    .ssPadding      resw    1
+    .rsp            resq    1
     .gs             resw    1
     .gsPadding      resw    1
     .fs             resw    1
@@ -114,7 +116,7 @@ struc CPUMCTX
     .ds             resw    1
     .dsPadding      resw    1
     .cs             resw    1
-    .csPadding      resw    1
+    .csPadding      resw    3
     .eflags         resq    1
     .eip            resq    1
 
@@ -178,9 +180,9 @@ struc CPUMCTX
     .tr             resw    1
     .trPadding      resw    1
 
-    .SysEnter.cs    resb    8
-    .SysEnter.eip   resb    8
-    .SysEnter.esp   resb    8
+    .SysEnter.cs        resb    8
+    .SysEnter.eip       resb    8
+    .SysEnter.esp       resb    8
 
     .ldtrHid.u32Base    resd    1
     .ldtrHid.u32Limit   resd    1
@@ -191,7 +193,7 @@ struc CPUMCTX
     .trHid.Attr         resd    1
 
     ; padding
-    .padding            resd    6
+    .padding            resd    4
 endstruc
 
 %endif
