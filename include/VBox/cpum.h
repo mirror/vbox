@@ -116,22 +116,12 @@ typedef struct CPUMCTXCORE
         uint32_t        ecx;
         uint64_t        rcx;
     };
-    union
-    {
-        /* Note: we rely on the exact layout, because we use lss esp, [] in the switcher */
-        struct
-        {
-            uint32_t        esp;
-            RTSEL           ss;
-            RTSEL           ssPadding;
-        };
-        struct
-        {
-            uint64_t        rsp;
-            RTSEL           ss64;
-            RTSEL           ss64Padding;
-        };
-    };
+    /* Note: we rely on the exact layout, because we use lss esp, [] in the switcher */
+    uint32_t        esp;
+    RTSEL           ss;
+    RTSEL           ssPadding;
+    /* Note: no overlap with esp here. */
+    uint64_t        rsp;
 
     RTSEL           gs;
     RTSEL           gsPadding;
@@ -142,7 +132,7 @@ typedef struct CPUMCTXCORE
     RTSEL           ds;
     RTSEL           dsPadding;
     RTSEL           cs;
-    RTSEL           csPadding;
+    RTSEL           csPadding[3];  /* 3 words to force 8 byte alignment for the remainder */
 
     union
     {
@@ -229,22 +219,12 @@ typedef struct CPUMCTX
         uint32_t        ecx;
         uint64_t        rcx;
     };
-    union
-    {
-        /* Note: we rely on the exact layout, because we use lss esp, [] in the switcher */
-        struct
-        {
-            uint32_t        esp;
-            RTSEL           ss;
-            RTSEL           ssPadding;
-        };
-        struct
-        {
-            uint64_t        rsp;
-            RTSEL           ss64;
-            RTSEL           ss64Padding;
-        };
-    };
+    /* Note: we rely on the exact layout, because we use lss esp, [] in the switcher */
+    uint32_t        esp;
+    RTSEL           ss;
+    RTSEL           ssPadding;
+    /* Note: no overlap with esp here. */
+    uint64_t        rsp;
 
     RTSEL           gs;
     RTSEL           gsPadding;
@@ -255,7 +235,7 @@ typedef struct CPUMCTX
     RTSEL           ds;
     RTSEL           dsPadding;
     RTSEL           cs;
-    RTSEL           csPadding;
+    RTSEL           csPadding[3];  /* 3 words to force 8 byte alignment for the remainder */
 
     union
     {
@@ -339,7 +319,7 @@ typedef struct CPUMCTX
     /** @} */
 
     /* padding to get 32byte aligned size */
-    uint32_t        padding[6];
+    uint32_t        padding[4];
 } CPUMCTX;
 #pragma pack()
 /** Pointer to CPUMCTX. */
