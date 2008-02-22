@@ -54,7 +54,7 @@ struc CPUM
     ; Host context state
     ;
     alignb 32
-    .Host.fpu            resb    512
+    .Host.fpu            resb    FPUSTATE_SIZE
 
 %if HC_ARCH_BITS == 64 || fVBOX_WITH_HYBIRD_32BIT_KERNEL
     ;.Host.rax            resq    1 - scratch
@@ -167,18 +167,18 @@ struc CPUM
     ; (Identical to .Host.*)
     ;
     alignb 32                           ; the padding
-    .Hyper.fpu            resb    512
+    .Hyper.fpu            resb    FPUSTATE_SIZE
 
-    .Hyper.edi            resd    1
-    .Hyper.esi            resd    1
-    .Hyper.ebp            resd    1
-    .Hyper.eax            resd    1
-    .Hyper.ebx            resd    1
-    .Hyper.edx            resd    1
-    .Hyper.ecx            resd    1
+    .Hyper.edi            resq    1
+    .Hyper.esi            resq    1
+    .Hyper.ebp            resq    1
+    .Hyper.eax            resq    1
+    .Hyper.ebx            resq    1
+    .Hyper.edx            resq    1
+    .Hyper.ecx            resq    1
     .Hyper.esp            resd    1
     .Hyper.ss             resw    1
-    .Hyper.ssPadding      resw    1
+    .Hyper.ssPadding      resw    3
     .Hyper.gs             resw    1
     .Hyper.gsPadding      resw    1
     .Hyper.fs             resw    1
@@ -189,8 +189,17 @@ struc CPUM
     .Hyper.dsPadding      resw    1
     .Hyper.cs             resw    1
     .Hyper.csPadding      resw    1
-    .Hyper.eflags         resd    1
-    .Hyper.eip            resd    1
+    .Hyper.eflags         resq    1
+    .Hyper.eip            resq    1
+    .Hyper.r8             resq    1
+    .Hyper.r9             resq    1
+    .Hyper.r10            resq    1
+    .Hyper.r11            resq    1
+    .Hyper.r12            resq    1
+    .Hyper.r13            resq    1
+    .Hyper.r14            resq    1
+    .Hyper.r15            resq    1
+
     .Hyper.esHid.u32Base      resd    1
     .Hyper.esHid.u32Limit     resd    1
     .Hyper.esHid.Attr         resd    1
@@ -215,19 +224,20 @@ struc CPUM
     .Hyper.gsHid.u32Limit     resd    1
     .Hyper.gsHid.Attr         resd    1
 
-    .Hyper.cr0            resd    1
-    .Hyper.cr2            resd    1
-    .Hyper.cr3            resd    1
-    .Hyper.cr4            resd    1
+    .Hyper.cr0            resq    1
+    .Hyper.cr2            resq    1
+    .Hyper.cr3            resq    1
+    .Hyper.cr4            resq    1
+    .Hyper.cr8            resq    1
 
-    .Hyper.dr0            resd    1
-    .Hyper.dr1            resd    1
-    .Hyper.dr2            resd    1
-    .Hyper.dr3            resd    1
-    .Hyper.dr4            resd    1
-    .Hyper.dr5            resd    1
-    .Hyper.dr6            resd    1
-    .Hyper.dr7            resd    1
+    .Hyper.dr0            resq    1
+    .Hyper.dr1            resq    1
+    .Hyper.dr2            resq    1
+    .Hyper.dr3            resq    1
+    .Hyper.dr4            resq    1
+    .Hyper.dr5            resq    1
+    .Hyper.dr6            resq    1
+    .Hyper.dr7            resq    1
 
     .Hyper.gdtr           resb    6           ; GDT limit + linear address
     .Hyper.gdtrPadding    resw    1
@@ -262,18 +272,18 @@ struc CPUM
     ; (Identical to the two above chunks)
     ;
     alignb 32
-    .Guest.fpu            resb    512
+    .Guest.fpu            resb    FPUSTATE_SIZE
 
-    .Guest.edi            resd    1
-    .Guest.esi            resd    1
-    .Guest.ebp            resd    1
-    .Guest.eax            resd    1
-    .Guest.ebx            resd    1
-    .Guest.edx            resd    1
-    .Guest.ecx            resd    1
+    .Guest.edi            resq    1
+    .Guest.esi            resq    1
+    .Guest.ebp            resq    1
+    .Guest.eax            resq    1
+    .Guest.ebx            resq    1
+    .Guest.edx            resq    1
+    .Guest.ecx            resq    1
     .Guest.esp            resd    1
     .Guest.ss             resw    1
-    .Guest.ssPadding      resw    1
+    .Guest.ssPadding      resw    3
     .Guest.gs             resw    1
     .Guest.gsPadding      resw    1
     .Guest.fs             resw    1
@@ -284,8 +294,17 @@ struc CPUM
     .Guest.dsPadding      resw    1
     .Guest.cs             resw    1
     .Guest.csPadding      resw    1
-    .Guest.eflags         resd    1
-    .Guest.eip            resd    1
+    .Guest.eflags         resq    1
+    .Guest.eip            resq    1
+    .Guest.r8             resq    1
+    .Guest.r9             resq    1
+    .Guest.r10            resq    1
+    .Guest.r11            resq    1
+    .Guest.r12            resq    1
+    .Guest.r13            resq    1
+    .Guest.r14            resq    1
+    .Guest.r15            resq    1
+
     .Guest.esHid.u32Base      resd    1
     .Guest.esHid.u32Limit     resd    1
     .Guest.esHid.Attr         resd    1
@@ -310,19 +329,20 @@ struc CPUM
     .Guest.gsHid.u32Limit     resd    1
     .Guest.gsHid.Attr         resd    1
 
-    .Guest.cr0            resd    1
-    .Guest.cr2            resd    1
-    .Guest.cr3            resd    1
-    .Guest.cr4            resd    1
+    .Guest.cr0            resq    1
+    .Guest.cr2            resq    1
+    .Guest.cr3            resq    1
+    .Guest.cr4            resq    1
+    .Guest.cr8            resq    1
 
-    .Guest.dr0            resd    1
-    .Guest.dr1            resd    1
-    .Guest.dr2            resd    1
-    .Guest.dr3            resd    1
-    .Guest.dr4            resd    1
-    .Guest.dr5            resd    1
-    .Guest.dr6            resd    1
-    .Guest.dr7            resd    1
+    .Guest.dr0            resq    1
+    .Guest.dr1            resq    1
+    .Guest.dr2            resq    1
+    .Guest.dr3            resq    1
+    .Guest.dr4            resq    1
+    .Guest.dr5            resq    1
+    .Guest.dr6            resq    1
+    .Guest.dr7            resq    1
 
     .Guest.gdtr           resb    6           ; GDT limit + linear address
     .Guest.gdtrPadding    resw    1
@@ -386,6 +406,7 @@ struc CPUM
     .GuestCpuIdDef        resb    16
 
     ; debug stuff...
-    .GuestEntry           resb    800
+    .GuestEntry           resb    960
+
 endstruc
 
