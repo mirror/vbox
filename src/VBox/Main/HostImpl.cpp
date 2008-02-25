@@ -2333,12 +2333,7 @@ HRESULT Host::checkUSBProxyService()
     CHECK_READY();
 
     AssertReturn (mUSBProxyService, E_FAIL);
-
-    /* consider !isActive() and VBOX_SUCCESS (getLastError()) as a special
-     * normal state and don't report warnings */
-
-    if (!mUSBProxyService->isActive() &&
-        VBOX_FAILURE (mUSBProxyService->getLastError()))
+    if (!mUSBProxyService->isActive())
     {
         /* disable the USB controller completely to avoid assertions if the
          * USB proxy service could not start. */
@@ -2348,10 +2343,12 @@ HRESULT Host::checkUSBProxyService()
                 tr ("Could not load the Host USB Proxy Service (%Vrc). "
                     "The service might be not installed on the host computer"),
                 mUSBProxyService->getLastError());
-        else
+        if (mUSBProxyService->getLastError() == VINF_SUCCESS)
             return setWarning (E_FAIL,
-                tr ("Could not load the Host USB Proxy service (%Vrc)"),
-                mUSBProxyService->getLastError());
+                tr ("The USB Proxy Service has not yet been ported to this host"));
+        return setWarning (E_FAIL,
+            tr ("Could not load the Host USB Proxy service (%Vrc)"),
+            mUSBProxyService->getLastError());
     }
 
     return S_OK;
