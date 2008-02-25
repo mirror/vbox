@@ -40,7 +40,7 @@ __BEGIN_DECLS
 /**
  * Selector hidden registers.
  */
-typedef struct CPUMSELREGHIDDEN
+typedef struct CPUMSELREGHID
 {
     /** Base register. */
     uint32_t    u32Base;
@@ -51,10 +51,6 @@ typedef struct CPUMSELREGHIDDEN
      * Only the flags, dpl and type are used. */
     X86DESCATTR Attr;
 } CPUMSELREGHID;
-/** Pointer to selector hidden registers. */
-typedef CPUMSELREGHID *PCPUMSELREGHID;
-/** Pointer to const selector hidden registers. */
-typedef const CPUMSELREGHID *PCCPUMSELREGHID;
 
 
 /**
@@ -165,11 +161,8 @@ typedef struct CPUMCTXCORE
     /** @} */
 
 } CPUMCTXCORE;
-/** Pointer to CPU context core. */
-typedef CPUMCTXCORE *PCPUMCTXCORE;
-/** Pointer to const CPU context core. */
-typedef const CPUMCTXCORE *PCCPUMCTXCORE;
 #pragma pack()
+
 
 /**
  * CPU context.
@@ -322,8 +315,6 @@ typedef struct CPUMCTX
     uint32_t        padding[4];
 } CPUMCTX;
 #pragma pack()
-/** Pointer to CPUMCTX. */
-typedef CPUMCTX *PCPUMCTX;
 
 /**
  * Gets the CPUMCTXCORE part of a CPUMCTX.

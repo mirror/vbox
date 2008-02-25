@@ -174,6 +174,21 @@ typedef CTXALLSUFF(PPTMTIMER)  PPTMTIMER;
 /** SSM Operation handle. */
 typedef struct SSMHANDLE *PSSMHANDLE;
 
+/** Pointer to a CPUMCTX. */
+typedef struct CPUMCTX *PCPUMCTX;
+/** Pointer to a const CPUMCTX. */
+typedef const struct CPUMCTX *PCCPUMCTX;
+
+/** Pointer to a CPU context core. */
+typedef struct CPUMCTXCORE *PCPUMCTXCORE;
+/** Pointer to a const CPU context core. */
+typedef const struct CPUMCTXCORE *PCCPUMCTXCORE;
+
+/** Pointer to selector hidden registers. */
+typedef struct CPUMSELREGHID *PCPUMSELREGHID;
+/** Pointer to const selector hidden registers. */
+typedef const struct CPUMSELREGHID *PCCPUMSELREGHID;
+
 /** @} */
 
 

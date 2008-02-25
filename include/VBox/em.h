@@ -29,7 +29,6 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/trpm.h>
-#include <VBox/cpum.h>
 #include <VBox/dis.h>
 
 __BEGIN_DECLS

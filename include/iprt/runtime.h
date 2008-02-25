@@ -31,7 +31,9 @@
 #include <iprt/param.h>
 #include <iprt/initterm.h>
 
-#include <iprt/alloc.h>
+#ifndef IN_GC
+# include <iprt/alloc.h>
+#endif
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>
@@ -40,12 +42,16 @@
 #include <iprt/critsect.h>
 #include <iprt/dir.h>
 #include <iprt/err.h>
-#include <iprt/file.h>
-#include <iprt/fs.h>
+#ifndef IN_GC
+# include <iprt/file.h>
+# include <iprt/fs.h>
+#endif
 #include <iprt/ldr.h>
 #include <iprt/log.h>
 #include <iprt/md5.h>
-#include <iprt/mem.h>
+#ifndef IN_GC
+# include <iprt/mem.h>
+#endif
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
@@ -53,7 +59,9 @@
 #include <iprt/string.h>
 #include <iprt/system.h>
 #include <iprt/table.h>
-#include <iprt/thread.h>
+#ifndef IN_GC
+# include <iprt/thread.h>
+#endif
 #include <iprt/time.h>
 #include <iprt/timer.h>
 #include <iprt/uni.h>

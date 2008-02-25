@@ -28,7 +28,6 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/cpum.h>
 #include <VBox/em.h>
 
 
@@ -229,7 +228,7 @@ CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTGCPTR addr);
  * @param   pHiddenSel  The hidden selector register.
  * @param   pInstrGC    Instruction pointer
  */
-CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR pInstrGC);
+CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, RTSEL Sel, PCPUMSELREGHID pHiddenSel, RTGCPTR pInstrGC);
 
 /**
  * Scan and analyse code

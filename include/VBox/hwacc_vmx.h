@@ -28,7 +28,6 @@
 
 #include <VBox/types.h>
 #include <VBox/err.h>
-#include <VBox/cpum.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
