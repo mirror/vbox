@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Shared Clipboard:
- * Mac OS X host implementation.
+ * Shared Clipboard: Mac OS X host implementation.
  */
 
 /*
@@ -16,18 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __DARWIN_PASTEBOARD_H
-#define __DARWIN_PASTEBOARD_H
+#ifndef ___DARWIN_PASTEBOARD_H
+#define ___DARWIN_PASTEBOARD_H
 
 typedef struct OpaquePasteboardRef;
 typedef struct OpaquePasteboardRef *PasteboardRef;
 
-int initPasteboard (PasteboardRef &pPasteboard);
-void destroyPasteboard (PasteboardRef &pPasteboard);
+int initPasteboard (PasteboardRef *pPasteboardRef);
+void destroyPasteboard (PasteboardRef *pPasteboardRef);
 
-int queryPasteboardFormats (PasteboardRef pPasteboard, uint32_t &u32Formats);
-int readFromPasteboard (PasteboardRef pPasteboard, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual);
-int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t u32Format);
+int queryPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats);
+int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcbActual);
+int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t fFormat);
 
-#endif /* __DARWIN-PASTEBOARD_H */
+#endif
 

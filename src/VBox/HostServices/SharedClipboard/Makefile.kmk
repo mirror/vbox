@@ -34,16 +34,16 @@ VBoxSharedClipboard_SOURCES.win = \
 	win32.cpp
 VBoxSharedClipboard_SOURCES.darwin = \
 	darwin.cpp \
-    clipboard-helper.cpp \
-    darwin-pasteboard.cpp
+	clipboard-helper.cpp \
+	darwin-pasteboard.cpp
 if1of ($(BUILD_TARGET),linux solaris)
  ifndef VBOX_HEADLESS
   VBoxSharedClipboard_SOURCES += \
-    clipboard-helper.cpp \
-	linux.cpp
+  	clipboard-helper.cpp \
+  	linux.cpp
  else
   VBoxSharedClipboard_SOURCES += \
-	linux-stub.cpp
+  	linux-stub.cpp
  endif
 endif
 
