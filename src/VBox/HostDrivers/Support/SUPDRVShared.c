@@ -629,6 +629,31 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSES
 
 
 /**
+ * Helper for supdrvIOCtl. Check if pszStr contains any character of pszChars.
+ * We would use strpbrk here if this function would be contained in the RedHat kABI white
+ * list, see http://www.kerneldrivers.org/RHEL5.
+ *
+ * @return 1 if pszStr does contain any character of pszChars, 0 otherwise.
+ * @param    pszStr     String to check
+ * @param    pszChars   Character set
+ */
+static int supdrvCheckInvalidChar(const char *pszStr, const char *pszChars)
+{
+    int chCur;
+    while ((chCur = *pszStr++) != '\0')
+    {
+        int ch;
+        const char *psz = pszChars;
+        while ((ch = *psz++) != '\0')
+            if (ch == chCur)
+                return 1;
+
+    }
+    return 0;
+}
+
+
+/**
  * I/O Control worker.
  *
  * @returns 0 on success.
@@ -895,7 +920,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImage < _1M*16);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.szName[0]);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, memchr(pReq->u.In.szName, '\0', sizeof(pReq->u.In.szName)));
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, !strpbrk(pReq->u.In.szName, ";:()[]{}/\\|&*%#@!~`\"'"));
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, !supdrvCheckInvalidChar(pReq->u.In.szName, ";:()[]{}/\\|&*%#@!~`\"'"));
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrOpen(pDevExt, pSession, pReq);
