@@ -632,7 +632,7 @@ BEGINPROC VMMGCGuestToHostAsmGuestCtx
     ;
     ; Guest Context (assumes esp now points to CPUMCTXCORE structure).
     ;
-    ; general purpose registers (layout is pushad)
+    ; general purpose registers
     push    eax                         ; save return code.
     mov     eax, [esp + 4 + CPUMCTXCORE.edi]
     mov     [edx + CPUM.Guest.edi], eax
