@@ -763,7 +763,7 @@ static void cpumR3InfoOne(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP p
                 "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
                 "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
                 "%scs=%04x %sss=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %str=%04x      %seflags=%08x\n"
-                "%scr0=%08x %scr2=%08x %scr3=%08x %scr4=%08x %sgdtr=%08x:%04x %sldtr=%04x\n"
+                "%scr0=%08RX64 %scr2=%08RX64 %scr3=%08RX64 %scr4=%08RX64 %sgdtr=%08x:%04x %sldtr=%04x\n"
                 ,
                 pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
                 pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
@@ -777,12 +777,12 @@ static void cpumR3InfoOne(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP p
             pHlp->pfnPrintf(pHlp,
                 "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
                 "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
-                "%scs={%04x base=%08x limit=%08x flags=%08x} %sdr0=%08x %sdr1=%08x\n"
-                "%sds={%04x base=%08x limit=%08x flags=%08x} %sdr2=%08x %sdr3=%08x\n"
-                "%ses={%04x base=%08x limit=%08x flags=%08x} %sdr4=%08x %sdr5=%08x\n"
-                "%sfs={%04x base=%08x limit=%08x flags=%08x} %sdr6=%08x %sdr7=%08x\n"
-                "%sgs={%04x base=%08x limit=%08x flags=%08x} %scr0=%08x %scr2=%08x\n"
-                "%sss={%04x base=%08x limit=%08x flags=%08x} %scr3=%08x %scr4=%08x\n"
+                "%scs={%04x base=%08x limit=%08x flags=%08x} %sdr0=%08RX64 %sdr1=%08RX64\n"
+                "%sds={%04x base=%08x limit=%08x flags=%08x} %sdr2=%08RX64 %sdr3=%08RX64\n"
+                "%ses={%04x base=%08x limit=%08x flags=%08x} %sdr4=%08RX64 %sdr5=%08RX64\n"
+                "%sfs={%04x base=%08x limit=%08x flags=%08x} %sdr6=%08RX64 %sdr7=%08RX64\n"
+                "%sgs={%04x base=%08x limit=%08x flags=%08x} %scr0=%08RX64 %scr2=%08RX64\n"
+                "%sss={%04x base=%08x limit=%08x flags=%08x} %scr3=%08RX64 %scr4=%08RX64\n"
                 "%sgdtr=%08x:%04x  %sidtr=%08x:%04x  %seflags=%08x\n"
                 "%sldtr={%04x base=%08x limit=%08x flags=%08x}\n"
                 "%str  ={%04x base=%08x limit=%08x flags=%08x}\n"
@@ -947,8 +947,8 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
             "eax=xxxxxxxx ebx=%08x ecx=xxxxxxxx edx=xxxxxxxx esi=%08x edi=%08x\n"
             "eip=xxxxxxxx esp=%08x ebp=%08x iopl=%d %31s\n"
             "cs=%04x ds=%04x es=%04x fs=%04x gs=%04x                       eflags=%08x\n"
-            "cr0=%08x cr2=xxxxxxxx cr3=%08x cr4=%08x gdtr=%08x:%04x ldtr=%04x\n"
-            "dr0=%08x dr1=%08x dr2=%08x dr3=%08x dr6=%08x dr7=%08x\n"
+            "cr0=%08RX64 cr2=xxxxxxxx cr3=%08RX64 cr4=%08RX64 gdtr=%08x:%04x ldtr=%04x\n"
+            "dr0=%08RX64 dr1=%08RX64x dr2=%08RX64 dr3=%08RX64x dr6=%08RX64 dr7=%08RX64\n"
             "SysEnter={cs=%04x eip=%08x esp=%08x}\n"
             ,
             /*pCtx->eax,*/ pCtx->ebx, /*pCtx->ecx, pCtx->edx,*/ pCtx->esi, pCtx->edi,
