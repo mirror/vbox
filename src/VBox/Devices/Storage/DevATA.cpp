@@ -1357,12 +1357,12 @@ static int ataWriteSectors(ATADevState *s, uint64_t u64Sector, const void *pvBuf
     s->Led.Asserted.s.fWriting = s->Led.Actual.s.fWriting = 1;
 #ifdef VBOX_INSTRUMENT_DMA_WRITES
     if (s->fDMA)
-        STAM_PROFILE_ADV_START(&s->StatInstrVDWrites, vw);;
+        STAM_PROFILE_ADV_START(&s->StatInstrVDWrites, vw);
 #endif
     rc = s->pDrvBlock->pfnWrite(s->pDrvBlock, u64Sector * 512, pvBuf, cSectors * 512);
 #ifdef VBOX_INSTRUMENT_DMA_WRITES
     if (s->fDMA)
-        STAM_PROFILE_ADV_STOP(&s->StatInstrVDWrites, vw);;
+        STAM_PROFILE_ADV_STOP(&s->StatInstrVDWrites, vw);
 #endif
     s->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&s->StatWrites, w);
@@ -6018,7 +6018,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 #endif
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatBytesRead,    STAMTYPE_COUNTER,     STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,           "Amount of data read.",              "/Devices/ATA%d/Unit%d/ReadBytes", i, j);
 #ifdef VBOX_INSTRUMENT_DMA_WRITES
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatInstrVDWrites,       STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the VD DMA write operations.","/Devices/ATA%d/Unit%d/InstrVDWrites", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatInstrVDWrites,STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the VD DMA write operations.","/Devices/ATA%d/Unit%d/InstrVDWrites", i, j);
 #endif
 #ifdef VBOX_WITH_STATISTICS
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatWrites,       STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the write operations.","/Devices/ATA%d/Unit%d/Writes", i, j);
