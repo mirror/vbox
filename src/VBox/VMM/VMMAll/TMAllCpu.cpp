@@ -60,7 +60,7 @@ TMDECL(int) TMCpuTickResume(PVM pVM)
             if (pVM->tm.s.fTSCUseRealTSC)
                 pVM->tm.s.u64TSCOffset = ASMReadTSC() - pVM->tm.s.u64TSC;
             else
-                pVM->tm.s.u64TSCOffset = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */) 
+                pVM->tm.s.u64TSCOffset = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
                                        - pVM->tm.s.u64TSC;
         }
         return VINF_SUCCESS;
@@ -90,38 +90,8 @@ TMDECL(int) TMCpuTickPause(PVM pVM)
 
 
 /**
- * Returns the TSC offset (virtual TSC - host TSC)
- *
- * @returns TSC ofset
- * @param   pVM         The VM to operate on.
- * @todo    Remove this when the code has been switched to TMCpuTickCanUseRealTSC.
- */
-TMDECL(uint64_t) TMCpuTickGetOffset(PVM pVM)
-{
-    uint64_t u64;
-    if (RT_LIKELY(pVM->tm.s.fTSCTicking))
-    {
-        if (pVM->tm.s.fTSCVirtualized)
-        {
-            if (pVM->tm.s.fTSCUseRealTSC)
-                u64 = ASMReadTSC();
-            else
-                u64 = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */);
-            u64 -= pVM->tm.s.u64TSCOffset;
-        }
-        else
-            u64 = ASMReadTSC();
-    }
-    else
-        u64 = pVM->tm.s.u64TSC;
-
-    return u64 - ASMReadTSC();
-}
-
-
-/**
  * Checks if AMD-V / VT-x can use an offsetted hardware TSC or not.
- * 
+ *
  * @returns true/false accordingly.
  * @param   pVM             The VM handle.
  * @param   poffRealTSC     The offset against the TSC of the current CPU.
@@ -156,9 +126,9 @@ TMDECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, uint64_t *poffRealTSC)
             {
                 uint64_t u64Now = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
                                 - pVM->tm.s.u64TSCOffset;
-                /** @todo When we start collecting statistics on how much time we spend executing 
-                 * guest code before exiting, we should check this against the next virtual sync 
-                 * timer timeout. If it's lower than the avg. length, we should trap rdtsc to increase 
+                /** @todo When we start collecting statistics on how much time we spend executing
+                 * guest code before exiting, we should check this against the next virtual sync
+                 * timer timeout. If it's lower than the avg. length, we should trap rdtsc to increase
                  * the chance that we'll get interrupted right after the timer expired. */
                 *poffRealTSC = u64Now - ASMReadTSC();
             }
