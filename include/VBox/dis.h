@@ -28,7 +28,6 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/cpum.h>
 #include <VBox/disopcode.h>
 
 #if defined(__L4ENV__)
@@ -71,7 +70,7 @@ typedef enum
 #define PREFIX_REX                      64
 /** @} */
 
-/** 64 bits prefix byte flags 
+/** 64 bits prefix byte flags
  * @{
  */
 #define PREFIX_REX_OP_2_FLAGS(a)        (a - OP_REX)
@@ -118,7 +117,7 @@ typedef enum
 #define OPTYPE_INVALID_64               RT_BIT(19)  /**< Invalid in 64 bits mode */
 #define OPTYPE_ONLY_64                  RT_BIT(20)  /**< Only valid in 64 bits mode */
 #define OPTYPE_DEFAULT_64_OP_SIZE       RT_BIT(21)  /**< Default 64 bits operand size */
-#define OPTYPE_FORCED_64_OP_SIZE        RT_BIT(22)  /**< Forced 64 bits operand size; regardless of prefix bytes */ 
+#define OPTYPE_FORCED_64_OP_SIZE        RT_BIT(22)  /**< Forced 64 bits operand size; regardless of prefix bytes */
 #define OPTYPE_ALL                      (0xffffffff)
 
 /** Parameter usage flags.
@@ -552,7 +551,7 @@ DISDECL(int) DISFetchReg8(PCPUMCTXCORE pCtx, uint32_t reg8, uint8_t *pVal);
 DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, uint32_t reg16, uint16_t *pVal);
 DISDECL(int) DISFetchReg32(PCPUMCTXCORE pCtx, uint32_t reg32, uint32_t *pVal);
 DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL *pVal);
-DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL *pVal, CPUMSELREGHID **ppSelHidReg);
+DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL *pVal, PCPUMSELREGHID *ppSelHidReg);
 DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, uint32_t reg8, uint8_t val8);
 DISDECL(int) DISWriteReg16(PCPUMCTXCORE pRegFrame, uint32_t reg32, uint16_t val16);
 DISDECL(int) DISWriteReg32(PCPUMCTXCORE pRegFrame, uint32_t reg32, uint32_t val32);
