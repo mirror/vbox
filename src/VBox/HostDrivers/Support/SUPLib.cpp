@@ -52,6 +52,7 @@
 #include <VBox/param.h>
 #include <VBox/vmm.h>
 #include <VBox/log.h>
+#include <VBox/x86.h>
 
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
