@@ -113,6 +113,8 @@ typedef union X86EFLAGS
     uint32_t        au32[1];
     /** The 32-bit view. */
     uint32_t        u32;
+    /** The plain unsigned view. */
+    uint32_t        u;
 } X86EFLAGS;
 /** Pointer to EFLAGS. */
 typedef X86EFLAGS *PX86EFLAGS;
@@ -120,7 +122,7 @@ typedef X86EFLAGS *PX86EFLAGS;
 typedef const X86EFLAGS *PCX86EFLAGS;
 
 /**
- * RFLAGS (32 upper bits are reserved)
+ * RFLAGS (32 upper bits are reserved).
  */
 typedef union X86RFLAGS
 {
@@ -136,6 +138,8 @@ typedef union X86RFLAGS
     uint64_t        au64[1];
     /** The 64-bit view. */
     uint64_t        u64;
+    /** The plain unsigned view. */
+    uint64_t        u;
 } X86RFLAGS;
 /** Pointer to RFLAGS. */
 typedef X86RFLAGS *PX86RFLAGS;
@@ -2224,7 +2228,7 @@ typedef const X86XCPT *PCX86XCPT;
 /** @} */
 
 #pragma pack(1)
-/** 
+/**
  * 32-bit IDTR/GDTR.
  */
 typedef struct X86XDTR32
@@ -2237,7 +2241,7 @@ typedef struct X86XDTR32
 #pragma pack()
 
 #pragma pack(1)
-/** 
+/**
  * 64-bit IDTR/GDTR.
  */
 typedef struct X86XDTR64
