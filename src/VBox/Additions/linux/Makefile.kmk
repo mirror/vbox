@@ -37,7 +37,7 @@ VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
-ifeq ($(BUILD_TYPE), debug)
+ifeq ($(BUILD_TYPE),debug)
  BIN_COPY         = cp
  BIN_COPY_SYMBOLS = cp
 else
@@ -48,7 +48,7 @@ endif
 #
 # Build the Linux Guest Additions self extracting installer.
 #
-# Note that $(PATH_SUB_CURRENT) was changed by subfooter.kmk above and 
+# Note that $(PATH_SUB_CURRENT) was changed by subfooter.kmk above and
 # any references should be made via variables assigned a know value via := .
 #
 # We need to depend on all source files for the additions and shared
