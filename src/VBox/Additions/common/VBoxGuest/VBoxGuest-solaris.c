@@ -144,8 +144,10 @@ typedef struct
     ddi_acc_handle_t        PciIOHandle;
     /** MMIO handle. */
     ddi_acc_handle_t        PciMMIOHandle;
+#if 0
     /** Interrupt block cookie. */
     ddi_iblock_cookie_t     BlockCookie;
+#endif
     /** Driver Mutex. */
     kmutex_t                Mtx;
     /** IO Port. */
