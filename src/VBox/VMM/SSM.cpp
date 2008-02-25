@@ -90,8 +90,8 @@ typedef struct SSMHANDLE
     RTFILE          File;
     /** The VM handle. */
     PVM             pVM;
-    /** The size of the file header. 
-     * Because the file header was incorrectly aligned there we've ended up with 
+    /** The size of the file header.
+     * Because the file header was incorrectly aligned there we've ended up with
      * differences between the 64-bit and 32-bit file header. */
     size_t          cbFileHdr;
     /** The current operation. */
@@ -776,7 +776,7 @@ SSMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     /*
      * Validate input.
      */
-    if (    enmAfter != SSMAFTER_DESTROY 
+    if (    enmAfter != SSMAFTER_DESTROY
         &&  enmAfter != SSMAFTER_CONTINUE)
     {
         AssertMsgFailed(("Invalid enmAfter=%d!\n", enmAfter));
@@ -1494,7 +1494,7 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                         }
                                         else
                                         {
-                                            /* 
+                                            /*
                                              * We failed, but if loading for the debugger ignore certain failures
                                              * just to get it all loaded (big hack).
                                              */
@@ -1502,7 +1502,7 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                             if (    Handle.enmAfter != SSMAFTER_DEBUG_IT
                                                 ||  rc != VERR_SSM_LOADED_TOO_MUCH)
                                                 break;
-                                            Handle.rc = rc = VINF_SUCCESS; 
+                                            Handle.rc = rc = VINF_SUCCESS;
                                             ssmR3Progress(&Handle, Handle.offEstUnitEnd - Handle.offEst);
                                         }
                                     }
@@ -1515,7 +1515,7 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                 }
                                 else
                                 {
-                                    /* 
+                                    /*
                                      * SSM unit wasn't found - ignore this when loading for the debugger.
                                      */
                                     LogRel(("SSM: Found no handler for unit '%s'!\n", pszName));
@@ -2249,6 +2249,7 @@ SSMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
     return VERR_SSM_INVALID_STATE;
 }
 
+
 /**
  * Saves a GC physical address item to the current data unit.
  *
@@ -2774,6 +2775,7 @@ SSMR3DECL(int) SSMR3GetGCSInt(PSSMHANDLE pSSM, PRTGCINT pi)
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a 32 bits GC physical address item from the current data unit.
