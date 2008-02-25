@@ -534,10 +534,10 @@ HWACCMR0DECL(void) HWACCMDumpRegs(PCPUMCTX pCtx)
      */
     Log(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
          "eip=%08x esp=%08x ebp=%08x iopl=%d %*s\n"
-         "cs={%04x base=%08x limit=%08x flags=%08x} dr0=%08x dr1=%08x\n"
-         "ds={%04x base=%08x limit=%08x flags=%08x} dr2=%08x dr3=%08x\n"
-         "es={%04x base=%08x limit=%08x flags=%08x} dr4=%08x dr5=%08x\n"
-         "fs={%04x base=%08x limit=%08x flags=%08x} dr6=%08x dr7=%08x\n"
+         "cs={%04x base=%08x limit=%08x flags=%08x} dr0=%08RX64 dr1=%08RX64\n"
+         "ds={%04x base=%08x limit=%08x flags=%08x} dr2=%08RX64 dr3=%08RX64\n"
+         "es={%04x base=%08x limit=%08x flags=%08x} dr4=%08RX64 dr5=%08RX64\n"
+         "fs={%04x base=%08x limit=%08x flags=%08x} dr6=%08RX64 dr7=%08RX64\n"
          ,
          pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
          pCtx->eip, pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(efl), 31, szEFlags,
@@ -546,8 +546,8 @@ HWACCMR0DECL(void) HWACCMDumpRegs(PCPUMCTX pCtx)
          (RTSEL)pCtx->es, pCtx->esHid.u32Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pCtx->dr4,  pCtx->dr5,
          (RTSEL)pCtx->fs, pCtx->fsHid.u32Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pCtx->dr6,  pCtx->dr7));
 
-    Log(("gs={%04x base=%08x limit=%08x flags=%08x} cr0=%08x cr2=%08x\n"
-         "ss={%04x base=%08x limit=%08x flags=%08x} cr3=%08x cr4=%08x\n"
+    Log(("gs={%04x base=%08x limit=%08x flags=%08x} cr0=%08RX64 cr2=%08RX64\n"
+         "ss={%04x base=%08x limit=%08x flags=%08x} cr3=%08RX64 cr4=%08RX64\n"
          "gdtr=%08x:%04x  idtr=%08x:%04x  eflags=%08x\n"
          "ldtr={%04x base=%08x limit=%08x flags=%08x}\n"
          "tr  ={%04x base=%08x limit=%08x flags=%08x}\n"
