@@ -37,6 +37,13 @@ VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
+ifeq ($(BUILD_TYPE), debug)
+ BIN_COPY         = cp
+ BIN_COPY_SYMBOLS = cp
+else
+ BIN_COPY         = objcopy -S -R .comment
+ BIN_COPY_SYMBOLS = objcopy -g -R .comment
+endif
 
 #
 # Build the Linux Guest Additions self extracting installer.
@@ -87,8 +94,8 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)/install/module/test
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test  $(PATH_TARGET)/install/module/test/Makefile
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c         $(PATH_TARGET)/install/module/test/
-	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxadd-timesync           $(PATH_TARGET)/install/vboxadd-timesync
-	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/VBoxClient                 $(PATH_TARGET)/install/VBoxClient
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxadd-timesync           $(PATH_TARGET)/install/vboxadd-timesync
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxClient                 $(PATH_TARGET)/install/VBoxClient
 	$(QUIET)$(SED) "s;_VERSION_;$(VBOX_VERSION_STRING);g" $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/install.sh \
 		| $(SED) "s;_BUILD_;$(shell date);g" \
 		| $(SED) "s;_OSE_;$(VBOX_OSE);g" \
@@ -102,16 +109,16 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd.sh          $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Installer/linux/routines.sh         $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/x11config.pl        $(PATH_TARGET)/install
-	$(QUIET)objcopy -g -R .comment $(PATH_BIN)/additions/vboxmouse_drv.o        $(PATH_TARGET)/install/vboxmouse_drv.o
-	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxmouse_drv_70.so    $(PATH_TARGET)/install/vboxmouse_drv_70.so
-	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxmouse_drv_71.so    $(PATH_TARGET)/install/vboxmouse_drv_71.so
-	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxmouse_drv_14.so    $(PATH_TARGET)/install/vboxmouse_drv_14.so
-	$(QUIET)objcopy -g -R .comment $(PATH_BIN)/additions/vboxvideo_drv.o        $(PATH_TARGET)/install/vboxvideo_drv.o
-	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_70.so    $(PATH_TARGET)/install/vboxvideo_drv_70.so
-	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_71.so    $(PATH_TARGET)/install/vboxvideo_drv_71.so
-	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_13.so    $(PATH_TARGET)/install/vboxvideo_drv_13.so
-	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_14.so    $(PATH_TARGET)/install/vboxvideo_drv_14.so
-	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/mountvboxsf            $(PATH_TARGET)/install/mount.vboxsf
+	$(QUIET)$(BIN_COPY_SYMBOLS) $(PATH_BIN)/additions/vboxmouse_drv.o        $(PATH_TARGET)/install/vboxmouse_drv.o
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_70.so    $(PATH_TARGET)/install/vboxmouse_drv_70.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so    $(PATH_TARGET)/install/vboxmouse_drv_71.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_14.so    $(PATH_TARGET)/install/vboxmouse_drv_14.so
+	$(QUIET)$(BIN_COPY_SYMBOLS) $(PATH_BIN)/additions/vboxvideo_drv.o        $(PATH_TARGET)/install/vboxvideo_drv.o
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so    $(PATH_TARGET)/install/vboxvideo_drv_70.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_71.so    $(PATH_TARGET)/install/vboxvideo_drv_71.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so    $(PATH_TARGET)/install/vboxvideo_drv_13.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so    $(PATH_TARGET)/install/vboxvideo_drv_14.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/mountvboxsf            $(PATH_TARGET)/install/mount.vboxsf
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxvfs.sh $(PATH_TARGET)/install
 ifdef VBOX_SELINUX_CMPLD
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_SELINUX_CMPLD)                            $(PATH_TARGET)/install
