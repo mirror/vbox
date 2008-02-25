@@ -49,7 +49,7 @@ int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
 
     uint32_t fFormats = 0;
     /* Retrieve the formats currently in the clipboard and supported by vbox */
-    int rc = queryPasteboardFormats (pCtx->pasteboard, fFormats);
+    int rc = queryPasteboardFormats (pCtx->pasteboard, &fFormats);
 
     if (fFormats > 0)
     {
