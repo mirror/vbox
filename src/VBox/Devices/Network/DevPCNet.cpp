@@ -2718,7 +2718,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
             val &= 0xffff;
             pData->aBCR[BCR_STVAL] = val;
             if (pData->fAm79C973)
-                TMTimerSetNano(pData->CTXSUFF(pTimerSoftInt), (uint64_t)12800 * val);
+                TMTimerSetNano(pData->CTXSUFF(pTimerSoftInt), ASMMult2xU32RetU64(12800, val));
             break;
 
         case BCR_MIIMDR:
@@ -3510,7 +3510,7 @@ static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 
     pData->aCSR[7] |= 0x0800; /* STINT */
     pcnetUpdateIrq(pData);
-    TMTimerSetNano(pData->CTXSUFF(pTimerSoftInt), (uint64_t)12800 * (pData->aBCR[BCR_STVAL] & 0xffff));
+    TMTimerSetNano(pData->CTXSUFF(pTimerSoftInt), ASMMult2xU32RetU64(12800, (pData->aBCR[BCR_STVAL] & 0xffff)));
 }
 
 
