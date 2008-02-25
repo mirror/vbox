@@ -38,8 +38,8 @@ VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
 include	$(PATH_KBUILD)/subfooter.kmk
 
 ifeq ($(BUILD_TYPE),debug)
- BIN_COPY         = cp
- BIN_COPY_SYMBOLS = cp
+ BIN_COPY         = $(CP) -f
+ BIN_COPY_SYMBOLS = $(CP) -f
 else
  BIN_COPY         = objcopy -S -R .comment
  BIN_COPY_SYMBOLS = objcopy -g -R .comment
