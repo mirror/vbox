@@ -31,6 +31,9 @@ EXPORTS
     RTLogRelDefaultInstance
     RTTimeMilliTS
     SELMGetHyperCS
+    TMTimerFromMilli
+    TMTimerFromMicro
+    TMTimerFromNano
     TMTimerGet
     TMTimerGetFreq
     TMTimerIsActive
