@@ -1244,7 +1244,7 @@ static void pcnetUpdateIrq(PCNetState *pData)
         csr0 |= 0x0080; /* INTR */
     }
 
-    if ((pData->aCSR[7] & 0x0C00) == 0x0C00)
+    if ((pData->aCSR[7] & 0x0C00) == 0x0C00) /* STINT + STINTE */
         iISR = 1;
 
     pData->aCSR[0] = csr0;
@@ -2383,7 +2383,8 @@ static void pcnetPollTimer(PCNetState *pData)
         if (!TMTimerIsActive(pData->CTXSUFF(pTimerPoll)))
             /* Poll timer interval is fixed to 500Hz. Don't stop it. */
             TMTimerSet(pData->CTXSUFF(pTimerPoll),
-                       TMTimerGet(pData->CTXSUFF(pTimerPoll)) + 2000000);
+                       TMTimerGet(pData->CTXSUFF(pTimerPoll))
+                       + TMTimerFromMilli(pData->CTXSUFF(pTimerPoll), 2));
 #endif
     }
     STAM_PROFILE_ADV_STOP(&pData->StatPollTimer, a);
@@ -2717,7 +2718,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
             val &= 0xffff;
             pData->aBCR[BCR_STVAL] = val;
             if (pData->fAm79C973)
-                TMTimerSet(pData->CTXSUFF(pTimerSoftInt), (uint64_t)12800 * val);
+                TMTimerSetNano(pData->CTXSUFF(pTimerSoftInt), (uint64_t)12800 * val);
             break;
 
         case BCR_MIIMDR:
@@ -2792,12 +2793,12 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
 
         case 2:
             /* PHY identifier 1. */
-            val = 0x22;     /* Am79C874 PHY */ 
+            val = 0x22;     /* Am79C874 PHY */
             break;
 
         case 3:
             /* PHY identifier 2. */
-            val = 0x561b;   /* Am79C874 PHY */  
+            val = 0x561b;   /* Am79C874 PHY */
             break;
 
         case 4:
@@ -2805,7 +2806,7 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
             val =   0x01e0  /* Try 100mbps FD/HD and 10mbps FD/HD. */
 #if 0
                 // Advertising flow control is a) not the default, and b) confuses
-                // the link speed detection routine in Windows PCnet driver 
+                // the link speed detection routine in Windows PCnet driver
                   | 0x0400  /* Try flow control. */
 #endif
                   | 0x0001; /* CSMA selector. */
@@ -3495,6 +3496,7 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
     STAM_PROFILE_ADV_STOP(&pData->StatTimer, a);
 }
 
+
 /**
  * Software interrupt timer callback function.
  *
@@ -3506,9 +3508,9 @@ static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
 
-    pData->aCSR[7] |= 0x0800;
+    pData->aCSR[7] |= 0x0800; /* STINT */
     pcnetUpdateIrq(pData);
-    TMTimerSet(pData->CTXSUFF(pTimerSoftInt), (uint64_t)12800 * (pData->aBCR[BCR_STVAL] & 0xffff));
+    TMTimerSetNano(pData->CTXSUFF(pTimerSoftInt), (uint64_t)12800 * (pData->aBCR[BCR_STVAL] & 0xffff));
 }
 
 
@@ -4456,7 +4458,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         /* Software Interrupt timer */
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerSoftInt,
-                                   "PCNet SoftInt Timer", &pData->pTimerSoftIntHC);
+                                    "PCNet SoftInt Timer", &pData->pTimerSoftIntHC);
         if (VBOX_FAILURE(rc))
         {
             AssertMsgFailed(("pfnTMTimerCreate pcnetTimerSoftInt -> %Vrc\n", rc));
