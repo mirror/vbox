@@ -186,7 +186,7 @@ static VBoxSDLFB  *gpFrameBuffer = NULL;
 static SDL_Cursor *gpDefaultCursor = NULL;
 #ifdef VBOXSDL_WITH_X11
 static Cursor      gpDefaultOrigX11Cursor;
-static BOOL useEvdevKeymap = FALSE;
+static BOOL        guseEvdevKeymap = FALSE;
 #endif
 static SDL_Cursor *gpCustomCursor = NULL;
 static WMcursor   *gpCustomOrigWMcursor = NULL;
@@ -1164,7 +1164,7 @@ int main(int argc, char *argv[])
 #ifdef RT_OS_LINUX
         else if (strcmp(argv[curArg], "-evdevkeymap") == 0)
         {
-            useEvdevKeymap = TRUE;
+            guseEvdevKeymap = TRUE;
         }
 #endif /* RT_OS_LINUX  */
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
@@ -2943,7 +2943,7 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
         // just an offset (Xorg MIN_KEYCODE)
         keycode -= 8;
     }
-    else if (keycode < 158 && useEvdevKeymap)
+    else if (keycode < 158 && guseEvdevKeymap)
     {
         // apply EVDEV conversion table
         keycode = evdev_keycode_to_pc_keycode[keycode - 97];
