@@ -748,9 +748,10 @@ typedef const RTGCPHYS *PCRTGCPHYS;
 /** @def NIL_RTGCPHYS
  * NIL GC Physical Address.
  * NIL_RTGCPHYS is used to signal an invalid physical address, similar
- * to the NULL pointer.
+ * to the NULL pointer. Note that this value may actually be valid in 
+ * some contexts.
  */
-#define NIL_RTGCPHYS     ((RTGCPHYS)~0U) /** @todo change this to (~(RTGCPHYS)0) */
+#define NIL_RTGCPHYS     ((RTGCPHYS)~0U) /** @todo change this to (~(RTGCPHYS)0) or maybe NIL_RTGCPHYS32? */
 
 
 /** Guest Physical Memory Address; limited to 32 bits.*/
@@ -761,10 +762,11 @@ typedef RTGCPHYS32     *PRTGCPHYS32;
 typedef const RTGCPHYS32 *PCRTGCPHYS32;
 /** @def NIL_RTGCPHYS32
  * NIL GC Physical Address.
- * NIL_RTGCPHYS is used to signal an invalid physical address, similar
- * to the NULL pointer.
+ * NIL_RTGCPHYS32 is used to signal an invalid physical address, similar
+ * to the NULL pointer. Note that this value may actually be valid in
+ * some contexts.
  */
-#define NIL_RTGCPHYS32     ((RTGCPHYS32)~0U) /** @todo change this to (~(RTGCPHYS32)0) */
+#define NIL_RTGCPHYS32     (~(RTGCPHYS32)0)
 
 /** Guest context pointer.
  * Keep in mind that this type is an unsigned integer in
