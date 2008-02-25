@@ -30,6 +30,9 @@
 #include <X11/Xatom.h>
 #include <X11/Xmu/WinUtil.h>
 
+/* This is defined wrong in my X11 header files! */
+#define VBoxShapeNotify 64
+
 /*****************************************************************************
 * Static functions                                                           *
 *****************************************************************************/
@@ -153,10 +156,56 @@ void VBoxGuestSeamlessX11::addClients(const Window hRoot)
         return;
     phChildren = phChildrenRaw;
     for (unsigned i = 0; i < cChildren; ++i)
+        addClientWindow(phChildren.get()[i]);
+}
+
+
+void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
+{
+    XWindowAttributes winAttrib;
+    bool fAddWin = true;
+    char *pszWinName = NULL;
+    Window hClient = XmuClientWindow(mDisplay, hWin);
+
+    if (isVirtualRoot(hClient))
+        fAddWin = false;
+    if (fAddWin && !XGetWindowAttributes(mDisplay, hWin, &winAttrib))
     {
-        Window hClient = XmuClientWindow(mDisplay.get(), phChildren.get()[i]);
-        if (!isVirtualRoot(hClient))
-            addClientWindow(phChildren.get()[i]);
+        LogRelFunc(("VBoxClient: Failed to get the window attributes for window %d\n", hWin));
+        fAddWin = false;
+    }
+    if (fAddWin && (winAttrib.map_state == IsUnmapped))
+        fAddWin = false;
+    if (fAddWin && (XFetchName(mDisplay, hClient, &pszWinName) != 0) && (pszWinName != NULL))
+        XFree(pszWinName);
+    else
+        /* kwin sometimes creates temporary fullscreen windows with no name. */
+        fAddWin = false;
+    if (fAddWin)
+    {
+        VBoxGuestX11Pointer<XRectangle> rects;
+        int cRects = 0, iOrdering;
+        bool hasShape = false;
+
+        if (mSupportsShape)
+        {
+            XShapeSelectInput(mDisplay, hWin, ShapeNotifyMask);
+            rects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding, &cRects, &iOrdering);
+            if (0 == rects.get())
+                cRects = 0;
+            else
+            {
+                if (   (cRects > 1)
+                    || (rects.get()[0].x != 0)
+                    || (rects.get()[0].y != 0)
+                    || (rects.get()[0].width != winAttrib.width)
+                    || (rects.get()[0].height != winAttrib.height)
+                   )
+                    hasShape = true;
+            }
+        }
+        mGuestWindows.addWindow(hWin, hasShape, winAttrib.x, winAttrib.y,
+                                winAttrib.width, winAttrib.height, cRects, rects);
     }
 }
 
@@ -182,30 +231,6 @@ bool VBoxGuestSeamlessX11::isVirtualRoot(Window hWin)
 }
 
 
-void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
-{
-    XWindowAttributes winAttrib;
-    VBoxGuestX11Pointer<XRectangle> rects;
-    int cRects = 0, iOrdering;
-
-    if (!XGetWindowAttributes(mDisplay, hWin, &winAttrib))
-    {
-        LogRelFunc(("VBoxClient: Failed to get the window attributes for window %d\n", hWin));
-        return;
-    }
-    if (mSupportsShape)
-    {
-        XShapeSelectInput(mDisplay, hWin, ShapeNotify);
-        rects = XShapeGetRectangles(mDisplay, hWin, ShapeClip, &cRects, &iOrdering);
-        if (0 == rects.get())
-        {
-            cRects = 0;
-        }
-    }
-    mGuestWindows.addWindow(hWin, winAttrib.map_state != IsUnmapped, winAttrib.x, winAttrib.y,
-                            winAttrib.width, winAttrib.height, cRects, rects);
-}
-
 /**
  * Free all information in the tree of visible windows
  */
@@ -218,6 +243,7 @@ void VBoxGuestSeamlessX11::freeWindowTree(void)
         XShapeSelectInput(mDisplay, it->first, 0);
     }
 }
+
 
 /**
  * Waits for a position or shape-related event from guest windows 
@@ -240,7 +266,7 @@ void VBoxGuestSeamlessX11::nextEvent(void)
     case MapNotify:
         doMapEvent(&event.xmap);
         break;
-    case ShapeNotify:
+    case VBoxShapeNotify:  /* This is defined wrong in my X11 header files! */
         doShapeEvent(reinterpret_cast<XShapeEvent *>(&event));
         break;
     case UnmapNotify:
@@ -263,10 +289,15 @@ void VBoxGuestSeamlessX11::doConfigureEvent(const XConfigureEvent *event)
     iter = mGuestWindows.find(event->window);
     if (iter != mGuestWindows.end())
     {
-        iter->second->mX = event->x;
-        iter->second->mY = event->y;
-        iter->second->mWidth = event->width;
-        iter->second->mHeight = event->height;
+        XWindowAttributes winAttrib;
+
+        if (XGetWindowAttributes(mDisplay, event->window, &winAttrib))
+        {
+            iter->second->mX = winAttrib.x;
+            iter->second->mY = winAttrib.y;
+            iter->second->mWidth = winAttrib.width;
+            iter->second->mHeight = winAttrib.height;
+        }
     }
 }
 
@@ -286,6 +317,7 @@ void VBoxGuestSeamlessX11::doMapEvent(const XMapEvent *event)
     }
 }
 
+
 /**
  * Handle a window shape change event in the seamless event thread.
  *
@@ -294,19 +326,17 @@ void VBoxGuestSeamlessX11::doMapEvent(const XMapEvent *event)
 void VBoxGuestSeamlessX11::doShapeEvent(const XShapeEvent *event)
 {
     VBoxGuestWindowList::iterator iter;
-    VBoxGuestX11Pointer<XRectangle> rects;
-    int cRects, iOrdering;
 
     iter = mGuestWindows.find(event->window);
     if (iter != mGuestWindows.end())
     {
-        rects = XShapeGetRectangles(mDisplay, iter->first, ShapeClip, &cRects, &iOrdering);
-        if (0 == rects.get())
-        {
-            cRects = 0;
-        }
-        iter->second->mapRects = rects;
+        VBoxGuestX11Pointer<XRectangle> rects;
+        int cRects = 0, iOrdering;
+
+        rects = XShapeGetRectangles(mDisplay, event->window, ShapeBounding, &cRects, &iOrdering);
+        iter->second->mhasShape = true;
         iter->second->mcRects = cRects;
+        iter->second->mapRects = rects;
     }
 }
 
@@ -341,39 +371,36 @@ std::auto_ptr<std::vector<RTRECT> > VBoxGuestSeamlessX11::getRects(void)
     for (VBoxGuestWindowList::iterator it = mGuestWindows.begin();
          it != mGuestWindows.end(); ++it)
     {
-        if (it->second->mMapped)
+        if (it->second->mhasShape)
         {
-            if (it->second->mcRects > 0)
-            {
-                for (int i = 0; i < it->second->mcRects; ++i)
-                {
-                    RTRECT rect;
-                    rect.xLeft   =   it->second->mX
-                                   + it->second->mapRects.get()[i].x;
-                    rect.yBottom =   it->second->mY
-                                   + it->second->mapRects.get()[i].y
-                                   + it->second->mapRects.get()[i].height;
-                    rect.xRight  =   it->second->mX
-                                   + it->second->mapRects.get()[i].x
-                                   + it->second->mapRects.get()[i].width;
-                    rect.yTop    =   it->second->mY
-                                   + it->second->mapRects.get()[i].y;
-                    apRects.get()->push_back(rect);
-                }
-                cRects += it->second->mcRects;
-            }
-            else
+            for (int i = 0; i < it->second->mcRects; ++i)
             {
                 RTRECT rect;
-                rect.xLeft   =  it->second->mX;
-                rect.yBottom =  it->second->mY
-                              + it->second->mHeight;
-                rect.xRight  =  it->second->mX
-                              + it->second->mWidth;
-                rect.yTop    =  it->second->mY;
+                rect.xLeft   =   it->second->mX
+                                + it->second->mapRects.get()[i].x;
+                rect.yBottom =   it->second->mY
+                                + it->second->mapRects.get()[i].y
+                                + it->second->mapRects.get()[i].height;
+                rect.xRight  =   it->second->mX
+                                + it->second->mapRects.get()[i].x
+                                + it->second->mapRects.get()[i].width;
+                rect.yTop    =   it->second->mY
+                                + it->second->mapRects.get()[i].y;
                 apRects.get()->push_back(rect);
-                ++cRects;
             }
+            cRects += it->second->mcRects;
+        }
+        else
+        {
+            RTRECT rect;
+            rect.xLeft   =  it->second->mX;
+            rect.yBottom =  it->second->mY
+                          + it->second->mHeight;
+            rect.xRight  =  it->second->mX
+                          + it->second->mWidth;
+            rect.yTop    =  it->second->mY;
+            apRects.get()->push_back(rect);
+            ++cRects;
         }
     }
     mcRects = cRects;
