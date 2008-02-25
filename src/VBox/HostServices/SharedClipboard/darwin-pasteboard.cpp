@@ -49,7 +49,7 @@ void destroyPasteboard (PasteboardRef *pPasteboardRef)
     *pPasteboardRef = NULL;
 }
 
-int queryPasteboardFormats (PasteboardRef pPasteboard, uint32_t pfFormats)
+int queryPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats)
 {
     Log (("queryPasteboardFormats\n"));
 
@@ -210,7 +210,7 @@ int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_
             AssertRCReturn (rc, rc);
         }
         /* Empty clipboard? Not critical */
-        if (cwDest == NULL)
+        if (cwDest == 0)
         {
             Log (("writeToPasteboard: received empty clipboard data from the guest, returning false.\n"));
             return VINF_SUCCESS;
