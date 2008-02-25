@@ -23,6 +23,7 @@
 #include <VBox/dbgf.h>
 #include <VBox/pgm.h>
 #include <VBox/selm.h>
+#include <VBox/cpum.h>
 #include <VBox/dis.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
