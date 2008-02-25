@@ -31,6 +31,9 @@ EXPORTS
     RTLogLoggerEx
     RTLogLoggerExV
     RTTimeMilliTS
+    TMTimerFromMilli
+    TMTimerFromMicro
+    TMTimerFromNano
     TMTimerGet
     TMTimerGetFreq
     TMTimerIsActive
