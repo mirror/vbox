@@ -41,8 +41,9 @@
 #include "clipboard.h"
 
 /* #define DEBUG_CLIPBOARD */
-#if !defined(DEBUG_CLIPBOARD)
-  /* Disabled unnecessary debug logging in the shared clipboard. */
+#if !defined(DEBUG_CLIPBOARD) && defined(LOG_TO_BACKDOOR)
+  /* Disabled unnecessary debug logging in the shared clipboard when
+     LOG_TO_BACKDOOR is defined (to be removed). */
 # undef LogFlow
 # define LogFlow(a) do {} while (0)
 #endif
