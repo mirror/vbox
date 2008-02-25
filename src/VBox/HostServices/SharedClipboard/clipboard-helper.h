@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Shared Clipboard:
- * Some helper function for converting between the various eol.
+ * Shared Clipboard: Some helper function for converting between the various eol.
  */
 
 /*
@@ -16,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __CLIPBOARD_HELPER_H
-#define __CLIPBOARD_HELPER_H
+#ifndef ___CLIPBOARD_HELPER_H
+#define ___CLIPBOARD_HELPER_H
 
 #include <iprt/string.h>
 
@@ -39,11 +38,11 @@ enum {
  *
  * @returns RT error code
  *
- * @param   pu16Src  The source Utf16 string
+ * @param   pwszSrc  The source Utf16 string
  * @param   cwSrc    The length in 16 bit words of the source string
  * @retval  pcwDest  The length of the destination string in 16 bit words
  */
-int vboxClipboardUtf16GetWinSize(PRTUTF16 pu16Src, size_t cwSrc, size_t *pcwDest);
+int vboxClipboardUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest);
 
 /**
  * Convert a Utf16 text with Linux EOLs to null-terminated Utf16-LE with Windows EOLs.  Does no
@@ -51,12 +50,12 @@ int vboxClipboardUtf16GetWinSize(PRTUTF16 pu16Src, size_t cwSrc, size_t *pcwDest
  *
  * @returns VBox status code
  *
- * @param   pu16Src  Source Utf16 text to convert
+ * @param   pwszSrc  Source Utf16 text to convert
  * @param   cwSrc    Size of the source text in 16 bit words
  * @retval  pu16Dest Buffer to store the converted text to.
  * @retval  pcwDest  Size of the buffer for the converted text in 16 bit words
  */
-int vboxClipboardUtf16LinToWin(PRTUTF16 pu16Src, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest);
+int vboxClipboardUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest);
 
 /**
  * Get the size of the buffer needed to hold a zero-terminated Utf16 string with Linux EOLs
@@ -64,11 +63,11 @@ int vboxClipboardUtf16LinToWin(PRTUTF16 pu16Src, size_t cwSrc, PRTUTF16 pu16Dest
  *
  * @returns RT status code
  *
- * @param   pu16Src  The source Utf16 string
+ * @param   pwszSrc  The source Utf16 string
  * @param   cwSrc    The length in 16 bit words of the source string
  * @retval  pcwDest  The length of the destination string in 16 bit words
  */
-int vboxClipboardUtf16GetLinSize(PRTUTF16 pu16Src, size_t cwSrc, size_t *pcwDest);
+int vboxClipboardUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest);
 
 /**
  * Convert Utf16-LE text with Windows EOLs to zero-terminated Utf16 with Linux EOLs.  This
@@ -76,12 +75,12 @@ int vboxClipboardUtf16GetLinSize(PRTUTF16 pu16Src, size_t cwSrc, size_t *pcwDest
  *
  * @returns VBox status code
  *
- * @param   pu16Src       Text to convert
+ * @param   pwszSrc       Text to convert
  * @param   cwSrc         Size of the source text in 16 bit words
  * @param   pu16Dest      The buffer to store the converted text to
  * @param   cwDest        The size of the buffer for the destination text in 16 bit words
  */
-int vboxClipboardUtf16WinToLin(PRTUTF16 pu16Src, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest);
+int vboxClipboardUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest);
 
-#endif /* __CLIPBOARD_HELPER_H */
+#endif
 

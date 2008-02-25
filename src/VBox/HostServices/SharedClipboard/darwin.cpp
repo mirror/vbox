@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Shared Clipboard:
- * Mac OS X host.
+ * Shared Clipboard: Mac OS X host.
  */
 
 /*
@@ -23,24 +22,24 @@
 
 #include "VBoxClipboard.h"
 /* We do the work in a separate cpp file because
- * of the conflicting typedef "OSType". This is 
+ * of the conflicting typedef "OSType". This is
  * defined in Carbon and in VBox/ostypes.h also. */
 #include "darwin-pasteboard.h"
 
 /** Global clipboard context information */
 struct _VBOXCLIPBOARDCONTEXT
 {
-    /* We have a separate thread to poll for new clipboard content */
+    /** We have a separate thread to poll for new clipboard content */
     RTTHREAD thread;
-    bool     fTerminate;
+    bool volatile fTerminate;
 
-    /* The reference to the current pasteboard */
+    /** The reference to the current pasteboard */
     PasteboardRef pasteboard;
 
     VBOXCLIPBOARDCLIENTDATA *pClient;
 };
 
-/* Only one client is supported. There seems to be no need for more clients. */
+/** Only one client is supported. There seems to be no need for more clients. */
 static VBOXCLIPBOARDCONTEXT g_ctx;
 
 int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
@@ -48,14 +47,14 @@ int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
     if (pCtx->pClient == NULL)
         return VINF_SUCCESS;
 
-    uint32_t u32Formats = 0;
+    uint32_t fFormats = 0;
     /* Retrieve the formats currently in the clipboard and supported by vbox */
-    int rc = queryPasteboardFormats (pCtx->pasteboard, u32Formats);
+    int rc = queryPasteboardFormats (pCtx->pasteboard, fFormats);
 
-    if (u32Formats > 0)
+    if (fFormats > 0)
     {
-        vboxSvcClipboardReportMsg (pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, u32Formats);
-        Log (("vboxClipboardChanged u32Formats %02X\n", u32Formats));
+        vboxSvcClipboardReportMsg (pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, fFormats);
+        Log (("vboxClipboardChanged fFormats %02X\n", fFormats));
     }
 
     return rc;
@@ -64,7 +63,7 @@ int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
 static int vboxClipboardThread (RTTHREAD self, void *pvUser)
 {
     Log (("vboxClipboardThread: starting clipboard thread\n"));
-    
+
     AssertReturn (VALID_PTR (pvUser), VERR_INVALID_PARAMETER);
 
     VBOXCLIPBOARDCONTEXT *pCtx = static_cast <VBOXCLIPBOARDCONTEXT*> (pvUser);
@@ -93,9 +92,9 @@ int vboxClipboardInit (void)
 
     g_ctx.fTerminate = false;
 
-    rc = initPasteboard (g_ctx.pasteboard);
+    rc = initPasteboard (&g_ctx.pasteboard);
 
-    rc = RTThreadCreate (&g_ctx.thread, vboxClipboardThread, &g_ctx, 0, 
+    rc = RTThreadCreate (&g_ctx.thread, vboxClipboardThread, &g_ctx, 0,
                          RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
 
     return rc;
@@ -108,7 +107,7 @@ void vboxClipboardDestroy (void)
 
     g_ctx.fTerminate = true;
 
-    destroyPasteboard (g_ctx.pasteboard);
+    destroyPasteboard (&g_ctx.pasteboard);
 
     /* Wait for the clipboard thread to terminate. */
     RTThreadWait (g_ctx.thread, RT_INDEFINITE_WAIT, NULL);
@@ -147,7 +146,7 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     /* Sync the host clipboard content with the client. */
     int rc = vboxClipboardChanged (pClient->pCtx);
-    
+
     return rc;
 }
 
@@ -157,7 +156,7 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA * /* pClient */)
 {
     Log (("vboxClipboardDisconnect\n"));
-    
+
     g_ctx.pClient = NULL;
 }
 
@@ -178,7 +177,7 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA * /* pClient */,
         return;
     }
 
-    vboxSvcClipboardReportMsg (g_ctx.pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, 
+    vboxSvcClipboardReportMsg (g_ctx.pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                                u32Formats);
 }
 
