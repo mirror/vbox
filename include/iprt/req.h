@@ -85,8 +85,8 @@ typedef enum RTREQFLAGS
     RTREQFLAGS_NO_WAIT      = 2
 } RTREQFLAGS;
 
-/* Forward declaration. */
-struct RTREQQUEUE;
+/** Pointer to a request queue. */
+typedef struct RTREQQUEUE *PRTREQQUEUE;
 
 /**
  * RT Request packet.
@@ -98,7 +98,7 @@ typedef struct RTREQ
     /** Pointer to the next request in the chain. */
     struct RTREQ * volatile pNext;
     /** Pointer to the queue this packet belongs to. */
-    RTREQQUEUE             *pQueue;
+    PRTREQQUEUE             pQueue;
     /** Request state. */
     volatile RTREQSTATE     enmState;
     /** iprt status code for the completed request. */
@@ -148,8 +148,6 @@ typedef struct RTREQQUEUE
      */
     RTSEMEVENT              EventSem;
 } RTREQQUEUE;
-/** Pointer to a request queue */
-typedef RTREQQUEUE *PRTREQQUEUE;
 
 #ifdef IN_RING3
 

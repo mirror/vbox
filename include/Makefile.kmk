@@ -21,18 +21,53 @@ include $(PATH_KBUILD)/header.kmk
 
 LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeGC
 
-hdrs := $(wildcard VBox/*.h iprt/*.h)
+cpp_hdrs := \
+	VBox/dbggui.h \
+	VBox/settings.h \
+	iprt/cpputils.h \
+	iprt/lock.h
 
-SyntaxVBoxIncludeR3_TEMPLATE = VBOXR3
+r3_only_hdrs := \
+	VBox/vrdpapi.h \
+        VBox/vrdpusb.h \
+	VBox/VBoxHDD-new.h \
+	VBox/VBoxHDD.h \
+	iprt/tcp.h \
+
+hdrs := $(filter-out \
+	VBox/VBoxGuest16.h \
+	VBox/tapwin32.h \
+	VBox/usblib-win.h, \
+	$(wildcard VBox/*.h iprt/*.h))
+
+hdrs.r3 := $(filter-out VBox/VBoxGuestLib.h, $(hdrs))
+hdrs.r0 := $(filter-out $(cpp_hdrs) $(r3_only_hdrs), $(hdrs))
+hdrs.gc := $(filter-out \
+	VBox/VBoxGuestLib.h \
+	VBox/gvm.h \
+	iprt/thread.h \
+	iprt/mem.h \
+	iprt/alloc.h \
+	$(cpp_hdrs) $(r3_only_hdrs), \
+	$(hdrs))
+
+SyntaxVBoxIncludeR3_TEMPLATE = VBOXMAINEXE
+SyntaxVBoxIncludeR3_DEFS = VBOX_HGCM
 SyntaxVBoxIncludeR3_SOURCES := \
-	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs)))) \
-	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs))))
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.r3)))) \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.r3))))
 
 SyntaxVBoxIncludeR0_TEMPLATE = VBOXR0
-SyntaxVBoxIncludeR0_SOURCES = $(SyntaxVBoxIncludeR3_SOURCES)
+SyntaxVBoxIncludeR0_DEFS = VBOX_HGCM
+SyntaxVBoxIncludeR0_SOURCES := \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.r0)))) \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.r0))))
 
 SyntaxVBoxIncludeGC_TEMPLATE = VBOXGC
-SyntaxVBoxIncludeGC_SOURCES = $(SyntaxVBoxIncludeR3_SOURCES)
+SyntaxVBoxIncludeGC_DEFS = VBOX_HGCM
+SyntaxVBoxIncludeGC_SOURCES := \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.gc)))) \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.gc))))
 
 
 
@@ -47,10 +82,12 @@ $$(PATH_TARGET)/$(flatname)-cpp.cpp:
 	$$(APPEND) $$@ "#include <$(hdr)>"
 	$$(APPEND) $$@ "int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}"
 
-$$(PATH_TARGET)/$(flatname)-c.c:
+$$(PATH_TARGET)/$(flatname)-c.c: Makefile.kmk
 	$$(MKDIR) -p $$(dir $$@)
 	$$(RM) -f $$@
+ifn1of ($(hdr),$(cpp_hdrs))
 	$$(APPEND) $$@ "#include <$(hdr)>"
+endif
 	$$(APPEND) $$@ "int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}"
 
 $(subst .h,.o,$(notdir $(hdr)))::

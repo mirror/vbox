@@ -27,6 +27,8 @@
 #ifndef ___VBox_vrdporders_h
 #define ___VBox_vrdporders_h
 
+#include <iprt/types.h>
+
 /*
  * The VRDP server gets an information about a graphical update as a pointer
  * to a memory block and the size of the memory block.
@@ -250,11 +252,11 @@ typedef struct _VRDPORDERGLYPH
 {
     uint32_t o32NextGlyph;
     uint64_t u64Handle;
-    
+
     /* The glyph origin position on the screen. */
     int16_t  x;
     int16_t  y;
-    
+
     /* The glyph bitmap dimensions. Note w == h == 0 for the space character. */
     uint16_t w;
     uint16_t h;
@@ -262,7 +264,7 @@ typedef struct _VRDPORDERGLYPH
     /* The character origin in the bitmap. */
     int16_t  xOrigin;
     int16_t  yOrigin;
-    
+
     /* 1BPP bitmap. Rows are byte aligned. Size is (((w + 7)/8) * h + 3) & ~3. */
     uint8_t au8Bitmap[1];
 } VRDPORDERGLYPH;
