@@ -190,7 +190,7 @@ typedef struct VUSBDESCCONFIGEX
      * @remark  The wTotalLength member is recalculated before the data is passed to the guest. */
     VUSBDESCCONFIG Core;
     /** Pointer to additional descriptor bytes following what's covered by VUSBDESCCONFIG. */
-    void *extra;
+    void *pvMore;
     /** Pointer to an array of the interfaces referenced in the configuration.
      * Core.bNumInterfaces in size. */
     const struct VUSBINTERFACE *iface;
@@ -225,7 +225,7 @@ typedef struct VUSBDESCINTERFACEEX
     /** The USB descriptor data. */
     VUSBDESCINTERFACE Core;
     /** Pointer to additional descriptor bytes following what's covered by VUSBDESCINTERFACE. */
-    void *extra;
+    void *pvMore;
     /** Pointer to an array of the endpoints referenced by the interface.
      * Core.bNumEndpoints in size. */
     const struct VUSBDESCENDPOINTEX *endpoint;
@@ -245,7 +245,7 @@ typedef struct VUSBDESCENDPOINTEX
      * @remark The wMaxPacketSize member is converted to native endian. */
     VUSBDESCENDPOINT Core;
     /** Pointer to additional descriptor bytes following what's covered by VUSBDESCENDPOINT. */
-    void *extra;
+    void *pvMore;
 } VUSBDESCENDPOINTEX;
 /** Pointer to a parsed USB endpoint descriptor. */
 typedef VUSBDESCENDPOINTEX *PVUSBDESCENDPOINTEX;
