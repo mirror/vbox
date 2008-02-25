@@ -21,23 +21,21 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# Try obtain a physical NIC that is currently active
-phys_nic=`/usr/sbin/dladm show-dev | /usr/bin/awk 'NF==7 && $3=="up" { print $1 }'`
-if [ -z "$phys_nic" ]; then
-    # Failed to get a currently active NIC, get the first available NIC.
-    phys_nic=`/usr/sbin/dladm show-link | /usr/bin/nawk '/legacy/ {next} {print $1; exit}'`
-    if [ -z "$phys_nic" ]; then
-        # Failed to get any NICs!
-        echo "Failed to get a physical NIC to bind to."
-        exit 1
-    fi
-fi
-vnic_id=0
-vnic_name=""
 mac=$1
-
 # Create the VNIC if required
 if [ -z "$2" ]; then
+    # Try obtain a physical NIC that is currently active
+    phys_nic=`/usr/sbin/dladm show-dev | /usr/bin/awk 'NF==7 && $3=="up" { print $1 }'`
+    if [ -z "$phys_nic" ]; then
+        # Failed to get a currently active NIC, get the first available NIC.
+        phys_nic=`/usr/sbin/dladm show-link | /usr/bin/nawk '/legacy/ {next} {print $1; exit}'`
+        if [ -z "$phys_nic" ]; then
+            # Failed to get any NICs!
+            echo "Failed to get a physical NIC to bind to."
+            exit 1
+        fi
+    fi
+
     # To use a specific physical NIC, replace $phys_nic with the name of the NIC.
     vnic_id=`/usr/lib/vna $phys_nic $mac`
     if [ $? != 0 ]; then
@@ -75,5 +73,5 @@ if [ -z "$2" ]; then
 fi
 
 echo "$vnic_name"
-exit $?
+exit 0
 
