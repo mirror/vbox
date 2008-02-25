@@ -24,6 +24,7 @@
 #include <VBox/selm.h>
 #include <VBox/mm.h>
 #include <VBox/pgm.h>
+#include <VBox/cpum.h>
 #include "DBGFInternal.h"
 #include <VBox/dis.h>
 #include <VBox/err.h>
