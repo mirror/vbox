@@ -20,14 +20,15 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_DIS
 #ifdef USING_VISUAL_STUDIO
 # include <stdafx.h>
 #endif
 
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
+#include <VBox/cpum.h>
 #include <VBox/err.h>
-#define LOG_GROUP LOG_GROUP_DIS
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
