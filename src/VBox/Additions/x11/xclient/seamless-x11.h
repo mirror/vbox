@@ -159,7 +159,7 @@ public:
 struct VBoxGuestWinInfo {
 public:
     /** Is the window currently mapped? */
-    bool mMapped;
+    bool mhasShape;
     /** Co-ordinates in the guest screen. */
     int mX, mY;
     /** Window dimensions. */
@@ -170,11 +170,11 @@ public:
         and will be freed automatically if non-null when the class is destroyed. */
     VBoxGuestX11Pointer<XRectangle> mapRects;
     /** Constructor. */
-    VBoxGuestWinInfo(bool isMapped, int x, int y, int w, int h, int cRects,
+    VBoxGuestWinInfo(bool hasShape, int x, int y, int w, int h, int cRects,
                      VBoxGuestX11Pointer<XRectangle> rects)
             : mapRects(rects)
     {
-        mMapped = isMapped, mX = x; mY = y; mWidth = w; mHeight = h; mcRects = cRects;
+        mhasShape = hasShape, mX = x; mY = y; mWidth = w; mHeight = h; mcRects = cRects;
     }
 
 private:
