@@ -433,6 +433,8 @@ TMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire);
  * @param   cMilliesToNext  Number of millieseconds to the next tick.
  */
 TMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext);
+TMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext);
+TMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext);
 
 /**
  * Get the current clock time.
