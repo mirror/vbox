@@ -61,6 +61,9 @@ endif
 ifdef VBOX_WITH_X11_ADDITIONS
  include $(PATH_SUB_CURRENT)/x11/Makefile.kmk
 endif
+ifeq ($(BUILD_TARGET),solaris)
+ include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
+endif
 
 # The packing target rule, but only if we're on the local build box.
 ifndef VBOX_WITHOUT_ADDITIONS_ISO
