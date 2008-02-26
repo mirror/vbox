@@ -64,7 +64,7 @@ else
         fail_msg() {
             echo_failure
             echo
-            echo "($1)"
+            echo "  ($1)"
         }
         succ_msg() {
             echo_success
@@ -75,7 +75,7 @@ else
         fail_msg() {
             rc_failed 1
             rc_status -v
-            echo "($1)"
+            echo "  ($1)"
         }
         succ_msg() {
             rc_reset
@@ -84,13 +84,13 @@ else
     elif [ "$system" = "gentoo" ]; then
         . /sbin/functions.sh
         fail_msg() {
-            eerror $1
+            eerror "$1"
         }
         succ_msg() {
-            eend $?
+            eend "$?"
         }
         begin_msg() {
-            ebegin $1
+            ebegin "$1"
         }
         if [ "`which $0`" = "/sbin/rc" ]; then
             shift
@@ -98,7 +98,7 @@ else
     else
         fail_msg() {
             echo " ...failed!"
-            echo "($1)"
+            echo "  ($1)"
         }
         succ_msg() {
             echo " ...done."
@@ -108,17 +108,17 @@ else
         begin_msg() {
             [ -z "${1:-}" ] && return 1
             if [ -z "${2:-}" ]; then
-                echo -n "$1:"
-                return
+                echo -n "$1"
+            else
+                echo -n "$1: $2"
             fi
-            echo -n "$1: $2"
         }
     fi
 fi
 
 failure()
 {
-    fail_msg $1
+    fail_msg "$1"
     # never return with exit code != 0
     exit 0
 }
