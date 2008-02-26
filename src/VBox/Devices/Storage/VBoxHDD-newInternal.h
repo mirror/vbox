@@ -329,6 +329,24 @@ typedef struct VBOXHDDBACKEND
     DECLR3CALLBACKMEMBER(int, pfnSetParentUuid, (void *pvBackendData, PCRTUUID pUuid));
 
     /**
+     * Get parent modification UUID of a disk image.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pUuid           Where to store the parent image modification UUID.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetParentModificationUuid, (void *pvBackendData, PRTUUID pUuid));
+
+    /**
+     * Set parent modification UUID of a disk image.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pUuid           Where to get the parent image modification UUID from.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetParentModificationUuid, (void *pvBackendData, PCRTUUID pUuid));
+
+    /**
      * Dump information about a disk image.
      *
      * @param   pvBackendData   Opaque state data for this image.

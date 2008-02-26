@@ -1023,7 +1023,7 @@
 /** Geometry hasn't been set. */
 #define VERR_VDI_GEOMETRY_NOT_SET                   (-3214)
 /** No data for this block in image. */
-#define VINF_VDI_BLOCK_FREE                         3215
+#define VERR_VDI_BLOCK_FREE                         (-3215)
 /** Configuration value not found. */
 #define VERR_VDI_VALUE_NOT_FOUND                    (-3216)
 /** @} */
