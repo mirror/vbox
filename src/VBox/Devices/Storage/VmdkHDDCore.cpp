@@ -633,7 +633,7 @@ static int vmdkStringUnquote(PVMDKIMAGE pImage, const char *pszStr,
     if (*pszStr++ != '"')
         return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrectly quoted value in descriptor in '%s'"), pImage->pszFilename);
 
-    pszQ = strchr(pszStr, '"');
+    pszQ = (char *)strchr(pszStr, '"');
     if (pszQ == NULL)
         return vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrectly quoted value in descriptor in '%s'"), pImage->pszFilename);
     pszUnquoted = (char *)RTMemTmpAlloc(pszQ - pszStr + 1);
