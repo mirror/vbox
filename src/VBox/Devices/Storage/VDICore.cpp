@@ -934,7 +934,7 @@ static void vdiEnableLastModifiedUpdate(PVDIIMAGEDESC pImage)
 /**
  * Flush the image file to disk.
  */
-void vdiFlushImage(PVDIIMAGEDESC pImage)
+void VDIFlushImage(PVDIIMAGEDESC pImage)
 {
     if (!pImage->fReadOnly)
     {
@@ -958,7 +958,7 @@ static void vdiCloseImage(PVDIIMAGEDESC pImage)
     Assert(pImage);
     Assert(pImage->File != NIL_RTFILE);
 
-    vdiFlushImage(pImage);
+    VDIFlushImage(pImage);
     RTFileUnlock(pImage->File,
                  0,
                  pImage->offStartData
@@ -3312,7 +3312,7 @@ int vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly)
     }
 
     /* Flush last image changes if was r/w mode. */
-    vdiFlushImage(pImage);
+    VDIFlushImage(pImage);
 
     /* Change image locking. */
     uint64_t cbLock = pImage->offStartData
@@ -3366,13 +3366,13 @@ static int vdiUpdateReadOnlyHeader(PVDIIMAGEDESC pImage)
         rc = vdiChangeImageMode(pImage, false);
         if (VBOX_SUCCESS(rc))
         {
-            vdiFlushImage(pImage);
+            VDIFlushImage(pImage);
             rc = vdiChangeImageMode(pImage, true);
             AssertReleaseRC(rc);
         }
     }
     else
-        vdiFlushImage(pImage);
+        VDIFlushImage(pImage);
 
     return rc;
 }
@@ -3612,7 +3612,7 @@ VBOXDDU_DECL(int) VDIDiskCreateOpenDifferenceImage(PVDIDISK pDisk, const char *p
     }
 
     /* Flush last parent image changes if possible. */
-    vdiFlushImage(pDisk->pLast);
+    VDIFlushImage(pDisk->pLast);
 
     int rc = vdiCreateImage(pszFilename,
                             VDI_IMAGE_TYPE_DIFF,
