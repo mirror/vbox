@@ -220,7 +220,7 @@ stop_vms()
                     begin_msg "Sending ACPI power button event to remaining VMs"
                     for v in $VMS; do
                         $VBOXMANAGE -nologo controlvm $v acpipowerbutton
-                        wait=15
+                        wait=30
                     done
                     succ_msg
                 elif [ "$SHUTDOWN" = "savestate" ]; then
