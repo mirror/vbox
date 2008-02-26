@@ -72,6 +72,7 @@ endif
 VBoxDDU_SOURCES          = \
 	Storage/VBoxHDD-new.cpp \
 	Storage/VDICore.cpp \
+        Storage/VDIHDDCore.cpp \
 	Storage/VmdkHDDCore.cpp \
 	VBoxDDUDeps.cpp
 ifndef VBOX_OSE
