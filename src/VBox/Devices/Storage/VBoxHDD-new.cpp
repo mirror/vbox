@@ -232,9 +232,9 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
          * than the previous reads marked as valid. Otherwise this would return
          * stale data when different block sizes are used for the images. */
         cbThisRead = cbRead;
-        rc = VINF_VDI_BLOCK_FREE;
+        rc = VERR_VDI_BLOCK_FREE;
         for (PVDIMAGE pCurrImage = pImage;
-             pCurrImage != NULL && rc == VINF_VDI_BLOCK_FREE;
+             pCurrImage != NULL && rc == VERR_VDI_BLOCK_FREE;
              pCurrImage = pCurrImage->pPrev)
         {
             rc = pDisk->Backend->pfnRead(pCurrImage->pvBackendData, uOffset,
@@ -242,7 +242,7 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
         }
 
         /* No image in the chain contains the data for the block. */
-        if (rc == VINF_VDI_BLOCK_FREE)
+        if (rc == VERR_VDI_BLOCK_FREE)
         {
             memset(pvBuf, '\0', cbThisRead);
             rc = VINF_SUCCESS;
@@ -366,7 +366,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
                                   cbPreRead + cbThisWrite + cbPostRead,
                                   NULL,
                                   &cbPreRead, &cbPostRead);
-    Assert(rc != VINF_VDI_BLOCK_FREE);
+    Assert(rc != VERR_VDI_BLOCK_FREE);
     Assert(cbPreRead == 0);
     Assert(cbPostRead == 0);
 
@@ -446,7 +446,7 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
                                   cbPreRead + cbThisWrite + cbPostRead,
                                   NULL,
                                   &cbPreRead, &cbPostRead);
-    Assert(rc != VINF_VDI_BLOCK_FREE);
+    Assert(rc != VERR_VDI_BLOCK_FREE);
     Assert(cbPreRead == 0);
     Assert(cbPostRead == 0);
 
@@ -475,7 +475,7 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
         rc = pDisk->Backend->pfnWrite(pImage->pvBackendData, uOffset, pvBuf,
                                       cbThisWrite, &cbThisWrite, &cbPreRead,
                                       &cbPostRead);
-        if (rc == VINF_VDI_BLOCK_FREE)
+        if (rc == VERR_VDI_BLOCK_FREE)
         {
             void *pvTmp = RTMemTmpAlloc(cbPreRead + cbThisWrite + cbPostRead);
             AssertBreak(!pvTmp, rc = VERR_NO_MEMORY);
@@ -1381,14 +1381,14 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                                              pvBuf, cbThisRead, &cbThisRead);
                 if (VBOX_FAILURE(rc))
                     break;
-                if (rc == VINF_VDI_BLOCK_FREE)
+                if (rc == VERR_VDI_BLOCK_FREE)
                 {
                     /* Search for image with allocated block. Do not attempt to
                      * read more than the previous reads marked as valid.
                      * Otherwise this would return stale data when different
                      * block sizes are used for the images. */
                     for (PVDIMAGE pCurrImage = pImageTo->pPrev;
-                         pCurrImage != NULL && pCurrImage != pImageFrom->pPrev && rc == VINF_VDI_BLOCK_FREE;
+                         pCurrImage != NULL && pCurrImage != pImageFrom->pPrev && rc == VERR_VDI_BLOCK_FREE;
                          pCurrImage = pCurrImage->pPrev)
                     {
                         rc = pDisk->Backend->pfnRead(pCurrImage->pvBackendData,
@@ -1398,7 +1398,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                     if (VBOX_FAILURE(rc))
                         break;
 
-                    if (rc != VINF_VDI_BLOCK_FREE)
+                    if (rc != VERR_VDI_BLOCK_FREE)
                     {
                         rc = vdWriteHelper(pDisk, pImageTo, uOffset, pvBuf,
                                            cbThisRead);
@@ -1426,7 +1426,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                  * this would return stale data when different block sizes are
                  * used for the images. */
                 for (PVDIMAGE pCurrImage = pImageFrom;
-                     pCurrImage != NULL && pCurrImage != pImageTo && rc == VINF_VDI_BLOCK_FREE;
+                     pCurrImage != NULL && pCurrImage != pImageTo && rc == VERR_VDI_BLOCK_FREE;
                      pCurrImage = pCurrImage->pPrev)
                 {
                     rc = pDisk->Backend->pfnRead(pCurrImage->pvBackendData,
@@ -1436,7 +1436,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 if (VBOX_FAILURE(rc))
                     break;
 
-                if (rc != VINF_VDI_BLOCK_FREE)
+                if (rc != VERR_VDI_BLOCK_FREE)
                 {
                     rc = vdWriteHelper(pDisk, pImageTo, uOffset, pvBuf,
                                        cbThisRead);
