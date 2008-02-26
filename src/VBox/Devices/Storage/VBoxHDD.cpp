@@ -161,7 +161,7 @@ static DECLCALLBACK(int) vdiFlush(PPDMIMEDIA pInterface)
 {
     LogFlow(("vdiFlush:\n"));
     PVDIDISK pData = PDMIMEDIA_2_VDIDISK(pInterface);
-    vdiFlushImage(pData->pLast);
+    VDIFlushImage(pData->pLast);
     int rc = VINF_SUCCESS;
     LogFlow(("vdiFlush: returns %Vrc\n", rc));
     return rc;
