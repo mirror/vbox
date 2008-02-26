@@ -1151,7 +1151,7 @@ static int vdiWriteInBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock
              * means that it's a zero block. Don't need to write anything to this
              * block if the data consists of just zeroes. */
             Assert(cbToWrite % 4 == 0);
-            if (ASMBitFirstSet((volatile void *)pvBuf, cbToWrite * 8) == -1)
+            if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)cbToWrite * 8) == -1)
             {
                 pImage->paBlocks[uBlock] = VDI_IMAGE_BLOCK_ZERO;
                 return VINF_SUCCESS;
@@ -1292,7 +1292,7 @@ VBOXDDU_DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pv
     int rc;
     for (;;)
     {
-        unsigned to_write;
+        size_t to_write;
         if (offWrite + cbToWrite <= cbBlock)
             to_write = cbToWrite;
         else
@@ -1694,7 +1694,7 @@ VBOXDDU_DECL(int) VDICheckImage(const char *pszFilename, unsigned *puVersion, PV
             &&  cbComment > 0)
         {
             char *pszTmp = getImageComment(&pImage->Header);
-            unsigned cb = strlen(pszTmp);
+            size_t cb = strlen(pszTmp);
             if (cbComment > cb)
                 memcpy(pszComment, pszTmp, cb + 1);
             else
@@ -3078,7 +3078,7 @@ VBOXDDU_DECL(int) VDIDiskGetImageFilename(PVDIDISK pDisk, int nImage, char *pszF
 
     if (pImage)
     {
-        unsigned cb = strlen(pImage->szFilename);
+        size_t cb = strlen(pImage->szFilename);
         if (cb < cbFilename)
         {
             /* memcpy is much better than strncpy. */
@@ -3122,7 +3122,7 @@ VBOXDDU_DECL(int) VDIDiskGetImageComment(PVDIDISK pDisk, int nImage, char *pszCo
     if (pImage)
     {
         char *pszTmp = getImageComment(&pImage->Header);
-        unsigned cb = strlen(pszTmp);
+        size_t cb = strlen(pszTmp);
         if (cb < cbComment)
         {
             /* memcpy is much better than strncpy. */
