@@ -1612,7 +1612,7 @@ ipcDConnectService::DeserializeInterfaceParamBits(PtrBits bits, PRUint32 peer,
 
     DConnectInstance *wrapper = (DConnectInstance *) bits;
     // make sure we've been sent a valid wrapper
-    if (!CheckInstanceAndAddRef(wrapper))
+    if (!CheckInstanceAndAddRef(wrapper, peer))
     {
       NS_NOTREACHED("instance wrapper not found");
       return NS_ERROR_INVALID_ARG;
@@ -2058,7 +2058,7 @@ ipcDConnectService::DeserializeException(ipcMessageReader &reader,
     // from us that it decided to return as its own result). Replace it with
     // the real instance.
     DConnectInstance *wrapper = (DConnectInstance *) bits;
-    if (CheckInstanceAndAddRef(wrapper))
+    if (CheckInstanceAndAddRef(wrapper, peer))
     {
       *xcpt = (nsIException *) wrapper->RealInstance();
       NS_ADDREF(wrapper->RealInstance());
@@ -3068,14 +3068,16 @@ ipcDConnectService::FindInstanceAndAddRef(PRUint32 peer,
 }
 
 PRBool
-ipcDConnectService::CheckInstanceAndAddRef(DConnectInstance *wrapper)
+ipcDConnectService::CheckInstanceAndAddRef(DConnectInstance *wrapper, PRUint32 peer)
 {
   nsAutoLock lock (mLock);
 
-  PRBool result = mInstanceSet.Contains(wrapper);
-  if (result)
+  if (mInstanceSet.Contains(wrapper) && wrapper->Peer() == peer)
+  {
     wrapper->AddRef();
-  return result;
+    return PR_TRUE;
+  }
+  return PR_FALSE;
 }
 
 nsresult
@@ -3439,7 +3441,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
       const DConnectSetupQueryInterface *setupQI = (const DConnectSetupQueryInterface *) setup;
 
       // make sure we've been sent a valid wrapper
-      if (!CheckInstanceAndAddRef(setupQI->instance))
+      if (!CheckInstanceAndAddRef(setupQI->instance, peer))
       {
         NS_NOTREACHED("instance wrapper not found");
         rv = NS_ERROR_INVALID_ARG;
@@ -3592,8 +3594,9 @@ ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
 
   nsAutoLock lock (mLock);
 
-  // make sure we've been sent a valid wrapper
-  if (mInstanceSet.Contains(wrapper))
+  // make sure we've been sent a valid wrapper from the same peer we created
+  // this wrapper for
+  if (mInstanceSet.Contains(wrapper) && wrapper->Peer() == peer)
   {
     // release the IPC reference from under the lock to ensure atomicity of
     // the "check + possible delete" sequence ("delete" is remove this wrapper
@@ -3612,7 +3615,7 @@ ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
     // client gets processed here (because of true multithreading). Just log
     // a debug warning
     LOG(("ipcDConnectService::OnRelease: WARNING: "
-         "instance wrapper %p not found", wrapper));
+         "instance wrapper %p for peer %d not found", wrapper, peer));
   }
 }
 
@@ -3636,7 +3639,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
   PRBool got_exception = PR_FALSE;
 
   // make sure we've been sent a valid wrapper
-  if (!CheckInstanceAndAddRef(wrapper))
+  if (!CheckInstanceAndAddRef(wrapper, peer))
   {
     NS_NOTREACHED("instance wrapper not found");
     wrapper = nsnull;
