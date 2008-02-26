@@ -117,7 +117,7 @@ extern VBOXHDDBACKEND g_VhdBackend;
 static PCVBOXHDDBACKEND aBackends[] =
 {
     &g_VmdkBackend,
-    &g_VdiBackend,
+    &g_VDIBackend,
 #ifndef VBOX_OSE
     &g_VhdBackend,
 #endif
