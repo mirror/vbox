@@ -34,6 +34,7 @@ ifndef VBOX_OSE
 endif
 
 VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
+VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installer
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
@@ -66,7 +67,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd.sh \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/install.sh \
 		$(PATH_ROOT)/src/VBox/Installer/linux/routines.sh \
-		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/x11config.pl \
+		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c \
 		$(PATH_BIN)/additions/vboxmouse_drv.o \
@@ -108,7 +109,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/98vboxadd-xclient   $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd.sh          $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Installer/linux/routines.sh         $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/x11config.pl        $(PATH_TARGET)/install
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl          $(PATH_TARGET)/install
 	$(QUIET)$(BIN_COPY_SYMBOLS) $(PATH_BIN)/additions/vboxmouse_drv.o        $(PATH_TARGET)/install/vboxmouse_drv.o
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_70.so    $(PATH_TARGET)/install/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so    $(PATH_TARGET)/install/vboxmouse_drv_71.so
