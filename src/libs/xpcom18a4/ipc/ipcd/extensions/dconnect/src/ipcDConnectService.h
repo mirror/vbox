@@ -246,7 +246,7 @@ public:
   // public only for DConnectInstance::Release()
   NS_HIDDEN_(void)     DeleteInstance(DConnectInstance *, PRBool locked = PR_FALSE);
   // public only for DConnectStub::CallMethod()
-  NS_HIDDEN_(PRBool)   CheckInstanceAndAddRef(DConnectInstance *);
+  NS_HIDDEN_(PRBool)   CheckInstanceAndAddRef(DConnectInstance *, PRUint32);
 
   PRLock *StubLock() { return mStubLock; }
   PRLock *StubQILock() { return mStubQILock; }
