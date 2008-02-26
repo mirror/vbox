@@ -40,7 +40,7 @@ if [ -n "$INSTALL_DIR" ]; then
     VBOXMANAGE="$INSTALL_DIR/VBoxManage"
     BUILDINTMP="$INSTALL_DIR/src/build_in_tmp"
 else
-    VBOXMANAGE="/usr/share/virtualbox/VBoxManage"
+    VBOXMANAGE="/usr/lib/virtualbox/VBoxManage"
     BUILDINTMP="/usr/share/virtualbox/src/build_in_tmp"
 fi
 
