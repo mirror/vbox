@@ -23,7 +23,6 @@
 #include "DarwinCursor.h"
 #include <Carbon/Carbon.h>
 #include <QuickTime/ImageCompression.h>
-#include <FlatCarbon/Quickdraw.h>
 
 #include <VBox/err.h>
 #include <iprt/assert.h>

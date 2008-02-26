@@ -719,7 +719,7 @@ DEFS.debug := DEBUG DEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) DEBUG_USERNAME=$
 DEFS.profile = VBOX_WITH_STATISTICS
 DEFS.x86     = RT_ARCH_X86 __X86__
 DEFS.amd64   = RT_ARCH_AMD64 __AMD64__
-DEFS.darwin  = RT_OS_DARWIN __DARWIN__
+DEFS.darwin  = RT_OS_DARWIN __DARWIN__ MAC_OS_X_VERSION_MIN_REQUIRED=1040 MAC_OS_X_VERSION_MAX_ALLOWED=1050
 DEFS.darwin.x86 = VBOX_WITH_HYBIRD_32BIT_KERNEL
 DEFS.freebsd = RT_OS_FREEBSD __FREEBSD__
 DEFS.l4      = RT_OS_L4 __L4__ __L4ENV__ L4API_l4v2 ARCH_$(BUILD_TARGET_ARCH) __NO_CTYPE _FILE_OFFSET_BITS=64
@@ -988,8 +988,12 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 #
 # Mac OS X SDK paths.
 #
+# Note: If you change something here you 
+# will maybe change DEFS.darwin also.
 VBOX_PATH_MACOSX_SDK ?= /Developer/SDKs/MacOSX10.4u.sdk
-VBOX_PATH_MACOSX_SDK_INCS ?= $(VBOX_PATH_MACOSX_SDK)/Developer/Headers
+CFLAGS.darwin   += -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK)
+CXXFLAGS.darwin += -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK)
+LDFLAGS.darwin  += -mmacosx-version-min=10.4 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK)
 
 #
 # The X11 headers.
@@ -1649,13 +1653,13 @@ endif
 ifeq ($(BUILD_TARGET),darwin)
 TEMPLATE_VBOXR0DRV_TOOL                = GXX4MACHO
 TEMPLATE_VBOXR0DRV_DEFS               += KERNEL KERNEL_PRIVATE DRIVER_PRIVATE APPLE NeXT
-TEMPLATE_VBOXR0DRV_INCS               += \
-	/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
-	/Developer/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks/Kernel.framework/Headers
+# I didn't really know why we have to state explicitly the position of the 
+# sdk headers. Maybe it has something to do with the fact that the kernel.framework 
+# isn't a real framework according to http://developer.apple.com/qa/qa2001/qa1096.html.
+TEMPLATE_VBOXR0DRV_INCS               += $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = \
 	-g -Wall -Wno-long-long -Wno-trigraphs -pipe -fno-common -nostdinc -fno-builtin -finline \
 	-fno-keep-inline-functions -force_cpusubtype_ALL -fno-exceptions -msoft-float -static \
-	-mmacosx-version-min=10.4 -isysroot /Developer/SDKs/MacOSX10.4u.sdk \
 	-fapple-kext -fno-rtti -fcheck-new
 TEMPLATE_VBOXR0DRV_CXXFLAGS.release    = $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing -fasm-blocks
 TEMPLATE_VBOXR0DRV_CXXFLAGS.profile    = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
@@ -1663,13 +1667,11 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
 TEMPLATE_VBOXR0DRV_CFLAGS              = \
 	-g -Wall -Wno-long-long -Wno-trigraphs -pipe -fno-common -nostdinc -fno-builtin -finline \
 	-fno-keep-inline-functions -force_cpusubtype_ALL -fno-exceptions -msoft-float -static \
-	-mmacosx-version-min=10.4 -isysroot /Developer/SDKs/MacOSX10.4u.sdk \
 	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations
 TEMPLATE_VBOXR0DRV_CFLAGS.release      = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.release)
 TEMPLATE_VBOXR0DRV_CFLAGS.profile      = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.profile)
 TEMPLATE_VBOXR0DRV_CFLAGS.kprofile     = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.kprofile)
-TEMPLATE_VBOXR0DRV_LDFLAGS             = -static -nostdlib -r -Wl,-Y,1455 \
-	-mmacosx-version-min=10.4 -isysroot /Developer/SDKs/MacOSX10.4u.sdk
+TEMPLATE_VBOXR0DRV_LDFLAGS             = -static -nostdlib -r -Wl,-Y,1455
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
 endif
 
@@ -1856,7 +1858,6 @@ TEMPLATE_VBOXR3EXE_LIBS                = socket iconv
 TEMPLATE_VBOXR3EXE_TOOL                = GXX4MACHO
 TEMPLATE_VBOXR3EXE_LIBS                =
 TEMPLATE_VBOXR3EXE_LDFLAGS             = -read_only_relocs suppress
-TEMPLATE_VBOXR3EXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
  else if1of ($(BUILD_TARGET),freebsd netbsd openbsd)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
@@ -2119,7 +2120,6 @@ TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin      = -bind_at_load -framework Carbon
  else if1of ($(BUILD_TARGET), freebsd netbsd openbsd)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
-TEMPLATE_VBOXMAINEXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
  else ifeq ($(BUILD_TARGET),solaris)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXMAINEXE_DEFS               += _REENTRANT
@@ -2297,7 +2297,6 @@ else # the gcc guys:
  ifeq ($(BUILD_TARGET),linux)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
  else ifeq ($(BUILD_TARGET),darwin)
-  TEMPLATE_VBOXQTGUIEXE_INCS += $(VBOX_PATH_MACOSX_SDK_INCS)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -framework Carbon -framework QuickTime -bind_at_load
   TEMPLATE_VBOXQTGUIEXE_LIBS +=
   TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
@@ -2437,7 +2436,6 @@ TEMPLATE_VBOXBLDPROG_LIBS                = socket iconv
  else ifeq ($(BUILD_PLATFORM),darwin)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX4MACHO
 TEMPLATE_VBOXBLDPROG_LIBS                =
-TEMPLATE_VBOXBLDPROG_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
  else if1of ($(BUILD_PLATFORM), freebsd netbsd openbsd)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3
 TEMPLATE_VBOXBLDPROG_LIBS                =
