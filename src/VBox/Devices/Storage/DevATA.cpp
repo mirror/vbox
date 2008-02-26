@@ -5281,7 +5281,7 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
                 fAllDone &= (pData->aCts[i].AsyncIOThread == NIL_RTTHREAD);
 
             if (    fAllDone
-                ||  RTTimeMilliTS() - u64Start >= 500)
+                ||  RTTimeMilliTS() - u64Start >= 5000)
                 break;
 
             /* Sleep for a bit. */
