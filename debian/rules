@@ -169,7 +169,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	mv $(archdir)/VBoxAddIF.sh $(prefix)/usr/bin/VBoxTAP
-	for i in VBoxManage VBoxSVC tstVMM $(if $(HEADLESS),,VBoxSDL) \
+	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
 	    $(if $(HEADLESS),,VirtualBox) $(if $(ose),,VBoxVRDP) \
 	    VBoxHeadless; do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done

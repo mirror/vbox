@@ -70,7 +70,6 @@ LINUXSTRIPBIN = \
 	VBoxXPCOMIPCD \
 	$(if $(VBOX_WITH_QTGUI),VBoxKeyboard.so,) \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
-	tstVMM \
 	VBoxTunctl \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
