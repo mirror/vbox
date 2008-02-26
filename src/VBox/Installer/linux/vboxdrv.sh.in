@@ -56,7 +56,7 @@ fi
 
 [ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
-if [ -z "$NOLSB"  ]; then
+if [ -z "$NOLSB" ]; then
     . /lib/lsb/init-functions
     fail_msg() {
         echo ""
@@ -94,13 +94,13 @@ else
     elif [ "$system" = "gentoo" ]; then
         . /sbin/functions.sh
         fail_msg() {
-            eerror $1
+            eerror "$1"
         }
         succ_msg() {
-            eend $?
+            eend "$?"
         }
         begin_msg() {
-            ebegin $1
+            ebegin "$1"
         }
         if [ "`which $0`" = "/sbin/rc" ]; then
             shift
@@ -118,10 +118,10 @@ else
         begin_msg() {
             [ -z "${1:-}" ] && return 1
             if [ -z "${2:-}" ]; then
-                echo -n "$1:"
-                return
+                echo -n "$1"
+            else
+                echo -n "$1: $2"
             fi
-            echo -n "$1: $2"
         }
     fi
 fi
