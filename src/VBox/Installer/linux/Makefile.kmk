@@ -32,7 +32,8 @@ OTHER_CLEAN    = $(addprefix $(PATH_TARGET)/install/,\
 	         install.sh deffiles routines.sh \
 	         VBoxAddIF.sh vboxdrv.sh vboxnet.sh \
 	         VirtualBox.tar.bz2 LICENSE) \
-	         $(wildcard $(PATH_TARGET)/VirtualBox-*)
+	         $(wildcard $(PATH_TARGET)/VirtualBox-*) \
+		 $(PATH_TARGET)/vboxdrv.sh $(PATH_TARGET)/vboxnet.sh
 INSTALLS       = linux-bin linux-doc
 
 VBoxTunctl_TEMPLATE = VBOXR3EXE
@@ -177,8 +178,8 @@ $(PATH_BIN)/VirtualBox.run: \
 		$(VBOX_VERSION_STAMP) \
 		routines.sh \
 		deffiles \
-		vboxnet.sh \
-		vboxdrv.sh \
+		$(PATH_TARGET)/vboxnet.sh \
+		$(PATH_TARGET)/vboxdrv.sh \
 		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt)
 	$(call MSG_TOOL,makeself,,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
@@ -189,8 +190,8 @@ $(PATH_BIN)/VirtualBox.run: \
 	$(QUIET)$(INSTALL) -m 0755 routines.sh $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 deffiles $(PATH_TARGET)/install
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_ROOT)/doc/License.txt $(PATH_TARGET)/install/LICENSE)
-	$(QUIET)$(INSTALL) -m 0755 vboxnet.sh $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 vboxdrv.sh $(PATH_TARGET)/install
+	$(QUIET)$(INSTALL) -m 0755 $(PATH_TARGET)/vboxnet.sh $(PATH_TARGET)/install
+	$(QUIET)$(INSTALL) -m 0755 $(PATH_TARGET)/vboxdrv.sh $(PATH_TARGET)/install
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(VBOX_MAKESELF) --follow $(PATH_TARGET)/install $@ \
 		"VirtualBox for Linux installation" ./install.sh "\$$0 1> /dev/null"
@@ -200,6 +201,12 @@ $(PATH_BIN)/VirtualBox-dbg.tar.bz2: \
 	$(call MSG_L1,Packing $@)
 	$(QUIET)tar --owner 0 --group 0 -cjRhf $@ -C $(PATH_TARGET)/archive-dbg \
 		$(addprefix $(DBGPATH)/,$(LINUXSTRIPBIN))
+
+$(PATH_TARGET)/vboxdrv.sh: vboxdrv.sh.in
+	$(QUIET)$(SED_EXT) -e "s|%NOLSB%|yes|g" $< > $@
+
+$(PATH_TARGET)/vboxnet.sh: vboxnet.sh.in
+	$(QUIET)$(SED_EXT) -e "s|%NOLSB%|yes|g" $< > $@
 
 # .tar.bz2 for converting into .run
 $(PATH_TARGET)/install/VirtualBox.tar.bz2: \
