@@ -569,7 +569,7 @@ static int vmdkCreateGrainDirectory(PVMDKEXTENT pExtent, uint64_t uStartSector,
     if (fPreAlloc)
     {
         uint32_t uGTSectorLE;
-        uint32_t uOffsetSectors;
+        uint64_t uOffsetSectors;
 
         uOffsetSectors = pExtent->uSectorRGD + VMDK_BYTE2SECTOR(cbGDRounded);
         for (i = 0; i < pExtent->cGDEntries; i++)
