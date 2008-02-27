@@ -408,9 +408,9 @@ vbox_output_get_modes (xf86OutputPtr output)
     if (rc && (0 != x) && (0 != y)) {
         vbox_output_add_mode(&pModes, NULL, x, y, TRUE);
     }
-    vbox_output_add_mode(&pModes, "1024x768", 1024, 768, FALSE);
-    vbox_output_add_mode(&pModes, "800x600", 800, 600, FALSE);
-    vbox_output_add_mode(&pModes, "640x480", 640, 480, FALSE);
+    vbox_output_add_mode(&pModes, NULL, 1024, 768, FALSE);
+    vbox_output_add_mode(&pModes, NULL, 800, 600, FALSE);
+    vbox_output_add_mode(&pModes, NULL, 640, 480, FALSE);
     TRACE2;
     return pModes;
 }
@@ -647,9 +647,13 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (flags & PROBE_DETECT)
         return (FALSE);
 
-    xf86Msg(X_INFO,
-            "VirtualBox guest additions video driver version "
-            VBOX_VERSION_STRING "\n");
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+               "VirtualBox guest additions video driver version "
+               VBOX_VERSION_STRING "\n");
+
+    /* Initialise the guest library */
+    if (!vbox_init(pScrn->scrnIndex))
+        return FALSE;
 
     /* Get our private data from the ScrnInfoRec structure. */
     pVBox = VBOXGetRec(pScrn);
@@ -699,17 +703,18 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
        sized video RAM configurations */
     pScrn->videoRam = inl(VBE_DISPI_IOPORT_DATA) / 1024;
 
-    /* This function asks X to choose a depth and bpp based on the
-       config file and the command line, and gives a default in
-       case none is specified.  Note that we only support 32bpp, not
-       24bpp.  After spending ages looking through the XFree86 4.2
-       source code however, I realised that it automatically uses
-       32bpp for depth 24 unless you explicitly add a "24 24"
-       format to its internal list. */
-    if (!xf86SetDepthBpp(pScrn, pScrn->videoRam >= 2048 ? 24 : 16, 0, 0,
-                         Support32bppFb))
-        return FALSE;
-    if (pScrn->depth != 24 && pScrn->depth != 16)
+    /* Query the host for the preferred colour depth */
+    {
+        uint32_t cx, cy, iDisplay, cBits = 24;
+
+        /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
+        if (   vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay)
+            && (cBits != 16))
+            cBits = 24;
+        if (!xf86SetDepthBpp(pScrn, cBits, 0, 0, Support32bppFb))
+            return FALSE;
+    }
+    if (pScrn->bitsPerPixel != 32 && pScrn->bitsPerPixel != 16)
     {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "The VBox additions only support 16 and 32bpp graphics modes\n");
@@ -733,15 +738,27 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* Set up our single virtual output. */
     output = xf86OutputCreate(pScrn, &VBOXOutputFuncs, "Virtual Output");
 
-    /* Set a sane minimum and maximum mode size */
-    xf86CrtcSetSizeRange(pScrn, 64, 64, 64000, 64000);
+    /* Set a sane minimum mode size and the maximum allowed by the available VRAM */
+    /** @todo Make sure that the host resolution is supported if it fits into VRAM. */
+    {
+        unsigned maxSize, trySize = 512;
 
-    /* I don't know exactly what these are for (and they are only used in a couple
-       of places in the X server code), but due to a bug in RandR 1.2 they place
-       an upper limit on possible resolutions.  To add to the fun, they get set
-       automatically if we don't do it ourselves. */
-    pScrn->display->virtualX = 64000;
-    pScrn->display->virtualY = 64000;
+        do {
+            maxSize = trySize;
+            trySize += 128;
+        } while (trySize * trySize * pScrn->bitsPerPixel / 8 < pScrn->videoRam * 1024);
+
+        xf86CrtcSetSizeRange(pScrn, 64, 64, maxSize, maxSize);
+
+        /* I don't know exactly what these are for (and they are only used in a couple
+           of places in the X server code), but due to a bug in RandR 1.2 they place
+           an upper limit on possible resolutions.  To add to the fun, they get set
+           automatically if we don't do it ourselves. */
+        pScrn->display->virtualX = maxSize;
+        pScrn->display->virtualY = maxSize;
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                   "The maximum supported resolution is currently %dx%d\n", maxSize, maxSize);
+    }
 
     /* We are not interested in the monitor section in the configuration file. */
     xf86OutputUseScreenMonitor(output, FALSE);
@@ -1046,14 +1063,14 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     outw(VBE_DISPI_IOPORT_DATA, pMode->HDisplay);
     outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
     outw(VBE_DISPI_IOPORT_DATA, pMode->VDisplay);
-    /* Enable linear framebuffer mode. */
-    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
-    outw(VBE_DISPI_IOPORT_DATA,
-         VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
     /* Set the virtual resolution.  We are still using VESA to control
        the virtual offset. */
     outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VIRT_WIDTH);
     outw(VBE_DISPI_IOPORT_DATA, pScrn->displayWidth);
+    /* Enable linear framebuffer mode. */
+    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
+    outw(VBE_DISPI_IOPORT_DATA,
+         VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
     if (pVBox->useVbva == TRUE)
         if (vboxEnableVbva(pScrn) != TRUE)  /* Bad but not fatal */
             pVBox->useVbva = FALSE;

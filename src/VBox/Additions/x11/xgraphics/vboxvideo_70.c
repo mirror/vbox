@@ -380,16 +380,21 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     ClockRange *clockRanges;
     int i;
     DisplayModePtr m_prev;
+    char *pcHostModeName = NULL;
 
     /* Are we really starting the server, or is this just a dummy run? */
     if (flags & PROBE_DETECT)
         return (FALSE);
 
-    xf86Msg(X_INFO,
-            "VirtualBox guest additions video driver version "
-            VBOX_VERSION_STRING "\n");
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+               "VirtualBox guest additions video driver version "
+               VBOX_VERSION_STRING "\n");
 
-    /* Get our private data from the ScrnInfoRec structure. */
+    /* Initialise the guest library */
+    if (!vbox_init(pScrn->scrnIndex))
+        return FALSE;
+
+     /* Get our private data from the ScrnInfoRec structure. */
     pVBox = VBOXGetRec(pScrn);
 
     /* Entity information seems to mean bus information. */
@@ -457,17 +462,21 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     clockRanges->ClockMulFactor = 1;
     clockRanges->ClockDivFactor = 1;
 
-    /* This function asks X to choose a depth and bpp based on the
-       config file and the command line, and gives a default in
-       case none is specified.  Note that we only support 32bpp, not
-       24bpp.  After spending ages looking through the XFree86 4.2
-       source code however, I realised that it automatically uses
-       32bpp for depth 24 unless you explicitly add a "24 24"
-       format to its internal list. */
-    if (!xf86SetDepthBpp(pScrn, pScrn->videoRam >= 2048 ? 24 : 16, 0, 0,
-                         Support32bppFb))
-        return FALSE;
-    if (pScrn->depth != 24 && pScrn->depth != 16)
+    /* Query the host for the preferred resolution and colour depth */
+    {
+        uint32_t cx, cy, iDisplay, cBits = 24;
+
+        if (vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay))
+        {
+            /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
+            if (cBits != 16)
+                cBits = 24;
+            pcHostModeName = XNFprintf("%dx%d", cx, cy);
+        }
+        if (!xf86SetDepthBpp(pScrn, cBits, 0, 0, Support32bppFb))
+            return FALSE;
+    }
+    if (pScrn->bitsPerPixel != 32 && pScrn->bitsPerPixel != 16)
     {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "The VBox additions only support 16 and 32bpp graphics modes\n");
@@ -475,46 +484,32 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     }
     xf86PrintDepthBpp(pScrn);
 
-    /* Colour weight - we always call this, since we are always in
-       truecolour. */
-    if (!xf86SetWeight(pScrn, rzeros, rzeros))
-        return (FALSE);
-
-    /* visual init */
-    if (!xf86SetDefaultVisual(pScrn, -1))
-        return (FALSE);
-
-    xf86SetGamma(pScrn, gzeros);
-
     /* To get around the problem of SUSE specifying a single, invalid mode in their
-     * Xorg.conf by default, we add an additional mode to the end of the user specified
+     * Xorg.conf by default, we add additional modes to the end of the user specified
      * list. This means that if all user modes are invalid, X will try our mode before
      * falling back to its standard mode list. */
     if (pScrn->display->modes == NULL)
     {
-        /* The user specified no modes at all - specify 1024x768 as a default. */
-        pScrn->display->modes    = xnfalloc(4 * sizeof(char*));
-        pScrn->display->modes[0] = "1024x768";
-        pScrn->display->modes[1] = "800x600";
-        pScrn->display->modes[2] = "640x480";
-        pScrn->display->modes[3] = NULL;
+        i = 0;
+        /* The user specified no modes at all. */
+        pScrn->display->modes = xnfalloc(5 * sizeof(char*));
     }
     else
     {
-        /* Add 1024x768 to the end of the mode list in case the others are all invalid. */
         for (i = 0; pScrn->display->modes[i] != NULL; i++);
-        pScrn->display->modes      = xnfrealloc(pScrn->display->modes, (i + 4)
-                                   * sizeof(char *));
-        pScrn->display->modes[i  ] = "1024x768";
-        pScrn->display->modes[i+1] = "800x600";
-        pScrn->display->modes[i+2] = "640x480";
-        pScrn->display->modes[i+3] = NULL;
+        pScrn->display->modes =   xnfrealloc(pScrn->display->modes, (i + 5)
+                                * sizeof(char *));
     }
-
-    /* Determine the virtual screen resolution from the first mode (which will be selected) */
-    sscanf(pScrn->display->modes[0], "%dx%d",
-           &pScrn->display->virtualX, &pScrn->display->virtualY);
-    pScrn->display->virtualX = (pScrn->display->virtualX + 7) & ~7;
+    /* Add additional modes to the end of the mode list in case the others are
+       all invalid. */
+    if (pcHostModeName != NULL)
+        pScrn->display->modes[i] = pcHostModeName;
+    else
+        --i;
+    pScrn->display->modes[i+1] = "1024x768";
+    pScrn->display->modes[i+2] = "800x600";
+    pScrn->display->modes[i+3] = "640x480";
+    pScrn->display->modes[i+4] = NULL;
 
     /* Create a builtin mode for every specified mode. This allows to specify arbitrary
      * screen resolutions */
@@ -525,13 +520,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         int x = 0, y = 0;
 
         sscanf(pScrn->display->modes[i], "%dx%d", &x, &y);
-        /* sanity check, smaller resolutions does not make sense */
-        if (x < 64 || y < 64)
-        {
-            xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Ignoring mode \"%s\"\n",
-                       pScrn->display->modes[i]);
-            continue;
-        }
         m                = xnfcalloc(sizeof(DisplayModeRec), 1);
         m->status        = MODE_OK;
         m->type          = M_T_BUILTIN;
@@ -554,15 +542,41 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         m_prev  = m;
     }
 
+    /* Colour weight - we always call this, since we are always in
+       truecolour. */
+    if (!xf86SetWeight(pScrn, rzeros, rzeros))
+        return (FALSE);
+
+    /* visual init */
+    if (!xf86SetDefaultVisual(pScrn, -1))
+        return (FALSE);
+
+    xf86SetGamma(pScrn, gzeros);
+
+    /* Set a sane minimum mode size and the maximum allowed by the available VRAM */
+    {
+        unsigned maxSize, trySize = 512;
+
+        do {
+            maxSize = trySize;
+            trySize += 128;
+        } while (trySize * trySize * pScrn->bitsPerPixel / 8 < pScrn->videoRam * 1024);
+
+        /* I don't know exactly what these are for (and they are only used in a couple
+           of places in the X server code). */
+        pScrn->display->virtualX = maxSize;
+        pScrn->display->virtualY = maxSize;
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                   "The maximum supported resolution is currently %dx%d\n", maxSize, maxSize);
+    }
+
     /* Filter out video modes not supported by the virtual hardware
-       we described.  All modes used by the Windows additions should
-       work fine. */
+       we described. */
     i = xf86ValidateModes(pScrn, pScrn->monitor->Modes,
                           pScrn->display->modes,
-                          clockRanges, NULL, 0, 6400, 1, 0, 1440,
-                          pScrn->display->virtualX,
-                          pScrn->display->virtualY,
-                          pScrn->videoRam, LOOKUP_BEST_REFRESH);
+                          clockRanges, NULL, 64, pScrn->display->virtualX, 1,
+                          64, pScrn->display->virtualY, 0, 0,
+                          pScrn->videoRam * 1024, LOOKUP_BEST_REFRESH);
 
     if (i <= 0) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No usable graphics modes found.\n");
@@ -575,8 +589,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86PrintModes(pScrn);
 
-    /* Set display resolution.  This was arbitrarily chosen to be about the same as my monitor. */
-    xf86SetDpi(pScrn, 100, 100);
+    /* Set display resolution.  Perhaps we should read this from the host. */
+    xf86SetDpi(pScrn, 96, 96);
 
     if (pScrn->modes == NULL) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No graphics modes available\n");

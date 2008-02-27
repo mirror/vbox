@@ -118,8 +118,6 @@ vbox_close(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 
     xfree (pVBox->reqp);
     pVBox->reqp = NULL;
-
-    VbglR3Term();
 }
 
 /**
@@ -307,6 +305,19 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
 }
 
 Bool
+vbox_init(int scrnIndex)
+{
+    Bool rc = TRUE;
+    int vrc = VbglR3Init();
+    if (RT_FAILURE(vrc))
+    {
+        xf86DrvMsg(scrnIndex, X_ERROR, "VbglR3Init failed rc=%d.\n", rc);
+        rc = FALSE;
+    }
+    return rc;
+}
+
+Bool
 vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 {
     int rc;
@@ -323,13 +334,6 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         /* still open, just re-enable VBVA after CloseScreen was called */
         pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
         return TRUE;
-    }
-
-    rc = VbglR3Init();
-    if (RT_FAILURE(rc))
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR, "VbglR3Init failed rc=%d.\n", rc);
-        return FALSE;
     }
 
     size = vmmdevGetRequestSize(VMMDevReq_SetPointerShape);
@@ -351,7 +355,6 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         xfree(p);
     }
     xf86DrvMsg(scrnIndex, X_ERROR, "Could not allocate %lu bytes for VMM request\n", (unsigned long)size);
-    VbglR3Term();
     return FALSE;
 }
 

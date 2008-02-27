@@ -370,9 +370,9 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (flags & PROBE_DETECT)
         return (FALSE);
 
-    xf86Msg(X_INFO,
-            "VirtualBox guest additions video driver version "
-            VBOX_VERSION_STRING "\n");
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+               "VirtualBox guest additions video driver version "
+               VBOX_VERSION_STRING "\n");
 
     /* Get our private data from the ScrnInfoRec structure. */
     pVBox = VBOXGetRec(pScrn);
@@ -452,7 +452,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (!xf86SetDepthBpp(pScrn, pScrn->videoRam >= 2048 ? 24 : 16, 0, 0,
                          Support32bppFb))
         return FALSE;
-    if (pScrn->depth != 24 && pScrn->depth != 16)
+    if (pScrn->bitsPerPixel != 32 && pScrn->bitsPerPixel != 16)
     {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "The VBox additions only support 16 and 32bpp graphics modes\n");
@@ -496,11 +496,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         pScrn->display->modes[i+3] = NULL;
     }
 
-    /* Determine the virtual screen resolution from the first mode (which will be selected) */
-    sscanf(pScrn->display->modes[0], "%dx%d",
-           &pScrn->display->virtualX, &pScrn->display->virtualY);
-    pScrn->display->virtualX = (pScrn->display->virtualX + 7) & ~7;
-
     /* Create a builtin mode for every specified mode. This allows to specify arbitrary
      * screen resolutions */
     m_prev = NULL;
@@ -510,13 +505,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         int x = 0, y = 0;
 
         sscanf(pScrn->display->modes[i], "%dx%d", &x, &y);
-        /* sanity check, smaller resolutions does not make sense */
-        if (x < 64 || y < 64)
-        {
-            xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Ignoring mode \"%s\"\n",
-                       pScrn->display->modes[i]);
-            continue;
-        }
         m                = xnfcalloc(sizeof(DisplayModeRec), 1);
         m->status        = MODE_OK;
         m->type          = M_T_BUILTIN;
@@ -532,15 +520,30 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         m_prev  = m;
     }
 
+    /* Set a sane minimum mode size and the maximum allowed by the available VRAM */
+    {
+        unsigned maxSize, trySize = 512;
+
+        do {
+            maxSize = trySize;
+            trySize += 128;
+        } while (trySize * trySize * pScrn->bitsPerPixel / 8 < pScrn->videoRam * 1024);
+
+        /* I don't know exactly what these are for (and they are only used in a couple
+           of places in the X server code). */
+        pScrn->display->virtualX = maxSize;
+        pScrn->display->virtualY = maxSize;
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                   "The maximum supported resolution is currently %dx%d\n", maxSize, maxSize);
+    }
+
     /* Filter out video modes not supported by the virtual hardware
-       we described.  All modes used by the Windows additions should
-       work fine. */
+       we described. */
     i = xf86ValidateModes(pScrn, pScrn->monitor->Modes,
                           pScrn->display->modes,
-                          clockRanges, NULL, 0, 6400, 1, 0, 1440,
-                          pScrn->display->virtualX,
-                          pScrn->display->virtualY,
-                          pScrn->videoRam, LOOKUP_BEST_REFRESH);
+                          clockRanges, NULL, 64, pScrn->display->virtualX, 1,
+                          64, pScrn->display->virtualY, 0, 0,
+                          pScrn->videoRam * 1024, LOOKUP_BEST_REFRESH);
 
     if (i <= 0) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No usable graphics modes found.\n");
@@ -553,8 +556,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86PrintModes(pScrn);
 
-    /* Set display resolution.  This was arbitrarily chosen to be about the same as my monitor. */
-    xf86SetDpi(pScrn, 100, 100);
+    /* Set display resolution.  Perhaps we should read this from the host. */
+    xf86SetDpi(pScrn, 96, 96);
 
     if (pScrn->modes == NULL) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No graphics modes available\n");
