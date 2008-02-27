@@ -48,6 +48,10 @@
 #include <XKeyboard.h>
 #endif
 
+#ifdef Q_WS_MAC
+#include "VBoxIChatTheaterWrapper.h"
+#endif
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
 #include <VBox/err.h>
 #endif
@@ -579,6 +583,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 #endif
 
 #ifdef Q_WS_MAC
+# ifdef VBOX_WITH_ICHAT_THEATER
+    initSharedAVManager();
+# endif
     /* prepare the dock images */
     dockImgStatePaused    = ::DarwinCreateDockBadge ("state_paused_16px.png");
     dockImgStateSaving    = ::DarwinCreateDockBadge ("state_saving_16px.png");
