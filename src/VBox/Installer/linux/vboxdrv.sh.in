@@ -72,11 +72,13 @@ else
     if [ "$system" = "redhat" ]; then
         . /etc/init.d/functions
         fail_msg() {
+            echo -n " "
             echo_failure
             echo
             echo "  ($1)"
         }
         succ_msg() {
+            echo -n " "
             echo_success
             echo
         }
