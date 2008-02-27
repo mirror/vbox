@@ -716,6 +716,8 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	common/string/memcpy.asm \
 	common/string/memcpy_alias.c \
 	common/string/mempcpy.asm \
+	common/string/memmove.asm \
+	common/string/memmove_alias.c \
 	common/string/memset.asm \
 	common/string/memset_alias.c \
 	common/string/strchr.asm \
@@ -942,12 +944,12 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/time-r0drv-darwin.cpp \
 	r0drv/memobj-r0drv.cpp
 
-RuntimeR0Drv_DEFS.os2 += RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0Drv_SOURCES.os2 = \
 	common/string/memchr.asm \
 	common/string/memcmp.asm \
 	common/string/memcpy.asm \
 	common/string/mempcpy.asm \
+	common/string/memmove.asm \
 	common/string/memset.asm \
 	common/string/strchr.asm \
 	common/string/strcmp.asm \
@@ -1054,6 +1056,7 @@ RuntimeGuestR0_SOURCES.win += \
 	common/string/memchr.cpp \
 	common/string/memcpy.cpp \
 	common/string/memset.cpp \
+	common/string/memmove.asm \
 	common/string/strlen.cpp
 endif
 
@@ -1076,10 +1079,12 @@ RuntimeW32GuestR0_SOURCES       = \
 	$(RuntimeR0Drv_SOURCES.win) \
 	VBox/logbackdoor.cpp
 ifdef VBOX_USE_VCC80
+## @todo use the .asm versions of these.
 RuntimeW32GuestR0_SOURCES += \
 	common/string/memchr.cpp \
 	common/string/memcpy.cpp \
 	common/string/memset.cpp \
+	common/string/memmove.asm \
 	common/string/strlen.cpp
 endif
 
@@ -1098,7 +1103,7 @@ RuntimeW32NT4GuestR0_SOURCES       = $(RuntimeW32GuestR0_SOURCES)
 # RuntimeGC - Guest context library.
 #
 RuntimeGC_TEMPLATE      = VBOXGC
-RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX
+RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeGC_SOURCES       = \
 	common/log/log.cpp \
 	common/log/logcom.cpp \
@@ -1110,6 +1115,7 @@ RuntimeGC_SOURCES       = \
 	common/string/memcmp.cpp \
 	common/string/memcpy.cpp \
 	common/string/memset.cpp \
+	common/string/memmove.asm \
 	common/string/strcpy.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
