@@ -33,6 +33,8 @@
 
 //#define SHOW_CLIPBOARD_CONTENT
 
+/** @todo r=bird: document these functions */
+
 int initPasteboard (PasteboardRef *pPasteboardRef)
 {
     int rc = VINF_SUCCESS;
