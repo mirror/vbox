@@ -41,12 +41,12 @@
 
 #include <iprt/cdefs.h>
 
-#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(__IBMC__) && !defined(__IBMCPP__) && !defined(IPRT_NO_CRT)
+#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(__IBMC__) && !defined(__IBMCPP__) && !defined(IPRT_NO_CRT) && !defined(DOXYGEN_RUNNING)
 # include <stdint.h>
 
 #else
 
-#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) || defined(IPRT_NO_CRT)
+#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) || defined(IPRT_NO_CRT) || defined(DOXGEN_RUNNING)
 /* machine specific */
 typedef signed char         __int8_t;
 typedef unsigned char       __uint8_t;
@@ -121,13 +121,15 @@ typedef __uint64_t      uint64_t;
 
 #endif /* !linux kernel || no-crt */
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
 #ifndef _INTPTR_T_DECLARED
+/** Signed interger type capable of holding a pointer value, very useful for casting. */
 typedef __intptr_t              intptr_t;
+/** Unsigned interger type capable of holding a pointer value, very useful for casting. */
 typedef __uintptr_t             uintptr_t;
 #define _INTPTR_T_DECLARED
 #endif
-#endif /* !_MSC_VER */
+#endif /* !_MSC_VER || DOXYGEN_RUNNING */
 
 #if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS)
 

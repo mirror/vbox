@@ -65,7 +65,7 @@
 /*
  * Shut up DOXYGEN warnings and guide it properly thru the code.
  */
-#ifdef  __DOXYGEN__
+#ifdef  DOXYGEN_RUNNING
 #define __AMD64__
 #define __X86__
 #define RT_ARCH_AMD64
@@ -79,12 +79,12 @@
 #define RT_STRICT
 #define Breakpoint
 #define RT_NO_DEPRECATED_MACROS
-#define ARCH_BITS
+/** @todo #define ARCH_BITS
 #define HC_ARCH_BITS
 #define R3_ARCH_BITS
 #define R0_ARCH_BITS
-#define GC_ARCH_BITS
-#endif /* __DOXYGEN__ */
+#define GC_ARCH_BITS */
+#endif /* DOXYGEN_RUNNING */
 
 /** @def RT_ARCH_X86
  * Indicates that we're compiling for the X86 architecture.

@@ -674,7 +674,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 #define LogIsFlowEnabled()  LogIsItEnabled(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP)
 
 
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 # define LOG_DISABLED
 # define LOG_ENABLED
 # define LOG_ENABLE_FLOW
@@ -971,7 +971,7 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args);
  * {
  */
 
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 # define LOG_TO_COM
 # define LOG_NO_COM
 #endif
@@ -1016,7 +1016,7 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args);
  * @{
  */
 
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 # define LOG_TO_BACKDOOR
 # define LOG_NO_BACKDOOR
 #endif

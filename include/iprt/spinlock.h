@@ -92,7 +92,7 @@ typedef const RTSPINLOCKTMP *PCRTSPINLOCKTMP;
 /** @def RTSPINLOCKTMP_INITIALIZER
  * What to assign to a RTSPINLOCKTMP at definition.
  */
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 # define RTSPINLOCKTMP_INITIALIZER
 #endif
 

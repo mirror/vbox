@@ -169,7 +169,7 @@ extern "C"
 void * _ReturnAddress(void);
 # pragma intrinsic(_ReturnAddress)
 # define ASMReturnAddress() _ReturnAddress()
-#elif defined(__GNUC__) || defined(__DOXYGEN__)
+#elif defined(__GNUC__) || defined(DOXYGEN_RUNNING)
 # define ASMReturnAddress() __builtin_return_address(0)
 #else
 # error "Unsupported compiler."
@@ -2494,7 +2494,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS32(volatile int32_t *pi32, const int32_t i32
  * @param   pu64    Pointer to the 64-bit variable to update.
  * @param   u64New  The 64-bit value to assign to *pu64.
  * @param   u64Old  The value to compare with.
- * @param   pu32Old     Pointer store the old value at.
+ * @param   pu64Old     Pointer store the old value at.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(bool) ASMAtomicCmpXchgExU64(volatile uint64_t *pu64, const uint64_t u64New, const uint64_t u64Old, uint64_t *pu64Old);
@@ -3338,7 +3338,7 @@ DECLINLINE(void) ASMAtomicUoWriteU8(volatile uint8_t *pu8, uint8_t u8)
  * Atomically writes a signed 8-bit value, ordered.
  *
  * @param   pi8     Pointer to the 8-bit variable to read.
- * @param   u8      The 8-bit value to assign to *pu8.
+ * @param   i8      The 8-bit value to assign to *pi8.
  */
 DECLINLINE(void) ASMAtomicWriteS8(volatile int8_t *pi8, int8_t i8)
 {
@@ -3350,7 +3350,7 @@ DECLINLINE(void) ASMAtomicWriteS8(volatile int8_t *pi8, int8_t i8)
  * Atomically writes a signed 8-bit value, unordered.
  *
  * @param   pi8     Pointer to the 8-bit variable to read.
- * @param   u8      The 8-bit value to assign to *pu8.
+ * @param   i8      The 8-bit value to assign to *pi8.
  */
 DECLINLINE(void) ASMAtomicUoWriteS8(volatile int8_t *pi8, int8_t i8)
 {
@@ -3387,7 +3387,7 @@ DECLINLINE(void) ASMAtomicUoWriteU16(volatile uint16_t *pu16, uint16_t u16)
  * Atomically writes a signed 16-bit value, ordered.
  *
  * @param   pi16    Pointer to the 16-bit variable to read.
- * @param   u16     The 16-bit value to assign to *pu16.
+ * @param   i16     The 16-bit value to assign to *pi16.
  */
 DECLINLINE(void) ASMAtomicWriteS16(volatile int16_t *pi16, int16_t i16)
 {
@@ -3399,7 +3399,7 @@ DECLINLINE(void) ASMAtomicWriteS16(volatile int16_t *pi16, int16_t i16)
  * Atomically writes a signed 16-bit value, unordered.
  *
  * @param   pi16    Pointer to the 16-bit variable to read.
- * @param   u16     The 16-bit value to assign to *pu16.
+ * @param   i16     The 16-bit value to assign to *pi16.
  */
 DECLINLINE(void) ASMAtomicUoWriteS16(volatile int16_t *pi16, int16_t i16)
 {
@@ -3437,7 +3437,7 @@ DECLINLINE(void) ASMAtomicUoWriteU32(volatile uint32_t *pu32, uint32_t u32)
  * Atomically writes a signed 32-bit value, ordered.
  *
  * @param   pi32    Pointer to the 32-bit variable to read.
- * @param   u32     The 32-bit value to assign to *pu32.
+ * @param   i32     The 32-bit value to assign to *pi32.
  */
 DECLINLINE(void) ASMAtomicWriteS32(volatile int32_t *pi32, int32_t i32)
 {
@@ -3449,7 +3449,7 @@ DECLINLINE(void) ASMAtomicWriteS32(volatile int32_t *pi32, int32_t i32)
  * Atomically writes a signed 32-bit value, unordered.
  *
  * @param   pi32    Pointer to the 32-bit variable to read.
- * @param   u32     The 32-bit value to assign to *pu32.
+ * @param   i32     The 32-bit value to assign to *pi32.
  */
 DECLINLINE(void) ASMAtomicUoWriteS32(volatile int32_t *pi32, int32_t i32)
 {
@@ -3491,7 +3491,7 @@ DECLINLINE(void) ASMAtomicUoWriteU64(volatile uint64_t *pu64, uint64_t u64)
  * Atomically writes a signed 64-bit value, ordered.
  *
  * @param   pi64    Pointer to the 64-bit variable.
- * @param   u64     The 64-bit value to assign to *pu64.
+ * @param   i64     The 64-bit value to assign to *pi64.
  */
 DECLINLINE(void) ASMAtomicWriteS64(volatile int64_t *pi64, int64_t i64)
 {
@@ -3503,7 +3503,7 @@ DECLINLINE(void) ASMAtomicWriteS64(volatile int64_t *pi64, int64_t i64)
  * Atomically writes a signed 64-bit value, unordered.
  *
  * @param   pi64    Pointer to the 64-bit variable.
- * @param   u64     The 64-bit value to assign to *pu64.
+ * @param   i64     The 64-bit value to assign to *pi64.
  */
 DECLINLINE(void) ASMAtomicUoWriteS64(volatile int64_t *pi64, int64_t i64)
 {

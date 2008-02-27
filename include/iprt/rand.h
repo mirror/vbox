@@ -46,7 +46,7 @@ RTDECL(void) RTRandBytes(void *pv, size_t cb);
 
 /**
  * Generate a 32-bit signed random number in the set [i32First..i32Last].
- * 
+ *
  * @returns The random number.
  * @param   i32First    First number in the set.
  * @param   i32Last     Last number in the set.
@@ -55,14 +55,14 @@ RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last);
 
 /**
  * Generate a 32-bit signed random number.
- * 
+ *
  * @returns The random number.
  */
 RTDECL(int32_t) RTRandS32(void);
 
 /**
  * Generate a 32-bit unsigned random number in the set [u32First..u32Last].
- * 
+ *
  * @returns The random number.
  * @param   u32First    First number in the set.
  * @param   u32Last     Last number in the set.
@@ -71,30 +71,30 @@ RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last);
 
 /**
  * Generate a 32-bit unsigned random number.
- * 
+ *
  * @returns The random number.
  */
 RTDECL(uint32_t) RTRandU32(void);
 
 /**
- * Generate a 32-bit signed random number in the set [i32First..i32Last].
- * 
+ * Generate a 64-bit signed random number in the set [i64First..i64Last].
+ *
  * @returns The random number.
- * @param   i32First    First number in the set.
- * @param   i32Last     Last number in the set.
+ * @param   i64First    First number in the set.
+ * @param   i64Last     Last number in the set.
  */
 RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last);
 
 /**
  * Generate a 64-bit signed random number.
- * 
+ *
  * @returns The random number.
  */
 RTDECL(int64_t) RTRandS64(void);
 
 /**
  * Generate a 64-bit unsigned random number in the set [u64First..u64Last].
- * 
+ *
  * @returns The random number.
  * @param   u64First    First number in the set.
  * @param   u64Last     Last number in the set.
@@ -103,7 +103,7 @@ RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last);
 
 /**
  * Generate a 64-bit unsigned random number.
- * 
+ *
  * @returns The random number.
  */
 RTDECL(uint64_t) RTRandU64(void);
