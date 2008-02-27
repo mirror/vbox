@@ -175,7 +175,7 @@
 /** @def R3_ARCH_BITS
  * Defines the host ring-3 architechture bit count.
  */
-#if defined(R3_ARCH_BITS) || defined(DOXYGEN_RUNNING)
+#if !defined(R3_ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # ifdef IN_RING3
 #  define R3_ARCH_BITS ARCH_BITS
 # else
