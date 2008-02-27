@@ -764,6 +764,7 @@ RuntimeR0_SOURCES       = \
 	common/string/memchr.cpp \
 	common/string/memcmp.cpp \
 	common/string/memcpy.cpp \
+	common/string/memmove.asm \
 	common/string/memset.cpp \
 	common/string/strcmp.asm \
 	common/string/strcpy.cpp \
