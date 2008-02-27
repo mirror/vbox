@@ -103,10 +103,6 @@ static int vboxadd_register_hgcm_connection(uint32_t client_id, struct file *fil
         for (i = 0; (i < MAX_HGCM_CONNECTIONS) && (false == found); ++i) {
                 if (ASMAtomicCmpXchgU32(&hgcm_connections[i].client_id, client_id, 0)) {
                         hgcm_connections[i].filp = filp;
-#ifdef DEBUG
-                        LogRelFunc(("Registered client ID %d, file pointer %p at position %d in the table.\n",
-                                    client_id, filp, i));
-#endif
                         found = true;
                 }
         }
@@ -127,10 +123,6 @@ static int vboxadd_unregister_hgcm_connection_no_close(uint32_t client_id)
 
         for (i = 0; (i < MAX_HGCM_CONNECTIONS) && (false == found); ++i) {
                 if (hgcm_connections[i].client_id == client_id) {
-#ifdef DEBUG
-                        LogRelFunc(("Unregistered client ID %d, file pointer %p at position %d in the table.\n",
-                                    client_id, hgcm_connections[i].filp, i));
-#endif
                         hgcm_connections[i].filp = NULL;
                         hgcm_connections[i].client_id = 0;
                         found = true;
@@ -157,10 +149,6 @@ static int vboxadd_unregister_all_hgcm_connections(struct file *filp)
         for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i) {
                 if (hgcm_connections[i].filp == filp) {
                         VBoxGuestHGCMDisconnectInfo infoDisconnect;
-#ifdef DEBUG
-                        LogRelFunc(("Unregistered client ID %d, file pointer %p at position %d in the table.\n",
-                                    hgcm_connections[i].client_id, filp, i));
-#endif
                         infoDisconnect.u32ClientID = hgcm_connections[i].client_id;
                         vboxadd_cmc_call(vboxDev, IOCTL_VBOXGUEST_HGCM_DISCONNECT,
                                          &infoDisconnect);
@@ -188,9 +176,6 @@ static int vboxadd_open(struct inode *inode, struct file *filp)
  */
 static int vboxadd_release(struct inode *inode, struct file * filp)
 {
-#ifdef DEBUG
-        LogRelFunc(("Cleaning up HGCM connections for file pointer %p\n", filp));
-#endif
         vboxadd_unregister_all_hgcm_connections(filp);
         return 0;
 }
