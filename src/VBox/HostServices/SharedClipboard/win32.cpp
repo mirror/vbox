@@ -524,6 +524,11 @@ int vboxClipboardInit (void)
     rc = RTThreadCreate (&g_ctx.thread, VBoxClipboardThread, NULL, 65536, 
                          RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
 
+    if (RT_FAILURE (rc))
+    {
+        CloseHandle (g_ctx.hRenderEvent);
+    }
+
     return rc;
 }
 

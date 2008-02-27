@@ -774,6 +774,8 @@ int vboxClipboardInit (void)
     if (RT_FAILURE(rc))
     {
         LogRel(("vboxClipboardInit: failed to create the clipboard thread.\n"));
+        RTSemEventDestroy(g_ctx.waitForData);
+        RTSemMutexDestroy(g_ctx.asyncMutex);
         AssertRCReturn(rc, rc);
     }
     return RTThreadUserWait(g_ctx.thread, 1000);

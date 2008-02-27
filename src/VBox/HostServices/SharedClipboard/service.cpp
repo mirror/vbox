@@ -221,9 +221,24 @@ void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Ms
 
 static int svcInit (void)
 {
-    RTCritSectInit (&critsect);
-    vboxSvcClipboardModeSet (VBOX_SHARED_CLIPBOARD_MODE_OFF);
-    return vboxClipboardInit ();
+    int rc = RTCritSectInit (&critsect);
+
+    if (RT_SUCCESS (rc))
+    {
+        vboxSvcClipboardModeSet (VBOX_SHARED_CLIPBOARD_MODE_OFF);
+
+        rc = vboxClipboardInit ();
+
+        /* Clean up on failure, because 'svnUnload' will not be called
+         * if the 'svcInit' returns an error.
+         */
+        if (VBOX_FAILURE (rc))
+        {
+            RTCritSectDelete (&critsect);
+        }
+    }
+
+    return rc;
 }
 
 static DECLCALLBACK(int) svcUnload (void)
