@@ -280,6 +280,14 @@ bool VBoxVMInformationDlg::event (QEvent *aEvent)
             languageChangeImp();
             break;
         }
+        case QEvent::WindowStateChange:
+        {
+            if (mIsPolished)
+                mMax = isMaximized();
+            else if (mMax == isMaximized())
+                mIsPolished = true;
+            break;
+        }
         default:
             break;
     }
@@ -329,12 +337,12 @@ void VBoxVMInformationDlg::showEvent (QShowEvent *aEvent)
     if (mIsPolished)
         return;
 
-    mIsPolished = true;
-
     /* load window size and state */
     resize (mWidth, mHeight);
     if (mMax)
         QTimer::singleShot (0, this, SLOT (showMaximized()));
+    else
+        mIsPolished = true;
 
     VBoxGlobal::centerWidget (this, parentWidget());
 }
