@@ -769,8 +769,16 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                      */
                     case 'R':
                     {
-                        pszFormat--;
-                        cch += rtstrFormatRt(pfnOutput, pvArgOutput, &pszFormat, &args, cchPrecision, cchWidth, fFlags, chArgSize);
+                        if (*pszFormat != '[')
+                        {
+                            pszFormat--;
+                            cch += rtstrFormatRt(pfnOutput, pvArgOutput, &pszFormat, &args, cchPrecision, cchWidth, fFlags, chArgSize);
+                        }
+                        else
+                        {
+                            pszFormat--;
+                            cch += rtstrFormatType(pfnOutput, pvArgOutput, &pszFormat, &args, cchPrecision, cchWidth, fFlags, chArgSize);
+                        }
                         break;
                     }
 

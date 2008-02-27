@@ -93,6 +93,7 @@ OBJS  += \
 	common/log/logformat.o \
 	common/string/strformat.o \
 	common/string/strformatrt.o \
+	common/string/strformattype.o \
 	common/string/strprintf.o \
 	common/string/strtonum.o \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \

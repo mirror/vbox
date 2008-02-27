@@ -33,11 +33,46 @@
 #include <iprt/string.h>
 #include <iprt/stream.h>
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static int g_cErrors = 0;
+
+
+/** See FNRTSTRFORMATTYPE. */
+static DECLCALLBACK(size_t) TstType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                    const char *pszType, void const *pvValue,
+                                    int cchWidth, int cchPrecision, unsigned fFlags,
+                                    void *pvUser)
+{
+    /* validate */
+    if (strncmp(pszType, "type", 4))
+    {
+        RTPrintf("tstStrFormat: pszType=%s expected 'typeN'\n", pszType);
+        g_cErrors++;
+    }
+
+    int iType = pszType[4] - '0';
+    if ((uintptr_t)pvUser != (uintptr_t)TstType + iType)
+    {
+        RTPrintf("tstStrFormat: pvValue=%p expected %p\n", pvUser, (void *)((uintptr_t)TstType + iType));
+        g_cErrors++;
+    }
+
+    /* format */
+    size_t cch = pfnOutput(pvArgOutput, pszType, 5);
+    cch += pfnOutput(pvArgOutput, "=", 1);
+    char szNum[64];
+    size_t cchNum = RTStrFormatNumber(szNum, (uintptr_t)pvValue, 0, cchWidth, cchPrecision, fFlags);
+    cch += pfnOutput(pvArgOutput, szNum, cchNum);
+    return cch;
+}
+
+
 int main()
 {
     RTR3Init();
 
-    int         cErrors = 0;
     uint32_t    u32 = 0x010;
     uint64_t    u64 = 0x100;
     char        szStr[120];
@@ -48,7 +83,7 @@ int main()
     {
         RTPrintf("error: '%s'\n"
                "wanted 'u32=16 u64=256 u64=0x100'\n", szStr);
-        cErrors++;
+        g_cErrors++;
     }
 
     /* just big. */
@@ -59,7 +94,7 @@ int main()
         RTPrintf("error: '%s'\n"
                  "wanted 'u64=0x8070605040302010 42=42 u64=8102081627430068240 42=42'\n", szStr);
         RTPrintf("%d\n", (int)(u64 % 10));
-        cErrors++;
+        g_cErrors++;
     }
 
     /* huge and negative. */
@@ -71,7 +106,7 @@ int main()
         RTPrintf("error: '%s'\n"
                  "wanted 'u64=0x8070605040302010 42=42 u64=9255003132036915216 42=42 u64=-9191740941672636400 42=42'\n", szStr);
         RTPrintf("%d\n", (int)(u64 % 10));
-        cErrors++;
+        g_cErrors++;
     }
 
     /* 64-bit value bug. */
@@ -81,7 +116,7 @@ int main()
     {
         RTPrintf("error: '%s'\n"
                  "wanted 'u64=0xa0000000 42=42 u64=2684354560 42=42'\n", szStr);
-        cErrors++;
+        g_cErrors++;
     }
 
     /* uuid */
@@ -95,7 +130,7 @@ int main()
         RTPrintf("error:    '%s'\n"
                  "expected: '%s'\n",
                  szStr, szCorrect);
-        cErrors++;
+        g_cErrors++;
     }
 
     /* allocation */
@@ -104,7 +139,7 @@ int main()
     if (cch2 < 0)
     {
         RTPrintf("error: RTStrAPrintf failed, cch2=%d\n", cch2);
-        cErrors++;
+        g_cErrors++;
     }
     else if (strcmp(psz, "Hey there! This is a test!"))
     {
@@ -112,12 +147,12 @@ int main()
                  "got   : '%s'\n"
                  "wanted: 'Hey there! This is a test!'\n",
                psz);
-        cErrors++;
+        g_cErrors++;
     }
     else if ((int)strlen(psz) != cch2)
     {
         RTPrintf("error: RTStrAPrintf failed, cch2 == %d expected %u\n", cch2, strlen(psz));
-        cErrors++;
+        g_cErrors++;
     }
     RTStrFree(psz);
 
@@ -130,13 +165,13 @@ int main()
                      "    output: '%s'\n"  \
                      "    wanted: '%s'\n", \
                      __LINE__, fmt, szStr, out " 42=42 " out " 42=42"); \
-            cErrors++; \
+            g_cErrors++; \
         } \
         else if (cch != sizeof(out " 42=42 " out " 42=42") - 1) \
         { \
             RTPrintf("error(%d): Invalid length %d returned, expected %u!\n", \
                      __LINE__, cch, sizeof(out " 42=42 " out " 42=42") - 1); \
-            cErrors++; \
+            g_cErrors++; \
         } \
     } while (0)
 
@@ -313,7 +348,7 @@ int main()
         RTPrintf("error:    '%s'\n"
                  "expected: '%s'\n",
                  szStr, szCorrect);
-        cErrors++;
+        g_cErrors++;
     }
 
     CHECK42("%RTxint", (RTGCUINT)0x2345, "2345");
@@ -350,7 +385,7 @@ int main()
     { \
         RTPrintf("error:    '%s'\n" \
                  "expected: '%s'\n", szStr, Correct); \
-        cErrors++; \
+        g_cErrors++; \
     }
 
     /*
@@ -393,14 +428,71 @@ int main()
     CHECKSTR(s_sz2);
 #endif
 
+    /*
+     * Custom types.
+     */
+#define CHECK(expr)  do { if (!(expr)) { RTPrintf("tstEnv: error line %d: %s\n", __LINE__, #expr); g_cErrors++; } } while (0)
+#define CHECK_RC(expr, rc)  do { int rc2 = expr; if (rc2 != (rc)) { RTPrintf("tstEnv: error line %d: %s -> %Rrc expected %Rrc\n", __LINE__, #expr, rc2, rc); g_cErrors++; } } while (0)
+
+    CHECK_RC(RTStrFormatTypeRegister("type3", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
+    CHECK_RC(RTStrFormatTypeSetUser("type3",           (void *)((uintptr_t)TstType + 3)), VINF_SUCCESS);
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3]", (void *)1);
+    CHECKSTR("type3=1");
+
+    CHECK_RC(RTStrFormatTypeRegister("type1", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
+    CHECK_RC(RTStrFormatTypeSetUser("type1",           (void *)((uintptr_t)TstType + 1)), VINF_SUCCESS);
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1]", (void *)1, (void *)2);
+    CHECKSTR("type3=1 type1=2");
+
+    CHECK_RC(RTStrFormatTypeRegister("type4", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
+    CHECK_RC(RTStrFormatTypeSetUser("type4",           (void *)((uintptr_t)TstType + 4)), VINF_SUCCESS);
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4]", (void *)1, (void *)2, (void *)3);
+    CHECKSTR("type3=1 type1=2 type4=3");
+
+    CHECK_RC(RTStrFormatTypeRegister("type2", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
+    CHECK_RC(RTStrFormatTypeSetUser("type2",           (void *)((uintptr_t)TstType + 2)), VINF_SUCCESS);
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4] %R[type2]", (void *)1, (void *)2, (void *)3, (void *)4);
+    CHECKSTR("type3=1 type1=2 type4=3 type2=4");
+
+    CHECK_RC(RTStrFormatTypeRegister("type5", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
+    CHECK_RC(RTStrFormatTypeSetUser("type5",           (void *)((uintptr_t)TstType + 5)), VINF_SUCCESS);
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4] %R[type2] %R[type5]", (void *)1, (void *)2, (void *)3, (void *)4, (void *)5);
+    CHECKSTR("type3=1 type1=2 type4=3 type2=4 type5=5");
+
+    CHECK_RC(RTStrFormatTypeSetUser("type1",           (void *)((uintptr_t)TstType + 1)), VINF_SUCCESS);
+    CHECK_RC(RTStrFormatTypeSetUser("type2",           (void *)((uintptr_t)TstType + 2)), VINF_SUCCESS);
+    CHECK_RC(RTStrFormatTypeSetUser("type3",           (void *)((uintptr_t)TstType + 3)), VINF_SUCCESS);
+    CHECK_RC(RTStrFormatTypeSetUser("type4",           (void *)((uintptr_t)TstType + 4)), VINF_SUCCESS);
+    CHECK_RC(RTStrFormatTypeSetUser("type5",           (void *)((uintptr_t)TstType + 5)), VINF_SUCCESS);
+
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4] %R[type2] %R[type5]", (void *)10, (void *)20, (void *)30, (void *)40, (void *)50);
+    CHECKSTR("type3=10 type1=20 type4=30 type2=40 type5=50");
+
+    CHECK_RC(RTStrFormatTypeDeregister("type2"), VINF_SUCCESS);
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4] %R[type5]", (void *)10, (void *)20, (void *)30, (void *)40);
+    CHECKSTR("type3=10 type1=20 type4=30 type5=40");
+
+    CHECK_RC(RTStrFormatTypeDeregister("type5"), VINF_SUCCESS);
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4]", (void *)10, (void *)20, (void *)30);
+    CHECKSTR("type3=10 type1=20 type4=30");
+
+    CHECK_RC(RTStrFormatTypeDeregister("type4"), VINF_SUCCESS);
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1]", (void *)10, (void *)20);
+    CHECKSTR("type3=10 type1=20");
+
+    CHECK_RC(RTStrFormatTypeDeregister("type1"), VINF_SUCCESS);
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3]", (void *)10);
+    CHECKSTR("type3=10");
+
+    CHECK_RC(RTStrFormatTypeDeregister("type3"), VINF_SUCCESS);
 
     /*
      * Summarize and exit.
      */
-    if (!cErrors)
+    if (!g_cErrors)
         RTPrintf("tstStrFormat: SUCCESS\n");
     else
-        RTPrintf("tstStrFormat: FAILED - %d errors\n", cErrors);
-    return !!cErrors;
+        RTPrintf("tstStrFormat: FAILED - %d errors\n", g_cErrors);
+    return !!g_cErrors;
 }
 
