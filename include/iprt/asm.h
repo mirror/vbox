@@ -79,6 +79,7 @@
 #  pragma intrinsic(_InterlockedIncrement)
 #  pragma intrinsic(_InterlockedDecrement)
 #  pragma intrinsic(_InterlockedExchange)
+#  pragma intrinsic(_InterlockedExchangeAdd)
 #  pragma intrinsic(_InterlockedCompareExchange)
 #  pragma intrinsic(_InterlockedCompareExchange64)
 #  ifdef RT_ARCH_AMD64
@@ -2647,6 +2648,61 @@ DECLINLINE(bool) ASMAtomicCmpXchgExPtr(void * volatile *ppv, void *pvNew, void *
 #else
 # error "ARCH_BITS is bogus"
 #endif
+}
+
+
+/**
+ * Atomically exchanges and adds to a 32-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pu32        Pointer to the value.
+ * @param   u32         Number to add.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint32_t) ASMAtomicAddU32(uint32_t volatile *pu32, uint32_t u32);
+#else
+DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile *pu32, uint32_t u32)
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    u32 = _InterlockedExchangeAdd((long *)pu32, u32);
+    return u32;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("lock; xaddl %0, %1\n\t"
+                         : "=r" (u32),
+                           "=m" (*pu32)
+                         : "0" (u32)
+                         : "memory");
+    return u32;
+# else
+    __asm
+    {
+        mov     eax, [u32]
+#  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+        lock xadd [rdx], eax
+#  else
+        mov     edx, [pu32]
+        lock xadd [edx], eax
+#  endif
+        mov     [u32], eax
+    }
+    return u32;
+# endif
+}
+#endif
+
+
+/**
+ * Atomically exchanges and adds to a signed 32-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pi32        Pointer to the value.
+ * @param   i32         Number to add.
+ */
+DECLINLINE(int32_t) ASMAtomicAddS32(int32_t volatile *pi32, int32_t i32)
+{
+    return (int32_t)ASMAtomicAddU32((uint32_t volatile *)pi32, (uint32_t)i32);
 }
 
 

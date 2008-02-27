@@ -117,7 +117,7 @@ const char *getL2CacheAss(unsigned u)
 void tstASMCpuId(void)
 {
     unsigned    iBit;
-    struct 
+    struct
     {
         uint32_t    uEBX, uEAX, uEDX, uECX;
     } s;
@@ -735,6 +735,35 @@ static void tstASMAtomicReadU64(void)
 }
 
 
+static void tstASMAtomicAddS32(void)
+{
+    int32_t i32Rc;
+    int32_t i32 = 10;
+#define MYCHECK(op, rc, val) \
+    do { \
+        i32Rc = op; \
+        if (i32Rc != (rc)) \
+        { \
+            RTPrintf("%s, %d: FAILURE: %s -> %d expected %d\n", __FUNCTION__, __LINE__, #op, i32Rc, rc); \
+            g_cErrors++; \
+        } \
+        if (i32 != (val)) \
+        { \
+            RTPrintf("%s, %d: FAILURE: %s => i32=%d expected %d\n", __FUNCTION__, __LINE__, #op, i32, val); \
+            g_cErrors++; \
+        } \
+    } while (0)
+    MYCHECK(ASMAtomicAddS32(&i32, 1),               10,             11);
+    MYCHECK(ASMAtomicAddS32(&i32, -2),              11,             9);
+    MYCHECK(ASMAtomicAddS32(&i32, -9),              9,              0);
+    MYCHECK(ASMAtomicAddS32(&i32, -0x7fffffff),     0,              -0x7fffffff);
+    MYCHECK(ASMAtomicAddS32(&i32, 0),               -0x7fffffff,    -0x7fffffff);
+    MYCHECK(ASMAtomicAddS32(&i32, 0x7fffffff),      -0x7fffffff,    0);
+    MYCHECK(ASMAtomicAddS32(&i32, 0),               0,              0);
+#undef MYCHECK
+}
+
+
 static void tstASMAtomicDecIncS32(void)
 {
     int32_t i32Rc;
@@ -775,7 +804,6 @@ static void tstASMAtomicDecIncS32(void)
     MYCHECK(ASMAtomicDecS32(&i32), 2);
     MYCHECK(ASMAtomicIncS32(&i32), 3);
 #undef MYCHECK
-
 }
 
 
@@ -923,29 +951,73 @@ void tstASMMath(void)
 /*
  * Make this static. We don't want to have this located on the stack.
  */
-static volatile uint32_t g_u32;
-
-#define BENCH(ins, str)  \
-    RTThreadYield(); \
-    u64Start = ASMReadTSC(); \
-    for (i = cRounds; i > 0; i--) \
-        ins; \
-    u64Stop = ASMReadTSC(); \
-    RTPrintf(" %-10s %3llu cycles\n", str, (u64Stop - u64Start) / cRounds);
-
-void tstASMBench()
+void tstASMBench(void)
 {
+    static uint8_t  volatile s_u8;
+    static int8_t   volatile s_i8;
+    static uint16_t volatile s_u16;
+    static int16_t  volatile s_i16;
+    static uint32_t volatile s_u32;
+    static int32_t  volatile s_i32;
+    static uint64_t volatile s_u64;
+    static int64_t  volatile s_i64;
     register unsigned i;
     const unsigned cRounds = 1000000;
-    register uint64_t u64Start, u64Stop;
+    register uint64_t u64Elapsed;
 
-    RTPrintf("Benchmarking some low-level instructions:\n");
+    RTPrintf("tstInlineASM: Benchmarking:\n");
 
-    BENCH(g_u32 = 0,                         "mov:");
-    BENCH(ASMAtomicXchgU32(&g_u32, 0),       "xchg:");
-    BENCH(ASMAtomicCmpXchgU32(&g_u32, 0, 0), "cmpxchg:");
+#define BENCH(op, str)  \
+        RTThreadYield(); \
+        u64Elapsed = ASMReadTSC(); \
+        for (i = cRounds; i > 0; i--) \
+            op; \
+        u64Elapsed = ASMReadTSC() - u64Elapsed; \
+        RTPrintf(" %-30s %3llu cycles\n", str, u64Elapsed / cRounds);
+
+    BENCH(s_u32 = 0,                            "s_u32 = 0:");
+    BENCH(ASMAtomicUoWriteU8(&s_u8, 0),         "ASMAtomicUoWriteU8:");
+    BENCH(ASMAtomicUoWriteS8(&s_i8, 0),         "ASMAtomicUoWriteS8:");
+    BENCH(ASMAtomicUoWriteU16(&s_u16, 0),       "ASMAtomicUoWriteU16:");
+    BENCH(ASMAtomicUoWriteS16(&s_i16, 0),       "ASMAtomicUoWriteS16:");
+    BENCH(ASMAtomicUoWriteU32(&s_u32, 0),       "ASMAtomicUoWriteU32:");
+    BENCH(ASMAtomicUoWriteS32(&s_i32, 0),       "ASMAtomicUoWriteS32:");
+    BENCH(ASMAtomicUoWriteU64(&s_u64, 0),       "ASMAtomicUoWriteU64:");
+    BENCH(ASMAtomicUoWriteS64(&s_i64, 0),       "ASMAtomicUoWriteS64:");
+    BENCH(ASMAtomicWriteU8(&s_u8, 0),           "ASMAtomicWriteU8:");
+    BENCH(ASMAtomicWriteS8(&s_i8, 0),           "ASMAtomicWriteS8:");
+    BENCH(ASMAtomicWriteU16(&s_u16, 0),         "ASMAtomicWriteU16:");
+    BENCH(ASMAtomicWriteS16(&s_i16, 0),         "ASMAtomicWriteS16:");
+    BENCH(ASMAtomicWriteU32(&s_u32, 0),         "ASMAtomicWriteU32:");
+    BENCH(ASMAtomicWriteS32(&s_i32, 0),         "ASMAtomicWriteS32:");
+    BENCH(ASMAtomicWriteU64(&s_u64, 0),         "ASMAtomicWriteU64:");
+    BENCH(ASMAtomicWriteS64(&s_i64, 0),         "ASMAtomicWriteS64:");
+    BENCH(ASMAtomicXchgU8(&s_u8, 0),            "ASMAtomicXchgU8:");
+    BENCH(ASMAtomicXchgS8(&s_i8, 0),            "ASMAtomicXchgS8:");
+    BENCH(ASMAtomicXchgU16(&s_u16, 0),          "ASMAtomicXchgU16:");
+    BENCH(ASMAtomicXchgS16(&s_i16, 0),          "ASMAtomicXchgS16:");
+    BENCH(ASMAtomicXchgU32(&s_u32, 0),          "ASMAtomicXchgU32:");
+    BENCH(ASMAtomicXchgS32(&s_i32, 0),          "ASMAtomicXchgS32:");
+    BENCH(ASMAtomicXchgU64(&s_u64, 0),          "ASMAtomicXchgU64:");
+    BENCH(ASMAtomicXchgS64(&s_i64, 0),          "ASMAtomicXchgS64:");
+    BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 0),    "ASMAtomicCmpXchgU32:");
+    BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 0),    "ASMAtomicCmpXchgS32:");
+    BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 0),    "ASMAtomicCmpXchgU64:");
+    BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 0),    "ASMAtomicCmpXchgS64:");
+    BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 1),    "ASMAtomicCmpXchgU32/neg:");
+    BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 1),    "ASMAtomicCmpXchgS32/neg:");
+    BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 1),    "ASMAtomicCmpXchgU64/neg:");
+    BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 1),    "ASMAtomicCmpXchgS64/neg:");
+    BENCH(ASMAtomicIncU32(&s_u32),              "ASMAtomicIncU32:");
+    BENCH(ASMAtomicIncS32(&s_i32),              "ASMAtomicIncS32:");
+    BENCH(ASMAtomicDecU32(&s_u32),              "ASMAtomicDecU32:");
+    BENCH(ASMAtomicDecS32(&s_i32),              "ASMAtomicDecS32:");
+    BENCH(ASMAtomicAddU32(&s_u32, 5),           "ASMAtomicAddU32:");
+    BENCH(ASMAtomicAddS32(&s_i32, 5),           "ASMAtomicAddS32:");
 
     RTPrintf("Done.\n");
+
+#undef BENCH
 }
 
 
@@ -973,10 +1045,12 @@ int main(int argc, char *argv[])
     tstASMAtomicCmpXchgExU32();
     tstASMAtomicCmpXchgExU64();
     tstASMAtomicReadU64();
+    tstASMAtomicAddS32();
     tstASMAtomicDecIncS32();
     tstASMAtomicAndOrU32();
     tstASMMemZeroPage();
     tstASMMath();
+
     tstASMBench();
 
     /*
