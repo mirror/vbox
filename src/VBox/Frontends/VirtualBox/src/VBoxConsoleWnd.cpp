@@ -1032,6 +1032,12 @@ void VBoxConsoleWnd::onEnterFullscreen()
 
     vmSeamlessAction->setEnabled (mIsSeamless);
     vmFullscreenAction->setEnabled (mIsFullscreen);
+    if (mIsSeamless)
+        connect (console, SIGNAL (resizeHintDone()),
+                 this, SLOT(exitSeamless()));
+    else if (mIsFullscreen)
+        connect (console, SIGNAL (resizeHintDone()),
+                 this, SLOT(exitFullscreen()));
 }
 
 /**
@@ -1055,6 +1061,26 @@ void VBoxConsoleWnd::onExitFullscreen()
 
     console->setIgnoreMainwndResize (false);
     console->normalizeGeometry (true /* adjustPosition */);
+}
+
+/**
+ *  This slot is called if the guest changes resolution while in fullscreen
+ *  mode.
+ */
+void VBoxConsoleWnd::exitFullscreen()
+{
+    if (mIsFullscreen && vmFullscreenAction->isEnabled())
+        vmFullscreenAction->toggle();
+}
+
+/**
+ *  This slot is called if the guest changes resolution while in seamless
+ *  mode.
+ */
+void VBoxConsoleWnd::exitSeamless()
+{
+    if (mIsSeamless && vmSeamlessAction->isEnabled())
+        vmSeamlessAction->toggle();
 }
 
 void VBoxConsoleWnd::setMouseIntegrationLocked (bool aDisabled)
@@ -1922,6 +1948,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
  */
 bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
+    disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
     if (aSeamless)
     {
         /* Check if the Guest Video RAM enough for the seamless mode. */
