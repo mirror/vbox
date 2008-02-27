@@ -35,17 +35,18 @@
 /** @def VBOX_RTASSERT_WITH_GDB
  * Enables the 'gdb' VBOX_ASSERT option.
  */
-#if !defined(VBOX_RTASSERT_WITH_GDB) \
-    && !defined(IN_GUEST) \
-    && ((!defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)) || defined(__DOXGYEN__))
+#if defined(DOXYGEN_RUNNING)
+ || (   !defined(VBOX_RTASSERT_WITH_GDB) \
+     && !defined(IN_GUEST) \
+     && (!defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)))
 # define VBOX_ASSERT_WITH_GDB
-#endif 
+#endif
 
 #ifdef VBOX_ASSERT_WITH_GDB
 # include <iprt/process.h>
 # include <iprt/path.h>
 # include <iprt/thread.h>
-#endif 
+#endif
 
 
 RTDECL(bool)    RTAssertDoBreakpoint(void)
@@ -85,7 +86,7 @@ RTDECL(bool)    RTAssertDoBreakpoint(void)
         }
 
         /* Try spawn the process. */
-        const char * apszArgs[] = 
+        const char * apszArgs[] =
         {
             pszTerm,
             "-e",

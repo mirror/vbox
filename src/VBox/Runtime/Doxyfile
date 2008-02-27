@@ -965,6 +965,8 @@ PREDEFINED             = DOXYGEN_RUNNING __DOXYGEN__ \
 
 EXPAND_AS_DEFINED      = \
     ARCH_BITS \
+    GC_ARCH_BITS \
+    HC_ARCH_BITS \
     R3_ARCH_BITS \
     R0_ARCH_BITS \
     \
