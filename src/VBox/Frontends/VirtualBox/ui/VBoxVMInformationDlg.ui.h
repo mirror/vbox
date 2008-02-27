@@ -103,9 +103,6 @@ void VBoxVMInformationDlg::init()
     /* applying language settings */
     languageChangeImp();
 
-    /* make initial resize */
-    resize (500, 450);
-
     /* show statistics page and make it focused */
     connect (mInfoStack, SIGNAL (currentChanged (QWidget*)),
              this, SLOT (onPageChanged (QWidget*)));
@@ -115,6 +112,11 @@ void VBoxVMInformationDlg::init()
 
 void VBoxVMInformationDlg::destroy()
 {
+    /* save dialog attributes for this vm */
+    QString dlgsize ("%1,%2,%3");
+    mSession.GetMachine().SetExtraData (VBoxDefs::GUI_InfoDlgState,
+        dlgsize.arg (mWidth).arg (mHeight).arg (isMaximized() ? "max" : "normal"));
+
     if (!mSession.isNull() && !mSession.GetMachine().isNull())
         mSelfArray.erase (mSession.GetMachine().GetName());
 }
@@ -147,6 +149,21 @@ void VBoxVMInformationDlg::setup (const CSession &aSession,
 
     connect (&mStatTimer, SIGNAL (timeout()), this, SLOT (processStatistics()));
     connect (mConsole, SIGNAL (resizeHintDone()), this, SLOT (processStatistics()));
+
+    /* preload dialog attributes for this vm */
+    QString dlgsize = mSession.GetMachine().GetExtraData (VBoxDefs::GUI_InfoDlgState);
+    if (dlgsize.isNull())
+    {
+        mWidth = 400;
+        mHeight = 450;
+        mMax = false;
+    }
+    else
+    {
+        QStringList list = QStringList::split (',', dlgsize);
+        mWidth = list [0].toInt(), mHeight = list [1].toInt();
+        mMax = list [2] == "max";
+    }
 }
 
 
@@ -314,6 +331,11 @@ void VBoxVMInformationDlg::showEvent (QShowEvent *aEvent)
 
     mIsPolished = true;
 
+    /* load window size and state */
+    resize (mWidth, mHeight);
+    if (mMax)
+        QTimer::singleShot (0, this, SLOT (showMaximized()));
+
     VBoxGlobal::centerWidget (this, parentWidget());
 }
 
@@ -324,6 +346,13 @@ void VBoxVMInformationDlg::resizeEvent (QResizeEvent*)
     mSizeGrip->move (centralWidget()->rect().bottomRight() -
                      QPoint (mSizeGrip->rect().width() - 1,
                      mSizeGrip->rect().height() - 1));
+
+    /* store dialog size for this vm */
+    if (mIsPolished && !isMaximized())
+    {
+        mWidth = width();
+        mHeight = height();
+    }
 }
 
 
