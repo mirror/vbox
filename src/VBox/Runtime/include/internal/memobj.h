@@ -209,7 +209,7 @@ typedef struct RTR0MEMOBJINTERNAL
  * Checks if this is mapping or not.
  *
  * @returns true if it's a mapping, otherwise false.
- * @param   MemObj  The ring-0 memory object handle.
+ * @param   pMem        The ring-0 memory object handle.
  * @see RTR0MemObjIsMapping
  */
 DECLINLINE(bool) rtR0MemObjIsMapping(PRTR0MEMOBJINTERNAL pMem)
@@ -229,7 +229,7 @@ DECLINLINE(bool) rtR0MemObjIsMapping(PRTR0MEMOBJINTERNAL pMem)
  * Checks if RTR0MEMOBJ::pv is a ring-3 pointer or not.
  *
  * @returns true if it's a object with a ring-3 address, otherwise false.
- * @param   MemObj  The ring-0 memory object handle.
+ * @param   pMem        The ring-0 memory object handle.
  */
 DECLINLINE(bool) rtR0MemObjIsRing3(PRTR0MEMOBJINTERNAL pMem)
 {

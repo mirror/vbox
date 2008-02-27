@@ -896,7 +896,7 @@ RTDECL(int) RTStrToInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase,
  * @param   pszValue    Pointer to the string value.
  * @param   uBase       The base of the representation used.
  *                      If the function will look for known prefixes before defaulting to 10.
- * @param   pi64        Where to store the converted number. (optional)
+ * @param   pi8         Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBase, int8_t *pi8)
 {

@@ -1247,6 +1247,7 @@ DOXYGEN_INPUT_DIRS = \
 	common/string \
 	common/table \
 	common/time \
+	VBox/ \
 	$(foreach dir, . r3 r0drv,\
 		$(dir) \
 		$(dir)/darwin \
@@ -1282,7 +1283,7 @@ DOXYGEN_OUTPUT = $(PATH_OUT)/docs/iprt
 -include $(PATH_TARGET)/Doxyfile.dep
 
 # Generate the Doxyfile
-$(PATH_TARGET)/Doxyfile: Doxyfile \
+$(PATH_TARGET)/Doxyfile: Doxyfile Makefile.kmk \
 		$(comp-vars DOXYGEN_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
 		$(comp-vars DOXYGEN_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
 		| $(call DIRDEP, $(PATH_TARGET))
@@ -1293,6 +1294,7 @@ $(PATH_TARGET)/Doxyfile: Doxyfile \
 	$(APPEND) $@.tmp "WARN_LOGFILE = $(DOXYGEN_OUTPUT)/errors"
 	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include include . common/table"
 	$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
+	$(APPEND) $@.tmp "PREDEFINED += $(ARCH_BITS_DEFS)"
 	$(APPEND) $@.tmp
 	$(APPEND) $@.tmp "INPUT = $(DOXYGEN_INPUT)"
 	$(APPEND) $@.tmp
@@ -1317,4 +1319,5 @@ test:
 	@echo test-$(comp-vars DOXYGEN_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE)
 	@echo $(DOXYGEN_OUTPUT)
 	@echo $(DOXYGEN_OUTPUT_PREV)
+	@echo $(DOXYGEN_INPUT)
 

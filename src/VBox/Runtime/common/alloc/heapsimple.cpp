@@ -443,7 +443,7 @@ RTDECL(void *) RTHeapSimpleAllocZ(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignme
  *
  * @returns Pointer to the allocated block.
  * @returns NULL on failure.
- * @param   pHeap       The heap.
+ * @param   pHeapInt    The heap.
  * @param   cb     	Size of the memory block to allocate.
  * @param   uAlignment  The alignment specifications for the allocated block.
  */

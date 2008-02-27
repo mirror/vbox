@@ -499,7 +499,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
  * @param ppMem     Where to store the memory object pointer.
  * @param pv        First page.
  * @param cb        Number of bytes.
- * @param Task      The task \a pv and \a cb refers to.
+ * @param R0Process The process \a pv and \a cb refers to.
  */
 static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process)
 {
