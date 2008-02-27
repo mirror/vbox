@@ -136,6 +136,9 @@
     <variable access="private">DataMapType mValuesMap;</variable>
     <variable access="private">QTimer mStatTimer;</variable>
     <variable access="private">VBoxConsoleView *mConsole;</variable>
+    <variable access="private">int mWidth;</variable>
+    <variable access="private">int mHeight;</variable>
+    <variable access="private">bool mMax;</variable>
 </variables>
 <slots>
     <slot access="protected">updateDetails()</slot>
@@ -155,7 +158,7 @@
     <function access="protected">showEvent( QShowEvent* )</function>
     <function access="protected">resizeEvent( QResizeEvent* )</function>
     <function returnType="QString" access="pritave">parseStatistics( const QString &amp; )</function>
-    <function access="pritave">refreshStatistics()</function>
+    <function access="private">refreshStatistics()</function>
     <function returnType="QString" access="pritave">formatHardDisk( const QString &amp;, CEnums::DiskControllerType, LONG, int, int )</function>
     <function returnType="QString" access="pritave">formatAdapter( const QString &amp;, ULONG, int, int )</function>
     <function returnType="QString" access="pritave">composeArticle( const QString &amp;, int, int )</function>
