@@ -182,9 +182,10 @@ typedef struct _ModeInfoData
 } ModeInfoData;
 #endif
 
-Bool vbox_cursor_init (ScreenPtr pScreen);
-Bool vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBOX);
-void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBOX);
+extern Bool vbox_init(int scrnIndex);
+extern Bool vbox_cursor_init (ScreenPtr pScreen);
+extern Bool vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBOX);
+extern void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBOX);
 
 extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
 
