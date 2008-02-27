@@ -353,9 +353,9 @@ static int rtPathCompare(const char *pszPath1, const char *pszPath2, bool fLimit
  * @param   pszPath1    Path to compare (must be an absolute path).
  * @param   pszPath2    Path to compare (must be an absolute path).
  *
- * @returns < 0 if the first path less than the second path.
+ * @returns @< 0 if the first path less than the second path.
  * @returns 0 if the first path identical to the second path.
- * @returns > 0 if the first path greater than the second path.
+ * @returns @> 0 if the first path greater than the second path.
  */
 RTDECL(int) RTPathCompare(const char *pszPath1, const char *pszPath2)
 {
@@ -559,8 +559,8 @@ RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath)
  * Gets the directory for architecture-independent application data, for
  * example NLS files, module sources, ...
  *
- * Linux:    /usr/shared/<application>
- * Windows:  <program files directory>/<application>
+ * Linux:    /usr/shared/@<application@>
+ * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathProgram()
  *
  */
@@ -590,8 +590,8 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, unsigned cchPath)
  * Gets the directory for architecture-dependent application data, for
  * example modules which can be loaded at runtime.
  *
- * Linux:    /usr/lib/<application>
- * Windows:  <program files directory>/<application>
+ * Linux:    /usr/lib/@<application@>
+ * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathProgram()
  *
  * @returns iprt status code.
@@ -626,7 +626,7 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, unsigned cchPath)
  * a common global directory where ld.so can found them.
  *
  * Linux:    /usr/lib
- * Windows:  <program files directory>/<application>
+ * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathProgram()
  *
  * @returns iprt status code.
@@ -658,8 +658,8 @@ RTDECL(int) RTPathSharedLibs(char *pszPath, unsigned cchPath)
 /**
  * Gets the directory for documentation.
  *
- * Linux:    /usr/share/doc/<application>
- * Windows:  <program files directory>/<application>
+ * Linux:    /usr/share/doc/@<application@>
+ * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathProgram()
  *
  * @returns iprt status code.

@@ -276,18 +276,7 @@ static DECLCALLBACK(int) rttimerCallback(RTTHREAD Thread, void *pvArg)
 #endif /* !USE_WINMM */
 
 
-/**
- * Create a recurring timer.
- *
- * @returns iprt status code.
- * @param   ppTimer             Where to store the timer handle.
- * @param   uMilliesInterval    Milliseconds between the timer ticks.
- *                              This is rounded up to the system granularity.
- * @param   pfnTimer            Callback function which shall be scheduled for execution
- *                              on every timer tick.
- * @param   pvUser              User argument for the callback.
- */
-RTR3DECL(int)     RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIMER pfnTimer, void *pvUser)
+RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIMER pfnTimer, void *pvUser)
 {
 #ifndef USE_WINMM
     /*
@@ -402,13 +391,6 @@ RTR3DECL(int)     RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PF
 }
 
 
-
-/**
- * Stops and destroys a running timer.
- *
- * @returns iprt status code.
- * @param   pTimer      Timer to stop and destroy.
- */
 RTR3DECL(int)     RTTimerDestroy(PRTTIMER pTimer)
 {
     /* NULL is ok. */

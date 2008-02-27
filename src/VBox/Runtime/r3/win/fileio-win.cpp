@@ -98,6 +98,7 @@ inline bool MySetFilePointer(RTFILE File, uint64_t offSeek, uint64_t *poffNew, u
  * @returns true for file size limit exceeded.
  * @param   File        Filehandle.
  * @param   offSeek     Offset to seek.
+ * @param   uMethod     The seek method.
  */
 DECLINLINE(bool) IsBeyondLimit(RTFILE File, uint64_t offSeek, unsigned uMethod)
 {

@@ -51,7 +51,7 @@ static int  rtReqProcessOne(PRTREQ pReq);
  * Create a request packet queueu
  *
  * @returns iprt status code.
- * @param   pReqQueue       The request queue.
+ * @param   ppQueue         Where to store the request queue pointer.
  */
 RTDECL(int) RTReqCreateQueue(PRTREQQUEUE *ppQueue)
 {
@@ -71,7 +71,7 @@ RTDECL(int) RTReqCreateQueue(PRTREQQUEUE *ppQueue)
  * Destroy a request packet queueu
  *
  * @returns iprt status code.
- * @param   pReqQueue       The request queue.
+ * @param   pQueue          The request queue.
  */
 RTDECL(int) RTReqDestroyQueue(PRTREQQUEUE pQueue)
 {
@@ -94,7 +94,7 @@ RTDECL(int) RTReqDestroyQueue(PRTREQQUEUE pQueue)
  * @returns iprt status code.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being added.
  *
- * @param   pReqQueue       The request queue.
+ * @param   pQueue          The request queue.
  * @param   cMillies        Number of milliseconds to wait for a pending request.
  *                          Use RT_INDEFINITE_WAIT to only wait till one is added.
  */
@@ -184,7 +184,7 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, unsigned cMillies)
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
- * @param   pReqQueue       The request queue.
+ * @param   pQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happens.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -217,7 +217,7 @@ RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNR
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
- * @param   pReqQueue       The request queue.
+ * @param   pQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -250,7 +250,7 @@ RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, 
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
- * @param   pReqQueue       The request queue.
+ * @param   pQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains RTREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -285,7 +285,7 @@ RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, un
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
- * @param   pReqQueue       The request queue.
+ * @param   pQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains RTREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -296,7 +296,7 @@ RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, un
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
  *                          Not possible to pass 64-bit arguments!
- * @param   pvArgs          Pointer to function arguments.
+ * @param   Args            Variable argument vector.
  */
 RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
@@ -421,7 +421,7 @@ static void vmr3ReqJoinFree(PRTREQQUEUE pQueue, PRTREQ pList)
  *
  * @returns iprt status code.
  *
- * @param   pReqQueue       The request queue.
+ * @param   pQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the allocated packet.
  * @param   enmType         Package type.
  */
