@@ -79,11 +79,6 @@
 #define RT_STRICT
 #define Breakpoint
 #define RT_NO_DEPRECATED_MACROS
-/*#define ARCH_BITS
-#define HC_ARCH_BITS
-#define R3_ARCH_BITS
-#define R0_ARCH_BITS
-#define GC_ARCH_BITS */
 #endif /* DOXYGEN_RUNNING */
 
 /** @def RT_ARCH_X86
