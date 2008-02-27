@@ -350,7 +350,7 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra);
 # define RTMemDup       RTMemEfDup
 # define RTMemDupEx     RTMemEfDupEx
 #endif
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 # define RTMEM_WRAP_TO_EF_APIS
 #endif
 

@@ -91,7 +91,7 @@ __BEGIN_DECLS
  * @remark  This is sufficent for the drive letter consept on PC.
  *          However it might be insufficient on other platforms
  *          and even on PC a UNC volume spec won't be detected this way.
- *          Use the RTPath<too be created>() instead.
+ *          Use the RTPath@<too be created@>() instead.
  *
  * @returns true if it is and false if it isn't.
  * @returns @param      ch      Char to check.
@@ -115,9 +115,9 @@ __BEGIN_DECLS
 
 /**
  * Checks if the path exists.
- * 
+ *
  * Symbolic links will all be attempted resolved.
- * 
+ *
  * @returns true if it exists and false if it doesn't.
  * @param   pszPath     The path to check.
  */
@@ -266,9 +266,9 @@ RTDECL(bool) RTPathHavePath(const char *pszPath);
  * @param   pszPath1    Path to compare (must be an absolute path).
  * @param   pszPath2    Path to compare (must be an absolute path).
  *
- * @returns < 0 if the first path less than the second path.
+ * @returns @< 0 if the first path less than the second path.
  * @returns 0 if the first path identical to the second path.
- * @returns > 0 if the first path greater than the second path.
+ * @returns @> 0 if the first path greater than the second path.
  */
 RTDECL(int) RTPathCompare(const char *pszPath1, const char *pszPath2);
 
@@ -322,7 +322,7 @@ RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath);
  * a common global directory where ld.so can found them.
  *
  * Linux:    /usr/lib
- * Windows:  <program files directory>/<application>
+ * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathProgram()
  *
  * @returns iprt status code.
@@ -335,8 +335,8 @@ RTDECL(int) RTPathSharedLibs(char *pszPath, unsigned cchPath);
  * Gets the directory for architecture-independent application data, for
  * example NLS files, module sources, ...
  *
- * Linux:    /usr/shared/<application>
- * Windows:  <program files directory>/<application>
+ * Linux:    /usr/shared/@<application@>
+ * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathProgram()
  *
  * @returns iprt status code.
@@ -349,8 +349,8 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, unsigned cchPath);
  * Gets the directory for architecture-dependent application data, for
  * example modules which can be loaded at runtime.
  *
- * Linux:    /usr/lib/<application>
- * Windows:  <program files directory>/<application>
+ * Linux:    /usr/lib/@<application@>
+ * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathProgram()
  *
  * @returns iprt status code.
@@ -362,8 +362,8 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, unsigned cchPath);
 /**
  * Gets the directory for documentation.
  *
- * Linux:    /usr/share/doc/<application>
- * Windows:  <program files directory>/<application>
+ * Linux:    /usr/share/doc/@<application@>
+ * Windows:  @<program files directory@>/@<application@>
  * Old path: same as RTPathProgram()
  *
  * @returns iprt status code.

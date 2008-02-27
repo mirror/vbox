@@ -34,7 +34,7 @@
 /** @def RTUNI_USE_WCTYPE
  * Define RTUNI_USE_WCTYPE to not use the IPRT unicode data but the
  * data which the C runtime library provides. */
-#ifdef __DOXYGEN__
+#ifdef DOXYGEN_RUNNING
 # define RTUNI_USE_WCTYPE
 #endif
 

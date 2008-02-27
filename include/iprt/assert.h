@@ -87,7 +87,7 @@
 #  else
 #   define AssertBreakpoint()   do { if (RTAssertDoBreakpoint()) { __asm__ __volatile__ ("int3; jmp 1f; 1:"); } } while (0)
 #  endif
-# elif defined(_MSC_VER)
+# elif defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
 #  define AssertBreakpoint()    do { if (RTAssertDoBreakpoint()) { __debugbreak(); } } while (0)
 # else
 #  error "Unknown compiler"
@@ -642,7 +642,7 @@ __END_DECLS
 #  else
 #   define AssertLogRelBreakpoint()     do { RTAssertDoBreakpoint(); __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
 #  endif
-# elif defined(_MSC_VER)
+# elif defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
 #  define AssertLogRelBreakpoint()      do { RTAssertDoBreakpoint(); __debugbreak(); } while (0)
 # else
 #  error "Unknown compiler"
@@ -992,7 +992,7 @@ __END_DECLS
 # else
 #  define AssertReleaseBreakpoint()     do { RTAssertDoBreakpoint(); __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
 # endif
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
 # define AssertReleaseBreakpoint()      do { RTAssertDoBreakpoint(); __debugbreak(); } while (0)
 #else
 # error "Unknown compiler"

@@ -502,9 +502,9 @@ typedef FNSTRFORMAT *PFNSTRFORMAT;
  * @param   pfnFormat   Custom format worker.
  * @param   pvArgFormat Argument to the format worker.
  * @param   pszFormat   Format string pointer.
- * @param   args        Argument list.
+ * @param   InArgs      Argument list.
  */
-RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat, const char *pszFormat, va_list args);
+RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat, const char *pszFormat, va_list InArgs);
 
 /**
  * Partial implementation of a printf like formatter.
@@ -1020,7 +1020,7 @@ RTDECL(int) RTStrToInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase,
  * @param   pszValue    Pointer to the string value.
  * @param   uBase       The base of the representation used.
  *                      If the function will look for known prefixes before defaulting to 10.
- * @param   pi64        Where to store the converted number. (optional)
+ * @param   pi8         Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBase, int8_t *pi8);
 

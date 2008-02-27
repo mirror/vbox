@@ -65,7 +65,7 @@ template <class C>
 inline C *unconst (const C *that) { return const_cast <C *> (that); }
 
 
-/** 
+/**
  * Extensions to the std namespace.
  */
 namespace stdx
@@ -74,7 +74,7 @@ namespace stdx
 /* forward */
 template <class> class auto_ref_ptr;
 
-/** 
+/**
  * Base class for objects willing to support smart reference counting using
  * the auto_ref_ptr template.
  *
@@ -130,12 +130,12 @@ class auto_ref_ptr
 {
 public:
 
-    /** 
+    /**
      * Creates a null instance that does not manage anything.
      */
     auto_ref_ptr() : m (NULL) {}
 
-    /** 
+    /**
      * Creates an instance that starts managing the given pointer. The
      * reference counter of the object pointed to by @a a is incremented by
      * one.
@@ -144,7 +144,7 @@ public:
      */
     auto_ref_ptr (C* a) : m (a) { if (m) m->ref(); }
 
-    /** 
+    /**
      * Creates an instance that starts managing a pointer managed by the given
      * instance. The reference counter of the object managed by @a that is
      * incremented by one.
@@ -154,8 +154,8 @@ public:
     auto_ref_ptr (const auto_ref_ptr &that) : m (that.m) { if (m) m->ref(); }
 
     ~auto_ref_ptr() { do_unref(); }
-    
-    /** 
+
+    /**
      * Assigns the given pointer to this instance and starts managing it. The
      * reference counter of the object pointed to by @a a is incremented by
      * one. The reference counter of the object previously managed by this
@@ -165,33 +165,33 @@ public:
      */
     auto_ref_ptr &operator= (C *a) { do_reref (a); return *this; }
 
-    /** 
+    /**
      * Assigns a pointer managed by the given instance to this instance and
      * starts managing it. The reference counter of the object managed by @a
      * that is incremented by one. The reference counter of the object
      * previously managed by this instance is decremented by one.
      *
-     * @param a Pointer to assign.
+     * @param that Instance which pointer to reference.
      */
     auto_ref_ptr &operator= (const auto_ref_ptr &that) { do_reref (that.m); return *this; }
 
-    /** 
+    /**
      * Returns @c true if this instance is @c null and false otherwise.
      */
     bool is_null() const { return m == NULL; }
 
-    /** 
+    /**
      * Dereferences the instance by returning the managed pointer.
      * Asserts that the managed pointer is not @c NULL.
      */
     C *operator-> () const { AssertMsg (m, ("Managed pointer is NULL!\n")); return m; }
 
-    /** 
+    /**
      * Returns the managed pointer or @c NULL if this instance is @c null.
      */
     C *raw() const { return m; }
 
-    /** 
+    /**
      * Compares this auto_ref_ptr instance with another instance and returns
      * @c true if both instances manage the same or @c NULL pointer.
      *
@@ -201,7 +201,7 @@ public:
      * follow and b) require to define the comparison operator in the managed
      * class which is not always possible. You may analyze pointed objects
      * yourself if you need more precise comparison.
-     * 
+     *
      * @param that Instance to compare this instance with.
      */
     bool operator== (const auto_ref_ptr &that) const
@@ -233,7 +233,7 @@ protected:
     C *m;
 };
 
-/** 
+/**
  * The exception_trap_base class is an abstract base class for all
  * exception_trap template instantiations.
  *
@@ -251,7 +251,7 @@ public:
     virtual void rethrow() = 0;
 };
 
-/** 
+/**
  * The exception_trap template acts like a wrapper for the given exception
  * class that stores a full copy of the exception and therefore allows to
  * rethrow it preserving the actual type information about the exception
@@ -274,7 +274,7 @@ public:
     int callback();
 
     int safe_callback()
-    {   
+    {
       try
       {
         // callback may throw a set of exceptions but we don't want it to start
@@ -303,7 +303,7 @@ public:
         trapped->rethrow();
     }
  * @endcode
- * 
+ *
  * @param T Exception class to wrap.
  */
 template <typename T>
@@ -317,7 +317,7 @@ public:
     T trapped;
 };
 
-/** 
+/**
  * Convenience function that allocates a new exception_trap instance on the
  * heap by automatically deducing the exception_trap template argument from
  * the type of the exception passed in @a aTrapped.
@@ -333,9 +333,9 @@ public:
       auto_ptr <exception_trap_base> t2 = new_exception_trap (err);
     }
  * @endcode
- * 
+ *
  * @param aTrapped Exception to put to the allocated trap.
- * 
+ *
  * @return Allocated exception_trap object.
  */
 template <typename T>
@@ -346,15 +346,15 @@ new_exception_trap (const T &aTrapped)
 }
 
 /**
- * Enhancement of std::auto_ptr <char> intended to take pointers to char
+ * Enhancement of std::auto_ptr @<char@> intended to take pointers to char
  * buffers allocated using new[].
  *
- * This differs from std::auto_ptr <char> so that it overloads some methods to
+ * This differs from std::auto_ptr @<char@> so that it overloads some methods to
  * uses delete[] instead of delete to delete the owned data in order to
  * conform to the C++ standard (and avoid valgrind complaints).
  *
  * Note that you should not use instances of this class where pointers or
- * references to objects of std::auto_ptr <char> are expeced. Despite the fact
+ * references to objects of std::auto_ptr @<char@> are expeced. Despite the fact
  * the classes are related, the base is not polymorphic (in particular,
  * neither the destructor nor the reset() method are virtual). It means that when
  * acessing instances of this class through the base pointer, overloaded
