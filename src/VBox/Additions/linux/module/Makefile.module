@@ -41,6 +41,7 @@ OBJS   = \
 	logformat.o \
 	strformat.o \
 	strformatrt.o \
+	strformattype.o \
 	strformat-vbox.o
 
 ifneq ($(MAKECMDGOALS),clean)

@@ -187,6 +187,7 @@ RuntimeR3_SOURCES       = \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
+	common/string/strformattype.cpp \
 	common/string/string.cpp \
 	common/string/strprintf.cpp \
 	common/string/strspace.cpp \
@@ -565,6 +566,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/misc/sanity-cpp.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
+	common/string/strformattype.cpp \
 	common/string/string.cpp \
 	common/string/strprintf.cpp \
 	common/string/unidata.cpp \
@@ -765,6 +767,7 @@ RuntimeR0_SOURCES       = \
 	common/string/strcpy.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
+	common/string/strformattype.cpp \
 	common/string/strlen.cpp \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
@@ -860,6 +863,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/misc/sanity-cpp.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
+	common/string/strformattype.cpp \
 	common/string/strprintf.cpp \
 	common/string/strtonum.cpp \
 	common/table/avlpv.cpp \
@@ -1109,6 +1113,7 @@ RuntimeGC_SOURCES       = \
 	common/string/strcpy.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
+	common/string/strformattype.cpp \
 	common/string/strlen.cpp \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \

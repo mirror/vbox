@@ -536,6 +536,83 @@ RTDECL(size_t) RTStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFO
  */
 RTDECL(int) RTStrFormatNumber(char *psz, uint64_t u64Value, unsigned int uiBase, signed int cchWidth, signed int cchPrecision, unsigned int fFlags);
 
+
+/**
+ * Callback for formatting a type.
+ *
+ * This is registered using the RTStrFormatTypeRegister function and will
+ * be called during string formatting to handle the specified %R[type].
+ * The argument for this format type is assumed to be a pointer and it's
+ * passed in the @a pvValue argument.
+ *
+ * @returns Length of the formatted output.
+ * @param   pfnOutput       Output worker.
+ * @param   pvArgOutput     Argument to the output worker.
+ * @param   pszType         The type name.
+ * @param   pvValue         The argument value.
+ * @param   cchWidth        Width.
+ * @param   cchPrecision    Precision.
+ * @param   fFlags          Flags (NTFS_*).
+ * @param   pvUser          The user argument.
+ */
+typedef DECLCALLBACK(size_t) FNRTSTRFORMATTYPE(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                               const char *pszType, void const *pvValue,
+                                               int cchWidth, int cchPrecision, unsigned fFlags,
+                                               void *pvUser);
+/** Pointer to a FNRTSTRFORMATTYPE. */
+typedef FNRTSTRFORMATTYPE *PFNRTSTRFORMATTYPE;
+
+
+/**
+ * Register a format handler for a type.
+ *
+ * The format handler is used to handle '%R[type]' format types, where the argument
+ * in the vector is a pointer value (a bit restrictive, but keeps it simple).
+ *
+ * The caller must ensure that no other thread will be making use of any of
+ * the dynamic formatting type facilities simultaneously with this call.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_ALREADY_EXISTS if the type has already been registered.
+ * @retval  VERR_TOO_MANY_OPEN_FILES if all the type slots has been allocated already.
+ *
+ * @param   pszType         The type name.
+ * @param   pfnHandler      The handler address. See FNRTSTRFORMATTYPE for details.
+ * @param   pvUser          The user argument to pass to the handler. See RTStrFormatTypeSetUser
+ *                          for how to update this later.
+ */
+RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnHandler, void *pvUser);
+
+/**
+ * Deregisters a format type.
+ *
+ * The caller must ensure that no other thread will be making use of any of
+ * the dynamic formatting type facilities simultaneously with this call.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_FILE_NOT_FOUND if not found.
+ *
+ * @param   pszType     The type to deregister.
+ */
+RTDECL(int) RTStrFormatTypeDeregister(const char *pszType);
+
+/**
+ * Sets the user argument for a type.
+ *
+ * This can be used if a user argument needs relocating in GC.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_FILE_NOT_FOUND if not found.
+ *
+ * @param   pszType     The type to update.
+ * @param   pvUser      The new user argument value.
+ */
+RTDECL(int) RTStrFormatTypeSetUser(const char *pszType, void *pvUser);
+
+
 /**
  * String printf.
  *
