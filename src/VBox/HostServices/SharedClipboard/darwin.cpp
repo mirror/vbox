@@ -42,7 +42,19 @@ struct _VBOXCLIPBOARDCONTEXT
 /** Only one client is supported. There seems to be no need for more clients. */
 static VBOXCLIPBOARDCONTEXT g_ctx;
 
-int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
+
+/**
+ * Checks if something is present on the clipboard and calls vboxSvcClipboardReportMsg.
+ * 
+ * @returns IPRT status code (ignored).
+ * @param   pCtx    The context.
+ * 
+ * @todo r=bird: This function does not check if something has _changed_ like indicated by 
+ *               the name. It will instead notify the client every 200ms as long as something
+ *               is on the clipboard. When the clipboard is cleared it will do nothing.
+ *               I somehow cannot think that this intentional behavior...
+ */
+static int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
 {
     if (pCtx->pClient == NULL)
         return VINF_SUCCESS;
@@ -60,22 +72,32 @@ int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
     return rc;
 }
 
-static int vboxClipboardThread (RTTHREAD self, void *pvUser)
+
+/** 
+ * The poller thread.
+ * 
+ * This thread will check for the arrival of new data on the clipboard.
+ * 
+ * @returns VINF_SUCCESS (not used).
+ * @param   Thread      Our thread handle.
+ * @param   pvUser      Pointer to the VBOXCLIPBOARDCONTEXT structure.
+ * 
+ */
+static int vboxClipboardThread (RTTHREAD ThreadSelf, void *pvUser)
 {
     Log (("vboxClipboardThread: starting clipboard thread\n"));
 
-    AssertReturn (VALID_PTR (pvUser), VERR_INVALID_PARAMETER);
-
-    VBOXCLIPBOARDCONTEXT *pCtx = static_cast <VBOXCLIPBOARDCONTEXT*> (pvUser);
+    AssertPtrReturn (pvUser, VERR_INVALID_PARAMETER);
+    VBOXCLIPBOARDCONTEXT *pCtx = (VBOXCLIPBOARDCONTEXT *) pvUser;
 
     while (!pCtx->fTerminate)
     {
-       vboxClipboardChanged (pCtx);
-       /* Sleep for 200 msecs before next poll */
-       RTThreadSleep (200);
+        vboxClipboardChanged (pCtx);
+        /* Sleep for 200 msecs before next poll */
+        RTThreadUserWait (self, 200);
     }
 
-    Log (("vboxClipboardThread: clipboard thread terminated successfully with return code %Vrc\n", VINF_SUCCESS));
+    Log (("vboxClipboardThread: clipboard thread terminated successfully with return code %Rrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -88,14 +110,18 @@ int vboxClipboardInit (void)
 {
     Log (("vboxClipboardInit\n"));
 
-    int rc = VINF_SUCCESS;
-
     g_ctx.fTerminate = false;
 
-    rc = initPasteboard (&g_ctx.pasteboard);
+    int rc = initPasteboard (&g_ctx.pasteboard);
+    AssertRCReturn (rc, rc);
 
     rc = RTThreadCreate (&g_ctx.thread, vboxClipboardThread, &g_ctx, 0,
                          RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
+    if (RT_FAILURE (rc))
+    {
+        g_ctx.thread = NIL_RTTHREAD;
+        destroyPasteboard (&g_ctx.pasteboard);
+    }
 
     return rc;
 }
@@ -105,22 +131,29 @@ void vboxClipboardDestroy (void)
 {
     Log (("vboxClipboardDestroy\n"));
 
-    g_ctx.fTerminate = true;
+    /* 
+     * Signal the termination of the polling thread and wait for it to respond.
+     */
+    ASMAtomicWriteBool (&g_ctx.fTerminate, true);
+    int rc = RTThreadUserSignal (g_ctx.thread);
+    AssertRC (rc);
+    rc = RTThreadWait (g_ctx.thread, RT_INDEFINITE_WAIT, NULL);
+    AssertRC (rc);
 
+    /*
+     * Destroy the pasteboard and uninitialize the global context record.
+     */
     destroyPasteboard (&g_ctx.pasteboard);
-
-    /* Wait for the clipboard thread to terminate. */
-    RTThreadWait (g_ctx.thread, RT_INDEFINITE_WAIT, NULL);
-
     g_ctx.thread = NIL_RTTHREAD;
+    g_ctx.pClient = NULL;
 }
 
 /**
-  * Enable the shared clipboard - called by the hgcm clipboard subsystem.
-  *
-  * @param   pClient Structure containing context information about the guest system
-  * @returns RT status code
-  */
+ * Enable the shared clipboard - called by the hgcm clipboard subsystem.
+ *
+ * @param   pClient Structure containing context information about the guest system
+ * @returns RT status code
+ */
 int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     if (g_ctx.pClient != NULL)
