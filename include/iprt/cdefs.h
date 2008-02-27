@@ -65,7 +65,7 @@
 /*
  * Shut up DOXYGEN warnings and guide it properly thru the code.
  */
-#ifdef  DOXYGEN_RUNNING
+#ifdef DOXYGEN_RUNNING
 #define __AMD64__
 #define __X86__
 #define RT_ARCH_AMD64
@@ -79,7 +79,7 @@
 #define RT_STRICT
 #define Breakpoint
 #define RT_NO_DEPRECATED_MACROS
-/** @todo #define ARCH_BITS
+/*#define ARCH_BITS
 #define HC_ARCH_BITS
 #define R3_ARCH_BITS
 #define R0_ARCH_BITS
@@ -158,7 +158,7 @@
 /** @def ARCH_BITS
  * Defines the bit count of the current context.
  */
-#ifndef ARCH_BITS
+#if !defined(ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # if defined(RT_ARCH_AMD64)
 #  define ARCH_BITS 64
 # else
@@ -169,7 +169,7 @@
 /** @def HC_ARCH_BITS
  * Defines the host architechture bit count.
  */
-#ifndef HC_ARCH_BITS
+#if !defined(HC_ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # ifndef IN_GC
 #  define HC_ARCH_BITS ARCH_BITS
 # else
@@ -180,7 +180,7 @@
 /** @def R3_ARCH_BITS
  * Defines the host ring-3 architechture bit count.
  */
-#ifndef R3_ARCH_BITS
+#if defined(R3_ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # ifdef IN_RING3
 #  define R3_ARCH_BITS ARCH_BITS
 # else
@@ -191,7 +191,7 @@
 /** @def R0_ARCH_BITS
  * Defines the host ring-0 architechture bit count.
  */
-#ifndef R0_ARCH_BITS
+#if !defined(R0_ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # ifdef IN_RING0
 #  define R0_ARCH_BITS ARCH_BITS
 # else
@@ -202,7 +202,7 @@
 /** @def GC_ARCH_BITS
  * Defines the guest architechture bit count.
  */
-#ifndef GC_ARCH_BITS
+#if !defined(GC_ARCH_BITS) || defined(DOXYGEN_RUNNING)
 # ifdef IN_GC
 #  define GC_ARCH_BITS ARCH_BITS
 # else
