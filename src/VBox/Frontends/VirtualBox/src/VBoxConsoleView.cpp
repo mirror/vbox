@@ -2246,7 +2246,7 @@ void VBoxConsoleView::toggleFSMode()
             newSize = mNormalSize;
         doResizeHint (newSize);
     }
-    mToggleFSModeTimer->start (400, true);
+    mToggleFSModeTimer->start (2000, true);
 }
 
 /**
