@@ -7,7 +7,7 @@
  *  Common definitions
 
      Copyright (C) 2004-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -493,7 +493,7 @@
 </xsd:complexType>
 
 <xsd:complexType name="THardDiskAttachment">
-  <xsd:attribute name="hardDisk" type="TNonNullUUID"/>
+  <xsd:attribute name="hardDisk" type="TNonNullUUID" use="required"/>
   <xsd:attribute name="bus" use="required">
     <xsd:simpleType>
       <xsd:restriction base="xsd:token">
