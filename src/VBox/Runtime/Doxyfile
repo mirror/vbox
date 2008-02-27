@@ -944,12 +944,17 @@ SEARCH_INCLUDES        = YES
 # or name=definition (no spaces). If the definition and the = are
 # omitted =1 is assumed.
 
-PREDEFINED             = __DOXYGEN__ \
+PREDEFINED             = DOXYGEN_RUNNING __DOXYGEN__ \
     __END_DECLS=  \
     __BEGIN_DECLS=  \
     VBOX=1 \
-    __cplusplus=1
-    RTCALL=
+    RT_STRICT=1 \
+    __cplusplus=1 \
+    RTCALL= \
+    ARCH_BITS=HC_ARCH_BITS \
+    R3_ARCH_BITS=HC_ARCH_BITS \
+    R0_ARCH_BITS=HC_ARCH_BITS \
+    RTDECL(type)=type \
 
 #    DECLCALLBACK(type)=type
 
@@ -959,24 +964,39 @@ PREDEFINED             = __DOXYGEN__ \
 # Use the PREDEFINED tag if you want to use a different macro definition.
 
 EXPAND_AS_DEFINED      = \
+    ARCH_BITS \
+    R3_ARCH_BITS \
+    R0_ARCH_BITS \
+    \
     GCTYPE \
     GCPTRTYPE \
     HCPTRTYPE \
+    R0PTRTYPE \
+    R3PTRTYPE \
+    R3R0PTRTYPE \
     \
     DECLEXPORT \
     DECLIMPORT \
     DECLASM \
     DECLASMTYPE \
-    DECLCALLBACKMEMBER \
     DECLCALLBACK \
+    DECLCALLBACKMEMBER \
+    DECLHCCALLBACKMEMBER \
+    DECLGCCALLBACKMEMBER \
+    DECLR3CALLBACKMEMBER \
+    DECLR0CALLBACKMEMBER \
     DECLINLINE \
     RTR3DECL \
     RTR0DECL \
     RTGCDECL \
     RTDECL \
     RTDATADECL \
-    KAVL_FN
-
+    KAVL_FN \
+    \
+    CTXSUFF \
+    OTHERCTXSUFF \
+    CTXMID \
+    OTHERCTXMID \
 
 
 # If the SKIP_FUNCTION_MACROS tag is set to YES (the default) then
