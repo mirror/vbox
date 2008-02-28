@@ -118,6 +118,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0PageAlloc",                         (void *)SUPR0PageAlloc },
     { "SUPR0PageFree",                          (void *)SUPR0PageFree },
     { "SUPR0Printf",                            (void *)SUPR0Printf },
+    { "SUPR0ExecuteCallback",                   (void *)SUPR0ExecuteCallback },
     { "RTMemAlloc",                             (void *)RTMemAlloc },
     { "RTMemAllocZ",                            (void *)RTMemAllocZ },
     { "RTMemFree",                              (void *)RTMemFree },
@@ -136,7 +137,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0MemObjIsMapping",                    (void *)RTR0MemObjIsMapping },
     { "RTR0MemObjGetPagePhysAddr",              (void *)RTR0MemObjGetPagePhysAddr },
     { "RTR0MemObjFree",                         (void *)RTR0MemObjFree },
-/* These doesn't work yet on linux - use fast mutexes!
+/* These don't work yet on linux - use fast mutexes!
     { "RTSemMutexCreate",                       (void *)RTSemMutexCreate },
     { "RTSemMutexRequest",                      (void *)RTSemMutexRequest },
     { "RTSemMutexRelease",                      (void *)RTSemMutexRelease },
@@ -2203,6 +2204,26 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 
     RTSemFastMutexRelease(pDevExt->mtxGip);
 
+    return rc;
+}
+
+/**
+ * Executes a callback handler on a specific cpu or all cpus
+ *
+ * @returns IPRT status code.
+ * @param   pSession    The session.
+ * @param   pfnCallback Callback handler
+ * @param   pvUser      The first user argument.
+ * @param   uCpu        Cpu id or SUPDRVEXECCALLBACK_CPU_ALL for all cpus
+ */
+SUPR0DECL(int) SUPR0ExecuteCallback(PSUPDRVSESSION pSession, PFNSUPDRVEXECCALLBACK pfnCallback, void *pvUser, unsigned uCpu)
+{
+    int           rc;
+    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
+
+    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
+    rc = supdrvOSExecuteCallback(pSession, pfnCallback, pvUser, uCpu);
+    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
     return rc;
 }
 
