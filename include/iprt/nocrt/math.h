@@ -558,7 +558,7 @@ __END_DECLS
 
 
 
-#ifndef RT_WITHOUT_NOCRT_WRAPPERS
+#if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
 /* sed -e "/#/d" -e "/RT_NOCRT/!d" -e "s/^.*RT_NOCRT(\([a-z0-9_]*\)).*$/# define \1 RT_NOCRT(\1)/" */
 # define __infinity RT_NOCRT(__infinity)
 # define __nan RT_NOCRT(__nan)

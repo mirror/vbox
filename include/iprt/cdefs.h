@@ -637,6 +637,8 @@
  * confuse the dynamic loader on unix like systems.
  *
  * Define RT_WITHOUT_NOCRT_WRAPPERS to drop the wrapping.
+ * Define RT_WITHOUT_NOCRT_WRAPPER_ALIASES to drop the aliases to the
+ * wrapped names.
  */
 /** @def RT_NOCRT_STR
  * Same as RT_NOCRT only it'll return a double quoted string of the result.
