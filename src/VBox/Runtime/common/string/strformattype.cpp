@@ -111,8 +111,9 @@ DECLINLINE(void) rtstrFormatTypeWriteLock(void)
 #if defined(RTSTRFORMATTYPE_WITH_LOCKING)
     if (RT_UNLIKELY(!ASMAtomicCmpXchgS32(&g_i32Spinlock, -RTSTRFORMATTYPE_LOCK_OFFSET, 0)))
     {
+        unsigned volatile i;
         AssertFailed();
-        for (unsigned volatile i = 0;; i++)
+        for (i = 0;; i++)
             if (    !g_i32Spinlock
                 &&  ASMAtomicCmpXchgS32(&g_i32Spinlock, -RTSTRFORMATTYPE_LOCK_OFFSET, 0))
                 break;
@@ -143,8 +144,9 @@ DECLINLINE(void) rtstrFormatTypeReadLock(void)
 #if defined(RTSTRFORMATTYPE_WITH_LOCKING)
     if (RT_UNLIKELY(ASMAtomicIncS32(&g_i32Spinlock) < 0))
     {
+        unsigned volatile i;
         AssertFailed();
-        for (unsigned volatile i = 0;; i++)
+        for (i = 0;; i++)
             if (ASMAtomicUoReadS32(&g_i32Spinlock) > 0)
                 break;
     }
@@ -241,12 +243,15 @@ DECLINLINE(int32_t) rtstrFormatTypeLookup(const char *pszType, size_t cchType)
  */
 RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnHandler, void *pvUser)
 {
+    size_t cchType;
+    int rc;
+    uint32_t cTypes;
     /*
      * Validate input.
      */
     AssertPtr(pfnHandler);
     AssertPtr(pszType);
-    const size_t cchType = strlen(pszType);
+    cchType = strlen(pszType);
     AssertReturn(cchType < RT_SIZEOFMEMB(RTSTRDYNFMT, szType), VERR_INVALID_PARAMETER);
 
     /*
@@ -255,8 +260,7 @@ RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnH
     rtstrFormatTypeWriteLock();
 
     /* check that there are empty slots. */
-    int rc;
-    uint32_t const cTypes = g_cTypes;
+    cTypes = g_cTypes;
     if (cTypes < RT_ELEMENTS(g_aTypes))
     {
         /* find where to insert it. */
@@ -317,6 +321,7 @@ RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnH
  */
 RTDECL(int) RTStrFormatTypeDeregister(const char *pszType)
 {
+    uint32_t i;
     /*
      * Validate input.
      */
@@ -326,7 +331,7 @@ RTDECL(int) RTStrFormatTypeDeregister(const char *pszType)
      * Locate the entry and remove it.
      */
     rtstrFormatTypeWriteLock();
-    int32_t i = rtstrFormatTypeLookup(pszType, strlen(pszType));
+    i = rtstrFormatTypeLookup(pszType, strlen(pszType));
     if (i >= 0)
     {
         const uint32_t cTypes = g_cTypes;
