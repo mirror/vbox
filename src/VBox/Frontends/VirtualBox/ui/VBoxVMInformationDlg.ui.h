@@ -36,7 +36,7 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
     {
         /* creating new information dialog if there is no one existing */
         mSelfArray [machine.GetName()] = new VBoxVMInformationDlg (
-            aConsole->topLevelWidget(),
+            aConsole,
             "VBoxVMInformationDlg", WType_TopLevel | WDestructiveClose);
         /* read new machine data for this information dialog */
         mSelfArray [machine.GetName()]->setup (aSession, aConsole);
