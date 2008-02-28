@@ -990,6 +990,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	common/err/RTErrConvertToErrno.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
+	common/string/memmove.asm \
 	common/string/strpbrk.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
