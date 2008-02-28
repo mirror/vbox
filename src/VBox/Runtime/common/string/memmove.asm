@@ -59,13 +59,27 @@ BEGINPROC RT_NOCRT(memmove)
         ;
         ; Decide which direction to perform the copy in.
         ;
+%if 1 ; keep it simpe for now.
         cmp     xDI, xSI
-        jb      .forward
+        jnb     .backward
 
         ;
-        ; Copy forward.
+        ; Slow/simple forward copy.
         ;
-.forward:
+        cld
+        rep movsb
+        jmp .epilog
+
+%else ; disabled - it seems to work, but play safe for now.
+        ;sub     xAX, xSI
+        ;jnb     .backward
+        cmp     xDI, xSI
+        jnb     .backward
+
+        ;
+        ; Fast forward copy.
+        ;
+.fast_forward:
         cld
 %ifdef RT_ARCH_AMD64
         shr     rcx, 3
@@ -91,6 +105,8 @@ BEGINPROC RT_NOCRT(memmove)
         movsb
 .forward_dont_move_byte:
 
+%endif ; disabled
+
         ;
         ; The epilog.
         ;
@@ -106,39 +122,16 @@ BEGINPROC RT_NOCRT(memmove)
 %endif
         ret
 
-
         ;
-        ; Copy backward.
+        ; Slow/simple backward copy.
         ;
 ALIGNCODE(16)
 .backward:
+        ;; @todo check if they overlap.
+        lea     xDI, [xDI + xCX - 1]
+        lea     xSI, [xSI + xCX - 1]
         std
-        add     xDI, xCX
-        add     xSI, xCX
-%ifdef RT_ARCH_AMD64
-        shr     rcx, 3
-        rep movsq
-%else
-        shr     ecx, 2
-        rep movsd
-%endif
-
-        ; The remaining bytes.
-%ifdef RT_ARCH_AMD64
-        test    dl, 4
-        jz      .backward_dont_move_dword
-        movsd
-%endif
-.backward_dont_move_dword:
-        test    dl, 2
-        jz      .backward_dont_move_word
-        movsw
-.backward_dont_move_word:
-        test    dl, 1
-        jz      .backward_dont_move_byte
-        movsb
-.backward_dont_move_byte:
-
+        rep movsb
         cld
         jmp .epilog
 ENDPROC RT_NOCRT(memmove)
