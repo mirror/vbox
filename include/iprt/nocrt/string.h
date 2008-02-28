@@ -51,7 +51,7 @@ size_t  RT_NOCRT(strlen)(const char *psz);
 size_t  RT_NOCRT(strnlen)(const char *psz, size_t cch);
 char *  RT_NOCRT(strstr)(const char *psz, const char *pszSub);
 
-#ifndef RT_WITHOUT_NOCRT_WRAPPERS
+#if !defined(RT_WITHOUT_NOCRT_WRAPPERS) && !defined(RT_WITHOUT_NOCRT_WRAPPER_ALIASES)
 # define memchr   RT_NOCRT(memchr)
 # define memcmp   RT_NOCRT(memcmp)
 # define memcpy   RT_NOCRT(memcpy)
