@@ -1037,7 +1037,7 @@ void VBoxProblemReporter::cannotCreateHardDiskImage (
 
 void VBoxProblemReporter::cannotAttachHardDisk (
     QWidget *parent, const CMachine &m, const QUuid &id,
-    CEnums::DiskControllerType ctl, LONG dev)
+    KDiskControllerType ctl, LONG dev)
 {
     message (parent, Error,
         tr ("Failed to attach a hard disk image with UUID %1 "
@@ -1050,7 +1050,7 @@ void VBoxProblemReporter::cannotAttachHardDisk (
 
 void VBoxProblemReporter::cannotDetachHardDisk (
     QWidget *parent, const CMachine &m,
-    CEnums::DiskControllerType ctl, LONG dev)
+    KDiskControllerType ctl, LONG dev)
 {
     message (parent, Error,
         tr ("Failed to detach a hard disk image "
@@ -1766,21 +1766,21 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     QCString autoConfimId = "showRuntimeError.";
 
     CConsole console = aConsole;
-    CEnums::MachineState state = console.GetState();
+    KMachineState state = console.GetState();
     Type type;
     QString severity;
 
     if (fatal)
     {
         /* the machine must be paused on fatal errors */
-        Assert (state == CEnums::Paused);
-        if (state != CEnums::Paused)
+        Assert (state == KMachineState_Paused);
+        if (state != KMachineState_Paused)
             console.Pause();
         type = Critical;
         severity = tr ("<nobr>Fatal Error</nobr>", "runtime error info");
         autoConfimId += "fatal.";
     }
-    else if (state == CEnums::Paused)
+    else if (state == KMachineState_Paused)
     {
         type = Error;
         severity = tr ("<nobr>Non-Fatal Error</nobr>", "runtime error info");

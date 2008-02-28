@@ -67,7 +67,7 @@ HRESULT NetworkAdapter::init (Machine *aParent, ULONG aSlot)
     mData->mSlot = aSlot;
 
     /* default to Am79C973 */
-    mData->mAdapterType = NetworkAdapterType_NetworkAdapterAm79C973;
+    mData->mAdapterType = NetworkAdapterType_Am79C973;
 
     /* generate the MAC address early to guarantee it is the same both after
      * changing some other property (i.e. after mData.backup()) and after the
@@ -198,10 +198,10 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
     /* make sure the value is allowed */
     switch (aAdapterType)
     {
-        case NetworkAdapterType_NetworkAdapterAm79C970A:
-        case NetworkAdapterType_NetworkAdapterAm79C973:
+        case NetworkAdapterType_Am79C970A:
+        case NetworkAdapterType_Am79C973:
 #ifdef VBOX_WITH_E1000
-        case NetworkAdapterType_NetworkAdapter82540EM:
+        case NetworkAdapterType_I82540EM:
 #endif
             break;
         default:
@@ -630,7 +630,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (INPTR BSTR aInternalNet
     {
         /* if an empty string is to be set, internal networking must be turned off */
         if (   (aInternalNetwork == Bstr(""))
-            && (mData->mAttachmentType = NetworkAttachmentType_InternalNetworkAttachment))
+            && (mData->mAttachmentType = NetworkAttachmentType_Internal))
         {
             return setError (E_FAIL, tr ("Empty internal network name is not valid"));
         }
@@ -820,13 +820,13 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
 
     AutoLock alock (this);
 
-    if (mData->mAttachmentType != NetworkAttachmentType_NATNetworkAttachment)
+    if (mData->mAttachmentType != NetworkAttachmentType_NAT)
     {
         mData.backup();
 
         detach();
 
-        mData->mAttachmentType = NetworkAttachmentType_NATNetworkAttachment;
+        mData->mAttachmentType = NetworkAttachmentType_NAT;
 
         /* leave the lock before informing callbacks */
         alock.unlock();
@@ -849,14 +849,14 @@ STDMETHODIMP NetworkAdapter::AttachToHostInterface()
     AutoLock alock (this);
 
     /* don't do anything if we're already host interface attached */
-    if (mData->mAttachmentType != NetworkAttachmentType_HostInterfaceNetworkAttachment)
+    if (mData->mAttachmentType != NetworkAttachmentType_HostInterface)
     {
         mData.backup();
 
         /* first detach the current attachment */
         detach();
 
-        mData->mAttachmentType = NetworkAttachmentType_HostInterfaceNetworkAttachment;
+        mData->mAttachmentType = NetworkAttachmentType_HostInterface;
 
         /* leave the lock before informing callbacks */
         alock.unlock();
@@ -879,7 +879,7 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
     AutoLock alock (this);
 
     /* don't do anything if we're already internal network attached */
-    if (mData->mAttachmentType != NetworkAttachmentType_InternalNetworkAttachment)
+    if (mData->mAttachmentType != NetworkAttachmentType_Internal)
     {
         mData.backup();
 
@@ -895,7 +895,7 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
             mData->mInternalNetwork = Bstr ("intnet");
         }
 
-        mData->mAttachmentType = NetworkAttachmentType_InternalNetworkAttachment;
+        mData->mAttachmentType = NetworkAttachmentType_Internal;
 
         /* leave the lock before informing callbacks */
         alock.unlock();
@@ -917,7 +917,7 @@ STDMETHODIMP NetworkAdapter::Detach()
 
     AutoLock alock (this);
 
-    if (mData->mAttachmentType != NetworkAttachmentType_NoNetworkAttachment)
+    if (mData->mAttachmentType != NetworkAttachmentType_Null)
     {
         mData.backup();
 
@@ -938,10 +938,10 @@ STDMETHODIMP NetworkAdapter::Detach()
 /**
  *  Loads settings from the given adapter node.
  *  May be called once right after this object creation.
- * 
+ *
  *  @param aAdapterNode <Adapter> node.
- * 
- *  @note Locks this object for writing. 
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
 {
@@ -963,7 +963,7 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
      * in the settings file (for backwards compatibility reasons). This takes
      * place when a setting of a newly created object must default to A while
      * the same setting of an object loaded from the old settings file must
-     * default to B. */ 
+     * default to B. */
 
     HRESULT rc = S_OK;
 
@@ -971,11 +971,11 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
     const char *adapterType = aAdapterNode.stringValue ("type");
 
     if (strcmp (adapterType, "Am79C970A") == 0)
-        mData->mAdapterType = NetworkAdapterType_NetworkAdapterAm79C970A;
+        mData->mAdapterType = NetworkAdapterType_Am79C970A;
     else if (strcmp (adapterType, "Am79C973") == 0)
-        mData->mAdapterType = NetworkAdapterType_NetworkAdapterAm79C973;
+        mData->mAdapterType = NetworkAdapterType_Am79C973;
     else if (strcmp (adapterType, "82540EM") == 0)
-        mData->mAdapterType = NetworkAdapterType_NetworkAdapter82540EM;
+        mData->mAdapterType = NetworkAdapterType_I82540EM;
     else
         ComAssertMsgFailedRet (("Invalid adapter type '%s'", adapterType),
                                E_FAIL);
@@ -1046,14 +1046,14 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
     return S_OK;
 }
 
-/** 
+/**
  *  Saves settings to the given adapter node.
- * 
+ *
  *  Note that the given Adapter node is comletely empty on input.
  *
  *  @param aAdapterNode <Adapter> node.
- * 
- *  @note Locks this object for reading. 
+ *
+ *  @note Locks this object for reading.
  */
 HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
 {
@@ -1080,13 +1080,13 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
     const char *typeStr = NULL;
     switch (mData->mAdapterType)
     {
-        case NetworkAdapterType_NetworkAdapterAm79C970A:
+        case NetworkAdapterType_Am79C970A:
             typeStr = "Am79C970A";
             break;
-        case NetworkAdapterType_NetworkAdapterAm79C973:
+        case NetworkAdapterType_Am79C973:
             typeStr = "Am79C973";
             break;
-        case NetworkAdapterType_NetworkAdapter82540EM:
+        case NetworkAdapterType_I82540EM:
             typeStr = "82540EM";
             break;
         default:
@@ -1098,17 +1098,17 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
 
     switch (mData->mAttachmentType)
     {
-        case NetworkAttachmentType_NoNetworkAttachment:
+        case NetworkAttachmentType_Null:
         {
             /* do nothing -- empty content */
             break;
         }
-        case NetworkAttachmentType_NATNetworkAttachment:
+        case NetworkAttachmentType_NAT:
         {
             Key attachmentNode = aAdapterNode.createKey ("NAT");
             break;
         }
-        case NetworkAttachmentType_HostInterfaceNetworkAttachment:
+        case NetworkAttachmentType_HostInterface:
         {
             Key attachmentNode = aAdapterNode.createKey ("HostInterface");
 #ifdef RT_OS_WINDOWS
@@ -1128,7 +1128,7 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
 #endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
             break;
         }
-        case NetworkAttachmentType_InternalNetworkAttachment:
+        case NetworkAttachmentType_Internal:
         {
             Key attachmentNode = aAdapterNode.createKey ("InternalNetwork");
             Assert (!mData->mInternalNetwork.isNull());
@@ -1233,16 +1233,16 @@ void NetworkAdapter::detach()
 
     switch (mData->mAttachmentType)
     {
-        case NetworkAttachmentType_NoNetworkAttachment:
+        case NetworkAttachmentType_Null:
         {
             /* nothing to do here */
             break;
         }
-        case NetworkAttachmentType_NATNetworkAttachment:
+        case NetworkAttachmentType_NAT:
         {
             break;
         }
-        case NetworkAttachmentType_HostInterfaceNetworkAttachment:
+        case NetworkAttachmentType_HostInterface:
         {
             /* reset handle and device name */
 #ifdef RT_OS_WINDOWS
@@ -1254,14 +1254,14 @@ void NetworkAdapter::detach()
 #endif
             break;
         }
-        case NetworkAttachmentType_InternalNetworkAttachment:
+        case NetworkAttachmentType_Internal:
         {
             mData->mInternalNetwork.setNull();
             break;
         }
     }
 
-    mData->mAttachmentType = NetworkAttachmentType_NoNetworkAttachment;
+    mData->mAttachmentType = NetworkAttachmentType_Null;
 }
 
 /**

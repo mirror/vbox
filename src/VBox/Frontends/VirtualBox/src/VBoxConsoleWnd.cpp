@@ -110,7 +110,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , dbgMenu (NULL)
 #endif
     , console (0)
-    , machine_state (CEnums::InvalidMachineState)
+    , machine_state (KMachineState_Null)
     , no_auto_close (false)
     , mIsFullscreen (false)
     , mIsSeamless (false)
@@ -401,36 +401,36 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     QHBox *indicatorBox = new QHBox (0, "indicatorBox");
     indicatorBox->setSpacing (5);
     /* i/o devices */
-    hd_light = new QIStateIndicator (CEnums::DeviceIdle, indicatorBox, "hd_light", WNoAutoErase);
-    hd_light->setStateIcon (CEnums::DeviceIdle, QPixmap::fromMimeSource ("hd_16px.png"));
-    hd_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("hd_read_16px.png"));
-    hd_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("hd_write_16px.png"));
-    hd_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("hd_disabled_16px.png"));
-    cd_light = new QIStateIndicator (CEnums::DeviceIdle, indicatorBox, "cd_light", WNoAutoErase);
-    cd_light->setStateIcon (CEnums::DeviceIdle, QPixmap::fromMimeSource ("cd_16px.png"));
-    cd_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("cd_read_16px.png"));
-    cd_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("cd_write_16px.png"));
-    cd_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("cd_disabled_16px.png"));
-    fd_light = new QIStateIndicator (CEnums::DeviceIdle, indicatorBox, "fd_light", WNoAutoErase);
-    fd_light->setStateIcon (CEnums::DeviceIdle, QPixmap::fromMimeSource ("fd_16px.png"));
-    fd_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("fd_read_16px.png"));
-    fd_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("fd_write_16px.png"));
-    fd_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("fd_disabled_16px.png"));
-    net_light = new QIStateIndicator (CEnums::DeviceIdle, indicatorBox, "net_light", WNoAutoErase);
-    net_light->setStateIcon (CEnums::DeviceIdle, QPixmap::fromMimeSource ("nw_16px.png"));
-    net_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("nw_read_16px.png"));
-    net_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("nw_write_16px.png"));
-    net_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("nw_disabled_16px.png"));
-    usb_light = new QIStateIndicator (CEnums::DeviceIdle, indicatorBox, "usb_light", WNoAutoErase);
-    usb_light->setStateIcon (CEnums::DeviceIdle, QPixmap::fromMimeSource ("usb_16px.png"));
-    usb_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("usb_read_16px.png"));
-    usb_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("usb_write_16px.png"));
-    usb_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("usb_disabled_16px.png"));
-    sf_light = new QIStateIndicator (CEnums::DeviceIdle, indicatorBox, "sf_light", WNoAutoErase);
-    sf_light->setStateIcon (CEnums::DeviceIdle, QPixmap::fromMimeSource ("shared_folder_16px.png"));
-    sf_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("shared_folder_read_16px.png"));
-    sf_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("shared_folder_write_16px.png"));
-    sf_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("shared_folder_disabled_16px.png"));
+    hd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "hd_light", WNoAutoErase);
+    hd_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("hd_16px.png"));
+    hd_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("hd_read_16px.png"));
+    hd_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("hd_write_16px.png"));
+    hd_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("hd_disabled_16px.png"));
+    cd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "cd_light", WNoAutoErase);
+    cd_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("cd_16px.png"));
+    cd_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("cd_read_16px.png"));
+    cd_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("cd_write_16px.png"));
+    cd_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("cd_disabled_16px.png"));
+    fd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "fd_light", WNoAutoErase);
+    fd_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("fd_16px.png"));
+    fd_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("fd_read_16px.png"));
+    fd_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("fd_write_16px.png"));
+    fd_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("fd_disabled_16px.png"));
+    net_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "net_light", WNoAutoErase);
+    net_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("nw_16px.png"));
+    net_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("nw_read_16px.png"));
+    net_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("nw_write_16px.png"));
+    net_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("nw_disabled_16px.png"));
+    usb_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "usb_light", WNoAutoErase);
+    usb_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("usb_16px.png"));
+    usb_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("usb_read_16px.png"));
+    usb_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("usb_write_16px.png"));
+    usb_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("usb_disabled_16px.png"));
+    sf_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "sf_light", WNoAutoErase);
+    sf_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("shared_folder_16px.png"));
+    sf_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("shared_folder_read_16px.png"));
+    sf_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("shared_folder_write_16px.png"));
+    sf_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("shared_folder_disabled_16px.png"));
 
     (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
 
@@ -677,7 +677,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     /* Not on Mac OS X. The dock icon is handled below. */
 #ifndef Q_WS_MAC
     setIcon (vboxGlobal().vmGuestOSTypeIcon (cmachine.GetOSTypeId()));
-#endif 
+#endif
 
     /* restore the position of the window and some options */
     {
@@ -755,8 +755,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         bool isUSBEnabled = usbctl.GetEnabled();
         devicesUSBMenu->setEnabled (isUSBEnabled);
         devicesUSBMenu->setConsole (cconsole);
-        usb_light->setState (isUSBEnabled ? CEnums::DeviceIdle
-                                          : CEnums::InvalidActivity);
+        usb_light->setState (isUSBEnabled ? KDeviceActivity_Idle
+                                          : KDeviceActivity_Null);
     }
 
     /* initialize vrdp stuff */
@@ -789,8 +789,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              this, SLOT (updateMouseState (int)));
     connect (console, SIGNAL (keyboardStateChanged (int)),
              hostkey_state, SLOT (setState (int)));
-    connect (console, SIGNAL (machineStateChanged (CEnums::MachineState)),
-             this, SLOT (updateMachineState (CEnums::MachineState)));
+    connect (console, SIGNAL (machineStateChanged (KMachineState)),
+             this, SLOT (updateMachineState (KMachineState)));
     connect (console, SIGNAL (additionsStateChanged (const QString&, bool, bool)),
              this, SLOT (updateAdditionsState (const QString &, bool, bool)));
     connect (console, SIGNAL (mediaChanged (VBoxDefs::DiskType)),
@@ -856,7 +856,7 @@ void VBoxConsoleWnd::finalizeOpenView()
     /* Notify the console scroll-view about the console-window is opened. */
     console->onViewOpened();
 
-    bool saved = machine_state == CEnums::Saved;
+    bool saved = machine_state == KMachineState_Saved;
 
     CMachine cmachine = csession.GetMachine();
     CConsole cconsole = console->console();
@@ -917,7 +917,7 @@ void VBoxConsoleWnd::finalizeOpenView()
 
     /* Check if we missed a really quick termination after successful
      * startup, and process it if we did. */
-    if (machine_state < CEnums::Running)
+    if (machine_state < KMachineState_Running)
     {
         close();
         LogFlowFuncLeave();
@@ -1183,8 +1183,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
         return;
     }
 
-    if (machine_state > CEnums::Paused &&
-        machine_state != CEnums::Stuck)
+    if (machine_state > KMachineState_Paused &&
+        machine_state != KMachineState_Stuck)
     {
         /*
          *  The machine is in some temporary state like Saving or Stopping.
@@ -1195,7 +1195,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
         e->ignore();
     }
     else
-    if (machine_state < CEnums::Running)
+    if (machine_state < KMachineState_Running)
     {
         /*
          *  the machine has been already powered off or saved or aborted --
@@ -1214,8 +1214,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 
         bool success = true;
 
-        bool wasPaused = machine_state == CEnums::Paused ||
-                         machine_state == CEnums::Stuck;
+        bool wasPaused = machine_state == KMachineState_Paused ||
+                         machine_state == KMachineState_Stuck;
         if (!wasPaused)
         {
             /* Suspend the VM and ignore the close event if failed to do so.
@@ -1235,7 +1235,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
             /* make the Discard checkbox invisible if there are no snapshots */
             dlg.cbDiscardCurState->setShown ((cmachine.GetSnapshotCount() > 0));
 
-            if (machine_state != CEnums::Stuck)
+            if (machine_state != KMachineState_Stuck)
             {
                 /* read the last user's choice for the given VM */
                 QStringList lastAction =
@@ -1370,7 +1370,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 
         no_auto_close = false;
 
-        if (machine_state < CEnums::Running)
+        if (machine_state < KMachineState_Running)
         {
             /*
              *  the machine has been stopped while showing the Close or the Pause
@@ -1383,7 +1383,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
             if (!success)
             {
                 /* restore the running state if needed */
-                if (!wasPaused && machine_state == CEnums::Paused)
+                if (!wasPaused && machine_state == KMachineState_Paused)
                     console->pause (false);
             }
         }
@@ -1623,8 +1623,8 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     CMachine cmachine = csession.GetMachine();
     CConsole cconsole = console->console();
 
-    bool isRunningOrPaused = machine_state == CEnums::Running ||
-                             machine_state == CEnums::Paused;
+    bool isRunningOrPaused = machine_state == KMachineState_Running ||
+                             machine_state == KMachineState_Paused;
 
     if (element & Caption)
     {
@@ -1639,24 +1639,24 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                     caption_prefix);
 //#ifdef Q_WS_MAC
 //        SetWindowTitleWithCFString (reinterpret_cast <WindowPtr> (this->winId()), CFSTR("sfds"));
-//SetWindowAlternateTitle 
-//#endif 
+//SetWindowAlternateTitle
+//#endif
     }
     if (element & FloppyStuff)
     {
         devicesMountFloppyMenu->setEnabled (isRunningOrPaused);
         CFloppyDrive floppy = cmachine.GetFloppyDrive();
-        CEnums::DriveState state = floppy.GetState();
-        bool mounted = state != CEnums::NotMounted;
+        KDriveState state = floppy.GetState();
+        bool mounted = state != KDriveState_NotMounted;
         devicesUnmountFloppyAction->setEnabled (isRunningOrPaused && mounted);
-        fd_light->setState (mounted ? CEnums::DeviceIdle : CEnums::InvalidActivity);
+        fd_light->setState (mounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
         QString tip = tr ("<qt><nobr>Indicates the activity of the floppy media:</nobr>"
                           "%1</qt>",
                           "Floppy tooltip");
         QString name;
         switch (state)
         {
-            case CEnums::HostDriveCaptured:
+            case KDriveState_HostDriveCaptured:
             {
                 CHostFloppyDrive drv = floppy.GetHostDrive();
                 QString drvName = drv.GetName();
@@ -1668,14 +1668,14 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                            "Floppy tooltip").arg (fullName);
                 break;
             }
-            case CEnums::ImageMounted:
+            case KDriveState_ImageMounted:
             {
                 name = tr ("<br><nobr><b>Image</b>: %1</nobr>",
                            "Floppy tooltip")
                     .arg (QDir::convertSeparators (floppy.GetImage().GetFilePath()));
                 break;
             }
-            case CEnums::NotMounted:
+            case KDriveState_NotMounted:
             {
                 name = tr ("<br><nobr><b>No media mounted</b></nobr>",
                            "Floppy tooltip");
@@ -1690,17 +1690,17 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     {
         devicesMountDVDMenu->setEnabled (isRunningOrPaused);
         CDVDDrive dvd = cmachine.GetDVDDrive();
-        CEnums::DriveState state = dvd.GetState();
-        bool mounted = state != CEnums::NotMounted;
+        KDriveState state = dvd.GetState();
+        bool mounted = state != KDriveState_NotMounted;
         devicesUnmountDVDAction->setEnabled (isRunningOrPaused && mounted);
-        cd_light->setState (mounted ? CEnums::DeviceIdle : CEnums::InvalidActivity);
+        cd_light->setState (mounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
         QString tip = tr ("<qt><nobr>Indicates the activity of the CD/DVD-ROM media:</nobr>"
                           "%1</qt>",
                           "DVD-ROM tooltip");
         QString name;
         switch (state)
         {
-            case CEnums::HostDriveCaptured:
+            case KDriveState_HostDriveCaptured:
             {
                 CHostDVDDrive drv = dvd.GetHostDrive();
                 QString drvName = drv.GetName();
@@ -1712,14 +1712,14 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                            "DVD-ROM tooltip").arg (fullName);
                 break;
             }
-            case CEnums::ImageMounted:
+            case KDriveState_ImageMounted:
             {
                 name = tr ("<br><nobr><b>Image</b>: %1</nobr>",
                            "DVD-ROM tooltip")
                     .arg (QDir::convertSeparators (dvd.GetImage().GetFilePath()));
                 break;
             }
-            case CEnums::NotMounted:
+            case KDriveState_NotMounted:
             {
                 name = tr ("<br><nobr><b>No media mounted</b></nobr>",
                            "DVD-ROM tooltip");
@@ -1753,7 +1753,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             data += tr ("<br><nobr><b>No hard disks attached</b></nobr>",
                         "HDD tooltip");
         QToolTip::add (hd_light, tip.arg (data));
-        hd_light->setState (hasDisks ? CEnums::DeviceIdle : CEnums::InvalidActivity);
+        hd_light->setState (hasDisks ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
     if (element & NetworkStuff)
     {
@@ -1763,8 +1763,8 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         for (ulong slot = 0; slot < maxCount; slot++)
             if (cmachine.GetNetworkAdapter (slot).GetEnabled())
                 count++;
-        net_light->setState (count > 0 ? CEnums::DeviceIdle
-                                       : CEnums::InvalidActivity);
+        net_light->setState (count > 0 ? KDeviceActivity_Idle
+                                       : KDeviceActivity_Null);
 
         devicesNetworkMenu->setEnabled (isRunningOrPaused && count > 0);
 
@@ -1935,7 +1935,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             vmDisableMouseIntegrAction->setStatusTip (
                 tr ("Enable temporarily disabled host mouse pointer integration"));
         }
-        if (machine_state == CEnums::Running)
+        if (machine_state == KMachineState_Running)
             vmDisableMouseIntegrAction->setEnabled (console->isMouseAbsolute());
         else
             vmDisableMouseIntegrAction->setEnabled (false);
@@ -2216,11 +2216,11 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 CGImageRef VBoxConsoleWnd::dockImageState() const
 {
     CGImageRef img;
-    if (machine_state == CEnums::Paused)
+    if (machine_state == KMachineState_Paused)
         img = dockImgStatePaused;
-    else if (machine_state == CEnums::Restoring)
+    else if (machine_state == KMachineState_Restoring)
         img = dockImgStateRestoring;
-    else if (machine_state == CEnums::Saving)
+    else if (machine_state == KMachineState_Saving)
         img = dockImgStateSaving;
     else
         img = NULL;
@@ -2391,7 +2391,7 @@ void VBoxConsoleWnd::vmTakeSnapshot()
     AssertReturn (console, (void) 0);
 
     /* remember the paused state */
-    bool wasPaused = machine_state == CEnums::Paused;
+    bool wasPaused = machine_state == KMachineState_Paused;
     if (!wasPaused)
     {
         /* Suspend the VM and ignore the close event if failed to do so.
@@ -2758,7 +2758,7 @@ void VBoxConsoleWnd::prepareFloppyMenu()
         int id = devicesMountFloppyMenu->insertItem (
             tr ("Host Drive ") + fullName);
         hostFloppyMap [id] = hostFloppy;
-        if (machine_state != CEnums::Running && machine_state != CEnums::Paused)
+        if (machine_state != KMachineState_Running && machine_state != KMachineState_Paused)
             devicesMountFloppyMenu->setItemEnabled (id, false);
         else if (!selected.isNull())
             if (!selected.GetName().compare (hostFloppy.GetName()))
@@ -2804,7 +2804,7 @@ void VBoxConsoleWnd::prepareDVDMenu()
         int id = devicesMountDVDMenu->insertItem (
             tr ("Host Drive ") + fullName);
         hostDVDMap [id] = hostDVD;
-        if (machine_state != CEnums::Running && machine_state != CEnums::Paused)
+        if (machine_state != KMachineState_Running && machine_state != KMachineState_Paused)
             devicesMountDVDMenu->setItemEnabled (id, false);
         else if (!selected.isNull())
             if (!selected.GetName().compare (hostDVD.GetName()))
@@ -3069,68 +3069,68 @@ void VBoxConsoleWnd::updateDeviceLights()
     if (console) {
         CConsole &cconsole = console->console();
         int st;
-        if (hd_light->state() != CEnums::InvalidActivity) {
-            st = cconsole.GetDeviceActivity (CEnums::HardDiskDevice);
+        if (hd_light->state() != KDeviceActivity_Null) {
+            st = cconsole.GetDeviceActivity (KDeviceType_HardDisk);
             if (hd_light->state() != st)
                 hd_light->setState (st);
         }
-        if (cd_light->state() != CEnums::InvalidActivity) {
-            st = cconsole.GetDeviceActivity (CEnums::DVDDevice);
+        if (cd_light->state() != KDeviceActivity_Null) {
+            st = cconsole.GetDeviceActivity (KDeviceType_DVD);
             if (cd_light->state() != st)
                 cd_light->setState (st);
         }
-        if (fd_light->state() != CEnums::InvalidActivity) {
-            st = cconsole.GetDeviceActivity (CEnums::FloppyDevice);
+        if (fd_light->state() != KDeviceActivity_Null) {
+            st = cconsole.GetDeviceActivity (KDeviceType_Floppy);
             if (fd_light->state() != st)
                 fd_light->setState (st);
         }
-        if (net_light->state() != CEnums::InvalidActivity) {
-            st = cconsole.GetDeviceActivity (CEnums::NetworkDevice);
+        if (net_light->state() != KDeviceActivity_Null) {
+            st = cconsole.GetDeviceActivity (KDeviceType_Network);
             if (net_light->state() != st)
                 net_light->setState (st);
         }
-        if (usb_light->state() != CEnums::InvalidActivity) {
-            st = cconsole.GetDeviceActivity (CEnums::USBDevice);
+        if (usb_light->state() != KDeviceActivity_Null) {
+            st = cconsole.GetDeviceActivity (KDeviceType_USB);
             if (usb_light->state() != st)
                 usb_light->setState (st);
         }
-        if (sf_light->state() != CEnums::InvalidActivity) {
-            st = cconsole.GetDeviceActivity (CEnums::SharedFolderDevice);
+        if (sf_light->state() != KDeviceActivity_Null) {
+            st = cconsole.GetDeviceActivity (KDeviceType_SharedFolder);
             if (sf_light->state() != st)
                 sf_light->setState (st);
         }
     }
 }
 
-void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
+void VBoxConsoleWnd::updateMachineState (KMachineState state)
 {
     bool guruMeditation = false;
 
     if (console && machine_state != state)
     {
-        if (state >= CEnums::Running)
+        if (state >= KMachineState_Running)
         {
             switch (state)
             {
-                case CEnums::Stuck:
+                case KMachineState_Stuck:
                 {
                     guruMeditation = true;
                     break;
                 }
-                case CEnums::Paused:
+                case KMachineState_Paused:
                 {
                     if (!vmPauseAction->isOn())
                         vmPauseAction->setOn (true);
                     break;
                 }
-                case CEnums::Running:
+                case KMachineState_Running:
                 {
-                    if (machine_state == CEnums::Paused && vmPauseAction->isOn())
+                    if (machine_state == KMachineState_Paused && vmPauseAction->isOn())
                         vmPauseAction->setOn (false);
                     break;
                 }
 #ifdef Q_WS_X11
-                case CEnums::Starting:
+                case KMachineState_Starting:
                 {
                     /* The keyboard handler may wish to do some release logging
                        on startup.  Tell it that the logger is now active. */
@@ -3143,13 +3143,13 @@ void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
             }
         }
 
-        bool isRunningOrPaused = state == CEnums::Running ||
-                                 state == CEnums::Paused;
+        bool isRunningOrPaused = state == KMachineState_Running ||
+                                 state == KMachineState_Paused;
 
         /* enable/disable actions that are not managed by
          * updateAppearanceOf() */
 
-        mRunningActions->setEnabled (state == CEnums::Running);
+        mRunningActions->setEnabled (state == KMachineState_Running);
         mRunningOrPausedActions->setEnabled (isRunningOrPaused);
 
         machine_state = state;
@@ -3158,7 +3158,7 @@ void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
                             USBStuff | VRDPStuff | PauseAction |
                             DisableMouseIntegrAction);
 
-        if (state < CEnums::Running)
+        if (state < KMachineState_Running)
         {
             /*
              *  VM has been powered off or saved or aborted, no matter

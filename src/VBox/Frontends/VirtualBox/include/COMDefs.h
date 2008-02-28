@@ -364,9 +364,9 @@ protected:
     };
 
     /**
-     * Adapter to pass CEnums enums as output COM enum params (*_T).
+     * Adapter to pass K* enums as output COM enum params (*_T).
      *
-     * @param QE    CEnums enum.
+     * @param QE    K* enum.
      * @param CE    COM enum.
      */
     template <typename QE, typename CE>

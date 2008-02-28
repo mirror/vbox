@@ -433,14 +433,14 @@ STDMETHODIMP BIOSSettings::COMSETTER(IDEControllerType)(IDEControllerType_T aCon
     /* make sure the value is allowed */
     switch (aControllerType)
     {
-        case IDEControllerType_IDEControllerPIIX3:
-        case IDEControllerType_IDEControllerPIIX4:
+        case IDEControllerType_PIIX3:
+        case IDEControllerType_PIIX4:
             break;
         default:
             return setError (E_FAIL,
                 tr("Invalid IDE controller type '%d'"),
                 aControllerType);
-    }    
+    }
 
     mData.backup();
 
@@ -488,13 +488,13 @@ STDMETHODIMP BIOSSettings::COMSETTER(TimeOffset)(LONG64 offset)
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  *  Loads settings from the given machine node.
  *  May be called once right after this object creation.
- * 
+ *
  *  @param aMachineNode <Machine> node.
- * 
- *  @note Locks this object for writing. 
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
 {
@@ -516,7 +516,7 @@ HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
      * in the settings file (for backwards compatibility reasons). This takes
      * place when a setting of a newly created object must default to A while
      * the same setting of an object loaded from the old settings file must
-     * default to B. */ 
+     * default to B. */
 
     /* BIOS node (required) */
     Key biosNode = aMachineNode.key ("BIOS");
@@ -584,16 +584,16 @@ HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
     /* IDE controller type (optional, for old machines that lack this node,
      * defaults to PIIX3) */
     {
-        mData->mIDEControllerType = IDEControllerType_IDEControllerPIIX3;
+        mData->mIDEControllerType = IDEControllerType_PIIX3;
 
         Key ideControllerNode = biosNode.findKey ("IDEController");
         if (!ideControllerNode.isNull())
         {
             const char *typeStr = ideControllerNode.stringValue ("type");
             if (strcmp (typeStr, "PIIX3") == 0)
-                mData->mIDEControllerType = IDEControllerType_IDEControllerPIIX3;
+                mData->mIDEControllerType = IDEControllerType_PIIX3;
             else if (strcmp (typeStr, "PIIX4") == 0)
-                mData->mIDEControllerType = IDEControllerType_IDEControllerPIIX4;
+                mData->mIDEControllerType = IDEControllerType_PIIX4;
             else
                 ComAssertMsgFailedRet (("Invalid boot menu mode '%s'\n", typeStr),
                                        E_FAIL);
@@ -603,12 +603,12 @@ HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
     return S_OK;
 }
 
-/** 
+/**
  *  Saves settings to the given machine node.
- * 
+ *
  *  @param aMachineNode <Machine> node.
- * 
- *  @note Locks this object for reading. 
+ *
+ *  @note Locks this object for reading.
  */
 HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
 {
@@ -685,10 +685,10 @@ HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
         const char *ideControllerTypeStr = NULL;
         switch (mData->mIDEControllerType)
         {
-            case IDEControllerType_IDEControllerPIIX3:
+            case IDEControllerType_PIIX3:
                 ideControllerTypeStr = "PIIX3";
                 break;
-            case IDEControllerType_IDEControllerPIIX4:
+            case IDEControllerType_PIIX4:
                 ideControllerTypeStr = "PIIX4";
                 break;
             default:

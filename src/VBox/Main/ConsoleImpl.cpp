@@ -188,7 +188,7 @@ struct VMSaveTask : public VMProgressTask
     VMSaveTask (Console *aConsole, Progress *aProgress)
         : VMProgressTask (aConsole, aProgress, true /* aUsesVMPtr */)
         , mIsSnapshot (false)
-        , mLastMachineState (MachineState_InvalidMachineState) {}
+        , mLastMachineState (MachineState_Null) {}
 
     bool mIsSnapshot;
     Utf8Str mSavedStateFile;
@@ -476,7 +476,7 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
     HRESULT hrc = mMachine->COMGETTER (Id) (uuid.asOutParam());
     AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
 
-    VRDPAuthType_T authType = VRDPAuthType_VRDPAuthNull;
+    VRDPAuthType_T authType = VRDPAuthType_Null;
     hrc = mVRDPServer->COMGETTER(AuthType) (&authType);
     AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
 
@@ -491,11 +491,11 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
 
     LogRel (("VRDPAUTH: User: [%s]. Domain: [%s]. Authentication type: [%s]\n",
                 pszUser, pszDomain,
-                authType == VRDPAuthType_VRDPAuthNull?
+                authType == VRDPAuthType_Null?
                     "null":
-                    (authType == VRDPAuthType_VRDPAuthExternal?
+                    (authType == VRDPAuthType_External?
                         "external":
-                        (authType == VRDPAuthType_VRDPAuthGuest?
+                        (authType == VRDPAuthType_Guest?
                             "guest":
                             "INVALID"
                         )
@@ -525,13 +525,13 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
 
     switch (authType)
     {
-        case VRDPAuthType_VRDPAuthNull:
+        case VRDPAuthType_Null:
         {
             result = VRDPAuthAccessGranted;
             break;
         }
 
-        case VRDPAuthType_VRDPAuthExternal:
+        case VRDPAuthType_External:
         {
             /* Call the external library. */
             result = mConsoleVRDPServer->Authenticate (uuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId);
@@ -546,7 +546,7 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
             LogFlowFunc (("External auth asked for guest judgement\n"));
         } /* pass through */
 
-        case VRDPAuthType_VRDPAuthGuest:
+        case VRDPAuthType_Guest:
         {
             guestJudgement = VRDPAuthGuestNotReacted;
 
@@ -589,7 +589,7 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
                 }
             }
 
-            if (authType == VRDPAuthType_VRDPAuthExternal)
+            if (authType == VRDPAuthType_External)
             {
                 LogRel(("VRDPAUTH: Guest judgement %d.\n", guestJudgement));
                 LogFlowFunc (("External auth called again with guest judgement = %d\n", guestJudgement));
@@ -708,11 +708,11 @@ void Console::VRDPClientDisconnect (uint32_t u32ClientId,
     HRESULT hrc = mMachine->COMGETTER (Id) (uuid.asOutParam());
     AssertComRC (hrc);
 
-    VRDPAuthType_T authType = VRDPAuthType_VRDPAuthNull;
+    VRDPAuthType_T authType = VRDPAuthType_Null;
     hrc = mVRDPServer->COMGETTER(AuthType) (&authType);
     AssertComRC (hrc);
 
-    if (authType == VRDPAuthType_VRDPAuthExternal)
+    if (authType == VRDPAuthType_External)
         mConsoleVRDPServer->AuthDisconnect (uuid, u32ClientId);
 
     LogFlowFuncLeave();
@@ -1265,7 +1265,7 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
         adapter->COMGETTER(AttachmentType)(&netattach);
         switch (netattach)
         {
-            case NetworkAttachmentType_HostInterfaceNetworkAttachment:
+            case NetworkAttachmentType_HostInterface:
             {
 #ifdef RT_OS_WINDOWS
                 /* a valid host interface must have been set */
@@ -1852,20 +1852,20 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
     PDMLEDCORE  SumLed = {0};
     switch (aDeviceType)
     {
-        case DeviceType_FloppyDevice:
+        case DeviceType_Floppy:
         {
             for (unsigned i = 0; i < ELEMENTS(mapFDLeds); i++)
                 SumLed.u32 |= readAndClearLed(mapFDLeds[i]);
             break;
         }
 
-        case DeviceType_DVDDevice:
+        case DeviceType_DVD:
         {
             SumLed.u32 |= readAndClearLed(mapIDELeds[2]);
             break;
         }
 
-        case DeviceType_HardDiskDevice:
+        case DeviceType_HardDisk:
         {
             SumLed.u32 |= readAndClearLed(mapIDELeds[0]);
             SumLed.u32 |= readAndClearLed(mapIDELeds[1]);
@@ -1873,20 +1873,20 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
             break;
         }
 
-        case DeviceType_NetworkDevice:
+        case DeviceType_Network:
         {
             for (unsigned i = 0; i < ELEMENTS(mapNetworkLeds); i++)
                 SumLed.u32 |= readAndClearLed(mapNetworkLeds[i]);
             break;
         }
 
-        case DeviceType_USBDevice:
+        case DeviceType_USB:
         {
             SumLed.u32 |= readAndClearLed(mapUSBLed);
             break;
         }
 
-        case DeviceType_SharedFolderDevice:
+        case DeviceType_SharedFolder:
         {
             SumLed.u32 |= readAndClearLed(mapSharedFolderLed);
             break;
@@ -1901,14 +1901,14 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
     switch (SumLed.u32 & (PDMLED_READING | PDMLED_WRITING))
     {
         case 0:
-            *aDeviceActivity = DeviceActivity_DeviceIdle;
+            *aDeviceActivity = DeviceActivity_Idle;
             break;
         case PDMLED_READING:
-            *aDeviceActivity = DeviceActivity_DeviceReading;
+            *aDeviceActivity = DeviceActivity_Reading;
             break;
         case PDMLED_WRITING:
         case PDMLED_READING | PDMLED_WRITING:
-            *aDeviceActivity = DeviceActivity_DeviceWriting;
+            *aDeviceActivity = DeviceActivity_Writing;
             break;
     }
 
@@ -2110,7 +2110,7 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
     {
         CallbackList::iterator it = mCallbacks.begin();
         while (it != mCallbacks.end())
-            (*it++)->OnSharedFolderChange (Scope_SessionScope);
+            (*it++)->OnSharedFolderChange (Scope_Session);
     }
 
     return rc;
@@ -2169,7 +2169,7 @@ STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
     {
         CallbackList::iterator it = mCallbacks.begin();
         while (it != mCallbacks.end())
-            (*it++)->OnSharedFolderChange (Scope_SessionScope);
+            (*it++)->OnSharedFolderChange (Scope_Session);
     }
 
     return rc;
@@ -2368,7 +2368,7 @@ STDMETHODIMP Console::DiscardSnapshot (INPTR GUIDPARAM aId, IProgress **aProgres
                 "(machine state: %d)"),
             mMachineState);
 
-    MachineState_T machineState = MachineState_InvalidMachineState;
+    MachineState_T machineState = MachineState_Null;
     HRESULT rc = mControl->DiscardSnapshot (this, aId, &machineState, aProgress);
     CheckComRCReturnRC (rc);
 
@@ -2389,7 +2389,7 @@ STDMETHODIMP Console::DiscardCurrentState (IProgress **aProgress)
                 "(nachine state: %d)"),
             mMachineState);
 
-    MachineState_T machineState = MachineState_InvalidMachineState;
+    MachineState_T machineState = MachineState_Null;
     HRESULT rc = mControl->DiscardCurrentState (this, &machineState, aProgress);
     CheckComRCReturnRC (rc);
 
@@ -2410,7 +2410,7 @@ STDMETHODIMP Console::DiscardCurrentSnapshotAndState (IProgress **aProgress)
                 "running machine (machine state: %d)"),
             mMachineState);
 
-    MachineState_T machineState = MachineState_InvalidMachineState;
+    MachineState_T machineState = MachineState_Null;
     HRESULT rc =
         mControl->DiscardCurrentSnapshotAndState (this, &machineState, aProgress);
     CheckComRCReturnRC (rc);
@@ -3349,8 +3349,8 @@ HRESULT Console::onSharedFolderChange (BOOL aGlobal)
     {
         CallbackList::iterator it = mCallbacks.begin();
         while (it != mCallbacks.end())
-            (*it++)->OnSharedFolderChange (aGlobal ? (Scope_T)Scope_GlobalScope
-                                                   : (Scope_T)Scope_MachineScope);
+            (*it++)->OnSharedFolderChange (aGlobal ? (Scope_T) Scope_Global
+                                                   : (Scope_T) Scope_Machine);
     }
 
     return rc;
@@ -4243,7 +4243,7 @@ HRESULT Console::setMachineState (MachineState_T aMachineState,
              *  the machine state here and on the server might go out of sync, that
              *  can lead to various unexpected results (like the machine state being
              *  >= MachineState_Running on the server, while the session state is
-             *  already SessionState_SessionClosed at the same time there).
+             *  already SessionState_Closed at the same time there).
              *
              *  Cross-lock conditions should be carefully watched out: calling
              *  UpdateState we will require Machine and SessionMachine locks
@@ -5139,7 +5139,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
     /* paranoia */
     NetworkAttachmentType_T attachment;
     networkAdapter->COMGETTER(AttachmentType)(&attachment);
-    Assert(attachment == NetworkAttachmentType_HostInterfaceNetworkAttachment);
+    Assert(attachment == NetworkAttachmentType_HostInterface);
 #endif /* DEBUG */
 
     HRESULT rc = S_OK;
@@ -5338,7 +5338,7 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
     /* paranoia */
     NetworkAttachmentType_T attachment;
     networkAdapter->COMGETTER(AttachmentType)(&attachment);
-    Assert(attachment == NetworkAttachmentType_HostInterfaceNetworkAttachment);
+    Assert(attachment == NetworkAttachmentType_HostInterface);
 #endif /* DEBUG */
 
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
@@ -5448,7 +5448,7 @@ HRESULT Console::powerDownHostInterfaces()
 
         NetworkAttachmentType_T attachment;
         networkAdapter->COMGETTER(AttachmentType)(&attachment);
-        if (attachment == NetworkAttachmentType_HostInterfaceNetworkAttachment)
+        if (attachment == NetworkAttachmentType_HostInterface)
         {
             HRESULT rc2 = detachFromHostInterface(networkAdapter);
             if (FAILED(rc2) && SUCCEEDED(rc))
@@ -6126,10 +6126,10 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
     int i;
     switch (enmCtl)
     {
-        case DiskControllerType_IDE0Controller:
+        case DiskControllerType_IDE0:
             i = 0;
             break;
-        case DiskControllerType_IDE1Controller:
+        case DiskControllerType_IDE1:
             i = 2;
             break;
         default:

@@ -113,34 +113,27 @@
  */
 </xsl:text>
 
-    <!-- all enum declarations as a single class -->
+<!-- all enum declarations -->
 <xsl:text>
 // all enums
 
-class CEnums
-{
-public:
-
 </xsl:text>
     <xsl:for-each select="*/enum">
-        <xsl:text>    enum </xsl:text>
-        <xsl:value-of select="@name"/>
-        <xsl:text>&#x0A;    {&#x0A;</xsl:text>
+        <xsl:text>enum </xsl:text>
+        <xsl:value-of select="concat('K',@name)"/>
+        <xsl:text>&#x0A;{&#x0A;</xsl:text>
         <xsl:for-each select="const">
-            <xsl:text>        </xsl:text>
-            <xsl:value-of select="@name"/>
+            <xsl:text>    </xsl:text>
+            <xsl:value-of select="concat('K',../@name,'_',@name)"/>
             <xsl:text> = ::</xsl:text>
-            <xsl:value-of select="parent::node()/@name"/>
-            <xsl:text>_</xsl:text>
-            <xsl:value-of select="@name"/>
+            <xsl:value-of select="concat(../@name,'_',@name)"/>
             <xsl:text>,&#x0A;</xsl:text>
         </xsl:for-each>
-        <xsl:text>        </xsl:text>
-        <xsl:value-of select="@name"/>
-        <xsl:text>_COUNT&#x0A;</xsl:text>
-        <xsl:text>    };&#x0A;&#x0A;</xsl:text>
+        <xsl:text>    </xsl:text>
+        <xsl:value-of select="concat('K',@name,'_COUNT')"/>
+        <xsl:text>&#x0A;};&#x0A;&#x0A;</xsl:text>
     </xsl:for-each>
-    <xsl:text>};&#x0A;&#x0A;</xsl:text>
+    <xsl:text>&#x0A;&#x0A;</xsl:text>
 
     <xsl:apply-templates/>
 
@@ -993,7 +986,7 @@ public:
                     </xsl:call-template>
                 </xsl:when>
                 <xsl:when test="$isOut">
-                    <xsl:text>ENUMOut &lt;CEnums::</xsl:text>
+                    <xsl:text>ENUMOut &lt;K</xsl:text>
                     <xsl:value-of select="@type"/>
                     <xsl:text>, </xsl:text>
                     <xsl:value-of select="@type"/>
@@ -1184,7 +1177,7 @@ public:
                             (ancestor::library/enum[@name=current()]) or
                             (ancestor::library/if[@target=$self_target]/enum[@name=current()])
                         ">
-                            <xsl:value-of select="concat('CEnums::',string(.))"/>
+                            <xsl:value-of select="concat('K',string(.))"/>
                         </xsl:when>
                         <!-- custom interface types -->
                         <xsl:when test="
@@ -1297,7 +1290,7 @@ public:
                             (ancestor::library/enum[@name=current()]) or
                             (ancestor::library/if[@target=$self_target]/enum[@name=current()])
                         ">
-                            <xsl:value-of select="concat(' = (CEnums::',string(.),') 0')"/>
+                            <xsl:value-of select="concat(' = (K',string(.),') 0')"/>
                         </xsl:when>
                     </xsl:choose>
                 </xsl:otherwise>

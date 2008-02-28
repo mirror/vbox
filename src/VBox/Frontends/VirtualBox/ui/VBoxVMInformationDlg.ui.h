@@ -474,17 +474,17 @@ void VBoxVMInformationDlg::refreshStatistics()
 
     /* Hard Disk Statistics. */
     result += hdrRow.arg ("hd_16px.png").arg (tr ("IDE Hard Disk Statistics"));
-    result += formatHardDisk (tr ("Primary Master"), CEnums::IDE0Controller, 0, 0, 1);
+    result += formatHardDisk (tr ("Primary Master"), KDiskControllerType_IDE0, 0, 0, 1);
     result += interline;
-    result += formatHardDisk (tr ("Primary Slave"), CEnums::IDE0Controller, 1, 4, 5);
+    result += formatHardDisk (tr ("Primary Slave"), KDiskControllerType_IDE0, 1, 4, 5);
     result += interline;
-    result += formatHardDisk (tr ("Secondary Slave"), CEnums::IDE1Controller, 1, 12, 13);
+    result += formatHardDisk (tr ("Secondary Slave"), KDiskControllerType_IDE1, 1, 12, 13);
     result += paragraph;
 
     /* CD/DVD-ROM Statistics. */
     result += hdrRow.arg ("cd_16px.png").arg (tr ("CD/DVD-ROM Statistics"));
     result += formatHardDisk (QString::null /* tr ("Secondary Master") */,
-                              CEnums::IDE1Controller, 0, 8, 9);
+                              KDiskControllerType_IDE1, 0, 8, 9);
     result += paragraph;
 
     /* Network Adapters Statistics. */
@@ -503,7 +503,7 @@ void VBoxVMInformationDlg::refreshStatistics()
 
 
 QString VBoxVMInformationDlg::formatHardDisk (const QString &aName,
-                                              CEnums::DiskControllerType aType,
+                                              KDiskControllerType aType,
                                               LONG aSlot, int aStart, int aFinish)
 {
     if (mSession.isNull())
@@ -514,7 +514,7 @@ QString VBoxVMInformationDlg::formatHardDisk (const QString &aName,
 
     QString result = aName.isNull() ? QString::null : header.arg (aName);
     CHardDisk hd = machine.GetHardDisk (aType, aSlot);
-    if (!hd.isNull() || (aType == CEnums::IDE1Controller && aSlot == 0))
+    if (!hd.isNull() || (aType == KDiskControllerType_IDE1 && aSlot == 0))
     {
         result += composeArticle (QString::null, aStart, aFinish);
         result += composeArticle ("B", aStart + 2, aFinish + 2);

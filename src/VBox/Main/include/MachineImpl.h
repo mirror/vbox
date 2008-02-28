@@ -226,7 +226,7 @@ public:
         ULONG          mStatisticsUpdateInterval;
         ULONG          mVRAMSize;
         ULONG          mMonitorCount;
-        TriStateBool_T mHWVirtExEnabled;
+        TSBool_T       mHWVirtExEnabled;
 
         DeviceType_T   mBootOrder [SchemaDefs::MaxBootPosition];
 
@@ -299,7 +299,7 @@ public:
 
         AutoStateDependency (Machine *aThat)
             : mThat (aThat), mRC (S_OK)
-            , mMachineState (MachineState_InvalidMachineState)
+            , mMachineState (MachineState_Null)
             , mRegistered (FALSE)
         {
             Assert (aThat);
@@ -453,8 +453,8 @@ public:
     STDMETHOD(COMGETTER(MonitorCount))(ULONG *monitorCount);
     STDMETHOD(COMSETTER(MonitorCount))(ULONG monitorCount);
     STDMETHOD(COMGETTER(BIOSSettings))(IBIOSSettings **biosSettings);
-    STDMETHOD(COMGETTER(HWVirtExEnabled))(TriStateBool_T *enabled);
-    STDMETHOD(COMSETTER(HWVirtExEnabled))(TriStateBool_T enabled);
+    STDMETHOD(COMGETTER(HWVirtExEnabled))(TSBool_T *enabled);
+    STDMETHOD(COMSETTER(HWVirtExEnabled))(TSBool_T enabled);
     STDMETHOD(COMGETTER(SnapshotFolder))(BSTR *aSavedStateFolder);
     STDMETHOD(COMSETTER(SnapshotFolder))(INPTR BSTR aSavedStateFolder);
     STDMETHOD(COMGETTER(HardDiskAttachments))(IHardDiskAttachmentCollection **attachments);
@@ -820,7 +820,7 @@ private:
 
     struct SnapshotData
     {
-        SnapshotData() : mLastState (MachineState_InvalidMachineState) {}
+        SnapshotData() : mLastState (MachineState_Null) {}
 
         MachineState_T mLastState;
 

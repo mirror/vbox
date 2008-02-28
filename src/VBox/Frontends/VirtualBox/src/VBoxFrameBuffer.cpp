@@ -291,7 +291,7 @@ STDMETHODIMP VBoxFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG aCount)
 VBoxQImageFrameBuffer::VBoxQImageFrameBuffer (VBoxConsoleView *aView) :
     VBoxFrameBuffer (aView)
 {
-    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
+    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
                                       NULL, 0, 0, 640, 480));
 }
 
@@ -461,7 +461,7 @@ VBoxSDLFrameBuffer::VBoxSDLFrameBuffer (VBoxConsoleView *aView) :
     mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
     mSurfVRAM = NULL;
 
-    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
+    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
                                       NULL, 0, 0, 640, 480));
 }
 
@@ -569,7 +569,7 @@ void VBoxSDLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     Uint32 Rmask = 0;
     Uint32 Gmask = 0;
     Uint32 Bmask = 0;
-    
+
     if (re->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB)
     {
         switch (re->bitsPerPixel())

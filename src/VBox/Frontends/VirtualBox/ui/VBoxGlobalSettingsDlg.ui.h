@@ -944,7 +944,7 @@ void VBoxGlobalSettingsDlg::tbAddUSBFilter_clicked()
     CHost host = vboxGlobal().virtualBox().GetHost();
     CHostUSBDeviceFilter hostFilter = host
         .CreateUSBDeviceFilter (usbFilterName.arg (maxFilterIndex + 1));
-    hostFilter.SetAction (CEnums::USBDeviceFilterHold);
+    hostFilter.SetAction (KUSBDeviceFilterAction_Hold);
 
     CUSBDeviceFilter filter = CUnknown (hostFilter);
     filter.SetActive (true);
@@ -969,7 +969,7 @@ void VBoxGlobalSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
     CHost host = vboxGlobal().virtualBox().GetHost();
     CHostUSBDeviceFilter hostFilter = host
         .CreateUSBDeviceFilter (vboxGlobal().details (usb));
-    hostFilter.SetAction (CEnums::USBDeviceFilterHold);
+    hostFilter.SetAction (KUSBDeviceFilterAction_Hold);
 
     CUSBDeviceFilter filter = CUnknown (hostFilter);
     filter.SetVendorId (QString().sprintf ("%04hX", usb.GetVendorId()));

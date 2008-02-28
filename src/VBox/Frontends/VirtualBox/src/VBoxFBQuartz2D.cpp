@@ -47,7 +47,7 @@ VBoxQuartz2DFrameBuffer::VBoxQuartz2DFrameBuffer (VBoxConsoleView *aView) :
     mRegionUnused (NULL)
 {
     Log (("Quartz2D: Creating\n"));
-    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
+    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
                                       NULL, 0, 0, 640, 480));
 }
 
@@ -311,7 +311,7 @@ void VBoxQuartz2DFrameBuffer::resizeEvent (VBoxResizeEvent *re)
         remind = true;
 //        printf ("No VRAM\n");
         /* Create the memory we need for our image copy
-         * Read somewhere that an alignment of 16 is 
+         * Read somewhere that an alignment of 16 is
          * best for optimal performance. So why not. */
 //        int bitmapBytesPerRow = RT_ALIGN (mWdt * 4, 16);
         int bitmapBytesPerRow = mWdt * 4;

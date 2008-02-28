@@ -1346,7 +1346,7 @@ STDMETHODIMP VirtualBox::GetDVDImageUsage (INPTR GUIDPARAM aId,
 {
     if (!aMachineIDs)
         return E_POINTER;
-    if (aUsage == ResourceUsage_InvalidUsage)
+    if (aUsage == ResourceUsage_Null)
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
@@ -1385,7 +1385,7 @@ STDMETHODIMP VirtualBox::UnregisterDVDImage (INPTR GUIDPARAM aId,
     HRESULT rc = findDVDImage (&uuid, NULL, true /* setError */, &dvd);
     CheckComRCReturnRC (rc);
 
-    if (!getDVDImageUsage (aId, ResourceUsage_AllUsage))
+    if (!getDVDImageUsage (aId, ResourceUsage_All))
     {
         /* remove from the collection */
         mData.mDVDImages.remove (dvd);
@@ -1515,7 +1515,7 @@ STDMETHODIMP VirtualBox::GetFloppyImageUsage (INPTR GUIDPARAM aId,
 {
     if (!aMachineIDs)
         return E_POINTER;
-    if (aUsage == ResourceUsage_InvalidUsage)
+    if (aUsage == ResourceUsage_Null)
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
@@ -1554,7 +1554,7 @@ STDMETHODIMP VirtualBox::UnregisterFloppyImage (INPTR GUIDPARAM aId,
     HRESULT rc = findFloppyImage (&uuid, NULL, true /* setError */, &floppy);
     CheckComRCReturnRC (rc);
 
-    if (!getFloppyImageUsage (aId, ResourceUsage_AllUsage))
+    if (!getFloppyImageUsage (aId, ResourceUsage_All))
     {
         /* remove from the collection */
         mData.mFloppyImages.remove (floppy);
@@ -1917,7 +1917,7 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, INPTR GUIDPARAM aMachi
     rc = aSession->COMGETTER(State) (&state);
     CheckComRCReturnRC (rc);
 
-    if (state != SessionState_SessionClosed)
+    if (state != SessionState_Closed)
         return setError (E_INVALIDARG,
             tr ("The given session is already open or being opened"));
 
@@ -1937,7 +1937,7 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, INPTR GUIDPARAM aMachi
         updateClientWatcher();
 
         /* fire an event */
-        onSessionStateChange (aMachineId, SessionState_SessionOpen);
+        onSessionStateChange (aMachineId, SessionState_Open);
     }
 
     return rc;
@@ -1971,7 +1971,7 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
     rc = aSession->COMGETTER(State) (&state);
     CheckComRCReturnRC (rc);
 
-    if (state != SessionState_SessionClosed)
+    if (state != SessionState_Closed)
         return setError (E_INVALIDARG,
             tr ("The given session is already open or being opened"));
 
@@ -1994,7 +1994,7 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
         progress.queryInterfaceTo (aProgress);
 
         /* fire an event */
-        onSessionStateChange (aMachineId, SessionState_SessionSpawning);
+        onSessionStateChange (aMachineId, SessionState_Spawning);
     }
 
     return rc;
@@ -2023,7 +2023,7 @@ STDMETHODIMP VirtualBox::OpenExistingSession (ISession *aSession,
     rc = aSession->COMGETTER(State) (&state);
     CheckComRCReturnRC (rc);
 
-    if (state != SessionState_SessionClosed)
+    if (state != SessionState_Closed)
         return setError (E_INVALIDARG,
             tr ("The given session is already open or being opened"));
 

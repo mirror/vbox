@@ -361,7 +361,7 @@ void VBoxVMListBoxItem::recache()
         mOSTypeId = mMachine.GetOSTypeId();
         mSnapshotCount = mMachine.GetSnapshotCount();
 
-        if (mState >= CEnums::Running)
+        if (mState >= KMachineState_Running)
         {
             mPid = mMachine.GetSessionPid();
     /// @todo Remove. See @c todo in #switchTo() below.
@@ -389,8 +389,8 @@ void VBoxVMListBoxItem::recache()
                        fi.baseName (true) : fi.fileName();
         needsResort = name != mName;
         mName = name;
-        mState = CEnums::InvalidMachineState;
-        mSessionState = CEnums::InvalidSessionState;
+        mState = KMachineState_Null;
+        mSessionState = KSessionState_Null;
         mLastStateChange = QDateTime::currentDateTime();
         mOSTypeId = QString::null;
         mSnapshotCount = 0;

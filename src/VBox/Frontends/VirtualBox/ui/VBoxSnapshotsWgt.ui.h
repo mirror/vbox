@@ -112,7 +112,7 @@ public:
     CSnapshot snapshot() const { return mSnapshot; }
     QUuid snapshotId() const { return mId; }
 
-    CEnums::MachineState machineState() const { return mMachineState; }
+    KMachineState machineState() const { return mMachineState; }
 
     void recache()
     {
@@ -145,7 +145,7 @@ public:
         }
     }
 
-    void updateCurrentState (CEnums::MachineState aState)
+    void updateCurrentState (KMachineState aState)
     {
         AssertReturn (!mMachine.isNull(), (void) 0);
         setPixmap (0, vboxGlobal().toIcon (aState));
@@ -219,7 +219,7 @@ private:
     QDateTime mTimestamp;
 
     bool mCurStateModified;
-    CEnums::MachineState mMachineState;
+    KMachineState mMachineState;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -340,7 +340,7 @@ void VBoxSnapshotsWgt::setMachine (const CMachine &aMachine)
     if (aMachine.isNull())
     {
         mMachineId = QUuid();
-        mSessionState = CEnums::InvalidSessionState;
+        mSessionState = KSessionState_Null;
     }
     else
     {
@@ -479,7 +479,7 @@ void VBoxSnapshotsWgt::listView_currentChanged (QListViewItem *item)
     }
 
     /* whether another direct session is open or not */
-    bool busy = mSessionState != CEnums::SessionClosed;
+    bool busy = mSessionState != KSessionState_Closed;
 
     /* enable/disable snapshot actions */
     snapshotActionGroup->setEnabled (!busy &&

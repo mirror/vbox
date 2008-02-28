@@ -44,7 +44,7 @@ public:
             mIOAPICEnabled = false;
             mPXEDebugEnabled = false;
             mTimeOffset = 0;
-            mIDEControllerType = IDEControllerType_IDEControllerPIIX4;
+            mIDEControllerType = IDEControllerType_PIIX4;
         }
 
         bool operator== (const Data &that) const

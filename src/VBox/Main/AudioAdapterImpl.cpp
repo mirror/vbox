@@ -224,28 +224,28 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
          */
         switch (aAudioDriver)
         {
-            case AudioDriverType_NullAudioDriver:
+            case AudioDriverType_Null:
 #ifdef RT_OS_WINDOWS
 # ifdef VBOX_WITH_WINMM
-            case AudioDriverType_WINMMAudioDriver:
+            case AudioDriverType_WINMM:
 # endif
-            case AudioDriverType_DSOUNDAudioDriver:
+            case AudioDriverType_DSOUND:
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_LINUX
-            case AudioDriverType_OSSAudioDriver:
+            case AudioDriverType_OSS:
 # ifdef VBOX_WITH_ALSA
-            case AudioDriverType_ALSAAudioDriver:
+            case AudioDriverType_ALSA:
 # endif
 # ifdef VBOX_WITH_PULSE
-            case AudioDriverType_PulseAudioDriver:
+            case AudioDriverType_Pulse:
 # endif
 #endif /* RT_OS_LINUX */
 #ifdef RT_OS_DARWIN
-            case AudioDriverType_CoreAudioDriver:
-#endif 
+            case AudioDriverType_Core:
+#endif
 #ifdef RT_OS_OS2
-            case AudioDriverType_MMPMAudioDriver:
-#endif 
+            case AudioDriverType_MMPM:
+#endif
             {
                 mData.backup();
                 mData->mAudioDriver = aAudioDriver;
@@ -323,13 +323,13 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioController)(AudioControllerType_T aAud
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  *  Loads settings from the given machine node.
  *  May be called once right after this object creation.
- * 
+ *
  *  @param aMachineNode <Machine> node.
- * 
- *  @note Locks this object for writing. 
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
 {
@@ -351,7 +351,7 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
      * in the settings file (for backwards compatibility reasons). This takes
      * place when a setting of a newly created object must default to A while
      * the same setting of an object loaded from the old settings file must
-     * default to B. */ 
+     * default to B. */
 
     /* AudioAdapter node (required) */
     Key audioAdapterNode = aMachineNode.key ("AudioAdapter");
@@ -368,45 +368,45 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
 
     /* now check the audio driver (required) */
     const char *driver = audioAdapterNode.stringValue ("driver");
-    mData->mAudioDriver = AudioDriverType_NullAudioDriver;
+    mData->mAudioDriver = AudioDriverType_Null;
     if      (strcmp (driver, "null") == 0)
         ; /* Null has been set above */
 #ifdef RT_OS_WINDOWS
     else if (strcmp (driver, "winmm") == 0)
 #ifdef VBOX_WITH_WINMM
-        mData->mAudioDriver = AudioDriverType_WINMMAudioDriver;
+        mData->mAudioDriver = AudioDriverType_WINMM;
 #else
         /* fall back to dsound */
-        mData->mAudioDriver = AudioDriverType_DSOUNDAudioDriver;
+        mData->mAudioDriver = AudioDriverType_DSOUND;
 #endif
     else if (strcmp (driver, "dsound") == 0)
-        mData->mAudioDriver = AudioDriverType_DSOUNDAudioDriver;
+        mData->mAudioDriver = AudioDriverType_DSOUND;
 #endif // RT_OS_WINDOWS
 #ifdef RT_OS_LINUX
     else if (strcmp (driver, "oss") == 0)
-        mData->mAudioDriver = AudioDriverType_OSSAudioDriver;
+        mData->mAudioDriver = AudioDriverType_OSS;
     else if (strcmp (driver, "alsa") == 0)
 # ifdef VBOX_WITH_ALSA
-        mData->mAudioDriver = AudioDriverType_ALSAAudioDriver;
+        mData->mAudioDriver = AudioDriverType_ALSA;
 # else
         /* fall back to OSS */
-        mData->mAudioDriver = AudioDriverType_OSSAudioDriver;
+        mData->mAudioDriver = AudioDriverType_OSS;
 # endif
     else if (strcmp (driver, "pulse") == 0)
 # ifdef VBOX_WITH_PULSE
-        mData->mAudioDriver = AudioDriverType_PulseAudioDriver;
+        mData->mAudioDriver = AudioDriverType_Pulse;
 # else
         /* fall back to OSS */
-        mData->mAudioDriver = AudioDriverType_OSSAudioDriver;
+        mData->mAudioDriver = AudioDriverType_OSS;
 # endif
 #endif // RT_OS_LINUX
 #ifdef RT_OS_DARWIN
     else if (strcmp (driver, "coreaudio") == 0)
-        mData->mAudioDriver = AudioDriverType_CoreAudioDriver;
+        mData->mAudioDriver = AudioDriverType_Core;
 #endif
 #ifdef RT_OS_OS2
     else if (strcmp (driver, "mmpm") == 0)
-        mData->mAudioDriver = AudioDriverType_MMPMAudioDriver;
+        mData->mAudioDriver = AudioDriverType_MMPM;
 #endif
     else
         AssertMsgFailed (("Invalid driver '%s'\n", driver));
@@ -414,12 +414,12 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
     return S_OK;
 }
 
-/** 
+/**
  *  Saves settings to the given machine node.
- * 
+ *
  *  @param aMachineNode <Machine> node.
- * 
- *  @note Locks this object for reading. 
+ *
+ *  @note Locks this object for reading.
  */
 HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
 {
@@ -453,55 +453,55 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
     const char *driverStr = NULL;
     switch (mData->mAudioDriver)
     {
-        case AudioDriverType_NullAudioDriver:
+        case AudioDriverType_Null:
         {
             driverStr = "null";
             break;
         }
 #ifdef RT_OS_WINDOWS
-            case AudioDriverType_WINMMAudioDriver:
+            case AudioDriverType_WINMM:
 # ifdef VBOX_WITH_WINMM
             {
                 driverStr = "winmm";
                 break;
             }
 # endif
-            case AudioDriverType_DSOUNDAudioDriver:
+            case AudioDriverType_DSOUND:
             {
                 driverStr = "dsound";
                 break;
             }
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_LINUX
-            case AudioDriverType_ALSAAudioDriver:
+            case AudioDriverType_ALSA:
 # ifdef VBOX_WITH_ALSA
             {
                 driverStr = "alsa";
                 break;
             }
 # endif
-            case AudioDriverType_PulseAudioDriver:
+            case AudioDriverType_Pulse:
 # ifdef VBOX_WITH_PULSE
             {
                 driverStr = "pulse";
                 break;
             }
 # endif
-            case AudioDriverType_OSSAudioDriver:
+            case AudioDriverType_OSS:
             {
                 driverStr = "oss";
                 break;
             }
 #endif /* RT_OS_LINUX */
 #ifdef RT_OS_DARWIN
-            case AudioDriverType_CoreAudioDriver:
+            case AudioDriverType_Core:
             {
                 driverStr = "coreaudio";
                 break;
             }
 #endif
 #ifdef RT_OS_OS2
-            case AudioDriverType_MMPMAudioDriver:
+            case AudioDriverType_MMPM:
             {
                 driverStr = "mmpm";
                 break;
@@ -519,7 +519,7 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
     return S_OK;
 }
 
-/** 
+/**
  *  @note Locks this object for writing.
  */
 bool AudioAdapter::rollback()
@@ -543,7 +543,7 @@ bool AudioAdapter::rollback()
     return changed;
 }
 
-/** 
+/**
  *  @note Locks this object for writing, together with the peer object (also
  *  for writing) if there is one.
  */
@@ -571,7 +571,7 @@ void AudioAdapter::commit()
     }
 }
 
-/** 
+/**
  *  @note Locks this object for writing, together with the peer object
  *  represented by @a aThat (locked for reading).
  */

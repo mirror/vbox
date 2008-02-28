@@ -36,7 +36,7 @@ public:
     {
         Data() {
             mEnabled = false;
-            mAudioDriver = AudioDriverType_NullAudioDriver;
+            mAudioDriver = AudioDriverType_Null;
             mAudioController = AudioControllerType_AC97;
         }
 

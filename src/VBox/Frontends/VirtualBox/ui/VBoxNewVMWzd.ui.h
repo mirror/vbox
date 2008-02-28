@@ -329,7 +329,7 @@ bool VBoxNewVMWzd::constructMachine()
     if (type.GetId() == "os2warp3" ||
         type.GetId() == "os2warp4" ||
         type.GetId() == "os2warp45")
-        cmachine.SetHWVirtExEnabled (CEnums::TSTrue);
+        cmachine.SetHWVirtExEnabled (KTSBool_True);
 
     /* RAM size */
     cmachine.SetMemorySize (slRAM->value());
@@ -360,7 +360,7 @@ bool VBoxNewVMWzd::constructMachine()
         if (!session.isNull())
         {
             CMachine m = session.GetMachine();
-            m.AttachHardDisk (uuidHD, CEnums::IDE0Controller, 0);
+            m.AttachHardDisk (uuidHD, KDiskControllerType_IDE0, 0);
             if (m.isOk())
             {
                 m.SaveSettings();
@@ -371,7 +371,7 @@ bool VBoxNewVMWzd::constructMachine()
             }
             else
                 vboxProblem().cannotAttachHardDisk (this, m, uuidHD,
-                                                    CEnums::IDE0Controller, 0);
+                                                    KDiskControllerType_IDE0, 0);
             session.Close();
         }
         if (!ok)

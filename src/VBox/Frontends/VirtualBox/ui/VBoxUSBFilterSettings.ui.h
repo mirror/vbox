@@ -40,8 +40,8 @@ void VBoxUSBFilterSettings::init()
     cbRemote->insertItem (tr ("Any", "remote")); // 0
     cbRemote->insertItem (tr ("Yes", "remote")); // 1
     cbRemote->insertItem (tr ("No", "remote")); // 2
-    cbAction->insertItem (vboxGlobal().toString (CEnums::USBDeviceFilterIgnore)); // 0
-    cbAction->insertItem (vboxGlobal().toString (CEnums::USBDeviceFilterHold)); // 1
+    cbAction->insertItem (vboxGlobal().toString (KUSBDeviceFilterAction_Ignore)); // 0
+    cbAction->insertItem (vboxGlobal().toString (KUSBDeviceFilterAction_Hold)); // 1
 }
 
 void VBoxUSBFilterSettings::getFromFilter (const CUSBDeviceFilter &aFilter)
@@ -76,10 +76,10 @@ void VBoxUSBFilterSettings::getFromFilter (const CUSBDeviceFilter &aFilter)
         case VBoxUSBFilterSettings::HostType:
         {
             const CHostUSBDeviceFilter filter = CUnknown (aFilter);
-            CEnums::USBDeviceFilterAction action = filter.GetAction();
-            if (action == CEnums::USBDeviceFilterIgnore)
+            KUSBDeviceFilterAction action = filter.GetAction();
+            if (action == KUSBDeviceFilterAction_Ignore)
                 cbAction->setCurrentItem (0);
-            else if (action == CEnums::USBDeviceFilterHold)
+            else if (action == KUSBDeviceFilterAction_Hold)
                 cbAction->setCurrentItem (1);
             else
                 AssertMsgFailed (("Invalid USBDeviceFilterAction type"));

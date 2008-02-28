@@ -97,33 +97,29 @@
   -->
 
   <enum
-     name="TriStateBool"
-     uuid="523ff64d-842a-4b1a-80e7-c311b028cb3a"
-     >
+    name="TSBool"
+    uuid="523ff64d-842a-4b1a-80e7-c311b028cb3a"
+  >
     <desc>
-      This represents a boolean variable having a third state, default.
+      Boolean variable having a third state, default.
     </desc>
 
-    <const name="TSFalse"   value="0"/>
-    <const name="TSTrue"    value="1"/>
-    <const name="TSDefault" value="2"/>
+    <const name="False"   value="0"/>
+    <const name="True"    value="1"/>
+    <const name="Default" value="2"/>
   </enum>
 
   <enum
-     name="MachineState"
-     uuid="73bf04d0-7c4f-4684-9abf-d65a9ad74343"
-     >
+    name="MachineState"
+    uuid="73bf04d0-7c4f-4684-9abf-d65a9ad74343"
+  >
     <desc>
       Virtual machine execution state. This enumeration represents possible
       values of the <link to="IMachine::state"/> attribute.
     </desc>
 
-    <const name="InvalidMachineState"   value="0">
-      <desc>
-        Invalid machine state. This state is never used by the virtual machine
-        and may be used as a <tt>null</tt> value for state
-        variables.
-      </desc>
+    <const name="Null"                  value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
     </const>
     <const name="PoweredOff"            value="1">
       <desc>
@@ -227,9 +223,9 @@
   </enum>
 
   <enum
-     name="SessionState"
-     uuid="CF2700C0-EA4B-47ae-9725-7810114B94D8"
-     >
+    name="SessionState"
+    uuid="CF2700C0-EA4B-47ae-9725-7810114B94D8"
+  >
     <desc>
       Session state. This enumeration represents possible values of
       <link to="IMachine::sessionState"/> and <link to="ISession::state"/>
@@ -237,20 +233,22 @@
       meaning for every case.
     </desc>
 
-    <const name="InvalidSessionState"   value="0"/>
-    <const name="SessionClosed"         value="1">
+    <const name="Null"                  value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
+    </const>
+    <const name="Closed"                value="1">
       <desc>
         The machine has no open sessions (<link to="IMachine::sessionState"/>);
         the session is closed (<link to="ISession::state"/>)
       </desc>
     </const>
-    <const name="SessionOpen"           value="2">
+    <const name="Open"                  value="2">
       <desc>
         The machine has an open direct session (<link to="IMachine::sessionState"/>);
         the session is open (<link to="ISession::state"/>)
       </desc>
     </const>
-    <const name="SessionSpawning"       value="3">
+    <const name="Spawning"              value="3">
       <desc>
         A new (direct) session is being opened for the machine
         as a result of <link to="IVirtualBox::openRemoteSession()"/>
@@ -260,7 +258,7 @@
         call (<link to="ISession::state"/>)
       </desc>
     </const>
-    <const name="SessionClosing"       value="4">
+    <const name="Closing"               value="4">
       <desc>
         The direct session is being closed (<link to="IMachine::sessionState"/>);
         the session is being closed (<link to="ISession::state"/>)
@@ -269,28 +267,30 @@
   </enum>
 
   <enum
-     name="SessionType"
-     uuid="A13C02CB-0C2C-421E-8317-AC0E8AAA153A"
-     >
+    name="SessionType"
+    uuid="A13C02CB-0C2C-421E-8317-AC0E8AAA153A"
+  >
     <desc>
       Session type. This enumeration represents possible values of the
       <link to="ISession::type"/> attribute.
     </desc>
 
-    <const name="InvalidSessionType"    value="0"/>
-    <const name="DirectSession"         value="1">
+    <const name="Null"                  value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
+    </const>
+    <const name="Direct"                value="1">
       <desc>
         Direct session
         (opened by <link to="IVirtualBox::openSession()"/>)
       </desc>
     </const>
-    <const name="RemoteSession"         value="2">
+    <const name="Remote"                value="2">
       <desc>
         Remote session
         (opened by <link to="IVirtualBox::openRemoteSession()"/>)
       </desc>
     </const>
-    <const name="ExistingSession"       value="3">
+    <const name="Existing"              value="3">
       <desc>
         Existing session
         (opened by <link to="IVirtualBox::openExistingSession()"/>)
@@ -299,66 +299,76 @@
   </enum>
 
   <enum
-     name="DeviceType"
-     uuid="6d9420f7-0b56-4636-99f9-7346f1b01e57"
-     >
+    name="DeviceType"
+    uuid="6d9420f7-0b56-4636-99f9-7346f1b01e57"
+  >
     <desc>
       Device type.
     </desc>
-    <const name="NoDevice"          value="0">
+    <const name="Null"              value="0">
       <desc>
-        No Device. This value is not used by
-        <link to="IConsole::getDeviceActivity"/>
+        <tt>null</tt> value which may also mean "no device".
+        <note>
+          This value is not allowed for
+          <link to="IConsole::getDeviceActivity"/>
+        </note>
       </desc>
     </const>
-    <const name="FloppyDevice"      value="1">
+    <const name="Floppy"            value="1">
       <desc>Floppy device.</desc>
     </const>
-    <const name="DVDDevice"         value="2">
+    <const name="DVD"               value="2">
       <desc>CD/DVD-ROM device.</desc>
     </const>
-    <const name="HardDiskDevice"    value="3">
+    <const name="HardDisk"          value="3">
       <desc>Hard disk device.</desc>
     </const>
-    <const name="NetworkDevice"     value="4">
+    <const name="Network"           value="4">
       <desc>Network device.</desc>
     </const>
-    <const name="USBDevice"         value="5">
+    <const name="USB"               value="5">
       <desc>USB device.</desc>
     </const>
-    <const name="SharedFolderDevice" value="6">
+    <const name="SharedFolder"      value="6">
       <desc>Shared folder device.</desc>
     </const>
   </enum>
 
   <enum
-     name="DeviceActivity"
-     uuid="6FC8AEAA-130A-4eb5-8954-3F921422D707"
-     >
-    <const name="InvalidActivity"   value="0"/>
-    <const name="DeviceIdle"        value="1"/>
-    <const name="DeviceReading"     value="2"/>
-    <const name="DeviceWriting"     value="3"/>
+    name="DeviceActivity"
+    uuid="6FC8AEAA-130A-4eb5-8954-3F921422D707"
+  >
+    <desc>
+      Device activity for <link to="IConsole::getDeviceActivity"/>.
+    </desc>
+
+    <const name="Null"              value="0"/>
+    <const name="Idle"              value="1"/>
+    <const name="Reading"           value="2"/>
+    <const name="Writing"           value="3"/>
   </enum>
 
   <enum
-     name="ResourceUsage"
-     uuid="FC56E4B6-B195-48e2-A5E1-A667B0D9F809"
-     >
+    name="ResourceUsage"
+    uuid="FC56E4B6-B195-48e2-A5E1-A667B0D9F809"
+  >
     <desc>
       Usage type constants for
       <link to="IVirtualBox::getDVDImageUsage"/> and
       <link to="IVirtualBox::getFloppyImageUsage"/>.
     </desc>
-    <const name="InvalidUsage"      value="0"/>
-    <const name="PermanentUsage"    value="1">
+
+    <const name="Null"              value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
+    </const>
+    <const name="Permanent"         value="1">
       <desc>
         Scopes the VMs that use the resource permanently
         (the information about this usage is stored in the VM
         settings file).
       </desc>
     </const>
-    <const name="TemporaryUsage"    value="2">
+    <const name="Temporary"         value="2">
       <desc>
         Scopes the VMs that are temporarily using the resource
         (the information about the usage is not yet saved in the VM
@@ -366,51 +376,66 @@
         context of an open session.
       </desc>
     </const>
-    <const name="AllUsage"          value="3">
+    <const name="All"               value="3">
       <desc>
-        Combines PermanentUsage and TemporaryUsage.
+        Combines Permanent and Temporary.
       </desc>
     </const>
   </enum>
 
   <enum
-     name="DiskControllerType"
-     uuid="1115b810-2ee7-4ebd-8b39-92e98c9a2b48"
-     >
-    <const name="InvalidController"  value="0"/>
-    <const name="IDE0Controller"     value="1"/>
-    <const name="IDE1Controller"     value="2"/>
+    name="DiskControllerType"
+    uuid="1115b810-2ee7-4ebd-8b39-92e98c9a2b48"
+  >
+    <desc>
+      Disk controller type for hard disk attachments.
+    </desc>
+
+    <const name="Null"              value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
+    </const>
+    <const name="IDE0"              value="1"/>
+    <const name="IDE1"              value="2"/>
   </enum>
 
   <enum
-     name="ClipboardMode"
-     uuid="33364716-4008-4701-8f14-be0fa3d62950"
-     >
-    <const name="ClipDisabled"         value="0"/>
-    <const name="ClipHostToGuest"      value="1"/>
-    <const name="ClipGuestToHost"      value="2"/>
-    <const name="ClipBidirectional"    value="3"/>
+    name="ClipboardMode"
+    uuid="33364716-4008-4701-8f14-be0fa3d62950"
+  >
+    <desc>
+     Host-Guest clipboard interchange mode.
+    </desc>
+
+    <const name="Disabled"          value="0"/>
+    <const name="HostToGuest"       value="1"/>
+    <const name="GuestToHost"       value="2"/>
+    <const name="Bidirectional"     value="3"/>
   </enum>
 
   <enum
-     name="Scope"
-     uuid="7c91096e-499e-4eca-9f9b-9001438d7855"
-     >
+    name="Scope"
+    uuid="7c91096e-499e-4eca-9f9b-9001438d7855"
+  >
     <desc>
       Scope of the operation.
 
       A generic enumeration used in various methods to define the action or
       argument scope.
     </desc>
-    <const name="GlobalScope"         value="0"/>
-    <const name="MachineScope"        value="1"/>
-    <const name="SessionScope"        value="2"/>
+
+    <const name="Global"          value="0"/>
+    <const name="Machine"         value="1"/>
+    <const name="Session"         value="2"/>
   </enum>
 
   <enum
-     name="GuestStatisticType"
-     uuid="aa7c1d71-aafe-47a8-9608-27d2d337cf55"
-     >
+    name="GuestStatisticType"
+    uuid="aa7c1d71-aafe-47a8-9608-27d2d337cf55"
+  >
+    <desc>
+      Statistics type for <link to="IGuest::getStatistic"/>.
+    </desc>
+
     <const name="CPULoad_Idle"         value="0">
       <desc>
         Idle CPU load (0-100%) for last interval.
@@ -497,6 +522,46 @@
       </desc>
     </const>
     <const name="MaxVal"               value="17"/>
+  </enum>
+
+  <enum
+    name="BIOSBootMenuMode"
+    uuid="ae4fb9f7-29d2-45b4-b2c7-d579603135d5"
+  >
+    <desc>
+      BIOS boot menu mode.
+    </desc>
+
+    <const name="Disabled"        value="0"/>
+    <const name="MenuOnly"        value="1"/>
+    <const name="MessageAndMenu"  value="2"/>
+  </enum>
+
+  <enum
+    name="IDEControllerType"
+    uuid="445330e3-202a-4dab-854f-ce22e6cb9715"
+  >
+    <desc>
+      IDE controller type.
+    </desc>
+
+    <const name="Null"            value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
+    </const>
+    <const name="PIIX3"           value="1"/>
+    <const name="PIIX4"           value="2"/>
+  </enum>
+
+  <enum
+    name="DriveState"
+    uuid="cb7233b7-c519-42a5-8310-1830953cacbc"
+  >
+    <const name="Null"              value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
+    </const>
+    <const name="NotMounted"        value="1"/>
+    <const name="ImageMounted"      value="2"/>
+    <const name="HostDriveCaptured" value="3"/>
   </enum>
 
   <!--
@@ -698,13 +763,13 @@
         media the specified @a mediaId refers to. Possible
         values are:
 
-        - <link to="HardDiskDevice"/>: the media is a hard disk
+        - <link to="DeviceType::HardDisk"/>: the media is a hard disk
         that, if registered, can be obtained using the
         <link to="IVirtualBox::getHardDisk"/> call.
-        - <link to="DVDDevice"/>: the media is a CD/DVD image
+        - <link to="DeviceType::DVD"/>: the media is a CD/DVD image
         that, if registered, can be obtained using the
         <link to="IVirtualBox::getDVDImage"/> call.
-        - <link to="FloppyDevice"/>: the media is a Floppy image
+        - <link to="DeviceType::Floppy"/>: the media is a Floppy image
         that, if registered, can be obtained using the
         <link to="IVirtualBox::getFloppyImage"/> call.
 
@@ -810,23 +875,24 @@
   </interface>
 
   <interface
-     name="IVirtualBox" extends="$dispatched"
-     uuid="64f652cb-7fdf-482d-ae19-4dbb289a5ca0"
-     wsmap="managed"
-     >
+    name="IVirtualBox" extends="$dispatched"
+    uuid="64f652cb-7fdf-482d-ae19-4dbb289a5ca0"
+    wsmap="managed"
+  >
     <desc>
       The IVirtualBox interface represents the main interface exposed by the
       product that provides virtual machine management.
 
       An instance of IVirtualBox is required for the product to do anything
-      useful. Even though the interface does not expose this, internally, IVirtualBox
-      is implemented as a singleton and actually lives in the process of the
-      VirtualBox server (VBoxSVC.exe). This makes sure that IVirtualBox can
-      track the state of all virtual machines on a particular host, regardless
-      of which frontend started them.
+      useful. Even though the interface does not expose this, internally,
+      IVirtualBox is implemented as a singleton and actually lives in the
+      process of the VirtualBox server (VBoxSVC.exe). This makes sure that
+      IVirtualBox can track the state of all virtual machines on a particular
+      host, regardless of which frontend started them.
 
-      To enumerate all the virtual machines on the host, use the <link to="IVirtualBox::machines" />
-      attribute.</desc>
+      To enumerate all the virtual machines on the host, use the
+      <link to="IVirtualBox::machines"/> attribute.
+    </desc>
 
     <attribute name="version" type="wstring" readonly="yes">
       <desc>
@@ -1427,10 +1493,9 @@
           The list is returned as a string containing UUIDs separated
           by spaces. A null string means that the image is not used.
           <note>
-            When the usage type is <link to="ResourceUsage::AllUsage"/>
-            and the image is used by the VM both permanently
-            and temporarily, the VM's UUID will be present only
-            once in the list.
+            When the usage type is <link to="ResourceUsage::All"/> and the image
+            is used by the VM both permanently and temporarily, the VM's UUID
+            will be present only once in the list.
           </note>
         </desc>
       </param>
@@ -1542,10 +1607,9 @@
           The list is returned as a string containing UUIDs separated
           by spaces. A null string means that the image is not used.
           <note>
-            When the usage type is <link to="ResourceUsage::AllUsage"/>
-            and the image is used by the VM both permanently
-            and temporarily, the VM's UUID will be present only
-            once in the list.
+            When the usage type is <link to="ResourceUsage::All"/> and the image
+            is used by the VM both permanently and temporarily, the VM's UUID
+            will be present only once in the list.
           </note>
         </desc>
       </param>
@@ -2178,28 +2242,6 @@
 
   </interface>
 
-  <enum
-     name="BIOSBootMenuMode"
-     uuid="ae4fb9f7-29d2-45b4-b2c7-d579603135d5"
-     >
-    <desc>
-      This represents the BIOS boot menu state.
-    </desc>
-
-    <const name="Disabled"       value="0"/>
-    <const name="MenuOnly"       value="1"/>
-    <const name="MessageAndMenu" value="2"/>
-  </enum>
-
-  <enum
-     name="IDEControllerType"
-     uuid="445330e3-202a-4dab-854f-ce22e6cb9715"
-     >
-    <const name="InvalidIDEControllerType"       value="0"/>
-    <const name="IDEControllerPIIX3"             value="1"/>
-    <const name="IDEControllerPIIX4"             value="2"/>
-  </enum>
-
   <interface
      name="IBIOSSettings" extends="$unknown"
      uuid="38b54279-dc35-4f5e-a431-835b867c6b5e"
@@ -2483,7 +2525,7 @@
       <desc>Object containing all BIOS settings.</desc>
     </attribute>
 
-    <attribute name="HWVirtExEnabled" type="TriStateBool">
+    <attribute name="HWVirtExEnabled" type="TSBool">
       <desc>
         This setting determines whether VirtualBox will try to make use of
         the host CPU's hardware virtualization extensions such as Intel VT-x
@@ -2729,7 +2771,7 @@
         the boot order.
 
         To indicate that no device is associated with the given position,
-        <link to="DeviceType::NoDevice"/> should be used.
+        <link to="DeviceType::Null"/> should be used.
 
         @todo setHardDiskBootOrder(), setNetworkBootOrder()
       </desc>
@@ -2758,7 +2800,7 @@
         retrieve the individual device that occupies the given position.
 
         If here are no devices at the given position, then
-        <link to="DeviceType::NoDevice"/> is returned.
+        <link to="DeviceType::Null"/> is returned.
 
         @todo getHardDiskBootOrder(), getNetworkBootOrder()
       </desc>
@@ -3361,14 +3403,13 @@
         Notification when a shared folder is added or removed.
         The @a scope argument defines one of three scopes:
         <link to="IVirtualBox::sharedFolders">global shared folders</link>
-        (<link to="Scope::GlobalScope">GlobalScope</link>),
+        (<link to="Scope::Global">Global</link>),
         <link to="IMachine::sharedFolders">permanent shared folders</link> of
-        the machine (<link to="Scope::MachineScope">MachineScope</link>)
-        or <link to="IConsole::sharedFolders">transient shared folders</link>
-        of the machine
-        (<link to="Scope::SessionScope">SessionScope</link>). Interested
-        callees should use query the corresponding collections to find out
-        what has changed.
+        the machine (<link to="Scope::Machine">Machine</link>) or <link
+        to="IConsole::sharedFolders">transient shared folders</link> of the
+        machine (<link to="Scope::Session">Session</link>). Interested callees
+        should use query the corresponding collections to find out what has
+        changed.
       </desc>
       <param name="scope" type="Scope" dir="in">
         <desc>Sope of the notification.</desc>
@@ -3886,15 +3927,14 @@
         USB controller of the virtual machine.
 
         The device needs to be in one of the following states:
-        <link to="USBDeviceState::USBDeviceBusy">USBDeviceBusy</link>,
-        <link to="USBDeviceState::USBDeviceAvailable">USBDeviceAvailable</link> or
-        <link to="USBDeviceState::USBDeviceHeld">USBDeviceHeld</link>,
+        <link to="USBDeviceState::Busy">Busy</link>,
+        <link to="USBDeviceState::Available">Available</link> or
+        <link to="USBDeviceState::Held">Held</link>,
         otherwise an error is immediately returned.
 
         When the device state is
-        <link to="USBDeviceState::USBDeviceBusy">USBDeviceBusy</link>,
-        an error may also be returned if the host computer
-        refuses to release it for some reason.
+        <link to="USBDeviceState::Busy">Busy</link>, an error may also
+        be returned if the host computer refuses to release it for some reason.
 
         <see>IUSBController::deviceFilters, USBDeviceState</see>
       </desc>
@@ -4016,15 +4056,14 @@
         snapshot cannot be discarded.
 
         You cannot discard the snapshot if it
-        stores <link to="HardDiskType::NormalHardDisk">normal</link>
-        (non-differencing) hard disks that have differencing hard disks based
-        on them. Snapshots of such kind can be discarded only when every
-        normal hard disk has either no children at all or exactly one
-        child. In the former case, the normal hard disk simply becomes unused
-        (i.e. not attached to any VM). In the latter case, it receives all the
-        changes strored in the child hard disk, and then it replaces the child
-        hard disk in the configuration of the corresponding snapshot or
-        machine.
+        stores <link to="HardDiskType::Normal">normal</link> (non-differencing)
+        hard disks that have differencing hard disks based on them. Snapshots of
+        such kind can be discarded only when every normal hard disk has either
+        no children at all or exactly one child. In the former case, the normal
+        hard disk simply becomes unused (i.e. not attached to any VM). In the
+        latter case, it receives all the changes strored in the child hard disk,
+        and then it replaces the child hard disk in the configuration of the
+        corresponding snapshot or machine.
 
         Also, you cannot discard the snapshot if it stores hard disks
         (of any type) having differencing child hard disks that belong
@@ -5330,39 +5369,40 @@
   -->
 
   <enum
-     name="HardDiskStorageType"
-     uuid="48138584-ad99-479d-a36f-eb82a7663685"
-     >
+    name="HardDiskStorageType"
+    uuid="48138584-ad99-479d-a36f-eb82a7663685"
+  >
     <desc>
       Virtual hard disk storage type.
       <see>IHardDisk</see>
     </desc>
-    <const name="VirtualDiskImage" value="0">
+
+    <const name="VirtualDiskImage"  value="0">
       <desc>
         Virtual Disk Image, VDI (a regular file in the file
         system of the host OS, see <link to="IVirtualDiskImage"/>)
       </desc>
     </const>
-    <const name="ISCSIHardDisk" value="1">
+    <const name="ISCSIHardDisk"     value="1">
       <desc>
         iSCSI Remote Disk (a disk accessed via the Internet
         SCSI protocol over a TCP/IP network, see
         <link to="IISCSIHardDisk"/>)
       </desc>
     </const>
-    <const name="VMDKImage" value="2">
+    <const name="VMDKImage"         value="2">
       <desc>
         VMware Virtual Machine Disk image (a regular file in the file
         system of the host OS, see <link to="IVMDKImage"/>)
       </desc>
     </const>
-    <const name="CustomHardDisk" value="3">
+    <const name="CustomHardDisk"    value="3">
       <desc>
         Disk formats supported through plugins (see
         <link to="ICustomHardDisk"/>)
       </desc>
     </const>
-    <const name="VHDImage" value="4">
+    <const name="VHDImage"          value="4">
       <desc>
         Virtual PC Virtual Machine Disk image (a regular file in the file
         system of the host OS, see <link to="IVHDImage"/>)
@@ -5371,26 +5411,27 @@
   </enum>
 
   <enum
-     name="HardDiskType"
-     uuid="a348fafd-a64e-4643-ba65-eb3896bd7e0a"
-     >
+    name="HardDiskType"
+    uuid="a348fafd-a64e-4643-ba65-eb3896bd7e0a"
+   >
     <desc>
       Virtual hard disk type.
       <see>IHardDisk</see>
     </desc>
-    <const name="NormalHardDisk" value="0">
+
+    <const name="Normal"            value="0">
       <desc>
         Normal hard disk (attached directly or indirectly, preserved
         when taking snapshots).
       </desc>
     </const>
-    <const name="ImmutableHardDisk" value="1">
+    <const name="Immutable"         value="1">
       <desc>
         Immutable hard disk (attached indirectly, changes are wiped out
         after powering off the virtual machine).
       </desc>
     </const>
-    <const name="WritethroughHardDisk" value="2">
+    <const name="Writethrough"      value="2">
       <desc>
         Write through hard disk (attached directly, ignored when
         taking snapshots).
@@ -5792,7 +5833,7 @@
       <desc>
 
         Type (behavior) of this hard disk. For a newly created or opened hard
-        disk, this value is <link to="HardDiskType::NormalHardDisk"/>.
+        disk, this value is <link to="HardDiskType::Normal"/>.
 
         <note>
           In the current implementation, this property can be
@@ -6184,7 +6225,7 @@
 
       <note>
         In the current imlementation, the type of all iSCSI hard disks
-        is <link to="HardDiskType::WritethroughHardDisk">Writethrough</link>
+        is <link to="HardDiskType::Writethrough">Writethrough</link>
         and cannot be changed.
       </note>
 
@@ -6290,8 +6331,8 @@
 
       <note>
         In the current imlementation, the type of all VMDK hard disks
-        is <link to="HardDiskType::WritethroughHardDisk">Writethrough</link>
-        and cannot be changed.
+        is <link to="HardDiskType::Writethrough">Writethrough</link> and cannot
+        be changed.
       </note>
 
     </desc>
@@ -6615,8 +6656,8 @@
 
       <note>
         In the current imlementation, the type of all VHD hard disks
-        is <link to="HardDiskType::WritethroughHardDisk">Writethrough</link>
-        and cannot be changed.
+        is <link to="HardDiskType::Writethrough">Writethrough</link> and cannot
+        be changed.
       </note>
 
     </desc>
@@ -6839,16 +6880,6 @@
   // IDVDDrive
   /////////////////////////////////////////////////////////////////////////
   -->
-
-  <enum
-     name="DriveState"
-     uuid="cb7233b7-c519-42a5-8310-1830953cacbc"
-     >
-    <const name="InvalidDriveState"  value="0"/>
-    <const name="NotMounted"         value="1"/>
-    <const name="ImageMounted"       value="2"/>
-    <const name="HostDriveCaptured"  value="3"/>
-  </enum>
 
   <interface
      name="IDVDDrive" extends="$unknown"
@@ -7092,9 +7123,13 @@
   -->
 
   <enum
-     name="MouseButtonState"
-     uuid="03131722-2EC5-4173-9794-0DACA46673EF"
-     >
+    name="MouseButtonState"
+    uuid="03131722-2EC5-4173-9794-0DACA46673EF"
+  >
+    <desc>
+      Mouse button state.
+    </desc>
+
     <const name="LeftButton"        value="0x01"/>
     <const name="RightButton"       value="0x02"/>
     <const name="MiddleButton"      value="0x04"/>
@@ -7226,17 +7261,21 @@
   -->
 
   <enum
-     name="FramebufferAccelerationOperation"
-     uuid="f0e5ebbe-dc8e-4e2d-916e-53baa3844df8"
-     >
+    name="FramebufferAccelerationOperation"
+    uuid="f0e5ebbe-dc8e-4e2d-916e-53baa3844df8"
+  >
+    <desc>
+      Framebuffer acceleration operation.
+    </desc>
+
     <const name="SolidFillAcceleration"   value="1"/>
     <const name="ScreenCopyAcceleration"  value="2"/>
   </enum>
 
   <enum
-     name="FramebufferPixelFormat"
-     uuid="6b27d1fc-4f2c-4e9c-a166-01d06540305d"
-     >
+    name="FramebufferPixelFormat"
+    uuid="6b27d1fc-4f2c-4e9c-a166-01d06540305d"
+  >
     <desc>
       Format of the video memory buffer. Constants represented by this enum can
       be used to test for particular values of <link
@@ -7245,7 +7284,8 @@
 
       See also www.fourcc.org for more informantion about FOURCC pixel formats.
     </desc>
-    <const name="PixelFormatOpaque"       value="0xFFFFFFFF">
+
+    <const name="Opaque"                  value="0xFFFFFFFF">
       <desc>
         Unknown buffer format. The user may not assume any particular
         format of the buffer.
@@ -7298,7 +7338,7 @@
         to="FramebufferPixelFormat"/> or a raw FOURCC code.
         <note>
           This attribute must never return <link
-          to="PixelFormat::PixelFormatOpaque"/> -- the format of the buffer
+          to="PixelFormat::Opaque"/> -- the format of the buffer
           <link to="#address"/> points to must be always known.
         </note>
       </desc>
@@ -7398,7 +7438,7 @@
 
         The @a pixelFormat parameter defines whether the direct mode is
         available or not. If @a pixelFormat is <link
-        to="PixelFormat::PixelFormatOpaque"/> then direct access to the guest
+        to="PixelFormat::Opaque"/> then direct access to the guest
         VRAM buffer is not available -- the @a VRAM, @a bitsPerPixel and @a
         bytesPerLine parameters must be ignored and the implementation must use
         the indirect mode (where it provides its own buffer in one of the
@@ -7439,7 +7479,7 @@
         to="#address"/> points to. Note also that the <link to="#bitsPerPixel"/>
         value must always correlate with <link to="#pixelFormat"/>. Note that
         the <link to="#pixelFormat"/> attribute must never return <link
-        to="PixelFormat::PixelFormatOpaque"/> regardless of the selected mode.
+        to="PixelFormat::Opaque"/> regardless of the selected mode.
 
         <note>
           This method is called by the IDisplay object under the
@@ -7810,23 +7850,35 @@
   -->
 
   <enum
-     name="NetworkAttachmentType"
-     uuid="8730d899-d036-4925-bc63-e58f3486f4bf"
-     >
-    <const name="NoNetworkAttachment"            value="0"/>
-    <const name="NATNetworkAttachment"           value="1"/>
-    <const name="HostInterfaceNetworkAttachment" value="2"/>
-    <const name="InternalNetworkAttachment"      value="3"/>
+    name="NetworkAttachmentType"
+    uuid="8730d899-d036-4925-bc63-e58f3486f4bf"
+  >
+    <desc>
+      Network attachment type.
+    </desc>
+
+    <const name="Null"                  value="0">
+      <desc><tt>null</tt> value. Also means "not attached".</desc>
+    </const>
+    <const name="NAT"                   value="1"/>
+    <const name="HostInterface"         value="2"/>
+    <const name="Internal"              value="3"/>
   </enum>
 
   <enum
-     name="NetworkAdapterType"
-     uuid="156b17b9-5d61-4d54-be90-62e37dda848d"
-     >
-    <const name="InvalidNetworkAdapterType"      value="0"/>
-    <const name="NetworkAdapterAm79C970A"        value="1"/>
-    <const name="NetworkAdapterAm79C973"         value="2"/>
-    <const name="NetworkAdapter82540EM"          value="3"/>
+    name="NetworkAdapterType"
+    uuid="156b17b9-5d61-4d54-be90-62e37dda848d"
+  >
+    <desc>
+      Network adapter type.
+    </desc>
+
+    <const name="Null"                  value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
+    </const>
+    <const name="Am79C970A"             value="1"/>
+    <const name="Am79C973"              value="2"/>
+    <const name="I82540EM"              value="3"/>
   </enum>
 
   <interface
@@ -7972,21 +8024,21 @@
   -->
 
   <enum
-     name="PortMode"
-     uuid="b266f43c-2e93-46b3-812b-c20e600e867b"
-     >
+    name="PortMode"
+    uuid="b266f43c-2e93-46b3-812b-c20e600e867b"
+  >
     <desc>
       The PortMode enumeration represents possible communicaton modes for
       the virtual serial port device.
     </desc>
 
-    <const name="DisconnectedPort"        value="0">
+    <const name="Disconnected"        value="0">
       <desc>Virtual device is not attached to any real host device.</desc>
     </const>
-    <const name="HostPipePort"            value="1">
+    <const name="HostPipe"            value="1">
       <desc>Virtual device is attached to a host pipe.</desc>
     </const>
-    <const name="HostDevicePort"          value="2">
+    <const name="HostDevice"          value="2">
       <desc>Virtual device is attached to a host device.</desc>
     </const>
   </enum>
@@ -8268,10 +8320,10 @@
         These filters are also activated when the machine is powered up.
         They are run against a list of all currently available USB
         devices (in states
-        <link to="USBDeviceState::USBDeviceAvailable">USBDeviceAvailable</link>,
-        <link to="USBDeviceState::USBDeviceBusy">USBDeviceBusy</link>,
-        <link to="USBDeviceState::USBDeviceHeld">USBDeviceHeld</link>)
-        that were not previously ignored by global filters.
+        <link to="USBDeviceState::Available">Available</link>,
+        <link to="USBDeviceState::Busy">Busy</link>,
+        <link to="USBDeviceState::Held">Held</link>) that were not previously
+        ignored by global filters.
 
         If at least one filter matches the USB device in question, this
         device is automatically captured (attached to) the virtual USB
@@ -8689,61 +8741,61 @@
 
       Once a supported USB device is attached to the host, global USB
       filters (<link to="IHost::USBDeviceFilters"/>) are activated. They can
-      either ignore the device, or put ot to #USBDeviceHeld state, or do
-      nothing. Unless the device is ignored by global filters, filters of
-      all currently running guests (<link to="IUSBController::deviceFilters"/>)
-      are activated that can put it to #USBDeviceCaptured state.
+      either ignore the device, or put ot to #Held state, or do nothing. Unless
+      the device is ignored by global filters, filters of all currently running
+      guests (<link to="IUSBController::deviceFilters"/>) are activated that can
+      put it to #Captured state.
 
       If the device was ignored by global filters, or didn't match
       any filters at all (including guest ones), it is handled by the host
       in a normal way. In this case, the device state is determined by
-      the host and can be one of #USBDeviceUnavailable, #USBDeviceBusy or
-      #USBDeviceAvailable, depending on the current device usage.
+      the host and can be one of #Unavailable, #Busy or #Available, depending on
+      the current device usage.
 
       Besides auto-capturing based on filters, the device can be manually
       captured by guests (<link to="IConsole::attachUSBDevice()"/>) if its
-      state is #USBDeviceBusy, #USBDeviceAvailable or #USBDeviceHeld.
+      state is #Busy, #Available or #Held.
 
       <note>
         Due to differences in USB stack implementations in Linux and Win32,
-        states #USBDeviceBusy and #USBDeviceAvailable are applicable
-        only to the Linux version of the product. This also means that
-        (<link to="IConsole::attachUSBDevice()"/>) can only succeed
-        on Win32 if the device state is #USBDeviceHeld.
+        states #Busy and #Available are applicable only to the Linux version of
+        the product. This also means that (<link
+        to="IConsole::attachUSBDevice()"/>) can only succeed on Win32 if
+        the device state is #USBDeviceHeld.
       </note>
 
       <see>IHostUSBDevice, IHostUSBDeviceFilter</see>
     </desc>
 
-    <const name="USBDeviceNotSupported" value="0">
+    <const name="NotSupported"          value="0">
       <desc>
         Not supported by the VirtualBox server, not available to guests.
       </desc>
     </const>
-    <const name="USBDeviceUnavailable"  value="1">
+    <const name="Unavailable"           value="1">
       <desc>
         Being used by the host computer exclusively,
         not available to guests.
       </desc>
     </const>
-    <const name="USBDeviceBusy"         value="2">
+    <const name="Busy"                  value="2">
       <desc>
         Being used by the host computer, potentially available to guests.
       </desc>
     </const>
-    <const name="USBDeviceAvailable"    value="3">
+    <const name="Available"             value="3">
       <desc>
         Not used by the host computer, available to guests.
         The host computer can also start using the device at any time.
       </desc>
     </const>
-    <const name="USBDeviceHeld"         value="4">
+    <const name="Held"                  value="4">
       <desc>
         Held by the VirtualBox server (ignored by the host computer),
         available to guests.
       </desc>
     </const>
-    <const name="USBDeviceCaptured"     value="5">
+    <const name="Captured"              value="5">
       <desc>
         Captured by one of the guest computers, not available
         to anybody else.
@@ -8835,19 +8887,21 @@
   -->
 
   <enum
-     name="USBDeviceFilterAction"
-     uuid="cbc30a49-2f4e-43b5-9da6-121320475933"
-     >
+    name="USBDeviceFilterAction"
+    uuid="cbc30a49-2f4e-43b5-9da6-121320475933"
+  >
     <desc>
       Actions for host USB device filters.
       <see>IHostUSBDeviceFilter, USBDeviceState</see>
     </desc>
 
-    <const name="InvalidUSBDeviceFilterAction"  value="0"/>
-    <const name="USBDeviceFilterIgnore"         value="1">
+    <const name="Null"          value="0">
+      <desc><tt>null</tt> value. Never used by the API.</desc>
+    </const>
+    <const name="Ignore"        value="1">
       <desc>Ignore the matched USB device.</desc>
     </const>
-    <const name="USBDeviceFilterHold"           value="2">
+    <const name="Hold"          value="2">
       <desc>Hold the matched USB device.</desc>
     </const>
   </enum>
@@ -8902,23 +8956,33 @@
   -->
 
   <enum
-     name="AudioDriverType"
-     uuid="4bcc3d73-c2fe-40db-b72f-0c2ca9d68496"
-     >
-    <const name="NullAudioDriver"   value="0"/>
-    <const name="WINMMAudioDriver"  value="1"/>
-    <const name="OSSAudioDriver"    value="2"/>
-    <const name="ALSAAudioDriver"   value="3"/>
-    <const name="DSOUNDAudioDriver" value="4"/>
-    <const name="CoreAudioDriver"   value="5"/>
-    <const name="MMPMAudioDriver"   value="6"/>
-    <const name="PulseAudioDriver"  value="7"/>
+    name="AudioDriverType"
+    uuid="4bcc3d73-c2fe-40db-b72f-0c2ca9d68496"
+  >
+    <desc>
+      Host audio driver type.
+    </desc>
+
+    <const name="Null"          value="0">
+      <desc><tt>null</tt> value. Also means "dummy audio driver".</desc>
+    </const>
+    <const name="WINMM"         value="1"/>
+    <const name="OSS"           value="2"/>
+    <const name="ALSA"          value="3"/>
+    <const name="DSOUND"        value="4"/>
+    <const name="Core"          value="5"/>
+    <const name="MMPM"          value="6"/>
+    <const name="Pulse"         value="7"/>
   </enum>
 
   <enum
     name="AudioControllerType"
     uuid="7afd395c-42c3-444e-8788-3ce80292f36c"
-    >
+  >
+    <desc>
+      Virtual audio controller type.
+    </desc>
+
     <const name="AC97" value="0"/>
     <const name="SB16" value="1"/>
   </enum>
@@ -8959,12 +9023,18 @@
   -->
 
   <enum
-     name="VRDPAuthType"
-     uuid="3d91887a-b67f-4b33-85bf-2da7ab1ea83a"
-     >
-    <const name="VRDPAuthNull"            value="0"/>
-    <const name="VRDPAuthExternal"        value="1"/>
-    <const name="VRDPAuthGuest"           value="2"/>
+    name="VRDPAuthType"
+    uuid="3d91887a-b67f-4b33-85bf-2da7ab1ea83a"
+  >
+    <desc>
+      VRDP authentication type.
+    </desc>
+
+    <const name="Null"            value="0">
+      <desc><tt>null</tt> value. Also means "no authentication".</desc>
+    </const>
+    <const name="External"        value="1"/>
+    <const name="Guest"           value="2"/>
   </enum>
 
   <interface

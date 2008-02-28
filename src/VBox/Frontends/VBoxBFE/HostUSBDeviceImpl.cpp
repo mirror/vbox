@@ -75,22 +75,22 @@ HRESULT HostUSBDevice::init(PUSBDEVICE aUsb, USBProxyService *aUSBProxyService)
         default:
             AssertMsgFailed(("aUsb->enmState=%d\n", aUsb->enmState));
         case USBDEVICESTATE_UNSUPPORTED:
-            mState = USBDeviceState_USBDeviceNotSupported;
+            mState = USBDeviceState_NotSupported;
             break;
         case USBDEVICESTATE_USED_BY_HOST:
-            mState = USBDeviceState_USBDeviceUnavailable;
+            mState = USBDeviceState_Unavailable;
             break;
         case USBDEVICESTATE_USED_BY_HOST_CAPTURABLE:
-            mState = USBDeviceState_USBDeviceBusy;
+            mState = USBDeviceState_Busy;
             break;
         case USBDEVICESTATE_UNUSED:
-            mState = USBDeviceState_USBDeviceAvailable;
+            mState = USBDeviceState_Available;
             break;
         case USBDEVICESTATE_HELD_BY_PROXY:
-            mState = USBDeviceState_USBDeviceHeld;
+            mState = USBDeviceState_Held;
             break;
         case USBDEVICESTATE_USED_BY_GUEST:
-            mState = USBDeviceState_USBDeviceCaptured;
+            mState = USBDeviceState_Captured;
             break;
     }
 
@@ -319,13 +319,13 @@ void HostUSBDevice::setCaptured ()
     Assert (isReady());
 
     Assert (
-        mState == USBDeviceState_USBDeviceBusy ||
-        mState == USBDeviceState_USBDeviceAvailable ||
-        mState == USBDeviceState_USBDeviceHeld);
+        mState == USBDeviceState_Busy ||
+        mState == USBDeviceState_Available ||
+        mState == USBDeviceState_Held);
 
     mUSBProxyService->captureDevice (this);
 
-    mState = USBDeviceState_USBDeviceCaptured;
+    mState = USBDeviceState_Captured;
 }
 
 /**
@@ -338,9 +338,9 @@ int HostUSBDevice::setHostDriven()
     AutoLock alock (this);
     AssertReturn (isReady(), VERR_INVALID_PARAMETER);
 
-    AssertReturn (mState == USBDeviceState_USBDeviceHeld, VERR_INVALID_PARAMETER);
+    AssertReturn (mState == USBDeviceState_Held, VERR_INVALID_PARAMETER);
 
-    mState = USBDeviceState_USBDeviceAvailable;
+    mState = USBDeviceState_Available;
 
     return mUSBProxyService->releaseDevice (this);
 }
@@ -355,7 +355,7 @@ int HostUSBDevice::reset()
     AutoLock alock (this);
     AssertReturn (isReady(), VERR_INVALID_PARAMETER);
 
-    mState = USBDeviceState_USBDeviceHeld;
+    mState = USBDeviceState_Held;
     mIgnored = false;
 
     /** @todo this operation might fail and cause the device to the reattached with a different address and all that. */
@@ -371,16 +371,16 @@ int HostUSBDevice::reset()
 void HostUSBDevice::setHostState (USBDeviceState_T aState)
 {
     AssertReturn (
-        aState == USBDeviceState_USBDeviceUnavailable ||
-        aState == USBDeviceState_USBDeviceBusy ||
-        aState == USBDeviceState_USBDeviceAvailable,
+        aState == USBDeviceState_Unavailable ||
+        aState == USBDeviceState_Busy ||
+        aState == USBDeviceState_Available,
         (void) 0);
 
     AssertReturn (
-        mState == USBDeviceState_USBDeviceNotSupported || /* initial state */
-        mState == USBDeviceState_USBDeviceUnavailable ||
-        mState == USBDeviceState_USBDeviceBusy ||
-        mState == USBDeviceState_USBDeviceAvailable,
+        mState == USBDeviceState_NotSupported || /* initial state */
+        mState == USBDeviceState_Unavailable ||
+        mState == USBDeviceState_Busy ||
+        mState == USBDeviceState_Available,
         (void) 0);
 
     if (mState != aState)
@@ -451,21 +451,21 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
         default:
             AssertMsgFailed (("aDev->enmState=%d\n", aDev->enmState));
         case USBDEVICESTATE_UNSUPPORTED:
-            Assert (mState == USBDeviceState_USBDeviceNotSupported);
+            Assert (mState == USBDeviceState_NotSupported);
             return false;
 
         case USBDEVICESTATE_USED_BY_HOST:
             switch (mState)
             {
-                case USBDeviceState_USBDeviceUnavailable:
+                case USBDeviceState_Unavailable:
                 /* the proxy may confuse following states with unavailable */
-                case USBDeviceState_USBDeviceHeld:
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Held:
+                case USBDeviceState_Captured:
                     return false;
                 default:
                     LogFlowMember ((" HostUSBDevice::updateState: %d -> %d\n",
-                                    mState, USBDeviceState_USBDeviceUnavailable));
-                    mState = USBDeviceState_USBDeviceUnavailable;
+                                    mState, USBDeviceState_Unavailable));
+                    mState = USBDeviceState_Unavailable;
                     return true;
             }
             break;
@@ -473,15 +473,15 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
         case USBDEVICESTATE_USED_BY_HOST_CAPTURABLE:
             switch (mState)
             {
-                case USBDeviceState_USBDeviceBusy:
+                case USBDeviceState_Busy:
                 /* the proxy may confuse following states with capturable */
-                case USBDeviceState_USBDeviceHeld:
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Held:
+                case USBDeviceState_Captured:
                     return false;
                 default:
                     LogFlowMember ((" HostUSBDevice::updateState: %d -> %d\n",
-                                    mState, USBDeviceState_USBDeviceBusy));
-                    mState = USBDeviceState_USBDeviceBusy;
+                                    mState, USBDeviceState_Busy));
+                    mState = USBDeviceState_Busy;
                     return true;
             }
             break;
@@ -489,15 +489,15 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
         case USBDEVICESTATE_UNUSED:
             switch (mState)
             {
-                case USBDeviceState_USBDeviceAvailable:
+                case USBDeviceState_Available:
                 /* the proxy may confuse following state(s) with available */
-                case USBDeviceState_USBDeviceHeld:
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Held:
+                case USBDeviceState_Captured:
                     return false;
                 default:
                     LogFlowMember ((" HostUSBDevice::updateState: %d -> %d\n",
-                                    mState, USBDeviceState_USBDeviceAvailable));
-                    mState = USBDeviceState_USBDeviceAvailable;
+                                    mState, USBDeviceState_Available));
+                    mState = USBDeviceState_Available;
                     return true;
             }
             break;
@@ -505,16 +505,16 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
         case USBDEVICESTATE_HELD_BY_PROXY:
             switch (mState)
             {
-                case USBDeviceState_USBDeviceHeld:
+                case USBDeviceState_Held:
                 /* the proxy may confuse following state(s) with held */
-                case USBDeviceState_USBDeviceAvailable:
-                case USBDeviceState_USBDeviceBusy:
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Available:
+                case USBDeviceState_Busy:
+                case USBDeviceState_Captured:
                     return false;
                 default:
                     LogFlowMember ((" HostUSBDevice::updateState: %d -> %d\n",
-                                    mState, USBDeviceState_USBDeviceHeld));
-                    mState = USBDeviceState_USBDeviceHeld;
+                                    mState, USBDeviceState_Held));
+                    mState = USBDeviceState_Held;
                     return true;
             }
             break;
@@ -522,16 +522,16 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
         case USBDEVICESTATE_USED_BY_GUEST:
             switch (mState)
             {
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Captured:
                 /* the proxy may confuse following state(s) with captured */
-                case USBDeviceState_USBDeviceHeld:
-                case USBDeviceState_USBDeviceAvailable:
-                case USBDeviceState_USBDeviceBusy:
+                case USBDeviceState_Held:
+                case USBDeviceState_Available:
+                case USBDeviceState_Busy:
                     return false;
                 default:
                     LogFlowMember ((" HostUSBDevice::updateState: %d -> %d\n",
-                                    mState, USBDeviceState_USBDeviceHeld));
-                    mState = USBDeviceState_USBDeviceHeld;
+                                    mState, USBDeviceState_Held));
+                    mState = USBDeviceState_Held;
                     return true;
             }
             break;

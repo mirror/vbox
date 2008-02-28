@@ -27,18 +27,18 @@
 
 void VBoxVMNetworkSettings::init()
 {
-    cbAdapterType->insertItem (vboxGlobal().toString (CEnums::NetworkAdapterAm79C970A));
-    cbAdapterType->insertItem (vboxGlobal().toString (CEnums::NetworkAdapterAm79C973));
-    cbAdapterType->insertItem (vboxGlobal().toString (CEnums::NetworkAdapter82540EM));
+    cbAdapterType->insertItem (vboxGlobal().toString (KNetworkAdapterType_Am79C970A));
+    cbAdapterType->insertItem (vboxGlobal().toString (KNetworkAdapterType_Am79C973));
+    cbAdapterType->insertItem (vboxGlobal().toString (KNetworkAdapterType_I82540EM));
 
     leMACAddress->setValidator (new QRegExpValidator
                                 (QRegExp ("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
 
-    cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::NoNetworkAttachment));
-    cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::NATNetworkAttachment));
+    cbNetworkAttachment->insertItem (vboxGlobal().toString (KNetworkAttachmentType_Null));
+    cbNetworkAttachment->insertItem (vboxGlobal().toString (KNetworkAttachmentType_NAT));
 #ifndef Q_WS_MAC /* not yet on the Mac */
-    cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::HostInterfaceNetworkAttachment));
-    cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::InternalNetworkAttachment));
+    cbNetworkAttachment->insertItem (vboxGlobal().toString (KNetworkAttachmentType_HostInterface));
+    cbNetworkAttachment->insertItem (vboxGlobal().toString (KNetworkAttachmentType_Internal));
 #endif
 
 #if defined Q_WS_X11
@@ -79,17 +79,17 @@ void VBoxVMNetworkSettings::init()
 VBoxVMNetworkSettings::CheckPageResult
 VBoxVMNetworkSettings::checkPage (const QStringList &aList)
 {
-    CEnums::NetworkAttachmentType type =
+    KNetworkAttachmentType type =
         vboxGlobal().toNetworkAttachmentType (cbNetworkAttachment->currentText());
 #if defined Q_WS_WIN
-    if (type == CEnums::HostInterfaceNetworkAttachment &&
+    if (type == KNetworkAttachmentType_HostInterface &&
         isInterfaceInvalid (aList, cbHostInterfaceName->currentText()))
         return CheckPage_InvalidInterface;
     else
 #else
     NOREF (aList);
 #endif
-    if (type == CEnums::InternalNetworkAttachment &&
+    if (type == KNetworkAttachmentType_Internal &&
         cbInternalNetworkName->currentText().isEmpty())
         return CheckPage_NoNetworkName;
     else
@@ -141,7 +141,7 @@ void VBoxVMNetworkSettings::getFromAdapter (const CNetworkAdapter &adapter)
     cbAdapterType->setCurrentText (vboxGlobal().
         toString (adapter.GetAdapterType()));
 
-    CEnums::NetworkAttachmentType type = adapter.GetAttachmentType();
+    KNetworkAttachmentType type = adapter.GetAttachmentType();
     cbNetworkAttachment->setCurrentItem (0);
     for (int i = 0; i < cbNetworkAttachment->count(); i ++)
         if (vboxGlobal().toNetworkAttachmentType (cbNetworkAttachment->text (i)) == type)
@@ -184,20 +184,20 @@ void VBoxVMNetworkSettings::putBackToAdapter()
     cadapter.SetAdapterType (vboxGlobal().
         toNetworkAdapterType (cbAdapterType->currentText()));
 
-    CEnums::NetworkAttachmentType type =
+    KNetworkAttachmentType type =
         vboxGlobal().toNetworkAttachmentType (cbNetworkAttachment->currentText());
     switch (type)
     {
-        case CEnums::NoNetworkAttachment:
+        case KNetworkAttachmentType_Null:
             cadapter.Detach();
             break;
-        case CEnums::NATNetworkAttachment:
+        case KNetworkAttachmentType_NAT:
             cadapter.AttachToNAT();
             break;
-        case CEnums::HostInterfaceNetworkAttachment:
+        case KNetworkAttachmentType_HostInterface:
             cadapter.AttachToHostInterface();
             break;
-        case CEnums::InternalNetworkAttachment:
+        case KNetworkAttachmentType_Internal:
             cadapter.AttachToInternalNetwork();
             break;
         default:
@@ -209,7 +209,7 @@ void VBoxVMNetworkSettings::putBackToAdapter()
 
     cadapter.SetCableConnected (chbCableConnected->isChecked());
 
-    if (type == CEnums::HostInterfaceNetworkAttachment)
+    if (type == KNetworkAttachmentType_HostInterface)
     {
 #if defined Q_WS_WIN
         if (!cbHostInterfaceName->currentText().isEmpty())
@@ -226,7 +226,7 @@ void VBoxVMNetworkSettings::putBackToAdapter()
         cadapter.SetTAPTerminateApplication (term.isEmpty() ? QString::null : term);
 #endif
     }
-    else if (type == CEnums::InternalNetworkAttachment)
+    else if (type == KNetworkAttachmentType_Internal)
         cadapter.SetInternalNetwork (cbInternalNetworkName->currentText());
 }
 
@@ -256,9 +256,9 @@ void VBoxVMNetworkSettings::grbEnabledToggled (bool aOn)
 void VBoxVMNetworkSettings::cbNetworkAttachment_activated (const QString &aString)
 {
     bool enableHostIf = vboxGlobal().toNetworkAttachmentType (aString) ==
-                        CEnums::HostInterfaceNetworkAttachment;
+                        KNetworkAttachmentType_HostInterface;
     bool enableIntNet = vboxGlobal().toNetworkAttachmentType (aString) ==
-                        CEnums::InternalNetworkAttachment;
+                        KNetworkAttachmentType_Internal;
 #if defined Q_WS_WIN
     txHostInterface_WIN->setEnabled (enableHostIf);
     cbHostInterfaceName->setEnabled (enableHostIf);

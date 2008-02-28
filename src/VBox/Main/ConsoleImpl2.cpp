@@ -149,16 +149,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
 
     /* hardware virtualization extensions */
-    TriStateBool_T hwVirtExEnabled;
+    TSBool_T hwVirtExEnabled;
     BOOL fHWVirtExEnabled;
     hrc = pMachine->COMGETTER(HWVirtExEnabled)(&hwVirtExEnabled);                   H();
-    if (hwVirtExEnabled == TriStateBool_TSDefault)
+    if (hwVirtExEnabled == TSBool_Default)
     {
         /* check the default value */
         hrc = systemProperties->COMGETTER(HWVirtExEnabled)(&fHWVirtExEnabled);      H();
     }
     else
-        fHWVirtExEnabled = (hwVirtExEnabled == TriStateBool_TSTrue);
+        fHWVirtExEnabled = (hwVirtExEnabled == TSBool_True);
 #ifndef RT_OS_DARWIN /** @todo Implement HWVirtExt on darwin. See #1865. */
     if (fHWVirtExEnabled)
     {
@@ -182,10 +182,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = biosSettings->COMGETTER(IDEControllerType)(&controllerType);               H();
     switch (controllerType)
     {
-        case IDEControllerType_IDEControllerPIIX3:
+        case IDEControllerType_PIIX3:
             fPIIX4 = FALSE;
             break;
-        case IDEControllerType_IDEControllerPIIX4:
+        case IDEControllerType_PIIX4:
             fPIIX4 = TRUE;
             break;
         default:
@@ -266,19 +266,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         const char *pszBootDevice;
         switch (bootDevice)
         {
-            case DeviceType_NoDevice:
+            case DeviceType_Null:
                 pszBootDevice = "NONE";
                 break;
-            case DeviceType_HardDiskDevice:
+            case DeviceType_HardDisk:
                 pszBootDevice = "IDE";
                 break;
-            case DeviceType_DVDDevice:
+            case DeviceType_DVD:
                 pszBootDevice = "DVD";
                 break;
-            case DeviceType_FloppyDevice:
+            case DeviceType_Floppy:
                 pszBootDevice = "FLOPPY";
                 break;
-            case DeviceType_NetworkDevice:
+            case DeviceType_Network:
                 pszBootDevice = "LAN";
                 break;
             default:
@@ -610,10 +610,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         switch (enmCtl)
         {
-            case DiskControllerType_IDE0Controller:
+            case DiskControllerType_IDE0:
                 i = 0;
                 break;
-            case DiskControllerType_IDE1Controller:
+            case DiskControllerType_IDE1:
                 i = 2;
                 break;
             default:
@@ -866,12 +866,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         hrc = networkAdapter->COMGETTER(AdapterType)(&adapterType);                 H();
         switch (adapterType)
         {
-            case NetworkAdapterType_NetworkAdapterAm79C970A:
-            case NetworkAdapterType_NetworkAdapterAm79C973:
+            case NetworkAdapterType_Am79C970A:
+            case NetworkAdapterType_Am79C973:
                 pDev = pDevPCNet;
                 break;
 #ifdef VBOX_WITH_E1000
-            case NetworkAdapterType_NetworkAdapter82540EM:
+            case NetworkAdapterType_I82540EM:
                 pDev = pDevE1000;
                 break;
 #endif
@@ -898,10 +898,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         */
         switch (adapterType)
         {
-            case NetworkAdapterType_NetworkAdapterAm79C970A:
+            case NetworkAdapterType_Am79C970A:
                 rc = CFGMR3InsertInteger(pCfg, "Am79C973", 0);                      RC_CHECK();
                 break;
-            case NetworkAdapterType_NetworkAdapterAm79C973:
+            case NetworkAdapterType_Am79C973:
                 rc = CFGMR3InsertInteger(pCfg, "Am79C973", 1);                      RC_CHECK();
                 break;
         }
@@ -976,10 +976,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         hrc = networkAdapter->COMGETTER(AttachmentType)(&networkAttachment);        H();
         switch (networkAttachment)
         {
-            case NetworkAttachmentType_NoNetworkAttachment:
+            case NetworkAttachmentType_Null:
                 break;
 
-            case NetworkAttachmentType_NATNetworkAttachment:
+            case NetworkAttachmentType_NAT:
             {
                 if (fSniffer)
                 {
@@ -1014,7 +1014,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             }
 
-            case NetworkAttachmentType_HostInterfaceNetworkAttachment:
+            case NetworkAttachmentType_HostInterface:
             {
                 /*
                  * Perform the attachment if required (don't return on error!)
@@ -1125,7 +1125,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             }
 
-            case NetworkAttachmentType_InternalNetworkAttachment:
+            case NetworkAttachmentType_Internal:
             {
                 hrc = networkAdapter->COMGETTER(InternalNetwork)(&str);                 H();
                 STR_CONV();
@@ -1184,10 +1184,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         hrc = serialPort->COMGETTER(Server)(&fServer);                              H();
         rc = CFGMR3InsertInteger(pCfg,   "IRQ", ulIRQ);                             RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,   "IOBase", ulIOBase);                       RC_CHECK();
-        if (HostMode != PortMode_DisconnectedPort)
+        if (HostMode != PortMode_Disconnected)
         {
             rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                     RC_CHECK();
-            if (HostMode == PortMode_HostPipePort)
+            if (HostMode == PortMode_HostPipe)
             {
                 rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                 RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);        RC_CHECK();
@@ -1196,7 +1196,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertString(pLunL2,  "Location", Utf8Str(path));        RC_CHECK();
                 rc = CFGMR3InsertInteger(pLunL2, "IsServer", fServer);              RC_CHECK();
             }
-            else if (HostMode == PortMode_HostDevicePort)
+            else if (HostMode == PortMode_HostDevice)
             {
                 rc = CFGMR3InsertString(pLunL0,  "Driver", "Host Serial");          RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,    "Config", &pLunL1);                RC_CHECK();
@@ -1334,40 +1334,40 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         hrc = audioAdapter->COMGETTER(AudioDriver)(&audioDriver);                       H();
         switch (audioDriver)
         {
-            case AudioDriverType_NullAudioDriver:
+            case AudioDriverType_Null:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "null");                   RC_CHECK();
                 break;
             }
 #ifdef RT_OS_WINDOWS
 #ifdef VBOX_WITH_WINMM
-            case AudioDriverType_WINMMAudioDriver:
+            case AudioDriverType_WINMM:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "winmm");                  RC_CHECK();
                 break;
             }
 #endif
-            case AudioDriverType_DSOUNDAudioDriver:
+            case AudioDriverType_DSOUND:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "dsound");                 RC_CHECK();
                 break;
             }
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_LINUX
-            case AudioDriverType_OSSAudioDriver:
+            case AudioDriverType_OSS:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                    RC_CHECK();
                 break;
             }
 # ifdef VBOX_WITH_ALSA
-            case AudioDriverType_ALSAAudioDriver:
+            case AudioDriverType_ALSA:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "alsa");                   RC_CHECK();
                 break;
             }
 # endif
 # ifdef VBOX_WITH_PULSE
-            case AudioDriverType_PulseAudioDriver:
+            case AudioDriverType_Pulse:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "pulse");                  RC_CHECK();
                 break;
@@ -1375,7 +1375,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 # endif
 #endif /* RT_OS_LINUX */
 #ifdef RT_OS_DARWIN
-            case AudioDriverType_CoreAudioDriver:
+            case AudioDriverType_Core:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "coreaudio");              RC_CHECK();
                 break;
@@ -1471,10 +1471,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Clipboard
      */
     {
-        ClipboardMode_T mode = ClipboardMode_ClipDisabled;
+        ClipboardMode_T mode = ClipboardMode_Disabled;
         hrc = pMachine->COMGETTER(ClipboardMode) (&mode);                               H();
 
-        if (mode != ClipboardMode_ClipDisabled)
+        if (mode != ClipboardMode_Disabled)
         {
             /* Load the service */
             rc = pConsole->mVMMDev->hgcmLoadService ("VBoxSharedClipboard", "VBoxSharedClipboard");
@@ -1495,25 +1495,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 switch (mode)
                 {
                     default:
-                    case ClipboardMode_ClipDisabled:
+                    case ClipboardMode_Disabled:
                     {
                         LogRel(("VBoxSharedClipboard mode: Off\n"));
                         parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_OFF;
                         break;
                     }
-                    case ClipboardMode_ClipGuestToHost:
+                    case ClipboardMode_GuestToHost:
                     {
                         LogRel(("VBoxSharedClipboard mode: Guest to Host\n"));
                         parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST;
                         break;
                     }
-                    case ClipboardMode_ClipHostToGuest:
+                    case ClipboardMode_HostToGuest:
                     {
                         LogRel(("VBoxSharedClipboard mode: Host to Guest\n"));
                         parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST;
                         break;
                     }
-                    case ClipboardMode_ClipBidirectional:
+                    case ClipboardMode_Bidirectional:
                     {
                         LogRel(("VBoxSharedClipboard mode: Bidirectional\n"));
                         parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL;

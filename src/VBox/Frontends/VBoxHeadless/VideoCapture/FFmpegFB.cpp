@@ -75,7 +75,7 @@ extern "C" DECLEXPORT(HRESULT) VBoxRegisterFFmpegFB(ULONG width,
 FFmpegFB::FFmpegFB(ULONG width, ULONG height, ULONG bitrate,
                    com::Bstr filename) :
     mBitRate(bitrate),
-    mPixelFormat(FramebufferPixelFormat_PixelFormatOpaque),
+    mPixelFormat(FramebufferPixelFormat_Opaque),
     mBitsPerPixel(0),
     mFileName(filename),
     mBytesPerLine(0),
@@ -141,7 +141,7 @@ FFmpegFB::~FFmpegFB()
         /* Add another 10 seconds. */
         for (int i = 10*25; i > 0; i--)
             do_encoding_and_write();
-#endif 
+#endif
         /* write a png file of the last frame */
         write_png();
         avcodec_close(mpStream->codec);
@@ -209,7 +209,7 @@ HRESULT FFmpegFB::init()
                    mFrameWidth, mFrameHeight);
     /* Set the initial framebuffer size to the mpeg frame dimensions */
     BOOL finished;
-    RequestResize(0, FramebufferPixelFormat_PixelFormatOpaque, NULL, 0, 0,
+    RequestResize(0, FramebufferPixelFormat_Opaque, NULL, 0, 0,
                   mFrameWidth, mFrameHeight, &finished);
     /* Start counting time */
     mLastTime = RTTimeMilliTS();
@@ -271,8 +271,8 @@ STDMETHODIMP FFmpegFB::COMGETTER(Height) (ULONG *height)
 /**
  * Return the colour depth of our frame buffer.  Note that we actually
  * store the pixel format, not the colour depth internally, since
- * when display sets FramebufferPixelFormat_PixelFormatOpaque, it
- * wants to retreive FramebufferPixelFormat_PixelFormatOpaque and
+ * when display sets FramebufferPixelFormat_Opaque, it
+ * wants to retreive FramebufferPixelFormat_Opaque and
  * nothing else.
  *
  * @returns            COM status code
@@ -481,7 +481,7 @@ STDMETHODIMP FFmpegFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h,
  * COMGETTER(UsesGuestVRAM) method is used to tell the VGA device which method
  * we have chosen, and the other COMGETTER methods tell the device about
  * the layout of our buffer.  We currently handle all VRAM layouts except
- * FramebufferPixelFormat_PixelFormatOpaque (which cannot be handled by
+ * FramebufferPixelFormat_Opaque (which cannot be handled by
  * definition).
  */
 STDMETHODIMP FFmpegFB::RequestResize(ULONG aScreenId, ULONG pixelFormat,
@@ -643,7 +643,7 @@ STDMETHODIMP FFmpegFB::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc,
     return S_OK;
 }
 
-/** Stubbed */    
+/** Stubbed */
 STDMETHODIMP FFmpegFB::GetVisibleRegion(BYTE *rectangles, ULONG /* count */, ULONG * /* countCopied */)
 {
     if (!rectangles)
@@ -652,7 +652,7 @@ STDMETHODIMP FFmpegFB::GetVisibleRegion(BYTE *rectangles, ULONG /* count */, ULO
     return S_OK;
 }
 
-/** Stubbed */    
+/** Stubbed */
 STDMETHODIMP FFmpegFB::SetVisibleRegion(BYTE *rectangles, ULONG /* count */)
 {
     if (!rectangles)
@@ -719,7 +719,7 @@ HRESULT FFmpegFB::setup_output_format()
         mpFormatContext->preload = (int)(0.5 * AV_TIME_BASE);
     if (!mpFormatContext->max_delay)
         mpFormatContext->max_delay = (int)(0.7 * AV_TIME_BASE);
-#endif 
+#endif
     return S_OK;
 }
 

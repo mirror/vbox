@@ -1157,13 +1157,13 @@ HRESULT Host::loadSettings (const settings::Key &aGlobal)
         Bstr port = (*it).stringValue ("port");
 
         USBDeviceFilterAction_T action;
-        action = USBDeviceFilterAction_USBDeviceFilterIgnore;
+        action = USBDeviceFilterAction_Ignore;
         const char *actionStr = (*it).stringValue ("action");
         if (strcmp (actionStr, "Ignore") == 0)
-            action = USBDeviceFilterAction_USBDeviceFilterIgnore;
+            action = USBDeviceFilterAction_Ignore;
         else
         if (strcmp (actionStr, "Hold") == 0)
-            action = USBDeviceFilterAction_USBDeviceFilterHold;
+            action = USBDeviceFilterAction_Hold;
         else
             AssertMsgFailed (("Invalid action: '%s'\n", actionStr));
 
@@ -1241,10 +1241,10 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
             filter.setValue <Bstr> ("port", data.mPort.string());
 
         /* action is mandatory */
-        if (data.mAction == USBDeviceFilterAction_USBDeviceFilterIgnore)
+        if (data.mAction == USBDeviceFilterAction_Ignore)
             filter.setStringValue ("action", "Ignore");
         else
-        if (data.mAction == USBDeviceFilterAction_USBDeviceFilterHold)
+        if (data.mAction == USBDeviceFilterAction_Hold)
             filter.setStringValue ("action", "Hold");
         else
             AssertMsgFailed (("Invalid action: %d\n", data.mAction));
@@ -1282,11 +1282,11 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
             filter.setValue <Bstr> ("port", str);
 
         /* action is mandatory */
-        ULONG action = USBDeviceFilterAction_InvalidUSBDeviceFilterAction;
+        ULONG action = USBDeviceFilterAction_Null;
         (*it)->COMGETTER (Action) (&action);
-        if (action == USBDeviceFilterAction_USBDeviceFilterIgnore)
+        if (action == USBDeviceFilterAction_Ignore)
             filter.setStringValue ("action", "Ignore");
-        else if (action == USBDeviceFilterAction_USBDeviceFilterHold)
+        else if (action == USBDeviceFilterAction_Hold)
             filter.setStringValue ("action", "Hold");
         else
             AssertMsgFailed (("Invalid action: %d\n", action));
@@ -1340,19 +1340,19 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
                 "state change). Please try later"),
             device->name().raw(), id.raw());
 
-    if (device->state() == USBDeviceState_USBDeviceNotSupported)
+    if (device->state() == USBDeviceState_NotSupported)
         return setError (E_INVALIDARG,
             tr ("USB device '%s' with UUID {%Vuuid} cannot be accessed by guest "
                 "computers"),
             device->name().raw(), id.raw());
 
-    if (device->state() == USBDeviceState_USBDeviceUnavailable)
+    if (device->state() == USBDeviceState_Unavailable)
         return setError (E_INVALIDARG,
             tr ("USB device '%s' with UUID {%Vuuid} is being exclusively used by the "
                 "host computer"),
             device->name().raw(), id.raw());
 
-    if (device->state() == USBDeviceState_USBDeviceCaptured)
+    if (device->state() == USBDeviceState_Captured)
     {
         /* Machine::name() requires a read lock */
         AutoReaderLock machLock (device->machine());
@@ -1490,9 +1490,9 @@ HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine)
         if (device->isStatePending())
             continue;
 
-        if (device->state() == USBDeviceState_USBDeviceBusy ||
-            device->state() == USBDeviceState_USBDeviceAvailable ||
-            device->state() == USBDeviceState_USBDeviceHeld)
+        if (device->state() == USBDeviceState_Busy ||
+            device->state() == USBDeviceState_Available ||
+            device->state() == USBDeviceState_Held)
         {
             applyMachineUSBFilters (aMachine, device);
         }
@@ -1535,7 +1535,7 @@ HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone)
             {
                 if (!device->isStatePending())
                 {
-                    Assert (device->state() == USBDeviceState_USBDeviceCaptured);
+                    Assert (device->state() == USBDeviceState_Captured);
 
                     /* re-apply filters on the device before giving it back to the
                      * host */
@@ -2059,15 +2059,15 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
 
     AssertReturn (aDevice->isLockedOnCurrentThread(), E_FAIL);
 
-    AssertReturn (aDevice->state() != USBDeviceState_USBDeviceCaptured, E_FAIL);
+    AssertReturn (aDevice->state() != USBDeviceState_Captured, E_FAIL);
 
     AssertReturn (aDevice->isStatePending() == false, E_FAIL);
 
     /* ignore unsupported devices */
-    if (aDevice->state() == USBDeviceState_USBDeviceNotSupported)
+    if (aDevice->state() == USBDeviceState_NotSupported)
         return S_OK;
     /* ignore unavailable devices as well */
-    if (aDevice->state() == USBDeviceState_USBDeviceUnavailable)
+    if (aDevice->state() == USBDeviceState_Unavailable)
         return S_OK;
 
     VirtualBox::SessionMachineVector machines;
@@ -2088,17 +2088,17 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
 #ifndef VBOX_WITH_USBFILTER
             USBDeviceFilterAction_T action = data.mAction;
 #else
-            ULONG action = USBDeviceFilterAction_InvalidUSBDeviceFilterAction;
+            ULONG action = USBDeviceFilterAction_Null;
             (*it)->COMGETTER (Action) (&action);
 #endif
-            if (action == USBDeviceFilterAction_USBDeviceFilterIgnore)
+            if (action == USBDeviceFilterAction_Ignore)
             {
                 /* request to give the device back to the host*/
                 aDevice->requestRelease();
                 /* nothing to do any more */
                 return S_OK;
             }
-            if (action == USBDeviceFilterAction_USBDeviceFilterHold)
+            if (action == USBDeviceFilterAction_Hold)
                 break;
         }
     }
@@ -2159,8 +2159,8 @@ bool Host::applyMachineUSBFilters (SessionMachine *aMachine,
 
     AssertReturn (aDevice->isLockedOnCurrentThread(), false);
 
-    AssertReturn (aDevice->state() != USBDeviceState_USBDeviceNotSupported, false);
-    AssertReturn (aDevice->state() != USBDeviceState_USBDeviceUnavailable, false);
+    AssertReturn (aDevice->state() != USBDeviceState_NotSupported, false);
+    AssertReturn (aDevice->state() != USBDeviceState_Unavailable, false);
 
     AssertReturn (aDevice->isStatePending() == false, false);
 
@@ -2281,7 +2281,7 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
                (handlePendingStateChange will disassociate itself from the machine.) */
             ComObjPtr <SessionMachine> machine (device->machine());
             device->handlePendingStateChange();
-            if (device->state() == USBDeviceState_USBDeviceCaptured)
+            if (device->state() == USBDeviceState_Captured)
             {
                 Log (("USB: running filters on async detached device\n"));
                 device->setHeld();
@@ -2290,13 +2290,13 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
             }
             else
                 Log (("USB: async detached devices reappeared in stated %d instead of %d!\n",
-                      device->state(), USBDeviceState_USBDeviceCaptured));
+                      device->state(), USBDeviceState_Captured));
         }
         else
             device->handlePendingStateChange();
     }
-    else if (   device->state() == USBDeviceState_USBDeviceAvailable
-             || device->state() == USBDeviceState_USBDeviceBusy)
+    else if (   device->state() == USBDeviceState_Available
+             || device->state() == USBDeviceState_Busy)
     {
         /* The device has gone from being unavailable (not subject to filters) to being
            available / busy. This transition can be triggered by udevd or manual

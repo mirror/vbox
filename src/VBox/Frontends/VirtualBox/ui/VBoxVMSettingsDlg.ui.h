@@ -285,8 +285,8 @@ public:
         int minimumWidth = 0;
         for (int i = 1; i <= 4; ++ i)
         {
-            CEnums::DeviceType type = aMachine.GetBootOrder (i);
-            if (type != CEnums::NoDevice)
+            KDeviceType type = aMachine.GetBootOrder (i);
+            if (type != KDeviceType_Null)
             {
                 QString name = vboxGlobal().toString (type);
                 QCheckListItem *item = new BootItem (mBootTable,
@@ -298,9 +298,9 @@ public:
             }
         }
         /* Load other unique boot-items */
-        for (int i = CEnums::FloppyDevice; i < CEnums::USBDevice; ++ i)
+        for (int i = KDeviceType_Floppy; i < KDeviceType_USB; ++ i)
         {
-            QString name = vboxGlobal().toString ((CEnums::DeviceType) i);
+            QString name = vboxGlobal().toString ((KDeviceType) i);
             if (!uniqueList.contains (name))
             {
                 QCheckListItem *item = new BootItem (mBootTable,
@@ -328,7 +328,7 @@ public:
         {
             if (item->isOn())
             {
-                CEnums::DeviceType type =
+                KDeviceType type =
                     vboxGlobal().toDeviceType (item->text (0));
                 aMachine.SetBootOrder (index++, type);
             }
@@ -339,7 +339,7 @@ public:
         while (item)
         {
             if (!item->isOn())
-                aMachine.SetBootOrder (index++, CEnums::NoDevice);
+                aMachine.SetBootOrder (index++, KDeviceType_Null);
             item = static_cast<QCheckListItem*> (item->nextSibling());
         }
     }
@@ -842,13 +842,13 @@ void VBoxVMSettingsDlg::init()
     groupBox12Layout->addWidget (tblBootOrder);
     tblBootOrder->fixTabStops();
     /* Shared Clipboard mode */
-    cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipDisabled));
-    cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipHostToGuest));
-    cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipGuestToHost));
-    cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipBidirectional));
+    cbSharedClipboard->insertItem (vboxGlobal().toString (KClipboardMode_Disabled));
+    cbSharedClipboard->insertItem (vboxGlobal().toString (KClipboardMode_HostToGuest));
+    cbSharedClipboard->insertItem (vboxGlobal().toString (KClipboardMode_GuestToHost));
+    cbSharedClipboard->insertItem (vboxGlobal().toString (KClipboardMode_Bidirectional));
     /* IDE Controller Type */
-    cbIdeController->insertItem (vboxGlobal().toString (CEnums::IDEControllerPIIX3));
-    cbIdeController->insertItem (vboxGlobal().toString (CEnums::IDEControllerPIIX4));
+    cbIdeController->insertItem (vboxGlobal().toString (KIDEControllerType_PIIX3));
+    cbIdeController->insertItem (vboxGlobal().toString (KIDEControllerType_PIIX4));
 
     /* HDD Images page */
 
@@ -856,26 +856,26 @@ void VBoxVMSettingsDlg::init()
 
     /* Audio Page */
 
-    cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::NullAudioDriver));
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_Null));
 #if defined Q_WS_WIN32
-    cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::DSOUNDAudioDriver));
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_DSOUND));
 # ifdef VBOX_WITH_WINMM
-    cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::WINMMAudioDriver));
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_WINMM));
 # endif
 #elif defined Q_OS_LINUX
-    cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::OSSAudioDriver));
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_OSS));
 # ifdef VBOX_WITH_ALSA
-    cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::ALSAAudioDriver));
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_ALSA));
 # endif
 # ifdef VBOX_WITH_PULSE
-    cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::PulseAudioDriver));
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_Pulse));
 # endif
 #elif defined Q_OS_MACX
-    cbAudioDriver->insertItem (vboxGlobal().toString (CEnums::CoreAudioDriver));
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_Core));
 #endif
 
-    cbAudioController->insertItem (vboxGlobal().toString (CEnums::AC97));
-    cbAudioController->insertItem (vboxGlobal().toString (CEnums::SB16));
+    cbAudioController->insertItem (vboxGlobal().toString (KAudioControllerType_AC97));
+    cbAudioController->insertItem (vboxGlobal().toString (KAudioControllerType_SB16));
 
     /* Network Page */
 
@@ -893,9 +893,9 @@ void VBoxVMSettingsDlg::init()
 
     /* VRDP Page */
 
-    cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthNull));
-    cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthExternal));
-    cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthGuest));
+    cbVRDPAuthType->insertItem (vboxGlobal().toString (KVRDPAuthType_Null));
+    cbVRDPAuthType->insertItem (vboxGlobal().toString (KVRDPAuthType_External));
+    cbVRDPAuthType->insertItem (vboxGlobal().toString (KVRDPAuthType_Guest));
 }
 
 /**
@@ -1040,7 +1040,7 @@ void VBoxVMSettingsDlg::loadNetworksList()
             for (ulong slot = 0; slot < count; ++ slot)
             {
                 CNetworkAdapter adapter = m->GetNetworkAdapter (slot);
-                if (adapter.GetAttachmentType() == CEnums::InternalNetworkAttachment &&
+                if (adapter.GetAttachmentType() == KNetworkAttachmentType_Internal &&
                         !mNetworksList.contains (adapter.GetInternalNetwork()))
                     mNetworksList << adapter.GetInternalNetwork();
             }
@@ -1447,7 +1447,7 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
                 if (found)
                 {
                     CHardDisk hd = vbox.GetHardDisk (uuidHDB);
-                    valid = hd.GetType() == CEnums::ImmutableHardDisk;
+                    valid = hd.GetType() == KHardDiskType_Immutable;
                 }
                 if (valid)
                     uuids << uuidHDB;
@@ -1470,7 +1470,7 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
                 if (found)
                 {
                     CHardDisk hd = vbox.GetHardDisk (uuidHDD);
-                    valid = hd.GetType() == CEnums::ImmutableHardDisk;
+                    valid = hd.GetType() == KHardDiskType_Immutable;
                 }
                 if (valid)
                     uuids << uuidHDB;
@@ -1575,9 +1575,9 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
                 ports << port;
             }
             /* check the port path emptiness & unicity */
-            CEnums::PortMode mode =
+            KPortMode mode =
                 vboxGlobal().toPortMode (page->mHostModeCombo->currentText());
-            if (mode != CEnums::DisconnectedPort)
+            if (mode != KPortMode_Disconnected)
             {
                 QString path = page->mPortPathLine->text();
                 valid = !path.isEmpty() && !paths.contains (path);
@@ -1678,9 +1678,9 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     chbEnableIOAPIC->setChecked (biosSettings.GetIOAPICEnabled());
 
     /* VT-x/AMD-V */
-    machine.GetHWVirtExEnabled() == CEnums::TSFalse ? chbVTX->setChecked (false) :
-    machine.GetHWVirtExEnabled() == CEnums::TSTrue ?  chbVTX->setChecked (true) :
-                                                      chbVTX->setNoChange();
+    machine.GetHWVirtExEnabled() == KTSBool_False ? chbVTX->setChecked (false) :
+    machine.GetHWVirtExEnabled() == KTSBool_True ?  chbVTX->setChecked (true) :
+                                                    chbVTX->setNoChange();
 
     /* Saved state folder */
     leSnapshotFolder->setText (machine.GetSnapshotFolder());
@@ -1702,7 +1702,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     {
         struct
         {
-            CEnums::DiskControllerType ctl;
+            KDiskControllerType ctl;
             LONG dev;
             struct {
                 QGroupBox *grb;
@@ -1713,9 +1713,9 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         }
         diskSet[] =
         {
-            { CEnums::IDE0Controller, 0, {grbHDA, cbHDA, txHDA, &uuidHDA} },
-            { CEnums::IDE0Controller, 1, {grbHDB, cbHDB, txHDB, &uuidHDB} },
-            { CEnums::IDE1Controller, 1, {grbHDD, cbHDD, txHDD, &uuidHDD} },
+            { KDiskControllerType_IDE0, 0, {grbHDA, cbHDA, txHDA, &uuidHDA} },
+            { KDiskControllerType_IDE0, 1, {grbHDB, cbHDB, txHDB, &uuidHDB} },
+            { KDiskControllerType_IDE1, 1, {grbHDD, cbHDD, txHDD, &uuidHDD} },
         };
 
         grbHDA->setChecked (false);
@@ -1735,7 +1735,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                     CHardDisk hd = hda.GetHardDisk();
                     CHardDisk root = hd.GetRoot();
                     QString src = root.GetLocation();
-                    if (hd.GetStorageType() == CEnums::VirtualDiskImage)
+                    if (hd.GetStorageType() == KHardDiskStorageType_VirtualDiskImage)
                     {
                         QFileInfo fi (src);
                         src = fi.fileName() + " (" +
@@ -1775,7 +1775,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         CFloppyDrive floppy = machine.GetFloppyDrive();
         switch (floppy.GetState())
         {
-            case CEnums::HostDriveCaptured:
+            case KDriveState_HostDriveCaptured:
             {
                 CHostFloppyDrive drv = floppy.GetHostDrive();
                 QString name = drv.GetName();
@@ -1800,7 +1800,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                 rbHostFloppy->setChecked (true);
                 break;
             }
-            case CEnums::ImageMounted:
+            case KDriveState_ImageMounted:
             {
                 CFloppyImage img = floppy.GetImage();
                 QString src = img.GetFilePath();
@@ -1810,7 +1810,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                 uuidISOFloppy = QUuid (img.GetId());
                 break;
             }
-            case CEnums::NotMounted:
+            case KDriveState_NotMounted:
             {
                 bgFloppy->setChecked(false);
                 break;
@@ -1846,7 +1846,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         CDVDDrive dvd = machine.GetDVDDrive();
         switch (dvd.GetState())
         {
-            case CEnums::HostDriveCaptured:
+            case KDriveState_HostDriveCaptured:
             {
                 CHostDVDDrive drv = dvd.GetHostDrive();
                 QString name = drv.GetName();
@@ -1872,7 +1872,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                 cbPassthrough->setChecked (dvd.GetPassthrough());
                 break;
             }
-            case CEnums::ImageMounted:
+            case KDriveState_ImageMounted:
             {
                 CDVDImage img = dvd.GetImage();
                 QString src = img.GetFilePath();
@@ -1882,7 +1882,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                 uuidISODVD = QUuid (img.GetId());
                 break;
             }
-            case CEnums::NotMounted:
+            case KDriveState_NotMounted:
             {
                 bgDVD->setChecked(false);
                 break;
@@ -2053,8 +2053,8 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 
     /* VT-x/AMD-V */
     cmachine.SetHWVirtExEnabled (
-        chbVTX->state() == QButton::Off ? CEnums::TSFalse :
-        chbVTX->state() == QButton::On ? CEnums::TSTrue : CEnums::TSDefault);
+        chbVTX->state() == QButton::Off ? KTSBool_False :
+        chbVTX->state() == QButton::On ? KTSBool_True : KTSBool_Default);
 
     /* Saved state folder */
     if (leSnapshotFolder->isModified())
@@ -2072,7 +2072,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
                              teDescription->text());
 
     /* Shared clipboard mode */
-    cmachine.SetClipboardMode ((CEnums::ClipboardMode)cbSharedClipboard->currentItem());
+    cmachine.SetClipboardMode ((KClipboardMode) cbSharedClipboard->currentItem());
 
     /* IDE controller type */
     biosSettings.SetIDEControllerType (vboxGlobal().toIDEControllerType (cbIdeController->currentText()));
@@ -2085,7 +2085,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     {
         struct
         {
-            CEnums::DiskControllerType ctl;
+            KDiskControllerType ctl;
             LONG dev;
             struct {
                 QGroupBox *grb;
@@ -2094,9 +2094,9 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
         }
         diskSet[] =
         {
-            { CEnums::IDE0Controller, 0, {grbHDA, &uuidHDA} },
-            { CEnums::IDE0Controller, 1, {grbHDB, &uuidHDB} },
-            { CEnums::IDE1Controller, 1, {grbHDD, &uuidHDD} }
+            { KDiskControllerType_IDE0, 0, {grbHDA, &uuidHDA} },
+            { KDiskControllerType_IDE0, 1, {grbHDB, &uuidHDB} },
+            { KDiskControllerType_IDE1, 1, {grbHDD, &uuidHDD} }
         };
 
         /*

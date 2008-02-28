@@ -378,7 +378,7 @@
 <xsl:text>typedef enum &#x0A;{&#x0A;</xsl:text>
     <xsl:for-each select="const">
         <xsl:text>    </xsl:text>
-        <xsl:value-of select="@name"/> = <xsl:value-of select="@value"/>
+        <xsl:value-of select="concat(../@name,'_',@name)"/> = <xsl:value-of select="@value"/>
         <xsl:choose>
             <xsl:when test="position()!=last()"><xsl:text>,&#x0A;</xsl:text></xsl:when>
             <xsl:otherwise><xsl:text>&#x0A;</xsl:text></xsl:otherwise>
@@ -391,16 +391,6 @@
     <xsl:value-of select="concat('/* cross-platform type name for ', @name, ' */&#x0A;')"/>
     <xsl:value-of select="concat('cpp_quote(&quot;#define ', @name, '_T', ' ',
                                  @name, '&quot;)&#x0A;&#x0A;')"/>
-    <xsl:text>cpp_quote("")&#x0A;</xsl:text>
-    <!-- -->
-    <xsl:value-of select="concat('/* cross-platform constants for ', @name, ' */&#x0A;')"/>
-    <xsl:for-each select="const">
-        <xsl:value-of select="concat('cpp_quote(&quot;#define ', ../@name, '_', @name, ' ',
-                                     @name, '&quot;)&#x0A;')"/>
-        <xsl:choose>
-            <xsl:when test="position()=last()"><xsl:text>cpp_quote("")&#x0A;</xsl:text></xsl:when>
-        </xsl:choose>
-    </xsl:for-each>
     <xsl:text>&#x0A;&#x0A;</xsl:text>
 </xsl:template>
 

@@ -41,22 +41,22 @@ class USBProxyService;
 typedef enum {
     /** Not supported by the VirtualBox server, not available to
         guests. */
-    USBDeviceState_USBDeviceNotSupported,
+    USBDeviceState_NotSupported,
     /** Being used by the host computer exclusively, not available
         to guests. */
-    USBDeviceState_USBDeviceUnavailable,
+    USBDeviceState_Unavailable,
     /** Being used by the host computer, potentially available to
        guests. */
-    USBDeviceState_USBDeviceBusy,
+    USBDeviceState_Busy,
     /** Not used by the host computer, available to guests. The
         host computer can also start using the device at any time. */
-    USBDeviceState_USBDeviceAvailable,
+    USBDeviceState_Available,
     /** Held by the VirtualBox server (ignored by the host computer),
         available to guests. */
-    USBDeviceState_USBDeviceHeld,
+    USBDeviceState_Held,
     /** Captured by one of the guest computers, not available to
         anybody else. */
-    USBDeviceState_USBDeviceCaptured
+    USBDeviceState_Captured
 } USBDeviceState_T;
 
 /**
@@ -96,7 +96,7 @@ public:
     void setIgnored();
     void setCaptured ();
     bool isCaptured()
-        { return mState == USBDeviceState_USBDeviceCaptured; }
+        { return mState == USBDeviceState_Captured; }
     int  setHostDriven();
     int  reset();
 
