@@ -49,6 +49,7 @@ PROGRAMS = \
 	tstLdrLoad \
 	tstLog \
 	tstMove \
+	tstNoCrt-1 \
 	tstPath \
 	tstPrfRT \
 	tstRTFsQueries \
@@ -82,7 +83,7 @@ ifeq ($(filter-out lx pe,$(VBOX_LDR_FMT)), )
 LIBRARIES += \
 	tstLdr-4Imp
 endif
-	
+
 # tstSems
 endif # VBOX_WITH_TESTCASES
 
@@ -233,6 +234,11 @@ tstDir-2_SOURCES    = tstDir-2.cpp
 tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
 
 tstMove_SOURCES     = tstMove.cpp
+
+tstNoCrt-1_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES
+tstNoCrt-1_SOURCES = \
+	tstNoCrt-1.cpp \
+	../common/string/memmove.asm
 
 ntGetTimerResolution_SOURCES = ntGetTimerResolution.cpp
 ntGetTimerResolution_SDKS.win = WINPSDK W2K3DDK  VBOX_NTDLL
