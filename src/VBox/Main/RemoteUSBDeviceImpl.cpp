@@ -72,7 +72,7 @@ HRESULT RemoteUSBDevice::init (uint32_t u32ClientId, VRDPUSBDEVICEDESC *pDevDesc
     mVersion      = pDevDesc->bcdUSB >> 8;
     mPortVersion  = mVersion; /** @todo fix this */
 
-    mState        = USBDeviceState_USBDeviceAvailable;
+    mState        = USBDeviceState_Available;
 
     mDirty        = false;
     mDevId        = pDevDesc->id;

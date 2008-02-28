@@ -76,18 +76,18 @@ public:
     uint16_t devId (void) { return mDevId; }
     uint32_t clientId (void) { return mClientId; }
 
-    bool captured (void) { return mState == USBDeviceState_USBDeviceCaptured; }
+    bool captured (void) { return mState == USBDeviceState_Captured; }
     void captured (bool aCaptured)
     {
         if (aCaptured)
         {
-            Assert(mState == USBDeviceState_USBDeviceAvailable);
-            mState = USBDeviceState_USBDeviceCaptured;
+            Assert(mState == USBDeviceState_Available);
+            mState = USBDeviceState_Captured;
         }
         else
         {
-            Assert(mState == USBDeviceState_USBDeviceCaptured);
-            mState = USBDeviceState_USBDeviceAvailable;
+            Assert(mState == USBDeviceState_Captured);
+            mState = USBDeviceState_Available;
         }
     }
 

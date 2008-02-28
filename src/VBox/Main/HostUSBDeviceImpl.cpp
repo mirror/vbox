@@ -82,19 +82,19 @@ HRESULT HostUSBDevice::init(PUSBDEVICE aUsb, USBProxyService *aUSBProxyService)
         default:
             AssertMsgFailed(("aUsb->enmState=%d\n", aUsb->enmState));
         case USBDEVICESTATE_UNSUPPORTED:
-            mState = USBDeviceState_USBDeviceNotSupported;
+            mState = USBDeviceState_NotSupported;
             break;
         case USBDEVICESTATE_USED_BY_HOST:
-            mState = USBDeviceState_USBDeviceUnavailable;
+            mState = USBDeviceState_Unavailable;
             break;
         case USBDEVICESTATE_USED_BY_HOST_CAPTURABLE:
-            mState = USBDeviceState_USBDeviceBusy;
+            mState = USBDeviceState_Busy;
             break;
         case USBDEVICESTATE_UNUSED:
-            mState = USBDeviceState_USBDeviceAvailable;
+            mState = USBDeviceState_Available;
             break;
         case USBDEVICESTATE_HELD_BY_PROXY:
-            mState = USBDeviceState_USBDeviceHeld;
+            mState = USBDeviceState_Held;
             break;
         case USBDEVICESTATE_USED_BY_GUEST:
             /* @todo USBDEVICESTATE_USED_BY_GUEST seems not to be used
@@ -399,12 +399,12 @@ bool HostUSBDevice::requestCapture (SessionMachine *aMachine, ULONG aMaskedIfs /
     AssertReturn (mIsStatePending == false, false);
 
     AssertReturn (
-        mState == USBDeviceState_USBDeviceBusy ||
-        mState == USBDeviceState_USBDeviceAvailable ||
-        mState == USBDeviceState_USBDeviceHeld,
+        mState == USBDeviceState_Busy ||
+        mState == USBDeviceState_Available ||
+        mState == USBDeviceState_Held,
         false);
 
-    if (mState == USBDeviceState_USBDeviceHeld)
+    if (mState == USBDeviceState_Held)
     {
         /* can perform immediate capture, inform the VM process */
 
@@ -436,7 +436,7 @@ bool HostUSBDevice::requestCapture (SessionMachine *aMachine, ULONG aMaskedIfs /
 
         if (SUCCEEDED (rc))
         {
-            mState = mPendingState = USBDeviceState_USBDeviceCaptured;
+            mState = mPendingState = USBDeviceState_Captured;
             mMachine = aMachine;
             return true;
         }
@@ -445,7 +445,7 @@ bool HostUSBDevice::requestCapture (SessionMachine *aMachine, ULONG aMaskedIfs /
     }
 
     mIsStatePending = true;
-    mPendingState = USBDeviceState_USBDeviceCaptured;
+    mPendingState = USBDeviceState_Captured;
     mPendingStateEx = kNothingPending;
     mPendingSince = RTTimeNanoTS();
     mMachine = aMachine;
@@ -474,15 +474,15 @@ void HostUSBDevice::requestRelease()
     AssertReturnVoid (mIsStatePending == false);
 
     AssertReturnVoid (
-        mState == USBDeviceState_USBDeviceBusy ||
-        mState == USBDeviceState_USBDeviceAvailable ||
-        mState == USBDeviceState_USBDeviceHeld);
+        mState == USBDeviceState_Busy ||
+        mState == USBDeviceState_Available ||
+        mState == USBDeviceState_Held);
 
-    if (mState != USBDeviceState_USBDeviceHeld)
+    if (mState != USBDeviceState_Held)
         return;
 
     mIsStatePending = true;
-    mPendingState = USBDeviceState_USBDeviceAvailable;
+    mPendingState = USBDeviceState_Available;
     mPendingStateEx = kNothingPending;
     mPendingSince = RTTimeNanoTS();
 
@@ -508,17 +508,17 @@ void HostUSBDevice::requestHold()
     AssertReturnVoid (mIsStatePending == false);
 
     AssertReturnVoid (
-        mState == USBDeviceState_USBDeviceBusy ||
-        mState == USBDeviceState_USBDeviceAvailable ||
-        mState == USBDeviceState_USBDeviceHeld);
+        mState == USBDeviceState_Busy ||
+        mState == USBDeviceState_Available ||
+        mState == USBDeviceState_Held);
 
     mMachine.setNull();
 
-    if (mState == USBDeviceState_USBDeviceHeld)
+    if (mState == USBDeviceState_Held)
         return;
 
     mIsStatePending = true;
-    mPendingState = USBDeviceState_USBDeviceHeld;
+    mPendingState = USBDeviceState_Held;
     mPendingStateEx = kNothingPending;
     mPendingSince = RTTimeNanoTS();
 
@@ -537,11 +537,11 @@ void HostUSBDevice::setHeld()
 
     AssertReturnVoid (isLockedOnCurrentThread());
 
-    AssertReturnVoid (mState == USBDeviceState_USBDeviceCaptured);
-    AssertReturnVoid (mPendingState == USBDeviceState_USBDeviceCaptured);
+    AssertReturnVoid (mState == USBDeviceState_Captured);
+    AssertReturnVoid (mPendingState == USBDeviceState_Captured);
     AssertReturnVoid (mIsStatePending == false);
 
-    mState = USBDeviceState_USBDeviceHeld;
+    mState = USBDeviceState_Held;
     mMachine.setNull();
 }
 
@@ -558,7 +558,7 @@ void HostUSBDevice::onDetachedPhys()
 
     AssertReturnVoid (isLockedOnCurrentThread());
 
-    if (!mMachine.isNull() && mState == USBDeviceState_USBDeviceCaptured)
+    if (!mMachine.isNull() && mState == USBDeviceState_Captured)
     {
         /* the device is captured by a machine, instruct it to release */
 
@@ -591,7 +591,7 @@ void HostUSBDevice::onDetachedPhys()
          * uninitialized after this method returns, so it doesn't really
          * matter what state we put it in. */
         mIsStatePending = false;
-        mState = mPendingState = USBDeviceState_USBDeviceNotSupported;
+        mState = mPendingState = USBDeviceState_NotSupported;
         mPendingStateEx = kNothingPending;
         mMachine.setNull();
     }
@@ -610,7 +610,7 @@ void HostUSBDevice::handlePendingStateChange()
     AssertReturnVoid (isLockedOnCurrentThread());
 
     AssertReturnVoid (mIsStatePending == true);
-    AssertReturnVoid (mState != USBDeviceState_USBDeviceCaptured || mPendingStateEx != kNothingPending);
+    AssertReturnVoid (mState != USBDeviceState_Captured || mPendingStateEx != kNothingPending);
 
     bool wasCapture = false;
 
@@ -622,9 +622,9 @@ void HostUSBDevice::handlePendingStateChange()
         case kNothingPending:
             switch (mPendingState)
             {
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Captured:
                 {
-                    if (mState == USBDeviceState_USBDeviceHeld)
+                    if (mState == USBDeviceState_Held)
                     {
                         if (!mMachine.isNull())
                             wasCapture = true;
@@ -632,7 +632,7 @@ void HostUSBDevice::handlePendingStateChange()
                         {
                             /* it is a canceled capture request. Give the device back
                              * to the host. */
-                            mPendingState = USBDeviceState_USBDeviceAvailable;
+                            mPendingState = USBDeviceState_Available;
                             mUSBProxyService->releaseDevice (this);
                         }
                     }
@@ -655,11 +655,11 @@ void HostUSBDevice::handlePendingStateChange()
                     }
                     break;
                 }
-                case USBDeviceState_USBDeviceAvailable:
+                case USBDeviceState_Available:
                 {
                     Assert (mMachine.isNull());
 
-                    if (mState == USBDeviceState_USBDeviceHeld)
+                    if (mState == USBDeviceState_Held)
                     {
                         /* couldn't release the device (give it back to the host).
                          * there is nobody to report an error to (the machine has
@@ -673,9 +673,9 @@ void HostUSBDevice::handlePendingStateChange()
                     }
                     break;
                 }
-                case USBDeviceState_USBDeviceHeld:
+                case USBDeviceState_Held:
                 {
-                    if (mState == USBDeviceState_USBDeviceHeld)
+                    if (mState == USBDeviceState_Held)
                     {
                         /* All right, the device is now held (due to some global
                          * filter). */
@@ -756,7 +756,7 @@ void HostUSBDevice::handlePendingStateChange()
         if (SUCCEEDED (requestRC) && SUCCEEDED (rc))
         {
             mIsStatePending = false;
-            mState = mPendingState = USBDeviceState_USBDeviceCaptured;
+            mState = mPendingState = USBDeviceState_Captured;
             mPendingStateEx = kNothingPending;
             return;
         }
@@ -791,14 +791,14 @@ void HostUSBDevice::cancelPendingState(bool aTimeout /*= false*/)
         case kNothingPending:
             switch (mPendingState)
             {
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Captured:
                     /* reset mMachine to deassociate it from the filter and tell
                      * handlePendingStateChange() what to do */
                     mMachine.setNull();
                     if (!aTimeout)
                         break;
-                case USBDeviceState_USBDeviceAvailable:
-                case USBDeviceState_USBDeviceHeld:
+                case USBDeviceState_Available:
+                case USBDeviceState_Held:
                     if (aTimeout)
                     {
                         mPendingStateEx = kNothingPending;
@@ -1078,10 +1078,10 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
         default:
             AssertMsgFailed (("aDev->enmState=%d\n", aDev->enmState));
         case USBDEVICESTATE_UNSUPPORTED:
-            Assert (mState == USBDeviceState_USBDeviceNotSupported);
+            Assert (mState == USBDeviceState_NotSupported);
             switch (mState)
             {
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Captured:
                     isImportant = mIsStatePending;
                     break;
             }
@@ -1090,15 +1090,15 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
         case USBDEVICESTATE_USED_BY_HOST:
             switch (mState)
             {
-                case USBDeviceState_USBDeviceUnavailable:
+                case USBDeviceState_Unavailable:
                     return false;
                 /* the following state changes don't require any action for now */
-                case USBDeviceState_USBDeviceBusy:
-                case USBDeviceState_USBDeviceAvailable:
+                case USBDeviceState_Busy:
+                case USBDeviceState_Available:
                     isImportant = false;
                     break;
 #ifndef RT_OS_WINDOWS /* Only windows really knows whether the device is unavailable or captured. */
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Captured:
                     if (!mIsStatePending)
                         return false;
                     /* fall thru */
@@ -1107,19 +1107,19 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                     isImportant = true;
             }
             LogFlowThisFunc (("%d -> %d\n",
-                              mState, USBDeviceState_USBDeviceUnavailable));
-            mState = USBDeviceState_USBDeviceUnavailable;
+                              mState, USBDeviceState_Unavailable));
+            mState = USBDeviceState_Unavailable;
             return isImportant;
 
         case USBDEVICESTATE_USED_BY_HOST_CAPTURABLE:
             switch (mState)
             {
-                case USBDeviceState_USBDeviceBusy:
+                case USBDeviceState_Busy:
                     return false;
-                case USBDeviceState_USBDeviceAvailable:
+                case USBDeviceState_Available:
                     isImportant = false;
                     break;
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Captured:
 #ifndef RT_OS_WINDOWS /* Only Windows really knows whether the device is busy or captured. */
                     if (!mIsStatePending)
                         return false;
@@ -1132,25 +1132,25 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                     }
                     /* fall thru */
                 default:
-                    /* USBDeviceState_USBDeviceUnavailable: The device has become capturable, re-run filters. */
-                    /* USBDeviceState_USBDeviceHeld:        Pending request. */
-                    /* USBDeviceState_USBDeviceCaptured:    Pending request. */
-                    /* USBDeviceState_USBDeviceNotSupported: Something is broken. */
+                    /* USBDeviceState_Unavailable: The device has become capturable, re-run filters. */
+                    /* USBDeviceState_Held:        Pending request. */
+                    /* USBDeviceState_Captured:    Pending request. */
+                    /* USBDeviceState_NotSupported: Something is broken. */
                     isImportant = true;
             }
             LogFlowThisFunc (("%d -> %d\n",
-                              mState, USBDeviceState_USBDeviceBusy));
-            mState = USBDeviceState_USBDeviceBusy;
+                              mState, USBDeviceState_Busy));
+            mState = USBDeviceState_Busy;
             return isImportant;
 
         case USBDEVICESTATE_UNUSED:
             switch (mState)
             {
-                case USBDeviceState_USBDeviceAvailable:
+                case USBDeviceState_Available:
                     return false;
 #if defined(RT_OS_LINUX)  /* Hack for /proc/bus/usb/devices not necessarily putting up a driver. */ \
  || defined(RT_OS_DARWIN) /* We're a bit clueless as to the exact device state, just like linux. */
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Captured:
                     if (    !mIsStatePending
                         ||  mPendingStateEx != kNothingPending)
                         return false;
@@ -1158,33 +1158,33 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                     break;
 #endif
                 /* the following state changes don't require any action for now */
-                case USBDeviceState_USBDeviceBusy:
+                case USBDeviceState_Busy:
                     isImportant = false;
                     break;
                 default:
-                /* USBDeviceState_USBDeviceUnavailable: The device has become available, re-run filters. */
-                /* USBDeviceState_USBDeviceHeld:        Pending request. */
-                /* USBDeviceState_USBDeviceNotSupported: Something is broken. */
+                /* USBDeviceState_Unavailable: The device has become available, re-run filters. */
+                /* USBDeviceState_Held:        Pending request. */
+                /* USBDeviceState_NotSupported: Something is broken. */
                     isImportant = true;
             }
             LogFlowThisFunc (("%d -> %d\n",
-                              mState, USBDeviceState_USBDeviceAvailable));
-            mState = USBDeviceState_USBDeviceAvailable;
+                              mState, USBDeviceState_Available));
+            mState = USBDeviceState_Available;
             return isImportant;
 
         case USBDEVICESTATE_HELD_BY_PROXY:
             switch (mState)
             {
-                case USBDeviceState_USBDeviceHeld:
+                case USBDeviceState_Held:
                     return false;
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Captured:
                     if (!mIsStatePending)
                         return false;
                     /* no break */
                 default:
                     LogFlowThisFunc (("%d -> %d\n",
-                                      mState, USBDeviceState_USBDeviceHeld));
-                    mState = USBDeviceState_USBDeviceHeld;
+                                      mState, USBDeviceState_Held));
+                    mState = USBDeviceState_Held;
                     return true;
             }
             break;
@@ -1197,16 +1197,16 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
 #if 0
             switch (mState)
             {
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Captured:
                 /* the proxy may confuse following state(s) with captured */
-                case USBDeviceState_USBDeviceHeld:
-                case USBDeviceState_USBDeviceAvailable:
-                case USBDeviceState_USBDeviceBusy:
+                case USBDeviceState_Held:
+                case USBDeviceState_Available:
+                case USBDeviceState_Busy:
                     return false;
                 default:
                     LogFlowThisFunc (("%d -> %d\n",
-                                      mState, USBDeviceState_USBDeviceHeld));
-                    mState = USBDeviceState_USBDeviceHeld;
+                                      mState, USBDeviceState_Held));
+                    mState = USBDeviceState_Held;
                     return true;
             }
 #endif

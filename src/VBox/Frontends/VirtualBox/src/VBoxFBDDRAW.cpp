@@ -162,7 +162,7 @@ VBoxDDRAWFrameBuffer::VBoxDDRAWFrameBuffer (VBoxConsoleView *aView) :
                 mPrimarySurface->SetClipper (mClipper);
 
                 VBoxResizeEvent *re =
-                    new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
+                    new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
                                          NULL, 0, 0, 640, 480);
 
                 if (re)
@@ -260,11 +260,11 @@ void VBoxDDRAWFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 
     bool ok = createSurface (re->pixelFormat(), re->VRAM (), re->bitsPerPixel(),
                              re->bytesPerLine (), re->width(), re->height());
-    if (!ok && re->pixelFormat() != FramebufferPixelFormat_PixelFormatOpaque)
+    if (!ok && re->pixelFormat() != FramebufferPixelFormat_Opaque)
     {
         /* try to create a fallback surface with indirect buffer
          * (only if haven't done so already) */
-        ok = createSurface (FramebufferPixelFormat_PixelFormatOpaque,
+        ok = createSurface (FramebufferPixelFormat_Opaque,
                             NULL, 0, 0, re->width(), re->height());
     }
 
@@ -289,10 +289,10 @@ void VBoxDDRAWFrameBuffer::moveEvent (QMoveEvent *me)
  * On success, returns @c true and assigns the created surface to mSurface
  * and its definition to mSurfaceDesc. On failure, returns @c false.
  *
- * If @a aPixelFormat is other than FramebufferPixelFormat_PixelFormatOpaque,
+ * If @a aPixelFormat is other than FramebufferPixelFormat_Opaque,
  * then the method will attempt to attach @a aVRAM directly to the created
  * surface. If this fails, the caller may call this method again with
- * @a aPixelFormat set to FramebufferPixelFormat_PixelFormatOpaque to try
+ * @a aPixelFormat set to FramebufferPixelFormat_Opaque to try
  * setting up an indirect fallback buffer for the surface. This opeartion may
  * theoretically also fail.
  *
@@ -359,7 +359,7 @@ bool VBoxDDRAWFrameBuffer::createSurface (ULONG aPixelFormat, uchar *aVRAM,
         mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
     }
     else
-    if (aPixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
+    if (aPixelFormat != FramebufferPixelFormat_Opaque)
     {
         /* we don't directly support any other pixel format */
         return false;

@@ -510,11 +510,11 @@ bool USBProxyService::updateDeviceStateFake (HostUSBDevice *aDevice, PUSBDEVICE 
                     /* @todo USBDEVICESTATE_USED_BY_GUEST seems not to be used anywhere in the proxy code; it's
                      * quite logical because the proxy doesn't know anything about guest VMs. We use HELD_BY_PROXY
                      * instead -- it is sufficient and is what Main expects. */
-                    case USBDeviceState_USBDeviceCaptured:      aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
-                    case USBDeviceState_USBDeviceHeld:          aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
-                    case USBDeviceState_USBDeviceAvailable:     aUSBDevice->enmState = USBDEVICESTATE_UNUSED; break;
-                    case USBDeviceState_USBDeviceUnavailable:   aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST; break;
-                    case USBDeviceState_USBDeviceBusy:          aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE; break;
+                    case USBDeviceState_Captured:      aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
+                    case USBDeviceState_Held:          aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
+                    case USBDeviceState_Available:     aUSBDevice->enmState = USBDEVICESTATE_UNUSED; break;
+                    case USBDeviceState_Unavailable:   aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST; break;
+                    case USBDeviceState_Busy:          aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE; break;
                     default:
                         AssertMsgFailed(("%d\n", aDevice->pendingState()));
                         break;

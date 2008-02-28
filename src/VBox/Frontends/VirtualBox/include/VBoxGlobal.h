@@ -68,13 +68,13 @@ typedef QValueList <VBoxMedia> VBoxMediaList;
 class VBoxMachineStateChangeEvent : public QEvent
 {
 public:
-    VBoxMachineStateChangeEvent (const QUuid &aId, CEnums::MachineState aState)
+    VBoxMachineStateChangeEvent (const QUuid &aId, KMachineState aState)
         : QEvent ((QEvent::Type) VBoxDefs::MachineStateChangeEventType)
         , id (aId), state (aState)
         {}
 
     const QUuid id;
-    const CEnums::MachineState state;
+    const KMachineState state;
 };
 
 class VBoxMachineDataChangeEvent : public QEvent
@@ -103,13 +103,13 @@ public:
 class VBoxSessionStateChangeEvent : public QEvent
 {
 public:
-    VBoxSessionStateChangeEvent (const QUuid &aId, CEnums::SessionState aState)
+    VBoxSessionStateChangeEvent (const QUuid &aId, KSessionState aState)
         : QEvent ((QEvent::Type) VBoxDefs::SessionStateChangeEventType)
         , id (aId), state (aState)
         {}
 
     const QUuid id;
-    const CEnums::SessionState state;
+    const KSessionState state;
 };
 
 class VBoxSnapshotEvent : public QEvent
@@ -188,209 +188,209 @@ public:
     QPixmap vmGuestOSTypeIcon (const QString &aId) const;
     QString vmGuestOSTypeDescription (const QString &aId) const;
 
-    QPixmap toIcon (CEnums::MachineState s) const
+    QPixmap toIcon (KMachineState s) const
     {
         QPixmap *pm = mStateIcons [s];
         AssertMsg (pm, ("Icon for VM state %d must be defined", s));
         return pm ? *pm : QPixmap();
     }
 
-    const QColor &toColor (CEnums::MachineState s) const
+    const QColor &toColor (KMachineState s) const
     {
         static const QColor none;
         AssertMsg (vm_state_color [s], ("No color for %d", s));
         return vm_state_color [s] ? *vm_state_color [s] : none;
     }
 
-    QString toString (CEnums::MachineState s) const
+    QString toString (KMachineState s) const
     {
         AssertMsg (!machineStates [s].isNull(), ("No text for %d", s));
         return machineStates [s];
     }
 
-    QString toString (CEnums::SessionState s) const
+    QString toString (KSessionState s) const
     {
         AssertMsg (!sessionStates [s].isNull(), ("No text for %d", s));
         return sessionStates [s];
     }
 
-    QString toString (CEnums::DiskControllerType t) const
+    QString toString (KDiskControllerType t) const
     {
         AssertMsg (!diskControllerTypes [t].isNull(), ("No text for %d", t));
         return diskControllerTypes [t];
     }
 
-    QString toString (CEnums::HardDiskType t) const
+    QString toString (KHardDiskType t) const
     {
         AssertMsg (!diskTypes [t].isNull(), ("No text for %d", t));
         return diskTypes [t];
     }
 
-    QString toString (CEnums::HardDiskStorageType t) const
+    QString toString (KHardDiskStorageType t) const
     {
         AssertMsg (!diskStorageTypes [t].isNull(), ("No text for %d", t));
         return diskStorageTypes [t];
     }
 
-    QString toString (CEnums::VRDPAuthType t) const
+    QString toString (KVRDPAuthType t) const
     {
         AssertMsg (!vrdpAuthTypes [t].isNull(), ("No text for %d", t));
         return vrdpAuthTypes [t];
     }
 
-    QString toString (CEnums::PortMode t) const
+    QString toString (KPortMode t) const
     {
         AssertMsg (!portModeTypes [t].isNull(), ("No text for %d", t));
         return portModeTypes [t];
     }
 
-    QString toString (CEnums::USBDeviceFilterAction t) const
+    QString toString (KUSBDeviceFilterAction t) const
     {
         AssertMsg (!usbFilterActionTypes [t].isNull(), ("No text for %d", t));
         return usbFilterActionTypes [t];
     }
 
-    QString toString (CEnums::ClipboardMode t) const
+    QString toString (KClipboardMode t) const
     {
         AssertMsg (!clipboardTypes [t].isNull(), ("No text for %d", t));
         return clipboardTypes [t];
     }
 
-    CEnums::ClipboardMode toClipboardModeType (const QString &s) const
+    KClipboardMode toClipboardModeType (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (clipboardTypes.begin(), clipboardTypes.end(), s);
         AssertMsg (it != clipboardTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::ClipboardMode (it - clipboardTypes.begin());
+        return KClipboardMode (it - clipboardTypes.begin());
     }
 
-    QString toString (CEnums::IDEControllerType t) const
+    QString toString (KIDEControllerType t) const
     {
         AssertMsg (!ideControllerTypes [t].isNull(), ("No text for %d", t));
         return ideControllerTypes [t];
     }
 
-    CEnums::IDEControllerType toIDEControllerType (const QString &s) const
+    KIDEControllerType toIDEControllerType (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (ideControllerTypes.begin(), ideControllerTypes.end(), s);
         AssertMsg (it != ideControllerTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::IDEControllerType (it - ideControllerTypes.begin());
+        return KIDEControllerType (it - ideControllerTypes.begin());
     }
 
-    CEnums::VRDPAuthType toVRDPAuthType (const QString &s) const
+    KVRDPAuthType toVRDPAuthType (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (vrdpAuthTypes.begin(), vrdpAuthTypes.end(), s);
         AssertMsg (it != vrdpAuthTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::VRDPAuthType (it - vrdpAuthTypes.begin());
+        return KVRDPAuthType (it - vrdpAuthTypes.begin());
     }
 
-    CEnums::PortMode toPortMode (const QString &s) const
+    KPortMode toPortMode (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (portModeTypes.begin(), portModeTypes.end(), s);
         AssertMsg (it != portModeTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::PortMode (it - portModeTypes.begin());
+        return KPortMode (it - portModeTypes.begin());
     }
 
-    CEnums::USBDeviceFilterAction toUSBDevFilterAction (const QString &s) const
+    KUSBDeviceFilterAction toUSBDevFilterAction (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (usbFilterActionTypes.begin(), usbFilterActionTypes.end(), s);
         AssertMsg (it != usbFilterActionTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::USBDeviceFilterAction (it - usbFilterActionTypes.begin());
+        return KUSBDeviceFilterAction (it - usbFilterActionTypes.begin());
     }
 
     /**
-     *  Similar to toString (CEnums::HardDiskType), but returns 'Differencing'
+     *  Similar to toString (KHardDiskType), but returns 'Differencing'
      *  for normal hard disks that have a parent hard disk.
      */
     QString hardDiskTypeString (const CHardDisk &aHD) const
     {
         if (!aHD.GetParent().isNull())
         {
-            Assert (aHD.GetType() == CEnums::NormalHardDisk);
+            Assert (aHD.GetType() == KHardDiskType_Normal);
             return tr ("Differencing", "hard disk");
         }
         return toString (aHD.GetType());
     }
 
-    QString toString (CEnums::DiskControllerType t, LONG d) const;
+    QString toString (KDiskControllerType t, LONG d) const;
 
-    QString toString (CEnums::DeviceType t) const
+    QString toString (KDeviceType t) const
     {
         AssertMsg (!deviceTypes [t].isNull(), ("No text for %d", t));
         return deviceTypes [t];
     }
 
-    CEnums::DeviceType toDeviceType (const QString &s) const
+    KDeviceType toDeviceType (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (deviceTypes.begin(), deviceTypes.end(), s);
         AssertMsg (it != deviceTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::DeviceType (it - deviceTypes.begin());
+        return KDeviceType (it - deviceTypes.begin());
     }
 
     QStringList deviceTypeStrings() const;
 
-    QString toString (CEnums::AudioDriverType t) const
+    QString toString (KAudioDriverType t) const
     {
         AssertMsg (!audioDriverTypes [t].isNull(), ("No text for %d", t));
         return audioDriverTypes [t];
     }
 
-    CEnums::AudioDriverType toAudioDriverType (const QString &s) const
+    KAudioDriverType toAudioDriverType (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (audioDriverTypes.begin(), audioDriverTypes.end(), s);
         AssertMsg (it != audioDriverTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::AudioDriverType (it - audioDriverTypes.begin());
+        return KAudioDriverType (it - audioDriverTypes.begin());
     }
 
-    QString toString (CEnums::AudioControllerType t) const
+    QString toString (KAudioControllerType t) const
     {
         AssertMsg (!audioControllerTypes [t].isNull(), ("No text for %d", t));
         return audioControllerTypes [t];
     }
 
-    CEnums::AudioControllerType toAudioControllerType (const QString &s) const
+    KAudioControllerType toAudioControllerType (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (audioControllerTypes.begin(), audioControllerTypes.end(), s);
         AssertMsg (it != audioControllerTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::AudioControllerType (it - audioControllerTypes.begin());
+        return KAudioControllerType (it - audioControllerTypes.begin());
     }
 
-    QString toString (CEnums::NetworkAdapterType t) const
+    QString toString (KNetworkAdapterType t) const
     {
         AssertMsg (!networkAdapterTypes [t].isNull(), ("No text for %d", t));
         return networkAdapterTypes [t];
     }
 
-    CEnums::NetworkAdapterType toNetworkAdapterType (const QString &s) const
+    KNetworkAdapterType toNetworkAdapterType (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (networkAdapterTypes.begin(), networkAdapterTypes.end(), s);
         AssertMsg (it != networkAdapterTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::NetworkAdapterType (it - networkAdapterTypes.begin());
+        return KNetworkAdapterType (it - networkAdapterTypes.begin());
     }
 
-    QString toString (CEnums::NetworkAttachmentType t) const
+    QString toString (KNetworkAttachmentType t) const
     {
         AssertMsg (!networkAttachmentTypes [t].isNull(), ("No text for %d", t));
         return networkAttachmentTypes [t];
     }
 
-    CEnums::NetworkAttachmentType toNetworkAttachmentType (const QString &s) const
+    KNetworkAttachmentType toNetworkAttachmentType (const QString &s) const
     {
         QStringVector::const_iterator it =
             qFind (networkAttachmentTypes.begin(), networkAttachmentTypes.end(), s);
         AssertMsg (it != networkAttachmentTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::NetworkAttachmentType (it - networkAttachmentTypes.begin());
+        return KNetworkAttachmentType (it - networkAttachmentTypes.begin());
     }
 
-    QString toString (CEnums::USBDeviceState aState) const
+    QString toString (KUSBDeviceState aState) const
     {
         AssertMsg (!USBDeviceStates [aState].isNull(), ("No text for %d", aState));
         return USBDeviceStates [aState];

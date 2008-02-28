@@ -101,7 +101,7 @@ HRESULT HardDisk::FinalConstruct()
     mRegistered = FALSE;
 
     mStorageType = HardDiskStorageType_VirtualDiskImage;
-    mType = HardDiskType_NormalHardDisk;
+    mType = HardDiskType_Normal;
 
     mBusy = false;
     mReaders = 0;
@@ -887,7 +887,7 @@ HRESULT HardDisk::checkConsistency()
 
     AutoLock chLock (childrenLock());
 
-    if (mParent.isNull() && mType == HardDiskType_NormalHardDisk &&
+    if (mParent.isNull() && mType == HardDiskType_Normal &&
         children().size() != 0)
     {
         if (mMachineId.isEmpty())
@@ -1219,17 +1219,17 @@ HRESULT HardDisk::loadSettings (const settings::Key &aHDNode)
         /* type required for <HardDisk> nodes only */
         const char *type = aHDNode.stringValue ("type");
         if (strcmp (type, "normal") == 0)
-            mType = HardDiskType_NormalHardDisk;
+            mType = HardDiskType_Normal;
         else if (strcmp (type, "immutable") == 0)
-            mType = HardDiskType_ImmutableHardDisk;
+            mType = HardDiskType_Immutable;
         else if (strcmp (type, "writethrough") == 0)
-            mType = HardDiskType_WritethroughHardDisk;
+            mType = HardDiskType_Writethrough;
         else
             ComAssertMsgFailedRet (("Invalid hard disk type '%s'\n", type),
                                    E_FAIL);
     }
     else
-        mType = HardDiskType_NormalHardDisk;
+        mType = HardDiskType_Normal;
 
     HRESULT rc = mVirtualBox->registerHardDisk (this, VirtualBox::RHD_OnStartUp);
     CheckComRCReturnRC (rc);
@@ -1278,13 +1278,13 @@ HRESULT HardDisk::saveSettings (settings::Key &aHDNode)
         const char *type = NULL;
         switch (mType)
         {
-            case HardDiskType_NormalHardDisk:
+            case HardDiskType_Normal:
                 type = "normal";
                 break;
-            case HardDiskType_ImmutableHardDisk:
+            case HardDiskType_Immutable:
                 type = "immutable";
                 break;
-            case HardDiskType_WritethroughHardDisk:
+            case HardDiskType_Writethrough:
                 type = "writethrough";
                 break;
         }
@@ -2875,7 +2875,7 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox,
         rc = loadSettings (aHDNode);
         CheckComRCBreakRC (rc);
 
-        if (mType != HardDiskType_WritethroughHardDisk)
+        if (mType != HardDiskType_Writethrough)
         {
             rc = setError (E_FAIL,
                 tr ("Currently, non-Writethrough iSCSI hard disks are not "
@@ -2920,7 +2920,7 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox)
         /* we have to generate a new UUID */
         mId.create();
         /* currently, all iSCSI hard disks are writethrough */
-        mType = HardDiskType_WritethroughHardDisk;
+        mType = HardDiskType_Writethrough;
         mRegistered = FALSE;
     }
     while (0);
@@ -3409,7 +3409,7 @@ void HVMDKImage::FinalRelease()
  *  @param aVMDKNode    <VirtualDiskImage> node.
  */
 HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
-                          const settings::Key &aHDNode, 
+                          const settings::Key &aHDNode,
                           const settings::Key &aVMDKNode)
 {
     using namespace settings;
@@ -3444,7 +3444,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         rc = loadSettings (aHDNode);
         CheckComRCBreakRC (rc);
 
-        if (mType != HardDiskType_WritethroughHardDisk)
+        if (mType != HardDiskType_Writethrough)
         {
             rc = setError (E_FAIL,
                 tr ("Currently, non-Writethrough VMDK images are not "
@@ -3506,7 +3506,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         CheckComRCBreakRC (rc);
 
         /* currently, all VMDK hard disks are writethrough */
-        mType = HardDiskType_WritethroughHardDisk;
+        mType = HardDiskType_Writethrough;
 
         Assert (mId.isEmpty());
 
@@ -4333,7 +4333,7 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         rc = loadSettings (aHDNode);
         CheckComRCBreakRC (rc);
 
-        if (mType != HardDiskType_WritethroughHardDisk)
+        if (mType != HardDiskType_Writethrough)
         {
             rc = setError (E_FAIL,
                 tr ("Currently, non-Writethrough custom hard disks "
@@ -4395,7 +4395,7 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         CheckComRCBreakRC (rc);
 
         /* currently, all custom hard disks are writethrough */
-        mType = HardDiskType_WritethroughHardDisk;
+        mType = HardDiskType_Writethrough;
 
         Assert (mId.isEmpty());
 
@@ -5111,7 +5111,7 @@ void HVHDImage::FinalRelease()
  *  @param aVHDNode    <VirtualDiskImage> node
  */
 HRESULT HVHDImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
-                         const settings::Key &aHDNode, 
+                         const settings::Key &aHDNode,
                          const settings::Key &aVHDNode)
 {
     LogFlowThisFunc (("\n"));
@@ -5145,7 +5145,7 @@ HRESULT HVHDImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         rc = loadSettings (aHDNode);
         CheckComRCBreakRC (rc);
 
-        if (mType != HardDiskType_WritethroughHardDisk)
+        if (mType != HardDiskType_Writethrough)
         {
             rc = setError (E_FAIL,
                 tr ("Currently, non-Writethrough VHD images are not "
@@ -5207,7 +5207,7 @@ HRESULT HVHDImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         CheckComRCBreakRC (rc);
 
         /* currently, all VHD hard disks are writethrough */
-        mType = HardDiskType_WritethroughHardDisk;
+        mType = HardDiskType_Writethrough;
 
         Assert (mId.isEmpty());
 

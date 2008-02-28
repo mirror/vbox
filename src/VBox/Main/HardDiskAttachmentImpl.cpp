@@ -27,7 +27,7 @@ DEFINE_EMPTY_CTOR_DTOR (HardDiskAttachment)
 
 HRESULT HardDiskAttachment::FinalConstruct()
 {
-    mController = DiskControllerType_InvalidController;
+    mController = DiskControllerType_Null;
     mDeviceNumber = 0;
 
     return S_OK;

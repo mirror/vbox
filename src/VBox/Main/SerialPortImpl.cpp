@@ -159,13 +159,13 @@ void SerialPort::uninit()
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  *  Loads settings from the given port node.
  *  May be called once right after this object creation.
- * 
+ *
  *  @param aPortNode <Port> node.
- * 
- *  @note Locks this object for writing. 
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT SerialPort::loadSettings (const settings::Key &aPortNode)
 {
@@ -187,7 +187,7 @@ HRESULT SerialPort::loadSettings (const settings::Key &aPortNode)
      * in the settings file (for backwards compatibility reasons). This takes
      * place when a setting of a newly created object must default to A while
      * the same setting of an object loaded from the old settings file must
-     * default to B. */ 
+     * default to B. */
 
     /* enabled (required) */
     mData->mEnabled = aPortNode.value <bool> ("enabled");
@@ -198,11 +198,11 @@ HRESULT SerialPort::loadSettings (const settings::Key &aPortNode)
     /* host mode (required) */
     const char *mode = aPortNode.stringValue ("hostMode");
     if (strcmp (mode, "HostPipe") == 0)
-        mData->mHostMode = PortMode_HostPipePort;
+        mData->mHostMode = PortMode_HostPipe;
     else if (strcmp (mode, "HostDevice") == 0)
-        mData->mHostMode = PortMode_HostDevicePort;
+        mData->mHostMode = PortMode_HostDevice;
     else if (strcmp (mode, "Disconnected") == 0)
-        mData->mHostMode = PortMode_DisconnectedPort;
+        mData->mHostMode = PortMode_Disconnected;
     else
         ComAssertMsgFailedRet (("Invalid port mode '%s'\n", mode), E_FAIL);
 
@@ -224,7 +224,7 @@ HRESULT SerialPort::loadSettings (const settings::Key &aPortNode)
  *  Note that the given Port node is comletely empty on input.
  *
  *  @param aPortNode <Port> node.
- * 
+ *
  *  @note Locks this object for reading.
  */
 HRESULT SerialPort::saveSettings (settings::Key &aPortNode)
@@ -245,13 +245,13 @@ HRESULT SerialPort::saveSettings (settings::Key &aPortNode)
     const char *mode = NULL;
     switch (mData->mHostMode)
     {
-        case PortMode_DisconnectedPort:
+        case PortMode_Disconnected:
             mode = "Disconnected";
             break;
-        case PortMode_HostPipePort:
+        case PortMode_HostPipe:
             mode = "HostPipe";
             break;
-        case PortMode_HostDevicePort:
+        case PortMode_HostDevice:
             mode = "HostDevice";
             break;
         default:
@@ -260,7 +260,7 @@ HRESULT SerialPort::saveSettings (settings::Key &aPortNode)
                                    E_FAIL);
     }
     aPortNode.setStringValue ("hostMode", mode);
-    
+
     /* Always save non-null mPath and mServer to preserve the user values for
      * later use. Note that 'server' is false by default in XML so we don't
      * save it when it's false. */
@@ -272,7 +272,7 @@ HRESULT SerialPort::saveSettings (settings::Key &aPortNode)
     return S_OK;
 }
 
-/** 
+/**
  *  @note Locks this object for writing.
  */
 bool SerialPort::rollback()
@@ -296,7 +296,7 @@ bool SerialPort::rollback()
     return changed;
 }
 
-/** 
+/**
  *  @note Locks this object for writing, together with the peer object (also
  *  for writing) if there is one.
  */
@@ -324,7 +324,7 @@ void SerialPort::commit()
     }
 }
 
-/** 
+/**
  *  @note Locks this object for writing, together with the peer object
  *  represented by @a aThat (locked for reading).
  */
@@ -425,21 +425,21 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
     {
         switch (aHostMode)
         {
-            case PortMode_HostPipePort:
+            case PortMode_HostPipe:
                 if (mData->mPath.isEmpty())
                     return setError (E_INVALIDARG,
                         tr ("Cannot set the host pipe mode of the serial port %d "
                             "because the pipe path is empty or null"),
                         mData->mSlot);
                 break;
-            case PortMode_HostDevicePort:
+            case PortMode_HostDevice:
                 if (mData->mPath.isEmpty())
                     return setError (E_INVALIDARG,
                         tr ("Cannot set the host device mode of the serial port %d "
                             "because the device path is empty or null"),
                         mData->mSlot);
                 break;
-            case PortMode_DisconnectedPort:
+            case PortMode_Disconnected:
                 break;
         }
 
@@ -600,15 +600,15 @@ STDMETHODIMP SerialPort::COMGETTER(Path) (BSTR *aPath)
     return S_OK;
 }
 
-/** 
+/**
  *  Validates COMSETTER(Path) arguments.
  */
 HRESULT SerialPort::checkSetPath (const BSTR aPath)
 {
     AssertReturn (isLockedOnCurrentThread(), E_FAIL);
 
-    if ((mData->mHostMode == PortMode_HostDevicePort ||
-         mData->mHostMode == PortMode_HostPipePort) &&
+    if ((mData->mHostMode == PortMode_HostDevice ||
+         mData->mHostMode == PortMode_HostPipe) &&
         (aPath == NULL || *aPath == '\0'))
         return setError (E_INVALIDARG,
             tr ("Path of the serial port %d may not be empty or null in "

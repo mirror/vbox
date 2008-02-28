@@ -47,7 +47,7 @@ static DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser);
  */
 #define CHECK_OPEN() \
     do { \
-        if (mState != SessionState_SessionOpen) \
+        if (mState != SessionState_Open) \
             return setError (E_UNEXPECTED, \
                 tr ("The session is not open")); \
     } while (0)
@@ -83,8 +83,8 @@ HRESULT Session::init()
 
     LogFlowThisFuncEnter();
 
-    mState = SessionState_SessionClosed;
-    mType = SessionType_InvalidSessionType;
+    mState = SessionState_Closed;
+    mType = SessionType_Null;
 
 #if defined(RT_OS_WINDOWS)
     mIPCSem = NULL;
@@ -127,10 +127,10 @@ void Session::uninit (bool aFinalRelease)
 
     AutoLock alock (this);
 
-    if (mState != SessionState_SessionClosed)
+    if (mState != SessionState_Closed)
     {
-        Assert (mState == SessionState_SessionOpen ||
-                mState == SessionState_SessionSpawning);
+        Assert (mState == SessionState_Open ||
+                mState == SessionState_Spawning);
 
         HRESULT rc = close (aFinalRelease, false /* aFromServer */);
         AssertComRC (rc);
@@ -264,9 +264,9 @@ STDMETHODIMP Session::GetRemoteConsole (IConsole **aConsole)
 
     AutoReaderLock alock (this);
 
-    AssertReturn (mState == SessionState_SessionOpen, E_FAIL);
+    AssertReturn (mState == SessionState_Open, E_FAIL);
 
-    AssertMsgReturn (mType == SessionType_DirectSession && !!mConsole,
+    AssertMsgReturn (mType == SessionType_Direct && !!mConsole,
                      ("This is not a direct session!\n"), E_FAIL);
 
     mConsole.queryInterfaceTo (aConsole);
@@ -284,7 +284,7 @@ STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
 
     AutoLock alock (this);
 
-    AssertReturn (mState == SessionState_SessionClosed, E_FAIL);
+    AssertReturn (mState == SessionState_Closed, E_FAIL);
 
     if (!aMachine)
     {
@@ -295,9 +295,9 @@ STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
          *  called.
          */
 
-        AssertReturn (mType == SessionType_InvalidSessionType, E_FAIL);
-        mType = SessionType_RemoteSession;
-        mState = SessionState_SessionSpawning;
+        AssertReturn (mType == SessionType_Null, E_FAIL);
+        mType = SessionType_Remote;
+        mState = SessionState_Spawning;
 
         LogFlowThisFuncLeave();
         return S_OK;
@@ -326,8 +326,8 @@ STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
 
     if (SUCCEEDED (rc))
     {
-        mType = SessionType_DirectSession;
-        mState = SessionState_SessionOpen;
+        mType = SessionType_Direct;
+        mState = SessionState_Open;
     }
     else
     {
@@ -355,8 +355,8 @@ STDMETHODIMP Session::AssignRemoteMachine (IMachine *aMachine, IConsole *aConsol
 
     AutoLock alock (this);
 
-    AssertReturn (mState == SessionState_SessionClosed ||
-                  mState == SessionState_SessionSpawning, E_FAIL);
+    AssertReturn (mState == SessionState_Closed ||
+                  mState == SessionState_Spawning, E_FAIL);
 
     HRESULT rc = E_FAIL;
 
@@ -395,12 +395,12 @@ STDMETHODIMP Session::AssignRemoteMachine (IMachine *aMachine, IConsole *aConsol
          *  RemoteSession type can be already set by AssignMachine() when its
          *  argument is NULL (a special case)
          */
-        if (mType != SessionType_RemoteSession)
-            mType = SessionType_ExistingSession;
+        if (mType != SessionType_Remote)
+            mType = SessionType_Existing;
         else
-            Assert (mState == SessionState_SessionSpawning);
+            Assert (mState == SessionState_Spawning);
 
-        mState = SessionState_SessionOpen;
+        mState = SessionState_Open;
     }
     else
     {
@@ -432,14 +432,14 @@ STDMETHODIMP Session::UpdateMachineState (MachineState_T aMachineState)
 
     AutoReaderLock alock (this);
 
-    if (mState == SessionState_SessionClosing)
+    if (mState == SessionState_Closing)
     {
         LogFlowThisFunc (("Already being closed.\n"));
         return S_OK;
     }
 
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     AssertReturn (!mControl.isNull(), E_FAIL);
     AssertReturn (!mConsole.isNull(), E_FAIL);
@@ -461,13 +461,13 @@ STDMETHODIMP Session::Uninitialize()
 
         LogFlowThisFunc (("mState=%d, mType=%d\n", mState, mType));
 
-        if (mState == SessionState_SessionClosing)
+        if (mState == SessionState_Closing)
         {
             LogFlowThisFunc (("Already being closed.\n"));
             return S_OK;
         }
 
-        AssertReturn (mState == SessionState_SessionOpen, E_FAIL);
+        AssertReturn (mState == SessionState_Open, E_FAIL);
 
         /* close ourselves */
         rc = close (false /* aFinalRelease */, true /* aFromServer */);
@@ -500,8 +500,8 @@ STDMETHODIMP Session::OnDVDDriveChange()
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onDVDDriveChange();
 }
@@ -514,8 +514,8 @@ STDMETHODIMP Session::OnFloppyDriveChange()
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onFloppyDriveChange();
 }
@@ -528,8 +528,8 @@ STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onNetworkAdapterChange(networkAdapter);
 }
@@ -542,8 +542,8 @@ STDMETHODIMP Session::OnSerialPortChange(ISerialPort *serialPort)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onSerialPortChange(serialPort);
 }
@@ -556,8 +556,8 @@ STDMETHODIMP Session::OnParallelPortChange(IParallelPort *parallelPort)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onParallelPortChange(parallelPort);
 }
@@ -570,8 +570,8 @@ STDMETHODIMP Session::OnVRDPServerChange()
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onVRDPServerChange();
 }
@@ -584,8 +584,8 @@ STDMETHODIMP Session::OnUSBControllerChange()
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onUSBControllerChange();
 }
@@ -598,8 +598,8 @@ STDMETHODIMP Session::OnSharedFolderChange (BOOL aGlobal)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onSharedFolderChange (aGlobal);
 }
@@ -614,8 +614,8 @@ STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice,
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onUSBDeviceAttach (aDevice, aError, aMaskedIfs);
 }
@@ -629,8 +629,8 @@ STDMETHODIMP Session::OnUSBDeviceDetach (INPTR GUIDPARAM aId,
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onUSBDeviceDetach (aId, aError);
 }
@@ -641,8 +641,8 @@ STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReaderLock alock (this);
-    AssertReturn (mState == SessionState_SessionOpen &&
-                  mType == SessionType_DirectSession, E_FAIL);
+    AssertReturn (mState == SessionState_Open &&
+                  mType == SessionType_Direct, E_FAIL);
 
     return mConsole->onShowWindow (aCheck, aCanShow, aWinId);
 }
@@ -672,9 +672,9 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
 
     LogFlowThisFunc (("mState=%d, mType=%d\n", mState, mType));
 
-    if (mState != SessionState_SessionOpen)
+    if (mState != SessionState_Open)
     {
-        Assert (mState == SessionState_SessionSpawning);
+        Assert (mState == SessionState_Spawning);
 
         /* The session object is going to be uninitialized by the client before
          * it has been assigned a direct console of the machine the client
@@ -684,8 +684,8 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
          * procedure is fully complete, so assert here. */
         AssertFailed();
 
-        mState = SessionState_SessionClosed;
-        mType = SessionType_InvalidSessionType;
+        mState = SessionState_Closed;
+        mType = SessionType_Null;
 #if defined(RT_OS_WINDOWS)
         Assert (!mIPCSem && !mIPCThreadSem);
 #elif defined(RT_OS_OS2)
@@ -701,9 +701,9 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
     }
 
     /* go to the closing state */
-    mState =  SessionState_SessionClosing;
+    mState =  SessionState_Closing;
 
-    if (mType == SessionType_DirectSession)
+    if (mType == SessionType_Direct)
     {
         mConsole->uninit();
         mConsole.setNull();
@@ -733,7 +733,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
          *  can be called by the server (for example, Uninitialize(), if the
          *  direct session has initiated a closure just a bit before us) so
          *  we need to release the lock to avoid deadlocks. The state is already
-         *  SessionState_SessionClosing here, so it's safe.
+         *  SessionState_Closing here, so it's safe.
          */
         alock.leave();
 
@@ -747,7 +747,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
          *  If we get E_UNEXPECTED this means that the direct session has already
          *  been closed, we're just too late with our notification and nothing more
          */
-        if (mType != SessionType_DirectSession && rc == E_UNEXPECTED)
+        if (mType != SessionType_Direct && rc == E_UNEXPECTED)
             rc = S_OK;
 
         AssertComRC (rc);
@@ -755,7 +755,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
 
     mControl.setNull();
 
-    if (mType == SessionType_DirectSession)
+    if (mType == SessionType_Direct)
     {
         releaseIPCSemaphore();
         if (!aFinalRelease && !aFromServer)
@@ -771,8 +771,8 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
         }
     }
 
-    mState = SessionState_SessionClosed;
-    mType = SessionType_InvalidSessionType;
+    mState = SessionState_Closed;
+    mType = SessionType_Null;
 
     /* release the VirtualBox instance as the very last step */
     mVirtualBox.setNull();

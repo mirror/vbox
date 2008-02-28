@@ -281,7 +281,7 @@
 <variables>
     <variable access="private">CMachine mMachine;</variable>
     <variable access="private">QUuid mMachineId;</variable>
-    <variable access="private">CEnums::SessionState mSessionState;</variable>
+    <variable access="private">KSessionState mSessionState;</variable>
     <variable access="private">class ListViewItem; ListViewItem *mCurSnapshotItem;</variable>
     <variable access="private">class ToolTip; ToolTip *mToolTip;</variable>
     <variable access="private">QPopupMenu *mContextMenu;</variable>

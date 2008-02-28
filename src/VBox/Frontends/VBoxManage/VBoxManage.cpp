@@ -177,7 +177,7 @@ struct USBFilterCmd
     struct USBFilter
     {
         USBFilter ()
-            : mAction (USBDeviceFilterAction_InvalidUSBDeviceFilterAction)
+            : mAction (USBDeviceFilterAction_Null)
             {}
 
         Bstr mName;
@@ -912,9 +912,9 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     else
         RTPrintf("Time offset:     %lld ms\n", timeOffset);
 
-    TriStateBool_T hwVirtExEnabled;
+    TSBool_T hwVirtExEnabled;
     machine->COMGETTER(HWVirtExEnabled)(&hwVirtExEnabled);
-    if (hwVirtExEnabled == TriStateBool_TSDefault)
+    if (hwVirtExEnabled == TSBool_Default)
     {
         BOOL fHWVirtExEnabled;
         ComPtr<ISystemProperties> systemProperties;
@@ -928,9 +928,9 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     else
     {
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("hwvirtex=\"%s\"\n", hwVirtExEnabled == TriStateBool_TSTrue ? "on" : "off");
+            RTPrintf("hwvirtex=\"%s\"\n", hwVirtExEnabled == TSBool_True ? "on" : "off");
         else
-            RTPrintf("Hardw. virt.ext: %s\n", hwVirtExEnabled == TriStateBool_TSTrue ? "on" : "off");
+            RTPrintf("Hardw. virt.ext: %s\n", hwVirtExEnabled == TSBool_True ? "on" : "off");
     }
 
     MachineState_T machineState;
@@ -1062,7 +1062,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
     ComPtr<IHardDisk> hardDisk;
     Bstr filePath;
-    rc = machine->GetHardDisk(DiskControllerType_IDE0Controller, 0, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(DiskControllerType_IDE0, 0, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         /// @todo (dmik) we temporarily use the location property to
@@ -1085,7 +1085,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hda=\"none\"\n");
     }
-    rc = machine->GetHardDisk(DiskControllerType_IDE0Controller, 1, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(DiskControllerType_IDE0, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         /// @todo (dmik) we temporarily use the location property to
@@ -1108,7 +1108,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hdb=\"none\"\n");
     }
-    rc = machine->GetHardDisk(DiskControllerType_IDE1Controller, 1, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(DiskControllerType_IDE1, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         /// @todo (dmik) we temporarily use the location property to
@@ -1216,19 +1216,19 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 nic->COMGETTER(AttachmentType)(&attachment);
                 switch (attachment)
                 {
-                    case NetworkAttachmentType_NoNetworkAttachment:
+                    case NetworkAttachmentType_Null:
                         if (details == VMINFO_MACHINEREADABLE)
                             strAttachment = "null";
                         else
                             strAttachment = "none";
                         break;
-                    case NetworkAttachmentType_NATNetworkAttachment:
+                    case NetworkAttachmentType_NAT:
                         if (details == VMINFO_MACHINEREADABLE)
                             strAttachment = "nat";
                         else
                             strAttachment = "NAT";
                         break;
-                    case NetworkAttachmentType_HostInterfaceNetworkAttachment:
+                    case NetworkAttachmentType_HostInterface:
                     {
                         Bstr strHostIfDev;
                         nic->COMGETTER(HostInterface)(strHostIfDev.asOutParam());
@@ -1241,7 +1241,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                             strAttachment = Utf8StrFmt("Host Interface '%lS'", strHostIfDev.raw());
                         break;
                     }
-                    case NetworkAttachmentType_InternalNetworkAttachment:
+                    case NetworkAttachmentType_Internal:
                     {
                         Bstr strNetwork;
                         nic->COMGETTER(InternalNetwork)(strNetwork.asOutParam());
@@ -1274,14 +1274,14 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 NetworkAdapterType_T NICType;
                 nic->COMGETTER(AdapterType)(&NICType);
                 switch (NICType) {
-                case NetworkAdapterType_NetworkAdapterAm79C970A:
+                case NetworkAdapterType_Am79C970A:
                     strNICType = "Am79C970A";
                     break;
-                case NetworkAdapterType_NetworkAdapterAm79C973:
+                case NetworkAdapterType_Am79C973:
                     strNICType = "Am79C973";
                     break;
 #ifdef VBOX_WITH_E1000
-                case NetworkAdapterType_NetworkAdapter82540EM:
+                case NetworkAdapterType_I82540EM:
                     strNICType = "82540EM";
                     break;
 #endif
@@ -1350,13 +1350,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 switch (HostMode)
                 {
                     default:
-                    case PortMode_DisconnectedPort:
+                    case PortMode_Disconnected:
                         if (details == VMINFO_MACHINEREADABLE)
                             RTPrintf("uartmode%d=\"disconnected\"\n", currentUART + 1);
                         else
                             RTPrintf(", disconnected\n");
                         break;
-                    case PortMode_HostPipePort:
+                    case PortMode_HostPipe:
                         if (details == VMINFO_MACHINEREADABLE)
                             RTPrintf("uartmode%d=\"%s,%lS\"\n", currentUART + 1,
                                      fServer ? "server" : "client", path.raw());
@@ -1364,7 +1364,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                             RTPrintf(", attached to pipe (%s) '%lS'\n",
                                      fServer ? "server" : "client", path.raw());
                         break;
-                    case PortMode_HostDevicePort:
+                    case PortMode_HostDevice:
                         if (details == VMINFO_MACHINEREADABLE)
                             RTPrintf("uartmode%d=\"%lS\"\n", currentUART + 1,
                                      path.raw());
@@ -1390,43 +1390,43 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             rc = AudioAdapter->COMGETTER(AudioDriver)(&enmDrvType);
             switch (enmDrvType)
             {
-                case AudioDriverType_NullAudioDriver:
+                case AudioDriverType_Null:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "null";
                     else
                         pszDrv = "Null";
                     break;
-                case AudioDriverType_WINMMAudioDriver:
+                case AudioDriverType_WINMM:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "winmm";
                     else
                         pszDrv = "WINMM";
                     break;
-                case AudioDriverType_DSOUNDAudioDriver:
+                case AudioDriverType_DSOUND:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "dsound";
                     else
                         pszDrv = "DSOUND";
                     break;
-                case AudioDriverType_OSSAudioDriver:
+                case AudioDriverType_OSS:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "oss";
                     else
                         pszDrv = "OSS";
                     break;
-                case AudioDriverType_ALSAAudioDriver:
+                case AudioDriverType_ALSA:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "alsa";
                     else
                         pszDrv = "ALSA";
                     break;
-                case AudioDriverType_PulseAudioDriver:
+                case AudioDriverType_Pulse:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "pulse";
                     else
                         pszDrv = "PulseAudio";
                     break;
-                case AudioDriverType_CoreAudioDriver:
+                case AudioDriverType_Core:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "coreaudio";
                     else
@@ -1476,25 +1476,25 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         rc = machine->COMGETTER(ClipboardMode)(&enmMode);
         switch (enmMode)
         {
-            case ClipboardMode_ClipDisabled:
+            case ClipboardMode_Disabled:
                 if (details == VMINFO_MACHINEREADABLE)
                     psz = "disabled";
                 else
                     psz = "disabled";
                 break;
-            case ClipboardMode_ClipHostToGuest:
+            case ClipboardMode_HostToGuest:
                 if (details == VMINFO_MACHINEREADABLE)
                     psz = "hosttoguest";
                 else
                     psz = "HostToGuest";
                 break;
-            case ClipboardMode_ClipGuestToHost:
+            case ClipboardMode_GuestToHost:
                 if (details == VMINFO_MACHINEREADABLE)
                     psz = "guesttohost";
                 else
                     psz = "GuestToHost";
                 break;
-            case ClipboardMode_ClipBidirectional:
+            case ClipboardMode_Bidirectional:
                 if (details == VMINFO_MACHINEREADABLE)
                     psz = "bidirectional";
                 else
@@ -1547,13 +1547,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             vrdpServer->COMGETTER(AuthType)(&vrdpAuthType);
             switch (vrdpAuthType)
             {
-                case VRDPAuthType_VRDPAuthNull:
+                case VRDPAuthType_Null:
                     strAuthType = "null";
                     break;
-                case VRDPAuthType_VRDPAuthExternal:
+                case VRDPAuthType_External:
                     strAuthType = "external";
                     break;
-                case VRDPAuthType_VRDPAuthGuest:
+                case VRDPAuthType_Guest:
                     strAuthType = "guest";
                     break;
                 default:
@@ -2684,7 +2684,7 @@ static int handleList(int argc, char *argv[],
             dvdImage->COMGETTER(Accessible)(&fAccessible);
             RTPrintf("Accessible: %s\n", fAccessible ? "yes" : "no");
             Bstr machineUUIDs;
-            CHECK_ERROR(virtualBox, GetDVDImageUsage(uuid, ResourceUsage_AllUsage, machineUUIDs.asOutParam()));
+            CHECK_ERROR(virtualBox, GetDVDImageUsage(uuid, ResourceUsage_All, machineUUIDs.asOutParam()));
             /** @todo usage */
             RTPrintf("\n");
         }
@@ -2711,7 +2711,7 @@ static int handleList(int argc, char *argv[],
             floppyImage->COMGETTER(Accessible)(&fAccessible);
             RTPrintf("Accessible: %s\n", fAccessible ? "yes" : "no");
             Bstr machineUUIDs;
-            CHECK_ERROR(virtualBox, GetFloppyImageUsage(uuid, ResourceUsage_AllUsage, machineUUIDs.asOutParam()));
+            CHECK_ERROR(virtualBox, GetFloppyImageUsage(uuid, ResourceUsage_All, machineUUIDs.asOutParam()));
             /** @todo usage */
             RTPrintf("\n");
         }
@@ -2785,17 +2785,17 @@ static int handleList(int argc, char *argv[],
             const char *pszState = "?";
             switch (state)
             {
-                case USBDeviceState_USBDeviceNotSupported:
+                case USBDeviceState_NotSupported:
                     pszState = "Not supported"; break;
-                case USBDeviceState_USBDeviceUnavailable:
+                case USBDeviceState_Unavailable:
                     pszState = "Unavailable"; break;
-                case USBDeviceState_USBDeviceBusy:
+                case USBDeviceState_Busy:
                     pszState = "Busy"; break;
-                case USBDeviceState_USBDeviceAvailable:
+                case USBDeviceState_Available:
                     pszState = "Available"; break;
-                case USBDeviceState_USBDeviceHeld:
+                case USBDeviceState_Held:
                     pszState = "Held"; break;
-                case USBDeviceState_USBDeviceCaptured:
+                case USBDeviceState_Captured:
                     pszState = "Captured"; break;
                 default:
                     ASSERT (false);
@@ -2850,10 +2850,10 @@ static int handleList(int argc, char *argv[],
             const char *pszAction = "<invalid>";
             switch (action)
             {
-                case USBDeviceFilterAction_USBDeviceFilterIgnore:
+                case USBDeviceFilterAction_Ignore:
                     pszAction = "Ignore";
                     break;
-                case USBDeviceFilterAction_USBDeviceFilterHold:
+                case USBDeviceFilterAction_Hold:
                     pszAction = "Hold";
                     break;
                 default:
@@ -3099,7 +3099,7 @@ static int handleCreateVDI(int argc, char *argv[],
                     }
                     else if (strcmp(type, "writethrough") == 0)
                     {
-                        CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_WritethroughHardDisk));
+                        CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Writethrough));
                     }
 
                     RTPrintf("Disk image created. UUID: %s\n", uuid.toString().raw());
@@ -3181,19 +3181,19 @@ static int handleModifyVDI(int argc, char *argv[],
 
             if (strcmp(type, "normal") == 0)
             {
-                if (hddType != HardDiskType_NormalHardDisk)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_NormalHardDisk));
+                if (hddType != HardDiskType_Normal)
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Normal));
             }
             else if (strcmp(type, "writethrough") == 0)
             {
-                if (hddType != HardDiskType_WritethroughHardDisk)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_WritethroughHardDisk));
+                if (hddType != HardDiskType_Writethrough)
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Writethrough));
 
             }
             else if (strcmp(type, "immutable") == 0)
             {
-                if (hddType != HardDiskType_ImmutableHardDisk)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_ImmutableHardDisk));
+                if (hddType != HardDiskType_Immutable)
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Immutable));
             }
             else
             {
@@ -3894,23 +3894,23 @@ static int handleModifyVM(int argc, char *argv[],
             i++;
             if (strcmp(argv[i], "none") == 0)
             {
-                bootDevice[n - 1] = DeviceType_NoDevice;
+                bootDevice[n - 1] = DeviceType_Null;
             }
             else if (strcmp(argv[i], "floppy") == 0)
             {
-                bootDevice[n - 1] = DeviceType_FloppyDevice;
+                bootDevice[n - 1] = DeviceType_Floppy;
             }
             else if (strcmp(argv[i], "dvd") == 0)
             {
-                bootDevice[n - 1] = DeviceType_DVDDevice;
+                bootDevice[n - 1] = DeviceType_DVD;
             }
             else if (strcmp(argv[i], "disk") == 0)
             {
-                bootDevice[n - 1] = DeviceType_HardDiskDevice;
+                bootDevice[n - 1] = DeviceType_HardDisk;
             }
             else if (strcmp(argv[i], "net") == 0)
             {
-                bootDevice[n - 1] = DeviceType_NetworkDevice;
+                bootDevice[n - 1] = DeviceType_Network;
             }
             else
             {
@@ -4402,15 +4402,15 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hwvirtex, "on") == 0)
             {
-                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TriStateBool_TSTrue));
+                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TSBool_True));
             }
             else if (strcmp(hwvirtex, "off") == 0)
             {
-                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TriStateBool_TSFalse));
+                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TSBool_False));
             }
             else if (strcmp(hwvirtex, "default") == 0)
             {
-                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TriStateBool_TSDefault));
+                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TSBool_Default));
             }
             else
             {
@@ -4512,7 +4512,7 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hdds[0], "none") == 0)
             {
-                machine->DetachHardDisk(DiskControllerType_IDE0Controller, 0);
+                machine->DetachHardDisk(DiskControllerType_IDE0, 0);
             }
             else
             {
@@ -4545,7 +4545,7 @@ static int handleModifyVM(int argc, char *argv[],
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, DiskControllerType_IDE0Controller, 0));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, DiskControllerType_IDE0, 0));
                 }
                 else
                     rc = E_FAIL;
@@ -4557,7 +4557,7 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hdds[1], "none") == 0)
             {
-                machine->DetachHardDisk(DiskControllerType_IDE0Controller, 1);
+                machine->DetachHardDisk(DiskControllerType_IDE0, 1);
             }
             else
             {
@@ -4590,7 +4590,7 @@ static int handleModifyVM(int argc, char *argv[],
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, DiskControllerType_IDE0Controller, 1));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, DiskControllerType_IDE0, 1));
                 }
                 else
                     rc = E_FAIL;
@@ -4602,7 +4602,7 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hdds[2], "none") == 0)
             {
-                machine->DetachHardDisk(DiskControllerType_IDE1Controller, 1);
+                machine->DetachHardDisk(DiskControllerType_IDE1, 1);
             }
             else
             {
@@ -4635,7 +4635,7 @@ static int handleModifyVM(int argc, char *argv[],
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, DiskControllerType_IDE1Controller, 1));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, DiskControllerType_IDE1, 1));
                 }
                 else
                     rc = E_FAIL;
@@ -4808,40 +4808,40 @@ static int handleModifyVM(int argc, char *argv[],
                 }
                 else if (strcmp(audio, "null") == 0)
                 {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_NullAudioDriver));
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Null));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 #ifdef RT_OS_WINDOWS
 #ifdef VBOX_WITH_WINMM
                 else if (strcmp(audio, "winmm") == 0)
                 {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WINMMAudioDriver));
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WINMM));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 #endif
                 else if (strcmp(audio, "dsound") == 0)
                 {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DSOUNDAudioDriver));
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DSOUND));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_LINUX
                 else if (strcmp(audio, "oss") == 0)
                 {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSSAudioDriver));
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 # ifdef VBOX_WITH_ALSA
                 else if (strcmp(audio, "alsa") == 0)
                 {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSAAudioDriver));
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSA));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 # endif
 # ifdef VBOX_WITH_PULSE
                 else if (strcmp(audio, "pulse") == 0)
                 {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_PulseAudioDriver));
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Pulse));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 # endif
@@ -4849,7 +4849,7 @@ static int handleModifyVM(int argc, char *argv[],
 #ifdef RT_OS_DARWIN
                 else if (strcmp(audio, "coreaudio") == 0)
                 {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudioDriver));
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Core));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 
@@ -4884,19 +4884,19 @@ static int handleModifyVM(int argc, char *argv[],
 */
             if (strcmp(clipboard, "disabled") == 0)
             {
-                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_ClipDisabled));
+                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_Disabled));
             }
             else if (strcmp(clipboard, "hosttoguest") == 0)
             {
-                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_ClipHostToGuest));
+                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_HostToGuest));
             }
             else if (strcmp(clipboard, "guesttohost") == 0)
             {
-                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_ClipGuestToHost));
+                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_GuestToHost));
             }
             else if (strcmp(clipboard, "bidirectional") == 0)
             {
-                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_ClipBidirectional));
+                CHECK_ERROR(machine, COMSETTER(ClipboardMode)(ClipboardMode_Bidirectional));
             }
             else
             {
@@ -4953,16 +4953,16 @@ static int handleModifyVM(int argc, char *argv[],
             {
                 if (strcmp(nictype[n], "Am79C970A") == 0)
                 {
-                    CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapterAm79C970A), 1);
+                    CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_Am79C970A), 1);
                 }
                 else if (strcmp(nictype[n], "Am79C973") == 0)
                 {
-                    CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapterAm79C973), 1);
+                    CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_Am79C973), 1);
                 }
 #ifdef VBOX_WITH_E1000
                 else if (strcmp(nictype[n], "82540EM") == 0)
                 {
-                    CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapter82540EM), 1);
+                    CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82540EM), 1);
                 }
 #endif
                 else
@@ -5134,23 +5134,23 @@ static int handleModifyVM(int argc, char *argv[],
             {
                 if (strcmp(uarts_mode[n], "disconnected") == 0)
                 {
-                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_DisconnectedPort), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_Disconnected), 1);
                 }
                 else
                 {
                     if (strcmp(uarts_mode[n], "server") == 0)
                     {
-                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostPipePort), 1);
+                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostPipe), 1);
                         CHECK_ERROR_RET(uart, COMSETTER(Server) (TRUE), 1);
                     }
                     else if (strcmp(uarts_mode[n], "client") == 0)
                     {
-                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostPipePort), 1);
+                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostPipe), 1);
                         CHECK_ERROR_RET(uart, COMSETTER(Server) (FALSE), 1);
                     }
                     else
                     {
-                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostDevicePort), 1);
+                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostDevice), 1);
                     }
                     CHECK_ERROR_RET(uart, COMSETTER(Path) (Bstr(uarts_path[n])), 1);
                 }
@@ -5196,15 +5196,15 @@ static int handleModifyVM(int argc, char *argv[],
                 {
                     if (strcmp(vrdpauthtype, "null") == 0)
                     {
-                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_VRDPAuthNull));
+                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Null));
                     }
                     else if (strcmp(vrdpauthtype, "external") == 0)
                     {
-                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_VRDPAuthExternal));
+                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_External));
                     }
                     else if (strcmp(vrdpauthtype, "guest") == 0)
                     {
-                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_VRDPAuthGuest));
+                        CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Guest));
                     }
                     else
                     {
@@ -6200,13 +6200,13 @@ static int handleShowVDIInfo(int argc, char *argv[],
         const char *typeStr = "unknown";
         switch (type)
         {
-            case HardDiskType_NormalHardDisk:
+            case HardDiskType_Normal:
                 typeStr = "standard";
                 break;
-            case HardDiskType_ImmutableHardDisk:
+            case HardDiskType_Immutable:
                 typeStr = "immutable";
                 break;
-            case HardDiskType_WritethroughHardDisk:
+            case HardDiskType_Writethrough:
                 typeStr = "writethrough";
                 break;
         }
@@ -6299,11 +6299,11 @@ static int handleRegisterImage(int argc, char *argv[],
             if (type)
             {
                 if (strcmp(type, "normal") == 0)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_NormalHardDisk));
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Normal));
                 else if (strcmp(type, "immutable") == 0)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_ImmutableHardDisk));
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Immutable));
                 else if (strcmp(type, "writethrough") == 0)
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_WritethroughHardDisk));
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Writethrough));
             }
             if (SUCCEEDED(rc))
                 CHECK_ERROR(virtualBox, RegisterHardDisk(hardDisk));
@@ -6877,9 +6877,9 @@ static int handleUSBFilter (int argc, char *argv[],
                     }
                     i++;
                     if (strcmp (argv [i], "ignore") == 0)
-                        cmd.mFilter.mAction = USBDeviceFilterAction_USBDeviceFilterIgnore;
+                        cmd.mFilter.mAction = USBDeviceFilterAction_Ignore;
                     else if (strcmp (argv [i], "hold") == 0)
-                        cmd.mFilter.mAction = USBDeviceFilterAction_USBDeviceFilterHold;
+                        cmd.mFilter.mAction = USBDeviceFilterAction_Hold;
                     else
                     {
                         return errorArgument("Invalid USB filter action '%s'", argv[i]);
@@ -6898,7 +6898,7 @@ static int handleUSBFilter (int argc, char *argv[],
                 if (   cmd.mFilter.mName.isEmpty()
                     ||
                        (   cmd.mGlobal
-                        && cmd.mFilter.mAction == USBDeviceFilterAction_InvalidUSBDeviceFilterAction
+                        && cmd.mFilter.mAction == USBDeviceFilterAction_Null
                        )
                     || (   !cmd.mGlobal
                         && !cmd.mMachine)
@@ -6998,7 +6998,7 @@ static int handleUSBFilter (int argc, char *argv[],
                 if (!f.mMaskedInterfaces.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(MaskedInterfaces) (f.mMaskedInterfaces));
 
-                if (f.mAction != USBDeviceFilterAction_InvalidUSBDeviceFilterAction)
+                if (f.mAction != USBDeviceFilterAction_Null)
                     CHECK_ERROR_BREAK (flt, COMSETTER(Action) (f.mAction));
 
                 CHECK_ERROR_BREAK (host, InsertUSBDeviceFilter (cmd.mIndex, flt));
@@ -7055,7 +7055,7 @@ static int handleUSBFilter (int argc, char *argv[],
                 if (!f.mMaskedInterfaces.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(MaskedInterfaces) (f.mMaskedInterfaces));
 
-                if (f.mAction != USBDeviceFilterAction_InvalidUSBDeviceFilterAction)
+                if (f.mAction != USBDeviceFilterAction_Null)
                     CHECK_ERROR_BREAK (flt, COMSETTER(Action) (f.mAction));
             }
             else

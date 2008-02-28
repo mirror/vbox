@@ -219,12 +219,12 @@ private:
 class StateChangeEvent : public QEvent
 {
 public:
-    StateChangeEvent (CEnums::MachineState state) :
+    StateChangeEvent (KMachineState state) :
         QEvent ((QEvent::Type) VBoxDefs::MachineStateChangeEventType),
         s (state) {}
-    CEnums::MachineState machineState() const { return s; }
+    KMachineState machineState() const { return s; }
 private:
-    CEnums::MachineState s;
+    KMachineState s;
 };
 
 /** Guest Additions property changes. */
@@ -422,8 +422,7 @@ public:
     {
         LogFlowFunc (("machineState=%d\n", machineState));
         QApplication::postEvent (mView,
-                                 new StateChangeEvent (
-                                     (CEnums::MachineState) machineState));
+                                 new StateChangeEvent ((KMachineState) machineState));
         return S_OK;
     }
 
@@ -2589,11 +2588,11 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
 
     int state = 0;
     if (aStateAfter & LeftButton)
-        state |= CEnums::LeftButton;
+        state |= KMouseButtonState_LeftButton;
     if (aStateAfter & RightButton)
-        state |= CEnums::RightButton;
+        state |= KMouseButtonState_RightButton;
     if (aStateAfter & MidButton)
-        state |= CEnums::MiddleButton;
+        state |= KMouseButtonState_MiddleButton;
 
     int wheel = 0;
     if (aWheelDir == Vertical)
@@ -2805,11 +2804,11 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
     return false;
 }
 
-void VBoxConsoleView::onStateChange (CEnums::MachineState state)
+void VBoxConsoleView::onStateChange (KMachineState state)
 {
     switch (state)
     {
-        case CEnums::Paused:
+        case KMachineState_Paused:
         {
             if (mode != VBoxDefs::TimerMode && mFrameBuf)
             {
@@ -2835,16 +2834,16 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
             }
             /* fall through */
         }
-        case CEnums::Stuck:
+        case KMachineState_Stuck:
         {
             /* reuse the focus event handler to uncapture everything */
             if (hasFocus())
                 focusEvent (false /* aHasFocus*/, false /* aReleaseHostKey */);
             break;
         }
-        case CEnums::Running:
+        case KMachineState_Running:
         {
-            if (mLastState == CEnums::Paused)
+            if (mLastState == KMachineState_Paused)
             {
                 if (mode != VBoxDefs::TimerMode && mFrameBuf)
                 {

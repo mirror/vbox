@@ -593,7 +593,7 @@ public:
     {
         switch (machineState)
         {
-            case MachineState_InvalidMachineState: return "InvalidMachineState";
+            case MachineState_Null:                return "<null>";
             case MachineState_Running:             return "Running";
             case MachineState_Restoring:           return "Restoring";
             case MachineState_Starting:            return "Starting";
@@ -812,7 +812,7 @@ int main(int argc, char *argv[])
     HRESULT rc;
     Guid uuid;
     char *vmName = NULL;
-    DeviceType_T bootDevice = DeviceType_NoDevice;
+    DeviceType_T bootDevice = DeviceType_Null;
     uint32_t memorySize = 0;
     uint32_t vramSize = 0;
     VBoxSDLCallback *callback = NULL;
@@ -841,7 +841,7 @@ int main(int argc, char *argv[])
     unsigned fRawR3 = ~0U;
     unsigned fPATM  = ~0U;
     unsigned fCSAM  = ~0U;
-    TriStateBool_T fHWVirt = TriStateBool_TSDefault;
+    TSBool_T fHWVirt = TSBool_Default;
     uint32_t u32WarpDrive = 0;
 #endif
 #ifdef VBOX_WIN32_UI
@@ -1017,25 +1017,25 @@ int main(int argc, char *argv[])
             {
                 case 'a':
                 {
-                    bootDevice = DeviceType_FloppyDevice;
+                    bootDevice = DeviceType_Floppy;
                     break;
                 }
 
                 case 'c':
                 {
-                    bootDevice = DeviceType_HardDiskDevice;
+                    bootDevice = DeviceType_HardDisk;
                     break;
                 }
 
                 case 'd':
                 {
-                    bootDevice = DeviceType_DVDDevice;
+                    bootDevice = DeviceType_DVD;
                     break;
                 }
 
                 case 'n':
                 {
-                    bootDevice = DeviceType_NetworkDevice;
+                    bootDevice = DeviceType_Network;
                     break;
                 }
 
@@ -1284,9 +1284,9 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[curArg], "-nocsam") == 0)
             fCSAM = false;
         else if (strcmp(argv[curArg], "-hwvirtex") == 0)
-            fHWVirt = TriStateBool_TSTrue;
+            fHWVirt = TSBool_True;
         else if (strcmp(argv[curArg], "-nohwvirtex") == 0)
-            fHWVirt = TriStateBool_TSFalse;
+            fHWVirt = TSBool_False;
         else if (strcmp(argv[curArg], "-warpdrive") == 0)
         {
             if (++curArg >= argc)
@@ -1433,8 +1433,8 @@ int main(int argc, char *argv[])
              */
             Guid uuid;
             hardDisk->COMGETTER(Id)(uuid.asOutParam());
-            gMachine->DetachHardDisk(DiskControllerType_IDE0Controller, 0);
-            gMachine->AttachHardDisk(uuid, DiskControllerType_IDE0Controller, 0);
+            gMachine->DetachHardDisk(DiskControllerType_IDE0, 0);
+            gMachine->AttachHardDisk(uuid, DiskControllerType_IDE0, 0);
             /// @todo why is this attachment saved?
         }
         else
@@ -1608,7 +1608,7 @@ int main(int argc, char *argv[])
     }
 
     // set the boot drive
-    if (bootDevice != DeviceType_NoDevice)
+    if (bootDevice != DeviceType_Null)
     {
         rc = gMachine->SetBootOrder(1, bootDevice);
         if (rc != S_OK)
@@ -1744,7 +1744,7 @@ int main(int argc, char *argv[])
                 {
                     NetworkAttachmentType_T attachmentType;
                     networkAdapter->COMGETTER(AttachmentType)(&attachmentType);
-                    if (attachmentType == NetworkAttachmentType_HostInterfaceNetworkAttachment)
+                    if (attachmentType == NetworkAttachmentType_HostInterface)
                     {
                         if (tapdev[i])
                             networkAdapter->COMSETTER(HostInterface)(tapdev[i]);
@@ -1832,7 +1832,7 @@ int main(int argc, char *argv[])
         }
         gMachineDebugger->COMSETTER(CSAMEnabled)(fCSAM);
     }
-    if (fHWVirt != TriStateBool_TSDefault)
+    if (fHWVirt != TSBool_Default)
     {
         gMachine->COMSETTER(HWVirtExEnabled)(fHWVirt);
     }

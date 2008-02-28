@@ -241,7 +241,7 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId
 
 /**
  *  Handles display resize event.
- *  Disables access to VGA device; 
+ *  Disables access to VGA device;
  *  calls the framebuffer RequestResize method;
  *  if framebuffer resizes synchronously,
  *      updates the display connector data and enables access to the VGA device.
@@ -281,7 +281,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
             pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
             break;
         default:
-            pixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
+            pixelFormat = FramebufferPixelFormat_Opaque;
             bpp = cbLine = 0;
             break;
     }
@@ -330,7 +330,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
 void Display::handleResizeCompletedEMT (void)
 {
     LogFlowFunc(("\n"));
-    
+
     unsigned uScreenId;
     for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
     {
@@ -349,7 +349,7 @@ void Display::handleResizeCompletedEMT (void)
         {
             /* Primary framebuffer has completed the resize. Update the connector data for VGA device. */
             updateDisplayData();
-    
+
             /* Check the framebuffer pixel format to setup the rendering in VGA device. */
             BOOL usesGuestVRAM = FALSE;
             pFBInfo->pFramebuffer->COMGETTER(UsesGuestVRAM) (&usesGuestVRAM);
@@ -541,7 +541,7 @@ static void vbvaRgnInit (VBVADIRTYREGION *prgn, DISPLAYFBINFO *paFramebuffers, u
     prgn->cMonitors = cMonitors;
     prgn->pDisplay = pd;
     prgn->pPort = pp;
-    
+
     unsigned uScreenId;
     for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
     {
@@ -793,41 +793,41 @@ void Display::VideoAccelVRDP (bool fEnable)
     int c = fEnable?
                 ASMAtomicIncS32 (&mcVideoAccelVRDPRefs):
                 ASMAtomicDecS32 (&mcVideoAccelVRDPRefs);
-                
+
     Assert (c >= 0);
-    
+
     if (c == 0)
     {
-        /* The last client has disconnected, and the accel can be 
+        /* The last client has disconnected, and the accel can be
          * disabled.
          */
         Assert (fEnable == false);
-        
+
         mfVideoAccelVRDP = false;
         mfu32SupportedOrders = 0;
-        
+
         vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders, maFramebuffers, mcMonitors);
-        
+
         LogRel(("VBVA: VRDP acceleration has been disabled.\n"));
     }
     else if (   c == 1
              && !mfVideoAccelVRDP)
     {
-        /* The first client has connected. Enable the accel. 
+        /* The first client has connected. Enable the accel.
          */
         Assert (fEnable == true);
-        
+
         mfVideoAccelVRDP = true;
         /* Supporting all orders. */
         mfu32SupportedOrders = ~0;
-        
+
         vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders, maFramebuffers, mcMonitors);
-    
+
         LogRel(("VBVA: VRDP acceleration has been requested.\n"));
     }
     else
     {
-        /* A client is connected or disconnected but there is no change in the 
+        /* A client is connected or disconnected but there is no change in the
          * accel state. It remains enabled.
          */
         Assert (mfVideoAccelVRDP == true);
@@ -1189,7 +1189,7 @@ void Display::VideoAccelFlush (void)
             phdr->y = (int16_t)y;
             phdr->w = (uint16_t)w;
             phdr->h = (uint16_t)h;
-            
+
             DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
 
             if (pFBInfo->u32ResizeStatus == ResizeStatus_Void)
@@ -1211,7 +1211,7 @@ void Display::VideoAccelFlush (void)
 
                 /* Forward the command to VRDP server. */
                 mParent->consoleVRDPServer()->SendUpdate (uScreenId, phdr, cbCmd);
-                
+
                 *phdr = hdrSaved;
             }
         }
@@ -2160,17 +2160,17 @@ DECLCALLBACK(void) Display::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNEC
     {
          uint8_t *pu8 = (uint8_t *)pvVRAM;
          pu8 += u32VRAMSize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
-         
+
          // @todo
          uint8_t *pu8End = pu8 + VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
 
          VBOXVIDEOINFOHDR *pHdr;
-    
+
          for (;;)
          {
              pHdr = (VBOXVIDEOINFOHDR *)pu8;
              pu8 += sizeof (VBOXVIDEOINFOHDR);
-             
+
              if (pu8 >= pu8End)
              {
                  LogRel(("VBoxVideo: Guest adapter information overflow!!!\n"));
@@ -2217,13 +2217,13 @@ DECLCALLBACK(void) Display::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNEC
                      {
                          pConf32->u32Value = pDrv->pDisplay->mcMonitors;
                      } break;
-                     
+
                      case VBOX_VIDEO_QCI32_OFFSCREEN_HEAP_SIZE:
                      {
                          /* @todo make configurable. */
                          pConf32->u32Value = _1M;
                      } break;
-                     
+
                      default:
                          LogRel(("VBoxVideo: CONF32 %d not supported!!! Skipping.\n", pConf32->u32Index));
                  }
@@ -2268,17 +2268,17 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
 
     uint8_t *pu8 = (uint8_t *)pvVRAM;
     pu8 += pFBInfo->u32Offset + pFBInfo->u32MaxFramebufferSize;
-         
+
     // @todo
     uint8_t *pu8End = pu8 + pFBInfo->u32InformationSize;
 
     VBOXVIDEOINFOHDR *pHdr;
-    
+
     for (;;)
     {
         pHdr = (VBOXVIDEOINFOHDR *)pu8;
         pu8 += sizeof (VBOXVIDEOINFOHDR);
-             
+
         if (pu8 >= pu8End)
         {
             LogRel(("VBoxVideo: Guest display information overflow!!!\n"));

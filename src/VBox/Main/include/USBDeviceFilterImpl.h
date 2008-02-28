@@ -238,7 +238,7 @@ public:
     struct Data : public USBDeviceFilter::Data
     {
 #ifndef VBOX_WITH_USBFILTER
-        Data() : mAction (USBDeviceFilterAction_USBDeviceFilterIgnore) {}
+        Data() : mAction (USBDeviceFilterAction_Ignore) {}
         USBDeviceFilterAction_T mAction;
 #else  /* VBOX_WITH_USBFILTER */
         Data() {}

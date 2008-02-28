@@ -126,7 +126,7 @@ Machine::Data::Data()
     mHandleCfgFile = NIL_RTFILE;
 
     mSession.mPid = NIL_RTPROCESS;
-    mSession.mState = SessionState_SessionClosed;
+    mSession.mState = SessionState_Closed;
 }
 
 Machine::Data::~Data()
@@ -168,16 +168,16 @@ Machine::HWData::HWData()
     mStatisticsUpdateInterval = 0;
     mVRAMSize = 8;
     mMonitorCount = 1;
-    mHWVirtExEnabled = TriStateBool_TSFalse;
+    mHWVirtExEnabled = TSBool_False;
 
     /* default boot order: floppy - DVD - HDD */
-    mBootOrder [0] = DeviceType_FloppyDevice;
-    mBootOrder [1] = DeviceType_DVDDevice;
-    mBootOrder [2] = DeviceType_HardDiskDevice;
+    mBootOrder [0] = DeviceType_Floppy;
+    mBootOrder [1] = DeviceType_DVD;
+    mBootOrder [2] = DeviceType_HardDisk;
     for (size_t i = 3; i < ELEMENTS (mBootOrder); i++)
-        mBootOrder [i] = DeviceType_NoDevice;
+        mBootOrder [i] = DeviceType_Null;
 
-    mClipboardMode = ClipboardMode_ClipBidirectional;
+    mClipboardMode = ClipboardMode_Bidirectional;
 }
 
 Machine::HWData::~HWData()
@@ -1078,7 +1078,7 @@ STDMETHODIMP Machine::COMGETTER(BIOSSettings)(IBIOSSettings **biosSettings)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(HWVirtExEnabled)(TriStateBool_T *enabled)
+STDMETHODIMP Machine::COMGETTER(HWVirtExEnabled)(TSBool_T *enabled)
 {
     if (!enabled)
         return E_POINTER;
@@ -1093,7 +1093,7 @@ STDMETHODIMP Machine::COMGETTER(HWVirtExEnabled)(TriStateBool_T *enabled)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(HWVirtExEnabled)(TriStateBool_T enable)
+STDMETHODIMP Machine::COMSETTER(HWVirtExEnabled)(TSBool_T enable)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1550,7 +1550,7 @@ STDMETHODIMP Machine::SetBootOrder (ULONG aPosition, DeviceType_T aDevice)
             tr ("Invalid boot position: %lu (must be in range [1, %lu])"),
                 aPosition, SchemaDefs::MaxBootPosition);
 
-    if (aDevice == DeviceType_USBDevice)
+    if (aDevice == DeviceType_USB)
         return setError (E_FAIL,
             tr ("Booting from USB devices is not currently supported"));
 
@@ -1591,7 +1591,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
     Guid id = aId;
 
     if (id.isEmpty() ||
-        aCtl == DiskControllerType_InvalidController ||
+        aCtl == DiskControllerType_Null ||
         aDev < 0 || aDev > 1)
         return E_INVALIDARG;
 
@@ -1646,7 +1646,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
 
     switch (hd->type())
     {
-        case HardDiskType_ImmutableHardDisk:
+        case HardDiskType_Immutable:
         {
             Assert (hd->machineId().isEmpty());
             /*
@@ -1658,13 +1658,13 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
             dirty = true;
             break;
         }
-        case HardDiskType_WritethroughHardDisk:
+        case HardDiskType_Writethrough:
         {
             Assert (hd->children().size() == 0);
             Assert (hd->snapshotId().isEmpty());
             /* fall through */
         }
-        case HardDiskType_NormalHardDisk:
+        case HardDiskType_Normal:
         {
             if (hd->machineId().isEmpty())
             {
@@ -1721,7 +1721,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
                 else
                 {
                     /*
-                     *  here we go when the HardDiskType_NormalHardDisk
+                     *  here we go when the HardDiskType_Normal
                      *  is attached to some VM (probably to this one, too)
                      *  at some particular snapshot, so we can create a diff
                      *  based on it
@@ -1757,7 +1757,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
 STDMETHODIMP Machine::GetHardDisk (DiskControllerType_T aCtl,
                                    LONG aDev, IHardDisk **aHardDisk)
 {
-    if (aCtl == DiskControllerType_InvalidController ||
+    if (aCtl == DiskControllerType_Null ||
         aDev < 0 || aDev > 1)
         return E_INVALIDARG;
 
@@ -1786,7 +1786,7 @@ STDMETHODIMP Machine::GetHardDisk (DiskControllerType_T aCtl,
 
 STDMETHODIMP Machine::DetachHardDisk (DiskControllerType_T aCtl, LONG aDev)
 {
-    if (aCtl == DiskControllerType_InvalidController ||
+    if (aCtl == DiskControllerType_Null ||
         aDev < 0 || aDev > 1)
         return E_INVALIDARG;
 
@@ -1820,21 +1820,21 @@ STDMETHODIMP Machine::DetachHardDisk (DiskControllerType_T aCtl, LONG aDev)
             {
                 switch (hd->type())
                 {
-                    case HardDiskType_ImmutableHardDisk:
+                    case HardDiskType_Immutable:
                     {
                         /* decrease readers increased in AttachHardDisk() */
                         hd->releaseReader();
                         Log3 (("D: %ls released\n", hd->toString().raw()));
                         break;
                     }
-                    case HardDiskType_WritethroughHardDisk:
+                    case HardDiskType_Writethrough:
                     {
                         /* deassociate from this machine */
                         hd->setMachineId (Guid());
                         Log3 (("D: %ls deassociated\n", hd->toString().raw()));
                         break;
                     }
-                    case HardDiskType_NormalHardDisk:
+                    case HardDiskType_Normal:
                     {
                         if (hd->snapshotId().isEmpty())
                         {
@@ -2453,7 +2453,7 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
     {
         AutoReaderLock alock (this);
 
-        if (mData->mSession.mState != SessionState_SessionOpen)
+        if (mData->mSession.mState != SessionState_Open)
             return setError (E_FAIL,
                 tr ("Machine session is not open (session state: %d)"),
                 mData->mSession.mState);
@@ -2481,7 +2481,7 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
     {
         AutoReaderLock alock (this);
 
-        if (mData->mSession.mState != SessionState_SessionOpen)
+        if (mData->mSession.mState != SessionState_Open)
             return setError (E_FAIL,
                 tr ("Machine session is not open (session state: %d)"),
                 mData->mSession.mState);
@@ -2521,7 +2521,7 @@ ComObjPtr <SessionMachine> Machine::sessionMachine()
 
     sm = mData->mSession.mMachine;
     Assert (!sm.isNull() ||
-            mData->mSession.mState != SessionState_SessionOpen);
+            mData->mSession.mState != SessionState_Open);
 
     return  sm;
 }
@@ -2688,9 +2688,9 @@ bool Machine::isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage)
             d [1] = NULL;
         }
 
-        if (!(aUsage & ResourceUsage_PermanentUsage))
+        if (!(aUsage & ResourceUsage_Permanent))
             d [0] = NULL;
-        if (!(aUsage & ResourceUsage_TemporaryUsage))
+        if (!(aUsage & ResourceUsage_Temporary))
             d [1] = NULL;
 
         for (unsigned i = 0; i < ELEMENTS (d); ++ i)
@@ -2708,7 +2708,7 @@ bool Machine::isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage)
     }
 
     /* then, check snapshots if any */
-    if (aUsage & ResourceUsage_PermanentUsage)
+    if (aUsage & ResourceUsage_Permanent)
     {
         if (!mData->mFirstSnapshot.isNull() &&
             mData->mFirstSnapshot->isDVDImageUsed (aId))
@@ -2764,9 +2764,9 @@ bool Machine::isFloppyImageUsed (const Guid &aId, ResourceUsage_T aUsage)
             d [1] = NULL;
         }
 
-        if (!(aUsage & ResourceUsage_PermanentUsage))
+        if (!(aUsage & ResourceUsage_Permanent))
             d [0] = NULL;
-        if (!(aUsage & ResourceUsage_TemporaryUsage))
+        if (!(aUsage & ResourceUsage_Temporary))
             d [1] = NULL;
 
         for (unsigned i = 0; i < ELEMENTS (d); ++ i)
@@ -2784,7 +2784,7 @@ bool Machine::isFloppyImageUsed (const Guid &aId, ResourceUsage_T aUsage)
     }
 
     /* then, check snapshots if any */
-    if (aUsage & ResourceUsage_PermanentUsage)
+    if (aUsage & ResourceUsage_Permanent)
     {
         if (!mData->mFirstSnapshot.isNull() &&
             mData->mFirstSnapshot->isFloppyImageUsed (aId))
@@ -2816,8 +2816,8 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
 
     LogFlowThisFunc (("mSession.mState=%d\n", mData->mSession.mState));
 
-    if (mData->mSession.mState == SessionState_SessionOpen ||
-        mData->mSession.mState == SessionState_SessionClosing)
+    if (mData->mSession.mState == SessionState_Open ||
+        mData->mSession.mState == SessionState_Closing)
         return setError (E_ACCESSDENIED,
             tr ("A session for the machine '%ls' is currently open "
                 "(or being closed)"),
@@ -2832,7 +2832,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
     aControl->GetPID ((ULONG *) &pid);
     Assert (pid != NIL_RTPROCESS);
 
-    if (mData->mSession.mState == SessionState_SessionSpawning)
+    if (mData->mSession.mState == SessionState_Spawning)
     {
         /* This machine is awaiting for a spawning session to be opened, so
          * reject any other open attempts from processes other than one
@@ -2864,7 +2864,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
          *  we leave the lock.
          */
         SessionState_T origState = mData->mSession.mState;
-        mData->mSession.mState = SessionState_SessionSpawning;
+        mData->mSession.mState = SessionState_Spawning;
 
         /*
          *  Leave the lock before calling the client process -- it will call
@@ -2887,7 +2887,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
             setError (rc,
                 tr ("Failed to assign the machine to the session"));
 
-        if (SUCCEEDED (rc) && origState == SessionState_SessionSpawning)
+        if (SUCCEEDED (rc) && origState == SessionState_Spawning)
         {
             /* complete the remote session initialization */
 
@@ -2932,7 +2932,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
     }
 
     /* finalize spawning amyway (this is why we don't return on errors above) */
-    if (mData->mSession.mState == SessionState_SessionSpawning)
+    if (mData->mSession.mState == SessionState_Spawning)
     {
         /* Note that the progress object is finalized later */
 
@@ -2945,7 +2945,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
             /* Remove the remote control from the list on failure
              * and reset session state to Closed. */
             mData->mSession.mRemoteControls.clear();
-            mData->mSession.mState = SessionState_SessionClosed;
+            mData->mSession.mState = SessionState_Closed;
         }
     }
     else
@@ -2959,7 +2959,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
     {
         /* memorize the direct session control and cache IUnknown for it */
         mData->mSession.mDirectControl = aControl;
-        mData->mSession.mState = SessionState_SessionOpen;
+        mData->mSession.mState = SessionState_Open;
         /* associate the SessionMachine with this Machine */
         mData->mSession.mMachine = sessionMachine;
 
@@ -3010,9 +3010,9 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 
     LogFlowThisFunc (("mSession.mState=%d\n", mData->mSession.mState));
 
-    if (mData->mSession.mState == SessionState_SessionOpen ||
-        mData->mSession.mState == SessionState_SessionSpawning ||
-        mData->mSession.mState == SessionState_SessionClosing)
+    if (mData->mSession.mState == SessionState_Open ||
+        mData->mSession.mState == SessionState_Spawning ||
+        mData->mSession.mState == SessionState_Closing)
         return setError (E_ACCESSDENIED,
             tr ("A session for the machine '%ls' is currently open "
                 "(or being opened or closed)"),
@@ -3171,7 +3171,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     if (FAILED (rc))
     {
         /* restore the session state */
-        mData->mSession.mState = SessionState_SessionClosed;
+        mData->mSession.mState = SessionState_Closed;
         /* The failure may w/o any error info (from RPC), so provide one */
         return setError (rc,
             tr ("Failed to assign the machine to the session"));
@@ -3182,7 +3182,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     mData->mSession.mRemoteControls.push_back (aControl);
     mData->mSession.mProgress = aProgress;
     mData->mSession.mPid = pid;
-    mData->mSession.mState = SessionState_SessionSpawning;
+    mData->mSession.mState = SessionState_Spawning;
     mData->mSession.mType = type;
 
     LogFlowThisFuncLeave();
@@ -3210,7 +3210,7 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
 
     LogFlowThisFunc (("mSession.state=%d\n", mData->mSession.mState));
 
-    if (mData->mSession.mState != SessionState_SessionOpen)
+    if (mData->mSession.mState != SessionState_Open)
         return setError (E_ACCESSDENIED,
             tr ("The machine '%ls' does not have an open session"),
             mUserData->mName.raw());
@@ -3257,7 +3257,7 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
     alock.enter();
 
     /* need to revalidate the state after entering the lock again */
-    if (mData->mSession.mState != SessionState_SessionOpen)
+    if (mData->mSession.mState != SessionState_Open)
     {
         aControl->Uninitialize();
 
@@ -3348,7 +3348,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
                     "has %d snapshots"),
                 mUserData->mName.raw(), snapshotCount);
 
-        if (mData->mSession.mState != SessionState_SessionClosed)
+        if (mData->mSession.mState != SessionState_Closed)
             return setError (E_FAIL,
                 tr ("Cannot unregister the machine '%ls' because it has an "
                     "open session"),
@@ -4139,7 +4139,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     /* CPU node (currently not required) */
     {
         /* default value in case the node is not there */
-        mHWData->mHWVirtExEnabled = TriStateBool_TSDefault;
+        mHWData->mHWVirtExEnabled = TSBool_Default;
 
         Key cpuNode = aNode.findKey ("CPU");
         if (!cpuNode.isNull())
@@ -4149,11 +4149,11 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             {
                 const char *enabled = hwVirtExNode.stringValue ("enabled");
                 if      (strcmp (enabled, "false") == 0)
-                    mHWData->mHWVirtExEnabled = TriStateBool_TSFalse;
+                    mHWData->mHWVirtExEnabled = TSBool_False;
                 else if (strcmp (enabled, "true") == 0)
-                    mHWData->mHWVirtExEnabled = TriStateBool_TSTrue;
+                    mHWData->mHWVirtExEnabled = TSBool_True;
                 else
-                    mHWData->mHWVirtExEnabled = TriStateBool_TSDefault;
+                    mHWData->mHWVirtExEnabled = TSBool_Default;
             }
         }
     }
@@ -4169,7 +4169,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     {
         /* reset all boot order positions to NoDevice */
         for (size_t i = 0; i < ELEMENTS (mHWData->mBootOrder); i++)
-            mHWData->mBootOrder [i] = DeviceType_NoDevice;
+            mHWData->mBootOrder [i] = DeviceType_Null;
 
         Key bootNode = aNode.key ("Boot");
 
@@ -4186,15 +4186,15 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             /* device (required) */
             const char *device = (*it).stringValue ("device");
             if      (strcmp (device, "None") == 0)
-                mHWData->mBootOrder [position] = DeviceType_NoDevice;
+                mHWData->mBootOrder [position] = DeviceType_Null;
             else if (strcmp (device, "Floppy") == 0)
-                mHWData->mBootOrder [position] = DeviceType_FloppyDevice;
+                mHWData->mBootOrder [position] = DeviceType_Floppy;
             else if (strcmp (device, "DVD") == 0)
-                mHWData->mBootOrder [position] = DeviceType_DVDDevice;
+                mHWData->mBootOrder [position] = DeviceType_DVD;
             else if (strcmp (device, "HardDisk") == 0)
-                mHWData->mBootOrder [position] = DeviceType_HardDiskDevice;
+                mHWData->mBootOrder [position] = DeviceType_HardDisk;
             else if (strcmp (device, "Network") == 0)
-                mHWData->mBootOrder [position] = DeviceType_NetworkDevice;
+                mHWData->mBootOrder [position] = DeviceType_Network;
             else
                 ComAssertMsgFailed (("Invalid device: %s\n", device));
         }
@@ -4330,20 +4330,20 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     /// @todo (dmik) make required on next format change!
     {
         /* default value in case if the node is not there */
-        mHWData->mClipboardMode = ClipboardMode_ClipDisabled;
+        mHWData->mClipboardMode = ClipboardMode_Disabled;
 
         Key clipNode = aNode.findKey ("Clipboard");
         if (!clipNode.isNull())
         {
             const char *mode = clipNode.stringValue ("mode");
             if      (strcmp (mode, "Disabled") == 0)
-                mHWData->mClipboardMode = ClipboardMode_ClipDisabled;
+                mHWData->mClipboardMode = ClipboardMode_Disabled;
             else if (strcmp (mode, "HostToGuest") == 0)
-                mHWData->mClipboardMode = ClipboardMode_ClipHostToGuest;
+                mHWData->mClipboardMode = ClipboardMode_HostToGuest;
             else if (strcmp (mode, "GuestToHost") == 0)
-                mHWData->mClipboardMode = ClipboardMode_ClipGuestToHost;
+                mHWData->mClipboardMode = ClipboardMode_GuestToHost;
             else if (strcmp (mode, "Bidirectional") == 0)
-                mHWData->mClipboardMode = ClipboardMode_ClipBidirectional;
+                mHWData->mClipboardMode = ClipboardMode_Bidirectional;
             else
                 AssertMsgFailed (("Invalid clipboard mode '%s'\n", mode));
         }
@@ -4429,7 +4429,7 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
                 mData->mConfigFileFull.raw());
         }
 
-        if (hd->type() == HardDiskType_ImmutableHardDisk)
+        if (hd->type() == HardDiskType_Immutable)
         {
             return setError (E_FAIL,
                 tr ("Immutable hard disk '%ls' with UUID {%s} cannot be "
@@ -4439,12 +4439,12 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
         }
 
         /* attach the device */
-        DiskControllerType_T ctl = DiskControllerType_InvalidController;
+        DiskControllerType_T ctl = DiskControllerType_Null;
         LONG dev = -1;
 
         if (strcmp (bus, "ide0") == 0)
         {
-            ctl = DiskControllerType_IDE0Controller;
+            ctl = DiskControllerType_IDE0;
             if (strcmp (device, "master") == 0)
                 dev = 0;
             else if (strcmp (device, "slave") == 0)
@@ -4455,7 +4455,7 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
         }
         else if (strcmp (bus, "ide1") == 0)
         {
-            ctl = DiskControllerType_IDE1Controller;
+            ctl = DiskControllerType_IDE1;
             if (strcmp (device, "master") == 0)
                 rc = setError (E_FAIL, tr("Could not attach a disk as a master "
                                           "device on the secondary controller"));
@@ -5527,13 +5527,13 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
         const char *value = NULL;
         switch (mHWData->mHWVirtExEnabled)
         {
-            case TriStateBool_TSFalse:
+            case TSBool_False:
                 value = "false";
                 break;
-            case TriStateBool_TSTrue:
+            case TSBool_True:
                 value = "true";
                 break;
-            case TriStateBool_TSDefault:
+            case TSBool_Default:
                 value = "default";
         }
         hwVirtExNode.setStringValue ("enabled", value);
@@ -5554,14 +5554,14 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
             const char *device = NULL;
             switch (mHWData->mBootOrder [pos])
             {
-                case DeviceType_NoDevice:
+                case DeviceType_Null:
                     /* skip, this is allowed for <Order> nodes
                      * when loading, the default value NoDevice will remain */
                     continue;
-                case DeviceType_FloppyDevice:   device = "Floppy"; break;
-                case DeviceType_DVDDevice:      device = "DVD"; break;
-                case DeviceType_HardDiskDevice: device = "HardDisk"; break;
-                case DeviceType_NetworkDevice:  device = "Network"; break;
+                case DeviceType_Floppy:         device = "Floppy"; break;
+                case DeviceType_DVD:            device = "DVD"; break;
+                case DeviceType_HardDisk:       device = "HardDisk"; break;
+                case DeviceType_Network:        device = "Network"; break;
                 default:
                 {
                     ComAssertMsgFailedRet (("Invalid boot device: %d\n",
@@ -5678,16 +5678,16 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
         const char *modeStr = "Disabled";
         switch (mHWData->mClipboardMode)
         {
-            case ClipboardMode_ClipDisabled:
+            case ClipboardMode_Disabled:
                 /* already assigned */
                 break;
-            case ClipboardMode_ClipHostToGuest:
+            case ClipboardMode_HostToGuest:
                 modeStr = "HostToGuest";
                 break;
-            case ClipboardMode_ClipGuestToHost:
+            case ClipboardMode_GuestToHost:
                 modeStr = "GuestToHost";
                 break;
-            case ClipboardMode_ClipBidirectional:
+            case ClipboardMode_Bidirectional:
                 modeStr = "Bidirectional";
                 break;
             default:
@@ -5741,8 +5741,8 @@ HRESULT Machine::saveHardDisks (settings::Key &aNode)
             const char *bus = NULL;
             switch (att->controller())
             {
-                case DiskControllerType_IDE0Controller: bus = "ide0"; break;
-                case DiskControllerType_IDE1Controller: bus = "ide1"; break;
+                case DiskControllerType_IDE0: bus = "ide0"; break;
+                case DiskControllerType_IDE1: bus = "ide1"; break;
                 default:
                     ComAssertFailedRet (E_FAIL);
             }
@@ -5955,7 +5955,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
 
                 switch (hd->type())
                 {
-                    case HardDiskType_ImmutableHardDisk:
+                    case HardDiskType_Immutable:
                     {
                         /* decrease readers increased in AttachHardDisk() */
                         hd->releaseReader();
@@ -5964,14 +5964,14 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                         needDiff = true;
                         break;
                     }
-                    case HardDiskType_WritethroughHardDisk:
+                    case HardDiskType_Writethrough:
                     {
                         /* reset the dirty flag */
                         hda->updateHardDisk (hd, false /* aDirty */);
                         Log3 (("FC: %ls updated\n", hd->toString().raw()));
                         break;
                     }
-                    case HardDiskType_NormalHardDisk:
+                    case HardDiskType_Normal:
                     {
                         if (hd->snapshotId().isEmpty())
                         {
@@ -6235,21 +6235,21 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
         {
             switch (hd->type())
             {
-                case HardDiskType_ImmutableHardDisk:
+                case HardDiskType_Immutable:
                 {
                     /* decrease readers increased in AttachHardDisk() */
                     hd->releaseReader();
                     Log3 (("FR: %ls released\n", hd->toString().raw()));
                     break;
                 }
-                case HardDiskType_WritethroughHardDisk:
+                case HardDiskType_Writethrough:
                 {
                     /* deassociate from this machine */
                     hd->setMachineId (Guid());
                     Log3 (("FR: %ls deassociated\n", hd->toString().raw()));
                     break;
                 }
-                case HardDiskType_NormalHardDisk:
+                case HardDiskType_Normal:
                 {
                     if (hd->snapshotId().isEmpty())
                     {
@@ -6323,7 +6323,7 @@ HRESULT Machine::createSnapshotDiffs (const Guid *aSnapshotId,
             ComObjPtr <HardDisk> hd = hda->hardDisk();
             AutoLock hdLock (hd);
 
-            ComAssertMsgBreak (hd->type() == HardDiskType_NormalHardDisk,
+            ComAssertMsgBreak (hd->type() == HardDiskType_Normal,
                                ("Invalid hard disk type %d\n", hd->type()),
                                rc = E_FAIL);
 
@@ -6393,7 +6393,7 @@ HRESULT Machine::createSnapshotDiffs (const Guid *aSnapshotId,
         else
         {
             // checked in the first pass
-            Assert (hd->type() == HardDiskType_NormalHardDisk);
+            Assert (hd->type() == HardDiskType_Normal);
 
             aProgress->advanceOperation (Bstr (Utf8StrFmt (
                 tr ("Creating a differencing hard disk for '%ls'"),
@@ -6433,7 +6433,7 @@ HRESULT Machine::createSnapshotDiffs (const Guid *aSnapshotId,
             if (SUCCEEDED (rc))
             {
                 // associate the snapshot id with the old hard disk
-                if (hd->type() != HardDiskType_WritethroughHardDisk && aSnapshotId)
+                if (hd->type() != HardDiskType_Writethrough && aSnapshotId)
                     hd->setSnapshotId (*aSnapshotId);
 
                 // add the new attachment
@@ -7316,7 +7316,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     {
         /* this must be null here (see #OnSessionEnd()) */
         Assert (mData->mSession.mDirectControl.isNull());
-        Assert (mData->mSession.mState == SessionState_SessionClosing);
+        Assert (mData->mSession.mState == SessionState_Closing);
         Assert (!mData->mSession.mProgress.isNull());
 
         mData->mSession.mProgress->notifyComplete (S_OK);
@@ -7329,7 +7329,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
 
     /* reset the rest of session data */
     mData->mSession.mMachine.setNull();
-    mData->mSession.mState = SessionState_SessionClosed;
+    mData->mSession.mState = SessionState_Closed;
     mData->mSession.mType.setNull();
 
     /* close the interprocess semaphore before leaving the shared lock */
@@ -7350,7 +7350,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
 #endif
 
     /* fire an event */
-    mParent->onSessionStateChange (mData->mUuid, SessionState_SessionClosed);
+    mParent->onSessionStateChange (mData->mUuid, SessionState_Closed);
 
     uninitDataAndChildObjects();
 
@@ -7546,8 +7546,8 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
 
         /* go to the closing state (essential for all open*Session() calls and
          * for #checkForDeath()) */
-        Assert (mData->mSession.mState == SessionState_SessionOpen);
-        mData->mSession.mState = SessionState_SessionClosing;
+        Assert (mData->mSession.mState == SessionState_Open);
+        mData->mSession.mState = SessionState_Closing;
 
         /* set direct control to NULL to release the remote instance */
         mData->mSession.mDirectControl.setNull();
@@ -7603,7 +7603,7 @@ STDMETHODIMP SessionMachine::BeginSavingState (IProgress *aProgress, BSTR *aStat
     AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
 
     AssertReturn (mData->mMachineState == MachineState_Paused &&
-                  mSnapshotData.mLastState == MachineState_InvalidMachineState &&
+                  mSnapshotData.mLastState == MachineState_Null &&
                   mSnapshotData.mProgressId.isEmpty() &&
                   mSnapshotData.mStateFilePath.isNull(),
                   E_FAIL);
@@ -7651,7 +7651,7 @@ STDMETHODIMP SessionMachine::EndSavingState (BOOL aSuccess)
     AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
 
     AssertReturn (mData->mMachineState == MachineState_Saving &&
-                  mSnapshotData.mLastState != MachineState_InvalidMachineState &&
+                  mSnapshotData.mLastState != MachineState_Null &&
                   !mSnapshotData.mProgressId.isEmpty() &&
                   !mSnapshotData.mStateFilePath.isNull(),
                   E_FAIL);
@@ -7726,7 +7726,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
 
     AssertReturn ((mData->mMachineState < MachineState_Running ||
                    mData->mMachineState == MachineState_Paused) &&
-                  mSnapshotData.mLastState == MachineState_InvalidMachineState &&
+                  mSnapshotData.mLastState == MachineState_Null &&
                   mSnapshotData.mSnapshot.isNull() &&
                   mSnapshotData.mServerProgress.isNull() &&
                   mSnapshotData.mCombinedProgress.isNull(),
@@ -7752,7 +7752,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     {
         ComObjPtr <HardDisk> hd = (*it)->hardDisk();
         AutoLock hdLock (hd);
-        if (hd->type() == HardDiskType_WritethroughHardDisk)
+        if (hd->type() == HardDiskType_Writethrough)
             return setError (E_FAIL,
                 tr ("Cannot take a snapshot when there is a Writethrough hard "
                     " disk attached ('%ls')"), hd->toString().raw());
@@ -7886,7 +7886,7 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot (BOOL aSuccess)
 
     AssertReturn (!aSuccess ||
                   (mData->mMachineState == MachineState_Saving &&
-                   mSnapshotData.mLastState != MachineState_InvalidMachineState &&
+                   mSnapshotData.mLastState != MachineState_Null &&
                    !mSnapshotData.mSnapshot.isNull() &&
                    !mSnapshotData.mServerProgress.isNull() &&
                    !mSnapshotData.mCombinedProgress.isNull()),
@@ -8186,7 +8186,7 @@ bool SessionMachine::checkForDeath()
          *  before exiting. We threat the latter also as an abnormal termination
          *  (see Session::uninit() for details).
          */
-        reason = mData->mSession.mState == SessionState_SessionClosing ?
+        reason = mData->mSession.mState == SessionState_Closing ?
                  Uninit::Normal :
                  Uninit::Abnormal;
 
@@ -8538,7 +8538,7 @@ HRESULT SessionMachine::endSavingState (BOOL aSuccess)
     mParent->removeProgress (mSnapshotData.mProgressId);
 
     /* clear out the temporary saved state data */
-    mSnapshotData.mLastState = MachineState_InvalidMachineState;
+    mSnapshotData.mLastState = MachineState_Null;
     mSnapshotData.mProgressId.clear();
     mSnapshotData.mStateFilePath.setNull();
 
@@ -8621,7 +8621,7 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
         mParent->onSnapshotTaken (mData->mUuid, mSnapshotData.mSnapshot->data().mId);
 
     /* clear out the snapshot data */
-    mSnapshotData.mLastState = MachineState_InvalidMachineState;
+    mSnapshotData.mLastState = MachineState_Null;
     mSnapshotData.mSnapshot.setNull();
     mSnapshotData.mServerProgress.setNull();
     /* uninitialize the combined progress (to remove it from the VBox collection) */
@@ -8799,7 +8799,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                 break;
             }
 
-            if (hd->type() == HardDiskType_NormalHardDisk)
+            if (hd->type() == HardDiskType_Normal)
             {
                 AutoLock hdChildrenLock (hd->childrenLock());
                 size_t childrenCount = hd->children().size();
@@ -8915,7 +8915,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                     CheckComRCBreakRC (rc);
                 }
             }
-            else if (hd->type() == HardDiskType_NormalHardDisk)
+            else if (hd->type() == HardDiskType_Normal)
             {
                 /*
                  *  normal vdi has the only child or none
@@ -9598,7 +9598,7 @@ HRESULT SessionMachine::updateMachineStateOnClient()
          * operation to complete. For now, we accept this inconsitent behavior
          * and simply do nothing here. */
 
-        if (mData->mSession.mState == SessionState_SessionClosing)
+        if (mData->mSession.mState == SessionState_Closing)
             return S_OK;
 
         AssertReturn (!directControl.isNull(), E_FAIL);

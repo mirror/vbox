@@ -868,9 +868,9 @@ QString VBoxDiskImageManagerDlg::getDVDImageUsage (const QUuid &aId,
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     QStringList permMachines =
-        QStringList::split (' ', vbox.GetDVDImageUsage (aId, CEnums::PermanentUsage));
+        QStringList::split (' ', vbox.GetDVDImageUsage (aId, KResourceUsage_Permanent));
     QStringList tempMachines =
-        QStringList::split (' ', vbox.GetDVDImageUsage (aId, CEnums::TemporaryUsage));
+        QStringList::split (' ', vbox.GetDVDImageUsage (aId, KResourceUsage_Temporary));
 
     QString usage;
 
@@ -915,9 +915,9 @@ QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId,
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     QStringList permMachines =
-        QStringList::split (' ', vbox.GetFloppyImageUsage (aId, CEnums::PermanentUsage));
+        QStringList::split (' ', vbox.GetFloppyImageUsage (aId, KResourceUsage_Permanent));
     QStringList tempMachines =
-        QStringList::split (' ', vbox.GetFloppyImageUsage (aId, CEnums::TemporaryUsage));
+        QStringList::split (' ', vbox.GetFloppyImageUsage (aId, KResourceUsage_Temporary));
 
     QString usage;
 
@@ -1006,7 +1006,7 @@ QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd,
     QUuid machineId = aItem ? aItem->getMachineId() : aHd.GetMachineId();
 
     QString src = aItem ? aItem->getPath() : aHd.GetLocation();
-    QString location = aItem || aHd.GetStorageType() == CEnums::ISCSIHardDisk ? src :
+    QString location = aItem || aHd.GetStorageType() == KHardDiskStorageType_ISCSIHardDisk ? src :
         QDir::convertSeparators (QFileInfo (src).absFilePath());
 
     QString storageType = aItem ? aItem->getStorageType() :
@@ -1250,7 +1250,7 @@ void VBoxDiskImageManagerDlg::updateHdItem (DiskImageItem   *aItem,
     aItem->setText (0, fi.fileName());
     aItem->setText (1, virtualSize);
     aItem->setText (2, actualSize);
-    aItem->setPath (hd.GetStorageType() == CEnums::ISCSIHardDisk ? src :
+    aItem->setPath (hd.GetStorageType() == KHardDiskStorageType_ISCSIHardDisk ? src :
                     QDir::convertSeparators (fi.absFilePath()));
     aItem->setUsage (usage);
     aItem->setSnapshotName (snapshotName);
@@ -1670,11 +1670,11 @@ void VBoxDiskImageManagerDlg::machineStateChanged (const VBoxMachineStateChangeE
 
     switch (e.state)
     {
-        case CEnums::PoweredOff:
-        case CEnums::Aborted:
-        case CEnums::Saved:
-        case CEnums::Starting:
-        case CEnums::Restoring:
+        case KMachineState_PoweredOff:
+        case KMachineState_Aborted:
+        case KMachineState_Saved:
+        case KMachineState_Starting:
+        case KMachineState_Restoring:
         {
             refreshAll();
             break;
@@ -1759,8 +1759,8 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
         CHardDisk hd = aItem->getMedia().disk;
         QUuid machineId = hd.GetMachineId();
         if (machineId.isNull() ||
-            (vbox.GetMachine (machineId).GetState() != CEnums::PoweredOff &&
-             vbox.GetMachine (machineId).GetState() != CEnums::Aborted))
+            (vbox.GetMachine (machineId).GetState() != KMachineState_PoweredOff &&
+             vbox.GetMachine (machineId).GetState() != KMachineState_Aborted))
             return false;
     }
     else if (parentList == cdsView)
@@ -1768,17 +1768,17 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
         /* check if there is temporary usage: */
         QStringList tempMachines =
             QStringList::split (' ', vbox.GetDVDImageUsage (itemId,
-                                          CEnums::TemporaryUsage));
+                                                            KResourceUsage_Temporary));
         if (!tempMachines.isEmpty())
             return false;
         /* only permamently mounted .iso could be released */
         QStringList permMachines =
             QStringList::split (' ', vbox.GetDVDImageUsage (itemId,
-                                          CEnums::PermanentUsage));
+                                                            KResourceUsage_Permanent));
         for (QStringList::Iterator it = permMachines.begin();
              it != permMachines.end(); ++it)
-            if (vbox.GetMachine(QUuid (*it)).GetState() != CEnums::PoweredOff &&
-                vbox.GetMachine(QUuid (*it)).GetState() != CEnums::Aborted)
+            if (vbox.GetMachine(QUuid (*it)).GetState() != KMachineState_PoweredOff &&
+                vbox.GetMachine(QUuid (*it)).GetState() != KMachineState_Aborted)
                 return false;
     }
     else if (parentList == fdsView)
@@ -1786,17 +1786,17 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
         /* check if there is temporary usage: */
         QStringList tempMachines =
             QStringList::split (' ', vbox.GetFloppyImageUsage (itemId,
-                                             CEnums::TemporaryUsage));
+                                                               KResourceUsage_Temporary));
         if (!tempMachines.isEmpty())
             return false;
         /* only permamently mounted floppies could be released */
         QStringList permMachines =
             QStringList::split (' ', vbox.GetFloppyImageUsage (itemId,
-                                             CEnums::PermanentUsage));
+                                                               KResourceUsage_Permanent));
         for (QStringList::Iterator it = permMachines.begin();
              it != permMachines.end(); ++it)
-            if (vbox.GetMachine(QUuid (*it)).GetState() != CEnums::PoweredOff &&
-                vbox.GetMachine(QUuid (*it)).GetState() != CEnums::Aborted)
+            if (vbox.GetMachine(QUuid (*it)).GetState() != KMachineState_PoweredOff &&
+                vbox.GetMachine(QUuid (*it)).GetState() != KMachineState_Aborted)
                 return false;
     }
     else
@@ -2022,7 +2022,7 @@ void VBoxDiskImageManagerDlg::removeImage()
         /// enable image deletion for  them as well (use
         /// GetStorageType() to define the correct cast).
         CHardDisk disk = item->getMedia().disk;
-        if (disk.GetStorageType() == CEnums::VirtualDiskImage &&
+        if (disk.GetStorageType() == KHardDiskStorageType_VirtualDiskImage &&
             disk.GetParent().isNull() && /* must not be differencing (see below) */
             item->getStatus() == VBoxMedia::Ok)
         {
@@ -2111,7 +2111,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
         {
             QStringList permMachines =
                 QStringList::split (' ', vbox.GetDVDImageUsage (itemId,
-                                              CEnums::PermanentUsage));
+                                                                KResourceUsage_Permanent));
             for (QStringList::Iterator it = permMachines.begin();
                  it != permMachines.end(); ++it)
                 releaseDisk (QUuid (*it), itemId, VBoxDefs::CD);
@@ -2132,7 +2132,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
         {
             QStringList permMachines =
                 QStringList::split (' ', vbox.GetFloppyImageUsage (itemId,
-                                                 CEnums::PermanentUsage));
+                                                                   KResourceUsage_Permanent));
             for (QStringList::Iterator it = permMachines.begin();
                  it != permMachines.end(); ++it)
                 releaseDisk (QUuid (*it), itemId, VBoxDefs::FD);

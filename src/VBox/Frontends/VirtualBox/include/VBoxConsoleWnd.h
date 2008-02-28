@@ -168,7 +168,7 @@ private slots:
     void showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e);
 
     void updateDeviceLights();
-    void updateMachineState (CEnums::MachineState state);
+    void updateMachineState (KMachineState state);
     void updateMouseState (int state);
     void updateAdditionsState (const QString&, bool, bool);
     void updateNetworkAdarptersState();
@@ -294,7 +294,7 @@ private:
     QLabel *hostkey_name;
 
     QTimer *idle_timer;
-    CEnums::MachineState machine_state;
+    KMachineState machine_state;
     QString caption_prefix;
 
     bool no_auto_close : 1;

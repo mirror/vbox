@@ -37,7 +37,7 @@ public:
     {
         Data()
             : mSlot (0), mEnabled (FALSE)
-            , mAttachmentType (NetworkAttachmentType_NoNetworkAttachment)
+            , mAttachmentType (NetworkAttachmentType_Null)
             ,  mCableConnected (TRUE), mLineSpeed (0), mTraceEnabled (FALSE)
 #ifdef RT_OS_WINDOWS
             , mHostInterface ("") // cannot be null

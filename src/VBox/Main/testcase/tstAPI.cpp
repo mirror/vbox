@@ -732,7 +732,7 @@ int main(int argc, char *argv[])
                         id.toString().raw(), path.raw());
                 Guid mid;
                 CHECK_RC_BREAK (
-                    virtualBox->GetHardDiskUsage (id, ResourceUsage_AllUsage,
+                    virtualBox->GetHardDiskUsage (id, ResourceUsage_All,
                                                   mid.asOutParam())
                 );
                 if (mid.isEmpty())
@@ -761,7 +761,7 @@ int main(int argc, char *argv[])
                         id.toString().raw(), path.raw());
                 Bstr mIDs;
                 CHECK_RC_BREAK (
-                    virtualBox->GetDVDImageUsage (id, ResourceUsage_AllUsage,
+                    virtualBox->GetDVDImageUsage (id, ResourceUsage_All,
                                                   mIDs.asOutParam())
                 );
                 if (mIDs.isNull())

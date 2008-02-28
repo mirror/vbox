@@ -102,7 +102,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     /* Start with standard screen dimensions. */
     mGuestXRes      = 640;
     mGuestYRes      = 480;
-    mPixelFormat    = FramebufferPixelFormat_PixelFormatOpaque;
+    mPixelFormat    = FramebufferPixelFormat_Opaque;
     mUsesGuestVRAM  = FALSE;
     mPtrVRAM        = NULL;
     mBitsPerPixel   = 0;

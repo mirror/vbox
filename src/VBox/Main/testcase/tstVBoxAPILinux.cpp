@@ -365,8 +365,8 @@ void createVM(IVirtualBox *virtualBox)
                     nsID *vdiUUID = nsnull;
                     hardDisk->GetId(&vdiUUID);
                     rc = machine->AttachHardDisk(*vdiUUID,
-                                                DiskControllerType::IDE0Controller, // controler identifier
-                                                0);                                 // device number on the controller
+                                                DiskControllerType::IDE0, // controler identifier
+                                                0);                       // device number on the controller
                     nsMemory::Free(vdiUUID);
                     if (NS_FAILED(rc))
                     {
@@ -423,7 +423,7 @@ void createVM(IVirtualBox *virtualBox)
                 /*
                  * Last step: tell the VM to boot from the CD.
                  */
-                rc = machine->SetBootOrder (1, DeviceType::DVDDevice);
+                rc = machine->SetBootOrder (1, DeviceType::DVD);
                 if (NS_FAILED(rc))
                 {
                     printf("Could not set boot device! rc=%08X\n", rc);

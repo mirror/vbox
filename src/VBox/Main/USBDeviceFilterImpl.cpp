@@ -1300,7 +1300,7 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent, INPTR BSTR aName)
     mData->mName = aName;
     mData->mActive = FALSE;
 #ifndef VBOX_WITH_USBFILTER
-    mData->mAction = USBDeviceFilterAction_USBDeviceFilterIgnore;
+    mData->mAction = USBDeviceFilterAction_Ignore;
 #endif /* !VBOX_WITH_USBFILTER */
 
     mInList = false;
@@ -1863,9 +1863,9 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Action) (USBDeviceFilterAction_T *aA
 #else   /* VBOX_WITH_USBFILTER */
     switch (USBFilterGetFilterType (&mData->mUSBFilter))
     {
-        case USBFILTERTYPE_IGNORE:   *aAction = USBDeviceFilterAction_USBDeviceFilterIgnore; break;
-        case USBFILTERTYPE_CAPTURE:  *aAction = USBDeviceFilterAction_USBDeviceFilterHold; break;
-        default:                     *aAction = USBDeviceFilterAction_InvalidUSBDeviceFilterAction; break;
+        case USBFILTERTYPE_IGNORE:   *aAction = USBDeviceFilterAction_Ignore; break;
+        case USBFILTERTYPE_CAPTURE:  *aAction = USBDeviceFilterAction_Hold; break;
+        default:                     *aAction = USBDeviceFilterAction_Null; break;
     }
 #endif  /* VBOX_WITH_USBFILTER */
 
@@ -1894,9 +1894,9 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Action) (USBDeviceFilterAction_T aAc
     USBFILTERTYPE filterType;
     switch (aAction)
     {
-        case USBDeviceFilterAction_USBDeviceFilterIgnore:   filterType = USBFILTERTYPE_IGNORE; break;
-        case USBDeviceFilterAction_USBDeviceFilterHold:     filterType = USBFILTERTYPE_CAPTURE; break;
-        case USBDeviceFilterAction_InvalidUSBDeviceFilterAction:
+        case USBDeviceFilterAction_Ignore:   filterType = USBFILTERTYPE_IGNORE; break;
+        case USBDeviceFilterAction_Hold:     filterType = USBFILTERTYPE_CAPTURE; break;
+        case USBDeviceFilterAction_Null:
             return setError (E_INVALIDARG,
                 tr ("Action value InvalidUSBDeviceFilterAction is not permitted"));
         default:

@@ -103,7 +103,7 @@ signals:
 
     void keyboardStateChanged (int state);
     void mouseStateChanged (int state);
-    void machineStateChanged (CEnums::MachineState state);
+    void machineStateChanged (KMachineState state);
     void additionsStateChanged (const QString &, bool, bool);
     void mediaChanged (VBoxDefs::DiskType aType);
     void networkStateChange();
@@ -161,7 +161,7 @@ private:
     }
 
     // IConsoleCallback event handlers
-    void onStateChange (CEnums::MachineState state);
+    void onStateChange (KMachineState state);
 
     void doRefresh();
 
@@ -183,8 +183,8 @@ private:
 
     void setPointerShape (MousePointerChangeEvent *me);
 
-    bool isPaused() { return mLastState == CEnums::Paused; }
-    bool isRunning() { return mLastState == CEnums::Running; }
+    bool isPaused() { return mLastState == KMachineState_Paused; }
+    bool isRunning() { return mLastState == KMachineState_Running; }
 
     static void dimImage (QImage &img);
 
@@ -202,7 +202,7 @@ private:
 
     const VBoxGlobalSettings &gs;
 
-    CEnums::MachineState mLastState;
+    KMachineState mLastState;
 
     bool mAttached : 1;
     bool mKbdCaptured : 1;

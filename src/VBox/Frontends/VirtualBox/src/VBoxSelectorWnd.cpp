@@ -343,8 +343,8 @@ void VBoxVMDescriptionPage::updateState()
 
     if (mItem)
     {
-        bool saved = mItem->state() == CEnums::Saved;
-        bool busy = mItem->sessionState() != CEnums::SessionClosed;
+        bool saved = mItem->state() == KMachineState_Saved;
+        bool busy = mItem->sessionState() != KSessionState_Closed;
         mBtnEdit->setEnabled (!saved && !busy);
     }
     else
@@ -899,7 +899,7 @@ void VBoxSelectorWnd::vmStart()
         return;
     }
 
-    AssertMsg (item->state() < CEnums::Running,
+    AssertMsg (item->state() < KMachineState_Running,
                ("Machine must be PoweredOff/Saved/Aborted"));
 
     QUuid id = item->id();
@@ -1235,9 +1235,9 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
     {
         CMachine m = item->machine();
 
-        CEnums::MachineState state = item->state();
-        bool running = item->sessionState() != CEnums::SessionClosed;
-        bool modifyEnabled = !running && state != CEnums::Saved;
+        KMachineState state = item->state();
+        bool running = item->sessionState() != KSessionState_Closed;
+        bool modifyEnabled = !running && state != KMachineState_Saved;
 
         if (aRefreshDetails)
         {
@@ -1273,12 +1273,12 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         /* enable/disable modify actions */
         vmConfigAction->setEnabled (modifyEnabled);
         vmDeleteAction->setEnabled (modifyEnabled);
-        vmDiscardAction->setEnabled (state == CEnums::Saved && !running);
-        vmPauseAction->setEnabled (state == CEnums::Running ||
-                                   state == CEnums::Paused);
+        vmDiscardAction->setEnabled (state == KMachineState_Saved && !running);
+        vmPauseAction->setEnabled (state == KMachineState_Running ||
+                                   state == KMachineState_Paused);
 
         /* change the Start button text accordingly */
-        if (state >= CEnums::Running)
+        if (state >= KMachineState_Running)
         {
             vmStartAction->setMenuText (tr ("S&how"));
             vmStartAction->setText (tr ("Show"));
@@ -1298,7 +1298,7 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         }
 
         /* change the Pause/Resume button text accordingly */
-        if (state == CEnums::Paused)
+        if (state == KMachineState_Paused)
         {
             vmPauseAction->setMenuText (tr ("R&esume"));
             vmPauseAction->setText (tr ("Resume"));

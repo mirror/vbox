@@ -465,7 +465,7 @@ bool VBoxNewHDWzd::createHardDisk()
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     CProgress progress;
-    CHardDisk hd = vbox.CreateHardDisk (CEnums::VirtualDiskImage);
+    CHardDisk hd = vbox.CreateHardDisk (KHardDiskStorageType_VirtualDiskImage);
 
     /// @todo (dmik) later, change wrappers so that converting
     //  to CUnknown is not necessary for cross-assignments

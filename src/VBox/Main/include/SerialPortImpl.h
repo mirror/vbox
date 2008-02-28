@@ -39,7 +39,7 @@ public:
             , mEnabled (FALSE)
             , mIRQ (4)
             , mIOBase (0x3f8)
-            , mHostMode (PortMode_DisconnectedPort)
+            , mHostMode (PortMode_Disconnected)
             , mServer (FALSE)
         {}
 

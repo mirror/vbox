@@ -50,9 +50,9 @@ void VBoxVMSerialPortSettings::init()
     mPortNumCombo->insertStringList (vboxGlobal().COMPortNames());
     mPortNumCombo->insertItem (vboxGlobal().toCOMPortName (0, 0));
 
-    mHostModeCombo->insertItem (vboxGlobal().toString (CEnums::DisconnectedPort));
-    mHostModeCombo->insertItem (vboxGlobal().toString (CEnums::HostPipePort));
-    mHostModeCombo->insertItem (vboxGlobal().toString (CEnums::HostDevicePort));
+    mHostModeCombo->insertItem (vboxGlobal().toString (KPortMode_Disconnected));
+    mHostModeCombo->insertItem (vboxGlobal().toString (KPortMode_HostPipe));
+    mHostModeCombo->insertItem (vboxGlobal().toString (KPortMode_HostDevice));
 }
 
 void VBoxVMSerialPortSettings::getFromPort (const CSerialPort &aPort)
@@ -119,7 +119,7 @@ void VBoxVMSerialPortSettings::mPortNumCombo_activated (const QString &aText)
 
 void VBoxVMSerialPortSettings::mHostModeCombo_activated (const QString &aText)
 {
-    CEnums::PortMode mode = vboxGlobal().toPortMode (aText);
-    mServerCheck->setEnabled (mode == CEnums::HostPipePort);
-    mPortPathLine->setEnabled (mode != CEnums::DisconnectedPort);
+    KPortMode mode = vboxGlobal().toPortMode (aText);
+    mServerCheck->setEnabled (mode == KPortMode_HostPipe);
+    mPortPathLine->setEnabled (mode != KPortMode_Disconnected);
 }

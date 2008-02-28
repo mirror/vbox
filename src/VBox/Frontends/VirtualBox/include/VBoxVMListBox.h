@@ -57,9 +57,9 @@ public:
 
     QFont shotFont() const { return mShotFont; }
 
-    QFont stateFont (CEnums::SessionState aS) const
+    QFont stateFont (KSessionState aS) const
     {
-        return aS == CEnums::SessionClosed ? font() : mStateBusyFont;
+        return aS == KSessionState_Closed ? font() : mStateBusyFont;
     }
 
     int margin() const { return mMargin; }
@@ -124,8 +124,8 @@ public:
     bool accessible() const { return mAccessible; }
     const CVirtualBoxErrorInfo &accessError() const { return mAccessError; }
     QString name() const { return mName; }
-    CEnums::MachineState state() const { return mState; }
-    CEnums::SessionState sessionState() const { return mSessionState; }
+    KMachineState state() const { return mState; }
+    KSessionState sessionState() const { return mSessionState; }
     ULONG snapshotCount() const { return mSnapshotCount; }
 
     /// @todo see comments in #switchTo() in VBoxVMListBox.cpp
@@ -153,9 +153,9 @@ private:
 
     QString mName;
     QString mSnapshotName;
-    CEnums::MachineState mState;
+    KMachineState mState;
     QDateTime mLastStateChange;
-    CEnums::SessionState mSessionState;
+    KSessionState mSessionState;
     QString mOSTypeId;
     ULONG mSnapshotCount;
 

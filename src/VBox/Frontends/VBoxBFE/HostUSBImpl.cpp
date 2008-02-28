@@ -215,9 +215,9 @@ STDMETHODIMP HostUSB::AttachUSBDevice (HostUSBDevice *hostDevice)
      * Make sure that the device is in a captureable state
      */
     USBDeviceState_T eState = hostDevice->state();
-    if (eState != USBDeviceState_USBDeviceBusy &&
-        eState != USBDeviceState_USBDeviceAvailable &&
-        eState != USBDeviceState_USBDeviceHeld)
+    if (eState != USBDeviceState_Busy &&
+        eState != USBDeviceState_Available &&
+        eState != USBDeviceState_Held)
         return setError (E_FAIL,
                          tr ("Device is not in a capturable state"));
     PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG)pBase->pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);

@@ -190,7 +190,7 @@ public:
     STDMETHOD(OnMachineStateChange) (IN_GUIDPARAM id, MachineState_T state)
     {
         postEvent (new VBoxMachineStateChangeEvent (COMBase::ToQUuid (id),
-                                                    (CEnums::MachineState) state));
+                                                    (KMachineState) state));
         return S_OK;
     }
 
@@ -307,7 +307,7 @@ public:
     STDMETHOD(OnSessionStateChange) (IN_GUIDPARAM id, SessionState_T state)
     {
         postEvent (new VBoxSessionStateChangeEvent (COMBase::ToQUuid (id),
-                                                    (CEnums::SessionState) state));
+                                                    (KSessionState) state));
         return S_OK;
     }
 
@@ -734,24 +734,24 @@ VBoxGlobal::VBoxGlobal()
 #endif
     , media_enum_thread (NULL)
     , verString ("1.0")
-    , vm_state_color (CEnums::MachineState_COUNT)
-    , machineStates (CEnums::MachineState_COUNT)
-    , sessionStates (CEnums::SessionState_COUNT)
-    , deviceTypes (CEnums::DeviceType_COUNT)
-    , diskControllerTypes (CEnums::DiskControllerType_COUNT)
-    , diskTypes (CEnums::HardDiskType_COUNT)
-    , diskStorageTypes (CEnums::HardDiskStorageType_COUNT)
-    , vrdpAuthTypes (CEnums::VRDPAuthType_COUNT)
-    , portModeTypes (CEnums::PortMode_COUNT)
-    , usbFilterActionTypes (CEnums::USBDeviceFilterAction_COUNT)
+    , vm_state_color (KMachineState_COUNT)
+    , machineStates (KMachineState_COUNT)
+    , sessionStates (KSessionState_COUNT)
+    , deviceTypes (KDeviceType_COUNT)
+    , diskControllerTypes (KDiskControllerType_COUNT)
+    , diskTypes (KHardDiskType_COUNT)
+    , diskStorageTypes (KHardDiskStorageType_COUNT)
+    , vrdpAuthTypes (KVRDPAuthType_COUNT)
+    , portModeTypes (KPortMode_COUNT)
+    , usbFilterActionTypes (KUSBDeviceFilterAction_COUNT)
     , diskControllerDevices (3)
-    , audioDriverTypes (CEnums::AudioDriverType_COUNT)
-    , audioControllerTypes (CEnums::AudioControllerType_COUNT)
-    , networkAdapterTypes (CEnums::NetworkAdapterType_COUNT)
-    , networkAttachmentTypes (CEnums::NetworkAttachmentType_COUNT)
-    , clipboardTypes (CEnums::ClipboardMode_COUNT)
-    , ideControllerTypes (CEnums::IDEControllerType_COUNT)
-    , USBDeviceStates (CEnums::USBDeviceState_COUNT)
+    , audioDriverTypes (KAudioDriverType_COUNT)
+    , audioControllerTypes (KAudioControllerType_COUNT)
+    , networkAdapterTypes (KNetworkAdapterType_COUNT)
+    , networkAttachmentTypes (KNetworkAttachmentType_COUNT)
+    , clipboardTypes (KClipboardMode_COUNT)
+    , ideControllerTypes (KIDEControllerType_COUNT)
+    , USBDeviceStates (KUSBDeviceState_COUNT)
     , detailReportTemplatesReady (false)
 {
 }
@@ -960,14 +960,14 @@ QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aId) const
     return QString::null;
 }
 
-QString VBoxGlobal::toString (CEnums::DiskControllerType t, LONG d) const
+QString VBoxGlobal::toString (KDiskControllerType t, LONG d) const
 {
     Assert (diskControllerDevices.count() == 3);
     QString dev;
     switch (t)
     {
-        case CEnums::IDE0Controller:
-        case CEnums::IDE1Controller:
+        case KDiskControllerType_IDE0:
+        case KDiskControllerType_IDE1:
         {
             if (d == 0 || d == 1)
             {
@@ -1167,9 +1167,9 @@ QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */,
 
     QString details;
 
-    CEnums::HardDiskType type = root.GetType();
+    KHardDiskType type = root.GetType();
 
-    if (type == CEnums::NormalHardDisk &&
+    if (type == KHardDiskType_Normal &&
         (aHD != root || (aPredict && root.GetChildren().GetCount() != 0)))
             details = tr ("Differencing", "hard disk");
     else
@@ -1425,15 +1425,15 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         QString bootOrder;
         for (ulong i = 1; i <= mVBox.GetSystemProperties().GetMaxBootPosition(); i++)
         {
-            CEnums::DeviceType device = m.GetBootOrder (i);
-            if (device == CEnums::NoDevice)
+            KDeviceType device = m.GetBootOrder (i);
+            if (device == KDeviceType_Null)
                 continue;
             if (bootOrder)
                 bootOrder += ", ";
             bootOrder += toString (device);
         }
         if (!bootOrder)
-            bootOrder = toString (CEnums::NoDevice);
+            bootOrder = toString (KDeviceType_Null);
 
         CBIOSSettings biosSettings = m.GetBIOSSettings();
 
@@ -1449,9 +1449,9 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
         /* VT-x/AMD-V */
         CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
-        QString virt = m.GetHWVirtExEnabled() == CEnums::TSTrue ?
+        QString virt = m.GetHWVirtExEnabled() == KTSBool_True ?
                        tr ("Enabled", "details report (VT-x/AMD-V)") :
-                       m.GetHWVirtExEnabled() == CEnums::TSFalse ?
+                       m.GetHWVirtExEnabled() == KTSBool_False ?
                        tr ("Disabled", "details report (VT-x/AMD-V)") :
                        props.GetHWVirtExEnabled() ?
                        tr ("Enabled", "details report (VT-x/AMD-V)") :
@@ -1477,17 +1477,17 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         item = QString (sSectionItemTpl);
         switch (dvd.GetState())
         {
-            case CEnums::NotMounted:
+            case KDriveState_NotMounted:
                 item = item.arg (tr ("Not mounted", "details report (DVD)"), "");
                 break;
-            case CEnums::ImageMounted:
+            case KDriveState_ImageMounted:
             {
                 CDVDImage img = dvd.GetImage();
                 item = item.arg (tr ("Image", "details report (DVD)"),
                                  prepareFileNameForHTML (img.GetFilePath()));
                 break;
             }
-            case CEnums::HostDriveCaptured:
+            case KDriveState_HostDriveCaptured:
             {
                 CHostDVDDrive drv = dvd.GetHostDrive();
                 QString drvName = drv.GetName();
@@ -1514,17 +1514,17 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         item = QString (sSectionItemTpl);
         switch (floppy.GetState())
         {
-            case CEnums::NotMounted:
+            case KDriveState_NotMounted:
                 item = item.arg (tr ("Not mounted", "details report (floppy)"), "");
                 break;
-            case CEnums::ImageMounted:
+            case KDriveState_ImageMounted:
             {
                 CFloppyImage img = floppy.GetImage();
                 item = item.arg (tr ("Image", "details report (floppy)"),
                                  prepareFileNameForHTML (img.GetFilePath()));
                 break;
             }
-            case CEnums::HostDriveCaptured:
+            case KDriveState_HostDriveCaptured:
             {
                 CHostFloppyDrive drv = floppy.GetHostDrive();
                 QString drvName = drv.GetName();
@@ -1578,16 +1578,16 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 CNetworkAdapter adapter = m.GetNetworkAdapter (slot);
                 if (adapter.GetEnabled())
                 {
-                    CEnums::NetworkAttachmentType type = adapter.GetAttachmentType();
+                    KNetworkAttachmentType type = adapter.GetAttachmentType();
                     QString attType = toString (adapter.GetAdapterType())
                                       .replace (QRegExp ("\\s\\(.+\\)"), " (%1)");
                     /* don't use the adapter type string for types that have
                      * an additional symbolic network/interface name field, use
                      * this name instead */
-                    if (type == CEnums::HostInterfaceNetworkAttachment)
+                    if (type == KNetworkAttachmentType_HostInterface)
                         attType = attType.arg (tr ("host interface, %1",
                             "details report (network)").arg (adapter.GetHostInterface()));
-                    else if (type == CEnums::InternalNetworkAttachment)
+                    else if (type == KNetworkAttachmentType_Internal)
                         attType = attType.arg (tr ("internal network, '%1'",
                             "details report (network)").arg (adapter.GetInternalNetwork()));
                     else
@@ -1624,11 +1624,11 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 CSerialPort port = m.GetSerialPort (slot);
                 if (port.GetEnabled())
                 {
-                    CEnums::PortMode mode = port.GetHostMode();
+                    KPortMode mode = port.GetHostMode();
                     QString data =
                         toCOMPortName (port.GetIRQ(), port.GetIOBase()) + ", ";
-                    if (mode == CEnums::HostPipePort ||
-                        mode == CEnums::HostDevicePort)
+                    if (mode == KPortMode_HostPipe ||
+                        mode == KPortMode_HostDevice)
                         data += QString ("%1 (<nobr>%2</nobr>)")
                             .arg (vboxGlobal().toString (mode))
                             .arg (QDir::convertSeparators (port.GetPath()));
@@ -1974,7 +1974,7 @@ void VBoxGlobal::startEnumeratingMedia()
                             if (!machineId.isNull())
                             {
                                 CMachine machine = mVBox.GetMachine (machineId);
-                                if (!machine.isNull() && (machine.GetState() >= CEnums::Running))
+                                if (!machine.isNull() && (machine.GetState() >= KMachineState_Running))
                                     media.status = VBoxMedia::Ok;
                             }
                         }
@@ -2163,69 +2163,69 @@ QString VBoxGlobal::languageTranslators() const
  */
 void VBoxGlobal::languageChange()
 {
-    machineStates [CEnums::PoweredOff] =    tr ("Powered Off", "MachineState");
-    machineStates [CEnums::Saved] =         tr ("Saved", "MachineState");
-    machineStates [CEnums::Aborted] =       tr ("Aborted", "MachineState");
-    machineStates [CEnums::Running] =       tr ("Running", "MachineState");
-    machineStates [CEnums::Paused] =        tr ("Paused", "MachineState");
-    machineStates [CEnums::Stuck] =         tr ("Stuck", "MachineState");
-    machineStates [CEnums::Starting] =      tr ("Starting", "MachineState");
-    machineStates [CEnums::Stopping] =      tr ("Stopping", "MachineState");
-    machineStates [CEnums::Saving] =        tr ("Saving", "MachineState");
-    machineStates [CEnums::Restoring] =     tr ("Restoring", "MachineState");
-    machineStates [CEnums::Discarding] =    tr ("Discarding", "MachineState");
+    machineStates [KMachineState_PoweredOff] =  tr ("Powered Off", "MachineState");
+    machineStates [KMachineState_Saved] =       tr ("Saved", "MachineState");
+    machineStates [KMachineState_Aborted] =     tr ("Aborted", "MachineState");
+    machineStates [KMachineState_Running] =     tr ("Running", "MachineState");
+    machineStates [KMachineState_Paused] =      tr ("Paused", "MachineState");
+    machineStates [KMachineState_Stuck] =       tr ("Stuck", "MachineState");
+    machineStates [KMachineState_Starting] =    tr ("Starting", "MachineState");
+    machineStates [KMachineState_Stopping] =    tr ("Stopping", "MachineState");
+    machineStates [KMachineState_Saving] =      tr ("Saving", "MachineState");
+    machineStates [KMachineState_Restoring] =   tr ("Restoring", "MachineState");
+    machineStates [KMachineState_Discarding] =  tr ("Discarding", "MachineState");
 
-    sessionStates [CEnums::SessionClosed] =     tr ("Closed", "SessionState");
-    sessionStates [CEnums::SessionOpen] =       tr ("Open", "SessionState");
-    sessionStates [CEnums::SessionSpawning] =   tr ("Spawning", "SessionState");
-    sessionStates [CEnums::SessionClosing] =    tr ("Closing", "SessionState");
+    sessionStates [KSessionState_Closed] =      tr ("Closed", "SessionState");
+    sessionStates [KSessionState_Open] =        tr ("Open", "SessionState");
+    sessionStates [KSessionState_Spawning] =    tr ("Spawning", "SessionState");
+    sessionStates [KSessionState_Closing] =     tr ("Closing", "SessionState");
 
-    deviceTypes [CEnums::NoDevice] =        tr ("None", "DeviceType");
-    deviceTypes [CEnums::FloppyDevice] =    tr ("Floppy", "DeviceType");
-    deviceTypes [CEnums::DVDDevice] =       tr ("CD/DVD-ROM", "DeviceType");
-    deviceTypes [CEnums::HardDiskDevice] =  tr ("Hard Disk", "DeviceType");
-    deviceTypes [CEnums::NetworkDevice] =   tr ("Network", "DeviceType");
+    deviceTypes [KDeviceType_Null] =            tr ("None", "DeviceType");
+    deviceTypes [KDeviceType_Floppy] =          tr ("Floppy", "DeviceType");
+    deviceTypes [KDeviceType_DVD] =             tr ("CD/DVD-ROM", "DeviceType");
+    deviceTypes [KDeviceType_HardDisk] =        tr ("Hard Disk", "DeviceType");
+    deviceTypes [KDeviceType_Network] =         tr ("Network", "DeviceType");
 
-    diskControllerTypes [CEnums::IDE0Controller] =
+    diskControllerTypes [KDiskControllerType_IDE0] =
         tr ("Primary", "DiskControllerType");
-    diskControllerTypes [CEnums::IDE1Controller] =
+    diskControllerTypes [KDiskControllerType_IDE1] =
         tr ("Secondary", "DiskControllerType");
 
-    diskTypes [CEnums::NormalHardDisk] =
+    diskTypes [KHardDiskType_Normal] =
         tr ("Normal", "DiskType");
-    diskTypes [CEnums::ImmutableHardDisk] =
+    diskTypes [KHardDiskType_Immutable] =
         tr ("Immutable", "DiskType");
-    diskTypes [CEnums::WritethroughHardDisk] =
+    diskTypes [KHardDiskType_Writethrough] =
         tr ("Writethrough", "DiskType");
 
-    diskStorageTypes [CEnums::VirtualDiskImage] =
+    diskStorageTypes [KHardDiskStorageType_VirtualDiskImage] =
         tr ("Virtual Disk Image", "DiskStorageType");
-    diskStorageTypes [CEnums::ISCSIHardDisk] =
+    diskStorageTypes [KHardDiskStorageType_ISCSIHardDisk] =
         tr ("iSCSI", "DiskStorageType");
-    diskStorageTypes [CEnums::VMDKImage] =
+    diskStorageTypes [KHardDiskStorageType_VMDKImage] =
         tr ("VMDK Image", "DiskStorageType");
-    diskStorageTypes [CEnums::CustomHardDisk] =
+    diskStorageTypes [KHardDiskStorageType_CustomHardDisk] =
         tr ("Custom Hard Disk", "DiskStorageType");
-    diskStorageTypes [CEnums::VHDImage] =
+    diskStorageTypes [KHardDiskStorageType_VHDImage] =
         tr ("VHD Image", "DiskStorageType");
 
-    vrdpAuthTypes [CEnums::VRDPAuthNull] =
+    vrdpAuthTypes [KVRDPAuthType_Null] =
         tr ("Null", "VRDPAuthType");
-    vrdpAuthTypes [CEnums::VRDPAuthExternal] =
+    vrdpAuthTypes [KVRDPAuthType_External] =
         tr ("External", "VRDPAuthType");
-    vrdpAuthTypes [CEnums::VRDPAuthGuest] =
+    vrdpAuthTypes [KVRDPAuthType_Guest] =
         tr ("Guest", "VRDPAuthType");
 
-    portModeTypes [CEnums::DisconnectedPort] =
+    portModeTypes [KPortMode_Disconnected] =
         tr ("Disconnected", "PortMode");
-    portModeTypes [CEnums::HostPipePort] =
+    portModeTypes [KPortMode_HostPipe] =
         tr ("Host Pipe", "PortMode");
-    portModeTypes [CEnums::HostDevicePort] =
+    portModeTypes [KPortMode_HostDevice] =
         tr ("Host Device", "PortMode");
 
-    usbFilterActionTypes [CEnums::USBDeviceFilterIgnore] =
+    usbFilterActionTypes [KUSBDeviceFilterAction_Ignore] =
         tr ("Ignore", "USBFilterActionType");
-    usbFilterActionTypes [CEnums::USBDeviceFilterHold] =
+    usbFilterActionTypes [KUSBDeviceFilterAction_Hold] =
         tr ("Hold", "USBFilterActionType");
 
     Assert (diskControllerDevices.count() == 3);
@@ -2233,67 +2233,67 @@ void VBoxGlobal::languageChange()
     diskControllerDevices [1] = tr ("Slave", "DiskControllerDevice");
     diskControllerDevices [2] = tr ("Device&nbsp;%1", "DiskControllerDevice");
 
-    audioDriverTypes [CEnums::NullAudioDriver] =
+    audioDriverTypes [KAudioDriverType_Null] =
         tr ("Null Audio Driver", "AudioDriverType");
-    audioDriverTypes [CEnums::WINMMAudioDriver] =
+    audioDriverTypes [KAudioDriverType_WINMM] =
         tr ("Windows Multimedia", "AudioDriverType");
-    audioDriverTypes [CEnums::OSSAudioDriver] =
+    audioDriverTypes [KAudioDriverType_OSS] =
         tr ("OSS Audio Driver", "AudioDriverType");
-    audioDriverTypes [CEnums::ALSAAudioDriver] =
+    audioDriverTypes [KAudioDriverType_ALSA] =
         tr ("ALSA Audio Driver", "AudioDriverType");
-    audioDriverTypes [CEnums::DSOUNDAudioDriver] =
+    audioDriverTypes [KAudioDriverType_DSOUND] =
         tr ("Windows DirectSound", "AudioDriverType");
-    audioDriverTypes [CEnums::CoreAudioDriver] =
+    audioDriverTypes [KAudioDriverType_Core] =
         tr ("CoreAudio", "AudioDriverType");
-    audioDriverTypes [CEnums::PulseAudioDriver] =
+    audioDriverTypes [KAudioDriverType_Pulse] =
         tr ("PulseAudio", "AudioDriverType");
 
-    audioControllerTypes [CEnums::AC97] =
+    audioControllerTypes [KAudioControllerType_AC97] =
         tr ("ICH AC97", "AudioControllerType");
-    audioControllerTypes [CEnums::SB16] =
+    audioControllerTypes [KAudioControllerType_SB16] =
         tr ("SoundBlaster 16", "AudioControllerType");
 
-    networkAdapterTypes [CEnums::NetworkAdapterAm79C970A] =
+    networkAdapterTypes [KNetworkAdapterType_Am79C970A] =
         tr ("PCnet-PCI II (Am79C970A)", "NetworkAdapterType");
-    networkAdapterTypes [CEnums::NetworkAdapterAm79C973] =
+    networkAdapterTypes [KNetworkAdapterType_Am79C973] =
         tr ("PCnet-FAST III (Am79C973)", "NetworkAdapterType");
-    networkAdapterTypes [CEnums::NetworkAdapter82540EM] =
+    networkAdapterTypes [KNetworkAdapterType_I82540EM] =
         tr ("Intel PRO/1000 MT Desktop (82540EM)", "NetworkAdapterType");
 
-    networkAttachmentTypes [CEnums::NoNetworkAttachment] =
+    networkAttachmentTypes [KNetworkAttachmentType_Null] =
         tr ("Not attached", "NetworkAttachmentType");
-    networkAttachmentTypes [CEnums::NATNetworkAttachment] =
+    networkAttachmentTypes [KNetworkAttachmentType_NAT] =
         tr ("NAT", "NetworkAttachmentType");
-    networkAttachmentTypes [CEnums::HostInterfaceNetworkAttachment] =
+    networkAttachmentTypes [KNetworkAttachmentType_HostInterface] =
         tr ("Host Interface", "NetworkAttachmentType");
-    networkAttachmentTypes [CEnums::InternalNetworkAttachment] =
+    networkAttachmentTypes [KNetworkAttachmentType_Internal] =
         tr ("Internal Network", "NetworkAttachmentType");
 
-    clipboardTypes [CEnums::ClipDisabled] =
+    clipboardTypes [KClipboardMode_Disabled] =
         tr ("Disabled", "ClipboardType");
-    clipboardTypes [CEnums::ClipHostToGuest] =
+    clipboardTypes [KClipboardMode_HostToGuest] =
         tr ("Host To Guest", "ClipboardType");
-    clipboardTypes [CEnums::ClipGuestToHost] =
+    clipboardTypes [KClipboardMode_GuestToHost] =
         tr ("Guest To Host", "ClipboardType");
-    clipboardTypes [CEnums::ClipBidirectional] =
+    clipboardTypes [KClipboardMode_Bidirectional] =
         tr ("Bidirectional", "ClipboardType");
 
-    ideControllerTypes [CEnums::IDEControllerPIIX3] =
+    ideControllerTypes [KIDEControllerType_PIIX3] =
         tr ("PIIX3", "IDEControllerType");
-    ideControllerTypes [CEnums::IDEControllerPIIX4] =
+    ideControllerTypes [KIDEControllerType_PIIX4] =
         tr ("PIIX4", "IDEControllerType");
 
-    USBDeviceStates [CEnums::USBDeviceNotSupported] =
+    USBDeviceStates [KUSBDeviceState_NotSupported] =
         tr ("Not supported", "USBDeviceState");
-    USBDeviceStates [CEnums::USBDeviceUnavailable] =
+    USBDeviceStates [KUSBDeviceState_Unavailable] =
         tr ("Unavailable", "USBDeviceState");
-    USBDeviceStates [CEnums::USBDeviceBusy] =
+    USBDeviceStates [KUSBDeviceState_Busy] =
         tr ("Busy", "USBDeviceState");
-    USBDeviceStates [CEnums::USBDeviceAvailable] =
+    USBDeviceStates [KUSBDeviceState_Available] =
         tr ("Available", "USBDeviceState");
-    USBDeviceStates [CEnums::USBDeviceHeld] =
+    USBDeviceStates [KUSBDeviceState_Held] =
         tr ("Held", "USBDeviceState");
-    USBDeviceStates [CEnums::USBDeviceCaptured] =
+    USBDeviceStates [KUSBDeviceState_Captured] =
         tr ("Captured", "USBDeviceState");
 
     mUserDefinedPortName = tr ("User-defined", "serial port");
@@ -3852,23 +3852,23 @@ void VBoxGlobal::init()
     // fill in VM state icon dictionary
     static struct
     {
-        CEnums::MachineState state;
+        KMachineState state;
         const char *name;
     }
     vmStateIcons[] =
     {
-        {CEnums::InvalidMachineState, NULL},
-        {CEnums::PoweredOff, "state_powered_off_16px.png"},
-        {CEnums::Saved, "state_saved_16px.png"},
-        {CEnums::Aborted, "state_aborted_16px.png"},
-        {CEnums::Running, "state_running_16px.png"},
-        {CEnums::Paused, "state_paused_16px.png"},
-        {CEnums::Stuck, "state_stuck_16px.png"},
-        {CEnums::Starting, "state_running_16px.png"}, /// @todo (dmik) separate icon?
-        {CEnums::Stopping, "state_running_16px.png"}, /// @todo (dmik) separate icon?
-        {CEnums::Saving, "state_saving_16px.png"},
-        {CEnums::Restoring, "state_restoring_16px.png"},
-        {CEnums::Discarding, "state_discarding_16px.png"},
+        {KMachineState_Null, NULL},
+        {KMachineState_PoweredOff, "state_powered_off_16px.png"},
+        {KMachineState_Saved, "state_saved_16px.png"},
+        {KMachineState_Aborted, "state_aborted_16px.png"},
+        {KMachineState_Running, "state_running_16px.png"},
+        {KMachineState_Paused, "state_paused_16px.png"},
+        {KMachineState_Stuck, "state_stuck_16px.png"},
+        {KMachineState_Starting, "state_running_16px.png"}, /// @todo (dmik) separate icon?
+        {KMachineState_Stopping, "state_running_16px.png"}, /// @todo (dmik) separate icon?
+        {KMachineState_Saving, "state_saving_16px.png"},
+        {KMachineState_Restoring, "state_restoring_16px.png"},
+        {KMachineState_Discarding, "state_discarding_16px.png"},
     };
     mStateIcons.setAutoDelete (true); // takes ownership of elements
     for (uint n = 0; n < SIZEOF_ARRAY (vmStateIcons); n ++)
@@ -3883,18 +3883,18 @@ void VBoxGlobal::init()
 
     // initialize state colors vector
     // no ownership of elements, we're passing pointers to existing objects
-    vm_state_color.insert (CEnums::InvalidMachineState, &Qt::red);
-    vm_state_color.insert (CEnums::PoweredOff,          &Qt::gray);
-    vm_state_color.insert (CEnums::Saved,               &Qt::yellow);
-    vm_state_color.insert (CEnums::Aborted,             &Qt::darkRed);
-    vm_state_color.insert (CEnums::Running,             &Qt::green);
-    vm_state_color.insert (CEnums::Paused,              &Qt::darkGreen);
-    vm_state_color.insert (CEnums::Stuck,               &Qt::darkMagenta);
-    vm_state_color.insert (CEnums::Starting,            &Qt::green);
-    vm_state_color.insert (CEnums::Stopping,            &Qt::green);
-    vm_state_color.insert (CEnums::Saving,              &Qt::green);
-    vm_state_color.insert (CEnums::Restoring,           &Qt::green);
-    vm_state_color.insert (CEnums::Discarding,          &Qt::green);
+    vm_state_color.insert (KMachineState_Null,           &Qt::red);
+    vm_state_color.insert (KMachineState_PoweredOff,     &Qt::gray);
+    vm_state_color.insert (KMachineState_Saved,          &Qt::yellow);
+    vm_state_color.insert (KMachineState_Aborted,        &Qt::darkRed);
+    vm_state_color.insert (KMachineState_Running,        &Qt::green);
+    vm_state_color.insert (KMachineState_Paused,         &Qt::darkGreen);
+    vm_state_color.insert (KMachineState_Stuck,          &Qt::darkMagenta);
+    vm_state_color.insert (KMachineState_Starting,       &Qt::green);
+    vm_state_color.insert (KMachineState_Stopping,       &Qt::green);
+    vm_state_color.insert (KMachineState_Saving,         &Qt::green);
+    vm_state_color.insert (KMachineState_Restoring,      &Qt::green);
+    vm_state_color.insert (KMachineState_Discarding,     &Qt::green);
 
     qApp->installEventFilter (this);
 
@@ -4112,7 +4112,7 @@ void VBoxUSBMenu::processAboutToShow()
                     mConsole.GetUSBDevices().FindById (usb.GetId());
                 setItemChecked (id, !attachedUSB.isNull());
                 setItemEnabled (id, iterator.GetState() !=
-                                CEnums::USBDeviceUnavailable);
+                                KUSBDeviceState_Unavailable);
             }
         }
     }
