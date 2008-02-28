@@ -605,6 +605,11 @@ SUPR3DECL(int) SUPGipGetPhys(PRTHCPHYS pHCPhys);
  */
 
 /**
+ * Execute callback on all cpus/cores (SUPR0ExecuteCallback)
+ */
+#define SUPDRVEXECCALLBACK_CPU_ALL      (~0)
+
+/**
  * Security objectype.
  */
 typedef enum SUPDRVOBJTYPE
@@ -635,6 +640,16 @@ typedef DECLCALLBACK(void) FNSUPDRVDESTRUCTOR(void *pvObj, void *pvUser1, void *
 /** Pointer to a FNSUPDRVDESTRUCTOR(). */
 typedef FNSUPDRVDESTRUCTOR *PFNSUPDRVDESTRUCTOR;
 
+/**
+ * Per cpu execution callback (SUPR0ExecuteCallback)
+ *
+ * @param   pSession    Session object
+ * @param   pvUser      The first user argument.
+ */
+typedef DECLCALLBACK(void) FNSUPDRVEXECCALLBACK(PSUPDRVSESSION pSession, void *pvUser1);
+/** Pointer to a PFNSUPDRVEXECCALLBACK(). */
+typedef FNSUPDRVEXECCALLBACK *PFNSUPDRVEXECCALLBACK;
+
 SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType, PFNSUPDRVDESTRUCTOR pfnDestructor, void *pvUser1, void *pvUser2);
 SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession);
@@ -654,6 +669,7 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
+SUPR0DECL(int) SUPR0ExecuteCallback(PSUPDRVSESSION pSession, PFNSUPDRVEXECCALLBACK pfnCallback, void *pvUser, unsigned uCpu);
 
 /** @} */
 #endif

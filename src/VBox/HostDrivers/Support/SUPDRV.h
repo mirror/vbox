@@ -756,6 +756,7 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt);
 unsigned VBOXCALL supdrvOSGetCPUCount(void);
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(void);
 #endif
+int  VBOXCALL   supdrvOSExecuteCallback(PSUPDRVSESSION pSession, PFNSUPDRVEXECCALLBACK pfnCallback, void *pvUser, unsigned uCpu);
 
 
 /*******************************************************************************
