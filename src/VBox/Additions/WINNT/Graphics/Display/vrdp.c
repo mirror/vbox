@@ -1187,7 +1187,6 @@ void vrdpTextOut(
         vrdpReportSolidRect (ppdev, &clipRects, 0x0000FF);
 #else
         /* Try to report the text order. */
-#if 0
         ULONG ulForeRGB = pboFore? vrdpColor2RGB (pso, pboFore->iSolidColor): 0;
         ULONG ulBackRGB = pboOpaque? vrdpColor2RGB (pso, pboOpaque->iSolidColor): 0;
         
@@ -1198,9 +1197,6 @@ void vrdpTextOut(
         {
             vrdpReportDirtyRects (ppdev, &clipRects);
         }
-#else
-        vrdpReportDirtyRects (ppdev, &clipRects);
-#endif
 #endif
     }
 
