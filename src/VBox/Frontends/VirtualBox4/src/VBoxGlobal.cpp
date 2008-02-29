@@ -3808,7 +3808,7 @@ void VBoxGlobal::init()
         return;
     }
 
-    // initialize guest OS type vector
+    /* initialize guest OS type vector */
     CGuestOSTypeCollection coll = mVBox.GetGuestOSTypes();
     int osTypeCount = coll.GetCount();
     AssertMsg (osTypeCount > 0, ("Number of OS types must not be zero"));
@@ -3821,7 +3821,7 @@ void VBoxGlobal::init()
             vm_os_types [i++] = en.GetNext();
     }
 
-    // fill in OS type icon dictionary
+    /* fill in OS type icon dictionary */
     static const char *osTypeIcons[][2] =
     {
         {"unknown", "os_other.png"},
@@ -3848,14 +3848,14 @@ void VBoxGlobal::init()
         {"solaris", "os_solaris.png"},
         {"l4", "os_l4.png"},
     };
-    vm_os_type_icons.setAutoDelete (true); // takes ownership of elements
+    vm_os_type_icons.setAutoDelete (true); /* takes ownership of elements */
     for (uint n = 0; n < SIZEOF_ARRAY (osTypeIcons); n ++)
     {
         vm_os_type_icons.insert (osTypeIcons [n][0],
             new QPixmap (qPixmapFromMimeSource (osTypeIcons [n][1])));
     }
 
-    // fill in VM state icon dictionary
+    /* fill in VM state icon dictionary */
     static struct
     {
         KMachineState state;
@@ -3883,12 +3883,12 @@ void VBoxGlobal::init()
             new QPixmap (qPixmapFromMimeSource (vmStateIcons [n].name)));
     }
 
-    // online/offline snapshot icons
+    /* online/offline snapshot icons */
     mOfflineSnapshotIcon = qPixmapFromMimeSource ("offline_snapshot_16px.png");
     mOnlineSnapshotIcon = qPixmapFromMimeSource ("online_snapshot_16px.png");
 
-    // initialize state colors vector
-    // no ownership of elements, we're passing pointers to existing objects
+    /* initialize state colors vector */
+    vm_state_color.setAutoDelete (true); /* takes ownership of elements */
     vm_state_color.insert (KMachineState_Null,           new QColor(Qt::red));
     vm_state_color.insert (KMachineState_PoweredOff,     new QColor(Qt::gray));
     vm_state_color.insert (KMachineState_Saved,          new QColor(Qt::yellow));
@@ -3904,10 +3904,10 @@ void VBoxGlobal::init()
 
     qApp->installEventFilter (this);
 
-    // create default non-null global settings
+    /* create default non-null global settings */
     gset = VBoxGlobalSettings (false);
 
-    // try to load global settings
+    /* try to load global settings */
     gset.load (mVBox);
     if (!mVBox.isOk() || !gset)
     {
@@ -3922,7 +3922,7 @@ void VBoxGlobal::init()
 
     languageChange();
 
-    // process command line
+    /* process command line */
 
     vm_render_mode_str = 0;
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -3980,19 +3980,17 @@ void VBoxGlobal::init()
 
     vm_render_mode = vboxGetRenderMode( vm_render_mode_str );
 
-    // setup the callback
+    /* setup the callback */
     callback = CVirtualBoxCallback (new VBoxCallback (*this));
     mVBox.RegisterCallback (callback);
     AssertWrapperOk (mVBox);
     if (!mVBox.isOk())
         return;
 
-    /*
-     *  Redefine default large and small icon sizes. In particular, it is
-     *  necessary to consider both 32px and 22px icon sizes as Large when
-     *  we explicitly define them as Large (seems to be a bug in
-     *  QToolButton::sizeHint()).
-     */
+    /* Redefine default large and small icon sizes. In particular, it is
+     * necessary to consider both 32px and 22px icon sizes as Large when we
+     * explicitly define them as Large (seems to be a bug in
+     * QToolButton::sizeHint()). */
 #warning port me
 //    QIcon::setIconSize (QIcon::Small, QSize (16, 16));
 //    QIcon::setIconSize (QIcon::Large, QSize (22, 22));
