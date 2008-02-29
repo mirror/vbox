@@ -297,6 +297,7 @@ $(PATH_BIN)/vboxkeyboard.tar.gz: $(VBoxKeyboard_TARSOURCES) $(PATH_TARGET)/$(SOU
 # VirtualBox - The GUI program.
 #
 VirtualBox_TEMPLATE = VBOXQT4GUIEXE
+VirtualBox_NAME     = VirtualBox4
 VirtualBox_SDKS.win = WINPSDK DXSDK
 #ifeq ($(filter-out freebsd linux netbsd openbsd os2 solaris,$(BUILD_TARGET)),) - later
 ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(BUILD_TARGET)),) # X11 + os2
