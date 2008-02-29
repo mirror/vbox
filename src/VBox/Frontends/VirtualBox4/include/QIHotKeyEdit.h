@@ -20,6 +20,9 @@
 #define __QIHotKeyEdit_h__
 
 #include <qlabel.h>
+//Added by qt3to4:
+#include <QPalette>
+#include <QFocusEvent>
 #if defined(Q_WS_X11)
 #include <qmap.h>
 #endif
@@ -60,7 +63,7 @@ public:
 #endif
 
 #if defined (Q_WS_PM) || defined (Q_WS_X11)
-    static void languageChange();
+    static void languageChange_qt3();
 #endif
     static QString keyName (int aKeyVal);
     static bool isValidKey (int aKeyVal);

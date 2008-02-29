@@ -25,18 +25,21 @@
 
 #include <qapplication.h>
 #include <qpixmap.h>
-#include <qiconset.h>
+#include <qicon.h>
 #include <qcolor.h>
 #include <quuid.h>
 #include <qthread.h>
-#include <qpopupmenu.h>
+#include <q3popupmenu.h>
 #include <qtooltip.h>
 
-#include <qptrvector.h>
-#include <qvaluevector.h>
-#include <qvaluelist.h>
-#include <qdict.h>
-#include <qintdict.h>
+#include <q3ptrvector.h>
+#include <q3valuevector.h>
+#include <q3valuelist.h>
+#include <q3dict.h>
+#include <q3intdict.h>
+//Added by qt3to4:
+#include <QLabel>
+#include <QEvent>
 
 class QAction;
 class QLabel;
@@ -60,7 +63,7 @@ struct VBoxMedia
     Status status;
 };
 
-typedef QValueList <VBoxMedia> VBoxMediaList;
+typedef Q3ValueList <VBoxMedia> VBoxMediaList;
 
 // VirtualBox callback events
 ////////////////////////////////////////////////////////////////////////////////
@@ -476,10 +479,10 @@ public:
     static QString languageId();
     static void loadLanguage (const QString &aLangId = QString::null);
 
-    static QIconSet iconSet (const char *aNormal,
+    static QIcon iconSet (const char *aNormal,
                              const char *aDisabled = 0,
                              const char *aActive = 0);
-    static QIconSet iconSetEx (const char *aNormal, const char *aSmallNormal,
+    static QIcon iconSetEx (const char *aNormal, const char *aSmallNormal,
                                const char *aDisabled = 0, const char *aSmallDisabled = 0,
                                const char *aActive = 0, const char *aSmallActive = 0);
 
@@ -614,15 +617,15 @@ private:
 
     CVirtualBoxCallback callback;
 
-    typedef QValueVector <QString> QStringVector;
+    typedef Q3ValueVector <QString> QStringVector;
 
     QString verString;
 
-    QValueVector <CGuestOSType> vm_os_types;
-    QDict <QPixmap> vm_os_type_icons;
-    QPtrVector <QColor> vm_state_color;
+    Q3ValueVector <CGuestOSType> vm_os_types;
+    Q3Dict <QPixmap> vm_os_type_icons;
+    Q3PtrVector <QColor> vm_state_color;
 
-    QIntDict <QPixmap> mStateIcons;
+    Q3IntDict <QPixmap> mStateIcons;
     QPixmap mOfflineSnapshotIcon, mOnlineSnapshotIcon;
 
     QStringVector machineStates;
@@ -694,7 +697,7 @@ public:
  *  USB Popup Menu class.
  *  This class provides the list of USB devices attached to the host.
  */
-class VBoxUSBMenu : public QPopupMenu
+class VBoxUSBMenu : public Q3PopupMenu
 {
     Q_OBJECT
 
@@ -725,7 +728,7 @@ private:
  *  Enable/Disable Menu class.
  *  This class provides enable/disable menu items.
  */
-class VBoxSwitchMenu : public QPopupMenu
+class VBoxSwitchMenu : public Q3PopupMenu
 {
     Q_OBJECT
 

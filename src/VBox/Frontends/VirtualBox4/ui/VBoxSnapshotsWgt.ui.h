@@ -1,3 +1,5 @@
+//Added by qt3to4:
+#include <Q3PopupMenu>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -29,13 +31,13 @@
 *****************************************************************************/
 
 /** QListViewItem subclass for snapshots */
-class VBoxSnapshotsWgt::ListViewItem : public QListViewItem
+class VBoxSnapshotsWgt::ListViewItem : public Q3ListViewItem
 {
 public:
 
     /** Normal snapshot item */
-    ListViewItem (QListView *lv, const CSnapshot &aSnapshot)
-        : QListViewItem (lv)
+    ListViewItem (Q3ListView *lv, const CSnapshot &aSnapshot)
+        : Q3ListViewItem (lv)
         , mBld (false), mItal (false)
         , mSnapshot (aSnapshot)
     {
@@ -43,8 +45,8 @@ public:
     }
 
     /** Normal snapshot item */
-    ListViewItem (QListViewItem *lvi, const CSnapshot &aSnapshot)
-        : QListViewItem (lvi)
+    ListViewItem (Q3ListViewItem *lvi, const CSnapshot &aSnapshot)
+        : Q3ListViewItem (lvi)
         , mBld (false), mItal (false)
         , mSnapshot (aSnapshot)
     {
@@ -52,8 +54,8 @@ public:
     }
 
     /** Current state item */
-    ListViewItem (QListView *lv, const CMachine &aMachine)
-        : QListViewItem (lv)
+    ListViewItem (Q3ListView *lv, const CMachine &aMachine)
+        : Q3ListViewItem (lv)
         , mBld (false), mItal (true)
         , mMachine (aMachine)
     {
@@ -62,8 +64,8 @@ public:
     }
 
     /** Current state item */
-    ListViewItem (QListViewItem *lvi, const CMachine &aMachine)
-        : QListViewItem (lvi)
+    ListViewItem (Q3ListViewItem *lvi, const CMachine &aMachine)
+        : Q3ListViewItem (lvi)
         , mBld (false), mItal (true)
         , mMachine (aMachine)
     {
@@ -94,10 +96,10 @@ public:
             font.setItalic (mItal);
         if (font != p->font())
             p->setFont (font);
-        QListViewItem::paintCell (p, cg, column, width, align);
+        Q3ListViewItem::paintCell (p, cg, column, width, align);
     }
 
-    int width (const QFontMetrics &fm, const QListView *lv, int c) const
+    int width (const QFontMetrics &fm, const Q3ListView *lv, int c) const
     {
         QFont font = lv->font();
         if (font.bold() != mBld)
@@ -105,8 +107,8 @@ public:
         if (font.italic() != mItal)
             font.setItalic (mItal);
         if (font != lv->font())
-            return QListViewItem::width (QFontMetrics (font), lv, c);
-        return QListViewItem::width (fm, lv, c);
+            return Q3ListViewItem::width (QFontMetrics (font), lv, c);
+        return Q3ListViewItem::width (fm, lv, c);
     }
 
     CSnapshot snapshot() const { return mSnapshot; }
@@ -200,7 +202,7 @@ public:
 
     void okRename (int aCol)
     {
-        QListViewItem::okRename (aCol);
+        Q3ListViewItem::okRename (aCol);
         AssertReturn (aCol == 0 && !mSnapshot.isNull(), (void) 0);
         mSnapshot.SetName (text (0));
     }
@@ -225,50 +227,51 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 /** Tooltips for snapshots */
-class VBoxSnapshotsWgt::ToolTip : public QToolTip
-{
-public:
+#warning port me
+//class VBoxSnapshotsWgt::ToolTip : public QToolTip
+//{
+//public:
+//
+//    ToolTip (Q3ListView *aLV, QWidget *aParent, QToolTipGroup *aTG = 0)
+//        : QToolTip (aParent, aTG), mLV (aLV)
+//    {}
+//
+//    virtual ~ToolTip()
+//    {
+//        remove (parentWidget());
+//    }
+//
+//    void maybeTip (const QPoint &aPnt);
+//
+//private:
+//
+//    Q3ListView *mLV;
+//};
 
-    ToolTip (QListView *aLV, QWidget *aParent, QToolTipGroup *aTG = 0)
-        : QToolTip (aParent, aTG), mLV (aLV)
-    {}
-
-    virtual ~ToolTip()
-    {
-        remove (parentWidget());
-    }
-
-    void maybeTip (const QPoint &aPnt);
-
-private:
-
-    QListView *mLV;
-};
-
-void VBoxSnapshotsWgt::ToolTip::maybeTip (const QPoint &aPnt)
-{
-    ListViewItem *lvi = static_cast <ListViewItem *> (mLV->itemAt (aPnt));
-    if (!lvi)
-        return;
-
-    if (parentWidget()->topLevelWidget()->inherits ("QMainWindow"))
-    {
-        /*
-         *  Ensure the main window doesn't show the text from the previous
-         *  tooltip in the status bar.
-         */
-        QToolTipGroup *toolTipGroup =
-            (::qt_cast <QMainWindow *> (parentWidget()->topLevelWidget()))->
-                toolTipGroup();
-        if (toolTipGroup)
-        {
-	    int index = toolTipGroup->metaObject()->findSignal("removeTip()", false);
-	    toolTipGroup->qt_emit (index, 0);
-        }
-    }
-
-    tip (mLV->itemRect (lvi), lvi->toolTipText());
-}
+//void VBoxSnapshotsWgt::ToolTip::maybeTip (const QPoint &aPnt)
+//{
+//    ListViewItem *lvi = static_cast <ListViewItem *> (mLV->itemAt (aPnt));
+//    if (!lvi)
+//        return;
+//
+//    if (parentWidget()->topLevelWidget()->inherits ("QMainWindow"))
+//    {
+//        /*
+//         *  Ensure the main window doesn't show the text from the previous
+//         *  tooltip in the status bar.
+//         */
+//        QToolTipGroup *toolTipGroup =
+//            (::qt_cast <Q3MainWindow *> (parentWidget()->topLevelWidget()))->
+//                toolTipGroup();
+//        if (toolTipGroup)
+//        {
+//	    int index = toolTipGroup->metaObject()->findSignal("removeTip()", false);
+//	    toolTipGroup->qt_emit (index, 0);
+//        }
+//    }
+//
+//    tip (mLV->itemRect (lvi), lvi->toolTipText());
+//}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -298,13 +301,14 @@ void VBoxSnapshotsWgt::init()
     toolBar->setUsesTextLabel (false);
     toolBar->setUsesBigPixmaps (true);
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
-    VBoxSnapshotsWgtLayout->insertWidget (0, toolBar);
+#warning port me
+//    VBoxSnapshotsWgtLayout->insertWidget (0, toolBar);
 #ifdef Q_WS_MAC
     toolBar->setMacStyle();
 #endif
 
     /* context menu */
-    mContextMenu = new QPopupMenu (this);
+    mContextMenu = new Q3PopupMenu (this);
     mContextMenuDirty = true;
 
     /* icons */
@@ -325,7 +329,8 @@ void VBoxSnapshotsWgt::init()
         "show_snapshot_details_dis_22px.png", "show_snapshot_details_dis_16px.png"));
 
     /* tooltip */
-    mToolTip = new ToolTip (listView, listView->viewport());
+#warning port me
+//    mToolTip = new ToolTip (listView, listView->viewport());
 }
 
 void VBoxSnapshotsWgt::destroy()
@@ -353,7 +358,7 @@ void VBoxSnapshotsWgt::setMachine (const CMachine &aMachine)
 
 VBoxSnapshotsWgt::ListViewItem *VBoxSnapshotsWgt::findItem (const QUuid &aSnapshotId)
 {
-    QListViewItemIterator it (listView);
+    Q3ListViewItemIterator it (listView);
     while (it.current())
     {
         ListViewItem *lvi = static_cast <ListViewItem *> (it.current());
@@ -432,13 +437,13 @@ void VBoxSnapshotsWgt::refreshAll (bool aKeepSelected /* = false */)
 
 VBoxSnapshotsWgt::ListViewItem *VBoxSnapshotsWgt::curStateItem()
 {
-    QListViewItem *csi = mCurSnapshotItem ? mCurSnapshotItem->firstChild()
+    Q3ListViewItem *csi = mCurSnapshotItem ? mCurSnapshotItem->firstChild()
                                           : listView->firstChild();
     Assert (csi);
     return static_cast <ListViewItem *> (csi);
 }
 
-void VBoxSnapshotsWgt::populateSnapshots (const CSnapshot &snapshot, QListViewItem *item)
+void VBoxSnapshotsWgt::populateSnapshots (const CSnapshot &snapshot, Q3ListViewItem *item)
 {
     ListViewItem *si = 0;
     if (item)
@@ -463,7 +468,7 @@ void VBoxSnapshotsWgt::populateSnapshots (const CSnapshot &snapshot, QListViewIt
     si->setRenameEnabled (0, true);
 }
 
-void VBoxSnapshotsWgt::listView_currentChanged (QListViewItem *item)
+void VBoxSnapshotsWgt::listView_currentChanged (Q3ListViewItem *item)
 {
     /* Make the selected item visible */
     if (item)
@@ -501,7 +506,7 @@ void VBoxSnapshotsWgt::listView_currentChanged (QListViewItem *item)
 }
 
 void VBoxSnapshotsWgt::
-listView_contextMenuRequested (QListViewItem *item, const QPoint &pnt,
+listView_contextMenuRequested (Q3ListViewItem *item, const QPoint &pnt,
                                int /* col */)
 {
     if (!item)
@@ -582,7 +587,7 @@ void VBoxSnapshotsWgt::takeSnapshot()
     int maxSnapShotIndex = 0;
     QString snapShotName = tr ("Snapshot %1");
     QRegExp regExp (QString ("^") + snapShotName.arg ("([0-9]+)") + QString ("$"));
-    QListViewItemIterator iterator (listView);
+    Q3ListViewItemIterator iterator (listView);
     while (*iterator)
     {
         QString snapShot = (*iterator)->text (0);

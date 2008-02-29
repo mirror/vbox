@@ -178,7 +178,6 @@
     <include location="global" impldecl="in implementation">qlineedit.h</include>
     <include location="global" impldecl="in implementation">qtoolbutton.h</include>
     <include location="global" impldecl="in implementation">qmessagebox.h</include>
-    <include location="global" impldecl="in implementation">qfocusdata.h</include>
 </includes>
 <forwards>
     <forward>class QSizeGrip</forward>

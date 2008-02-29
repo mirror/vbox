@@ -24,9 +24,11 @@
 #include "VBoxSelectorWnd.h"
 #include "VBoxGlobal.h"
 
-#include <qlistbox.h>
+#include <q3listbox.h>
 #include <qfont.h>
 #include <qdatetime.h>
+//Added by qt3to4:
+#include <QFocusEvent>
 
 struct QUuid;
 class QColorGroup;
@@ -42,14 +44,14 @@ class VBoxVMListBoxItem;
  *  Every item in the list box is an instance of the VBoxVMListBoxItem
  *  class.
  */
-class VBoxVMListBox : public QListBox
+class VBoxVMListBox : public Q3ListBox
 {
     Q_OBJECT
 
 public:
 
     VBoxVMListBox (QWidget *aParent = 0, const char *aName = NULL,
-                   WFlags aFlags = 0);
+                   Qt::WFlags aFlags = 0);
 
     virtual ~VBoxVMListBox();
 
@@ -96,7 +98,7 @@ private:
  *  It holds a CMachine instance (passed to the constructor) to
  *  get an access to various VM data.
  */
-class VBoxVMListBoxItem : public QListBoxItem
+class VBoxVMListBoxItem : public Q3ListBoxItem
 {
 public:
 
@@ -117,8 +119,8 @@ public:
 
     QString toolTipText() const;
 
-    int height (const QListBox *) const;
-    int width (const QListBox *) const;
+    int height (const Q3ListBox *) const;
+    int width (const Q3ListBox *) const;
 
     QUuid id() const { return mId; }
     bool accessible() const { return mAccessible; }

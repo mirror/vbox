@@ -20,6 +20,9 @@
 #define __VBoxFrameBuffer_h__
 
 #include "COMDefs.h"
+//Added by qt3to4:
+#include <QMoveEvent>
+#include <QPaintEvent>
 
 class VBoxConsoleView;
 

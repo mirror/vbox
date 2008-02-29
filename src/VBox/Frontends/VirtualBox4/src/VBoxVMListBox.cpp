@@ -28,6 +28,10 @@
 #include <qstyle.h>
 
 #include <qfileinfo.h>
+//Added by qt3to4:
+#include <QPixmap>
+#include <q3mimefactory.h>
+#include <QFocusEvent>
 
 #if defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
@@ -139,48 +143,49 @@ static WId FindWindowIdFromPid (ULONG aPid)
 // VBoxVMListBoxItem class
 ////////////////////////////////////////////////////////////////////////////////
 
-class VBoxVMListBoxTip : public QToolTip
-{
-public:
-
-    VBoxVMListBoxTip (VBoxVMListBox *aLB, QToolTipGroup *aTG = 0)
-        : QToolTip (aLB, aTG)
-    {}
-
-    virtual ~VBoxVMListBoxTip()
-    {
-        remove (parentWidget());
-    }
-
-    void maybeTip (const QPoint &aPnt);
-};
-
-void VBoxVMListBoxTip::maybeTip (const QPoint &aPnt)
-{
-    const VBoxVMListBox *lb = static_cast <VBoxVMListBox *> (parentWidget());
-
-    VBoxVMListBoxItem *vmi = static_cast <VBoxVMListBoxItem *> (lb->itemAt (aPnt));
-    if (!vmi)
-        return;
-
-    if (parentWidget()->topLevelWidget()->inherits ("QMainWindow"))
-    {
-        /*
-         *  Ensure the main window doesn't show the text from the previous
-         *  tooltip in the status bar.
-         */
-        QToolTipGroup *toolTipGroup =
-            (::qt_cast <QMainWindow *> (parentWidget()->topLevelWidget()))->
-                toolTipGroup();
-        if (toolTipGroup)
-        {
-            int index = toolTipGroup->metaObject()->findSignal("removeTip()", false);
-            toolTipGroup->qt_emit (index, 0);
-        }
-    }
-
-    tip (lb->itemRect (vmi), vmi->toolTipText());
-}
+#warning port me
+//class VBoxVMListBoxTip : public QToolTip
+//{
+//public:
+//
+//    VBoxVMListBoxTip (VBoxVMListBox *aLB, QToolTipGroup *aTG = 0)
+//        : QToolTip (aLB, aTG)
+//    {}
+//
+//    virtual ~VBoxVMListBoxTip()
+//    {
+//        remove (parentWidget());
+//    }
+//
+//    void maybeTip (const QPoint &aPnt);
+//};
+//
+//void VBoxVMListBoxTip::maybeTip (const QPoint &aPnt)
+//{
+//    const VBoxVMListBox *lb = static_cast <VBoxVMListBox *> (parentWidget());
+//
+//    VBoxVMListBoxItem *vmi = static_cast <VBoxVMListBoxItem *> (lb->itemAt (aPnt));
+//    if (!vmi)
+//        return;
+//
+//    if (parentWidget()->topLevelWidget()->inherits ("QMainWindow"))
+//    {
+//        /*
+//         *  Ensure the main window doesn't show the text from the previous
+//         *  tooltip in the status bar.
+//         */
+//        QToolTipGroup *toolTipGroup =
+//            (::qt_cast <Q3MainWindow *> (parentWidget()->topLevelWidget()))->
+//                toolTipGroup();
+//        if (toolTipGroup)
+//        {
+//            int index = toolTipGroup->metaObject()->findSignal("removeTip()", false);
+//            toolTipGroup->qt_emit (index, 0);
+//        }
+//    }
+//
+//    tip (lb->itemRect (vmi), vmi->toolTipText());
+//}
 
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxVMListBox class
@@ -192,8 +197,8 @@ void VBoxVMListBoxTip::maybeTip (const QPoint &aPnt)
  */
 VBoxVMListBox::
 VBoxVMListBox (QWidget *aParent /* = 0 */, const char *aName /* = NULL */,
-               WFlags aFlags /* = 0 */)
-    : QListBox (aParent, aName, aFlags)
+               Qt::WFlags aFlags /* = 0 */)
+    : Q3ListBox (aParent, aName, aFlags)
 {
     mVBox = vboxGlobal().virtualBox();
 
@@ -204,7 +209,8 @@ VBoxVMListBox (QWidget *aParent /* = 0 */, const char *aName /* = NULL */,
 
     mMargin = QMAX (fontMetrics().width (' ') * 2, 8);
 
-    mToolTip = new VBoxVMListBoxTip (this);
+#warning port me
+//    mToolTip = new VBoxVMListBoxTip (this);
 
     mGaveFocusToPopup = false;
 
@@ -213,7 +219,8 @@ VBoxVMListBox (QWidget *aParent /* = 0 */, const char *aName /* = NULL */,
 
 VBoxVMListBox::~VBoxVMListBox()
 {
-    delete mToolTip;
+#warning port me
+//    delete mToolTip;
 }
 
 // public members
@@ -243,7 +250,7 @@ void VBoxVMListBox::refresh (const QUuid &aID)
 {
     for (uint i = 0; i < count(); i++)
     {
-        VBoxVMListBoxItem *vmi = (VBoxVMListBoxItem *) QListBox::item (i);
+        VBoxVMListBoxItem *vmi = (VBoxVMListBoxItem *) Q3ListBox::item (i);
         if (vmi->id() == aID)
         {
             vmi->recache();
@@ -262,7 +269,7 @@ VBoxVMListBoxItem *VBoxVMListBox::item (const QUuid &aID)
 {
     for (uint i = 0; i < count(); i++)
     {
-        VBoxVMListBoxItem *vmi = (VBoxVMListBoxItem *) QListBox::item (i);
+        VBoxVMListBoxItem *vmi = (VBoxVMListBoxItem *) Q3ListBox::item (i);
         if (vmi->id() == aID)
             return vmi;
     }
@@ -284,12 +291,14 @@ const QColorGroup &VBoxVMListBox::activeColorGroup() const
      * that rectangle. So, we have to use the logic of QListBox itself.
      * Here is a modified extract from qlistbox.cpp: */
 
-    bool drawActiveSelection =
-        !style().styleHint (QStyle::SH_ItemView_ChangeHighlightOnFocus, this) ||
-        hasFocus() ||
-        mGaveFocusToPopup;
-
-    return (drawActiveSelection ? colorGroup() : palette().inactive());
+#warning port me
+//    bool drawActiveSelection =
+//        !style().styleHint (QStyle::SH_ItemView_ChangeHighlightOnFocus, this) ||
+//        hasFocus() ||
+//        mGaveFocusToPopup;
+//
+//    return (drawActiveSelection ? colorGroup() : palette().inactive());
+    return colorGroup();
 }
 
 // protected members
@@ -298,16 +307,18 @@ const QColorGroup &VBoxVMListBox::activeColorGroup() const
 void VBoxVMListBox::focusInEvent (QFocusEvent *aE)
 {
     mGaveFocusToPopup = false;
-    QListBox::focusInEvent (aE);
+    Q3ListBox::focusInEvent (aE);
 }
 
 void VBoxVMListBox::focusOutEvent (QFocusEvent *aE)
 {
     /* A modified extract from qlistbox.cpp (see #activeColorGroup()): */
     mGaveFocusToPopup =
-        QFocusEvent::reason() == QFocusEvent::Popup ||
+#warning port me: check this
+        aE->reason() == QFocusEvent::Popup ||
+//        QFocusEvent::reason() == QFocusEvent::Popup ||
         (qApp->focusWidget() && qApp->focusWidget()->inherits ("QMenuBar"));
-    QListBox::focusOutEvent (aE);
+    Q3ListBox::focusOutEvent (aE);
 }
 
 // private members
@@ -318,7 +329,7 @@ void VBoxVMListBox::focusOutEvent (QFocusEvent *aE)
 ////////////////////////////////////////////////////////////////////////////////
 
 VBoxVMListBoxItem::VBoxVMListBoxItem (VBoxVMListBox *aLB, const CMachine &aM)
-    : QListBoxItem (aLB), mMachine (aM)
+    : Q3ListBoxItem (aLB), mMachine (aM)
 {
     recache();
 }
@@ -442,7 +453,7 @@ QString VBoxVMListBoxItem::toolTipText() const
     return toolTip;
 }
 
-int VBoxVMListBoxItem::width (const QListBox *) const
+int VBoxVMListBoxItem::width (const Q3ListBox *) const
 {
     /* see the picture below for dimensions */
 
@@ -466,8 +477,8 @@ int VBoxVMListBoxItem::width (const QListBox *) const
     else
     {
         /// @todo (r=dmik) temporary
-        pmOSType = QPixmap::fromMimeSource ("os_other.png");
-        pmState = QPixmap::fromMimeSource ("state_aborted_16px.png");
+        pmOSType = qPixmapFromMimeSource ("os_other.png");
+        pmState = qPixmapFromMimeSource ("state_aborted_16px.png");
         strState = VBoxVMListBox::tr ("Inaccessible");
     }
 
@@ -481,7 +492,7 @@ int VBoxVMListBoxItem::width (const QListBox *) const
            QMAX (nameWidth, stateWidth) + marg;
 }
 
-int VBoxVMListBoxItem::height (const QListBox *) const
+int VBoxVMListBoxItem::height (const Q3ListBox *) const
 {
     /* see the picture below for dimensions */
 
@@ -502,8 +513,8 @@ int VBoxVMListBoxItem::height (const QListBox *) const
     else
     {
         /// @todo (r=dmik) temporary
-        pmOSType = QPixmap::fromMimeSource ("os_other.png");
-        pmState = QPixmap::fromMimeSource ("state_aborted_16px.png");
+        pmOSType = qPixmapFromMimeSource ("os_other.png");
+        pmState = qPixmapFromMimeSource ("state_aborted_16px.png");
     }
 
     int strHeight = fmName.lineSpacing() +
@@ -684,8 +695,8 @@ void VBoxVMListBoxItem::paint (QPainter *aP)
     else
     {
         /// @todo (r=dmik) temporary
-        pmOSType = QPixmap::fromMimeSource ("os_other.png");
-        pmState = QPixmap::fromMimeSource ("state_aborted_16px.png");
+        pmOSType = qPixmapFromMimeSource ("os_other.png");
+        pmState = qPixmapFromMimeSource ("state_aborted_16px.png");
         strState = VBoxVMListBox::tr ("Inaccessible");
     }
 

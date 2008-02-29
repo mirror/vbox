@@ -17,6 +17,9 @@
  */
 
 #include "QIHotKeyEdit.h"
+//Added by qt3to4:
+#include <QLabel>
+#include <QFocusEvent>
 
 #include "VBoxDefs.h"
 
@@ -113,9 +116,9 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent, const char *aName) :
 
     clear();
 
-    setFrameStyle (LineEditPanel | Sunken);
-    setAlignment (AlignHCenter | AlignBottom);
-    setFocusPolicy (StrongFocus);
+    setFrameStyle (QFrame::StyledPanel | Sunken);
+    setAlignment (Qt::AlignHCenter | Qt::AlignBottom);
+    setFocusPolicy (Qt::StrongFocus);
 
     QPalette p = palette();
     p.setColor (QPalette::Active, QColorGroup::Foreground,
@@ -202,9 +205,11 @@ QSize QIHotKeyEdit::sizeHint() const
     int h = QMAX(fm.lineSpacing(), 14) + 2;
     int w = fm.width( 'x' ) * 17; // "some"
     int m = frameWidth() * 2;
-    return (style().sizeFromContents (QStyle::CT_LineEdit, this,
-                                      QSize (w + m, h + m)
-                                      .expandedTo(QApplication::globalStrut())));
+#warning port me
+//    return (style()->sizeFromContents (QStyle::CT_LineEdit, this,
+//                                      QSize (w + m, h + m)
+//                                      .expandedTo(QApplication::globalStrut())));
+    QSize(10,10);
 }
 
 /**
@@ -277,7 +282,7 @@ int QIHotKeyEdit::virtualKey (QMSG *aMsg)
  *  keys to human readable key names.
  */
 /* static */
-void QIHotKeyEdit::languageChange()
+void QIHotKeyEdit::languageChange_qt3()
 {
     /* Note: strings for the same key must match strings in languageChange()
      * versions for all platforms, to keep translators happy. */
@@ -332,7 +337,7 @@ void QIHotKeyEdit::languageChange()
  *  readable key names.
  */
 /* static */
-void QIHotKeyEdit::languageChange()
+void QIHotKeyEdit::languageChange_qt3()
 {
     /* Note: strings for the same key must match strings in languageChange()
      * versions for all platforms, to keep translators happy. */
@@ -725,14 +730,15 @@ void QIHotKeyEdit::focusOutEvent (QFocusEvent *)
 
 void QIHotKeyEdit::drawContents (QPainter * p)
 {
-    QLabel::drawContents (p);
-    if (hasFocus())
-    {
-        style().drawPrimitive (
-            QStyle::PE_FocusRect, p, contentsRect(), colorGroup(),
-            QStyle::Style_Default,
-            QStyleOption( colorGroup().background()));
-    }
+#warning port me
+//    QLabel::drawContents (p);
+//    if (hasFocus())
+//    {
+//        style().drawPrimitive (
+//            QStyle::PE_FocusRect, p, contentsRect(), colorGroup(),
+//            QStyle::State_None,
+//            QStyleOption( colorGroup().background()));
+//    }
 }
 
 // Private members

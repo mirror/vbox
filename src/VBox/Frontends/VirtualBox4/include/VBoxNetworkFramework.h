@@ -22,6 +22,9 @@
 #include <HappyHttp.h>
 #include <qobject.h>
 #include <qthread.h>
+//Added by qt3to4:
+#include <QEvent>
+#include <QDataStream>
 typedef happyhttp::Connection HConnect;
 
 /**
@@ -35,7 +38,7 @@ class VBoxNetworkFramework : public QObject
 public:
 
     VBoxNetworkFramework()
-        : mDataStream (mDataArray, IO_ReadWrite)
+        : mDataStream (&mDataArray, QIODevice::ReadWrite)
         , mNetworkThread (0) {}
 
     ~VBoxNetworkFramework() { delete mNetworkThread; }

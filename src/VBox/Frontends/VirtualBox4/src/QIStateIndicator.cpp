@@ -19,6 +19,11 @@
 #include "QIStateIndicator.h"
 
 #include <qpainter.h>
+//Added by qt3to4:
+#include <QPixmap>
+#include <QMouseEvent>
+#include <Q3Frame>
+#include <QContextMenuEvent>
 
 /** @clas QIStateIndicator
  *
@@ -35,8 +40,8 @@
  */
 QIStateIndicator::QIStateIndicator (int aState,
                                     QWidget *aParent, const char *aName,
-                                    WFlags aFlags)
-    : QFrame (aParent, aName, aFlags | WStaticContents | WMouseNoMask)
+                                    Qt::WFlags aFlags)
+    : Q3Frame (aParent, aName, aFlags | Qt::WStaticContents | Qt::WMouseNoMask)
 {
     mState = aState;
     mSize = QSize (0, 0);
@@ -98,7 +103,9 @@ void QIStateIndicator::drawContents (QPainter *aPainter)
     }
     else
     {
-        if (testWFlags (WNoAutoErase))
+//        if (testAttribute (Qt::WNoAutoErase))
+#warning port me
+        if(0)
         {
             QColor bgColor = paletteBackgroundColor();
             const QPixmap *bgPixmap = paletteBackgroundPixmap();
@@ -129,8 +136,9 @@ void QIStateIndicator::drawContents (QPainter *aPainter)
                     icon->cached.fill (bgColor);
                 }
                 /* paint the icon on top of the widget background sample */
-                bitBlt (&icon->cached, 0, 0, &icon->pixmap,
-                        0, 0, w, h, CopyROP, false);
+#warning port me
+//                bitBlt (&icon->cached, 0, 0, &icon->pixmap,
+//                        0, 0, w, h, CopyROP, false);
                 /* store the new values */
                 icon->bgColor = bgColor;
                 icon->bgPixmap = bgPixmap;
@@ -158,7 +166,7 @@ void QIStateIndicator::mousePressEvent (QMouseEvent *aEv)
     if (qme.isAccepted())
         aEv->accept();
     else
-        QFrame::mousePressEvent (aEv);
+        Q3Frame::mousePressEvent (aEv);
 }
 #endif /* Q_WS_MAC */
 

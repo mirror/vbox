@@ -23,21 +23,30 @@
 #include "QIRichLabel.h"
 
 #include <qpainter.h>
-#include <qaccel.h>
+#include <q3accel.h>
 #include <qmovie.h>
 #include <qimage.h>
-#include <qpicture.h>
+#include <q3picture.h>
 #include <qapplication.h>
-#include <qsimplerichtext.h>
-#include <qstylesheet.h>
+#include <q3simplerichtext.h>
+#include <q3stylesheet.h>
 #include <qstyle.h>
 #include <qregexp.h>
-#include <qfocusdata.h>
+//#include <qfocusdata.h>
 #include <qtooltip.h>
-#include <qpopupmenu.h>
+#include <q3popupmenu.h>
 #include <qaction.h>
 #include <qclipboard.h>
 #include <qcursor.h>
+//Added by qt3to4:
+#include <QContextMenuEvent>
+#include <QKeyEvent>
+#include <QPixmap>
+#include <QBitmap>
+#include <Q3Frame>
+#include <QResizeEvent>
+#include <QFocusEvent>
+#include <QMouseEvent>
 
 class QLabelPrivate
 {
@@ -53,16 +62,16 @@ public:
 };
 
 
-QIRichLabel::QIRichLabel (QWidget *parent, const char *name, WFlags f)
-: QFrame (parent, name, f | WMouseNoMask)
+QIRichLabel::QIRichLabel (QWidget *parent, const char *name, Qt::WFlags f)
+: Q3Frame (parent, name, f | Qt::WMouseNoMask)
 {
    init();
 }
 
 
 QIRichLabel::QIRichLabel (const QString &text, QWidget *parent, const char *name,
-                          WFlags f)
-                          : QFrame (parent, name, f | WMouseNoMask)
+                          Qt::WFlags f)
+                          : Q3Frame (parent, name, f | Qt::WMouseNoMask)
 {
    init();
    setText (text);
@@ -70,8 +79,8 @@ QIRichLabel::QIRichLabel (const QString &text, QWidget *parent, const char *name
 
 
 QIRichLabel::QIRichLabel (QWidget *buddy,  const QString &text,
-                          QWidget *parent, const char *name, WFlags f)
-                          : QFrame (parent, name, f | WMouseNoMask)
+                          QWidget *parent, const char *name, Qt::WFlags f)
+                          : Q3Frame (parent, name, f | Qt::WMouseNoMask)
 {
    init();
    setBuddy (buddy);
@@ -97,7 +106,7 @@ void QIRichLabel::init()
    accel = 0;
    lpixmap = 0;
    lpicture = 0;
-   align = AlignAuto | AlignVCenter | ExpandTabs;
+   align = Qt::AlignLeft | Qt::AlignVCenter | Qt::TextExpandTabs;
    extraMargin = -1;
    autoresize = FALSE;
    scaledcontents = FALSE;
@@ -111,7 +120,7 @@ void QIRichLabel::init()
       this, SLOT (putToClipBoard()));
    copyAction->setMenuText (tr ("Copy to clipboard"));
 
-   popupMenu = new QPopupMenu (this, "contextMenu");
+   popupMenu = new Q3PopupMenu (this, "contextMenu");
    copyAction->addTo (popupMenu);
 
    setMouseTracking (true);
@@ -121,7 +130,7 @@ void QIRichLabel::init()
 void QIRichLabel::setFixedHeight (int aHeight)
 {
     baseheight = aHeight;
-    QFrame::setFixedHeight (baseheight);
+    Q3Frame::setFixedHeight (baseheight);
 }
 
 
@@ -135,17 +144,17 @@ void QIRichLabel::setText (const QString &text)
    clearContents();
    ltext = text;
 
-   bool useRichText = (textformat == RichText ||
-      ((textformat == AutoText) && QStyleSheet::mightBeRichText (ltext)));
+   bool useRichText = (textformat == Qt::RichText ||
+      ((textformat == Qt::AutoText) && Q3StyleSheet::mightBeRichText (ltext)));
 
    // ### Setting accelerators for rich text labels will not work.
    // Eg. <b>&gt;Hello</b> will return ALT+G which is clearly
    // not intended.
    if (!useRichText) {
-      int p = QAccel::shortcutKey (ltext);
+      int p = Q3Accel::shortcutKey (ltext);
       if (p) {
          if (!accel)
-            accel = new QAccel (this, "accel label accel");
+            accel = new Q3Accel (this, "accel label accel");
          accel->connectItem (accel->insertItem (p),
             this, SLOT (acceleratorSlot()));
       }
@@ -153,15 +162,15 @@ void QIRichLabel::setText (const QString &text)
 
    if (useRichText) {
       if (!hadRichtext)
-         align |= WordBreak;
+         align |= Qt::TextWordWrap;
       QString t = ltext;
-      if (align & AlignRight)
+      if (align & Qt::AlignRight)
          t.prepend ("<div align=\"right\">");
-      else if (align & AlignHCenter)
+      else if (align & Qt::AlignHCenter)
          t.prepend ("<div align=\"center\">");
-      if ((align & WordBreak) == 0)
+      if ((align & Qt::TextWordWrap) == 0)
          t.prepend ("<nobr>");
-      doc = new QSimpleRichText (compressText(0), font());
+      doc = new Q3SimpleRichText (compressText(0), font());
    }
 
    updateLabel (osh);
@@ -169,7 +178,7 @@ void QIRichLabel::setText (const QString &text)
    if (mMaxHeightMode && (int)baseheight < heightForWidth (width()))
    {
        baseheight = heightForWidth (width());
-       QFrame::setFixedHeight (baseheight);
+       Q3Frame::setFixedHeight (baseheight);
    }
 }
 
@@ -196,11 +205,11 @@ void QIRichLabel::setPixmap (const QPixmap &pixmap)
 }
 
 
-void QIRichLabel::setPicture (const QPicture &picture)
+void QIRichLabel::setPicture (const Q3Picture &picture)
 {
    QSize osh = sizeHint();
    clearContents();
-   lpicture = new QPicture (picture);
+   lpicture = new Q3Picture (picture);
 
    updateLabel (osh);
 }
@@ -229,7 +238,7 @@ void QIRichLabel::setAlignment (int alignment)
    QSize osh = sizeHint();
 
    if (lbuddy)
-      align = alignment | ShowPrefix;
+      align = alignment | Qt::TextShowMnemonic;
    else
       align = alignment;
 
@@ -270,7 +279,7 @@ QSize QIRichLabel::sizeForWidth (int w) const
 {
    QRect br;
    QPixmap *pix = pixmap();
-   QPicture *pic = picture();
+   Q3Picture *pic = picture();
    QMovie *mov = movie();
 
    int hextra = 2 * frameWidth();
@@ -282,10 +291,10 @@ QSize QIRichLabel::sizeForWidth (int w) const
       if (m < 0 && hextra) // no indent, but we do have a frame
          m = xw / 2 - margin();
       if (m >= 0) {
-         int horizAlign = QApplication::horizontalAlignment( align );
-         if ((horizAlign & AlignLeft) || (horizAlign & AlignRight))
+          Qt::Alignment horizAlign = QApplication::horizontalAlignment( (Qt::Alignment)align );
+         if ((horizAlign & Qt::AlignLeft) || (horizAlign & Qt::AlignRight))
             hextra += m;
-         if ((align & AlignTop) || (align & AlignBottom))
+         if ((align & Qt::AlignTop) || (align & Qt::AlignBottom))
             vextra += m;
       }
    }
@@ -298,7 +307,7 @@ QSize QIRichLabel::sizeForWidth (int w) const
       br = mov->framePixmap().rect();
    else if (doc) {
       int oldW = doc->width();
-      if ( align & WordBreak ) {
+      if ( align & Qt::TextWordWrap ) {
          if (w < 0)
             doc->adjustSize();
          else
@@ -308,7 +317,7 @@ QSize QIRichLabel::sizeForWidth (int w) const
       doc->setWidth (oldW);
    }
    else {
-      bool tryWidth = (w < 0) && (align & WordBreak);
+      bool tryWidth = (w < 0) && (align & Qt::TextWordWrap);
       if (tryWidth)
          w = xw * 80;
       else if (w < 0)
@@ -331,7 +340,7 @@ int QIRichLabel::heightForWidth (int w) const
 {
    if (
       doc ||
-      (align & WordBreak))
+      (align & Qt::TextWordWrap))
       return sizeForWidth (w).height();
    return QWidget::heightForWidth(w);
 }
@@ -357,7 +366,7 @@ QSize QIRichLabel::minimumSizeHint() const
 
    if (
       !doc &&
-      (align & WordBreak) == 0) {
+      (align & Qt::TextWordWrap) == 0) {
       sz = d->sh;
    } else {
       // think about caching these for performance
@@ -384,7 +393,8 @@ void QIRichLabel::mouseMoveEvent (QMouseEvent *aEvent)
     {
         if (mIsMainTip)
         {
-            mTipText = QToolTip::textFor (this);
+#warning port me
+//            mTipText = QToolTip::textFor (this);
             QToolTip::remove (this);
             QToolTip::add (this, link);
             mIsMainTip = false;
@@ -410,34 +420,37 @@ void QIRichLabel::mousePressEvent (QMouseEvent *aEvent)
 
     QString link = doc->anchorAt (aEvent->pos());
     /* Check for mouse left button clicked on the link */
-    if (!link.isEmpty() && aEvent->button() == LeftButton)
+    if (!link.isEmpty() && aEvent->button() == Qt::LeftButton)
         emit clickedOnLink (link);
 }
 
 
 void QIRichLabel::resizeEvent (QResizeEvent *e)
 {
-   QFrame::resizeEvent (e);
+   Q3Frame::resizeEvent (e);
 
    static const bool doc = FALSE;
 
    // optimize for standard labels
-   if (frameShape() == NoFrame && (align & WordBreak) == 0 && !doc &&
-       (e->oldSize().width() >= e->size().width() && (align & AlignLeft) == AlignLeft)
-       && (e->oldSize().height() >= e->size().height() && (align & AlignTop) == AlignTop)) {
-      setWFlags (WResizeNoErase);
+   if (frameShape() == NoFrame && (align & Qt::TextWordWrap) == 0 && !doc &&
+       (e->oldSize().width() >= e->size().width() && (align & Qt::AlignLeft) == Qt::AlignLeft)
+       && (e->oldSize().height() >= e->size().height() && (align & Qt::AlignTop) == Qt::AlignTop)) {
+#warning port me
+//      setWFlags (Qt::WResizeNoErase);
       return;
    }
 
-   clearWFlags (WResizeNoErase);
+#warning port me
+//   clearWFlags (Qt::WResizeNoErase);
    QRect cr = contentsRect();
    if ( !lpixmap ||  !cr.isValid() ||
       // masked pixmaps can only reduce flicker when being top/left
       // aligned and when we do not perform scaled contents
-      (lpixmap->hasAlpha() && (scaledcontents || ((align & (AlignLeft|AlignTop)) != (AlignLeft|AlignTop)))))
+      (lpixmap->hasAlpha() && (scaledcontents || ((align & (Qt::AlignLeft|Qt::AlignTop)) != (Qt::AlignLeft|Qt::AlignTop)))))
       return;
 
-   setWFlags (WResizeNoErase);
+#warning port me
+//   setWFlags (Qt::WResizeNoErase);
 
    if (!scaledcontents) {
       // don't we all love QFrame? Reduce pixmap flicker
@@ -472,26 +485,27 @@ void QIRichLabel::resizeEvent (QResizeEvent *e)
 
 void QIRichLabel::focusInEvent (QFocusEvent *aEvent)
 {
-   QFrame::focusInEvent (aEvent);
+   Q3Frame::focusInEvent (aEvent);
    repaint();
 }
 
 
 void QIRichLabel::keyPressEvent (QKeyEvent *aEvent)
 {
-   switch (aEvent->key())
-   {
-   case Qt::Key_Up:
-      focusData()->home();
-      focusData()->prev()->setFocus();
-      break;
-   case Qt::Key_Down:
-      focusData()->home();
-      focusData()->next()->setFocus();
-      break;
-   default:
-      aEvent->ignore();
-   }
+#warning port me
+//   switch (aEvent->key())
+//   {
+//   case Qt::Key_Up:
+//      focusData()->home();
+//      focusData()->prev()->setFocus();
+//      break;
+//   case Qt::Key_Down:
+//      focusData()->home();
+//      focusData()->next()->setFocus();
+//      break;
+//   default:
+//      aEvent->ignore();
+//   }
 }
 
 
@@ -577,7 +591,7 @@ void QIRichLabel::drawContents (QPainter *p)
    QRect cr = contentsRect();
 
    QPixmap *pix = pixmap();
-   QPicture *pic = picture();
+   Q3Picture *pic = picture();
    QMovie *mov = movie();
 
    if (!mov && !pix && !pic) {
@@ -585,45 +599,47 @@ void QIRichLabel::drawContents (QPainter *p)
       if (m < 0 && frameWidth()) // no indent, but we do have a frame
          m = fontMetrics().width ('x') / 2 - margin();
       if (m > 0) {
-         int hAlign = QApplication::horizontalAlignment (align);
-         if (hAlign & AlignLeft)
+         int hAlign = QApplication::horizontalAlignment ((Qt::Alignment)align);
+         if (hAlign & Qt::AlignLeft)
             cr.setLeft (cr.left() + m);
-         if (hAlign & AlignRight)
+         if (hAlign & Qt::AlignRight)
             cr.setRight (cr.right() - m);
-         if (align & AlignTop)
+         if (align & Qt::AlignTop)
             cr.setTop (cr.top() + m);
-         if (align & AlignBottom)
+         if (align & Qt::AlignBottom)
             cr.setBottom (cr.bottom() - m);
       }
    }
 
    if (mov) {
+#warning port me
       // ### should add movie to qDrawItem
-      QRect r = style().itemRect (p, cr, align, isEnabled(), &(mov->framePixmap()),
-         QString::null);
+//      QRect r = style()->itemRect (p, cr, align, isEnabled(), &(mov->framePixmap()),
+//         QString::null);
       // ### could resize movie frame at this point
-      p->drawPixmap (r.x(), r.y(), mov->framePixmap());
+//      p->drawPixmap (r.x(), r.y(), mov->framePixmap());
    }
    else
       if (doc) {
          delete doc;
          QToolTip::remove (this);
          QString filteredText = compressText();
-         doc = new QSimpleRichText (filteredText, font());
+         doc = new Q3SimpleRichText (filteredText, font());
          /* focus indent */
          doc->setWidth (p, cr.width() - 2*3);
          int rh = doc->height();
          int yo = 0;
-         if (align & AlignVCenter)
+         if (align & Qt::AlignVCenter)
             yo = (cr.height()-rh)/2;
-         else if (align & AlignBottom)
+         else if (align & Qt::AlignBottom)
             yo = cr.height()-rh;
-         if (! isEnabled() &&
-            style().styleHint (QStyle::SH_EtchDisabledText, this)) {
-            QColorGroup cg = colorGroup();
-            cg.setColor (QColorGroup::Text, cg.light());
-            doc->draw (p, cr.x()+1, cr.y()+yo+1, cr, cg, 0);
-         }
+#warning port me
+//         if (! isEnabled() &&
+//            style().styleHint (QStyle::SH_EtchDisabledText, this)) {
+//            QColorGroup cg = colorGroup();
+//            cg.setColor (QColorGroup::Text, cg.light());
+//            doc->draw (p, cr.x()+1, cr.y()+yo+1, cr, cg, 0);
+//         }
 
          // QSimpleRichText always draws with QColorGroup::Text as with
          // background mode PaletteBase. QIRichLabel typically has
@@ -639,17 +655,18 @@ void QIRichLabel::drawContents (QPainter *p)
                cg.setColor (QColorGroup::Text,
                   standartGroup.color (QColorGroup::HighlightedText));
                paper.setColor (standartGroup.color (QColorGroup::Highlight));
-               paper.setStyle (QBrush::SolidPattern);
+               paper.setStyle (Qt::SolidPattern);
             }
             else
                cg.setColor (QColorGroup::Text, paletteForegroundColor());
          }
 
          doc->draw (p, cr.x()+3, cr.y()+yo, cr, cg, &paper);
-         if (hasFocus())
-            style().drawPrimitive (QStyle::PE_FocusRect, p, cr, cg,
-            QStyle::Style_FocusAtBorder,
-            cg.highlight());
+#warning port me
+//         if (hasFocus())
+//            style().drawPrimitive (QStyle::PE_FocusRect, p, cr, cg,
+//            QStyle::State_FocusAtBorder,
+//            cg.highlight());
 
          if (filteredText != ltext)
             QToolTip::add (this, QString ("&nbsp;&nbsp;%1").arg (ltext));
@@ -667,13 +684,13 @@ void QIRichLabel::drawContents (QPainter *p)
             } else {
                int xo = 0;
                int yo = 0;
-               if (align & AlignVCenter)
+               if (align & Qt::AlignVCenter)
                   yo = (cr.height()-rh)/2;
-               else if (align & AlignBottom)
+               else if (align & Qt::AlignBottom)
                   yo = cr.height()-rh;
-               if (align & AlignRight)
+               if (align & Qt::AlignRight)
                   xo = cr.width()-rw;
-               else if (align & AlignHCenter)
+               else if (align & Qt::AlignHCenter)
                   xo = (cr.width()-rw)/2;
                p->drawPicture (cr.x()+xo-br.x(), cr.y()+yo-br.y(), *pic);
             }
@@ -690,11 +707,12 @@ void QIRichLabel::drawContents (QPainter *p)
                pix = d->pix;
             }
             int alignment = align;
-            if ((align & ShowPrefix) && !style().styleHint(QStyle::SH_UnderlineAccelerator, this))
-               alignment |= NoAccel;
+#warning port me
+//            if ((align & Qt::TextShowMnemonic) && !style().styleHint(QStyle::SH_UnderlineShortcut, this))
+//               alignment |= Qt::TextHideMnemonic;
             // ordinary text or pixmap label
-            style().drawItem ( p, cr, alignment, colorGroup(), isEnabled(),
-               pix, ltext );
+//            style().drawItem ( p, cr, alignment, colorGroup(), isEnabled(),
+//               pix, ltext );
          }
 }
 
@@ -703,7 +721,7 @@ void QIRichLabel::updateLabel (QSize oldSizeHint)
 {
    d->valid_hints = -1;
    QSizePolicy policy = sizePolicy();
-   bool wordBreak = align & WordBreak;
+   bool wordBreak = align & Qt::TextWordWrap;
    policy.setHeightForWidth (wordBreak);
    if (policy != sizePolicy())
       setSizePolicy (policy);
@@ -728,10 +746,12 @@ void QIRichLabel::acceleratorSlot()
    if (!w->hasFocus() &&
        w->isEnabled() &&
        w->isVisible() &&
-       w->focusPolicy() != NoFocus) {
-      QFocusEvent::setReason (QFocusEvent::Shortcut);
+       w->focusPolicy() != Qt::NoFocus) {
+#warning port me
+//      QFocusEvent::setReason (QFocusEvent::Shortcut);
       w->setFocus();
-      QFocusEvent::resetReason();
+#warning port me
+//      QFocusEvent::resetReason();
    }
 }
 
@@ -745,9 +765,9 @@ void QIRichLabel::buddyDied()
 void QIRichLabel::setBuddy (QWidget *buddy)
 {
    if (buddy)
-      setAlignment (alignment() | ShowPrefix);
+      setAlignment (alignment() | Qt::TextShowMnemonic);
    else
-      setAlignment (alignment() & ~ShowPrefix);
+      setAlignment (alignment() & ~Qt::TextShowMnemonic);
 
    if (lbuddy)
       disconnect (lbuddy, SIGNAL (destroyed()), this, SLOT (buddyDied()));
@@ -757,13 +777,13 @@ void QIRichLabel::setBuddy (QWidget *buddy)
    if (!lbuddy)
       return;
 
-   if (!( textformat == RichText || (textformat == AutoText &&
-      QStyleSheet::mightBeRichText(ltext))))
+   if (!( textformat == Qt::RichText || (textformat == Qt::AutoText &&
+      Q3StyleSheet::mightBeRichText(ltext))))
    {
-      int p = QAccel::shortcutKey (ltext);
+      int p = Q3Accel::shortcutKey (ltext);
       if (p) {
          if (!accel)
-            accel = new QAccel (this, "accel label accel");
+            accel = new Q3Accel (this, "accel label accel");
          accel->connectItem (accel->insertItem (p),
             this, SLOT (acceleratorSlot()));
       }
@@ -784,12 +804,14 @@ void QIRichLabel::movieUpdated (const QRect &rect)
    QMovie *mov = movie();
    if (mov && !mov->isNull()) {
       QRect r = contentsRect();
-      r = style().itemRect (0, r, align, isEnabled(), &(mov->framePixmap()),
-         QString::null);
+#warning port me
+//      r = style().itemRect (0, r, align, isEnabled(), &(mov->framePixmap()),
+//         QString::null);
       r.moveBy (rect.x(), rect.y());
       r.setWidth (QMIN (r.width(), rect.width()));
       r.setHeight (QMIN (r.height(), rect.height()));
-      repaint (r, mov->framePixmap().mask() != 0);
+#warning port me
+//      repaint (r, mov->framePixmap().mask() != 0);
    }
 }
 
@@ -806,15 +828,16 @@ void QIRichLabel::movieResized (const QSize &size)
 
 void QIRichLabel::setMovie (const QMovie &movie)
 {
-   QSize osh = sizeHint();
-   clearContents();
-
-   lmovie = new QMovie (movie);
-   lmovie->connectResize (this, SLOT (movieResized (const QSize&)));
-   lmovie->connectUpdate (this, SLOT (movieUpdated (const QRect&)));
-
-   if (!lmovie->running())   // Assume that if the movie is running,
-      updateLabel (osh); // resize/update signals will come soon enough
+#warning port me
+//   QSize osh = sizeHint();
+//   clearContents();
+//
+//   lmovie = new QMovie (movie);
+//   lmovie->connectResize (this, SLOT (movieResized (const QSize&)));
+//   lmovie->connectUpdate (this, SLOT (movieUpdated (const QRect&)));
+//
+//   if (!lmovie->running())   // Assume that if the movie is running,
+//      updateLabel (osh); // resize/update signals will come soon enough
 }
 
 
@@ -841,8 +864,9 @@ void QIRichLabel::clearContents()
       accel->clear();
 
    if (lmovie) {
-      lmovie->disconnectResize (this, SLOT (movieResized (const QSize&)));
-      lmovie->disconnectUpdate (this, SLOT (movieUpdated (const QRect&)));
+#warning port me
+//      lmovie->disconnectResize (this, SLOT (movieResized (const QSize&)));
+//      lmovie->disconnectUpdate (this, SLOT (movieUpdated (const QRect&)));
       delete lmovie;
       lmovie = 0;
    }
@@ -907,5 +931,5 @@ void QIRichLabel::setScaledContents (bool enable)
 
 void QIRichLabel::setFont (const QFont &f)
 {
-   QFrame::setFont (f);
+   Q3Frame::setFont (f);
 }

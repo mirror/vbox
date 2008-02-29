@@ -1293,7 +1293,6 @@ to the system default language.&lt;/qt&gt;
     <include location="global" impldecl="in implementation">qpainter.h</include>
     <include location="global" impldecl="in implementation">qobjectlist.h</include>
     <include location="global" impldecl="in implementation">qfiledialog.h</include>
-    <include location="global" impldecl="in implementation">qfocusdata.h</include>
     <include location="global" impldecl="in implementation">qtimer.h</include>
     <include location="global" impldecl="in implementation">qeventloop.h</include>
     <include location="local" impldecl="in declaration">COMDefs.h</include>

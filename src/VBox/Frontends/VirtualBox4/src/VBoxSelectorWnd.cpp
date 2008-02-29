@@ -30,18 +30,27 @@
 #include "VBoxVMLogViewer.h"
 
 #include <qlabel.h>
-#include <qtextbrowser.h>
+#include <q3textbrowser.h>
 #include <qmenubar.h>
-#include <qpopupmenu.h>
+#include <q3popupmenu.h>
 #include <qmessagebox.h>
-#include <qwidgetlist.h>
+#include <qwidget.h>
 #include <qtabwidget.h>
-#include <qwidgetstack.h>
-#include <qbutton.h>
-#include <qprocess.h>
+#include <q3widgetstack.h>
+#include <qpushbutton.h>
+#include <q3process.h>
 
 #include <qlayout.h>
-#include <qvbox.h>
+#include <q3vbox.h>
+//Added by qt3to4:
+#include <QDesktopWidget>
+#include <Q3HBoxLayout>
+#include <Q3Frame>
+#include <q3mimefactory.h>
+#include <QResizeEvent>
+#include <QEvent>
+#include <Q3VBoxLayout>
+#include <QMenuItem>
 
 #ifdef Q_WS_X11
 #include <iprt/env.h>
@@ -55,7 +64,7 @@
  *  Two-page widget stack to represent VM details: one page for normal details
  *  and another one for inaccessibility errors.
  */
-class VBoxVMDetailsView : public QWidgetStack
+class VBoxVMDetailsView : public Q3WidgetStack
 {
     Q_OBJECT
 
@@ -105,18 +114,18 @@ private:
 
     void createErrPage();
 
-    QTextBrowser *mDetailsText;
+    Q3TextBrowser *mDetailsText;
 
     QWidget *mErrBox;
     QLabel *mErrLabel;
-    QTextBrowser *mErrText;
+    Q3TextBrowser *mErrText;
     QToolButton *mRefreshButton;
     QAction *mRefreshAction;
 };
 
 VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent, const char *aName,
                                       QAction *aRefreshAction /* = NULL */)
-    : QWidgetStack (aParent, aName)
+    : Q3WidgetStack (aParent, aName)
     , mErrBox (NULL), mErrLabel (NULL), mErrText (NULL)
     , mRefreshButton (NULL)
     , mRefreshAction (aRefreshAction)
@@ -125,11 +134,11 @@ VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent, const char *aName,
 
     /* create normal details page */
 
-    mDetailsText = new QTextBrowser (mErrBox);
-    mDetailsText->setFocusPolicy (QWidget::StrongFocus);
+    mDetailsText = new Q3TextBrowser (mErrBox);
+    mDetailsText->setFocusPolicy (Qt::StrongFocus);
     mDetailsText->setLinkUnderline (false);
     /* make "transparent" */
-    mDetailsText->setFrameShape (QFrame::NoFrame);
+    mDetailsText->setFrameShape (Q3Frame::NoFrame);
     mDetailsText->setPaper (backgroundBrush());
 
     connect (mDetailsText, SIGNAL (linkClicked (const QString &)),
@@ -147,25 +156,25 @@ void VBoxVMDetailsView::createErrPage()
 
     mErrBox = new QWidget();
 
-    QVBoxLayout *layout = new QVBoxLayout (mErrBox);
+    Q3VBoxLayout *layout = new Q3VBoxLayout (mErrBox);
     layout->setSpacing (10);
 
     mErrLabel = new QLabel (mErrBox);
-    mErrLabel->setAlignment (WordBreak);
+    mErrLabel->setAlignment (Qt::WordBreak);
     mErrLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
     layout->add (mErrLabel);
 
-    mErrText = new QTextBrowser (mErrBox);
-    mErrText->setFocusPolicy (QWidget::StrongFocus);
+    mErrText = new Q3TextBrowser (mErrBox);
+    mErrText->setFocusPolicy (Qt::StrongFocus);
     mErrText->setLinkUnderline (false);
     layout->add (mErrText);
 
     if (mRefreshAction)
     {
         mRefreshButton = new QToolButton (mErrBox);
-        mRefreshButton->setFocusPolicy (QWidget::StrongFocus);
+        mRefreshButton->setFocusPolicy (Qt::StrongFocus);
 
-        QHBoxLayout *hLayout = new QHBoxLayout (layout);
+        Q3HBoxLayout *hLayout = new Q3HBoxLayout (layout);
         hLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
                                                  QSizePolicy::Minimum));
         hLayout->add (mRefreshButton);
@@ -234,7 +243,7 @@ private:
 
     VBoxSelectorWnd *mParent;
     QToolButton *mBtnEdit;
-    QTextBrowser *mBrowser;
+    Q3TextBrowser *mBrowser;
     QLabel *mLabel;
 };
 
@@ -245,12 +254,12 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     , mBtnEdit (0), mBrowser (0), mLabel (0)
 {
     /* main layout */
-    QVBoxLayout *mainLayout = new QVBoxLayout (this, 0, 10, "mainLayout");
+    Q3VBoxLayout *mainLayout = new Q3VBoxLayout (this, 0, 10, "mainLayout");
 
     /* mBrowser */
-    mBrowser = new QTextBrowser (this, "mBrowser");
+    mBrowser = new Q3TextBrowser (this, "mBrowser");
     mBrowser->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
-    mBrowser->setFocusPolicy (QWidget::StrongFocus);
+    mBrowser->setFocusPolicy (Qt::StrongFocus);
     mBrowser->setLinkUnderline (false);
     mainLayout->addWidget (mBrowser);
     /* hidden by default */
@@ -259,13 +268,13 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     mLabel = new QLabel (this, "mLabel");
     mLabel->setFrameStyle (mBrowser->frameStyle());
     mLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
-    mLabel->setAlignment (AlignCenter | WordBreak);
+    mLabel->setAlignment (Qt::AlignCenter | Qt::WordBreak);
     mainLayout->addWidget (mLabel);
     /* always disabled */
     mLabel->setEnabled (false);
 
     /* button layout */
-    QHBoxLayout *btnLayout = new QHBoxLayout (mainLayout, 10, "btnLayout");
+    Q3HBoxLayout *btnLayout = new Q3HBoxLayout (mainLayout, 10, "btnLayout");
     btnLayout->addItem (new QSpacerItem (0, 0,
                                          QSizePolicy::Expanding,
                                          QSizePolicy::Minimum));
@@ -273,7 +282,7 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     /* button */
     mBtnEdit = new QToolButton (this, "mBtnEdit");
     mBtnEdit->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Fixed);
-    mBtnEdit->setFocusPolicy (QWidget::StrongFocus);
+    mBtnEdit->setFocusPolicy (Qt::StrongFocus);
     mBtnEdit->setIconSet (VBoxGlobal::iconSet ("edit_description_16px.png",
                                                "edit_description_disabled_16px.png"));
     mBtnEdit->setTextPosition (QToolButton::BesideIcon);
@@ -378,8 +387,8 @@ void VBoxVMDescriptionPage::goToSettings()
  */
 VBoxSelectorWnd::
 VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
-                 WFlags aFlags)
-    : QMainWindow (aParent, aName, aFlags)
+                 Qt::WFlags aFlags)
+    : Q3MainWindow (aParent, aName, aFlags)
     , doneInaccessibleWarningOnce (false)
 {
     if (aSelf)
@@ -388,7 +397,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     statusBar();
 
     /* application icon */
-    setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
+    setIcon (qPixmapFromMimeSource ("ico40x01.png"));
 
     /* actions */
 
@@ -448,14 +457,14 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* central widget & horizontal layout */
     setCentralWidget (new QWidget (this, "centralWidget"));
-    QHBoxLayout *centralLayout =
-        new QHBoxLayout (centralWidget(), 5, 9, "centralLayout");
+    Q3HBoxLayout *centralLayout =
+        new Q3HBoxLayout (centralWidget(), 5, 9, "centralLayout");
 
     /* left vertical box */
-    QVBox *leftVBox = new QVBox (centralWidget(), "leftWidget");
+    Q3VBox *leftVBox = new Q3VBox (centralWidget(), "leftWidget");
     leftVBox->setSpacing (5);
     /* right vertical box */
-    QVBox *rightVBox = new QVBox (centralWidget(), "rightWidget");
+    Q3VBox *rightVBox = new Q3VBox (centralWidget(), "rightWidget");
     rightVBox->setSpacing (5);
     centralLayout->addWidget (leftVBox, 3);
     centralLayout->addWidget (rightVBox, 5);
@@ -510,7 +519,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* add actions to menubar */
 
-    QPopupMenu *fileMenu = new QPopupMenu(this, "fileMenu");
+    Q3PopupMenu *fileMenu = new Q3PopupMenu(this, "fileMenu");
     fileDiskMgrAction->addTo( fileMenu );
     fileMenu->insertSeparator();
     fileSettingsAction->addTo(fileMenu);
@@ -519,7 +528,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     menuBar()->insertItem( QString::null, fileMenu, 1);
 
-    QPopupMenu *vmMenu = new QPopupMenu (this, "vmMenu");
+    Q3PopupMenu *vmMenu = new Q3PopupMenu (this, "vmMenu");
     vmNewAction->addTo (vmMenu);
     vmMenu->insertSeparator();
     vmConfigAction->addTo (vmMenu);
@@ -536,7 +545,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     menuBar()->insertItem (QString::null, vmMenu, 2);
 
-    mVMCtxtMenu = new QPopupMenu (this, "mVMCtxtMenu");
+    mVMCtxtMenu = new Q3PopupMenu (this, "mVMCtxtMenu");
     vmConfigAction->addTo (mVMCtxtMenu);
     vmDeleteAction->addTo (mVMCtxtMenu);
     mVMCtxtMenu->insertSeparator();
@@ -549,7 +558,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     mVMCtxtMenu->insertSeparator();
     vmShowLogsAction->addTo (mVMCtxtMenu);
 
-    QPopupMenu *helpMenu = new QPopupMenu( this, "helpMenu" );
+    Q3PopupMenu *helpMenu = new Q3PopupMenu( this, "helpMenu" );
     helpContentsAction->addTo (helpMenu);
     helpWebAction->addTo (helpMenu);
     helpMenu->insertSeparator();
@@ -609,7 +618,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
             vmListBox->setSelected (item, true);
     }
 
-    clearWState (WState_Polished);
+#warning port me
+//    clearWState (WState_Polished);
 
     /* signals and slots connections */
     connect (fileDiskMgrAction, SIGNAL (activated()), this, SLOT(fileDiskMgr()));
@@ -637,12 +647,12 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     connect (helpResetMessagesAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (resetSuppressedMessages()));
 
-    connect (vmListBox, SIGNAL (currentChanged(QListBoxItem *)),
+    connect (vmListBox, SIGNAL (currentChanged(Q3ListBoxItem *)),
              this, SLOT (vmListBoxCurrentChanged()));
-    connect (vmListBox, SIGNAL (selected (QListBoxItem *)),
+    connect (vmListBox, SIGNAL (selected (Q3ListBoxItem *)),
              this, SLOT (vmStart()));
-    connect (vmListBox, SIGNAL (contextMenuRequested (QListBoxItem *, const QPoint &)),
-             this, SLOT (showContextMenu (QListBoxItem *, const QPoint &)));
+    connect (vmListBox, SIGNAL (contextMenuRequested (Q3ListBoxItem *, const QPoint &)),
+             this, SLOT (showContextMenu (Q3ListBoxItem *, const QPoint &)));
 
     connect (vmDetailsView, SIGNAL (linkClicked (const QString &)),
             this, SLOT (vmSettings (const QString &)));
@@ -686,7 +696,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
     }
     /* save vm selector position */
     {
-        QListBoxItem *item = vmListBox->selectedItem();
+        Q3ListBoxItem *item = vmListBox->selectedItem();
         QString curVMId = item ?
             QString (static_cast<VBoxVMListBoxItem*> (item)->id()) :
             QString::null;
@@ -1053,7 +1063,7 @@ void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
         vmListBoxCurrentChanged (aDetails, aSnapshots, aDescription);
 }
 
-void VBoxSelectorWnd::showContextMenu (QListBoxItem *aItem, const QPoint &aPoint)
+void VBoxSelectorWnd::showContextMenu (Q3ListBoxItem *aItem, const QPoint &aPoint)
 {
     if (aItem)
         mVMCtxtMenu->exec (aPoint);
@@ -1073,15 +1083,15 @@ bool VBoxSelectorWnd::event (QEvent *e)
         case QEvent::Resize:
         {
             QResizeEvent *re = (QResizeEvent *) e;
-            if ((windowState() & (WindowMaximized | WindowMinimized |
-                                  WindowFullScreen)) == 0)
+            if ((windowState() & (Qt::WindowMaximized | Qt::WindowMinimized |
+                                  Qt::WindowFullScreen)) == 0)
                 normal_size = re->size();
             break;
         }
         case QEvent::Move:
         {
-            if ((windowState() & (WindowMaximized | WindowMinimized |
-                                  WindowFullScreen)) == 0)
+            if ((windowState() & (Qt::WindowMaximized | Qt::WindowMinimized |
+                                  Qt::WindowFullScreen)) == 0)
                 normal_pos = pos();
             break;
         }
@@ -1095,7 +1105,7 @@ bool VBoxSelectorWnd::event (QEvent *e)
             break;
     }
 
-    return QMainWindow::event (e);
+    return Q3MainWindow::event (e);
 }
 
 // Private members

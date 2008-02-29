@@ -19,12 +19,15 @@
 #ifndef __QIStateIndicator_h__
 #define __QIStateIndicator_h__
 
-#include <qframe.h>
+#include <q3frame.h>
 #include <qpixmap.h>
 
-#include <qintdict.h>
+#include <q3intdict.h>
+//Added by qt3to4:
+#include <QMouseEvent>
+#include <QContextMenuEvent>
 
-class QIStateIndicator : public QFrame
+class QIStateIndicator : public Q3Frame
 {
     Q_OBJECT
 
@@ -32,7 +35,7 @@ public:
 
     QIStateIndicator (int aState,
                       QWidget *aParent, const char *aName = 0,
-                      WFlags aFlags = 0);
+                      Qt::WFlags aFlags = 0);
 
     virtual QSize sizeHint() const;
 
@@ -81,7 +84,7 @@ private:
         QPoint bgOff;
     };
 
-    QIntDict <Icon> mStateIcons;
+    Q3IntDict <Icon> mStateIcons;
 };
 
 #endif // __QIStateIndicator_h__

@@ -182,23 +182,23 @@ HRESULT COMBase::CleanupCOM()
 }
 
 /* static */
-void COMBase::ToSafeArray (const QValueVector <QString> &aVec,
+void COMBase::ToSafeArray (const Q3ValueVector <QString> &aVec,
                            com::SafeArray <BSTR> &aArr)
 {
     aArr.reset (aVec.size());
     size_t i = 0;
-    for (QValueVector <QString>::const_iterator it = aVec.begin();
+    for (Q3ValueVector <QString>::const_iterator it = aVec.begin();
          it != aVec.end(); ++ it, ++ i)
         aArr [i] = SysAllocString ((const OLECHAR *) (*it).ucs2());
 }
 
 /* static */
 void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
-                             QValueVector <QString> &aVec)
+                             Q3ValueVector <QString> &aVec)
 {
-    aVec = QValueVector <QString> (aArr.size());
+    aVec = Q3ValueVector <QString> (aArr.size());
     size_t i = 0;
-    for (QValueVector <QString>::iterator it = aVec.begin();
+    for (Q3ValueVector <QString>::iterator it = aVec.begin();
          it != aVec.end(); ++ it, ++ i)
         *it = QString::fromUcs2 (aArr [i]);
 }

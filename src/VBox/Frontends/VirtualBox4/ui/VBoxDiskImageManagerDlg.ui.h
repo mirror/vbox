@@ -1,3 +1,21 @@
+//Added by qt3to4:
+#include <QResizeEvent>
+#include <QLabel>
+#include <QPixmap>
+#include <QCloseEvent>
+#include <Q3GridLayout>
+#include <QShowEvent>
+#include <q3mimefactory.h>
+#include <QDragEnterEvent>
+#include <QKeyEvent>
+#include <QEvent>
+#include <Q3VBoxLayout>
+#include <Q3Frame>
+#include <QDropEvent>
+#include <QCustomEvent>
+#include <Q3PopupMenu>
+#include <QMenuBar>
+#include <QMenuItem>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -26,17 +44,17 @@
 *****************************************************************************/
 
 
-class DiskImageItem : public QListViewItem
+class DiskImageItem : public Q3ListViewItem
 {
 public:
 
     enum { TypeId = 1001 };
 
     DiskImageItem (DiskImageItem *parent) :
-        QListViewItem (parent), mStatus (VBoxMedia::Unknown) {}
+        Q3ListViewItem (parent), mStatus (VBoxMedia::Unknown) {}
 
-    DiskImageItem (QListView *parent) :
-        QListViewItem (parent), mStatus (VBoxMedia::Unknown) {}
+    DiskImageItem (Q3ListView *parent) :
+        Q3ListViewItem (parent), mStatus (VBoxMedia::Unknown) {}
 
     void setMedia (const VBoxMedia &aMedia) { mMedia = aMedia; }
     const VBoxMedia &getMedia() const { return mMedia; }
@@ -99,7 +117,7 @@ public:
 
     int rtti() const { return TypeId; }
 
-    int compare (QListViewItem *aItem, int aColumn, bool aAscending) const
+    int compare (Q3ListViewItem *aItem, int aColumn, bool aAscending) const
     {
         ULONG64 thisValue = vboxGlobal().parseSize (       text (aColumn));
         ULONG64 thatValue = vboxGlobal().parseSize (aItem->text (aColumn));
@@ -111,14 +129,14 @@ public:
                 return thisValue > thatValue ? 1 : -1;
         }
         else
-            return QListViewItem::compare (aItem, aColumn, aAscending);
+            return Q3ListViewItem::compare (aItem, aColumn, aAscending);
     }
 
     DiskImageItem* nextSibling() const
     {
-        return (QListViewItem::nextSibling() &&
-                QListViewItem::nextSibling()->rtti() == DiskImageItem::TypeId) ?
-                static_cast<DiskImageItem*> (QListViewItem::nextSibling()) : 0;
+        return (Q3ListViewItem::nextSibling() &&
+                Q3ListViewItem::nextSibling()->rtti() == DiskImageItem::TypeId) ?
+                static_cast<DiskImageItem*> (Q3ListViewItem::nextSibling()) : 0;
     }
 
     void paintCell (QPainter *aPainter, const QColorGroup &aColorGroup,
@@ -127,7 +145,7 @@ public:
         QColorGroup cGroup (aColorGroup);
         if (mStatus == VBoxMedia::Unknown)
             cGroup.setColor (QColorGroup::Text, cGroup.mid());
-        QListViewItem::paintCell (aPainter, cGroup, aColumn, aWidth, aSlign);
+        Q3ListViewItem::paintCell (aPainter, cGroup, aColumn, aWidth, aSlign);
     }
 
 protected:
@@ -153,23 +171,23 @@ protected:
 };
 
 
-class DiskImageItemIterator : public QListViewItemIterator
+class DiskImageItemIterator : public Q3ListViewItemIterator
 {
 public:
 
-    DiskImageItemIterator (QListView* aList)
-        : QListViewItemIterator (aList) {}
+    DiskImageItemIterator (Q3ListView* aList)
+        : Q3ListViewItemIterator (aList) {}
 
     DiskImageItem* operator*()
     {
-        QListViewItem *item = QListViewItemIterator::operator*();
+        Q3ListViewItem *item = Q3ListViewItemIterator::operator*();
         return item && item->rtti() == DiskImageItem::TypeId ?
             static_cast<DiskImageItem*> (item) : 0;
     }
 
     DiskImageItemIterator& operator++()
     {
-        return (DiskImageItemIterator&) QListViewItemIterator::operator++();
+        return (DiskImageItemIterator&) Q3ListViewItemIterator::operator++();
     }
 };
 
@@ -199,7 +217,7 @@ void VBoxDiskImageManagerDlg::showModeless (bool aRefresh /* = true */)
         mModelessDialog =
             new VBoxDiskImageManagerDlg (NULL,
                                          "VBoxDiskImageManagerDlg",
-                                         WType_TopLevel | WDestructiveClose);
+                                         Qt::WType_TopLevel | Qt::WDestructiveClose);
         mModelessDialog->setup (VBoxDefs::HD | VBoxDefs::CD | VBoxDefs::FD,
                                 false, NULL, aRefresh);
 
@@ -217,7 +235,7 @@ void VBoxDiskImageManagerDlg::showModeless (bool aRefresh /* = true */)
 
     mModelessDialog->show();
     mModelessDialog->setWindowState (mModelessDialog->windowState() &
-                                     ~WindowMinimized);
+                                     ~Qt::WindowMinimized);
     mModelessDialog->setActiveWindow();
 }
 
@@ -233,7 +251,7 @@ void VBoxDiskImageManagerDlg::init()
     vbox = vboxGlobal().virtualBox();
     Assert (!vbox.isNull());
 
-    setIcon (QPixmap::fromMimeSource ("diskim_16px.png"));
+    setIcon (qPixmapFromMimeSource ("diskim_16px.png"));
 
     type = VBoxDefs::InvalidType;
 
@@ -277,12 +295,12 @@ void VBoxDiskImageManagerDlg::init()
     hdsView->setShowToolTips (false);
     cdsView->setShowToolTips (false);
     fdsView->setShowToolTips (false);
-    connect (hdsView, SIGNAL (onItem (QListViewItem*)),
-             this, SLOT (mouseOnItem(QListViewItem*)));
-    connect (cdsView, SIGNAL (onItem (QListViewItem*)),
-             this, SLOT (mouseOnItem(QListViewItem*)));
-    connect (fdsView, SIGNAL (onItem (QListViewItem*)),
-             this, SLOT (mouseOnItem(QListViewItem*)));
+    connect (hdsView, SIGNAL (onItem (Q3ListViewItem*)),
+             this, SLOT (mouseOnItem(Q3ListViewItem*)));
+    connect (cdsView, SIGNAL (onItem (Q3ListViewItem*)),
+             this, SLOT (mouseOnItem(Q3ListViewItem*)));
+    connect (fdsView, SIGNAL (onItem (Q3ListViewItem*)),
+             this, SLOT (mouseOnItem(Q3ListViewItem*)));
 
 
     /* status-bar currently disabled */
@@ -292,7 +310,7 @@ void VBoxDiskImageManagerDlg::init()
 
 
     /* context menu composing */
-    itemMenu = new QPopupMenu (this, "itemMenu");
+    itemMenu = new Q3PopupMenu (this, "itemMenu");
 
     imNewAction = new QAction (this, "imNewAction");
     imAddAction = new QAction (this, "imAddAction");
@@ -339,7 +357,7 @@ void VBoxDiskImageManagerDlg::init()
     /* toolbar composing */
     toolBar = new VBoxToolBar (this, centralWidget(), "toolBar");
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
-    ((QVBoxLayout*)centralWidget()->layout())->insertWidget(0, toolBar);
+    ((Q3VBoxLayout*)centralWidget()->layout())->insertWidget(0, toolBar);
 
     toolBar->setUsesTextLabel (true);
     toolBar->setUsesBigPixmaps (true);
@@ -358,7 +376,7 @@ void VBoxDiskImageManagerDlg::init()
 
 
     /* menu bar */
-    QPopupMenu *actionMenu = new QPopupMenu (this, "actionMenu");
+    Q3PopupMenu *actionMenu = new Q3PopupMenu (this, "actionMenu");
     imNewAction->addTo    (actionMenu);
     imAddAction->addTo    (actionMenu);
     actionMenu->insertSeparator();
@@ -379,11 +397,11 @@ void VBoxDiskImageManagerDlg::init()
     QApplication::setGlobalMouseTracking (true);
     qApp->installEventFilter (this);
     /* setup information pane layouts */
-    QGridLayout *hdsContainerLayout = new QGridLayout (hdsContainer, 4, 4);
+    Q3GridLayout *hdsContainerLayout = new Q3GridLayout (hdsContainer, 4, 4);
     hdsContainerLayout->setMargin (10);
-    QGridLayout *cdsContainerLayout = new QGridLayout (cdsContainer, 2, 4);
+    Q3GridLayout *cdsContainerLayout = new Q3GridLayout (cdsContainer, 2, 4);
     cdsContainerLayout->setMargin (10);
-    QGridLayout *fdsContainerLayout = new QGridLayout (fdsContainer, 2, 4);
+    Q3GridLayout *fdsContainerLayout = new Q3GridLayout (fdsContainer, 2, 4);
     fdsContainerLayout->setMargin (10);
     /* create info-pane for hd list-view */
     createInfoString (hdsPane1, hdsContainer, 0, -1);
@@ -402,14 +420,16 @@ void VBoxDiskImageManagerDlg::init()
     /* enumeration progressbar creation */
     mProgressText = new QLabel (centralWidget());
     mProgressText->setHidden (true);
-    buttonLayout->insertWidget (2, mProgressText);
-    mProgressBar = new QProgressBar (centralWidget());
+#warning port me
+//    buttonLayout->insertWidget (2, mProgressText);
+    mProgressBar = new Q3ProgressBar (centralWidget());
     mProgressBar->setHidden (true);
-    mProgressBar->setFrameShadow (QFrame::Sunken);
-    mProgressBar->setFrameShape  (QFrame::Panel);
+    mProgressBar->setFrameShadow (Q3Frame::Sunken);
+    mProgressBar->setFrameShape  (Q3Frame::Panel);
     mProgressBar->setPercentageVisible (false);
     mProgressBar->setMaximumWidth (100);
-    buttonLayout->insertWidget (3, mProgressBar);
+#warning port me
+//    buttonLayout->insertWidget (3, mProgressBar);
 
 
     /* applying language settings */
@@ -475,29 +495,29 @@ void VBoxDiskImageManagerDlg::createInfoString (InfoPaneLabel *&aInfo,
     aInfo = new InfoPaneLabel (aRoot, nameLabel);
 
     /* Setup focus policy <strong> default for info pane */
-    aInfo->setFocusPolicy (QWidget::StrongFocus);
+    aInfo->setFocusPolicy (Qt::StrongFocus);
 
     /* prevent the name columns from being expanded */
     nameLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     if (aColumn == -1)
     {
-        ((QGridLayout *) aRoot->layout())->addWidget (nameLabel, aRow, 0);
-        ((QGridLayout *) aRoot->layout())->
+        ((Q3GridLayout *) aRoot->layout())->addWidget (nameLabel, aRow, 0);
+        ((Q3GridLayout *) aRoot->layout())->
             addMultiCellWidget (aInfo, aRow, aRow,
-                                1, ((QGridLayout *) aRoot->layout())->numCols() - 1);
+                                1, ((Q3GridLayout *) aRoot->layout())->numCols() - 1);
     }
     else
     {
-        ((QGridLayout *) aRoot->layout())->addWidget (nameLabel, aRow, aColumn * 2);
-        ((QGridLayout *) aRoot->layout())->addWidget (aInfo, aRow, aColumn * 2 + 1);
+        ((Q3GridLayout *) aRoot->layout())->addWidget (nameLabel, aRow, aColumn * 2);
+        ((Q3GridLayout *) aRoot->layout())->addWidget (aInfo, aRow, aColumn * 2 + 1);
     }
 }
 
 
 void VBoxDiskImageManagerDlg::showEvent (QShowEvent *e)
 {
-    QMainWindow::showEvent (e);
+    Q3MainWindow::showEvent (e);
 
     /* one may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,
@@ -514,9 +534,9 @@ void VBoxDiskImageManagerDlg::showEvent (QShowEvent *e)
 }
 
 
-void VBoxDiskImageManagerDlg::mouseOnItem (QListViewItem *aItem)
+void VBoxDiskImageManagerDlg::mouseOnItem (Q3ListViewItem *aItem)
 {
-    QListView *currentList = getCurrentListView();
+    Q3ListView *currentList = getCurrentListView();
     QString tip;
     switch (aItem->rtti())
     {
@@ -547,19 +567,19 @@ void VBoxDiskImageManagerDlg::closeEvent (QCloseEvent *aEvent)
 void VBoxDiskImageManagerDlg::keyPressEvent (QKeyEvent *aEvent)
 {
     if ( aEvent->state() == 0 ||
-         (aEvent->state() & Keypad && aEvent->key() == Key_Enter) )
+         (aEvent->state() & Qt::KeypadModifier && aEvent->key() == Qt::Key_Enter) )
     {
         switch ( aEvent->key() )
         {
-            case Key_Enter:
-            case Key_Return:
+            case Qt::Key_Enter:
+            case Qt::Key_Return:
             {
                 QPushButton *currentDefault = searchDefaultButton();
                 if (currentDefault)
                     currentDefault->animateClick();
                 break;
             }
-            case Key_Escape:
+            case Qt::Key_Escape:
             {
                 reject();
                 break;
@@ -574,11 +594,13 @@ void VBoxDiskImageManagerDlg::keyPressEvent (QKeyEvent *aEvent)
 QPushButton* VBoxDiskImageManagerDlg::searchDefaultButton()
 {
     QPushButton *defButton = 0;
-    QObjectList *list = queryList ("QPushButton");
-    QObjectListIt it (*list);
-    while ( (defButton = (QPushButton*)it.current()) && !defButton->isDefault() )
+    QObjectList list = queryList ("QPushButton");
+    QListIterator<QObject*> it (list);
+    foreach(QObject *o, list)
     {
-        ++it;
+        defButton = qobject_cast<QPushButton*> (o);
+        if(defButton->isDefault())
+            break;
     }
     return defButton;
 }
@@ -596,7 +618,8 @@ int  VBoxDiskImageManagerDlg::exec()
     if (mInLoop) return result();
     show();
     mInLoop = true;
-    qApp->eventLoop()->enterLoop();
+#warning port me
+//    qApp->eventLoop()->enterLoop();
     mInLoop = false;
 
     return result();
@@ -609,7 +632,8 @@ void VBoxDiskImageManagerDlg::done (int aResult)
     if (mInLoop)
     {
         hide();
-        qApp->eventLoop()->exitLoop();
+#warning port me
+//        qApp->eventLoop()->exitLoop();
     }
     else
     {
@@ -618,15 +642,15 @@ void VBoxDiskImageManagerDlg::done (int aResult)
 }
 
 
-QListView* VBoxDiskImageManagerDlg::getCurrentListView()
+Q3ListView* VBoxDiskImageManagerDlg::getCurrentListView()
 {
-    QListView *clv = static_cast<QListView*>(twImages->currentPage()->
-        queryList("QListView")->getFirst());
+    Q3ListView *clv = static_cast<Q3ListView*>(twImages->currentPage()->
+        queryList("QListView").first());
     Assert(clv);
     return clv;
 }
 
-QListView* VBoxDiskImageManagerDlg::getListView (VBoxDefs::DiskType aType)
+Q3ListView* VBoxDiskImageManagerDlg::getListView (VBoxDefs::DiskType aType)
 {
     switch (aType)
     {
@@ -644,7 +668,7 @@ QListView* VBoxDiskImageManagerDlg::getListView (VBoxDefs::DiskType aType)
 
 bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
 {
-    QListView *currentList = getCurrentListView();
+    Q3ListView *currentList = getCurrentListView();
 
     switch (aEvent->type())
     {
@@ -666,7 +690,7 @@ bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
                 QDropEvent *dropEvent =
                     static_cast<QDropEvent*>(aEvent);
                 QStringList *droppedList = new QStringList();
-                QUriDrag::decodeLocalFiles (dropEvent, *droppedList);
+                Q3UriDrag::decodeLocalFiles (dropEvent, *droppedList);
                 QCustomEvent *updateEvent = new QCustomEvent (1001);
                 updateEvent->setData (droppedList);
                 QApplication::postEvent (currentList, updateEvent);
@@ -709,13 +733,13 @@ bool VBoxDiskImageManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
         default:
             break;
     }
-    return QMainWindow::eventFilter (aObject, aEvent);
+    return Q3MainWindow::eventFilter (aObject, aEvent);
 }
 
 
 bool VBoxDiskImageManagerDlg::event (QEvent *aEvent)
 {
-    bool result = QMainWindow::event (aEvent);
+    bool result = Q3MainWindow::event (aEvent);
     switch (aEvent->type())
     {
         case QEvent::LanguageChange:
@@ -732,7 +756,7 @@ bool VBoxDiskImageManagerDlg::event (QEvent *aEvent)
 
 void VBoxDiskImageManagerDlg::addDroppedImages (QStringList *aDroppedList)
 {
-    QListView *currentList = getCurrentListView();
+    Q3ListView *currentList = getCurrentListView();
 
     for (QStringList::Iterator it = (*aDroppedList).begin();
          it != (*aDroppedList).end(); ++it)
@@ -836,7 +860,7 @@ void VBoxDiskImageManagerDlg::addImageToList (const QString &aSource,
 }
 
 
-DiskImageItem* VBoxDiskImageManagerDlg::createImageNode (QListView *aList,
+DiskImageItem* VBoxDiskImageManagerDlg::createImageNode (Q3ListView *aList,
                                                          DiskImageItem *aRoot,
                                                          const VBoxMedia &aMedia)
 {
@@ -855,7 +879,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::createImageNode (QListView *aList,
 }
 
 
-void VBoxDiskImageManagerDlg::invokePopup (QListViewItem *aItem, const QPoint & aPos, int)
+void VBoxDiskImageManagerDlg::invokePopup (Q3ListViewItem *aItem, const QPoint & aPos, int)
 {
     if (aItem)
         itemMenu->popup(aPos);
@@ -878,7 +902,7 @@ QString VBoxDiskImageManagerDlg::getDVDImageUsage (const QUuid &aId,
          it != permMachines.end();
          ++it)
     {
-        if (usage)
+        if (!usage.isEmpty())
             usage += ", ";
         CMachine machine = vbox.GetMachine (QUuid (*it));
         usage += machine.GetName();
@@ -894,7 +918,7 @@ QString VBoxDiskImageManagerDlg::getDVDImageUsage (const QUuid &aId,
         /* skip IDs that are in the permanent list */
         if (!permMachines.contains (*it))
         {
-            if (usage)
+            if (!usage.isEmpty())
                 usage += ", [";
             else
                 usage += "[";
@@ -925,7 +949,7 @@ QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId,
          it != permMachines.end();
          ++it)
     {
-        if (usage)
+        if (!usage.isEmpty())
             usage += ", ";
         CMachine machine = vbox.GetMachine (QUuid (*it));
         usage += machine.GetName();
@@ -941,7 +965,7 @@ QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId,
         /* skip IDs that are in the permanent list */
         if (!permMachines.contains (*it))
         {
-            if (usage)
+            if (!usage.isEmpty())
                 usage += ", [";
             else
                 usage += "[";
@@ -967,7 +991,7 @@ void VBoxDiskImageManagerDlg::getDVDImageSnapshotUsage (const QUuid &aImageId,
     if (!aSnapshot.GetMachine().GetDVDDrive().GetImage().isNull() &&
         aSnapshot.GetMachine().GetDVDDrive().GetImage().GetId() == aImageId)
     {
-        if (aUsage)
+        if (!aUsage.isEmpty())
             aUsage += ", ";
         aUsage += aSnapshot.GetName();
     }
@@ -987,7 +1011,7 @@ void VBoxDiskImageManagerDlg::getFloppyImageSnapshotUsage (const QUuid &aImageId
     if (!aSnapshot.GetMachine().GetFloppyDrive().GetImage().isNull() &&
         aSnapshot.GetMachine().GetFloppyDrive().GetImage().GetId() == aImageId)
     {
-        if (aUsage)
+        if (!aUsage.isEmpty())
             aUsage += ", ";
         aUsage += aSnapshot.GetName();
     }
@@ -1327,7 +1351,7 @@ void VBoxDiskImageManagerDlg::updateFdItem (DiskImageItem   *aItem,
 }
 
 
-DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView *aList,
+DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (Q3ListView *aList,
                                                       const VBoxMedia &aMedia)
 {
     CHardDisk hd = aMedia.disk;
@@ -1338,7 +1362,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::createHdItem (QListView *aList,
     return item;
 }
 
-DiskImageItem* VBoxDiskImageManagerDlg::createCdItem (QListView *aList,
+DiskImageItem* VBoxDiskImageManagerDlg::createCdItem (Q3ListView *aList,
                                                       const VBoxMedia &aMedia)
 {
     DiskImageItem *item = createImageNode (aList, 0, aMedia);
@@ -1346,7 +1370,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::createCdItem (QListView *aList,
     return item;
 }
 
-DiskImageItem* VBoxDiskImageManagerDlg::createFdItem (QListView *aList,
+DiskImageItem* VBoxDiskImageManagerDlg::createFdItem (Q3ListView *aList,
                                                       const VBoxMedia &aMedia)
 {
     DiskImageItem *item = createImageNode (aList, 0, aMedia);
@@ -1365,7 +1389,7 @@ void VBoxDiskImageManagerDlg::makeWarningMark (DiskImageItem *aItem,
     if (!pm.isNull())
     {
         aItem->setPixmap (0, pm);
-        QIconSet iconSet (pm);
+        QIcon iconSet (pm);
         QWidget *wt = aType == VBoxDefs::HD ? twImages->page (0) :
                       aType == VBoxDefs::CD ? twImages->page (1) :
                       aType == VBoxDefs::FD ? twImages->page (2) : 0;
@@ -1376,7 +1400,7 @@ void VBoxDiskImageManagerDlg::makeWarningMark (DiskImageItem *aItem,
 }
 
 
-DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QListView *aList,
+DiskImageItem* VBoxDiskImageManagerDlg::searchItem (Q3ListView *aList,
                                                     const QUuid &aId)
 {
     if (aId.isNull()) return 0;
@@ -1391,7 +1415,7 @@ DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QListView *aList,
 }
 
 
-DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QListView *aList,
+DiskImageItem* VBoxDiskImageManagerDlg::searchItem (Q3ListView *aList,
                                                     VBoxMedia::Status aStatus)
 {
     DiskImageItemIterator iterator (aList);
@@ -1642,7 +1666,7 @@ void VBoxDiskImageManagerDlg::mediaUpdated (const VBoxMedia &aMedia)
 void VBoxDiskImageManagerDlg::mediaRemoved (VBoxDefs::DiskType aType,
                                             const QUuid &aId)
 {
-    QListView *listView = getListView (aType);
+    Q3ListView *listView = getListView (aType);
     DiskImageItem *item = searchItem (listView, aId);
     delete item;
     setCurrentItem (listView, listView->currentItem());
@@ -1653,9 +1677,9 @@ void VBoxDiskImageManagerDlg::mediaRemoved (VBoxDefs::DiskType aType,
         QWidget *wt = aType == VBoxDefs::HD ? twImages->page (0) :
                       aType == VBoxDefs::CD ? twImages->page (1) :
                       aType == VBoxDefs::FD ? twImages->page (2) : 0;
-        const QIconSet &set = aType == VBoxDefs::HD ? pxHD :
+        const QIcon &set = aType == VBoxDefs::HD ? pxHD :
                               aType == VBoxDefs::CD ? pxCD :
-                              aType == VBoxDefs::FD ? pxFD : QIconSet();
+                              aType == VBoxDefs::FD ? pxFD : QIcon();
         Assert (wt && !set.isNull()); /* atype should be the correct one */
         twImages->changeTab (wt, set, twImages->tabLabel (wt));
     }
@@ -1709,11 +1733,11 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
     }
 
     imRefreshAction->setEnabled (false);
-    setCursor (QCursor (BusyCursor));
+    setCursor (QCursor (Qt::BusyCursor));
 
     /* store the current list selections */
 
-    QListViewItem *item;
+    Q3ListViewItem *item;
     DiskImageItem *di;
 
     item = hdsView->currentItem();
@@ -1753,7 +1777,7 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
     QUuid itemId = aItem ? aItem->getUuid() : QUuid();
     if (itemId.isNull()) return false;
 
-    QListView* parentList = aItem->listView();
+    Q3ListView* parentList = aItem->listView();
     if (parentList == hdsView)
     {
         CHardDisk hd = aItem->getMedia().disk;
@@ -1807,8 +1831,8 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
 }
 
 
-void VBoxDiskImageManagerDlg::setCurrentItem (QListView *aListView,
-                                              QListViewItem *aItem)
+void VBoxDiskImageManagerDlg::setCurrentItem (Q3ListView *aListView,
+                                              Q3ListViewItem *aItem)
 {
     if (!aItem)
         return;
@@ -1820,7 +1844,7 @@ void VBoxDiskImageManagerDlg::setCurrentItem (QListView *aListView,
 
 void VBoxDiskImageManagerDlg::processCurrentChanged()
 {
-    QListView *currentList = getCurrentListView();
+    Q3ListView *currentList = getCurrentListView();
     currentList->setFocus();
 
     /* tab stop setup */
@@ -1845,7 +1869,7 @@ void VBoxDiskImageManagerDlg::processCurrentChanged()
     processCurrentChanged (currentList->currentItem());
 }
 
-void VBoxDiskImageManagerDlg::processCurrentChanged (QListViewItem *aItem)
+void VBoxDiskImageManagerDlg::processCurrentChanged (Q3ListViewItem *aItem)
 {
     DiskImageItem *item = aItem && aItem->rtti() == DiskImageItem::TypeId ?
         static_cast<DiskImageItem*> (aItem) : 0;
@@ -1909,11 +1933,11 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QListViewItem *aItem)
 }
 
 
-void VBoxDiskImageManagerDlg::processPressed (QListViewItem * aItem)
+void VBoxDiskImageManagerDlg::processPressed (Q3ListViewItem * aItem)
 {
     if (!aItem)
     {
-        QListView *currentList = getCurrentListView();
+        Q3ListView *currentList = getCurrentListView();
         currentList->setSelected (currentList->currentItem(), true);
     }
 }
@@ -1939,7 +1963,7 @@ void VBoxDiskImageManagerDlg::newImage()
 
 void VBoxDiskImageManagerDlg::addImage()
 {
-    QListView *currentList = getCurrentListView();
+    Q3ListView *currentList = getCurrentListView();
     DiskImageItem *item =
         currentList->currentItem() &&
         currentList->currentItem()->rtti() == DiskImageItem::TypeId ?
@@ -1949,11 +1973,11 @@ void VBoxDiskImageManagerDlg::addImage()
     if (item && item->getStatus() == VBoxMedia::Ok)
         dir = QFileInfo (item->getPath().stripWhiteSpace()).dirPath (true);
 
-    if (!dir)
+    if (dir.isEmpty())
         if (currentList == hdsView)
             dir = vbox.GetSystemProperties().GetDefaultVDIFolder();
 
-    if (!dir || !QFileInfo (dir).exists())
+    if (dir.isEmpty() || !QFileInfo (dir).exists())
         dir = vbox.GetHomeFolder();
 
     QString title;
@@ -2000,7 +2024,7 @@ void VBoxDiskImageManagerDlg::addImage()
 
 void VBoxDiskImageManagerDlg::removeImage()
 {
-    QListView *currentList = getCurrentListView();
+    Q3ListView *currentList = getCurrentListView();
     DiskImageItem *item =
         currentList->currentItem() &&
         currentList->currentItem()->rtti() == DiskImageItem::TypeId ?
@@ -2077,7 +2101,7 @@ void VBoxDiskImageManagerDlg::removeImage()
 
 void VBoxDiskImageManagerDlg::releaseImage()
 {
-    QListView *currentList = getCurrentListView();
+    Q3ListView *currentList = getCurrentListView();
     DiskImageItem *item =
         currentList->currentItem() &&
         currentList->currentItem()->rtti() == DiskImageItem::TypeId ?
@@ -2216,7 +2240,7 @@ void VBoxDiskImageManagerDlg::releaseDisk (QUuid aMachineId,
 
 QUuid VBoxDiskImageManagerDlg::getSelectedUuid()
 {
-    QListView *currentList = getCurrentListView();
+    Q3ListView *currentList = getCurrentListView();
     QUuid uuid;
 
     if (currentList->selectedItem() &&
@@ -2230,7 +2254,7 @@ QUuid VBoxDiskImageManagerDlg::getSelectedUuid()
 
 QString VBoxDiskImageManagerDlg::getSelectedPath()
 {
-    QListView *currentList = getCurrentListView();
+    Q3ListView *currentList = getCurrentListView();
     QString path;
 
     if (currentList->selectedItem() &&
@@ -2242,9 +2266,9 @@ QString VBoxDiskImageManagerDlg::getSelectedPath()
 }
 
 
-void VBoxDiskImageManagerDlg::processDoubleClick (QListViewItem*)
+void VBoxDiskImageManagerDlg::processDoubleClick (Q3ListViewItem*)
 {
-    QListView *currentList = getCurrentListView();
+    Q3ListView *currentList = getCurrentListView();
 
     if (doSelect && currentList->selectedItem() && buttonOk->isEnabled())
         accept();

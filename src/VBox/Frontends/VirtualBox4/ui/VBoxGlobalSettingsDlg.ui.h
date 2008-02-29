@@ -28,6 +28,13 @@
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+//Added by qt3to4:
+#include <QTranslator>
+#include <QLabel>
+#include <q3mimefactory.h>
+#include <QEvent>
+#include <QShowEvent>
+#include <Q3WhatsThis>
 
 /* defined in VBoxGlobal.cpp */
 extern const char *gVBoxLangSubDir;
@@ -40,11 +47,11 @@ extern const char *gVBoxBuiltInLangName;
  *  Returns the path to the item in the form of 'grandparent > parent > item'
  *  using the text of the first column of every item.
  */
-static QString path (QListViewItem *li)
+static QString path (Q3ListViewItem *li)
 {
     static QString sep = ": ";
     QString p;
-    QListViewItem *cur = li;
+    Q3ListViewItem *cur = li;
     while (cur)
     {
         if (!p.isNull())
@@ -65,12 +72,12 @@ enum
 };
 
 
-class USBListItem : public QCheckListItem
+class USBListItem : public Q3CheckListItem
 {
 public:
 
-    USBListItem (QListView *aParent, QListViewItem *aAfter)
-        : QCheckListItem (aParent, aAfter, QString::null, CheckBox)
+    USBListItem (Q3ListView *aParent, Q3ListViewItem *aAfter)
+        : Q3CheckListItem (aParent, aAfter, QString::null, CheckBox)
         , mId (-1) {}
 
     int mId;
@@ -78,19 +85,19 @@ public:
 enum { lvUSBFilters_Name = 0 };
 
 
-class LanguageItem : public QListViewItem
+class LanguageItem : public Q3ListViewItem
 {
 public:
 
     enum { TypeId = 1001 };
 
-    LanguageItem (QListView *aParent, const QTranslator &aTranslator,
+    LanguageItem (Q3ListView *aParent, const QTranslator &aTranslator,
                   const QString &aId, bool aBuiltIn = false)
-        : QListViewItem (aParent), mBuiltIn (aBuiltIn), mInvalid (false)
+        : Q3ListViewItem (aParent), mBuiltIn (aBuiltIn), mInvalid (false)
     {
         Assert (!aId.isEmpty());
 
-        QTranslatorMessage transMes;
+//        QTranslatorMessage transMes;
 
         /* Note: context/source/comment arguments below must match strings
          * used in VBoxGlobal::languageName() and friends (the latter are the
@@ -140,8 +147,8 @@ public:
 
     /* Constructs an item for an invalid language ID (i.e. when a language
      * file is missing or corrupt). */
-    LanguageItem (QListView *aParent, const QString &aId)
-        : QListViewItem (aParent), mBuiltIn (false), mInvalid (true)
+    LanguageItem (Q3ListView *aParent, const QString &aId)
+        : Q3ListViewItem (aParent), mBuiltIn (false), mInvalid (true)
     {
         Assert (!aId.isEmpty());
 
@@ -153,8 +160,8 @@ public:
 
     /* Constructs an item for the default language ID (column 1 will be set
      * to QString::null) */
-    LanguageItem (QListView *aParent)
-        : QListViewItem (aParent), mBuiltIn (false), mInvalid (false)
+    LanguageItem (Q3ListView *aParent)
+        : Q3ListViewItem (aParent), mBuiltIn (false), mInvalid (false)
     {
         setText (0, VBoxGlobalSettingsDlg::tr ("Default", "Language"));
         setText (1, QString::null);
@@ -166,7 +173,7 @@ public:
 
     int rtti() const { return TypeId; }
 
-    int compare (QListViewItem *aItem, int aColumn, bool aAscending) const
+    int compare (Q3ListViewItem *aItem, int aColumn, bool aAscending) const
     {
         QString thisId = text (1);
         QString thatId = aItem->text (1);
@@ -178,7 +185,7 @@ public:
             return -1;
         if (aItem->rtti() == TypeId && ((LanguageItem *) aItem)->mBuiltIn)
             return 1;
-        return QListViewItem::compare (aItem, aColumn, aAscending);
+        return Q3ListViewItem::compare (aItem, aColumn, aAscending);
     }
 
     void paintCell (QPainter *aPainter, const QColorGroup &aGroup,
@@ -195,7 +202,7 @@ public:
         if (aPainter->font() != font)
             aPainter->setFont (font);
 
-        QListViewItem::paintCell (aPainter, aGroup, aColumn, aWidth, aAlign);
+        Q3ListViewItem::paintCell (aPainter, aGroup, aColumn, aWidth, aAlign);
 
         if (mBuiltIn)
         {
@@ -205,7 +212,7 @@ public:
         }
     }
 
-    int width (const QFontMetrics &aFM, const QListView *aLV, int aC) const
+    int width (const QFontMetrics &aFM, const Q3ListView *aLV, int aC) const
     {
         QFont font = aLV->font();
 
@@ -219,12 +226,12 @@ public:
         if (aLV->font() != font)
             fm = QFontMetrics (font);
 
-        return QListViewItem::width (fm, aLV, aC);
+        return Q3ListViewItem::width (fm, aLV, aC);
     }
 
     void setup ()
     {
-        QListViewItem::setup();
+        Q3ListViewItem::setup();
         if (mBuiltIn)
             setHeight (height() + 1);
     }
@@ -234,7 +241,9 @@ private:
     QString tratra (const QTranslator &aTranslator, const char *aCtxt,
                        const char *aSrc, const char *aCmnt)
     {
-        QString msg = aTranslator.findMessage (aCtxt, aSrc, aCmnt).translation();
+#warning port me: check this
+        QString msg = aTranslator.translate (aCtxt, aSrc, aCmnt);
+//        QString msg = aTranslator.findMessage (aCtxt, aSrc, aCmnt).translation();
         /* return the source text if no translation is found */
         if (msg.isEmpty())
             msg = QString (aSrc);
@@ -250,12 +259,13 @@ void VBoxGlobalSettingsDlg::init()
 {
     polished = false;
 
-    setIcon (QPixmap::fromMimeSource ("global_settings_16px.png"));
+    setIcon (qPixmapFromMimeSource ("global_settings_16px.png"));
 
     /*  all pages are initially valid */
     valid = true;
     buttonOk->setEnabled (true);
-    warningSpacer->changeSize (0, 0, QSizePolicy::Expanding);
+#warning port me
+//    warningSpacer->changeSize (0, 0, QSizePolicy::Expanding);
     warningLabel->setHidden (true);
     warningPixmap->setHidden (true);
 
@@ -263,8 +273,8 @@ void VBoxGlobalSettingsDlg::init()
     new QIListViewSelectionPreserver (this, listView);
     /*  hide the header and internal columns */
     listView->header()->hide();
-    listView->setColumnWidthMode (listView_Id, QListView::Manual);
-    listView->setColumnWidthMode (listView_Link, QListView::Manual);
+    listView->setColumnWidthMode (listView_Id, Q3ListView::Manual);
+    listView->setColumnWidthMode (listView_Link, Q3ListView::Manual);
     listView->hideColumn (listView_Id);
     listView->hideColumn (listView_Link);
     /*  sort by the id column (to have pages in the desired order) */
@@ -288,7 +298,8 @@ void VBoxGlobalSettingsDlg::init()
     whatsThisCandidate = NULL;
 
     whatsThisLabel = new QIRichLabel (this, "whatsThisLabel");
-    VBoxGlobalSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
+#warning port me
+//    VBoxGlobalSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
 
 #ifndef DEBUG
     /* Enforce rich text format to avoid jumping margins (margins of plain
@@ -302,16 +313,16 @@ void VBoxGlobalSettingsDlg::init()
 #endif
 
     whatsThisLabel->setMaxHeightMode (true);
-    whatsThisLabel->setFocusPolicy (QWidget::NoFocus);
+    whatsThisLabel->setFocusPolicy (Qt::NoFocus);
     whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
-    whatsThisLabel->setBackgroundMode (QLabel::PaletteMidlight);
+    whatsThisLabel->setBackgroundMode (Qt::PaletteMidlight);
     whatsThisLabel->setFrameShape (QLabel::Box);
     whatsThisLabel->setFrameShadow (QLabel::Sunken);
     whatsThisLabel->setMargin (7);
     whatsThisLabel->setScaledContents (FALSE);
-    whatsThisLabel->setAlignment (int (QLabel::WordBreak |
-                                       QLabel::AlignJustify |
-                                       QLabel::AlignTop));
+    whatsThisLabel->setAlignment (int (Qt::TextWordWrap |
+                                       Qt::AlignJustify |
+                                       Qt::AlignTop));
 
     whatsThisLabel->setFixedHeight (whatsThisLabel->frameWidth() * 2 +
                                     6 /* seems that RichText adds some margin */ +
@@ -327,11 +338,12 @@ void VBoxGlobalSettingsDlg::init()
 
     hkeHostKey = new QIHotKeyEdit (grbKeyboard, "hkeHostKey");
     hkeHostKey->setSizePolicy (QSizePolicy (QSizePolicy::Preferred, QSizePolicy::Fixed));
-    QWhatsThis::add (hkeHostKey,
+    Q3WhatsThis::add (hkeHostKey,
         tr ("Displays the key used as a Host Key in the VM window. Activate the "
             "entry field and press a new Host Key. Note that alphanumeric, "
             "cursor movement and editing keys cannot be used as a Host Key."));
-    layoutHostKey->addWidget (hkeHostKey);
+#warning port me
+//    layoutHostKey->addWidget (hkeHostKey);
     txHostKey->setBuddy (hkeHostKey);
     setTabOrder (listView, hkeHostKey);
 
@@ -359,8 +371,9 @@ void VBoxGlobalSettingsDlg::init()
     lvUSBFilters->setSorting (-1);
     /* disable unselecting items by clicking in the unused area of the list */
     new QIListViewSelectionPreserver (this, lvUSBFilters);
-    wstUSBFilters = new QWidgetStack (grbUSBFilters, "wstUSBFilters");
-    grbUSBFiltersLayout->addWidget (wstUSBFilters);
+    wstUSBFilters = new Q3WidgetStack (grbUSBFilters, "wstUSBFilters");
+#warning port me
+//    grbUSBFiltersLayout->addWidget (wstUSBFilters);
     /* create a default (disabled) filter settings widget at index 0 */
     VBoxUSBFilterSettings *settings = new VBoxUSBFilterSettings (wstUSBFilters);
     settings->setup (VBoxUSBFilterSettings::HostType);
@@ -440,7 +453,7 @@ void VBoxGlobalSettingsDlg::init()
  */
 QString VBoxGlobalSettingsDlg::pagePath (QWidget *aPage)
 {
-    QListViewItem *li = listView->
+    Q3ListViewItem *li = listView->
         findItem (QString::number (widgetStack->id (aPage)), 1);
     return ::path (li);
 }
@@ -526,7 +539,7 @@ void VBoxGlobalSettingsDlg::showEvent (QShowEvent *e)
     VBoxGlobal::centerWidget (this, parentWidget());
 }
 
-void VBoxGlobalSettingsDlg::listView_currentChanged (QListViewItem *item)
+void VBoxGlobalSettingsDlg::listView_currentChanged (Q3ListViewItem *item)
 {
     Assert (item);
     int id = item->text (1).toInt();
@@ -548,10 +561,8 @@ void VBoxGlobalSettingsDlg::enableOk (const QIWidgetValidator *wval)
     /* detect the overall validity */
     bool newValid = true;
     {
-        QObjectList *l = this->queryList ("QIWidgetValidator");
-        QObjectListIt it (*l);
-        QObject *obj;
-        while ((obj = it.current()) != 0)
+        QObjectList l = this->queryList ("QIWidgetValidator");
+        foreach (QObject *obj, l)
         {
             QIWidgetValidator *wval = (QIWidgetValidator *) obj;
             newValid = wval->isValid();
@@ -560,9 +571,7 @@ void VBoxGlobalSettingsDlg::enableOk (const QIWidgetValidator *wval)
                 wvalWarning = wval->warningText();
                 break;
             }
-            ++ it;
         }
-        delete l;
     }
 
     if (warningString.isNull() && !wvalWarning.isNull())
@@ -636,7 +645,7 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
         /* disable the USB host filters category if the USB is
          * not available (i.e. in VirtualBox OSE) */
 
-        QListViewItem *usbItem = listView->findItem ("#usb", listView_Link);
+        Q3ListViewItem *usbItem = listView->findItem ("#usb", listView_Link);
         Assert (usbItem);
         usbItem->setVisible (false);
 
@@ -662,7 +671,7 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
     /* language properties */
 
     QString langId = gs.languageId();
-    QListViewItem *item = lvLanguages->findItem (langId, 1);
+    Q3ListViewItem *item = lvLanguages->findItem (langId, 1);
     if (!item)
     {
         /* add an item for an invalid language to represent it in the list */
@@ -718,7 +727,7 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
             host.RemoveUSBDeviceFilter (0);
 
     /* then add all new filters */
-    for (QListViewItem *item = lvUSBFilters->firstChild(); item;
+    for (Q3ListViewItem *item = lvUSBFilters->firstChild(); item;
          item = item->nextSibling())
     {
         USBListItem *uli = static_cast <USBListItem *> (item);
@@ -743,7 +752,7 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
 
     /* language properties */
 
-    QListViewItem *selItem = lvLanguages->selectedItem();
+    Q3ListViewItem *selItem = lvLanguages->selectedItem();
     Assert (selItem);
     if (mLanguageChanged && selItem)
     {
@@ -764,12 +773,14 @@ void VBoxGlobalSettingsDlg::updateWhatsThis (bool gotFocus /* = false */)
     }
     else
     {
-        widget = focusData()->focusWidget();
+#warning port me
+//        widget = focusData()->focusWidget();
     }
     /* if the given widget lacks the whats'this text, look at its parent */
     while (widget && widget != this)
     {
-        text = QWhatsThis::textFor (widget);
+#warning port me
+//        text = Q3WhatsThis::textFor (widget);
         if (!text.isEmpty())
             break;
         widget = widget->parentWidget();
@@ -777,8 +788,9 @@ void VBoxGlobalSettingsDlg::updateWhatsThis (bool gotFocus /* = false */)
 
     if (text.isEmpty() && !warningString.isEmpty())
         text = warningString;
-    if (text.isEmpty())
-        text = QWhatsThis::textFor (this);
+#warning port me
+//    if (text.isEmpty())
+//        text = Q3WhatsThis::textFor (this);
 
     whatsThisLabel->setText (text);
 }
@@ -797,7 +809,7 @@ void VBoxGlobalSettingsDlg::setWarning (const QString &warning)
 
 void VBoxGlobalSettingsDlg::tbResetFolder_clicked()
 {
-    QToolButton *tb = ::qt_cast <QToolButton *> (sender());
+    QToolButton *tb = qobject_cast <QToolButton *> (sender());
     Assert (tb);
 
     QLineEdit *le = 0;
@@ -816,7 +828,7 @@ void VBoxGlobalSettingsDlg::tbResetFolder_clicked()
 
 void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
 {
-    QToolButton *tb = ::qt_cast <QToolButton *> (sender());
+    QToolButton *tb = qobject_cast <QToolButton *> (sender());
     Assert (tb);
 
     QLineEdit *le = 0;
@@ -854,7 +866,7 @@ void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
 void VBoxGlobalSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter,
                                           bool aIsNew)
 {
-    QListViewItem *currentItem = aIsNew
+    Q3ListViewItem *currentItem = aIsNew
         ? lvUSBFilters->currentItem()
         : lvUSBFilters->lastItem();
 
@@ -893,7 +905,7 @@ void VBoxGlobalSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter,
     wval->revalidate();
 }
 
-void VBoxGlobalSettingsDlg::lvUSBFilters_currentChanged (QListViewItem *item)
+void VBoxGlobalSettingsDlg::lvUSBFilters_currentChanged (Q3ListViewItem *item)
 {
     if (item && lvUSBFilters->selectedItem() != item)
         lvUSBFilters->setSelected (item, true);
@@ -917,7 +929,7 @@ void VBoxGlobalSettingsDlg::lvUSBFilters_currentChanged (QListViewItem *item)
 
 void VBoxGlobalSettingsDlg::lvUSBFilters_setCurrentText (const QString &aText)
 {
-    QListViewItem *item = lvUSBFilters->currentItem();
+    Q3ListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
 
     item->setText (lvUSBFilters_Name, aText);
@@ -929,7 +941,7 @@ void VBoxGlobalSettingsDlg::tbAddUSBFilter_clicked()
     int maxFilterIndex = 0;
     QString usbFilterName = tr ("New Filter %1", "usb");
     QRegExp regExp (QString ("^") + usbFilterName.arg ("([0-9]+)") + QString ("$"));
-    QListViewItemIterator iterator (lvUSBFilters);
+    Q3ListViewItemIterator iterator (lvUSBFilters);
     while (*iterator)
     {
         QString filterName = (*iterator)->text (lvUSBFilters_Name);
@@ -996,7 +1008,7 @@ void VBoxGlobalSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
 
 void VBoxGlobalSettingsDlg::tbRemoveUSBFilter_clicked()
 {
-    QListViewItem *item = lvUSBFilters->currentItem();
+    Q3ListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
 
     USBListItem *uli = static_cast <USBListItem *> (item);
@@ -1013,10 +1025,10 @@ void VBoxGlobalSettingsDlg::tbRemoveUSBFilter_clicked()
 
 void VBoxGlobalSettingsDlg::tbUSBFilterUp_clicked()
 {
-    QListViewItem *item = lvUSBFilters->currentItem();
+    Q3ListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
 
-    QListViewItem *itemAbove = item->itemAbove();
+    Q3ListViewItem *itemAbove = item->itemAbove();
     Assert (itemAbove);
     itemAbove = itemAbove->itemAbove();
 
@@ -1031,10 +1043,10 @@ void VBoxGlobalSettingsDlg::tbUSBFilterUp_clicked()
 
 void VBoxGlobalSettingsDlg::tbUSBFilterDown_clicked()
 {
-    QListViewItem *item = lvUSBFilters->currentItem();
+    Q3ListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
 
-    QListViewItem *itemBelow = item->itemBelow();
+    Q3ListViewItem *itemBelow = item->itemBelow();
     Assert (itemBelow);
 
     item->moveItem (itemBelow);
@@ -1043,7 +1055,7 @@ void VBoxGlobalSettingsDlg::tbUSBFilterDown_clicked()
     mUSBFilterListModified = true;
 }
 
-void VBoxGlobalSettingsDlg::lvLanguages_currentChanged (QListViewItem *aItem)
+void VBoxGlobalSettingsDlg::lvLanguages_currentChanged (Q3ListViewItem *aItem)
 {
     Assert (aItem);
     if (!aItem) return;
@@ -1072,7 +1084,7 @@ void VBoxGlobalSettingsDlg::fixLanguageChange()
         /* disable the USB host filters category if the USB is
          * not available (i.e. in VirtualBox OSE) */
 
-        QListViewItem *usbItem = listView->findItem ("#usb", listView_Link);
+        Q3ListViewItem *usbItem = listView->findItem ("#usb", listView_Link);
         Assert (usbItem);
         usbItem->setVisible (false);
 

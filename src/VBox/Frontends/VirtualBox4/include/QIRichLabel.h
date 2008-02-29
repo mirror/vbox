@@ -23,39 +23,49 @@
 #ifndef __QIRichLabel_h__
 #define __QIRichLabel_h__
 
-#include "qframe.h"
+#include "q3frame.h"
+//Added by qt3to4:
+#include <Q3Accel>
+#include <Q3Picture>
+#include <QPixmap>
+#include <QResizeEvent>
+#include <QMouseEvent>
+#include <QContextMenuEvent>
+#include <QKeyEvent>
+#include <Q3PopupMenu>
+#include <QFocusEvent>
 
-class QSimpleRichText;
+class Q3SimpleRichText;
 class QLabelPrivate;
 class QAction;
-class QPopupMenu;
+class Q3PopupMenu;
 
-class QIRichLabel : public QFrame
+class QIRichLabel : public Q3Frame
 {
    Q_OBJECT
       Q_PROPERTY( QString text READ text WRITE setText )
-      Q_PROPERTY( TextFormat textFormat READ textFormat WRITE setTextFormat )
+      Q_PROPERTY( Qt::TextFormat textFormat READ textFormat WRITE setTextFormat )
       Q_PROPERTY( QPixmap pixmap READ pixmap WRITE setPixmap )
       Q_PROPERTY( bool scaledContents READ hasScaledContents WRITE setScaledContents )
-      Q_PROPERTY( Alignment alignment READ alignment WRITE setAlignment )
+//      Q_PROPERTY( Qt::Alignment alignment READ alignment WRITE setAlignment )
       Q_PROPERTY( int indent READ indent WRITE setIndent )
-      Q_OVERRIDE( BackgroundMode backgroundMode DESIGNABLE true )
+      Q_OVERRIDE( Qt::BackgroundMode backgroundMode DESIGNABLE true )
 
 public:
-   QIRichLabel (QWidget *parent, const char* name=0, WFlags f=0);
+   QIRichLabel (QWidget *parent, const char* name=0, Qt::WFlags f=0);
    QIRichLabel (const QString &text, QWidget *parent, const char* name=0,
-              WFlags f=0);
+              Qt::WFlags f=0);
    QIRichLabel (QWidget *buddy, const QString &,
-              QWidget *parent, const char* name=0, WFlags f=0 );
+              QWidget *parent, const char* name=0, Qt::WFlags f=0 );
    ~QIRichLabel();
 
    QString      text()    const   { return ltext; }
    QPixmap     *pixmap()  const   { return lpixmap; }
-   QPicture    *picture() const   { return lpicture; }
+   Q3Picture    *picture() const   { return lpicture; }
    QMovie      *movie()   const;
 
-   TextFormat   textFormat() const;
-   void         setTextFormat( TextFormat );
+   Qt::TextFormat   textFormat() const;
+   void         setTextFormat( Qt::TextFormat );
 
    int          alignment() const  { return align; }
    virtual void setAlignment( int );
@@ -80,7 +90,7 @@ public:
 public slots:
    virtual void setText( const QString &);
    virtual void setPixmap( const QPixmap & );
-   virtual void setPicture( const QPicture & );
+   virtual void setPicture( const Q3Picture & );
    virtual void setMovie( const QMovie & );
    virtual void setNum( int );
    virtual void setNum( double );
@@ -119,9 +129,9 @@ private:
    QString     mTipText;
    bool        mIsMainTip;
    QPixmap    *lpixmap;
-   QPicture   *lpicture;
+   Q3Picture   *lpicture;
    QMovie     *lmovie;
-   QPopupMenu *popupMenu;
+   Q3PopupMenu *popupMenu;
    QString     popupBuffer;
    QWidget    *lbuddy;
    ushort      align;
@@ -129,10 +139,10 @@ private:
    uint        autoresize:1;
    uint        scaledcontents :1;
    uint        baseheight;
-   TextFormat  textformat;
-   QAccel     *accel;
+   Qt::TextFormat  textformat;
+   Q3Accel     *accel;
    QLabelPrivate *d;
-   QSimpleRichText *doc;
+   Q3SimpleRichText *doc;
    bool        mMaxHeightMode;
 
    friend class QTipLabel;

@@ -23,6 +23,9 @@
 #include "VBoxConsoleView.h"
 
 #include <qapplication.h>
+//Added by qt3to4:
+#include <QMoveEvent>
+#include <QPaintEvent>
 
 #include <iprt/param.h>
 #include <iprt/alloc.h>

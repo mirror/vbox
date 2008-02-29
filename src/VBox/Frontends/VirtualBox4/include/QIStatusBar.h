@@ -20,6 +20,8 @@
 #define __QIStatusBar_h__
 
 #include <qstatusbar.h>
+//Added by qt3to4:
+#include <QPaintEvent>
 
 class QPaintEvent;
 

@@ -19,10 +19,12 @@
 #ifndef __VBoxToolBar_h__
 #define __VBoxToolBar_h__
 
-#include <qtoolbar.h>
+#include <q3toolbar.h>
 #include <qtoolbutton.h>
-#include <qmainwindow.h>
-#include <qobjectlist.h>
+#include <q3mainwindow.h>
+#include <qobject.h>
+//Added by qt3to4:
+#include <QContextMenuEvent>
 #ifdef Q_WS_MAC
 # include "VBoxAquaStyle.h"
 #endif
@@ -31,12 +33,12 @@
  *  The VBoxToolBar class is a simple QToolBar reimplementation to disable
  *  its built-in context menu and add some default behavior we need.
  */
-class VBoxToolBar : public QToolBar
+class VBoxToolBar : public Q3ToolBar
 {
 public:
 
-    VBoxToolBar (QMainWindow *mainWindow, QWidget *parent, const char *name)
-        : QToolBar (QString::null, mainWindow, parent, FALSE, name)
+    VBoxToolBar (Q3MainWindow *mainWindow, QWidget *parent, const char *name)
+        : Q3ToolBar (QString::null, mainWindow, parent, FALSE, name)
     {
         setResizeEnabled (false);
         setMovingEnabled (false);
@@ -55,16 +57,13 @@ public:
             mainWindow()->setUsesBigPixmaps (enable);
         else
         {
-            QObjectList *list = queryList ("QToolButton");
-            QObjectListIt it (*list);
+            QObjectList list = queryList ("QToolButton");
             QObject *obj;
-            while ((obj = it.current()) != 0)
+            foreach(obj, list)
             {
-                QToolButton *btn = ::qt_cast <QToolButton *> (obj);
+                QToolButton *btn = qobject_cast<QToolButton *> (obj);
                 btn->setUsesBigPixmap (enable);
-                ++ it;
             }
-            delete list;
         }
     }
 
@@ -74,16 +73,13 @@ public:
             mainWindow()->setUsesTextLabel (enable);
         else
         {
-            QObjectList *list = queryList ("QToolButton");
-            QObjectListIt it (*list);
+            QObjectList list = queryList ("QToolButton");
             QObject *obj;
-            while ((obj = it.current()) != 0)
+            foreach(obj, list)
             {
-                QToolButton *btn = ::qt_cast <QToolButton *> (obj);
+                QToolButton *btn = qobject_cast<QToolButton *> (obj);
                 btn->setUsesTextLabel (enable);
-                ++ it;
             }
-            delete list;
         }
     }
 

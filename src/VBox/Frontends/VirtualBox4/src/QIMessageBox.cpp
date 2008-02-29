@@ -17,13 +17,17 @@
  */
 
 #include "QIMessageBox.h"
+//Added by qt3to4:
+#include <Q3HBoxLayout>
+#include <q3mimefactory.h>
+#include <Q3VBoxLayout>
 #include "VBoxDefs.h"
 #include "QIRichLabel.h"
 
 #include <qpixmap.h>
 #include <qlabel.h>
 #include <qpushbutton.h>
-#include <qhbox.h>
+#include <q3hbox.h>
 #include <qlayout.h>
 
 #include <qfontmetrics.h>
@@ -44,10 +48,10 @@
 QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
                             Icon aIcon, int aButton0, int aButton1, int aButton2,
                             QWidget *aParent, const char *aName, bool aModal,
-                            WFlags aFlags)
+                            Qt::WFlags aFlags)
     : QDialog (aParent, aName, aModal,
-               aFlags | WStyle_Customize | WStyle_NormalBorder |
-                        WStyle_Title | WStyle_SysMenu)
+               aFlags | Qt::WStyle_Customize | Qt::WStyle_NormalBorder |
+                        Qt::WStyle_Title | Qt::WStyle_SysMenu)
 {
     setCaption (aCaption);
 
@@ -55,14 +59,14 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mButton1 = aButton1;
     mButton2 = aButton2;
 
-    QVBoxLayout *layout = new QVBoxLayout (this);
+    Q3VBoxLayout *layout = new Q3VBoxLayout (this);
     /* setAutoAdd() behavior is really poor (it messes up with the order
      * of widgets), never use it: layout->setAutoAdd (true); */
     layout->setMargin (11);
     layout->setSpacing (10);
-    layout->setResizeMode (QLayout::Minimum);
+    layout->setResizeMode (QLayout::SetMinimumSize);
 
-    QHBox *main = new QHBox (this);
+    Q3HBox *main = new Q3HBox (this);
     main->setMargin (0);
     main->setSpacing (10);
     layout->addWidget (main);
@@ -71,28 +75,28 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
 	if (aIcon < GuruMeditation)
         mIconLabel->setPixmap (QMessageBox::standardIcon ((QMessageBox::Icon) aIcon));
     else if (aIcon == GuruMeditation)
-        mIconLabel->setPixmap (QPixmap::fromMimeSource ("meditation_32px.png"));
+        mIconLabel->setPixmap (qPixmapFromMimeSource ("meditation_32px.png"));
     mIconLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
-    mIconLabel->setAlignment (AlignHCenter | AlignTop);
+    mIconLabel->setAlignment (Qt::AlignHCenter | Qt::AlignTop);
 
-    mMessageVBox = new QVBox (main);
+    mMessageVBox = new Q3VBox (main);
     mMessageVBox->setMargin (0);
     mMessageVBox->setSpacing (10);
 
     mTextLabel = new QIRichLabel (aText, mMessageVBox);
-    mTextLabel->setAlignment (AlignAuto | AlignTop | ExpandTabs | WordBreak);
+    mTextLabel->setAlignment (Qt::AlignLeft | Qt::AlignTop | Qt::TextExpandTabs | Qt::TextWordWrap);
     mTextLabel->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred, true);
     mTextLabel->setMinimumWidth (mTextLabel->sizeHint().width());
 
     mFlagCB_Main = new QCheckBox (mMessageVBox);
     mFlagCB_Main->hide();
 
-    mDetailsVBox = new QVBox (this);
+    mDetailsVBox = new Q3VBox (this);
     mDetailsVBox->setMargin (0);
     mDetailsVBox->setSpacing (10);
     layout->addWidget (mDetailsVBox);
 
-    mDetailsText = new QTextEdit (mDetailsVBox);
+    mDetailsText = new Q3TextEdit (mDetailsVBox);
     {
         /* calculate the minimum size dynamically, approx. for 40 chars and
          * 6 lines */
@@ -100,7 +104,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
         mDetailsText->setMinimumSize (40 * fm.width ('m'), fm.lineSpacing() * 6);
     }
     mDetailsText->setReadOnly (true);
-    mDetailsText->setWrapPolicy (QTextEdit::AtWordOrDocumentBoundary);
+    mDetailsText->setWrapPolicy (Q3TextEdit::AtWordOrDocumentBoundary);
     mDetailsText->setSizePolicy (QSizePolicy::Expanding,
                                  QSizePolicy::MinimumExpanding);
 
@@ -110,7 +114,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mSpacer = new QSpacerItem (0, 0);
     layout->addItem (mSpacer);
 
-    QHBoxLayout *buttons = new QHBoxLayout (new QWidget (this));
+    Q3HBoxLayout *buttons = new Q3HBoxLayout (new QWidget (this));
     layout->addWidget (buttons->mainWidget());
     buttons->setAutoAdd (true);
     buttons->setSpacing (5);
@@ -127,7 +131,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     if (mButton2PB)
         connect (mButton2PB, SIGNAL (clicked()), SLOT (done2()));
 
-    buttons->setAlignment (AlignHCenter);
+    buttons->setAlignment (Qt::AlignHCenter);
 
     /* this call is a must -- it initializes mFlagCB and mSpacer */
     setDetailsShown (false);

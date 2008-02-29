@@ -18,10 +18,12 @@
 
 #include "QIWidgetValidator.h"
 
-#include <qobjectlist.h>
+#include <qobject.h>
 #include <qlineedit.h>
 #include <qcombobox.h>
 #include <qlabel.h>
+//Added by qt3to4:
+#include <Q3ValueList>
 
 #include <iprt/assert.h>
 
@@ -151,7 +153,7 @@ bool QIWidgetValidator::isValid() const
 
     QValidator::State state = QValidator::Acceptable;
 
-    for (QValueList <Watched>::ConstIterator it = mWatched.begin();
+    for (Q3ValueList <Watched>::ConstIterator it = mWatched.begin();
          it != mWatched.end(); ++ it)
     {
         Watched watched = *it;
@@ -211,14 +213,14 @@ void QIWidgetValidator::rescan()
 
     Watched watched;
 
-    QObjectList *list = mWidget->queryList();
+    QObjectList list = mWidget->queryList();
     QObject *obj;
 
     /* detect all widgets that support validation */
-    QObjectListIterator it (*list);
-    while ((obj = it.current()) != 0)
+    QListIterator<QObject*> it (list);
+    while (it.hasNext())
     {
-        ++ it;
+        obj = it.next();
         if (obj->inherits ("QLineEdit"))
         {
             QLineEdit *le = ((QLineEdit *) obj);
@@ -246,10 +248,10 @@ void QIWidgetValidator::rescan()
 
         /* try to find a buddy widget in order to determine the title for
          * the watched widget which is used in the warning text */
-        QObjectListIterator it2 (*list);
-        while ((obj = it2.current()) != 0)
+        QListIterator<QObject*> it2 (list);
+        while (it2.hasNext())
         {
-            ++ it2;
+            obj = it2.next();
             if (obj->inherits ("QLabel"))
             {
                 QLabel *label = (QLabel *) obj;
@@ -264,9 +266,6 @@ void QIWidgetValidator::rescan()
         /* memorize */
         mWatched << watched;
     }
-
-    /* don't forget to delete the list */
-    delete list;
 }
 
 /** 
