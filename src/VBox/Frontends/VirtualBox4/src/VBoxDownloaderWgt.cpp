@@ -22,12 +22,15 @@
 #include "VBoxDownloaderWgt.h"
 
 #include "qaction.h"
-#include "qprogressbar.h"
+#include "q3progressbar.h"
 #include "qtoolbutton.h"
 #include "qlayout.h"
 #include "qstatusbar.h"
 #include "qdir.h"
 #include "qtimer.h"
+//Added by qt3to4:
+#include <Q3HBoxLayout>
+#include <QEvent>
 
 /* These notifications are used to notify the GUI thread about different
  * downloading events: Downloading Started, Downloading in Progress,
@@ -128,7 +131,7 @@ VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
     , mIsChecking (true), mSuicide (false)
     , mConn (new HConnect (mUrl.host(), 80))
     , mRequestThread (0)
-    , mDataStream (mDataArray, IO_WriteOnly)
+    , mDataStream (&mDataArray, QIODevice::WriteOnly)
     , mTimeout (new QTimer (this))
 {
     /* Disable the associated action */
@@ -139,18 +142,18 @@ VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
     /* Drawing itself */
     setFixedHeight (16);
 
-    mProgressBar = new QProgressBar (this);
+    mProgressBar = new Q3ProgressBar (this);
     mProgressBar->setFixedWidth (100);
     mProgressBar->setPercentageVisible (true);
     mProgressBar->setProgress (0);
 
     mCancelButton = new QToolButton (this);
     mCancelButton->setAutoRaise (true);
-    mCancelButton->setFocusPolicy (TabFocus);
+    mCancelButton->setFocusPolicy (Qt::TabFocus);
     connect (mCancelButton, SIGNAL (clicked()),
              this, SLOT (processAbort()));
 
-    QHBoxLayout *mainLayout = new QHBoxLayout (this);
+    Q3HBoxLayout *mainLayout = new Q3HBoxLayout (this);
     mainLayout->addWidget (mProgressBar);
     mainLayout->addWidget (mCancelButton);
     mainLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
@@ -240,7 +243,7 @@ bool VBoxDownloaderWgt::event (QEvent *aEvent)
             while (true)
             {
                 QFile file (mTarget);
-                if (file.open (IO_WriteOnly))
+                if (file.open (QIODevice::WriteOnly))
                 {
                     file.writeBlock (mDataArray);
                     file.close();

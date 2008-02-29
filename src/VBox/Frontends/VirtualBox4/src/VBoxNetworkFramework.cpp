@@ -18,6 +18,8 @@
 
 #include <VBoxNetworkFramework.h>
 #include <qapplication.h>
+//Added by qt3to4:
+#include <QEvent>
 
 /* These notifications are used to notify the GUI thread about different
  * downloading events: Downloading Started, Downloading in Progress,

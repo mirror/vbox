@@ -1,3 +1,11 @@
+//Added by qt3to4:
+#include <QKeyEvent>
+#include <Q3Frame>
+#include <q3mimefactory.h>
+#include <QResizeEvent>
+#include <QEvent>
+#include <Q3VBoxLayout>
+#include <QShowEvent>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -37,7 +45,7 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
         /* creating new information dialog if there is no one existing */
         mSelfArray [machine.GetName()] = new VBoxVMInformationDlg (
             aConsole,
-            "VBoxVMInformationDlg", WType_TopLevel | WDestructiveClose);
+            "VBoxVMInformationDlg", Qt::WType_TopLevel | Qt::WDestructiveClose);
         /* read new machine data for this information dialog */
         mSelfArray [machine.GetName()]->setup (aSession, aConsole);
     }
@@ -45,7 +53,7 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
     VBoxVMInformationDlg *info = mSelfArray [machine.GetName()];
     info->show();
     info->raise();
-    info->setWindowState (info->windowState() & ~WindowMinimized);
+    info->setWindowState (info->windowState() & ~Qt::WindowMinimized);
     info->setActiveWindow();
 }
 
@@ -60,7 +68,7 @@ void VBoxVMInformationDlg::init()
     qApp->installEventFilter (this);
 
     /* setup a dialog icon */
-    setIcon (QPixmap::fromMimeSource ("description_16px.png"));
+    setIcon (qPixmapFromMimeSource ("description_16px.png"));
 
     /* statusbar initially disabled */
     statusBar()->setHidden (true);
@@ -73,20 +81,20 @@ void VBoxVMInformationDlg::init()
     /* logs list creation */
     mInfoStack = new QTabWidget (mInfoFrame, "mInfoStack");
     mInfoStack->setMargin (10);
-    QVBoxLayout *infoFrameLayout = new QVBoxLayout (mInfoFrame);
+    Q3VBoxLayout *infoFrameLayout = new Q3VBoxLayout (mInfoFrame);
     infoFrameLayout->addWidget (mInfoStack);
 
     /* details view creation */
-    mDetailsText = new QTextBrowser();
-    mDetailsText->setFrameShape (QFrame::NoFrame);
+    mDetailsText = new Q3TextBrowser();
+    mDetailsText->setFrameShape (Q3Frame::NoFrame);
     mDetailsText->setPaper (backgroundBrush());
     mInfoStack->addTab (mDetailsText,
                         VBoxGlobal::iconSet ("settings_16px.png"),
                         QString::null);
 
     /* statistic view creation */
-    mStatisticText = new QTextBrowser();
-    mStatisticText->setFrameShape (QFrame::NoFrame);
+    mStatisticText = new Q3TextBrowser();
+    mStatisticText->setFrameShape (Q3Frame::NoFrame);
     mStatisticText->setPaper (backgroundBrush());
     mInfoStack->addTab (mStatisticText,
                         VBoxGlobal::iconSet ("state_running_16px.png"),
@@ -225,10 +233,13 @@ QPushButton* VBoxVMInformationDlg::searchDefaultButton()
     /* this mechanism is used for searching the default dialog button
      * and similar the same mechanism in Qt::QDialog inner source */
     QPushButton *button = 0;
-    QObjectList *list = queryList ("QPushButton");
-    QObjectListIt it (*list);
-    while ((button = (QPushButton*)it.current()) && !button->isDefault())
-        ++ it;
+    QObjectList list = queryList ("QPushButton");
+    foreach (QObject* obj, list)
+    {
+        button = qobject_cast<QPushButton*> (obj);
+        if (button->isDefault())
+            break;
+    }
     return button;
 }
 
@@ -266,13 +277,13 @@ bool VBoxVMInformationDlg::eventFilter (QObject *aObject, QEvent *aEvent)
         default:
             break;
     }
-    return QMainWindow::eventFilter (aObject, aEvent);
+    return Q3MainWindow::eventFilter (aObject, aEvent);
 }
 
 
 bool VBoxVMInformationDlg::event (QEvent *aEvent)
 {
-    bool result = QMainWindow::event (aEvent);
+    bool result = Q3MainWindow::event (aEvent);
     switch (aEvent->type())
     {
         case QEvent::LanguageChange:
@@ -298,13 +309,13 @@ bool VBoxVMInformationDlg::event (QEvent *aEvent)
 void VBoxVMInformationDlg::keyPressEvent (QKeyEvent *aEvent)
 {
     if (aEvent->state() == 0 ||
-        (aEvent->state() & Keypad && aEvent->key() == Key_Enter))
+        (aEvent->state() & Qt::KeypadModifier && aEvent->key() == Qt::Key_Enter))
     {
         switch (aEvent->key())
         {
             /* processing the return keypress for the auto-default button */
-            case Key_Enter:
-            case Key_Return:
+            case Qt::Key_Enter:
+            case Qt::Key_Return:
             {
                 QPushButton *currentDefault = searchDefaultButton();
                 if (currentDefault)
@@ -312,7 +323,7 @@ void VBoxVMInformationDlg::keyPressEvent (QKeyEvent *aEvent)
                 break;
             }
             /* processing the escape keypress as the close dialog action */
-            case Key_Escape:
+            case Qt::Key_Escape:
             {
                 close();
                 break;
@@ -326,7 +337,7 @@ void VBoxVMInformationDlg::keyPressEvent (QKeyEvent *aEvent)
 
 void VBoxVMInformationDlg::showEvent (QShowEvent *aEvent)
 {
-    QMainWindow::showEvent (aEvent);
+    Q3MainWindow::showEvent (aEvent);
 
     /* one may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,

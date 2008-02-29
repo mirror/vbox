@@ -45,7 +45,7 @@
     </property>
     <grid>
         <property name="name">
-            <cstring>unnamed</cstring>
+            <cstring>VBoxVMSettingsDlgLayout</cstring>
         </property>
         <property name="spacing">
             <number>10</number>
@@ -3204,7 +3204,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <include location="global" impldecl="in implementation">qfiledialog.h</include>
     <include location="global" impldecl="in implementation">qobjectlist.h</include>
     <include location="global" impldecl="in implementation">qlistbox.h</include>
-    <include location="global" impldecl="in implementation">qfocusdata.h</include>
     <include location="global" impldecl="in implementation">qtimer.h</include>
     <include location="global" impldecl="in implementation">qpopupmenu.h</include>
     <include location="global" impldecl="in implementation">qlistview.h</include>

@@ -25,11 +25,16 @@
 #include "VBoxGlobalSettings.h"
 
 #include <qdatetime.h>
-#include <qscrollview.h>
+#include <q3scrollview.h>
 #include <qpixmap.h>
 #include <qimage.h>
 
 #include <qkeysequence.h>
+//Added by qt3to4:
+#include <QTimerEvent>
+#include <QPaintEvent>
+#include <QLabel>
+#include <QEvent>
 
 #if defined (Q_WS_PM)
 #include "src/os2/VBoxHlp.h"
@@ -51,7 +56,7 @@ class QPainter;
 class QLabel;
 class QMenuData;
 
-class VBoxConsoleView : public QScrollView
+class VBoxConsoleView : public Q3ScrollView
 {
     Q_OBJECT
 
@@ -69,7 +74,7 @@ public:
     VBoxConsoleView (VBoxConsoleWnd *mainWnd,
                      const CConsole &console,
                      VBoxDefs::RenderMode rm,
-                     QWidget *parent = 0, const char *name = 0, WFlags f = 0);
+                     QWidget *parent = 0, const char *name = 0, Qt::WFlags f = 0);
     ~VBoxConsoleView();
 
     QSize sizeHint() const;
@@ -143,9 +148,9 @@ private:
     bool keyEvent (int aKey, uint8_t aScan, int aFlags,
                    wchar_t *aUniKey = NULL);
     bool mouseEvent (int aType, const QPoint &aPos, const QPoint &aGlobalPos,
-                     ButtonState aButton,
-                     ButtonState aState, ButtonState aStateAfter,
-                     int aWheelDelta, Orientation aWheelDir);
+                     Qt::ButtonState aButton,
+                     Qt::ButtonState aState, Qt::ButtonState aStateAfter,
+                     int aWheelDelta, Qt::Orientation aWheelDir);
 
     void emitKeyboardStateChanged()
     {

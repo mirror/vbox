@@ -24,12 +24,16 @@
 #include "VBoxGlobal.h"
 
 #include <qapplication.h>
-#include <qmainwindow.h>
-#include <qlistbox.h>
-#include <qgroupbox.h>
+#include <q3mainwindow.h>
+#include <q3listbox.h>
+#include <q3groupbox.h>
 #include <qaction.h>
 
-#include <qvaluelist.h>
+#include <q3valuelist.h>
+//Added by qt3to4:
+#include <QEvent>
+#include <QLabel>
+#include <Q3PopupMenu>
 
 class VBoxVMListBox;
 class VBoxSnapshotsWgt;
@@ -38,11 +42,11 @@ class VBoxVMDescriptionPage;
 class VBoxVMLogViewer;
 
 class QLabel;
-class QTextBrowser;
+class Q3TextBrowser;
 class QTabWidget;
 struct QUuid;
 
-class VBoxSelectorWnd : public QMainWindow
+class VBoxSelectorWnd : public Q3MainWindow
 {
     Q_OBJECT
 
@@ -50,7 +54,7 @@ public:
 
     VBoxSelectorWnd (VBoxSelectorWnd **aSelf,
                      QWidget* aParent = 0, const char* aName = 0,
-                     WFlags aFlags = WType_TopLevel);
+                     Qt::WFlags aFlags = Qt::WType_TopLevel);
     virtual ~VBoxSelectorWnd();
 
     bool startMachine (const QUuid &id);
@@ -76,7 +80,7 @@ public slots:
                                           bool aSnapshots,
                                           bool aDescription);
 
-    void showContextMenu (QListBoxItem *, const QPoint &);
+    void showContextMenu (Q3ListBoxItem *, const QPoint &);
 
 protected:
 
@@ -109,7 +113,7 @@ private slots:
 private:
 
     /** VM list context menu */
-    QPopupMenu *mVMCtxtMenu;
+    Q3PopupMenu *mVMCtxtMenu;
 
     /* actions */
     QAction *fileDiskMgrAction;
@@ -136,7 +140,7 @@ private:
     VBoxSnapshotsWgt *vmSnapshotsWgt;
     VBoxVMDescriptionPage *vmDescriptionPage;
 
-    QValueList <CSession> sessions;
+    Q3ValueList <CSession> sessions;
 
     QPoint normal_pos;
     QSize normal_size;

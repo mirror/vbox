@@ -24,7 +24,7 @@
 
 #include <qobject.h>
 
-class QProcess;
+class Q3Process;
 
 class VBoxProblemReporter : public QObject
 {

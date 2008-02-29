@@ -1,3 +1,5 @@
+//Added by qt3to4:
+#include <QShowEvent>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -99,7 +101,9 @@ void VBoxNewVMWzd::init()
 
     /* HDD Images page */
     mediaCombo = new VBoxMediaComboBox (grbHDA, "mediaCombo", VBoxDefs::HD, true);
-    grbHDALayout->addMultiCellWidget (mediaCombo, 0, 0, 0, 2);
+#warning port me: check this
+    gridLayout->addMultiCellWidget (mediaCombo, 0, 0, 0, 2);
+//    grbHDALayout->addMultiCellWidget (mediaCombo, 0, 0, 0, 2);
     setTabOrder (mediaCombo, pbNewHD);
     setTabOrder (pbNewHD, pbExistingHD);
     connect (mediaCombo, SIGNAL (activated (int)),
@@ -120,12 +124,14 @@ void VBoxNewVMWzd::init()
 
     teSummary = new QITextEdit (pageSummary);
     teSummary->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
-    teSummary->setFrameShape (QTextEdit::NoFrame);
+    teSummary->setFrameShape (Q3TextEdit::NoFrame);
     teSummary->setReadOnly (TRUE);
-    summaryLayout->insertWidget (1, teSummary);
+#warning port me: check this
+    hboxLayout12->insertWidget (1, teSummary);
+//    summaryLayout->insertWidget (1, teSummary);
 
     /* filter out Enter keys in order to direct them to the default dlg button */
-    QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
+    QIKeyFilter *ef = new QIKeyFilter (this, Qt::Key_Enter);
     ef->watchOn (teSummary);
 
     /*
@@ -177,7 +183,9 @@ void VBoxNewVMWzd::init()
     setFinishEnabled (pageSummary, true);
 
     /* setup minimum width for the sizeHint to be calculated correctly */
-    int wid = widthSpacer->minimumSize().width();
+#warning port me: check this
+    int wid = spacerItem->minimumSize().width();
+//    int wid = widthSpacer->minimumSize().width();
     txWelcome->setMinimumWidth (wid);
     txNameAndOS->setMinimumWidth (wid);
     textLabel1->setMinimumWidth (wid);
@@ -269,7 +277,7 @@ void VBoxNewVMWzd::showPage (QWidget *page)
         nextButton()->setDefault( true );
     }
 
-    QWizard::showPage (page);
+    Q3Wizard::showPage (page);
 
     /*
      *  fix focus on the last page. when we go to the last page
@@ -299,7 +307,7 @@ void VBoxNewVMWzd::accept()
      *  On failure, the wisard will remain open to give it another try.
      */
     if (constructMachine())
-        QWizard::accept();
+        Q3Wizard::accept();
 }
 
 bool VBoxNewVMWzd::constructMachine()
@@ -422,7 +430,7 @@ CMachine VBoxNewVMWzd::machine()
 
 void VBoxNewVMWzd::showVDIManager()
 {
-    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", WType_Dialog | WShowModal);
+    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", Qt::WType_Dialog | Qt::WShowModal);
     dlg.setup (VBoxDefs::HD, true);
     QUuid newId = dlg.exec() == VBoxDiskImageManagerDlg::Accepted ?
         dlg.getSelectedUuid() : mediaCombo->getId();

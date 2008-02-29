@@ -23,7 +23,7 @@
 
 #include <qobject.h>
 #include <qvalidator.h>
-#include <qvaluelist.h>
+#include <q3valuelist.h>
 
 class QIWidgetValidator : public QObject
 {
@@ -73,7 +73,7 @@ private:
         QValidator::State state;
     };
 
-    QValueList <Watched> mWatched;
+    Q3ValueList <Watched> mWatched;
     Watched mLastInvalid;
 
 private slots:
@@ -86,12 +86,12 @@ class QIULongValidator : public QValidator
 public:
 
     QIULongValidator (QObject *aParent, const char *aName = 0)
-        : QValidator (aParent, aName)
+        : QValidator (aParent)
         , mBottom (0), mTop (ULONG_MAX) {}
 
     QIULongValidator (ulong aMinimum, ulong aMaximum,
                       QObject *aParent, const char *aName = 0)
-        : QValidator (aParent, aName)
+        : QValidator (aParent)
         , mBottom (aMinimum), mTop (aMaximum) {}
 
     ~QIULongValidator() {}

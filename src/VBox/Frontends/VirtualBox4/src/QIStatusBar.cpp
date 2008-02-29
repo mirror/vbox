@@ -20,6 +20,8 @@
 
 #include <qpainter.h>
 #include <qsizegrip.h>
+//Added by qt3to4:
+#include <QPaintEvent>
 
 /** @clas QIStatusLine
  *
@@ -56,6 +58,6 @@ void QIStatusBar::paintEvent (QPaintEvent *)
 
     if (!message.isEmpty()) {
         p.setPen (colorGroup().foreground());
-        p.drawText (6, 0, psx, height(), AlignVCenter | SingleLine, message);
+        p.drawText (6, 0, psx, height(), Qt::AlignVCenter | Qt::TextSingleLine, message);
     }
 }

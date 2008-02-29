@@ -1,3 +1,13 @@
+//Added by qt3to4:
+#include <Q3WhatsThis>
+#include <QLabel>
+#include <QShowEvent>
+#include <Q3ValueList>
+#include <q3mimefactory.h>
+#include <QKeyEvent>
+#include <Q3HBoxLayout>
+#include <QEvent>
+#include <Q3VBoxLayout>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -42,20 +52,20 @@ public:
         mLeName (0)
     {
         setCaption (tr ("Add Host Interface"));
-        QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
+        Q3VBoxLayout *mainLayout = new Q3VBoxLayout (this, 10, 10, "mainLayout");
 
         /* Setup Input layout */
-        QHBoxLayout *inputLayout = new QHBoxLayout (mainLayout, 10, "inputLayout");
+        Q3HBoxLayout *inputLayout = new Q3HBoxLayout (mainLayout, 10, "inputLayout");
         QLabel *lbName = new QLabel (tr ("Interface Name"), this);
         mLeName = new QLineEdit (aIfaceName, this);
-        QWhatsThis::add (mLeName, tr ("Descriptive name of the new network interface"));
+        Q3WhatsThis::add (mLeName, tr ("Descriptive name of the new network interface"));
         inputLayout->addWidget (lbName);
         inputLayout->addWidget (mLeName);
         connect (mLeName, SIGNAL (textChanged (const QString &)),
                  this, SLOT (validate()));
 
         /* Setup Button layout */
-        QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
+        Q3HBoxLayout *buttonLayout = new Q3HBoxLayout (mainLayout, 10, "buttonLayout");
         mBtOk = new QPushButton (tr ("&OK"), this, "mBtOk");
         QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
         QPushButton *btCancel = new QPushButton (tr ("Cancel"), this, "btCancel");
@@ -132,27 +142,27 @@ static int calcPageStep (int aMax)
  *  Keymapping handlers for ctrl-up & ctrl-down are translated into
  *  boot-items up/down moving.
  */
-class BootItemsTable : public QListView
+class BootItemsTable : public Q3ListView
 {
     Q_OBJECT
 
 public:
 
     BootItemsTable (QWidget *aParent, const char *aName)
-        : QListView (aParent, aName)
+        : Q3ListView (aParent, aName)
     {
         addColumn (QString::null);
         header()->hide();
         setSorting (-1);
         setColumnWidthMode (0, Maximum);
         setResizeMode (AllColumns);
-        QWhatsThis::add (this, tr ("Defines the boot device order. "
+        Q3WhatsThis::add (this, tr ("Defines the boot device order. "
                                    "Use checkboxes to the left to enable or disable "
                                    "individual boot devices. Move items up and down to "
                                    "change the device order."));
         setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
-        connect (this, SIGNAL (pressed (QListViewItem*)),
-                 this, SLOT (processPressed (QListViewItem*)));
+        connect (this, SIGNAL (pressed (Q3ListViewItem*)),
+                 this, SLOT (processPressed (Q3ListViewItem*)));
     }
 
     ~BootItemsTable() {}
@@ -167,7 +177,7 @@ signals:
 
 private slots:
 
-    void processPressed (QListViewItem *aItem)
+    void processPressed (Q3ListViewItem *aItem)
     {
         if (!aItem)
             setSelected (currentItem(), true);
@@ -189,7 +199,7 @@ private slots:
                     break;
             }
         }
-        QListView::keyPressEvent (aEvent);
+        Q3ListView::keyPressEvent (aEvent);
     }
 };
 
@@ -205,13 +215,13 @@ class BootItemsList : public QWidget
 {
     Q_OBJECT
 
-    class BootItem : public QCheckListItem
+    class BootItem : public Q3CheckListItem
     {
         public:
 
-            BootItem (BootItemsTable *aParent, QListViewItem *aAfter,
+            BootItem (BootItemsTable *aParent, Q3ListViewItem *aAfter,
                       const QString &aName, Type aType)
-                : QCheckListItem (aParent, aAfter, aName, aType) {}
+                : Q3CheckListItem (aParent, aAfter, aName, aType) {}
 
         private:
 
@@ -228,28 +238,28 @@ public:
         : QWidget (aParent, aName), mBootTable (0)
     {
         /* Setup main widget layout */
-        QHBoxLayout *mainLayout = new QHBoxLayout (this, 0, 6, "mainLayout");
+        Q3HBoxLayout *mainLayout = new Q3HBoxLayout (this, 0, 6, "mainLayout");
 
         /* Setup settings layout */
         mBootTable = new BootItemsTable (this, "mBootTable");
-        connect (mBootTable, SIGNAL (currentChanged (QListViewItem*)),
-                 this, SLOT (processCurrentChanged (QListViewItem*)));
+        connect (mBootTable, SIGNAL (currentChanged (Q3ListViewItem*)),
+                 this, SLOT (processCurrentChanged (Q3ListViewItem*)));
         mainLayout->addWidget (mBootTable);
 
         /* Setup button's layout */
-        QVBoxLayout *buttonLayout = new QVBoxLayout (mainLayout, 0, "buttonLayout");
+        Q3VBoxLayout *buttonLayout = new Q3VBoxLayout (mainLayout, 0, "buttonLayout");
         mBtnUp = new QToolButton (this, "mBtnUp");
         mBtnDown = new QToolButton (this, "mBtnDown");
         mBtnUp->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
         mBtnDown->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
-        QWhatsThis::add (mBtnUp, tr ("Moves the selected boot device up."));
-        QWhatsThis::add (mBtnDown, tr ("Moves the selected boot device down."));
+        Q3WhatsThis::add (mBtnUp, tr ("Moves the selected boot device up."));
+        Q3WhatsThis::add (mBtnDown, tr ("Moves the selected boot device down."));
         QToolTip::add (mBtnUp, tr ("Move Up (Ctrl-Up)"));
         QToolTip::add (mBtnDown, tr ("Move Down (Ctrl-Down)"));
         mBtnUp->setAutoRaise (true);
         mBtnDown->setAutoRaise (true);
-        mBtnUp->setFocusPolicy (QWidget::StrongFocus);
-        mBtnDown->setFocusPolicy (QWidget::StrongFocus);
+        mBtnUp->setFocusPolicy (Qt::StrongFocus);
+        mBtnDown->setFocusPolicy (Qt::StrongFocus);
         mBtnUp->setIconSet (VBoxGlobal::iconSet ("list_moveup_16px.png",
                                                  "list_moveup_disabled_16px.png"));
         mBtnDown->setIconSet (VBoxGlobal::iconSet ("list_movedown_16px.png",
@@ -289,8 +299,8 @@ public:
             if (type != KDeviceType_Null)
             {
                 QString name = vboxGlobal().toString (type);
-                QCheckListItem *item = new BootItem (mBootTable,
-                    mBootTable->lastItem(), name, QCheckListItem::CheckBox);
+                Q3CheckListItem *item = new BootItem (mBootTable,
+                    mBootTable->lastItem(), name, Q3CheckListItem::CheckBox);
                 item->setOn (true);
                 uniqueList << name;
                 int width = item->width (mBootTable->fontMetrics(), mBootTable, 0);
@@ -303,8 +313,8 @@ public:
             QString name = vboxGlobal().toString ((KDeviceType) i);
             if (!uniqueList.contains (name))
             {
-                QCheckListItem *item = new BootItem (mBootTable,
-                    mBootTable->lastItem(), name, QCheckListItem::CheckBox);
+                Q3CheckListItem *item = new BootItem (mBootTable,
+                    mBootTable->lastItem(), name, Q3CheckListItem::CheckBox);
                 uniqueList << name;
                 int width = item->width (mBootTable->fontMetrics(), mBootTable, 0);
                 if (width > minimumWidth) minimumWidth = width;
@@ -320,10 +330,10 @@ public:
 
     void putBackToMachine (CMachine &aMachine)
     {
-        QCheckListItem *item = 0;
+        Q3CheckListItem *item = 0;
         /* Search for checked items */
         int index = 1;
-        item = static_cast<QCheckListItem*> (mBootTable->firstChild());
+        item = static_cast<Q3CheckListItem*> (mBootTable->firstChild());
         while (item)
         {
             if (item->isOn())
@@ -332,15 +342,15 @@ public:
                     vboxGlobal().toDeviceType (item->text (0));
                 aMachine.SetBootOrder (index++, type);
             }
-            item = static_cast<QCheckListItem*> (item->nextSibling());
+            item = static_cast<Q3CheckListItem*> (item->nextSibling());
         }
         /* Search for non-checked items */
-        item = static_cast<QCheckListItem*> (mBootTable->firstChild());
+        item = static_cast<Q3CheckListItem*> (mBootTable->firstChild());
         while (item)
         {
             if (!item->isOn())
                 aMachine.SetBootOrder (index++, KDeviceType_Null);
-            item = static_cast<QCheckListItem*> (item->nextSibling());
+            item = static_cast<Q3CheckListItem*> (item->nextSibling());
         }
     }
 
@@ -366,9 +376,9 @@ private slots:
 
     void moveItemUp()
     {
-        QListViewItem *item = mBootTable->currentItem();
+        Q3ListViewItem *item = mBootTable->currentItem();
         Assert (item);
-        QListViewItem *itemAbove = item->itemAbove();
+        Q3ListViewItem *itemAbove = item->itemAbove();
         if (!itemAbove) return;
         itemAbove->moveItem (item);
         processCurrentChanged (item);
@@ -377,9 +387,9 @@ private slots:
 
     void moveItemDown()
     {
-        QListViewItem *item = mBootTable->currentItem();
+        Q3ListViewItem *item = mBootTable->currentItem();
         Assert (item);
-        QListViewItem *itemBelow = item->itemBelow();
+        Q3ListViewItem *itemBelow = item->itemBelow();
         if (!itemBelow) return;
         item->moveItem (itemBelow);
         processCurrentChanged (item);
@@ -391,7 +401,7 @@ private slots:
         emit bootSequenceChanged();
     }
 
-    void processCurrentChanged (QListViewItem *aItem)
+    void processCurrentChanged (Q3ListViewItem *aItem)
     {
         bool upEnabled   = aItem && aItem->isSelected() && aItem->itemAbove();
         bool downEnabled = aItem && aItem->isSelected() && aItem->itemBelow();
@@ -428,12 +438,12 @@ private:
 //    return p;
 //}
 
-class USBListItem : public QCheckListItem
+class USBListItem : public Q3CheckListItem
 {
 public:
 
-    USBListItem (QListView *aParent, QListViewItem *aAfter)
-        : QCheckListItem (aParent, aAfter, QString::null, CheckBox)
+    USBListItem (Q3ListView *aParent, Q3ListViewItem *aAfter)
+        : Q3CheckListItem (aParent, aAfter, QString::null, CheckBox)
         , mId (-1) {}
 
     int mId;
@@ -443,11 +453,11 @@ public:
  *  Returns the path to the item in the form of 'grandparent > parent > item'
  *  using the text of the first column of every item.
  */
-static QString path (QListViewItem *li)
+static QString path (Q3ListViewItem *li)
 {
     static QString sep = ": ";
     QString p;
-    QListViewItem *cur = li;
+    Q3ListViewItem *cur = li;
     while (cur)
     {
         if (!p.isNull())
@@ -479,7 +489,7 @@ void VBoxVMSettingsDlg::init()
     connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
              this, SLOT (onMediaEnumerationDone()));
 
-    setIcon (QPixmap::fromMimeSource ("settings_16px.png"));
+    setIcon (qPixmapFromMimeSource ("settings_16px.png"));
 
     /* all pages are initially valid */
     valid = true;
@@ -489,8 +499,8 @@ void VBoxVMSettingsDlg::init()
     new QIListViewSelectionPreserver (this, listView);
     /* hide the header and internal columns */
     listView->header()->hide();
-    listView->setColumnWidthMode (listView_Id, QListView::Manual);
-    listView->setColumnWidthMode (listView_Link, QListView::Manual);
+    listView->setColumnWidthMode (listView_Id, Q3ListView::Manual);
+    listView->setColumnWidthMode (listView_Link, Q3ListView::Manual);
     listView->hideColumn (listView_Id);
     listView->hideColumn (listView_Link);
     /* sort by the id column (to have pages in the desired order) */
@@ -519,7 +529,8 @@ void VBoxVMSettingsDlg::init()
     whatsThisCandidate = NULL;
 
     whatsThisLabel = new QIRichLabel (this, "whatsThisLabel");
-    VBoxVMSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
+#warning port me
+//    VBoxVMSettingsDlgLayout->addWidget (whatsThisLabel, 2, 1);
 
 #ifndef DEBUG
     /* Enforce rich text format to avoid jumping margins (margins of plain
@@ -533,16 +544,16 @@ void VBoxVMSettingsDlg::init()
 #endif
 
     whatsThisLabel->setMaxHeightMode (true);
-    whatsThisLabel->setFocusPolicy (QWidget::NoFocus);
+    whatsThisLabel->setFocusPolicy (Qt::NoFocus);
     whatsThisLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
-    whatsThisLabel->setBackgroundMode (QLabel::PaletteMidlight);
+    whatsThisLabel->setBackgroundMode (Qt::PaletteMidlight);
     whatsThisLabel->setFrameShape (QLabel::Box);
     whatsThisLabel->setFrameShadow (QLabel::Sunken);
     whatsThisLabel->setMargin (7);
     whatsThisLabel->setScaledContents (FALSE);
-    whatsThisLabel->setAlignment (int (QLabel::WordBreak |
-                                       QLabel::AlignJustify |
-                                       QLabel::AlignTop));
+    whatsThisLabel->setAlignment (int (Qt::TextWordWrap |
+                                       Qt::AlignJustify |
+                                       Qt::AlignTop));
 
     whatsThisLabel->setFixedHeight (whatsThisLabel->frameWidth() * 2 +
                                     6 /* seems that RichText adds some margin */ +
@@ -583,21 +594,22 @@ void VBoxVMSettingsDlg::init()
 
     /* HDD Images page */
 
-    QWhatsThis::add (static_cast <QWidget *> (grbHDA->child ("qt_groupbox_checkbox")),
+    Q3WhatsThis::add (static_cast <QWidget *> (grbHDA->child ("qt_groupbox_checkbox")),
                      tr ("When checked, attaches the specified virtual hard disk to the "
                          "Master slot of the Primary IDE controller."));
-    QWhatsThis::add (static_cast <QWidget *> (grbHDB->child ("qt_groupbox_checkbox")),
+    Q3WhatsThis::add (static_cast <QWidget *> (grbHDB->child ("qt_groupbox_checkbox")),
                      tr ("When checked, attaches the specified virtual hard disk to the "
                          "Slave slot of the Primary IDE controller."));
-    QWhatsThis::add (static_cast <QWidget *> (grbHDD->child ("qt_groupbox_checkbox")),
+    Q3WhatsThis::add (static_cast <QWidget *> (grbHDD->child ("qt_groupbox_checkbox")),
                      tr ("When checked, attaches the specified virtual hard disk to the "
                          "Slave slot of the Secondary IDE controller."));
     cbHDA = new VBoxMediaComboBox (grbHDA, "cbHDA", VBoxDefs::HD);
     cbHDB = new VBoxMediaComboBox (grbHDB, "cbHDB", VBoxDefs::HD);
     cbHDD = new VBoxMediaComboBox (grbHDD, "cbHDD", VBoxDefs::HD);
-    hdaLayout->insertWidget (0, cbHDA);
-    hdbLayout->insertWidget (0, cbHDB);
-    hddLayout->insertWidget (0, cbHDD);
+#warning port me
+//    hdaLayout->insertWidget (0, cbHDA);
+//    hdbLayout->insertWidget (0, cbHDB);
+//    hddLayout->insertWidget (0, cbHDD);
     /* sometimes the weirdness of Qt just kills... */
     setTabOrder (static_cast <QWidget *> (grbHDA->child ("qt_groupbox_checkbox")),
                  cbHDA);
@@ -606,15 +618,15 @@ void VBoxVMSettingsDlg::init()
     setTabOrder (static_cast <QWidget *> (grbHDD->child ("qt_groupbox_checkbox")),
                  cbHDD);
 
-    QWhatsThis::add (cbHDB, tr ("Displays the virtual hard disk to attach to this IDE slot "
+    Q3WhatsThis::add (cbHDB, tr ("Displays the virtual hard disk to attach to this IDE slot "
                                 "and allows to quickly select a different hard disk."));
-    QWhatsThis::add (cbHDD, tr ("Displays the virtual hard disk to attach to this IDE slot "
+    Q3WhatsThis::add (cbHDD, tr ("Displays the virtual hard disk to attach to this IDE slot "
                                 "and allows to quickly select a different hard disk."));
-    QWhatsThis::add (cbHDA, tr ("Displays the virtual hard disk to attach to this IDE slot "
+    Q3WhatsThis::add (cbHDA, tr ("Displays the virtual hard disk to attach to this IDE slot "
                                 "and allows to quickly select a different hard disk."));
-    QWhatsThis::add (cbHDB, tr ("Displays the virtual hard disk to attach to this IDE slot "
+    Q3WhatsThis::add (cbHDB, tr ("Displays the virtual hard disk to attach to this IDE slot "
                                 "and allows to quickly select a different hard disk."));
-    QWhatsThis::add (cbHDD, tr ("Displays the virtual hard disk to attach to this IDE slot "
+    Q3WhatsThis::add (cbHDD, tr ("Displays the virtual hard disk to attach to this IDE slot "
                                 "and allows to quickly select a different hard disk."));
 
     wvalHDD = new QIWidgetValidator (pagePath (pageHDD), pageHDD, this);
@@ -643,13 +655,14 @@ void VBoxVMSettingsDlg::init()
 
     /* CD/DVD-ROM Drive Page */
 
-    QWhatsThis::add (static_cast <QWidget *> (bgDVD->child ("qt_groupbox_checkbox")),
+    Q3WhatsThis::add (static_cast <QWidget *> (bgDVD->child ("qt_groupbox_checkbox")),
                      tr ("When checked, mounts the specified media to the CD/DVD drive of the "
                          "virtual machine. Note that the CD/DVD drive is always connected to the "
                          "Secondary Master IDE controller of the machine."));
     cbISODVD = new VBoxMediaComboBox (bgDVD, "cbISODVD", VBoxDefs::CD);
-    cdLayout->insertWidget(0, cbISODVD);
-    QWhatsThis::add (cbISODVD, tr ("Displays the image file to mount to the virtual CD/DVD "
+#warning port me
+//    cdLayout->insertWidget(0, cbISODVD);
+    Q3WhatsThis::add (cbISODVD, tr ("Displays the image file to mount to the virtual CD/DVD "
                                    "drive and allows to quickly select a different image."));
 
     wvalDVD = new QIWidgetValidator (pagePath (pageDVD), pageDVD, this);
@@ -670,12 +683,13 @@ void VBoxVMSettingsDlg::init()
 
     /* Floppy Drive Page */
 
-    QWhatsThis::add (static_cast <QWidget *> (bgFloppy->child ("qt_groupbox_checkbox")),
+    Q3WhatsThis::add (static_cast <QWidget *> (bgFloppy->child ("qt_groupbox_checkbox")),
                      tr ("When checked, mounts the specified media to the Floppy drive of the "
                          "virtual machine."));
     cbISOFloppy = new VBoxMediaComboBox (bgFloppy, "cbISOFloppy", VBoxDefs::FD);
-    fdLayout->insertWidget(0, cbISOFloppy);
-    QWhatsThis::add (cbISOFloppy, tr ("Displays the image file to mount to the virtual Floppy "
+#warning port me
+//    fdLayout->insertWidget(0, cbISOFloppy);
+    Q3WhatsThis::add (cbISOFloppy, tr ("Displays the image file to mount to the virtual Floppy "
                                       "drive and allows to quickly select a different image."));
 
     wvalFloppy = new QIWidgetValidator (pagePath (pageFloppy), pageFloppy, this);
@@ -696,7 +710,7 @@ void VBoxVMSettingsDlg::init()
 
     /* Audio Page */
 
-    QWhatsThis::add (static_cast <QWidget *> (grbAudio->child ("qt_groupbox_checkbox")),
+    Q3WhatsThis::add (static_cast <QWidget *> (grbAudio->child ("qt_groupbox_checkbox")),
                      tr ("When checked, the virtual PCI audio card is plugged into the "
                          "virtual machine that uses the specified driver to communicate "
                          "to the host audio card."));
@@ -720,7 +734,7 @@ void VBoxVMSettingsDlg::init()
     /* Serial Port Page */
 
     /* Parallel Port Page (currently disabled) */
-    QListViewItem *item = listView->findItem ("#parallelPorts", listView_Link);
+    Q3ListViewItem *item = listView->findItem ("#parallelPorts", listView_Link);
     if (item) item->setVisible (false);
 
     /* USB Page */
@@ -740,8 +754,9 @@ void VBoxVMSettingsDlg::init()
     //  data of the associated USB filter until the dialog window is accepted.
     //  If we remove stacking, we will have to create a structure to store
     //  editable data of all USB filters while the dialog is open.
-    wstUSBFilters = new QWidgetStack (grbUSBFilters, "wstUSBFilters");
-    grbUSBFiltersLayout->addWidget (wstUSBFilters);
+    wstUSBFilters = new Q3WidgetStack (grbUSBFilters, "wstUSBFilters");
+#warning port me
+//    grbUSBFiltersLayout->addWidget (wstUSBFilters);
     /* create a default (disabled) filter settings widget at index 0 */
     VBoxUSBFilterSettings *settings = new VBoxUSBFilterSettings (wstUSBFilters);
     settings->setup (VBoxUSBFilterSettings::MachineType);
@@ -765,7 +780,7 @@ void VBoxVMSettingsDlg::init()
 
     /* VRDP Page */
 
-    QWhatsThis::add (static_cast <QWidget *> (grbVRDP->child ("qt_groupbox_checkbox")),
+    Q3WhatsThis::add (static_cast <QWidget *> (grbVRDP->child ("qt_groupbox_checkbox")),
                      tr ("When checked, the VM will act as a Remote Desktop "
                          "Protocol (RDP) server, allowing remote clients to connect "
                          "and operate the VM (when it is running) "
@@ -785,7 +800,7 @@ void VBoxVMSettingsDlg::init()
 
     /* Shared Folders Page */
 
-    QVBoxLayout* pageFoldersLayout = new QVBoxLayout (pageFolders, 0, 10, "pageFoldersLayout");
+    Q3VBoxLayout* pageFoldersLayout = new Q3VBoxLayout (pageFolders, 0, 10, "pageFoldersLayout");
     mSharedFolders = new VBoxSharedFoldersSettings (pageFolders, "sharedFolders");
     mSharedFolders->setDialogType (VBoxSharedFoldersSettings::MachineType);
     pageFoldersLayout->addWidget (mSharedFolders);
@@ -839,7 +854,8 @@ void VBoxVMSettingsDlg::init()
     /* Fixing focus order for BootItemsList */
     setTabOrder (tbwGeneral, tblBootOrder);
     setTabOrder (tblBootOrder->focusProxy(), chbEnableACPI);
-    groupBox12Layout->addWidget (tblBootOrder);
+#warning port me
+//    groupBox12Layout->addWidget (tblBootOrder);
     tblBootOrder->fixTabStops();
     /* Shared Clipboard mode */
     cbSharedClipboard->insertItem (vboxGlobal().toString (KClipboardMode_Disabled));
@@ -904,7 +920,7 @@ void VBoxVMSettingsDlg::init()
  */
 QString VBoxVMSettingsDlg::pagePath (QWidget *aPage)
 {
-    QListViewItem *li = listView->
+    Q3ListViewItem *li = listView->
         findItem (QString::number (widgetStack->id (aPage)), 1);
     return ::path (li);
 }
@@ -1240,7 +1256,7 @@ void VBoxVMSettingsDlg::fdMediaChanged()
 }
 
 
-QString VBoxVMSettingsDlg::getHdInfo (QGroupBox *aGroupBox, QUuid aId)
+QString VBoxVMSettingsDlg::getHdInfo (Q3GroupBox *aGroupBox, QUuid aId)
 {
     QString notAttached = tr ("<not attached>", "hard disk");
     if (aId.isNull())
@@ -1262,21 +1278,24 @@ void VBoxVMSettingsDlg::updateWhatsThis (bool gotFocus /* = false */)
     }
     else
     {
-        widget = focusData()->focusWidget();
+#warning port me
+//        widget = focusData()->focusWidget();
     }
     /* if the given widget lacks the whats'this text, look at its parent */
     while (widget && widget != this)
     {
-        text = QWhatsThis::textFor (widget);
+#warning port me
+//        text = Q3WhatsThis::textFor (widget);
         if (!text.isEmpty())
             break;
         widget = widget->parentWidget();
     }
 
-    if (text.isEmpty() && !warningString.isEmpty())
-        text = warningString;
-    if (text.isEmpty())
-        text = QWhatsThis::textFor (this);
+#warning port me
+//    if (text.isEmpty() && !warningString.isEmpty())
+//        text = warningString;
+//    if (text.isEmpty())
+//        text = Q3WhatsThis::textFor (this);
 
     whatsThisLabel->setText (text);
 }
@@ -1315,7 +1334,7 @@ void VBoxVMSettingsDlg::setup (const QString &aCategory, const QString &aControl
     if (!aCategory.isNull())
     {
         /* search for a list view item corresponding to the category */
-        QListViewItem *item = listView->findItem (aCategory, listView_Link);
+        Q3ListViewItem *item = listView->findItem (aCategory, listView_Link);
         if (item)
         {
             listView->setSelected (item, true);
@@ -1327,7 +1346,7 @@ void VBoxVMSettingsDlg::setup (const QString &aCategory, const QString &aControl
                 if (obj && obj->isWidgetType())
                 {
                     QWidget *w = static_cast <QWidget *> (obj);
-                    QWidgetList parents;
+                    Q3PtrList<QWidget> parents;
                     QWidget *p = w;
                     while ((p = p->parentWidget()) != NULL)
                     {
@@ -1351,7 +1370,7 @@ void VBoxVMSettingsDlg::setup (const QString &aCategory, const QString &aControl
     }
 }
 
-void VBoxVMSettingsDlg::listView_currentChanged (QListViewItem *item)
+void VBoxVMSettingsDlg::listView_currentChanged (Q3ListViewItem *item)
 {
     Assert (item);
     int id = item->text (1).toInt();
@@ -1374,10 +1393,8 @@ void VBoxVMSettingsDlg::enableOk (const QIWidgetValidator *wval)
     /* detect the overall validity */
     bool newValid = true;
     {
-        QObjectList *l = this->queryList ("QIWidgetValidator");
-        QObjectListIt it (*l);
-        QObject *obj;
-        while ((obj = it.current()) != 0)
+        QObjectList l = this->queryList ("QIWidgetValidator");
+        foreach(QObject *obj, l)
         {
             QIWidgetValidator *wval = (QIWidgetValidator *) obj;
             newValid = wval->isValid();
@@ -1386,9 +1403,7 @@ void VBoxVMSettingsDlg::enableOk (const QIWidgetValidator *wval)
                 wvalWarning = wval->warningText();
                 break;
             }
-            ++ it;
         }
-        delete l;
     }
 
     if (warningString.isNull() && !wvalWarning.isNull())
@@ -1422,7 +1437,7 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
         CVirtualBox vbox = vboxGlobal().virtualBox();
         valid = true;
 
-        QValueList <QUuid> uuids;
+        Q3ValueList <QUuid> uuids;
 
         if (valid && grbHDA->isChecked())
         {
@@ -1551,8 +1566,8 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
     else if (pg == pageSerial)
     {
         valid = true;
-        QValueList <QString> ports;
-        QValueList <QString> paths;
+        Q3ValueList <QString> ports;
+        Q3ValueList <QString> paths;
 
         int index = 0;
         for (; index < tbwSerialPorts->count(); ++ index)
@@ -1596,8 +1611,8 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
     else if (pg == pageParallel)
     {
         valid = true;
-        QValueList <QString> ports;
-        QValueList <QString> paths;
+        Q3ValueList <QString> ports;
+        Q3ValueList <QString> paths;
 
         int index = 0;
         for (; index < tbwParallelPorts->count(); ++ index)
@@ -1705,7 +1720,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
             KDiskControllerType ctl;
             LONG dev;
             struct {
-                QGroupBox *grb;
+                Q3GroupBox *grb;
                 QComboBox *cbb;
                 QLabel *tx;
                 QUuid *uuid;
@@ -1945,7 +1960,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
             /* disable the USB controller category if the USB controller is
              * not available (i.e. in VirtualBox OSE) */
 
-            QListViewItem *usbItem = listView->findItem ("#usb", listView_Link);
+            Q3ListViewItem *usbItem = listView->findItem ("#usb", listView_Link);
             Assert (usbItem);
             if (usbItem)
                 usbItem->setVisible (false);
@@ -1979,7 +1994,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
             /* disable the VRDP category if VRDP is
              * not available (i.e. in VirtualBox OSE) */
 
-            QListViewItem *vrdpItem = listView->findItem ("#vrdp", listView_Link);
+            Q3ListViewItem *vrdpItem = listView->findItem ("#vrdp", listView_Link);
             Assert (vrdpItem);
             if (vrdpItem)
                 vrdpItem->setVisible (false);
@@ -2053,8 +2068,8 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 
     /* VT-x/AMD-V */
     cmachine.SetHWVirtExEnabled (
-        chbVTX->state() == QButton::Off ? KTSBool_False :
-        chbVTX->state() == QButton::On ? KTSBool_True : KTSBool_Default);
+        chbVTX->state() == QCheckBox::Off ? KTSBool_False :
+        chbVTX->state() == QCheckBox::On ? KTSBool_True : KTSBool_Default);
 
     /* Saved state folder */
     if (leSnapshotFolder->isModified())
@@ -2088,7 +2103,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
             KDiskControllerType ctl;
             LONG dev;
             struct {
-                QGroupBox *grb;
+                Q3GroupBox *grb;
                 QUuid *uuid;
             } data;
         }
@@ -2255,7 +2270,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
                     ctl.RemoveDeviceFilter (0);
 
             /* then add all new filters */
-            for (QListViewItem *item = lvUSBFilters->firstChild(); item;
+            for (Q3ListViewItem *item = lvUSBFilters->firstChild(); item;
                  item = item->nextSibling())
             {
                 USBListItem *uli = static_cast <USBListItem *> (item);
@@ -2319,7 +2334,7 @@ void VBoxVMSettingsDlg::showVDImageManager (QUuid *id, VBoxMediaComboBox *cbb, Q
         type = VBoxDefs::HD;
 
     VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg",
-                                 WType_Dialog | WShowModal);
+                                 Qt::WType_Dialog | Qt::WShowModal);
     QUuid machineId = cmachine.GetId();
     QUuid hdId = type == VBoxDefs::HD ? cbb->getId() : QUuid();
     QUuid cdId = type == VBoxDefs::CD ? cbb->getId() : QUuid();
@@ -2566,7 +2581,7 @@ void VBoxVMSettingsDlg::usbAdapterToggled (bool aOn)
 
 void VBoxVMSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter, bool isNew)
 {
-    QListViewItem *currentItem = isNew
+    Q3ListViewItem *currentItem = isNew
         ? lvUSBFilters->currentItem()
         : lvUSBFilters->lastItem();
 
@@ -2605,7 +2620,7 @@ void VBoxVMSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter, bool isNe
     wval->revalidate();
 }
 
-void VBoxVMSettingsDlg::lvUSBFilters_currentChanged (QListViewItem *item)
+void VBoxVMSettingsDlg::lvUSBFilters_currentChanged (Q3ListViewItem *item)
 {
     if (item && lvUSBFilters->selectedItem() != item)
         lvUSBFilters->setSelected (item, true);
@@ -2629,7 +2644,7 @@ void VBoxVMSettingsDlg::lvUSBFilters_currentChanged (QListViewItem *item)
 
 void VBoxVMSettingsDlg::lvUSBFilters_setCurrentText (const QString &aText)
 {
-    QListViewItem *item = lvUSBFilters->currentItem();
+    Q3ListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
 
     item->setText (lvUSBFilters_Name, aText);
@@ -2641,7 +2656,7 @@ void VBoxVMSettingsDlg::tbAddUSBFilter_clicked()
     int maxFilterIndex = 0;
     QString usbFilterName = tr ("New Filter %1", "usb");
     QRegExp regExp (QString ("^") + usbFilterName.arg ("([0-9]+)") + QString ("$"));
-    QListViewItemIterator iterator (lvUSBFilters);
+    Q3ListViewItemIterator iterator (lvUSBFilters);
     while (*iterator)
     {
         QString filterName = (*iterator)->text (lvUSBFilters_Name);
@@ -2701,7 +2716,7 @@ void VBoxVMSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
 
 void VBoxVMSettingsDlg::tbRemoveUSBFilter_clicked()
 {
-    QListViewItem *item = lvUSBFilters->currentItem();
+    Q3ListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
 
     USBListItem *uli = static_cast <USBListItem *> (item);
@@ -2718,10 +2733,10 @@ void VBoxVMSettingsDlg::tbRemoveUSBFilter_clicked()
 
 void VBoxVMSettingsDlg::tbUSBFilterUp_clicked()
 {
-    QListViewItem *item = lvUSBFilters->currentItem();
+    Q3ListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
 
-    QListViewItem *itemAbove = item->itemAbove();
+    Q3ListViewItem *itemAbove = item->itemAbove();
     Assert (itemAbove);
     itemAbove = itemAbove->itemAbove();
 
@@ -2739,10 +2754,10 @@ void VBoxVMSettingsDlg::tbUSBFilterUp_clicked()
 
 void VBoxVMSettingsDlg::tbUSBFilterDown_clicked()
 {
-    QListViewItem *item = lvUSBFilters->currentItem();
+    Q3ListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
 
-    QListViewItem *itemBelow = item->itemBelow();
+    Q3ListViewItem *itemBelow = item->itemBelow();
     Assert (itemBelow);
 
     item->moveItem (itemBelow);

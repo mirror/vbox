@@ -32,6 +32,8 @@
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+//Added by qt3to4:
+#include <QShowEvent>
 
 /**
  *  This class is used to encode/decode the registration data.
@@ -217,7 +219,8 @@ void VBoxRegistrationDlg::init()
     VBoxGlobal::adoptLabelPixmap (pictureLabel);
 
     /* Adjust text label size */
-    mTextLabel->setMinimumWidth (widthSpacer->minimumSize().width());
+#warning port me
+//    mTextLabel->setMinimumWidth (widthSpacer->minimumSize().width());
 
     /* Setup validations and maximum text-edit text length */
     QRegExp nameExp ("[\\S\\s]+");
@@ -320,7 +323,7 @@ void VBoxRegistrationDlg::registration()
 
     /* Handshake arguments initializing */
     QString version = vboxGlobal().virtualBox().GetVersion();
-    QUrl::encode (version);
+    Q3Url::encode (version);
 
     /* Handshake */
     QString argument = QString ("?version=%1").arg (version);
@@ -374,10 +377,10 @@ void VBoxRegistrationDlg::onNetEnd (const QByteArray &aTotalData)
         QString name = mNameEdit->text();
         QString email = mEmailEdit->text();
         QString prvt = mUseCheckBox->isChecked() ? "1" : "0";
-        QUrl::encode (version);
-        QUrl::encode (platform);
-        QUrl::encode (name);
-        QUrl::encode (email);
+        Q3Url::encode (version);
+        Q3Url::encode (platform);
+        Q3Url::encode (name);
+        Q3Url::encode (email);
 
         /* Registration */
         QString argument;
@@ -530,13 +533,13 @@ QString VBoxRegistrationDlg::getPlatform()
 
     rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath));
     Assert (RT_SUCCESS (rc));
-    QProcess infoScript (QString ("./VBoxSysInfo.sh"), this, "infoScript");
+    Q3Process infoScript (QString ("./VBoxSysInfo.sh"), this, "infoScript");
     infoScript.setWorkingDirectory (QString (szAppPrivPath));
     if (infoScript.start())
     {
         while (infoScript.isRunning()) {}
         if (infoScript.normalExit())
-            platform += QString (" [%1]").arg (infoScript.readStdout());
+            platform += QString (" [%1]").arg (QString(infoScript.readStdout()));
     }
 #endif
 
@@ -564,5 +567,5 @@ void VBoxRegistrationDlg::abortRegisterRequest (const QString &aReason)
 void VBoxRegistrationDlg::showEvent (QShowEvent *aEvent)
 {
     validate();
-    QWizard::showEvent (aEvent);
+    Q3Wizard::showEvent (aEvent);
 }

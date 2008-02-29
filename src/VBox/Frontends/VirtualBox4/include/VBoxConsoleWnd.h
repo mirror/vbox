@@ -21,12 +21,20 @@
 
 #include "COMDefs.h"
 
-#include <qmainwindow.h>
+#include <q3mainwindow.h>
 
 #include <qmap.h>
-#include <qobjectlist.h>
+#include <qobject.h>
 #include <qcolor.h>
 #include <qdialog.h>
+//Added by qt3to4:
+#include <QContextMenuEvent>
+#include <QLabel>
+#include <Q3PopupMenu>
+#include <QEvent>
+#include <Q3ActionGroup>
+#include <QShowEvent>
+#include <QCloseEvent>
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
@@ -38,8 +46,8 @@
 #endif
 
 class QAction;
-class QActionGroup;
-class QHBox;
+class Q3ActionGroup;
+class Q3HBox;
 class QLabel;
 class QSpacerItem;
 
@@ -49,7 +57,7 @@ class QIStateIndicator;
 class VBoxUSBMenu;
 class VBoxSwitchMenu;
 
-class VBoxConsoleWnd : public QMainWindow
+class VBoxConsoleWnd : public Q3MainWindow
 {
     Q_OBJECT
 
@@ -57,7 +65,7 @@ public:
 
     VBoxConsoleWnd (VBoxConsoleWnd **aSelf,
                      QWidget* aParent = 0, const char* aName = 0,
-                     WFlags aFlags = WType_TopLevel);
+                     Qt::WFlags aFlags = Qt::WType_TopLevel);
     virtual ~VBoxConsoleWnd();
 
     bool openView (const CSession &session);
@@ -193,10 +201,10 @@ private slots:
 private:
 
     /** Popup version of the main menu */
-    QPopupMenu *mMainMenu;
+    Q3PopupMenu *mMainMenu;
 
-    QActionGroup *mRunningActions;
-    QActionGroup *mRunningOrPausedActions;
+    Q3ActionGroup *mRunningActions;
+    Q3ActionGroup *mRunningOrPausedActions;
 
     // Machine actions
     QAction *vmFullscreenAction;
@@ -242,11 +250,11 @@ private:
     VBoxSwitchMenu *vmDisMouseIntegrMenu;
 
     // Devices popup menus
-    QPopupMenu *devicesMenu;
-    QPopupMenu *devicesMountFloppyMenu;
-    QPopupMenu *devicesMountDVDMenu;
-    QPopupMenu *devicesSFMenu;
-    QPopupMenu *devicesNetworkMenu;
+    Q3PopupMenu *devicesMenu;
+    Q3PopupMenu *devicesMountFloppyMenu;
+    Q3PopupMenu *devicesMountDVDMenu;
+    Q3PopupMenu *devicesSFMenu;
+    Q3PopupMenu *devicesNetworkMenu;
     VBoxUSBMenu *devicesUSBMenu;
     VBoxSwitchMenu *devicesVRDPMenu;
 
@@ -265,7 +273,7 @@ private:
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger popup menu
-    QPopupMenu *dbgMenu;
+    Q3PopupMenu *dbgMenu;
 #endif
 
     // Menu identifiers
@@ -290,7 +298,7 @@ private:
     QIStateIndicator *mouse_state, *hostkey_state;
     QIStateIndicator *autoresize_state;
     QIStateIndicator *vrdp_state;
-    QHBox *hostkey_hbox;
+    Q3HBox *hostkey_hbox;
     QLabel *hostkey_name;
 
     QTimer *idle_timer;

@@ -20,6 +20,9 @@
 #define ___VBoxAquaStyle_h___
 
 #include <qstyle.h>
+//Added by qt3to4:
+#include <QPixmap>
+#include <Q3PopupMenu>
 
 /**
  * The Virtual Box QAquaStyle overrider.
@@ -45,7 +48,7 @@ public:
     virtual void polish( QApplication *app );
     virtual void unPolish( QApplication *app );
     virtual void polish( QPalette &p );
-    virtual void polishPopupMenu( QPopupMenu *m );
+    virtual void polishPopupMenu( Q3PopupMenu *m );
     virtual QRect itemRect( QPainter *p, const QRect &r, int flags, bool enabled, const QPixmap *pixmap, 
                             const QString &text, int len = -1 ) const;
     virtual void drawItem( QPainter *p, const QRect &r, int flags, const QColorGroup &g, bool enabled, 

@@ -1,3 +1,5 @@
+//Added by qt3to4:
+#include <QShowEvent>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -49,7 +51,8 @@ void VBoxVMFirstRunWzd::init()
 
     /* media page */
     cbImage = new VBoxMediaComboBox (bgSource, "cbImage", VBoxDefs::CD);
-    ltVdm->insertWidget (0, cbImage);
+#warning port me
+//    ltVdm->insertWidget (0, cbImage);
     tbVdm->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
                                             "select_file_dis_16px.png"));
     setTabOrder (cbImage, tbVdm);
@@ -57,10 +60,11 @@ void VBoxVMFirstRunWzd::init()
     /* summary page */
     teSummary = new QITextEdit (pageSummary);
     teSummary->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Minimum);
-    teSummary->setFrameShape (QTextEdit::NoFrame);
+    teSummary->setFrameShape (Q3TextEdit::NoFrame);
     teSummary->setReadOnly (TRUE);
     teSummary->setPaper (pageSummary->backgroundBrush());
-    ltSummary->insertWidget (2, teSummary);
+#warning port me
+//    ltSummary->insertWidget (2, teSummary);
 
     /* setup connections and set validation for pages
      * --------------------------------------------------------------------- */
@@ -73,7 +77,7 @@ void VBoxVMFirstRunWzd::init()
              this, SLOT (revalidate (QIWidgetValidator *)));
 
     /* filter out Enter keys in order to direct them to the default dlg button */
-    QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
+    QIKeyFilter *ef = new QIKeyFilter (this, Qt::Key_Enter);
     ef->watchOn (teSummary);
 
     /* set initial values
@@ -83,7 +87,9 @@ void VBoxVMFirstRunWzd::init()
     setFinishEnabled (pageSummary, true);
 
     /* setup minimum width for the sizeHint to be calculated correctly */
-    int wid = widthSpacer->minimumSize().width();
+#warning port me
+    int wid = 1;
+//    int wid = widthSpacer->minimumSize().width();
     txWelcome->setMinimumWidth (wid);
     txType->setMinimumWidth (wid);
     txSource->setMinimumWidth (wid);
@@ -169,7 +175,7 @@ void VBoxVMFirstRunWzd::showPage (QWidget *aPage)
         nextButton()->setDefault (true);
     }
 
-    QWizard::showPage (aPage);
+    Q3Wizard::showPage (aPage);
 
     /* fix focus on the last page. when we go to the last page
      * having the Next in focus the focus goes to the Cancel
@@ -226,7 +232,7 @@ void VBoxVMFirstRunWzd::accept()
         }
     }
 
-    QWizard::accept();
+    Q3Wizard::accept();
 }
 
 
@@ -330,7 +336,7 @@ void VBoxVMFirstRunWzd::mediaSourceChanged()
 void VBoxVMFirstRunWzd::openVdm()
 {
     VBoxDiskImageManagerDlg vdm (this, "VBoxDiskImageManagerDlg",
-                                 WType_Dialog | WShowModal);
+                                 Qt::WType_Dialog | Qt::WShowModal);
     QUuid machineId = machine.GetId();
     VBoxDefs::DiskType type = rbCdType->isChecked() ? VBoxDefs::CD :
         rbFdType->isChecked() ? VBoxDefs::FD : VBoxDefs::InvalidType;

@@ -21,11 +21,13 @@
 
 #include "HappyHttp.h"
 #include "qwidget.h"
-#include "qurl.h"
+#include "q3url.h"
 #include "qmutex.h"
+//Added by qt3to4:
+#include <QEvent>
 class QStatusBar;
 class QAction;
-class QProgressBar;
+class Q3ProgressBar;
 class QToolButton;
 class QThread;
 class QTimer;
@@ -85,11 +87,11 @@ private:
 
     void abortConnection();
 
-    QUrl mUrl;
+    Q3Url mUrl;
     QString mTarget;
     QStatusBar *mStatusBar;
     QAction *mAction;
-    QProgressBar *mProgressBar;
+    Q3ProgressBar *mProgressBar;
     QToolButton *mCancelButton;
     bool mIsChecking;
     bool mSuicide;

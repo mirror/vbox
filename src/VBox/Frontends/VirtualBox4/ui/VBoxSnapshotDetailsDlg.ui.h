@@ -1,3 +1,5 @@
+//Added by qt3to4:
+#include <q3mimefactory.h>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -28,13 +30,13 @@
 
 void VBoxSnapshotDetailsDlg::init()
 {
-    setIcon (QPixmap::fromMimeSource ("settings_16px.png"));
+    setIcon (qPixmapFromMimeSource ("settings_16px.png"));
 
     txeSummary->setPaper (this->backgroundBrush());
     txeSummary->setLinkUnderline (false);
 
     // filter out Enter keys in order to direct them to the default dlg button
-    QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
+    QIKeyFilter *ef = new QIKeyFilter (this, Qt::Key_Enter);
     ef->watchOn (txeSummary);
 
     txeSummary->setFocus();

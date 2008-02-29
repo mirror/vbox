@@ -23,6 +23,8 @@
 #include "VBoxGlobal.h"
 
 #include <qapplication.h>
+//Added by qt3to4:
+#include <QPaintEvent>
 
 //
 // VBoxFrameBuffer class
@@ -340,10 +342,11 @@ void VBoxQImageFrameBuffer::paintEvent (QPaintEvent *pe)
                                          r.y() + mView->contentsY(),
                                          r.width(), r.height()));
 
-        ::bitBlt (mView->viewport(), r.x(), r.y(),
-                  &mPM, 0, 0,
-                  r.width(), r.height(),
-                  Qt::CopyROP, TRUE);
+#warning port me
+//        ::bitBlt (mView->viewport(), r.x(), r.y(),
+//                  &mPM, 0, 0,
+//                  r.width(), r.height(),
+//                  Qt::CopyROP, TRUE);
     }
     else
     {
@@ -352,10 +355,11 @@ void VBoxQImageFrameBuffer::paintEvent (QPaintEvent *pe)
                                       mImg.width(), r.height(), mImg.depth(),
                                       0, 0, QImage::LittleEndian));
 
-        ::bitBlt (mView->viewport(), r.x(), r.y(),
-                  &mPM, r.x() + mView->contentsX(), 0,
-                  r.width(), r.height(),
-                  Qt::CopyROP, TRUE);
+#warning port me
+//        ::bitBlt (mView->viewport(), r.x(), r.y(),
+//                  &mPM, r.x() + mView->contentsX(), 0,
+//                  r.width(), r.height(),
+//                  Qt::CopyROP, TRUE);
     }
 
     FRAMEBUF_DEBUG_STOP (xxx, r.width(), r.height());

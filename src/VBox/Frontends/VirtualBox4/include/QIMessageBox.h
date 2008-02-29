@@ -20,10 +20,12 @@
 #define __QIMessageBox_h__
 
 #include <qdialog.h>
-#include <qvbox.h>
+#include <q3vbox.h>
 #include <qmessagebox.h>
 #include <qcheckbox.h>
-#include <qtextedit.h>
+#include <q3textedit.h>
+//Added by qt3to4:
+#include <QLabel>
 
 class QIRichLabel;
 class QLabel;
@@ -60,7 +62,7 @@ public:
     QIMessageBox (const QString &aCaption, const QString &aText,
                   Icon aIcon, int aButton0, int aButton1 = 0, int aButton2 = 0,
                   QWidget *aParent = 0, const char *aName = 0, bool aModal = TRUE,
-                  WFlags aFlags = WStyle_DialogBorder);
+                  Qt::WFlags aFlags = Qt::WStyle_DialogBorder);
 
     QString buttonText (int aButton) const;
     void setButtonText (int aButton, const QString &aText);
@@ -99,10 +101,10 @@ private:
     QLabel *mIconLabel;
     QIRichLabel *mTextLabel;
     QPushButton *mButton0PB, *mButton1PB, *mButton2PB;
-    QVBox *mMessageVBox;
+    Q3VBox *mMessageVBox;
     QCheckBox *mFlagCB, *mFlagCB_Main, *mFlagCB_Details;
-    QVBox *mDetailsVBox;
-    QTextEdit *mDetailsText;
+    Q3VBox *mDetailsVBox;
+    Q3TextEdit *mDetailsText;
     QSpacerItem *mSpacer;
 };
 

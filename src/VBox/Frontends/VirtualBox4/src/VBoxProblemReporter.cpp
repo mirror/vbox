@@ -27,14 +27,18 @@
 #include "QIHotKeyEdit.h"
 
 #include <qmessagebox.h>
-#include <qprogressdialog.h>
+#include <q3progressdialog.h>
 #include <qcursor.h>
-#include <qprocess.h>
+#include <q3process.h>
 #include <qeventloop.h>
 #include <qregexp.h>
 #ifdef Q_WS_MAC
 # include <qpushbutton.h>
 #endif
+//Added by qt3to4:
+#include <QTimerEvent>
+#include <Q3CString>
+#include <QCloseEvent>
 
 #include <iprt/err.h>
 #include <iprt/param.h>
@@ -58,15 +62,15 @@
  *        must not be destroyed before the created VBoxProgressDialog instance
  *        is destroyed.
  */
-class VBoxProgressDialog : public QProgressDialog
+class VBoxProgressDialog : public Q3ProgressDialog
 {
 public:
 
     VBoxProgressDialog (CProgress &aProgress, const QString &aTitle,
                         int aMinDuration = 2000, QWidget *aCreator = 0,
                         const char *aName = 0)
-        : QProgressDialog (aCreator, aName, true,
-                           WStyle_Customize | WStyle_DialogBorder | WStyle_Title)
+        : Q3ProgressDialog (aCreator, aName, true,
+                           Qt::WStyle_Customize | Qt::WStyle_DialogBorder | Qt::WStyle_Title)
         , mProgress (aProgress)
         , mCalcelEnabled (true)
         , mOpCount (mProgress.GetOperationCount())
@@ -99,12 +103,12 @@ protected:
 
     virtual void timerEvent (QTimerEvent *e);
 
-    virtual void reject() { if (mCalcelEnabled) QProgressDialog::reject(); };
+    virtual void reject() { if (mCalcelEnabled) Q3ProgressDialog::reject(); };
 
     virtual void closeEvent (QCloseEvent *e)
     {
         if (mCalcelEnabled)
-            QProgressDialog::closeEvent (e);
+            Q3ProgressDialog::closeEvent (e);
         else
             e->ignore();
     }
@@ -128,14 +132,15 @@ int VBoxProgressDialog::run (int aRefreshInterval)
 {
     if (mProgress.isOk())
     {
+#warning port me
         /* start a refresh timer */
-        startTimer (aRefreshInterval);
-        mLoopLevel = qApp->eventLoop()->loopLevel();
-        /* enter the modal loop */
-        qApp->eventLoop()->enterLoop();
-        killTimers();
-        mLoopLevel = -1;
-        mEnded = false;
+//        startTimer (aRefreshInterval);
+//        mLoopLevel = qApp->eventLoop()->loopLevel();
+//        /* enter the modal loop */
+//        qApp->eventLoop()->enterLoop();
+//        killTimers();
+//        mLoopLevel = -1;
+//        mEnded = false;
         return result();
     }
     return Rejected;
@@ -164,19 +169,20 @@ void VBoxProgressDialog::timerEvent (QTimerEvent *e)
     {
         if (mLoopLevel != -1)
         {
-            /* we've entered the loop in run() */
-            if (mLoopLevel + 1 == qApp->eventLoop()->loopLevel())
-            {
-                /* it's our loop, exit it */
-                qApp->eventLoop()->exitLoop();
-            }
-            else
-            {
-                Assert (mLoopLevel + 1 < qApp->eventLoop()->loopLevel());
-                /* restart the timer to watch for the loop level to drop */
-                if (justEnded)
-                    startTimer (50);
-            }
+#warning port me
+//            /* we've entered the loop in run() */
+//            if (mLoopLevel + 1 == qApp->eventLoop()->loopLevel())
+//            {
+//                /* it's our loop, exit it */
+//                qApp->eventLoop()->exitLoop();
+//            }
+//            else
+//            {
+//                Assert (mLoopLevel + 1 < qApp->eventLoop()->loopLevel());
+//                /* restart the timer to watch for the loop level to drop */
+//                if (justEnded)
+//                    startTimer (50);
+//            }
         }
         else
             Assert (justEnded);
@@ -348,7 +354,7 @@ int VBoxProblemReporter::message (QWidget *aParent, Type aType, const QString &a
     if (!aText3.isNull())
         box->setButtonText (2, aText3);
 
-    if (aDetails)
+    if (!aDetails.isEmpty())
     {
         box->setDetailsText (aDetails);
         box->setDetailsShown (true);
@@ -408,7 +414,7 @@ bool VBoxProblemReporter::showModalProgressDialog (
     CProgress &aProgress, const QString &aTitle, QWidget *aParent,
     int aMinDuration)
 {
-    QApplication::setOverrideCursor (QCursor (WaitCursor));
+    QApplication::setOverrideCursor (QCursor (Qt::WaitCursor));
 
     VBoxProgressDialog progressDlg (aProgress, aTitle, aMinDuration,
                                     aParent, "progressDlg");
@@ -1763,7 +1769,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     //  - make warning messages modeless
     //  - add common buttons like Retry/Save/PowerOff/whatever
 
-    QCString autoConfimId = "showRuntimeError.";
+    Q3CString autoConfimId = "showRuntimeError.";
 
     CConsole console = aConsole;
     KMachineState state = console.GetState();
@@ -1869,7 +1875,7 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
 {
     QString formatted;
 
-    if (aInfo.text())
+    if (!aInfo.text().isEmpty())
         formatted += QString ("<table bgcolor=#FFFFFF border=0 cellspacing=0 "
                               "cellpadding=0 width=100%>"
                               "<tr><td><p>%1.</p></td></tr>"
@@ -1925,7 +1931,7 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
         if (haveInterfaceID)
         {
             QString s = aInfo.interfaceID();
-            if (aInfo.interfaceName())
+            if (!aInfo.interfaceName().isEmpty())
                 s = aInfo.interfaceName() + ' ' + s;
             formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
                 .arg (tr ("Interface: ", "error info"), s);
@@ -1934,7 +1940,7 @@ QString VBoxProblemReporter::doFormatErrorInfo (const COMErrorInfo &aInfo,
         if (!aInfo.calleeIID().isNull() && aInfo.calleeIID() != aInfo.interfaceID())
         {
             QString s = aInfo.calleeIID();
-            if (aInfo.calleeName())
+            if (!aInfo.calleeName().isEmpty())
                 s = aInfo.calleeName() + ' ' + s;
             formatted += QString ("<tr><td>%1</td><td>%2</td></tr>")
                 .arg (tr ("Callee: ", "error info"), s);
@@ -2012,11 +2018,11 @@ void VBoxProblemReporter::showHelpHelpDialog()
     rc = RTPathAppPrivateArch (szViewerPath, sizeof (szViewerPath));
 
     QString fullProgPath = QString(szDocsPath);
-    QProcess kchmViewer (QString(szViewerPath) + "/kchmviewer");
+    Q3Process kchmViewer (QString(szViewerPath) + "/kchmviewer");
     kchmViewer.addArgument (fullProgPath + "/VirtualBox.chm");
-    kchmViewer.launch ("");
+    kchmViewer.launch (QString(""));
 #elif defined (Q_WS_MAC)
-    QProcess openApp (QString("/usr/bin/open"));
+    Q3Process openApp (QString("/usr/bin/open"));
     openApp.addArgument (qApp->applicationDirPath() + "/UserManual.pdf");
     openApp.launch ("");
 #endif

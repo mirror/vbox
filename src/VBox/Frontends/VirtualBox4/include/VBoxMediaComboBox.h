@@ -22,8 +22,10 @@
 #include "VBoxGlobal.h"
 
 #include <qcombobox.h>
+//Added by qt3to4:
+#include <QPixmap>
 
-class QListBoxItem;
+class Q3ListBoxItem;
 
 class VBoxMediaComboBox : public QComboBox
 {
@@ -50,7 +52,7 @@ protected slots:
     void mediaAdded (const VBoxMedia &);
     void mediaUpdated (const VBoxMedia &);
     void mediaRemoved (VBoxDefs::DiskType, const QUuid &);
-    void processOnItem (QListBoxItem *);
+    void processOnItem (Q3ListBoxItem *);
     void processActivated (int);
 
 protected:

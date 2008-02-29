@@ -24,7 +24,9 @@
 #include <qdir.h>
 #include <qfile.h>
 #include <qtooltip.h>
-#include <qlistbox.h>
+#include <q3listbox.h>
+//Added by qt3to4:
+#include <QPixmap>
 
 VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, const char *aName,
                                       int aType, bool aUseEmptyItem)
@@ -50,11 +52,12 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, const char *aName,
              this, SLOT (processActivated (int)));
 
     /* in some qt themes embedded list-box is not used by default, so create it */
-    if (!listBox())
-        setListBox (new QListBox (this));
-    if (listBox())
-        connect (listBox(), SIGNAL (onItem (QListBoxItem*)),
-                 this, SLOT (processOnItem (QListBoxItem*)));
+#warning port me
+//    if (!listBox())
+//        setListBox (new Q3ListBox (this));
+//    if (listBox())
+//        connect (listBox(), SIGNAL (onItem (Q3ListBoxItem*)),
+//                 this, SLOT (processOnItem (Q3ListBoxItem*)));
 
     /* cache pixmaps as class members */
     QImage img;
@@ -236,12 +239,13 @@ void VBoxMediaComboBox::updateToolTip (int aItem)
         QToolTip::add (this, mTipList [aItem]);
 }
 
-void VBoxMediaComboBox::processOnItem (QListBoxItem* aItem)
+void VBoxMediaComboBox::processOnItem (Q3ListBoxItem* aItem)
 {
     /* combobox item's tooltip attaching */
-    int index = listBox()->index (aItem);
-    QToolTip::remove (listBox()->viewport());
-    QToolTip::add (listBox()->viewport(), mTipList [index]);
+#warning port me
+//    int index = listBox()->index (aItem);
+//    QToolTip::remove (listBox()->viewport());
+//    QToolTip::add (listBox()->viewport(), mTipList [index]);
 }
 
 QUuid VBoxMediaComboBox::getId()

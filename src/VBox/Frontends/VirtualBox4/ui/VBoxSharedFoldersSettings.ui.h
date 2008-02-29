@@ -1,3 +1,14 @@
+//Added by qt3to4:
+#include <Q3WhatsThis>
+#include <QPushButton>
+#include <Q3HBoxLayout>
+#include <Q3ValueList>
+#include <QLabel>
+#include <Q3GridLayout>
+#include <QMouseEvent>
+#include <QEvent>
+#include <Q3VBoxLayout>
+#include <QShowEvent>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -30,10 +41,10 @@
 
 
 typedef QPair<QString, VBoxSharedFoldersSettings::SFDialogType> SFolderName;
-typedef QValueList<SFolderName> SFoldersNameList;
+typedef Q3ValueList<SFolderName> SFoldersNameList;
 
 
-class VBoxRichListItem : public QListViewItem
+class VBoxRichListItem : public Q3ListViewItem
 {
 public:
 
@@ -48,38 +59,38 @@ public:
         EllipsisFile    = 4
     };
 
-    VBoxRichListItem (FormatType aFormat, QListView *aParent,
+    VBoxRichListItem (FormatType aFormat, Q3ListView *aParent,
                       const QString& aName, const QString& aNull1,
                       const QString& aNull2, const QString& aKey) :
-        QListViewItem (aParent, aName, aNull1, aNull2, aKey), mFormat (aFormat)
+        Q3ListViewItem (aParent, aName, aNull1, aNull2, aKey), mFormat (aFormat)
     {
     }
 
-    VBoxRichListItem (FormatType aFormat, QListViewItem *aParent,
+    VBoxRichListItem (FormatType aFormat, Q3ListViewItem *aParent,
                       const QString& aName, const QString& aPath,
                       const QString& aAccess, const QString& aEdited) :
-        QListViewItem (aParent, aName, aPath, aAccess, aEdited), mFormat (aFormat)
+        Q3ListViewItem (aParent, aName, aPath, aAccess, aEdited), mFormat (aFormat)
     {
         mTextList << aName << aPath << aAccess << aEdited;
     }
 
     int rtti() const { return QIRichListItemId; }
 
-    int compare (QListViewItem *aItem, int aColumn, bool aAscending) const
+    int compare (Q3ListViewItem *aItem, int aColumn, bool aAscending) const
     {
         /* Sorting the children always by name: */
         if (parent() && aItem->parent())
-            return QListViewItem::compare (aItem, 0, aAscending);
+            return Q3ListViewItem::compare (aItem, 0, aAscending);
         /* Sorting the root items always by key: */
         else if (!parent() && !aItem->parent())
-            return QListViewItem::compare (aItem, 3, aAscending);
+            return Q3ListViewItem::compare (aItem, 3, aAscending);
         else
-            return QListViewItem::compare (aItem, aColumn, aAscending);
+            return Q3ListViewItem::compare (aItem, aColumn, aAscending);
     }
 
     VBoxRichListItem* nextSibling() const
     {
-        QListViewItem *item = QListViewItem::nextSibling();
+        Q3ListViewItem *item = Q3ListViewItem::nextSibling();
         return item && item->rtti() == QIRichListItemId ?
             static_cast<VBoxRichListItem*> (item) : 0;
     }
@@ -117,21 +128,21 @@ protected:
                     dx += listView()->columnWidth (i);
                 wnd.moveBy (dx, 0);
                 aPainter->setWindow (wnd);
-                QListViewItem::paintCell (aPainter, aColorGroup, 0, aWidth, aAlign);
+                Q3ListViewItem::paintCell (aPainter, aColorGroup, 0, aWidth, aAlign);
                 aPainter->restore();
                 return;
             }
 
-            QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
+            Q3ListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
         }
         else
         {
             processColumn (aColumn, aWidth);
-            QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
+            Q3ListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
         }
     }
 
-    int width (const QFontMetrics &aFontMetrics, const QListView *, int aColumn) const
+    int width (const QFontMetrics &aFontMetrics, const Q3ListView *, int aColumn) const
     {
         return parent() ?
                aFontMetrics.boundingRect (getText (aColumn)).width() +
@@ -227,10 +238,10 @@ public:
             default:
                 AssertMsgFailed (("Incorrect SF Dialog type\n"));
         }
-        QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
+        Q3VBoxLayout *mainLayout = new Q3VBoxLayout (this, 10, 10, "mainLayout");
 
         /* Setup Input layout */
-        QGridLayout *inputLayout = new QGridLayout (mainLayout, 3, 3, 10, "inputLayout");
+        Q3GridLayout *inputLayout = new Q3GridLayout (mainLayout, 3, 3, 10, "inputLayout");
         QLabel *lbPath = new QLabel (tr ("Folder Path"), this);
         mLePath = new QLineEdit (this);
         QToolButton *tbPath = new QToolButton (this);
@@ -238,16 +249,16 @@ public:
         mLeName = new QLineEdit (this);
         tbPath->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
                                                  "select_file_dis_16px.png"));
-        tbPath->setFocusPolicy (QWidget::TabFocus);
+        tbPath->setFocusPolicy (Qt::TabFocus);
         connect (mLePath, SIGNAL (textChanged (const QString &)),
                  this, SLOT (validate()));
         connect (mLeName, SIGNAL (textChanged (const QString &)),
                  this, SLOT (validate()));
         connect (tbPath, SIGNAL (clicked()), this, SLOT (showFileDialog()));
-        QWhatsThis::add (mLePath, tr ("Displays the path to an existing folder on the host PC."));
-        QWhatsThis::add (mLeName, tr ("Displays the name of the shared folder "
+        Q3WhatsThis::add (mLePath, tr ("Displays the path to an existing folder on the host PC."));
+        Q3WhatsThis::add (mLeName, tr ("Displays the name of the shared folder "
                                       "(as it will be seen by the guest OS)."));
-        QWhatsThis::add (tbPath, tr ("Opens the dialog to select a folder."));
+        Q3WhatsThis::add (tbPath, tr ("Opens the dialog to select a folder."));
 
         inputLayout->addWidget (lbPath,  0, 0);
         inputLayout->addWidget (mLePath, 0, 1);
@@ -256,7 +267,7 @@ public:
         inputLayout->addMultiCellWidget (mLeName, 1, 1, 1, 2);
 
         mCbReadonly = new QCheckBox (tr ("&Read-only"), this);
-        QWhatsThis::add (mCbReadonly,
+        Q3WhatsThis::add (mCbReadonly,
             tr ("When checked, the guest OS will not be able to write to the "
                 "specified shared folder."));
         mCbReadonly->setChecked (false);
@@ -272,7 +283,7 @@ public:
         }
 
         /* Setup Button layout */
-        QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
+        Q3HBoxLayout *buttonLayout = new Q3HBoxLayout (mainLayout, 10, "buttonLayout");
         mBtOk = new QPushButton (tr ("&OK"), this, "btOk");
         QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
         QPushButton *btCancel = new QPushButton (tr ("Cancel"), this, "btCancel");
@@ -395,8 +406,8 @@ void VBoxSharedFoldersSettings::init()
     connect (tbAdd, SIGNAL (clicked()), this, SLOT (tbAddPressed()));
     connect (tbEdit, SIGNAL (clicked()), this, SLOT (tbEditPressed()));
     connect (tbRemove, SIGNAL (clicked()), this, SLOT (tbRemovePressed()));
-    connect (listView, SIGNAL (currentChanged (QListViewItem *)),
-             this, SLOT (processCurrentChanged (QListViewItem *)));
+    connect (listView, SIGNAL (currentChanged (Q3ListViewItem *)),
+             this, SLOT (processCurrentChanged (Q3ListViewItem *)));
 
     /* Make after-paining list update to ensure all columns repainted correctly. */
     connect (listView->header(), SIGNAL (sizeChange (int, int, int)),
@@ -453,7 +464,7 @@ bool VBoxSharedFoldersSettings::eventFilter (QObject *aObject, QEvent *aEvent)
     if (aObject == listView->viewport() && aEvent->type() == QEvent::MouseMove)
     {
         QMouseEvent *e = static_cast<QMouseEvent*> (aEvent);
-        QListViewItem *i = listView->itemAt (e->pos());
+        Q3ListViewItem *i = listView->itemAt (e->pos());
         VBoxRichListItem *item = i && i->rtti() == VBoxRichListItem::QIRichListItemId ?
             static_cast<VBoxRichListItem*> (i) : 0;
         if (item)
@@ -467,7 +478,9 @@ bool VBoxSharedFoldersSettings::eventFilter (QObject *aObject, QEvent *aEvent)
                 delta -= listView->columnWidth (id);
             }
 
-            QString curText = QToolTip::textFor (listView->viewport());
+#warning port me
+//            QString curText = QToolTip::textFor (listView->viewport());
+            QString curText = "";
             QString newText = item->text (id) != item->getText (id) ?
                               item->getText (id) : QString::null;
 
@@ -601,7 +614,7 @@ void VBoxSharedFoldersSettings::getFromConsole (const CConsole &aConsole)
 }
 
 void VBoxSharedFoldersSettings::getFrom (const CSharedFolderEnumerator &aEn,
-                                         QListViewItem *aRoot)
+                                         Q3ListViewItem *aRoot)
 {
     aRoot->setSelectable (false);
     while (aEn.HasMore())
@@ -643,7 +656,7 @@ void VBoxSharedFoldersSettings::putBackToMachine()
     /* This function is only available for MachineType dialog */
     Assert (mDialogType & MachineType);
     /* Searching for MachineType item's root */
-    QListViewItem *root = listView->findItem (QString::number (MachineType), 3);
+    Q3ListViewItem *root = listView->findItem (QString::number (MachineType), 3);
     Assert (root);
     CSharedFolderEnumerator en = mMachine.GetSharedFolders().Enumerate();
     putBackTo (en, root);
@@ -657,14 +670,14 @@ void VBoxSharedFoldersSettings::putBackToConsole()
     /* This function is only available for ConsoleType dialog */
     Assert (mDialogType & ConsoleType);
     /* Searching for ConsoleType item's root */
-    QListViewItem *root = listView->findItem (QString::number (ConsoleType), 3);
+    Q3ListViewItem *root = listView->findItem (QString::number (ConsoleType), 3);
     Assert (root);
     CSharedFolderEnumerator en = mConsole.GetSharedFolders().Enumerate();
     putBackTo (en, root);
 }
 
 void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
-                                           QListViewItem *aRoot)
+                                           Q3ListViewItem *aRoot)
 {
     Assert (!aRoot->text (3).isNull());
     SFDialogType type = (SFDialogType)aRoot->text (3).toInt();
@@ -675,7 +688,7 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
         CSharedFolder sf = aEn.GetNext();
 
         /* Search for this root's items */
-        QListViewItem *firstItem = aRoot->firstChild();
+        Q3ListViewItem *firstItem = aRoot->firstChild();
         VBoxRichListItem *item = firstItem &&
             firstItem->rtti() == VBoxRichListItem::QIRichListItemId ?
             static_cast<VBoxRichListItem*> (firstItem) : 0;
@@ -693,7 +706,7 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
     }
 
     /* saving all machine related list view items */
-    QListViewItem *iterator = aRoot->firstChild();
+    Q3ListViewItem *iterator = aRoot->firstChild();
     while (iterator)
     {
         VBoxRichListItem *item = 0;
@@ -708,7 +721,7 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
 }
 
 
-QListViewItem* VBoxSharedFoldersSettings::searchRoot (bool aIsPermanent)
+Q3ListViewItem* VBoxSharedFoldersSettings::searchRoot (bool aIsPermanent)
 {
     if (!aIsPermanent)
         return listView->findItem (QString::number (ConsoleType), 3);
@@ -722,7 +735,7 @@ void VBoxSharedFoldersSettings::tbAddPressed()
 {
     /* Make the used names list: */
     SFoldersNameList usedList;
-    QListViewItemIterator it (listView);
+    Q3ListViewItemIterator it (listView);
     while (*it)
     {
         if ((*it)->parent() && (*it)->rtti() == VBoxRichListItem::QIRichListItemId)
@@ -745,7 +758,7 @@ void VBoxSharedFoldersSettings::tbAddPressed()
     /* Shared folder's name & path could not be empty */
     Assert (!name.isEmpty() && !path.isEmpty());
     /* Searching root for the new listview item */
-    QListViewItem *root = searchRoot (isPermanent);
+    Q3ListViewItem *root = searchRoot (isPermanent);
     Assert (root);
     /* Appending a new listview item to the root */
     VBoxRichListItem *item = new VBoxRichListItem (
@@ -764,7 +777,7 @@ void VBoxSharedFoldersSettings::tbEditPressed()
 {
     /* Make the used names list: */
     SFoldersNameList usedList;
-    QListViewItemIterator it (listView);
+    Q3ListViewItemIterator it (listView);
     while (*it)
     {
         if ((*it)->parent() && !(*it)->isSelected() &&
@@ -778,7 +791,7 @@ void VBoxSharedFoldersSettings::tbEditPressed()
     }
 
     /* Check selected item */
-    QListViewItem *selectedItem = listView->selectedItem();
+    Q3ListViewItem *selectedItem = listView->selectedItem();
     VBoxRichListItem *item =
         selectedItem->rtti() == VBoxRichListItem::QIRichListItemId ?
         static_cast<VBoxRichListItem*> (selectedItem) : 0;
@@ -800,7 +813,7 @@ void VBoxSharedFoldersSettings::tbEditPressed()
     /* Shared folder's name & path could not be empty */
     Assert (!name.isEmpty() && !path.isEmpty());
     /* Searching new root for the selected listview item */
-    QListViewItem *root = searchRoot (isPermanent);
+    Q3ListViewItem *root = searchRoot (isPermanent);
     Assert (root);
     /* Updating an edited listview item */
     item->updateText (3, "edited");
@@ -832,7 +845,7 @@ void VBoxSharedFoldersSettings::tbRemovePressed()
 }
 
 
-void VBoxSharedFoldersSettings::processCurrentChanged (QListViewItem *aItem)
+void VBoxSharedFoldersSettings::processCurrentChanged (Q3ListViewItem *aItem)
 {
     if (aItem && aItem->isSelectable() && listView->selectedItem() != aItem)
         listView->setSelected (aItem, true);
@@ -846,7 +859,7 @@ void VBoxSharedFoldersSettings::processCurrentChanged (QListViewItem *aItem)
     tbRemove->setEnabled (removeEnabled);
 }
 
-void VBoxSharedFoldersSettings::processDoubleClick (QListViewItem *aItem)
+void VBoxSharedFoldersSettings::processDoubleClick (Q3ListViewItem *aItem)
 {
     bool editEnabled = aItem && aItem->parent() &&
         isEditable (aItem->parent()->text (3));

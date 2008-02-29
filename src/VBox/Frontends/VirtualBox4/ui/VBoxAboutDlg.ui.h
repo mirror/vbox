@@ -1,3 +1,5 @@
+//Added by qt3to4:
+#include <QMouseEvent>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):

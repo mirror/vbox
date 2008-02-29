@@ -495,7 +495,6 @@
 <includes>
     <include location="global" impldecl="in implementation">qapplication.h</include>
     <include location="global" impldecl="in implementation">qprogressdialog.h</include>
-    <include location="global" impldecl="in implementation">qfocusdata.h</include>
     <include location="global" impldecl="in implementation">qobjectlist.h</include>
     <include location="global" impldecl="in implementation">qdragobject.h</include>
     <include location="global" impldecl="in implementation">qaction.h</include>

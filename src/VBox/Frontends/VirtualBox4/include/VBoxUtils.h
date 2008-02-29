@@ -21,10 +21,15 @@
 
 #include <qobject.h>
 #include <qevent.h>
-#include <qlistview.h>
-#include <qtextedit.h>
+#include <q3listview.h>
+#include <q3textedit.h>
 #include <qlabel.h>
 #include <qlayout.h>
+//Added by qt3to4:
+#include <QPixmap>
+#include <QResizeEvent>
+#include <QMouseEvent>
+#include <QKeyEvent>
 
 /**
  *  Simple ListView filter to disable unselecting all items by clicking in the
@@ -35,7 +40,7 @@ class QIListViewSelectionPreserver : protected QObject
 {
 public:
 
-    QIListViewSelectionPreserver (QObject *parent, QListView *alv)
+    QIListViewSelectionPreserver (QObject *parent, Q3ListView *alv)
         : QObject (parent), lv (alv)
     {
         lv->viewport()->installEventFilter (this);
@@ -59,7 +64,7 @@ protected:
 
 private:
 
-    QListView *lv;
+    Q3ListView *lv;
 };
 
 /**
@@ -71,7 +76,7 @@ class QIKeyFilter : protected QObject
 {
 public:
 
-    QIKeyFilter (QObject *aParent, Key aKey) : QObject (aParent), mKey (aKey) {}
+    QIKeyFilter (QObject *aParent, Qt::Key aKey) : QObject (aParent), mKey (aKey) {}
 
     void watchOn (QObject *o) { o->installEventFilter (this); }
 
@@ -93,7 +98,7 @@ protected:
         return false;
     }
 
-    Key mKey;
+    Qt::Key mKey;
 };
 
 /**
@@ -170,14 +175,14 @@ private:
  *  Simple QTextEdit subclass to return its minimumSizeHint() as sizeHint()
  *  for getting more compact layout.
  */
-class QITextEdit : public QTextEdit
+class QITextEdit : public Q3TextEdit
 {
     Q_OBJECT
 
 public:
 
     QITextEdit (QWidget *aParent)
-        : QTextEdit (aParent) {}
+        : Q3TextEdit (aParent) {}
 
     QSize sizeHint() const
     {
@@ -209,7 +214,7 @@ public:
                                     (QSizePolicy::SizeType)0,
                                     0, 0,
                                     sizePolicy().hasHeightForWidth()));
-        setAlignment (int (QLabel::WordBreak | QLabel::AlignTop));
+        setAlignment (int (Qt::AlignTop));
         /* install show-parent-widget watcher */
         aParent->topLevelWidget()->installEventFilter (this);
     }

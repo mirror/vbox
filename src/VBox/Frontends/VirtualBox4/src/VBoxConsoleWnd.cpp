@@ -31,7 +31,7 @@
 
 #include <qaction.h>
 #include <qmenubar.h>
-#include <qbuttongroup.h>
+#include <q3buttongroup.h>
 #include <qradiobutton.h>
 #include <qfile.h>
 #include <qdir.h>
@@ -40,6 +40,21 @@
 #include <qtimer.h>
 #include <qeventloop.h>
 #include <qregexp.h>
+//Added by qt3to4:
+#include <QDesktopWidget>
+#include <QResizeEvent>
+#include <QContextMenuEvent>
+#include <QLabel>
+#include <QCloseEvent>
+#include <Q3GridLayout>
+#include <QShowEvent>
+#include <q3mimefactory.h>
+#include <Q3HBoxLayout>
+#include <QEvent>
+#include <Q3VBoxLayout>
+#include <Q3Frame>
+#include <Q3PopupMenu>
+#include <Q3ActionGroup>
 
 #include <VBox/VBoxGuest.h>
 
@@ -78,8 +93,8 @@ public:
 };
 
 #ifdef RT_OS_DARWIN
-class QHttp;
-class QHttpResponseHeader;
+class Q3Http;
+class Q3HttpResponseHeader;
 #endif
 
 /** \class VBoxConsoleWnd
@@ -101,8 +116,8 @@ class QHttpResponseHeader;
  */
 VBoxConsoleWnd::
 VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
-                WFlags aFlags)
-    : QMainWindow (aParent, aName, aFlags)
+                Qt::WFlags aFlags)
+    : Q3MainWindow (aParent, aName, aFlags)
     , mMainMenu (0)
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , dbgStatisticsAction (NULL)
@@ -115,7 +130,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , mIsFullscreen (false)
     , mIsSeamless (false)
     , mIsSeamlessSupported (false)
-    , normal_wflags (getWFlags())
+#warning port me
+//    , normal_wflags (getWFlags())
     , was_max (false)
     , console_style (0)
     , mIsOpenViewFinished (false)
@@ -139,7 +155,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* default application icon (will change to the VM-specific icon in
      * openView()) */
-    setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
+    setIcon (qPixmapFromMimeSource ("ico40x01.png"));
 
     /* ensure status bar is created */
     new QIStatusBar (this, "statusBar");
@@ -149,13 +165,13 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     /* a group for all actions that are enabled only when the VM is running.
      * Note that only actions whose enabled state depends exclusively on the
      * execution state of the VM are added to this group. */
-    mRunningActions = new QActionGroup (this);
+    mRunningActions = new Q3ActionGroup (this);
     mRunningActions->setExclusive (false);
 
     /* a group for all actions that are enabled when the VM is running or
      * paused. Note that only actions whose enabled state depends exclusively
      * on the execution state of the VM are added to this group. */
-    mRunningOrPausedActions = new QActionGroup (this);
+    mRunningOrPausedActions = new Q3ActionGroup (this);
     mRunningOrPausedActions->setExclusive (false);
 
     /* VM menu actions */
@@ -280,11 +296,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     ///// Menubar ///////////////////////////////////////////////////////////
 
-    mMainMenu = new QPopupMenu (this, "mMainMenu");
+    mMainMenu = new Q3PopupMenu (this, "mMainMenu");
 
     /* Machine submenu */
 
-    QPopupMenu *vmMenu = new QPopupMenu (this, "vmMenu");
+    Q3PopupMenu *vmMenu = new Q3PopupMenu (this, "vmMenu");
 
     /* dynamic & status line popup menus */
     vmAutoresizeMenu = new VBoxSwitchMenu (vmMenu, vmAutoresizeGuestAction);
@@ -318,13 +334,13 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* Devices submenu */
 
-    devicesMenu = new QPopupMenu (this, "devicesMenu");
+    devicesMenu = new Q3PopupMenu (this, "devicesMenu");
 
     /* dynamic & statusline popup menus */
-    devicesMountFloppyMenu = new QPopupMenu (devicesMenu, "devicesMountFloppyMenu");
-    devicesMountDVDMenu = new QPopupMenu (devicesMenu, "devicesMountDVDMenu");
-    devicesSFMenu = new QPopupMenu (devicesMenu, "devicesSFMenu");
-    devicesNetworkMenu = new QPopupMenu (devicesMenu, "devicesNetworkMenu");
+    devicesMountFloppyMenu = new Q3PopupMenu (devicesMenu, "devicesMountFloppyMenu");
+    devicesMountDVDMenu = new Q3PopupMenu (devicesMenu, "devicesMountDVDMenu");
+    devicesSFMenu = new Q3PopupMenu (devicesMenu, "devicesSFMenu");
+    devicesNetworkMenu = new Q3PopupMenu (devicesMenu, "devicesNetworkMenu");
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
     devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction);
 
@@ -367,7 +383,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     /* Debug popup menu */
     if (vboxGlobal().isDebuggerEnabled())
     {
-        dbgMenu = new QPopupMenu (this, "dbgMenu");
+        dbgMenu = new Q3PopupMenu (this, "dbgMenu");
         dbgStatisticsAction->addTo (dbgMenu);
         dbgCommandLineAction->addTo (dbgMenu);
         menuBar()->insertItem (QString::null, dbgMenu, dbgMenuId);
@@ -379,7 +395,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* Help submenu */
 
-    QPopupMenu *helpMenu = new QPopupMenu( this, "helpMenu" );
+    Q3PopupMenu *helpMenu = new Q3PopupMenu( this, "helpMenu" );
 
     helpContentsAction->addTo (helpMenu);
     helpWebAction->addTo( helpMenu );
@@ -398,70 +414,70 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     ///// Status bar ////////////////////////////////////////////////////////
 
-    QHBox *indicatorBox = new QHBox (0, "indicatorBox");
+    Q3HBox *indicatorBox = new Q3HBox (0, "indicatorBox");
     indicatorBox->setSpacing (5);
     /* i/o devices */
-    hd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "hd_light", WNoAutoErase);
-    hd_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("hd_16px.png"));
-    hd_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("hd_read_16px.png"));
-    hd_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("hd_write_16px.png"));
-    hd_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("hd_disabled_16px.png"));
-    cd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "cd_light", WNoAutoErase);
-    cd_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("cd_16px.png"));
-    cd_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("cd_read_16px.png"));
-    cd_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("cd_write_16px.png"));
-    cd_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("cd_disabled_16px.png"));
-    fd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "fd_light", WNoAutoErase);
-    fd_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("fd_16px.png"));
-    fd_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("fd_read_16px.png"));
-    fd_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("fd_write_16px.png"));
-    fd_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("fd_disabled_16px.png"));
-    net_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "net_light", WNoAutoErase);
-    net_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("nw_16px.png"));
-    net_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("nw_read_16px.png"));
-    net_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("nw_write_16px.png"));
-    net_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("nw_disabled_16px.png"));
-    usb_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "usb_light", WNoAutoErase);
-    usb_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("usb_16px.png"));
-    usb_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("usb_read_16px.png"));
-    usb_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("usb_write_16px.png"));
-    usb_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("usb_disabled_16px.png"));
-    sf_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "sf_light", WNoAutoErase);
-    sf_light->setStateIcon (KDeviceActivity_Idle, QPixmap::fromMimeSource ("shared_folder_16px.png"));
-    sf_light->setStateIcon (KDeviceActivity_Reading, QPixmap::fromMimeSource ("shared_folder_read_16px.png"));
-    sf_light->setStateIcon (KDeviceActivity_Writing, QPixmap::fromMimeSource ("shared_folder_write_16px.png"));
-    sf_light->setStateIcon (KDeviceActivity_Null, QPixmap::fromMimeSource ("shared_folder_disabled_16px.png"));
+    hd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "hd_light", Qt::WNoAutoErase);
+    hd_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("hd_16px.png"));
+    hd_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("hd_read_16px.png"));
+    hd_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("hd_write_16px.png"));
+    hd_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("hd_disabled_16px.png"));
+    cd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "cd_light", Qt::WNoAutoErase);
+    cd_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("cd_16px.png"));
+    cd_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("cd_read_16px.png"));
+    cd_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("cd_write_16px.png"));
+    cd_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("cd_disabled_16px.png"));
+    fd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "fd_light", Qt::WNoAutoErase);
+    fd_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("fd_16px.png"));
+    fd_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("fd_read_16px.png"));
+    fd_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("fd_write_16px.png"));
+    fd_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("fd_disabled_16px.png"));
+    net_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "net_light", Qt::WNoAutoErase);
+    net_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("nw_16px.png"));
+    net_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("nw_read_16px.png"));
+    net_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("nw_write_16px.png"));
+    net_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("nw_disabled_16px.png"));
+    usb_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "usb_light", Qt::WNoAutoErase);
+    usb_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("usb_16px.png"));
+    usb_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("usb_read_16px.png"));
+    usb_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("usb_write_16px.png"));
+    usb_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("usb_disabled_16px.png"));
+    sf_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "sf_light", Qt::WNoAutoErase);
+    sf_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("shared_folder_16px.png"));
+    sf_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("shared_folder_read_16px.png"));
+    sf_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("shared_folder_write_16px.png"));
+    sf_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("shared_folder_disabled_16px.png"));
 
-    (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
+    (new Q3Frame (indicatorBox))->setFrameStyle (Q3Frame::VLine | Q3Frame::Sunken);
 
 #if 0 // do not show these indicators, information overload
     /* vrdp state */
-    vrdp_state = new QIStateIndicator (0, indicatorBox, "vrdp_state", WNoAutoErase);
-    vrdp_state->setStateIcon (0, QPixmap::fromMimeSource ("vrdp_disabled_16px.png"));
-    vrdp_state->setStateIcon (1, QPixmap::fromMimeSource ("vrdp_16px.png"));
+    vrdp_state = new QIStateIndicator (0, indicatorBox, "vrdp_state", Qt::WNoAutoErase);
+    vrdp_state->setStateIcon (0, qPixmapFromMimeSource ("vrdp_disabled_16px.png"));
+    vrdp_state->setStateIcon (1, qPixmapFromMimeSource ("vrdp_16px.png"));
     /* auto resize state */
-    autoresize_state = new QIStateIndicator (1, indicatorBox, "autoresize_state", WNoAutoErase);
-    autoresize_state->setStateIcon (0, QPixmap::fromMimeSource ("auto_resize_off_disabled_16px.png"));
-    autoresize_state->setStateIcon (1, QPixmap::fromMimeSource ("auto_resize_off_16px.png"));
-    autoresize_state->setStateIcon (2, QPixmap::fromMimeSource ("auto_resize_on_disabled_16px.png"));
-    autoresize_state->setStateIcon (3, QPixmap::fromMimeSource ("auto_resize_on_16px.png"));
+    autoresize_state = new QIStateIndicator (1, indicatorBox, "autoresize_state", Qt::WNoAutoErase);
+    autoresize_state->setStateIcon (0, qPixmapFromMimeSource ("auto_resize_off_disabled_16px.png"));
+    autoresize_state->setStateIcon (1, qPixmapFromMimeSource ("auto_resize_off_16px.png"));
+    autoresize_state->setStateIcon (2, qPixmapFromMimeSource ("auto_resize_on_disabled_16px.png"));
+    autoresize_state->setStateIcon (3, qPixmapFromMimeSource ("auto_resize_on_16px.png"));
 #endif
 
     /* mouse */
-    mouse_state = new QIStateIndicator (0, indicatorBox, "mouse_state", WNoAutoErase);
-    mouse_state->setStateIcon (0, QPixmap::fromMimeSource ("mouse_disabled_16px.png"));
-    mouse_state->setStateIcon (1, QPixmap::fromMimeSource ("mouse_16px.png"));
-    mouse_state->setStateIcon (2, QPixmap::fromMimeSource ("mouse_seamless_16px.png"));
-    mouse_state->setStateIcon (3, QPixmap::fromMimeSource ("mouse_can_seamless_16px.png"));
-    mouse_state->setStateIcon (4, QPixmap::fromMimeSource ("mouse_can_seamless_uncaptured_16px.png"));
+    mouse_state = new QIStateIndicator (0, indicatorBox, "mouse_state", Qt::WNoAutoErase);
+    mouse_state->setStateIcon (0, qPixmapFromMimeSource ("mouse_disabled_16px.png"));
+    mouse_state->setStateIcon (1, qPixmapFromMimeSource ("mouse_16px.png"));
+    mouse_state->setStateIcon (2, qPixmapFromMimeSource ("mouse_seamless_16px.png"));
+    mouse_state->setStateIcon (3, qPixmapFromMimeSource ("mouse_can_seamless_16px.png"));
+    mouse_state->setStateIcon (4, qPixmapFromMimeSource ("mouse_can_seamless_uncaptured_16px.png"));
     /* host key */
-    hostkey_hbox = new QHBox (indicatorBox, "hostkey_hbox");
+    hostkey_hbox = new Q3HBox (indicatorBox, "hostkey_hbox");
     hostkey_hbox->setSpacing (3);
     hostkey_state = new QIStateIndicator (0, hostkey_hbox, "hostkey_state");
-    hostkey_state->setStateIcon (0, QPixmap::fromMimeSource ("hostkey_16px.png"));
-    hostkey_state->setStateIcon (1, QPixmap::fromMimeSource ("hostkey_captured_16px.png"));
-    hostkey_state->setStateIcon (2, QPixmap::fromMimeSource ("hostkey_pressed_16px.png"));
-    hostkey_state->setStateIcon (3, QPixmap::fromMimeSource ("hostkey_captured_pressed_16px.png"));
+    hostkey_state->setStateIcon (0, qPixmapFromMimeSource ("hostkey_16px.png"));
+    hostkey_state->setStateIcon (1, qPixmapFromMimeSource ("hostkey_captured_16px.png"));
+    hostkey_state->setStateIcon (2, qPixmapFromMimeSource ("hostkey_pressed_16px.png"));
+    hostkey_state->setStateIcon (3, qPixmapFromMimeSource ("hostkey_captured_pressed_16px.png"));
     hostkey_name = new QLabel (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey()),
                                hostkey_hbox, "hostkey_name");
     /* add to statusbar */
@@ -593,7 +609,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     dockImgBack100x75     = ::DarwinCreateDockBadge ("dock_1.png");
     SetApplicationDockTileImage (dockImgOS);
 #endif
-    mMaskShift.scale (0, 0, QSize::ScaleFree);
+    mMaskShift.scale (0, 0, Qt::IgnoreAspectRatio);
 }
 
 VBoxConsoleWnd::~VBoxConsoleWnd()
@@ -638,7 +654,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     if (!centralWidget())
     {
         setCentralWidget (new QWidget (this, "centralWidget"));
-        QGridLayout *pMainLayout = new QGridLayout(centralWidget(), 3, 3, 0, 0);
+        Q3GridLayout *pMainLayout = new Q3GridLayout(centralWidget(), 3, 3, 0, 0);
         mShiftingSpacerLeft = new QSpacerItem (0, 0,
                                                QSizePolicy::Fixed,
                                                QSizePolicy::Fixed);
@@ -669,7 +685,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     activateUICustomizations();
 
-    static_cast<QGridLayout*>(centralWidget()->layout())->addWidget(console, 1, 1, AlignVCenter | AlignHCenter);
+    static_cast<Q3GridLayout*>(centralWidget()->layout())->addWidget(console, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
 
     CMachine cmachine = csession.GetMachine();
 
@@ -712,7 +728,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         console->normalizeGeometry (true /* adjustPosition */);
         /* maximize if needed */
         if (max)
-            setWindowState (windowState() | WindowMaximized);
+            setWindowState (windowState() | Qt::WindowMaximized);
         was_max = max;
 
         show();
@@ -1163,7 +1179,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
             break;
     }
 
-    return QMainWindow::event (e);
+    return Q3MainWindow::event (e);
 }
 
 void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
@@ -1961,11 +1977,15 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                           * 8; /* to bits */
         ULONG64 usedBits = screen.width() /* display width */
                          * screen.height() /* display height */
-                         * QColor::numBitPlanes(); /* bit per pixel */
+#warning port me: check this
+                         * depth(); /* bit per pixel */
+//                         * QColor::numBitPlanes(); /* bit per pixel */
         if (aOn && (availBits < usedBits))
         {
             vboxProblem().cannotEnterSeamlessMode (screen.width(),
-                screen.height(), QColor::numBitPlanes());
+#warning port me: check this
+                screen.height(), depth());
+//                screen.height(), QColor::numBitPlanes());
             return false;
         }
     }
@@ -2068,8 +2088,8 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #endif
 
         /* Hide all but the central widget containing the console view. */
-        QObjectList *list = queryList (NULL, NULL, false, false);
-        for (QObject *obj = list->first(); obj != NULL; obj = list->next())
+        QObjectList list = queryList (NULL, NULL, false, false);
+        foreach (QObject *obj, list)
         {
             if (obj->isWidgetType() && obj != centralWidget())
             {
@@ -2081,7 +2101,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                 }
             }
         }
-        delete list;
 
 #ifdef Q_WS_MAC
         if (!aSeamless)
@@ -2095,15 +2114,15 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
         /* Adjust colors and appearance. */
         mEraseColor = centralWidget()->eraseColor();
-        centralWidget()->setEraseColor (black);
+        centralWidget()->setEraseColor (Qt::black);
         console_style = console->frameStyle();
-        console->setFrameStyle (QFrame::NoFrame);
+        console->setFrameStyle (Q3Frame::NoFrame);
         console->setMaximumSize (scrGeo.size());
-        console->setVScrollBarMode (QScrollView::AlwaysOff);
-        console->setHScrollBarMode (QScrollView::AlwaysOff);
+        console->setVScrollBarMode (Q3ScrollView::AlwaysOff);
+        console->setHScrollBarMode (Q3ScrollView::AlwaysOff);
 
         /* Going fullscreen */
-        setWindowState (windowState() ^ WindowFullScreen);
+        setWindowState (windowState() ^ Qt::WindowFullScreen);
 #ifdef Q_WS_MAC /* setMask seems to not include the far border pixels. */
 //        QRect maskRect = dtw->screenGeometry (this);
 //        maskRect.setRight (maskRect.right() + 1);
@@ -2185,17 +2204,16 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         centralWidget()->setBackgroundMode (Qt::PaletteBackground);
         console->setFrameStyle (console_style);
         console->setMaximumSize (console->sizeHint());
-        console->setVScrollBarMode (QScrollView::Auto);
-        console->setHScrollBarMode (QScrollView::Auto);
+        console->setVScrollBarMode (Q3ScrollView::Auto);
+        console->setHScrollBarMode (Q3ScrollView::Auto);
 
         /* Show everything hidden when going fullscreen. */
-        for (QObject *obj = hidden_children.first(); obj != NULL;
-             obj = hidden_children.next())
+        foreach (QObject *obj, hidden_children)
             ((QWidget *) obj)->show();
         hidden_children.clear();
 
         /* Going normal || maximized */
-        setWindowState (windowState() ^ WindowFullScreen);
+        setWindowState (windowState() ^ Qt::WindowFullScreen);
 
         qApp->processEvents();
         console->toggleFSMode();
@@ -2241,7 +2259,7 @@ void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
         QDesktopWidget *dtw = QApplication::desktop();
         QRect sRect = dtw->screenGeometry (this);
         QRect aRect (aTargetRect);
-        mMaskShift.scale (aTargetRect.left(), aTargetRect.top(), QSize::ScaleFree);
+        mMaskShift.scale (aTargetRect.left(), aTargetRect.top(), Qt::IgnoreAspectRatio);
 #ifdef Q_WS_MAC
         /* On mac os x this isn't necessary cause the screen starts
          * by y=0 always regardless if there is the global menubar or not. */
@@ -2469,7 +2487,7 @@ void VBoxConsoleWnd::devicesMountFloppyImage()
 {
     if (!console) return;
 
-    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", WType_Dialog | WShowModal);
+    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", Qt::WType_Dialog | Qt::WShowModal);
     QUuid id = csession.GetMachine().GetId();
     dlg.setup (VBoxDefs::FD, true, &id);
 
@@ -2513,7 +2531,7 @@ void VBoxConsoleWnd::devicesMountDVDImage()
 {
     if (!console) return;
 
-    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", WType_Dialog | WShowModal);
+    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", Qt::WType_Dialog | Qt::WShowModal);
     QUuid id = csession.GetMachine().GetId();
     dlg.setup (VBoxDefs::CD, true, &id);
 
@@ -2727,7 +2745,7 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
         ReshapeCustomWindow (reinterpret_cast <WindowPtr> (winId()));
     }
 #else
-    QMainWindow::setMask (region);
+    Q3MainWindow::setMask (region);
 #endif
 }
 
@@ -3047,8 +3065,9 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
 #if 0
         devicesSFMenu->exec (e->globalPos());
 #else
-        if (devicesSFDialogAction->isEnabled())
-            devicesSFDialogAction->activate();
+#warning port me
+//        if (devicesSFDialogAction->isEnabled())
+//            devicesSFDialogAction->activate();
 #endif
     }
     else
@@ -3298,28 +3317,29 @@ void VBoxConsoleWnd::updateNetworkAdarptersState()
  */
 void VBoxConsoleWnd::tryClose()
 {
-    LogFlowFunc (("eventLoopLevel=%d\n", qApp->eventLoop()->loopLevel()));
-
-    if (qApp->eventLoop()->loopLevel() > 1)
-    {
-        if (QApplication::activeModalWidget())
-            QApplication::activeModalWidget()->close();
-        else if (QApplication::activePopupWidget())
-            QApplication::activePopupWidget()->close();
-        else
-        {
+#warning port me
+//    LogFlowFunc (("eventLoopLevel=%d\n", qApp->eventLoop()->loopLevel()));
+//
+//    if (qApp->eventLoop()->loopLevel() > 1)
+//    {
+//        if (QApplication::activeModalWidget())
+//            QApplication::activeModalWidget()->close();
+//        else if (QApplication::activePopupWidget())
+//            QApplication::activePopupWidget()->close();
+//        else
+//        {
             /// @todo (r=dmik) in general, the following is not that correct
             //  because some custom modal event loop may not expect to be
             //  exited externally (e.g., it might want to set some internal
             //  flags before calling exitLoop()). The alternative is to do
             //  nothing but wait keeping to post singleShot timers.
-            qApp->eventLoop()->exitLoop();
-        }
-
-        QTimer::singleShot (0, this, SLOT (tryClose()));
-    }
-    else
-        close();
+//            qApp->eventLoop()->exitLoop();
+//        }
+//
+//        QTimer::singleShot (0, this, SLOT (tryClose()));
+//    }
+//    else
+//        close();
 }
 
 /**
@@ -3402,16 +3422,16 @@ void VBoxConsoleWnd::dbgAdjustRelativePos()
 
 VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession)
     : QDialog (aParent, "VBoxSFDialog", true /* modal */,
-               WType_Dialog | WShowModal)
+               Qt::WType_Dialog | Qt::WShowModal)
     , mSettings (0), mSession (aSession)
 {
     /* Setup Dialog's options */
     setCaption (tr ("Shared Folders"));
-    setIcon (QPixmap::fromMimeSource ("select_file_16px.png"));
+    setIcon (qPixmapFromMimeSource ("select_file_16px.png"));
     setSizeGripEnabled (true);
 
     /* Setup main dialog's layout */
-    QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
+    Q3VBoxLayout *mainLayout = new Q3VBoxLayout (this, 10, 10, "mainLayout");
 
     /* Setup settings layout */
     mSettings = new VBoxSharedFoldersSettings (this, "mSettings");
@@ -3422,7 +3442,7 @@ VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession)
     mainLayout->addWidget (mSettings);
 
     /* Setup button's layout */
-    QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
+    Q3HBoxLayout *buttonLayout = new Q3HBoxLayout (mainLayout, 10, "buttonLayout");
     QPushButton *pbHelp = new QPushButton (tr ("Help"), this, "pbHelp");
     QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
     QPushButton *pbOk = new QPushButton (tr ("&OK"), this, "pbOk");

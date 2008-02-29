@@ -23,6 +23,17 @@
 #include "VBoxConsoleWnd.h"
 #include "VBoxProblemReporter.h"
 #include "QIHotKeyEdit.h"
+//Added by qt3to4:
+#include <QDesktopWidget>
+#include <Q3CString>
+#include <q3mimefactory.h>
+#include <QTranslator>
+#include <Q3VBoxLayout>
+#include <Q3Frame>
+#include <QEvent>
+#include <QShowEvent>
+#include <Q3PopupMenu>
+#include <Q3HBoxLayout>
 
 #ifdef VBOX_WITH_REGISTRATION
 #include "VBoxRegistrationDlg.h"
@@ -31,15 +42,15 @@
 #include <qapplication.h>
 #include <qmessagebox.h>
 #include <qpixmap.h>
-#include <qiconset.h>
-#include <qwidgetlist.h>
-#include <qfiledialog.h>
+#include <qicon.h>
+#include <qwidget.h>
+#include <q3filedialog.h>
 #include <qimage.h>
 #include <qlabel.h>
 #include <qtoolbutton.h>
 
 #ifdef Q_WS_X11
-#include <qtextbrowser.h>
+#include <q3textbrowser.h>
 #include <qpushbutton.h>
 #include <qlayout.h>
 #endif
@@ -49,7 +60,7 @@
 #include <qmutex.h>
 #include <qregexp.h>
 #include <qlocale.h>
-#include <qprocess.h>
+#include <q3process.h>
 
 #if defined (Q_WS_MAC)
 #include <Carbon/Carbon.h> // for HIToolbox/InternetConfig
@@ -414,11 +425,11 @@ static QString winFilter (const QString &aFilter)
     for (; it != filterLst.end(); ++it)
     {
         winfilters += *it;
-        winfilters += QChar::null;
+        winfilters += QChar::Null;
         winfilters += extractFilter (*it);
-        winfilters += QChar::null;
+        winfilters += QChar::Null;
     }
-    winfilters += QChar::null;
+    winfilters += QChar::Null;
     return winfilters;
 }
 
@@ -556,9 +567,9 @@ public:
         , mLicenseText (0), mAgreeButton (0), mDisagreeButton (0)
     {
         setCaption ("VirtualBox License");
-        setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
+        setIcon (qPixmapFromMimeSource ("ico40x01.png"));
 
-        mLicenseText = new QTextBrowser (this);
+        mLicenseText = new Q3TextBrowser (this);
         mAgreeButton = new QPushButton (tr ("I &Agree"), this);
         mDisagreeButton = new QPushButton (tr ("I &Disagree"), this);
 
@@ -569,10 +580,10 @@ public:
         connect (mAgreeButton, SIGNAL (clicked()), SLOT (accept()));
         connect (mDisagreeButton, SIGNAL (clicked()), SLOT (reject()));
 
-        QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10);
+        Q3VBoxLayout *mainLayout = new Q3VBoxLayout (this, 10, 10);
         mainLayout->addWidget (mLicenseText);
 
-        QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10);
+        Q3HBoxLayout *buttonLayout = new Q3HBoxLayout (mainLayout, 10);
         buttonLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
                                                       QSizePolicy::Preferred));
         buttonLayout->addWidget (mAgreeButton);
@@ -589,7 +600,7 @@ public slots:
     {
         /* read & show the license file */
         QFile file (mFilePath);
-        if (file.open (IO_ReadOnly))
+        if (file.open (QIODevice::ReadOnly))
         {
             mLicenseText->setText (file.readAll());
             return QDialog::exec();
@@ -621,7 +632,7 @@ private:
     {
         QDialog::showEvent (aEvent);
         bool isScrollBarHidden = mLicenseText->verticalScrollBar()->isHidden()
-                                 && !(windowState() & WindowMinimized);
+                                 && !(windowState() & Qt::WindowMinimized);
         mAgreeButton->setEnabled (isScrollBarHidden);
         mDisagreeButton->setEnabled (isScrollBarHidden);
     }
@@ -632,7 +643,7 @@ private:
         {
             case QEvent::Hide:
                 if (aObject == mLicenseText->verticalScrollBar() &&
-                    (windowState() & WindowActive))
+                    (windowState() & Qt::WindowActive))
                     unlockButtons();
             default:
                 break;
@@ -641,7 +652,7 @@ private:
     }
 
     QString       mFilePath;
-    QTextBrowser *mLicenseText;
+    Q3TextBrowser *mLicenseText;
     QPushButton  *mAgreeButton;
     QPushButton  *mDisagreeButton;
 };
@@ -1428,11 +1439,11 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             KDeviceType device = m.GetBootOrder (i);
             if (device == KDeviceType_Null)
                 continue;
-            if (bootOrder)
+            if (!bootOrder.isEmpty())
                 bootOrder += ", ";
             bootOrder += toString (device);
         }
-        if (!bootOrder)
+        if (bootOrder.isEmpty())
             bootOrder = toString (KDeviceType_Null);
 
         CBIOSSettings biosSettings = m.GetBIOSSettings();
@@ -2304,7 +2315,8 @@ void VBoxGlobal::languageChange()
     /* As PM and X11 do not (to my knowledge) have functionality for providing
      * human readable key names, we keep a table of them, which must be
      * updated when the language is changed. */
-    QIHotKeyEdit::languageChange();
+#warning port me
+    QIHotKeyEdit::languageChange_qt3();
 #endif
 }
 
@@ -2342,16 +2354,16 @@ void VBoxGlobal::adoptLabelPixmap (QLabel *aLabel)
 {
     AssertReturnVoid (aLabel);
 
-    QPixmap *pix = aLabel->pixmap();
+    const QPixmap *pix = aLabel->pixmap();
     QImage img = pix->convertToImage();
     QRgb rgbBack = img.pixel (img.width() - 1, img.height() - 1);
     QRgb rgbFrame = img.pixel (img.width() - 1, 0);
 
-    aLabel->setAlignment (AlignTop);
+    aLabel->setAlignment (Qt::AlignTop);
 
     aLabel->setPaletteBackgroundColor (QColor (rgbBack));
-    aLabel->setFrameShadow (QFrame::Plain);
-    aLabel->setFrameShape (QFrame::Box);
+    aLabel->setFrameShadow (Q3Frame::Plain);
+    aLabel->setFrameShape (Q3Frame::Box);
     aLabel->setPaletteForegroundColor (QColor (rgbFrame));
 }
 
@@ -2371,7 +2383,7 @@ public:
     bool loadFile (const QString &aFileName)
     {
         QFile file (aFileName);
-        if (!file.open (IO_ReadOnly))
+        if (!file.open (QIODevice::ReadOnly))
             return false;
         mData = file.readAll();
         return load ((uchar*) mData.data(), mData.size());
@@ -2534,27 +2546,27 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
 }
 
 /* static */
-QIconSet VBoxGlobal::iconSet (const char *aNormal,
+QIcon VBoxGlobal::iconSet (const char *aNormal,
                               const char *aDisabled /* = 0 */,
                               const char *aActive /* = 0 */)
 {
     Assert (aNormal);
 
-    QIconSet iconSet;
+    QIcon iconSet;
 
-    iconSet.setPixmap (QPixmap::fromMimeSource (aNormal),
-                       QIconSet::Automatic, QIconSet::Normal);
+    iconSet.setPixmap (qPixmapFromMimeSource (aNormal),
+                       QIcon::Automatic, QIcon::Normal);
     if (aDisabled)
-        iconSet.setPixmap (QPixmap::fromMimeSource (aDisabled),
-                           QIconSet::Automatic, QIconSet::Disabled);
+        iconSet.setPixmap (qPixmapFromMimeSource (aDisabled),
+                           QIcon::Automatic, QIcon::Disabled);
     if (aActive)
-        iconSet.setPixmap (QPixmap::fromMimeSource (aActive),
-                           QIconSet::Automatic, QIconSet::Active);
+        iconSet.setPixmap (qPixmapFromMimeSource (aActive),
+                           QIcon::Automatic, QIcon::Active);
     return iconSet;
 }
 
 /* static */
-QIconSet VBoxGlobal::
+QIcon VBoxGlobal::
 iconSetEx (const char *aNormal, const char *aSmallNormal,
            const char *aDisabled /* = 0 */, const char *aSmallDisabled /* = 0 */,
            const char *aActive /* = 0 */, const char *aSmallActive /* = 0 */)
@@ -2562,25 +2574,25 @@ iconSetEx (const char *aNormal, const char *aSmallNormal,
     Assert (aNormal);
     Assert (aSmallNormal);
 
-    QIconSet iconSet;
+    QIcon iconSet;
 
-    iconSet.setPixmap (QPixmap::fromMimeSource (aNormal),
-                       QIconSet::Large, QIconSet::Normal);
-    iconSet.setPixmap (QPixmap::fromMimeSource (aSmallNormal),
-                       QIconSet::Small, QIconSet::Normal);
+    iconSet.setPixmap (qPixmapFromMimeSource (aNormal),
+                       QIcon::Large, QIcon::Normal);
+    iconSet.setPixmap (qPixmapFromMimeSource (aSmallNormal),
+                       QIcon::Small, QIcon::Normal);
     if (aSmallDisabled)
     {
-        iconSet.setPixmap (QPixmap::fromMimeSource (aDisabled),
-                           QIconSet::Large, QIconSet::Disabled);
-        iconSet.setPixmap (QPixmap::fromMimeSource (aSmallDisabled),
-                           QIconSet::Small, QIconSet::Disabled);
+        iconSet.setPixmap (qPixmapFromMimeSource (aDisabled),
+                           QIcon::Large, QIcon::Disabled);
+        iconSet.setPixmap (qPixmapFromMimeSource (aSmallDisabled),
+                           QIcon::Small, QIcon::Disabled);
     }
     if (aSmallActive)
     {
-        iconSet.setPixmap (QPixmap::fromMimeSource (aActive),
-                           QIconSet::Large, QIconSet::Active);
-        iconSet.setPixmap (QPixmap::fromMimeSource (aSmallActive),
-                           QIconSet::Small, QIconSet::Active);
+        iconSet.setPixmap (qPixmapFromMimeSource (aActive),
+                           QIcon::Large, QIcon::Active);
+        iconSet.setPixmap (qPixmapFromMimeSource (aSmallActive),
+                           QIcon::Small, QIcon::Active);
     }
 
     return iconSet;
@@ -2605,7 +2617,7 @@ void VBoxGlobal::setTextLabel (QToolButton *aToolButton,
     AssertReturnVoid (aToolButton != NULL);
 
     /* remember the icon set as setText() will kill it */
-    QIconSet iset = aToolButton->iconSet();
+    QIcon iset = aToolButton->iconSet();
     /* re-use the setText() method to detect and set the accelerator */
     aToolButton->setText (aTextLabel);
     QKeySequence accel = aToolButton->accel();
@@ -2700,13 +2712,12 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
 
     int extraw = 0, extrah = 0;
 
-    QWidgetList *list = QApplication::topLevelWidgets();
-    QWidgetListIt it (*list);
-    while ((extraw == 0 || extrah == 0) && it.current() != 0)
+    QWidgetList list = QApplication::topLevelWidgets();
+    QListIterator<QWidget*> it (list);
+    while ((extraw == 0 || extrah == 0) && it.hasNext())
     {
         int framew, frameh;
-        QWidget *current = it.current();
-        ++ it;
+        QWidget *current = it.next();
         if (!current->isVisible())
             continue;
 
@@ -2716,7 +2727,6 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
         extraw = QMAX (extraw, framew);
         extrah = QMAX (extrah, frameh);
     }
-    delete list;
 
     /// @todo (r=dmik) not sure if we really need this
 #if 0
@@ -3139,7 +3149,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
 
 #else
 
-    return QFileDialog::getExistingDirectory (aDir, aParent, aName, aCaption,
+    return Q3FileDialog::getExistingDirectory (aDir, aParent, aName, aCaption,
                                               aDirOnly, aResolveSymlinks);
 
 #endif
@@ -3281,7 +3291,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 
 #else
 
-    return QFileDialog::getOpenFileName (aStartWith, aFilters, aParent, aName,
+    return Q3FileDialog::getOpenFileName (aStartWith, aFilters, aParent, aName,
                                          aCaption, aSelectedFilter, aResolveSymlinks);
 
 #endif
@@ -3495,10 +3505,9 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
 {
     if (aParent == NULL)
     {
-        QWidgetList *list = QApplication::topLevelWidgets();
-        QWidgetListIt it (*list);
-        QWidget *w = NULL;
-        for (; (w = it.current()) != NULL; ++ it)
+        QWidgetList list = QApplication::topLevelWidgets();
+        QWidget* w = NULL;
+        foreach(w, list)
         {
             if ((!aName || strcmp (w->name(), aName) == 0) &&
                 (!aClassName || strcmp (w->className(), aClassName) == 0))
@@ -3510,19 +3519,16 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
                     break;
             }
         }
-        delete list;
         return w;
     }
 
-    QObjectList *list = aParent->queryList (aName, aClassName, false, true);
-    QObjectListIt it (*list);
+    QObjectList list = aParent->queryList (aName, aClassName, false, true);
     QObject *obj = NULL;
-    for (; (obj = it.current()) != NULL; ++ it)
+    foreach(obj, list)
     {
         if (obj->isWidgetType())
             break;
     }
-    delete list;
     return (QWidget *) obj;
 }
 
@@ -3578,7 +3584,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
     {
         QStringList args = QStringList::split (':', commands [i]);
         args += aURL;
-        QProcess cmd (args);
+        Q3Process cmd (args);
         if (cmd.start())
             return true;
     }
@@ -3600,7 +3606,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
     if (error == noErr)
     {
         ConstStr255Param hint (0x0);
-        QCString cs = aURL.local8Bit();
+        Q3CString cs = aURL.local8Bit();
         const char* data = cs.data();
         long length = cs.length();
         long start (0);
@@ -3634,7 +3640,7 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
     if (mRegDlg)
     {
         /* Show the already opened registration dialog */
-        mRegDlg->setWindowState (mRegDlg->windowState() & ~WindowMinimized);
+        mRegDlg->setWindowState (mRegDlg->windowState() & ~Qt::WindowMinimized);
         mRegDlg->raise();
         mRegDlg->setActiveWindow();
     }
@@ -3652,11 +3658,12 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
         if (mVBox.isOk())
         {
             /* We've got the "mutex", create a new registration dialog */
-            VBoxRegistrationDlg *dlg =
-                new VBoxRegistrationDlg (0, 0, false, WDestructiveClose);
-            dlg->setup (&mRegDlg);
-            Assert (dlg == mRegDlg);
-            mRegDlg->show();
+#warning port me
+//            VBoxRegistrationDlg *dlg =
+//                new VBoxRegistrationDlg (0, 0, false, Qt::WDestructiveClose);
+//            dlg->setup (&mRegDlg);
+//            Assert (dlg == mRegDlg);
+//            mRegDlg->show();
         }
     }
 #endif
@@ -3762,14 +3769,13 @@ bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
         /* Catch the language change event before any other widget gets it in
          * order to invalidate cached string resources (like the details view
          * templates) that may be used by other widgets. */
-        QWidgetList *list = QApplication::topLevelWidgets();
-        if (list->first() == aObject)
+        QWidgetList list = QApplication::topLevelWidgets();
+        if (list.first() == aObject)
         {
             /* call this only once per every language change (see
              * QApplication::installTranslator() for details) */
             languageChange();
         }
-        delete list;
     }
 
     return QObject::eventFilter (aObject, aEvent);
@@ -3846,7 +3852,7 @@ void VBoxGlobal::init()
     for (uint n = 0; n < SIZEOF_ARRAY (osTypeIcons); n ++)
     {
         vm_os_type_icons.insert (osTypeIcons [n][0],
-            new QPixmap (QPixmap::fromMimeSource (osTypeIcons [n][1])));
+            new QPixmap (qPixmapFromMimeSource (osTypeIcons [n][1])));
     }
 
     // fill in VM state icon dictionary
@@ -3874,27 +3880,27 @@ void VBoxGlobal::init()
     for (uint n = 0; n < SIZEOF_ARRAY (vmStateIcons); n ++)
     {
         mStateIcons.insert (vmStateIcons [n].state,
-            new QPixmap (QPixmap::fromMimeSource (vmStateIcons [n].name)));
+            new QPixmap (qPixmapFromMimeSource (vmStateIcons [n].name)));
     }
 
     // online/offline snapshot icons
-    mOfflineSnapshotIcon = QPixmap::fromMimeSource ("offline_snapshot_16px.png");
-    mOnlineSnapshotIcon = QPixmap::fromMimeSource ("online_snapshot_16px.png");
+    mOfflineSnapshotIcon = qPixmapFromMimeSource ("offline_snapshot_16px.png");
+    mOnlineSnapshotIcon = qPixmapFromMimeSource ("online_snapshot_16px.png");
 
     // initialize state colors vector
     // no ownership of elements, we're passing pointers to existing objects
-    vm_state_color.insert (KMachineState_Null,           &Qt::red);
-    vm_state_color.insert (KMachineState_PoweredOff,     &Qt::gray);
-    vm_state_color.insert (KMachineState_Saved,          &Qt::yellow);
-    vm_state_color.insert (KMachineState_Aborted,        &Qt::darkRed);
-    vm_state_color.insert (KMachineState_Running,        &Qt::green);
-    vm_state_color.insert (KMachineState_Paused,         &Qt::darkGreen);
-    vm_state_color.insert (KMachineState_Stuck,          &Qt::darkMagenta);
-    vm_state_color.insert (KMachineState_Starting,       &Qt::green);
-    vm_state_color.insert (KMachineState_Stopping,       &Qt::green);
-    vm_state_color.insert (KMachineState_Saving,         &Qt::green);
-    vm_state_color.insert (KMachineState_Restoring,      &Qt::green);
-    vm_state_color.insert (KMachineState_Discarding,     &Qt::green);
+    vm_state_color.insert (KMachineState_Null,           new QColor(Qt::red));
+    vm_state_color.insert (KMachineState_PoweredOff,     new QColor(Qt::gray));
+    vm_state_color.insert (KMachineState_Saved,          new QColor(Qt::yellow));
+    vm_state_color.insert (KMachineState_Aborted,        new QColor(Qt::darkRed));
+    vm_state_color.insert (KMachineState_Running,        new QColor(Qt::green));
+    vm_state_color.insert (KMachineState_Paused,         new QColor(Qt::darkGreen));
+    vm_state_color.insert (KMachineState_Stuck,          new QColor(Qt::darkMagenta));
+    vm_state_color.insert (KMachineState_Starting,       new QColor(Qt::green));
+    vm_state_color.insert (KMachineState_Stopping,       new QColor(Qt::green));
+    vm_state_color.insert (KMachineState_Saving,         new QColor(Qt::green));
+    vm_state_color.insert (KMachineState_Restoring,      new QColor(Qt::green));
+    vm_state_color.insert (KMachineState_Discarding,     new QColor(Qt::green));
 
     qApp->installEventFilter (this);
 
@@ -3987,8 +3993,9 @@ void VBoxGlobal::init()
      *  we explicitly define them as Large (seems to be a bug in
      *  QToolButton::sizeHint()).
      */
-    QIconSet::setIconSize (QIconSet::Small, QSize (16, 16));
-    QIconSet::setIconSize (QIconSet::Large, QSize (22, 22));
+#warning port me
+//    QIcon::setIconSize (QIcon::Small, QSize (16, 16));
+//    QIcon::setIconSize (QIcon::Large, QSize (22, 22));
 
     mValid = true;
 }
@@ -4063,7 +4070,7 @@ void VBoxGlobal::cleanup()
  *  USB Popup Menu class methods
  *  This class provides the list of USB devices attached to the host.
  */
-VBoxUSBMenu::VBoxUSBMenu (QWidget *aParent) : QPopupMenu (aParent)
+VBoxUSBMenu::VBoxUSBMenu (QWidget *aParent) : Q3PopupMenu (aParent)
 {
     connect (this, SIGNAL (aboutToShow()),
              this, SLOT   (processAboutToShow()));
@@ -4148,7 +4155,7 @@ void VBoxUSBMenu::processHighlighted (int aIndex)
  */
 VBoxSwitchMenu::VBoxSwitchMenu (QWidget *aParent, QAction *aAction,
                                 bool aInverted)
-    : QPopupMenu (aParent), mAction (aAction), mInverted (aInverted)
+    : Q3PopupMenu (aParent), mAction (aAction), mInverted (aInverted)
 {
     /* this menu works only with toggle action */
     Assert (aAction->isToggleAction());

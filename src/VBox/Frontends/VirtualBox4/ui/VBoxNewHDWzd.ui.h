@@ -1,3 +1,6 @@
+//Added by qt3to4:
+#include <QShowEvent>
+#include <QPushButton>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -196,7 +199,7 @@ void VBoxNewHDWzd::init()
 
     leName->setValidator (new QRegExpValidator (QRegExp( ".+" ), this));
 
-    leSize->setValidator (new QRegExpValidator (vboxGlobal().sizeRegexp(), this));
+    leSize->setValidator (new QRegExpValidator (QRegExp(vboxGlobal().sizeRegexp()), this));
     leSize->setAlignment (Qt::AlignRight);
 
     wvalNameAndSize = new QIWidgetValidator (pageNameAndSize, this);
@@ -213,12 +216,13 @@ void VBoxNewHDWzd::init()
 
     teSummary = new QITextEdit (pageSummary);
     teSummary->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
-    teSummary->setFrameShape (QTextEdit::NoFrame);
+    teSummary->setFrameShape (Q3TextEdit::NoFrame);
     teSummary->setReadOnly (TRUE);
-    summaryLayout->insertWidget (1, teSummary);
+#warning port me
+//    summaryLayout->insertWidget (1, teSummary);
 
     /* filter out Enter keys in order to direct them to the default dlg button */
-    QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
+    QIKeyFilter *ef = new QIKeyFilter (this, Qt::Key_Enter);
     ef->watchOn (teSummary);
 
     /* set initial values
@@ -231,7 +235,7 @@ void VBoxNewHDWzd::init()
     static ulong HDNumber = 0;
     leName->setText (QString ("NewHardDisk%1.vdi").arg (++ HDNumber));
 
-    slSize->setFocusPolicy (QWidget::StrongFocus);
+    slSize->setFocusPolicy (Qt::StrongFocus);
     slSize->setPageStep (sliderScale);
     slSize->setLineStep (sliderScale / 8);
     slSize->setTickInterval (0);
@@ -260,7 +264,9 @@ void VBoxNewHDWzd::init()
     setFinishEnabled (pageSummary, true);
 
     /* setup minimum width for the sizeHint to be calculated correctly */
-    int wid = widthSpacer->minimumSize().width();
+#warning port me
+    int wid = 1;
+//    int wid = widthSpacer->minimumSize().width();
     txWelcome->setMinimumWidth (wid);
     textLabel1_2->setMinimumWidth (wid);
     txNameComment->setMinimumWidth (wid);
@@ -412,7 +418,7 @@ void VBoxNewHDWzd::showPage( QWidget *page )
         nextButton()->setDefault (true);
     }
 
-    QWizard::showPage (page);
+    Q3Wizard::showPage (page);
 
     /* fix focus on the last page. when we go to the last page
      * having the Next in focus the focus goes to the Cancel
@@ -445,7 +451,7 @@ void VBoxNewHDWzd::accept()
      *  On failure, the wisard will remain open to give it another try.
      */
     if (createHardDisk())
-        QWizard::accept();
+        Q3Wizard::accept();
 }
 
 /**
@@ -565,7 +571,7 @@ void VBoxNewHDWzd::tbNameSelect_clicked()
 //    fd.setCaption (tr( "Select a file for the new hard disk image file" ));
 //    fd.setDir (d);
 
-    QString selected = QFileDialog::getSaveFileName (
+    QString selected = Q3FileDialog::getSaveFileName (
         fld.absFilePath(),
         tr ("Hard disk images (*.vdi)"),
         this,
@@ -574,7 +580,7 @@ void VBoxNewHDWzd::tbNameSelect_clicked()
 
 //    if ( fd.exec() == QDialog::Accepted ) {
 //        leName->setText (QDir::convertSeparators (fd.selectedFile()));
-    if (selected)
+    if (!selected.isEmpty())
     {
         if (QFileInfo (selected).extension().isEmpty())
             selected += ".vdi";

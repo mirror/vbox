@@ -289,26 +289,26 @@ void VBoxVMNetworkSettings::pbGenerateMAC_clicked()
 
 void VBoxVMNetworkSettings::pbTAPSetup_clicked()
 {
-    QString selected = QFileDialog::getOpenFileName (
+    QString selected = Q3FileDialog::getOpenFileName (
         "/",
         QString::null,
         this,
         NULL,
         tr ("Select TAP setup application"));
 
-    if (selected)
+    if (!selected.isEmpty())
         leTAPSetup->setText (selected);
 }
 
 void VBoxVMNetworkSettings::pbTAPTerminate_clicked()
 {
-    QString selected = QFileDialog::getOpenFileName (
+    QString selected = Q3FileDialog::getOpenFileName (
         "/",
         QString::null,
         this,
         NULL,
         tr ("Select TAP terminate application"));
 
-    if (selected)
+    if (!selected.isEmpty())
         leTAPTerminate->setText (selected);
 }

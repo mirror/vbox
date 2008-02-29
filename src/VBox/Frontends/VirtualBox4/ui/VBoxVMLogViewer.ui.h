@@ -1,3 +1,14 @@
+//Added by qt3to4:
+#include <Q3HBoxLayout>
+#include <QKeyEvent>
+#include <QLabel>
+#include <QPixmap>
+#include <q3mimefactory.h>
+#include <QHideEvent>
+#include <QResizeEvent>
+#include <QEvent>
+#include <Q3VBoxLayout>
+#include <QShowEvent>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -45,7 +56,7 @@ public:
     {
         mButtonClose = new QToolButton (this);
         mButtonClose->setAutoRaise (true);
-        mButtonClose->setFocusPolicy (QWidget::TabFocus);
+        mButtonClose->setFocusPolicy (Qt::TabFocus);
         mButtonClose->setAccel (QKeySequence (Qt::Key_Escape));
         connect (mButtonClose, SIGNAL (clicked()), this, SLOT (hide()));
         mButtonClose->setIconSet (VBoxGlobal::iconSet ("delete_16px.png",
@@ -61,7 +72,7 @@ public:
         mButtonNext = new QToolButton (this);
         mButtonNext->setEnabled (false);
         mButtonNext->setAutoRaise (true);
-        mButtonNext->setFocusPolicy (QWidget::TabFocus);
+        mButtonNext->setFocusPolicy (Qt::TabFocus);
         mButtonNext->setUsesTextLabel (true);
         mButtonNext->setTextPosition (QToolButton::BesideIcon);
         connect (mButtonNext, SIGNAL (clicked()), this, SLOT (findNext()));
@@ -71,7 +82,7 @@ public:
         mButtonPrev = new QToolButton (this);
         mButtonPrev->setEnabled (false);
         mButtonPrev->setAutoRaise (true);
-        mButtonPrev->setFocusPolicy (QWidget::TabFocus);
+        mButtonPrev->setFocusPolicy (Qt::TabFocus);
         mButtonPrev->setUsesTextLabel (true);
         mButtonPrev->setTextPosition (QToolButton::BesideIcon);
         connect (mButtonPrev, SIGNAL (clicked()), this, SLOT (findBack()));
@@ -99,7 +110,7 @@ public:
         QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Expanding,
                                                      QSizePolicy::Minimum);
 
-        QHBoxLayout *mainLayout = new QHBoxLayout (this, 5, 5);
+        Q3HBoxLayout *mainLayout = new Q3HBoxLayout (this, 5, 5);
         mainLayout->addWidget (mButtonClose);
         mainLayout->addWidget (mSearchName);
         mainLayout->addWidget (mSearchString);
@@ -168,7 +179,7 @@ private:
 
     void search (bool aForward, bool aStartCurrent = false)
     {
-        QTextBrowser *browser = mViewer->currentLogPage();
+        Q3TextBrowser *browser = mViewer->currentLogPage();
         if (!browser) return;
 
         int startPrg = 0, endPrg = 0;
@@ -225,24 +236,24 @@ private:
                 /* handle the Enter keypress for mSearchString
                  * widget as a search next string action */
                 if (aObject == mSearchString &&
-                    (e->state() == 0 || e->state() & Keypad) &&
-                    (e->key() == Key_Enter || e->key() == Key_Return))
+                    (e->state() == 0 || e->state() & Qt::Keypad) &&
+                    (e->key() == Qt::Key_Enter || e->key() == Qt::Key_Return))
                 {
                     findNext();
                     return true;
                 }
                 /* handle other search next/previous shortcuts */
-                else if (e->key() == Key_F3)
+                else if (e->key() == Qt::Key_F3)
                 {
                     if (e->state() == 0)
                         findNext();
-                    else if (e->state() == ShiftButton)
+                    else if (e->state() == Qt::ShiftButton)
                         findBack();
                     return true;
                 }
                 /* handle ctrl-f key combination as a shortcut to
                  * move to the search field */
-                else if (e->state() == ControlButton && e->key() == Key_F)
+                else if (e->state() == Qt::ControlButton && e->key() == Qt::Key_F)
                 {
                     if (mViewer->currentLogPage())
                     {
@@ -253,7 +264,7 @@ private:
                 }
                 /* handle alpha-numeric keys to implement the
                  * "find as you type" feature */
-                else if ((e->state() & ~ShiftButton) == 0 &&
+                else if ((e->state() & ~Qt::ShiftButton) == 0 &&
                          e->key() >= Qt::Key_Exclam &&
                          e->key() <= Qt::Key_AsciiTilde)
                 {
@@ -283,8 +294,9 @@ private:
 
     void hideEvent (QHideEvent *aEvent)
     {
-        if (focusData()->focusWidget()->parent() == this)
-           focusNextPrevChild (true);
+#warning port me
+//        if (focusData()->focusWidget()->parent() == this)
+//           focusNextPrevChild (true);
         QWidget::hideEvent (aEvent);
     }
 
@@ -317,14 +329,14 @@ void VBoxVMLogViewer::createLogViewer (CMachine &aMachine)
     {
         /* creating new log viewer if there is no one existing */
         mSelfArray [aMachine.GetName()] = new VBoxVMLogViewer (0,
-            "VBoxVMLogViewer", WType_TopLevel | WDestructiveClose);
+            "VBoxVMLogViewer", Qt::WType_TopLevel | Qt::WDestructiveClose);
         /* read new machine data for this log viewer */
         mSelfArray [aMachine.GetName()]->setup (aMachine);
     }
 
     VBoxVMLogViewer *viewer = mSelfArray [aMachine.GetName()];
     viewer->show();
-    viewer->setWindowState (viewer->windowState() & ~WindowMinimized);
+    viewer->setWindowState (viewer->windowState() & ~Qt::WindowMinimized);
     viewer->setActiveWindow();
 }
 
@@ -342,7 +354,7 @@ void VBoxVMLogViewer::init()
     topLevelWidget()->installEventFilter (this);
 
     /* setup a dialog icon */
-    setIcon (QPixmap::fromMimeSource ("show_logs_16px.png"));
+    setIcon (qPixmapFromMimeSource ("show_logs_16px.png"));
 
     /* statusbar initially disabled */
     statusBar()->setHidden (true);
@@ -354,7 +366,7 @@ void VBoxVMLogViewer::init()
 
     /* logs list creation */
     mLogList = new QTabWidget (mLogsFrame, "mLogList");
-    QVBoxLayout *logsFrameLayout = new QVBoxLayout (mLogsFrame);
+    Q3VBoxLayout *logsFrameLayout = new Q3VBoxLayout (mLogsFrame);
     logsFrameLayout->addWidget (mLogList);
 
     /* search panel creation */
@@ -420,10 +432,13 @@ QPushButton* VBoxVMLogViewer::searchDefaultButton()
     /* this mechanism is used for searching the default dialog button
      * and similar the same mechanism in Qt::QDialog inner source */
     QPushButton *button = 0;
-    QObjectList *list = queryList ("QPushButton");
-    QObjectListIt it (*list);
-    while ((button = (QPushButton*)it.current()) && !button->isDefault())
-        ++ it;
+    QObjectList list = queryList ("QPushButton");
+    foreach (QObject *obj, list)
+    {
+        button = qobject_cast<QPushButton*> (obj);
+        if (button->isDefault())
+            break;
+    }
     return button;
 }
 
@@ -461,13 +476,13 @@ bool VBoxVMLogViewer::eventFilter (QObject *aObject, QEvent *aEvent)
         default:
             break;
     }
-    return QMainWindow::eventFilter (aObject, aEvent);
+    return Q3MainWindow::eventFilter (aObject, aEvent);
 }
 
 
 bool VBoxVMLogViewer::event (QEvent *aEvent)
 {
-    bool result = QMainWindow::event (aEvent);
+    bool result = Q3MainWindow::event (aEvent);
     switch (aEvent->type())
     {
         case QEvent::LanguageChange:
@@ -485,13 +500,13 @@ bool VBoxVMLogViewer::event (QEvent *aEvent)
 void VBoxVMLogViewer::keyPressEvent (QKeyEvent *aEvent)
 {
     if (aEvent->state() == 0 ||
-        (aEvent->state() & Keypad && aEvent->key() == Key_Enter))
+        (aEvent->state() & Qt::KeypadModifier && aEvent->key() == Qt::Key_Enter))
     {
         switch (aEvent->key())
         {
             /* processing the return keypress for the auto-default button */
-            case Key_Enter:
-            case Key_Return:
+            case Qt::Key_Enter:
+            case Qt::Key_Return:
             {
                 QPushButton *currentDefault = searchDefaultButton();
                 if (currentDefault)
@@ -499,7 +514,7 @@ void VBoxVMLogViewer::keyPressEvent (QKeyEvent *aEvent)
                 break;
             }
             /* processing the escape keypress as the close dialog action */
-            case Key_Escape:
+            case Qt::Key_Escape:
             {
                 mCloseButton->animateClick();
                 break;
@@ -513,7 +528,7 @@ void VBoxVMLogViewer::keyPressEvent (QKeyEvent *aEvent)
 
 void VBoxVMLogViewer::showEvent (QShowEvent *aEvent)
 {
-    QMainWindow::showEvent (aEvent);
+    Q3MainWindow::showEvent (aEvent);
 
     /* one may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,
@@ -569,9 +584,9 @@ void VBoxVMLogViewer::refresh()
     /* create an empty log page if there are no logs at all */
     if (!isAnyLogPresent)
     {
-        QTextBrowser *dummyLog = createLogPage ("VBox.log");
+        Q3TextBrowser *dummyLog = createLogPage ("VBox.log");
         dummyLog->setTextFormat (Qt::RichText);
-        dummyLog->setWordWrap (QTextEdit::WidgetWidth);
+        dummyLog->setWordWrap (Q3TextEdit::WidgetWidth);
         dummyLog->setText (tr ("<p>No log files found. Press the <b>Refresh</b> "
             "button to rescan the log folder <nobr><b>%1</b></nobr>.</p>")
             .arg (logFilesPath));
@@ -595,7 +610,7 @@ void VBoxVMLogViewer::refresh()
     {
         /* resize the whole log-viewer to fit 80 symbols in text-browser for
          * the first time started */
-        QTextBrowser *firstPage = static_cast <QTextBrowser *> (mLogList->page(0));
+        Q3TextBrowser *firstPage = static_cast <Q3TextBrowser *> (mLogList->page(0));
         int fullWidth = firstPage->fontMetrics().width (QChar ('x')) * 80 +
                         firstPage->verticalScrollBar()->width() +
                         firstPage->frameWidth() * 2 +
@@ -612,35 +627,35 @@ void VBoxVMLogViewer::loadLogFile (const QString &aFileName)
 {
     /* prepare log file */
     QFile logFile (aFileName);
-    if (!logFile.exists() || !logFile.open (IO_ReadOnly))
+    if (!logFile.exists() || !logFile.open (QIODevice::ReadOnly))
         return;
 
     /* read log file and write it into the log page */
-    QTextBrowser *logViewer = createLogPage (QFileInfo (aFileName).fileName());
+    Q3TextBrowser *logViewer = createLogPage (QFileInfo (aFileName).fileName());
     logViewer->setText (logFile.readAll());
 
     mLogFilesList << aFileName;
 }
 
 
-QTextBrowser* VBoxVMLogViewer::createLogPage (const QString &aName)
+Q3TextBrowser* VBoxVMLogViewer::createLogPage (const QString &aName)
 {
-    QTextBrowser *logViewer = new QTextBrowser();
+    Q3TextBrowser *logViewer = new Q3TextBrowser();
     logViewer->setTextFormat (Qt::PlainText);
     QFont font = logViewer->currentFont();
     font.setFamily ("Courier New,courier");
     logViewer->setFont (font);
-    logViewer->setWordWrap (QTextEdit::NoWrap);
-    logViewer->setVScrollBarMode (QScrollView::AlwaysOn);
+    logViewer->setWordWrap (Q3TextEdit::NoWrap);
+    logViewer->setVScrollBarMode (Q3ScrollView::AlwaysOn);
     mLogList->addTab (logViewer, aName);
     return logViewer;
 }
 
 
-QTextBrowser* VBoxVMLogViewer::currentLogPage()
+Q3TextBrowser* VBoxVMLogViewer::currentLogPage()
 {
     return mLogList->isEnabled() ?
-        static_cast<QTextBrowser*> (mLogList->currentPage()) : 0;
+        static_cast<Q3TextBrowser*> (mLogList->currentPage()) : 0;
 }
 
 
@@ -655,7 +670,7 @@ void VBoxVMLogViewer::save()
     QString defaultFullName = QDir::convertSeparators (QDir::home().absPath() +
                                                        "/" + defaultFileName);
 
-    QString newFileName = QFileDialog::getSaveFileName (defaultFullName,
+    QString newFileName = Q3FileDialog::getSaveFileName (defaultFullName,
         QString::null, this, "SaveLogAsDialog", tr ("Save VirtualBox Log As"));
 
     /* save new log into the file */
@@ -664,7 +679,7 @@ void VBoxVMLogViewer::save()
         /* reread log data */
         QFile oldFile (mLogFilesList [mLogList->currentPageIndex()]);
         QFile newFile (newFileName);
-        if (!oldFile.open (IO_ReadOnly) || !newFile.open (IO_WriteOnly))
+        if (!oldFile.open (QIODevice::ReadOnly) || !newFile.open (QIODevice::WriteOnly))
             return;
 
         /* save log data into the new file */

@@ -78,7 +78,7 @@
 #include <qglobal.h>
 #include <qstring.h>
 #include <quuid.h>
-#include <qvaluevector.h>
+#include <q3valuevector.h>
 
 #include <iprt/memory> // for auto_copy_ptr
 
@@ -224,25 +224,25 @@ public:
     /* Arrays of arbitrary types */
 
     template <typename QT, typename CT>
-    static void ToSafeArray (const QValueVector <QT> &aVec, com::SafeArray <CT> &aArr)
+    static void ToSafeArray (const Q3ValueVector <QT> &aVec, com::SafeArray <CT> &aArr)
     {
         AssertMsgFailedReturnVoid (("No conversion!\n"));
     }
 
     template <typename CT, typename QT>
-    static void FromSafeArray (const com::SafeArray <CT> &aArr, QValueVector <QT> &aVec)
+    static void FromSafeArray (const com::SafeArray <CT> &aArr, Q3ValueVector <QT> &aVec)
     {
         AssertMsgFailedReturnVoid (("No conversion!\n"));
     }
 
     template <typename QT, typename CT>
-    static void ToSafeArray (const QValueVector <QT *> &aVec, com::SafeArray <CT *> &aArr)
+    static void ToSafeArray (const Q3ValueVector <QT *> &aVec, com::SafeArray <CT *> &aArr)
     {
         AssertMsgFailedReturnVoid (("No conversion!\n"));
     }
 
     template <typename CT, typename QT>
-    static void FromSafeArray (const com::SafeArray <CT *> &aArr, QValueVector <QT *> &aVec)
+    static void FromSafeArray (const com::SafeArray <CT *> &aArr, Q3ValueVector <QT *> &aVec)
     {
         AssertMsgFailedReturnVoid (("No conversion!\n"));
     }
@@ -250,31 +250,31 @@ public:
     /* Arrays of equal types */
 
     template <typename T>
-    static void ToSafeArray (const QValueVector <T> &aVec, com::SafeArray <T> &aArr)
+    static void ToSafeArray (const Q3ValueVector <T> &aVec, com::SafeArray <T> &aArr)
     {
         aArr.reset (aVec.size());
         size_t i = 0;
-        for (typename QValueVector <T>::const_iterator it = aVec.begin();
+        for (typename Q3ValueVector <T>::const_iterator it = aVec.begin();
              it != aVec.end(); ++ it, ++ i)
             aArr [i] = *it;
     }
 
     template <typename T>
-    static void FromSafeArray (const com::SafeArray <T> &aArr, QValueVector <T> &aVec)
+    static void FromSafeArray (const com::SafeArray <T> &aArr, Q3ValueVector <T> &aVec)
     {
-        aVec = QValueVector <T> (aArr.size());
+        aVec = Q3ValueVector <T> (aArr.size());
         size_t i = 0;
-        for (typename QValueVector <T>::iterator it = aVec.begin();
+        for (typename Q3ValueVector <T>::iterator it = aVec.begin();
              it != aVec.end(); ++ it, ++ i)
             *it = aArr [i];
     }
 
     /* Arrays of strings */
 
-    static void ToSafeArray (const QValueVector <QString> &aVec,
+    static void ToSafeArray (const Q3ValueVector <QString> &aVec,
                              com::SafeArray <BSTR> &aArr);
     static void FromSafeArray (const com::SafeArray <BSTR> &aArr,
-                               QValueVector <QString> &aVec);
+                               Q3ValueVector <QString> &aVec);
 
     /* Arrays of interface pointers. Note: we need a separate pair of names
      * only because the MSVC8 template matching algorithm is poor and tries to
@@ -286,12 +286,12 @@ public:
      * charm. */
 
     template <class CI, class I>
-    static void ToSafeIfaceArray (const QValueVector <CI> &aVec,
+    static void ToSafeIfaceArray (const Q3ValueVector <CI> &aVec,
                                   com::SafeIfaceArray <I> &aArr)
     {
         aArr.reset (aVec.size());
         size_t i = 0;
-        for (typename QValueVector <CI>::const_iterator it = aVec.begin();
+        for (typename Q3ValueVector <CI>::const_iterator it = aVec.begin();
              it != aVec.end(); ++ it, ++ i)
         {
             aArr [i] = (*it).iface();
@@ -302,11 +302,11 @@ public:
 
     template <class I, class CI>
     static void FromSafeIfaceArray (const com::SafeIfaceArray <I> &aArr,
-                                    QValueVector <CI> &aVec)
+                                    Q3ValueVector <CI> &aVec)
     {
-        aVec = QValueVector <CI> (aArr.size());
+        aVec = Q3ValueVector <CI> (aArr.size());
         size_t i = 0;
-        for (typename QValueVector <CI>::iterator it = aVec.begin();
+        for (typename Q3ValueVector <CI>::iterator it = aVec.begin();
              it != aVec.end(); ++ it, ++ i)
             (*it).attach (aArr [i]);
     }

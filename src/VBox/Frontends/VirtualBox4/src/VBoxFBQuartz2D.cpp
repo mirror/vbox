@@ -28,8 +28,11 @@
 
 /* Qt includes */
 #include <qapplication.h>
-#include <qmainwindow.h>
+#include <q3mainwindow.h>
 #include <qstatusbar.h>
+//Added by qt3to4:
+#include <QPaintEvent>
+#include <Q3MemArray>
 
 /** @class VBoxQuartz2DFrameBuffer
  *
@@ -236,7 +239,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
 
         /* Ok, for more performance we set a clipping path of the
          * regions given by this paint event. */
-        QMemArray <QRect> a = pe->region().rects();
+        Q3MemArray <QRect> a = pe->region().rects();
         if (a.size() > 0)
         {
             /* Save state for display fliping */

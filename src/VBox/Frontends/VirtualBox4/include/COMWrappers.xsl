@@ -233,7 +233,7 @@
       or
       (//param[@safearray='yes' and not(../@internal='yes') and @type=current()/@name])
     ">
-      <xsl:text>typedef QValueVector &lt;C</xsl:text>
+      <xsl:text>typedef Q3ValueVector &lt;C</xsl:text>
       <xsl:value-of select="substring(@name,2)"/>
       <xsl:text>&gt; C</xsl:text>
       <xsl:value-of select="substring(@name,2)"/>
@@ -1149,7 +1149,7 @@
     <!-- no modifiers -->
     <xsl:otherwise>
       <xsl:if test="../@safearray">
-        <xsl:text>QValueVector &lt;</xsl:text>
+        <xsl:text>Q3ValueVector &lt;</xsl:text>
       </xsl:if>
       <xsl:choose>
         <!-- standard types -->
@@ -1550,7 +1550,7 @@
           <xsl:text>;&#x0A;</xsl:text>
           <xsl:if test="(name()='attribute' and $isSetter) or
                         (name()='param' and @dir='in')">
-            <!-- convert QValueVector to SafeArray -->
+            <!-- convert Q3ValueVector to SafeArray -->
             <xsl:choose>
               <!-- interface types need special treatment here -->
               <xsl:when test="@type='$unknown' or $is_iface">
@@ -1576,7 +1576,7 @@
         <xsl:when test="@safearray='yes'">
           <xsl:if test="(name()='attribute' and not($isSetter)) or
                         (name()='param' and (@dir='out' or @dir='return'))">
-            <!-- convert SafeArray to QValueVector -->
+            <!-- convert SafeArray to Q3ValueVector -->
             <xsl:choose>
               <!-- interface types need special treatment here -->
               <xsl:when test="@type='$unknown' or $is_iface">

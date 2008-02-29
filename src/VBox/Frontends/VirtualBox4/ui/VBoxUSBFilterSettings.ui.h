@@ -1,3 +1,5 @@
+//Added by qt3to4:
+#include <Q3CString>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -64,7 +66,7 @@ void VBoxUSBFilterSettings::getFromFilter (const CUSBDeviceFilter &aFilter)
     {
         case VBoxUSBFilterSettings::MachineType:
         {
-            QCString remote = aFilter.GetRemote().latin1();
+            Q3CString remote = aFilter.GetRemote().latin1();
             if (remote == "yes" || remote == "true" || remote == "1")
                 cbRemote->setCurrentItem (1);
             else if (remote == "no" || remote == "false" || remote == "0")

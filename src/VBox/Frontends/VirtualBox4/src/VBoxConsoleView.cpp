@@ -40,8 +40,17 @@
 
 #include <qmenudata.h>
 #include <qmenubar.h>
-#include <qwidgetlist.h>
+#include <qwidget.h>
 #include <qtimer.h>
+//Added by qt3to4:
+#include <QDesktopWidget>
+#include <QTimerEvent>
+#include <QMoveEvent>
+#include <QWheelEvent>
+#include <QMouseEvent>
+#include <QKeyEvent>
+#include <QEvent>
+#include <QPaintEvent>
 
 #ifdef Q_WS_WIN
 // VBox/cdefs.h defines these:
@@ -53,6 +62,7 @@
 #endif
 
 #ifdef Q_WS_X11
+#include <QX11Info>
 // We need to capture some X11 events directly which
 // requires the XEvent structure to be defined. However,
 // including the Xlib header file will cause some nasty
@@ -593,8 +603,8 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VBoxConsoleCallback, IConsoleCallback)
 VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
                                   const CConsole &console,
                                   VBoxDefs::RenderMode rm,
-                                  QWidget *parent, const char *name, WFlags f)
-    : QScrollView (parent, name, f | WStaticContents | WNoAutoErase)
+                                  QWidget *parent, const char *name, Qt::WFlags f)
+    : Q3ScrollView (parent, name, f | Qt::WStaticContents | Qt::WNoAutoErase)
     , mMainWnd (mainWnd)
     , mConsole (console)
     , gs (vboxGlobal().settings())
@@ -745,12 +755,12 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     mConsole.RegisterCallback (mCallback);
     AssertWrapperOk (mConsole);
 
-    viewport()->setEraseColor (black);
+    viewport()->setEraseColor (Qt::black);
 
     setSizePolicy (QSizePolicy (QSizePolicy::Maximum, QSizePolicy::Maximum));
     setMaximumSize (sizeHint());
 
-    setFocusPolicy (WheelFocus);
+    setFocusPolicy (Qt::WheelFocus);
 
 #if defined (VBOX_GUI_DEBUG) && defined (VBOX_GUI_FRAMEBUF_STAT)
     VMCPUTimer::calibrate (200);
@@ -969,7 +979,7 @@ void VBoxConsoleView::setMouseIntegrationEnabled (bool enabled)
      * This notification is not possible right now due to there is
      * no the required API. */
     if (enabled)
-        viewport()->setCursor (QCursor (BlankCursor));
+        viewport()->setCursor (QCursor (Qt::BlankCursor));
 
     mMouseIntegration = enabled;
 
@@ -1078,7 +1088,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* resize the guest canvas */
                 resizeContents (re->width(), re->height());
                 /* let our toplevel widget calculate its sizeHint properly */
-                QApplication::sendPostedEvents (0, QEvent::LayoutHint);
+                QApplication::sendPostedEvents (0, QEvent::LayoutRequest);
 
                 normalizeGeometry (true /* adjustPosition */);
 
@@ -1212,7 +1222,8 @@ bool VBoxConsoleView::event (QEvent *e)
             case VBoxDefs::ActivateMenuEventType:
             {
                 ActivateMenuEvent *ame = (ActivateMenuEvent *) e;
-                ame->menuData()->activateItemAt (ame->index());
+#warning port me
+//                ame->menuData()->activateItemAt (ame->index());
 
                 /*
                  *  The main window and its children can be destroyed at this
@@ -1220,9 +1231,8 @@ bool VBoxConsoleView::event (QEvent *e)
                  *  main window). Detect this situation to prevent calls to
                  *  destroyed widgets.
                  */
-                QWidgetList *list = QApplication::topLevelWidgets();
-                bool destroyed = list->find (mMainWnd) < 0;
-                delete list;
+                QWidgetList list = QApplication::topLevelWidgets();
+                bool destroyed = list.indexOf (mMainWnd) < 0;
                 if (!destroyed && mMainWnd->statusBar())
                     mMainWnd->statusBar()->clear();
 
@@ -1301,11 +1311,11 @@ bool VBoxConsoleView::event (QEvent *e)
                      * between left and right shift here (too much hassle) */
                     const bool kShift = (gs.hostKey() == VK_SHIFT ||
                                         gs.hostKey() == VK_LSHIFT) &&
-                                        (ke->state() & ShiftButton);
+                                        (ke->state() & Qt::ShiftModifier);
                     /* define hot keys according to the Shift state */
-                    const int kAltTab      = kShift ? Key_Exclam     : Key_1;
-                    const int kAltShiftTab = kShift ? Key_At         : Key_2;
-                    const int kCtrlEsc     = kShift ? Key_AsciiTilde : Key_QuoteLeft;
+                    const int kAltTab      = kShift ? Qt::Key_Exclam     : Qt::Key_1;
+                    const int kAltShiftTab = kShift ? Qt::Key_At         : Qt::Key_2;
+                    const int kCtrlEsc     = kShift ? Qt::Key_AsciiTilde : Qt::Key_QuoteLeft;
 
                     /* Simulate Alt+Tab on Host+1 and Alt+Shift+Tab on Host+2 */
                     if (ke->key() == kAltTab || ke->key() == kAltShiftTab)
@@ -1369,23 +1379,23 @@ bool VBoxConsoleView::event (QEvent *e)
 
                 if (mIsHostkeyPressed && e->type() == QEvent::KeyPress)
                 {
-                    if (ke->key() >= Key_F1 && ke->key() <= Key_F12)
+                    if (ke->key() >= Qt::Key_F1 && ke->key() <= Qt::Key_F12)
                     {
                         LONG combo [6];
                         combo [0] = 0x1d; /* Ctrl down */
                         combo [1] = 0x38; /* Alt  down */
                         combo [4] = 0xb8; /* Alt  up   */
                         combo [5] = 0x9d; /* Ctrl up   */
-                        if (ke->key() >= Key_F1 && ke->key() <= Key_F10)
+                        if (ke->key() >= Qt::Key_F1 && ke->key() <= Qt::Key_F10)
                         {
-                            combo [2] = 0x3b + (ke->key() - Key_F1); /* F1-F10 down */
-                            combo [3] = 0xbb + (ke->key() - Key_F1); /* F1-F10 up   */
+                            combo [2] = 0x3b + (ke->key() - Qt::Key_F1); /* F1-F10 down */
+                            combo [3] = 0xbb + (ke->key() - Qt::Key_F1); /* F1-F10 up   */
                         }
                         /* some scan slice */
-                        else if (ke->key() >= Key_F11 && ke->key() <= Key_F12)
+                        else if (ke->key() >= Qt::Key_F11 && ke->key() <= Qt::Key_F12)
                         {
-                            combo [2] = 0x57 + (ke->key() - Key_F11); /* F11-F12 down */
-                            combo [3] = 0xd7 + (ke->key() - Key_F11); /* F11-F12 up   */
+                            combo [2] = 0x57 + (ke->key() - Qt::Key_F11); /* F11-F12 down */
+                            combo [3] = 0xd7 + (ke->key() - Qt::Key_F11); /* F11-F12 up   */
                         }
                         else
                             Assert (0);
@@ -1393,7 +1403,7 @@ bool VBoxConsoleView::event (QEvent *e)
                         CKeyboard keyboard = mConsole.GetKeyboard();
                         keyboard.PutScancodes (combo, 6);
                     }
-                    else if (ke->key() == Key_Home)
+                    else if (ke->key() == Qt::Key_Home)
                     {
                         /* activate the main menu */
                         if (mMainWnd->isTrueSeamless() || mMainWnd->isTrueFullscreen())
@@ -1405,8 +1415,9 @@ bool VBoxConsoleView::event (QEvent *e)
                     {
                         /* process hot keys not processed in keyEvent()
                          * (as in case of non-alphanumeric keys) */
-                        processHotKey (QKeySequence (ke->key()),
-                                       mMainWnd->menuBar());
+#warning port me
+//                        processHotKey (QKeySequence (ke->key()),
+//                                       mMainWnd->menuBar());
                     }
                 }
                 else if (!mIsHostkeyPressed && e->type() == QEvent::KeyRelease)
@@ -1451,7 +1462,7 @@ bool VBoxConsoleView::event (QEvent *e)
         }
     }
 
-    return QScrollView::event (e);
+    return Q3ScrollView::event (e);
 }
 
 bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
@@ -1468,7 +1479,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                 QMouseEvent *me = (QMouseEvent *) e;
                 if (mouseEvent (me->type(), me->pos(), me->globalPos(),
                                 me->button(), me->state(), me->stateAfter(),
-                                0, Horizontal))
+                                0, Qt::Horizontal))
                     return true; /* stop further event handling */
                 break;
             }
@@ -1476,7 +1487,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             {
                 QWheelEvent *we = (QWheelEvent *) e;
                 if (mouseEvent (we->type(), we->pos(), we->globalPos(),
-                                NoButton, we->state(), we->state(),
+                                Qt::NoButton, we->state(), we->state(),
                                 we->delta(), we->orientation()))
                     return true; /* stop further event handling */
                 break;
@@ -1572,7 +1583,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             case QEvent::KeyPress:
             {
                 QKeyEvent *ke = (QKeyEvent *) e;
-                if (ke->key() == Key_Escape && !(ke->state() & KeyButtonMask))
+                if (ke->key() == Qt::Key_Escape && !(ke->state() & Qt::KeyboardModifierMask))
                     if (mMainWnd->menuBar()->hasFocus())
                         setFocus();
                 break;
@@ -1582,7 +1593,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
         }
     }
 
-    return QScrollView::eventFilter (watched, e);
+    return Q3ScrollView::eventFilter (watched, e);
 }
 
 #if defined(Q_WS_WIN32)
@@ -2164,9 +2175,9 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
     unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0, uKeyMaskScroll = 0;
 
     uKeyMaskCaps          = LockMask;
-    XModifierKeymap* map  = XGetModifierMapping(qt_xdisplay());
-    KeyCode keyCodeNum    = XKeysymToKeycode(qt_xdisplay(), XK_Num_Lock);
-    KeyCode keyCodeScroll = XKeysymToKeycode(qt_xdisplay(), XK_Scroll_Lock);
+    XModifierKeymap* map  = XGetModifierMapping(QX11Info::display());
+    KeyCode keyCodeNum    = XKeysymToKeycode(QX11Info::display(), XK_Num_Lock);
+    KeyCode keyCodeScroll = XKeysymToKeycode(QX11Info::display(), XK_Scroll_Lock);
 
     for (int i = 0; i < 8; i++)
     {
@@ -2177,7 +2188,7 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
                  && map->modifiermap[map->max_keypermod * i] == keyCodeScroll)
             uKeyMaskScroll = 1 << i;
     }
-    XQueryPointer(qt_xdisplay(), DefaultRootWindow(qt_xdisplay()), &wDummy1, &wDummy2,
+    XQueryPointer(QX11Info::display(), DefaultRootWindow(QX11Info::display()), &wDummy1, &wDummy2,
                   &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
     XFreeModifiermap(map);
 
@@ -2488,7 +2499,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
             if (!ToUnicodeEx (hotkey, 0, keys, &ch, 1, 0, list [i]) == 1)
                 ch = 0;
             if (ch)
-                processed = processHotKey (QKeySequence (UNICODE_ACCEL +
+                processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
                                                 QChar (ch).upper().unicode()),
                                            mMainWnd->menuBar());
         }
@@ -2508,14 +2519,15 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
             if (ch)
             {
                 QChar c = QString::fromLocal8Bit (&ch, 1) [0];
-                processed = processHotKey (QKeySequence (UNICODE_ACCEL +
-                                                c.upper().unicode()),
-                                           mMainWnd->menuBar());
+#warning port me
+//                processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
+//                                                c.upper().unicode()),
+//                                           mMainWnd->menuBar());
             }
         }
 #elif defined (Q_WS_MAC)
         if (aUniKey && aUniKey [0] && !aUniKey [1])
-            processed = processHotKey (QKeySequence (UNICODE_ACCEL +
+            processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
                                                      QChar (aUniKey [0]).upper().unicode()),
                                        mMainWnd->menuBar());
 
@@ -2569,9 +2581,9 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
  *  @return     true to consume the event and false to pass it to Qt
  */
 bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
-                                  const QPoint &aGlobalPos, ButtonState aButton,
-                                  ButtonState aState, ButtonState aStateAfter,
-                                  int aWheelDelta, Orientation aWheelDir)
+                                  const QPoint &aGlobalPos, Qt::ButtonState aButton,
+                                  Qt::ButtonState aState, Qt::ButtonState aStateAfter,
+                                  int aWheelDelta, Qt::Orientation aWheelDir)
 {
 #if 0
     char buf [256];
@@ -2587,15 +2599,15 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
 #endif
 
     int state = 0;
-    if (aStateAfter & LeftButton)
+    if (aStateAfter & Qt::LeftButton)
         state |= KMouseButtonState_LeftButton;
-    if (aStateAfter & RightButton)
+    if (aStateAfter & Qt::RightButton)
         state |= KMouseButtonState_RightButton;
-    if (aStateAfter & MidButton)
+    if (aStateAfter & Qt::MidButton)
         state |= KMouseButtonState_MiddleButton;
 
     int wheel = 0;
-    if (aWheelDir == Vertical)
+    if (aWheelDir == Qt::Vertical)
     {
         /* the absolute value of wheel delta is 120 units per every wheel
          * move; positive deltas correspond to counterclockwize rotations
@@ -2886,7 +2898,7 @@ void VBoxConsoleView::doRefresh()
                 updateGeometry();
                 setMaximumSize (sizeHint());
                 /* let our toplevel widget calculate its sizeHint properly */
-                QApplication::sendPostedEvents (0, QEvent::LayoutHint);
+                QApplication::sendPostedEvents (0, QEvent::LayoutRequest);
                 normalizeGeometry();
             }
             else
@@ -2914,10 +2926,11 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
         {
             /* draw a part of vbuf */
             const QRect &r = pe->rect();
-            ::bitBlt (viewport(), r.x(), r.y(),
-                      &pm, r.x() + contentsX(), r.y() + contentsY(),
-                      r.width(), r.height(),
-                      CopyROP, TRUE);
+#warning port me
+//            ::bitBlt (viewport(), r.x(), r.y(),
+//                      &pm, r.x() + contentsX(), r.y() + contentsY(),
+//                      r.width(), r.height(),
+//                      CopyROP, TRUE);
         }
         else
         {
@@ -3049,7 +3062,7 @@ void VBoxConsoleView::captureMouse (bool aCapture, bool aEmitSignal /* = true */
         /* memorize the host position where the cursor was captured */
         mCapturedPos = QCursor::pos();
 #ifdef Q_WS_WIN32
-        viewport()->setCursor (QCursor (BlankCursor));
+        viewport()->setCursor (QCursor (Qt::BlankCursor));
         /* move the mouse to the center of the visible area */
         QCursor::setPos (mapToGlobal (visibleRect().center()));
         mLastPos = QCursor::pos();
@@ -3098,39 +3111,40 @@ bool VBoxConsoleView::processHotKey (const QKeySequence &key,  QMenuData *data)
      *  which is unconvenient).
      */
 
-    for (uint i = 0; i < data->count(); i++)
-    {
-        int id = data->idAt (i);
-        QMenuItem *item = data->findItem (id);
-        if (item->popup())
-        {
-            if (processHotKey (key, item->popup()))
-                return true;
-        }
-        else
-        {
-            QStringList list = QStringList::split ("\tHost+", data->text (id));
-            if (list.count() == 2)
-            {
-                if (key.matches (QKeySequence (list[1])) == Identical)
-                {
-                    /*
-                     *  we asynchronously post a special event instead of calling
-                     *  data->activateItemAt (i) directly, to let key presses
-                     *  and releases be processed correctly by Qt first.
-                     *  Note: we assume that nobody will delete the menu item
-                     *  corresponding to the key sequence, so that the pointer to
-                     *  menu data posted along with the event will remain valid in
-                     *  the event handler, at least until the main window is closed.
-                     */
-
-                    QApplication::postEvent (this,
-                                             new ActivateMenuEvent (data, i));
-                    return true;
-                }
-            }
-        }
-    }
+#warning port me
+//    for (uint i = 0; i < data->count(); i++)
+//    {
+//        int id = data->idAt (i);
+//        QMenuItem *item = data->findItem (id);
+//        if (item->popup())
+//        {
+//            if (processHotKey (key, item->popup()))
+//                return true;
+//        }
+//        else
+//        {
+//            QStringList list = QStringList::split ("\tHost+", data->text (id));
+//            if (list.count() == 2)
+//            {
+//                if (key.matches (QKeySequence (list[1])) == Identical)
+//                {
+//                    /*
+//                     *  we asynchronously post a special event instead of calling
+//                     *  data->activateItemAt (i) directly, to let key presses
+//                     *  and releases be processed correctly by Qt first.
+//                     *  Note: we assume that nobody will delete the menu item
+//                     *  corresponding to the key sequence, so that the pointer to
+//                     *  menu data posted along with the event will remain valid in
+//                     *  the event handler, at least until the main window is closed.
+//                     */
+//
+//                    QApplication::postEvent (this,
+//                                             new ActivateMenuEvent (data, i));
+//                    return true;
+//                }
+//            }
+//        }
+//    }
 
     return false;
 }
@@ -3241,7 +3255,7 @@ void VBoxConsoleView::updateMouseClipping()
 
     if (mMouseCaptured)
     {
-        viewport()->setCursor (QCursor (BlankCursor));
+        viewport()->setCursor (QCursor (Qt::BlankCursor));
 #ifdef Q_WS_WIN32
         QRect r = viewport()->rect();
         r.moveTopLeft (viewport()->mapToGlobal (QPoint (0, 0)));
@@ -3508,7 +3522,7 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
         }
         else
         {
-            viewport()->setCursor (QCursor::BlankCursor);
+            viewport()->setCursor (Qt::BlankCursor);
         }
     }
 }
