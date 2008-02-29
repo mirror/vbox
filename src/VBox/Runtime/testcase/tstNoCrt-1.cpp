@@ -108,6 +108,9 @@ static void TstBufCheck(PTSTBUF pBuf, const char *pszDesc)
 #if 0 /* enable this to test the testcase. */
 # undef RT_NOCRT
 # define RT_NOCRT(a) a
+# ifdef _MSC_VER
+#  define mempcpy nocrt_mempcpy
+# endif 
 #endif
 
 int main()
