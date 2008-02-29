@@ -43,15 +43,14 @@ VBOX_WITH_DEBUGGER_GUI :=
 DEFS := $(filter-out VBOX_WITH_DEBUGGER_GUI,$(DEFS))
 
 # Handmade configuration of qt4
-VBOX_PATH_QT4 = /usr
-VBOX_MODULE_QT4 = QtCore QtGui QtNetwork Qt3Support
-VBOX_DEFS_QT4 = QT_CORE_LIB QT_GUI_LIB QT_NETWORK_LIB QT_QT3SUPPORT_LIB
-VBOX_INCS_QT4 = $(VBOX_PATH_QT4)/share/qt4/mkspecs/linux-g++ $(foreach mod, $(VBOX_MODULE_QT4), $(join $(VBOX_PATH_QT4)/include/qt4/, $(mod))) $(VBOX_PATH_QT4)/include/qt4/Qt $(VBOX_PATH_QT4)/include/qt4
-VBOX_LIBS_QT4 = $(VBOX_MODULE_QT4)
-VBOX_LIBPATH_QT4 =  $(VBOX_MODULE_QT4)/lib
-
-# Moc knows ifdefs now
-VBOX_MOCDEF_QT4 = -DQ_WS_X11
+VBOX_PATH_QT4      ?= /usr
+VBOX_MODULE_QT4     = QtCore QtGui QtNetwork Qt3Support
+VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB QT_NETWORK_LIB QT_QT3SUPPORT_LIB
+VBOX_INCS_QT4       = $(VBOX_PATH_QT4)/share/qt4/mkspecs/linux-g++ \
+                      $(foreach mod, $(VBOX_MODULE_QT4), $(join $(VBOX_PATH_QT4)/include/qt4/, $(mod))) \
+                      $(VBOX_PATH_QT4)/include/qt4/Qt $(VBOX_PATH_QT4)/include/qt4
+VBOX_LIBS_QT4       = $(VBOX_MODULE_QT4)
+VBOX_LIBPATH_QT4    = $(VBOX_MODULE_QT4)/lib
 
 # Warn about all what you know about porting qt3->qt4.
 # Disable this if you like to see something on your screen.
@@ -60,9 +59,9 @@ VBOX_DEFS_QT4 += QT3_SUPPORT_WARNINGS
 VBOX_DEFS_QT4 += QT3_SUPPORT QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
 
 VBOX_UIC4      := $(VBOX_PATH_QT4)/bin/uic3
-VBOX_MOC4      := $(VBOX_PATH_QT4)/bin/moc
-VBOX_LUPDATE4  := $(VBOX_PATH_QT4)/bin/lupdate
-VBOX_LRELEASE4 := $(VBOX_PATH_QT4)/bin/lrelease
+VBOX_MOC4      := $(VBOX_PATH_QT4)/bin/moc-qt4
+VBOX_LUPDATE4  := $(VBOX_PATH_QT4)/bin/lupdate-qt4
+VBOX_LRELEASE4 := $(VBOX_PATH_QT4)/bin/lrelease-qt4
 
 # Template copy from the qt3 stuff. Appended a "4" on the
 # relevant places.
@@ -196,7 +195,6 @@ ifdef VBOX_WITH_XPCOM
 	$(VBOX_XPCOM_INCS)
  TEMPLATE_VBOXQT4GUIEXE_LIBS            += \
 	$(LIB_XPCOM)
- VBOX_MOCDEF_QT4 += -DVBOX_WITH_XPCOM
 endif
 
 #
@@ -645,7 +643,7 @@ $(target)_GENSRCS_REAL += $(mocsrc)
 $(mocsrc): $(mochdr)
 	$$(call MSG_TOOL,moc,$(target),$(mochdr),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
-	$$(QUIET)$$(VBOX_MOC4) $(VBOX_MOCDEF_QT4) $(mochdr) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) $($(target)_DEFS) $(mochdr) -o $$@
 
 endef
 
@@ -666,7 +664,7 @@ $(mocobj): $(mocinc)
 $(mocinc): $(mocsrc)
 	$$(call MSG_TOOL,moc,$(target),$(mocsrc),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
-	$$(QUIET)$$(VBOX_MOC4) $(VBOX_MOCDEF_QT4) -i $(mocsrc) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) $($(target)_DEFS) -i $(mocsrc) -o $$@
 
 endef
 
@@ -687,7 +685,7 @@ $(uisrc): $(mocuiinc)
 $(mocuiinc): $(mocuihdr)
 	$$(call MSG_TOOL,moc,$(target),$(mocuihdr),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
-	$$(QUIET)$$(VBOX_MOC4) $(VBOX_MOCDEF_QT4) -i $(mocuihdr) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) $($(target)_DEFS) -i $(mocuihdr) -o $$@
 
 endef
 
@@ -716,7 +714,7 @@ $(uisrc): $(uihdr) $(uifile) $(wildcard $(uifile).h) | $$(call DIRDEP,$(dir $(ui
 
 $(mocsrc): $(uihdr) | $$(call DIRDEP,$(dir $(mocsrc)))
 	$$(call MSG_TOOL,moc,$(target),$(uihdr),$$@)
-	$$(QUIET)$$(VBOX_MOC4) $(VBOX_MOCDEF_QT4) $(uihdr) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) $($(target)_DEFS) $(uihdr) -o $$@
 
 endef
 
