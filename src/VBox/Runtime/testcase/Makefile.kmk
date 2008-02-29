@@ -238,7 +238,14 @@ tstMove_SOURCES     = tstMove.cpp
 tstNoCrt-1_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES
 tstNoCrt-1_SOURCES = \
 	tstNoCrt-1.cpp \
-	../common/string/memmove.asm
+	../common/string/memcpy.asm \
+	../common/string/mempcpy.asm \
+	../common/string/memmove.asm \
+	../common/string/memset.asm \
+	../common/string/memchr.asm \
+	../common/string/memcmp.asm \
+	../common/string/strchr.asm \
+	../common/string/strcmp.asm
 
 ntGetTimerResolution_SOURCES = ntGetTimerResolution.cpp
 ntGetTimerResolution_SDKS.win = WINPSDK W2K3DDK  VBOX_NTDLL
