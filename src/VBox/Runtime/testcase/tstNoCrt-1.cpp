@@ -147,6 +147,21 @@ int main()
          } while (0)
     void *pv;
 
+#define CHECK_DIFF(op)  \
+        do \
+        { \
+            if (!(iDiff op 0)) \
+            { \
+                RTPrintf("tstNoCrt-1(%d): iDiff=%d expected: %s 0\n", __LINE__, iDiff, #op); \
+                g_cErrors++; \
+            } \
+         } while (0)
+    int iDiff;
+
+    static char s_szTest1[] = "0123456789abcdef";
+    static char s_szTest2[] = "0123456789abcdef";
+    static char s_szTest3[] = "fedcba9876543210";
+
     /*
      * memcpy.
      */
@@ -369,8 +384,6 @@ int main()
     /*
      * memchr & strchr.
      */
-    static char s_szTest1[] = "0123456789abcdef";
-
     RTPrintf("tstNoCrt-1: memchr\n");
     pv = RT_NOCRT(memchr)(&s_szTest1[0x00], 'f', sizeof(s_szTest1)); CHECK_PV(&s_szTest1[0xf]);
     pv = RT_NOCRT(memchr)(&s_szTest1[0x0f], 'f', sizeof(s_szTest1)); CHECK_PV(&s_szTest1[0xf]);
@@ -395,23 +408,9 @@ int main()
             CHECK_PV(&s_szTest1[i]);
         }
 
-#define CHECK_DIFF(op)  \
-        do \
-        { \
-            if (!(iDiff op 0)) \
-            { \
-                RTPrintf("tstNoCrt-1(%d): iDiff=%d expected: %s 0\n", __LINE__, iDiff, #op); \
-                g_cErrors++; \
-            } \
-         } while (0)
-    int iDiff;
-
     /*
      * Some simple memcmp/strcmp checks.
      */
-    static char s_szTest2[] = "0123456789abcdef";
-    static char s_szTest3[] = "fedcba9876543210";
-
     RTPrintf("tstNoCrt-1: memcmp\n");
     iDiff = RT_NOCRT(memcmp)(s_szTest1, s_szTest1, sizeof(s_szTest1)); CHECK_DIFF( == );
     iDiff = RT_NOCRT(memcmp)(s_szTest1, s_szTest2, sizeof(s_szTest1)); CHECK_DIFF( == );
