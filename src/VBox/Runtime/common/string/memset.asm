@@ -99,7 +99,7 @@ BEGINPROC RT_NOCRT(memset)
         ; eax = (al << 24) | (al << 16) | (al << 8) | al;
         mov     ah, al
         mov     edx, eax
-        shr     edx, 16
+        shl     edx, 16
         or      eax, edx
 
         mov     edx, ecx
