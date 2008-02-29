@@ -575,7 +575,7 @@
     </xsd:simpleType>
   </xsd:attribute>
   <xsd:attribute name="cable" type="xsd:boolean" use="required"/>
-  <xsd:attribute name="speed" type="xsd:unsignedInt" default="100000"/>
+  <xsd:attribute name="speed" type="xsd:unsignedInt" default="1000000"/>
   <xsd:attribute name="trace" type="xsd:boolean" default="false"/>
   <xsd:attribute name="tracefile" type="xsd:string"/>
 </xsd:complexType>
