@@ -1,0 +1,275 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>VBoxSharedFoldersSettings</class>
+<comment>
+:mode=html:tabSize=4:indentSize=4:noTabs=true:
+:folding=explicit:collapseFolds=1:
+
+     Copyright (C) 2006-2007 innotek GmbH
+    
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+</comment>
+<widget class="QWidget">
+    <property name="name">
+        <cstring>VBoxSharedFoldersSettings</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>286</width>
+            <height>247</height>
+        </rect>
+    </property>
+    <property name="sizePolicy">
+        <sizepolicy>
+            <hsizetype>7</hsizetype>
+            <vsizetype>7</vsizetype>
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+        </sizepolicy>
+    </property>
+    <property name="caption">
+        <string>VBoxSharedFoldersSettings</string>
+        <comment>don't translate</comment>
+    </property>
+    <vbox>
+        <property name="name">
+            <cstring>unnamed</cstring>
+        </property>
+        <property name="margin">
+            <number>0</number>
+        </property>
+        <property name="spacing">
+            <number>10</number>
+        </property>
+        <widget class="QGroupBox">
+            <property name="name">
+                <cstring>gbSharedFolders</cstring>
+            </property>
+            <property name="title">
+                <string>Shared &amp;Folders</string>
+            </property>
+            <hbox>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QListView">
+                    <column>
+                        <property name="text">
+                            <string>Name</string>
+                        </property>
+                        <property name="clickable">
+                            <bool>true</bool>
+                        </property>
+                        <property name="resizable">
+                            <bool>true</bool>
+                        </property>
+                    </column>
+                    <column>
+                        <property name="text">
+                            <string>Path</string>
+                        </property>
+                        <property name="clickable">
+                            <bool>true</bool>
+                        </property>
+                        <property name="resizable">
+                            <bool>true</bool>
+                        </property>
+                    </column>
+                    <column>
+                        <property name="text">
+                            <string>Access</string>
+                        </property>
+                        <property name="clickable">
+                            <bool>true</bool>
+                        </property>
+                        <property name="resizable">
+                            <bool>true</bool>
+                        </property>
+                    </column>
+                    <property name="name">
+                        <cstring>listView</cstring>
+                    </property>
+                    <property name="allColumnsShowFocus">
+                        <bool>true</bool>
+                    </property>
+                    <property name="resizeMode">
+                        <enum>AllColumns</enum>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>&lt;qt&gt;Lists all shared folders accessible to this machine.
+Use
+&lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
+to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
+&lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
+to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</string>
+                    </property>
+                </widget>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout101</cstring>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <property name="spacing">
+                            <number>0</number>
+                        </property>
+                        <widget class="QToolButton">
+                            <property name="name">
+                                <cstring>tbAdd</cstring>
+                            </property>
+                            <property name="focusPolicy">
+                                <enum>TabFocus</enum>
+                            </property>
+                            <property name="text">
+                                <string></string>
+                            </property>
+                            <property name="accel">
+                                <string>Ins</string>
+                            </property>
+                            <property name="textLabel">
+                                <string>Add a new shared folder (Ins)</string>
+                            </property>
+                            <property name="autoRaise">
+                                <bool>true</bool>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Adds a new shared folder definition.</string>
+                            </property>
+                        </widget>
+                        <widget class="QToolButton">
+                            <property name="name">
+                                <cstring>tbEdit</cstring>
+                            </property>
+                            <property name="focusPolicy">
+                                <enum>TabFocus</enum>
+                            </property>
+                            <property name="text">
+                                <string></string>
+                            </property>
+                            <property name="accel">
+                                <string>Ctrl+Space</string>
+                            </property>
+                            <property name="textLabel">
+                                <string>Edit the selected shared folder (Ctrl+Space)</string>
+                            </property>
+                            <property name="autoRaise">
+                                <bool>true</bool>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Edits the selected shared folder definition.</string>
+                            </property>
+                        </widget>
+                        <widget class="QToolButton">
+                            <property name="name">
+                                <cstring>tbRemove</cstring>
+                            </property>
+                            <property name="focusPolicy">
+                                <enum>TabFocus</enum>
+                            </property>
+                            <property name="text">
+                                <string></string>
+                            </property>
+                            <property name="accel">
+                                <string>Del</string>
+                            </property>
+                            <property name="textLabel">
+                                <string>Remove the selected shared folder (Del)</string>
+                            </property>
+                            <property name="autoRaise">
+                                <bool>true</bool>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Removes the selected shared folder definition.</string>
+                            </property>
+                        </widget>
+                        <spacer>
+                            <property name="name">
+                                <cstring>spacer76</cstring>
+                            </property>
+                            <property name="orientation">
+                                <enum>Vertical</enum>
+                            </property>
+                            <property name="sizeType">
+                                <enum>Expanding</enum>
+                            </property>
+                            <property name="sizeHint">
+                                <size>
+                                    <width>21</width>
+                                    <height>101</height>
+                                </size>
+                            </property>
+                        </spacer>
+                    </vbox>
+                </widget>
+            </hbox>
+        </widget>
+    </vbox>
+</widget>
+<connections>
+    <connection>
+        <sender>listView</sender>
+        <signal>doubleClicked(QListViewItem*)</signal>
+        <receiver>VBoxSharedFoldersSettings</receiver>
+        <slot>processDoubleClick(QListViewItem*)</slot>
+    </connection>
+</connections>
+<includes>
+    <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
+    <include location="local" impldecl="in implementation">VBoxUtils.h</include>
+    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
+    <include location="global" impldecl="in implementation">qfiledialog.h</include>
+    <include location="global" impldecl="in implementation">qlabel.h</include>
+    <include location="global" impldecl="in implementation">qlineedit.h</include>
+    <include location="global" impldecl="in implementation">qregexp.h</include>
+    <include location="global" impldecl="in implementation">qtimer.h</include>
+    <include location="global" impldecl="in implementation">qpainter.h</include>
+</includes>
+<variables>
+    <variable access="public">enum SFDialogType { WrongType, GlobalType = 0x01, MachineType = 0x02, ConsoleType = 0x04 };</variable>
+    <variable access="private">bool mIsListViewChanged;</variable>
+    <variable access="private">int mDialogType;</variable>
+    <variable access="private">CMachine mMachine;</variable>
+    <variable access="private">CConsole mConsole;</variable>
+    <variable access="private">QString mTrFull;</variable>
+    <variable access="private">QString mTrReadOnly;</variable>
+</variables>
+<slots>
+    <slot>tbAddPressed()</slot>
+    <slot>tbEditPressed()</slot>
+    <slot>tbRemovePressed()</slot>
+    <slot>processCurrentChanged( QListViewItem* )</slot>
+    <slot>processDoubleClick( QListViewItem* )</slot>
+    <slot>adjustList()</slot>
+    <slot>updateList()</slot>
+</slots>
+<functions>
+    <function access="private">init()</function>
+    <function access="private">showEvent( QShowEvent* )</function>
+    <function returnType="bool" access="private">eventFilter( QObject*, QEvent* )</function>
+    <function>setDialogType( int )</function>
+    <function returnType="int">dialogType() {return mDialogType;}</function>
+    <function access="private">removeSharedFolder( const QString &amp;, const QString &amp;, VBoxSharedFoldersSettings::SFDialogType )</function>
+    <function access="private">createSharedFolder( const QString &amp;, const QString &amp;, bool, VBoxSharedFoldersSettings::SFDialogType )</function>
+    <function>getFromGlobal()</function>
+    <function>getFromMachine( const CMachine &amp; )</function>
+    <function>getFromConsole( const CConsole &amp; )</function>
+    <function access="private">getFrom( const CSharedFolderEnumerator &amp;, QListViewItem* )</function>
+    <function>putBackToGlobal()</function>
+    <function>putBackToMachine()</function>
+    <function>putBackToConsole()</function>
+    <function access="private">putBackTo( CSharedFolderEnumerator &amp;, QListViewItem* )</function>
+    <function access="private" returnType="QListViewItem*">searchRoot( bool )</function>
+    <function access="private" returnType="bool">isEditable( const QString &amp; )</function>
+</functions>
+<pixmapinproject/>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>
