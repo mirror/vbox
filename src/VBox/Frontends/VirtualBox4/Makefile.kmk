@@ -644,7 +644,9 @@ $(target)_GENSRCS_REAL += $(mocsrc)
 $(mocsrc): $(mochdr)
 	$$(call MSG_TOOL,moc,$(target),$(mochdr),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
-	$$(QUIET)$$(VBOX_MOC4) $($(target)_DEFS) $(mochdr) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) $(foreach def,$($(target)_DEFS),-D$(def)) \
+                           $(foreach inc,$($(target)_INCS),-I$(inc)) \
+                           $(mochdr) -o $$@
 
 endef
 
@@ -665,7 +667,9 @@ $(mocobj): $(mocinc)
 $(mocinc): $(mocsrc)
 	$$(call MSG_TOOL,moc,$(target),$(mocsrc),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
-	$$(QUIET)$$(VBOX_MOC4) $($(target)_DEFS) -i $(mocsrc) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) $(foreach def,$($(target)_DEFS),-D$(def)) \
+                           $(foreach inc,$($(target)_INCS),-I$(inc)) \
+                           -i $(mocsrc) -o $$@
 
 endef
 
@@ -686,7 +690,9 @@ $(uisrc): $(mocuiinc)
 $(mocuiinc): $(mocuihdr)
 	$$(call MSG_TOOL,moc,$(target),$(mocuihdr),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
-	$$(QUIET)$$(VBOX_MOC4) $($(target)_DEFS) -i $(mocuihdr) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) $(foreach def,$($(target)_DEFS),-D$(def)) \
+                           $(foreach inc,$($(target)_INCS),-I$(inc)) \
+                           -i $(mocuihdr) -o $$@
 
 endef
 
@@ -715,7 +721,9 @@ $(uisrc): $(uihdr) $(uifile) $(wildcard $(uifile).h) | $$(call DIRDEP,$(dir $(ui
 
 $(mocsrc): $(uihdr) | $$(call DIRDEP,$(dir $(mocsrc)))
 	$$(call MSG_TOOL,moc,$(target),$(uihdr),$$@)
-	$$(QUIET)$$(VBOX_MOC4) $($(target)_DEFS) $(uihdr) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) $(foreach def,$($(target)_DEFS),-D$(def)) \
+                           $(foreach inc,$($(target)_INCS),-I$(inc)) \
+                           $(uihdr) -o $$@
 
 endef
 
