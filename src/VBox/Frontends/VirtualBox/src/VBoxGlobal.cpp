@@ -1585,11 +1585,11 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                      * an additional symbolic network/interface name field, use
                      * this name instead */
                     if (type == KNetworkAttachmentType_HostInterface)
-                        attType = attType.arg (tr ("host interface, %1",
-                            "details report (network)").arg (adapter.GetHostInterface()));
+                        attType = attType.arg ("%1 '%2'")
+                            .arg (vboxGlobal().toString (type), adapter.GetHostInterface());
                     else if (type == KNetworkAttachmentType_Internal)
-                        attType = attType.arg (tr ("internal network, '%1'",
-                            "details report (network)").arg (adapter.GetInternalNetwork()));
+                        attType = attType.arg ("%1 '%2'")
+                            .arg (vboxGlobal().toString (type), adapter.GetInternalNetwork());
                     else
                         attType = attType.arg (vboxGlobal().toString (type));
 
