@@ -36,9 +36,33 @@ BEGINPROC RT_NOCRT(memset)
         cld
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
-        int3
-  %error "Port me"
- %else
+        mov     r9, rdi                 ; save rdi in r9
+        mov     rdi, rcx
+        mov     r10, rcx                ; the return value.
+        movzx   eax, dl
+        cmp     r8, 32
+        jb      .dobytes
+
+        ; eax = (al << 24) | (al << 16) | (al << 8) | al;
+        ; rdx = (eax << 32) | eax
+        movzx   edx, dl
+        mov     rax, qword 0101010101010101h
+        imul    rax, rdx
+
+        ; todo: alignment.
+        mov     rcx, r8
+        shr     rcx, 3
+        rep stosq
+
+        and     r8, 7
+.dobytes:
+        mov     rcx, r8
+        rep stosb
+
+        mov     rdi, r9                 ; restore rdi
+        mov     rax, r10
+
+ %else ; GCC
         mov     r10, rdi                ; the return value.
         movzx   eax, sil
         cmp     rdx, 32
@@ -51,7 +75,6 @@ BEGINPROC RT_NOCRT(memset)
         imul    rax, rsi
 
         ; todo: alignment.
-
         mov     rcx, rdx
         shr     rcx, 3
         rep stosq
@@ -61,10 +84,10 @@ BEGINPROC RT_NOCRT(memset)
         mov     rcx, rdx
         rep stosb
 
-        mov     rax, rdi
- %endif
+        mov     rax, r10
+ %endif ; GCC
 
-%else
+%else ; X86
         push    edi
 
         mov     ecx, [esp + 0ch + 4]
@@ -90,7 +113,7 @@ BEGINPROC RT_NOCRT(memset)
 
         pop     edi
         mov     eax, [esp + 4]
-%endif
+%endif ; X86
         ret
 ENDPROC RT_NOCRT(memset)
 
