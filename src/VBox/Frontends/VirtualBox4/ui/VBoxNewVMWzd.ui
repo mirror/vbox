@@ -1,0 +1,1071 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>VBoxNewVMWzd</class>
+<comment>
+
+:mode=html:tabSize=4:indentSize=4:noTabs=true:
+:folding=explicit:collapseFolds=1:
+
+     Copyright (C) 2006-2007 innotek GmbH
+    
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+</comment>
+<widget class="QWizard">
+    <property name="name">
+        <cstring>VBoxNewVMWzd</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>571</width>
+            <height>465</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>Create New Virtual Machine</string>
+    </property>
+    <property name="titleFont">
+        <font>
+            <family>Arial</family>
+            <pointsize>12</pointsize>
+            <bold>1</bold>
+        </font>
+    </property>
+    <widget class="QWidget">
+        <property name="name">
+            <cstring>pageWelcome</cstring>
+        </property>
+        <attribute name="title">
+            <string>Welcome to the New Virtual Machine Wizard!</string>
+        </attribute>
+        <hbox>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <property name="spacing">
+                <number>20</number>
+            </property>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>pmWelcome</cstring>
+                </property>
+                <property name="sizePolicy">
+                    <sizepolicy>
+                        <hsizetype>4</hsizetype>
+                        <vsizetype>5</vsizetype>
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                    </sizepolicy>
+                </property>
+                <property name="pixmap">
+                    <pixmap>vmw_new_welcome.png</pixmap>
+                </property>
+                <property name="alignment">
+                    <set>AlignTop</set>
+                </property>
+            </widget>
+            <widget class="QLayoutWidget">
+                <property name="name">
+                    <cstring>layout74</cstring>
+                </property>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txWelcome</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
+a new virtual machine for VirtualBox.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
+and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer21</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>0</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                    <spacer>
+                        <property name="name">
+                            <cstring>widthSpacer</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Horizontal</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>MinimumExpanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>400</width>
+                                <height>1</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+        </hbox>
+    </widget>
+    <widget class="QWidget">
+        <property name="name">
+            <cstring>pageNameAndOS</cstring>
+        </property>
+        <attribute name="title">
+            <string>VM Name and OS Type</string>
+        </attribute>
+        <hbox>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <property name="spacing">
+                <number>20</number>
+            </property>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>pmNameAndOS</cstring>
+                </property>
+                <property name="sizePolicy">
+                    <sizepolicy>
+                        <hsizetype>4</hsizetype>
+                        <vsizetype>5</vsizetype>
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                    </sizepolicy>
+                </property>
+                <property name="pixmap">
+                    <pixmap>vmw_new_welcome.png</pixmap>
+                </property>
+                <property name="alignment">
+                    <set>AlignTop</set>
+                </property>
+            </widget>
+            <widget class="QLayoutWidget">
+                <property name="name">
+                    <cstring>layout23</cstring>
+                </property>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="spacing">
+                        <number>15</number>
+                    </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txNameAndOS</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
+system you plan to install onto the virtual machine.&lt;/p&gt;
+&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
+It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>groupBox22</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="title">
+                            <string>N&amp;ame</string>
+                        </property>
+                        <hbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout100</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLineEdit">
+                                        <property name="name">
+                                            <cstring>leName</cstring>
+                                        </property>
+                                        <property name="frameShape">
+                                            <enum>LineEditPanel</enum>
+                                        </property>
+                                        <property name="frameShadow">
+                                            <enum>Sunken</enum>
+                                        </property>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                        </hbox>
+                    </widget>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>groupBox22_2</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="title">
+                            <string>OS &amp;Type</string>
+                        </property>
+                        <hbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout22</cstring>
+                                </property>
+                                <vbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>layout101</cstring>
+                                        </property>
+                                        <hbox>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <widget class="QComboBox">
+                                                <property name="name">
+                                                    <cstring>cbOS</cstring>
+                                                </property>
+                                            </widget>
+                                        </hbox>
+                                    </widget>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer15</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Vertical</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>0</width>
+                                                <height>0</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </vbox>
+                            </widget>
+                            <spacer>
+                                <property name="name">
+                                    <cstring>spacer16</cstring>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Horizontal</enum>
+                                </property>
+                                <property name="sizeType">
+                                    <enum>Expanding</enum>
+                                </property>
+                                <property name="sizeHint">
+                                    <size>
+                                        <width>101</width>
+                                        <height>20</height>
+                                    </size>
+                                </property>
+                            </spacer>
+                            <widget class="QLabel">
+                                <property name="name">
+                                    <cstring>pmOS</cstring>
+                                </property>
+                                <property name="sizePolicy">
+                                    <sizepolicy>
+                                        <hsizetype>0</hsizetype>
+                                        <vsizetype>0</vsizetype>
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <property name="lineWidth">
+                                    <number>1</number>
+                                </property>
+                                <property name="pixmap">
+                                    <pixmap>os_other.png</pixmap>
+                                </property>
+                                <property name="scaledContents">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="alignment">
+                                    <set>AlignBottom</set>
+                                </property>
+                            </widget>
+                        </hbox>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer37</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>0</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+        </hbox>
+    </widget>
+    <widget class="QWidget">
+        <property name="name">
+            <cstring>pageMemory</cstring>
+        </property>
+        <attribute name="title">
+            <string>Memory</string>
+        </attribute>
+        <hbox>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <property name="spacing">
+                <number>20</number>
+            </property>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>pmMemory</cstring>
+                </property>
+                <property name="sizePolicy">
+                    <sizepolicy>
+                        <hsizetype>4</hsizetype>
+                        <vsizetype>5</vsizetype>
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                    </sizepolicy>
+                </property>
+                <property name="pixmap">
+                    <pixmap>vmw_new_welcome.png</pixmap>
+                </property>
+                <property name="alignment">
+                    <set>AlignTop</set>
+                </property>
+            </widget>
+            <widget class="QLayoutWidget">
+                <property name="name">
+                    <cstring>layout35</cstring>
+                </property>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="spacing">
+                        <number>15</number>
+                    </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>textLabel1</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txRAMBest2</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string></string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>groupBox2</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>5</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="title">
+                            <string>Base &amp;Memory Size</string>
+                        </property>
+                        <hbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout33</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>layout32</cstring>
+                                        </property>
+                                        <vbox>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <property name="spacing">
+                                                <number>0</number>
+                                            </property>
+                                            <widget class="QSlider">
+                                                <property name="name">
+                                                    <cstring>slRAM</cstring>
+                                                </property>
+                                                <property name="sizePolicy">
+                                                    <sizepolicy>
+                                                        <hsizetype>7</hsizetype>
+                                                        <vsizetype>0</vsizetype>
+                                                        <horstretch>10</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="minValue">
+                                                    <number>4</number>
+                                                </property>
+                                                <property name="maxValue">
+                                                    <number>384</number>
+                                                </property>
+                                                <property name="lineStep">
+                                                    <number>4</number>
+                                                </property>
+                                                <property name="pageStep">
+                                                    <number>32</number>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Horizontal</enum>
+                                                </property>
+                                                <property name="tickmarks">
+                                                    <enum>Below</enum>
+                                                </property>
+                                                <property name="tickInterval">
+                                                    <number>32</number>
+                                                </property>
+                                            </widget>
+                                            <widget class="QLayoutWidget">
+                                                <property name="name">
+                                                    <cstring>layout31</cstring>
+                                                </property>
+                                                <hbox>
+                                                    <property name="name">
+                                                        <cstring>unnamed</cstring>
+                                                    </property>
+                                                    <widget class="QLabel">
+                                                        <property name="name">
+                                                            <cstring>txRAMMin</cstring>
+                                                        </property>
+                                                        <property name="text">
+                                                            <string>&lt;</string>
+                                                        </property>
+                                                        <property name="alignment">
+                                                            <set>WordBreak|AlignVCenter|AlignLeft</set>
+                                                        </property>
+                                                    </widget>
+                                                    <spacer>
+                                                        <property name="name">
+                                                            <cstring>spacer8_2</cstring>
+                                                        </property>
+                                                        <property name="orientation">
+                                                            <enum>Horizontal</enum>
+                                                        </property>
+                                                        <property name="sizeType">
+                                                            <enum>Expanding</enum>
+                                                        </property>
+                                                        <property name="sizeHint">
+                                                            <size>
+                                                                <width>60</width>
+                                                                <height>20</height>
+                                                            </size>
+                                                        </property>
+                                                    </spacer>
+                                                    <widget class="QLabel">
+                                                        <property name="name">
+                                                            <cstring>txRAMBest</cstring>
+                                                        </property>
+                                                        <property name="text">
+                                                            <string>=</string>
+                                                        </property>
+                                                        <property name="alignment">
+                                                            <set>AlignCenter</set>
+                                                        </property>
+                                                    </widget>
+                                                    <spacer>
+                                                        <property name="name">
+                                                            <cstring>spacer8_3</cstring>
+                                                        </property>
+                                                        <property name="orientation">
+                                                            <enum>Horizontal</enum>
+                                                        </property>
+                                                        <property name="sizeType">
+                                                            <enum>Expanding</enum>
+                                                        </property>
+                                                        <property name="sizeHint">
+                                                            <size>
+                                                                <width>60</width>
+                                                                <height>20</height>
+                                                            </size>
+                                                        </property>
+                                                    </spacer>
+                                                    <widget class="QLabel">
+                                                        <property name="name">
+                                                            <cstring>txRAMMax</cstring>
+                                                        </property>
+                                                        <property name="text">
+                                                            <string>&gt;</string>
+                                                        </property>
+                                                        <property name="alignment">
+                                                            <set>WordBreak|AlignVCenter|AlignRight</set>
+                                                        </property>
+                                                    </widget>
+                                                </hbox>
+                                            </widget>
+                                        </vbox>
+                                    </widget>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>layout18_2</cstring>
+                                        </property>
+                                        <vbox>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <widget class="QLayoutWidget">
+                                                <property name="name">
+                                                    <cstring>layout17_2</cstring>
+                                                </property>
+                                                <hbox>
+                                                    <property name="name">
+                                                        <cstring>unnamed</cstring>
+                                                    </property>
+                                                    <widget class="QLineEdit">
+                                                        <property name="name">
+                                                            <cstring>leRAM</cstring>
+                                                        </property>
+                                                        <property name="sizePolicy">
+                                                            <sizepolicy>
+                                                                <hsizetype>4</hsizetype>
+                                                                <vsizetype>0</vsizetype>
+                                                                <horstretch>0</horstretch>
+                                                                <verstretch>0</verstretch>
+                                                            </sizepolicy>
+                                                        </property>
+                                                    </widget>
+                                                    <widget class="QLabel">
+                                                        <property name="name">
+                                                            <cstring>txRAM</cstring>
+                                                        </property>
+                                                        <property name="text">
+                                                            <string>MB</string>
+                                                        </property>
+                                                        <property name="buddy" stdset="0">
+                                                            <cstring>leRAM</cstring>
+                                                        </property>
+                                                    </widget>
+                                                </hbox>
+                                            </widget>
+                                            <spacer>
+                                                <property name="name">
+                                                    <cstring>spacer9_2</cstring>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="sizeType">
+                                                    <enum>Expanding</enum>
+                                                </property>
+                                                <property name="sizeHint">
+                                                    <size>
+                                                        <width>0</width>
+                                                        <height>0</height>
+                                                    </size>
+                                                </property>
+                                            </spacer>
+                                        </vbox>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                        </hbox>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer7</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>0</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+        </hbox>
+    </widget>
+    <widget class="QWidget">
+        <property name="name">
+            <cstring>pageHDD</cstring>
+        </property>
+        <attribute name="title">
+            <string>Virtual Hard Disk</string>
+        </attribute>
+        <hbox>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <property name="spacing">
+                <number>20</number>
+            </property>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>pmHDD</cstring>
+                </property>
+                <property name="sizePolicy">
+                    <sizepolicy>
+                        <hsizetype>4</hsizetype>
+                        <vsizetype>5</vsizetype>
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                    </sizepolicy>
+                </property>
+                <property name="pixmap">
+                    <pixmap>vmw_new_welcome.png</pixmap>
+                </property>
+                <property name="alignment">
+                    <set>AlignTop</set>
+                </property>
+            </widget>
+            <widget class="QLayoutWidget">
+                <property name="name">
+                    <cstring>layout76</cstring>
+                </property>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="spacing">
+                        <number>15</number>
+                    </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>textLabel1_3</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;Select a hard disk image to be used
+as the boot hard disk of the virtual machine. You can either create a new hard
+disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
+image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
+button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
+step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txVDIBest</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string></string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>grbHDA</cstring>
+                        </property>
+                        <property name="title">
+                            <string>B&amp;oot Hard Disk (Primary Master)</string>
+                        </property>
+                        <grid>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QPushButton" row="1" column="0">
+                                <property name="name">
+                                    <cstring>pbNewHD</cstring>
+                                </property>
+                                <property name="sizePolicy">
+                                    <sizepolicy>
+                                        <hsizetype>1</hsizetype>
+                                        <vsizetype>1</vsizetype>
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <property name="text">
+                                    <string>N&amp;ew...</string>
+                                </property>
+                            </widget>
+                            <widget class="QPushButton" row="1" column="1">
+                                <property name="name">
+                                    <cstring>pbExistingHD</cstring>
+                                </property>
+                                <property name="sizePolicy">
+                                    <sizepolicy>
+                                        <hsizetype>1</hsizetype>
+                                        <vsizetype>1</vsizetype>
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <property name="text">
+                                    <string>E&amp;xisting...</string>
+                                </property>
+                            </widget>
+                            <spacer row="1" column="2">
+                                <property name="name">
+                                    <cstring>spacer33</cstring>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Horizontal</enum>
+                                </property>
+                                <property name="sizeType">
+                                    <enum>Expanding</enum>
+                                </property>
+                                <property name="sizeHint">
+                                    <size>
+                                        <width>40</width>
+                                        <height>20</height>
+                                    </size>
+                                </property>
+                            </spacer>
+                        </grid>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer103</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>0</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+        </hbox>
+    </widget>
+    <widget class="QWidget">
+        <property name="name">
+            <cstring>pageSummary</cstring>
+        </property>
+        <attribute name="title">
+            <string>Summary</string>
+        </attribute>
+        <hbox>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <property name="spacing">
+                <number>20</number>
+            </property>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>pmSummary</cstring>
+                </property>
+                <property name="sizePolicy">
+                    <sizepolicy>
+                        <hsizetype>4</hsizetype>
+                        <vsizetype>5</vsizetype>
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                    </sizepolicy>
+                </property>
+                <property name="pixmap">
+                    <pixmap>vmw_new_welcome.png</pixmap>
+                </property>
+                <property name="alignment">
+                    <set>AlignTop</set>
+                </property>
+            </widget>
+            <widget class="QLayoutWidget">
+                <property name="name">
+                    <cstring>summaryLayout</cstring>
+                </property>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="spacing">
+                        <number>15</number>
+                    </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txSummaryHdr</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>
+                            &lt;p&gt;
+                            You are going to create a new virtual machine
+                            with the following parameters:
+                            &lt;/p&gt;
+                            </string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txSummaryFtr</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>0</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>
+                            &lt;p&gt;
+                            If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
+                            Once you press it, a new virtual machine will be created.
+                            &lt;/p&gt;&lt;p&gt;
+                            Note that you can alter these and all other setting of the
+                            created virtual machine at any time using the
+                            &lt;b&gt;Settings&lt;/b&gt; dialog accessible through
+                            the menu of the main window.
+                            &lt;/p&gt;
+                            </string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer33_2</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>0</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+        </hbox>
+    </widget>
+</widget>
+<connections>
+    <connection>
+        <sender>pbNewHD</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxNewVMWzd</receiver>
+        <slot>showNewVDIWizard()</slot>
+    </connection>
+    <connection>
+        <sender>pbExistingHD</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxNewVMWzd</receiver>
+        <slot>showVDIManager()</slot>
+    </connection>
+    <connection>
+        <sender>leRAM</sender>
+        <signal>textChanged(const QString&amp;)</signal>
+        <receiver>VBoxNewVMWzd</receiver>
+        <slot>leRAM_textChanged(const QString&amp;)</slot>
+    </connection>
+    <connection>
+        <sender>slRAM</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>VBoxNewVMWzd</receiver>
+        <slot>slRAM_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>cbOS</sender>
+        <signal>activated(int)</signal>
+        <receiver>VBoxNewVMWzd</receiver>
+        <slot>cbOS_activated(int)</slot>
+    </connection>
+</connections>
+<tabstops>
+    <tabstop>leName</tabstop>
+    <tabstop>cbOS</tabstop>
+    <tabstop>slRAM</tabstop>
+    <tabstop>leRAM</tabstop>
+    <tabstop>pbNewHD</tabstop>
+    <tabstop>pbExistingHD</tabstop>
+</tabstops>
+<includes>
+    <include location="global" impldecl="in implementation">qvalidator.h</include>
+    <include location="local" impldecl="in declaration">qfiledialog.h</include>
+    <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
+    <include location="local" impldecl="in declaration">COMDefs.h</include>
+    <include location="local" impldecl="in implementation">VBoxUtils.h</include>
+    <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
+    <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
+    <include location="local" impldecl="in implementation">VBoxNewHDWzd.h</include>
+    <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
+</includes>
+<forwards>
+    <forward>class VBoxMediaComboBox</forward>
+    <forward>class QITextEdit</forward>
+</forwards>
+<variables>
+    <variable access="private">QIWidgetValidator *wvalNameAndOS;</variable>
+    <variable access="private">QIWidgetValidator *wvalMemory;</variable>
+    <variable access="private">QIWidgetValidator *wvalHDD;</variable>
+    <variable access="private">QUuid uuidHD;</variable>
+    <variable access="private">CHardDisk chd;</variable>
+    <variable access="private">CMachine cmachine;</variable>
+    <variable access="private">VBoxMediaComboBox *mediaCombo;</variable>
+    <variable access="private">QITextEdit *teSummary;</variable>
+</variables>
+<slots>
+    <slot>enableNext( const QIWidgetValidator * wval )</slot>
+    <slot>revalidate( QIWidgetValidator * wval )</slot>
+    <slot>showVDIManager()</slot>
+    <slot>showNewVDIWizard()</slot>
+    <slot>slRAM_valueChanged( int val )</slot>
+    <slot>leRAM_textChanged( const QString &amp; text )</slot>
+    <slot>cbOS_activated( int item )</slot>
+    <slot>currentMediaChanged( int item )</slot>
+</slots>
+<functions>
+    <function access="private">init()</function>
+    <function access="private">destroy()</function>
+    <function access="private">showEvent( QShowEvent * )</function>
+    <function>showPage( QWidget * page )</function>
+    <function>accept()</function>
+    <function access="private" returnType="bool">constructMachine()</function>
+    <function access="private">ensureNewHardDiskDeleted()</function>
+    <function returnType="CMachine">machine()</function>
+</functions>
+<pixmapinproject/>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

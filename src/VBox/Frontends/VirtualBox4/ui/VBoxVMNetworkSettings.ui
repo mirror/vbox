@@ -1,0 +1,681 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>VBoxVMNetworkSettings</class>
+<comment>
+:mode=html:tabSize=4:indentSize=4:noTabs=true:
+:folding=explicit:collapseFolds=1:
+
+     Copyright (C) 2006-2007 innotek GmbH
+
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+</comment>
+<widget class="QWidget">
+    <property name="name">
+        <cstring>VBoxVMNetworkSettings</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>442</width>
+            <height>353</height>
+        </rect>
+    </property>
+    <property name="sizePolicy">
+        <sizepolicy>
+            <hsizetype>5</hsizetype>
+            <vsizetype>1</vsizetype>
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+        </sizepolicy>
+    </property>
+    <property name="caption">
+        <string>VBoxVMNetworkSettings</string>
+    </property>
+    <vbox>
+        <property name="name">
+            <cstring>unnamed</cstring>
+        </property>
+        <property name="spacing">
+            <number>10</number>
+        </property>
+        <widget class="QGroupBox">
+            <property name="name">
+                <cstring>grbEnabled</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>5</hsizetype>
+                    <vsizetype>1</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="title">
+                <string>&amp;Enable Network Adapter</string>
+            </property>
+            <property name="whatsThis" stdset="0">
+                <string>When checked, plugs this virtual network adapter into the virtual machine.</string>
+            </property>
+            <property name="checkable">
+                <bool>true</bool>
+            </property>
+            <vbox>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout345</cstring>
+                    </property>
+                    <grid>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QLabel" row="2" column="0">
+                            <property name="name">
+                                <cstring>txHostInterface_WIN</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>0</hsizetype>
+                                    <vsizetype>5</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="text">
+                                <string>&amp;Interface Name</string>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>cbHostInterfaceName</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QLabel" row="3" column="0">
+                            <property name="name">
+                                <cstring>txInternalNetwork</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>0</hsizetype>
+                                    <vsizetype>5</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="text">
+                                <string>&amp;Network Name</string>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>cbInternalNetworkName</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QLineEdit" row="4" column="1">
+                            <property name="name">
+                                <cstring>leMACAddress</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>7</hsizetype>
+                                    <vsizetype>0</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="frameShape">
+                                <enum>LineEditPanel</enum>
+                            </property>
+                            <property name="frameShadow">
+                                <enum>Sunken</enum>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                        <string>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</string>
+                            </property>
+                        </widget>
+                        <widget class="QLabel" row="0" column="0">
+                            <property name="name">
+                                <cstring>txAdapterType</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>0</hsizetype>
+                                    <vsizetype>0</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="text">
+                                <string>Adapter &amp;Type</string>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>cbAdapterType</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QComboBox" row="0" column="1" rowspan="1" colspan="2">
+                            <property name="name">
+                                <cstring>cbAdapterType</cstring>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</string>
+                            </property>
+                        </widget>
+                        <widget class="QComboBox" row="1" column="1" rowspan="1" colspan="2">
+                            <property name="name">
+                                <cstring>cbNetworkAttachment</cstring>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Controls the way how this virtual adapter is attached to the real network of the Host OS.</string>
+                            </property>
+                        </widget>
+                        <widget class="QToolButton" row="4" column="2">
+                            <property name="name">
+                                <cstring>pbGenerateMAC</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>5</hsizetype>
+                                    <vsizetype>1</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="focusPolicy">
+                                <enum>StrongFocus</enum>
+                            </property>
+                            <property name="text">
+                                <string>&amp;Generate</string>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Generates a new random MAC address.</string>
+                            </property>
+                        </widget>
+                        <widget class="QLabel" row="1" column="0">
+                            <property name="name">
+                                <cstring>txNetworkAttachment</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>0</hsizetype>
+                                    <vsizetype>0</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="text">
+                                <string>&amp;Attached to</string>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>cbNetworkAttachment</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QLabel" row="4" column="0">
+                            <property name="name">
+                                <cstring>txMACAddress</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>0</hsizetype>
+                                    <vsizetype>0</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="text">
+                                <string>&amp;MAC Address</string>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>leMACAddress</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QComboBox" row="2" column="1" rowspan="1" colspan="2">
+                            <property name="name">
+                                <cstring>cbHostInterfaceName</cstring>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Displays the name of the host interface selected for this adapter.</string>
+                            </property>
+                        </widget>
+                        <widget class="QComboBox" row="3" column="1" rowspan="1" colspan="2">
+                            <property name="name">
+                                <cstring>cbInternalNetworkName</cstring>
+                            </property>
+                            <property name="editable">
+                                <bool>true</bool>
+                            </property>
+                            <property name="insertionPolicy">
+                                <enum>NoInsertion</enum>
+                            </property>
+                            <property name="autoCompletion">
+                                <bool>true</bool>
+                            </property>
+                            <property name="duplicatesEnabled">
+                                <bool>false</bool>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Displays the name of the internal network selected for this adapter.</string>
+                            </property>
+                        </widget>
+                    </grid>
+                </widget>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>chbCableConnected</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Ca&amp;ble Connected</string>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
+                    </property>
+                </widget>
+            </vbox>
+        </widget>
+        <widget class="QGroupBox">
+            <property name="name">
+                <cstring>grbTAP</cstring>
+            </property>
+            <property name="title">
+                <string>Host Interface Settings</string>
+            </property>
+            <property name="flat">
+                <bool>false</bool>
+            </property>
+            <vbox>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout120</cstring>
+                    </property>
+                    <hbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QFrame">
+                            <property name="name">
+                                <cstring>frmHostInterface_X11</cstring>
+                            </property>
+                            <property name="frameShape">
+                                <enum>NoFrame</enum>
+                            </property>
+                            <property name="frameShadow">
+                                <enum>Raised</enum>
+                            </property>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <property name="margin">
+                                    <number>0</number>
+                                </property>
+                                <widget class="QLabel">
+                                    <property name="name">
+                                        <cstring>txHostInterface_X11</cstring>
+                                    </property>
+                                    <property name="sizePolicy">
+                                        <sizepolicy>
+                                            <hsizetype>0</hsizetype>
+                                            <vsizetype>5</vsizetype>
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                    </property>
+                                    <property name="text">
+                                        <string>&amp;Interface Name</string>
+                                    </property>
+                                    <property name="buddy" stdset="0">
+                                        <cstring>leHostInterface</cstring>
+                                    </property>
+                                </widget>
+                                <widget class="QLineEdit">
+                                    <property name="name">
+                                        <cstring>leHostInterface</cstring>
+                                    </property>
+                                    <property name="whatsThis" stdset="0">
+                                        <string>Displays the TAP interface name.</string>
+                                    </property>
+                                </widget>
+                            </vbox>
+                        </widget>
+                        <widget class="QFrame">
+                            <property name="name">
+                                <cstring>frmTAPDescriptor</cstring>
+                            </property>
+                            <property name="frameShape">
+                                <enum>NoFrame</enum>
+                            </property>
+                            <property name="frameShadow">
+                                <enum>Raised</enum>
+                            </property>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <property name="margin">
+                                    <number>0</number>
+                                </property>
+                                <widget class="QLabel">
+                                    <property name="name">
+                                        <cstring>txTAPDescriptor</cstring>
+                                    </property>
+                                    <property name="sizePolicy">
+                                        <sizepolicy>
+                                            <hsizetype>0</hsizetype>
+                                            <vsizetype>5</vsizetype>
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                    </property>
+                                    <property name="text">
+                                        <string>&amp;File Descriptor</string>
+                                    </property>
+                                    <property name="buddy" stdset="0">
+                                        <cstring>leTAPDescriptor</cstring>
+                                    </property>
+                                </widget>
+                                <widget class="QLineEdit">
+                                    <property name="name">
+                                        <cstring>leTAPDescriptor</cstring>
+                                    </property>
+                                    <property name="frameShape">
+                                        <enum>LineEditPanel</enum>
+                                    </property>
+                                    <property name="frameShadow">
+                                        <enum>Sunken</enum>
+                                    </property>
+                                </widget>
+                            </vbox>
+                        </widget>
+                    </hbox>
+                </widget>
+                <widget class="QFrame">
+                    <property name="name">
+                        <cstring>frmTAPSetupTerminate</cstring>
+                    </property>
+                    <property name="frameShape">
+                        <enum>NoFrame</enum>
+                    </property>
+                    <property name="frameShadow">
+                        <enum>Raised</enum>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <property name="margin">
+                            <number>0</number>
+                        </property>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout124</cstring>
+                            </property>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <property name="margin">
+                                    <number>0</number>
+                                </property>
+                                <property name="spacing">
+                                    <number>0</number>
+                                </property>
+                                <widget class="QLayoutWidget">
+                                    <property name="name">
+                                        <cstring>layout31</cstring>
+                                    </property>
+                                    <hbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QLabel">
+                                            <property name="name">
+                                                <cstring>txTAPSetup</cstring>
+                                            </property>
+                                            <property name="text">
+                                                <string>&amp;Setup Application</string>
+                                            </property>
+                                            <property name="buddy" stdset="0">
+                                                <cstring>leTAPSetup</cstring>
+                                            </property>
+                                        </widget>
+                                        <spacer>
+                                            <property name="name">
+                                                <cstring>spacer14</cstring>
+                                            </property>
+                                            <property name="orientation">
+                                                <enum>Horizontal</enum>
+                                            </property>
+                                            <property name="sizeType">
+                                                <enum>Expanding</enum>
+                                            </property>
+                                            <property name="sizeHint">
+                                                <size>
+                                                    <width>61</width>
+                                                    <height>20</height>
+                                                </size>
+                                            </property>
+                                        </spacer>
+                                    </hbox>
+                                </widget>
+                                <widget class="QLayoutWidget">
+                                    <property name="name">
+                                        <cstring>layout122</cstring>
+                                    </property>
+                                    <hbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QLineEdit">
+                                            <property name="name">
+                                                <cstring>leTAPSetup</cstring>
+                                            </property>
+                                            <property name="whatsThis" stdset="0">
+                                                <string>Displays the command executed to set up the TAP interface.</string>
+                                            </property>
+                                        </widget>
+                                        <widget class="QToolButton">
+                                            <property name="name">
+                                                <cstring>pbTAPSetup</cstring>
+                                            </property>
+                                            <property name="text">
+                                                <string>Select</string>
+                                            </property>
+                                            <property name="whatsThis" stdset="0">
+                                                <string>Selects the setup application.</string>
+                                            </property>
+                                            <property name="focusPolicy">
+                                                <enum>TabFocus</enum>
+                                            </property>
+                                        </widget>
+                                    </hbox>
+                                </widget>
+                            </vbox>
+                        </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout125</cstring>
+                            </property>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <property name="margin">
+                                    <number>0</number>
+                                </property>
+                                <property name="spacing">
+                                    <number>0</number>
+                                </property>
+                                <widget class="QLayoutWidget">
+                                    <property name="name">
+                                        <cstring>layout32</cstring>
+                                    </property>
+                                    <hbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QLabel">
+                                            <property name="name">
+                                                <cstring>txTAPTerminate</cstring>
+                                            </property>
+                                            <property name="text">
+                                                <string>&amp;Terminate Application</string>
+                                            </property>
+                                            <property name="buddy" stdset="0">
+                                                <cstring>leTAPTerminate</cstring>
+                                            </property>
+                                        </widget>
+                                        <spacer>
+                                            <property name="name">
+                                                <cstring>spacer15</cstring>
+                                            </property>
+                                            <property name="orientation">
+                                                <enum>Horizontal</enum>
+                                            </property>
+                                            <property name="sizeType">
+                                                <enum>Expanding</enum>
+                                            </property>
+                                            <property name="sizeHint">
+                                                <size>
+                                                    <width>61</width>
+                                                    <height>20</height>
+                                                </size>
+                                            </property>
+                                        </spacer>
+                                    </hbox>
+                                </widget>
+                                <widget class="QLayoutWidget">
+                                    <property name="name">
+                                        <cstring>layout123</cstring>
+                                    </property>
+                                    <hbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QLineEdit">
+                                            <property name="name">
+                                                <cstring>leTAPTerminate</cstring>
+                                            </property>
+                                            <property name="frameShape">
+                                                <enum>LineEditPanel</enum>
+                                            </property>
+                                            <property name="frameShadow">
+                                                <enum>Sunken</enum>
+                                            </property>
+                                            <property name="whatsThis" stdset="0">
+                                                <string>Displays the command executed to terminate the TAP interface.</string>
+                                            </property>
+                                        </widget>
+                                        <widget class="QToolButton">
+                                            <property name="name">
+                                                <cstring>pbTAPTerminate</cstring>
+                                            </property>
+                                            <property name="text">
+                                                <string>Select</string>
+                                            </property>
+                                            <property name="whatsThis" stdset="0">
+                                                <string>Selects the terminate application.</string>
+                                            </property>
+                                            <property name="focusPolicy">
+                                                <enum>TabFocus</enum>
+                                            </property>
+                                        </widget>
+                                    </hbox>
+                                </widget>
+                            </vbox>
+                        </widget>
+                    </vbox>
+                </widget>
+            </vbox>
+        </widget>
+        <spacer>
+            <property name="name">
+                <cstring>spacer5</cstring>
+            </property>
+            <property name="orientation">
+                <enum>Vertical</enum>
+            </property>
+            <property name="sizeType">
+                <enum>Expanding</enum>
+            </property>
+            <property name="sizeHint">
+                <size>
+                    <width>0</width>
+                    <height>0</height>
+                </size>
+            </property>
+        </spacer>
+    </vbox>
+</widget>
+<connections>
+    <connection>
+        <sender>pbGenerateMAC</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMNetworkSettings</receiver>
+        <slot>pbGenerateMAC_clicked()</slot>
+    </connection>
+    <connection>
+        <sender>cbNetworkAttachment</sender>
+        <signal>activated(const QString&amp;)</signal>
+        <receiver>VBoxVMNetworkSettings</receiver>
+        <slot>cbNetworkAttachment_activated(const QString&amp;)</slot>
+    </connection>
+    <connection>
+        <sender>pbTAPSetup</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMNetworkSettings</receiver>
+        <slot>pbTAPSetup_clicked()</slot>
+    </connection>
+    <connection>
+        <sender>pbTAPTerminate</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMNetworkSettings</receiver>
+        <slot>pbTAPTerminate_clicked()</slot>
+    </connection>
+</connections>
+<tabstops>
+    <tabstop>cbNetworkAttachment</tabstop>
+    <tabstop>cbHostInterfaceName</tabstop>
+    <tabstop>cbInternalNetworkName</tabstop>
+    <tabstop>leMACAddress</tabstop>
+</tabstops>
+<includes>
+    <include location="global" impldecl="in implementation">limits</include>
+    <include location="global" impldecl="in implementation">qvalidator.h</include>
+    <include location="global" impldecl="in implementation">qfiledialog.h</include>
+    <include location="local" impldecl="in declaration">COMDefs.h</include>
+    <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
+    <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
+    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
+</includes>
+<variables>
+    <variable access="public">enum CheckPageResult { CheckPage_Ok, CheckPage_InvalidInterface, CheckPage_NoNetworkName };</variable>
+    <variable access="private">CNetworkAdapter cadapter;</variable>
+    <variable access="private">QIWidgetValidator *mWalidator;</variable>
+</variables>
+<slots>
+    <slot access="private">grbEnabledToggled( bool )</slot>
+    <slot access="private">cbNetworkAttachment_activated( const QString &amp; string )</slot>
+    <slot access="private">pbGenerateMAC_clicked()</slot>
+    <slot access="private">pbTAPSetup_clicked()</slot>
+    <slot access="private">pbTAPTerminate_clicked()</slot>
+</slots>
+<functions>
+    <function access="private" specifier="non virtual">init()</function>
+    <function returnType="CheckPageResult">checkPage( const QStringList &amp; )</function>
+    <function>loadInterfaceList( const QStringList &amp;, const QString &amp; )</function>
+    <function>loadNetworksList( const QStringList &amp; )</function>
+    <function>getFromAdapter( const CNetworkAdapter &amp; )</function>
+    <function>putBackToAdapter()</function>
+    <function>setValidator( QIWidgetValidator* )</function>
+    <function>revalidate()</function>
+    <function access="private" returnType="bool">isInterfaceInvalid( const QStringList &amp;, const QString &amp; )</function>
+</functions>
+<pixmapinproject/>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

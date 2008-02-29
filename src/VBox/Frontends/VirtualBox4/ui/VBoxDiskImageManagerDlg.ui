@@ -1,0 +1,638 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>VBoxDiskImageManagerDlg</class>
+<comment>
+:mode=html:tabSize=4:indentSize=4:noTabs=true:
+:folding=explicit:collapseFolds=1:
+
+     Copyright (C) 2006-2007 innotek GmbH
+    
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+</comment>
+<widget class="QMainWindow">
+    <property name="name">
+        <cstring>VBoxDiskImageManagerDlg</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>620</width>
+            <height>460</height>
+        </rect>
+    </property>
+    <property name="minimumSize">
+        <size>
+            <width>289</width>
+            <height>178</height>
+        </size>
+    </property>
+    <property name="caption">
+        <string>Virtual Disk Manager</string>
+    </property>
+    <vbox>
+        <property name="name">
+            <cstring>unnamed</cstring>
+        </property>
+        <property name="margin">
+            <number>3</number>
+        </property>
+        <property name="spacing">
+            <number>5</number>
+        </property>
+        <widget class="QLayoutWidget">
+            <property name="name">
+                <cstring>layout2</cstring>
+            </property>
+            <vbox>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <property name="margin">
+                    <number>7</number>
+                </property>
+                <widget class="QTabWidget">
+                    <property name="name">
+                        <cstring>twImages</cstring>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>5</hsizetype>
+                            <vsizetype>7</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <widget class="QWidget">
+                        <property name="name">
+                            <cstring>tab</cstring>
+                        </property>
+                        <attribute name="title">
+                            <string>&amp;Hard Disks</string>
+                        </attribute>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QListView">
+                                <column>
+                                    <property name="text">
+                                        <string>Name</string>
+                                    </property>
+                                    <property name="clickable">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="resizable">
+                                        <bool>true</bool>
+                                    </property>
+                                </column>
+                                <column>
+                                    <property name="text">
+                                        <string>Virtual Size</string>
+                                    </property>
+                                    <property name="clickable">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="resizable">
+                                        <bool>true</bool>
+                                    </property>
+                                </column>
+                                <column>
+                                    <property name="text">
+                                        <string>Actual Size</string>
+                                    </property>
+                                    <property name="clickable">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="resizable">
+                                        <bool>true</bool>
+                                    </property>
+                                </column>
+                                <property name="name">
+                                    <cstring>hdsView</cstring>
+                                </property>
+                                <property name="acceptDrops">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="hScrollBarMode">
+                                    <enum>AlwaysOff</enum>
+                                </property>
+                                <property name="dragAutoScroll">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="allColumnsShowFocus">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="rootIsDecorated">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="resizeMode">
+                                    <enum>AllColumns</enum>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string></string>
+                                </property>
+                            </widget>
+                            <widget class="QFrame">
+                                <property name="name">
+                                    <cstring>hdsContainer</cstring>
+                                </property>
+                                <property name="frameShape">
+                                    <enum>Box</enum>
+                                </property>
+                                <property name="frameShadow">
+                                    <enum>Sunken</enum>
+                                </property>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <widget class="QWidget">
+                        <property name="name">
+                            <cstring>tab</cstring>
+                        </property>
+                        <attribute name="title">
+                            <string>&amp;CD/DVD Images</string>
+                        </attribute>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QListView">
+                                <column>
+                                    <property name="text">
+                                        <string>Name</string>
+                                    </property>
+                                    <property name="clickable">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="resizable">
+                                        <bool>true</bool>
+                                    </property>
+                                </column>
+                                <column>
+                                    <property name="text">
+                                        <string>Size</string>
+                                    </property>
+                                    <property name="clickable">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="resizable">
+                                        <bool>true</bool>
+                                    </property>
+                                </column>
+                                <property name="name">
+                                    <cstring>cdsView</cstring>
+                                </property>
+                                <property name="acceptDrops">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="hScrollBarMode">
+                                    <enum>AlwaysOff</enum>
+                                </property>
+                                <property name="dragAutoScroll">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="allColumnsShowFocus">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="rootIsDecorated">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="resizeMode">
+                                    <enum>AllColumns</enum>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string></string>
+                                </property>
+                            </widget>
+                            <widget class="QFrame">
+                                <property name="name">
+                                    <cstring>cdsContainer</cstring>
+                                </property>
+                                <property name="frameShape">
+                                    <enum>Box</enum>
+                                </property>
+                                <property name="frameShadow">
+                                    <enum>Sunken</enum>
+                                </property>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <widget class="QWidget">
+                        <property name="name">
+                            <cstring>TabPage</cstring>
+                        </property>
+                        <attribute name="title">
+                            <string>&amp;Floppy Images</string>
+                        </attribute>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QListView">
+                                <column>
+                                    <property name="text">
+                                        <string>Name</string>
+                                    </property>
+                                    <property name="clickable">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="resizable">
+                                        <bool>true</bool>
+                                    </property>
+                                </column>
+                                <column>
+                                    <property name="text">
+                                        <string>Size</string>
+                                    </property>
+                                    <property name="clickable">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="resizable">
+                                        <bool>true</bool>
+                                    </property>
+                                </column>
+                                <property name="name">
+                                    <cstring>fdsView</cstring>
+                                </property>
+                                <property name="acceptDrops">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="hScrollBarMode">
+                                    <enum>AlwaysOff</enum>
+                                </property>
+                                <property name="dragAutoScroll">
+                                    <bool>false</bool>
+                                </property>
+                                <property name="allColumnsShowFocus">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="rootIsDecorated">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="resizeMode">
+                                    <enum>AllColumns</enum>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string></string>
+                                </property>
+                            </widget>
+                            <widget class="QFrame">
+                                <property name="name">
+                                    <cstring>fdsContainer</cstring>
+                                </property>
+                                <property name="frameShape">
+                                    <enum>Box</enum>
+                                </property>
+                                <property name="frameShadow">
+                                    <enum>Sunken</enum>
+                                </property>
+                            </widget>
+                        </vbox>
+                    </widget>
+                </widget>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>buttonLayout</cstring>
+                    </property>
+                    <hbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QPushButton">
+                            <property name="name">
+                                <cstring>buttonHelp</cstring>
+                            </property>
+                            <property name="text">
+                                <string>Help</string>
+                            </property>
+                            <property name="accel">
+                                <string>F1</string>
+                            </property>
+                            <property name="autoDefault">
+                                <bool>true</bool>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Invoke dialog's help</string>
+                            </property>
+                        </widget>
+                        <spacer>
+                            <property name="name">
+                                <cstring>Spacer1</cstring>
+                            </property>
+                            <property name="orientation">
+                                <enum>Horizontal</enum>
+                            </property>
+                            <property name="sizeType">
+                                <enum>Expanding</enum>
+                            </property>
+                            <property name="sizeHint">
+                                <size>
+                                    <width>214</width>
+                                    <height>16</height>
+                                </size>
+                            </property>
+                        </spacer>
+                        <spacer>
+                            <property name="name">
+                                <cstring>Spacer2</cstring>
+                            </property>
+                            <property name="orientation">
+                                <enum>Horizontal</enum>
+                            </property>
+                            <property name="sizeType">
+                                <enum>Expanding</enum>
+                            </property>
+                            <property name="sizeHint">
+                                <size>
+                                    <width>214</width>
+                                    <height>16</height>
+                                </size>
+                            </property>
+                        </spacer>
+                        <widget class="QPushButton">
+                            <property name="name">
+                                <cstring>buttonOk</cstring>
+                            </property>
+                            <property name="text">
+                                <string>&amp;OK</string>
+                            </property>
+                            <property name="autoDefault">
+                                <bool>true</bool>
+                            </property>
+                            <property name="default">
+                                <bool>true</bool>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Accept dialog</string>
+                            </property>
+                        </widget>
+                        <widget class="QPushButton">
+                            <property name="name">
+                                <cstring>buttonCancel</cstring>
+                            </property>
+                            <property name="text">
+                                <string>Cancel</string>
+                            </property>
+                            <property name="autoDefault">
+                                <bool>true</bool>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Cancel dialog</string>
+                            </property>
+                        </widget>
+                    </hbox>
+                </widget>
+            </vbox>
+        </widget>
+    </vbox>
+</widget>
+<toolbars>
+</toolbars>
+<connections>
+    <connection>
+        <sender>buttonOk</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>accept()</slot>
+    </connection>
+    <connection>
+        <sender>buttonCancel</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>reject()</slot>
+    </connection>
+    <connection>
+        <sender>hdsView</sender>
+        <signal>currentChanged(QListViewItem*)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>processCurrentChanged(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>cdsView</sender>
+        <signal>currentChanged(QListViewItem*)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>processCurrentChanged(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>fdsView</sender>
+        <signal>currentChanged(QListViewItem*)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>processCurrentChanged(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>hdsView</sender>
+        <signal>pressed(QListViewItem*)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>processPressed(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>cdsView</sender>
+        <signal>pressed(QListViewItem*)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>processPressed(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>fdsView</sender>
+        <signal>pressed(QListViewItem*)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>processPressed(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>hdsView</sender>
+        <signal>doubleClicked(QListViewItem*)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>processDoubleClick(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>cdsView</sender>
+        <signal>doubleClicked(QListViewItem*)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>processDoubleClick(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>fdsView</sender>
+        <signal>doubleClicked(QListViewItem*)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>processDoubleClick(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>hdsView</sender>
+        <signal>contextMenuRequested(QListViewItem*,const QPoint&amp;,int)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>invokePopup(QListViewItem*,const QPoint&amp;,int)</slot>
+    </connection>
+    <connection>
+        <sender>cdsView</sender>
+        <signal>contextMenuRequested(QListViewItem*,const QPoint&amp;,int)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>invokePopup(QListViewItem*,const QPoint&amp;,int)</slot>
+    </connection>
+    <connection>
+        <sender>fdsView</sender>
+        <signal>contextMenuRequested(QListViewItem*,const QPoint&amp;,int)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>invokePopup(QListViewItem*,const QPoint&amp;,int)</slot>
+    </connection>
+    <connection>
+        <sender>twImages</sender>
+        <signal>currentChanged(QWidget*)</signal>
+        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <slot>processCurrentChanged()</slot>
+    </connection>
+    <connection>
+        <sender>buttonHelp</sender>
+        <signal>clicked()</signal>
+        <receiver>&amp;vboxProblem()</receiver>
+        <slot>showHelpHelpDialog()</slot>
+    </connection>
+</connections>
+<includes>
+    <include location="global" impldecl="in implementation">qapplication.h</include>
+    <include location="global" impldecl="in implementation">qprogressdialog.h</include>
+    <include location="global" impldecl="in implementation">qfocusdata.h</include>
+    <include location="global" impldecl="in implementation">qobjectlist.h</include>
+    <include location="global" impldecl="in implementation">qdragobject.h</include>
+    <include location="global" impldecl="in implementation">qaction.h</include>
+    <include location="global" impldecl="in implementation">qpopupmenu.h</include>
+    <include location="global" impldecl="in implementation">qeventloop.h</include>
+    <include location="global" impldecl="in implementation">qstatusbar.h</include>
+    <include location="global" impldecl="in implementation">qsizegrip.h</include>
+    <include location="global" impldecl="in implementation">qlocale.h</include>
+    <include location="global" impldecl="in implementation">qregexp.h</include>
+    <include location="global" impldecl="in implementation">qpainter.h</include>
+    <include location="global" impldecl="in implementation">qprogressbar.h</include>
+    <include location="global" impldecl="in declaration">qvaluelist.h</include>
+    <include location="local" impldecl="in declaration">COMDefs.h</include>
+    <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
+    <include location="local" impldecl="in declaration">VBoxProblemReporter.h</include>
+    <include location="local" impldecl="in implementation">VBoxDefs.h</include>
+    <include location="local" impldecl="in implementation">VBoxNewHDWzd.h</include>
+    <include location="local" impldecl="in implementation">VBoxToolBar.h</include>
+    <include location="local" impldecl="in implementation">QIRichLabel.h</include>
+</includes>
+<forwards>
+    <forward>class DiskImageItem</forward>
+    <forward>class VBoxToolBar</forward>
+    <forward>class QSizeGrip</forward>
+    <forward>class InfoPaneLabel</forward>
+    <forward>class QProgressBar</forward>
+</forwards>
+<variables>
+    <variable access="public">enum ResultCode { Rejected, Accepted };</variable>
+    <variable access="private">bool polished;</variable>
+    <variable access="private">CVirtualBox vbox;</variable>
+    <variable access="private">int type;</variable>
+    <variable access="private">bool doSelect;</variable>
+    <variable access="private">QUuid targetVMId;</variable>
+    <variable access="private">QPixmap pxInaccessible;</variable>
+    <variable access="private">QPixmap pxErroneous;</variable>
+    <variable access="private">QIconSet pxHD;</variable>
+    <variable access="private">QIconSet pxCD;</variable>
+    <variable access="private">QIconSet pxFD;</variable>
+    <variable access="private">CMachine cmachine;</variable>
+    <variable access="private">QPopupMenu *itemMenu;</variable>
+    <variable access="private">VBoxToolBar *toolBar;</variable>
+    <variable access="private">int mRescode;</variable>
+    <variable access="private">bool mInLoop;</variable>
+    <variable access="private">QAction *imNewAction;</variable>
+    <variable access="private">QAction *imAddAction;</variable>
+    <variable access="private">QAction *imEditAction;</variable>
+    <variable access="private">QAction *imRemoveAction;</variable>
+    <variable access="private">QAction *imReleaseAction;</variable>
+    <variable access="private">QAction *imRefreshAction;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane1;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane2;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane3;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane4;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane5;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane6;</variable>
+    <variable access="private">InfoPaneLabel *hdsPane7;</variable>
+    <variable access="private">InfoPaneLabel *cdsPane1;</variable>
+    <variable access="private">InfoPaneLabel *cdsPane2;</variable>
+    <variable access="private">InfoPaneLabel *fdsPane1;</variable>
+    <variable access="private">InfoPaneLabel *fdsPane2;</variable>
+    <variable>QSizeGrip *sizeGrip;</variable>
+    <variable>QPushButton *defaultButton;</variable>
+    <variable access="private">static VBoxDiskImageManagerDlg *mModelessDialog;</variable>
+    <variable access="private">QProgressBar *mProgressBar;</variable>
+    <variable access="private">QLabel *mProgressText;</variable>
+    <variable access="private">QUuid hdSelectedId;</variable>
+    <variable access="private">QUuid cdSelectedId;</variable>
+    <variable access="private">QUuid fdSelectedId;</variable>
+</variables>
+<slots>
+    <slot access="protected">mediaEnumStarted()</slot>
+    <slot access="protected">mediaEnumerated( const VBoxMedia &amp;, int )</slot>
+    <slot access="protected">mediaEnumFinished( const VBoxMediaList &amp; )</slot>
+    <slot access="protected">mediaAdded( const VBoxMedia &amp; )</slot>
+    <slot access="protected">mediaUpdated( const VBoxMedia &amp; )</slot>
+    <slot access="protected">mediaRemoved( VBoxDefs::DiskType, const QUuid &amp; )</slot>
+    <slot access="protected">machineStateChanged( const VBoxMachineStateChangeEvent &amp; )</slot>
+    <slot>refreshAll()</slot>
+    <slot access="protected">processCurrentChanged( QListViewItem * item )</slot>
+    <slot access="protected">processPressed( QListViewItem * item )</slot>
+    <slot access="protected">newImage()</slot>
+    <slot access="protected">addImage()</slot>
+    <slot access="protected">removeImage()</slot>
+    <slot access="protected">processDoubleClick( QListViewItem * item )</slot>
+    <slot access="protected">releaseImage()</slot>
+    <slot access="protected">invokePopup( QListViewItem * item, const QPoint &amp; pos, int col )</slot>
+    <slot access="protected">processCurrentChanged()</slot>
+    <slot access="protected">accept()</slot>
+    <slot access="protected">reject()</slot>
+    <slot access="protected">mouseOnItem( QListViewItem *item )</slot>
+</slots>
+<functions>
+    <function access="private">init()</function>
+    <function access="private" returnType="int">result()</function>
+    <function access="private">setResult( int )</function>
+    <function returnType="int">exec()</function>
+    <function access="private">done( int )</function>
+    <function access="private" returnType="DiskImageItem*">searchItem( QListView*, const QUuid &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">searchItem( QListView*, VBoxMedia::Status )</function>
+    <function specifier="static" access="private" returnType="QString">getDVDImageUsage( const QUuid &amp; aId, QString &amp; aSnapshotUsage )</function>
+    <function specifier="static" access="private" returnType="QString">getFloppyImageUsage( const QUuid &amp; aId, QString &amp; aSnapshotUsage )</function>
+    <function specifier="static" access="private">getDVDImageSnapshotUsage( const QUuid &amp; aImageId, const CSnapshot &amp; aSnapshot, QString &amp; aUsage )</function>
+    <function specifier="static" access="private">getFloppyImageSnapshotUsage( const QUuid &amp; aImageId, const CSnapshot &amp; aSnapshot, QString &amp; aUsage )</function>
+    <function access="private" returnType="bool">checkImage( DiskImageItem* item )</function>
+    <function access="private">releaseDisk( QUuid machineId, QUuid itemId, VBoxDefs::DiskType diskType )</function>
+    <function returnType="QUuid">getSelectedUuid()</function>
+    <function returnType="QString">getSelectedPath()</function>
+    <function>setup( int aType, bool aDoSelect, const QUuid *aTargetVMId = NULL, bool aRefresh = true, CMachine machine = NULL, const QUuid &amp; aHdId = QUuid(), const QUuid &amp; aCdId = QUuid(), const QUuid &amp; aFdId = QUuid() )</function>
+    <function access="private" returnType="QListView*">getCurrentListView()</function>
+    <function access="private" returnType="QListView*">getListView( VBoxDefs::DiskType )</function>
+    <function returnType="bool">eventFilter( QObject *, QEvent * )</function>
+    <function access="private">addDroppedImages( QStringList* )</function>
+    <function access="private">addImageToList( const QString &amp; aSource, VBoxDefs::DiskType aDiskType )</function>
+    <function access="private" returnType="DiskImageItem*">createImageNode( QListView *aList, DiskImageItem *aRoot, const VBoxMedia &amp; )</function>
+    <function access="private">updateHdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
+    <function access="private">updateCdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
+    <function access="private">updateFdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">createHdItem( QListView*, const VBoxMedia &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">createCdItem( QListView*, const VBoxMedia &amp; )</function>
+    <function access="private" returnType="DiskImageItem*">createFdItem( QListView*, const VBoxMedia &amp; )</function>
+    <function access="protected" returnType="bool">event( QEvent* )</function>
+    <function access="protected">showEvent( QShowEvent * )</function>
+    <function access="protected">resizeEvent( QResizeEvent* )</function>
+    <function access="protected">keyPressEvent( QKeyEvent* )</function>
+    <function access="protected">closeEvent( QCloseEvent* )</function>
+    <function access="protected">createInfoString( InfoPaneLabel *&amp;, QWidget*, int, int )</function>
+    <function access="protected" returnType="QPushButton*">searchDefaultButton()</function>
+    <function access="protected">setCurrentItem( QListView*, QListViewItem* )</function>
+    <function specifier="static"> showModeless( bool aRefresh = true )</function>
+    <function specifier="static" returnType="QString">composeHdToolTip( CHardDisk &amp;, VBoxMedia::Status = VBoxMedia::Ok, DiskImageItem *aItem = NULL )</function>
+    <function specifier="static" returnType="QString">composeCdToolTip( CDVDImage &amp;, VBoxMedia::Status = VBoxMedia::Ok, DiskImageItem *aItem = NULL )</function>
+    <function specifier="static" returnType="QString">composeFdToolTip( CFloppyImage &amp;, VBoxMedia::Status = VBoxMedia::Ok, DiskImageItem *aItem = NULL )</function>
+    <function access="protected">clearInfoPanes()</function>
+    <function access="protected">prepareToRefresh( int aTotal = 0 )</function>
+    <function access="protected">makeWarningMark( DiskImageItem*, VBoxMedia::Status, VBoxDefs::DiskType )</function>
+    <function access="pritave">languageChangeImp()</function>
+</functions>
+<layoutdefaults spacing="10" margin="10"/>
+</UI>

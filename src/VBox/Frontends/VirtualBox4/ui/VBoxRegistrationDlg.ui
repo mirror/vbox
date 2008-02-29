@@ -1,0 +1,257 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>VBoxRegistrationDlg</class>
+<comment>
+
+:mode=html:tabSize=4:indentSize=4:noTabs=true:
+:folding=explicit:collapseFolds=1:
+
+     Copyright (C) 2007 innotek GmbH
+    
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+</comment>
+<widget class="QWizard">
+    <property name="name">
+        <cstring>VBoxRegistrationDlg</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>600</width>
+            <height>450</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>VirtualBox Registration Dialog</string>
+    </property>
+    <property name="icon">
+        <pixmap>register_16px.png</pixmap>
+    </property>
+    <property name="titleFont">
+        <font>
+            <family>Arial</family>
+            <pointsize>12</pointsize>
+            <bold>1</bold>
+        </font>
+    </property>
+    <widget class="QWidget">
+        <property name="name">
+            <cstring>pageReg</cstring>
+        </property>
+        <attribute name="title">
+            <string>Welcome to the VirtualBox Registration Form!</string>
+        </attribute>
+        <hbox>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <property name="spacing">
+                <number>10</number>
+            </property>
+            <property name="resizeMode">
+                <enum>Minimum</enum>
+            </property>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>pictureLabel</cstring>
+                </property>
+                <property name="sizePolicy">
+                    <sizepolicy>
+                        <hsizetype>4</hsizetype>
+                        <vsizetype>5</vsizetype>
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                    </sizepolicy>
+                </property>
+                <property name="pixmap">
+                    <pixmap>vmw_new_user.png</pixmap>
+                </property>
+                <property name="alignment">
+                    <set>AlignTop</set>
+                </property>
+            </widget>
+            <widget class="QLayoutWidget">
+                <property name="name">
+                    <cstring>layout9</cstring>
+                </property>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <widget class="QIRichLabel">
+                        <property name="name">
+                            <cstring>mTextLabel</cstring>
+                        </property>
+                        <property name="text" stdset="0">
+                            <string>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</string>
+                        </property>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spWelcome</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>160</height>
+                            </size>
+                        </property>
+                    </spacer>
+                    <spacer>
+                        <property name="name">
+                            <cstring>widthSpacer</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Horizontal</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>MinimumExpanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>400</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                    <widget class="QLayoutWidget">
+                        <property name="name">
+                            <cstring>layout7</cstring>
+                        </property>
+                        <grid>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLabel" row="0" column="0">
+                                <property name="name">
+                                    <cstring>mNameLabel</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>&amp;Name</string>
+                                </property>
+                                <property name="buddy" stdset="0">
+                                    <cstring>mNameEdit</cstring>
+                                </property>
+                            </widget>
+                            <widget class="QLineEdit" row="0" column="1">
+                                <property name="name">
+                                    <cstring>mNameEdit</cstring>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string>Enter your full name using Latin characters.</string>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="1" column="0">
+                                <property name="name">
+                                    <cstring>mEmailLabel</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>&amp;E-mail</string>
+                                </property>
+                                <property name="buddy" stdset="0">
+                                    <cstring>mEmailEdit</cstring>
+                                </property>
+                            </widget>
+                            <widget class="QLineEdit" row="1" column="1">
+                                <property name="name">
+                                    <cstring>mEmailEdit</cstring>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string>Enter your valid e-mail address.</string>
+                                </property>
+                            </widget>
+                            <widget class="QCheckBox" row="2" column="0" rowspan="1" colspan="2">
+                                <property name="name">
+                                    <cstring>mUseCheckBox</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>&amp;Please do not use this information to contact me</string>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</string>
+                                </property>
+                            </widget>
+                        </grid>
+                    </widget>
+                </vbox>
+            </widget>
+        </hbox>
+    </widget>
+</widget>
+<customwidgets>
+    <customwidget>
+        <class>QIRichLabel</class>
+        <header location="local">QIRichLabel.h</header>
+        <sizehint>
+            <width>80</width>
+            <height>20</height>
+        </sizehint>
+        <container>0</container>
+        <sizepolicy>
+            <hordata>5</hordata>
+            <verdata>5</verdata>
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+        </sizepolicy>
+        <pixmap>image0</pixmap>
+        <property type="String">text</property>
+    </customwidget>
+</customwidgets>
+<includes>
+    <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
+    <include location="local" impldecl="in implementation">VBoxNetworkFramework.h</include>
+    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
+    <include location="global" impldecl="in declaration">qurl.h</include>
+    <include location="global" impldecl="in implementation">qpushbutton.h</include>
+    <include location="global" impldecl="in implementation">qtimer.h</include>
+    <include location="global" impldecl="in implementation">qvalidator.h</include>
+    <include location="global" impldecl="in implementation">qprocess.h</include>
+</includes>
+<forwards>
+	<forward>class VBoxNetworkFramework</forward>
+</forwards>
+<variables>
+    <variable access="private">VBoxRegistrationDlg **mSelf;</variable>
+    <variable access="private">QUrl mUrl;</variable>
+    <variable access="private">QTimer *mTimeout;</variable>
+    <variable access="private">bool mSuicide;</variable>
+    <variable access="private">bool mHandshake;</variable>
+    <variable access="private">VBoxNetworkFramework *mNetfw;</variable>
+</variables>
+<slots>
+    <slot access="private">registration()</slot>
+    <slot access="private">processTimeout()</slot>
+    <slot access="private">onNetBegin( int )</slot>
+    <slot access="private">onNetData( const QByteArray &amp; )</slot>
+    <slot access="private">onNetEnd( const QByteArray &amp; )</slot>
+    <slot access="private">onNetError( const QString &amp; )</slot>
+    <slot access="private">accept()</slot>
+    <slot access="private">reject()</slot>
+    <slot access="private">validate()</slot>
+</slots>
+<functions>
+    <function specifier="static" returnType="bool">hasToBeShown()</function>
+    <function access="private">init()</function>
+    <function access="private">destroy()</function>
+    <function>setup( VBoxRegistrationDlg ** )</function>
+    <function access="private">languageChangeImp()</function>
+    <function access="private">postRequest( const QString &amp; , const QString &amp; )</function>
+    <function access="private" returnType="QString">getPlatform()</function>
+    <function>abortRegisterRequest( const QString &amp; )</function>
+    <function access="private">showEvent( QShowEvent* )</function>
+</functions>
+<pixmapinproject/>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

@@ -1,0 +1,685 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>VBoxVMFirstRunWzd</class>
+<comment>
+
+:mode=html:tabSize=4:indentSize=4:noTabs=true:
+:folding=explicit:collapseFolds=1:
+
+     Copyright (C) 2007 innotek GmbH
+    
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+</comment>
+<widget class="QWizard">
+    <property name="name">
+        <cstring>VBoxVMFirstRunWzd</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>571</width>
+            <height>463</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>First Run Wizard</string>
+    </property>
+    <property name="titleFont">
+        <font>
+            <family>Arial</family>
+            <pointsize>12</pointsize>
+            <bold>1</bold>
+        </font>
+    </property>
+    <widget class="QWidget">
+        <property name="name">
+            <cstring>pageWelcome</cstring>
+        </property>
+        <attribute name="title">
+            <string>Welcome to the First Run Wizard!</string>
+        </attribute>
+        <hbox>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <property name="spacing">
+                <number>20</number>
+            </property>
+            <property name="resizeMode">
+                <enum>Minimum</enum>
+            </property>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>pmWelcome</cstring>
+                </property>
+                <property name="sizePolicy">
+                    <sizepolicy>
+                        <hsizetype>4</hsizetype>
+                        <vsizetype>5</vsizetype>
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                    </sizepolicy>
+                </property>
+                <property name="pixmap">
+                    <pixmap>vmw_new_harddisk.png</pixmap>
+                </property>
+                <property name="alignment">
+                    <set>AlignTop</set>
+                </property>
+            </widget>
+            <widget class="QLayoutWidget">
+                <property name="name">
+                    <cstring>ltWelcome</cstring>
+                </property>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txWelcome</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>5</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txWelcomeHD</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>5</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spWelcome</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                    <spacer>
+                        <property name="name">
+                            <cstring>widthSpacer</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Horizontal</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>MinimumExpanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>400</width>
+                                <height>1</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+        </hbox>
+    </widget>
+    <widget class="QWidget">
+        <property name="name">
+            <cstring>pageType</cstring>
+        </property>
+        <attribute name="title">
+            <string>Select Installation Media</string>
+        </attribute>
+        <hbox>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <property name="spacing">
+                <number>20</number>
+            </property>
+            <property name="resizeMode">
+                <enum>Minimum</enum>
+            </property>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>pmType</cstring>
+                </property>
+                <property name="sizePolicy">
+                    <sizepolicy>
+                        <hsizetype>4</hsizetype>
+                        <vsizetype>5</vsizetype>
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                    </sizepolicy>
+                </property>
+                <property name="pixmap">
+                    <pixmap>vmw_new_harddisk.png</pixmap>
+                </property>
+                <property name="alignment">
+                    <set>AlignTop</set>
+                </property>
+            </widget>
+            <widget class="QLayoutWidget">
+                <property name="name">
+                    <cstring>ltSelect</cstring>
+                </property>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
+                    </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txType</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>5</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txTypeHD</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>5</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QButtonGroup">
+                        <property name="name">
+                            <cstring>bgType</cstring>
+                        </property>
+                        <property name="title">
+                            <string>Media Type</string>
+                        </property>
+                        <property name="exclusive">
+                            <bool>true</bool>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QRadioButton">
+                                <property name="name">
+                                    <cstring>rbCdType</cstring>
+                                </property>
+                                <property name="focusPolicy">
+                                    <enum>StrongFocus</enum>
+                                </property>
+                                <property name="text">
+                                    <string>&amp;CD/DVD-ROM Device</string>
+                                </property>
+                                <property name="checked">
+                                    <bool>false</bool>
+                                </property>
+                            </widget>
+                            <widget class="QRadioButton">
+                                <property name="name">
+                                    <cstring>rbFdType</cstring>
+                                </property>
+                                <property name="focusPolicy">
+                                    <enum>StrongFocus</enum>
+                                </property>
+                                <property name="text">
+                                    <string>&amp;Floppy Device</string>
+                                </property>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txSource</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>5</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txSourceHD</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>5</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QButtonGroup">
+                        <property name="name">
+                            <cstring>bgSource</cstring>
+                        </property>
+                        <property name="title">
+                            <string>Media Source</string>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>ltHost</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QRadioButton">
+                                        <property name="name">
+                                            <cstring>rbHost</cstring>
+                                        </property>
+                                        <property name="focusPolicy">
+                                            <enum>StrongFocus</enum>
+                                        </property>
+                                        <property name="text">
+                                            <string>&amp;Host Drive</string>
+                                        </property>
+                                        <property name="checked">
+                                            <bool>false</bool>
+                                        </property>
+                                    </widget>
+                                    <widget class="QComboBox">
+                                        <property name="name">
+                                            <cstring>cbHost</cstring>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy>
+                                                <hsizetype>1</hsizetype>
+                                                <vsizetype>0</vsizetype>
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                    </widget>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spHost</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>161</width>
+                                                <height>21</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </hbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>ltImage</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QRadioButton">
+                                        <property name="name">
+                                            <cstring>rbImage</cstring>
+                                        </property>
+                                        <property name="focusPolicy">
+                                            <enum>StrongFocus</enum>
+                                        </property>
+                                        <property name="text">
+                                            <string>&amp;Image File</string>
+                                        </property>
+                                    </widget>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spImage</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>211</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </hbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>ltVdm</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QToolButton">
+                                        <property name="name">
+                                            <cstring>tbVdm</cstring>
+                                        </property>
+                                        <property name="focusPolicy">
+                                            <enum>TabFocus</enum>
+                                        </property>
+                                        <property name="text">
+                                            <string>VDM</string>
+                                        </property>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spSelect</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+        </hbox>
+    </widget>
+    <widget class="QWidget">
+        <property name="name">
+            <cstring>pageSummary</cstring>
+        </property>
+        <attribute name="title">
+            <string>Summary</string>
+        </attribute>
+        <hbox>
+            <property name="name">
+                <cstring>unnamed</cstring>
+            </property>
+            <property name="spacing">
+                <number>20</number>
+            </property>
+            <property name="resizeMode">
+                <enum>Minimum</enum>
+            </property>
+            <widget class="QLabel">
+                <property name="name">
+                    <cstring>pmSummary</cstring>
+                </property>
+                <property name="sizePolicy">
+                    <sizepolicy>
+                        <hsizetype>4</hsizetype>
+                        <vsizetype>5</vsizetype>
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                    </sizepolicy>
+                </property>
+                <property name="pixmap">
+                    <pixmap>vmw_new_harddisk.png</pixmap>
+                </property>
+                <property name="alignment">
+                    <set>AlignTop</set>
+                </property>
+            </widget>
+            <widget class="QLayoutWidget">
+                <property name="name">
+                    <cstring>ltSummary</cstring>
+                </property>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
+                    </property>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txSummaryHdr</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>5</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txSummaryHdrHD</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>5</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txSummaryFtr</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>5</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <widget class="QLabel">
+                        <property name="name">
+                            <cstring>txSummaryFtrHD</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>5</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                        <property name="text">
+                            <string>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</string>
+                        </property>
+                        <property name="alignment">
+                            <set>WordBreak|AlignTop</set>
+                        </property>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spSummary</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+        </hbox>
+    </widget>
+</widget>
+<connections>
+    <connection>
+        <sender>rbCdType</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMFirstRunWzd</receiver>
+        <slot>mediaTypeChanged()</slot>
+    </connection>
+    <connection>
+        <sender>rbFdType</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMFirstRunWzd</receiver>
+        <slot>mediaTypeChanged()</slot>
+    </connection>
+    <connection>
+        <sender>rbHost</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMFirstRunWzd</receiver>
+        <slot>mediaSourceChanged()</slot>
+    </connection>
+    <connection>
+        <sender>rbImage</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMFirstRunWzd</receiver>
+        <slot>mediaSourceChanged()</slot>
+    </connection>
+    <connection>
+        <sender>tbVdm</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMFirstRunWzd</receiver>
+        <slot>openVdm()</slot>
+    </connection>
+</connections>
+<includes>
+    <include location="global" impldecl="in declaration">qvaluevector.h</include>
+    <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
+    <include location="local" impldecl="in declaration">COMDefs.h</include>
+    <include location="local" impldecl="in declaration">VBoxUtils.h</include>
+    <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
+    <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
+    <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
+</includes>
+<forwards>
+    <forward>class VBoxMediaComboBox</forward>
+    <forward>class QITextEdit</forward>
+</forwards>
+<variables>
+    <variable access="private">QIWidgetValidator *wvalType;</variable>
+    <variable access="private">VBoxMediaComboBox *cbImage;</variable>
+    <variable access="private">QITextEdit *teSummary;</variable>
+    <variable access="private">CMachine machine;</variable>
+    <variable access="private">QValueVector &lt; CHostDVDDrive &gt; hostDVDs;</variable>
+    <variable access="private">QValueVector &lt; CHostFloppyDrive &gt; hostFloppys;</variable>
+</variables>
+<slots>
+    <slot>enableNext( const QIWidgetValidator* )</slot>
+    <slot>revalidate( QIWidgetValidator* )</slot>
+    <slot>mediaTypeChanged()</slot>
+    <slot>mediaSourceChanged()</slot>
+    <slot>openVdm()</slot>
+</slots>
+<functions>
+    <function access="private">init()</function>
+    <function>setup( const CMachine &amp; )</function>
+    <function access="private">showEvent( QShowEvent* )</function>
+    <function>showPage( QWidget* )</function>
+    <function>accept()</function>
+</functions>
+<pixmapinproject/>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

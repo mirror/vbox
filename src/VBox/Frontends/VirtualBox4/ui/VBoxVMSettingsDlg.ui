@@ -1,0 +1,3329 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>VBoxVMSettingsDlg</class>
+<comment>
+:mode=html:tabSize=4:indentSize=4:noTabs=true:
+:folding=explicit:collapseFolds=1:
+
+     Copyright (C) 2006-2007 innotek GmbH
+
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+</comment>
+<widget class="QDialog">
+    <property name="name">
+        <cstring>VBoxVMSettingsDlg</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>486</width>
+            <height>493</height>
+        </rect>
+    </property>
+    <property name="sizePolicy">
+        <sizepolicy>
+            <hsizetype>7</hsizetype>
+            <vsizetype>7</vsizetype>
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+        </sizepolicy>
+    </property>
+    <property name="caption">
+        <string>VBoxVMSettingsDlg</string>
+    </property>
+    <property name="sizeGripEnabled">
+        <bool>true</bool>
+    </property>
+    <property name="whatsThis" stdset="0">
+        <string>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</string>
+    </property>
+    <grid>
+        <property name="name">
+            <cstring>unnamed</cstring>
+        </property>
+        <property name="spacing">
+            <number>10</number>
+        </property>
+        <property name="resizeMode">
+            <enum>Minimum</enum>
+        </property>
+        <widget class="QListView" row="0" column="0" rowspan="3" colspan="1">
+            <column>
+                <property name="text">
+                    <string>Category</string>
+                </property>
+                <property name="clickable">
+                    <bool>false</bool>
+                </property>
+                <property name="resizable">
+                    <bool>true</bool>
+                </property>
+            </column>
+            <column>
+                <property name="text">
+                    <string>[id]</string>
+                </property>
+                <property name="clickable">
+                    <bool>false</bool>
+                </property>
+                <property name="resizable">
+                    <bool>false</bool>
+                </property>
+            </column>
+            <column>
+                <property name="text">
+                    <string>[link]</string>
+                </property>
+                <property name="clickable">
+                    <bool>false</bool>
+                </property>
+                <property name="resizable">
+                    <bool>false</bool>
+                </property>
+            </column>
+        <item>
+            <property name="text">
+                <string> General </string>
+            </property>
+            <property name="text">
+                <string>0</string>
+            </property>
+            <property name="text">
+                <string>#general</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>machine_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> Hard Disks </string>
+            </property>
+            <property name="text">
+                <string>1</string>
+            </property>
+            <property name="text">
+                <string>#hdds</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>hd_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> CD/DVD-ROM </string>
+            </property>
+            <property name="text">
+                <string>2</string>
+            </property>
+            <property name="text">
+                <string>#dvd</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>cd_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> Floppy </string>
+            </property>
+            <property name="text">
+                <string>3</string>
+            </property>
+            <property name="text">
+                <string>#floppy</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>fd_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> Audio </string>
+            </property>
+            <property name="text">
+                <string>4</string>
+            </property>
+            <property name="text">
+                <string>#audio</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>sound_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> Network </string>
+            </property>
+            <property name="text">
+                <string>5</string>
+            </property>
+            <property name="text">
+                <string>#network</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>nw_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> USB </string>
+            </property>
+            <property name="text">
+                <string>8</string>
+            </property>
+            <property name="text">
+                <string>#usb</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>usb_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> Remote Display </string>
+            </property>
+            <property name="text">
+                <string>10</string>
+            </property>
+            <property name="text">
+                <string>#vrdp</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>vrdp_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> Shared Folders </string>
+            </property>
+            <property name="text">
+                <string>9</string>
+            </property>
+            <property name="text">
+                <string>#sfolders</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>shared_folder_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> Serial Ports </string>
+            </property>
+            <property name="text">
+                <string>6</string>
+            </property>
+            <property name="text">
+                <string>#serialPorts</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>serial_port_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> Parallel Ports </string>
+            </property>
+            <property name="text">
+                <string>7</string>
+            </property>
+            <property name="text">
+                <string>#parallelPorts</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>parallel_port_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+            <property name="name">
+                <cstring>listView</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>0</hsizetype>
+                    <vsizetype>5</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="lineWidth">
+                <number>2</number>
+            </property>
+            <property name="margin">
+                <number>0</number>
+            </property>
+            <property name="allColumnsShowFocus">
+                <bool>true</bool>
+            </property>
+            <property name="itemMargin">
+                <number>3</number>
+            </property>
+        </widget>
+        <widget class="QLabel" row="0" column="1">
+            <property name="name">
+                <cstring>titleLabel</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>7</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="backgroundMode">
+                <enum>PaletteBase</enum>
+            </property>
+            <property name="font">
+                <font>
+                    <pointsize>11</pointsize>
+                    <bold>1</bold>
+                </font>
+            </property>
+            <property name="frameShape">
+                <enum>Box</enum>
+            </property>
+            <property name="frameShadow">
+                <enum>Sunken</enum>
+            </property>
+            <property name="lineWidth">
+                <number>1</number>
+            </property>
+            <property name="margin">
+                <number>7</number>
+            </property>
+            <property name="text">
+                <string></string>
+            </property>
+            <property name="buddy" stdset="0">
+                <cstring></cstring>
+            </property>
+        </widget>
+        <widget class="QWidgetStack" row="1" column="1">
+            <property name="name">
+                <cstring>widgetStack</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>7</hsizetype>
+                    <vsizetype>7</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageGeneral</cstring>
+                </property>
+                <attribute name="id">
+                    <number>0</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
+                    </property>
+                    <widget class="QTabWidget">
+                        <property name="name">
+                            <cstring>tbwGeneral</cstring>
+                        </property>
+                        <widget class="QWidget">
+                            <property name="name">
+                                <cstring>basic</cstring>
+                            </property>
+                            <attribute name="title">
+                                <string>&amp;Basic</string>
+                            </attribute>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <property name="margin">
+                                    <number>10</number>
+                                </property>
+                                <property name="spacing">
+                                    <number>10</number>
+                                </property>
+                                <widget class="QGroupBox">
+                                    <property name="name">
+                                        <cstring>groupBox22</cstring>
+                                    </property>
+                                    <property name="sizePolicy">
+                                        <sizepolicy>
+                                            <hsizetype>5</hsizetype>
+                                            <vsizetype>0</vsizetype>
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                    </property>
+                                    <property name="title">
+                                        <string>&amp;Identification</string>
+                                    </property>
+                                    <grid>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QLayoutWidget" row="0" column="0">
+                                            <property name="name">
+                                                <cstring>layout100</cstring>
+                                            </property>
+                                            <property name="sizePolicy">
+                                                <sizepolicy>
+                                                    <hsizetype>7</hsizetype>
+                                                    <vsizetype>0</vsizetype>
+                                                    <horstretch>0</horstretch>
+                                                    <verstretch>0</verstretch>
+                                                </sizepolicy>
+                                            </property>
+                                            <hbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QLabel">
+                                                    <property name="name">
+                                                        <cstring>txName</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>&amp;Name</string>
+                                                    </property>
+                                                    <property name="buddy" stdset="0">
+                                                        <cstring>leName</cstring>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QLineEdit">
+                                                    <property name="name">
+                                                        <cstring>leName</cstring>
+                                                    </property>
+                                                    <property name="frameShape">
+                                                        <enum>LineEditPanel</enum>
+                                                    </property>
+                                                    <property name="frameShadow">
+                                                        <enum>Sunken</enum>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>Displays the name of the virtual machine.</string>
+                                                    </property>
+                                                </widget>
+                                            </hbox>
+                                        </widget>
+                                        <widget class="QLayoutWidget" row="0" column="1">
+                                            <property name="name">
+                                                <cstring>layout101</cstring>
+                                            </property>
+                                            <hbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QLabel">
+                                                    <property name="name">
+                                                        <cstring>textLabel7</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>OS &amp;Type</string>
+                                                    </property>
+                                                    <property name="buddy" stdset="0">
+                                                        <cstring>cbOS</cstring>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QComboBox">
+                                                    <property name="name">
+                                                        <cstring>cbOS</cstring>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</string>
+                                                    </property>
+                                                </widget>
+                                            </hbox>
+                                        </widget>
+                                    </grid>
+                                </widget>
+                                <widget class="QGroupBox">
+                                    <property name="name">
+                                        <cstring>groupBox2</cstring>
+                                    </property>
+                                    <property name="sizePolicy">
+                                        <sizepolicy>
+                                            <hsizetype>5</hsizetype>
+                                            <vsizetype>0</vsizetype>
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                    </property>
+                                    <property name="title">
+                                        <string>Base &amp;Memory Size</string>
+                                    </property>
+                                    <hbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QLayoutWidget">
+                                            <property name="name">
+                                                <cstring>layout33</cstring>
+                                            </property>
+                                            <hbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QLayoutWidget">
+                                                    <property name="name">
+                                                        <cstring>layout32</cstring>
+                                                    </property>
+                                                    <property name="sizePolicy">
+                                                        <sizepolicy>
+                                                            <hsizetype>7</hsizetype>
+                                                            <vsizetype>1</vsizetype>
+                                                            <horstretch>0</horstretch>
+                                                            <verstretch>0</verstretch>
+                                                        </sizepolicy>
+                                                    </property>
+                                                    <vbox>
+                                                        <property name="name">
+                                                            <cstring>unnamed</cstring>
+                                                        </property>
+                                                        <property name="spacing">
+                                                            <number>0</number>
+                                                        </property>
+                                                        <widget class="QSlider">
+                                                            <property name="name">
+                                                                <cstring>slRAM</cstring>
+                                                            </property>
+                                                            <property name="sizePolicy">
+                                                                <sizepolicy>
+                                                                    <hsizetype>7</hsizetype>
+                                                                    <vsizetype>0</vsizetype>
+                                                                    <horstretch>10</horstretch>
+                                                                    <verstretch>0</verstretch>
+                                                                </sizepolicy>
+                                                            </property>
+                                                            <property name="minValue">
+                                                                <number>4</number>
+                                                            </property>
+                                                            <property name="maxValue">
+                                                                <number>384</number>
+                                                            </property>
+                                                            <property name="lineStep">
+                                                                <number>4</number>
+                                                            </property>
+                                                            <property name="pageStep">
+                                                                <number>32</number>
+                                                            </property>
+                                                            <property name="orientation">
+                                                                <enum>Horizontal</enum>
+                                                            </property>
+                                                            <property name="tickmarks">
+                                                                <enum>Below</enum>
+                                                            </property>
+                                                            <property name="tickInterval">
+                                                                <number>32</number>
+                                                            </property>
+                                                            <property name="whatsThis" stdset="0">
+                                                                <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
+                                                            </property>
+                                                        </widget>
+                                                        <widget class="QLayoutWidget">
+                                                            <property name="name">
+                                                                <cstring>layout31</cstring>
+                                                            </property>
+                                                            <hbox>
+                                                                <property name="name">
+                                                                    <cstring>unnamed</cstring>
+                                                                </property>
+                                                                <widget class="QLabel">
+                                                                    <property name="name">
+                                                                        <cstring>txRAMMin</cstring>
+                                                                    </property>
+                                                                    <property name="text">
+                                                                        <string>&lt;</string>
+                                                                    </property>
+                                                                    <property name="alignment">
+                                                                        <set>WordBreak|AlignVCenter|AlignLeft</set>
+                                                                    </property>
+                                                                </widget>
+                                                                <spacer>
+                                                                    <property name="name">
+                                                                        <cstring>spacer8</cstring>
+                                                                    </property>
+                                                                    <property name="orientation">
+                                                                        <enum>Horizontal</enum>
+                                                                    </property>
+                                                                    <property name="sizeType">
+                                                                        <enum>Expanding</enum>
+                                                                    </property>
+                                                                    <property name="sizeHint">
+                                                                        <size>
+                                                                            <width>60</width>
+                                                                            <height>20</height>
+                                                                        </size>
+                                                                    </property>
+                                                                </spacer>
+                                                                <widget class="QLabel">
+                                                                    <property name="name">
+                                                                        <cstring>txRAMBest</cstring>
+                                                                    </property>
+                                                                    <property name="text">
+                                                                        <string>=</string>
+                                                                    </property>
+                                                                    <property name="alignment">
+                                                                        <set>AlignCenter</set>
+                                                                    </property>
+                                                                </widget>
+                                                                <spacer>
+                                                                    <property name="name">
+                                                                        <cstring>spacer8_3</cstring>
+                                                                    </property>
+                                                                    <property name="orientation">
+                                                                        <enum>Horizontal</enum>
+                                                                    </property>
+                                                                    <property name="sizeType">
+                                                                        <enum>Expanding</enum>
+                                                                    </property>
+                                                                    <property name="sizeHint">
+                                                                        <size>
+                                                                            <width>60</width>
+                                                                            <height>20</height>
+                                                                        </size>
+                                                                    </property>
+                                                                </spacer>
+                                                                <widget class="QLabel">
+                                                                    <property name="name">
+                                                                        <cstring>txRAMMax</cstring>
+                                                                    </property>
+                                                                    <property name="text">
+                                                                        <string>&gt;</string>
+                                                                    </property>
+                                                                    <property name="alignment">
+                                                                        <set>WordBreak|AlignVCenter|AlignRight</set>
+                                                                    </property>
+                                                                </widget>
+                                                            </hbox>
+                                                        </widget>
+                                                    </vbox>
+                                                </widget>
+                                                <widget class="QLayoutWidget">
+                                                    <property name="name">
+                                                        <cstring>layout18</cstring>
+                                                    </property>
+                                                    <vbox>
+                                                        <property name="name">
+                                                            <cstring>unnamed</cstring>
+                                                        </property>
+                                                        <widget class="QLayoutWidget">
+                                                            <property name="name">
+                                                                <cstring>layout17</cstring>
+                                                            </property>
+                                                            <hbox>
+                                                                <property name="name">
+                                                                    <cstring>unnamed</cstring>
+                                                                </property>
+                                                                <widget class="QLineEdit">
+                                                                    <property name="name">
+                                                                        <cstring>leRAM</cstring>
+                                                                    </property>
+                                                                    <property name="sizePolicy">
+                                                                        <sizepolicy>
+                                                                            <hsizetype>4</hsizetype>
+                                                                            <vsizetype>0</vsizetype>
+                                                                            <horstretch>0</horstretch>
+                                                                            <verstretch>0</verstretch>
+                                                                        </sizepolicy>
+                                                                    </property>
+                                                                    <property name="whatsThis" stdset="0">
+                                                                        <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
+                                                                    </property>
+                                                                </widget>
+                                                                <widget class="QLabel">
+                                                                    <property name="name">
+                                                                        <cstring>txRAM</cstring>
+                                                                    </property>
+                                                                    <property name="text">
+                                                                        <string>MB</string>
+                                                                    </property>
+                                                                    <property name="buddy" stdset="0">
+                                                                        <cstring>leRAM</cstring>
+                                                                    </property>
+                                                                </widget>
+                                                            </hbox>
+                                                        </widget>
+                                                        <spacer>
+                                                            <property name="name">
+                                                                <cstring>spacer9</cstring>
+                                                            </property>
+                                                            <property name="orientation">
+                                                                <enum>Vertical</enum>
+                                                            </property>
+                                                            <property name="sizeType">
+                                                                <enum>Expanding</enum>
+                                                            </property>
+                                                            <property name="sizeHint">
+                                                                <size>
+                                                                    <width>20</width>
+                                                                    <height>1</height>
+                                                                </size>
+                                                            </property>
+                                                        </spacer>
+                                                    </vbox>
+                                                </widget>
+                                            </hbox>
+                                        </widget>
+                                    </hbox>
+                                </widget>
+                                <widget class="QGroupBox">
+                                    <property name="name">
+                                        <cstring>groupBox1</cstring>
+                                    </property>
+                                    <property name="sizePolicy">
+                                        <sizepolicy>
+                                            <hsizetype>5</hsizetype>
+                                            <vsizetype>0</vsizetype>
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                    </property>
+                                    <property name="title">
+                                        <string>&amp;Video Memory Size</string>
+                                    </property>
+                                    <hbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QLayoutWidget">
+                                            <property name="name">
+                                                <cstring>layout33</cstring>
+                                            </property>
+                                            <hbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QLayoutWidget">
+                                                    <property name="name">
+                                                        <cstring>layout32</cstring>
+                                                    </property>
+                                                    <vbox>
+                                                        <property name="name">
+                                                            <cstring>unnamed</cstring>
+                                                        </property>
+                                                        <property name="spacing">
+                                                            <number>0</number>
+                                                        </property>
+                                                        <widget class="QSlider">
+                                                            <property name="name">
+                                                                <cstring>slVRAM</cstring>
+                                                            </property>
+                                                            <property name="sizePolicy">
+                                                                <sizepolicy>
+                                                                    <hsizetype>7</hsizetype>
+                                                                    <vsizetype>0</vsizetype>
+                                                                    <horstretch>10</horstretch>
+                                                                    <verstretch>0</verstretch>
+                                                                </sizepolicy>
+                                                            </property>
+                                                            <property name="minValue">
+                                                                <number>1</number>
+                                                            </property>
+                                                            <property name="maxValue">
+                                                                <number>128</number>
+                                                            </property>
+                                                            <property name="lineStep">
+                                                                <number>1</number>
+                                                            </property>
+                                                            <property name="pageStep">
+                                                                <number>4</number>
+                                                            </property>
+                                                            <property name="orientation">
+                                                                <enum>Horizontal</enum>
+                                                            </property>
+                                                            <property name="tickmarks">
+                                                                <enum>Below</enum>
+                                                            </property>
+                                                            <property name="tickInterval">
+                                                                <number>4</number>
+                                                            </property>
+                                                            <property name="whatsThis" stdset="0">
+                                                                <string>Controls the amount of video memory provided to the virtual machine.</string>
+                                                            </property>
+                                                        </widget>
+                                                        <widget class="QLayoutWidget">
+                                                            <property name="name">
+                                                                <cstring>layout31</cstring>
+                                                            </property>
+                                                            <property name="sizePolicy">
+                                                                <sizepolicy>
+                                                                    <hsizetype>7</hsizetype>
+                                                                    <vsizetype>1</vsizetype>
+                                                                    <horstretch>0</horstretch>
+                                                                    <verstretch>0</verstretch>
+                                                                </sizepolicy>
+                                                            </property>
+                                                            <hbox>
+                                                                <property name="name">
+                                                                    <cstring>unnamed</cstring>
+                                                                </property>
+                                                                <widget class="QLabel">
+                                                                    <property name="name">
+                                                                        <cstring>txVRAMMin</cstring>
+                                                                    </property>
+                                                                    <property name="text">
+                                                                        <string>&lt;</string>
+                                                                    </property>
+                                                                    <property name="alignment">
+                                                                        <set>WordBreak|AlignVCenter|AlignLeft</set>
+                                                                    </property>
+                                                                </widget>
+                                                                <spacer>
+                                                                    <property name="name">
+                                                                        <cstring>spacer8_2</cstring>
+                                                                    </property>
+                                                                    <property name="orientation">
+                                                                        <enum>Horizontal</enum>
+                                                                    </property>
+                                                                    <property name="sizeType">
+                                                                        <enum>Expanding</enum>
+                                                                    </property>
+                                                                    <property name="sizeHint">
+                                                                        <size>
+                                                                            <width>70</width>
+                                                                            <height>20</height>
+                                                                        </size>
+                                                                    </property>
+                                                                </spacer>
+                                                                <widget class="QLabel">
+                                                                    <property name="name">
+                                                                        <cstring>txVRAMBest</cstring>
+                                                                    </property>
+                                                                    <property name="text">
+                                                                        <string>=</string>
+                                                                    </property>
+                                                                    <property name="alignment">
+                                                                        <set>AlignCenter</set>
+                                                                    </property>
+                                                                    <property name="buddy" stdset="0">
+                                                                        <cstring></cstring>
+                                                                    </property>
+                                                                </widget>
+                                                                <spacer>
+                                                                    <property name="name">
+                                                                        <cstring>spacer19_2</cstring>
+                                                                    </property>
+                                                                    <property name="orientation">
+                                                                        <enum>Horizontal</enum>
+                                                                    </property>
+                                                                    <property name="sizeType">
+                                                                        <enum>Expanding</enum>
+                                                                    </property>
+                                                                    <property name="sizeHint">
+                                                                        <size>
+                                                                            <width>61</width>
+                                                                            <height>20</height>
+                                                                        </size>
+                                                                    </property>
+                                                                </spacer>
+                                                                <widget class="QLabel">
+                                                                    <property name="name">
+                                                                        <cstring>txVRAMMax</cstring>
+                                                                    </property>
+                                                                    <property name="text">
+                                                                        <string>&gt;</string>
+                                                                    </property>
+                                                                    <property name="alignment">
+                                                                        <set>WordBreak|AlignVCenter|AlignRight</set>
+                                                                    </property>
+                                                                </widget>
+                                                            </hbox>
+                                                        </widget>
+                                                    </vbox>
+                                                </widget>
+                                                <widget class="QLayoutWidget">
+                                                    <property name="name">
+                                                        <cstring>layout18_2</cstring>
+                                                    </property>
+                                                    <vbox>
+                                                        <property name="name">
+                                                            <cstring>unnamed</cstring>
+                                                        </property>
+                                                        <widget class="QLayoutWidget">
+                                                            <property name="name">
+                                                                <cstring>layout17_2</cstring>
+                                                            </property>
+                                                            <hbox>
+                                                                <property name="name">
+                                                                    <cstring>unnamed</cstring>
+                                                                </property>
+                                                                <widget class="QLineEdit">
+                                                                    <property name="name">
+                                                                        <cstring>leVRAM</cstring>
+                                                                    </property>
+                                                                    <property name="sizePolicy">
+                                                                        <sizepolicy>
+                                                                            <hsizetype>4</hsizetype>
+                                                                            <vsizetype>0</vsizetype>
+                                                                            <horstretch>0</horstretch>
+                                                                            <verstretch>0</verstretch>
+                                                                        </sizepolicy>
+                                                                    </property>
+                                                                    <property name="frameShape">
+                                                                        <enum>LineEditPanel</enum>
+                                                                    </property>
+                                                                    <property name="frameShadow">
+                                                                        <enum>Sunken</enum>
+                                                                    </property>
+                                                                    <property name="whatsThis" stdset="0">
+                                                                        <string>Controls the amount of video memory provided to the virtual machine.</string>
+                                                                    </property>
+                                                                </widget>
+                                                                <widget class="QLabel">
+                                                                    <property name="name">
+                                                                        <cstring>txVRAM</cstring>
+                                                                    </property>
+                                                                    <property name="text">
+                                                                        <string>MB</string>
+                                                                    </property>
+                                                                    <property name="buddy" stdset="0">
+                                                                        <cstring>leRAM</cstring>
+                                                                    </property>
+                                                                </widget>
+                                                            </hbox>
+                                                        </widget>
+                                                        <spacer>
+                                                            <property name="name">
+                                                                <cstring>spacer9_2</cstring>
+                                                            </property>
+                                                            <property name="orientation">
+                                                                <enum>Vertical</enum>
+                                                            </property>
+                                                            <property name="sizeType">
+                                                                <enum>Expanding</enum>
+                                                            </property>
+                                                            <property name="sizeHint">
+                                                                <size>
+                                                                    <width>20</width>
+                                                                    <height>1</height>
+                                                                </size>
+                                                            </property>
+                                                        </spacer>
+                                                    </vbox>
+                                                </widget>
+                                            </hbox>
+                                        </widget>
+                                    </hbox>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer118</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>0</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </vbox>
+                        </widget>
+                        <widget class="QWidget">
+                            <property name="name">
+                                <cstring>advanced</cstring>
+                            </property>
+                            <attribute name="title">
+                                <string>&amp;Advanced</string>
+                            </attribute>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <property name="margin">
+                                    <number>10</number>
+                                </property>
+                                <property name="spacing">
+                                    <number>10</number>
+                                </property>
+                                <widget class="QLayoutWidget">
+                                    <property name="name">
+                                        <cstring>layout148</cstring>
+                                    </property>
+                                    <hbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QGroupBox">
+                                            <property name="name">
+                                                <cstring>groupBox12</cstring>
+                                            </property>
+                                            <property name="sizePolicy">
+                                                <sizepolicy>
+                                                    <hsizetype>0</hsizetype>
+                                                    <vsizetype>1</vsizetype>
+                                                    <horstretch>0</horstretch>
+                                                    <verstretch>0</verstretch>
+                                                </sizepolicy>
+                                            </property>
+                                            <property name="title">
+                                                <string>Boo&amp;t Order</string>
+                                            </property>
+                                            <vbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                            </vbox>
+                                        </widget>
+                                        <widget class="QGroupBox">
+                                            <property name="name">
+                                                <cstring>groupBox23</cstring>
+                                            </property>
+                                            <property name="sizePolicy">
+                                                <sizepolicy>
+                                                    <hsizetype>7</hsizetype>
+                                                    <vsizetype>1</vsizetype>
+                                                    <horstretch>1</horstretch>
+                                                    <verstretch>0</verstretch>
+                                                </sizepolicy>
+                                            </property>
+                                            <property name="title">
+                                                <string>Extended Features</string>
+                                            </property>
+                                            <vbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QCheckBox">
+                                                    <property name="name">
+                                                        <cstring>chbEnableACPI</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>Enable A&amp;CPI</string>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>&lt;qt&gt;When checked, the virtual machine will support
+the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't disable
+this feature after having installed a Windows guest operating system!&lt;/qt&gt;</string>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QCheckBox">
+                                                    <property name="name">
+                                                        <cstring>chbEnableIOAPIC</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>Enable IO A&amp;PIC</string>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>&lt;qt&gt;When checked, the virtual machine will support
+the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don't disable
+this feature after having installed a Windows guest operating system!&lt;/qt&gt;</string>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QCheckBox">
+                                                    <property name="name">
+                                                        <cstring>chbVTX</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>Enable &amp;VT-x/AMD-V</string>
+                                                    </property>
+                                                    <property name="tristate">
+                                                        <bool>true</bool>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>When checked, the virtual machine will try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</string>
+                                                    </property>
+                                                </widget>
+                                            </vbox>
+                                        </widget>
+                                    </hbox>
+                                </widget>
+                                <widget class="QLayoutWidget">
+                                    <property name="name">
+                                        <cstring>layout102</cstring>
+                                    </property>
+                                    <hbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QGroupBox">
+                                            <property name="name">
+                                                <cstring>groupBox61</cstring>
+                                            </property>
+                                            <property name="title">
+                                                <string>&amp;Shared Clipboard</string>
+                                            </property>
+                                            <hbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QComboBox">
+                                                    <property name="name">
+                                                        <cstring>cbSharedClipboard</cstring>
+                                                    </property>
+                                                    <property name="sizePolicy">
+                                                        <sizepolicy>
+                                                            <hsizetype>5</hsizetype>
+                                                            <vsizetype>0</vsizetype>
+                                                            <horstretch>0</horstretch>
+                                                            <verstretch>0</verstretch>
+                                                        </sizepolicy>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</string>
+                                                    </property>
+                                                </widget>
+                                                <spacer>
+                                                    <property name="name">
+                                                        <cstring>spacer130</cstring>
+                                                    </property>
+                                                    <property name="orientation">
+                                                        <enum>Horizontal</enum>
+                                                    </property>
+                                                    <property name="sizeType">
+                                                        <enum>Expanding</enum>
+                                                    </property>
+                                                    <property name="sizeHint">
+                                                        <size>
+                                                            <width>0</width>
+                                                            <height>20</height>
+                                                        </size>
+                                                    </property>
+                                                </spacer>
+                                            </hbox>
+                                        </widget>
+                                        <widget class="QGroupBox">
+                                            <property name="name">
+                                                <cstring>groupBox62</cstring>
+                                            </property>
+                                            <property name="title">
+                                                <string>&amp;IDE Controller Type</string>
+                                            </property>
+                                            <hbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QComboBox">
+                                                    <property name="name">
+                                                        <cstring>cbIdeController</cstring>
+                                                    </property>
+                                                    <property name="sizePolicy">
+                                                        <sizepolicy>
+                                                            <hsizetype>5</hsizetype>
+                                                            <vsizetype>0</vsizetype>
+                                                            <horstretch>0</horstretch>
+                                                            <verstretch>0</verstretch>
+                                                        </sizepolicy>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</string>
+                                                    </property>
+                                                </widget>
+                                                <spacer>
+                                                    <property name="name">
+                                                        <cstring>spacer131</cstring>
+                                                    </property>
+                                                    <property name="orientation">
+                                                        <enum>Horizontal</enum>
+                                                    </property>
+                                                    <property name="sizeType">
+                                                        <enum>Expanding</enum>
+                                                    </property>
+                                                    <property name="sizeHint">
+                                                        <size>
+                                                            <width>0</width>
+                                                            <height>20</height>
+                                                        </size>
+                                                    </property>
+                                                </spacer>
+                                            </hbox>
+                                        </widget>
+                                    </hbox>
+                                </widget>
+                                <widget class="QGroupBox">
+                                    <property name="name">
+                                        <cstring>groupBox5</cstring>
+                                    </property>
+                                    <property name="title">
+                                        <string>S&amp;napshot Folder</string>
+                                    </property>
+                                    <grid>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QLineEdit" row="0" column="0">
+                                            <property name="name">
+                                                <cstring>leSnapshotFolder</cstring>
+                                            </property>
+                                            <property name="frameShape">
+                                                <enum>LineEditPanel</enum>
+                                            </property>
+                                            <property name="frameShadow">
+                                                <enum>Sunken</enum>
+                                            </property>
+                                            <property name="readOnly">
+                                                <bool>false</bool>
+                                            </property>
+                                            <property name="whatsThis" stdset="0">
+                                                <string>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</string>
+                                            </property>
+                                        </widget>
+                                        <widget class="QToolButton" row="0" column="1">
+                                            <property name="name">
+                                                <cstring>tbSelectSavedStateFolder</cstring>
+                                            </property>
+                                            <property name="focusPolicy">
+                                                <enum>TabFocus</enum>
+                                            </property>
+                                            <property name="text">
+                                                <string>Select</string>
+                                            </property>
+                                            <property name="iconSet">
+                                                <iconset></iconset>
+                                            </property>
+                                            <property name="textLabel">
+                                                <string>Select</string>
+                                            </property>
+                                            <property name="autoRaise">
+                                                <bool>true</bool>
+                                            </property>
+                                            <property name="whatsThis" stdset="0">
+                                                <string>Selects the snapshot folder path.</string>
+                                            </property>
+                                        </widget>
+                                        <widget class="QToolButton" row="0" column="2">
+                                            <property name="name">
+                                                <cstring>tbResetSavedStateFolder</cstring>
+                                            </property>
+                                            <property name="focusPolicy">
+                                                <enum>TabFocus</enum>
+                                            </property>
+                                            <property name="text">
+                                                <string>Reset</string>
+                                            </property>
+                                            <property name="autoRaise">
+                                                <bool>true</bool>
+                                            </property>
+                                            <property name="whatsThis" stdset="0">
+                                                <string>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
+                                            </property>
+                                        </widget>
+                                    </grid>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer119_2</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>0</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </vbox>
+                        </widget>
+                        <widget class="QWidget">
+                            <property name="name">
+                                <cstring>description</cstring>
+                            </property>
+                            <attribute name="title">
+                                <string>&amp;Description</string>
+                            </attribute>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <property name="margin">
+                                    <number>10</number>
+                                </property>
+                                <property name="spacing">
+                                    <number>10</number>
+                                </property>
+                                <widget class="QTextEdit">
+                                    <property name="name">
+                                        <cstring>teDescription</cstring>
+                                    </property>
+                                    <property name="whatsThis" stdset="0">
+                                        <string>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</string>
+                                    </property>
+                                </widget>
+                            </vbox>
+                        </widget>
+                        <widget class="QWidget">
+                            <property name="name">
+                                <cstring>other</cstring>
+                            </property>
+                            <attribute name="title">
+                                <string>O&amp;ther</string>
+                            </attribute>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <property name="margin">
+                                    <number>10</number>
+                                </property>
+                                <widget class="QGroupBox">
+                                    <property name="name">
+                                        <cstring>groupBox15</cstring>
+                                    </property>
+                                    <property name="title">
+                                        <string>Other &amp;Settings</string>
+                                    </property>
+                                    <vbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QCheckBox">
+                                            <property name="name">
+                                                <cstring>chbRememberMedia</cstring>
+                                            </property>
+                                            <property name="text">
+                                                <string>&amp;Remember Media Mounted at Runtime</string>
+                                            </property>
+                                            <property name="checked">
+                                                <bool>true</bool>
+                                            </property>
+                                            <property name="whatsThis" stdset="0">
+                                                <string>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</string>
+                                            </property>
+                                        </widget>
+                                    </vbox>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer30</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>151</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </vbox>
+                        </widget>
+                    </widget>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageHDD</cstring>
+                </property>
+                <attribute name="id">
+                    <number>1</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
+                    </property>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>grbHDA</cstring>
+                        </property>
+                        <property name="title">
+                            <string>&amp;Primary Master</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>hdaLayout</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QToolButton">
+                                        <property name="name">
+                                            <cstring>tbHDA</cstring>
+                                        </property>
+                                        <property name="focusPolicy">
+                                            <enum>TabFocus</enum>
+                                        </property>
+                                        <property name="text">
+                                            <string>Select</string>
+                                        </property>
+                                        <property name="iconSet">
+                                            <iconset></iconset>
+                                        </property>
+                                        <property name="textLabel">
+                                            <string>Select</string>
+                                        </property>
+                                        <property name="autoRaise">
+                                            <bool>true</bool>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</string>
+                                        </property>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                            <widget class="QLabel">
+                                <property name="name">
+                                    <cstring>txHDA</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>&lt;not selected&gt;</string>
+                                </property>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>grbHDB</cstring>
+                        </property>
+                        <property name="title">
+                            <string>P&amp;rimary Slave</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>hdbLayout</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QToolButton">
+                                        <property name="name">
+                                            <cstring>tbHDB</cstring>
+                                        </property>
+                                        <property name="focusPolicy">
+                                            <enum>TabFocus</enum>
+                                        </property>
+                                        <property name="text">
+                                            <string>Select</string>
+                                        </property>
+                                        <property name="iconSet">
+                                            <iconset></iconset>
+                                        </property>
+                                        <property name="textLabel">
+                                            <string>Select</string>
+                                        </property>
+                                        <property name="autoRaise">
+                                            <bool>true</bool>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</string>
+                                        </property>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                            <widget class="QLabel">
+                                <property name="name">
+                                    <cstring>txHDB</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>&lt;not selected&gt;</string>
+                                </property>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>grbHDD</cstring>
+                        </property>
+                        <property name="title">
+                            <string>&amp;Secondary (IDE 1) Slave</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>hddLayout</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QToolButton">
+                                        <property name="name">
+                                            <cstring>tbHDD</cstring>
+                                        </property>
+                                        <property name="focusPolicy">
+                                            <enum>TabFocus</enum>
+                                        </property>
+                                        <property name="text">
+                                            <string>Select</string>
+                                        </property>
+                                        <property name="iconSet">
+                                            <iconset></iconset>
+                                        </property>
+                                        <property name="textLabel">
+                                            <string>Select</string>
+                                        </property>
+                                        <property name="autoRaise">
+                                            <bool>true</bool>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</string>
+                                        </property>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                            <widget class="QLabel">
+                                <property name="name">
+                                    <cstring>txHDD</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>&lt;not selected&gt;</string>
+                                </property>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer3</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageDVD</cstring>
+                </property>
+                <attribute name="id">
+                    <number>2</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
+                    </property>
+                    <widget class="QButtonGroup">
+                        <property name="name">
+                            <cstring>bgDVD</cstring>
+                        </property>
+                        <property name="title">
+                            <string>&amp;Mount CD/DVD Drive</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout39</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QRadioButton">
+                                        <property name="name">
+                                            <cstring>rbHostDVD</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>Host CD/DVD &amp;Drive</string>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</string>
+                                        </property>
+                                    </widget>
+                                    <widget class="QComboBox">
+                                        <property name="name">
+                                            <cstring>cbHostDVD</cstring>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Lists host CD/DVD drives available to mount to the virtual machine.</string>
+                                        </property>
+                                    </widget>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer23</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>51</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </hbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout485</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <property name="spacing">
+                                        <number>0</number>
+                                    </property>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer412</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Fixed</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>19</width>
+                                                <height>16</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                    <widget class="QCheckBox">
+                                        <property name="name">
+                                            <cstring>cbPassthrough</cstring>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy>
+                                                <hsizetype>7</hsizetype>
+                                                <vsizetype>0</vsizetype>
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="text">
+                                            <string>&amp;Enable Passthrough</string>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</string>
+                                        </property>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout40</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QRadioButton">
+                                        <property name="name">
+                                            <cstring>rbISODVD</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>&amp;ISO Image File</string>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</string>
+                                        </property>
+                                    </widget>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer35_4</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>156</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </hbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout35</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <property name="spacing">
+                                        <number>0</number>
+                                    </property>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer413</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Fixed</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>19</width>
+                                                <height>16</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>cdLayout</cstring>
+                                        </property>
+                                        <hbox>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>tbISODVD</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>TabFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Select</string>
+                                                </property>
+                                                <property name="iconSet">
+                                                    <iconset></iconset>
+                                                </property>
+                                                <property name="textLabel">
+                                                    <string>Select</string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</string>
+                                                </property>
+                                            </widget>
+                                        </hbox>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer19</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageFloppy</cstring>
+                </property>
+                <attribute name="id">
+                    <number>3</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
+                    </property>
+                    <widget class="QButtonGroup">
+                        <property name="name">
+                            <cstring>bgFloppy</cstring>
+                        </property>
+                        <property name="title">
+                            <string>&amp;Mount Floppy Drive</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout139</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QRadioButton">
+                                        <property name="name">
+                                            <cstring>rbHostFloppy</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>Host Floppy &amp;Drive</string>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Mounts the specified host Floppy drive to the virtual Floppy drive.</string>
+                                        </property>
+                                    </widget>
+                                    <widget class="QComboBox">
+                                        <property name="name">
+                                            <cstring>cbHostFloppy</cstring>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Lists host Floppy drives available to mount to the virtual machine.</string>
+                                        </property>
+                                    </widget>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer123</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>51</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </hbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout140</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QRadioButton">
+                                        <property name="name">
+                                            <cstring>rbISOFloppy</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>&amp;Image File</string>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Mounts the specified Floppy image to the virtual Floppy drive.</string>
+                                        </property>
+                                    </widget>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer135_4</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>156</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </hbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout36</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <property name="spacing">
+                                        <number>0</number>
+                                    </property>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer413_2</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Fixed</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>19</width>
+                                                <height>16</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>fdLayout</cstring>
+                                        </property>
+                                        <hbox>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>tbISOFloppy</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>TabFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Select</string>
+                                                </property>
+                                                <property name="iconSet">
+                                                    <iconset></iconset>
+                                                </property>
+                                                <property name="textLabel">
+                                                    <string>Select</string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Invokes the Virtual Disk Manager to select a Floppy image to mount.</string>
+                                                </property>
+                                            </widget>
+                                        </hbox>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer119</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageAudio</cstring>
+                </property>
+                <attribute name="id">
+                    <number>4</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
+                    </property>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>grbAudio</cstring>
+                        </property>
+                        <property name="title">
+                            <string>&amp;Enable Audio</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <property name="checked">
+                            <bool>true</bool>
+                        </property>
+                        <grid>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLabel" row="0" column="0">
+                                <property name="name">
+                                    <cstring>txAudioDriver</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>Host Audio &amp;Driver</string>
+                                </property>
+                                <property name="buddy" stdset="0">
+                                    <cstring>cbAudioDriver</cstring>
+                                </property>
+                            </widget>
+                            <widget class="QComboBox" row="0" column="1">
+                                <property name="name">
+                                    <cstring>cbAudioDriver</cstring>
+                                </property>
+                                <property name="sizePolicy">
+                                    <sizepolicy>
+                                        <hsizetype>1</hsizetype>
+                                        <vsizetype>0</vsizetype>
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
+makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</string>
+                                </property>
+                            </widget>
+                            <widget class="QLabel" row="1" column="0">
+                                <property name="name">
+                                    <cstring>txAudioController</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>Audio &amp;Controller</string>
+                                </property>
+                                <property name="buddy" stdset="0">
+                                    <cstring>cbAudioController</cstring>
+                                </property>
+                            </widget>
+                            <widget class="QComboBox" row="1" column="1">
+                                <property name="name">
+                                    <cstring>cbAudioController</cstring>
+                                </property>
+                                <property name="sizePolicy">
+                                    <sizepolicy>
+                                        <hsizetype>1</hsizetype>
+                                        <vsizetype>0</vsizetype>
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</string>
+                                </property>
+                            </widget>
+                            <spacer row="0" column="2">
+                                <property name="name">
+                                    <cstring>spacer36</cstring>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Horizontal</enum>
+                                </property>
+                                <property name="sizeType">
+                                    <enum>Expanding</enum>
+                                </property>
+                                <property name="sizeHint">
+                                    <size>
+                                        <width>30</width>
+                                        <height>20</height>
+                                    </size>
+                                </property>
+                            </spacer>
+                            <spacer row="1" column="2">
+                                <property name="name">
+                                    <cstring>spacer37</cstring>
+                                </property>
+                                <property name="orientation">
+                                    <enum>Horizontal</enum>
+                                </property>
+                                <property name="sizeType">
+                                    <enum>Expanding</enum>
+                                </property>
+                                <property name="sizeHint">
+                                    <size>
+                                        <width>30</width>
+                                        <height>20</height>
+                                    </size>
+                                </property>
+                            </spacer>
+                        </grid>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer11</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageNetwork</cstring>
+                </property>
+                <attribute name="id">
+                    <number>5</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <widget class="QTabWidget">
+                        <property name="name">
+                            <cstring>tbwNetwork</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>1</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                    </widget>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>gbInterfaceList</cstring>
+                        </property>
+                        <property name="title">
+                            <string>Host &amp;Interfaces</string>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout99</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <property name="spacing">
+                                        <number>6</number>
+                                    </property>
+                                    <widget class="QListBox">
+                                        <property name="name">
+                                            <cstring>lbHostInterface</cstring>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy>
+                                                <hsizetype>7</hsizetype>
+                                                <vsizetype>7</vsizetype>
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Lists all available host interfaces.</string>
+                                        </property>
+                                    </widget>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>layout27</cstring>
+                                        </property>
+                                        <vbox>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <property name="margin">
+                                                <number>0</number>
+                                            </property>
+                                            <property name="spacing">
+                                                <number>0</number>
+                                            </property>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>pbHostAdd</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>StrongFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string></string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="toolTip" stdset="0">
+                                                    <string></string>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Adds a new host interface.</string>
+                                                </property>
+                                            </widget>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>pbHostRemove</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>StrongFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string></string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="toolTip" stdset="0">
+                                                    <string></string>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Removes the selected host interface.</string>
+                                                </property>
+                                            </widget>
+                                            <spacer>
+                                                <property name="name">
+                                                    <cstring>spacer7</cstring>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="sizeType">
+                                                    <enum>Expanding</enum>
+                                                </property>
+                                                <property name="sizeHint">
+                                                    <size>
+                                                        <width>10</width>
+                                                        <height>10</height>
+                                                    </size>
+                                                </property>
+                                            </spacer>
+                                        </vbox>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                        </vbox>
+                    </widget>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageUSB</cstring>
+                </property>
+                <attribute name="id">
+                    <number>8</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
+                    </property>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>cbEnableUSBController</cstring>
+                        </property>
+                        <property name="title">
+                            <string>Enable &amp;USB Controller</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <property name="checked">
+                            <bool>true</bool>
+                        </property>
+                        <property name="whatsThis" stdset="0">
+                            <string>When checked, enables the virtual USB controller of this machine.</string>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+		                    <widget class="QCheckBox">
+        		                <property name="name">
+                	                <cstring>cbEnableUSBEhci</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>Enable USB E&amp;HCI Controller</string>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</string>
+                       	        </property>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>grbUSBFilters</cstring>
+                        </property>
+                        <property name="title">
+                            <string>USB Device &amp;Filters</string>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout148</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <property name="margin">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="spacing">
+                                        <number>0</number>
+                                    </property>
+                                    <widget class="QListView">
+                                        <column>
+                                            <property name="text">
+                                                <string>[name]</string>
+                                            </property>
+                                            <property name="clickable">
+                                                <bool>false</bool>
+                                            </property>
+                                            <property name="resizable">
+                                                <bool>true</bool>
+                                            </property>
+                                        </column>
+                                        <property name="name">
+                                            <cstring>lvUSBFilters</cstring>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</string>
+                                        </property>
+                                    </widget>
+                                    <widget class="QLayoutWidget">
+                                        <property name="name">
+                                            <cstring>layout147</cstring>
+                                        </property>
+                                        <vbox>
+                                            <property name="name">
+                                                <cstring>unnamed</cstring>
+                                            </property>
+                                            <property name="spacing">
+                                                <number>0</number>
+                                            </property>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>tbAddUSBFilter</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>TabFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string></string>
+                                                </property>
+                                                <property name="accel">
+                                                    <string>Ins</string>
+                                                </property>
+                                                <property name="iconSet">
+                                                    <iconset></iconset>
+                                                </property>
+                                                <property name="textLabel">
+                                                    <string>Add Empty (Ins)</string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</string>
+                                                </property>
+                                            </widget>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>tbAddUSBFilterFrom</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>TabFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string></string>
+                                                </property>
+                                                <property name="accel">
+                                                    <string>Alt+Ins</string>
+                                                </property>
+                                                <property name="iconSet">
+                                                    <iconset></iconset>
+                                                </property>
+                                                <property name="textLabel">
+                                                    <string>Add From (Alt+Ins)</string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</string>
+                                                </property>
+                                            </widget>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>tbRemoveUSBFilter</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>TabFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string></string>
+                                                </property>
+                                                <property name="accel">
+                                                    <string>Del</string>
+                                                </property>
+                                                <property name="iconSet">
+                                                    <iconset></iconset>
+                                                </property>
+                                                <property name="textLabel">
+                                                    <string>Remove (Del)</string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Removes the selected USB filter.</string>
+                                                </property>
+                                            </widget>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>tbUSBFilterUp</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>TabFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string></string>
+                                                </property>
+                                                <property name="accel">
+                                                    <string>Ctrl+Up</string>
+                                                </property>
+                                                <property name="iconSet">
+                                                    <iconset></iconset>
+                                                </property>
+                                                <property name="textLabel">
+                                                    <string>Move Up (Ctrl+Up)</string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Moves the selected USB filter up.</string>
+                                                </property>
+                                            </widget>
+                                            <widget class="QToolButton">
+                                                <property name="name">
+                                                    <cstring>tbUSBFilterDown</cstring>
+                                                </property>
+                                                <property name="focusPolicy">
+                                                    <enum>TabFocus</enum>
+                                                </property>
+                                                <property name="text">
+                                                    <string></string>
+                                                </property>
+                                                <property name="accel">
+                                                    <string>Ctrl+Down</string>
+                                                </property>
+                                                <property name="iconSet">
+                                                    <iconset></iconset>
+                                                </property>
+                                                <property name="textLabel">
+                                                    <string>Move Down (Ctrl+Down)</string>
+                                                </property>
+                                                <property name="autoRaise">
+                                                    <bool>true</bool>
+                                                </property>
+                                                <property name="whatsThis" stdset="0">
+                                                    <string>Moves the selected USB filter down.</string>
+                                                </property>
+                                            </widget>
+                                            <spacer>
+                                                <property name="name">
+                                                    <cstring>spacer106</cstring>
+                                                </property>
+                                                <property name="orientation">
+                                                    <enum>Vertical</enum>
+                                                </property>
+                                                <property name="sizeType">
+                                                    <enum>Expanding</enum>
+                                                </property>
+                                                <property name="sizeHint">
+                                                    <size>
+                                                        <width>20</width>
+                                                        <height>0</height>
+                                                    </size>
+                                                </property>
+                                            </spacer>
+                                        </vbox>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                        </vbox>
+                    </widget>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageVRDP</cstring>
+                </property>
+                <attribute name="id">
+                    <number>10</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <widget class="QGroupBox">
+                        <property name="name">
+                            <cstring>grbVRDP</cstring>
+                        </property>
+                        <property name="title">
+                            <string>&amp;Enable VRDP Server</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <property name="checked">
+                            <bool>true</bool>
+                        </property>
+                        <hbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout31</cstring>
+                                </property>
+                                <vbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLabel">
+                                        <property name="name">
+                                            <cstring>txVRDPPort</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>&amp;Server Port </string>
+                                        </property>
+                                        <property name="buddy" stdset="0">
+                                            <cstring>leVRDPPort</cstring>
+                                        </property>
+                                    </widget>
+                                    <widget class="QLabel">
+                                        <property name="name">
+                                            <cstring>txVRDPAuthMethod</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>Authentication &amp;Method </string>
+                                        </property>
+                                        <property name="buddy" stdset="0">
+                                            <cstring>cbVRDPAuthType</cstring>
+                                        </property>
+                                    </widget>
+                                    <widget class="QLabel">
+                                        <property name="name">
+                                            <cstring>txVRDPAuthTimeout</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>Authentication &amp;Timeout </string>
+                                        </property>
+                                        <property name="buddy" stdset="0">
+                                            <cstring>leVRDPTimeout</cstring>
+                                        </property>
+                                    </widget>
+                                </vbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout32</cstring>
+                                </property>
+                                <vbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QLineEdit">
+                                        <property name="name">
+                                            <cstring>leVRDPPort</cstring>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy>
+                                                <hsizetype>1</hsizetype>
+                                                <vsizetype>0</vsizetype>
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</string>
+                                        </property>
+                                    </widget>
+                                    <widget class="QComboBox">
+                                        <property name="name">
+                                            <cstring>cbVRDPAuthType</cstring>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy>
+                                                <hsizetype>1</hsizetype>
+                                                <vsizetype>0</vsizetype>
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Defines the VRDP authentication method.</string>
+                                        </property>
+                                    </widget>
+                                    <widget class="QLineEdit">
+                                        <property name="name">
+                                            <cstring>leVRDPTimeout</cstring>
+                                        </property>
+                                        <property name="sizePolicy">
+                                            <sizepolicy>
+                                                <hsizetype>1</hsizetype>
+                                                <vsizetype>0</vsizetype>
+                                                <horstretch>0</horstretch>
+                                                <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Specifies the timeout for guest authentication, in milliseconds.</string>
+                                        </property>
+                                    </widget>
+                                </vbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout33</cstring>
+                                </property>
+                                <vbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer36_2</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>16</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer36_2_3</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>16</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer36_2_2</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>16</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </vbox>
+                            </widget>
+                        </hbox>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer11_2</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>110</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageFolders</cstring>
+                </property>
+                <attribute name="id">
+                    <number>9</number>
+                </attribute>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageSerial</cstring>
+                </property>
+                <attribute name="id">
+                    <number>6</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <widget class="QTabWidget">
+                        <property name="name">
+                            <cstring>tbwSerialPorts</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>1</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                    </widget>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageParallel</cstring>
+                </property>
+                <attribute name="id">
+                    <number>7</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <widget class="QTabWidget">
+                        <property name="name">
+                            <cstring>tbwParallelPorts</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>1</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                    </widget>
+                </vbox>
+            </widget>
+        </widget>
+        <widget class="QLayoutWidget" row="3" column="0" rowspan="1" colspan="2">
+            <property name="name">
+                <cstring>layout25</cstring>
+            </property>
+            <hbox>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QPushButton">
+                    <property name="name">
+                        <cstring>buttonHelp</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Help</string>
+                    </property>
+                    <property name="accel">
+                        <string>F1</string>
+                    </property>
+                    <property name="autoDefault">
+                        <bool>true</bool>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Displays the dialog help.</string>
+                    </property>
+                </widget>
+                <spacer>
+                    <property name="name">
+                        <cstring>warningSpacer</cstring>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                        <enum>Expanding</enum>
+                    </property>
+                    <property name="sizeHint">
+                        <size>
+                            <width>16</width>
+                            <height>20</height>
+                        </size>
+                    </property>
+                </spacer>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>warningPixmap</cstring>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>0</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="scaledContents">
+                        <bool>true</bool>
+                    </property>
+                </widget>
+                <widget class="QLabel">
+                    <property name="name">
+                        <cstring>warningLabel</cstring>
+                    </property>
+                    <property name="sizePolicy">
+                        <sizepolicy>
+                            <hsizetype>0</hsizetype>
+                            <vsizetype>0</vsizetype>
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="minimumSize">
+                        <size>
+                            <width>0</width>
+                            <height>0</height>
+                        </size>
+                    </property>
+                    <property name="backgroundOrigin">
+                        <enum>WidgetOrigin</enum>
+                    </property>
+                    <property name="lineWidth">
+                        <number>1</number>
+                    </property>
+                    <property name="midLineWidth">
+                        <number>0</number>
+                    </property>
+                    <property name="text">
+                        <string>Invalid settings detected</string>
+                    </property>
+                    <property name="textFormat">
+                        <enum>AutoText</enum>
+                    </property>
+                    <property name="scaledContents">
+                        <bool>false</bool>
+                    </property>
+                    <property name="alignment">
+                        <set>AlignVCenter</set>
+                    </property>
+                </widget>
+                <spacer>
+                    <property name="name">
+                        <cstring>spacer20</cstring>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                        <enum>Expanding</enum>
+                    </property>
+                    <property name="sizeHint">
+                        <size>
+                            <width>21</width>
+                            <height>20</height>
+                        </size>
+                    </property>
+                </spacer>
+                <widget class="QPushButton">
+                    <property name="name">
+                        <cstring>buttonOk</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;OK</string>
+                    </property>
+                    <property name="autoDefault">
+                        <bool>true</bool>
+                    </property>
+                    <property name="default">
+                        <bool>true</bool>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Accepts (saves) changes and closes the dialog.</string>
+                    </property>
+                </widget>
+                <widget class="QPushButton">
+                    <property name="name">
+                        <cstring>buttonCancel</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Cancel</string>
+                    </property>
+                    <property name="autoDefault">
+                        <bool>true</bool>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Cancels changes and closes the dialog.</string>
+                    </property>
+                </widget>
+            </hbox>
+        </widget>
+    </grid>
+</widget>
+<connections>
+    <connection>
+        <sender>buttonOk</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>accept()</slot>
+    </connection>
+    <connection>
+        <sender>buttonCancel</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>reject()</slot>
+    </connection>
+    <connection>
+        <sender>slRAM</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>slRAM_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>leRAM</sender>
+        <signal>textChanged(const QString&amp;)</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>leRAM_textChanged(const QString&amp;)</slot>
+    </connection>
+    <connection>
+        <sender>slVRAM</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>slVRAM_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>leVRAM</sender>
+        <signal>textChanged(const QString&amp;)</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>leVRAM_textChanged(const QString&amp;)</slot>
+    </connection>
+    <connection>
+        <sender>tbResetSavedStateFolder</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>tbResetSavedStateFolder_clicked()</slot>
+    </connection>
+    <connection>
+        <sender>tbSelectSavedStateFolder</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>tbSelectSavedStateFolder_clicked()</slot>
+    </connection>
+    <connection>
+        <sender>listView</sender>
+        <signal>currentChanged(QListViewItem*)</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>listView_currentChanged(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>cbOS</sender>
+        <signal>activated(int)</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>cbOS_activated(int)</slot>
+    </connection>
+    <connection>
+        <sender>lvUSBFilters</sender>
+        <signal>currentChanged(QListViewItem*)</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>lvUSBFilters_currentChanged(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>tbAddUSBFilter</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>tbAddUSBFilter_clicked()</slot>
+    </connection>
+    <connection>
+        <sender>tbAddUSBFilterFrom</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>tbAddUSBFilterFrom_clicked()</slot>
+    </connection>
+    <connection>
+        <sender>tbRemoveUSBFilter</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>tbRemoveUSBFilter_clicked()</slot>
+    </connection>
+    <connection>
+        <sender>tbUSBFilterUp</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>tbUSBFilterUp_clicked()</slot>
+    </connection>
+    <connection>
+        <sender>tbUSBFilterDown</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>tbUSBFilterDown_clicked()</slot>
+    </connection>
+    <connection>
+        <sender>pbHostAdd</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>hostInterfaceAdd()</slot>
+    </connection>
+    <connection>
+        <sender>pbHostRemove</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMSettingsDlg</receiver>
+        <slot>hostInterfaceRemove()</slot>
+    </connection>
+    <connection>
+        <sender>buttonHelp</sender>
+        <signal>clicked()</signal>
+        <receiver>&amp;vboxProblem()</receiver>
+        <slot>showHelpHelpDialog()</slot>
+    </connection>
+</connections>
+<tabstops>
+    <tabstop>listView</tabstop>
+    <tabstop>tbwGeneral</tabstop>
+    <tabstop>leName</tabstop>
+    <tabstop>cbOS</tabstop>
+    <tabstop>slRAM</tabstop>
+    <tabstop>leRAM</tabstop>
+    <tabstop>slVRAM</tabstop>
+    <tabstop>leVRAM</tabstop>
+    <tabstop>chbEnableACPI</tabstop>
+    <tabstop>chbEnableIOAPIC</tabstop>
+    <tabstop>chbVTX</tabstop>
+    <tabstop>cbSharedClipboard</tabstop>
+    <tabstop>cbIdeController</tabstop>
+    <tabstop>leSnapshotFolder</tabstop>
+    <tabstop>tbSelectSavedStateFolder</tabstop>
+    <tabstop>tbResetSavedStateFolder</tabstop>
+    <tabstop>grbHDA</tabstop>
+    <tabstop>tbHDA</tabstop>
+    <tabstop>grbHDB</tabstop>
+    <tabstop>tbHDB</tabstop>
+    <tabstop>grbHDD</tabstop>
+    <tabstop>tbHDD</tabstop>
+    <tabstop>bgDVD</tabstop>
+    <tabstop>rbHostDVD</tabstop>
+    <tabstop>cbHostDVD</tabstop>
+    <tabstop>cbPassthrough</tabstop>
+    <tabstop>rbISODVD</tabstop>
+    <tabstop>tbISODVD</tabstop>
+    <tabstop>bgFloppy</tabstop>
+    <tabstop>rbHostFloppy</tabstop>
+    <tabstop>cbHostFloppy</tabstop>
+    <tabstop>rbISOFloppy</tabstop>
+    <tabstop>tbISOFloppy</tabstop>
+    <tabstop>grbAudio</tabstop>
+    <tabstop>cbAudioDriver</tabstop>
+    <tabstop>cbAudioController</tabstop>
+    <tabstop>cbEnableUSBController</tabstop>
+    <tabstop>cbEnableUSBEhci</tabstop>
+    <tabstop>lvUSBFilters</tabstop>
+    <tabstop>tbAddUSBFilter</tabstop>
+    <tabstop>tbAddUSBFilterFrom</tabstop>
+    <tabstop>tbRemoveUSBFilter</tabstop>
+    <tabstop>tbUSBFilterUp</tabstop>
+    <tabstop>tbUSBFilterDown</tabstop>
+    <tabstop>grbVRDP</tabstop>
+    <tabstop>leVRDPPort</tabstop>
+    <tabstop>cbVRDPAuthType</tabstop>
+    <tabstop>leVRDPTimeout</tabstop>
+    <tabstop>buttonHelp</tabstop>
+    <tabstop>buttonOk</tabstop>
+    <tabstop>buttonCancel</tabstop>
+</tabstops>
+<includes>
+    <include location="global" impldecl="in declaration">qvaluevector.h</include>
+    <include location="global" impldecl="in implementation">qvalidator.h</include>
+    <include location="global" impldecl="in implementation">qmessagebox.h</include>
+    <include location="global" impldecl="in implementation">qfont.h</include>
+    <include location="global" impldecl="in implementation">qfileinfo.h</include>
+    <include location="global" impldecl="in implementation">qdir.h</include>
+    <include location="global" impldecl="in implementation">qfiledialog.h</include>
+    <include location="global" impldecl="in implementation">qobjectlist.h</include>
+    <include location="global" impldecl="in implementation">qlistbox.h</include>
+    <include location="global" impldecl="in implementation">qfocusdata.h</include>
+    <include location="global" impldecl="in implementation">qtimer.h</include>
+    <include location="global" impldecl="in implementation">qpopupmenu.h</include>
+    <include location="global" impldecl="in implementation">qlistview.h</include>
+    <include location="global" impldecl="in implementation">qeventloop.h</include>
+    <include location="local" impldecl="in declaration">COMDefs.h</include>
+    <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
+    <include location="local" impldecl="in implementation">VBoxUtils.h</include>
+    <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
+    <include location="local" impldecl="in implementation">VBoxVMNetworkSettings.h</include>
+    <include location="local" impldecl="in implementation">VBoxVMSerialPortSettings.h</include>
+    <include location="local" impldecl="in implementation">VBoxVMParallelPortSettings.h</include>
+    <include location="local" impldecl="in implementation">VBoxUSBFilterSettings.h</include>
+    <include location="local" impldecl="in implementation">VBoxSharedFoldersSettings.h</include>
+    <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
+    <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
+    <include location="local" impldecl="in implementation">QIRichLabel.h</include>
+</includes>
+<forwards>
+    <forward>class VBoxMediaComboBox</forward>
+    <forward>class VBoxDiskImageManagerDlg</forward>
+    <forward>class VBoxUSBMenu</forward>
+    <forward>class VBoxSharedFoldersSettings</forward>
+    <forward>class QIRichLabel</forward>
+    <forward>class BootItemsList</forward>
+</forwards>
+<variables>
+    <variable access="private">bool polished;</variable>
+    <variable access="private">bool valid;</variable>
+    <variable access="private">QTimer *whatsThisTimer;</variable>
+    <variable access="private">QWidget *whatsThisCandidate;</variable>
+    <variable access="private">QIWidgetValidator *wvalGeneral;</variable>
+    <variable access="private">QIWidgetValidator *wvalHDD;</variable>
+    <variable access="private">QIWidgetValidator *wvalDVD;</variable>
+    <variable access="private">QIWidgetValidator *wvalFloppy;</variable>
+    <variable access="private">QIWidgetValidator *wvalVRDP;</variable>
+    <variable access="private">QUuid uuidHDA;</variable>
+    <variable access="private">QUuid uuidHDB;</variable>
+    <variable access="private">QUuid uuidHDD;</variable>
+    <variable access="private">QUuid uuidISODVD;</variable>
+    <variable access="private">QUuid uuidISOFloppy;</variable>
+    <variable access="private">QValueVector &lt; CHostDVDDrive &gt; hostDVDs;</variable>
+    <variable access="private">QValueVector &lt; CHostFloppyDrive &gt; hostFloppies;</variable>
+    <variable access="private">CMachine cmachine;</variable>
+    <variable access="private">QStringList mInterfaceList;</variable>
+    <variable access="private">QStringList mNetworksList;</variable>
+    <variable access="private">QWidgetStack *wstUSBFilters;</variable>
+    <variable access="private">bool mUSBFilterListModified;</variable>
+    <variable access="private">VBoxSharedFoldersSettings *mSharedFolders;</variable>
+    <variable access="private">QString warningString;</variable>
+    <variable access="private">VBoxMediaComboBox *cbHDA;</variable>
+    <variable access="private">VBoxMediaComboBox *cbHDB;</variable>
+    <variable access="private">VBoxMediaComboBox *cbHDD;</variable>
+    <variable access="private">VBoxMediaComboBox *cbISODVD;</variable>
+    <variable access="private">VBoxMediaComboBox *cbISOFloppy;</variable>
+    <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
+    <variable access="private">QIRichLabel *whatsThisLabel;</variable>
+    <variable access="private">BootItemsList *tblBootOrder;</variable>
+    <variable access="private">QString mNoInterfaces;</variable>
+    <variable access="private">bool mAllowResetFirstRunFlag;</variable>
+    <variable access="private">bool mResetFirstRunFlag;</variable>
+    <variable access="private">bool mLockNetworkListUpdate;</variable>
+</variables>
+<slots>
+    <slot>listView_currentChanged( QListViewItem * item )</slot>
+    <slot>enableOk( const QIWidgetValidator * wval )</slot>
+    <slot>revalidate( QIWidgetValidator * wval )</slot>
+    <slot>updateWhatsThis( bool gotFocus = false )</slot>
+    <slot>showImageManagerHDA()</slot>
+    <slot>showImageManagerHDB()</slot>
+    <slot>showImageManagerHDD()</slot>
+    <slot>showImageManagerISODVD()</slot>
+    <slot>showImageManagerISOFloppy()</slot>
+    <slot>showVDImageManager( QUuid *id, VBoxMediaComboBox *le, QLabel *tx = NULL )</slot>
+    <slot>addNetworkAdapter( const CNetworkAdapter &amp; )</slot>
+    <slot>updateNetworksList()</slot>
+    <slot>addSerialPort( const CSerialPort &amp; )</slot>
+    <slot>addParallelPort( const CParallelPort &amp; )</slot>
+    <slot>slRAM_valueChanged( int val )</slot>
+    <slot>leRAM_textChanged( const QString &amp; text )</slot>
+    <slot>slVRAM_valueChanged( int val )</slot>
+    <slot>leVRAM_textChanged( const QString &amp; text )</slot>
+    <slot>cbOS_activated( int item )</slot>
+    <slot>tbResetSavedStateFolder_clicked()</slot>
+    <slot>tbSelectSavedStateFolder_clicked()</slot>
+    <slot>usbAdapterToggled( bool aOn )</slot>
+    <slot>addUSBFilter( const CUSBDeviceFilter &amp; aFilter, bool isNew )</slot>
+    <slot>lvUSBFilters_currentChanged( QListViewItem * item )</slot>
+    <slot>lvUSBFilters_setCurrentText( const QString &amp; aText )</slot>
+    <slot>tbAddUSBFilter_clicked()</slot>
+    <slot>tbAddUSBFilterFrom_clicked()</slot>
+    <slot>menuAddUSBFilterFrom_activated( int )</slot>
+    <slot>tbRemoveUSBFilter_clicked()</slot>
+    <slot>tbUSBFilterUp_clicked()</slot>
+    <slot>tbUSBFilterDown_clicked()</slot>
+    <slot>hdaMediaChanged()</slot>
+    <slot>hdbMediaChanged()</slot>
+    <slot>hddMediaChanged()</slot>
+    <slot>cdMediaChanged()</slot>
+    <slot>fdMediaChanged()</slot>
+    <slot>networkPageUpdate( QWidget* )</slot>
+    <slot>hostInterfaceAdd()</slot>
+    <slot>hostInterfaceRemove()</slot>
+    <slot>onMediaEnumerationDone()</slot>
+    <slot>resetFirstRunFlag()</slot>
+</slots>
+<functions>
+    <function access="private">init()</function>
+    <function access="private" returnType="QString">pagePath( QWidget * )</function>
+    <function>setup( const QString &amp;, const QString &amp; )</function>
+    <function>getFromMachine( const CMachine &amp; machine )</function>
+    <function returnType="bool">eventFilter( QObject * watched, QEvent * e )</function>
+    <function returnType="COMResult">putBackToMachine()</function>
+    <function access="private">setWarning( const QString &amp; )</function>
+    <function access="private">showEvent( QShowEvent * )</function>
+    <function access="private">updateShortcuts()</function>
+    <function access="private" returnType="QString">getHdInfo( QGroupBox*, QUuid )</function>
+    <function access="private">loadInterfacesList()</function>
+    <function access="private">loadNetworksList()</function>
+</functions>
+<pixmapinproject/>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>
