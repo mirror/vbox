@@ -37,6 +37,7 @@ BEGINPROC RT_NOCRT(memcmp)
 
         ; Do the bulk of the work.
 %ifdef RT_ARCH_AMD64
+        xor     eax, eax
  %ifdef ASM_CALL64_MSC
         mov     r10, rdi                ; save
         mov     r11, rsi                ; save
@@ -47,7 +48,6 @@ BEGINPROC RT_NOCRT(memcmp)
  %else
         mov     rcx, rdx
  %endif
-        mov     rax, rdi                ; save the return value
         shr     rcx, 3
         repe cmpsq
         jne     .not_equal_qword
@@ -59,7 +59,6 @@ BEGINPROC RT_NOCRT(memcmp)
         mov     edi, [esp + 04h + 8]
         mov     esi, [esp + 08h + 8]
         mov     edx, ecx
-        xor     eax, eax
         jecxz   .done
         shr     ecx, 2
         repe cmpsd
