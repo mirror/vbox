@@ -33,6 +33,7 @@ __BEGIN_DECLS
 void *  RT_NOCRT(memchr)(const void *pv, int ch, size_t cb);
 int     RT_NOCRT(memcmp)(const void *pv1, const void *pv2, size_t cb);
 void *  RT_NOCRT(memcpy)(void *pvDst, const void *pvSrc, size_t cb);
+void *  RT_NOCRT(mempcpy)(void *pvDst, const void *pvSrc, size_t cb);
 void *  RT_NOCRT(memmove)(void *pvDst, const void *pvSrc, size_t cb);
 void *  RT_NOCRT(memset)(void *pvDst, int ch, size_t cb);
 
@@ -55,6 +56,7 @@ char *  RT_NOCRT(strstr)(const char *psz, const char *pszSub);
 # define memchr   RT_NOCRT(memchr)
 # define memcmp   RT_NOCRT(memcmp)
 # define memcpy   RT_NOCRT(memcpy)
+# define mempcpy  RT_NOCRT(mempcpy)
 # define memmove  RT_NOCRT(memmove)
 # define memset   RT_NOCRT(memset)
 # define strcat   RT_NOCRT(strcat)
