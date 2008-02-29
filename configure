@@ -1014,9 +1014,9 @@ EOF
 #
 # Check for the QT library, needed by VirtualBox
 #
-check_qt()
+check_qt3()
 {
-  test_header Qt
+  test_header Qt3
   cat > .tmp_src.cc << EOF
 #include <cstdio>
 #include <qglobal.h>
@@ -1074,6 +1074,55 @@ EOF
     fi
   fi
 }
+
+#
+# Check for the QT library, needed by VirtualBox4
+#
+# Currently not fatal.
+#
+check_qt4()
+{
+  test_header Qt4
+  if which_wrapper pkg-config > /dev/null; then
+    qt4_ver=`pkg-config QtGui --modversion 2>> $LOG`
+    if [ $? -ne 0 ]; then
+      log_failure "not found"
+#      fail
+    else
+      FLGQT4=`pkg-config QtGui --cflags`
+      INCQT4=`strip_I "$FLGQT4"`
+      LIBQT4=`pkg-config QtGui --libs`
+      cat > .tmp_src.cc << EOF
+#include <cstdio>
+#include <Qt/qglobal.h>
+extern "C" int main(void)
+{
+  printf("found version %s", QT_VERSION_STR);
+#if QT_VERSION >= 0x030305
+  printf(", OK.\n");
+  return 0;
+#elif QT_VERSION >= 0x030300
+  printf("\n  ** WARNING: QT < 3.3.5 has known problems!\n");
+#else
+  printf(", expected version 3.3.0 or higher\n");
+  return 1;
+#endif
+}
+EOF
+      [ -n "$INCQT4" ] && I_INCQT4=`prefix_I "$INCQT4"`
+      if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4" qt4 qt4 nofatal; then
+        if test_execute; then
+          cnf_append "SDK_VBOX_LIBQT4_INCS" "$INCQT4"
+          cnf_append "SDK_VBOX_LIBQT4_LIBS" "`strip_l "$LIBQT4"`"
+        fi
+      fi
+    fi
+  else
+    log_failure "pkg-config not found"
+#    fail
+  fi
+}
+
 
 #
 # Check whether static libstdc++ is installed
@@ -1508,7 +1557,8 @@ check_png
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
 [ $WITH_X11 -eq 1    ] && check_x
 [ $WITH_X11 -eq 1    ] && check_xcursor
-[ $WITH_QT -eq 1     ] && check_qt
+[ $WITH_QT -eq 1     ] && check_qt3
+[ $WITH_QT -eq 1     ] && check_qt4
 
 # Linux-specific
 if [ "$OS" = "linux" ]; then
