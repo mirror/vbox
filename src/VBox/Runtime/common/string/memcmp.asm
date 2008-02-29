@@ -34,10 +34,10 @@ BEGINCODE
 ; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch]
 BEGINPROC RT_NOCRT(memcmp)
         cld
+        xor     eax, eax
 
         ; Do the bulk of the work.
 %ifdef RT_ARCH_AMD64
-        xor     eax, eax
  %ifdef ASM_CALL64_MSC
         mov     r10, rdi                ; save
         mov     r11, rsi                ; save
