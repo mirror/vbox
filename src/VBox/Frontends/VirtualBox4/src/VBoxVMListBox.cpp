@@ -700,7 +700,7 @@ void VBoxVMListBoxItem::paint (QPainter *aP)
         strState = VBoxVMListBox::tr ("Inaccessible");
     }
 
-    const QColorGroup &cg = lb->activeColorGroup();
+    const QPalette &pal = lb->palette();
 
     int osTypeY = marg;
     int strHeight = fmName.lineSpacing() +
@@ -711,7 +711,9 @@ void VBoxVMListBoxItem::paint (QPainter *aP)
     /* draw the OS type icon with border, vertically centered */
     aP->drawPixmap (marg, osTypeY, pmOSType);
 
-    aP->setPen (isSelected() ? cg.highlightedText() : cg.text());
+    aP->setPen (isSelected() ?
+                pal.color (QPalette::Active, QPalette::HighlightedText) :
+                pal.color (QPalette::Active, QPalette::Text));
 
     int textX = marg + pmOSType.width() + marg * 3 / 2;
 
