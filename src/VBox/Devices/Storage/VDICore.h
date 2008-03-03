@@ -538,17 +538,21 @@ typedef struct VDIIMAGEDESC
     unsigned                uBlockMask;
     /** Block shift value for converting byte hdd offset into paBlock index. */
     unsigned                uShiftOffset2Index;
+#ifndef VBOX_VDICORE_VD
     /** Block shift value for converting block index into offset in image. */
     unsigned                uShiftIndex2Offset;
+#endif /* !VBOX_VDICORE_VD */
     /** Offset of data from the beginning of block. */
     unsigned                offStartBlockData;
+#ifndef VBOX_VDICORE_VD
     /** Image is modified flags (VDI_IMAGE_MODIFIED*). */
     unsigned                fModified;
-#ifndef VBOX_VDICORE_VD
     /** Container filename. (UTF-8)
      * @todo Make this variable length to save a bunch of bytes. (low prio) */
     char                    szFilename[RTPATH_MAX];
-#else /* !VBOX_VDICORE_VD */
+#else /* VBOX_VDICORE_VD */
+    /** Total size of image block (including the extra data). */
+    unsigned                cbTotalBlockData;
     /** Container filename. (UTF-8) */
     const char             *pszFilename;
     /** Physical geometry of this image (never actually stored). */
@@ -557,7 +561,7 @@ typedef struct VDIIMAGEDESC
     PFNVDERROR              pfnError;
     /** Opaque data for error callback. */
     void                   *pvErrorUser;
-#endif /* !VBOX_VDICORE_VD */
+#endif /* VBOX_VDICORE_VD */
 } VDIIMAGEDESC, *PVDIIMAGEDESC;
 
 #ifndef VBOX_VDICORE_VD

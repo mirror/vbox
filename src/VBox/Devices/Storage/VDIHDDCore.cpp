@@ -39,8 +39,9 @@
 static unsigned getPowerOfTwo(unsigned uNumber);
 static void vdiInitPreHeader(PVDIPREHEADER pPreHdr);
 static int  vdiValidatePreHeader(PVDIPREHEADER pPreHdr);
-static void vdiInitHeader(PVDIHEADER pHeader, VDIMAGETYPE enmType, uint32_t uImageFlags,
-                          const char *pszComment, uint64_t cbDisk, uint32_t cbBlock,
+static void vdiInitHeader(PVDIHEADER pHeader, VDIMAGETYPE enmType,
+                          uint32_t uImageFlags, const char *pszComment,
+                          uint64_t cbDisk, uint32_t cbBlock,
                           uint32_t cbBlockExtra);
 static int  vdiValidateHeader(PVDIHEADER pHeader);
 static void vdiSetupImageDesc(PVDIIMAGEDESC pImage);
@@ -112,8 +113,9 @@ static int vdiValidatePreHeader(PVDIPREHEADER pPreHdr)
  * Internal: Init VDI header. Always use latest header version.
  * @param   pHeader     Assumes it was initially initialized to all zeros.
  */
-static void vdiInitHeader(PVDIHEADER pHeader, VDIMAGETYPE enmType, uint32_t uImageFlags,
-                          const char *pszComment, uint64_t cbDisk, uint32_t cbBlock,
+static void vdiInitHeader(PVDIHEADER pHeader, VDIMAGETYPE enmType,
+                          uint32_t uImageFlags, const char *pszComment,
+                          uint64_t cbDisk, uint32_t cbBlock,
                           uint32_t cbBlockExtra)
 {
     pHeader->uVersion = VDI_IMAGE_VERSION;
@@ -295,11 +297,10 @@ static void vdiSetupImageDesc(PVDIIMAGEDESC pImage)
     pImage->offStartBlocks     = getImageBlocksOffset(&pImage->Header);
     pImage->offStartData       = getImageDataOffset(&pImage->Header);
     pImage->uBlockMask         = getImageBlockSize(&pImage->Header) - 1;
-    pImage->uShiftIndex2Offset =
     pImage->uShiftOffset2Index = getPowerOfTwo(getImageBlockSize(&pImage->Header));
     pImage->offStartBlockData  = getImageExtraBlockSize(&pImage->Header);
-    if (pImage->offStartBlockData != 0)
-        pImage->uShiftIndex2Offset += getPowerOfTwo(pImage->offStartBlockData);
+    pImage->cbTotalBlockData   =   pImage->offStartBlockData
+                                 + getImageBlockSize(&pImage->Header);
 }
 
 /**
@@ -374,7 +375,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
     }
 
     cbTotal =   pImage->offStartData
-              + ((uint64_t)getImageBlocks(&pImage->Header) << pImage->uShiftIndex2Offset);
+              + (uint64_t)getImageBlocks(&pImage->Header) * pImage->cbTotalBlockData;
 
     if (enmType == VD_IMAGE_TYPE_FIXED)
     {
@@ -455,7 +456,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
             goto out;
         }
 
-        cbFill = (uint64_t)getImageBlocks(&pImage->Header) << pImage->uShiftIndex2Offset;
+        cbFill = (uint64_t)getImageBlocks(&pImage->Header) * pImage->cbTotalBlockData;
         uOff = 0;
         /* do loop to fill all image. */
         while (uOff < cbFill)
@@ -683,7 +684,7 @@ static void vdiFlushImage(PVDIIMAGEDESC pImage)
  */
 static void vdiFreeImage(PVDIIMAGEDESC pImage, bool fDelete)
 {
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     vdiFlushImage(pImage);
     if (pImage->File != NIL_RTFILE)
@@ -878,12 +879,13 @@ static int vdiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     unsigned offRead;
     int rc;
 
-    Assert(pImage);
-    Assert(uOffset % 512 == 0);
-    Assert(cbToRead % 512 == 0);
+    Assert(VALID_PTR(pImage));
+    Assert(!(uOffset % 512));
+    Assert(!(cbToRead % 512));
 
     if (   uOffset + cbToRead > getImageDiskSize(&pImage->Header)
-        || cbToRead == 0)
+        || !VALID_PTR(pvBuf)
+        || !cbToRead)
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
@@ -906,8 +908,8 @@ static int vdiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     }
     else
     {
-        /* block present in image file */
-        uint64_t u64Offset = ((uint64_t)pImage->paBlocks[uBlock] << pImage->uShiftIndex2Offset)
+        /* Block present in image file, read relevant data. */
+        uint64_t u64Offset = (uint64_t)pImage->paBlocks[uBlock] * pImage->cbTotalBlockData
                            + (pImage->offStartData + pImage->offStartBlockData + offRead);
         rc = RTFileReadAt(pImage->File, u64Offset, pvBuf, cbToRead, NULL);
     }
@@ -931,9 +933,9 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     unsigned offWrite;
     int rc = VINF_SUCCESS;
 
-    Assert(pImage);
-    Assert(uOffset % 512 == 0);
-    Assert(cbToWrite % 512 == 0);
+    Assert(VALID_PTR(pImage));
+    Assert(!(uOffset % 512));
+    Assert(!(cbToWrite % 512));
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
@@ -941,7 +943,7 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         goto out;
     }
 
-    if (cbToWrite == 0)
+    if (!VALID_PTR(pvBuf) || !cbToWrite)
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
@@ -970,7 +972,7 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
              * either a zero block or a block which hasn't been used so far
              * (which also means that it's a zero block. Don't need to write
              * anything to this block  if the data consists of just zeroes. */
-            Assert(cbToWrite % 4 == 0);
+            Assert(!(cbToWrite % 4));
             Assert(cbToWrite * 8 <= UINT32_MAX);
             if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)cbToWrite * 8) == -1)
             {
@@ -983,11 +985,11 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         {
             /* Full block write to previously unallocated block.
              * Allocate block and write data. */
+            Assert(!offWrite);
             unsigned cBlocksAllocated = getImageBlocksAllocated(&pImage->Header);
-            rc = RTFileWriteAt(pImage->File,
-                                 ((uint64_t)cBlocksAllocated << pImage->uShiftIndex2Offset)
-                               + pImage->offStartData,
-                               pvBuf, cbToWrite, NULL);
+            uint64_t u64Offset = (uint64_t)cBlocksAllocated * pImage->cbTotalBlockData
+                               + (pImage->offStartData + pImage->offStartBlockData);
+            rc = RTFileWriteAt(pImage->File, u64Offset, pvBuf, cbToWrite, NULL);
             if (VBOX_FAILURE(rc))
                 goto out;
             pImage->paBlocks[uBlock] = cBlocksAllocated;
@@ -1010,10 +1012,12 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         }
     }
     else
-        rc = RTFileWriteAt(pImage->File,
-                             ((uint64_t)pImage->paBlocks[uBlock] << pImage->uShiftIndex2Offset)
-                           + pImage->offStartData + pImage->offStartBlockData + offWrite,
-                           pvBuf, cbToWrite, NULL);
+    {
+        /* Block present in image file, write relevant data. */
+        uint64_t u64Offset = (uint64_t)pImage->paBlocks[uBlock] * pImage->cbTotalBlockData
+                           + (pImage->offStartData + pImage->offStartBlockData + offWrite);
+        rc = RTFileWriteAt(pImage->File, u64Offset, pvBuf, cbToWrite, NULL);
+    }
 
 out:
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -1039,7 +1043,7 @@ static unsigned vdiGetVersion(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     unsigned uVersion;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
         uVersion = pImage->PreHeader.u32Version;
@@ -1057,8 +1061,8 @@ static int vdiGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(pImage);
-    Assert(penmImageType);
+    Assert(VALID_PTR(pImage));
+    Assert(VALID_PTR(penmImageType));
 
     if (pImage)
         *penmImageType =   getImageType(&pImage->Header) == VDI_IMAGE_TYPE_NORMAL
@@ -1078,7 +1082,7 @@ static uint64_t vdiGetSize(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     uint64_t cbSize;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
         cbSize = getImageDiskSize(&pImage->Header);
@@ -1096,7 +1100,7 @@ static uint64_t vdiGetFileSize(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     uint64_t cb = 0;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1121,7 +1125,7 @@ static int vdiGetPCHSGeometry(void *pBackendData,
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1148,7 +1152,7 @@ static int vdiSetPCHSGeometry(void *pBackendData,
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1177,7 +1181,7 @@ static int vdiGetLCHSGeometry(void *pBackendData,
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1214,7 +1218,7 @@ static int vdiSetLCHSGeometry(void *pBackendData,
     PVDIDISKGEOMETRY pGeometry;
     int rc;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1252,7 +1256,7 @@ static unsigned vdiGetImageFlags(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     unsigned uImageFlags;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
         uImageFlags = getImageFlags(&pImage->Header);
@@ -1270,7 +1274,7 @@ static unsigned vdiGetOpenFlags(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     unsigned uOpenFlags;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
         uOpenFlags = pImage->uOpenFlags;
@@ -1315,7 +1319,7 @@ static int vdiGetComment(void *pBackendData, char *pszComment,
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1343,7 +1347,7 @@ static int vdiSetComment(void *pBackendData, const char *pszComment)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
@@ -1391,7 +1395,7 @@ static int vdiGetUuid(void *pBackendData, PRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1412,7 +1416,7 @@ static int vdiSetUuid(void *pBackendData, PCRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1446,7 +1450,7 @@ static int vdiGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1467,7 +1471,7 @@ static int vdiSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1501,7 +1505,7 @@ static int vdiGetParentUuid(void *pBackendData, PRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1522,7 +1526,7 @@ static int vdiSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1556,7 +1560,7 @@ static int vdiGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1577,7 +1581,7 @@ static int vdiSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(pImage);
+    Assert(VALID_PTR(pImage));
 
     if (pImage)
     {
@@ -1635,9 +1639,9 @@ static void vdiDump(void *pBackendData)
         RTLogPrintf("Header: uuidParentModification={%Vuuid}\n", getImageParentModificationUUID(&pImage->Header));
     RTLogPrintf("Image:  fFlags=%08X offStartBlocks=%u offStartData=%u\n",
                 pImage->uImageFlags, pImage->offStartBlocks, pImage->offStartData);
-    RTLogPrintf("Image:  uBlockMask=%08X uShiftIndex2Offset=%u uShiftOffset2Index=%u offStartBlockData=%u\n",
+    RTLogPrintf("Image:  uBlockMask=%08X cbTotalBlockData=%u uShiftOffset2Index=%u offStartBlockData=%u\n",
                 pImage->uBlockMask,
-                pImage->uShiftIndex2Offset,
+                pImage->cbTotalBlockData,
                 pImage->uShiftOffset2Index,
                 pImage->offStartBlockData);
 
