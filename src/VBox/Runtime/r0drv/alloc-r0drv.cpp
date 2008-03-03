@@ -121,7 +121,7 @@ RTDECL(void *)  RTMemAlloc(size_t cb)
     {
 #ifdef RTR0MEM_STRICT
         pHdr->cbReq = cb;
-        memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], sizeof(g_abFence));
+        memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], RTR0MEM_FENCE_EXTRA);
 #endif
         return pHdr + 1;
     }
@@ -147,7 +147,7 @@ RTDECL(void *)  RTMemAllocZ(size_t cb)
     {
 #ifdef RTR0MEM_STRICT
         pHdr->cbReq = cb;
-        memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], sizeof(g_abFence));
+        memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], RTR0MEM_FENCE_EXTRA);
         return memset(pHdr + 1, 0, cb);
 #else
         return memset(pHdr + 1, 0, pHdr->cb);
@@ -186,14 +186,14 @@ RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew)
                 memcpy(pHdrNew + 1, pvOld, cbCopy);
 #ifdef RTR0MEM_STRICT
                 pHdrNew->cbReq = cbNew;
-                memcpy((uint8_t *)(pHdrNew + 1) + cbNew, &g_abFence[0], sizeof(g_abFence));
-                AssertReleaseMsg(!memcmp((uint8_t *)(pHdrOld + 1) + pHdrOld->cbReq, &g_abFence[0], sizeof(g_abFence)),
+                memcpy((uint8_t *)(pHdrNew + 1) + cbNew, &g_abFence[0], RTR0MEM_FENCE_EXTRA);
+                AssertReleaseMsg(!memcmp((uint8_t *)(pHdrOld + 1) + pHdrOld->cbReq, &g_abFence[0], RTR0MEM_FENCE_EXTRA),
                                  ("pHdr=%p pvOld=%p cb=%zu cbNew=%zu\n"
                                   "fence:    %.*Rhxs\n"
                                   "expected: %.*Rhxs\n",
                                   pHdrOld, pvOld, pHdrOld->cb, cbNew,
-                                  sizeof(g_abFence), (uint8_t *)(pHdrOld + 1) + pHdrOld->cb,
-                                  sizeof(g_abFence), &g_abFence[0]));
+                                  RTR0MEM_FENCE_EXTRA, (uint8_t *)(pHdrOld + 1) + pHdrOld->cb,
+                                  RTR0MEM_FENCE_EXTRA, &g_abFence[0]));
 #endif
                 rtMemFree(pHdrOld);
                 return pHdrNew + 1;
@@ -222,13 +222,13 @@ RTDECL(void) RTMemFree(void *pv)
     {
         Assert(!(pHdr->fFlags & RTMEMHDR_FLAG_EXEC));
 #ifdef RTR0MEM_STRICT
-        AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], sizeof(g_abFence)),
+        AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], RTR0MEM_FENCE_EXTRA),
                          ("pHdr=%p pv=%p cb=%zu\n"
                           "fence:    %.*Rhxs\n"
                           "expected: %.*Rhxs\n",
                           pHdr, pv, pHdr->cb, pv,
-                          sizeof(g_abFence), (uint8_t *)(pHdr + 1) + pHdr->cb,
-                          sizeof(g_abFence), &g_abFence[0]));
+                          RTR0MEM_FENCE_EXTRA, (uint8_t *)(pHdr + 1) + pHdr->cb,
+                          RTR0MEM_FENCE_EXTRA, &g_abFence[0]));
 #endif
         rtMemFree(pHdr);
     }
@@ -246,11 +246,11 @@ RTDECL(void) RTMemFree(void *pv)
  */
 RTDECL(void *)    RTMemExecAlloc(size_t cb)
 {
-    PRTMEMHDR pHdr = rtMemAlloc(cb, RTMEMHDR_FLAG_EXEC);
+    PRTMEMHDR pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_EXEC);
     if (pHdr)
     {
 #ifdef RTR0MEM_STRICT
-        memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], sizeof(g_abFence));
+        memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], RTR0MEM_FENCE_EXTRA);
 #endif
         return pHdr + 1;
     }
@@ -272,13 +272,13 @@ RTDECL(void)      RTMemExecFree(void *pv)
     if (pHdr->u32Magic == RTMEMHDR_MAGIC)
     {
 #ifdef RTR0MEM_STRICT
-        AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], sizeof(g_abFence)),
+        AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], RTR0MEM_FENCE_EXTRA),
                          ("pHdr=%p pv=%p cb=%zu\n"
                           "fence:    %.*Rhxs\n"
                           "expected: %.*Rhxs\n",
                           pHdr, pv, pHdr->cb,
-                          sizeof(g_abFence), (uint8_t *)(pHdr + 1) + pHdr->cb,
-                          sizeof(g_abFence), &g_abFence[0]));
+                          RTR0MEM_FENCE_EXTRA, (uint8_t *)(pHdr + 1) + pHdr->cb,
+                          RTR0MEM_FENCE_EXTRA, &g_abFence[0]));
 #endif
         rtMemFree(pHdr);
     }
