@@ -473,12 +473,22 @@ void VBoxVMInformationDlg::refreshStatistics()
     }
 
     /* Hard Disk Statistics. */
+    QString primaryMaster = QString ("%1 %2")
+        .arg (vboxGlobal().toString (KDiskControllerType_IDE0))
+        .arg (vboxGlobal().toString (KDiskControllerType_IDE0, 0));
+    QString primarySlave = QString ("%1 %2")
+        .arg (vboxGlobal().toString (KDiskControllerType_IDE0))
+        .arg (vboxGlobal().toString (KDiskControllerType_IDE0, 1));
+    QString secondarySlave = QString ("%1 %2")
+        .arg (vboxGlobal().toString (KDiskControllerType_IDE1))
+        .arg (vboxGlobal().toString (KDiskControllerType_IDE1, 1));
+
     result += hdrRow.arg ("hd_16px.png").arg (tr ("IDE Hard Disk Statistics"));
-    result += formatHardDisk (tr ("Primary Master"), KDiskControllerType_IDE0, 0, 0, 1);
+    result += formatHardDisk (primaryMaster, KDiskControllerType_IDE0, 0, 0, 1);
     result += interline;
-    result += formatHardDisk (tr ("Primary Slave"), KDiskControllerType_IDE0, 1, 4, 5);
+    result += formatHardDisk (primarySlave, KDiskControllerType_IDE0, 1, 4, 5);
     result += interline;
-    result += formatHardDisk (tr ("Secondary Slave"), KDiskControllerType_IDE1, 1, 12, 13);
+    result += formatHardDisk (secondarySlave, KDiskControllerType_IDE1, 1, 12, 13);
     result += paragraph;
 
     /* CD/DVD-ROM Statistics. */
