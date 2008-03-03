@@ -31,7 +31,7 @@
 
 /**
  * Initialize the global pasteboard and return a reference to it.
- * 
+ *
  * @param pPasteboardRef Reference to the global pasteboard.
  *
  * @returns IPRT status code.
@@ -48,7 +48,7 @@ int initPasteboard (PasteboardRef *pPasteboardRef)
 
 /**
  * Release the reference to the global pasteboard.
- * 
+ *
  * @param pPasteboardRef Reference to the global pasteboard.
  */
 void destroyPasteboard (PasteboardRef *pPasteboardRef)
@@ -60,21 +60,21 @@ void destroyPasteboard (PasteboardRef *pPasteboardRef)
 /**
  * Inspect the global pasteboard for new content. Check if there is some type
  * that is supported by vbox and return it.
- * 
+ *
  * @param   pPasteboardRef Reference to the global pasteboard.
  * @param   pfFormats      Pointer for the bit combination of the
  *                         supported types.
  * @param   pbChanged      True if something has changed after the
  *                         last call.
  *
- * @returns IPRT status code.
+ * @returns IPRT status code. (Always VINF_SUCCESS atm.)
  */
-int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, bool *pbChanged)
+int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, bool *pfChanged)
 {
     Log (("queryNewPasteboardFormats\n"));
 
     OSStatus err = noErr;
-    *pbChanged = true;
+    *pfChanged = true;
 
     PasteboardSyncFlags syncFlags;
     /* Make sure all is in sync */
@@ -82,7 +82,7 @@ int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, b
     /* If nothing changed return */
     if (!(syncFlags & kPasteboardModified))
     {
-        *pbChanged = false; 
+        *pfChanged = false;
         return VINF_SUCCESS;
     }
 
@@ -93,7 +93,7 @@ int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, b
         return VINF_SUCCESS;
 
     /* The id of the first element in the pasteboard */
-    int rc = VERR_NOT_SUPPORTED;
+    int rc = VINF_SUCCESS;
     PasteboardItemID itemID;
     if (!(err = PasteboardGetItemIdentifier (pPasteboard, 1, &itemID)))
     {
@@ -117,7 +117,6 @@ int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, b
                     *pfFormats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
                 }
             }
-            rc = VINF_SUCCESS;
             CFRelease (flavorTypeArray);
         }
     }
@@ -129,7 +128,7 @@ int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, b
 /**
  * Read content from the host clipboard and write it to the internal clipboard
  * structure for further processing.
- * 
+ *
  * @param   pPasteboardRef Reference to the global pasteboard.
  * @param   fFormats       The format type which should be read.
  * @param   pv             The destination buffer.
@@ -223,7 +222,7 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
 /**
  * Write clipboard content to the host clipboard from the internal clipboard
  * structure.
- * 
+ *
  * @param   pPasteboardRef Reference to the global pasteboard.
  * @param   pv             The source buffer.
  * @param   cb             The size of the source buffer.
