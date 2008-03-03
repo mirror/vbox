@@ -380,16 +380,16 @@ void VBoxGlobalSettingsDlg::init()
     wstUSBFilters->addWidget (settings, 0);
     lvUSBFilters_currentChanged (NULL);
     /* setup toolbutton icons */
-    tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_new_16px.png",
-                                                     "usb_new_disabled_16px.png"));
-    tbAddUSBFilterFrom->setIconSet (VBoxGlobal::iconSet ("usb_add_16px.png",
-                                                         "usb_add_disabled_16px.png"));
-    tbRemoveUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_remove_16px.png",
-                                                        "usb_remove_disabled_16px.png"));
-    tbUSBFilterUp->setIconSet (VBoxGlobal::iconSet ("usb_moveup_16px.png",
-                                                    "usb_moveup_disabled_16px.png"));
-    tbUSBFilterDown->setIconSet (VBoxGlobal::iconSet ("usb_movedown_16px.png",
-                                                      "usb_movedown_disabled_16px.png"));
+    tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet (":/usb_new_16px.png",
+                                                     ":/usb_new_disabled_16px.png"));
+    tbAddUSBFilterFrom->setIconSet (VBoxGlobal::iconSet (":/usb_add_16px.png",
+                                                         ":/usb_add_disabled_16px.png"));
+    tbRemoveUSBFilter->setIconSet (VBoxGlobal::iconSet (":/usb_remove_16px.png",
+                                                        ":/usb_remove_disabled_16px.png"));
+    tbUSBFilterUp->setIconSet (VBoxGlobal::iconSet (":/usb_moveup_16px.png",
+                                                    ":/usb_moveup_disabled_16px.png"));
+    tbUSBFilterDown->setIconSet (VBoxGlobal::iconSet (":/usb_movedown_16px.png",
+                                                      ":/usb_movedown_disabled_16px.png"));
     /* create menu of existing usb-devices */
     usbDevicesMenu = new VBoxUSBMenu (this);
     connect (usbDevicesMenu, SIGNAL(activated(int)), this, SLOT(menuAddUSBFilterFrom_activated(int)));

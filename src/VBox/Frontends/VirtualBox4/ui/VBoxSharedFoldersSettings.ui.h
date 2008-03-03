@@ -247,8 +247,8 @@ public:
         QToolButton *tbPath = new QToolButton (this);
         QLabel *lbName = new QLabel (tr ("Folder Name"), this);
         mLeName = new QLineEdit (this);
-        tbPath->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                                 "select_file_dis_16px.png"));
+        tbPath->setIconSet (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                                 ":/select_file_dis_16px.png"));
         tbPath->setFocusPolicy (Qt::TabFocus);
         connect (mLePath, SIGNAL (textChanged (const QString &)),
                  this, SLOT (validate()));
@@ -397,12 +397,12 @@ void VBoxSharedFoldersSettings::init()
     listView->setShowToolTips (false);
     listView->setRootIsDecorated (true);
     listView->header()->setMovingEnabled (false);
-    tbAdd->setIconSet (VBoxGlobal::iconSet ("add_shared_folder_16px.png",
-                                            "add_shared_folder_disabled_16px.png"));
-    tbEdit->setIconSet (VBoxGlobal::iconSet ("edit_shared_folder_16px.png",
-                                             "edit_shared_folder_disabled_16px.png"));
-    tbRemove->setIconSet (VBoxGlobal::iconSet ("revome_shared_folder_16px.png",
-                                               "revome_shared_folder_disabled_16px.png"));
+    tbAdd->setIconSet (VBoxGlobal::iconSet (":/add_shared_folder_16px.png",
+                                            ":/add_shared_folder_disabled_16px.png"));
+    tbEdit->setIconSet (VBoxGlobal::iconSet (":/edit_shared_folder_16px.png",
+                                             ":/edit_shared_folder_disabled_16px.png"));
+    tbRemove->setIconSet (VBoxGlobal::iconSet (":/revome_shared_folder_16px.png",
+                                               ":/revome_shared_folder_disabled_16px.png"));
     connect (tbAdd, SIGNAL (clicked()), this, SLOT (tbAddPressed()));
     connect (tbEdit, SIGNAL (clicked()), this, SLOT (tbEditPressed()));
     connect (tbRemove, SIGNAL (clicked()), this, SLOT (tbRemovePressed()));

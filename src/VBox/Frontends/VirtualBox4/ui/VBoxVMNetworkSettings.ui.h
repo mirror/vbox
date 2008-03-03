@@ -60,10 +60,10 @@ void VBoxVMNetworkSettings::init()
     txHostInterface_WIN->setHidden (true);
     cbHostInterfaceName->setHidden (true);
     /* setup iconsets */
-    pbTAPSetup->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                                 "select_file_dis_16px.png"));
-    pbTAPTerminate->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                                     "select_file_dis_16px.png"));
+    pbTAPSetup->setIconSet (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                                 ":/select_file_dis_16px.png"));
+    pbTAPTerminate->setIconSet (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                                     ":/select_file_dis_16px.png"));
 #endif
 
     /* the TAP file descriptor setting is always invisible -- currently not used

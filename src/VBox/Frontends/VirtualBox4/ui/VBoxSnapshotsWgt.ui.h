@@ -313,20 +313,20 @@ void VBoxSnapshotsWgt::init()
 
     /* icons */
     discardSnapshotAction->setIconSet (VBoxGlobal::iconSetEx (
-        "discard_snapshot_22px.png", "discard_snapshot_16px.png",
-        "discard_snapshot_dis_22px.png", "discard_snapshot_dis_16px.png"));
+        ":/discard_snapshot_22px.png", ":/discard_snapshot_16px.png",
+        ":/discard_snapshot_dis_22px.png", ":/discard_snapshot_dis_16px.png"));
     takeSnapshotAction->setIconSet (VBoxGlobal::iconSetEx (
-        "take_snapshot_22px.png", "take_snapshot_16px.png",
-        "take_snapshot_dis_22px.png", "take_snapshot_dis_16px.png"));
+        ":/take_snapshot_22px.png", ":/take_snapshot_16px.png",
+        ":/take_snapshot_dis_22px.png", ":/take_snapshot_dis_16px.png"));
     revertToCurSnapAction->setIconSet (VBoxGlobal::iconSetEx (
-        "discard_cur_state_22px.png", "discard_cur_state_16px.png",
-        "discard_cur_state_dis_22px.png", "discard_cur_state_dis_16px.png"));
+        ":/discard_cur_state_22px.png", ":/discard_cur_state_16px.png",
+        ":/discard_cur_state_dis_22px.png", ":/discard_cur_state_dis_16px.png"));
     discardCurSnapAndStateAction->setIconSet (VBoxGlobal::iconSetEx (
-        "discard_cur_state_snapshot_22px.png", "discard_cur_state_snapshot_16px.png",
-        "discard_cur_state_snapshot_dis_22px.png", "discard_cur_state_snapshot_dis_16px.png"));
+        ":/discard_cur_state_snapshot_22px.png", ":/discard_cur_state_snapshot_16px.png",
+        ":/discard_cur_state_snapshot_dis_22px.png", ":/discard_cur_state_snapshot_dis_16px.png"));
     showSnapshotDetailsAction->setIconSet (VBoxGlobal::iconSetEx (
-        "show_snapshot_details_22px.png", "show_snapshot_details_16px.png",
-        "show_snapshot_details_dis_22px.png", "show_snapshot_details_dis_16px.png"));
+        ":/show_snapshot_details_22px.png", ":/show_snapshot_details_16px.png",
+        ":/show_snapshot_details_dis_22px.png", ":/show_snapshot_details_dis_16px.png"));
 
     /* tooltip */
 #warning port me
