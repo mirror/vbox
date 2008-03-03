@@ -43,7 +43,7 @@ static VBOXCLIPBOARDCONTEXT g_ctx;
 
 /**
  * Checks if something is present on the clipboard and calls vboxSvcClipboardReportMsg.
- * 
+ *
  * @returns IPRT status code (ignored).
  * @param   pCtx    The context.
  */
@@ -53,11 +53,10 @@ static int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
         return VINF_SUCCESS;
 
     uint32_t fFormats = 0;
-    bool bChanged = false;
+    bool fChanged = false;
     /* Retrieve the formats currently in the clipboard and supported by vbox */
-    int rc = queryNewPasteboardFormats (pCtx->pasteboard, &fFormats, &bChanged);
-
-    if (bChanged)
+    int rc = queryNewPasteboardFormats (pCtx->pasteboard, &fFormats, &fChanged);
+    if (RT_SUCCESS (rc) && fChanged)
     {
         vboxSvcClipboardReportMsg (pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, fFormats);
         Log (("vboxClipboardChanged fFormats %02X\n", fFormats));
@@ -67,15 +66,15 @@ static int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
 }
 
 
-/** 
+/**
  * The poller thread.
- * 
+ *
  * This thread will check for the arrival of new data on the clipboard.
- * 
+ *
  * @returns VINF_SUCCESS (not used).
  * @param   Thread      Our thread handle.
  * @param   pvUser      Pointer to the VBOXCLIPBOARDCONTEXT structure.
- * 
+ *
  */
 static int vboxClipboardThread (RTTHREAD ThreadSelf, void *pvUser)
 {
@@ -86,7 +85,12 @@ static int vboxClipboardThread (RTTHREAD ThreadSelf, void *pvUser)
 
     while (!pCtx->fTerminate)
     {
+        /* call this behind the lock because we don't know if the api is
+           thread safe and in any case we're calling several methods. */
+        vboxSvcClipboardLock();
         vboxClipboardChanged (pCtx);
+        vboxSvcClipboardUnlock();
+
         /* Sleep for 200 msecs before next poll */
         RTThreadUserWait (ThreadSelf, 200);
     }
@@ -125,7 +129,7 @@ void vboxClipboardDestroy (void)
 {
     Log (("vboxClipboardDestroy\n"));
 
-    /* 
+    /*
      * Signal the termination of the polling thread and wait for it to respond.
      */
     ASMAtomicWriteBool (&g_ctx.fTerminate, true);
@@ -156,12 +160,15 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
         return VERR_NOT_SUPPORTED;
     }
 
+    vboxSvcClipboardLock();
+
     pClient->pCtx = &g_ctx;
     pClient->pCtx->pClient = pClient;
 
     /* Initially sync the host clipboard content with the client. */
     int rc = vboxClipboardSync (pClient);
 
+    vboxSvcClipboardUnlock();
     return rc;
 }
 
@@ -172,7 +179,9 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     /* Sync the host clipboard content with the client. */
+    vboxSvcClipboardLock();
     int rc = vboxClipboardChanged (pClient->pCtx);
+    vboxSvcClipboardUnlock();
 
     return rc;
 }
@@ -180,11 +189,13 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 /**
  * Shut down the shared clipboard subsystem and "disconnect" the guest.
  */
-void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA * /* pClient */)
+void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     Log (("vboxClipboardDisconnect\n"));
 
-    g_ctx.pClient = NULL;
+    vboxSvcClipboardLock();
+    pClient->pCtx->pClient = NULL;
+    vboxSvcClipboardUnlock();
 }
 
 /**
@@ -194,8 +205,7 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA * /* pClient */)
  * @param pClient    Context data for the guest system
  * @param u32Formats Clipboard formats the the guest is offering
  */
-void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA * /* pClient */,
-                                  uint32_t u32Formats)
+void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
 {
     Log (("vboxClipboardFormatAnnounce u32Formats %02X\n", u32Formats));
     if (u32Formats == 0)
@@ -204,7 +214,7 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA * /* pClient */,
         return;
     }
 
-    vboxSvcClipboardReportMsg (g_ctx.pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+    vboxSvcClipboardReportMsg (pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                                u32Formats);
 }
 
@@ -217,13 +227,16 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA * /* pClient */,
  * @param cb        The size of the buffer to write the data to
  * @param pcbActual Where to write the actual size of the written data
  */
-int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA * /* pClient */, uint32_t u32Format,
+int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
                            void *pv, uint32_t cb, uint32_t * pcbActual)
 {
+    vboxSvcClipboardLock();
+
     /* Default to no data available. */
     *pcbActual = 0;
-    int rc = readFromPasteboard (g_ctx.pasteboard, u32Format, pv, cb, pcbActual);
+    int rc = readFromPasteboard (pClient->pCtx->pasteboard, u32Format, pv, cb, pcbActual);
 
+    vboxSvcClipboardUnlock();
     return rc;
 }
 
@@ -235,8 +248,12 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA * /* pClient */, uint32_t u32
  * @param cb        The size of the data written
  * @param u32Format The format of the data written
  */
-void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA * /* pClient */, void *pv,
+void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv,
                              uint32_t cb, uint32_t u32Format)
 {
-    writeToPasteboard (g_ctx.pasteboard, pv, cb, u32Format);
+    vboxSvcClipboardLock();
+
+    writeToPasteboard (pClient->pCtx->pasteboard, pv, cb, u32Format);
+
+    vboxSvcClipboardUnlock();
 }
