@@ -2413,7 +2413,7 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
                 if ((val & 7) == 7)
                     val &= ~3;
 
-                Log(("#%d pcnetWriteCSR0: %#06x => %#06x\n", pData->aCSR[0], csr0));
+                Log(("#%d pcnetWriteCSR0: %#06x => %#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aCSR[0], csr0));
 
 #ifndef IN_RING3
                 if (!(csr0 & 0x0001/*init*/) && (val & 1))
