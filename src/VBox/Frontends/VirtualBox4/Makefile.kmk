@@ -41,29 +41,31 @@ VBOX_WITH_DEBUGGER_GUI :=
 DEFS := $(filter-out VBOX_WITH_DEBUGGER_GUI,$(DEFS))
 
 # Handmade configuration of qt4
-VBOX_PATH_QT4      ?= /usr
+VBOX_PATH_QT4          ?= /usr
+VBOX_PATH_QT4_BIN      ?= $(VBOX_PATH_QT4)/bin
+VBOX_PATH_QT4_INCLUDE  ?= $(VBOX_PATH_QT4)/include
+VBOX_PATH_QT4_LIB      ?= $(VBOX_PATH_QT4)/lib
+VBOX_PATH_QT4_LIB64    ?= $(VBOX_PATH_QT4)/lib64
+VBOX_PATH_QT4_SHARE    ?= $(VBOX_PATH_QT4)
+
 VBOX_MODULE_QT4     = QtCore QtGui QtNetwork Qt3Support
 VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB QT_NETWORK_LIB QT_QT3SUPPORT_LIB
-VBOX_INCS_QT4       = $(VBOX_PATH_QT4)/share/qt4/mkspecs/linux-g++ \
-                      $(foreach mod, $(VBOX_MODULE_QT4), $(join $(VBOX_PATH_QT4)/include/qt4/, $(mod))) \
-                      $(VBOX_PATH_QT4)/include/qt4/Qt $(VBOX_PATH_QT4)/include/qt4
+VBOX_INCS_QT4       = $(VBOX_PATH_QT4_SHARE)/mkspecs/linux-g++ \
+                      $(foreach mod, $(VBOX_MODULE_QT4), $(join $(VBOX_PATH_QT4_INCLUDE)/, $(mod))) \
+                      $(VBOX_PATH_QT4_INCLUDE)/Qt $(VBOX_PATH_QT4_INCLUDE)
 VBOX_LIBS_QT4       = $(VBOX_MODULE_QT4)
-VBOX_LIBPATH_QT4    = $(VBOX_MODULE_QT4)/lib
 
 # Warn about all what you know about porting qt3->qt4.
 # Disable this if you like to see something on your screen.
-#VBOX_DEFS_QT4 += QT3_SUPPORT_WARNINGS 
+#VBOX_DEFS_QT4 += QT3_SUPPORT_WARNINGS
 # Some default defs
 VBOX_DEFS_QT4 += QT3_SUPPORT QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
 
-VBOX_UIC4      := $(VBOX_PATH_QT4)/bin/uic3
-VBOX_MOC4      := $(VBOX_PATH_QT4)/bin/moc
-VBOX_RCC4      := $(VBOX_PATH_QT4)/bin/rcc
-VBOX_LUPDATE4  := $(VBOX_PATH_QT4)/bin/lupdate
-VBOX_LRELEASE4 := $(VBOX_PATH_QT4)/bin/lrelease
-#VBOX_MOC4      := $(VBOX_PATH_QT4)/bin/moc-qt4
-#VBOX_LUPDATE4  := $(VBOX_PATH_QT4)/bin/lupdate-qt4
-#VBOX_LRELEASE4 := $(VBOX_PATH_QT4)/bin/lrelease-qt4
+VBOX_UIC4      ?= $(VBOX_PATH_QT4_BIN)/uic3
+VBOX_MOC4      ?= $(VBOX_PATH_QT4_BIN)/moc
+VBOX_RCC4      ?= $(VBOX_PATH_QT4_BIN)/rcc
+VBOX_LUPDATE4  ?= $(VBOX_PATH_QT4_BIN)/lupdate
+VBOX_LRELEASE4 ?= $(VBOX_PATH_QT4_BIN)/lrelease
 
 # Template copy from the qt3 stuff. Appended a "4" on the
 # relevant places.
@@ -72,7 +74,7 @@ VBOX_LRELEASE4 := $(VBOX_PATH_QT4)/bin/lrelease
 # Template for building Qt GUI executables.
 #
 
-TEMPLATE_VBOXQT4GUIEXE = VBox Qt4 GUI Executable 
+TEMPLATE_VBOXQT4GUIEXE = VBox Qt4 GUI Executable
 TEMPLATE_VBOXQT4GUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS) $(VBOX_DEFS_QT4)
 TEMPLATE_VBOXQT4GUIEXE_INCS = \
 	$(VBOX_PATH_SDK)/include \
@@ -118,7 +120,7 @@ ifeq ($(BUILD_TARGET),win)
 else # the gcc guys:
  TEMPLATE_VBOXQT4GUIEXE_TOOL = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXQT4GUIEXE_DEFS.linux = _REENTRANT
-    
+
  TEMPLATE_VBOXQT4GUIEXE_DEFS.solaris = _REENTRANT
 
  TEMPLATE_VBOXQT4GUIEXE_INCS += \
@@ -141,10 +143,10 @@ else # the gcc guys:
 
  ifeq ($(BUILD_TARGET_ARCH),amd64)
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH = \
-	$(VBOX_PATH_QT4)/lib64/qt4 $(VBOX_PATH_QT4)/lib/qt4
+	$(VBOX_PATH_QT4_LIB64) $(VBOX_PATH_QT4_LIB)
  else
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH = \
-	$(VBOX_PATH_QT4)/lib/qt4
+	$(VBOX_PATH_QT4_LIB)
  endif
 
  ifeq ($(BUILD_TARGET),linux)
@@ -312,7 +314,7 @@ VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 
  # For testing iChat Theater stuff change
  # the sdk path
- ifdef VBOX_WITH_ICHAT_THEATER 
+ ifdef VBOX_WITH_ICHAT_THEATER
   VBOX_PATH_MACOSX_SDK = /Developer/SDKs/MacOSX10.5.sdk
  endif
 
