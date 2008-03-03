@@ -22,9 +22,6 @@
 #include <iprt/thread.h>
 
 #include "VBoxClipboard.h"
-/* We do the work in a separate cpp file because
- * of the conflicting typedef "OSType". This is
- * defined in Carbon and in VBox/ostypes.h also. */
 #include "darwin-pasteboard.h"
 
 /** Global clipboard context information */
@@ -49,11 +46,6 @@ static VBOXCLIPBOARDCONTEXT g_ctx;
  * 
  * @returns IPRT status code (ignored).
  * @param   pCtx    The context.
- * 
- * @todo r=bird: This function does not check if something has _changed_ like indicated by 
- *               the name. It will instead notify the client every 200ms as long as something
- *               is on the clipboard. When the clipboard is cleared it will do nothing.
- *               I somehow cannot think that this intentional behavior...
  */
 static int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
 {
@@ -62,7 +54,7 @@ static int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
 
     uint32_t fFormats = 0;
     /* Retrieve the formats currently in the clipboard and supported by vbox */
-    int rc = queryPasteboardFormats (pCtx->pasteboard, &fFormats);
+    int rc = queryNewPasteboardFormats (pCtx->pasteboard, &fFormats);
 
     if (fFormats > 0)
     {

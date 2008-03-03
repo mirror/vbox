@@ -15,12 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/// @todo: same as defined in VBoxClipboardSvc.h
-/// @todo r-bird: why don't you include it?
-#define VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT 0x01
-#define VBOX_SHARED_CLIPBOARD_FMT_BITMAP      0x02
-#define VBOX_SHARED_CLIPBOARD_FMT_HTML        0x04
-
 #include <Carbon/Carbon.h>
 
 #include <iprt/mem.h>
@@ -29,12 +23,19 @@
 
 #define LOG_GROUP LOG_GROUP_HGCM
 #include "VBox/log.h"
+#include "VBox/HostServices/VBoxClipboardSvc.h"
 #include "clipboard-helper.h"
 
+/* For debugging */
 //#define SHOW_CLIPBOARD_CONTENT
 
-/** @todo r=bird: document these functions */
-
+/**
+ * Initialize the global pasteboard and return a reference to it.
+ * 
+ * @param pPasteboardRef Reference to the global pasteboard.
+ *
+ * @returns IPRT status code.
+ */
 int initPasteboard (PasteboardRef *pPasteboardRef)
 {
     int rc = VINF_SUCCESS;
@@ -45,15 +46,30 @@ int initPasteboard (PasteboardRef *pPasteboardRef)
     return rc;
 }
 
+/**
+ * Release the reference to the global pasteboard.
+ * 
+ * @param pPasteboardRef Reference to the global pasteboard.
+ */
 void destroyPasteboard (PasteboardRef *pPasteboardRef)
 {
     CFRelease (*pPasteboardRef);
     *pPasteboardRef = NULL;
 }
 
-int queryPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats)
+/**
+ * Inspect the global pasteboard for new content. Check if there is some type
+ * that is supported by vbox and return it.
+ * 
+ * @param   pPasteboardRef Reference to the global pasteboard.
+ * @param   pfFormats      Pointer for the bit combination of the
+ *                         supported types.
+ *
+ * @returns IPRT status code.
+ */
+int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats)
 {
-    Log (("queryPasteboardFormats\n"));
+    Log (("queryNewPasteboardFormats\n"));
 
     OSStatus err = noErr;
 
@@ -70,7 +86,7 @@ int queryPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats)
     if (itemCount < 1)
         return VINF_SUCCESS;
 
-    /* The id of the first element in the pastboard */
+    /* The id of the first element in the pasteboard */
     int rc = VERR_NOT_SUPPORTED;
     PasteboardItemID itemID;
     if (!(err = PasteboardGetItemIdentifier (pPasteboard, 1, &itemID)))
@@ -100,13 +116,25 @@ int queryPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats)
         }
     }
 
-    Log (("queryPasteboardFormats: rc = %02X\n", rc));
+    Log (("queryNewPasteboardFormats: rc = %02X\n", rc));
     return rc;
 }
 
+/**
+ * Read content from the host clipboard and write it to the internal clipboard
+ * structure for further processing.
+ * 
+ * @param   pPasteboardRef Reference to the global pasteboard.
+ * @param   fFormats       The format type which should be read.
+ * @param   pv             The destination buffer.
+ * @param   cb             The size of the destination buffer.
+ * @param   pcbActual      The size which is needed to transfer the content.
+ *
+ * @returns IPRT status code.
+ */
 int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcbActual)
 {
-    Log (("readFromPastboard: fFormat = %02X\n", fFormat));
+    Log (("readFromPasteboard: fFormat = %02X\n", fFormat));
 
     OSStatus err = noErr;
 
@@ -119,7 +147,7 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
     if (itemCount < 1)
         return VINF_SUCCESS;
 
-    /* The id of the first element in the pastboard */
+    /* The id of the first element in the pasteboard */
     int rc = VERR_NOT_SUPPORTED;
     PasteboardItemID itemID;
     if (!(err = PasteboardGetItemIdentifier (pPasteboard, 1, &itemID)))
@@ -143,7 +171,7 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
 #endif
                 if (!(err = PasteboardCopyItemFlavorData (pPasteboard, itemID, CFSTR ("public.utf8-plain-text"), &outData)))
                 {
-                    Log (("readFromPastboard: clipboard content is utf-8\n"));
+                    Log (("readFromPasteboard: clipboard content is utf-8\n"));
                     rc = RTStrToUtf16 ((const char*)CFDataGetBytePtr (outData), &pwszTmp);
                 }
             if (pwszTmp)
@@ -155,7 +183,7 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
                 if (RT_FAILURE (rc))
                 {
                     RTUtf16Free (pwszTmp);
-                    Log (("readFromPastboard: clipboard conversion failed.  vboxClipboardUtf16GetWinSize returned %Vrc.  Abandoning.\n", rc));
+                    Log (("readFromPasteboard: clipboard conversion failed.  vboxClipboardUtf16GetWinSize returned %Vrc.  Abandoning.\n", rc));
                     AssertRCReturn (rc, rc);
                 }
                 /* Set the actually needed data size */
@@ -169,11 +197,11 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
                     if (RT_FAILURE (rc))
                     {
                         RTUtf16Free (pwszTmp);
-                        Log (("readFromPastboard: clipboard conversion failed.  vboxClipboardUtf16LinToWin() returned %Vrc.  Abandoning.\n", rc));
+                        Log (("readFromPasteboard: clipboard conversion failed.  vboxClipboardUtf16LinToWin() returned %Vrc.  Abandoning.\n", rc));
                         AssertRCReturn (rc, rc);
                     }
 #ifdef SHOW_CLIPBOARD_CONTENT
-                    Log (("readFromPastboard: clipboard content: %ls\n", static_cast <PRTUTF16> (pv)));
+                    Log (("readFromPasteboard: clipboard content: %ls\n", static_cast <PRTUTF16> (pv)));
 #endif
                 }
                 /* Free the temp string */
@@ -182,15 +210,26 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
         }
     }
 
-    Log (("readFromPastboard: rc = %02X\n", rc));
+    Log (("readFromPasteboard: rc = %02X\n", rc));
     return rc;
 }
 
+/**
+ * Write clipboard content to the host clipboard from the internal clipboard
+ * structure.
+ * 
+ * @param   pPasteboardRef Reference to the global pasteboard.
+ * @param   pv             The source buffer.
+ * @param   cb             The size of the source buffer.
+ * @param   fFormats       The format type which should be written.
+ *
+ * @returns IPRT status code.
+ */
 int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t fFormat)
 {
     Log (("writeToPasteboard: fFormat = %02X\n", fFormat));
 
-    /* Clear the pastboard */
+    /* Clear the pasteboard */
     if (PasteboardClear (pPasteboard))
         return VERR_NOT_SUPPORTED;
 
@@ -252,7 +291,7 @@ int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_
         {
             /* Create a CData object which we could pass to the pasteboard */
             if ((textData = CFDataCreate (kCFAllocatorDefault,
-                                          reinterpret_cast<UInt8*> (pszDestText), RTUtf16CalcUtf8Len (pwszDestText)))) /** @todo r=bird: why not strlen(pszDestText)? */
+                                          reinterpret_cast<UInt8*> (pszDestText), strlen(pszDestText))))
             {
                 /* Put the Utf-8 version to the pasteboard */
                 PasteboardPutItemFlavor (pPasteboard, itemId,
