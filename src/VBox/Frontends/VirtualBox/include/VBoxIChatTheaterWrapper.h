@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Common innotek classes: iChat Theater cocoa wrapper
+ * Qt GUI - iChat Theater cocoa wrapper.
  */
 
 /*
@@ -17,14 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxIChatTheaterWrapper_h_
-#define __VBoxIChatTheaterWrapper_h_
+#ifndef ___VBoxIChatTheaterWrapper_h
+#define ___VBoxIChatTheaterWrapper_h
 
-#if defined(Q_WS_MAC) && defined(VBOX_WITH_ICHAT_THEATER)
+#if defined (Q_WS_MAC) && defined (VBOX_WITH_ICHAT_THEATER)
 
 #include <Carbon/Carbon.h>
 
-__BEGIN_DECLS 
+__BEGIN_DECLS
 
 void initSharedAVManager();
 void setImageRef (CGImageRef aImage);
