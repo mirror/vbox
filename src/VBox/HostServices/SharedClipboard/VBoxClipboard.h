@@ -34,35 +34,35 @@ typedef struct _VBOXCLIPBOARDCLIENTDATA
 {
     struct _VBOXCLIPBOARDCLIENTDATA *pNext;
     struct _VBOXCLIPBOARDCLIENTDATA *pPrev;
-    
+
     VBOXCLIPBOARDCONTEXT *pCtx;
-    
+
     uint32_t u32ClientID;
-    
+
     bool fAsync: 1; /* Guest is waiting for a message. */
-    
+
     bool fMsgQuit: 1;
     bool fMsgReadData: 1;
     bool fMsgFormats: 1;
-    
+
     struct {
         VBOXHGCMCALLHANDLE callHandle;
         VBOXHGCMSVCPARM *paParms;
     } async;
-    
+
     struct {
          void *pv;
          uint32_t cb;
          uint32_t u32Format;
     } data;
-    
+
     uint32_t u32AvailableFormats;
     uint32_t u32RequestedFormat;
-    
+
 } VBOXCLIPBOARDCLIENTDATA;
 
 /*
- * The service functions. Locking is between the service thread and the platform dependedn windows thread.
+ * The service functions. Locking is between the service thread and the platform dependent windows thread.
  */
 bool vboxSvcClipboardLock (void);
 void vboxSvcClipboardUnlock (void);
