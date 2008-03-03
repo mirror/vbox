@@ -354,7 +354,7 @@ void VBoxVMLogViewer::init()
     topLevelWidget()->installEventFilter (this);
 
     /* setup a dialog icon */
-    setIcon (qPixmapFromMimeSource ("show_logs_16px.png"));
+    setIcon (QPixmap (":/show_logs_16px.png"));
 
     /* statusbar initially disabled */
     statusBar()->setHidden (true);

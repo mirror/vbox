@@ -30,7 +30,7 @@
 
 void VBoxSnapshotDetailsDlg::init()
 {
-    setIcon (qPixmapFromMimeSource ("settings_16px.png"));
+    setIcon (QPixmap (":/settings_16px.png"));
 
     txeSummary->setPaper (this->backgroundBrush());
     txeSummary->setLinkUnderline (false);

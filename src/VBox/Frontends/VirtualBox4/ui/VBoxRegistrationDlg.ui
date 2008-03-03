@@ -31,7 +31,7 @@
         <string>VirtualBox Registration Dialog</string>
     </property>
     <property name="icon">
-        <pixmap>register_16px.png</pixmap>
+        <pixmap>:/register_16px.png</pixmap>
     </property>
     <property name="titleFont">
         <font>
@@ -70,7 +70,7 @@
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_user.png</pixmap>
+                    <pixmap>:/vmw_new_user.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>

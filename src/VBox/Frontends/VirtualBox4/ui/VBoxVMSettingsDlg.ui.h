@@ -489,7 +489,7 @@ void VBoxVMSettingsDlg::init()
     connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
              this, SLOT (onMediaEnumerationDone()));
 
-    setIcon (qPixmapFromMimeSource ("settings_16px.png"));
+    setIcon (QPixmap (":/settings_16px.png"));
 
     /* all pages are initially valid */
     valid = true;

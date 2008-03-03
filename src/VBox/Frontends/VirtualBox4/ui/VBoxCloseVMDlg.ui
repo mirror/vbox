@@ -70,7 +70,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                                 </sizepolicy>
                             </property>
                             <property name="pixmap">
-                                <pixmap>os_other.png</pixmap>
+                                <pixmap>:/os_other.png</pixmap>
                             </property>
                             <property name="scaledContents">
                                 <bool>false</bool>
@@ -128,7 +128,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                                 <string></string>
                             </property>
                             <property name="pixmap">
-                                <pixmap>state_saved_16px.png</pixmap>
+                                <pixmap>:/state_saved_16px.png</pixmap>
                             </property>
                             <property name="buddy" stdset="0">
                                 <cstring>rbSave</cstring>
@@ -163,7 +163,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                                 <string></string>
                             </property>
                             <property name="pixmap">
-                                <pixmap>acpi_16px.png</pixmap>
+                                <pixmap>:/acpi_16px.png</pixmap>
                             </property>
                             <property name="buddy" stdset="0">
                                 <cstring>rbShutdown</cstring>
@@ -198,7 +198,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                                 <string></string>
                             </property>
                             <property name="pixmap">
-                                <pixmap>poweroff_16px.png</pixmap>
+                                <pixmap>:/poweroff_16px.png</pixmap>
                             </property>
                             <property name="buddy" stdset="0">
                                 <cstring>rbPowerOff</cstring>

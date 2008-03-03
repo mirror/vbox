@@ -71,7 +71,7 @@
                                 </sizepolicy>
                             </property>
                             <property name="pixmap">
-                                <pixmap>os_other.png</pixmap>
+                                <pixmap>:/os_other.png</pixmap>
                             </property>
                             <property name="scaledContents">
                                 <bool>false</bool>

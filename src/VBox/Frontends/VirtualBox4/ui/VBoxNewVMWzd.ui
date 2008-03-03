@@ -64,7 +64,7 @@
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_welcome.png</pixmap>
+                    <pixmap>:/vmw_new_welcome.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>
@@ -165,7 +165,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_welcome.png</pixmap>
+                    <pixmap>:/vmw_new_welcome.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>
@@ -340,7 +340,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
                                     <number>1</number>
                                 </property>
                                 <property name="pixmap">
-                                    <pixmap>os_other.png</pixmap>
+                                    <pixmap>:/os_other.png</pixmap>
                                 </property>
                                 <property name="scaledContents">
                                     <bool>false</bool>
@@ -399,7 +399,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_welcome.png</pixmap>
+                    <pixmap>:/vmw_new_welcome.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>
@@ -718,7 +718,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_welcome.png</pixmap>
+                    <pixmap>:/vmw_new_welcome.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>
@@ -889,7 +889,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_welcome.png</pixmap>
+                    <pixmap>:/vmw_new_welcome.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>

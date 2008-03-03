@@ -567,7 +567,7 @@ public:
         , mLicenseText (0), mAgreeButton (0), mDisagreeButton (0)
     {
         setCaption ("VirtualBox License");
-        setIcon (qPixmapFromMimeSource ("ico40x01.png"));
+        setIcon (QPixmap (":/ico40x01.png"));
 
         mLicenseText = new Q3TextBrowser (this);
         mAgreeButton = new QPushButton (tr ("I &Agree"), this);
@@ -1295,19 +1295,19 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                                    bool withLinks, bool aDoRefresh)
 {
     static const char *sTableTpl =
-        "<table border=0 cellspacing=0 cellpadding=0 width=100%>%1</table>";
+        "<table border=0 cellspacing=0 cellpadding=0>%1</table>";
     static const char *sSectionHrefTpl =
         "<tr><td rowspan=%1 align=left><img src='%2'></td>"
-            "<td width=100% colspan=2><b><a href='%3'><nobr>%4</nobr></a></b></td></tr>"
+            "<td colspan=2><b><a href='%3'><nobr>%4</nobr></a></b></td></tr>"
             "%5"
-        "<tr><td width=100% colspan=2><font size=1>&nbsp;</font></td></tr>";
+        "<tr><td colspan=2><font size=1>&nbsp;</font></td></tr>";
     static const char *sSectionBoldTpl =
         "<tr><td rowspan=%1 align=left><img src='%2'></td>"
-            "<td width=100% colspan=2><!-- %3 --><b><nobr>%4</nobr></b></td></tr>"
+            "<td colspan=2><!-- %3 --><b><nobr>%4</nobr></b></td></tr>"
             "%5"
-        "<tr><td width=100% colspan=2><font size=1>&nbsp;</font></td></tr>";
+        "<tr><td colspan=2><font size=1>&nbsp;</font></td></tr>";
     static const char *sSectionItemTpl =
-        "<tr><td width=30%><nobr>%1</nobr></td><td width=70%>%2</td></tr>";
+        "<tr><td width=30%><nobr>%1</nobr></td><td>%2</td></tr>";
 
     static QString sGeneralBasicHrefTpl, sGeneralBasicBoldTpl;
     static QString sGeneralFullHrefTpl, sGeneralFullBoldTpl;
@@ -1325,13 +1325,13 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                                              tr ("<nobr>%3 MB</nobr>", "details report"));
         sGeneralBasicHrefTpl = QString (sSectionHrefTpl)
                 .arg (2 + 3) /* rows */
-                .arg ("machine_16px.png", /* icon */
+                .arg (":/machine_16px.png", /* icon */
                       "#general", /* link */
                       tr ("General", "details report"), /* title */
                       generalItems); /* items */
         sGeneralBasicBoldTpl = QString (sSectionBoldTpl)
                 .arg (2 + 3) /* rows */
-                .arg ("machine_16px.png", /* icon */
+                .arg (":/machine_16px.png", /* icon */
                       "#general", /* link */
                       tr ("General", "details report"), /* title */
                       generalItems); /* items */
@@ -1346,13 +1346,13 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
         sGeneralFullHrefTpl = QString (sSectionHrefTpl)
             .arg (2 + 8) /* rows */
-            .arg ("machine_16px.png", /* icon */
+            .arg (":/machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
                   generalItems); /* items */
         sGeneralFullBoldTpl = QString (sSectionBoldTpl)
             .arg (2 + 8) /* rows */
-            .arg ("machine_16px.png", /* icon */
+            .arg (":/machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
                   generalItems); /* items */
@@ -1403,7 +1403,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
         hardDisks = sectionTpl
             .arg (rows) /* rows */
-            .arg ("hd_16px.png", /* icon */
+            .arg (":/hd_16px.png", /* icon */
                   "#hdds", /* link */
                   tr ("Hard Disks", "details report"), /* title */
                   hardDisks); /* items */
@@ -1515,7 +1515,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         }
         detailsReport += sectionTpl
             .arg (2 + 1) /* rows */
-            .arg ("cd_16px.png", /* icon */
+            .arg (":/cd_16px.png", /* icon */
                   "#dvd", /* link */
                   tr ("CD/DVD-ROM", "details report"), /* title */
                   item); // items
@@ -1552,7 +1552,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         }
         detailsReport += sectionTpl
             .arg (2 + 1) /* rows */
-            .arg ("fd_16px.png", /* icon */
+            .arg (":/fd_16px.png", /* icon */
                   "#floppy", /* link */
                   tr ("Floppy", "details report"), /* title */
                   item); /* items */
@@ -1574,7 +1574,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
             detailsReport += sectionTpl
                 .arg (rows + 1) /* rows */
-                .arg ("sound_16px.png", /* icon */
+                .arg (":/sound_16px.png", /* icon */
                       "#audio", /* link */
                       tr ("Audio", "details report"), /* title */
                       item); /* items */
@@ -1620,7 +1620,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
             detailsReport += sectionTpl
                 .arg (rows) /* rows */
-                .arg ("nw_16px.png", /* icon */
+                .arg (":/nw_16px.png", /* icon */
                       "#network", /* link */
                       tr ("Network", "details report"), /* title */
                       item); /* items */
@@ -1662,7 +1662,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
             detailsReport += sectionTpl
                 .arg (rows) /* rows */
-                .arg ("serial_port_16px.png", /* icon */
+                .arg (":/serial_port_16px.png", /* icon */
                       "#serialPorts", /* link */
                       tr ("Serial Ports", "details report"), /* title */
                       item); /* items */
@@ -1699,7 +1699,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             /* Temporary disabled */
             QString dummy = sectionTpl /* detailsReport += sectionTpl */
                 .arg (rows) /* rows */
-                .arg ("parallel_port_16px.png", /* icon */
+                .arg (":/parallel_port_16px.png", /* icon */
                       "#parallelPorts", /* link */
                       tr ("Parallel Ports", "details report"), /* title */
                       item); /* items */
@@ -1731,7 +1731,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
                 detailsReport += sectionTpl
                     .arg (2 + 1) /* rows */
-                    .arg ("usb_16px.png", /* icon */
+                    .arg (":/usb_16px.png", /* icon */
                           "#usb", /* link */
                           tr ("USB", "details report"), /* title */
                           item); /* items */
@@ -1753,7 +1753,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
             detailsReport += sectionTpl
                 .arg (2 + 1) /* rows */
-                .arg ("shared_folder_16px.png", /* icon */
+                .arg (":/shared_folder_16px.png", /* icon */
                       "#sfolders", /* link */
                       tr ("Shared Folders", "details report"), /* title */
                       item); /* items */
@@ -1776,7 +1776,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
                 detailsReport += sectionTpl
                     .arg (2 + 1) /* rows */
-                    .arg ("vrdp_16px.png", /* icon */
+                    .arg (":/vrdp_16px.png", /* icon */
                           "#vrdp", /* link */
                           tr ("Remote Display", "details report"), /* title */
                           item); /* items */
@@ -2546,52 +2546,47 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
 }
 
 /* static */
-QIcon VBoxGlobal::iconSet (const char *aNormal,
-                              const char *aDisabled /* = 0 */,
-                              const char *aActive /* = 0 */)
+QIcon VBoxGlobal::iconSet (const QString &aNormal,
+                           const QString &aDisabled,
+                           const QString &aActive)
 {
-    Assert (aNormal);
-
     QIcon iconSet;
 
-    iconSet.setPixmap (qPixmapFromMimeSource (aNormal),
+    iconSet.setPixmap (QPixmap (":/" + aNormal),
                        QIcon::Automatic, QIcon::Normal);
-    if (aDisabled)
-        iconSet.setPixmap (qPixmapFromMimeSource (aDisabled),
+    if (!aDisabled.isEmpty())
+        iconSet.setPixmap (QPixmap (":/" + aDisabled),
                            QIcon::Automatic, QIcon::Disabled);
-    if (aActive)
-        iconSet.setPixmap (qPixmapFromMimeSource (aActive),
+    if (!aActive.isEmpty())
+        iconSet.setPixmap (QPixmap (":/" + aActive),
                            QIcon::Automatic, QIcon::Active);
     return iconSet;
 }
 
 /* static */
 QIcon VBoxGlobal::
-iconSetEx (const char *aNormal, const char *aSmallNormal,
-           const char *aDisabled /* = 0 */, const char *aSmallDisabled /* = 0 */,
-           const char *aActive /* = 0 */, const char *aSmallActive /* = 0 */)
+iconSetEx (const QString &aNormal, const QString &aSmallNormal,
+           const QString &aDisabled, const QString &aSmallDisabled,
+           const QString &aActive, const QString &aSmallActive)
 {
-    Assert (aNormal);
-    Assert (aSmallNormal);
-
     QIcon iconSet;
 
-    iconSet.setPixmap (qPixmapFromMimeSource (aNormal),
+    iconSet.setPixmap (QPixmap (":/" + aNormal),
                        QIcon::Large, QIcon::Normal);
-    iconSet.setPixmap (qPixmapFromMimeSource (aSmallNormal),
+    iconSet.setPixmap (QPixmap (":/" + aSmallNormal),
                        QIcon::Small, QIcon::Normal);
-    if (aSmallDisabled)
+    if (!aSmallDisabled.isEmpty())
     {
-        iconSet.setPixmap (qPixmapFromMimeSource (aDisabled),
+        iconSet.setPixmap (QPixmap (":/" + aDisabled),
                            QIcon::Large, QIcon::Disabled);
-        iconSet.setPixmap (qPixmapFromMimeSource (aSmallDisabled),
+        iconSet.setPixmap (QPixmap (":/" + aSmallDisabled),
                            QIcon::Small, QIcon::Disabled);
     }
-    if (aSmallActive)
+    if (!aSmallActive.isEmpty())
     {
-        iconSet.setPixmap (qPixmapFromMimeSource (aActive),
+        iconSet.setPixmap (QPixmap (":/" + aActive),
                            QIcon::Large, QIcon::Active);
-        iconSet.setPixmap (qPixmapFromMimeSource (aSmallActive),
+        iconSet.setPixmap (QPixmap (":/" + aSmallActive),
                            QIcon::Small, QIcon::Active);
     }
 
@@ -3824,35 +3819,35 @@ void VBoxGlobal::init()
     /* fill in OS type icon dictionary */
     static const char *osTypeIcons[][2] =
     {
-        {"unknown", "os_other.png"},
-        {"dos", "os_dos.png"},
-        {"win31", "os_win31.png"},
-        {"win95", "os_win95.png"},
-        {"win98", "os_win98.png"},
-        {"winme", "os_winme.png"},
-        {"winnt4", "os_winnt.png"},
-        {"win2k", "os_win2000.png"},
-        {"winxp", "os_winxp.png"},
-        {"win2k3", "os_win2003.png"},
-        {"winvista", "os_winvista.png"},
-        {"os2warp3", "os_os2.png"},
-        {"os2warp4", "os_os2.png"},
-        {"os2warp45", "os_os2.png"},
-        {"linux22", "os_linux.png"},
-        {"linux24", "os_linux.png"},
-        {"linux26", "os_linux.png"},
-        {"freebsd", "os_freebsd.png"},
-        {"openbsd", "os_openbsd.png"},
-        {"netbsd", "os_netbsd.png"},
-        {"netware", "os_netware.png"},
-        {"solaris", "os_solaris.png"},
-        {"l4", "os_l4.png"},
+        {"unknown", ":/os_other.png"},
+        {"dos", ":/os_dos.png"},
+        {"win31", ":/os_win31.png"},
+        {"win95", ":/os_win95.png"},
+        {"win98", ":/os_win98.png"},
+        {"winme", ":/os_winme.png"},
+        {"winnt4", ":/os_winnt.png"},
+        {"win2k", ":/os_win2000.png"},
+        {"winxp", ":/os_winxp.png"},
+        {"win2k3", ":/os_win2003.png"},
+        {"winvista", ":/os_winvista.png"},
+        {"os2warp3", ":/os_os2.png"},
+        {"os2warp4", ":/os_os2.png"},
+        {"os2warp45", ":/os_os2.png"},
+        {"linux22", ":/os_linux.png"},
+        {"linux24", ":/os_linux.png"},
+        {"linux26", ":/os_linux.png"},
+        {"freebsd", ":/os_freebsd.png"},
+        {"openbsd", ":/os_openbsd.png"},
+        {"netbsd", ":/os_netbsd.png"},
+        {"netware", ":/os_netware.png"},
+        {"solaris", ":/os_solaris.png"},
+        {"l4", ":/os_l4.png"},
     };
     vm_os_type_icons.setAutoDelete (true); /* takes ownership of elements */
     for (uint n = 0; n < SIZEOF_ARRAY (osTypeIcons); n ++)
     {
         vm_os_type_icons.insert (osTypeIcons [n][0],
-            new QPixmap (qPixmapFromMimeSource (osTypeIcons [n][1])));
+            new QPixmap (osTypeIcons [n][1]));
     }
 
     /* fill in VM state icon dictionary */
@@ -3864,28 +3859,28 @@ void VBoxGlobal::init()
     vmStateIcons[] =
     {
         {KMachineState_Null, NULL},
-        {KMachineState_PoweredOff, "state_powered_off_16px.png"},
-        {KMachineState_Saved, "state_saved_16px.png"},
-        {KMachineState_Aborted, "state_aborted_16px.png"},
-        {KMachineState_Running, "state_running_16px.png"},
-        {KMachineState_Paused, "state_paused_16px.png"},
-        {KMachineState_Stuck, "state_stuck_16px.png"},
-        {KMachineState_Starting, "state_running_16px.png"}, /// @todo (dmik) separate icon?
-        {KMachineState_Stopping, "state_running_16px.png"}, /// @todo (dmik) separate icon?
-        {KMachineState_Saving, "state_saving_16px.png"},
-        {KMachineState_Restoring, "state_restoring_16px.png"},
-        {KMachineState_Discarding, "state_discarding_16px.png"},
+        {KMachineState_PoweredOff, ":/state_powered_off_16px.png"},
+        {KMachineState_Saved, ":/state_saved_16px.png"},
+        {KMachineState_Aborted, ":/state_aborted_16px.png"},
+        {KMachineState_Running, ":/state_running_16px.png"},
+        {KMachineState_Paused, ":/state_paused_16px.png"},
+        {KMachineState_Stuck, ":/state_stuck_16px.png"},
+        {KMachineState_Starting, ":/state_running_16px.png"}, /// @todo (dmik) separate icon?
+        {KMachineState_Stopping, ":/state_running_16px.png"}, /// @todo (dmik) separate icon?
+        {KMachineState_Saving, ":/state_saving_16px.png"},
+        {KMachineState_Restoring, ":/state_restoring_16px.png"},
+        {KMachineState_Discarding, ":/state_discarding_16px.png"},
     };
     mStateIcons.setAutoDelete (true); // takes ownership of elements
     for (uint n = 0; n < SIZEOF_ARRAY (vmStateIcons); n ++)
     {
         mStateIcons.insert (vmStateIcons [n].state,
-            new QPixmap (qPixmapFromMimeSource (vmStateIcons [n].name)));
+            new QPixmap (vmStateIcons [n].name));
     }
 
     /* online/offline snapshot icons */
-    mOfflineSnapshotIcon = qPixmapFromMimeSource ("offline_snapshot_16px.png");
-    mOnlineSnapshotIcon = qPixmapFromMimeSource ("online_snapshot_16px.png");
+    mOfflineSnapshotIcon = QPixmap (":/offline_snapshot_16px.png");
+    mOnlineSnapshotIcon = QPixmap (":/online_snapshot_16px.png");
 
     /* initialize state colors vector */
     vm_state_color.setAutoDelete (true); /* takes ownership of elements */

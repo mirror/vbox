@@ -251,7 +251,7 @@ void VBoxDiskImageManagerDlg::init()
     vbox = vboxGlobal().virtualBox();
     Assert (!vbox.isNull());
 
-    setIcon (qPixmapFromMimeSource ("diskim_16px.png"));
+    setIcon (QPixmap (":/diskim_16px.png"));
 
     type = VBoxDefs::InvalidType;
 

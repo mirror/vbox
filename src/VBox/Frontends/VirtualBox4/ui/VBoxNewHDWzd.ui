@@ -66,7 +66,7 @@
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_harddisk.png</pixmap>
+                    <pixmap>:/vmw_new_harddisk.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>
@@ -169,7 +169,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_harddisk.png</pixmap>
+                    <pixmap>:/vmw_new_harddisk.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>
@@ -294,7 +294,7 @@ time depending on the image size and the write performance of your harddisk.&lt;
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_harddisk.png</pixmap>
+                    <pixmap>:/vmw_new_harddisk.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>
@@ -364,7 +364,7 @@ to store the virtual hard disk image or type a file name in the entry field.&lt;
                                     <string></string>
                                 </property>
                                 <property name="iconSet">
-                                    <iconset>select_file_16px.png</iconset>
+                                    <iconset>:/select_file_16px.png</iconset>
                                 </property>
                                 <property name="textLabel">
                                     <string>Select</string>
@@ -589,7 +589,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</string>
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_harddisk.png</pixmap>
+                    <pixmap>:/vmw_new_harddisk.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>

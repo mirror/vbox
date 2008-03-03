@@ -75,7 +75,7 @@ CGImageRef DarwinQImageToCGImage (const QImage *aImage)
  */
 CGImageRef DarwinQImageFromMimeSourceToCGImage (const char *aSource)
 {
-    QImage qim = QImage::fromMimeSource (aSource);
+    QImage qim = QImage::fromMimeSource (QString(":/") + aSource);
     Assert (!qim.isNull());
     return DarwinQImageToCGImage (&qim);
 }
@@ -101,7 +101,7 @@ CGImageRef DarwinQPixmapToCGImage (const QPixmap *aPixmap)
  */
 CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource)
 {
-    QPixmap qpm = QPixmap::fromMimeSource (aSource);
+    QPixmap qpm = QPixmap::fromMimeSource (QString(":/" + aSource);
     Assert (!qpm.isNull());
     return DarwinQPixmapToCGImage (&qpm);
 }

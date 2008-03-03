@@ -477,8 +477,8 @@ int VBoxVMListBoxItem::width (const Q3ListBox *) const
     else
     {
         /// @todo (r=dmik) temporary
-        pmOSType = qPixmapFromMimeSource ("os_other.png");
-        pmState = qPixmapFromMimeSource ("state_aborted_16px.png");
+        pmOSType = QPixmap (":/os_other.png");
+        pmState = QPixmap (":/state_aborted_16px.png");
         strState = VBoxVMListBox::tr ("Inaccessible");
     }
 
@@ -513,8 +513,8 @@ int VBoxVMListBoxItem::height (const Q3ListBox *) const
     else
     {
         /// @todo (r=dmik) temporary
-        pmOSType = qPixmapFromMimeSource ("os_other.png");
-        pmState = qPixmapFromMimeSource ("state_aborted_16px.png");
+        pmOSType = QPixmap (":/os_other.png");
+        pmState = QPixmap (":/state_aborted_16px.png");
     }
 
     int strHeight = fmName.lineSpacing() +
@@ -695,8 +695,8 @@ void VBoxVMListBoxItem::paint (QPainter *aP)
     else
     {
         /// @todo (r=dmik) temporary
-        pmOSType = qPixmapFromMimeSource ("os_other.png");
-        pmState = qPixmapFromMimeSource ("state_aborted_16px.png");
+        pmOSType = QPixmap (":/os_other.png");
+        pmState = QPixmap (":/state_aborted_16px.png");
         strState = VBoxVMListBox::tr ("Inaccessible");
     }
 
