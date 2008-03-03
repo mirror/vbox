@@ -290,7 +290,7 @@ void VBoxSnapshotsWgt::init()
     new QIListViewSelectionPreserver (this, listView);
 
     /* toolbar */
-    VBoxToolBar *toolBar = new VBoxToolBar (0, this, "snapshotToolBar");
+    VBoxToolBar *toolBar = new VBoxToolBar (0, this);
 
     curStateActionGroup->addTo (toolBar);
     toolBar->addSeparator();

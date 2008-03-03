@@ -24,7 +24,7 @@
 #include "VBoxGlobal.h"
 
 #include <qapplication.h>
-#include <q3mainwindow.h>
+#include <QMainWindow>
 #include <q3listbox.h>
 #include <q3groupbox.h>
 #include <qaction.h>
@@ -46,7 +46,7 @@ class Q3TextBrowser;
 class QTabWidget;
 struct QUuid;
 
-class VBoxSelectorWnd : public Q3MainWindow
+class VBoxSelectorWnd : public QMainWindow
 {
     Q_OBJECT
 

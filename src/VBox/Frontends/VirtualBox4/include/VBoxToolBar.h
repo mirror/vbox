@@ -19,11 +19,10 @@
 #ifndef __VBoxToolBar_h__
 #define __VBoxToolBar_h__
 
-#include <q3toolbar.h>
-#include <qtoolbutton.h>
-#include <q3mainwindow.h>
-#include <qobject.h>
-//Added by qt3to4:
+/* Qt includes */
+#include <QToolBar>
+#include <QToolButton>
+#include <QMainWindow>
 #include <QContextMenuEvent>
 #ifdef Q_WS_MAC
 # include "VBoxAquaStyle.h"
@@ -33,15 +32,16 @@
  *  The VBoxToolBar class is a simple QToolBar reimplementation to disable
  *  its built-in context menu and add some default behavior we need.
  */
-class VBoxToolBar : public Q3ToolBar
+class VBoxToolBar : public QToolBar
 {
 public:
 
-    VBoxToolBar (Q3MainWindow *mainWindow, QWidget *parent, const char *name)
-        : Q3ToolBar (QString::null, mainWindow, parent, FALSE, name)
+    VBoxToolBar (QMainWindow *aMainWindow, QWidget *aParent)
+        : QToolBar (aParent),
+          mMainWindow (aMainWindow)
     {
-        setResizeEnabled (false);
-        setMovingEnabled (false);
+        setFloatable (false);
+        setMovable (false);
     };
 
     /** Reimplements and does nothing to disable the context menu */
@@ -53,40 +53,27 @@ public:
      */
     void setUsesBigPixmaps (bool enable)
     {
-        if (mainWindow())
-            mainWindow()->setUsesBigPixmaps (enable);
+        QSize bigSize(32, 32);
+
+        if (mMainWindow)
+            mMainWindow->setIconSize (bigSize);
         else
-        {
-            QObjectList list = queryList ("QToolButton");
-            QObject *obj;
-            foreach(obj, list)
-            {
-                QToolButton *btn = qobject_cast<QToolButton *> (obj);
-                btn->setUsesBigPixmap (enable);
-            }
-        }
+            setIconSize (bigSize);
     }
 
     void setUsesTextLabel (bool enable)
     {
-        if (mainWindow())
-            mainWindow()->setUsesTextLabel (enable);
+        if (mMainWindow)
+            mMainWindow->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
         else
-        {
-            QObjectList list = queryList ("QToolButton");
-            QObject *obj;
-            foreach(obj, list)
-            {
-                QToolButton *btn = qobject_cast<QToolButton *> (obj);
-                btn->setUsesTextLabel (enable);
-            }
-        }
+            setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
     }
 
 #ifdef Q_WS_MAC
     /** 
      * This is a temporary hack, we'll set the style globally later. 
      */
+#warning port me
     void setMacStyle() 
     {
         /* self */
@@ -108,6 +95,8 @@ public:
         /** @todo the separator */
     }
 #endif 
+private:
+    QMainWindow *mMainWindow;
 };
 
 #endif // __VBoxToolBar_h__
