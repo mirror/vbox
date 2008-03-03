@@ -53,10 +53,11 @@ static int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
         return VINF_SUCCESS;
 
     uint32_t fFormats = 0;
+    bool bChanged = false;
     /* Retrieve the formats currently in the clipboard and supported by vbox */
-    int rc = queryNewPasteboardFormats (pCtx->pasteboard, &fFormats);
+    int rc = queryNewPasteboardFormats (pCtx->pasteboard, &fFormats, &bChanged);
 
-    if (fFormats > 0)
+    if (bChanged)
     {
         vboxSvcClipboardReportMsg (pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, fFormats);
         Log (("vboxClipboardChanged fFormats %02X\n", fFormats));
