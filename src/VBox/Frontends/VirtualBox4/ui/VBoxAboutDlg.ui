@@ -53,7 +53,7 @@
                 </size>
             </property>
             <property name="paletteBackgroundPixmap">
-                <pixmap>about.png</pixmap>
+                <pixmap>:/about.png</pixmap>
             </property>
             <property name="backgroundOrigin">
                 <enum>WidgetOrigin</enum>
@@ -67,7 +67,7 @@
                 <cstring>frame3</cstring>
             </property>
             <property name="paletteBackgroundPixmap">
-                <pixmap>about_tile.png</pixmap>
+                <pixmap>:/about_tile.png</pixmap>
             </property>
             <property name="frameShape">
                 <enum>NoFrame</enum>

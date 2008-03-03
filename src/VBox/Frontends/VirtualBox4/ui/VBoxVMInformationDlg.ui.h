@@ -68,7 +68,7 @@ void VBoxVMInformationDlg::init()
     qApp->installEventFilter (this);
 
     /* setup a dialog icon */
-    setIcon (qPixmapFromMimeSource ("description_16px.png"));
+    setIcon (QPixmap (":/description_16px.png"));
 
     /* statusbar initially disabled */
     statusBar()->setHidden (true);

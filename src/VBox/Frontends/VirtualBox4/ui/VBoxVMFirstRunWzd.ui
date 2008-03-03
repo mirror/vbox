@@ -67,7 +67,7 @@
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_harddisk.png</pixmap>
+                    <pixmap>:/vmw_new_harddisk.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>
@@ -187,7 +187,7 @@
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_harddisk.png</pixmap>
+                    <pixmap>:/vmw_new_harddisk.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>
@@ -498,7 +498,7 @@
                     </sizepolicy>
                 </property>
                 <property name="pixmap">
-                    <pixmap>vmw_new_harddisk.png</pixmap>
+                    <pixmap>:/vmw_new_harddisk.png</pixmap>
                 </property>
                 <property name="alignment">
                     <set>AlignTop</set>

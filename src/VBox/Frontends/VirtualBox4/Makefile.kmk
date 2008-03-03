@@ -22,8 +22,6 @@ include VBoxUI.pro
 VirtualBox_QT_UISRCS := $(FORMS)
 # Import translation sources
 VirtualBox_QT_TRANSLATIONS := $(TRANSLATIONS)
-# Import images
-VirtualBox_QT_IMAGES := $(IMAGES)
 
 # reset things to avoid possible conflicts with kBuild
 TEMPLATE :=
@@ -54,14 +52,18 @@ VBOX_LIBPATH_QT4    = $(VBOX_MODULE_QT4)/lib
 
 # Warn about all what you know about porting qt3->qt4.
 # Disable this if you like to see something on your screen.
-VBOX_DEFS_QT4 += QT3_SUPPORT_WARNINGS 
+#VBOX_DEFS_QT4 += QT3_SUPPORT_WARNINGS 
 # Some default defs
 VBOX_DEFS_QT4 += QT3_SUPPORT QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
 
 VBOX_UIC4      := $(VBOX_PATH_QT4)/bin/uic3
-VBOX_MOC4      := $(VBOX_PATH_QT4)/bin/moc-qt4
-VBOX_LUPDATE4  := $(VBOX_PATH_QT4)/bin/lupdate-qt4
-VBOX_LRELEASE4 := $(VBOX_PATH_QT4)/bin/lrelease-qt4
+VBOX_MOC4      := $(VBOX_PATH_QT4)/bin/moc
+VBOX_RCC4      := $(VBOX_PATH_QT4)/bin/rcc
+VBOX_LUPDATE4  := $(VBOX_PATH_QT4)/bin/lupdate
+VBOX_LRELEASE4 := $(VBOX_PATH_QT4)/bin/lrelease
+#VBOX_MOC4      := $(VBOX_PATH_QT4)/bin/moc-qt4
+#VBOX_LUPDATE4  := $(VBOX_PATH_QT4)/bin/lupdate-qt4
+#VBOX_LRELEASE4 := $(VBOX_PATH_QT4)/bin/lrelease-qt4
 
 # Template copy from the qt3 stuff. Appended a "4" on the
 # relevant places.
@@ -376,7 +378,7 @@ VirtualBox_QT_MOCUIHDRS = \
 VirtualBox_GENSRCS = \
 	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCHDRS))), $(PATH_VirtualBox)/moc/moc_$(moc).cpp) \
 	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS))), $(PATH_VirtualBox)/ui/$(ui).cpp $(PATH_VirtualBox)/moc/moc_$(ui).cpp) \
-#	$(PATH_VirtualBox)/ui/vbox_image_collection.cpp
+	$(PATH_VirtualBox)/ui/vbox_image_collection.cpp
 
 # All generated headers. Note: this list MUST be in sync with Qt source
 # generation rules defined somewhere below!
@@ -797,19 +799,14 @@ endef
 
 $(foreach src,$(VirtualBox_SOURCES),$(eval $(def_wrapper_deps)))
 
-# static images imported from VBoxUI.pro as VirtualBox_QT_IMAGES
+# grep the images out of the resource file for dependency tracking
+VirtualBox_QT_IMAGES = $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBox.qrc)
 
-#$(PATH_VirtualBox)/ui/vbox_image_collection.txt: VBoxUI.pro $(VirtualBox_QT_IMAGES)
-#	$(RM) -f $@
-#	$(APPEND) -v $@ VirtualBox_QT_IMAGES
-#
-#$(PATH_VirtualBox)/ui/vbox_image_collection.cpp: $(PATH_VirtualBox)/ui/vbox_image_collection.txt
-#	$(call MSG_TOOL,uic,VirtualBox,$<,$@)
-#	$(QUIET)$(VBOX_UIC4) -o $@ -embed VBoxGUI -f $<
-#
-#VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/vbox_image_collection.cpp
-#OTHER_CLEAN += $(PATH_VirtualBox)/ui/vbox_image_collection.txt
+$(PATH_VirtualBox)/ui/vbox_image_collection.cpp: VirtualBox.qrc $(VirtualBox_QT_IMAGES)
+	$(call MSG_TOOL,rcc,VirtualBox,$<,$@)
+	$(QUIET)$(VBOX_RCC4) -o $@  $<
 
+VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/vbox_image_collection.cpp
 
 #
 # Hand made dependencies go here.

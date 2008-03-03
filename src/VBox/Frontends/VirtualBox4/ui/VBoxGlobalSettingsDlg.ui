@@ -93,7 +93,7 @@
                 <string>#general</string>
             </property>
             <property name="pixmap">
-                <pixmap>machine_16px.png</pixmap>
+                <pixmap>:/machine_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>
@@ -113,7 +113,7 @@
                 <string>#input</string>
             </property>
             <property name="pixmap">
-                <pixmap>hostkey_16px.png</pixmap>
+                <pixmap>:/hostkey_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>
@@ -133,7 +133,7 @@
                 <string>#usb</string>
             </property>
             <property name="pixmap">
-                <pixmap>usb_16px.png</pixmap>
+                <pixmap>:/usb_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>
@@ -153,7 +153,7 @@
                 <string>#language</string>
             </property>
             <property name="pixmap">
-                <pixmap>site_16px.png</pixmap>
+                <pixmap>:/site_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>
@@ -309,7 +309,7 @@
                                     <string></string>
                                 </property>
                                 <property name="iconSet">
-                                    <iconset>eraser_16px.png</iconset>
+                                    <iconset>:/eraser_16px.png</iconset>
                                 </property>
                                 <property name="autoRaise">
                                     <bool>true</bool>
@@ -329,7 +329,7 @@
                                     <string></string>
                                 </property>
                                 <property name="iconSet">
-                                    <iconset>eraser_16px.png</iconset>
+                                    <iconset>:/eraser_16px.png</iconset>
                                 </property>
                                 <property name="autoRaise">
                                     <bool>true</bool>
@@ -357,7 +357,7 @@
                                     <string></string>
                                 </property>
                                 <property name="iconSet">
-                                    <iconset>select_file_16px.png</iconset>
+                                    <iconset>:/select_file_16px.png</iconset>
                                 </property>
                                 <property name="textLabel">
                                     <string>Select</string>
@@ -380,7 +380,7 @@
                                     <string></string>
                                 </property>
                                 <property name="iconSet">
-                                    <iconset>select_file_16px.png</iconset>
+                                    <iconset>:/select_file_16px.png</iconset>
                                 </property>
                                 <property name="textLabel">
                                     <string>Select</string>
@@ -427,7 +427,7 @@
                                     <string></string>
                                 </property>
                                 <property name="iconSet">
-                                    <iconset>select_file_16px.png</iconset>
+                                    <iconset>:/select_file_16px.png</iconset>
                                 </property>
                                 <property name="autoRaise">
                                     <bool>true</bool>
@@ -447,7 +447,7 @@
                                     <string></string>
                                 </property>
                                 <property name="iconSet">
-                                    <iconset>eraser_16px.png</iconset>
+                                    <iconset>:/eraser_16px.png</iconset>
                                 </property>
                                 <property name="autoRaise">
                                     <bool>true</bool>

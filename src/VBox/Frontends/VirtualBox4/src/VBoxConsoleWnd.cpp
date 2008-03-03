@@ -155,7 +155,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* default application icon (will change to the VM-specific icon in
      * openView()) */
-    setIcon (qPixmapFromMimeSource ("ico40x01.png"));
+    setIcon (QPixmap (":/ico40x01.png"));
 
     /* ensure status bar is created */
     new QIStatusBar (this, "statusBar");
@@ -418,66 +418,66 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     indicatorBox->setSpacing (5);
     /* i/o devices */
     hd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "hd_light", Qt::WNoAutoErase);
-    hd_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("hd_16px.png"));
-    hd_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("hd_read_16px.png"));
-    hd_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("hd_write_16px.png"));
-    hd_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("hd_disabled_16px.png"));
+    hd_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/hd_16px.png"));
+    hd_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/hd_read_16px.png"));
+    hd_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/hd_write_16px.png"));
+    hd_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/hd_disabled_16px.png"));
     cd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "cd_light", Qt::WNoAutoErase);
-    cd_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("cd_16px.png"));
-    cd_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("cd_read_16px.png"));
-    cd_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("cd_write_16px.png"));
-    cd_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("cd_disabled_16px.png"));
+    cd_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/cd_16px.png"));
+    cd_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/cd_read_16px.png"));
+    cd_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/cd_write_16px.png"));
+    cd_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/cd_disabled_16px.png"));
     fd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "fd_light", Qt::WNoAutoErase);
-    fd_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("fd_16px.png"));
-    fd_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("fd_read_16px.png"));
-    fd_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("fd_write_16px.png"));
-    fd_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("fd_disabled_16px.png"));
+    fd_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/fd_16px.png"));
+    fd_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/fd_read_16px.png"));
+    fd_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/fd_write_16px.png"));
+    fd_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/fd_disabled_16px.png"));
     net_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "net_light", Qt::WNoAutoErase);
-    net_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("nw_16px.png"));
-    net_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("nw_read_16px.png"));
-    net_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("nw_write_16px.png"));
-    net_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("nw_disabled_16px.png"));
+    net_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/nw_16px.png"));
+    net_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/nw_read_16px.png"));
+    net_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/nw_write_16px.png"));
+    net_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/nw_disabled_16px.png"));
     usb_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "usb_light", Qt::WNoAutoErase);
-    usb_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("usb_16px.png"));
-    usb_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("usb_read_16px.png"));
-    usb_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("usb_write_16px.png"));
-    usb_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("usb_disabled_16px.png"));
+    usb_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/usb_16px.png"));
+    usb_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/usb_read_16px.png"));
+    usb_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/usb_write_16px.png"));
+    usb_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/usb_disabled_16px.png"));
     sf_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "sf_light", Qt::WNoAutoErase);
-    sf_light->setStateIcon (KDeviceActivity_Idle, qPixmapFromMimeSource ("shared_folder_16px.png"));
-    sf_light->setStateIcon (KDeviceActivity_Reading, qPixmapFromMimeSource ("shared_folder_read_16px.png"));
-    sf_light->setStateIcon (KDeviceActivity_Writing, qPixmapFromMimeSource ("shared_folder_write_16px.png"));
-    sf_light->setStateIcon (KDeviceActivity_Null, qPixmapFromMimeSource ("shared_folder_disabled_16px.png"));
+    sf_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/shared_folder_16px.png"));
+    sf_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/shared_folder_read_16px.png"));
+    sf_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/shared_folder_write_16px.png"));
+    sf_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/shared_folder_disabled_16px.png"));
 
     (new Q3Frame (indicatorBox))->setFrameStyle (Q3Frame::VLine | Q3Frame::Sunken);
 
 #if 0 // do not show these indicators, information overload
     /* vrdp state */
     vrdp_state = new QIStateIndicator (0, indicatorBox, "vrdp_state", Qt::WNoAutoErase);
-    vrdp_state->setStateIcon (0, qPixmapFromMimeSource ("vrdp_disabled_16px.png"));
-    vrdp_state->setStateIcon (1, qPixmapFromMimeSource ("vrdp_16px.png"));
+    vrdp_state->setStateIcon (0, QPixmap (":/vrdp_disabled_16px.png"));
+    vrdp_state->setStateIcon (1, QPixmap (":/vrdp_16px.png"));
     /* auto resize state */
     autoresize_state = new QIStateIndicator (1, indicatorBox, "autoresize_state", Qt::WNoAutoErase);
-    autoresize_state->setStateIcon (0, qPixmapFromMimeSource ("auto_resize_off_disabled_16px.png"));
-    autoresize_state->setStateIcon (1, qPixmapFromMimeSource ("auto_resize_off_16px.png"));
-    autoresize_state->setStateIcon (2, qPixmapFromMimeSource ("auto_resize_on_disabled_16px.png"));
-    autoresize_state->setStateIcon (3, qPixmapFromMimeSource ("auto_resize_on_16px.png"));
+    autoresize_state->setStateIcon (0, QPixmap (":/auto_resize_off_disabled_16px.png"));
+    autoresize_state->setStateIcon (1, QPixmap (":/auto_resize_off_16px.png"));
+    autoresize_state->setStateIcon (2, QPixmap (":/auto_resize_on_disabled_16px.png"));
+    autoresize_state->setStateIcon (3, QPixmap (":/auto_resize_on_16px.png"));
 #endif
 
     /* mouse */
     mouse_state = new QIStateIndicator (0, indicatorBox, "mouse_state", Qt::WNoAutoErase);
-    mouse_state->setStateIcon (0, qPixmapFromMimeSource ("mouse_disabled_16px.png"));
-    mouse_state->setStateIcon (1, qPixmapFromMimeSource ("mouse_16px.png"));
-    mouse_state->setStateIcon (2, qPixmapFromMimeSource ("mouse_seamless_16px.png"));
-    mouse_state->setStateIcon (3, qPixmapFromMimeSource ("mouse_can_seamless_16px.png"));
-    mouse_state->setStateIcon (4, qPixmapFromMimeSource ("mouse_can_seamless_uncaptured_16px.png"));
+    mouse_state->setStateIcon (0, QPixmap (":/mouse_disabled_16px.png"));
+    mouse_state->setStateIcon (1, QPixmap (":/mouse_16px.png"));
+    mouse_state->setStateIcon (2, QPixmap (":/mouse_seamless_16px.png"));
+    mouse_state->setStateIcon (3, QPixmap (":/mouse_can_seamless_16px.png"));
+    mouse_state->setStateIcon (4, QPixmap (":/mouse_can_seamless_uncaptured_16px.png"));
     /* host key */
     hostkey_hbox = new Q3HBox (indicatorBox, "hostkey_hbox");
     hostkey_hbox->setSpacing (3);
     hostkey_state = new QIStateIndicator (0, hostkey_hbox, "hostkey_state");
-    hostkey_state->setStateIcon (0, qPixmapFromMimeSource ("hostkey_16px.png"));
-    hostkey_state->setStateIcon (1, qPixmapFromMimeSource ("hostkey_captured_16px.png"));
-    hostkey_state->setStateIcon (2, qPixmapFromMimeSource ("hostkey_pressed_16px.png"));
-    hostkey_state->setStateIcon (3, qPixmapFromMimeSource ("hostkey_captured_pressed_16px.png"));
+    hostkey_state->setStateIcon (0, QPixmap (":/hostkey_16px.png"));
+    hostkey_state->setStateIcon (1, QPixmap (":/hostkey_captured_16px.png"));
+    hostkey_state->setStateIcon (2, QPixmap (":/hostkey_pressed_16px.png"));
+    hostkey_state->setStateIcon (3, QPixmap (":/hostkey_captured_pressed_16px.png"));
     hostkey_name = new QLabel (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey()),
                                hostkey_hbox, "hostkey_name");
     /* add to statusbar */
@@ -821,11 +821,11 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 #ifdef Q_WS_MAC
     QString osTypeId = cmachine.GetOSTypeId();
     QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).convertToImage().smoothScale (100, 75);
-    QImage osImg = QImage::fromMimeSource ("dock_1.png");
+    QImage osImg = QImage (":/dock_1.png");
     bitBlt (&osImg, 14, 22,
             &osImg100x75, 0, 0,
             100, 75, /* conversion_flags */ 0);
-    QImage VBoxOverlay = QImage::fromMimeSource ("VirtualBox_48px.png");
+    QImage VBoxOverlay = QImage (":/VirtualBox_48px.png");
     bitBlt (&osImg, osImg.width() - VBoxOverlay.width(), osImg.height() - VBoxOverlay.height(),
             &VBoxOverlay, 0, 0,
             VBoxOverlay.width(), VBoxOverlay.height(), /* conversion_flags */ 0);
@@ -3427,7 +3427,7 @@ VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession)
 {
     /* Setup Dialog's options */
     setCaption (tr ("Shared Folders"));
-    setIcon (qPixmapFromMimeSource ("select_file_16px.png"));
+    setIcon (QPixmap (":/select_file_16px.png"));
     setSizeGripEnabled (true);
 
     /* Setup main dialog's layout */

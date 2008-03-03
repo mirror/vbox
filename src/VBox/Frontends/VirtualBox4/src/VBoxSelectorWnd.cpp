@@ -30,6 +30,7 @@
 #include "VBoxVMLogViewer.h"
 
 #include <qlabel.h>
+#include <QTextBrowser>
 #include <q3textbrowser.h>
 #include <qmenubar.h>
 #include <q3popupmenu.h>
@@ -100,10 +101,10 @@ signals:
 
 private slots:
 
-    void gotLinkClicked (const QString &aURL)
+    void gotLinkClicked (const QUrl &aURL)
     {
         QString text = mDetailsText->text();
-        emit linkClicked (aURL);
+        emit linkClicked (aURL.toString());
         /* QTextBrowser will try to get the URL from the mime source factory
          * and show an empty "page" after a failure. Reset the text to avoid
          * this. */
@@ -114,7 +115,7 @@ private:
 
     void createErrPage();
 
-    Q3TextBrowser *mDetailsText;
+    QTextBrowser *mDetailsText;
 
     QWidget *mErrBox;
     QLabel *mErrLabel;
@@ -134,15 +135,19 @@ VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent, const char *aName,
 
     /* create normal details page */
 
-    mDetailsText = new Q3TextBrowser (mErrBox);
+    mDetailsText = new QTextBrowser (mErrBox);
     mDetailsText->setFocusPolicy (Qt::StrongFocus);
-    mDetailsText->setLinkUnderline (false);
+    mDetailsText->document()->setDefaultStyleSheet ("a { text-decoration: none; }");
     /* make "transparent" */
-    mDetailsText->setFrameShape (Q3Frame::NoFrame);
-    mDetailsText->setPaper (backgroundBrush());
+    mDetailsText->setFrameShape (QFrame::NoFrame);
+    mDetailsText->setAutoFillBackground (true);
+//    mDetailsText->setBackgroundRole (QPalette::Window);
+    QPalette bgPal(mDetailsText->palette());
+    bgPal.setBrush(QPalette::Base, bgPal.brush(QPalette::Window));
+    mDetailsText->setPalette(bgPal);
 
-    connect (mDetailsText, SIGNAL (linkClicked (const QString &)),
-            this, SLOT (gotLinkClicked (const QString &)));
+    connect (mDetailsText, SIGNAL (anchorClicked (const QUrl &)),
+            this, SLOT (gotLinkClicked (const QUrl &)));
 
     addWidget (mDetailsText, 0);
 }
@@ -397,7 +402,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     statusBar();
 
     /* application icon */
-    setIcon (qPixmapFromMimeSource ("ico40x01.png"));
+    setIcon (QPixmap (":/ico40x01.png"));
 
     /* actions */
 
@@ -1361,7 +1366,7 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
                      "a list of all virtual machines on your computer. "
                      "The list is empty now because you haven't created any virtual "
                      "machines yet."
-                     "<img src=welcome.png align=right/></p>"
+                     "<img src=:/welcome.png align=right/></p>"
                      "<p>In order to create a new virtual machine, press the "
                      "<b>New</b> button in the main tool bar located "
                      "at the top of the window.</p>"

@@ -259,7 +259,7 @@ void VBoxGlobalSettingsDlg::init()
 {
     polished = false;
 
-    setIcon (qPixmapFromMimeSource ("global_settings_16px.png"));
+    setIcon (QPixmap (":/global_settings_16px.png"));
 
     /*  all pages are initially valid */
     valid = true;
