@@ -112,6 +112,7 @@ DECLINLINE(void) rtstrFormatTypeWriteLock(void)
     if (RT_UNLIKELY(!ASMAtomicCmpXchgS32(&g_i32Spinlock, -RTSTRFORMATTYPE_LOCK_OFFSET, 0)))
     {
         unsigned volatile i;
+
         AssertFailed();
         for (i = 0;; i++)
             if (    !g_i32Spinlock
@@ -145,6 +146,7 @@ DECLINLINE(void) rtstrFormatTypeReadLock(void)
     if (RT_UNLIKELY(ASMAtomicIncS32(&g_i32Spinlock) < 0))
     {
         unsigned volatile i;
+
         AssertFailed();
         for (i = 0;; i++)
             if (ASMAtomicUoReadS32(&g_i32Spinlock) > 0)
@@ -246,6 +248,7 @@ RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnH
     size_t cchType;
     int rc;
     uint32_t cTypes;
+
     /*
      * Validate input.
      */
@@ -322,6 +325,7 @@ RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnH
 RTDECL(int) RTStrFormatTypeDeregister(const char *pszType)
 {
     uint32_t i;
+
     /*
      * Validate input.
      */
