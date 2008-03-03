@@ -873,9 +873,9 @@ static __init int init(void)
     /* report guest version to host, the VMMDev requires that to be done first */
     infoReq->guestInfo.additionsVersion = VMMDEV_VERSION;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 0)
-    infoReq->guestInfo.osType = OSTypeLinux26;
+    infoReq->guestInfo.osType = VBOXOSTYPE_Linux26;
 #else
-    infoReq->guestInfo.osType = OSTypeLinux24;
+    infoReq->guestInfo.osType = VBOXOSTYPE_Linux24;
 #endif
     rcVBox = VbglGRPerform(&infoReq->header);
     if (VBOX_FAILURE(rcVBox) || VBOX_FAILURE(infoReq->header.rc))

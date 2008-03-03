@@ -200,23 +200,23 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
         switch (winVersion)
         {
             case WINNT4:
-                req->guestInfo.osType = OSTypeWinNT4;
+                req->guestInfo.osType = VBOXOSTYPE_WinNT4;
                 break;
             case WIN2K:
-                req->guestInfo.osType = OSTypeWin2k;
+                req->guestInfo.osType = VBOXOSTYPE_Win2k;
                 break;
             case WINXP:
-                req->guestInfo.osType = OSTypeWinXP;
+                req->guestInfo.osType = VBOXOSTYPE_WinXP;
                 break;
             case WIN2K3:
-                req->guestInfo.osType = OSTypeWin2k3;
+                req->guestInfo.osType = VBOXOSTYPE_Win2k3;
                 break;
             case WINVISTA:
-                req->guestInfo.osType = OSTypeWinVista;
+                req->guestInfo.osType = VBOXOSTYPE_WinVista;
                 break;
             default:
                 /* we don't know, therefore NT family */
-                req->guestInfo.osType = OSTypeWinNT;
+                req->guestInfo.osType = VBOXOSTYPE_WinNT;
                 break;
         }
 

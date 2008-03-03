@@ -334,18 +334,18 @@ static int vboxGuestOS2MapMemory(void)
  */
 static VBOXOSTYPE vboxGuestOS2DetectVersion(void)
 {
-    VBOXOSTYPE enmOSType = OSTypeOS2;
+    VBOXOSTYPE enmOSType = VBOXOSTYPE_OS2;
 
 #if 0 /** @todo dig up the version stuff from GIS later and verify that the numbers are actually decimal. */
     unsigned uMajor, uMinor;
     if (uMajor == 2)
     {
         if (uMinor >= 30 && uMinor < 40)
-            enmOSType = OSTypeOS2Warp3;
+            enmOSType = VBOXOSTYPE_OS2Warp3;
         else if (uMinor >= 40 && uMinor < 45)
-            enmOSType = OSTypeOS2Warp4;
+            enmOSType = VBOXOSTYPE_OS2Warp4;
         else if (uMinor >= 45 && uMinor < 50)
-            enmOSType = OSTypeOS2Warp45;
+            enmOSType = VBOXOSTYPE_OS2Warp45;
     }
 #endif
     return enmOSType;

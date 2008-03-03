@@ -4315,7 +4315,7 @@ HRESULT VirtualBox::registerGuestOSTypes()
     {
         const char    *id;          // utf-8
         const char    *description; // utf-8
-        const OSType   osType;
+        const VBOXOSTYPE osType;
         const uint32_t recommendedRAM;
         const uint32_t recommendedVRAM;
         const uint32_t recommendedHDD;
@@ -4325,29 +4325,29 @@ HRESULT VirtualBox::registerGuestOSTypes()
         /* NOTE1: we assume that unknown is always the first entry!
          * NOTE2: please use powers of 2 when specifying the size of harddisks since
          *        '2GB' looks better than '1.95GB' (= 2000MB) */
-        { "unknown",    tr ("Other/Unknown"),  OSTypeUnknown,     64,   4,  2 * _1K },
-        { "dos",        "DOS",                 OSTypeDOS,         32,   4,      512 },
-        { "win31",      "Windows 3.1",         OSTypeWin31,       32,   4,  1 * _1K },
-        { "win95",      "Windows 95",          OSTypeWin95,       64,   4,  2 * _1K },
-        { "win98",      "Windows 98",          OSTypeWin98,       64,   4,  2 * _1K },
-        { "winme",      "Windows Me",          OSTypeWinMe,       64,   4,  4 * _1K },
-        { "winnt4",     "Windows NT 4",        OSTypeWinNT4,     128,   4,  2 * _1K },
-        { "win2k",      "Windows 2000",        OSTypeWin2k,      168,   4,  4 * _1K },
-        { "winxp",      "Windows XP",          OSTypeWinXP,      192,   4, 10 * _1K },
-        { "win2k3",     "Windows Server 2003", OSTypeWin2k3,     256,   4, 20 * _1K },
-        { "winvista",   "Windows Vista",       OSTypeWinVista,   512,   4, 20 * _1K },
-        { "os2warp3",   "OS/2 Warp 3",         OSTypeOS2Warp3,    48,   4,  1 * _1K },
-        { "os2warp4",   "OS/2 Warp 4",         OSTypeOS2Warp4,    64,   4,  2 * _1K },
-        { "os2warp45",  "OS/2 Warp 4.5",       OSTypeOS2Warp45,   96,   4,  2 * _1K },
-        { "linux22",    "Linux 2.2",           OSTypeLinux22,     64,   4,  2 * _1K },
-        { "linux24",    "Linux 2.4",           OSTypeLinux24,    128,   4,  4 * _1K },
-        { "linux26",    "Linux 2.6",           OSTypeLinux26,    256,   4,  8 * _1K },
-        { "freebsd",    "FreeBSD",             OSTypeFreeBSD,     64,   4,  2 * _1K },
-        { "openbsd",    "OpenBSD",             OSTypeOpenBSD,     64,   4,  2 * _1K },
-        { "netbsd",     "NetBSD",              OSTypeNetBSD,      64,   4,  2 * _1K },
-        { "netware",    "Netware",             OSTypeNetware,    128,   4,  4 * _1K },
-        { "solaris",    "Solaris",             OSTypeSolaris,    128,   4,  8 * _1K },
-        { "l4",         "L4",                  OSTypeL4,          64,   4,  2 * _1K }
+        { "unknown",    tr ("Other/Unknown"),  VBOXOSTYPE_Unknown,     64,   4,  2 * _1K },
+        { "dos",        "DOS",                 VBOXOSTYPE_DOS,         32,   4,      512 },
+        { "win31",      "Windows 3.1",         VBOXOSTYPE_Win31,       32,   4,  1 * _1K },
+        { "win95",      "Windows 95",          VBOXOSTYPE_Win95,       64,   4,  2 * _1K },
+        { "win98",      "Windows 98",          VBOXOSTYPE_Win98,       64,   4,  2 * _1K },
+        { "winme",      "Windows Me",          VBOXOSTYPE_WinMe,       64,   4,  4 * _1K },
+        { "winnt4",     "Windows NT 4",        VBOXOSTYPE_WinNT4,     128,   4,  2 * _1K },
+        { "win2k",      "Windows 2000",        VBOXOSTYPE_Win2k,      168,   4,  4 * _1K },
+        { "winxp",      "Windows XP",          VBOXOSTYPE_WinXP,      192,   4, 10 * _1K },
+        { "win2k3",     "Windows Server 2003", VBOXOSTYPE_Win2k3,     256,   4, 20 * _1K },
+        { "winvista",   "Windows Vista",       VBOXOSTYPE_WinVista,   512,   4, 20 * _1K },
+        { "os2warp3",   "OS/2 Warp 3",         VBOXOSTYPE_OS2Warp3,    48,   4,  1 * _1K },
+        { "os2warp4",   "OS/2 Warp 4",         VBOXOSTYPE_OS2Warp4,    64,   4,  2 * _1K },
+        { "os2warp45",  "OS/2 Warp 4.5",       VBOXOSTYPE_OS2Warp45,   96,   4,  2 * _1K },
+        { "linux22",    "Linux 2.2",           VBOXOSTYPE_Linux22,     64,   4,  2 * _1K },
+        { "linux24",    "Linux 2.4",           VBOXOSTYPE_Linux24,    128,   4,  4 * _1K },
+        { "linux26",    "Linux 2.6",           VBOXOSTYPE_Linux26,    256,   4,  8 * _1K },
+        { "freebsd",    "FreeBSD",             VBOXOSTYPE_FreeBSD,     64,   4,  2 * _1K },
+        { "openbsd",    "OpenBSD",             VBOXOSTYPE_OpenBSD,     64,   4,  2 * _1K },
+        { "netbsd",     "NetBSD",              VBOXOSTYPE_NetBSD,      64,   4,  2 * _1K },
+        { "netware",    "Netware",             VBOXOSTYPE_Netware,    128,   4,  4 * _1K },
+        { "solaris",    "Solaris",             VBOXOSTYPE_Solaris,    128,   4,  8 * _1K },
+        { "l4",         "L4",                  VBOXOSTYPE_L4,          64,   4,  2 * _1K }
     };
 
     for (uint32_t i = 0; i < ELEMENTS (OSTypes) && SUCCEEDED (rc); i++)
