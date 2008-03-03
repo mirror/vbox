@@ -31,44 +31,45 @@
 __BEGIN_DECLS
 
 /**
- * Global list of guest operating system types. They are grouped
- * into families. A family identifer is always has mod 0x10000 == 0.
- * New entries can be added, however other components might depend
- * on the values (e.g. the Qt GUI) so if possible, the values should
- * stay the same.
- * 
- * @todo This typedef crashes with a core Mac OS X typedef, please rename it.
+ * Global list of guest operating system types.
+ *
+ * They are grouped into families. A family identifer is always has
+ * mod 0x10000 == 0. New entries can be added, however other components
+ * depend on the values (e.g. the Qt GUI and guest additions) so the
+ * existing values MUST stay the same.
  */
-typedef enum
+typedef enum VBOXOSTYPE
 {
-    OSTypeUnknown   = 0,
-    OSTypeDOS       = 0x10000,
-    OSTypeWin31     = 0x15000,
-    OSTypeWin9x     = 0x20000,
-    OSTypeWin95     = 0x21000,
-    OSTypeWin98     = 0x22000,
-    OSTypeWinMe     = 0x23000,
-    OSTypeWinNT     = 0x30000,
-    OSTypeWinNT4    = 0x31000,
-    OSTypeWin2k     = 0x32000,
-    OSTypeWinXP     = 0x33000,
-    OSTypeWin2k3    = 0x34000,
-    OSTypeWinVista  = 0x35000,
-    OSTypeOS2       = 0x40000,
-    OSTypeOS2Warp3  = 0x41000,
-    OSTypeOS2Warp4  = 0x42000,
-    OSTypeOS2Warp45 = 0x43000,
-    OSTypeLinux     = 0x50000,
-    OSTypeLinux22   = 0x51000,
-    OSTypeLinux24   = 0x52000,
-    OSTypeLinux26   = 0x53000,
-    OSTypeFreeBSD   = 0x60000,
-    OSTypeOpenBSD   = 0x61000,
-    OSTypeNetBSD    = 0x62000,
-    OSTypeNetware   = 0x70000,
-    OSTypeSolaris   = 0x80000,
-    OSTypeL4        = 0x90000
-} OSType, VBOXOSTYPE;
+    VBOXOSTYPE_Unknown   = 0,
+    VBOXOSTYPE_DOS       = 0x10000,
+    VBOXOSTYPE_Win31     = 0x15000,
+    VBOXOSTYPE_Win9x     = 0x20000,
+    VBOXOSTYPE_Win95     = 0x21000,
+    VBOXOSTYPE_Win98     = 0x22000,
+    VBOXOSTYPE_WinMe     = 0x23000,
+    VBOXOSTYPE_WinNT     = 0x30000,
+    VBOXOSTYPE_WinNT4    = 0x31000,
+    VBOXOSTYPE_Win2k     = 0x32000,
+    VBOXOSTYPE_WinXP     = 0x33000,
+    VBOXOSTYPE_Win2k3    = 0x34000,
+    VBOXOSTYPE_WinVista  = 0x35000,
+    VBOXOSTYPE_OS2       = 0x40000,
+    VBOXOSTYPE_OS2Warp3  = 0x41000,
+    VBOXOSTYPE_OS2Warp4  = 0x42000,
+    VBOXOSTYPE_OS2Warp45 = 0x43000,
+    VBOXOSTYPE_Linux     = 0x50000,
+    VBOXOSTYPE_Linux22   = 0x51000,
+    VBOXOSTYPE_Linux24   = 0x52000,
+    VBOXOSTYPE_Linux26   = 0x53000,
+    VBOXOSTYPE_FreeBSD   = 0x60000,
+    VBOXOSTYPE_OpenBSD   = 0x61000,
+    VBOXOSTYPE_NetBSD    = 0x62000,
+    VBOXOSTYPE_Netware   = 0x70000,
+    VBOXOSTYPE_Solaris   = 0x80000,
+    VBOXOSTYPE_L4        = 0x90000,
+    /** The usual 32-bit hack. */
+    VBOXOSTYPE_32BIT_HACK = 0x7fffffff
+} VBOXOSTYPE;
 
 __END_DECLS
 

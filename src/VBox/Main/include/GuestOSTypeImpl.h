@@ -50,7 +50,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (const char *aId, const char *aDescription, OSType aOSType,
+    HRESULT init (const char *aId, const char *aDescription, VBOXOSTYPE aOSType,
                   uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize);
     void uninit();
 
@@ -71,7 +71,7 @@ private:
 
     const Bstr mID;
     const Bstr mDescription;
-    const OSType mOSType;
+    const VBOXOSTYPE mOSType;
     const uint32_t mRAMSize;
     const uint32_t mVRAMSize;
     const uint32_t mHDDSize;

@@ -39,8 +39,6 @@
 #if defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
 # include "DarwinCursor.h"
-/** @todo remove this hack when somebody get around fixing the conflicting typedef/enum OSType. */
-# define OSType VBoxOSType
 #endif
 
 class VBoxConsoleWnd;

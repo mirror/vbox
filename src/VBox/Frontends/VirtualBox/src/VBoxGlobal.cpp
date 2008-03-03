@@ -3595,7 +3595,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
      *       ICStop should then be called at Psi shutdown if ICStart
      *       succeeded. */
     ICInstance icInstance;
-    OSType psiSignature = 'psi ';
+    VBOXOSTYPE psiSignature = 'psi ';
     OSStatus error = ::ICStart (&icInstance, psiSignature);
     if (error == noErr)
     {

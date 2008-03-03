@@ -23,7 +23,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 GuestOSType::GuestOSType()
-    : mOSType (OSTypeUnknown)
+    : mOSType (VBOXOSTYPE_Unknown)
     , mRAMSize (0), mVRAMSize (0)
     , mHDDSize (0), mMonitorCount (0)
 {
@@ -57,7 +57,7 @@ void GuestOSType::FinalRelease()
  * @param aVRAMSize    recommended video memory size in megabytes
  * @param aHDDSize     recommended HDD size in megabytes
  */
-HRESULT GuestOSType::init (const char *aId, const char *aDescription, OSType aOSType,
+HRESULT GuestOSType::init (const char *aId, const char *aDescription, VBOXOSTYPE aOSType,
                            uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize)
 {
     LogFlowThisFunc (("aId='%s', aDescription='%s', aType=%d, "

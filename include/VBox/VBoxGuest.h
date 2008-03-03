@@ -358,7 +358,7 @@ typedef struct VBoxGuestInfo
     /** The VMMDev interface version expected by additions. */
     uint32_t additionsVersion;
     /** guest OS type */
-    OSType osType;
+    VBOXOSTYPE osType;
     /** @todo */
 } VBoxGuestInfo;
 

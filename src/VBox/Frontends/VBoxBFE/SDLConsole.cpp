@@ -22,7 +22,6 @@
 #define LOG_GROUP LOG_GROUP_GUI
 #ifdef RT_OS_DARWIN
 # include <Carbon/Carbon.h>
-# define OSType VBoxOSType
 # undef PAGE_SIZE
 # undef PAGE_SHIFT
 #endif
