@@ -5272,22 +5272,18 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
     if (ataWaitForAllAsyncIOIsIdle(pDevIns, 20000))
     {
         uint64_t    u64Start = RTTimeMilliTS();
-        bool        fAllDone;
-        for (;;)
+	int rc2 = VINF_SUCCESS;
+	for (unsigned i = 0; i < RT_ELEMENTS(pData->aCts); i++)
         {
-            /* check */
-            fAllDone = true;
-            for (uint32_t i = 0; i < RT_ELEMENTS(pData->aCts) && fAllDone; i++)
-                fAllDone &= (pData->aCts[i].AsyncIOThread == NIL_RTTHREAD);
-
-            if (    fAllDone
-                ||  RTTimeMilliTS() - u64Start >= 5000)
-                break;
-
-            /* Sleep for a bit. */
-            RTThreadSleep(100);
+            /* Wait for at most 5 seconds, and if that is elapsed for 100msec
+             * per remaining thread. Just to be on the safe side. */
+            rc = RTThreadWait(pData->aCts[i].AsyncIOThread,
+                              RT_MAX(RTTimeMilliTS() - u64Start + 5000, 100),
+                              NULL);
+	    if (VBOX_FAILURE(rc) && rc != VERR_INVALID_HANDLE)
+	        rc2 = rc;
         }
-        AssertMsg(fAllDone, ("Some of the async I/O threads are still running!\n"));
+        AssertMsg(VBOX_SUCCESS(rc2), ("Some of the async I/O threads are still running!\n"));
     }
     else
         AssertMsgFailed(("Async I/O is still busy!\n"));
@@ -6077,7 +6073,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         rc = RTSemMutexCreate(&pCtl->AsyncIORequestMutex);
         AssertRC(rc);
         ataAsyncIOClearRequests(pCtl);
-        rc = RTThreadCreate(&pCtl->AsyncIOThread, ataAsyncIOLoop, (void *)pCtl, 128*1024, RTTHREADTYPE_IO, 0, "ATA");
+        rc = RTThreadCreate(&pCtl->AsyncIOThread, ataAsyncIOLoop, (void *)pCtl, 128*1024, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "ATA");
         AssertRC(rc);
         Assert(pCtl->AsyncIOThread != NIL_RTTHREAD && pCtl->AsyncIOSem != NIL_RTSEMEVENT && pCtl->SuspendIOSem != NIL_RTSEMEVENT && pCtl->AsyncIORequestMutex != NIL_RTSEMMUTEX);
         Log(("%s: controller %d AIO thread id %#x; sem %p susp_sem %p mutex %p\n", __FUNCTION__, i, pCtl->AsyncIOThread, pCtl->AsyncIOSem, pCtl->SuspendIOSem, pCtl->AsyncIORequestMutex));
