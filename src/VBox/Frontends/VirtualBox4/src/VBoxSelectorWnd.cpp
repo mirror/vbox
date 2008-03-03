@@ -393,7 +393,7 @@ void VBoxVMDescriptionPage::goToSettings()
 VBoxSelectorWnd::
 VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
                  Qt::WFlags aFlags)
-    : Q3MainWindow (aParent, aName, aFlags)
+    : QMainWindow (aParent, aFlags)
     , doneInaccessibleWarningOnce (false)
 {
     if (aSelf)
@@ -475,7 +475,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     centralLayout->addWidget (rightVBox, 5);
 
     /* VM list toolbar */
-    VBoxToolBar *vmTools = new VBoxToolBar (this, leftVBox, "vmTools");
+    VBoxToolBar *vmTools = new VBoxToolBar (this, leftVBox);
 
     /* VM list box */
     vmListBox = new VBoxVMListBox (leftVBox, "vmListBox");
@@ -507,8 +507,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* add actions to the toolbar */
 
-    setUsesTextLabel (true);
-    setUsesBigPixmaps (true);
+#warning port me
+//    setUsesTextLabel (true);
+//    setUsesBigPixmaps (true);
     vmTools->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
 
     vmNewAction->addTo (vmTools);
@@ -1110,7 +1111,7 @@ bool VBoxSelectorWnd::event (QEvent *e)
             break;
     }
 
-    return Q3MainWindow::event (e);
+    return QMainWindow::event (e);
 }
 
 // Private members

@@ -355,7 +355,8 @@ void VBoxDiskImageManagerDlg::init()
 
 
     /* toolbar composing */
-    toolBar = new VBoxToolBar (this, centralWidget(), "toolBar");
+#warning port me
+//    toolBar = new VBoxToolBar (this, centralWidget());
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
     ((Q3VBoxLayout*)centralWidget()->layout())->insertWidget(0, toolBar);
 
