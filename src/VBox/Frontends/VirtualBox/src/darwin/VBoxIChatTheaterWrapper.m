@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Qt GUI - iChat Theater cocoa wrapper
+ * Qt GUI - iChat Theater cocoa wrapper.
  */
 
 /*
@@ -23,7 +23,7 @@
 #import <InstantMessage/IMService.h>
 #import <InstantMessage/IMAVManager.h>
 
-@interface AVHandler: NSObject 
+@interface AVHandler: NSObject
 {
     CGImageRef mImage;
 }
@@ -66,20 +66,20 @@
     mImage = aImage;
 }
 
-- (void) getPixelBufferPixelFormat: (OSType *)pixelFormatOut 
+- (void) getPixelBufferPixelFormat: (OSType *)pixelFormatOut
 {
     /* Return 32 bit pixel format */
     *pixelFormatOut = kCVPixelFormatType_32ARGB;
 }
 
-- (bool) renderIntoPixelBuffer: (CVPixelBufferRef)buffer forTime: (CVTimeStamp *)timeStamp 
+- (bool) renderIntoPixelBuffer: (CVPixelBufferRef)buffer forTime: (CVTimeStamp *)timeStamp
 {
     if (mImage == nil)
         return NO;
 
     // Lock the pixel buffer's base address so that we can draw into it.
     CVReturn err;
-    if ((err = CVPixelBufferLockBaseAddress (buffer, 0)) != kCVReturnSuccess) 
+    if ((err = CVPixelBufferLockBaseAddress (buffer, 0)) != kCVReturnSuccess)
     {
         // Rarely is a lock refused. Return NO if this happens.
         printf ("Warning: could not lock pixel buffer base address in %s - error %ld\n", __func__, (long)err);
@@ -111,7 +111,7 @@
         scaledWidth = width * aspect;
         scaledHeight = height;
     }
-    CGRect iconRect = CGRectMake ((width - scaledWidth) / 2.0, 
+    CGRect iconRect = CGRectMake ((width - scaledWidth) / 2.0,
                                   (height - scaledHeight) / 2.0,
                                    scaledWidth, scaledHeight);
     /* Here we have to paint the context*/
@@ -129,7 +129,7 @@
 {
     IMAVManager *avManager = [IMAVManager sharedAVManager];
     printf ("state changed to: %d\n", [avManager state]);
-    
+
     /* Get the new state */
     IMAVManagerState state = [avManager state];
 
@@ -188,5 +188,5 @@ void setImageRef (CGImageRef aImage)
     [pool release];
 }
 
-#endif
+#endif /* VBOX_WITH_ICHAT_THEATER */
 
