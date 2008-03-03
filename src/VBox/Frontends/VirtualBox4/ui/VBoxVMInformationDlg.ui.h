@@ -89,7 +89,7 @@ void VBoxVMInformationDlg::init()
     mDetailsText->setFrameShape (Q3Frame::NoFrame);
     mDetailsText->setPaper (backgroundBrush());
     mInfoStack->addTab (mDetailsText,
-                        VBoxGlobal::iconSet ("settings_16px.png"),
+                        VBoxGlobal::iconSet (":/settings_16px.png"),
                         QString::null);
 
     /* statistic view creation */
@@ -97,7 +97,7 @@ void VBoxVMInformationDlg::init()
     mStatisticText->setFrameShape (Q3Frame::NoFrame);
     mStatisticText->setPaper (backgroundBrush());
     mInfoStack->addTab (mStatisticText,
-                        VBoxGlobal::iconSet ("state_running_16px.png"),
+                        VBoxGlobal::iconSet (":/state_running_16px.png"),
                         QString::null);
 
     /* full list of statistics counters to get total info */
@@ -105,7 +105,7 @@ void VBoxVMInformationDlg::init()
     // mDefStatText->setFrameShape (QFrame::NoFrame);
     // mDefStatText->setPaper (backgroundBrush());
     // mInfoStack->addTab (mDefStatText,
-    //                     VBoxGlobal::iconSet ("show_logs_16px.png"),
+    //                     VBoxGlobal::iconSet (":/show_logs_16px.png"),
     //                     QString::null);
 
     /* applying language settings */
@@ -477,14 +477,14 @@ void VBoxVMInformationDlg::refreshStatistics()
         QString virt = console.GetDebugger().GetHWVirtExEnabled() ?
             tr ("Enabled") : tr ("Disabled");
 
-        result += hdrRow.arg ("state_running_16px.png").arg (tr ("Runtime Attributes"));
+        result += hdrRow.arg (":/state_running_16px.png").arg (tr ("Runtime Attributes"));
         result += bdyRow.arg (tr ("Screen Resolution")).arg (resolution) +
                   bdyRow.arg (tr ("Hardware Virtualization")).arg (virt);
         result += paragraph;
     }
 
     /* Hard Disk Statistics. */
-    result += hdrRow.arg ("hd_16px.png").arg (tr ("IDE Hard Disk Statistics"));
+    result += hdrRow.arg (":/hd_16px.png").arg (tr ("IDE Hard Disk Statistics"));
     result += formatHardDisk (tr ("Primary Master"), KDiskControllerType_IDE0, 0, 0, 1);
     result += interline;
     result += formatHardDisk (tr ("Primary Slave"), KDiskControllerType_IDE0, 1, 4, 5);
@@ -493,13 +493,13 @@ void VBoxVMInformationDlg::refreshStatistics()
     result += paragraph;
 
     /* CD/DVD-ROM Statistics. */
-    result += hdrRow.arg ("cd_16px.png").arg (tr ("CD/DVD-ROM Statistics"));
+    result += hdrRow.arg (":/cd_16px.png").arg (tr ("CD/DVD-ROM Statistics"));
     result += formatHardDisk (QString::null /* tr ("Secondary Master") */,
                               KDiskControllerType_IDE1, 0, 8, 9);
     result += paragraph;
 
     /* Network Adapters Statistics. */
-    result += hdrRow.arg ("nw_16px.png").arg (tr ("Network Adapter Statistics"));
+    result += hdrRow.arg (":/nw_16px.png").arg (tr ("Network Adapter Statistics"));
     result += formatAdapter (tr ("Adapter 1"), 0, 16, 17);
     result += interline;
     result += formatAdapter (tr ("Adapter 2"), 1, 18, 19);
@@ -611,14 +611,14 @@ void VBoxVMInformationDlg::refreshStatistics()
         QString virt = console.GetDebugger().GetHWVirtExEnabled() ?
             tr ("Enabled") : tr ("Disabled");
 
-        result += hdrRow.arg ("state_running_16px.png").arg (tr ("Runtime Attributes"));
+        result += hdrRow.arg (":/state_running_16px.png").arg (tr ("Runtime Attributes"));
         result += bdyRow.arg (tr ("Screen Resolution")) .arg (resolution)
                         .arg (tr ("Hardware Virtualization")).arg (virt);
         result += paragraph;
     }
 
     /* Hard Disk Statistics. */
-    result += hdrRow.arg ("hd_16px.png").arg (tr ("Hard Disks Statistics"));
+    result += hdrRow.arg (":/hd_16px.png").arg (tr ("Hard Disks Statistics"));
 
     result += subRow.arg (tr ("Primary Master")).arg (tr ("Primary Slave"));
     result += composeArticle (QString::null, 0, 1, 4, 5);
@@ -631,7 +631,7 @@ void VBoxVMInformationDlg::refreshStatistics()
     result += paragraph;
 
     /* Network Adapters Statistics. Counters are currently missed. */
-    result += hdrRow.arg ("nw_16px.png").arg (tr ("Network Adapter Statistics"));
+    result += hdrRow.arg (":/nw_16px.png").arg (tr ("Network Adapter Statistics"));
     result += subRow.arg (tr ("Adapter 1")).arg (tr ("Adapter 2"));
     result += composeArticle ("B", 16, 17, 18, 19);
 

@@ -178,61 +178,61 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     vmFullscreenAction = new QAction (this, "vmFullscreenAction");
     vmFullscreenAction->setIconSet (
-        VBoxGlobal::iconSet ("fullscreen_16px.png", "fullscreen_disabled_16px.png"));
+        VBoxGlobal::iconSet (":/fullscreen_16px.png", ":/fullscreen_disabled_16px.png"));
     vmFullscreenAction->setToggleAction (true);
 
     vmSeamlessAction = new QAction (this, "vmSeamlessAction");
     vmSeamlessAction->setIconSet (
-        VBoxGlobal::iconSet ("nw_16px.png", "nw_disabled_16px.png"));
+        VBoxGlobal::iconSet (":/nw_16px.png", ":/nw_disabled_16px.png"));
     vmSeamlessAction->setToggleAction (true);
 
     vmAutoresizeGuestAction = new QAction (mRunningActions, "vmAutoresizeGuestAction");
     vmAutoresizeGuestAction->setIconSet (
-        VBoxGlobal::iconSet ("auto_resize_on_16px.png", "auto_resize_on_disabled_16px.png"));
+        VBoxGlobal::iconSet (":/auto_resize_on_16px.png", ":/auto_resize_on_disabled_16px.png"));
     vmAutoresizeGuestAction->setToggleAction (true);
     vmAutoresizeGuestAction->setEnabled (false);
 
     vmAdjustWindowAction = new QAction (this, "vmAdjustWindowAction");
     vmAdjustWindowAction->setIconSet (
-        VBoxGlobal::iconSet ("adjust_win_size_16px.png",
-                             "adjust_win_size_disabled_16px.png"));
+        VBoxGlobal::iconSet (":/adjust_win_size_16px.png",
+                             ":/adjust_win_size_disabled_16px.png"));
 
     vmTypeCADAction = new QAction (mRunningActions, "vmTypeCADAction");
-    vmTypeCADAction->setIconSet (VBoxGlobal::iconSet ("hostkey_16px.png",
-                                                      "hostkey_disabled_16px.png"));
+    vmTypeCADAction->setIconSet (VBoxGlobal::iconSet (":/hostkey_16px.png",
+                                                      ":/hostkey_disabled_16px.png"));
 
 #if defined(Q_WS_X11)
     vmTypeCABSAction = new QAction (mRunningActions, "vmTypeCABSAction");
-    vmTypeCABSAction->setIconSet (VBoxGlobal::iconSet ("hostkey_16px.png",
-                                                       "hostkey_disabled_16px.png"));
+    vmTypeCABSAction->setIconSet (VBoxGlobal::iconSet (":/hostkey_16px.png",
+                                                       ":/hostkey_disabled_16px.png"));
 #endif
 
     vmResetAction = new QAction (mRunningActions, "vmResetAction");
-    vmResetAction->setIconSet (VBoxGlobal::iconSet ("reset_16px.png",
-                                                    "reset_disabled_16px.png"));
+    vmResetAction->setIconSet (VBoxGlobal::iconSet (":/reset_16px.png",
+                                                    ":/reset_disabled_16px.png"));
 
     vmPauseAction = new QAction (this, "vmPauseAction");
-    vmPauseAction->setIconSet (VBoxGlobal::iconSet ("pause_16px.png"));
+    vmPauseAction->setIconSet (VBoxGlobal::iconSet (":/pause_16px.png"));
     vmPauseAction->setToggleAction (true);
 
     vmACPIShutdownAction = new QAction (mRunningActions, "vmACPIShutdownAction");
     vmACPIShutdownAction->setIconSet (
-        VBoxGlobal::iconSet ("acpi_16px.png", "acpi_disabled_16px.png"));
+        VBoxGlobal::iconSet (":/acpi_16px.png", ":/acpi_disabled_16px.png"));
 
     vmCloseAction = new QAction (this, "vmCloseAction");
-    vmCloseAction->setIconSet (VBoxGlobal::iconSet ("exit_16px.png"));
+    vmCloseAction->setIconSet (VBoxGlobal::iconSet (":/exit_16px.png"));
 
     vmTakeSnapshotAction = new QAction (mRunningOrPausedActions, "vmTakeSnapshotAction");
     vmTakeSnapshotAction->setIconSet (VBoxGlobal::iconSet (
-        "take_snapshot_16px.png", "take_snapshot_dis_16px.png"));
+        ":/take_snapshot_16px.png", ":/take_snapshot_dis_16px.png"));
 
     vmShowInformationDlgAction = new QAction (this, "vmShowInformationDlgAction");
     vmShowInformationDlgAction->setIconSet (VBoxGlobal::iconSet (
-        "description_16px.png", "description_disabled_16px.png"));
+        ":/description_16px.png", ":/description_disabled_16px.png"));
 
     vmDisableMouseIntegrAction = new QAction (this, "vmDisableMouseIntegrAction");
     vmDisableMouseIntegrAction->setIconSet (VBoxGlobal::iconSet (
-        "mouse_can_seamless_16px.png", "mouse_can_seamless_disabled_16px.png"));
+        ":/mouse_can_seamless_16px.png", ":/mouse_can_seamless_disabled_16px.png"));
     vmDisableMouseIntegrAction->setToggleAction (true);
 
     /* Devices menu actions */
@@ -241,31 +241,31 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
                                                  "devicesMountFloppyImageAction");
 
     devicesUnmountFloppyAction = new QAction (this, "devicesUnmountFloppyAction");
-    devicesUnmountFloppyAction->setIconSet (VBoxGlobal::iconSet ("fd_unmount_16px.png",
-                                                                 "fd_unmount_dis_16px.png"));
+    devicesUnmountFloppyAction->setIconSet (VBoxGlobal::iconSet (":/fd_unmount_16px.png",
+                                                                 ":/fd_unmount_dis_16px.png"));
 
     devicesMountDVDImageAction = new QAction (mRunningOrPausedActions,
                                               "devicesMountISOImageAction");
 
     devicesUnmountDVDAction = new QAction (this, "devicesUnmountDVDAction");
-    devicesUnmountDVDAction->setIconSet (VBoxGlobal::iconSet ("cd_unmount_16px.png",
-                                                     "cd_unmount_dis_16px.png"));
+    devicesUnmountDVDAction->setIconSet (VBoxGlobal::iconSet (":/cd_unmount_16px.png",
+                                                              ":/cd_unmount_dis_16px.png"));
 
     devicesSFDialogAction = new QAction (mRunningOrPausedActions,
                                          "devicesSFDialogAction");
-    devicesSFDialogAction->setIconSet (VBoxGlobal::iconSet ("shared_folder_16px.png",
-                                                            "shared_folder_disabled_16px.png"));
+    devicesSFDialogAction->setIconSet (VBoxGlobal::iconSet (":/shared_folder_16px.png",
+                                                            ":/shared_folder_disabled_16px.png"));
 
     devicesSwitchVrdpAction = new QAction (mRunningOrPausedActions,
                                            "devicesSwitchVrdpAction");
-    devicesSwitchVrdpAction->setIconSet (VBoxGlobal::iconSet ("vrdp_16px.png",
-                                                              "vrdp_disabled_16px.png"));
+    devicesSwitchVrdpAction->setIconSet (VBoxGlobal::iconSet (":/vrdp_16px.png",
+                                                              ":/vrdp_disabled_16px.png"));
     devicesSwitchVrdpAction->setToggleAction (true);
 
     devicesInstallGuestToolsAction = new QAction (mRunningActions,
                                                   "devicesInstallGuestToolsAction");
-    devicesInstallGuestToolsAction->setIconSet (VBoxGlobal::iconSet ("guesttools_16px.png",
-                                                                     "guesttools_disabled_16px.png"));
+    devicesInstallGuestToolsAction->setIconSet (VBoxGlobal::iconSet (":/guesttools_16px.png",
+                                                                     ":/guesttools_disabled_16px.png"));
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
@@ -283,16 +283,16 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     /* Help menu actions */
 
     helpContentsAction = new QAction (this, "helpContentsAction");
-    helpContentsAction->setIconSet (VBoxGlobal::iconSet ("help_16px.png"));
+    helpContentsAction->setIconSet (VBoxGlobal::iconSet (":/help_16px.png"));
     helpWebAction = new QAction (this, "helpWebAction");
-    helpWebAction->setIconSet (VBoxGlobal::iconSet ("site_16px.png"));
+    helpWebAction->setIconSet (VBoxGlobal::iconSet (":/site_16px.png"));
     helpRegisterAction = new QAction (this, "helpRegisterAction");
-    helpRegisterAction->setIconSet (VBoxGlobal::iconSet ("register_16px.png",
-                                                         "register_disabled_16px.png"));
+    helpRegisterAction->setIconSet (VBoxGlobal::iconSet (":/register_16px.png",
+                                                         ":/register_disabled_16px.png"));
     helpAboutAction = new QAction (this, "helpAboutAction");
-    helpAboutAction->setIconSet (VBoxGlobal::iconSet ("about_16px.png"));
+    helpAboutAction->setIconSet (VBoxGlobal::iconSet (":/about_16px.png"));
     helpResetMessagesAction = new QAction (this, "helpResetMessagesAction");
-    helpResetMessagesAction->setIconSet (VBoxGlobal::iconSet ("reset_16px.png"));
+    helpResetMessagesAction->setIconSet (VBoxGlobal::iconSet (":/reset_16px.png"));
 
     ///// Menubar ///////////////////////////////////////////////////////////
 
@@ -344,21 +344,21 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
     devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction);
 
-    devicesMenu->insertItem (VBoxGlobal::iconSet ("cd_16px.png", "cd_disabled_16px.png"),
+    devicesMenu->insertItem (VBoxGlobal::iconSet (":/cd_16px.png", ":/cd_disabled_16px.png"),
         QString::null, devicesMountDVDMenu, devicesMountDVDMenuId);
     devicesUnmountDVDAction->addTo (devicesMenu);
     devicesMenu->insertSeparator();
 
-    devicesMenu->insertItem (VBoxGlobal::iconSet ("fd_16px.png", "fd_disabled_16px.png"),
+    devicesMenu->insertItem (VBoxGlobal::iconSet (":/fd_16px.png", ":/fd_disabled_16px.png"),
         QString::null, devicesMountFloppyMenu, devicesMountFloppyMenuId);
     devicesUnmountFloppyAction->addTo (devicesMenu);
     devicesMenu->insertSeparator();
 
-    devicesMenu->insertItem (VBoxGlobal::iconSet ("nw_16px.png", "nw_disabled_16px.png"),
+    devicesMenu->insertItem (VBoxGlobal::iconSet (":/nw_16px.png", ":/nw_disabled_16px.png"),
         QString::null, devicesNetworkMenu, devicesNetworkMenuId);
     devicesMenu->insertSeparator();
 
-    devicesMenu->insertItem (VBoxGlobal::iconSet ("usb_16px.png", "usb_disabled_16px.png"),
+    devicesMenu->insertItem (VBoxGlobal::iconSet (":/usb_16px.png", ":/usb_disabled_16px.png"),
         QString::null, devicesUSBMenu, devicesUSBMenuId);
     devicesUSBMenuSeparatorId = devicesMenu->insertSeparator();
 
@@ -1588,10 +1588,10 @@ void VBoxConsoleWnd::languageChange()
 
     menuBar()->changeItem (vmMenuId, tr ("&Machine"));
     mMainMenu->changeItem (vmMenuId,
-        VBoxGlobal::iconSet ("machine_16px.png"), tr ("&Machine"));
+        VBoxGlobal::iconSet (":/machine_16px.png"), tr ("&Machine"));
     menuBar()->changeItem (devicesMenuId, tr ("&Devices"));
     mMainMenu->changeItem (devicesMenuId,
-        VBoxGlobal::iconSet ("settings_16px.png"), tr ("&Devices"));
+        VBoxGlobal::iconSet (":/settings_16px.png"), tr ("&Devices"));
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
     {
@@ -1601,7 +1601,7 @@ void VBoxConsoleWnd::languageChange()
 #endif
     menuBar()->changeItem (helpMenuId, tr ("&Help"));
     mMainMenu->changeItem (helpMenuId,
-        VBoxGlobal::iconSet ("help_16px.png"), tr ("&Help"));
+        VBoxGlobal::iconSet (":/help_16px.png"), tr ("&Help"));
 
     /* status bar widgets */
 

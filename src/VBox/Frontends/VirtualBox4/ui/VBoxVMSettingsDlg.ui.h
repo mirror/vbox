@@ -260,10 +260,10 @@ public:
         mBtnDown->setAutoRaise (true);
         mBtnUp->setFocusPolicy (Qt::StrongFocus);
         mBtnDown->setFocusPolicy (Qt::StrongFocus);
-        mBtnUp->setIconSet (VBoxGlobal::iconSet ("list_moveup_16px.png",
-                                                 "list_moveup_disabled_16px.png"));
-        mBtnDown->setIconSet (VBoxGlobal::iconSet ("list_movedown_16px.png",
-                                                   "list_movedown_disabled_16px.png"));
+        mBtnUp->setIconSet (VBoxGlobal::iconSet (":/list_moveup_16px.png",
+                                                 ":/list_moveup_disabled_16px.png"));
+        mBtnDown->setIconSet (VBoxGlobal::iconSet (":/list_movedown_16px.png",
+                                                   ":/list_movedown_disabled_16px.png"));
         QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Minimum,
                                                      QSizePolicy::Minimum);
         connect (mBtnUp, SIGNAL (clicked()), this, SLOT (moveItemUp()));
@@ -585,10 +585,10 @@ void VBoxVMSettingsDlg::init()
     connect (wvalGeneral, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT(enableOk (const QIWidgetValidator *)));
 
-    tbSelectSavedStateFolder->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                                               "select_file_dis_16px.png"));
-    tbResetSavedStateFolder->setIconSet (VBoxGlobal::iconSet ("eraser_16px.png",
-                                                              "eraser_disabled_16px.png"));
+    tbSelectSavedStateFolder->setIconSet (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                                               ":/select_file_dis_16px.png"));
+    tbResetSavedStateFolder->setIconSet (VBoxGlobal::iconSet (":/eraser_16px.png",
+                                                              ":/eraser_disabled_16px.png"));
 
     teDescription->setTextFormat (Qt::PlainText);
 
@@ -646,12 +646,12 @@ void VBoxVMSettingsDlg::init()
     connect (tbHDD, SIGNAL (clicked()), this, SLOT (showImageManagerHDD()));
 
     /* setup iconsets -- qdesigner is not capable... */
-    tbHDA->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                            "select_file_dis_16px.png"));
-    tbHDB->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                            "select_file_dis_16px.png"));
-    tbHDD->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                            "select_file_dis_16px.png"));
+    tbHDA->setIconSet (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                            ":/select_file_dis_16px.png"));
+    tbHDB->setIconSet (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                            ":/select_file_dis_16px.png"));
+    tbHDD->setIconSet (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                            ":/select_file_dis_16px.png"));
 
     /* CD/DVD-ROM Drive Page */
 
@@ -678,8 +678,8 @@ void VBoxVMSettingsDlg::init()
     connect (tbISODVD, SIGNAL (clicked()), this, SLOT (showImageManagerISODVD()));
 
     /* setup iconsets -- qdesigner is not capable... */
-    tbISODVD->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                               "select_file_dis_16px.png"));
+    tbISODVD->setIconSet (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                               ":/select_file_dis_16px.png"));
 
     /* Floppy Drive Page */
 
@@ -705,8 +705,8 @@ void VBoxVMSettingsDlg::init()
     connect (tbISOFloppy, SIGNAL (clicked()), this, SLOT (showImageManagerISOFloppy()));
 
     /* setup iconsets -- qdesigner is not capable... */
-    tbISOFloppy->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                                  "select_file_dis_16px.png"));
+    tbISOFloppy->setIconSet (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                                  ":/select_file_dis_16px.png"));
 
     /* Audio Page */
 
@@ -723,10 +723,10 @@ void VBoxVMSettingsDlg::init()
     /* setup tab widget */
     mNoInterfaces = tr ("<No suitable interfaces>");
     /* setup iconsets */
-    pbHostAdd->setIconSet (VBoxGlobal::iconSet ("add_host_iface_16px.png",
-                                                "add_host_iface_disabled_16px.png"));
-    pbHostRemove->setIconSet (VBoxGlobal::iconSet ("remove_host_iface_16px.png",
-                                                   "remove_host_iface_disabled_16px.png"));
+    pbHostAdd->setIconSet (VBoxGlobal::iconSet (":/add_host_iface_16px.png",
+                                                ":/add_host_iface_disabled_16px.png"));
+    pbHostRemove->setIconSet (VBoxGlobal::iconSet (":/remove_host_iface_16px.png",
+                                                   ":/remove_host_iface_disabled_16px.png"));
     /* setup languages */
     QToolTip::add (pbHostAdd, tr ("Add"));
     QToolTip::add (pbHostRemove, tr ("Remove"));
@@ -764,16 +764,16 @@ void VBoxVMSettingsDlg::init()
     lvUSBFilters_currentChanged (NULL);
 
     /* setup iconsets -- qdesigner is not capable... */
-    tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_new_16px.png",
-                                                     "usb_new_disabled_16px.png"));
-    tbAddUSBFilterFrom->setIconSet (VBoxGlobal::iconSet ("usb_add_16px.png",
-                                                         "usb_add_disabled_16px.png"));
-    tbRemoveUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_remove_16px.png",
-                                                        "usb_remove_disabled_16px.png"));
-    tbUSBFilterUp->setIconSet (VBoxGlobal::iconSet ("usb_moveup_16px.png",
-                                                    "usb_moveup_disabled_16px.png"));
-    tbUSBFilterDown->setIconSet (VBoxGlobal::iconSet ("usb_movedown_16px.png",
-                                                      "usb_movedown_disabled_16px.png"));
+    tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet (":/usb_new_16px.png",
+                                                     ":/usb_new_disabled_16px.png"));
+    tbAddUSBFilterFrom->setIconSet (VBoxGlobal::iconSet (":/usb_add_16px.png",
+                                                         ":/usb_add_disabled_16px.png"));
+    tbRemoveUSBFilter->setIconSet (VBoxGlobal::iconSet (":/usb_remove_16px.png",
+                                                        ":/usb_remove_disabled_16px.png"));
+    tbUSBFilterUp->setIconSet (VBoxGlobal::iconSet (":/usb_moveup_16px.png",
+                                                    ":/usb_moveup_disabled_16px.png"));
+    tbUSBFilterDown->setIconSet (VBoxGlobal::iconSet (":/usb_movedown_16px.png",
+                                                      ":/usb_movedown_disabled_16px.png"));
     usbDevicesMenu = new VBoxUSBMenu (this);
     connect (usbDevicesMenu, SIGNAL(activated(int)), this, SLOT(menuAddUSBFilterFrom_activated(int)));
     mUSBFilterListModified = false;

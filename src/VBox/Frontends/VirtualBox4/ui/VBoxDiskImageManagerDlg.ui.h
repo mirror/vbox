@@ -267,9 +267,9 @@ void VBoxDiskImageManagerDlg::init()
     pxErroneous.convertFromImage (img);
     Assert (!pxErroneous.isNull());
 
-    pxHD = VBoxGlobal::iconSet ("hd_16px.png", "hd_disabled_16px.png");
-    pxCD = VBoxGlobal::iconSet ("cd_16px.png", "cd_disabled_16px.png");
-    pxFD = VBoxGlobal::iconSet ("fd_16px.png", "fd_disabled_16px.png");
+    pxHD = VBoxGlobal::iconSet (":/hd_16px.png", ":/hd_disabled_16px.png");
+    pxCD = VBoxGlobal::iconSet (":/cd_16px.png", ":/cd_disabled_16px.png");
+    pxFD = VBoxGlobal::iconSet (":/fd_16px.png", ":/fd_disabled_16px.png");
 
     /* setup tab widget icons */
     twImages->setTabIconSet (twImages->page (0), pxHD);
@@ -333,21 +333,21 @@ void VBoxDiskImageManagerDlg::init()
              this, SLOT (refreshAll()));
 
     imNewAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vdm_new_22px.png", "vdm_new_16px.png",
-        "vdm_new_disabled_22px.png", "vdm_new_disabled_16px.png"));
+        ":/vdm_new_22px.png", ":/vdm_new_16px.png",
+        ":/vdm_new_disabled_22px.png", ":/vdm_new_disabled_16px.png"));
     imAddAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vdm_add_22px.png", "vdm_add_16px.png",
-        "vdm_add_disabled_22px.png", "vdm_add_disabled_16px.png"));
-    // imEditAction->setIconSet (VBoxGlobal::iconSet ("guesttools_16px.png", "guesttools_disabled_16px.png"));
+        ":/vdm_add_22px.png", ":/vdm_add_16px.png",
+        ":/vdm_add_disabled_22px.png", ":/vdm_add_disabled_16px.png"));
+    // imEditAction->setIconSet (VBoxGlobal::iconSet (":/guesttools_16px.png", ":/guesttools_disabled_16px.png"));
     imRemoveAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vdm_remove_22px.png", "vdm_remove_16px.png",
-        "vdm_remove_disabled_22px.png", "vdm_remove_disabled_16px.png"));
+        ":/vdm_remove_22px.png", ":/vdm_remove_16px.png",
+        ":/vdm_remove_disabled_22px.png", ":/vdm_remove_disabled_16px.png"));
     imReleaseAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vdm_release_22px.png", "vdm_release_16px.png",
-        "vdm_release_disabled_22px.png", "vdm_release_disabled_16px.png"));
+        ":/vdm_release_22px.png", ":/vdm_release_16px.png",
+        ":/vdm_release_disabled_22px.png", ":/vdm_release_disabled_16px.png"));
     imRefreshAction->setIconSet (VBoxGlobal::iconSetEx (
-        "refresh_22px.png", "refresh_16px.png",
-        "refresh_disabled_22px.png", "refresh_disabled_16px.png"));
+        ":/refresh_22px.png", ":/refresh_16px.png",
+        ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
 
     // imEditAction->addTo (itemMenu);
     imRemoveAction->addTo (itemMenu);

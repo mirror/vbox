@@ -59,8 +59,8 @@ public:
         mButtonClose->setFocusPolicy (Qt::TabFocus);
         mButtonClose->setAccel (QKeySequence (Qt::Key_Escape));
         connect (mButtonClose, SIGNAL (clicked()), this, SLOT (hide()));
-        mButtonClose->setIconSet (VBoxGlobal::iconSet ("delete_16px.png",
-                                                   "delete_dis_16px.png"));
+        mButtonClose->setIconSet (VBoxGlobal::iconSet (":/delete_16px.png",
+                                                       ":/delete_dis_16px.png"));
 
         mSearchName = new QLabel (this);
         mSearchString = new QLineEdit (this);
@@ -76,8 +76,8 @@ public:
         mButtonNext->setUsesTextLabel (true);
         mButtonNext->setTextPosition (QToolButton::BesideIcon);
         connect (mButtonNext, SIGNAL (clicked()), this, SLOT (findNext()));
-        mButtonNext->setIconSet (VBoxGlobal::iconSet ("list_movedown_16px.png",
-                                           "list_movedown_disabled_16px.png"));
+        mButtonNext->setIconSet (VBoxGlobal::iconSet (":/list_movedown_16px.png",
+                                                      ":/list_movedown_disabled_16px.png"));
 
         mButtonPrev = new QToolButton (this);
         mButtonPrev->setEnabled (false);
@@ -86,8 +86,8 @@ public:
         mButtonPrev->setUsesTextLabel (true);
         mButtonPrev->setTextPosition (QToolButton::BesideIcon);
         connect (mButtonPrev, SIGNAL (clicked()), this, SLOT (findBack()));
-        mButtonPrev->setIconSet (VBoxGlobal::iconSet ("list_moveup_16px.png",
-                                             "list_moveup_disabled_16px.png"));
+        mButtonPrev->setIconSet (VBoxGlobal::iconSet (":/list_moveup_16px.png",
+                                                      ":/list_moveup_disabled_16px.png"));
 
         mCaseSensitive = new QCheckBox (this);
 

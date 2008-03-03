@@ -2546,47 +2546,49 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
 }
 
 /* static */
-QIcon VBoxGlobal::iconSet (const QString &aNormal,
-                           const QString &aDisabled,
-                           const QString &aActive)
+QIcon VBoxGlobal::iconSet (const char *aNormal,
+                           const char *aDisabled /* = NULL */,
+                           const char *aActive /* = NULL */)
 {
     QIcon iconSet;
 
-    iconSet.setPixmap (QPixmap (":/" + aNormal),
+    iconSet.setPixmap (QPixmap (aNormal),
                        QIcon::Automatic, QIcon::Normal);
-    if (!aDisabled.isEmpty())
-        iconSet.setPixmap (QPixmap (":/" + aDisabled),
+    if (aDisabled != NULL)
+        iconSet.setPixmap (QPixmap (aDisabled),
                            QIcon::Automatic, QIcon::Disabled);
-    if (!aActive.isEmpty())
-        iconSet.setPixmap (QPixmap (":/" + aActive),
+    if (aActive != NULL)
+        iconSet.setPixmap (QPixmap (aActive),
                            QIcon::Automatic, QIcon::Active);
     return iconSet;
 }
 
 /* static */
 QIcon VBoxGlobal::
-iconSetEx (const QString &aNormal, const QString &aSmallNormal,
-           const QString &aDisabled, const QString &aSmallDisabled,
-           const QString &aActive, const QString &aSmallActive)
+iconSetEx (const char *aNormal, const char *aSmallNormal,
+           const char *aDisabled /* = NULL */,
+           const char *aSmallDisabled /* = NULL */,
+           const char *aActive /* = NULL */,
+           const char *aSmallActive /* = NULL */)
 {
     QIcon iconSet;
 
-    iconSet.setPixmap (QPixmap (":/" + aNormal),
+    iconSet.setPixmap (QPixmap (aNormal),
                        QIcon::Large, QIcon::Normal);
-    iconSet.setPixmap (QPixmap (":/" + aSmallNormal),
+    iconSet.setPixmap (QPixmap (aSmallNormal),
                        QIcon::Small, QIcon::Normal);
-    if (!aSmallDisabled.isEmpty())
+    if (aSmallDisabled != NULL)
     {
-        iconSet.setPixmap (QPixmap (":/" + aDisabled),
+        iconSet.setPixmap (QPixmap (aDisabled),
                            QIcon::Large, QIcon::Disabled);
-        iconSet.setPixmap (QPixmap (":/" + aSmallDisabled),
+        iconSet.setPixmap (QPixmap (aSmallDisabled),
                            QIcon::Small, QIcon::Disabled);
     }
-    if (!aSmallActive.isEmpty())
+    if (aSmallActive != NULL)
     {
-        iconSet.setPixmap (QPixmap (":/" + aActive),
+        iconSet.setPixmap (QPixmap (aActive),
                            QIcon::Large, QIcon::Active);
-        iconSet.setPixmap (QPixmap (":/" + aSmallActive),
+        iconSet.setPixmap (QPixmap (aSmallActive),
                            QIcon::Small, QIcon::Active);
     }
 

@@ -53,8 +53,8 @@ void VBoxVMFirstRunWzd::init()
     cbImage = new VBoxMediaComboBox (bgSource, "cbImage", VBoxDefs::CD);
 #warning port me
 //    ltVdm->insertWidget (0, cbImage);
-    tbVdm->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                            "select_file_dis_16px.png"));
+    tbVdm->setIconSet (VBoxGlobal::iconSet (":/select_file_16px.png",
+                                            ":/select_file_dis_16px.png"));
     setTabOrder (cbImage, tbVdm);
 
     /* summary page */

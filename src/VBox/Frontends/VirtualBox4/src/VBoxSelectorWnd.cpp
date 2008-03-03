@@ -288,8 +288,8 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     mBtnEdit = new QToolButton (this, "mBtnEdit");
     mBtnEdit->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Fixed);
     mBtnEdit->setFocusPolicy (Qt::StrongFocus);
-    mBtnEdit->setIconSet (VBoxGlobal::iconSet ("edit_description_16px.png",
-                                               "edit_description_disabled_16px.png"));
+    mBtnEdit->setIconSet (VBoxGlobal::iconSet (":/edit_description_16px.png",
+                                               ":/edit_description_disabled_16px.png"));
     mBtnEdit->setTextPosition (QToolButton::BesideIcon);
     mBtnEdit->setUsesTextLabel (true);
     connect (mBtnEdit, SIGNAL (clicked()), this, SLOT (goToSettings()));
@@ -407,56 +407,56 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     /* actions */
 
     fileDiskMgrAction = new QAction( this, "fileDiskMgrAction" );
-    fileDiskMgrAction->setIconSet (VBoxGlobal::iconSet ("diskim_16px.png"));
+    fileDiskMgrAction->setIconSet (VBoxGlobal::iconSet (":/diskim_16px.png"));
     fileSettingsAction = new QAction(this, "fileSettingsAction");
-    fileSettingsAction->setIconSet (VBoxGlobal::iconSet ("global_settings_16px.png"));
+    fileSettingsAction->setIconSet (VBoxGlobal::iconSet (":/global_settings_16px.png"));
     fileExitAction = new QAction (this, "fileExitAction");
-    fileExitAction->setIconSet (VBoxGlobal::iconSet ("exit_16px.png"));
+    fileExitAction->setIconSet (VBoxGlobal::iconSet (":/exit_16px.png"));
 
     vmNewAction = new QAction (this, "vmNewAction");
     vmNewAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vm_new_32px.png", "new_16px.png"));
+        ":/vm_new_32px.png", ":/new_16px.png"));
     vmConfigAction = new QAction (this, "vmConfigAction");
     vmConfigAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vm_settings_32px.png", "settings_16px.png",
-        "vm_settings_disabled_32px.png", "settings_dis_16px.png"));
+        ":/vm_settings_32px.png", ":/settings_16px.png",
+        ":/vm_settings_disabled_32px.png", ":/settings_dis_16px.png"));
     vmDeleteAction = new QAction( this, "vmDeleteAction" );
     vmDeleteAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vm_delete_32px.png", "delete_16px.png",
-        "vm_delete_disabled_32px.png", "delete_dis_16px.png"));
+        ":/vm_delete_32px.png", ":/delete_16px.png",
+        ":/vm_delete_disabled_32px.png", ":/delete_dis_16px.png"));
     vmStartAction = new QAction( this, "vmStartAction" );
     vmStartAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vm_start_32px.png", "start_16px.png",
-        "vm_start_disabled_32px.png", "start_dis_16px.png"));
+        ":/vm_start_32px.png", ":/start_16px.png",
+        ":/vm_start_disabled_32px.png", ":/start_dis_16px.png"));
     vmDiscardAction = new QAction (this, "vmDiscardAction");
     vmDiscardAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vm_discard_32px.png", "discard_16px.png",
-        "vm_discard_disabled_32px.png", "discard_dis_16px.png"));
+        ":/vm_discard_32px.png", ":/discard_16px.png",
+        ":/vm_discard_disabled_32px.png", ":/discard_dis_16px.png"));
     vmPauseAction = new QAction (this, "vmPauseAction");
     vmPauseAction->setToggleAction (true);
     vmPauseAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vm_pause_32px.png", "pause_16px.png",
-        "vm_pause_disabled_32px.png", "pause_disabled_16px.png"));
+        ":/vm_pause_32px.png", "pause_16px.png",
+        ":/vm_pause_disabled_32px.png", "pause_disabled_16px.png"));
     vmRefreshAction = new QAction (this, "vmRefreshAction");
     vmRefreshAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vm_refresh_32px.png", "refresh_16px.png",
-        "vm_refresh_disabled_32px.png", "refresh_disabled_16px.png"));
+        ":/vm_refresh_32px.png", "refresh_16px.png",
+        ":/vm_refresh_disabled_32px.png", "refresh_disabled_16px.png"));
     vmShowLogsAction = new QAction (this, "vmShowLogsAction");
     vmShowLogsAction->setIconSet (VBoxGlobal::iconSetEx (
-        "vm_show_logs_32px.png", "show_logs_16px.png",
-        "vm_show_logs_disabled_32px.png", "show_logs_disabled_16px.png"));
+        ":/vm_show_logs_32px.png", "show_logs_16px.png",
+        ":/vm_show_logs_disabled_32px.png", "show_logs_disabled_16px.png"));
 
     helpContentsAction = new QAction (this, "helpContentsAction");
-    helpContentsAction->setIconSet (VBoxGlobal::iconSet ("help_16px.png"));
+    helpContentsAction->setIconSet (VBoxGlobal::iconSet (":/help_16px.png"));
     helpWebAction = new QAction (this, "helpWebAction");
-    helpWebAction->setIconSet (VBoxGlobal::iconSet ("site_16px.png"));
+    helpWebAction->setIconSet (VBoxGlobal::iconSet (":/site_16px.png"));
     helpRegisterAction = new QAction (this, "helpRegisterAction");
-    helpRegisterAction->setIconSet (VBoxGlobal::iconSet ("register_16px.png",
-                                                         "register_disabled_16px.png"));
+    helpRegisterAction->setIconSet (VBoxGlobal::iconSet (":/register_16px.png",
+                                                         ":/register_disabled_16px.png"));
     helpAboutAction = new QAction (this, "helpAboutAction");
-    helpAboutAction->setIconSet (VBoxGlobal::iconSet ("about_16px.png"));
+    helpAboutAction->setIconSet (VBoxGlobal::iconSet (":/about_16px.png"));
     helpResetMessagesAction = new QAction( this, "helpResetMessagesAction" );
-    helpResetMessagesAction->setIconSet (VBoxGlobal::iconSet ("reset_16px.png"));
+    helpResetMessagesAction->setIconSet (VBoxGlobal::iconSet (":/reset_16px.png"));
 
     /* subwidgets */
 
@@ -488,21 +488,21 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmDetailsView = new VBoxVMDetailsView (NULL, "vmDetailsView",
                                            vmRefreshAction);
     vmTabWidget->addTab (vmDetailsView,
-                         VBoxGlobal::iconSet ("settings_16px.png"),
+                         VBoxGlobal::iconSet (":/settings_16px.png"),
                          QString::null);
 
     /* VM snapshots list */
     vmSnapshotsWgt = new VBoxSnapshotsWgt (NULL, "vmSnapshotsWgt");
     vmTabWidget->addTab (vmSnapshotsWgt,
-                         VBoxGlobal::iconSet ("take_snapshot_16px.png",
-                                              "take_snapshot_dis_16px.png"),
+                         VBoxGlobal::iconSet (":/take_snapshot_16px.png",
+                                              ":/take_snapshot_dis_16px.png"),
                          QString::null);
 
     /* VM comments page */
     vmDescriptionPage = new VBoxVMDescriptionPage (this, "vmDescriptionPage");
     vmTabWidget->addTab (vmDescriptionPage,
-                         VBoxGlobal::iconSet ("description_16px.png",
-                                              "description_disabled_16px.png"),
+                         VBoxGlobal::iconSet (":/description_16px.png",
+                                              ":/description_disabled_16px.png"),
                          QString::null);
 
     /* add actions to the toolbar */

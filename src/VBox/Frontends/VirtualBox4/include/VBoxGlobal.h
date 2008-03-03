@@ -479,12 +479,14 @@ public:
     static QString languageId();
     static void loadLanguage (const QString &aLangId = QString::null);
 
-    static QIcon iconSet (const QString &aNormal,
-                          const QString &aDisabled = "",
-                          const QString &aActive = "");
-    static QIcon iconSetEx (const QString &aNormal, const QString &aSmallNormal,
-                            const QString &aDisabled = "", const QString &aSmallDisabled = "",
-                            const QString &aActive = "", const QString &aSmallActive = "");
+    static QIcon iconSet (const char *aNormal,
+                          const char *aDisabled = NULL,
+                          const char *aActive = NULL);
+    static QIcon iconSetEx (const char *aNormal, const char *aSmallNormal,
+                            const char *aDisabled = NULL,
+                            const char *aSmallDisabled = NULL,
+                            const char *aActive = NULL,
+                            const char *aSmallActive = NULL);
 
     static void setTextLabel (QToolButton *aToolButton, const QString &aTextLabel);
 
