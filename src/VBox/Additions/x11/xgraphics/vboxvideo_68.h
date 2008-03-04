@@ -144,7 +144,6 @@ typedef struct _VBOXRec
     int vbox_fd;
     VMMDevReqMousePointer *reqp;
     xf86CursorInfoPtr pCurs;
-    Bool useHwCursor;
     size_t pointerHeaderSize;
     size_t pointerSize;
     Bool pointerOffscreen;

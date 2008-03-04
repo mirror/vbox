@@ -49,7 +49,7 @@
 
 #define DEBUG_VERB 2
 
-#include "vboxvideo.h"
+#include "vboxvideo_68.h"
 #include "version-generated.h"
 
 /* All drivers initialising the SW cursor need this */
