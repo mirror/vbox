@@ -1967,7 +1967,7 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
         }
         else
         {
-            LogFlow(("VRDPServer::loadLibrary(): failed to load VRDP library! VRDP not available.\n"));
+            LogRel(("VRDPServer::loadLibrary(): failed to load VRDP library! VRDP not available: rc = %Vrc\n", rc));
             mVRDPLibrary = NULL;
         }
     }
