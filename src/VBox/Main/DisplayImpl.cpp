@@ -86,8 +86,6 @@ HRESULT Display::FinalConstruct()
     mLastWidth = 0;
     mLastHeight = 0;
 
-//    mu32ResizeStatus = ResizeStatus_Void;
-
     return S_OK;
 }
 
@@ -123,7 +121,6 @@ HRESULT Display::init (Console *parent)
 
     // by default, we have an internal framebuffer which is
     // NULL, i.e. a black hole for no display output
-//    mFramebuffer = 0;
     mInternalFramebuffer = true;
     mFramebufferOpened = false;
     mSupportedAccelOps = 0;
@@ -172,7 +169,6 @@ void Display::uninit()
     AutoLock alock (this);
     AssertReturn (isReady(), (void) 0);
 
-//    mFramebuffer.setNull();
     ULONG ul;
     for (ul = 0; ul < mcMonitors; ul++)
     {
