@@ -167,12 +167,12 @@ public:
         return rc;
     }
 
-    void uninit(void)
+    void uninit(unsigned cMillies = RT_INDEFINITE_WAIT)
     {
         if (isInitialised)
         {
             mHost.stop();
-            mGuestThread.stop(RT_INDEFINITE_WAIT, 0);
+            mGuestThread.stop(cMillies, 0);
             mGuest.uninit();
             isInitialised = false;
         }

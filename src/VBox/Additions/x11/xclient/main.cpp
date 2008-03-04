@@ -21,14 +21,16 @@
 #include <VBox/VBoxGuest.h>
 #include <VBox/log.h>
 #include <iprt/initterm.h>
+#include <iprt/path.h>
 
 #include <iostream>
+#include <cstdio>
 
 #include <sys/types.h>
 #include <stdlib.h>       /* For exit */
 #include <unistd.h>
-#include <getopt.h>
 #include <errno.h>
+#include <signal.h>
 
 #include <X11/Xlib.h>
 #include <X11/Intrinsic.h>
@@ -42,8 +44,23 @@
 # endif
 #endif
 
-static bool gbDaemonise = true;
+#define TRACE printf("%s: %d\n", __PRETTY_FUNCTION__, __LINE__); Log(("%s: %d\n", __PRETTY_FUNCTION__, __LINE__))
+
 static int (*gpfnOldIOErrorHandler)(Display *) = NULL;
+
+/* Make these global so that the destructors are called if we make an "emergency exit",
+   i.e. a (handled) signal or an X11 error. */
+#ifdef DYNAMIC_RESIZE
+VBoxGuestDisplayChangeMonitor gDisplayChange;
+# ifdef SEAMLESS_GUEST
+    /** Our instance of the seamless class.  This only makes sense if dynamic resizing
+        is enabled. */
+    VBoxGuestSeamless gSeamless;
+# endif /* SEAMLESS_GUEST defined */
+#endif /* DYNAMIC_RESIZE */
+#ifdef VBOX_X11_CLIPBOARD
+    VBoxGuestClipboard gClipboard;
+#endif
 
 /**
  * Drop the programmes privileges to the caller's.
@@ -89,9 +106,6 @@ int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
         Log(("VBoxClient: ignoring BadWindow error and returning\n"));
         return 0;
     }
-#ifdef VBOX_X11_CLIPBOARD
-    vboxClipboardDisconnect();
-#endif
     XGetErrorText(pDisplay, pError->error_code, errorText, sizeof(errorText));
     LogRel(("VBoxClient: an X Window protocol error occurred: %s (error code %d).  Request code: %d, minor code: %d, serial number: %d\n", errorText, pError->error_code, pError->request_code, pError->minor_code, pError->serial));
     VbglR3Term();
@@ -109,50 +123,85 @@ int vboxClientXLibIOErrorHandler(Display *pDisplay)
     return gpfnOldIOErrorHandler(pDisplay);
 }
 
+/**
+ * A standard signal handler which cleans up and exits.  Our global static objects will
+ * be cleaned up properly as we exit using "exit".
+ */
+void vboxClientSignalHandler(int cSignal)
+{
+    Log(("VBoxClient: terminated with signal %d\n", cSignal));
+    /* Our pause() call will now return and exit. */
+}
+
+/**
+ * Reset all standard termination signals to call our signal handler, which cleans up
+ * and exits.
+ */
+void vboxClientSetSignalHandlers(void)
+{
+    struct sigaction sigAction = { { 0 } };
+
+    sigAction.sa_handler = vboxClientSignalHandler;
+    sigemptyset(&sigAction.sa_mask);
+    sigaction(SIGHUP, &sigAction, NULL);
+    sigaction(SIGINT, &sigAction, NULL);
+    sigaction(SIGQUIT, &sigAction, NULL);
+    sigaction(SIGABRT, &sigAction, NULL);
+    sigaction(SIGPIPE, &sigAction, NULL);
+    sigaction(SIGALRM, &sigAction, NULL);
+    sigaction(SIGTERM, &sigAction, NULL);
+    sigaction(SIGUSR1, &sigAction, NULL);
+    sigaction(SIGUSR2, &sigAction, NULL);
+}
+
+/**
+ * Print out a usage message and exit with success.
+ */
+void vboxClientUsage(const char *pcszFileName)
+{
+    /* printf is better for i18n than iostream. */
+    printf("Usage: %s [-d|--nodaemon]\n", pcszFileName);
+    printf("Start the VirtualBox X Window System guest services.\n\n");
+    printf("Options:\n");
+    printf("  -d, --nodaemon   do not lower privileges and continue running as a system\n");
+    printf("                   service\n");
+    exit(0);
+}
+
+/**
+ * The main loop for the VBoxClient daemon.
+ */
 int main(int argc, char *argv[])
 {
     int rcClipboard, rc = VINF_SUCCESS;
-#ifdef DYNAMIC_RESIZE
-    VBoxGuestDisplayChangeMonitor displayChange;
-# ifdef SEAMLESS_GUEST
-    /** Our instance of the seamless class.  This only makes sense if dynamic resizing
-        is enabled. */
-    VBoxGuestSeamless seamless;
-# endif /* SEAMLESS_GUEST defined */
-#endif /* DYNAMIC_RESIZE */
+    const char *pszFileName = RTPathFilename(argv[0]);
+    bool fDaemonise = true;
 
+    if (NULL == pszFileName)
+        pszFileName = "VBoxClient";
+
+    TRACE;
     /* Parse our option(s) */
-/** @todo r=bird: use RTGetOpt */
-    while (1)
+    /** @todo Use RTGetOpt() if the arguments become more complex. */
+    for (int i = 1; i < argc; ++i)
     {
-        static struct option sOpts[] =
+        if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--nodaemon"))
+            fDaemonise = false;
+        else if (!strcmp(argv[i], "-h") || strcmp(argv[i], "--help"))
         {
-            {"nodaemon", 0, 0, 'd'},
-            {0, 0, 0, 0}
-        };
-        int cOpt = getopt_long(argc, argv, "", sOpts, 0);
-        if (cOpt == -1)
-        {
-            if (optind < argc)
-            {
-                std::cout << "Unrecognized command line argument: " << argv[argc] << std::endl;
-                exit(1);
-            }
-            break;
+            vboxClientUsage(pszFileName);
+            exit(0);
         }
-        switch(cOpt)
+        else
         {
-        case 'd':
-            gbDaemonise = false;
-            break;
-        default:
-            std::cout << "Unrecognized command line option: " << static_cast<char>(cOpt)
-                      << std::endl;
-        case '?':
+            /* printf is better than iostream for i18n. */
+            printf("%s: unrecognized option `%s'\n", pszFileName, argv[i]);
+            printf("Try `%s --help' for more information\n", pszFileName);
             exit(1);
         }
     }
-    if (gbDaemonise)
+    TRACE;
+    if (fDaemonise)
     {
         rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
         if (RT_FAILURE(rc))
@@ -162,13 +211,15 @@ int main(int argc, char *argv[])
         }
     }
     /* Initialise our runtime before all else. */
+    TRACE;
     RTR3Init(false);
     if (RT_FAILURE(VbglR3Init()))
     {
         std::cout << "Failed to connect to the VirtualBox kernel service" << std::endl;
         return 1;
     }
-    if (RT_FAILURE(vboxClientDropPrivileges()))
+    TRACE;
+    if (fDaemonise && RT_FAILURE(vboxClientDropPrivileges()))
         return 1;
     LogRel(("VBoxClient: starting...\n"));
     /* Initialise threading in X11 and in Xt. */
@@ -181,20 +232,21 @@ int main(int argc, char *argv[])
     XSetErrorHandler(vboxClientXLibErrorHandler);
     /* Set an X11 I/O error handler, so that we can shutdown properly on fatal errors. */
     gpfnOldIOErrorHandler = XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
-#ifdef VBOX_X11_CLIPBOARD
-    /* Connect to the host clipboard. */
-    LogRel(("VBoxClient: starting clipboard Guest Additions...\n"));
-    rcClipboard = vboxClipboardConnect();
-    if (RT_FAILURE(rcClipboard))
-    {
-        LogRel(("VBoxClient: vboxClipboardConnect failed with rc = %Rrc\n", rc));
-    }
-#endif  /* VBOX_X11_CLIPBOARD defined */
+    vboxClientSetSignalHandlers();
     try
     {
+#ifdef VBOX_X11_CLIPBOARD
+        /* Connect to the host clipboard. */
+        LogRel(("VBoxClient: starting clipboard Guest Additions...\n"));
+        rcClipboard = gClipboard.init();
+        if (RT_FAILURE(rcClipboard))
+        {
+            LogRel(("VBoxClient: vboxClipboardConnect failed with rc = %Rrc\n", rc));
+        }
+#endif  /* VBOX_X11_CLIPBOARD defined */
 #ifdef DYNAMIC_RESIZE
         LogRel(("VBoxClient: starting dynamic guest resizing...\n"));
-        rc = displayChange.init();
+        rc = gDisplayChange.init();
         if (RT_FAILURE(rc))
         {
             LogRel(("VBoxClient: failed to start dynamic guest resizing, rc = %Rrc\n", rc));
@@ -203,7 +255,7 @@ int main(int argc, char *argv[])
         if (RT_SUCCESS(rc))
         {
             LogRel(("VBoxClient: starting seamless Guest Additions...\n"));
-            rc = seamless.init();
+            rc = gSeamless.init();
             if (RT_FAILURE(rc))
             {
                 LogRel(("VBoxClient: failed to start seamless Additions, rc = %Rrc\n", rc));
@@ -214,43 +266,41 @@ int main(int argc, char *argv[])
     }
     catch (std::exception e)
     {
-        LogRel(("VBoxClient: failed to initialise seamless Additions - caught exception: %s\n", e.what()));
+        LogRel(("VBoxClient: failed to initialise Guest Additions - caught exception: %s\n", e.what()));
         rc = VERR_UNRESOLVED_ERROR;
     }
     catch (...)
     {
-        LogRel(("VBoxClient: failed to initialise seamless Additions - caught unknown exception.\n"));
+        LogRel(("VBoxClient: failed to initialise Guest Additions - caught unknown exception.\n"));
         rc = VERR_UNRESOLVED_ERROR;
     }
-#ifdef VBOX_X11_CLIPBOARD
-    if (RT_SUCCESS(rcClipboard))
-    {
-        LogRel(("VBoxClient: connecting to the shared clipboard service.\n"));
-        vboxClipboardMain();
-        vboxClipboardDisconnect();
-    }
-#else  /* VBOX_X11_CLIPBOARD not defined */
     LogRel(("VBoxClient: sleeping...\n"));
     pause();
     LogRel(("VBoxClient: exiting...\n"));
-#endif  /* VBOX_X11_CLIPBOARD not defined */
     try
     {
 #ifdef DYNAMIC_RESIZE
-        displayChange.uninit();
 # ifdef SEAMLESS_GUEST
-        seamless.uninit();
+        LogRel(("VBoxClient: shutting down seamless Guest Additions...\n"));
+        gSeamless.uninit(2000);
 # endif /* SEAMLESS_GUEST defined */
+        LogRel(("VBoxClient: shutting down dynamic guest resizing...\n"));
+        gDisplayChange.uninit(2000);
 #endif /* DYNAMIC_RESIZE defined */
+#ifdef VBOX_X11_CLIPBOARD
+        /* Connect to the host clipboard. */
+        LogRel(("VBoxClient: shutting down clipboard Guest Additions...\n"));
+        gClipboard.uninit(2000);
+#endif  /* VBOX_X11_CLIPBOARD defined */
     }
     catch (std::exception e)
     {
-        LogRel(("VBoxClient: error shutting down seamless Additions - caught exception: %s\n", e.what()));
+        LogRel(("VBoxClient: failed to shut down Guest Additions - caught exception: %s\n", e.what()));
         rc = VERR_UNRESOLVED_ERROR;
     }
     catch (...)
     {
-        LogRel(("VBoxClient: error shutting down seamless Additions - caught unknown exception.\n"));
+        LogRel(("VBoxClient: failed to shut down Guest Additions - caught unknown exception.\n"));
         rc = VERR_UNRESOLVED_ERROR;
     }
     VbglR3Term();
