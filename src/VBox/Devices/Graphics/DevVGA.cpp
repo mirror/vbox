@@ -4911,7 +4911,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             if (VBOX_SUCCESS(rc))
             {
                 ModeInfoListItem *pDefMode = mode_info_list;
-                unsigned int cx, cy, cBits, cParams;
+                unsigned int cx, cy, cBits, cParams, j;
                 uint16_t u16DefMode;
 
                 cParams = sscanf(pszExtraData, "%ux%ux%u", &cx, &cy, &cBits);
@@ -4951,10 +4951,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                         continue;
                 }
 
-                while (     pDefMode->mode != u16DefMode
-                       &&   pDefMode->mode != VBE_VESA_MODE_END_OF_LIST)
+                /* mode_info_list is not terminated */
+                for (j = 0; j < MODE_INFO_SIZE && pDefMode->mode != u16DefMode; j++)
                     pDefMode++;
-                Assert(pDefMode->mode != VBE_VESA_MODE_END_OF_LIST);
+                Assert(j < MODE_INFO_SIZE);
 
                 *pCurMode  = *pDefMode;
                 pCurMode->mode = u16CurMode++;
