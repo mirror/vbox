@@ -47,6 +47,11 @@ using namespace com;
 #include <iprt/process.h>
 #endif
 
+//#define VBOX_WITH_SAVESTATE_ON_SIGNAL
+#ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
+#include <signal.h>
+#endif
+
 #ifdef VBOX_WITH_VRDP
 # include "Framebuffer.h"
 #endif
@@ -261,6 +266,65 @@ private:
 NS_DECL_CLASSINFO (ConsoleCallback)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI (ConsoleCallback, IConsoleCallback)
 #endif
+
+#ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
+static void SaveState(int sig)
+{
+    ComPtr <IProgress> progress = NULL;
+
+/** @todo Deal with nested signals, multithreaded signal dispatching (esp. on windows),
+ * and multiple signals (both SIGINT and SIGTERM in some order).
+ * Consider processing the signal request asynchronously since there are lots of things
+ * which aren't safe (like RTPrintf and printf IIRC) in a signal context. */
+
+    RTPrintf("Signal received, saving state.\n");
+
+    HRESULT rc = gConsole->SaveState(progress.asOutParam());
+    if (FAILED(S_OK))
+    {
+        RTPrintf("Error saving state! rc = 0x%x\n", rc);
+        return;
+    }
+    Assert(progress);
+    LONG cPercent = 0;
+
+    RTPrintf("0%%");
+    RTStrmFlush(g_pStdOut);
+    for (;;)
+    {
+        BOOL fCompleted = false;
+        rc = progress->COMGETTER(Completed)(&fCompleted);
+        if (FAILED(rc) || fCompleted)
+            break;
+        LONG cPercentNow;
+        rc = progress->COMGETTER(Percent)(&cPercentNow);
+        if (FAILED(rc))
+            break;
+        if ((cPercentNow / 10) != (cPercent / 10))
+        {
+            cPercent = cPercentNow;
+            RTPrintf("...%d%%", cPercentNow);
+            RTStrmFlush(g_pStdOut);
+        }
+
+        /* wait */
+        rc = progress->WaitForCompletion(100);
+    }
+
+    HRESULT lrc;
+    rc = progress->COMGETTER(ResultCode)(&lrc);
+    if (FAILED(rc))
+        lrc = ~0;
+    if (!lrc)
+    {
+        RTPrintf(" -- Saved the state successfully.\n");
+        RTThreadYield();
+    }
+    else
+        RTPrintf("-- Error saving state, lrc=%d (%#x)\n", lrc, lrc);
+
+}
+#endif /* VBOX_WITH_SAVESTATE_ON_SIGNAL */
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -775,6 +839,12 @@ int main (int argc, char **argv)
                 }
             }
         }
+
+#ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
+        signal(SIGINT, SaveState);
+        signal(SIGTERM, SaveState);
+#endif
+
         Log (("VBoxHeadless: Waiting for PowerDown...\n"));
 
         Event *e;
