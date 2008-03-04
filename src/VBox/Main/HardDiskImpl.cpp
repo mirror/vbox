@@ -3380,7 +3380,7 @@ HRESULT HVMDKImage::FinalConstruct()
     mActualSize = 0;
 
     /* initialize the container */
-    int vrc = VDCreate ("VMDK", VDError, this, &mContainer);
+    int vrc = VDCreate (VDError, this, &mContainer);
     ComAssertRCRet (vrc, E_FAIL);
 
     return S_OK;
@@ -4048,7 +4048,7 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
         /// yield a null UUID. It cannot be added to a VMDK opened readonly,
         /// obviously. This of course changes locking behavior, but for now
         /// this is acceptable. A better solution needs to be found later.
-        vrc = VDOpen (mContainer, filePath, VD_OPEN_FLAGS_NORMAL);
+        vrc = VDOpen (mContainer, "VMDK", filePath, VD_OPEN_FLAGS_NORMAL);
         if (VBOX_FAILURE (vrc))
             break;
 
@@ -4315,7 +4315,7 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         mFormat = aCustomNode.stringValue ("format");
 
         /* initialize the container */
-        vrc = VDCreate (Utf8Str (mFormat), VDError, this, &mContainer);
+        vrc = VDCreate (VDError, this, &mContainer);
         if (VBOX_FAILURE (vrc))
         {
             AssertRC (vrc);
@@ -4416,14 +4416,11 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
                     toString().raw(), vrc);
                 break;
             }
+            mFormat = Bstr (pszFormat);
+            RTStrFree (pszFormat);
 
             /* Create the corresponding container. */
-            vrc = VDCreate (pszFormat, VDError, this, &mContainer);
-
-            if (VBOX_SUCCESS(vrc))
-                mFormat = Bstr (pszFormat);
-
-            RTStrFree (pszFormat);
+            vrc = VDCreate (VDError, this, &mContainer);
 
             /* the format has been already checked for presence at this point */
             ComAssertRCBreak (vrc, rc = E_FAIL);
@@ -4884,7 +4881,7 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
     {
         Guid id, parentId;
 
-        vrc = VDOpen (mContainer, location, VD_OPEN_FLAGS_INFO);
+        vrc = VDOpen (mContainer, Utf8Str (mFormat), location, VD_OPEN_FLAGS_INFO);
         if (VBOX_FAILURE (vrc))
             break;
 
@@ -5082,7 +5079,7 @@ HRESULT HVHDImage::FinalConstruct()
     mActualSize = 0;
 
     /* initialize the container */
-    int vrc = VDCreate ("VHD", VDError, this, &mContainer);
+    int vrc = VDCreate (VDError, this, &mContainer);
     ComAssertRCRet (vrc, E_FAIL);
 
     return S_OK;
@@ -5748,7 +5745,7 @@ HRESULT HVHDImage::queryInformation (Bstr *aAccessError)
         /// yield a null UUID. It cannot be added to a VHD opened readonly,
         /// obviously. This of course changes locking behavior, but for now
         /// this is acceptable. A better solution needs to be found later.
-        vrc = VDOpen (mContainer, filePath, VD_OPEN_FLAGS_NORMAL);
+        vrc = VDOpen (mContainer, "VHD", filePath, VD_OPEN_FLAGS_NORMAL);
         if (VBOX_FAILURE (vrc))
             break;
 

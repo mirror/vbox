@@ -759,6 +759,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             STR_CONV();
             rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
             STR_FREE();
+            rc = CFGMR3InsertString(pCfg,   "Format",           "VMDK");                RC_CHECK();
         }
         else if (hddType == HardDiskStorageType_CustomHardDisk)
         {

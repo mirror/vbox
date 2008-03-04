@@ -58,6 +58,11 @@ typedef struct VDIMAGE
     /** Image open flags (only those handled generically in this code and which
      * the backends will never ever see). */
     unsigned        uOpenFlags;
+
+    /** Handle for the shared object / DLL. */
+    RTLDRMOD            hPlugin;
+    /** Function pointers for the various backend methods. */
+    PCVBOXHDDBACKEND    Backend;
 } VDIMAGE, *PVDIMAGE;
 
 /**
@@ -100,11 +105,6 @@ struct VBOXHDD
     PFNVDERROR          pfnError;
     /** Opaque data for error callback. */
     void                *pvErrorUser;
-
-    /** Handle for the shared object / DLL. */
-    RTLDRMOD            hPlugin;
-    /** Function pointers for the various backend methods. */
-    PCVBOXHDDBACKEND    Backend;
 };
 
 
@@ -126,20 +126,6 @@ static PCVBOXHDDBACKEND aBackends[] =
 
 
 /**
- * internal: issue early error message.
- */
-static int vdEarlyError(PFNVDERROR pfnError, void *pvErrorUser, int rc,
-                        RT_SRC_POS_DECL, const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    if (pfnError)
-        pfnError(pvErrorUser, rc, RT_SRC_POS_ARGS, pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-/**
  * internal: issue error message.
  */
 static int vdError(PVBOXHDD pDisk, int rc, RT_SRC_POS_DECL,
@@ -150,6 +136,93 @@ static int vdError(PVBOXHDD pDisk, int rc, RT_SRC_POS_DECL,
     if (pDisk->pfnError)
         pDisk->pfnError(pDisk->pvErrorUser, rc, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
+    return rc;
+}
+
+/**
+ * internal: find image format backend.
+ */
+static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend,
+                         RTLDRMOD *phPlugin)
+{
+    int rc = VINF_SUCCESS;
+    PCVBOXHDDBACKEND pBackend = NULL;
+    RTLDRMOD hPlugin = NIL_RTLDRMOD;
+
+    for (unsigned i = 0; aBackends[i] != NULL; i++)
+    {
+        if (!strcmp(pszBackend, aBackends[i]->pszBackendName))
+        {
+            pBackend = aBackends[i];
+            break;
+        }
+    }
+
+    /* If no static backend is found try loading a shared module with
+     * pszBackend as filename. */
+    if (!pBackend)
+    {
+        char *pszPluginName;
+
+        /* HDD Format Plugins have VBoxHDD as prefix, prepend it. */
+        RTStrAPrintf(&pszPluginName, "%s%s",
+                     VBOX_HDDFORMAT_PLUGIN_PREFIX, pszBackend);
+        if (!pszPluginName)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+
+        /* Try to load the plugin (RTldrLoad takes care of the suffix). */
+        rc = RTLdrLoad(pszPluginName, &hPlugin);
+        if (VBOX_SUCCESS(rc))
+        {
+            PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad;
+
+            rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME,
+                                (void**)&pfnHDDFormatLoad);
+            if (VBOX_FAILURE(rc) || !pfnHDDFormatLoad)
+            {
+                LogFunc(("error resolving the entry point %s in plugin %s, rc=%Vrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pszPluginName, rc, pfnHDDFormatLoad));
+                if (VBOX_SUCCESS(rc))
+                    rc = VERR_SYMBOL_NOT_FOUND;
+                goto out;
+            }
+
+            /* Get the function table. */
+            PVBOXHDDBACKEND pBE;
+            rc = pfnHDDFormatLoad(&pBE);
+            if (VBOX_FAILURE(rc))
+                goto out;
+            /* Check if the sizes match. If not this plugin is too old. */
+            if (pBE->cbSize != sizeof(VBOXHDDBACKEND))
+            {
+                rc = VERR_VDI_UNSUPPORTED_VERSION;
+                goto out;
+            }
+            pBackend = pBE;
+        }
+        else
+        {
+            /* If the backend plugin doesn't exist, don't treat this as an
+             * error. Just return the NULL pointers. */
+            rc = VINF_SUCCESS;
+        }
+
+        RTStrFree(pszPluginName);
+    }
+
+out:
+    if (VBOX_FAILURE(rc))
+    {
+        if (hPlugin != NIL_RTLDRMOD)
+            RTLdrClose(hPlugin);
+        hPlugin = NIL_RTLDRMOD;
+        pBackend = NULL;
+    }
+
+    *ppBackend = pBackend;
+    *phPlugin = hPlugin;
     return rc;
 }
 
@@ -239,8 +312,9 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
              pCurrImage != NULL && rc == VERR_VDI_BLOCK_FREE;
              pCurrImage = pCurrImage->pPrev)
         {
-            rc = pDisk->Backend->pfnRead(pCurrImage->pvBackendData, uOffset,
-                                         pvBuf, cbThisRead, &cbThisRead);
+            rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
+                                              uOffset, pvBuf, cbThisRead,
+                                              &cbThisRead);
         }
 
         /* No image in the chain contains the data for the block. */
@@ -271,8 +345,8 @@ static void vdResetModifiedFlag(PVBOXHDD pDisk)
             RTUUID Uuid;
 
             RTUuidCreate(&Uuid);
-            pDisk->Backend->pfnSetModificationUuid(pDisk->pLast->pvBackendData,
-                                                   &Uuid);
+            pDisk->pLast->Backend->pfnSetModificationUuid(pDisk->pLast->pvBackendData,
+                                                          &Uuid);
         }
 
         pDisk->uModified &= ~VD_IMAGE_MODIFIED_FLAG;
@@ -293,7 +367,7 @@ static void vdSetModifiedFlag(PVBOXHDD pDisk)
         vdResetModifiedFlag(pDisk);
 
         if (!(pDisk->uModified | VD_IMAGE_MODIFIED_DISABLE_UUID_UPDATE))
-            pDisk->Backend->pfnFlush(pDisk->pLast->pvBackendData);
+            pDisk->pLast->Backend->pfnFlush(pDisk->pLast->pvBackendData);
     }
 }
 
@@ -363,11 +437,11 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
     }
 
     /* Write the full block to the virtual disk. */
-    rc = pDisk->Backend->pfnWrite(pImage->pvBackendData,
-                                  uOffset - cbPreRead, pvTmp,
-                                  cbPreRead + cbThisWrite + cbPostRead,
-                                  NULL,
-                                  &cbPreRead, &cbPostRead);
+    rc = pImage->Backend->pfnWrite(pImage->pvBackendData,
+                                   uOffset - cbPreRead, pvTmp,
+                                   cbPreRead + cbThisWrite + cbPostRead,
+                                   NULL,
+                                   &cbPreRead, &cbPostRead);
     Assert(rc != VERR_VDI_BLOCK_FREE);
     Assert(cbPreRead == 0);
     Assert(cbPostRead == 0);
@@ -443,11 +517,11 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
     }
 
     /* Write the full block to the virtual disk. */
-    rc = pDisk->Backend->pfnWrite(pImage->pvBackendData,
-                                  uOffset - cbPreRead, pvTmp,
-                                  cbPreRead + cbThisWrite + cbPostRead,
-                                  NULL,
-                                  &cbPreRead, &cbPostRead);
+    rc = pImage->Backend->pfnWrite(pImage->pvBackendData,
+                                   uOffset - cbPreRead, pvTmp,
+                                   cbPreRead + cbThisWrite + cbPostRead,
+                                   NULL,
+                                   &cbPreRead, &cbPostRead);
     Assert(rc != VERR_VDI_BLOCK_FREE);
     Assert(cbPreRead == 0);
     Assert(cbPostRead == 0);
@@ -474,9 +548,9 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
          * if it is a full-block write, which automatically allocates a new
          * block if needed. */
         cbThisWrite = cbWrite;
-        rc = pDisk->Backend->pfnWrite(pImage->pvBackendData, uOffset, pvBuf,
-                                      cbThisWrite, &cbThisWrite, &cbPreRead,
-                                      &cbPostRead);
+        rc = pImage->Backend->pfnWrite(pImage->pvBackendData, uOffset, pvBuf,
+                                       cbThisWrite, &cbThisWrite, &cbPreRead,
+                                       &cbPostRead);
         if (rc == VERR_VDI_BLOCK_FREE)
         {
             void *pvTmp = RTMemTmpAlloc(cbPreRead + cbThisWrite + cbPostRead);
@@ -519,27 +593,20 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
  * No image files are opened.
  *
  * @returns VBox status code.
- * @param   pszBackend      Name of the image file backend to use.
  * @param   pfnError        Callback for setting extended error information.
  * @param   pvErrorUser     Opaque parameter for pfnError.
  * @param   ppDisk          Where to store the reference to HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
-                           void *pvErrorUser, PVBOXHDD *ppDisk)
+VBOXDDU_DECL(int) VDCreate(PFNVDERROR pfnError, void *pvErrorUser,
+                           PVBOXHDD *ppDisk)
 {
     int rc = VINF_SUCCESS;
-    PCVBOXHDDBACKEND pBackend = NULL;
     PVBOXHDD pDisk = NULL;
-    RTLDRMOD hPlugin = NULL;
 
-    LogFlowFunc(("pszBackend=\"%s\" pfnError=%#p pvErrorUser=%#p\n",
-                 pszBackend, pfnError, pvErrorUser));
+    LogFlowFunc(("pfnError=%#p pvErrorUser=%#p\n", pfnError, pvErrorUser));
     do
     {
         /* Check arguments. */
-        AssertMsgBreak(VALID_PTR(pszBackend) && *pszBackend,
-                       ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
-                       rc = VERR_INVALID_PARAMETER);
         AssertMsgBreak(VALID_PTR(pfnError),
                        ("pfnError=%#p\n", pfnError),
                        rc = VERR_INVALID_PARAMETER);
@@ -547,100 +614,30 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
                        ("ppDisk=%#p\n", ppDisk),
                        rc = VERR_INVALID_PARAMETER);
 
-        /* Find backend. */
-        for (unsigned i = 0; aBackends[i] != NULL; i++)
+        pDisk = (PVBOXHDD)RTMemAllocZ(sizeof(VBOXHDD));
+        if (pDisk)
         {
-            if (!strcmp(pszBackend, aBackends[i]->pszBackendName))
-            {
-                pBackend = aBackends[i];
-                break;
-            }
-        }
-
-        /* If no static backend is found try loading a shared module with
-         * pszBackend as filename. */
-        if (!pBackend)
-        {
-            char *pszPluginName;
-
-            /* HDD Format Plugins have VBoxHDD as prefix, prepend it. */
-            RTStrAPrintf(&pszPluginName, "%s%s",
-                         VBOX_HDDFORMAT_PLUGIN_PREFIX, pszBackend);
-            if (!pszPluginName)
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
-
-            /* Try to load the plugin (RTldrLoad takes care of the suffix). */
-            rc = RTLdrLoad(pszPluginName, &hPlugin);
-            if (VBOX_SUCCESS(rc))
-            {
-                PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad;
-
-                rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME,
-                                    (void**)&pfnHDDFormatLoad);
-                if (VBOX_FAILURE(rc) || !pfnHDDFormatLoad)
-                {
-                    LogFunc(("error resolving the entry point %s in plugin %s, rc=%Vrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pszPluginName, rc, pfnHDDFormatLoad));
-                    if (VBOX_SUCCESS(rc))
-                        rc = VERR_SYMBOL_NOT_FOUND;
-                    break;
-                }
-
-                /* Get the function table. */
-                PVBOXHDDBACKEND pBE;
-                rc = pfnHDDFormatLoad(&pBE);
-                if (VBOX_FAILURE(rc))
-                    break;
-                /* Check if the sizes match. If not this plugin is too old. */
-                if (pBE->cbSize != sizeof(VBOXHDDBACKEND))
-                {
-                    rc = VERR_VDI_UNSUPPORTED_VERSION;
-                    break;
-                }
-                pBackend = pBE;
-            }
-
-            RTStrFree(pszPluginName);
-        }
-
-        if (pBackend)
-        {
-            pDisk = (PVBOXHDD)RTMemAllocZ(sizeof(VBOXHDD));
-            if (pDisk)
-            {
-                pDisk->u32Signature = VBOXHDDDISK_SIGNATURE;
-                pDisk->cImages      = 0;
-                pDisk->pBase        = NULL;
-                pDisk->pLast        = NULL;
-                pDisk->cbSize       = 0;
-                pDisk->PCHSGeometry.cCylinders = 0;
-                pDisk->PCHSGeometry.cHeads     = 0;
-                pDisk->PCHSGeometry.cSectors   = 0;
-                pDisk->LCHSGeometry.cCylinders = 0;
-                pDisk->LCHSGeometry.cHeads     = 0;
-                pDisk->LCHSGeometry.cSectors   = 0;
-                pDisk->pfnError     = pfnError;
-                pDisk->pvErrorUser  = pvErrorUser;
-                pDisk->Backend      = pBackend;
-                pDisk->hPlugin      = hPlugin;
-                *ppDisk = pDisk;
-            }
-            else
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
+            pDisk->u32Signature = VBOXHDDDISK_SIGNATURE;
+            pDisk->cImages      = 0;
+            pDisk->pBase        = NULL;
+            pDisk->pLast        = NULL;
+            pDisk->cbSize       = 0;
+            pDisk->PCHSGeometry.cCylinders = 0;
+            pDisk->PCHSGeometry.cHeads     = 0;
+            pDisk->PCHSGeometry.cSectors   = 0;
+            pDisk->LCHSGeometry.cCylinders = 0;
+            pDisk->LCHSGeometry.cHeads     = 0;
+            pDisk->LCHSGeometry.cSectors   = 0;
+            pDisk->pfnError     = pfnError;
+            pDisk->pvErrorUser  = pvErrorUser;
+            *ppDisk = pDisk;
         }
         else
-            rc = vdEarlyError(pfnError, pvErrorUser, VERR_INVALID_PARAMETER,
-                              RT_SRC_POS, "VD: unknown backend name '%s'",
-                              pszBackend);
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
     } while (0);
-
-    if (VBOX_FAILURE(rc) && hPlugin)
-        RTLdrClose(hPlugin);
 
     LogFlowFunc(("returns %Vrc (pDisk=%#p)\n", rc, pDisk));
     return rc;
@@ -664,11 +661,6 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
         if (pDisk)
         {
             VDCloseAll(pDisk);
-            if (pDisk->hPlugin != NIL_RTLDRMOD)
-            {
-                RTLdrClose(pDisk->hPlugin);
-                pDisk->hPlugin = NIL_RTLDRMOD;
-            }
             RTMemFree(pDisk);
         }
     } while (0);
@@ -855,17 +847,18 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
  *
  * @returns VBox status code.
  * @param   pDisk           Pointer to HDD container.
+ * @param   pszBackend      Name of the image file backend to use.
  * @param   pszFilename     Name of the image file to open.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  */
-VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
-                         unsigned uOpenFlags)
+VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
+                         const char *pszFilename, unsigned uOpenFlags)
 {
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage = NULL;
 
-    LogFlowFunc(("pDisk=%#p pszFilename=\"%s\" uOpenFlags=%#x\n",
-                 pszFilename, uOpenFlags));
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uOpenFlags=%#x\n",
+                 pDisk, pszBackend, pszFilename, uOpenFlags));
     do
     {
         /* sanity check */
@@ -873,6 +866,9 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
+        AssertMsgBreak(VALID_PTR(pszBackend) && *pszBackend,
+                       ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
+                       rc = VERR_INVALID_PARAMETER);
         AssertMsgBreak(VALID_PTR(pszFilename) && *pszFilename,
                        ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
                        rc = VERR_INVALID_PARAMETER);
@@ -898,11 +894,21 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
             break;
         }
 
+        rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
+        if (VBOX_FAILURE(rc))
+            break;
+        if (!pImage->Backend)
+        {
+            rc = vdError(pDisk, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                         N_("VD: unknown backend name '%s'"), pszBackend);
+            break;
+        }
+
         pImage->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
-        rc = pDisk->Backend->pfnOpen(pImage->pszFilename,
-                                     uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
-                                     pDisk->pfnError, pDisk->pvErrorUser,
-                                     &pImage->pvBackendData);
+        rc = pImage->Backend->pfnOpen(pImage->pszFilename,
+                                      uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
+                                      pDisk->pfnError, pDisk->pvErrorUser,
+                                      &pImage->pvBackendData);
         /* If the open in read-write mode failed, retry in read-only mode. */
         if (VBOX_FAILURE(rc))
         {
@@ -912,11 +918,11 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
                      || rc == VERR_WRITE_PROTECT
                      || rc == VERR_SHARING_VIOLATION
                      || rc == VERR_FILE_LOCK_FAILED))
-                rc = pDisk->Backend->pfnOpen(pImage->pszFilename,
-                                               (uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME)
-                                             | VD_OPEN_FLAGS_READONLY,
-                                             pDisk->pfnError, pDisk->pvErrorUser,
-                                             &pImage->pvBackendData);
+                rc = pImage->Backend->pfnOpen(pImage->pszFilename,
+                                                (uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME)
+                                               | VD_OPEN_FLAGS_READONLY,
+                                               pDisk->pfnError, pDisk->pvErrorUser,
+                                               &pImage->pvBackendData);
             if (VBOX_FAILURE(rc))
             {
                 rc = vdError(pDisk, rc, RT_SRC_POS,
@@ -926,8 +932,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
         }
 
         VDIMAGETYPE enmImageType;
-        rc = pDisk->Backend->pfnGetImageType(pImage->pvBackendData,
-                                             &enmImageType);
+        rc = pImage->Backend->pfnGetImageType(pImage->pvBackendData,
+                                              &enmImageType);
         /* Check image type. As the image itself has no idea whether it's a
          * base image or not, this info is derived here. Image 0 can be fixed
          * or normal, all others must be normal images. */
@@ -945,11 +951,11 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
         int rc2;
 
         /* Cache disk information. */
-        pDisk->cbSize = pDisk->Backend->pfnGetSize(pImage->pvBackendData);
+        pDisk->cbSize = pImage->Backend->pfnGetSize(pImage->pvBackendData);
 
         /* Cache PCHS geometry. */
-        rc2 = pDisk->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
-                                                 &pDisk->PCHSGeometry);
+        rc2 = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
+                                                  &pDisk->PCHSGeometry);
         if (VBOX_FAILURE(rc2))
         {
             pDisk->PCHSGeometry.cCylinders = 0;
@@ -965,8 +971,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
         }
 
         /* Cache LCHS geometry. */
-        rc2 = pDisk->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
-                                                 &pDisk->LCHSGeometry);
+        rc2 = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
+                                                  &pDisk->LCHSGeometry);
         if (VBOX_FAILURE(rc2))
         {
             pDisk->LCHSGeometry.cCylinders = 0;
@@ -985,11 +991,11 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
         {
             /* Switch previous image to read-only mode. */
             unsigned uOpenFlagsPrevImg;
-            uOpenFlagsPrevImg = pDisk->Backend->pfnGetOpenFlags(pDisk->pLast->pvBackendData);
+            uOpenFlagsPrevImg = pDisk->pLast->Backend->pfnGetOpenFlags(pDisk->pLast->pvBackendData);
             if (!(uOpenFlagsPrevImg & VD_OPEN_FLAGS_READONLY))
             {
                 uOpenFlagsPrevImg |= VD_OPEN_FLAGS_READONLY;
-                rc = pDisk->Backend->pfnSetOpenFlags(pDisk->pLast->pvBackendData, uOpenFlagsPrevImg);
+                rc = pDisk->pLast->Backend->pfnSetOpenFlags(pDisk->pLast->pvBackendData, uOpenFlagsPrevImg);
             }
         }
 
@@ -1002,7 +1008,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
         {
             /* Error detected, but image opened. Close image. */
             int rc2;
-            rc2 = pDisk->Backend->pfnClose(pImage->pvBackendData, false);
+            rc2 = pImage->Backend->pfnClose(pImage->pvBackendData, false);
             AssertRC(rc2);
             pImage->pvBackendData = NULL;
         }
@@ -1010,6 +1016,9 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
 
     if (VBOX_FAILURE(rc))
     {
+        if (pImage->hPlugin != NIL_RTLDRMOD)
+            RTLdrClose(pImage->hPlugin);
+
         if (pImage)
         {
             if (pImage->pszFilename)
@@ -1027,6 +1036,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
  *
  * @returns VBox status code.
  * @param   pDisk           Pointer to HDD container.
+ * @param   pszBackend      Name of the image file backend to use.
  * @param   pszFilename     Name of the image file to create.
  * @param   enmType         Image type, only base image types are acceptable.
  * @param   cbSize          Image size in bytes.
@@ -1038,9 +1048,10 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
  */
-VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
-                               VDIMAGETYPE enmType, uint64_t cbSize,
-                               unsigned uImageFlags, const char *pszComment,
+VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
+                               const char *pszFilename, VDIMAGETYPE enmType,
+                               uint64_t cbSize, unsigned uImageFlags,
+                               const char *pszComment,
                                PCPDMMEDIAGEOMETRY pPCHSGeometry,
                                PCPDMMEDIAGEOMETRY pLCHSGeometry,
                                unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
@@ -1049,8 +1060,8 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage = NULL;
 
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%#x cbSize=%llu uImageFlags=%#x pszComment=\"%s\" PCHS=%u/%u/%u LCHS=%u/%u/%u uOpenFlags=%#x pfnProgress=%#p pvUser=%#p\n",
-                 pszFilename, enmType, cbSize, uImageFlags, pszComment,
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" enmType=%#x cbSize=%llu uImageFlags=%#x pszComment=\"%s\" PCHS=%u/%u/%u LCHS=%u/%u/%u uOpenFlags=%#x pfnProgress=%#p pvUser=%#p\n",
+                 pDisk, pszBackend, pszFilename, enmType, cbSize, uImageFlags, pszComment,
                  pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
                  pPCHSGeometry->cSectors, pLCHSGeometry->cCylinders,
                  pLCHSGeometry->cHeads, pLCHSGeometry->cSectors, uOpenFlags,
@@ -1062,6 +1073,9 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
+        AssertMsgBreak(VALID_PTR(pszBackend) && *pszBackend,
+                       ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
+                       rc = VERR_INVALID_PARAMETER);
         AssertMsgBreak(VALID_PTR(pszFilename) && *pszFilename,
                        ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
                        rc = VERR_INVALID_PARAMETER);
@@ -1100,7 +1114,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
 
         /* Check state. */
         AssertMsgBreak(pDisk->cImages == 0,
-	               ("Create base image cannot be done with other images open\n"),
+                       ("Create base image cannot be done with other images open\n"),
                        rc = VERR_VDI_INVALID_STATE);
 
         /* Set up image descriptor. */
@@ -1117,12 +1131,22 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
             break;
         }
 
-        rc = pDisk->Backend->pfnCreate(pImage->pszFilename, enmType, cbSize,
-                                       uImageFlags, pszComment, pPCHSGeometry,
-                                       pLCHSGeometry, uOpenFlags, pfnProgress,
-                                       pvUser, 0, 99, pDisk->pfnError,
-                                       pDisk->pvErrorUser,
-                                       &pImage->pvBackendData);
+        rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
+        if (VBOX_FAILURE(rc))
+            break;
+        if (!pImage->Backend)
+        {
+            rc = vdError(pDisk, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                         N_("VD: unknown backend name '%s'"), pszBackend);
+            break;
+        }
+
+        rc = pImage->Backend->pfnCreate(pImage->pszFilename, enmType, cbSize,
+                                        uImageFlags, pszComment, pPCHSGeometry,
+                                        pLCHSGeometry, uOpenFlags, pfnProgress,
+                                        pvUser, 0, 99, pDisk->pfnError,
+                                        pDisk->pvErrorUser,
+                                        &pImage->pvBackendData);
 
         if (VBOX_SUCCESS(rc))
         {
@@ -1131,11 +1155,11 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
             int rc2;
 
             /* Cache disk information. */
-            pDisk->cbSize = pDisk->Backend->pfnGetSize(pImage->pvBackendData);
+            pDisk->cbSize = pImage->Backend->pfnGetSize(pImage->pvBackendData);
 
             /* Cache PCHS geometry. */
-            rc2 = pDisk->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
-                                                     &pDisk->PCHSGeometry);
+            rc2 = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
+                                                      &pDisk->PCHSGeometry);
             if (VBOX_FAILURE(rc2))
             {
                 pDisk->PCHSGeometry.cCylinders = 0;
@@ -1151,8 +1175,8 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
             }
 
             /* Cache LCHS geometry. */
-            rc2 = pDisk->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
-                                                     &pDisk->LCHSGeometry);
+            rc2 = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
+                                                      &pDisk->LCHSGeometry);
             if (VBOX_FAILURE(rc2))
             {
                 pDisk->LCHSGeometry.cCylinders = 0;
@@ -1177,7 +1201,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
         {
             /* Error detected, but image opened. Close and delete image. */
             int rc2;
-            rc2 = pDisk->Backend->pfnClose(pImage->pvBackendData, true);
+            rc2 = pImage->Backend->pfnClose(pImage->pvBackendData, true);
             AssertRC(rc2);
             pImage->pvBackendData = NULL;
         }
@@ -1185,6 +1209,9 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
 
     if (VBOX_FAILURE(rc))
     {
+        if (pImage->hPlugin != NIL_RTLDRMOD)
+            RTLdrClose(pImage->hPlugin);
+
         if (pImage)
         {
             if (pImage->pszFilename)
@@ -1206,6 +1233,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
  *
  * @returns VBox status code.
  * @param   pDisk           Pointer to HDD container.
+ * @param   pszBackend      Name of the image file backend to use.
  * @param   pszFilename     Name of the differencing image file to create.
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
@@ -1213,16 +1241,16 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
  */
-VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszFilename,
-                               unsigned uImageFlags, const char *pszComment,
-                               unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
-                               void *pvUser)
+VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
+                               const char *pszFilename, unsigned uImageFlags,
+                               const char *pszComment, unsigned uOpenFlags,
+                               PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage = NULL;
 
-    LogFlowFunc(("pDisk=%#p pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" uOpenFlags=%#x pfnProgress=%#p pvUser=%#p\n",
-                 pDisk, pszFilename, uImageFlags, pszComment, uOpenFlags,
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" uOpenFlags=%#x pfnProgress=%#p pvUser=%#p\n",
+                 pDisk, pszBackend, pszFilename, uImageFlags, pszComment, uOpenFlags,
                  pfnProgress, pvUser));
     do
     {
@@ -1231,6 +1259,9 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszFilename,
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
+        AssertMsgBreak(VALID_PTR(pszBackend) && *pszBackend,
+                       ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
+                       rc = VERR_INVALID_PARAMETER);
         AssertMsgBreak(VALID_PTR(pszFilename) && *pszFilename,
                        ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
                        rc = VERR_INVALID_PARAMETER);
@@ -1243,7 +1274,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszFilename,
 
         /* Check state. */
         AssertMsgBreak(pDisk->cImages != 0,
-	               ("Create diff image cannot be done without other images open\n"),
+                       ("Create diff image cannot be done without other images open\n"),
                        rc = VERR_VDI_INVALID_STATE);
 
         /* Set up image descriptor. */
@@ -1260,14 +1291,24 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszFilename,
             break;
         }
 
-        rc = pDisk->Backend->pfnCreate(pImage->pszFilename,
-                                       VD_IMAGE_TYPE_NORMAL, pDisk->cbSize,
-                                       uImageFlags, pszComment,
-                                       &pDisk->PCHSGeometry,
-                                       &pDisk->LCHSGeometry, uOpenFlags,
-                                       pfnProgress, pvUser, 0, 99,
-                                       pDisk->pfnError, pDisk->pvErrorUser,
-                                       &pImage->pvBackendData);
+        rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
+        if (VBOX_FAILURE(rc))
+            break;
+        if (!pImage->Backend)
+        {
+            rc = vdError(pDisk, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                         N_("VD: unknown backend name '%s'"), pszBackend);
+            break;
+        }
+
+        rc = pImage->Backend->pfnCreate(pImage->pszFilename,
+                                        VD_IMAGE_TYPE_NORMAL, pDisk->cbSize,
+                                        uImageFlags, pszComment,
+                                        &pDisk->PCHSGeometry,
+                                        &pDisk->LCHSGeometry, uOpenFlags,
+                                        pfnProgress, pvUser, 0, 99,
+                                        pDisk->pfnError, pDisk->pvErrorUser,
+                                        &pImage->pvBackendData);
 
         if (VBOX_SUCCESS(rc))
         {
@@ -1283,7 +1324,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszFilename,
         {
             /* Error detected, but image opened. Close and delete image. */
             int rc2;
-            rc2 = pDisk->Backend->pfnClose(pImage->pvBackendData, true);
+            rc2 = pImage->Backend->pfnClose(pImage->pvBackendData, true);
             AssertRC(rc2);
             pImage->pvBackendData = NULL;
         }
@@ -1291,6 +1332,9 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszFilename,
 
     if (VBOX_FAILURE(rc))
     {
+        if (pImage->hPlugin != NIL_RTLDRMOD)
+            RTLdrClose(pImage->hPlugin);
+
         if (pImage)
         {
             if (pImage->pszFilename)
@@ -1345,7 +1389,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         AssertBreak(pImageFrom != pImageTo, rc = VERR_INVALID_PARAMETER);
 
         /* Check if destination image is writable. */
-        unsigned uOpenFlags = pDisk->Backend->pfnGetOpenFlags(pImageTo->pvBackendData);
+        unsigned uOpenFlags = pImageTo->Backend->pfnGetOpenFlags(pImageTo->pvBackendData);
         if (uOpenFlags & VD_OPEN_FLAGS_READONLY)
         {
             rc = VERR_VDI_IMAGE_READ_ONLY;
@@ -1353,7 +1397,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         }
 
         /* Get size of destination image. */
-        uint64_t cbSize = pDisk->Backend->pfnGetSize(pImageTo->pvBackendData);
+        uint64_t cbSize = pImageTo->Backend->pfnGetSize(pImageTo->pvBackendData);
 
         /* Allocate tmp buffer. */
         pvBuf = RTMemTmpAlloc(VD_MERGE_BUFFER_SIZE);
@@ -1379,8 +1423,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
             do
             {
                 size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
-                rc = pDisk->Backend->pfnRead(pImageTo->pvBackendData, uOffset,
-                                             pvBuf, cbThisRead, &cbThisRead);
+                rc = pImageTo->Backend->pfnRead(pImageTo->pvBackendData,
+                                                uOffset, pvBuf, cbThisRead,
+                                                &cbThisRead);
                 if (VBOX_FAILURE(rc))
                     break;
                 if (rc == VERR_VDI_BLOCK_FREE)
@@ -1393,9 +1438,10 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                          pCurrImage != NULL && pCurrImage != pImageFrom->pPrev && rc == VERR_VDI_BLOCK_FREE;
                          pCurrImage = pCurrImage->pPrev)
                     {
-                        rc = pDisk->Backend->pfnRead(pCurrImage->pvBackendData,
-                                                     uOffset, pvBuf,
-                                                     cbThisRead, &cbThisRead);
+                        rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
+                                                          uOffset, pvBuf,
+                                                          cbThisRead,
+                                                          &cbThisRead);
                     }
                     if (VBOX_FAILURE(rc))
                         break;
@@ -1431,9 +1477,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                      pCurrImage != NULL && pCurrImage != pImageTo && rc == VERR_VDI_BLOCK_FREE;
                      pCurrImage = pCurrImage->pPrev)
                 {
-                    rc = pDisk->Backend->pfnRead(pCurrImage->pvBackendData,
-                                                 uOffset, pvBuf,
-                                                 cbThisRead, &cbThisRead);
+                    rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
+                                                      uOffset, pvBuf,
+                                                      cbThisRead, &cbThisRead);
                 }
                 if (VBOX_FAILURE(rc))
                     break;
@@ -1457,25 +1503,25 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         {
             if (pImageTo->pPrev)
             {
-                rc = pDisk->Backend->pfnGetUuid(pImageTo->pPrev->pvBackendData,
-                                                &Uuid);
+                rc = pImageTo->Backend->pfnGetUuid(pImageTo->pPrev->pvBackendData,
+                                                   &Uuid);
                 AssertRC(rc);
             }
             else
                 RTUuidClear(&Uuid);
-            rc = pDisk->Backend->pfnSetParentUuid(pImageTo->pvBackendData,
-                                                  &Uuid);
+            rc = pImageTo->Backend->pfnSetParentUuid(pImageTo->pvBackendData,
+                                                     &Uuid);
             AssertRC(rc);
         }
         else
         {
             if (pImageFrom->pNext)
             {
-                rc = pDisk->Backend->pfnGetUuid(pImageTo->pvBackendData,
-                                                &Uuid);
+                rc = pImageTo->Backend->pfnGetUuid(pImageTo->pvBackendData,
+                                                   &Uuid);
                 AssertRC(rc);
-                rc = pDisk->Backend->pfnSetParentUuid(pImageFrom->pNext,
-                                                      &Uuid);
+                rc = pImageFrom->Backend->pfnSetParentUuid(pImageFrom->pNext,
+                                                           &Uuid);
                 AssertRC(rc);
             }
         }
@@ -1489,7 +1535,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
             else
                 pTmp = pImg->pPrev;
             vdRemoveImageFromList(pDisk, pImg);
-            pDisk->Backend->pfnClose(pImg->pvBackendData, true);
+            pImg->Backend->pfnClose(pImg->pvBackendData, true);
             pImg = pTmp;
         }
     } while (0);
@@ -1508,8 +1554,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * Copies an image from one HDD container to another.
  * The copy is opened in the target HDD container.
  * It is possible to convert between different image formats, because the
- * backend for the destination HDD container may be different from the
- * source container.
+ * backend for the destination may be different from the source.
  * If both the source and destination reference the same HDD container,
  * then the image is moved (by copying/deleting or renaming) to the new location.
  * The source container is unchanged if the move operation fails, otherwise
@@ -1520,6 +1565,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pDiskFrom       Pointer to source HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pDiskTo         Pointer to destination HDD container.
+ * @param   pszBackend      Name of the image file backend to use.
  * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
  * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
  * @param   cbSize          New image size (0 means leave unchanged).
@@ -1527,9 +1573,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pvUser          User argument for the progress callback.
  */
 VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
-                         const char *pszFilename, bool fMoveByRename,
-                         uint64_t cbSize, PFNVMPROGRESS pfnProgress,
-                         void *pvUser)
+                         const char *pszBackend, const char *pszFilename,
+                         bool fMoveByRename, uint64_t cbSize,
+                         PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -1549,7 +1595,7 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
 {
     int rc = VINF_SUCCESS;;
 
-    LogFlowFunc(("fDelete=%d\n", fDelete));
+    LogFlowFunc(("pDisk=%#p fDelete=%d\n", pDisk, fDelete));
     do
     {
         /* sanity check */
@@ -1557,13 +1603,18 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         PVDIMAGE pImage = pDisk->pLast;
-	AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_NOT_OPENED);
-        unsigned uOpenFlags = pDisk->Backend->pfnGetOpenFlags(pImage->pvBackendData);
+        AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_NOT_OPENED);
+        unsigned uOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pvBackendData);
         /* Remove image from list of opened images. */
         vdRemoveImageFromList(pDisk, pImage);
         /* Close (and optionally delete) image. */
-        rc = pDisk->Backend->pfnClose(pImage->pvBackendData, fDelete);
+        rc = pImage->Backend->pfnClose(pImage->pvBackendData, fDelete);
         /* Free remaining resources related to the image. */
+        if (pImage->hPlugin != NIL_RTLDRMOD)
+        {
+            RTLdrClose(pImage->hPlugin);
+            pImage->hPlugin = NIL_RTLDRMOD;
+        }
         RTStrFree(pImage->pszFilename);
         RTMemFree(pImage);
 
@@ -1576,18 +1627,18 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
          * accordingly. */
         if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY))
         {
-            uOpenFlags = pDisk->Backend->pfnGetOpenFlags(pImage->pvBackendData);
+            uOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pvBackendData);
             uOpenFlags &= ~ VD_OPEN_FLAGS_READONLY;
-            rc = pDisk->Backend->pfnSetOpenFlags(pImage->pvBackendData, uOpenFlags);
+            rc = pImage->Backend->pfnSetOpenFlags(pImage->pvBackendData, uOpenFlags);
         }
 
         int rc2;
 
         /* Cache disk information. */
-        pDisk->cbSize = pDisk->Backend->pfnGetSize(pImage->pvBackendData);
+        pDisk->cbSize = pImage->Backend->pfnGetSize(pImage->pvBackendData);
 
         /* Cache PCHS geometry. */
-        rc2 = pDisk->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
+        rc2 = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
                                                  &pDisk->PCHSGeometry);
         if (VBOX_FAILURE(rc2))
         {
@@ -1604,8 +1655,8 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
         }
 
         /* Cache LCHS geometry. */
-        rc2 = pDisk->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
-                                                 &pDisk->LCHSGeometry);
+        rc2 = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
+                                                  &pDisk->LCHSGeometry);
         if (VBOX_FAILURE(rc2))
         {
             pDisk->LCHSGeometry.cCylinders = 0;
@@ -1649,10 +1700,15 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
             /* Remove image from list of opened images. */
             vdRemoveImageFromList(pDisk, pImage);
             /* Close image. */
-            int rc2 = pDisk->Backend->pfnClose(pImage->pvBackendData, false);
+            int rc2 = pImage->Backend->pfnClose(pImage->pvBackendData, false);
             if (VBOX_FAILURE(rc2) && VBOX_SUCCESS(rc))
                 rc = rc2;
             /* Free remaining resources related to the image. */
+            if (pImage->hPlugin != NIL_RTLDRMOD)
+            {
+                RTLdrClose(pImage->hPlugin);
+                pImage->hPlugin = NIL_RTLDRMOD;
+            }
             RTStrFree(pImage->pszFilename);
             RTMemFree(pImage);
             pImage = pPrev;
@@ -1777,7 +1833,7 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_NOT_OPENED);
 
         vdResetModifiedFlag(pDisk);
-        rc = pDisk->Backend->pfnFlush(pImage->pvBackendData);
+        rc = pImage->Backend->pfnFlush(pImage->pvBackendData);
     } while (0);
 
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -1830,7 +1886,7 @@ VBOXDDU_DECL(bool) VDIsReadOnly(PVBOXHDD pDisk)
         AssertBreak(VALID_PTR(pImage), fReadOnly = true);
 
         unsigned uOpenFlags;
-        uOpenFlags = pDisk->Backend->pfnGetOpenFlags(pDisk->pLast->pvBackendData);
+        uOpenFlags = pDisk->pLast->Backend->pfnGetOpenFlags(pDisk->pLast->pvBackendData);
         fReadOnly = !!(uOpenFlags & VD_OPEN_FLAGS_READONLY);
     } while (0);
 
@@ -1859,7 +1915,7 @@ VBOXDDU_DECL(uint64_t) VDGetSize(PVBOXHDD pDisk, unsigned nImage)
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), cbSize = 0);
-        cbSize = pDisk->Backend->pfnGetSize(pImage->pvBackendData);
+        cbSize = pImage->Backend->pfnGetSize(pImage->pvBackendData);
     } while (0);
 
     LogFlowFunc(("returns %llu\n", cbSize));
@@ -1887,7 +1943,7 @@ VBOXDDU_DECL(uint64_t) VDGetFileSize(PVBOXHDD pDisk, unsigned nImage)
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), cbSize = 0);
-        cbSize = pDisk->Backend->pfnGetFileSize(pImage->pvBackendData);
+        cbSize = pImage->Backend->pfnGetFileSize(pImage->pvBackendData);
     } while (0);
 
     LogFlowFunc(("returns %llu\n", cbSize));
@@ -1934,8 +1990,8 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                 rc = VERR_VDI_GEOMETRY_NOT_SET;
         }
         else
-            rc = pDisk->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
-                                                    pPCHSGeometry);
+            rc = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
+                                                     pPCHSGeometry);
     } while (0);
 
     LogFlowFunc(("%s: %Vrc (PCHS=%u/%u/%u)\n", rc,
@@ -1997,12 +2053,12 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                  * to the previous values, so no need to go through the hassle
                  * of updating an image which could be opened in read-only mode
                  * right now. */
-                rc = pDisk->Backend->pfnSetPCHSGeometry(pImage->pvBackendData,
-                                                        pPCHSGeometry);
+                rc = pImage->Backend->pfnSetPCHSGeometry(pImage->pvBackendData,
+                                                         pPCHSGeometry);
 
                 /* Cache new geometry values in any case. */
-                int rc2 = pDisk->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
-                                                             &pDisk->PCHSGeometry);
+                int rc2 = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
+                                                              &pDisk->PCHSGeometry);
                 if (VBOX_FAILURE(rc2))
                 {
                     pDisk->PCHSGeometry.cCylinders = 0;
@@ -2021,8 +2077,8 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         else
         {
             PDMMEDIAGEOMETRY PCHS;
-            rc = pDisk->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
-                                                    &PCHS);
+            rc = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
+                                                     &PCHS);
             if (    VBOX_FAILURE(rc)
                 ||  pPCHSGeometry->cCylinders != PCHS.cCylinders
                 ||  pPCHSGeometry->cHeads != PCHS.cHeads
@@ -2033,8 +2089,8 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                  * to the previous values, so no need to go through the hassle
                  * of updating an image which could be opened in read-only mode
                  * right now. */
-                rc = pDisk->Backend->pfnSetPCHSGeometry(pImage->pvBackendData,
-                                                        pPCHSGeometry);
+                rc = pImage->Backend->pfnSetPCHSGeometry(pImage->pvBackendData,
+                                                         pPCHSGeometry);
             }
         }
     } while (0);
@@ -2083,8 +2139,8 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                 rc = VERR_VDI_GEOMETRY_NOT_SET;
         }
         else
-            rc = pDisk->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
-                                                    pLCHSGeometry);
+            rc = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
+                                                     pLCHSGeometry);
     } while (0);
 
     LogFlowFunc(("%s: %Vrc (LCHS=%u/%u/%u)\n", rc,
@@ -2143,12 +2199,12 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                  * to the previous values, so no need to go through the hassle
                  * of updating an image which could be opened in read-only mode
                  * right now. */
-                rc = pDisk->Backend->pfnSetLCHSGeometry(pImage->pvBackendData,
-                                                        pLCHSGeometry);
+                rc = pImage->Backend->pfnSetLCHSGeometry(pImage->pvBackendData,
+                                                         pLCHSGeometry);
 
                 /* Cache new geometry values in any case. */
-                int rc2 = pDisk->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
-                                                             &pDisk->LCHSGeometry);
+                int rc2 = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
+                                                              &pDisk->LCHSGeometry);
                 if (VBOX_FAILURE(rc2))
                 {
                     pDisk->LCHSGeometry.cCylinders = 0;
@@ -2167,8 +2223,8 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         else
         {
             PDMMEDIAGEOMETRY LCHS;
-            rc = pDisk->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
-                                                    &LCHS);
+            rc = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
+                                                     &LCHS);
             if (    VBOX_FAILURE(rc)
                 ||  pLCHSGeometry->cCylinders != LCHS.cCylinders
                 ||  pLCHSGeometry->cHeads != LCHS.cHeads
@@ -2179,8 +2235,8 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                  * to the previous values, so no need to go through the hassle
                  * of updating an image which could be opened in read-only mode
                  * right now. */
-                rc = pDisk->Backend->pfnSetLCHSGeometry(pImage->pvBackendData,
-                                                        pLCHSGeometry);
+                rc = pImage->Backend->pfnSetLCHSGeometry(pImage->pvBackendData,
+                                                         pLCHSGeometry);
             }
         }
     } while (0);
@@ -2219,7 +2275,7 @@ VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        *puVersion = pDisk->Backend->pfnGetVersion(pImage->pvBackendData);
+        *puVersion = pImage->Backend->pfnGetVersion(pImage->pvBackendData);
     } while (0);
 
     LogFlowFunc(("returns %Vrc uVersion=%#x\n", rc, *puVersion));
@@ -2256,8 +2312,8 @@ VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        rc = pDisk->Backend->pfnGetImageType(pImage->pvBackendData,
-                                             penmType);
+        rc = pImage->Backend->pfnGetImageType(pImage->pvBackendData,
+                                              penmType);
     } while (0);
 
     LogFlowFunc(("returns %Vrc uenmType=%u\n", rc, *penmType));
@@ -2294,7 +2350,7 @@ VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage,
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        *puImageFlags = pDisk->Backend->pfnGetImageFlags(pImage->pvBackendData);
+        *puImageFlags = pImage->Backend->pfnGetImageFlags(pImage->pvBackendData);
     } while (0);
 
     LogFlowFunc(("returns %Vrc uImageFlags=%#x\n", rc, *puImageFlags));
@@ -2331,7 +2387,7 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        *puOpenFlags = pDisk->Backend->pfnGetOpenFlags(pImage->pvBackendData);
+        *puOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pvBackendData);
     } while (0);
 
     LogFlowFunc(("returns %Vrc uOpenFlags=%#x\n", rc, *puOpenFlags));
@@ -2369,8 +2425,8 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        rc = pDisk->Backend->pfnSetOpenFlags(pImage->pvBackendData,
-                                             uOpenFlags);
+        rc = pImage->Backend->pfnSetOpenFlags(pImage->pvBackendData,
+                                              uOpenFlags);
     } while (0);
 
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -2467,8 +2523,8 @@ VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        rc = pDisk->Backend->pfnGetComment(pImage->pvBackendData, pszComment,
-                                           cbComment);
+        rc = pImage->Backend->pfnGetComment(pImage->pvBackendData, pszComment,
+                                            cbComment);
     } while (0);
 
     LogFlowFunc(("returns %Vrc, pszComment=\"%s\"\n", rc, pszComment));
@@ -2505,7 +2561,7 @@ VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        rc = pDisk->Backend->pfnSetComment(pImage->pvBackendData, pszComment);
+        rc = pImage->Backend->pfnSetComment(pImage->pvBackendData, pszComment);
     } while (0);
 
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -2541,7 +2597,7 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        rc = pDisk->Backend->pfnGetUuid(pImage->pvBackendData, pUuid);
+        rc = pImage->Backend->pfnGetUuid(pImage->pvBackendData, pUuid);
     } while (0);
 
     LogFlowFunc(("returns %Vrc, Uuid={%Vuuid}\n", rc, pUuid));
@@ -2582,7 +2638,7 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
             RTUuidCreate(&Uuid);
             pUuid = &Uuid;
         }
-        rc = pDisk->Backend->pfnSetUuid(pImage->pvBackendData, pUuid);
+        rc = pImage->Backend->pfnSetUuid(pImage->pvBackendData, pUuid);
     } while (0);
 
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -2617,8 +2673,8 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        rc = pDisk->Backend->pfnGetModificationUuid(pImage->pvBackendData,
-                                                    pUuid);
+        rc = pImage->Backend->pfnGetModificationUuid(pImage->pvBackendData,
+                                                     pUuid);
     } while (0);
 
     LogFlowFunc(("returns %Vrc, Uuid={%Vuuid}\n", rc, pUuid));
@@ -2660,8 +2716,8 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
             RTUuidCreate(&Uuid);
             pUuid = &Uuid;
         }
-        rc = pDisk->Backend->pfnSetModificationUuid(pImage->pvBackendData,
-                                                    pUuid);
+        rc = pImage->Backend->pfnSetModificationUuid(pImage->pvBackendData,
+                                                     pUuid);
     } while (0);
 
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -2697,7 +2753,7 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertBreak(VALID_PTR(pImage), rc = VERR_VDI_IMAGE_NOT_FOUND);
 
-        rc = pDisk->Backend->pfnGetParentUuid(pImage->pvBackendData, pUuid);
+        rc = pImage->Backend->pfnGetParentUuid(pImage->pvBackendData, pUuid);
     } while (0);
 
     LogFlowFunc(("returns %Vrc, Uuid={%Vuuid}\n", rc, pUuid));
@@ -2739,7 +2795,7 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
             RTUuidCreate(&Uuid);
             pUuid = &Uuid;
         }
-        rc = pDisk->Backend->pfnSetParentUuid(pImage->pvBackendData, pUuid);
+        rc = pImage->Backend->pfnSetParentUuid(pImage->pvBackendData, pUuid);
     } while (0);
 
     LogFlowFunc(("returns %Vrc\n", rc));
@@ -2760,12 +2816,12 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
         AssertBreak(VALID_PTR(pDisk), );
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        RTLogPrintf("--- Dumping VD Disk, Backend=%s, Images=%u\n",
-                    pDisk->Backend->pszBackendName, pDisk->cImages);
+        RTLogPrintf("--- Dumping VD Disk, Images=%u\n", pDisk->cImages);
         for (PVDIMAGE pImage = pDisk->pBase; pImage; pImage = pImage->pNext)
         {
-            RTLogPrintf("Dumping VD image \"%s\"\n", pImage->pszFilename);
-            pDisk->Backend->pfnDump(pImage->pvBackendData);
+            RTLogPrintf("Dumping VD image \"%s\" (Backend=%s)\n",
+	                pImage->Backend->pszBackendName, pImage->pszFilename);
+            pImage->Backend->pfnDump(pImage->pvBackendData);
         }
     } while (0);
 }

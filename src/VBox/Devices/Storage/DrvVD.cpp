@@ -61,8 +61,6 @@ typedef struct VBOXDISK
     PDMIMEDIA       IMedia;
     /** Pointer to the driver instance. */
     PPDMDRVINS      pDrvIns;
-    /** Name of the image format backend. */
-    char            szFormat[16];
     /** Flag whether suspend has changed image open mode to read only. */
     bool            fTempReadOnly;
 } VBOXDISK, *PVBOXDISK;
@@ -254,7 +252,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pData = PDMINS2DATA(pDrvIns, PVBOXDISK);
     int rc = VINF_SUCCESS;
-    char *pszName;          /**< The path of the disk image file. */
+    char *pszName = NULL;   /**< The path of the disk image file. */
+    char *pszFormat = NULL; /**< The format backed to use for this image. */
     bool fReadOnly;         /**< True if the media is readonly. */
     bool fHonorZeroWrites;  /**< True if zero blocks should be written. */
 
@@ -262,8 +261,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      * Init the static parts.
      */
     pDrvIns->IBase.pfnQueryInterface    = drvvdQueryInterface;
-    pData->pDrvIns = pDrvIns;
-    pData->fTempReadOnly = false;
+    pData->pDrvIns                      = pDrvIns;
+    pData->fTempReadOnly                = false;
+    pData->pDisk                        = NULL;
 
     /* IMedia */
     pData->IMedia.pfnRead               = drvvdRead;
@@ -289,16 +289,17 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
         if (pCurNode == pCfgHandle)
         {
-            /* Toplevel configuration contains the format backend name and
-             * full image open information. */
+            /* Toplevel configuration additionally contains the global image
+             * open flags. Some might be converted to per-image flags later. */
             fValid = CFGMR3AreValuesValid(pCurNode,
-                                          "Format\0"
-                                          "Path\0ReadOnly\0HonorZeroWrites\0");
+                                          "Format\0Path\0"
+                                          "ReadOnly\0HonorZeroWrites\0");
         }
         else
         {
-            /* All other image configurations only contain image name. */
-            fValid = CFGMR3AreValuesValid(pCurNode, "Path\0");
+            /* All other image configurations only contain image name and
+             * the format information. */
+            fValid = CFGMR3AreValuesValid(pCurNode, "Format\0Path\0");
         }
         if (!fValid)
         {
@@ -319,23 +320,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      */
     if (VBOX_SUCCESS(rc))
     {
-        rc = CFGMR3QueryString(pCfgHandle, "Format", &pData->szFormat[0],
-                               sizeof(pData->szFormat));
-        if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        {
-            /* Default disk image format is VMDK. */
-            rc = VINF_SUCCESS;
-            strncpy(&pData->szFormat[0], "VMDK", sizeof(pData->szFormat));
-            pData->szFormat[sizeof(pData->szFormat) - 1] = '\0';
-        }
-        if (VBOX_SUCCESS(rc))
-        {
-            rc = VDCreate(pData->szFormat, drvvdErrorCallback, pDrvIns, &pData->pDisk);
-            /* Error message is already set correctly. */
-        }
-        else
-            rc = PDMDRV_SET_ERROR(pDrvIns, rc,
-                                  N_("DrvVD: Configuration error: Querying \"Format\" as string failed"));
+        rc = VDCreate(drvvdErrorCallback, pDrvIns, &pData->pDisk);
+        /* Error message is already set correctly. */
     }
 
     while (pCurNode && VBOX_SUCCESS(rc))
@@ -346,9 +332,16 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         rc = CFGMR3QueryStringAlloc(pCurNode, "Path", &pszName);
         if (VBOX_FAILURE(rc))
         {
-            VDDestroy(pData->pDisk);
             rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                   N_("DrvVD: Configuration error: Querying \"Path\" as string failed"));
+            break;
+        }
+
+        rc = CFGMR3QueryStringAlloc(pCfgHandle, "Format", &pszFormat);
+        if (VBOX_FAILURE(rc))
+        {
+            rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                  N_("DrvVD: Configuration error: Querying \"Format\" as string failed"));
             break;
         }
 
@@ -359,8 +352,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                 fReadOnly = false;
             else if (VBOX_FAILURE(rc))
             {
-                MMR3HeapFree(pszName);
-                VDDestroy(pData->pDisk);
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"ReadOnly\" as boolean failed"));
                 break;
@@ -371,8 +362,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                 fHonorZeroWrites = false;
             else if (VBOX_FAILURE(rc))
             {
-                MMR3HeapFree(pszName);
-                VDDestroy(pData->pDisk);
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"HonorZeroWrites\" as boolean failed"));
                 break;
@@ -394,7 +383,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             uOpenFlags = VD_OPEN_FLAGS_NORMAL;
         if (fHonorZeroWrites)
             uOpenFlags |= VD_OPEN_FLAGS_HONOR_ZEROES;
-        rc = VDOpen(pData->pDisk, pszName, uOpenFlags);
+        rc = VDOpen(pData->pDisk, pszFormat, pszName, uOpenFlags);
         if (VBOX_SUCCESS(rc))
             Log(("%s: %d - Opened '%s' in %s mode\n", __FUNCTION__,
                  iLevel, pszName,
@@ -402,14 +391,29 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         else
         {
             AssertMsgFailed(("Failed to open image '%s' rc=%Vrc\n", pszName, rc));
-            VDDestroy(pData->pDisk);
             break;
         }
         MMR3HeapFree(pszName);
+        pszName = NULL;
+        MMR3HeapFree(pszFormat);
+        pszFormat = NULL;
 
         /* next */
         iLevel--;
         pCurNode = CFGMR3GetParent(pCurNode);
+    }
+
+    if (VBOX_FAILURE(rc))
+    {
+        if (VALID_PTR(pData->pDisk))
+        {
+            VDDestroy(pData->pDisk);
+            pData->pDisk = NULL;
+        }
+        if (VALID_PTR(pszName))
+            MMR3HeapFree(pszName);
+        if (VALID_PTR(pszFormat))
+            MMR3HeapFree(pszFormat);
     }
 
     LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
