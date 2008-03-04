@@ -595,7 +595,7 @@ ps2SendPacket(InputInfoPtr pInfo, unsigned char *bytes, int len)
     unsigned char c;
     int i,j;
 
-#ifdef DEBUG
+#ifdef MOUSE_DEBUG
     xf86ErrorF("Ps/2 data package:");
     for (i = 0; i < len; i++)
 	xf86ErrorF(" %x", *(bytes + i));
@@ -607,12 +607,12 @@ ps2SendPacket(InputInfoPtr pInfo, unsigned char *bytes, int len)
 	    xf86WriteSerial(pInfo->fd, bytes + i, 1);
 	    usleep(10000);
 	    if (!readMouse(pInfo,&c)) {
-#ifdef DEBUG
+#ifdef MOUSE_DEBUG
 		xf86ErrorF("sending 0x%x to PS/2 unsuccessful\n",*(bytes + i));
 #endif
 		return FALSE;
 	    }
-#ifdef DEBUG
+#ifdef MOUSE_DEBUG
 	    xf86ErrorF("Recieved: 0x%x\n",c);
 #endif
 	    if (c == 0xFA) /* ACK */
@@ -669,7 +669,7 @@ ps2GetDeviceID(InputInfoPtr pInfo)
 	if (u != 0xFA)
 	    break;
     }
-#ifdef DEBUG
+#ifdef MOUSE_DEBUG
     xf86ErrorF("Obtained Mouse Type: %x\n",u);
 #endif
     return (int) u;
@@ -682,7 +682,7 @@ ps2Reset(InputInfoPtr pInfo)
     unsigned char packet[] = { 0xff };
     unsigned char reply[] = { 0xaa, 0x00 };
     unsigned int i;
-#ifdef DEBUG
+#ifdef MOUSE_DEBUG
    xf86ErrorF("PS/2 Mouse reset\n");
 #endif
     if (!ps2SendPacket(pInfo, packet, sizeof(packet)))
