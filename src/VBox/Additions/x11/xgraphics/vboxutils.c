@@ -34,17 +34,21 @@
 #define DEBUG_X
 #endif
 #ifdef DEBUG_X
-#define TRACE_ENTRY() for (;;) \
+#define TRACE_ENTRY() do \
     { \
         ErrorF ("%s\n", __FUNCTION__); \
-        break; \
-    }
+    } while(0)
+#define TRACE_LINE() do \
+    { \
+        ErrorF ("%s: line %d\n", __FUNCTION__, __LINE__); \
+    } while(0)
 #define PUT_PIXEL(c) ErrorF ("%c", c)
 #define dolog(...) ErrorF  (__VA_ARGS__)
 #else
-#define PUT_PIXEL(c) (void) c
-#define TRACE_ENTRY() (void) 0
-#define dolog(...)
+#define PUT_PIXEL(c) do { } while(0)
+#define TRACE_ENTRY() do { } while(0)
+#define TRACE_LINE() do { } while(0)
+#define dolog(...) do { } while(0)
 #endif
 
 /** Macro to printf an error message and return from a function */
@@ -95,21 +99,25 @@ vbox_show_shape(unsigned short w, unsigned short h, CARD32 bg, unsigned char *im
 
 
 static Bool
-vbox_host_can_hwcursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
+vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
 {
-    VMMDevReqMouseStatus req;
-    int rc;
-    int scrnIndex = pScrn->scrnIndex;
+    Bool rc = FALSE;
+    uint32_t fFeatures = 0;
 
-    uint32_t fFeatures;
-    NOREF(req);
-    rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-    if (VBOX_FAILURE(rc))
-        RETERROR(scrnIndex, FALSE,
-                 "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", rc);
-
-    return (fFeatures & VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER) ? FALSE : TRUE;
+    TRACE_ENTRY();
+    int vrc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
+    if (VBOX_FAILURE(vrc))
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                 "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", vrc);
+    else
+    {
+        if (   !(fFeatures & VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER)
+            && (fFeatures & VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE))
+            rc = TRUE;
+    }
+    return rc;
 }
+
 
 void
 vbox_close(ScrnInfoPtr pScrn, VBOXPtr pVBox)
@@ -345,7 +353,6 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         {
             pVBox->reqp = p;
             pVBox->pCurs = NULL;
-            pVBox->useHwCursor = vbox_host_can_hwcursor(pScrn, pVBox);
             pVBox->pointerHeaderSize = size;
             pVBox->pointerOffscreen = FALSE;
             pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
@@ -471,8 +478,7 @@ static Bool
 vbox_use_hw_cursor(ScreenPtr pScreen, CursorPtr pCurs)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-    VBOXPtr pVBox = pScrn->driverPrivate;
-    return pVBox->useHwCursor;
+    return vbox_host_uses_hwcursor(pScrn);
 }
 
 static unsigned char
@@ -533,7 +539,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
 
     dolog ("w=%d h=%d sm=%d sr=%d p=%d\n",
            w, h, (int) sizeMask, (int) sizeRgba, (int) dstPitch);
-    dolog ("m=%p c=%p cp=%p\n", m, c, cp);
+    dolog ("m=%p c=%p cp=%p\n", m, c, (void *)cp);
 
     fc = color_to_byte (pCurs->foreBlue)
       | (color_to_byte (pCurs->foreGreen) << 8)
@@ -614,10 +620,20 @@ static Bool
 vbox_use_hw_cursor_argb(ScreenPtr pScreen, CursorPtr pCurs)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-    return pCurs->bits->height <= VBOX_MAX_CURSOR_HEIGHT
-        && pCurs->bits->width <= VBOX_MAX_CURSOR_WIDTH
-        && pScrn->bitsPerPixel > 8;
+    Bool rc = TRUE;
+
+    if (!vbox_host_uses_hwcursor(pScrn))
+        rc = FALSE;
+    if (   rc
+        && (   (pCurs->bits->height > VBOX_MAX_CURSOR_HEIGHT)
+            || (pCurs->bits->width > VBOX_MAX_CURSOR_WIDTH)
+            || (pScrn->bitsPerPixel <= 8)
+           )
+       )
+        rc = FALSE;
+    return rc;
 }
+
 
 static void
 vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
@@ -714,18 +730,6 @@ vbox_cursor_init(ScreenPtr pScreen)
     VBOXPtr pVBox = pScrn->driverPrivate;
     xf86CursorInfoPtr pCurs;
     Bool rc;
-
-    if (pVBox->useHwCursor)
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                  "The host system is drawing the mouse cursor.\n");
-    }
-    else
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                  "The guest system is drawing the mouse cursor.\n");
-        return TRUE;
-    }
 
     pVBox->pCurs = pCurs = xf86CreateCursorInfoRec();
     if (!pCurs)

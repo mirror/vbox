@@ -47,7 +47,7 @@
  * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
  */
 
-#ifdef DEBUG
+#ifdef DEBUG_VIDEO
 
 #define TRACE \
 do { \
@@ -65,13 +65,13 @@ do { \
     xf86Msg(X_INFO, __VA_ARGS__); \
 } while(0)
 
-#else  /* DEBUG not defined */
+#else  /* DEBUG_VIDEO not defined */
 
 #define TRACE
 #define TRACE2
 #define TRACE3(...)
 
-#endif  /* DEBUG not defined */
+#endif  /* DEBUG_VIDEO not defined */
 
 #ifdef XFree86LOADER
 # include "xorg-server.h"

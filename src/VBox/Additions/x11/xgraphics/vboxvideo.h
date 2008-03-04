@@ -74,9 +74,7 @@
 
 /* VBE/DDC support */
 #include "vbe.h"
-#ifdef XORG_7X
 #include "vbeModes.h"
-#endif
 #include "xf86DDC.h"
 
 /* ShadowFB support */
@@ -117,9 +115,6 @@
 #include "fb.h"
 #include "afb.h"
 #include "mfb.h"
-#ifndef XORG_7X
-#include "cfb24_32.h"
-#endif
 
 #define VBOX_VERSION		4000
 #include "xf86Cursor.h"
@@ -136,12 +131,8 @@ typedef struct _VBOXRec
     pciVideoPtr pciInfo;
     PCITAG pciTag;
     CARD16 maxBytesPerScanline;
-#ifdef XORG_7X
     unsigned long mapPhys, mapOff;
     int mapSize;	/* video memory */
-#else
-    int mapPhys, mapOff, mapSize;	/* video memory */
-#endif
     void *base, *VGAbase;
     CARD8 *state, *pstate;	/* SVGA state */
     int statePage, stateSize, stateMode;
@@ -152,35 +143,16 @@ typedef struct _VBOXRec
     int nDGAMode;
     CloseScreenProcPtr CloseScreen;
     OptionInfoPtr Options;
-#ifdef XORG_7X
     IOADDRESS ioBase;
-#endif  /* XORG_7X defined */
-#if 0
-    int vbox_fd;
-#endif
     VMMDevReqMousePointer *reqp;
     xf86CursorInfoPtr pCurs;
-    Bool useHwCursor;
     size_t pointerHeaderSize;
     size_t pointerSize;
     Bool pointerOffscreen;
     Bool useVbva;
-#if 0
-    VMMDevVideoAccelFlush *reqf; 
-    VMMDevVideoAccelEnable *reqe; 
-#endif
     VMMDevMemory *pVMMDevMemory;
     VBVAMEMORY *pVbvaMemory;
 } VBOXRec, *VBOXPtr;
-
-#ifndef XORG_7X
-typedef struct _ModeInfoData
-{
-    int mode;
-    VbeModeInfoBlock *data;
-    VbeCRTCInfoBlock *block;
-} ModeInfoData;
-#endif
 
 extern Bool vbox_init(int scrnIndex);
 extern Bool vbox_cursor_init (ScreenPtr pScreen);

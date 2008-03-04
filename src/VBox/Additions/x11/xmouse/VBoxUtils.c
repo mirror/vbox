@@ -33,7 +33,7 @@ int VBoxMouseInit(void)
         return 1;
     }
 
-    rc = VbglR3SetMouseStatus(VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE | VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR);
+    rc = VbglR3SetMouseStatus(VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE /* | VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR */);
     if (VBOX_FAILURE(rc))
     {
         ErrorF("Error sending mouse pointer capabilities to VMM! rc = %d (%s)\n",
