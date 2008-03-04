@@ -69,23 +69,25 @@ $(PATH_TARGET)/VBoxClient/libstdc++.a:
 
 ifdef VBOX_X11_SEAMLESS_GUEST
  ifdef VBOX_WITH_TESTCASES
-  #
-  # Additional testcase designed to be run manually, which initiates and starts the Linux
-  # guest client part of the seamless additions in the host, faking seamless events from
-  # the host and writing information about guest events to standard output.
-  #
-  PROGRAMS += tstSeamlessX11
-  tstSeamlessX11_TEMPLATE = VBOXR3TSTEXE
-  tstSeamlessX11_SOURCES = \
-  	testcase/tstSeamlessX11.cpp \
-  	seamless-host.cpp \
-  	seamless-x11.cpp \
-  	thread.cpp
-  tstSeamlessX11_LIBS = \
-  	$(LIB_RUNTIME) \
-  	Xext \
-  	Xmu \
-  	X11
+  ifndef VBOX_ONLY_ADDITIONS
+   #
+   # Additional testcase designed to be run manually, which initiates and starts the Linux
+   # guest client part of the seamless additions in the host, faking seamless events from
+   # the host and writing information about guest events to standard output.
+   #
+   PROGRAMS += tstSeamlessX11
+   tstSeamlessX11_TEMPLATE = VBOXR3TSTEXE
+   tstSeamlessX11_SOURCES = \
+           testcase/tstSeamlessX11.cpp \
+           seamless-host.cpp \
+           seamless-x11.cpp \
+           thread.cpp
+   tstSeamlessX11_LIBS = \
+           $(LIB_RUNTIME) \
+           Xext \
+           Xmu \
+           X11
+  endif
  endif
 endif
 
