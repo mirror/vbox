@@ -36,6 +36,7 @@ using namespace com;
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
 #include <iprt/ldr.h>
+#include <iprt/getopt.h>
 
 #ifdef VBOX_FFMPEG
 #include <cstdlib>
@@ -53,10 +54,10 @@ using namespace com;
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LogError(m,rc) \
-    if (1) { \
+    do { \
         Log (("VBoxHeadless: ERROR: " m " [rc=0x%08X]\n", rc)); \
         RTPrintf (m " (rc = 0x%08X)\n", rc); \
-    }
+    } while (0)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -266,25 +267,69 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI (ConsoleCallback, IConsoleCallback)
 static void show_usage()
 {
     RTPrintf("Usage:\n"
-             "   -startvm <name|uuid>     Start given VM (required argument)\n"
+             "   -s, -startvm, --startvm <name|uuid>   Start given VM (required argument)\n"
 #ifdef VBOX_WITH_VRDP
-             "   -vrdpport <port>         Port number the VRDP server will bind to\n"
-             "   -vrdpaddress <ip>        Interface IP the VRDP will bind to \n"
+             "   -p, -vrdpport, --vrdpport <port>      Port number the VRDP server will bind\n"
+             "                                         to\n"
+             "   -a, -vrdpaddress, --vrdpaddress <ip>  Interface IP the VRDP will bind to \n"
 #endif
 #ifdef VBOX_FFMPEG
-             "   -capture                 Record the VM screen output to a file\n"
-             "\n"
-             "When recording, the following optional environment variables are also\n"
-             "recognized:\n"
-             "\n"
-             "   VBOX_CAPTUREWIDTH        Frame width\n"
-             "   VBOX_CAPTUREHEIGHT       Frame height\n"
-             "   VBOX_CAPTUREBITRATE      Recording bit rate\n"
-             "   VBOX_CAPTUREBITRATE      Recording bit rate\n"
-             "   VBOX_CAPTUREFILE         Specify a file name\n"
+             "   -c, -capture, --capture               Record the VM screen output to a file\n"
+             "   -w, --width                           Frame width when recording\n"
+             "   -h, --height                          Frame height when recording\n"
+             "   -r, --bitrate                         Recording bit rate when recording\n"
+             "   -f, --filename                        File name when recording.  The codec\n"
+             "                                         used will be chosen based on the\n"
+             "                                         file extension\n"
 #endif
              "\n");
 }
+
+#ifdef VBOX_FFMPEG
+/**
+ * Parse the environment for variables which can influence the FFMPEG settings.
+ * purely for backwards compatibility.
+ * @param pulFrameWidth may be updated with a desired frame width
+ * @param pulFrameHeight may be updated with a desired frame height
+ * @param pulBitRate may be updated with a desired bit rate
+ * @param ppszFileName may be updated with a desired file name
+ */
+static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameHeight,
+                          unsigned long *pulBitRate, const char **ppszFileName)
+{
+    const char *pszEnvTemp;
+
+    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREWIDTH")) != 0)
+    {
+        errno = 0;
+        unsigned long ulFrameWidth = strtoul(pszEnvTemp, 0, 10);
+        if (errno != 0)
+            LogError("VBoxHeadless: ERROR: invalid VBOX_CAPTUREWIDTH environment variable", 0);
+        else
+            *pulFrameWidth = ulFrameWidth;
+    }
+    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREHEIGHT")) != 0)
+    {
+        errno = 0;
+        unsigned long ulFrameHeight = strtoul(pszEnvTemp, 0, 10);
+        if (errno != 0)
+            LogError("VBoxHeadless: ERROR: invalid VBOX_CAPTUREHEIGHT environment variable", 0);
+        else
+            *pulFrameHeight = ulFrameHeight;
+    }
+    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREBITRATE")) != 0)
+    {
+        errno = 0;
+        unsigned long ulBitRate = strtoul(pszEnvTemp, 0, 10);
+        if (errno != 0)
+            LogError("VBoxHeadless: ERROR: invalid VBOX_CAPTUREBITRATE environment variable", 0);
+        else
+            *pulBitRate = ulBitRate;
+    }
+    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREFILE")) != 0)
+        *ppszFileName = pszEnvTemp;
+}
+#endif /* VBOX_FFMPEG defined */
 
 /**
  *  Entry point.
@@ -301,10 +346,11 @@ int main (int argc, char **argv)
     unsigned fCSAM  = ~0U;
 #ifdef VBOX_FFMPEG
     unsigned fFFMPEG = 0;
-    unsigned ulFrameWidth = 800;
-    unsigned ulFrameHeight = 600;
-    unsigned ulBitRate = 300000;
+    unsigned long ulFrameWidth = 800;
+    unsigned long ulFrameHeight = 600;
+    unsigned long ulBitRate = 300000;
     char pszMPEGFile[RTPATH_MAX];
+    const char *pszFileNameParam = "VBox-%d.vob";
 #endif /* VBOX_FFMPEG */
 
     // initialize VBox Runtime
@@ -320,167 +366,165 @@ int main (int argc, char **argv)
     /* the below cannot be Bstr because on Linux Bstr doesn't work until XPCOM (nsMemory) is initialized */
     const char *name = NULL;
 
-    // parse the command line
-    for (int curArg = 1; curArg < argc; curArg++)
+#ifdef VBOX_FFMPEG
+    /* Parse the environment */
+    parse_environ(&ulFrameWidth, &ulFrameHeight, &ulBitRate, &pszFileNameParam);
+#endif
+
+    enum eHeadlessOptions
     {
-        if (strcmp(argv[curArg], "-startvm") == 0)
-        {
-            if (++curArg >= argc)
-            {
-                LogError("VBoxHeadless: ERROR: missing VM identifier!", 0);
-                return -1;
-            }
-            id = argv[curArg];
-            /* If the argument was not a UUID, then it must be a name. */
-            if (!id)
-            {
-                name = argv[curArg];
-            }
-        }
+        OPT_RAW_R0 = 0x100,
+        OPT_NO_RAW_R0,
+        OPT_RAW_R3,
+        OPT_NO_RAW_R3,
+        OPT_PATM,
+        OPT_NO_PATM,
+        OPT_CSAM,
+        OPT_NO_CSAM,
+        OPT_COMMENT
+    };
+
+    static const RTOPTIONDEF g_aOptions[] =
+    {
+        { "-startvm", 's', RTGETOPT_REQ_STRING },
+        { "--startvm", 's', RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_VRDP
-        else if (strcmp(argv[curArg], "-vrdpport") == 0)
-        {
-            if (++curArg >= argc)
-            {
-                LogError("VBoxHeadless: ERROR: missing VRDP port value!", 0);
-                return -1;
-            }
-            vrdpPort = atoi(argv[curArg]);
-        }
-        else if (strcmp(argv[curArg], "-vrdpaddress") == 0)
-        {
-            if (++curArg >= argc)
-            {
-                LogError("VBoxHeadless: ERROR: missing VRDP address value!", 0);
-                return -1;
-            }
-            vrdpAddress = argv[curArg];
-        }
-#endif
-        else if (strcmp(argv[curArg], "-rawr0") == 0)
-        {
-            fRawR0 = true;
-        }
-        else if (strcmp(argv[curArg], "-norawr0") == 0)
-        {
-            fRawR0 = false;
-        }
-        else if (strcmp(argv[curArg], "-rawr3") == 0)
-        {
-            fRawR3 = true;
-        }
-        else if (strcmp(argv[curArg], "-norawr3") == 0)
-        {
-            fRawR3 = false;
-        }
-        else if (strcmp(argv[curArg], "-patm") == 0)
-        {
-            fPATM = true;
-        }
-        else if (strcmp(argv[curArg], "-nopatm") == 0)
-        {
-            fPATM = false;
-        }
-        else if (strcmp(argv[curArg], "-csam") == 0)
-        {
-            fCSAM = true;
-        }
-        else if (strcmp(argv[curArg], "-nocsam") == 0)
-        {
-            fCSAM = false;
-        }
+        { "-vrdpport", 'p', RTGETOPT_REQ_UINT32 },
+        { "--vrdpport", 'p', RTGETOPT_REQ_UINT32 },
+        { "-vrdaddress", 'a', RTGETOPT_REQ_STRING },
+        { "--vrdaddress", 'a', RTGETOPT_REQ_STRING },
+#endif /* VBOX_WITH_VRDP defined */
+        { "-rawr0", OPT_RAW_R0, 0 },
+        { "--rawr0", OPT_RAW_R0, 0 },
+        { "-norawr0", OPT_NO_RAW_R0, 0 },
+        { "--norawr0", OPT_NO_RAW_R0, 0 },
+        { "-rawr3", OPT_RAW_R3, 0 },
+        { "--rawr3", OPT_RAW_R3, 0 },
+        { "-norawr3", OPT_NO_RAW_R3, 0 },
+        { "--norawr3", OPT_NO_RAW_R3, 0 },
+        { "-patm", OPT_PATM, 0 },
+        { "--patm", OPT_PATM, 0 },
+        { "-nopatm", OPT_NO_PATM, 0 },
+        { "--nopatm", OPT_NO_PATM, 0 },
+        { "-csam", OPT_CSAM, 0 },
+        { "--csam", OPT_CSAM, 0 },
+        { "-nocsam", OPT_NO_CSAM, 0 },
+        { "--nocsam", OPT_NO_CSAM, 0 },
 #ifdef VBOX_FFMPEG
-        else if (strcmp(argv[curArg], "-capture") == 0)
+        { "-capture", 'c', 0 },
+        { "--capture", 'c', 0 },
+        { "--width", 'w', RTGETOPT_REQ_UINT32 },
+        { "--height", 'h', RTGETOPT_REQ_UINT32 },
+        { "--bitrate", 'r', RTGETOPT_REQ_UINT32 },
+        { "--filename", 'f', RTGETOPT_REQ_STRING },
+#endif /* VBOX_FFMPEG defined */
+        { "-comment", OPT_COMMENT, RTGETOPT_REQ_STRING },
+        { "--comment", OPT_COMMENT, RTGETOPT_REQ_STRING }
+    };
+
+    // parse the command line
+    int ch;
+    int i = 1;
+    RTOPTIONUNION ValueUnion;
+    while ((ch = RTGetOpt(argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), &i, &ValueUnion)))
+    {
+        if (ch < 0)
         {
-            fFFMPEG = true;
-        }
-#endif
-        else if (strcmp(argv[curArg], "-comment") == 0)
-        {
-            /* We could just ignore this, but check the syntax for consistency... */
-            if (++curArg >= argc)
-            {
-                LogError("VBoxHeadless: ERROR: missing comment!", 0);
-                return -1;
-            }
-        }
-        else
-        {
-            LogError("VBoxHeadless: ERROR: unknown option '%s'", argv[curArg]);
             show_usage();
-            return -1;
+            exit(-1);
+        }
+        switch(ch)
+        {
+            case 's':
+                id = ValueUnion.psz;
+                /* If the argument was not a UUID, then it must be a name. */
+                if (!id)
+                    name = ValueUnion.psz;
+                break;
+#ifdef VBOX_WITH_VRDP
+            case 'p':
+                vrdpPort = ValueUnion.u32;
+                break;
+            case 'a':
+                vrdpAddress = ValueUnion.psz;
+                break;
+#endif /* VBOX_WITH_VRDP defined */
+            case OPT_RAW_R0:
+                fRawR0 = true;
+                break;
+            case OPT_NO_RAW_R0:
+                fRawR0 = false;
+                break;
+            case OPT_RAW_R3:
+                fRawR3 = true;
+                break;
+            case OPT_NO_RAW_R3:
+                fRawR3 = false;
+                break;
+            case OPT_PATM:
+                fPATM = true;
+                break;
+            case OPT_NO_PATM:
+                fPATM = false;
+                break;
+            case OPT_CSAM:
+                fCSAM = true;
+                break;
+            case OPT_NO_CSAM:
+                fCSAM = false;
+                break;
+#ifdef VBOX_FFMPEG
+            case 'c':
+                fFFMPEG = true;
+                break;
+            case 'w':
+                ulFrameWidth = ValueUnion.u32;
+                break;
+            case 'h':
+                ulFrameHeight = ValueUnion.u32;
+                break;
+            case 'r':
+                ulBitRate = ValueUnion.u32;
+                break;
+            case 'f':
+                pszFileNameParam = ValueUnion.psz;
+                break;
+#endif /* VBOX_FFMPEG defined */
+            default: /* comment */
+                break;
         }
     }
 
 #ifdef VBOX_FFMPEG
-    const char *pszEnvTemp;
-    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREWIDTH")) != 0)
+    if (ulFrameWidth < 512 || ulFrameWidth > 2048 || ulFrameWidth % 2)
     {
-        errno = 0;
-        ulFrameWidth = strtoul(pszEnvTemp, 0, 10);
-        if (errno != 0)
-        {
-            LogError("VBoxHeadless: ERROR: invalid VBOX_CAPTUREWIDTH environment variable", 0);
-            return -1;
-        }
-        if (ulFrameWidth < 512 || ulFrameWidth > 2048 || ulFrameWidth % 2)
-        {
-            LogError("VBoxHeadless: ERROR: please specify an even VBOX_CAPTUREWIDTH variable between 512 and 2048", 0);
-            return -1;
-        }
-    }
-
-    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREHEIGHT")) != 0)
-    {
-        errno = 0;
-        ulFrameHeight = strtoul(pszEnvTemp, 0, 10);
-        if (errno != 0)
-        {
-            LogError("VBoxHeadless: ERROR: invalid VBOX_CAPTUREHEIGHT environment variable", 0);
-            return -1;
-        }
-        if (ulFrameHeight < 384 || ulFrameHeight > 1536 || ulFrameHeight % 2)
-        {
-            LogError("VBoxHeadless: ERROR: please specify an even VBOX_CAPTUREHEIGHT variable between 384 and 1536", 0);
-            return -1;
-        }
-    }
-
-    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREBITRATE")) != 0)
-    {
-        errno = 0;
-        ulBitRate = strtoul(pszEnvTemp, 0, 10);
-        if (errno != 0)
-        {
-            LogError("VBoxHeadless: ERROR: invalid VBOX_CAPTUREBITRATE environment variable", 0);
-            return -1;
-        }
-        if (ulBitRate < 300000 || ulBitRate > 1000000)
-        {
-            LogError("VBoxHeadless: ERROR: please specify an even VBOX_CAPTUREHEIGHT variable between 300000 and 1000000", 0);
-            return -1;
-        }
-    }
-
-    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREFILE")) == 0)
-        /* Standard base name */
-        pszEnvTemp = "VBox-%d.vob";
-
-    /* Make sure we only have %d or %u (or none) */
-    char *pcPercent = (char*)strchr(pszEnvTemp, '%');
-    if (pcPercent != 0 && *(pcPercent + 1) != 'd' && *(pcPercent + 1) != 'u')
-    {
-        LogError("VBoxHeadless: ERROR: Only %%d and %%u are allowed in the VBOX_CAPTUREFILE parameter.", -1);
+        LogError("VBoxHeadless: ERROR: please specify an even frame width between 512 and 2048", 0);
         return -1;
     }
-
+    if (ulFrameHeight < 384 || ulFrameHeight > 1536 || ulFrameHeight % 2)
+    {
+        LogError("VBoxHeadless: ERROR: please specify an even frame height between 384 and 1536", 0);
+        return -1;
+    }
+    if (ulBitRate < 300000 || ulBitRate > 1000000)
+    {
+        LogError("VBoxHeadless: ERROR: please specify an even bitrate between 300000 and 1000000", 0);
+        return -1;
+    }
+    /* Make sure we only have %d or %u (or none) in the file name specified */
+    char *pcPercent = (char*)strchr(pszFileNameParam, '%');
+    if (pcPercent != 0 && *(pcPercent + 1) != 'd' && *(pcPercent + 1) != 'u')
+    {
+        LogError("VBoxHeadless: ERROR: Only %%d and %%u are allowed in the capture file name.", -1);
+        return -1;
+    }
     /* And no more than one % in the name */
     if (pcPercent != 0 && strchr(pcPercent + 1, '%') != 0)
     {
-        LogError("VBoxHeadless: ERROR: Only one format modifier is allowed in the VBOX_CAPTUREFILE parameter.", -1);
+        LogError("VBoxHeadless: ERROR: Only one format modifier is allowed in the capture file name.", -1);
         return -1;
     }
-    RTStrPrintf(&pszMPEGFile[0], RTPATH_MAX, pszEnvTemp, RTProcSelf());
+    RTStrPrintf(&pszMPEGFile[0], RTPATH_MAX, pszFileNameParam, RTProcSelf());
 #endif /* defined VBOX_FFMPEG */
 
     if (!id && !name)
