@@ -249,6 +249,17 @@ struct PCNetState_st
     bool                                afAlignment[1];
     uint32_t                            u32LinkSpeed;
 
+/* #define PCNET_QUEUE_SEND_PACKETS */
+#ifdef PCNET_QUEUE_SEND_PACKETS
+    #define PCNET_MAX_XMIT_SLOTS         128
+    #define PCNET_MAX_XMIT_SLOTS_MASK    (PCNET_MAX_XMIT_SLOTS-1)
+
+    uint32_t                            ulXmitRingBufProd;
+    uint32_t                            ulXmitRingBufCons;
+    uint16_t                            cbXmitRingBuffer[PCNET_MAX_XMIT_SLOTS];
+    R3PTRTYPE(char *)                   pXmitRingBuffer[PCNET_MAX_XMIT_SLOTS];
+#endif
+
     STAMCOUNTER                         StatReceiveBytes;
     STAMCOUNTER                         StatTransmitBytes;
 
@@ -577,6 +588,10 @@ AssertCompileSize(RMD, 16);
         (R)->rmd1.ones, 4096-(R)->rmd1.bcnt,            \
         (R)->rmd2.rcc, (R)->rmd2.rpc, (R)->rmd2.mcnt,   \
         (R)->rmd2.zeros))
+
+#ifdef PCNET_QUEUE_SEND_PACKETS
+static int pcnetSyncTransmit(PCNetState *pData);
+#endif
 
 /**
  * Load transmit message descriptor
@@ -1829,8 +1844,12 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
 
     /* Clear counter .*/
     ASMAtomicAndU32(&pData->cPendingSends, 0);
+#ifdef PCNET_QUEUE_SEND_PACKETS
+    pcnetSyncTransmit(pData);
+#else
     int rc = RTSemEventSignal(pData->hSendEventSem);
     AssertRC(rc);
+#endif
     return true;
 }
 
@@ -1891,6 +1910,17 @@ DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS32 GCPhysFrame, co
  */
 DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pData)
 {
+#ifdef PCNET_QUEUE_SEND_PACKETS
+    Assert(!pData->cbXmitRingBuffer[pData->ulXmitRingBufProd]);
+    memcpy(pData->pXmitRingBuffer[pData->ulXmitRingBufProd], pData->SendFrame.pvBuf, pData->SendFrame.cb);
+    pData->cbXmitRingBuffer[pData->ulXmitRingBufProd] = (uint16_t)pData->SendFrame.cb;
+    pData->ulXmitRingBufProd                          = (pData->ulXmitRingBufProd+1) & PCNET_MAX_XMIT_SLOTS_MASK;
+
+    int rc = RTSemEventSignal(pData->hSendEventSem);
+    AssertRC(rc);
+
+    return VINF_SUCCESS;
+#else
     /* Don't hold the critical section while transmitting data. */
     /** @note also avoids deadlocks with NAT as it can call us right back. */
     PDMCritSectLeave(&pData->CritSect);
@@ -1898,12 +1928,14 @@ DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pData)
     STAM_PROFILE_ADV_START(&pData->StatTransmitSend, a);
     if (pData->SendFrame.cb > 70) /* unqualified guess */
         pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
+
     pData->pDrv->pfnSend(pData->pDrv, pData->SendFrame.pvBuf, pData->SendFrame.cb);
     STAM_REL_COUNTER_ADD(&pData->StatTransmitBytes, pData->SendFrame.cb);
     pData->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&pData->StatTransmitSend, a);
 
     return PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+#endif
 }
 
 
@@ -2011,7 +2043,38 @@ static void pcnetTransmit(PCNetState *pData)
 /**
  * Try to transmit frames
  */
+#ifdef PCNET_QUEUE_SEND_PACKETS
 static int pcnetAsyncTransmit(PCNetState *pData)
+{
+    Assert(PDMCritSectIsOwner(&pData->CritSect));
+
+    while (pData->cbXmitRingBuffer[pData->ulXmitRingBufCons])
+    {
+        /* Don't hold the critical section while transmitting data. */
+        /** @note also avoids deadlocks with NAT as it can call us right back. */
+        PDMCritSectLeave(&pData->CritSect);
+
+        STAM_PROFILE_ADV_START(&pData->StatTransmitSend, a);
+        if (pData->SendFrame.cb > 70) /* unqualified guess */
+            pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
+
+        pData->pDrv->pfnSend(pData->pDrv, pData->pXmitRingBuffer[pData->ulXmitRingBufCons], pData->cbXmitRingBuffer[pData->ulXmitRingBufCons]);
+        STAM_REL_COUNTER_ADD(&pData->StatTransmitBytes, pData->cbXmitRingBuffer[pData->ulXmitRingBufCons]);
+        pData->Led.Actual.s.fWriting = 0;
+        STAM_PROFILE_ADV_STOP(&pData->StatTransmitSend, a);
+
+        PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+
+        pData->cbXmitRingBuffer[pData->ulXmitRingBufCons] = 0;
+        pData->ulXmitRingBufCons                          = (pData->ulXmitRingBufCons+1) & PCNET_MAX_XMIT_SLOTS_MASK;
+    }
+    return VINF_SUCCESS;
+}
+
+static int pcnetSyncTransmit(PCNetState *pData)
+#else
+static int pcnetAsyncTransmit(PCNetState *pData)
+#endif
 {
     unsigned cFlushIrq = 0;
 
@@ -4279,6 +4342,10 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
         pData->hSendEventSem = NIL_RTSEMEVENT;
         PDMR3CritSectDelete(&pData->CritSect);
     }
+#ifdef PCNET_QUEUE_SEND_PACKETS
+    if (pData->pXmitRingBuffer)
+        RTMemFree(pData->pXmitRingBuffer[0]);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -4569,6 +4636,19 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpPDMThreadCreate(pDevIns, &pData->pSendThread, pData, pcnetAsyncSendThread, pcnetAsyncSendThreadWakeUp, 0, RTTHREADTYPE_IO, "PCNET_SEND");
     AssertRCReturn(rc, rc);
 
+    unsigned i;
+#ifdef PCNET_QUEUE_SEND_PACKETS
+    pData->ulXmitRingBufProd   = 0;
+    pData->ulXmitRingBufCons   = 0;
+    pData->pXmitRingBuffer[0]  = (char *)RTMemAlloc(PCNET_MAX_XMIT_SLOTS * 1536);
+    pData->cbXmitRingBuffer[0] = 0;
+    for (i=1;i<PCNET_MAX_XMIT_SLOTS;i++)
+    {
+        pData->pXmitRingBuffer[i]  = pData->pXmitRingBuffer[i-1] + 1536;
+        pData->cbXmitRingBuffer[i] = 0;
+    }
+#endif
+
 #ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/PCNet%d/MMIO/ReadGC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMMIOReadHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in HC",         "/Devices/PCNet%d/MMIO/ReadHC", iInstance);
@@ -4598,7 +4678,6 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTmdStoreGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in GC",     "/Devices/PCNet%d/TmdStoreGC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTmdStoreHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in HC",     "/Devices/PCNet%d/TmdStoreHC", iInstance);
 
-    unsigned i;
     for (i = 0; i < ELEMENTS(pData->aStatXmitFlush) - 1; i++)
         PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "",                                       "/Devices/PCNet%d/XmitFlushIrq/%d", iInstance, i + 1);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,    "",                                    "/Devices/PCNet%d/XmitFlushIrq/%d+", iInstance, i + 1);
