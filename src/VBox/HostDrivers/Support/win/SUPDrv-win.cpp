@@ -455,25 +455,6 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 }
 
 /**
- * Executes a callback handler on a specific cpu or all cpus
- *
- * @returns IPRT status code.
- * @param   pSession    The session.
- * @param   pfnCallback Callback handler
- * @param   pvUser      The first user argument.
- * @param   uCpu        Cpu id or SUPDRVEXECCALLBACK_CPU_ALL for all cpus
- */
-int  VBOXCALL   supdrvOSExecuteCallback(PSUPDRVSESSION pSession, PFNSUPDRVEXECCALLBACK pfnCallback, void *pvUser, unsigned uCpu)
-{
-    NOREF(pSession);
-    NOREF(pfnCallback);
-    NOREF(pvUser);
-    NOREF(uCpu);
-    /** @todo */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-/**
  * Gets the monotone timestamp (nano seconds).
  * @returns NanoTS.
  */
@@ -634,17 +615,19 @@ static void _stdcall VBoxDrvNtGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID 
         {
             KIRQL oldIrql;
 
-            Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+            /* KeQueryActiveProcessors must be executed at IRQL < DISPATCH_LEVEL */
+            Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+            KAFFINITY Mask = KeQueryActiveProcessors();
+
+            /* Raise the IRQL to DISPATCH_LEVEL so we can't be rescheduled to another cpu */
             KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
 
             /*
-             * We cannot do other than assume a 1:1 relation ship between the
+             * We cannot do other than assume a 1:1 relationship between the
              * affinity mask and the process despite the warnings in the docs.
              * If someone knows a better way to get this done, please let bird know.
              */
-            /** @todo our IRQL is too high for KeQueryActiveProcessors!! */
             unsigned iSelf = KeGetCurrentProcessorNumber();
-            KAFFINITY Mask = KeQueryActiveProcessors();
 
             for (unsigned i = 0; i < RT_ELEMENTS(pDevExt->aGipCpuDpcs); i++)
             {

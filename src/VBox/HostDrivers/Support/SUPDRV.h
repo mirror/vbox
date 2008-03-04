@@ -699,7 +699,7 @@ typedef struct SUPDRVDEVEXT
     /** The GIP DPC object associated with GipTimer. */
     KDPC                    GipDpc;
     /** The GIP DPC objects for updating per-cpu data. */
-    KDPC                    aGipCpuDpcs[32];
+    KDPC                    aGipCpuDpcs[64];
     /** Pointer to the MDL for the pGip page. */
     PMDL                    pGipMdl;
     /** GIP timer interval (ms). */
@@ -756,7 +756,6 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt);
 unsigned VBOXCALL supdrvOSGetCPUCount(void);
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(void);
 #endif
-int  VBOXCALL   supdrvOSExecuteCallback(PSUPDRVSESSION pSession, PFNSUPDRVEXECCALLBACK pfnCallback, void *pvUser, unsigned uCpu);
 
 
 /*******************************************************************************
