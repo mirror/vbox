@@ -822,15 +822,16 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     QString osTypeId = cmachine.GetOSTypeId();
     QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).convertToImage().smoothScale (100, 75);
     QImage osImg = QImage (":/dock_1.png");
-    bitBlt (&osImg, 14, 22,
-            &osImg100x75, 0, 0,
-            100, 75, /* conversion_flags */ 0);
-    QImage VBoxOverlay = QImage (":/VirtualBox_48px.png");
-    bitBlt (&osImg, osImg.width() - VBoxOverlay.width(), osImg.height() - VBoxOverlay.height(),
-            &VBoxOverlay, 0, 0,
-            VBoxOverlay.width(), VBoxOverlay.height(), /* conversion_flags */ 0);
-    if (dockImgOS)
-        CGImageRelease (dockImgOS);
+#warning port me
+//    bitBlt (&osImg, 14, 22,
+//            &osImg100x75, 0, 0,
+//            100, 75, /* conversion_flags */ 0);
+//    QImage VBoxOverlay = QImage (":/VirtualBox_48px.png");
+//    bitBlt (&osImg, osImg.width() - VBoxOverlay.width(), osImg.height() - VBoxOverlay.height(),
+//            &VBoxOverlay, 0, 0,
+//            VBoxOverlay.width(), VBoxOverlay.height(), /* conversion_flags */ 0);
+//    if (dockImgOS)
+//        CGImageRelease (dockImgOS);
     dockImgOS = ::DarwinQImageToCGImage (&osImg);
     SetApplicationDockTileImage (dockImgOS);
 #endif

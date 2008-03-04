@@ -184,7 +184,7 @@ void VBoxNewVMWzd::init()
 
     /* setup minimum width for the sizeHint to be calculated correctly */
 #warning port me: check this
-    int wid = spacerItem->minimumSize().width();
+    int wid = 1;
 //    int wid = widthSpacer->minimumSize().width();
     txWelcome->setMinimumWidth (wid);
     txNameAndOS->setMinimumWidth (wid);

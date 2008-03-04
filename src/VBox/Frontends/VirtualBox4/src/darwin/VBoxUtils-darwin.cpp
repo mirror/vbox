@@ -75,7 +75,7 @@ CGImageRef DarwinQImageToCGImage (const QImage *aImage)
  */
 CGImageRef DarwinQImageFromMimeSourceToCGImage (const char *aSource)
 {
-    QImage qim = QImage::fromMimeSource (QString(":/") + aSource);
+    QImage qim (QString(":/") + aSource);
     Assert (!qim.isNull());
     return DarwinQImageToCGImage (&qim);
 }
@@ -101,7 +101,7 @@ CGImageRef DarwinQPixmapToCGImage (const QPixmap *aPixmap)
  */
 CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource)
 {
-    QPixmap qpm = QPixmap::fromMimeSource (QString(":/" + aSource);
+    QPixmap qpm (QString(":/") + aSource);
     Assert (!qpm.isNull());
     return DarwinQPixmapToCGImage (&qpm);
 }
@@ -125,7 +125,7 @@ CGImageRef DarwinCreateDockBadge (const char *aSource)
     QPixmap back (transImage);
 
     /* load the badge */
-    QPixmap badge = QPixmap::fromMimeSource (aSource);
+    QPixmap badge (aSource);
     Assert (!badge.isNull());
 
     /* resize it and copy it onto the background. */

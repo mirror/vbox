@@ -25,7 +25,7 @@
 #include <QMainWindow>
 #include <QContextMenuEvent>
 #ifdef Q_WS_MAC
-# include "VBoxAquaStyle.h"
+//# include "VBoxAquaStyle.h"
 #endif
 
 /**
@@ -77,20 +77,20 @@ public:
     void setMacStyle() 
     {
         /* self */
-        QStyle *qs = &VBoxAquaStyle::instance();
-        setStyle(qs);
-
-        /* the buttons */
-        QObjectList *list = queryList ("QToolButton");
-        QObjectListIt it (*list);
-        QObject *obj;
-        while ((obj = it.current()) != 0)
-        {
-            QToolButton *btn = ::qt_cast <QToolButton *> (obj);
-            btn->setStyle (&VBoxAquaStyle::instance());
-            ++ it;
-        }
-        delete list;
+//        QStyle *qs = &VBoxAquaStyle::instance();
+//        setStyle(qs);
+//
+//        /* the buttons */
+//        QObjectList *list = queryList ("QToolButton");
+//        QObjectListIt it (*list);
+//        QObject *obj;
+//        while ((obj = it.current()) != 0)
+//        {
+//            QToolButton *btn = ::qt_cast <QToolButton *> (obj);
+//            btn->setStyle (&VBoxAquaStyle::instance());
+//            ++ it;
+//        }
+//        delete list;
 
         /** @todo the separator */
     }

@@ -2024,7 +2024,7 @@ void VBoxProblemReporter::showHelpHelpDialog()
 #elif defined (Q_WS_MAC)
     Q3Process openApp (QString("/usr/bin/open"));
     openApp.addArgument (qApp->applicationDirPath() + "/UserManual.pdf");
-    openApp.launch ("");
+    openApp.launch (QString(""));
 #endif
 #endif /* VBOX_OSE */
 }
