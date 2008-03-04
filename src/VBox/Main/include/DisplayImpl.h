@@ -250,7 +250,6 @@ private:
     /** Set after the first attempt to find the VMM Device. */
     bool                    mfVMMDevInited;
     bool mInternalFramebuffer;
-//    ComPtr<IFramebuffer> mFramebuffer;
 
     unsigned mcMonitors;
     DISPLAYFBINFO maFramebuffers[SchemaDefs::MaxGuestMonitors];
@@ -285,7 +284,6 @@ private:
     void vbvaReleaseCmd (VBVACMDHDR *pHdr, int32_t cbCmd);
 
     void handleResizeCompletedEMT (void);
-//    volatile uint32_t mu32ResizeStatus;
 };
 
 #endif // ____H_DISPLAYIMPL
