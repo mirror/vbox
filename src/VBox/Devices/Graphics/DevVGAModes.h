@@ -58,19 +58,19 @@
 #endif
 
 /* BOCHS/PLEX86 'own' mode numbers */
-#define VBE_OWN_MODE_320X200X8888                        0x120
-#define VBE_OWN_MODE_640X400X8888                        0x121
-#define VBE_OWN_MODE_640X480X8888                        0x122
-#define VBE_OWN_MODE_800X600X8888                        0x123
-#define VBE_OWN_MODE_1024X768X8888                       0x124
-#define VBE_OWN_MODE_1280X1024X8888                      0x125
-#define VBE_OWN_MODE_320X200X8                           0x126
-#define VBE_OWN_MODE_1600X1200X8888                      0x127
-#define VBE_OWN_MODE_1152X864X8                          0x128
-#define VBE_OWN_MODE_1152X864X1555                       0x129
-#define VBE_OWN_MODE_1152X864X565                        0x12a
-#define VBE_OWN_MODE_1152X864X888                        0x12b
-#define VBE_OWN_MODE_1152X864X8888                       0x12c
+#define VBE_OWN_MODE_320X200X8888                        0x140
+#define VBE_OWN_MODE_640X400X8888                        0x141
+#define VBE_OWN_MODE_640X480X8888                        0x142
+#define VBE_OWN_MODE_800X600X8888                        0x143
+#define VBE_OWN_MODE_1024X768X8888                       0x144
+#define VBE_OWN_MODE_1280X1024X8888                      0x145
+#define VBE_OWN_MODE_320X200X8                           0x146
+#define VBE_OWN_MODE_1600X1200X8888                      0x147
+#define VBE_OWN_MODE_1152X864X8                          0x148
+#define VBE_OWN_MODE_1152X864X1555                       0x149
+#define VBE_OWN_MODE_1152X864X565                        0x14a
+#define VBE_OWN_MODE_1152X864X888                        0x14b
+#define VBE_OWN_MODE_1152X864X8888                       0x14c
 
 #define VBE_VESA_MODE_END_OF_LIST                        0xFFFF
 
