@@ -438,9 +438,9 @@ VirtualBox_SOURCES.win += \
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
 	src/darwin/DarwinCursor.cpp \
-	src/darwin/VBoxAquaStyle.cpp \
 	src/darwin/VBoxUtils-darwin.cpp \
 	src/VBoxFBQuartz2D.cpp
+#	src/darwin/VBoxAquaStyle.cpp \
 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_SOURCES.darwin += \
@@ -521,9 +521,9 @@ else
  endif
 endif
 VirtualBox_LDFLAGS.os2    = -Zlinker /PM:PM -Zno-fork
-VirtualBox_LDFLAGS.darwin = -framework IOKit
+VirtualBox_LDFLAGS.darwin = -framework IOKit -framework AppKit -framework ApplicationServices -framework Foundation -lz
 ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox_LDFLAGS.darwin += -framework Foundation -framework AppKit -framework InstantMessage -framework QuartzCore
+ VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif
 VirtualBox_LIBS.win       = \
 	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \

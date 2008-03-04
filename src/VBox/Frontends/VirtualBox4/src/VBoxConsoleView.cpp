@@ -2526,10 +2526,11 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
             }
         }
 #elif defined (Q_WS_MAC)
-        if (aUniKey && aUniKey [0] && !aUniKey [1])
-            processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
-                                                     QChar (aUniKey [0]).upper().unicode()),
-                                       mMainWnd->menuBar());
+#warning port me
+//        if (aUniKey && aUniKey [0] && !aUniKey [1])
+//            processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
+//                                                     QChar (aUniKey [0]).upper().unicode()),
+//                                       mMainWnd->menuBar());
 
         /* Don't consider the hot key as pressed since the guest never saw
          * it. (probably a generic thing) */
