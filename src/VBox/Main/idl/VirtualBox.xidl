@@ -926,7 +926,7 @@
       <desc>Associated system information object.</desc>
     </attribute>
 
-	<attribute name="machines" type="IMachineCollection" readonly="yes">
+    <attribute name="machines" type="IMachineCollection" readonly="yes">
       <desc>
         Collection of machine objects registered within this VirtualBox
         instance.
@@ -979,12 +979,35 @@
       <desc>
         Creates a new virtual machine.
 
+        The new machine will have "empty" default settings and will not
+        yet be registered. The typical sequence to create a virtual machine
+        is therefore something like this:
+
+        <ol>
+           <li>Call this method (IVirtualBox::createMachine) to have a new
+           machine created. The machine object returned is "mutable", i.e.
+           automatically locked for the current session, as if
+           <link to="#openSession" /> had been called on it.</li>
+
+           <li>Assign meaningful settings to the new machine by calling the
+           respective methods.</li>
+
+           <li>Call <link to="IMachine::saveSettings" /> to have the settings written
+           to the machine's XML settings file. The configuration of the newly
+           created machine will not be saved to disk (and the settings subfolder
+           and file, as described below, will not be created) until this method
+           is called.</li>
+
+           <li>Call <link to="#registerMachine" /> to have the
+           machine show up in the list of machines registered with VirtualBox.</li>
+        </ol>
+
         Every machine has a <i>settings file</i> that is used to store
         the machine configuration. This file is stored in the directory
-        called <i>machine settings subfolder</i>. Both the subfolder
-        and the settings file have the same name that corresponds to the
-        name of the virtual machine. You can specify where
-        to create the machine settings subfolder using the @a
+        called <i>machine settings subfolder</i>. Unless specified otherwise,
+        both the subfolder and the settings file will have a name that
+        corresponds to the name of the virtual machine. You can specify
+        where to create the machine settings subfolder using the @a
         baseFolder argument. The base folder can be absolute (full path)
         or relative to the <link to="IVirtualBox::homeFolder">
           VirtualBox home directory</link>.
@@ -1000,10 +1023,6 @@
         Optionally the UUID of the machine can be predefined. If this is
         not desired (i.e. a new UUID should be generated), pass just an
         empty or null UUID.
-
-        Note that the configuration of the newly created machine is not
-        saved to disk (and therefore no settings subfolder and file are
-        created) until <link to="IMachine::saveSettings()"/> is called.
 
         You should also specify a valid name for the machine.
         See the <link to="IMachine::name"/> property
@@ -1738,10 +1757,36 @@
         Within the direct session context, it is possible to change
         all VM settings, as well as to execute the VM in the process
         space of the session object. There can be only one direct
-        session open at a time for every virtual machine.
+        session open at a time for every virtual machine. In VirtualBox
+        terminology, the machine becomes "mutable" after a session has
+        been opened.
 
         Upon successful return, the session object can be used to
         get access to the machine and to the VM console.
+
+        Note that the "mutable" machine object, on which you may want
+        to invoke IMachine methods to change its settings, will be a
+        different object from the immutable IMachine objects returned
+        by various IVirtualBox methods. To obtain a mutable
+        IMachine object, upon which you can invoke settings methods,
+        use the "machine" attribute of the ISession object which represents
+        your open session.
+
+        In other words, to change settings on a machine, the following
+        sequence is typically performed:
+
+        <ol>
+        <li>Call this method (openSession) to have a machine locked for
+        the current session.</li>
+
+        <li>Obtain a mutable IMachine object from ISession::machine.</li>
+
+        <li>Change the settings of the machine.</li>
+
+        <li>Call IMachine::saveSettings.</li>
+
+        <li>Close the session by calling <link to="#close" />.</li>
+        </ol>
       </desc>
       <param name="session" type="ISession" dir="in">
         <desc>
@@ -9380,38 +9425,50 @@
       that there are no incompatible requests from several processes for the
       same virtual machine.
 
-      When using the COM API directly, an object of the Session class from the
-      VirtualBox type library needs to be created. This object will then act
-      as a local session object in further calls to open a session.
+      How sessions objects are used depends on whether you use the Main API
+      via COM or via the web service:
 
-      In the webservice, the session manager creates one session object during
-      <link to="IWebsessionManager::logon" /> automatically; a managed object
-      reference to that session object can be retrieved by calling
-      <link to="IWebsessionManager::getSessionObject" />.
+      <ul>
+      <li>When using the COM API directly, an object of the Session class from the
+      VirtualBox type library needs to be created. In regular COM C++ client code,
+      this can be done by calling <tt>createLocalObject()</tt>, a standard COM API.
+      This object will  then act as a local session object in further calls to open
+      a session.
+      </li>
 
+      <li>In the webservice, the session manager (IWebsessionManager) instead creates
+      one session object automatically when <link to="IWebsessionManager::logon" />
+      is called. A managed object reference to that session object can be retrieved by
+      calling <link to="IWebsessionManager::getSessionObject" />. This session object
+      reference can then be used to open sessions.
+      </li>
+      </ul>
+
+      Sessions are mainly used in two variations:
+
+      <ul>
+      <li>
       To start a virtual machine in a separate process, one would call
       <link to="IVirtualBox::openRemoteSession"/>, which requires a session
       object as its first parameter. This session then identifies the caller
       and lets him control the started machine (for example, pause machine
       execution or power it down) as well as be notified about machine
       execution state changes.
+      </li>
 
-      To alter machine settings, or to start machine execution within its own
-      process, one needs to open a direct session for the machine first by
-      calling <link to="IVirtualBox::openSession"/>. Once the direct session
-      is successfully opened within one process, no any other process may open
-      a direct session for the same machine as long as the successful direct
-      session remains open. This prevents the machine from being changed by
-      other processes while it is running or while the machine is being
-      configured.
+      <li>To alter machine settings, or to start machine execution within the
+      current process, one needs to open a direct session for the machine first by
+      calling <link to="IVirtualBox::openSession"/>. While a direct session
+      is open within one process, no any other process may open another direct
+      session for the same machine. This prevents the machine from being changed
+      by other processes while it is running or while the machine is being configured.
+      </li>
+      </ul>
 
       One also can attach to an existing direct session alreay opened by
       another process (for example, in order to send a control request to the
       virtual machine such as the pause or the reset request). This is done by
       calling <link to="IVirtualBox::openExistingSession"/>.
-
-      In regular COM C++ client code, one can simply create a session object,
-      for example by calling <tt>createLocalObject().</tt>
 
       <note>
         Unless you are trying to write a new VirtualBox front-end that
