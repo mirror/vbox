@@ -320,7 +320,7 @@ int vbox_ioctl_hgcm_call(unsigned long arg, VBoxDevice *vboxDev)
     rc = vboxadd_cmc_call(vboxDev, IOCTL_VBOXGUEST_HGCM_CALL, hgcmR0);
     if (VBOX_FAILURE(rc))
     {
-        LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: internal ioctl call failed, rc=%Vrc\n", rc));
+        LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: internal ioctl call failed, rc=%Rrc\n", rc));
         rc = -RTErrConvertToErrno(rc);
     }
     else
