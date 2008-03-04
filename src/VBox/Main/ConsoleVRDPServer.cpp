@@ -25,6 +25,8 @@
 
 #include <iprt/asm.h>
 #include <iprt/ldr.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
 #include <iprt/alloca.h>
 
 #include <VBox/err.h>
@@ -1925,6 +1927,68 @@ void ConsoleVRDPServer::QueryInfo (uint32_t index, void *pvBuffer, uint32_t cbBu
 }
 
 #ifdef VBOX_VRDP
+static int loadLibrary (const char *pszName, PRTLDRMOD phLdrMod)
+{
+    /* Load the specified library.
+     * If the full path is specified, only this path is used.
+     * If only library name is specified, then try to load it from:
+     *   - RTPathAppPrivateArch
+     *   - RTPathSharedLibs (legacy)
+     */
+    int rc = VERR_FILE_NOT_FOUND;
+
+    if (RTPathHavePath (pszName))
+    {
+        /* Path specified, respect it. */
+        rc = RTLdrLoad (pszName, phLdrMod);
+    }
+    else
+    {
+        /* Try default locations. */
+        int i;
+        for (i = 0;; i++)
+        {
+            char szBase[RTPATH_MAX];
+
+            /* Get the appropriate base path. */
+            if (i == 0)
+            {
+                rc = RTPathAppPrivateArch(szBase, sizeof (szBase));
+            }
+            else if (i == 1)
+            {
+                rc = RTPathSharedLibs(szBase, sizeof (szBase));
+            }
+            else
+            {
+                break;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                char szPath[RTPATH_MAX];
+
+                /* szPath = pszBase + pszName */
+                rc = RTPathAbsEx(szBase, pszName, szPath, sizeof (szPath));
+
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTLdrLoad(szPath, phLdrMod);
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Successfully loaded a library. */
+                        LogFlow(("Library loaded: [%s]\n", szPath));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return rc;
+}
+
 /* note: static function now! */
 bool ConsoleVRDPServer::loadVRDPLibrary (void)
 {
@@ -1932,7 +1996,7 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
 
     if (!mVRDPLibrary)
     {
-        rc = RTLdrLoad("VBoxVRDP", &mVRDPLibrary);
+        rc = loadLibrary("VBoxVRDP", &mVRDPLibrary);
 
         if (VBOX_SUCCESS(rc))
         {
