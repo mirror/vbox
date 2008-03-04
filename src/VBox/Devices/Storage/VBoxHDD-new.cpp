@@ -1088,13 +1088,11 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         AssertMsgBreak((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0,
                        ("uImageFlags=%#x\n", uImageFlags),
                        rc = VERR_INVALID_PARAMETER);
+        /* The PCHS geometry fields may be 0 to leave it for later. */
         AssertMsgBreak(   VALID_PTR(pPCHSGeometry)
                        && pPCHSGeometry->cCylinders <= 16383
-                       && pPCHSGeometry->cCylinders != 0
                        && pPCHSGeometry->cHeads <= 16
-                       && pPCHSGeometry->cHeads != 0
-                       && pPCHSGeometry->cSectors <= 63
-                       && pPCHSGeometry->cSectors != 0,
+                       && pPCHSGeometry->cSectors <= 63,
                        ("pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pPCHSGeometry,
                         pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
                         pPCHSGeometry->cSectors),
@@ -2029,11 +2027,8 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         /* Check arguments. */
         AssertMsgBreak(   VALID_PTR(pPCHSGeometry)
                        && pPCHSGeometry->cCylinders <= 16383
-                       && pPCHSGeometry->cCylinders != 0
                        && pPCHSGeometry->cHeads <= 16
-                       && pPCHSGeometry->cHeads != 0
-                       && pPCHSGeometry->cSectors <= 63
-                       && pPCHSGeometry->cSectors != 0,
+                       && pPCHSGeometry->cSectors <= 63,
                        ("pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pPCHSGeometry,
                         pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
                         pPCHSGeometry->cSectors),
