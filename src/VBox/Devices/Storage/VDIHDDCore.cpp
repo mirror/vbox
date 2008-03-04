@@ -373,6 +373,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
         rc = vdiError(pImage, rc, RT_SRC_POS, N_("VDI: cannot create image '%s'"), pImage->pszFilename);
         goto out;
     }
+    pImage->File = File;
 
     cbTotal =   pImage->offStartData
               + (uint64_t)getImageBlocks(&pImage->Header) * pImage->cbTotalBlockData;
@@ -396,7 +397,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
          * Allocate & commit whole file if fixed image, it must be more
          * effective than expanding file by write operations.
          */
-        rc = RTFileSetSize(pImage->File, cbTotal);
+        rc = RTFileSetSize(File, cbTotal);
     }
     else
     {
@@ -413,7 +414,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
     RTUuidCreate(getImageModificationUUID(&pImage->Header));
 
     /* Write pre-header. */
-    rc = RTFileWriteAt(pImage->File, 0, &pImage->PreHeader, sizeof(pImage->PreHeader), NULL);
+    rc = RTFileWriteAt(File, 0, &pImage->PreHeader, sizeof(pImage->PreHeader), NULL);
     if (VBOX_FAILURE(rc))
     {
         rc = vdiError(pImage, rc, RT_SRC_POS, N_("VDI: writing pre-header failed for '%s'"), pImage->pszFilename);
@@ -421,14 +422,14 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
     }
 
     /* Write header. */
-    rc = RTFileWriteAt(pImage->File, sizeof(pImage->PreHeader), &pImage->Header.u.v1plus, sizeof(pImage->Header.u.v1plus), NULL);
+    rc = RTFileWriteAt(File, sizeof(pImage->PreHeader), &pImage->Header.u.v1plus, sizeof(pImage->Header.u.v1plus), NULL);
     if (VBOX_FAILURE(rc))
     {
         rc = vdiError(pImage, rc, RT_SRC_POS, N_("VDI: writing header failed for '%s'"), pImage->pszFilename);
         goto out;
     }
 
-    rc = RTFileWriteAt(pImage->File, pImage->offStartBlocks,
+    rc = RTFileWriteAt(File, pImage->offStartBlocks,
                        pImage->paBlocks,
                        getImageBlocks(&pImage->Header) * sizeof(VDIIMAGEBLOCKPOINTER),
                        NULL);
@@ -463,7 +464,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
         {
             unsigned cbChunk = (unsigned)RT_MIN(cbFill, cbBuf);
 
-            rc = RTFileWriteAt(pImage->File, pImage->offStartData + uOff,
+            rc = RTFileWriteAt(File, pImage->offStartData + uOff,
                                pvBuf, cbChunk, NULL);
             if (VBOX_FAILURE(rc))
             {
