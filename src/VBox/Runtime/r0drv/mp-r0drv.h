@@ -30,12 +30,23 @@
 #include <iprt/mp.h>
 
 /**
+ * MP callback
+ *
+ * @param   idCpu       CPU id
+ * @param   pvUser1     The first user argument.
+ * @param   pvUser2     The second user argument.
+ */
+typedef DECLCALLBACK(void) FNMPWORKER(RTCPUID idCpu, void *pvUser1, void *pvUser2);
+/** Pointer to a FNMPWORKER(). */
+typedef FNMPWORKER *PFNMPWORKER;
+
+/**
  * RTMpOn* argument packet used by the host specific callback 
  * wrapper functions.
  */
 typedef struct RTMPARGS
 {
-    PFNWORKER   pfnWorker;
+    PFNMPWORKER pfnWorker;
     void       *pvUser1;
     void       *pvUser2;
     RTCPUID     idCpu;

@@ -904,9 +904,8 @@ RuntimeR0Drv_SOURCES.win = \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
-	generic/RTMpCpuId-generic.cpp \
+	r0drv/nt/mp-r0drv-nt.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
-	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/nt/alloc-r0drv-nt.cpp \
 	r0drv/nt/initterm-r0drv-nt.cpp \
