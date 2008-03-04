@@ -1197,6 +1197,8 @@
 #define VERR_WEB_INVALID_SESSION_ID                 (-6002)
 /** Invalid object ID in managed object reference */
 #define VERR_WEB_INVALID_OBJECT_ID                  (-6003)
+/** Unsupported interface for managed object reference */
+#define VERR_WEB_UNSUPPORTED_INTERFACE              (-6004)
 /** @} */
 
 /* SED-END */
