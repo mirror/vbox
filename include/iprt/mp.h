@@ -70,9 +70,9 @@ RTDECL(RTCPUID) RTMpCpuId(void);
  * @param   pvUser1     The 1st user argument.
  * @param   pvUser2     The 2nd user argument.
  */
-typedef DECLCALLBACK(void) FNWORKER(RTCPUID idCpu, void *pvUser1, void *pvUser2);
-/** Pointer to a FNWORKER. */
-typedef FNWORKER *PFNWORKER;
+typedef DECLCALLBACK(void) FNRTMPWORKER(RTCPUID idCpu, void *pvUser1, void *pvUser2);
+/** Pointer to a FNRTMPWORKER. */
+typedef FNRTMPWORKER *PFNRTMPWORKER;
 
 /**
  * Executes a function on each (online) CPU in the system.
@@ -88,7 +88,7 @@ typedef FNWORKER *PFNWORKER;
  * @remarks The execution isn't in any way guaranteed to be simultaneous,
  *          it might even be serial (cpu by cpu).
  */
-RTDECL(int) RTMpOnAll(PFNWORKER pfnWorker, void *pvUser1, void *pvUser2);
+RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 
 /**
  * Executes a function on a all other (online) CPUs in the system.
@@ -104,7 +104,7 @@ RTDECL(int) RTMpOnAll(PFNWORKER pfnWorker, void *pvUser1, void *pvUser2);
  * @remarks The execution isn't in any way guaranteed to be simultaneous,
  *          it might even be serial (cpu by cpu).
  */
-RTDECL(int) RTMpOnOthers(PFNWORKER pfnWorker, void *pvUser1, void *pvUser2);
+RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 
 /**
  * Executes a function on a specific CPU in the system.
@@ -120,7 +120,7 @@ RTDECL(int) RTMpOnOthers(PFNWORKER pfnWorker, void *pvUser1, void *pvUser2);
  * @param   pvUser1         The first user argument for the worker.        
  * @param   pvUser2         The second user argument for the worker.        
  */
-RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNWORKER pfnWorker, void *pvUser1, void *pvUser2);
+RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 
 #endif /* IN_RING0 */
 
