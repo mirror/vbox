@@ -201,13 +201,12 @@ typedef VBOXHDD *PVBOXHDD;
  * No image files are opened.
  *
  * @returns VBox status code.
- * @param   pszBackend      Name of the image file backend to use.
  * @param   pfnError        Callback for setting extended error information.
  * @param   pvErrorUser     Opaque parameter for pfnError.
  * @param   ppDisk          Where to store the reference to HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
-                           void *pvErrorUser, PVBOXHDD *ppDisk);
+VBOXDDU_DECL(int) VDCreate(PFNVDERROR pfnError, void *pvErrorUser,
+                           PVBOXHDD *ppDisk);
 
 /**
  * Destroys HDD container.
@@ -242,17 +241,19 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat);
  *
  * @returns VBox status code.
  * @param   pDisk           Pointer to HDD container.
+ * @param   pszBackend      Name of the image file backend to use.
  * @param   pszFilename     Name of the image file to open.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  */
-VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
-                         unsigned uOpenFlags);
+VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
+                         const char *pszFilename, unsigned uOpenFlags);
 
 /**
  * Creates and opens a new base image file.
  *
  * @returns VBox status code.
  * @param   pDisk           Pointer to HDD container.
+ * @param   pszBackend      Name of the image file backend to use.
  * @param   pszFilename     Name of the image file to create.
  * @param   enmType         Image type, only base image types are acceptable.
  * @param   cbSize          Image size in bytes.
@@ -264,9 +265,10 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszFilename,
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
  */
-VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
-                               VDIMAGETYPE enmType, uint64_t cbSize,
-                               unsigned uImageFlags, const char *pszComment,
+VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
+                               const char *pszFilename, VDIMAGETYPE enmType,
+                               uint64_t cbSize, unsigned uImageFlags,
+                               const char *pszComment,
                                PCPDMMEDIAGEOMETRY pPCHSGeometry,
                                PCPDMMEDIAGEOMETRY pLCHSGeometry,
                                unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
@@ -278,6 +280,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
  *
  * @returns VBox status code.
  * @param   pDisk           Pointer to HDD container.
+ * @param   pszBackend      Name of the image file backend to use.
  * @param   pszFilename     Name of the differencing image file to create.
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
@@ -285,10 +288,10 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszFilename,
  * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
  * @param   pvUser          User argument for the progress callback.
  */
-VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszFilename,
-                               unsigned uImageFlags, const char *pszComment,
-                               unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
-                               void *pvUser);
+VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
+                               const char *pszFilename, unsigned uImageFlags,
+                               const char *pszComment, unsigned uOpenFlags,
+                               PFNVMPROGRESS pfnProgress, void *pvUser);
 
 /**
  * Merges two images (not necessarily with direct parent/child relationship).
@@ -312,8 +315,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * Copies an image from one HDD container to another.
  * The copy is opened in the target HDD container.
  * It is possible to convert between different image formats, because the
- * backend for the destination HDD container may be different from the
- * source container.
+ * backend for the destination may be different from the source.
  * If both the source and destination reference the same HDD container,
  * then the image is moved (by copying/deleting or renaming) to the new location.
  * The source container is unchanged if the move operation fails, otherwise
@@ -324,6 +326,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pDiskFrom       Pointer to source HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pDiskTo         Pointer to destination HDD container.
+ * @param   pszBackend      Name of the image file backend to use (may be NULL to use the same as the source).
  * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
  * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
  * @param   cbSize          New image size (0 means leave unchanged).
@@ -331,9 +334,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pvUser          User argument for the progress callback.
  */
 VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
-                         const char *pszFilename, bool fMoveByRename,
-                         uint64_t cbSize, PFNVMPROGRESS pfnProgress,
-                         void *pvUser);
+                         const char *pszBackend, const char *pszFilename,
+                         bool fMoveByRename, uint64_t cbSize,
+                         PFNVMPROGRESS pfnProgress, void *pvUser);
 
 /**
  * Closes the last opened image file in HDD container.
