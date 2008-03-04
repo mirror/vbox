@@ -338,7 +338,7 @@ static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                              * Call the common device extension initializer.
                                              */
                                             rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, pState->pMMIOBase,
-                                                        pState->cbMMIO, OSTypeSolaris);
+                                                        pState->cbMMIO, VBOXOSTYPE_Solaris);
                                             if (RT_SUCCESS(rc))
                                             {
                                                 rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);
