@@ -1543,7 +1543,7 @@ check_gcc
 # don't check for yasm for the time beeing as 0.40 and 0.50 both have known bugs
 # [ "$OS" != "darwin" ] && check_yasm
 [ "$OS" != "darwin"  ] && check_xsltproc
-[ $OSE -eq 0 ]         && check_mkisofs
+[ $OSE -eq 0 -a "$OS" != "darwin" ] && check_mkisofs
 
 # the libraries
 [ "$OS" != "darwin"  ] && check_pthread
