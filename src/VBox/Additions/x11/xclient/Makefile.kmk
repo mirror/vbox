@@ -82,7 +82,7 @@ ifdef VBOX_X11_SEAMLESS_GUEST
            seamless-host.cpp \
            seamless-x11.cpp \
            thread.cpp
-   VBoxClient_LIBPATH = \
+   tstSeamlessX11_LIBPATH = \
            $(VBOX_LIBPATH_X11)
    tstSeamlessX11_LIBS = \
            $(LIB_RUNTIME) \
