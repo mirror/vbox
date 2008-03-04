@@ -883,6 +883,8 @@ RuntimeR0Drv_SOURCES.linux = \
 	common/string/strpbrk.cpp \
 	common/err/RTErrConvertToErrno.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTMpCpuId-generic.cpp \
+	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
 	r0drv/linux/memobj-r0drv-linux.c \
@@ -902,7 +904,9 @@ RuntimeR0Drv_SOURCES.win = \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTMpCpuId-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
+	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/nt/alloc-r0drv-nt.cpp \
 	r0drv/nt/initterm-r0drv-nt.cpp \
@@ -930,8 +934,10 @@ RuntimeR0Drv_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwinIO.cpp \
 	darwin/RTErrConvertFromDarwinKern.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTMpCpuId-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/timer-generic.cpp \
+	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
 	r0drv/darwin/assert-r0drv-darwin.cpp \
 	r0drv/darwin/initterm-r0drv-darwin.cpp \
@@ -962,9 +968,11 @@ RuntimeR0Drv_SOURCES.os2 = \
 	\
 	common/misc/thread.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTMpCpuId-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm \
 	r0drv/memobj-r0drv.cpp \
+	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/os2/alloc-r0drv-os2.cpp \
 	r0drv/os2/assert-r0drv-os2.cpp \
 	r0drv/os2/assertA-r0drv-os2.asm \
@@ -994,7 +1002,9 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	common/string/strpbrk.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTMpCpuId-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/freebsd/alloc-r0drv-freebsd.c \
 	r0drv/freebsd/assert-r0drv-freebsd.c \
 	r0drv/freebsd/initterm-r0drv-freebsd.c \
@@ -1015,8 +1025,10 @@ RuntimeR0Drv_SOURCES.solaris = \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTMpCpuId-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
+	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/solaris/alloc-r0drv-solaris.c \
 	r0drv/solaris/assert-r0drv-solaris.c \
 	r0drv/solaris/initterm-r0drv-solaris.c \
