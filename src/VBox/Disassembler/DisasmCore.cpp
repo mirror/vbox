@@ -172,6 +172,7 @@ static const unsigned g_aReg32Index[] =
  */
 #define DIS_READ_REG32(p, idx)       (*(uint32_t *)((char *)(p) + g_aReg32Index[idx]))
 #define DIS_WRITE_REG32(p, idx, val) (*(uint32_t *)((char *)(p) + g_aReg32Index[idx]) = val)
+#define DIS_PTR_REG32(p, idx)        ( (uint32_t *)((char *)(p) + g_aReg32Index[idx]))
 
 /**
  * Array for accessing 16-bit general registers in CPUMCTXCORE structure
@@ -194,6 +195,7 @@ static const unsigned g_aReg16Index[] =
  */
 #define DIS_READ_REG16(p, idx)          (*(uint16_t *)((char *)(p) + g_aReg16Index[idx]))
 #define DIS_WRITE_REG16(p, idx, val)    (*(uint16_t *)((char *)(p) + g_aReg16Index[idx]) = val)
+#define DIS_PTR_REG16(p, idx)           ( (uint16_t *)((char *)(p) + g_aReg16Index[idx]))
 
 /**
  * Array for accessing 8-bit general registers in CPUMCTXCORE structure
@@ -216,6 +218,7 @@ static const unsigned g_aReg8Index[] =
  */
 #define DIS_READ_REG8(p, idx)           (*(uint8_t *)((char *)(p) + g_aReg8Index[idx]))
 #define DIS_WRITE_REG8(p, idx, val)     (*(uint8_t *)((char *)(p) + g_aReg8Index[idx]) = val)
+#define DIS_PTR_REG8(p, idx)            ( (uint8_t *)((char *)(p) + g_aReg8Index[idx]))
 
 /**
  * Array for accessing segment registers in CPUMCTXCORE structure
@@ -557,7 +560,7 @@ DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, uint32_t reg16, uint16_t *pVal)
 }
 
 /**
- * Returns the value of the specified 16 bits general purpose register
+ * Returns the value of the specified 32 bits general purpose register
  *
  */
 DISDECL(int) DISFetchReg32(PCPUMCTXCORE pCtx, uint32_t reg32, uint32_t *pVal)
@@ -565,6 +568,42 @@ DISDECL(int) DISFetchReg32(PCPUMCTXCORE pCtx, uint32_t reg32, uint32_t *pVal)
     AssertReturn(reg32 < ELEMENTS(g_aReg32Index), VERR_INVALID_PARAMETER);
 
     *pVal = DIS_READ_REG32(pCtx, reg32);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Returns the pointer to the specified 8 bits general purpose register
+ *
+ */
+DISDECL(int) DISPtrReg8(PCPUMCTXCORE pCtx, uint32_t reg8, uint8_t **ppReg)
+{
+    AssertReturn(reg8 < ELEMENTS(g_aReg8Index), VERR_INVALID_PARAMETER);
+
+    *ppReg = DIS_PTR_REG8(pCtx, reg8);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Returns the pointer to the specified 16 bits general purpose register
+ *
+ */
+DISDECL(int) DISPtrReg16(PCPUMCTXCORE pCtx, uint32_t reg16, uint16_t **ppReg)
+{
+    AssertReturn(reg16 < ELEMENTS(g_aReg16Index), VERR_INVALID_PARAMETER);
+
+    *ppReg = DIS_PTR_REG16(pCtx, reg16);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Returns the pointer to the specified 32 bits general purpose register
+ *
+ */
+DISDECL(int) DISPtrReg32(PCPUMCTXCORE pCtx, uint32_t reg32, uint32_t **ppReg)
+{
+    AssertReturn(reg32 < ELEMENTS(g_aReg32Index), VERR_INVALID_PARAMETER);
+
+    *ppReg = DIS_PTR_REG32(pCtx, reg32);
     return VINF_SUCCESS;
 }
 
@@ -846,6 +885,61 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         }
     }
     return VINF_SUCCESS;
+}
+
+/**
+ * Returns the pointer to a register of the parameter in pParam. We need this
+ * pointer when an interpreted instruction updates a register as a side effect.
+ * In CMPXCHG we know that only [r/e]ax is updated, but with XADD this could
+ * be every register.
+ *
+ * @returns VBox error code
+ * @param   pCtx            CPU context structure pointer
+ * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
+ *                          set correctly.
+ * @param   pParam          Pointer to the parameter to parse
+ * @param   pReg            Pointer to parameter value (OUT)
+ * @param   cbsize          Parameter size (OUT)
+ *
+ * @note    Currently doesn't handle FPU/XMM/MMX/3DNow! parameters correctly!!
+ *
+ */
+DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, uint32_t **ppReg, size_t *pcbSize)
+{
+    if(pParam->flags & (USE_REG_GEN8|USE_REG_GEN16|USE_REG_GEN32|USE_REG_FP|USE_REG_MMX|USE_REG_XMM|USE_REG_CR|USE_REG_DBG|USE_REG_SEG|USE_REG_TEST))
+    {
+        if(pParam->flags & USE_REG_GEN8)
+        {
+            uint8_t *pu8Reg;
+            if(VBOX_SUCCESS(DISPtrReg8(pCtx, pParam->base.reg_gen8, &pu8Reg)))
+            {
+                *pcbSize = sizeof(uint8_t);
+                *ppReg = (uint32_t*)pu8Reg;
+                return VINF_SUCCESS;
+            }
+        }
+        else if(pParam->flags & USE_REG_GEN16)
+        {
+            uint16_t *pu16Reg;
+            if(VBOX_SUCCESS(DISPtrReg16(pCtx, pParam->base.reg_gen16, &pu16Reg)))
+            {
+                *pcbSize = sizeof(uint16_t);
+                *ppReg = (uint32_t*)pu16Reg;
+                return VINF_SUCCESS;
+            }
+        }
+        else if(pParam->flags & USE_REG_GEN32)
+        {
+            uint32_t *pu32Reg;
+            if(VBOX_SUCCESS(DISPtrReg32(pCtx, pParam->base.reg_gen32, &pu32Reg)))
+            {
+                *pcbSize = sizeof(uint32_t);
+                *ppReg = pu32Reg;
+                return VINF_SUCCESS;
+            }
+        }
+    }
+    return VERR_INVALID_PARAMETER;
 }
 //*****************************************************************************
 //*****************************************************************************
