@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!DOCTYPE xsa PUBLIC "-//LM Garshol//DTD XML Software Autoupdate 1.0//EN//XML" "http://www.garshol.priv.no/download/xsa/xsa.dtd">
+<xsa>
+  <vendor>
+    <name>Daniel Veillard</name>
+    <email>daniel@veillard.com</email>
+    <url>http://veillard.com/</url>
+  </vendor>
+  <product id="libxslt">
+    <name>libxslt</name>
+    <version>1.1.21</version>
+    <last-release> Jun 12 2007</last-release>
+    <info-url>http://xmlsoft.org/XSLT/</info-url>
+    <changes>   - Bug fixes: out of memory allocation errors (William Brack), 
+      namespace problem on compound predicates (William Brack),
+      python space/tab inconsistencies (Andreas Hanke), hook xsl:message
+      to per transformation error callbacks (Shaun McCance),
+      cached RVT problem (William Brack), XPath context maintainance
+      on choose (William Brack), memory leaks in the math module (William
+      Brack), exclude-result-prefix induced namespace problem (William
+      Brack)
+   - Build: configure setup for TRIO_REPLACE_STDIO (William Brack)
+  
+   - Documentation: updated after change from CVs to SVN (William Brack)
+
+</changes>
+  </product>
+</xsa>
