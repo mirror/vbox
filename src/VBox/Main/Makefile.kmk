@@ -406,7 +406,7 @@ win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs $(PATH_VBoxCOM)/VirtualBox.tlb
 #
 VBoxSettings_TEMPLATE	= VBOXMAINDLL
 VBoxSettings_NAME       = $(basename $(notdir $(LIB_SETTINGS)))
-VBoxSettings_SDKS       = VBOX_LIBXML2 VBOX_ZLIB
+VBoxSettings_SDKS       = VBOX_LIBXSLT VBOX_LIBXML2 VBOX_ZLIB
 VBoxSettings_DEFS       = IN_VBOXSETTINGS_R3
 VBoxSettings_INCS       = \
 	include \

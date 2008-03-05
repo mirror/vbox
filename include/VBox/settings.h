@@ -124,7 +124,7 @@
             int level = (*it).value <int> ("level");
             if (level > 5)
             {
-                // if so, create a "Bar" key if it doesn't exist yet 
+                // if so, create a "Bar" key if it doesn't exist yet
                 Key bar = (*it).createKey ("Bar");
                 // set the "date" attribute
                 RTTIMESPEC now;
@@ -264,7 +264,7 @@ namespace settings
 // Helpers
 //////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  * Temporary holder for the formatted string.
  *
  * Instances of this class are used for passing the formatted string as an
@@ -275,7 +275,7 @@ class VBOXSETTINGS_CLASS FmtStr
 {
 public:
 
-    /** 
+    /**
      * Creates a formatted string using the format string and a set of
      * printf-like arguments.
      */
@@ -308,7 +308,7 @@ class VBOXSETTINGS_CLASS Error : public std::exception
 {
 public:
 
-    Error (const char *aMsg = NULL) 
+    Error (const char *aMsg = NULL)
         : m (aMsg ? Str::New (aMsg) : NULL) {}
 
     virtual ~Error() throw() {}
@@ -439,7 +439,7 @@ public:
 DECLEXPORT (uint64_t) FromStringInteger (const char *aValue, bool aSigned,
                                          int aBits, uint64_t aMin, uint64_t aMax);
 
-/** 
+/**
  * Generic template function to perform a conversion of an UTF-8 string to an
  * arbitrary value of type @a T.
  *
@@ -457,7 +457,7 @@ DECLEXPORT (uint64_t) FromStringInteger (const char *aValue, bool aSigned,
  * exception. All specializations must do the same.
  *
  * @param aValue Value to convert.
- * 
+ *
  * @return Result of conversion.
  */
 template <typename T>
@@ -491,13 +491,13 @@ template<> DECLEXPORT (bool) FromString <bool> (const char *aValue);
  */
 template<> DECLEXPORT (RTTIMESPEC) FromString <RTTIMESPEC> (const char *aValue);
 
-/** 
+/**
  * Converts a string of hex digits to memory bytes.
- * 
+ *
  * @param aValue String to convert.
  * @param aLen   Where to store the length of the returned memory
  *               block (may be NULL).
- * 
+ *
  * @return Result of conversion (a block of @a aLen bytes).
  */
 DECLEXPORT (stdx::char_auto_ptr) FromString (const char *aValue, size_t *aLen);
@@ -512,7 +512,7 @@ DECLEXPORT (stdx::char_auto_ptr)
 ToStringInteger (uint64_t aValue, unsigned int aBase,
                  bool aSigned, int aBits);
 
-/** 
+/**
  * Generic template function to perform a conversion of an arbitrary value to
  * an UTF-8 string.
  *
@@ -568,12 +568,12 @@ ToString <bool> (const bool &aValue, unsigned int aExtra);
 template<> DECLEXPORT (stdx::char_auto_ptr)
 ToString <RTTIMESPEC> (const RTTIMESPEC &aValue, unsigned int aExtra);
 
-/** 
+/**
  * Converts memory bytes to a null-terminated string of hex values.
- * 
+ *
  * @param aData Pointer to the memory block.
  * @param aLen  Length of the memory block.
- * 
+ *
  * @return Result of conversion.
  */
 DECLEXPORT (stdx::char_auto_ptr) ToString (const void *aData, size_t aLen);
@@ -581,7 +581,7 @@ DECLEXPORT (stdx::char_auto_ptr) ToString (const void *aData, size_t aLen);
 // the rest
 //////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  * The Key class represents a settings key.
  *
  * Every settings key has a name and zero or more uniquely named values
@@ -646,23 +646,23 @@ public:
         virtual void *position() const = 0;
     };
 
-    /** 
+    /**
      * Creates a new key object. If @a aBackend is @c NULL then a null key is
      * created.
      *
      * Regular API users should never need to call this method with something
      * other than NULL argument (which is the default).
-     * 
+     *
      * @param aBackend      Key backend to use.
      */
     Key (Backend *aBackend = NULL) : m (aBackend) {}
 
-    /** 
+    /**
      * Returns @c true if this key is null.
      */
     bool isNull() const { return m.is_null(); }
 
-    /** 
+    /**
      * Makes this object a null key.
      *
      * Note that as opposed to #zap(), this methid does not delete the key from
@@ -670,20 +670,20 @@ public:
      */
     void setNull() { m = NULL; }
 
-    /** 
+    /**
      * Returns the name of this key.
      * Returns NULL if this object a null (uninitialized) key.
      */
     const char *name() const { return m.is_null() ? NULL : m->name(); }
 
-    /** 
+    /**
      * Sets the name of this key.
-     * 
+     *
      * @param aName New key name.
      */
     void setName (const char *aName) { if (!m.is_null()) m->setName (aName); }
 
-    /** 
+    /**
      * Returns the value of the attribute with the given name as an UTF-8
      * string. Returns @c NULL if there is no attribute with the given name.
      *
@@ -695,10 +695,10 @@ public:
         return m.is_null() ? NULL : m->value (aName);
     }
 
-    /** 
+    /**
      * Sets the value of the attribute with the given name from an UTF-8
      * string. This method will do a copy of the supplied @a aValue string.
-     * 
+     *
      * @param aName     Name of the attribute. NULL may be used to
      *                  set the key value.
      * @param aValue    New value of the attribute. NULL may be used to
@@ -709,7 +709,7 @@ public:
         if (!m.is_null()) m->setValue (aName, aValue);
     }
 
-    /** 
+    /**
      * Returns the value of the attribute with the given name as an object of
      * type @a T. Throws ENoValue if there is no attribute with the given
      * name.
@@ -717,7 +717,7 @@ public:
      * This function calls #stringValue() to get the string representation of
      * the attribute and then calls the FromString() template to convert this
      * string to a value of the given type.
-     * 
+     *
      * @param aName     Name of the attribute. NULL may be used to
      *                  get the key value.
      */
@@ -734,7 +734,7 @@ public:
         }
     }
 
-    /** 
+    /**
      * Returns the value of the attribute with the given name as an object of
      * type @a T. Returns the given default value if there is no attribute
      * with the given name.
@@ -742,7 +742,7 @@ public:
      * This function calls #stringValue() to get the string representation of
      * the attribute and then calls the FromString() template to convert this
      * string to a value of the given type.
-     * 
+     *
      * @param aName     Name of the attribute. NULL may be used to
      *                  get the key value.
      * @param aDefault  Default value to return for the missing attribute.
@@ -760,14 +760,14 @@ public:
         }
     }
 
-    /** 
+    /**
      * Sets the value of the attribute with the given name from an object of
      * type @a T. This method will do a copy of data represented by @a aValue
      * when necessary.
      *
      * This function converts the given value to a string using the ToString()
      * template and then calls #setStringValue().
-     * 
+     *
      * @param aName     Name of the attribute. NULL may be used to
      *                  set the key value.
      * @param aValue    New value of the attribute.
@@ -789,7 +789,7 @@ public:
         }
     }
 
-    /** 
+    /**
      * Sets the value of the attribute with the given name from an object of
      * type @a T. If the value of the @a aValue object equals to the value of
      * the given @a aDefault object, then the attribute with the given name
@@ -797,7 +797,7 @@ public:
      *
      * This function converts the given value to a string using the ToString()
      * template and then calls #setStringValue().
-     * 
+     *
      * @param aName     Name of the attribute. NULL may be used to
      *                  set the key value.
      * @param aValue    New value of the attribute.
@@ -816,39 +816,39 @@ public:
             setValue <T> (aName, aValue, aExtra);
     }
 
-    /** 
+    /**
      * Deletes the value of the attribute with the given name.
      * Shortcut to <tt>setStringValue(aName, NULL)</tt>.
      */
     void zapValue (const char *aName) { setStringValue (aName, NULL); }
 
-    /** 
+    /**
      * Returns the key value.
      * Shortcut to <tt>stringValue (NULL)</tt>.
      */
     const char *keyStringValue() const { return stringValue (NULL); }
 
-    /** 
+    /**
      * Sets the key value.
      * Shortcut to <tt>setStringValue (NULL, aValue)</tt>.
      */
     void setKeyStringValue (const char *aValue) { setStringValue (NULL, aValue); }
 
-    /** 
+    /**
      * Returns the key value.
      * Shortcut to <tt>value (NULL)</tt>.
      */
     template <typename T>
     T keyValue() const { return value <T> (NULL); }
 
-    /** 
+    /**
      * Returns the key value or the given default if the key value is NULL.
      * Shortcut to <tt>value (NULL)</tt>.
      */
     template <typename T>
     T keyValueOr (const T &aDefault) const { return valueOr <T> (NULL, aDefault); }
 
-    /** 
+    /**
      * Sets the key value.
      * Shortcut to <tt>setValue (NULL, aValue, aExtra)</tt>.
      */
@@ -858,7 +858,7 @@ public:
         setValue <T> (NULL, aValue, aExtra);
     }
 
-    /** 
+    /**
      * Sets the key value.
      * Shortcut to <tt>setValueOr (NULL, aValue, aDefault)</tt>.
      */
@@ -869,29 +869,29 @@ public:
         setValueOr <T> (NULL, aValue, aDefault, aExtra);
     }
 
-    /** 
+    /**
      * Deletes the key value.
      * Shortcut to <tt>zapValue (NULL)</tt>.
      */
     void zapKeyValue () { zapValue (NULL); }
 
-    /** 
+    /**
      * Returns a list of all child keys named @a aName.
      *
      * If @a aname is @c NULL, returns a list of all child keys.
-     * 
+     *
      * @param aName     Child key name to list.
      */
     List keys (const char *aName = NULL) const
     {
-        return m.is_null() ? List() : m->keys (aName); 
+        return m.is_null() ? List() : m->keys (aName);
     };
 
-    /** 
+    /**
      * Returns the first child key with the given name.
      *
      * Throws ENoKey if no child key with the given name exists.
-     * 
+     *
      * @param aName     Child key name.
      */
     Key key (const char *aName) const
@@ -902,26 +902,26 @@ public:
         return key;
     }
 
-    /** 
+    /**
      * Returns the first child key with the given name.
      *
      * As opposed to #key(), this method will not throw an exception if no
      * child key with the given name exists, but return a null key instead.
-     * 
+     *
      * @param aName     Child key name.
      */
     Key findKey (const char *aName) const
     {
-        return m.is_null() ? Key() : m->findKey (aName); 
+        return m.is_null() ? Key() : m->findKey (aName);
     }
 
-    /** 
+    /**
      * Creates a key with the given name as a child of this key and returns it
      * to the caller.
      *
      * If one or more child keys with the given name already exist, no new key
      * is created but the first matching child key is returned.
-     * 
+     *
      * @param aName Name of the child key to create.
      */
     Key createKey (const char *aName)
@@ -932,18 +932,18 @@ public:
         return key;
     }
 
-    /** 
+    /**
      * Appends a key with the given name to the list of child keys of this key
      * and returns the appended key to the caller.
-     * 
+     *
      * @param aName Name of the child key to create.
      */
     Key appendKey (const char *aName)
     {
-        return m.is_null() ? Key() : m->appendKey (aName); 
+        return m.is_null() ? Key() : m->appendKey (aName);
     }
 
-    /** 
+    /**
      * Deletes this key.
      *
      * The deleted key is removed from the list of child keys of its parent
@@ -972,7 +972,7 @@ public:
                 m->position() == that.m->position());
     }
 
-    /** 
+    /**
      * Counterpart to operator==().
      */
     bool operator!= (const Key &that) const { return !operator== (that); }
@@ -984,7 +984,7 @@ private:
     friend class TreeBackend;
 };
 
-/** 
+/**
  * The Stream class is a base class for I/O streams.
  */
 class VBOXSETTINGS_CLASS Stream
@@ -1015,7 +1015,7 @@ public:
     virtual void setPos (uint64_t aPos) = 0;
 };
 
-/** 
+/**
  * The Input class represents an input stream.
  *
  * This input stream is used to read the settings tree from.
@@ -1028,10 +1028,10 @@ public:
 
     /**
      * Reads from the stream to the supplied buffer.
-     * 
+     *
      * @param aBuf Buffer to store read data to.
      * @param aLen Buffer length.
-     * 
+     *
      * @return Number of bytes read.
      */
     virtual int read (char *aBuf, int aLen) = 0;
@@ -1046,15 +1046,15 @@ public:
 
     /**
      * Writes to the stream from the supplied buffer.
-     * 
+     *
      * @param aBuf Buffer to write data from.
      * @param aLen Buffer length.
-     * 
+     *
      * @return Number of bytes written.
      */
     virtual int write (const char *aBuf, int aLen) = 0;
 
-    /** 
+    /**
      * Truncates the stream from the current position and upto the end.
      * The new file size will become exactly #pos() bytes.
      *
@@ -1077,7 +1077,7 @@ class VBOXSETTINGS_CLASS TreeBackend
 {
 public:
 
-    /** 
+    /**
      * Reads and parses the given input stream.
      *
      * On success, the previous settings tree owned by this backend (if any)
@@ -1093,7 +1093,7 @@ public:
      * This method will set the read/write position to the beginning of the
      * given stream before reading. After the stream has been successfully
      * parsed, the position will be set back to the beginning.
-     * 
+     *
      * @param aInput        Input stream.
      * @param aSchema       Schema URI to use for input stream validation.
      * @param aFlags        Optional bit flags.
@@ -1105,28 +1105,27 @@ public:
         aInput.setPos (0);
     }
 
-    /** 
+    /**
      * Reads and parses the given input stream in a raw fashion.
      *
-     * Currently, the only difference from #read() is that this method doesn't
-     * set the stream position to the beginnign before and after reading but
-     * instead leaves it as is in both cases which can give unexpected
-     * results.
+     * This method doesn't set the stream position to the beginnign before and
+     * after reading but instead leaves it as is in both cases. It's the
+     * caller's responsibility to maintain the correct position.
      *
      * @see read()
      */
     virtual void rawRead (Input &aInput, const char *aSchema = NULL,
                           int aFlags = 0) = 0;
 
-    /** 
+    /**
      * Writes the current settings tree to the given output stream.
-     * 
+     *
      * This method will set the read/write position to the beginning of the
      * given stream before writing. After the settings have been successfully
      * written to the stream, the stream will be truncated at the position
      * following the last byte written by this method anc ghd position will be
      * set back to the beginning.
-     * 
+     *
      * @param aOutput       Output stream.
      */
     void write (Output &aOutput)
@@ -1137,25 +1136,25 @@ public:
         aOutput.setPos (0);
     }
 
-    /** 
+    /**
      * Writes the current settings tree to the given output stream in a raw
      * fashion.
      *
-     * Currently, the only difference from #write() is that this method
-     * doesn't set the stream position to the beginning before and after
-     * reading and doesn't thruncate the stream, but instead leaves it as is
-     * in both cases which can give unexpected results.
+     * This method doesn't set the stream position to the beginnign before and
+     * after reading and doesn't truncate the stream, but instead leaves it as
+     * is in both cases. It's the caller's responsibility to maintain the
+     * correct position and perform truncation.
      *
      * @see write()
      */
     virtual void rawWrite (Output &aOutput) = 0;
 
-    /** 
+    /**
      * Deletes the current settings tree.
      */
     virtual void reset() = 0;
 
-    /** 
+    /**
      * Returns the root settings key.
      */
     virtual Key &rootKey() const = 0;
@@ -1186,7 +1185,7 @@ public:
      * Opens a file with the given name in the given mode. If @a aMode is Read
      * or ReadWrite, the file must exist. If @a aMode is Write, the file must
      * not exist. Otherwise, an EIPRTFailure excetion will be thrown.
-     * 
+     *
      * @param aMode     File mode.
      * @param aFileName File name.
      */
@@ -1222,19 +1221,19 @@ public:
     uint64_t pos() const;
     void setPos (uint64_t aPos);
 
-    /** 
+    /**
      * See Input::read(). If this method is called in wrong file mode,
      * LogicError will be thrown.
      */
     int read (char *aBuf, int aLen);
 
-    /** 
+    /**
      * See Output::write(). If this method is called in wrong file mode,
      * LogicError will be thrown.
      */
     int write (const char *aBuf, int aLen);
 
-    /** 
+    /**
      * See Output::truncate(). If this method is called in wrong file mode,
      * LogicError will be thrown.
      */
@@ -1250,7 +1249,7 @@ private:
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (File)
 };
 
-/** 
+/**
  * The MemoryBuf class represents a stream implementation that reads from the
  * memory buffer.
  */
@@ -1290,7 +1289,7 @@ public:
     /** Flags for TreeBackend::read(). */
     enum
     {
-        /** 
+        /**
          * Sbstitute default values for missing attributes that have defaults
          * in the XML schema. Otherwise, stringValue() will return NULL for
          * such attributes.
@@ -1298,7 +1297,7 @@ public:
         Read_AddDefaults = RT_BIT (0),
     };
 
-    /** 
+    /**
      * The InputResolver class represents an input resolver, the service used to
      * provide input streams for external entities given an URL and entity ID.
      */
@@ -1309,10 +1308,10 @@ public:
         /**
          * Returns a newly allocated input stream for the given arguments. The
          * caller will delete the returned object when no more necessary.
-         * 
+         *
          * @param aURI  URI of the external entity.
          * @param aID   ID of the external entity (may be NULL).
-         * 
+         *
          * @return      Input stream created using @c new or NULL to indicate
          *              a wrong URI/ID pair.
          *
@@ -1323,7 +1322,7 @@ public:
     };
 
 
-    /** 
+    /**
      * The Error class represents errors that may happen when parsing or
      * validating the XML document representing the settings tree.
      */
@@ -1337,23 +1336,66 @@ public:
     XmlTreeBackend();
     ~XmlTreeBackend();
 
-    /** 
+    /**
      * Sets an external entity resolver used to provide input streams for
      * entities referred to by the XML document being parsed.
      *
      * The given resolver object must exist as long as this instance exists or
      * until a different resolver is set using setInputResolver() or reset
      * using resetInputResolver().
-     * 
+     *
      * @param aResolver Resolver to use.
      */
     void setInputResolver (InputResolver &aResolver);
 
-    /** 
+    /**
      * Resets the entity resolver to the default resolver. The default
      * resolver provides support for 'file:' and 'http:' protocols.
      */
     void resetInputResolver();
+
+    /**
+     * Sets up automatic settings tree conversion.
+     *
+     * Automatic settings tree conversion is useful for upgrading old settings
+     * files to the new version transparently during execution of the #read()
+     * method.
+     *
+     * Automatic conversion is performed after reading the document from the
+     * stream but before validating it using the given XSLT template if the
+     * version check fails. The version check consists of comparing the given
+     * version string with the value of the given attribute of the root key. The
+     * conversion is performed only when the version strings are not equal.
+     *
+     * Note that in order to make the conversion permanent, the resulting tree
+     * needs to be exlicitly written back to the stream.
+     *
+     * The method will make copies of the supplied strings.
+     *
+     * Specifying a NULL value for all of the arguments will completely disable
+     * automatic conversion. Specifying an invalid root key name or a
+     * non-existent attribute name will disable automatic conversion too. By
+     * default automatic conversion it is disabled.
+     *
+     * Specifying a NULL value only for some of the arguments will throw an
+     * EInvalidArg exception.
+     *
+     * @param aRoot     Name of the root key containing the version attribute.
+     * @param aAttr     Name of the attribute containing the version string.
+     * @param aVersion  Version string to compare with the attribute value.
+     * @param aTemplate URI of the XSLT template that performs conversion.
+     */
+    void setAutoConversion (const char *aRoot, const char *aAttr,
+                            const char *aVersion, const char *aTemplate);
+
+    /**
+     * Disables automatic settings conversion previously enabled by
+     * setAutoConversion(). By default automatic conversion it is disabled.
+     */
+    void resetAutoConversion()
+    {
+        setAutoConversion (NULL, NULL, NULL, NULL);
+    }
 
     void rawRead (Input &aInput, const char *aSchema = NULL, int aFlags = 0);
     void rawWrite (Output &aOutput);

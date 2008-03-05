@@ -30,6 +30,10 @@
 
 #include <libxml/xmlschemas.h>
 
+#include <libxslt/xsltInternals.h>
+#include <libxslt/transform.h>
+#include <libxslt/xsltutils.h>
+
 #include <string.h>
 
 
@@ -803,6 +807,28 @@ struct XmlTreeBackend::Data
 
     std::auto_ptr <stdx::exception_trap_base> trappedErr;
 
+    struct AutoConv
+    {
+        AutoConv() : root (NULL), attr (NULL), version (NULL), xslt (NULL) {}
+        ~AutoConv() { uninit(); }
+
+        void uninit()
+        {
+            RTStrFree (xslt); xslt = NULL;
+            RTStrFree (version); version = NULL;
+            RTStrFree (attr); attr = NULL;
+            RTStrFree (root); root = NULL;
+        }
+
+        bool isNull() { return xslt == NULL; }
+
+        char *root;
+        char *attr;
+        char *version;
+        char *xslt;
+    }
+    autoConv;
+
     /**
      * This is to avoid throwing exceptions while in libxml2 code and
      * redirect them to our level instead. Also used to perform clean up
@@ -869,18 +895,30 @@ void XmlTreeBackend::resetInputResolver()
     m->inputResolver = NULL;
 }
 
+void XmlTreeBackend::setAutoConversion (const char *aRoot, const char *aAttr,
+                                        const char *aVersion, const char *aTemplate)
+{
+    if (aRoot == NULL && aAttr == NULL && aVersion == NULL && aTemplate == NULL)
+    {
+        m->autoConv.uninit();
+        return;
+    }
+
+    if (aRoot == NULL || aAttr == NULL || aVersion == NULL || aTemplate == NULL)
+        throw EInvalidArg (RT_SRC_POS);
+
+    m->autoConv.root = RTStrDup (aRoot);
+    m->autoConv.attr = RTStrDup (aAttr);
+    m->autoConv.version = RTStrDup (aVersion);
+    m->autoConv.xslt = RTStrDup (aTemplate);
+}
+
 void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
                               int aFlags /* = 0 */)
 {
     /* Reset error variables used to memorize exceptions while inside the
      * libxml2 code. */
     m->trappedErr.reset();
-
-    /* Set up an input stream for parsing the document. This will be deleted
-     * when the stream is closed by the libxml2 API (e.g. when calling
-     * xmlFreeParserCtxt()). */
-    Data::InputCtxt *inputCtxt =
-        new Data::InputCtxt (&aInput, m->trappedErr);
 
     /* Set up the external entity resolver. Note that we do it in a
      * thread-unsafe fashion because this stuff is not thread-safe in libxml2.
@@ -898,9 +936,12 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
      * output. */
 
     /* parse the stream */
+    /* NOTE: new InputCtxt instance will be deleted when the stream is closed by
+     * the libxml2 API (e.g. when calling xmlFreeParserCtxt()) */
     xmlDocPtr doc = xmlCtxtReadIO (m->ctxt,
                                    ReadCallback, CloseCallback,
-                                   inputCtxt, aInput.uri(), NULL,
+                                   new Data::InputCtxt (&aInput, m->trappedErr),
+                                   aInput.uri(), NULL,
                                    XML_PARSE_NOBLANKS);
     if (doc == NULL)
     {
@@ -915,6 +956,104 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
         throw XmlError (xmlCtxtGetLastError (m->ctxt));
     }
 
+    /* perform automatic document transformation if necessary */
+    if (!m->autoConv.isNull())
+    {
+        Key root = Key (new XmlKeyBackend (xmlDocGetRootElement (doc)));
+        if (!strcmp (root.name(), m->autoConv.root))
+        {
+            const char *ver = root.stringValue (m->autoConv.attr);
+            if (strcmp (ver, m->autoConv.version))
+            {
+                /* version mismatch */
+
+                xmlDocPtr xsltDoc = NULL;
+                xsltStylesheetPtr xslt = NULL;
+                xsltTransformContextPtr tranCtxt = NULL;
+                char *errorStr = NULL;
+
+                try
+                {
+                    /* parse the XSLT */
+                    {
+                        Input *xsltInput =
+                            m->inputResolver->resolveEntity (m->autoConv.xslt, NULL);
+                        /* NOTE: new InputCtxt instance will be deleted when the
+                         * stream is closed by the libxml2 API */
+                        xsltDoc = xmlCtxtReadIO (m->ctxt,
+                                                 ReadCallback, CloseCallback,
+                                                 new Data::InputCtxt (xsltInput, m->trappedErr),
+                                                 m->autoConv.xslt, NULL,
+                                                 0);
+                        delete xsltInput;
+                    }
+
+                    if (xsltDoc == NULL)
+                    {
+                        /* look if there was a forwared exception from the lower level */
+                        if (m->trappedErr.get() != NULL)
+                            m->trappedErr->rethrow();
+
+                        throw XmlError (xmlCtxtGetLastError (m->ctxt));
+                    }
+
+                    xslt = xsltParseStylesheetDoc (xsltDoc);
+                    if (xslt == NULL)
+                        throw LogicError (RT_SRC_POS);
+
+                    /* setup transformation error reporting */
+                    tranCtxt = xsltNewTransformContext (xslt, xsltDoc);
+                    if (tranCtxt == NULL)
+                        throw LogicError (RT_SRC_POS);
+                    xsltSetTransformErrorFunc (tranCtxt, &errorStr, ValidityErrorCallback);
+
+                    xmlDocPtr newDoc = xsltApplyStylesheetUser (xslt, doc, NULL,
+                                                                NULL, NULL, tranCtxt);
+                    if (newDoc == NULL)
+                        throw LogicError (RT_SRC_POS);
+
+                    if (errorStr != NULL)
+                    {
+                        xmlFreeDoc (newDoc);
+                        throw Error (errorStr);
+                        /* errorStr is freed in catch(...) below */
+                    }
+
+                    /* replace the old document on success */
+                    xmlFreeDoc (doc);
+                    doc = newDoc;
+
+                    xsltFreeTransformContext (tranCtxt);
+
+                    /* NOTE: xsltFreeStylesheet() also fress the document
+                     * passed to xsltParseStylesheetDoc(). */
+                    xsltFreeStylesheet (xslt);
+                }
+                catch (...)
+                {
+                    /* restore the previous entity resolver */
+                    xmlSetExternalEntityLoader (oldEntityLoader);
+                    sThat = NULL;
+
+                    RTStrFree (errorStr);
+
+                    if (tranCtxt != NULL)
+                        xsltFreeTransformContext (tranCtxt);
+
+                    /* NOTE: xsltFreeStylesheet() also fress the document
+                     * passed to xsltParseStylesheetDoc(). */
+                    if (xslt != NULL)
+                        xsltFreeStylesheet (xslt);
+                    else if (xsltDoc != NULL)
+                        xmlFreeDoc (xsltDoc);
+
+                    throw;
+                }
+            }
+        }
+    }
+
+    /* validate the document */
     if (aSchema != NULL)
     {
         xmlSchemaParserCtxtPtr schemaCtxt = NULL;
@@ -922,7 +1061,6 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
         xmlSchemaValidCtxtPtr validCtxt = NULL;
         char *errorStr = NULL;
 
-        /* validate the document */
         try
         {
             bool valid = false;
@@ -1160,23 +1298,27 @@ void XmlTreeBackend::ValidityErrorCallback (void *aCtxt, const char *aMsg, ...)
     while (newMsgLen && strchr (" \n.?!", newMsg [newMsgLen - 1]))
         -- newMsgLen;
 
-    if (str == NULL)
+    /* anything left? */
+    if (newMsgLen > 0)
     {
-        str = newMsg;
-        newMsg [newMsgLen] = '\0';
-    }
-    else
-    {
-        /* append to the existing string */
-        size_t strLen = strlen (str);
-        char *newStr = (char *) RTMemRealloc (str, strLen + 2 + newMsgLen + 1);
-        AssertReturnVoid (newStr != NULL);
+        if (str == NULL)
+        {
+            str = newMsg;
+            newMsg [newMsgLen] = '\0';
+        }
+        else
+        {
+            /* append to the existing string */
+            size_t strLen = strlen (str);
+            char *newStr = (char *) RTMemRealloc (str, strLen + 2 + newMsgLen + 1);
+            AssertReturnVoid (newStr != NULL);
 
-        memcpy (newStr + strLen, ".\n", 2);
-        memcpy (newStr + strLen + 2, newMsg, newMsgLen);
-        newStr [strLen + 2 + newMsgLen] = '\0';
-        str = newStr;
-        RTStrFree (newMsg);
+            memcpy (newStr + strLen, ".\n", 2);
+            memcpy (newStr + strLen + 2, newMsg, newMsgLen);
+            newStr [strLen + 2 + newMsgLen] = '\0';
+            str = newStr;
+            RTStrFree (newMsg);
+        }
     }
 }
 
