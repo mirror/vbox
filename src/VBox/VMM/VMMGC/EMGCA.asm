@@ -178,10 +178,9 @@ ENDPROC     EMGCEmulateCmpXchg
 ;
 align 16
 BEGINPROC   EMGCEmulateLockXAdd
-    push    ebx
-    mov     ecx, [esp + 04h + 4]        ; ecx = first parameter
-    mov     ebx, [esp + 08h + 4]        ; ebx = 2nd parameter
-    mov     eax, [esp + 0ch + 4]        ; eax = size of parameters
+    mov     ecx, [esp + 04h + 0]        ; ecx = first parameter
+    mov     edx, [esp + 08h + 0]        ; edx = 2nd parameter
+    mov     eax, [esp + 0ch + 0]        ; eax = size of parameters
 
     cmp     al, 4
     je short .do_dword                  ; 4 bytes variant
@@ -193,39 +192,35 @@ BEGINPROC   EMGCEmulateLockXAdd
 
 .do_dword:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [edx]
     lock xadd dword [ecx], eax              ; do 4 bytes XADD
-    mov     dword [ebx], eax
+    mov     dword [edx], eax
     jmp     short .done
 
 .do_word:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [edx]
     lock xadd word [ecx], ax                ; do 2 bytes XADD
-    mov     word [ebx], ax
+    mov     word [edx], ax
     jmp     short .done
 
 .do_byte:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [edx]
     lock xadd byte [ecx], al                ; do 1 bytes XADD
-    mov     byte [ebx], al
+    mov     byte [edx], al
 
 .done:
     ; collect flags and return.
+    mov     edx, [esp + 10h + 0]            ; eflags pointer
     pushf
-    pop     eax
+    pop     dword [edx]
 
-    mov     edx, [esp + 10h + 4]            ; eflags pointer
-    mov     dword [edx], eax
-
-    pop     ebx
     mov     eax, VINF_SUCCESS
     retn
 
 ; Read error - we will be here after our page fault handler.
 GLOBALNAME EMGCEmulateLockXAdd_Error
-    pop     ebx
     mov     eax, VERR_ACCESS_DENIED
     ret
 
@@ -244,10 +239,9 @@ ENDPROC     EMGCEmulateLockXAdd
 ;
 align 16
 BEGINPROC   EMGCEmulateXAdd
-    push    ebx
-    mov     ecx, [esp + 04h + 4]        ; ecx = first parameter
-    mov     ebx, [esp + 08h + 4]        ; ebx = 2nd parameter (eax)
-    mov     eax, [esp + 0ch + 4]        ; eax = size of parameters
+    mov     ecx, [esp + 04h + 0]        ; ecx = first parameter
+    mov     edx, [esp + 08h + 0]        ; edx = 2nd parameter (eax)
+    mov     eax, [esp + 0ch + 0]        ; eax = size of parameters
 
     cmp     al, 4
     je short .do_dword                  ; 4 bytes variant
@@ -259,39 +253,35 @@ BEGINPROC   EMGCEmulateXAdd
 
 .do_dword:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [edx]
     xadd    dword [ecx], eax            ; do 4 bytes XADD
-    mov     dword [ebx], eax
+    mov     dword [edx], eax
     jmp     short .done
 
 .do_word:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [edx]
     xadd    word [ecx], ax              ; do 2 bytes XADD
-    mov     word [ebx], ax
+    mov     word [edx], ax
     jmp     short .done
 
 .do_byte:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [edx]
     xadd    byte [ecx], al              ; do 1 bytes XADD
-    mov     byte [ebx], al
+    mov     byte [edx], al
 
 .done:
     ; collect flags and return.
+    mov     edx, [esp + 10h + 0]        ; eflags pointer
     pushf
-    pop     eax
+    pop     dword [edx]
 
-    mov     edx, [esp + 10h + 4]        ; eflags pointer
-    mov     dword [edx], eax
-
-    pop     ebx
     mov     eax, VINF_SUCCESS
     retn
 
 ; Read error - we will be here after our page fault handler.
 GLOBALNAME EMGCEmulateXAdd_Error
-    pop     ebx
     mov     eax, VERR_ACCESS_DENIED
     ret
 ENDPROC     EMGCEmulateXAdd
