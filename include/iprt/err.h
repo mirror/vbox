@@ -859,6 +859,15 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 #define VINF_ENV_VAR_NOT_FOUND                  (750)
 /** @} */
 
+/** @name Multiprocessor Status Code
+ * @{
+ */
+/** The specified cpu is offline. */
+#define VERR_CPU_OFFLINE                        (-800)
+/** The specified cpu was not found. */
+#define VERR_CPU_NOT_FOUND                      (-801)
+/** @} */
+
 /* SED-END */
 
 /** @} */
