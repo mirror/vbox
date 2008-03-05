@@ -179,7 +179,7 @@ $(PATH_BIN)/VirtualBox.run: \
 		$(PATH_TARGET)/vboxnet.sh \
 		$(PATH_TARGET)/vboxdrv.sh \
 		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt)
-	$(call MSG_TOOL,makeself,,,$@)
+	$(call MSG_TOOL,makeself,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
 		-e "s;_BUILD_;$(shell date);g" \
 		-e "s;_ARCH_;${BUILD_TARGET_ARCH};g" \
@@ -191,7 +191,7 @@ $(PATH_BIN)/VirtualBox.run: \
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_TARGET)/vboxnet.sh $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_TARGET)/vboxdrv.sh $(PATH_TARGET)/install
 	$(QUIET)$(RM) -f $@
-	$(QUIET)$(VBOX_MAKESELF) --follow $(PATH_TARGET)/install $@ \
+	$(QUIET)$(VBOX_MAKESELF) --follow --nocomp $(PATH_TARGET)/install $@ \
 		"VirtualBox for Linux installation" ./install.sh "\$$0 1> /dev/null"
 
 $(PATH_BIN)/VirtualBox-dbg.tar.bz2: \
