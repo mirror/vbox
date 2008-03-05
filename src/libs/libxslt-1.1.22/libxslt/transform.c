@@ -2035,6 +2035,7 @@ xsltProcessOneNode(xsltTransformContextPtr ctxt, xmlNodePtr contextNode,
     }
 }
 
+#ifdef WITH_DEBUGGER
 static xmlNodePtr
 xsltDebuggerStartSequenceConstructor(xsltTransformContextPtr ctxt,
 				     xmlNodePtr contextNode,
@@ -2070,6 +2071,7 @@ xsltDebuggerStartSequenceConstructor(xsltTransformContextPtr ctxt,
     }
     return(debugedNode);
 }
+#endif
 
 /**
  * xsltLocalVariablePush:
