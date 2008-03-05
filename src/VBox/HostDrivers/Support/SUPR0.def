@@ -88,6 +88,9 @@ EXPORTS
     RTThreadNativeSelf
     RTThreadSleep
     RTThreadYield
+    RTMpOnAll
+    RTMpOnOthers
+    RTMpOnSpecific
     RTLogDefaultInstance
     RTLogRelDefaultInstance
     RTLogSetDefaultInstanceThread
