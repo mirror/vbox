@@ -991,7 +991,7 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 #
 # Mac OS X SDK paths.
 #
-# Note: If you change something here you 
+# Note: If you change something here you
 # will maybe change DEFS.darwin also.
 VBOX_PATH_MACOSX_SDK ?= /Developer/SDKs/MacOSX10.4u.sdk
 CFLAGS.darwin   += -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK)
@@ -1248,6 +1248,23 @@ SDK_VBOX_LIBXML2          = .
 #else
 # SDK_VBOX_LIBXML2_INCS   ?=
 # SDK_VBOX_LIBXML2_LIBS   ?= xml2
+#endif
+
+SDK_VBOX_LIBXSLT          = .
+#if1of ($(BUILD_TARGET),win os2 solaris)
+ SDK_VBOX_LIBXSLT_INCS   ?= $(PATH_ROOT)/src/libs/libxslt-1.1.22
+ SDK_VBOX_LIBXSLT_LIBS   ?= $(PATH_LIB)/VBox-libxslt$(VBOX_SUFF_LIB)
+ SDK_VBOX_LIBXSLT_DEFS   ?=
+ SDK_VBOX_LIBXSLT_DEFS.win += WIN32 _WINDOWS _MBCS _REENTRANT
+#else if1of ($(BUILD_TARGET),linux)
+# SDK_VBOX_LIBXSLT_INCS      ?=
+# SDK_VBOX_LIBXSLT_LIBS      ?=
+# SDK_VBOX_LIBXSLT_CFLAGS    ?= $(shell pkg-config libxslt-1.0 --cflags)
+# SDK_VBOX_LIBXSLT_CXXFLAGS  ?= $(SDK_VBOX_LIBXSLT_CFLAGS)
+# SDK_VBOX_LIBXSLT_LDFLAGS   ?= $(shell pkg-config libxslt-1.0 --libs)
+#else
+# SDK_VBOX_LIBXSLT_INCS   ?=
+# SDK_VBOX_LIBXSLT_LIBS   ?= xslt
 #endif
 
 SDK_VBOX_LIBPNG       = .
@@ -1656,8 +1673,8 @@ endif
 ifeq ($(BUILD_TARGET),darwin)
 TEMPLATE_VBOXR0DRV_TOOL                = GXX4MACHO
 TEMPLATE_VBOXR0DRV_DEFS               += KERNEL KERNEL_PRIVATE DRIVER_PRIVATE APPLE NeXT
-# I didn't really know why we have to state explicitly the position of the 
-# sdk headers. Maybe it has something to do with the fact that the kernel.framework 
+# I didn't really know why we have to state explicitly the position of the
+# sdk headers. Maybe it has something to do with the fact that the kernel.framework
 # isn't a real framework according to http://developer.apple.com/qa/qa2001/qa1096.html.
 TEMPLATE_VBOXR0DRV_INCS               += $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = \
