@@ -516,18 +516,12 @@ static NTSTATUS VBoxDrvNtGipInit(PSUPDRVDEVEXT pDevExt)
 
                 /*
                  * Initialize the DPCs we're using to update the per-cpu GIP data.
-                 * (Not sure if we need to be this careful with KeSetTargetProcessorDpc...)
                  */
-                UNICODE_STRING  RoutineName;
-                RtlInitUnicodeString(&RoutineName, L"KeSetTargetProcessorDpc");
-                VOID (*pfnKeSetTargetProcessorDpc)(IN PRKDPC, IN CCHAR) = (VOID (*)(IN PRKDPC, IN CCHAR))MmGetSystemRoutineAddress(&RoutineName);
-
                 for (unsigned i = 0; i < RT_ELEMENTS(pDevExt->aGipCpuDpcs); i++)
                 {
                     KeInitializeDpc(&pDevExt->aGipCpuDpcs[i], VBoxDrvNtGipPerCpuDpc, pGip);
                     KeSetImportanceDpc(&pDevExt->aGipCpuDpcs[i], HighImportance);
-                    if (pfnKeSetTargetProcessorDpc)
-                        pfnKeSetTargetProcessorDpc(&pDevExt->aGipCpuDpcs[i], i);
+                    KeSetTargetProcessorDpc(&pDevExt->aGipCpuDpcs[i], i);
                 }
 
                 dprintf(("VBoxDrvNtGipInit: ulClockFreq=%ld ulClockInterval=%ld ulClockIntervalActual=%ld Phys=%x%08x\n",
