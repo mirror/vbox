@@ -200,6 +200,8 @@ EMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatHCBtc,                  STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/Btc",       STAMUNIT_OCCURENCES,    "The number of times BTC was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatGCCmpXchg,              STAMTYPE_COUNTER, "/EM/GC/Interpret/Success/CmpXchg",   STAMUNIT_OCCURENCES,    "The number of times CMPXCHG was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatHCCmpXchg,              STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/CmpXchg",   STAMUNIT_OCCURENCES,    "The number of times CMPXCHG was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatGCXAdd,                 STAMTYPE_COUNTER, "/EM/GC/Interpret/Success/XAdd",      STAMUNIT_OCCURENCES,    "The number of times XADD was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatHCXAdd,                 STAMTYPE_COUNTER, "/EM/HC/Interpret/Success/XAdd",      STAMUNIT_OCCURENCES,    "The number of times XADD was successfully interpreted.");
 
     STAM_REG(pVM, &pStats->StatGCInterpretFailed,           STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed",            STAMUNIT_OCCURENCES,    "The number of times an instruction was not interpreted.");
     STAM_REG(pVM, &pStats->StatHCInterpretFailed,           STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed",            STAMUNIT_OCCURENCES,    "The number of times an instruction was not interpreted.");
@@ -259,6 +261,8 @@ EMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatHCFailedCli,            STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed/Cli",        STAMUNIT_OCCURENCES,    "The number of times CLI was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatGCFailedCmpXchg,        STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed/CmpXchg",    STAMUNIT_OCCURENCES,    "The number of times CMPXCHG was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatHCFailedCmpXchg,        STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed/CmpXchg",    STAMUNIT_OCCURENCES,    "The number of times CMPXCHG was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatGCFailedXAdd,           STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed/XAdd",       STAMUNIT_OCCURENCES,    "The number of times XADD was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatHCFailedXAdd,           STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed/XAdd",       STAMUNIT_OCCURENCES,    "The number of times XADD was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatGCFailedMovNTPS,        STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed/MovNTPS",    STAMUNIT_OCCURENCES,    "The number of times MOVNTPS was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatHCFailedMovNTPS,        STAMTYPE_COUNTER, "/EM/HC/Interpret/Failed/MovNTPS",    STAMUNIT_OCCURENCES,    "The number of times MOVNTPS was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatGCFailedStosWD,         STAMTYPE_COUNTER, "/EM/GC/Interpret/Failed/StosWD",     STAMUNIT_OCCURENCES,    "The number of times STOSWD was not interpreted.");

@@ -130,6 +130,8 @@ typedef struct EMSTATS
     STAMCOUNTER             StatHCBtc;
     STAMCOUNTER             StatGCCmpXchg;
     STAMCOUNTER             StatHCCmpXchg;
+    STAMCOUNTER             StatGCXAdd;
+    STAMCOUNTER             StatHCXAdd;
     STAMCOUNTER             StatGCClts;
     STAMCOUNTER             StatHCClts;
 
@@ -189,6 +191,8 @@ typedef struct EMSTATS
     STAMCOUNTER             StatHCFailedCli;
     STAMCOUNTER             StatGCFailedCmpXchg;
     STAMCOUNTER             StatHCFailedCmpXchg;
+    STAMCOUNTER             StatGCFailedXAdd;
+    STAMCOUNTER             StatHCFailedXAdd;
     STAMCOUNTER             StatHCFailedMovNTPS;
     STAMCOUNTER             StatGCFailedMovNTPS;
     STAMCOUNTER             StatGCFailedStosWD;

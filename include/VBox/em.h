@@ -468,6 +468,8 @@ EMGCDECL(int) EMGCTrap(PVM pVM, unsigned uTrap, PCPUMCTXCORE pRegFrame);
 
 EMGCDECL(uint32_t) EMGCEmulateLockCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
 EMGCDECL(uint32_t) EMGCEmulateCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
+EMGCDECL(uint32_t) EMGCEmulateLockXAdd(RTGCPTR pu32Param1, uint32_t *pu32Param2, size_t cbSize, uint32_t *pEflags);
+EMGCDECL(uint32_t) EMGCEmulateXAdd(RTGCPTR pu32Param1, uint32_t *pu32Param2, size_t cbSize, uint32_t *pEflags);
 
 /** @} */
 #endif
