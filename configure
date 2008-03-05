@@ -53,6 +53,7 @@ XSLTPROC="xsltproc"
 GENISOIMAGE="genisoimage"
 MKISOFS="mkisofs"
 BUILD_LIBXML2=
+BUILD_LIBXSLT=
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
 LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
@@ -600,6 +601,85 @@ EOF
       fi
     else
       log_failure "neither pkg-config nor xml2-config found"
+      fail
+    fi
+  fi
+}
+
+#
+# Check for libxslt, needed by VBoxSettings
+#
+check_libxslt()
+{
+  if [ -z "$BUILD_LIBXSLT" ]; then
+    test_header libxslt
+    if which_wrapper pkg-config > /dev/null; then
+      libxslt_ver=`pkg-config libxslt --modversion 2>> $LOG`
+      if [ $? -ne 0 ]; then
+        log_failure "not found"
+        fail
+      else
+        FLGXSLT=`pkg-config libxslt --cflags`
+        INCXSLT=`strip_I "$FLGXSLT"`
+        LIBXSLT=`pkg-config libxslt --libs`
+        cat > .tmp_src.cc << EOF
+#include <cstdio>
+#include <libxslt/xsltconfig.h>
+extern "C" int main(void)
+{
+  printf("found version %s", LIBXSLT_DOTTED_VERSION);
+#if LIBXSLT_VERSION >= 10122
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 1.1.22 or higher\n");
+  return 1;
+#endif
+}
+EOF
+        [ -n "$INCXSLT" ] && I_INCXSLT=`prefix_I "$INCXSLT"`
+        if test_compile "$LIBXSLT $LIBPTHREAD $I_INCXSLT" xslt xslt; then
+          if test_execute; then
+            cnf_append "SDK_VBOX_LIBXSLT_INCS" "$INCXSLT"
+            cnf_append "SDK_VBOX_LIBXSLT_LIBS" "`strip_l "$LIBXSLT"`"
+          fi
+        fi
+      fi
+    elif which_wrapper xslt-config; then
+      libxslt_ver=`xslt-config --version`
+      if [ $? -ne 0 ]; then
+        log_failure "not found"
+        fail
+      else
+        log_success "found version $libxslt_ver"
+        FLGXSLT=`xslt-config --cflags`
+        INCXSLT=`strip_I "$FLGXSLT"`
+        LIBXSLT=`xslt-config --libs`
+        cat > .tmp_src.cc << EOF
+#include <cstdio>
+#include <libxslt/xsltconfig.h>
+extern "C" int main(void)
+{
+  printf("found version %s", LIBXSLT_DOTTED_VERSION);
+#if LIBXSLT_VERSION >= 10122
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 1.1.22 or higher\n");
+  return 1;
+#endif
+}
+EOF
+        [ -n "$INCXSLT" ] && I_INCXSLT=`prefix_I "$INCXSLT"`
+        if test_compile "$LIBXSLT $LIBPTHREAD $I_INCXSLT" xslt xslt; then
+          if test_execute; then
+            cnf_append "SDK_VBOX_LIBXSLT_INCS" "$INCXSLT"
+            cnf_append "SDK_VBOX_LIBXSLT_LIBS" "`strip_l "$LIBXSLT"`"
+          fi
+        fi
+      fi
+    else
+      log_failure "neither pkg-config nor xslt-config found"
       fail
     fi
   fi
@@ -1336,6 +1416,7 @@ Configuration:
   --disable-pulse          disable PulseAudio detection
   --disable-kmods          don't build Linux kernel modules (host and guest)
   --build-libxml2          build libxml2 from sources (not OSE!)
+  --build-libxslt          build libxslt from sources (not OSE!)
   --setup-wine             setup a Wine directory and register the hhc hack
 
 Paths:
@@ -1417,6 +1498,9 @@ for option in $*; do
       ;;
     --build-libxml2)
       BUILD_LIBXML2=1
+      ;;
+    --build-libxslt)
+      BUILD_LIBXSLT=1
       ;;
     --build-headless)
       HEADLESS=1
@@ -1539,6 +1623,9 @@ check_gcc
 # build libxml2 on Darwin in every case
 [ "$OS" != "darwin"  ] || BUILD_LIBXML2=1
 [ $WITH_XPCOM  -eq 1 ] && check_libxml2
+# build libxslt on Darwin in every case
+[ "$OS" != "darwin"  ] || BUILD_LIBXSLT=1
+[ $WITH_XPCOM  -eq 1 ] && check_libxslt
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
 # build openssl on Darwin in every case
 [ "$OS" != "darwin" -a $OSE -eq 0 ] && check_ssl
