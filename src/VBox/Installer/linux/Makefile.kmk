@@ -58,6 +58,7 @@ linux-doc_SOURCES = \
 LINUXSTRIPBIN = \
 	VBoxDD.so \
 	VBoxDD2.so \
+	$(if $(VBOX_WITH_FFMPEG),VBoxFFmpegFB.so,) \
 	VBoxManage \
 	VBoxREM.so \
 	VBoxRT.so \
