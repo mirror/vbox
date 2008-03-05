@@ -1415,7 +1415,7 @@ Configuration:
   --disable-sdl-ttf        disable SDL_ttf detection
   --disable-pulse          disable PulseAudio detection
   --disable-kmods          don't build Linux kernel modules (host and guest)
-  --build-libxml2          build libxml2 from sources (not OSE!)
+  --build-libxml2          build libxml2 from sources
   --build-libxslt          build libxslt from sources (not OSE!)
   --setup-wine             setup a Wine directory and register the hhc hack
 
@@ -1625,7 +1625,7 @@ check_gcc
 [ $WITH_XPCOM  -eq 1 ] && check_libxml2
 # build libxslt on Darwin in every case
 [ "$OS" != "darwin"  ] || BUILD_LIBXSLT=1
-[ $WITH_XPCOM  -eq 1 ] && check_libxslt
+#[ $WITH_XPCOM  -eq 1 ] && check_libxslt
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
 # build openssl on Darwin in every case
 [ "$OS" != "darwin" -a $OSE -eq 0 ] && check_ssl
