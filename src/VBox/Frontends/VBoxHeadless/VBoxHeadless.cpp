@@ -593,7 +593,6 @@ int main (int argc, char **argv)
 
     if (!id && !name)
     {
-        LogError("VBoxHeadless: ERROR: invalid invocation!", -1);
         show_usage();
         return -1;
     }
