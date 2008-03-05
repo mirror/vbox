@@ -36,8 +36,8 @@ class VBoxToolBar : public QToolBar
 {
 public:
 
-    VBoxToolBar (QMainWindow *aMainWindow, QWidget *aParent)
-        : QToolBar (aParent),
+    VBoxToolBar (QMainWindow *aMainWindow, QWidget *aParent = NULL)
+        : QToolBar (aParent), 
           mMainWindow (aMainWindow)
     {
         setFloatable (false);
@@ -53,20 +53,26 @@ public:
      */
     void setUsesBigPixmaps (bool enable)
     {
-        QSize bigSize(32, 32);
-
+        QSize size (32, 32);
+        if (!enable)
+            size = QSize (16, 16);
+                
         if (mMainWindow)
-            mMainWindow->setIconSize (bigSize);
+            mMainWindow->setIconSize (size);
         else
-            setIconSize (bigSize);
+            setIconSize (size);
     }
 
     void setUsesTextLabel (bool enable)
     {
+        Qt::ToolButtonStyle tbs = Qt::ToolButtonTextUnderIcon;
+        if (!enable)
+            tbs = Qt::ToolButtonIconOnly;
+            
         if (mMainWindow)
-            mMainWindow->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
+            mMainWindow->setToolButtonStyle (tbs);
         else
-            setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
+            setToolButtonStyle (tbs);
     }
 
 #ifdef Q_WS_MAC

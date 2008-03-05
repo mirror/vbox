@@ -29,34 +29,17 @@
 #include "VBoxGlobalSettingsDlg.h"
 #include "VBoxVMLogViewer.h"
 
-#include <qlabel.h>
-#include <QTextBrowser>
-#include <q3textbrowser.h>
-#include <qmenubar.h>
-#include <q3popupmenu.h>
-#include <qmessagebox.h>
-#include <qwidget.h>
-#include <qtabwidget.h>
-#include <q3widgetstack.h>
-#include <qpushbutton.h>
-#include <q3process.h>
-
-#include <qlayout.h>
-#include <q3vbox.h>
-//Added by qt3to4:
-#include <QDesktopWidget>
-#include <Q3HBoxLayout>
-#include <Q3Frame>
-#include <q3mimefactory.h>
-#include <QResizeEvent>
-#include <QEvent>
-#include <Q3VBoxLayout>
-#include <QMenuItem>
-
 #ifdef Q_WS_X11
 #include <iprt/env.h>
 #endif
 
+/* Qt includes */
+#include <QTextBrowser>
+#include <QMenuBar>
+#include <QMenu>
+#include <QMenuItem>
+#include <QStackedWidget>
+#include <QDesktopWidget>
 
 // VBoxVMDetailsView class
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,13 +48,13 @@
  *  Two-page widget stack to represent VM details: one page for normal details
  *  and another one for inaccessibility errors.
  */
-class VBoxVMDetailsView : public Q3WidgetStack
+class VBoxVMDetailsView : public QStackedWidget
 {
     Q_OBJECT
 
 public:
 
-    VBoxVMDetailsView (QWidget *aParent, const char *aName,
+    VBoxVMDetailsView (QWidget *aParent,
                        QAction *aRefreshAction = NULL);
 
     void languageChange();
@@ -79,20 +62,20 @@ public:
     void setDetailsText (const QString &aText)
     {
         mDetailsText->setText (aText);
-        raiseWidget (0);
+        setCurrentIndex (0);
     }
 
     void setErrorText (const QString &aText)
     {
         createErrPage();
         mErrText->setText (aText);
-        raiseWidget (1);
+        setCurrentIndex (1);
     }
 
     void setEmpty()
     {
         mDetailsText->setText (QString::null);
-        raiseWidget (0);
+        setCurrentIndex (0);
     }
 
 signals:
@@ -119,14 +102,14 @@ private:
 
     QWidget *mErrBox;
     QLabel *mErrLabel;
-    Q3TextBrowser *mErrText;
+    QTextBrowser *mErrText;
     QToolButton *mRefreshButton;
     QAction *mRefreshAction;
 };
 
-VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent, const char *aName,
+VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent,
                                       QAction *aRefreshAction /* = NULL */)
-    : Q3WidgetStack (aParent, aName)
+    : QStackedWidget (aParent)
     , mErrBox (NULL), mErrLabel (NULL), mErrText (NULL)
     , mRefreshButton (NULL)
     , mRefreshAction (aRefreshAction)
@@ -149,7 +132,7 @@ VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent, const char *aName,
     connect (mDetailsText, SIGNAL (anchorClicked (const QUrl &)),
             this, SLOT (gotLinkClicked (const QUrl &)));
 
-    addWidget (mDetailsText, 0);
+    addWidget (mDetailsText);
 }
 
 void VBoxVMDetailsView::createErrPage()
@@ -161,37 +144,37 @@ void VBoxVMDetailsView::createErrPage()
 
     mErrBox = new QWidget();
 
-    Q3VBoxLayout *layout = new Q3VBoxLayout (mErrBox);
-    layout->setSpacing (10);
+    QVBoxLayout *pVLayout = new QVBoxLayout (mErrBox);
+    pVLayout->setSpacing (10);
 
     mErrLabel = new QLabel (mErrBox);
     mErrLabel->setAlignment (Qt::WordBreak);
     mErrLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
-    layout->add (mErrLabel);
+    pVLayout->add (mErrLabel);
 
-    mErrText = new Q3TextBrowser (mErrBox);
+    mErrText = new QTextBrowser (mErrBox);
     mErrText->setFocusPolicy (Qt::StrongFocus);
-    mErrText->setLinkUnderline (false);
-    layout->add (mErrText);
+    mErrText->document()->setDefaultStyleSheet ("a { text-decoration: none; }");
+    pVLayout->add (mErrText);
 
     if (mRefreshAction)
     {
         mRefreshButton = new QToolButton (mErrBox);
         mRefreshButton->setFocusPolicy (Qt::StrongFocus);
 
-        Q3HBoxLayout *hLayout = new Q3HBoxLayout (layout);
-        hLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
-                                                 QSizePolicy::Minimum));
-        hLayout->add (mRefreshButton);
+        QHBoxLayout *pHLayout = new QHBoxLayout (pVLayout);
+        pHLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
+                                                  QSizePolicy::Minimum));
+        pHLayout->add (mRefreshButton);
 
         connect (mRefreshButton, SIGNAL (clicked()),
                  mRefreshAction, SIGNAL (activated()));
     }
 
-    layout->addItem (new QSpacerItem (0, 0, QSizePolicy::Minimum,
+    pVLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Minimum,
                                             QSizePolicy::Expanding));
 
-    addWidget (mErrBox, 1);
+    addWidget (mErrBox);
 
     languageChange();
 }
@@ -248,7 +231,7 @@ private:
 
     VBoxSelectorWnd *mParent;
     QToolButton *mBtnEdit;
-    Q3TextBrowser *mBrowser;
+    QTextBrowser *mBrowser;
     QLabel *mLabel;
 };
 
@@ -259,14 +242,16 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     , mBtnEdit (0), mBrowser (0), mLabel (0)
 {
     /* main layout */
-    Q3VBoxLayout *mainLayout = new Q3VBoxLayout (this, 0, 10, "mainLayout");
+    QVBoxLayout *pVMainLayout = new QVBoxLayout (this);
+    pVMainLayout->setSpacing (10);
+    pVMainLayout->setContentsMargins (0, 0, 0, 0);
 
     /* mBrowser */
-    mBrowser = new Q3TextBrowser (this, "mBrowser");
+    mBrowser = new QTextBrowser (this, "mBrowser");
     mBrowser->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
     mBrowser->setFocusPolicy (Qt::StrongFocus);
-    mBrowser->setLinkUnderline (false);
-    mainLayout->addWidget (mBrowser);
+    mBrowser->document()->setDefaultStyleSheet ("a { text-decoration: none; }");
+    pVMainLayout->addWidget (mBrowser);
     /* hidden by default */
     mBrowser->setHidden (true);
 
@@ -274,15 +259,16 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     mLabel->setFrameStyle (mBrowser->frameStyle());
     mLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
     mLabel->setAlignment (Qt::AlignCenter | Qt::WordBreak);
-    mainLayout->addWidget (mLabel);
+    pVMainLayout->addWidget (mLabel);
     /* always disabled */
     mLabel->setEnabled (false);
 
     /* button layout */
-    Q3HBoxLayout *btnLayout = new Q3HBoxLayout (mainLayout, 10, "btnLayout");
-    btnLayout->addItem (new QSpacerItem (0, 0,
-                                         QSizePolicy::Expanding,
-                                         QSizePolicy::Minimum));
+    QHBoxLayout *pHBtnLayout = new QHBoxLayout (pVMainLayout);
+    pHBtnLayout->setSpacing (10);
+    pHBtnLayout->addItem (new QSpacerItem (0, 0,
+                                           QSizePolicy::Expanding,
+                                           QSizePolicy::Minimum));
 
     /* button */
     mBtnEdit = new QToolButton (this, "mBtnEdit");
@@ -293,9 +279,9 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     mBtnEdit->setTextPosition (QToolButton::BesideIcon);
     mBtnEdit->setUsesTextLabel (true);
     connect (mBtnEdit, SIGNAL (clicked()), this, SLOT (goToSettings()));
-    btnLayout->addWidget (mBtnEdit);
+    pHBtnLayout->addWidget (mBtnEdit);
 
-    mainLayout->addItem (new QSpacerItem (0, 0,
+    pVMainLayout->addItem (new QSpacerItem (0, 0,
                                           QSizePolicy::Expanding,
                                           QSizePolicy::Minimum));
 
@@ -391,7 +377,7 @@ void VBoxVMDescriptionPage::goToSettings()
  *               recursion in VBoxGlobal::selectorWnd())
  */
 VBoxSelectorWnd::
-VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
+VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
                  Qt::WFlags aFlags)
     : QMainWindow (aParent, aFlags)
     , doneInaccessibleWarningOnce (false)
@@ -461,31 +447,36 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     /* subwidgets */
 
     /* central widget & horizontal layout */
-    setCentralWidget (new QWidget (this, "centralWidget"));
-    Q3HBoxLayout *centralLayout =
-        new Q3HBoxLayout (centralWidget(), 5, 9, "centralLayout");
+    setCentralWidget (new QWidget (this));
+    QHBoxLayout *pCentralLayout =
+        new QHBoxLayout (centralWidget());
+    pCentralLayout->setSpacing (9);
+    pCentralLayout->setContentsMargins (5, 5, 5, 5);
 
     /* left vertical box */
-    Q3VBox *leftVBox = new Q3VBox (centralWidget(), "leftWidget");
-    leftVBox->setSpacing (5);
+    QVBoxLayout *pLeftVLayout = new QVBoxLayout ();
+    pLeftVLayout->setSpacing (5);
     /* right vertical box */
-    Q3VBox *rightVBox = new Q3VBox (centralWidget(), "rightWidget");
-    rightVBox->setSpacing (5);
-    centralLayout->addWidget (leftVBox, 3);
-    centralLayout->addWidget (rightVBox, 5);
+    QVBoxLayout *pRightVLayout = new QVBoxLayout ();
+    pRightVLayout->setSpacing (5);
+    pCentralLayout->addLayout (pLeftVLayout, 3);
+    pCentralLayout->addLayout (pRightVLayout, 3);
 
     /* VM list toolbar */
-    VBoxToolBar *vmTools = new VBoxToolBar (this, leftVBox);
+    VBoxToolBar *vmTools = new VBoxToolBar (this);
+    pLeftVLayout->addWidget(vmTools);
 
     /* VM list box */
-    vmListBox = new VBoxVMListBox (leftVBox, "vmListBox");
+    vmListBox = new VBoxVMListBox ();
+    pLeftVLayout->addWidget (vmListBox);
 
     /* VM tab widget containing details and snapshots tabs */
-    vmTabWidget = new QTabWidget (rightVBox, "vmTabWidget");
+    vmTabWidget = new QTabWidget ();
+    pRightVLayout->addWidget (vmTabWidget);
     vmTabWidget->setMargin (10);
 
     /* VM details view */
-    vmDetailsView = new VBoxVMDetailsView (NULL, "vmDetailsView",
+    vmDetailsView = new VBoxVMDetailsView (NULL,
                                            vmRefreshAction);
     vmTabWidget->addTab (vmDetailsView,
                          VBoxGlobal::iconSet (":/settings_16px.png"),
@@ -510,6 +501,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 #warning port me
 //    setUsesTextLabel (true);
 //    setUsesBigPixmaps (true);
+    vmTools->setIconSize (QSize (32, 32));
+    vmTools->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
     vmTools->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
 
     vmNewAction->addTo (vmTools);
@@ -525,7 +518,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* add actions to menubar */
 
-    Q3PopupMenu *fileMenu = new Q3PopupMenu(this, "fileMenu");
+    QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
     fileDiskMgrAction->addTo( fileMenu );
     fileMenu->insertSeparator();
     fileSettingsAction->addTo(fileMenu);
@@ -534,7 +527,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     menuBar()->insertItem( QString::null, fileMenu, 1);
 
-    Q3PopupMenu *vmMenu = new Q3PopupMenu (this, "vmMenu");
+    QMenu *vmMenu = menuBar()->addMenu(tr("&Machine"));
     vmNewAction->addTo (vmMenu);
     vmMenu->insertSeparator();
     vmConfigAction->addTo (vmMenu);
@@ -551,7 +544,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     menuBar()->insertItem (QString::null, vmMenu, 2);
 
-    mVMCtxtMenu = new Q3PopupMenu (this, "mVMCtxtMenu");
+    mVMCtxtMenu = new QMenu (this);
     vmConfigAction->addTo (mVMCtxtMenu);
     vmDeleteAction->addTo (mVMCtxtMenu);
     mVMCtxtMenu->insertSeparator();
@@ -564,7 +557,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     mVMCtxtMenu->insertSeparator();
     vmShowLogsAction->addTo (mVMCtxtMenu);
 
-    Q3PopupMenu *helpMenu = new Q3PopupMenu( this, "helpMenu" );
+    QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
     helpContentsAction->addTo (helpMenu);
     helpWebAction->addTo (helpMenu);
     helpMenu->insertSeparator();
