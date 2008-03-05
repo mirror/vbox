@@ -25,7 +25,7 @@
 BEGINCODE
 
 ;;
-; Emulate lock CMPXCHG instruction, CDECL calling conv.
+; Emulate LOCK CMPXCHG instruction, CDECL calling conv.
 ; EMGCDECL(uint32_t) EMGCEmulateLockCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
 ;
 ; @returns eax=0 if data written, other code - invalid access, #PF was generated.
@@ -164,3 +164,134 @@ GLOBALNAME EMGCEmulateCmpXchg_Error
     mov     eax, VERR_ACCESS_DENIED
     ret
 ENDPROC     EMGCEmulateCmpXchg
+
+;;
+; Emulate LOCK XADD instruction, CDECL calling conv.
+; EMGCDECL(uint32_t) EMGCEmulateLockXAdd(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
+;
+; @returns eax=0 if data exchanged, other code - invalid access, #PF was generated.
+; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
+; @param    [esp + 08h]    Param 2 - Second parameter - pointer to second parameter (general register)
+; @param    [esp + 0ch]    Param 3 - Size of parameters, only 1/2/4 is valid.
+; @param    [esp + 10h]    Param 4 - Pointer to eflags (out)
+; @uses     eax, ecx, edx
+;
+align 16
+BEGINPROC   EMGCEmulateLockXAdd
+    push    ebx
+    mov     ecx, [esp + 04h + 4]        ; ecx = first parameter
+    mov     ebx, [esp + 08h + 4]        ; ebx = 2nd parameter
+    mov     eax, [esp + 0ch + 4]        ; eax = size of parameters
+
+    cmp     al, 4
+    je short .do_dword                  ; 4 bytes variant
+    cmp     al, 2
+    je short .do_word                   ; 2 byte variant
+    cmp     al, 1
+    je short .do_byte                   ; 1 bytes variant
+    int3
+
+.do_dword:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+    lock xadd dword [ecx], eax              ; do 4 bytes XADD
+    mov     dword [ebx], eax
+    jmp     short .done
+
+.do_word:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+    lock xadd word [ecx], ax                ; do 2 bytes XADD
+    mov     word [ebx], ax
+    jmp     short .done
+
+.do_byte:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+    lock xadd byte [ecx], al                ; do 1 bytes XADD
+    mov     byte [ebx], al
+
+.done:
+    ; collect flags and return.
+    pushf
+    pop     eax
+
+    mov     edx, [esp + 10h + 4]            ; eflags pointer
+    mov     dword [edx], eax
+
+    pop     ebx
+    mov     eax, VINF_SUCCESS
+    retn
+
+; Read error - we will be here after our page fault handler.
+GLOBALNAME EMGCEmulateLockXAdd_Error
+    pop     ebx
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+
+ENDPROC     EMGCEmulateLockXAdd
+
+;;
+; Emulate XADD instruction, CDECL calling conv.
+; EMGCDECL(uint32_t) EMGCEmulateXAdd(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
+;
+; @returns eax=0 if data written, other code - invalid access, #PF was generated.
+; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
+; @param    [esp + 08h]    Param 2 - Second parameter - pointer to second parameter (general register)
+; @param    [esp + 0ch]    Param 3 - Size of parameters, only 1/2/4 is valid.
+; @param    [esp + 10h]    Param 4 - Pointer to eflags (out)
+; @uses     eax, ecx, edx
+;
+align 16
+BEGINPROC   EMGCEmulateXAdd
+    push    ebx
+    mov     ecx, [esp + 04h + 4]        ; ecx = first parameter
+    mov     ebx, [esp + 08h + 4]        ; ebx = 2nd parameter (eax)
+    mov     eax, [esp + 0ch + 4]        ; eax = size of parameters
+
+    cmp     al, 4
+    je short .do_dword                  ; 4 bytes variant
+    cmp     al, 2
+    je short .do_word                   ; 2 byte variant
+    cmp     al, 1
+    je short .do_byte                   ; 1 bytes variant
+    int3
+
+.do_dword:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+    xadd    dword [ecx], eax            ; do 4 bytes XADD
+    mov     dword [ebx], eax
+    jmp     short .done
+
+.do_word:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+    xadd    word [ecx], ax              ; do 2 bytes XADD
+    mov     word [ebx], ax
+    jmp     short .done
+
+.do_byte:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+    xadd    byte [ecx], al              ; do 1 bytes XADD
+    mov     byte [ebx], al
+
+.done:
+    ; collect flags and return.
+    pushf
+    pop     eax
+
+    mov     edx, [esp + 10h + 4]        ; eflags pointer
+    mov     dword [edx], eax
+
+    pop     ebx
+    mov     eax, VINF_SUCCESS
+    retn
+
+; Read error - we will be here after our page fault handler.
+GLOBALNAME EMGCEmulateXAdd_Error
+    pop     ebx
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+ENDPROC     EMGCEmulateXAdd
