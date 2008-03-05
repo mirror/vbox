@@ -50,10 +50,18 @@ VBOX_PATH_QT4_SHARE    ?= $(VBOX_PATH_QT4)
 
 VBOX_MODULE_QT4     = QtCore QtGui QtNetwork Qt3Support
 VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB QT_NETWORK_LIB QT_QT3SUPPORT_LIB
+
+ifeq ($(BUILD_TARGET),darwin)
+VBOX_MODULE_QT4 	+= QtSql QtXml
+VBOX_DEFS_QT4       = QT_SQL_LIB QT_XML_LIB
+VBOX_INCS_QT4       = $(foreach mod, $(VBOX_MODULE_QT4), $(join $(join /Library/Frameworks/, $(mod)), .framework/Headers))
+VBOX_LIBS_QT4       = 
+else
 VBOX_INCS_QT4       = $(VBOX_PATH_QT4_SHARE)/mkspecs/linux-g++ \
                       $(foreach mod, $(VBOX_MODULE_QT4), $(join $(VBOX_PATH_QT4_INCLUDE)/, $(mod))) \
                       $(VBOX_PATH_QT4_INCLUDE)/Qt $(VBOX_PATH_QT4_INCLUDE)
 VBOX_LIBS_QT4       = $(VBOX_MODULE_QT4)
+endif
 
 # Warn about all what you know about porting qt3->qt4.
 # Disable this if you like to see something on your screen.
@@ -152,7 +160,8 @@ else # the gcc guys:
  ifeq ($(BUILD_TARGET),linux)
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
  else ifeq ($(BUILD_TARGET),darwin)
-  TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += -framework Carbon -framework QuickTime -bind_at_load
+  TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(foreach mod, $(VBOX_MODULE_QT4), -framework $(mod)) \
+  	-framework Carbon -framework QuickTime -bind_at_load
   TEMPLATE_VBOXQT4GUIEXE_LIBS +=
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH +=
  else ifeq ($(BUILD_TARGET),os2)
