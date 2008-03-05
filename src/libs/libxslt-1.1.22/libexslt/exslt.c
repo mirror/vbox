@@ -3,7 +3,11 @@
 
 #include <libxml/xmlversion.h>
 
+#if defined(VBOX)
+#include "vboxconfig.h"
+#else
 #include "config.h"
+#endif
 
 #include <libxslt/xsltconfig.h>
 #include <libxslt/extensions.h>
