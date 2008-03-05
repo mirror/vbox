@@ -693,12 +693,15 @@ int main (int argc, char **argv)
                         pFramebuffer->AddRef();
                         display->RegisterExternalFramebuffer(pFramebuffer);
                     }
+                    else
+                        LogError("Failed to initialise video capturing - make sure that the file format\n"
+                                 "you wish to use is supported on your system\n", 1);
                 }
             }
         }
         if (rc != S_OK)
         {
-            LogError ("Failed to load VBoxFFmpegFB shared library\n", 0);
+            LogError ("Failed to set up video capturing\n", 1);
             return -1;
         }
 #endif /* defined(VBOX_FFMPEG) */

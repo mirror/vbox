@@ -738,6 +738,7 @@ HRESULT FFmpegFB::open_codec()
     Assert(mpStream != 0);
     AVOutputFormat *pOutFormat = mpFormatContext->oformat;
     AVCodecContext *pCodecContext = mpStream->codec;
+    AssertReturn(pCodecContext != 0, E_UNEXPECTED);
     AVCodec *pCodec = avcodec_find_encoder(pOutFormat->video_codec);
     AssertReturn(pCodec != 0, E_UNEXPECTED);
     pCodecContext->codec_id = pOutFormat->video_codec;
