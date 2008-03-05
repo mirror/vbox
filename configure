@@ -283,17 +283,6 @@ check_environment()
   DEVDIR_BIN="$DEVDIR/$OS.$BUILD_MACHINE/bin"
   log_success "Determined build machine: $OS.$BUILD_MACHINE, target machine: $OS.$TARGET_MACHINE"
 
-  # Automatically disable XPCOM on darwin.
-  if [ "$OS" = "darwin" -a $WITH_XPCOM -eq 1 ]; then
-    WITH_XPCOM=0
-    WITH_LIBIDL=0
-    WITH_QT=0
-    WITH_SDL=0
-    WITH_SDL_TTF=0
-    WITH_X11=0
-    echo "Disabling checks for XPCOM related components."
-  fi
-
   echo "export BUILD_PLATFORM=\"$OS\"" >> $ENV
   echo "export BUILD_PLATFORM_ARCH=\"$BUILD_MACHINE\"" >> $ENV
   echo "export BUILD_TARGET=\"$OS\"" >> $ENV
