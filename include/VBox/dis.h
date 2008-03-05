@@ -546,6 +546,7 @@ DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
  *
  */
 DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype);
+DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, uint32_t **ppReg, size_t *pcbSize);
 
 DISDECL(int) DISFetchReg8(PCPUMCTXCORE pCtx, uint32_t reg8, uint8_t *pVal);
 DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, uint32_t reg16, uint16_t *pVal);
