@@ -862,7 +862,7 @@ VBoxSelectorWnd &VBoxGlobal::selectorWnd()
          *  to avoid recursion, since this method may be (and will be) called
          *  from the below constructor or from constructors/methods it calls.
          */
-        VBoxSelectorWnd *w = new VBoxSelectorWnd (&mSelectorWnd, 0, "selectorWnd");
+        VBoxSelectorWnd *w = new VBoxSelectorWnd (&mSelectorWnd, 0);
         Assert (w == mSelectorWnd);
         NOREF(w);
     }

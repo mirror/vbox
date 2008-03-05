@@ -23,17 +23,8 @@
 
 #include "VBoxGlobal.h"
 
-#include <qapplication.h>
+/* Qt includes */
 #include <QMainWindow>
-#include <q3listbox.h>
-#include <q3groupbox.h>
-#include <qaction.h>
-
-#include <q3valuelist.h>
-//Added by qt3to4:
-#include <QEvent>
-#include <QLabel>
-#include <Q3PopupMenu>
 
 class VBoxVMListBox;
 class VBoxSnapshotsWgt;
@@ -41,10 +32,10 @@ class VBoxVMDetailsView;
 class VBoxVMDescriptionPage;
 class VBoxVMLogViewer;
 
-class QLabel;
-class Q3TextBrowser;
 class QTabWidget;
-struct QUuid;
+class Q3ListBoxItem;
+class QEvent;
+class QUuid;
 
 class VBoxSelectorWnd : public QMainWindow
 {
@@ -53,7 +44,7 @@ class VBoxSelectorWnd : public QMainWindow
 public:
 
     VBoxSelectorWnd (VBoxSelectorWnd **aSelf,
-                     QWidget* aParent = 0, const char* aName = 0,
+                     QWidget* aParent = 0,
                      Qt::WFlags aFlags = Qt::WType_TopLevel);
     virtual ~VBoxSelectorWnd();
 
@@ -113,7 +104,7 @@ private slots:
 private:
 
     /** VM list context menu */
-    Q3PopupMenu *mVMCtxtMenu;
+    QMenu *mVMCtxtMenu;
 
     /* actions */
     QAction *fileDiskMgrAction;
@@ -139,8 +130,6 @@ private:
     VBoxVMDetailsView *vmDetailsView;
     VBoxSnapshotsWgt *vmSnapshotsWgt;
     VBoxVMDescriptionPage *vmDescriptionPage;
-
-    Q3ValueList <CSession> sessions;
 
     QPoint normal_pos;
     QSize normal_size;
