@@ -140,8 +140,7 @@ ifdef VBOX_WITH_DOCS
 endif
 ifdef VBOX_WITH_VRDP
  LINUXSTRIPBIN += \
-	VBoxVRDP.so \
-	VBoxVRDP
+	VBoxVRDP.so
 
  LINUXNOSTRIP += \
 	rdesktop-vrdp.tar.gz
