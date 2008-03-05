@@ -109,7 +109,7 @@ case "$APP" in
     exec "$INSTALL_DIR/VBoxSDL" "$@"
     ;;
   VBoxVRDP)
-    exec "$INSTALL_DIR/VBoxVRDP" "$@"
+    exec "$INSTALL_DIR/VBoxHeadless" "$@"
     ;;
   VBoxHeadless)
     exec "$INSTALL_DIR/VBoxHeadless" "$@"
