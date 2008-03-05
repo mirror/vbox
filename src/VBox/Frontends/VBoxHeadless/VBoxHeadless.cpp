@@ -61,7 +61,7 @@ using namespace com;
 #define LogError(m,rc) \
     do { \
         Log (("VBoxHeadless: ERROR: " m " [rc=0x%08X]\n", rc)); \
-        RTPrintf (m " (rc = 0x%08X)\n", rc); \
+        RTPrintf ("%s", m); \
     } while (0)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -671,36 +671,41 @@ int main (int argc, char **argv)
 
         if (fFFMPEG)
         {
-            Log2(("VBoxHeadless: loading VBoxFFmpegFB shared library\n"));
-            rc = RTLdrLoad("VBoxFFmpegFB", &hLdrFFmpegFB);
+            int rrc = VINF_SUCCESS, rcc = S_OK;
 
-            if (rc == VINF_SUCCESS)
+            Log2(("VBoxHeadless: loading VBoxFFmpegFB shared library\n"));
+            rrc = RTLdrLoad("VBoxFFmpegFB", &hLdrFFmpegFB);
+
+            if (RT_SUCCESS(rrc))
             {
                 Log2(("VBoxHeadless: looking up symbol VBoxRegisterFFmpegFB\n"));
-                rc = RTLdrGetSymbol(hLdrFFmpegFB, "VBoxRegisterFFmpegFB",
-                                    reinterpret_cast<void **>(&pfnRegisterFFmpegFB));
-
-                if (rc == VINF_SUCCESS)
-                {
-                    Log2(("VBoxHeadless: calling pfnRegisterFFmpegFB\n"));
-                    rc = pfnRegisterFFmpegFB(ulFrameWidth, ulFrameHeight, ulBitRate,
-                                             pszMPEGFile, &pFramebuffer);
-
-                    if (rc == S_OK)
-                    {
-                        Log2(("VBoxHeadless: Registering framebuffer\n"));
-                        pFramebuffer->AddRef();
-                        display->RegisterExternalFramebuffer(pFramebuffer);
-                    }
-                    else
-                        LogError("Failed to initialise video capturing - make sure that the file format\n"
-                                 "you wish to use is supported on your system\n", 1);
-                }
+                rrc = RTLdrGetSymbol(hLdrFFmpegFB, "VBoxRegisterFFmpegFB",
+                                     reinterpret_cast<void **>(&pfnRegisterFFmpegFB));
+                if (RT_FAILURE(rrc))
+                    LogError("Failed to load the video capture extension, possibly due to a damaged file\n", rrc);
             }
+            else
+                LogError("Failed to load the video capture extension\n", rrc);
+            if (RT_SUCCESS(rrc))
+            {
+                Log2(("VBoxHeadless: calling pfnRegisterFFmpegFB\n"));
+                rcc = pfnRegisterFFmpegFB(ulFrameWidth, ulFrameHeight, ulBitRate,
+                                         pszMPEGFile, &pFramebuffer);
+                if (rcc != S_OK)
+                    LogError("Failed to initialise video capturing - make sure that the file format\n"
+                             "you wish to use is supported on your system\n", rcc);
+            }
+            if (RT_SUCCESS(rrc) && (S_OK == rcc))
+            {
+                Log2(("VBoxHeadless: Registering framebuffer\n"));
+                pFramebuffer->AddRef();
+                display->RegisterExternalFramebuffer(pFramebuffer);
+            }
+            if (!RT_SUCCESS(rrc) || (rcc != S_OK))
+                rc = E_FAIL;
         }
         if (rc != S_OK)
         {
-            LogError ("Failed to set up video capturing\n", 1);
             return -1;
         }
 #endif /* defined(VBOX_FFMPEG) */
