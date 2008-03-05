@@ -37,6 +37,13 @@ __BEGIN_DECLS
  * @{
  */
 
+/** Maximum number of CPUs we support in one system. 
+ * @remarks The current limit in Windows (affinity mask)
+ *
+ */
+#define RT_MP_MAX_CPU                   64
+
+
 /** A CPU identifier. 
  * @remarks This doesn't have to correspond to the APIC ID (intel/amd). Nor 
  *          does it have to correspond to the bits in the affinity mask, at
