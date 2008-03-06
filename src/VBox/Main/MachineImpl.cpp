@@ -8694,7 +8694,7 @@ void SessionMachine::takeSnapshotHandler (TakeSnapshotTask &aTask)
         alock.leave();
 
         /* copy the state file */
-        int vrc = RTFileCopyEx (stateFrom, stateTo, progressCallback,
+        int vrc = RTFileCopyEx (stateFrom, stateTo, 0, progressCallback,
                                 static_cast <Progress *> (mSnapshotData.mServerProgress));
 
         alock.enter();
@@ -9277,7 +9277,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
                 snapshotLock.unlock();
                 alock.leave();
                 int vrc = RTFileCopyEx (snapStateFilePath, stateFilePath,
-                                        progressCallback, aTask.progress);
+                                        0, progressCallback, aTask.progress);
                 alock.enter();
                 snapshotLock.lock();
 

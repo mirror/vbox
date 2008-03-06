@@ -43,6 +43,6 @@
  */
 RTDECL(int) RTFileCopy(const char *pszSrc, const char *pszDst)
 {
-    return RTFileCopyEx(pszSrc, pszDst, NULL, NULL);
+    return RTFileCopyEx(pszSrc, pszDst, 0, NULL, NULL);
 }
 
