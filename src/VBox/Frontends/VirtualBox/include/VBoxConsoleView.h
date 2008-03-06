@@ -284,6 +284,7 @@ private:
 #if defined(Q_WS_MAC)
     CGImageRef mVirtualBoxLogo;
 #endif
+    QSize mLastSizeHint;
 };
 
 #endif // __VBoxConsoleView_h__

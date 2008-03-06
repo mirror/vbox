@@ -35,3 +35,4 @@ const char* VBoxDefs::GUI_RegistrationDlgWinID = "GUI/RegistrationDlgWinID";
 const char* VBoxDefs::GUI_RegistrationData = "GUI/RegistrationData";
 const char* VBoxDefs::GUI_LastVMSelected = "GUI/LastVMSelected";
 const char* VBoxDefs::GUI_InfoDlgState = "GUI/InfoDlgState";
+const char* VBoxDefs::GUI_LastSizeHint = "GUI/LastSizeHint";
