@@ -89,6 +89,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/initterm-r0drv-linux.c=>r0drv/linux/initterm-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/memobj-r0drv-linux.c=>r0drv/linux/memobj-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/mp-r0drv-linux.c=>r0drv/linux/mp-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/mp-r0drv.h=>r0drv/mp-r0drv.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/process-r0drv-linux.c=>r0drv/linux/process-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semevent-r0drv-linux.c=>r0drv/linux/semevent-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semeventmulti-r0drv-linux.c=>r0drv/linux/semeventmulti-r0drv-linux.c \

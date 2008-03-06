@@ -70,6 +70,7 @@ OBJS   = \
 	SUPDRVShared.o \
 	r0drv/alloc-r0drv.o \
 	r0drv/initterm-r0drv.o \
+	r0drv/linux/mp-r0drv-linux.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/initterm-r0drv-linux.o \
 	r0drv/linux/process-r0drv-linux.o \
