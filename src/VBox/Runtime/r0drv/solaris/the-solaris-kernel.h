@@ -27,6 +27,8 @@
 #ifndef ___the_solaris_kernel_h
 #define ___the_solaris_kernel_h
 
+#define _MACHDEP /* needed for cpuset_t and sys/x_call.h */
+
 #include <sys/kmem.h>
 #include <sys/types.h>
 #include <sys/mman.h>
@@ -41,6 +43,9 @@
 #include <sys/vmsystm.h>
 #include <sys/cyclic.h>
 #include <sys/class.h>
+#include <sys/cpuvar.h>
+#include <sys/x_call.h> /* in platform dir */
+#include <sys/x86_archext.h>
 #include <vm/hat.h>
 #include <vm/seg_vn.h>
 #include <vm/seg_kmem.h>
