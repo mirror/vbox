@@ -3534,7 +3534,6 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
       rv2 = es->GetCurrentExceptionManager (getter_AddRefs (em));
       if (NS_SUCCEEDED(rv2))
       {
-        nsCOMPtr <nsIException> exception;
         rv2 = em->GetCurrentException (getter_AddRefs (exception));
         if (NS_SUCCEEDED(rv2))
         {
