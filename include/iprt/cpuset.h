@@ -40,22 +40,26 @@ __BEGIN_DECLS
 /**
  * Clear all CPUs.
  *
+ * @returns pSet.
  * @param   pSet    Pointer to the set.
  */
-DECLINLINE(void) RTCpuSetEmpty(PRTCPUSET pSet)
+DECLINLINE(PRTCPUSET) RTCpuSetEmpty(PRTCPUSET pSet)
 {
     *pSet = 0;
+    return pSet;
 }
 
 
 /**
  * Set all CPUs.
  *
+ * @returns pSet.
  * @param   pSet    Pointer to the set.
  */
-DECLINLINE(void) RTCpuSetFill(PRTCPUSET pSet)
+DECLINLINE(PRTCPUSET) RTCpuSetFill(PRTCPUSET pSet)
 {
     *pSet = UINT64_MAX;
+    return pSet;
 }
 
 
@@ -127,46 +131,28 @@ DECLINLINE(uint64_t) RTCpuSetToU64(PCRTCPUSET pSet)
  * @param   pSet    Pointer to the set.
  * @param   fMask   The mask.
  */
-DECLINLINE(void) RTCpuSetFromU64(PRTCPUSET pSet, uint64_t fMask)
+DECLINLINE(PRTCPUSET) RTCpuSetFromU64(PRTCPUSET pSet, uint64_t fMask)
 {
     *pSet = fMask;
+    return pSet;
 }
 
 
 /**
- * Gets the identifier of the CPU executing the call.
+ * Count the CPUs in the set.
  *
- * When called from a system mode where scheduling is active, like ring-3 or
- * kernel mode with interrupts enabled on some systems, no assumptions should
- * be made about the current CPU when the call returns.
- *
- * @returns CPU Id.
+ * @returns CPU count.
+ * @param   pSet    Pointer to the set.
  */
-RTDECL(RTCPUID) RTMpCpuId(void);
-
-/**
- * Checks if a CPU is online or not.
- *
- * @returns true/false accordingly.
- * @param   idCpu       The identifier of the CPU.
- */
-RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu);
-
-/**
- * Checks if a CPU exist or not / validates a CPU id.
- *
- * @returns true/false accordingly.
- * @param   idCpu       The identifier of the CPU.
- */
-RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu);
-
-/**
- * Converts a CPU identifier to a CPU set index.
- *
- * @returns The CPU set index on success, -1 on failure.
- * @param   idCpu       The identifier of the CPU.
- */
-RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu);
+DECLINLINE(RTCPUID) RTCpuSetCount(PRTCPUSET pSet)
+{
+    RTCPUID cCpus = 0;
+    RTCPUID iCpu = 64;
+    while (iCpu-- > 0)
+        if (*pSet & RT_BIT_64(iCpu))
+            cCpus++;
+    return cCpus;
+}
 
 
 /** @} */
