@@ -748,7 +748,7 @@ typedef const RTGCPHYS *PCRTGCPHYS;
 /** @def NIL_RTGCPHYS
  * NIL GC Physical Address.
  * NIL_RTGCPHYS is used to signal an invalid physical address, similar
- * to the NULL pointer. Note that this value may actually be valid in 
+ * to the NULL pointer. Note that this value may actually be valid in
  * some contexts.
  */
 #define NIL_RTGCPHYS     ((RTGCPHYS)~0U) /** @todo change this to (~(RTGCPHYS)0) or maybe NIL_RTGCPHYS32? */
@@ -977,6 +977,26 @@ typedef R3PTRTYPE(struct RTENVINTERNAL *)           RTENV;
 typedef RTENV                                      *PRTENV;
 /** NIL simple heap handle. */
 #define NIL_RTENV                                   ((RTENV)0)
+
+/** A CPU identifier.
+ * @remarks This doesn't have to correspond to the APIC ID (intel/amd). Nor
+ *          does it have to correspond to the bits in the affinity mask, at
+ *          least not until we've sorted out Windows NT. */
+typedef RTHCUINTPTR                                 RTCPUID;
+/** Pointer to a CPU identifier. */
+typedef RTCPUID                                    *PRTCPUID;
+/** Pointer to a const CPU identifier. */
+typedef RTCPUID const                              *PCRTCPUID;
+/** Nil CPU Id. */
+#define NIL_RTCPUID                                 ((RTCPUID)~0)
+
+/** A CPU set.
+ * Treat this as an opaque type and always use RTCpuSet* for manupulating it. */
+typedef uint64_t                                    RTCPUSET;
+/** Pointer to a CPU set. */
+typedef RTCPUSET                                   *PRTCPUSET;
+/** Pointer to a const CPU set. */
+typedef RTCPUSET const                             *PCRTCPUSET;
 
 
 /**
