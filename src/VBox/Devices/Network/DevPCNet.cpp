@@ -600,8 +600,9 @@ static int pcnetSyncTransmit(PCNetState *pData);
  * @param pData         adapter private data
  * @param addr          physical address of the descriptor
  * @param fRetIfNotOwn  return immediately after reading the own flag if we don't own the descriptor
+ * @return              true if we own the descriptor, false otherwise
  */
-DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr, bool fRetIfNotOwn)
+DECLINLINE(bool) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr, bool fRetIfNotOwn)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     uint8_t    ownbyte;
@@ -612,7 +613,7 @@ DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr, bool
 
         PDMDevHlpPhysRead(pDevIns, addr+3, &ownbyte, 1);
         if (!(ownbyte & 0x80) && fRetIfNotOwn)
-            return;
+            return false;
         PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda[0], sizeof(xda));
         ((uint32_t *)tmd)[0] = (uint32_t)xda[0] | ((uint32_t)(xda[1] & 0x00ff) << 16);
         ((uint32_t *)tmd)[1] = (uint32_t)xda[2] | ((uint32_t)(xda[1] & 0xff00) << 16);
@@ -623,7 +624,7 @@ DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr, bool
     {
         PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
         if (!(ownbyte & 0x80) && fRetIfNotOwn)
-            return;
+            return false;
         PDMDevHlpPhysRead(pDevIns, addr, (void*)tmd, 16);
     }
     else
@@ -631,7 +632,7 @@ DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr, bool
         uint32_t xda[4];
         PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
         if (!(ownbyte & 0x80) && fRetIfNotOwn)
-            return;
+            return false;
         PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda[0], sizeof(xda));
         ((uint32_t *)tmd)[0] = xda[2];
         ((uint32_t *)tmd)[1] = xda[1];
@@ -645,6 +646,8 @@ DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr, bool
 #endif
     if (!(ownbyte & 0x80))
         tmd->tmd1.own = 0;
+
+    return !!tmd->tmd1.own;
 }
 
 /**
@@ -696,8 +699,9 @@ DECLINLINE(void) pcnetTmdStorePassHost(PCNetState *pData, TMD *tmd, RTGCPHYS32 a
  * @param pData         adapter private data
  * @param addr          physical address of the descriptor
  * @param fRetIfNotOwn  return immediately after reading the own flag if we don't own the descriptor
+ * @return              true if we own the descriptor, false otherwise
  */
-DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool fRetIfNotOwn)
+DECLINLINE(int) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool fRetIfNotOwn)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     uint8_t    ownbyte;
@@ -707,7 +711,7 @@ DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool
         uint16_t rda[4];
         PDMDevHlpPhysRead(pDevIns, addr+3, &ownbyte, 1);
         if ((!ownbyte & 0x80) && fRetIfNotOwn)
-            return;
+            return false;
         PDMDevHlpPhysRead(pDevIns, addr, (void*)&rda[0], sizeof(rda));
         ((uint32_t *)rmd)[0] = (uint32_t)rda[0] | ((rda[1] & 0x00ff) << 16);
         ((uint32_t *)rmd)[1] = (uint32_t)rda[2] | ((rda[1] & 0xff00) << 16);
@@ -718,7 +722,7 @@ DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool
     {
         PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
         if ((!ownbyte & 0x80) && fRetIfNotOwn)
-            return;
+            return false;
         PDMDevHlpPhysRead(pDevIns, addr, (void*)rmd, 16);
     }
     else
@@ -726,7 +730,7 @@ DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool
         uint32_t rda[4];
         PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
         if ((!ownbyte & 0x80) && fRetIfNotOwn)
-            return;
+            return false;
         PDMDevHlpPhysRead(pDevIns, addr, (void*)&rda[0], sizeof(rda));
         ((uint32_t *)rmd)[0] = rda[2];
         ((uint32_t *)rmd)[1] = rda[1];
@@ -740,6 +744,8 @@ DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool
 #endif
     if (!(ownbyte & 0x80))
         rmd->rmd1.own = 0;
+
+    return !!rmd->rmd1.own;
 }
 
 /**
@@ -1519,10 +1525,9 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
         if (!fSkipCurrent)
         {
             addr = pcnetRdraAddr(pData, i);
-            pcnetRmdLoad(pData, &rmd, PHYSADDR(pData, addr), true);
             CSR_CRDA(pData) = CSR_CRBA(pData) = 0;
             CSR_CRBC(pData) = CSR_CRST(pData) = 0;
-            if (!rmd.rmd1.own)
+            if (!pcnetRmdLoad(pData, &rmd, PHYSADDR(pData, addr), true))
             {
                 STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatRdtePoll), a);
                 return;
@@ -1558,10 +1563,9 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
         if (--i < 1)
             i = CSR_RCVRL(pData);
         addr = pcnetRdraAddr(pData, i);
-        pcnetRmdLoad(pData, &rmd, PHYSADDR(pData, addr), true);
         CSR_NRDA(pData) = CSR_NRBA(pData) = 0;
         CSR_NRBC(pData) = 0;
-        if (!rmd.rmd1.own)
+        if (!pcnetRmdLoad(pData, &rmd, PHYSADDR(pData, addr), true))
         {
             STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatRdtePoll), a);
             return;
@@ -1605,9 +1609,7 @@ static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
     {
         RTGCPHYS32 cxda = pcnetTdraAddr(pData, CSR_XMTRC(pData));
 
-        pcnetTmdLoad(pData, tmd, PHYSADDR(pData, cxda), true);
-
-        if (!tmd->tmd1.own)
+        if (!pcnetTmdLoad(pData, tmd, PHYSADDR(pData, cxda), true))
         {
             STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatTdtePoll), a);
             return 0;
@@ -1765,12 +1767,11 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
                 if (--i < 1)
                     i = CSR_RCVRL(pData);
                 next_crda = pcnetRdraAddr(pData, i);
-                pcnetRmdLoad(pData, &next_rmd, PHYSADDR(pData, next_crda), true);
 
                 /* Check next descriptor's own bit. If we don't own it, we have
                  * to quit and write error status into the last descriptor we own.
                  */
-                if (!next_rmd.rmd1.own)
+                if (!pcnetRmdLoad(pData, &next_rmd, PHYSADDR(pData, next_crda), true))
                     break;
 
                 /* Write back current descriptor, clear the own bit. */
@@ -2129,7 +2130,6 @@ static int pcnetAsyncTransmit(PCNetState *pData)
 
         /*
          * The typical case - a complete packet.
-         * This can be performed with zero copy in Ring-3.
          */
         if (tmd.tmd1.stp && tmd.tmd1.enp)
         {
@@ -4706,7 +4706,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,    "",                                    "/Devices/PCNet%d/Xmit/Skipped", iInstance, i + 1);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet interrupt checks",   "/Devices/PCNet%d/Interrupt", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet interrupt checks",   "/Devices/PCNet%d/UpdateIRQ", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatPollTimer,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet poll timer",         "/Devices/PCNet%d/PollTimer", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMIIReads,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of MII reads",                "/Devices/PCNet%d/MIIReads", iInstance);
 # ifdef PCNET_NO_POLLING
