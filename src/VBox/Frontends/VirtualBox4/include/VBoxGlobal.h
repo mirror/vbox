@@ -263,7 +263,7 @@ public:
     {
         QStringVector::const_iterator it =
             qFind (clipboardTypes.begin(), clipboardTypes.end(), s);
-        AssertMsg (it != clipboardTypes.end(), ("No value for {%s}", s.latin1()));
+        AssertMsg (it != clipboardTypes.end(), ("No value for {%s}", s.toLatin1().constData()));
         return KClipboardMode (it - clipboardTypes.begin());
     }
 
@@ -277,7 +277,7 @@ public:
     {
         QStringVector::const_iterator it =
             qFind (ideControllerTypes.begin(), ideControllerTypes.end(), s);
-        AssertMsg (it != ideControllerTypes.end(), ("No value for {%s}", s.latin1()));
+        AssertMsg (it != ideControllerTypes.end(), ("No value for {%s}", s.toLatin1().constData()));
         return KIDEControllerType (it - ideControllerTypes.begin());
     }
 
@@ -285,7 +285,7 @@ public:
     {
         QStringVector::const_iterator it =
             qFind (vrdpAuthTypes.begin(), vrdpAuthTypes.end(), s);
-        AssertMsg (it != vrdpAuthTypes.end(), ("No value for {%s}", s.latin1()));
+        AssertMsg (it != vrdpAuthTypes.end(), ("No value for {%s}", s.toLatin1().constData()));
         return KVRDPAuthType (it - vrdpAuthTypes.begin());
     }
 
@@ -293,7 +293,7 @@ public:
     {
         QStringVector::const_iterator it =
             qFind (portModeTypes.begin(), portModeTypes.end(), s);
-        AssertMsg (it != portModeTypes.end(), ("No value for {%s}", s.latin1()));
+        AssertMsg (it != portModeTypes.end(), ("No value for {%s}", s.toLatin1().constData()));
         return KPortMode (it - portModeTypes.begin());
     }
 
@@ -301,7 +301,7 @@ public:
     {
         QStringVector::const_iterator it =
             qFind (usbFilterActionTypes.begin(), usbFilterActionTypes.end(), s);
-        AssertMsg (it != usbFilterActionTypes.end(), ("No value for {%s}", s.latin1()));
+        AssertMsg (it != usbFilterActionTypes.end(), ("No value for {%s}", s.toLatin1().constData()));
         return KUSBDeviceFilterAction (it - usbFilterActionTypes.begin());
     }
 
@@ -331,7 +331,7 @@ public:
     {
         QStringVector::const_iterator it =
             qFind (deviceTypes.begin(), deviceTypes.end(), s);
-        AssertMsg (it != deviceTypes.end(), ("No value for {%s}", s.latin1()));
+        AssertMsg (it != deviceTypes.end(), ("No value for {%s}", s.toLatin1().constData()));
         return KDeviceType (it - deviceTypes.begin());
     }
 
@@ -347,7 +347,7 @@ public:
     {
         QStringVector::const_iterator it =
             qFind (audioDriverTypes.begin(), audioDriverTypes.end(), s);
-        AssertMsg (it != audioDriverTypes.end(), ("No value for {%s}", s.latin1()));
+        AssertMsg (it != audioDriverTypes.end(), ("No value for {%s}", s.toLatin1().constData()));
         return KAudioDriverType (it - audioDriverTypes.begin());
     }
 
@@ -361,7 +361,7 @@ public:
     {
         QStringVector::const_iterator it =
             qFind (audioControllerTypes.begin(), audioControllerTypes.end(), s);
-        AssertMsg (it != audioControllerTypes.end(), ("No value for {%s}", s.latin1()));
+        AssertMsg (it != audioControllerTypes.end(), ("No value for {%s}", s.toLatin1().constData()));
         return KAudioControllerType (it - audioControllerTypes.begin());
     }
 
@@ -375,7 +375,7 @@ public:
     {
         QStringVector::const_iterator it =
             qFind (networkAdapterTypes.begin(), networkAdapterTypes.end(), s);
-        AssertMsg (it != networkAdapterTypes.end(), ("No value for {%s}", s.latin1()));
+        AssertMsg (it != networkAdapterTypes.end(), ("No value for {%s}", s.toLatin1().constData()));
         return KNetworkAdapterType (it - networkAdapterTypes.begin());
     }
 
@@ -389,7 +389,7 @@ public:
     {
         QStringVector::const_iterator it =
             qFind (networkAttachmentTypes.begin(), networkAttachmentTypes.end(), s);
-        AssertMsg (it != networkAttachmentTypes.end(), ("No value for {%s}", s.latin1()));
+        AssertMsg (it != networkAttachmentTypes.end(), ("No value for {%s}", s.toLatin1().constData()));
         return KNetworkAttachmentType (it - networkAttachmentTypes.begin());
     }
 
