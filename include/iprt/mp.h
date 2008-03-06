@@ -37,15 +37,15 @@ __BEGIN_DECLS
  * @{
  */
 
-/** Maximum number of CPUs we support in one system. 
+/** Maximum number of CPUs we support in one system.
  * @remarks The current limit in Windows (affinity mask)
  *
  */
 #define RT_MP_MAX_CPU                   64
 
 
-/** A CPU identifier. 
- * @remarks This doesn't have to correspond to the APIC ID (intel/amd). Nor 
+/** A CPU identifier.
+ * @remarks This doesn't have to correspond to the APIC ID (intel/amd). Nor
  *          does it have to correspond to the bits in the affinity mask, at
  *          least not until we've sorted out Windows NT. */
 typedef RTHCUINTPTR RTCPUID;
@@ -58,21 +58,40 @@ typedef RTCPUID const *PCRTCPUID;
 
 /**
  * Gets the identifier of the CPU executing the call.
- * 
+ *
  * When called from a system mode where scheduling is active, like ring-3 or
  * kernel mode with interrupts enabled on some systems, no assumptions should
  * be made about the current CPU when the call returns.
- * 
+ *
  * @returns CPU Id.
  */
 RTDECL(RTCPUID) RTMpCpuId(void);
+
+/**
+ * Checks if a CPU is online or not.
+ *
+ * @returns true/false accordingly.
+ * @param   idCpu       The identifier of the CPU.
+ */
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu);
+
+/**
+ * Checks if a CPU exist or not / validates a CPU id.
+ *
+ * @returns true/false accordingly.
+ * @param   idCpu       The identifier of the CPU.
+ */
+RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu);
+
+/** @todo we need some kind of RTCPUSET and converstion between RTCPUID and it. */
+
 
 #ifdef IN_RING0
 
 /**
  * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
  * is to be called on the target cpus.
- * 
+ *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     The 1st user argument.
  * @param   pvUser2     The 2nd user argument.
@@ -83,14 +102,14 @@ typedef FNRTMPWORKER *PFNRTMPWORKER;
 
 /**
  * Executes a function on each (online) CPU in the system.
- * 
+ *
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NOT_SUPPORTED if this kind of operation isn't supported by the system.
- * 
+ *
  * @param   pfnWorker       The worker function.
- * @param   pvUser1         The first user argument for the worker.        
- * @param   pvUser2         The second user argument for the worker.        
+ * @param   pvUser1         The first user argument for the worker.
+ * @param   pvUser2         The second user argument for the worker.
  *
  * @remarks The execution isn't in any way guaranteed to be simultaneous,
  *          it might even be serial (cpu by cpu).
@@ -99,15 +118,15 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 
 /**
  * Executes a function on a all other (online) CPUs in the system.
- * 
+ *
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NOT_SUPPORTED if this kind of operation isn't supported by the system.
- * 
+ *
  * @param   pfnWorker       The worker function.
- * @param   pvUser1         The first user argument for the worker.        
- * @param   pvUser2         The second user argument for the worker.        
- * 
+ * @param   pvUser1         The first user argument for the worker.
+ * @param   pvUser2         The second user argument for the worker.
+ *
  * @remarks The execution isn't in any way guaranteed to be simultaneous,
  *          it might even be serial (cpu by cpu).
  */
@@ -115,17 +134,17 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 
 /**
  * Executes a function on a specific CPU in the system.
- * 
+ *
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NOT_SUPPORTED if this kind of operation isn't supported by the system.
  * @retval  VERR_CPU_OFFLINE if the CPU is offline.
  * @retval  VERR_CPU_NOT_FOUND if the CPU wasn't found.
- * 
+ *
  * @param   idCpu           The id of the CPU.
  * @param   pfnWorker       The worker function.
- * @param   pvUser1         The first user argument for the worker.        
- * @param   pvUser2         The second user argument for the worker.        
+ * @param   pvUser1         The first user argument for the worker.
+ * @param   pvUser2         The second user argument for the worker.
  */
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 
