@@ -2857,6 +2857,11 @@ void VBoxConsoleView::onStateChange (KMachineState state)
                     dsp.InvalidateAndUpdate();
                 }
             }
+            else if (mLastState == KMachineState_Starting)
+            {
+                /* Suggest an initial size. */
+                sendInitialSizeHint ();
+            }
             /* reuse the focus event handler to capture input */
             if (hasFocus())
                 focusEvent (true /* aHasFocus */);
@@ -3562,6 +3567,36 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 
         mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
     }
+}
+
+
+/**
+ * We send an initial size hint to the VM on startup, so that it can choose
+ * an initial size which is well-readable on the host screen.
+ */
+void VBoxConsoleView::sendInitialSizeHint(void)
+{
+    enum { NUM_RES = 4 };
+
+    const int sizeList[NUM_RES][2] =
+    {
+        { 640, 480 },
+        { 800, 600 },
+        { 1024, 768 },
+        { 1280, 960 }
+    };
+    /** @todo save the last resize hint sent before a VM shutdown in
+        the XML and send that on next startup. */
+    QRect screen = QApplication::desktop()->screenGeometry (this);
+    unsigned i = 0;
+    /* Find a size that is smaller than three quarters of the reported
+       screen geometry. */
+    while (   (i + 1 < NUM_RES)
+           && (sizeList[i + 1][0] < screen.width() * 3 / 4)
+           && (sizeList[i + 1][1] < screen.height() * 3 / 4))
+        ++i;
+    LogFlowFunc (("Will suggest %d x %d\n", sizeList[i][0], sizeList[i][1]));
+    mConsole.GetDisplay().SetVideoModeHint (sizeList[i][0], sizeList[i][1], 0, 0);
 }
 
 /**
