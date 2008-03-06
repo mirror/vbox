@@ -602,7 +602,7 @@ DECLINLINE(void) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr)
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     uint8_t    ownbyte;
 
-    if (!BCR_SWSTYLE(pData))
+    if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
     {
         uint16_t xda[4];
 
@@ -645,7 +645,7 @@ DECLINLINE(void) pcnetTmdStorePassHost(PCNetState *pData, TMD *tmd, RTGCPHYS32 a
 {
     STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatTmdStore), a);
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
-    if (!BCR_SWSTYLE(pData))
+    if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
     {
         uint16_t xda[4];
         xda[0] =   ((uint32_t *)tmd)[0]        & 0xffff;
@@ -688,7 +688,7 @@ DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr)
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     uint8_t    ownbyte;
 
-    if (!BCR_SWSTYLE(pData))
+    if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
     {
         uint16_t rda[4];
         PDMDevHlpPhysRead(pDevIns, addr+3, &ownbyte, 1);
@@ -729,7 +729,7 @@ DECLINLINE(void) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr)
 DECLINLINE(void) pcnetRmdStorePassHost(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
-    if (!BCR_SWSTYLE(pData))
+    if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
     {
         uint16_t rda[4];
         rda[0] =   ((uint32_t *)rmd)[0]      & 0xffff;
@@ -1883,9 +1883,7 @@ DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS32 GCPhysFrame, con
 {
     Assert(cbFrame < sizeof(pData->abSendBuf));
 
-    PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame,
-                      &pData->abSendBuf[0],
-                      cbFrame);
+    PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame, &pData->abSendBuf[0], cbFrame);
     pData->SendFrame.pvBuf = pData->abSendBuf;
     pData->SendFrame.cb    = cbFrame;
 }
@@ -1897,9 +1895,7 @@ DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS32 GCPhysFrame, con
 DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame)
 {
     Assert(pData->SendFrame.cb + cbFrame < sizeof(pData->abSendBuf));
-    PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame,
-                      &pData->abSendBuf[pData->SendFrame.cb],
-                      cbFrame);
+    PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame, &pData->abSendBuf[pData->SendFrame.cb], cbFrame);
     pData->SendFrame.cb += cbFrame;
 }
 
@@ -4637,12 +4633,14 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertRCReturn(rc, rc);
 
     unsigned i;
+    NOREF(i);
+
 #ifdef PCNET_QUEUE_SEND_PACKETS
     pData->ulXmitRingBufProd   = 0;
     pData->ulXmitRingBufCons   = 0;
     pData->pXmitRingBuffer[0]  = (char *)RTMemAlloc(PCNET_MAX_XMIT_SLOTS * 1536);
     pData->cbXmitRingBuffer[0] = 0;
-    for (i=1;i<PCNET_MAX_XMIT_SLOTS;i++)
+    for (i = 1; i < PCNET_MAX_XMIT_SLOTS; i++)
     {
         pData->pXmitRingBuffer[i]  = pData->pXmitRingBuffer[i-1] + 1536;
         pData->cbXmitRingBuffer[i] = 0;
