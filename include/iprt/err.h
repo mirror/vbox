@@ -468,7 +468,7 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 #define VERR_WRITE_ERROR                    (-112)
 /** Write protect error. */
 #define VERR_WRITE_PROTECT                  (-113)
-/** Sharing violetion, file is being used by another process. */
+/** Sharing violation, file is being used by another process. */
 #define VERR_SHARING_VIOLATION              (-114)
 /** Unable to lock a region of a file. */
 #define VERR_FILE_LOCK_FAILED               (-115)
