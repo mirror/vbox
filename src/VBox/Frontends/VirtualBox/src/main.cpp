@@ -235,6 +235,8 @@ int main (int argc, char **argv)
 #endif
 #endif
 
+            vboxGlobal().checkForAutoConvertedSettings();
+
             VBoxGlobalSettings settings = vboxGlobal().settings();
             /* Process known keys */
             bool noSelector = settings.isFeatureActive ("noSelector");
