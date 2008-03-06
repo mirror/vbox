@@ -139,10 +139,11 @@ void vboxClientSignalHandler(int cSignal)
  */
 void vboxClientSetSignalHandlers(void)
 {
-    struct sigaction sigAction = { { 0 } };
+    struct sigaction sigAction;
 
     sigAction.sa_handler = vboxClientSignalHandler;
     sigemptyset(&sigAction.sa_mask);
+    sigAction.sa_flags = 0;
     sigaction(SIGHUP, &sigAction, NULL);
     sigaction(SIGINT, &sigAction, NULL);
     sigaction(SIGQUIT, &sigAction, NULL);
