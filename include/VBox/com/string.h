@@ -129,7 +129,7 @@ public:
 
     int compare (const BSTR str) const
     {
-        return ::RTStrUcs2Cmp ((PRTUCS2) bstr, (PRTUCS2) str);
+        return ::RTUtf16Cmp ((PRTUTF16) bstr, (PRTUTF16) str);
     }
 
     bool operator == (const Bstr &that) const { return !compare (that.bstr); }
@@ -164,7 +164,7 @@ public:
 
     bool isEmpty() const { return isNull() || *bstr == 0; }
 
-    size_t length() const { return isNull() ? 0 : ::RTStrUcs2Len ((PRTUCS2) bstr); }
+    size_t length() const { return isNull() ? 0 : ::RTUtf16Len ((PRTUTF16) bstr); }
 
     /** Intended to to pass instances as |BSTR| input parameters to methods. */
     operator const BSTR () const { return bstr; }
@@ -251,10 +251,10 @@ private:
     {
         if (rs)
         {
-            PRTUCS2 s = NULL;
-            ::RTStrUtf8ToUcs2 (&s, rs);
+            PRTUTF16 s = NULL;
+            ::RTStrToUtf16 (rs, &s);
             raw_copy (ls, (BSTR) s);
-            ::RTStrUcs2Free (s);
+            ::RTUtf16Free (s);
         }
     }
 
@@ -271,7 +271,7 @@ inline bool operator!= (const BSTR l, const Bstr &r) { return r.operator!= (l); 
 
 /**
  *  Helper class that represents UTF8 (|char *|) strings. Useful in
- *  conjunction with Bstr to simplify conversions beetween UCS2 (|BSTR|)
+ *  conjunction with Bstr to simplify conversions beetween UTF16 (|BSTR|)
  *  and UTF8.
  *
  *  This class uses COM/XPCOM-provided memory management routines to allocate
@@ -370,7 +370,14 @@ public:
 
     int compare (const char *s) const
     {
-        return str == s ? 0 : ::strcmp (str, s);
+        if (str == s)
+            return 0;
+        if (str == NULL)
+            return -1;
+        if (s == NULL)
+            return 1;
+
+        return ::strcmp (str, s);
     }
 
     bool operator == (const Utf8Str &that) const { return !compare (that.str); }
@@ -485,10 +492,10 @@ private:
         if (rs)
         {
 #if !defined (VBOX_WITH_XPCOM)
-            ::RTStrUcs2ToUtf8 (&ls, (PRTUCS2) rs);
+            ::RTUtf16ToUtf8 ((PRTUTF16) rs, &ls);
 #else
             char *s = NULL;
-            ::RTStrUcs2ToUtf8 (&s, (PRTUCS2) rs);
+            ::RTUtf16ToUtf8 ((PRTUTF16) rs, &s);
             raw_copy (ls, s);
             ::RTStrFree (s);
 #endif
