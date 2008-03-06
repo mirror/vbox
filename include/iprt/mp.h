@@ -78,6 +78,38 @@ RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu);
  */
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu);
 
+/**
+ * Gets set of the CPUs present in the system.
+ *
+ * This set includes CPUs in any state, see RTGetOnlineSet()
+ * for an alternative.
+ *
+ * @returns pSet.
+ * @param   pSet    Where to put the set.
+ */
+RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet);
+
+/**
+ * Get the count of CPUs presetn in the system.
+ *
+ * @return The count.
+ */
+RTDECL(RTCPUID) RTMpGetCount(void);
+
+/**
+ * Gets set of the CPUs present that are currently online.
+ *
+ * @returns pSet.
+ * @param   pSet    Where to put the set.
+ */
+RTDECL(void) RTMpGetOnlineSet(PRTCPUSET pSet);
+
+/**
+ * Get the count of CPUs that are currently online.
+ *
+ * @return The count.
+ */
+RTDECL(RTCPUID) RTMpGetOnlineCount(void);
 
 
 #ifdef IN_RING0
