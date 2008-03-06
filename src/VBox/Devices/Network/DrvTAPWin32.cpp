@@ -563,7 +563,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pData->hHaltAsyncEventSem = CreateEvent(NULL, FALSE, FALSE, NULL);
 
     /* Create asynchronous thread */
-    rc = RTThreadCreate(&pData->hThread, drvTAPW32AsyncIo, (void *)pData, 128*1024, RTTHREADTYPE_IO, 0, "TAPWIN32");
+    rc = RTThreadCreate(&pData->hThread, drvTAPW32AsyncIo, (void *)pData, 128*1024, RTTHREADTYPE_IO, 0, "TAP");
     AssertRC(rc);
 
     Assert(pData->hThread != NIL_RTTHREAD && pData->hHaltAsyncEventSem != NULL);
