@@ -3120,8 +3120,20 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
              * the link state.
              */
             PPDMIBASE pBase;
-            int vrc = PDMR3QueryDeviceLun (mpVM, "pcnet", (unsigned) ulInstance,
-                                           0, &pBase);
+            const char *cszAdapterName = "pcnet";
+#ifdef VBOX_WITH_E1000
+            /*
+             * Perharps it would be much wiser to wrap both 'pcnet' and 'e1000'
+             * into generic 'net' device.
+             */
+            NetworkAdapterType_T adapterType;
+            rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
+            AssertComRC(rc);
+            if (adapterType == NetworkAdapterType::I82540EM)
+                cszAdapterName = "e1000";
+#endif
+            int vrc = PDMR3QueryDeviceLun (mpVM, cszAdapterName,
+                                           (unsigned) ulInstance, 0, &pBase);
             ComAssertRC (vrc);
             if (VBOX_SUCCESS (vrc))
             {
