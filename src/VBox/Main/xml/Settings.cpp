@@ -796,7 +796,8 @@ public:
 struct XmlTreeBackend::Data
 {
     Data() : ctxt (NULL), doc (NULL)
-           , inputResolver (NULL) {}
+           , inputResolver (NULL)
+           , autoConverter (NULL), oldVersion (NULL) {}
 
     xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
@@ -805,29 +806,10 @@ struct XmlTreeBackend::Data
 
     InputResolver *inputResolver;
 
+    AutoConverter *autoConverter;
+    char *oldVersion;
+
     std::auto_ptr <stdx::exception_trap_base> trappedErr;
-
-    struct AutoConv
-    {
-        AutoConv() : root (NULL), attr (NULL), version (NULL), xslt (NULL) {}
-        ~AutoConv() { uninit(); }
-
-        void uninit()
-        {
-            RTStrFree (xslt); xslt = NULL;
-            RTStrFree (version); version = NULL;
-            RTStrFree (attr); attr = NULL;
-            RTStrFree (root); root = NULL;
-        }
-
-        bool isNull() { return xslt == NULL; }
-
-        char *root;
-        char *attr;
-        char *version;
-        char *xslt;
-    }
-    autoConv;
 
     /**
      * This is to avoid throwing exceptions while in libxml2 code and
@@ -895,22 +877,19 @@ void XmlTreeBackend::resetInputResolver()
     m->inputResolver = NULL;
 }
 
-void XmlTreeBackend::setAutoConversion (const char *aRoot, const char *aAttr,
-                                        const char *aVersion, const char *aTemplate)
+void XmlTreeBackend::setAutoConverter (AutoConverter &aConverter)
 {
-    if (aRoot == NULL && aAttr == NULL && aVersion == NULL && aTemplate == NULL)
-    {
-        m->autoConv.uninit();
-        return;
-    }
+    m->autoConverter = &aConverter;
+}
 
-    if (aRoot == NULL || aAttr == NULL || aVersion == NULL || aTemplate == NULL)
-        throw EInvalidArg (RT_SRC_POS);
+void XmlTreeBackend::resetAutoConverter()
+{
+    m->autoConverter = NULL;
+}
 
-    m->autoConv.root = RTStrDup (aRoot);
-    m->autoConv.attr = RTStrDup (aAttr);
-    m->autoConv.version = RTStrDup (aVersion);
-    m->autoConv.xslt = RTStrDup (aTemplate);
+const char *XmlTreeBackend::oldVersion() const
+{
+    return m->oldVersion;
 }
 
 void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
@@ -956,99 +935,98 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
         throw XmlError (xmlCtxtGetLastError (m->ctxt));
     }
 
+    char *oldVersion = NULL;
+
     /* perform automatic document transformation if necessary */
-    if (!m->autoConv.isNull())
+    if (m->autoConverter != NULL)
     {
         Key root = Key (new XmlKeyBackend (xmlDocGetRootElement (doc)));
-        if (!strcmp (root.name(), m->autoConv.root))
+        if (m->autoConverter->needsConversion (root, oldVersion))
         {
-            const char *ver = root.stringValue (m->autoConv.attr);
-            if (strcmp (ver, m->autoConv.version))
+            xmlDocPtr xsltDoc = NULL;
+            xsltStylesheetPtr xslt = NULL;
+            xsltTransformContextPtr tranCtxt = NULL;
+            char *errorStr = NULL;
+
+            try
             {
-                /* version mismatch */
-
-                xmlDocPtr xsltDoc = NULL;
-                xsltStylesheetPtr xslt = NULL;
-                xsltTransformContextPtr tranCtxt = NULL;
-                char *errorStr = NULL;
-
-                try
+                /* parse the XSLT template */
                 {
-                    /* parse the XSLT */
-                    {
-                        Input *xsltInput =
-                            m->inputResolver->resolveEntity (m->autoConv.xslt, NULL);
-                        /* NOTE: new InputCtxt instance will be deleted when the
-                         * stream is closed by the libxml2 API */
-                        xsltDoc = xmlCtxtReadIO (m->ctxt,
-                                                 ReadCallback, CloseCallback,
-                                                 new Data::InputCtxt (xsltInput, m->trappedErr),
-                                                 m->autoConv.xslt, NULL,
-                                                 0);
-                        delete xsltInput;
-                    }
+                    Input *xsltInput =
+                        m->inputResolver->resolveEntity
+                            (m->autoConverter->templateUri(), NULL);
+                    /* NOTE: new InputCtxt instance will be deleted when the
+                     * stream is closed by the libxml2 API */
+                    xsltDoc = xmlCtxtReadIO (m->ctxt,
+                                             ReadCallback, CloseCallback,
+                                             new Data::InputCtxt (xsltInput, m->trappedErr),
+                                             m->autoConverter->templateUri(),
+                                             NULL, 0);
+                    delete xsltInput;
+                }
 
-                    if (xsltDoc == NULL)
-                    {
-                        /* look if there was a forwared exception from the lower level */
-                        if (m->trappedErr.get() != NULL)
-                            m->trappedErr->rethrow();
+                if (xsltDoc == NULL)
+                {
+                    /* look if there was a forwared exception from the lower level */
+                    if (m->trappedErr.get() != NULL)
+                        m->trappedErr->rethrow();
 
-                        throw XmlError (xmlCtxtGetLastError (m->ctxt));
-                    }
+                    throw XmlError (xmlCtxtGetLastError (m->ctxt));
+                }
 
-                    xslt = xsltParseStylesheetDoc (xsltDoc);
-                    if (xslt == NULL)
-                        throw LogicError (RT_SRC_POS);
+                xslt = xsltParseStylesheetDoc (xsltDoc);
+                if (xslt == NULL)
+                    throw LogicError (RT_SRC_POS);
 
-                    /* setup transformation error reporting */
-                    tranCtxt = xsltNewTransformContext (xslt, xsltDoc);
-                    if (tranCtxt == NULL)
-                        throw LogicError (RT_SRC_POS);
-                    xsltSetTransformErrorFunc (tranCtxt, &errorStr, ValidityErrorCallback);
+                /* setup transformation error reporting */
+                tranCtxt = xsltNewTransformContext (xslt, xsltDoc);
+                if (tranCtxt == NULL)
+                    throw LogicError (RT_SRC_POS);
+                xsltSetTransformErrorFunc (tranCtxt, &errorStr, ValidityErrorCallback);
 
-                    xmlDocPtr newDoc = xsltApplyStylesheetUser (xslt, doc, NULL,
-                                                                NULL, NULL, tranCtxt);
-                    if (newDoc == NULL)
-                        throw LogicError (RT_SRC_POS);
+                xmlDocPtr newDoc = xsltApplyStylesheetUser (xslt, doc, NULL,
+                                                            NULL, NULL, tranCtxt);
+                if (newDoc == NULL)
+                    throw LogicError (RT_SRC_POS);
 
-                    if (errorStr != NULL)
-                    {
-                        xmlFreeDoc (newDoc);
-                        throw Error (errorStr);
-                        /* errorStr is freed in catch(...) below */
-                    }
+                if (errorStr != NULL)
+                {
+                    xmlFreeDoc (newDoc);
+                    throw Error (errorStr);
+                    /* errorStr is freed in catch(...) below */
+                }
 
-                    /* replace the old document on success */
-                    xmlFreeDoc (doc);
-                    doc = newDoc;
+                /* replace the old document on success */
+                xmlFreeDoc (doc);
+                doc = newDoc;
 
+                xsltFreeTransformContext (tranCtxt);
+
+                /* NOTE: xsltFreeStylesheet() also fress the document
+                 * passed to xsltParseStylesheetDoc(). */
+                xsltFreeStylesheet (xslt);
+            }
+            catch (...)
+            {
+                /* restore the previous entity resolver */
+                xmlSetExternalEntityLoader (oldEntityLoader);
+                sThat = NULL;
+
+                RTStrFree (errorStr);
+
+                if (tranCtxt != NULL)
                     xsltFreeTransformContext (tranCtxt);
 
-                    /* NOTE: xsltFreeStylesheet() also fress the document
-                     * passed to xsltParseStylesheetDoc(). */
+                /* NOTE: xsltFreeStylesheet() also fress the document
+                 * passed to xsltParseStylesheetDoc(). */
+                if (xslt != NULL)
                     xsltFreeStylesheet (xslt);
-                }
-                catch (...)
-                {
-                    /* restore the previous entity resolver */
-                    xmlSetExternalEntityLoader (oldEntityLoader);
-                    sThat = NULL;
+                else if (xsltDoc != NULL)
+                    xmlFreeDoc (xsltDoc);
 
-                    RTStrFree (errorStr);
+                RTStrFree (oldVersion);
 
-                    if (tranCtxt != NULL)
-                        xsltFreeTransformContext (tranCtxt);
-
-                    /* NOTE: xsltFreeStylesheet() also fress the document
-                     * passed to xsltParseStylesheetDoc(). */
-                    if (xslt != NULL)
-                        xsltFreeStylesheet (xslt);
-                    else if (xsltDoc != NULL)
-                        xmlFreeDoc (xsltDoc);
-
-                    throw;
-                }
+                throw;
             }
         }
     }
@@ -1129,6 +1107,8 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
             if (schemaCtxt)
                 xmlSchemaFreeParserCtxt (schemaCtxt);
 
+            RTStrFree (oldVersion);
+
             throw;
         }
     }
@@ -1143,6 +1123,10 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
     m->doc = doc;
     /* assign the root key */
     m->root = Key (new XmlKeyBackend (xmlDocGetRootElement (m->doc)));
+
+    /* memorize the old version string also used as a flag that
+     * the conversion has been performed (transfers ownership) */
+    m->oldVersion = oldVersion;
 }
 
 void XmlTreeBackend::rawWrite (Output &aOutput)
@@ -1186,6 +1170,9 @@ void XmlTreeBackend::rawWrite (Output &aOutput)
 
 void XmlTreeBackend::reset()
 {
+    RTStrFree (m->oldVersion);
+    m->oldVersion = NULL;
+
     if (m->doc)
     {
         /* reset the root key's node */
