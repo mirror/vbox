@@ -325,7 +325,7 @@ protected:
     {
     public:
 
-        BSTRIn (const QString &s) : bstr (SysAllocString ((const OLECHAR *) s.ucs2())) {}
+        BSTRIn (const QString &s) : bstr (SysAllocString ((const OLECHAR *) s.utf16())) {}
 
         ~BSTRIn()
         {
@@ -350,7 +350,7 @@ protected:
         ~BSTROut()
         {
             if (bstr) {
-                str = QString::fromUcs2 (bstr);
+                str = QString::fromUtf16 (bstr);
                 SysFreeString (bstr);
             }
         }
