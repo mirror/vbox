@@ -1696,11 +1696,12 @@ TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GC
 endif
 
 ifeq ($(BUILD_TARGET),solaris)
-## The Solaris /usr/include.
-VBOX_SOLARIS_SYS_INCS ?= /usr/include
+## The Solaris /usr/platform/i86pc/include and /usr/include directories.
+VBOX_SOLARIS_SYS_INCS ?= /usr/platform/i86pc/include /usr/include
 
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL _STRICT_STDC IN_RING0 IN_RT_R0
+TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_SOLARIS_SYS_INCS)
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -r
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -64
 # Exclude -Wall because of solaris headers' pragma ident warnings that gcc refuses to supress.
