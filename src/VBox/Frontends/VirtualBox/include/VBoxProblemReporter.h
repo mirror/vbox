@@ -128,12 +128,16 @@ public:
 #endif
 
     void cannotOpenURL (const QString &aURL);
+    void cannotCopyFile (const QString &aSrc, const QString &aDst, int aVRC);
 
     void cannotFindLanguage (const QString &aLangID, const QString &aNlsPath);
     void cannotLoadLanguage (const QString &aLangFile);
 
     void cannotInitCOM (HRESULT rc);
     void cannotCreateVirtualBox (const CVirtualBox &vbox);
+
+    void cannotSaveGlobalSettings (const CVirtualBox &vbox,
+                                   QWidget *parent = 0);
 
     void cannotLoadGlobalConfig (const CVirtualBox &vbox, const QString &error);
     void cannotSaveGlobalConfig (const CVirtualBox &vbox);
@@ -257,6 +261,9 @@ public:
     void remindAboutAutoCapture();
     void remindAboutMouseIntegration (bool aSupportsAbsolute);
     bool remindAboutPausedVMInput();
+
+    int warnAboutAutoConvertedSettings (const QString &aFormatVersion,
+                                        const QString &aFileList);
 
     bool remindAboutInaccessibleMedia();
 

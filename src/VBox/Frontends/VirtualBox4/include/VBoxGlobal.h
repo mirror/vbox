@@ -431,6 +431,8 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
+    void checkForAutoConvertedSettings();
+
     CSession openSession (const QUuid &aId, bool aExisting = false);
 
     /** Shortcut to openSession (aId, true). */

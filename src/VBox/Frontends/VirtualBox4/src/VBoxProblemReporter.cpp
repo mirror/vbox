@@ -492,86 +492,112 @@ void VBoxProblemReporter::cannotOpenURL (const QString &aURL)
          .arg (aURL));
 }
 
+void VBoxProblemReporter::
+cannotCopyFile (const QString &aSrc, const QString &aDst, int aVRC)
+{
+    PCRTSTATUSMSG msg = RTErrGet (aVRC);
+    Assert (msg);
+
+    QString err = QString ("%1: %2").arg (msg->pszDefine, msg->pszMsgShort);
+    if (err.endsWith ("."))
+        err.truncate (err.length() - 1);
+
+    message (mainWindowShown(), VBoxProblemReporter::Error,
+        tr ("Failed to copy file <b><nobr>%1<nobr></b> to "
+             "<b><nobr>%2<nobr></b> (%3).")
+             .arg (aSrc, aDst, err));
+}
+
 void VBoxProblemReporter::cannotFindLanguage (const QString &aLangID,
                                               const QString &aNlsPath)
 {
-    message
-        (0, VBoxProblemReporter::Error,
-         tr ("<p>Could not find a language file for the language "
-             "<b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
-             "<p>The language will be temporarily reset to the system "
-             "default language. Please go to the <b>Preferences</b> "
-             "dialog which you can open from the <b>File</b> menu of the "
-             "main VirtualBox window, and select one of the existing "
-             "languages on the <b>Language</b> page.</p>")
-         .arg (aLangID).arg (aNlsPath));
+    message (0, VBoxProblemReporter::Error,
+        tr ("<p>Could not find a language file for the language "
+            "<b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
+            "<p>The language will be temporarily reset to the system "
+            "default language. Please go to the <b>Preferences</b> "
+            "dialog which you can open from the <b>File</b> menu of the "
+            "main VirtualBox window, and select one of the existing "
+            "languages on the <b>Language</b> page.</p>")
+             .arg (aLangID).arg (aNlsPath));
 }
 
 void VBoxProblemReporter::cannotLoadLanguage (const QString &aLangFile)
 {
-    message
-        (0, VBoxProblemReporter::Error,
-         tr ("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
-             "<p>The language will be temporarily reset to English (built-in). "
-             "Please go to the <b>Preferences</b> "
-             "dialog which you can open from the <b>File</b> menu of the "
-             "main VirtualBox window, and select one of the existing "
-             "languages on the <b>Language</b> page.</p>")
-         .arg (aLangFile));
+    message (0, VBoxProblemReporter::Error,
+        tr ("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
+            "<p>The language will be temporarily reset to English (built-in). "
+            "Please go to the <b>Preferences</b> "
+            "dialog which you can open from the <b>File</b> menu of the "
+            "main VirtualBox window, and select one of the existing "
+            "languages on the <b>Language</b> page.</p>")
+             .arg (aLangFile));
 }
 
 void VBoxProblemReporter::cannotInitCOM (HRESULT rc)
 {
-    message (
-        0,
-        Critical,
+    message (0, Critical,
         tr ("<p>Failed to initialize COM or to find the VirtualBox COM server. "
             "Most likely, the VirtualBox server is not running "
             "or failed to start.</p>"
             "<p>The application will now terminate.</p>"),
-        formatErrorInfo (COMErrorInfo(), rc)
-    );
+        formatErrorInfo (COMErrorInfo(), rc));
 }
 
 void VBoxProblemReporter::cannotCreateVirtualBox (const CVirtualBox &vbox)
 {
-    message (
-        0,
-        Critical,
+    message (0, Critical,
         tr ("<p>Failed to create the VirtualBox COM object.</p>"
             "<p>The application will now terminate.</p>"),
-        formatErrorInfo (vbox)
-    );
+        formatErrorInfo (vbox));
+}
+
+void VBoxProblemReporter::cannotSaveGlobalSettings (const CVirtualBox &vbox,
+                                                    QWidget *parent /* = 0 */)
+{
+    /* preserve the current error info before calling the object again */
+    COMResult res (vbox);
+
+    message (parent ? parent : mainWindowShown(), Error,
+             tr ("<p>Failed to save the global VirtualBox settings to "
+                 "<b><nobr>%1</nobr></b>.</p>")
+                 .arg (vbox.GetSettingsFilePath()),
+             formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotLoadGlobalConfig (const CVirtualBox &vbox,
                                                   const QString &error)
 {
+    /* preserve the current error info before calling the object again */
+    COMResult res (vbox);
+
     message (mainWindowShown(), Critical,
-        tr ("<p>Failed to load the global GUI configuration.</p>"
-            "<p>The application will now terminate.</p>"),
-        !vbox.isOk() ? formatErrorInfo (vbox)
-                     : QString ("<p>%1</p>").arg (VBoxGlobal::highlight (error)));
+        tr ("<p>Failed to load the global GUI configuration from "
+            "<b><nobr>%1</nobr></b>.</p>"
+            "<p>The application will now terminate.</p>")
+             .arg (vbox.GetSettingsFilePath()),
+        !res.isOk() ? formatErrorInfo (res)
+                    : QString ("<p>%1</p>").arg (VBoxGlobal::highlight (error)));
 }
 
 void VBoxProblemReporter::cannotSaveGlobalConfig (const CVirtualBox &vbox)
 {
-    message (
-        mainWindowShown(),
-        Critical,
-        tr ("<p>Failed to save the global GUI configuration.<p>"),
-        formatErrorInfo (vbox)
-    );
+    /* preserve the current error info before calling the object again */
+    COMResult res (vbox);
+
+    message (mainWindowShown(), Critical,
+        tr ("<p>Failed to save the global GUI configuration to "
+            "<b><nobr>%1</nobr></b>.</p>"
+            "<p>The application will now terminate.</p>")
+             .arg (vbox.GetSettingsFilePath()),
+        formatErrorInfo (res));
 }
 
 void VBoxProblemReporter::cannotSetSystemProperties (const CSystemProperties &props)
 {
-    message (
-        mainWindowShown(),
-        Critical,
+    message (mainWindowShown(), Critical,
         tr ("Failed to set global VirtualBox properties."),
-        formatErrorInfo (props)
-    );
+        formatErrorInfo (props));
 }
 
 void VBoxProblemReporter::cannotAccessUSB (const COMBase &obj)
@@ -633,8 +659,9 @@ void VBoxProblemReporter::cannotSaveMachineSettings (const CMachine &machine,
     COMResult res (machine);
 
     message (parent ? parent : mainWindowShown(), Error,
-             tr ("Failed to save the settings of the virtual machine <b>%1</b>.")
-                 .arg (machine.GetName()),
+             tr ("Failed to save the settings of the virtual machine "
+                 "<b>%1</b> to <b><nobr>%2</nobr></b>.")
+                 .arg (machine.GetName(), machine.GetSettingsFilePath()),
              formatErrorInfo (res));
 }
 
@@ -651,8 +678,9 @@ void VBoxProblemReporter::cannotLoadMachineSettings (const CMachine &machine,
         return;
 
     message (parent ? parent : mainWindowShown(), Error,
-             tr ("Failed to load the settings of the virtual machine <b>%1</b>.")
-                 .arg (machine.GetName()),
+             tr ("Failed to load the settings of the virtual machine "
+                 "<b>%1</b> from <b><nobr>%2</nobr></b>.")
+                .arg (machine.GetName(), machine.GetSettingsFilePath()),
              formatErrorInfo (res));
 }
 
@@ -1121,11 +1149,15 @@ void VBoxProblemReporter::cannotOpenSession (
 ) {
     Assert (!vbox.isOk() || progress.isOk());
 
+    QString name = machine.GetName();
+    if (name.isEmpty())
+        name = QFileInfo (machine.GetSettingsFilePath()).baseName();
+
     message (
         mainWindowShown(),
         Error,
         tr ("Failed to open a session for the virtual machine <b>%1</b>.")
-            .arg (machine.GetName()),
+            .arg (name),
         !vbox.isOk() ? formatErrorInfo (vbox) :
                        formatErrorInfo (progress.GetErrorInfo())
     );
@@ -1604,6 +1636,47 @@ bool VBoxProblemReporter::remindAboutInaccessibleMedia()
         tr ("Check", "inaccessible media message box"));
 
     return rc == QIMessageBox::Ok; /* implies !AutoConfirmed */
+}
+
+/**
+ * Shows a list of auto-converted files and asks the user to either Save, Backup
+ * or Cancel to leave them as is.
+ *
+ * @param aFormatVersion    Recent settings file format version.
+ * @param aFileList         List of auto-converted files (may use Qt HTML).
+ *
+ * @return QIMessageBox::Yes (Save), QIMessageBox::No (Backup),
+ *         QIMessageBox::Cancel (Leave)
+ */
+int VBoxProblemReporter::warnAboutAutoConvertedSettings (const QString &aFormatVersion,
+                                                         const QString &aFileList)
+{
+    return message (mainWindowShown(), Warning,
+        tr ("<p>The following VirtualBox settings files have been "
+            "automatically converted to the new settings file format "
+            "version <b>%1</b>.</p>"
+            "<p>However, the results of the conversion were not saved back "
+            "to disk yet. Please press:</p>"
+            "<ul>"
+            "<li><b>Save</b> to save all auto-converted files now (it will not "
+            "be possible to use these settings files with an older version of "
+            "VirtualBox in the future);</li>"
+            "<li><b>Backup</b> to create backup copies of settings files in "
+            "the old format before saving them in the new format;</li>"
+            "<li><b>Cancel</b> to not save the settings files now.<li>"
+            "</ul>"
+            "<p>Note that if you select <b>Cancel</b>, the auto-converted "
+            "settings files will be implicitly saved in the new format anyway "
+            "once you change a setting or start a virtual machine.</p>")
+            .arg (aFormatVersion),
+        aFileList,
+        NULL /* aAutoConfirmId */,
+        QIMessageBox::Yes,
+        QIMessageBox::No | QIMessageBox::Default,
+        QIMessageBox::Cancel | QIMessageBox::Escape,
+        tr ("&Save", "warnAboutAutoConvertedSettings message box"),
+        tr ("&Backup", "warnAboutAutoConvertedSettings message box"),
+        tr ("Cancel", "warnAboutAutoConvertedSettings message box"));
 }
 
 /**

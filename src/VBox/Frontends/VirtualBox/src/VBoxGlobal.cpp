@@ -23,6 +23,7 @@
 #include "VBoxConsoleWnd.h"
 #include "VBoxProblemReporter.h"
 #include "QIHotKeyEdit.h"
+#include "QIMessageBox.h"
 
 #ifdef VBOX_WITH_REGISTRATION
 #include "VBoxRegistrationDlg.h"
@@ -75,6 +76,7 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/env.h>
+#include <iprt/file.h>
 
 #if defined (Q_WS_X11)
 #include <iprt/mem.h>
@@ -1823,6 +1825,148 @@ bool VBoxGlobal::showVirtualBoxLicense()
     return result;
 }
 #endif
+
+/**
+ * Checks if any of the settings files were auto-converted and informs the user
+ * if so.
+ */
+void VBoxGlobal::checkForAutoConvertedSettings()
+{
+    QString formatVersion = mVBox.GetSettingsFormatVersion();
+
+    bool isGlobalConverted = false;
+    QValueList <CMachine> machines;
+    QString fileList;
+    QString version;
+
+    CMachineVector vec = mVBox.GetMachines2();
+    for (CMachineVector::ConstIterator m = vec.begin();
+         m != vec.end(); ++ m)
+    {
+        if (!m->GetAccessible())
+            continue;
+
+        version = m->GetSettingsFileVersion();
+        if (version != formatVersion)
+        {
+            machines.append (*m);
+            fileList += QString ("<nobr>%1&nbsp;&nbsp;&nbsp;(<i>%2</i>)</nobr><br>")
+                .arg (m->GetSettingsFilePath())
+                .arg (version);
+        }
+    }
+
+    version = mVBox.GetSettingsFileVersion();
+    if (version != formatVersion)
+    {
+        isGlobalConverted = true;
+        fileList += QString ("<nobr>%1&nbsp;&nbsp;&nbsp;(<i>%2</i>)</nobr><br>")
+            .arg (mVBox.GetSettingsFilePath())
+            .arg (version);
+    }
+
+
+    if (!fileList.isNull())
+    {
+        int rc = vboxProblem()
+            .warnAboutAutoConvertedSettings (formatVersion, fileList);
+
+        if (rc == QIMessageBox::No)
+        {
+            /* create backup copies */
+            for (QValueList <CMachine>::Iterator m = machines.begin();
+                 /* machines.end() means global config => manual loop break */ ;)
+            {
+                QString of, nf;
+
+                if (m == machines.end())
+                {
+                    if (!isGlobalConverted)
+                        break;
+                    of = mVBox.GetSettingsFilePath();
+                    nf = QString ("%1.%2.bak").arg (of, mVBox.GetSettingsFileVersion());
+                }
+                else
+                {
+                    of = (*m).GetSettingsFilePath();
+                    nf = QString ("%1.%2.bak").arg (of, (*m).GetSettingsFileVersion());
+                }
+
+                int vrc = RTFileCopyEx (of.utf8(), nf.utf8(),
+                                        RTFILECOPY_FLAG_NO_DENY_WRITE,
+                                        NULL, NULL);
+
+                /* try progressive suffix on failure */
+                if (vrc == VERR_ALREADY_EXISTS)
+                {
+                    QString tmp = nf;
+                    for (int i = 0; i < 9 && RT_FAILURE (vrc); ++ i)
+                    {
+                        nf = QString ("%1.%2"). arg (tmp).arg (i);
+                        vrc = RTFileCopyEx (of.utf8(), nf.utf8(),
+                                            RTFILECOPY_FLAG_NO_DENY_WRITE,
+                                            NULL, NULL);
+                    }
+                }
+
+                if (RT_FAILURE (vrc))
+                {
+                    vboxProblem().cannotCopyFile (of, nf, vrc);
+                    if (m == machines.end())
+                    {
+                        /* remove from further processing */
+                        isGlobalConverted = false;
+                        break;
+                    }
+                    else
+                        /* remove from further processing */
+                        m = machines.remove (m);
+                }
+                else
+                {
+                    if (m == machines.end())
+                        break;
+                    ++ m;
+                }
+            }
+        }
+
+        if (rc == QIMessageBox::Yes || rc == QIMessageBox::No)
+        {
+            /* save all settings files */
+            for (QValueList <CMachine>::Iterator m = machines.begin();
+                 /* machines.end() means global config => manual loop break */ ;)
+            {
+                if (m == machines.end())
+                {
+                    if (isGlobalConverted)
+                    {
+                        mVBox.SaveSettings();
+                        if (!mVBox.isOk())
+                            vboxProblem().cannotSaveGlobalSettings (mVBox);
+                    }
+                }
+                else
+                {
+                    CSession session = openSession ((*m).GetId());
+                    if (!session.isNull())
+                    {
+                        CMachine sm = session.GetMachine();
+                        sm.SaveSettings();
+                        if (!sm.isOk())
+                            vboxProblem().cannotSaveMachineSettings (sm);
+                        session.Close();
+                    }
+                }
+
+                if (m == machines.end())
+                    break;
+
+                ++ m;
+            }
+        }
+    }
+}
 
 /**
  *  Opens a direct session for a machine with the given ID.
@@ -3802,7 +3946,7 @@ void VBoxGlobal::init()
         return;
     }
 
-    // initialize guest OS type vector
+    /* initialize guest OS type vector */
     CGuestOSTypeCollection coll = mVBox.GetGuestOSTypes();
     int osTypeCount = coll.GetCount();
     AssertMsg (osTypeCount > 0, ("Number of OS types must not be zero"));
@@ -3815,7 +3959,7 @@ void VBoxGlobal::init()
             vm_os_types [i++] = en.GetNext();
     }
 
-    // fill in OS type icon dictionary
+    /* fill in OS type icon dictionary */
     static const char *osTypeIcons[][2] =
     {
         {"unknown", "os_other.png"},
@@ -3842,14 +3986,14 @@ void VBoxGlobal::init()
         {"solaris", "os_solaris.png"},
         {"l4", "os_l4.png"},
     };
-    vm_os_type_icons.setAutoDelete (true); // takes ownership of elements
+    vm_os_type_icons.setAutoDelete (true); /* takes ownership of elements */
     for (uint n = 0; n < SIZEOF_ARRAY (osTypeIcons); n ++)
     {
         vm_os_type_icons.insert (osTypeIcons [n][0],
             new QPixmap (QPixmap::fromMimeSource (osTypeIcons [n][1])));
     }
 
-    // fill in VM state icon dictionary
+    /* fill in VM state icon dictionary */
     static struct
     {
         KMachineState state;
@@ -3877,12 +4021,12 @@ void VBoxGlobal::init()
             new QPixmap (QPixmap::fromMimeSource (vmStateIcons [n].name)));
     }
 
-    // online/offline snapshot icons
+    /* online/offline snapshot icons */
     mOfflineSnapshotIcon = QPixmap::fromMimeSource ("offline_snapshot_16px.png");
     mOnlineSnapshotIcon = QPixmap::fromMimeSource ("online_snapshot_16px.png");
 
-    // initialize state colors vector
-    // no ownership of elements, we're passing pointers to existing objects
+    /* initialize state colors vector */
+    /* no ownership of elements, we're passing pointers to existing objects */
     vm_state_color.insert (KMachineState_Null,           &Qt::red);
     vm_state_color.insert (KMachineState_PoweredOff,     &Qt::gray);
     vm_state_color.insert (KMachineState_Saved,          &Qt::yellow);
@@ -3896,12 +4040,19 @@ void VBoxGlobal::init()
     vm_state_color.insert (KMachineState_Restoring,      &Qt::green);
     vm_state_color.insert (KMachineState_Discarding,     &Qt::green);
 
+    /* Redefine default large and small icon sizes. In particular, it is
+     * necessary to consider both 32px and 22px icon sizes as Large when we
+     * explicitly define them as Large (seems to be a bug in
+     * QToolButton::sizeHint()). */
+    QIconSet::setIconSize (QIconSet::Small, QSize (16, 16));
+    QIconSet::setIconSize (QIconSet::Large, QSize (22, 22));
+
     qApp->installEventFilter (this);
 
-    // create default non-null global settings
+    /* create default non-null global settings */
     gset = VBoxGlobalSettings (false);
 
-    // try to load global settings
+    /* try to load global settings */
     gset.load (mVBox);
     if (!mVBox.isOk() || !gset)
     {
@@ -3916,7 +4067,7 @@ void VBoxGlobal::init()
 
     languageChange();
 
-    // process command line
+    /* process command line */
 
     vm_render_mode_str = 0;
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -3930,40 +4081,54 @@ void VBoxGlobal::init()
 
     int argc = qApp->argc();
     int i = 1;
-    while ( i < argc ) {
-        const char *arg = qApp->argv()[i];
-        if (        !::strcmp( arg, "-startvm" ) ) {
-            if ( ++i < argc ) {
-                QString param = QString (qApp->argv()[i]);
+    while (i < argc)
+    {
+        const char *arg = qApp->argv() [i];
+        if (       !::strcmp (arg, "-startvm"))
+        {
+            if (++i < argc)
+            {
+                QString param = QString (qApp->argv() [i]);
                 QUuid uuid = QUuid (param);
-                if (!uuid.isNull()) {
+                if (!uuid.isNull())
+                {
                     vmUuid = uuid;
-                } else {
+                }
+                else
+                {
                     CMachine m = mVBox.FindMachine (param);
-                    if (m.isNull()) {
+                    if (m.isNull())
+                    {
                         vboxProblem().cannotFindMachineByName (mVBox, param);
                         return;
                     }
                     vmUuid = m.GetId();
                 }
             }
-        } else if ( !::strcmp( arg, "-comment" ) ) {
+        }
+        else if (!::strcmp (arg, "-comment"))
+        {
             ++i;
-        } else if ( !::strcmp( arg, "-rmode" ) ) {
-            if ( ++i < argc )
-                vm_render_mode_str = qApp->argv()[i];
+        }
+        else if (!::strcmp (arg, "-rmode"))
+        {
+            if (++i < argc)
+                vm_render_mode_str = qApp->argv() [i];
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
-        else if ( !::strcmp( arg, "-dbg" ) ) {
+        else if (!::strcmp (arg, "-dbg"))
+        {
             dbg_enabled = true;
         }
 #ifdef DEBUG
-        else if ( !::strcmp( arg, "-nodebug" ) ) {
+        else if (!::strcmp (arg, "-nodebug"))
+        {
             dbg_enabled = false;
             dbg_visible_at_startup = false;
         }
 #else
-        else if ( !::strcmp( arg, "-debug" ) ) {
+        else if (!::strcmp( arg, "-debug"))
+        {
             dbg_enabled = true;
             dbg_visible_at_startup = true;
         }
@@ -3972,23 +4137,14 @@ void VBoxGlobal::init()
         i++;
     }
 
-    vm_render_mode = vboxGetRenderMode( vm_render_mode_str );
+    vm_render_mode = vboxGetRenderMode (vm_render_mode_str);
 
-    // setup the callback
+    /* setup the callback */
     callback = CVirtualBoxCallback (new VBoxCallback (*this));
     mVBox.RegisterCallback (callback);
     AssertWrapperOk (mVBox);
     if (!mVBox.isOk())
         return;
-
-    /*
-     *  Redefine default large and small icon sizes. In particular, it is
-     *  necessary to consider both 32px and 22px icon sizes as Large when
-     *  we explicitly define them as Large (seems to be a bug in
-     *  QToolButton::sizeHint()).
-     */
-    QIconSet::setIconSize (QIconSet::Small, QSize (16, 16));
-    QIconSet::setIconSize (QIconSet::Large, QSize (22, 22));
 
     mValid = true;
 }
