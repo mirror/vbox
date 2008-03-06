@@ -73,16 +73,39 @@ RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu);
 /**
  * Converts a CPU identifier to a CPU set index.
  *
+ * This may or may not validate the precense of the CPU.
+ *
  * @returns The CPU set index on success, -1 on failure.
  * @param   idCpu       The identifier of the CPU.
  */
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu);
 
 /**
+ * Converts a CPU set index to a a CPU identifier.
+ *
+ * This may or may not validate the precense of the CPU, so, use
+ * RTMpDoesCpuExist for that.
+ *
+ * @returns The corresponding CPU identifier, NIL_RTCPUID on failure.
+ * @param   iCpu    The CPU set index.
+ */
+RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu);
+
+/**
+ * Gets the max CPU identifier (inclusive).
+ *
+ * Inteded for brute force enumerations, but use with
+ * care as it may be expensive.
+ *
+ * @returns The current higest CPU identifier value.
+ */
+RTDECL(RTCPUID) RTMpGetMaxCpuId(void);
+
+/**
  * Gets set of the CPUs present in the system.
  *
- * This set includes CPUs in any state, see RTGetOnlineSet()
- * for an alternative.
+ * This may or may not validate the precense of the CPU, so, use
+ * RTMpDoesCpuExist for that.
  *
  * @returns pSet.
  * @param   pSet    Where to put the set.
