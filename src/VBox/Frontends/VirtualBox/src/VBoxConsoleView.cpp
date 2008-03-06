@@ -2277,7 +2277,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
     uint count = 0;
     uint8_t whatPressed = 0;
 
-    if (!isHostKey)
+    if (!isHostKey && !mIsHostkeyPressed)
     {
         if (aFlags & KeyPrint)
         {
