@@ -108,6 +108,9 @@ public:
     /* IVirtualBox properties */
     STDMETHOD(COMGETTER(Version)) (BSTR *aVersion);
     STDMETHOD(COMGETTER(HomeFolder)) (BSTR *aHomeFolder);
+    STDMETHOD(COMGETTER(SettingsFilePath)) (BSTR *aSettingsFilePath);
+    STDMETHOD(COMGETTER(SettingsFileVersion)) (BSTR *aSettingsFileVersion);
+    STDMETHOD(COMGETTER(SettingsFormatVersion)) (BSTR *aSettingsFormatVersion);
     STDMETHOD(COMGETTER(Host)) (IHost **aHost);
     STDMETHOD(COMGETTER(SystemProperties)) (ISystemProperties **aSystemProperties);
     STDMETHOD(COMGETTER(Machines)) (IMachineCollection **aMachines);
@@ -177,6 +180,8 @@ public:
 
     STDMETHOD(WaitForPropertyChange) (INPTR BSTR aWhat, ULONG aTimeout,
                                       BSTR *aChanged, BSTR *aValues);
+
+    STDMETHOD(SaveSettings)();
 
     /* public methods only for internal purposes */
 
@@ -256,29 +261,41 @@ public:
 
     const Bstr &settingsFileName() { return mData.mCfgFile.mName; }
 
-    class SettingsInputResolver : public settings::XmlTreeBackend::InputResolver
+    class SettingsTreeHelper : public settings::XmlTreeBackend::InputResolver
+                             , public settings::XmlTreeBackend::AutoConverter
     {
     public:
 
+        // InputResolver interface
         settings::Input *resolveEntity (const char *aURI, const char *aID);
+
+        // AutoConverter interface
+        bool needsConversion (const settings::Key &aRoot, char *&aOldVersion) const;
+        const char *templateUri() const;
     };
 
     static HRESULT loadSettingsTree (settings::XmlTreeBackend &aTree,
                                      settings::File &aFile,
                                      bool aValidate,
                                      bool aCatchLoadErrors,
-                                     bool aAddDefaults);
+                                     bool aAddDefaults,
+                                     Utf8Str *aFormatVersion = NULL);
 
     /**
      * Shortcut to loadSettingsTree (aTree, aFile, true, true, true).
      *
      * Used when the settings file is to be loaded for the first time for the
      * given object in order to recreate it from the stored settings.
+     *
+     * @param aFormatVersion Where to store the current format version of the
+     *                       loaded settings tree.
      */
     static HRESULT loadSettingsTree_FirstTime (settings::XmlTreeBackend &aTree,
-                                               settings::File &aFile)
+                                               settings::File &aFile,
+                                               Utf8Str &aFormatVersion)
     {
-        return loadSettingsTree (aTree, aFile, true, true, true);
+        return loadSettingsTree (aTree, aFile, true, true, true,
+                                 &aFormatVersion);
     }
 
     /**
@@ -309,7 +326,8 @@ public:
     }
 
     static HRESULT saveSettingsTree (settings::TreeBackend &aTree,
-                                     settings::File &aFile);
+                                     settings::File &aFile,
+                                     Utf8Str &aFormatVersion);
 
     static HRESULT handleUnexpectedExceptions (RT_SRC_POS_DECL);
 
@@ -389,6 +407,8 @@ private:
 
         CfgFile mCfgFile;
 
+        Utf8Str mSettingsFileVersion;
+
         MachineList mMachines;
         GuestOSTypeList mGuestOSTypes;
 
@@ -444,6 +464,7 @@ private:
     AutoLock::Handle mAsyncEventQLock;
 
     static Bstr sVersion;
+    static Bstr sSettingsFormatVersion;
 
     static DECLCALLBACK(int) ClientWatcher (RTTHREAD thread, void *pvUser);
     static DECLCALLBACK(int) AsyncEventHandler (RTTHREAD thread, void *pvUser);

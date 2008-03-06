@@ -137,6 +137,8 @@ public:
         Bstr mConfigFile;
         Bstr mConfigFileFull;
 
+        Utf8Str mSettingsFileVersion;
+
         BOOL mAccessible;
         com::ErrorInfo mAccessError;
 
@@ -464,6 +466,7 @@ public:
     STDMETHOD(COMGETTER(AudioAdapter))(IAudioAdapter **audioAdapter);
     STDMETHOD(COMGETTER(USBController)) (IUSBController * *aUSBController);
     STDMETHOD(COMGETTER(SettingsFilePath)) (BSTR *aFilePath);
+    STDMETHOD(COMGETTER(SettingsFileVersion)) (BSTR *aSettingsFileVersion);
     STDMETHOD(COMGETTER(SettingsModified)) (BOOL *aModified);
     STDMETHOD(COMGETTER(SessionState)) (SessionState_T *aSessionState);
     STDMETHOD(COMGETTER(SessionType)) (BSTR *aSessionType);

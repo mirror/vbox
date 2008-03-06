@@ -77,7 +77,7 @@ static const char DefaultGlobalConfig [] =
     "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" RTFILE_LINEFEED
     "<!-- innotek VirtualBox Global Configuration -->" RTFILE_LINEFEED
     "<VirtualBox xmlns=\"" VBOX_XML_NAMESPACE "\" "
-        "version=\"" VBOX_XML_VERSION "-" VBOX_XML_PLATFORM "\">" RTFILE_LINEFEED
+        "version=\"" VBOX_XML_VERSION_FULL "\">" RTFILE_LINEFEED
     "  <Global>"RTFILE_LINEFEED
     "    <MachineRegistry/>"RTFILE_LINEFEED
     "    <DiskRegistry/>"RTFILE_LINEFEED
@@ -89,6 +89,9 @@ static const char DefaultGlobalConfig [] =
 
 // static
 Bstr VirtualBox::sVersion;
+
+// static
+Bstr VirtualBox::sSettingsFormatVersion;
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -138,6 +141,11 @@ HRESULT VirtualBox::init()
     if (sVersion.isNull())
         sVersion = VBOX_VERSION_STRING;
     LogFlowThisFunc (("Version: %ls\n", sVersion.raw()));
+
+    if (sSettingsFormatVersion.isNull())
+        sSettingsFormatVersion = VBOX_XML_VERSION_FULL;
+    LogFlowThisFunc (("Settings Format Version: %ls\n",
+                      sSettingsFormatVersion.raw()));
 
     /* Get the VirtualBox home directory. */
     {
@@ -200,7 +208,8 @@ HRESULT VirtualBox::init()
             File file (File::ReadWrite, mData.mCfgFile.mHandle, vboxConfigFile);
             XmlTreeBackend tree;
 
-            rc = VirtualBox::loadSettingsTree_FirstTime (tree, file);
+            rc = VirtualBox::loadSettingsTree_FirstTime (tree, file,
+                                                         mData.mSettingsFileVersion);
             CheckComRCThrowRC (rc);
 
             Key global = tree.rootKey().key ("Global");
@@ -451,7 +460,49 @@ STDMETHODIMP VirtualBox::COMGETTER(HomeFolder) (BSTR *aHomeFolder)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
+    /* mHomeDir is const and doesn't need a lock */
     mData.mHomeDir.cloneTo (aHomeFolder);
+    return S_OK;
+}
+
+STDMETHODIMP VirtualBox::COMGETTER(SettingsFilePath) (BSTR *aSettingsFilePath)
+{
+    if (!aSettingsFilePath)
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mCfgFile.mName is const and doesn't need a lock */
+    mData.mCfgFile.mName.cloneTo (aSettingsFilePath);
+    return S_OK;
+}
+
+STDMETHODIMP VirtualBox::
+COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
+{
+    if (!aSettingsFileVersion)
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    mData.mSettingsFileVersion.cloneTo (aSettingsFileVersion);
+    return S_OK;
+}
+
+STDMETHODIMP VirtualBox::
+COMGETTER(SettingsFormatVersion) (BSTR *aSettingsFormatVersion)
+{
+    if (!aSettingsFormatVersion)
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    sSettingsFormatVersion.cloneTo (aSettingsFormatVersion);
     return S_OK;
 }
 
@@ -1879,7 +1930,8 @@ STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
             }
 
             /* save settings on success */
-            rc = VirtualBox::saveSettingsTree (tree, file);
+            rc = VirtualBox::saveSettingsTree (tree, file,
+                                               mData.mSettingsFileVersion);
             CheckComRCReturnRC (rc);
         }
     }
@@ -2088,6 +2140,11 @@ STDMETHODIMP VirtualBox::WaitForPropertyChange (INPTR BSTR aWhat, ULONG aTimeout
                                                 BSTR *aChanged, BSTR *aValues)
 {
     return E_NOTIMPL;
+}
+
+STDMETHODIMP VirtualBox::SaveSettings()
+{
+    return saveSettings();
 }
 
 // public methods only for internal purposes
@@ -3719,7 +3776,8 @@ HRESULT VirtualBox::saveSettings()
         CheckComRCThrowRC (rc);
 
         /* save the settings on success */
-        rc = VirtualBox::saveSettingsTree (tree, file);
+        rc = VirtualBox::saveSettingsTree (tree, file,
+                                           mData.mSettingsFileVersion);
         CheckComRCThrowRC (rc);
     }
     catch (HRESULT err)
@@ -4107,24 +4165,45 @@ HRESULT VirtualBox::updateSettings (const char *aOldPath, const char *aNewPath)
  * @param aAddDefaults      @c true to cause the substitution of default
  *                          values for for missing attributes that have
  *                          defaults in the XML schema.
+ * @param aFormatVersion    Where to store the current format version of the
+ *                          loaded settings tree (optional, may be NULL).
  */
 /* static */
 HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
                                       settings::File &aFile,
                                       bool aValidate,
                                       bool aCatchLoadErrors,
-                                      bool aAddDefaults)
+                                      bool aAddDefaults,
+                                      Utf8Str *aFormatVersion /* = NULL */)
 {
     using namespace settings;
 
     try
     {
-        SettingsInputResolver resolver = SettingsInputResolver();
+        SettingsTreeHelper helper = SettingsTreeHelper();
 
-        aTree.setInputResolver (resolver);
+        aTree.setInputResolver (helper);
+        aTree.setAutoConverter (helper);
+
         aTree.read (aFile, aValidate ? VBOX_XML_SCHEMA : NULL,
                     aAddDefaults ? XmlTreeBackend::Read_AddDefaults : 0);
+
+        aTree.resetAutoConverter();
         aTree.resetInputResolver();
+
+        /* on success, memorize the current settings file version or set it to
+         * the most recent version if no settings conversion took place. Note
+         * that it's not necessary to do it every time we load the settings file
+         * (i.e. only loadSettingsTree_FirstTime() passes a non-NULL
+         * aFormatVersion value) because currently we keep the settings
+         * files locked so that the only legal way to change the format version
+         * while VirtualBox is running is saveSettingsTree(). */
+        if (aFormatVersion != NULL)
+        {
+            *aFormatVersion = aTree.oldVersion();
+            if (aFormatVersion->isNull())
+                *aFormatVersion = VBOX_XML_VERSION_FULL;
+        }
     }
     catch (const EIPRTFailure &err)
     {
@@ -4158,18 +4237,26 @@ HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
  * Note that this method will not catch unexpected errors so it may still
  * throw something.
  *
- * @param aTree Tree to save.
- * @param aFile File to save the tree to.
+ * @param aTree             Tree to save.
+ * @param aFile             File to save the tree to.
+ * @param aFormatVersion    Where to store the (recent) format version of the
+ *                          saved settings tree on success.
  */
 /* static */
 HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
-                                             settings::File &aFile)
+                                      settings::File &aFile,
+                                      Utf8Str &aFormatVersion)
 {
     using namespace settings;
 
     try
     {
         aTree.write (aFile);
+
+        /* set the current settings file version to the most recent version on
+         * success. See also VirtualBox::loadSettingsTree(). */
+        if (aFormatVersion != VBOX_XML_VERSION_FULL)
+            aFormatVersion = VBOX_XML_VERSION_FULL;
     }
     catch (const EIPRTFailure &err)
     {
