@@ -192,6 +192,7 @@ private slots:
 
 private:
 
+    void sendInitialSizeHint(void);
     void maybeRestrictMinimumSize();
 
     VBoxConsoleWnd *mMainWnd;
