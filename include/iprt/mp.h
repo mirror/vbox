@@ -39,22 +39,9 @@ __BEGIN_DECLS
 
 /** Maximum number of CPUs we support in one system.
  * @remarks The current limit in Windows (affinity mask)
- *
  */
 #define RT_MP_MAX_CPU                   64
 
-
-/** A CPU identifier.
- * @remarks This doesn't have to correspond to the APIC ID (intel/amd). Nor
- *          does it have to correspond to the bits in the affinity mask, at
- *          least not until we've sorted out Windows NT. */
-typedef RTHCUINTPTR RTCPUID;
-/** Pointer to a CPU identifier. */
-typedef RTCPUID *PRTCPUID;
-/** Pointer to a const CPU identifier. */
-typedef RTCPUID const *PCRTCPUID;
-/** Nil CPU Id. */
-#define NIL_RTCPUID ( (RTCPUID)~0 )
 
 /**
  * Gets the identifier of the CPU executing the call.
@@ -83,7 +70,14 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu);
  */
 RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu);
 
-/** @todo we need some kind of RTCPUSET and converstion between RTCPUID and it. */
+/**
+ * Converts a CPU identifier to a CPU set index.
+ *
+ * @returns The CPU set index on success, -1 on failure.
+ * @param   idCpu       The identifier of the CPU.
+ */
+RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu);
+
 
 
 #ifdef IN_RING0
