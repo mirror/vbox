@@ -29,7 +29,7 @@
 
 int VBoxGuestDisplayChangeThreadX11::init(void)
 {
-    int rc, rcSystem, rcErrno;
+    int rc = VINF_SUCCESS, rcSystem, rcErrno;
 
     rcSystem = system("VBoxRandR --test");
     if (-1 == rcSystem)
