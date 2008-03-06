@@ -1298,8 +1298,8 @@ public:
     };
 
     /**
-     * The InputResolver class represents an input resolver, the service used to
-     * provide input streams for external entities given an URL and entity ID.
+     * The InputResolver class represents an interface to provide input streams
+     * for external entities given an URL and entity ID.
      */
     class VBOXSETTINGS_CLASS InputResolver
     {
@@ -1321,6 +1321,42 @@ public:
         virtual Input *resolveEntity (const char *aURI, const char *aID) = 0;
     };
 
+    /**
+     * The AutoConverter class represents an interface to automatically convert
+     * old settings trees to a new version when the tree is read from the
+     * stream.
+     */
+    class VBOXSETTINGS_CLASS AutoConverter
+    {
+    public:
+
+        /**
+         * Returns @true if the given tree needs to be converted using the XSLT
+         * template identified by #templateUri(), or @false if no conversion is
+         * required.
+         *
+         * The implementation normally checks for the "version" value of the
+         * root key to determine if the conversion is necessary. The
+         * implementation must return a string representing the old version
+         * (before conversion) in the @c aOldVersion argument -- this string is
+         * used by XmlTreeBackend::oldVersion() and must be non-NULL to indicate
+         * that the conversion has been performed on the tree. The returned
+         * string must be allocated using RTStrDup or such.
+         *
+         * @param aRoot                 Root settings key.
+         * @param aOldVersionString     Old version string (allocated by
+         *                              RTStrDup or such).
+         */
+        virtual bool needsConversion (const Key &aRoot,
+                                      char *&aOldVersion) const = 0;
+
+        /**
+         * Returns the URI of the XSLT template to perform the conversion.
+         * This template will be applied to the tree if #needsConversion()
+         * returns @c true for this tree.
+         */
+        virtual const char *templateUri() const = 0;
+    };
 
     /**
      * The Error class represents errors that may happen when parsing or
@@ -1355,47 +1391,45 @@ public:
     void resetInputResolver();
 
     /**
-     * Sets up automatic settings tree conversion.
+     * Sets a settings tree converter and enables the automatic conversion.
      *
-     * Automatic settings tree conversion is useful for upgrading old settings
-     * files to the new version transparently during execution of the #read()
-     * method.
+     * The Automatic settings tree conversion is useful for upgrading old
+     * settings files to the new version transparently during execution of the
+     * #read() method.
      *
-     * Automatic conversion is performed after reading the document from the
-     * stream but before validating it using the given XSLT template if the
-     * version check fails. The version check consists of comparing the given
-     * version string with the value of the given attribute of the root key. The
-     * conversion is performed only when the version strings are not equal.
+     * The automatic conversion takes place after reading the document from the
+     * stream but before validating it. The given converter is asked if the
+     * conversion is necessary using the AutoConverter::needsConversion() call,
+     * and if so, the XSLT template specified by AutoConverter::templateUri() is
+     * applied to the settings tree.
      *
-     * Note that in order to make the conversion permanent, the resulting tree
-     * needs to be exlicitly written back to the stream.
+     * Note that in order to make the result of the conversion permanent, the
+     * settings tree needs to be exlicitly written back to the stream.
      *
-     * The method will make copies of the supplied strings.
+     * The given converter object must exist as long as this instance exists or
+     * until a different converter is set using setAutoConverter() or reset
+     * using resetAutoConverter().
      *
-     * Specifying a NULL value for all of the arguments will completely disable
-     * automatic conversion. Specifying an invalid root key name or a
-     * non-existent attribute name will disable automatic conversion too. By
-     * default automatic conversion it is disabled.
-     *
-     * Specifying a NULL value only for some of the arguments will throw an
-     * EInvalidArg exception.
-     *
-     * @param aRoot     Name of the root key containing the version attribute.
-     * @param aAttr     Name of the attribute containing the version string.
-     * @param aVersion  Version string to compare with the attribute value.
-     * @param aTemplate URI of the XSLT template that performs conversion.
+     * @param aConverter    Settings converter to use.
      */
-    void setAutoConversion (const char *aRoot, const char *aAttr,
-                            const char *aVersion, const char *aTemplate);
+    void setAutoConverter (AutoConverter &aConverter);
 
     /**
-     * Disables automatic settings conversion previously enabled by
-     * setAutoConversion(). By default automatic conversion it is disabled.
+     * Disables the automatic settings conversion previously enabled by
+     * setAutoConverter(). By default automatic conversion it is disabled.
      */
-    void resetAutoConversion()
-    {
-        setAutoConversion (NULL, NULL, NULL, NULL);
-    }
+    void resetAutoConverter();
+
+    /**
+     * Returns a non-NULL string if the automatic settings conversion has been
+     * performed during the last successful #read() call. Returns @c NULL if
+     * there was no settings conversion.
+     *
+     * If #read() fails, this method will return the version string set by the
+     * previous successful #read() call or @c NULL if there were no #read()
+     * calls.
+     */
+    const char *oldVersion() const;
 
     void rawRead (Input &aInput, const char *aSchema = NULL, int aFlags = 0);
     void rawWrite (Output &aOutput);
