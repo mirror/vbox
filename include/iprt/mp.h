@@ -102,7 +102,7 @@ RTDECL(RTCPUID) RTMpGetCount(void);
  * @returns pSet.
  * @param   pSet    Where to put the set.
  */
-RTDECL(void) RTMpGetOnlineSet(PRTCPUSET pSet);
+RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet);
 
 /**
  * Get the count of CPUs that are currently online.
