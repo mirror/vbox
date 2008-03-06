@@ -876,7 +876,7 @@
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="64f652cb-7fdf-482d-ae19-4dbb289a5ca0"
+    uuid="3d835db8-0d0b-4d3e-a83e-ed1dea86c4f5"
     wsmap="managed"
   >
     <desc>
@@ -915,6 +915,66 @@
         This path is also used as the base to resolve relative paths in
         places where relative paths are allowed (unless otherwise
         expressly indicated).
+      </desc>
+    </attribute>
+
+		<attribute name="settingsFilePath" type="wstring" readonly="yes">
+			<desc>
+				Full name of the global settings file.
+				The value of this property corresponds to the value of
+				<link to="#homeFolder"/> plus <tt>/VirtualBox.xml</tt>.
+			</desc>
+		</attribute>
+
+    <attribute name="settingsFileVersion" type="wstring" readonly="yes">
+      <desc>
+        Current version of the format of the global VirtualBox settings file
+        (<tt>VirtualBox.xml</tt>).
+
+			  The version string has the following format:
+				<pre>x.y-platform</pre>
+				where <tt>x</tt> and <tt>y</tt> are the major and the minor format
+				versions, and <tt>platform</tt> is the platform identifier.
+
+        The current version usually matches the value of the
+        <link to="#settingsFormatVersion"/> attribute unless the
+				settings file was created by an older version of VirtualBox and there
+        was a change of the settings file format since then.
+
+        Note that VirtualBox automatically converts settings files from older
+        versions to the most recent version when reading them (usually at
+        VirtualBox startup) but it doesn't save the changes back until
+				you call a method that implicitly saves settings (such as
+				<link to="#setExtraData()"/>) or call <link to="#saveSettings()"/>
+				explicitly. Therefore, if the value of this attribute differs from the
+				value of <link to="#settingsFormatVersion"/>, then it
+				means that the settings file was converted but the result of the
+				conversion is not yet saved to disk.
+
+				The above feature may be used by interactive front-ends to inform users
+				about the settings file format change and offer them to explicitly save
+				all converted settings files (the global and VM-specific ones),
+				optionally create bacup copies of the old settings files before saving,
+				etc.
+
+        <see>settingsFormatVersion</see>
+      </desc>
+    </attribute>
+
+    <attribute name="settingsFormatVersion" type="wstring" readonly="yes">
+      <desc>
+        Most recent version of the settings file format.
+
+			  The version string has the following format:
+				<pre>x.y-platform</pre>
+				where <tt>x</tt> and <tt>y</tt> are the major and the minor format
+				versions, and <tt>platform</tt> is the platform identifier.
+
+				VirtualBox uses this version of the format when saving settings files
+				(either as a result of method calls that require to save settings or as
+				a result of an explicit call to <link to="#saveSettings()"/>).
+
+				<see>settingsFileVersion</see>
       </desc>
     </attribute>
 
@@ -2028,6 +2088,19 @@
       </param>
     </method>
 
+		<method name="saveSettings">
+			<desc>
+				Saves the global settings to the global settings file
+				(<link to="#settingsFilePath"/>).
+
+				This method is only useful for explicitly saving the global settings
+				file after it has been auto-converted from the old format to the most
+				recent format (see <link to="#settingsFileVersion"/> for details).
+				Normally, the global settings file is implicitly saved when a global
+				setting is changed.
+			</desc>
+		</method>
+
   </interface>
 
   <!--
@@ -2356,7 +2429,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="2830ce8c-be5b-4660-b8d5-65d913005b4f"
+     uuid="c929abcc-5373-4ed9-9b56-201430b37868"
      wsmap="managed"
      >
     <desc>
@@ -2652,6 +2725,41 @@
         Full name of the file containing machine settings data.
       </desc>
     </attribute>
+
+		<attribute name="settingsFileVersion" type="wstring" readonly="yes">
+			<desc>
+				Current version of the format of the settings file of this machine
+				(<link to="#settingsFilePath"/>).
+
+				The version string has the following format:
+				<pre>x.y-platform</pre>
+				where <tt>x</tt> and <tt>y</tt> are the major and the minor format
+				versions, and <tt>platform</tt> is the platform identifier.
+
+				The current version usually matches the value of the
+				<link to="IVirtualBox::settingsFormatVersion"/> attribute unless the
+				settings file was created by an older version of VirtualBox and there
+				was a change of the settings file format since then.
+
+				Note that VirtualBox automatically converts settings files from older
+				versions to the most recent version when reading them (usually at
+				VirtualBox startup) but it doesn't save the changes back until
+				you call a method that implicitly saves settings (such as
+				<link to="#setExtraData()"/>) or call <link to="#saveSettings()"/>
+				explicitly. Therefore, if the value of this attribute differs from the
+				value of <link to="IVirtualBox::settingsFormatVersion"/>, then it
+				means that the settings file was converted but the result of the
+				conversion is not yet saved to disk.
+
+				The above feature may be used by interactive front-ends to inform users
+				about the settings file format change and offer them to explicitly save
+				all converted settings files (the global and VM-specific ones),
+				optionally create bacup copies of the old settings files before saving,
+				etc.
+
+				<see>IVirtualBox::settingsFormatVersion</see>
+			</desc>
+		</attribute>
 
     <attribute name="settingsModified" type="boolean" readonly="yes">
       <desc>

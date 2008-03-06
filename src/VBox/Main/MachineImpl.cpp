@@ -84,7 +84,7 @@ static const char DefaultMachineConfig[] =
     "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" RTFILE_LINEFEED
     "<!-- innotek VirtualBox Machine Configuration -->" RTFILE_LINEFEED
     "<VirtualBox xmlns=\"" VBOX_XML_NAMESPACE "\" "
-        "version=\"" VBOX_XML_VERSION "-" VBOX_XML_PLATFORM "\">" RTFILE_LINEFEED
+        "version=\"" VBOX_XML_VERSION_FULL "\">" RTFILE_LINEFEED
     "</VirtualBox>" RTFILE_LINEFEED
 };
 
@@ -1298,6 +1298,21 @@ STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *aFilePath)
     return S_OK;
 }
 
+STDMETHODIMP Machine::
+COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
+{
+    if (!aSettingsFileVersion)
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    mData->mSettingsFileVersion.cloneTo (aSettingsFileVersion);
+    return S_OK;
+}
+
 STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *aModified)
 {
     if (!aModified)
@@ -2197,7 +2212,8 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
             }
 
             /* save settings on success */
-            rc = VirtualBox::saveSettingsTree (tree, file);
+            rc = VirtualBox::saveSettingsTree (tree, file,
+                                               mData->mSettingsFileVersion);
             CheckComRCReturnRC (rc);
         }
     }
@@ -3855,7 +3871,8 @@ HRESULT Machine::loadSettings (bool aRegistered)
                    Utf8Str (mData->mConfigFileFull));
         XmlTreeBackend tree;
 
-        rc = VirtualBox::loadSettingsTree_FirstTime (tree, file);
+        rc = VirtualBox::loadSettingsTree_FirstTime (tree, file,
+                                                     mData->mSettingsFileVersion);
         CheckComRCThrowRC (rc);
 
         Key machineNode = tree.rootKey().key ("Machine");
@@ -5148,7 +5165,8 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
         }
 
         /* save the settings on success */
-        rc = VirtualBox::saveSettingsTree (tree, file);
+        rc = VirtualBox::saveSettingsTree (tree, file,
+                                          mData->mSettingsFileVersion);
         CheckComRCThrowRC (rc);
     }
     catch (HRESULT err)
@@ -5227,7 +5245,8 @@ HRESULT Machine::saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags)
         CheckComRCReturnRC (rc);
 
         /* save settings on success */
-        rc = VirtualBox::saveSettingsTree (tree, file);
+        rc = VirtualBox::saveSettingsTree (tree, file,
+                                           mData->mSettingsFileVersion);
         CheckComRCReturnRC (rc);
     }
     catch (...)
@@ -5836,7 +5855,8 @@ HRESULT Machine::saveStateSettings (int aFlags)
         }
 
         /* save settings on success */
-        rc = VirtualBox::saveSettingsTree (tree, file);
+        rc = VirtualBox::saveSettingsTree (tree, file,
+                                           mData->mSettingsFileVersion);
         CheckComRCReturnRC (rc);
     }
     catch (...)
