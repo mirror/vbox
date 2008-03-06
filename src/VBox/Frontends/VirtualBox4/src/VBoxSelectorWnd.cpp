@@ -144,35 +144,35 @@ void VBoxVMDetailsView::createErrPage()
 
     mErrBox = new QWidget();
 
-    QVBoxLayout *pVLayout = new QVBoxLayout (mErrBox);
-    pVLayout->setSpacing (10);
+    QVBoxLayout *vLayout = new QVBoxLayout (mErrBox);
+    vLayout->setSpacing (10);
 
     mErrLabel = new QLabel (mErrBox);
     mErrLabel->setAlignment (Qt::WordBreak);
     mErrLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
-    pVLayout->add (mErrLabel);
+    vLayout->add (mErrLabel);
 
     mErrText = new QTextBrowser (mErrBox);
     mErrText->setFocusPolicy (Qt::StrongFocus);
     mErrText->document()->setDefaultStyleSheet ("a { text-decoration: none; }");
-    pVLayout->add (mErrText);
+    vLayout->add (mErrText);
 
     if (mRefreshAction)
     {
         mRefreshButton = new QToolButton (mErrBox);
         mRefreshButton->setFocusPolicy (Qt::StrongFocus);
 
-        QHBoxLayout *pHLayout = new QHBoxLayout (pVLayout);
-        pHLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
-                                                  QSizePolicy::Minimum));
-        pHLayout->add (mRefreshButton);
+        QHBoxLayout *hLayout = new QHBoxLayout (vLayout);
+        hLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
+                                                 QSizePolicy::Minimum));
+        hLayout->add (mRefreshButton);
 
         connect (mRefreshButton, SIGNAL (clicked()),
                  mRefreshAction, SIGNAL (activated()));
     }
 
-    pVLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Minimum,
-                                            QSizePolicy::Expanding));
+    vLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Minimum,
+                                             QSizePolicy::Expanding));
 
     addWidget (mErrBox);
 
@@ -242,16 +242,16 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     , mBtnEdit (0), mBrowser (0), mLabel (0)
 {
     /* main layout */
-    QVBoxLayout *pVMainLayout = new QVBoxLayout (this);
-    pVMainLayout->setSpacing (10);
-    pVMainLayout->setContentsMargins (0, 0, 0, 0);
+    QVBoxLayout *vMainLayout = new QVBoxLayout (this);
+    vMainLayout->setSpacing (10);
+    vMainLayout->setContentsMargins (0, 0, 0, 0);
 
     /* mBrowser */
     mBrowser = new QTextBrowser (this, "mBrowser");
     mBrowser->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
     mBrowser->setFocusPolicy (Qt::StrongFocus);
     mBrowser->document()->setDefaultStyleSheet ("a { text-decoration: none; }");
-    pVMainLayout->addWidget (mBrowser);
+    vMainLayout->addWidget (mBrowser);
     /* hidden by default */
     mBrowser->setHidden (true);
 
@@ -259,16 +259,16 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     mLabel->setFrameStyle (mBrowser->frameStyle());
     mLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
     mLabel->setAlignment (Qt::AlignCenter | Qt::WordBreak);
-    pVMainLayout->addWidget (mLabel);
+    vMainLayout->addWidget (mLabel);
     /* always disabled */
     mLabel->setEnabled (false);
 
     /* button layout */
-    QHBoxLayout *pHBtnLayout = new QHBoxLayout (pVMainLayout);
-    pHBtnLayout->setSpacing (10);
-    pHBtnLayout->addItem (new QSpacerItem (0, 0,
-                                           QSizePolicy::Expanding,
-                                           QSizePolicy::Minimum));
+    QHBoxLayout *hBtnLayout = new QHBoxLayout (vMainLayout);
+    hBtnLayout->setSpacing (10);
+    hBtnLayout->addItem (new QSpacerItem (0, 0,
+                                          QSizePolicy::Expanding,
+                                          QSizePolicy::Minimum));
 
     /* button */
     mBtnEdit = new QToolButton (this, "mBtnEdit");
@@ -279,11 +279,11 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     mBtnEdit->setTextPosition (QToolButton::BesideIcon);
     mBtnEdit->setUsesTextLabel (true);
     connect (mBtnEdit, SIGNAL (clicked()), this, SLOT (goToSettings()));
-    pHBtnLayout->addWidget (mBtnEdit);
+    hBtnLayout->addWidget (mBtnEdit);
 
-    pVMainLayout->addItem (new QSpacerItem (0, 0,
-                                          QSizePolicy::Expanding,
-                                          QSizePolicy::Minimum));
+    vMainLayout->addItem (new QSpacerItem (0, 0,
+                                           QSizePolicy::Expanding,
+                                           QSizePolicy::Minimum));
 
     /* apply language settings */
     languageChange();
@@ -448,31 +448,31 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* central widget & horizontal layout */
     setCentralWidget (new QWidget (this));
-    QHBoxLayout *pCentralLayout =
+    QHBoxLayout *centralLayout =
         new QHBoxLayout (centralWidget());
-    pCentralLayout->setSpacing (9);
-    pCentralLayout->setContentsMargins (5, 5, 5, 5);
+    centralLayout->setSpacing (9);
+    centralLayout->setContentsMargins (5, 5, 5, 5);
 
     /* left vertical box */
-    QVBoxLayout *pLeftVLayout = new QVBoxLayout ();
-    pLeftVLayout->setSpacing (5);
+    QVBoxLayout *leftVLayout = new QVBoxLayout ();
+    leftVLayout->setSpacing (5);
     /* right vertical box */
-    QVBoxLayout *pRightVLayout = new QVBoxLayout ();
-    pRightVLayout->setSpacing (5);
-    pCentralLayout->addLayout (pLeftVLayout, 3);
-    pCentralLayout->addLayout (pRightVLayout, 3);
+    QVBoxLayout *rightVLayout = new QVBoxLayout ();
+    rightVLayout->setSpacing (5);
+    centralLayout->addLayout (leftVLayout, 3);
+    centralLayout->addLayout (rightVLayout, 3);
 
     /* VM list toolbar */
     VBoxToolBar *vmTools = new VBoxToolBar (this);
-    pLeftVLayout->addWidget(vmTools);
+    leftVLayout->addWidget(vmTools);
 
     /* VM list box */
     vmListBox = new VBoxVMListBox ();
-    pLeftVLayout->addWidget (vmListBox);
+    leftVLayout->addWidget (vmListBox);
 
     /* VM tab widget containing details and snapshots tabs */
     vmTabWidget = new QTabWidget ();
-    pRightVLayout->addWidget (vmTabWidget);
+    rightVLayout->addWidget (vmTabWidget);
     vmTabWidget->setMargin (10);
 
     /* VM details view */
@@ -518,7 +518,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* add actions to menubar */
 
-    QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+    QMenu *fileMenu = menuBar()->addMenu (tr ("&File"));
     fileDiskMgrAction->addTo( fileMenu );
     fileMenu->insertSeparator();
     fileSettingsAction->addTo(fileMenu);
@@ -527,7 +527,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     menuBar()->insertItem( QString::null, fileMenu, 1);
 
-    QMenu *vmMenu = menuBar()->addMenu(tr("&Machine"));
+    QMenu *vmMenu = menuBar()->addMenu (tr ("&Machine"));
     vmNewAction->addTo (vmMenu);
     vmMenu->insertSeparator();
     vmConfigAction->addTo (vmMenu);
@@ -557,7 +557,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMCtxtMenu->insertSeparator();
     vmShowLogsAction->addTo (mVMCtxtMenu);
 
-    QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
+    QMenu *helpMenu = menuBar()->addMenu (tr ("&Help"));
     helpContentsAction->addTo (helpMenu);
     helpWebAction->addTo (helpMenu);
     helpMenu->insertSeparator();
