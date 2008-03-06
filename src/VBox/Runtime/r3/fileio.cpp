@@ -312,10 +312,11 @@ RTDECL(int) RTFileCopyByHandles(RTFILE FileSrc, RTFILE FileDst)
  * @param   pszSrc      The path to the source file.
  * @param   pszDst      The path to the destination file.
  *                      This file will be created.
+ * @param   fFlags      Flags, any of the RTFILECOPY_FLAGS_ \#defines.
  * @param   pfnProgress Pointer to callback function for reporting progress.
  * @param   pvUser      User argument to pass to pfnProgress along with the completion precentage.
  */
-RTDECL(int) RTFileCopyEx(const char *pszSrc, const char *pszDst, PFNRTPROGRESS pfnProgress, void *pvUser)
+RTDECL(int) RTFileCopyEx(const char *pszSrc, const char *pszDst, uint32_t fFlags, PFNRTPROGRESS pfnProgress, void *pvUser)
 {
     /*
      * Validate input.
@@ -330,7 +331,10 @@ RTDECL(int) RTFileCopyEx(const char *pszSrc, const char *pszDst, PFNRTPROGRESS p
      * Open the files.
      */
     RTFILE FileSrc;
-    int rc = RTFileOpen(&FileSrc, pszSrc, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN);
+    uint32_t fSrcOpen = RTFILE_O_READ | RTFILE_O_OPEN;
+    if (!(fFlags & RTFILECOPY_FLAG_NO_DENY_WRITE))
+        fSrcOpen |= RTFILE_O_DENY_WRITE;
+    int rc = RTFileOpen(&FileSrc, pszSrc, fSrcOpen);
     if (RT_SUCCESS(rc))
     {
         RTFILE FileDst;
