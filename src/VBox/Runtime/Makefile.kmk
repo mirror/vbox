@@ -306,6 +306,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
+	r3/posix/RTMpGetCount-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/semrw-posix.cpp \
 	r3/posix/system-posix.cpp \
@@ -387,6 +388,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
+	r3/posix/RTMpGetCount-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
@@ -420,6 +422,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
+	r3/posix/RTMpGetCount-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
@@ -453,6 +456,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
+	r3/posix/RTMpGetCount-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
