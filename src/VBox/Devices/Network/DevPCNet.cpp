@@ -140,6 +140,9 @@ struct PCNetState_st
 
     /** Size of current send frame */
     uint32_t                            cbSendFrame;
+#if HC_ARCH_BITS == 64
+    uint32_t                            Alignment2;
+#endif
     /** Buffer address of current send frame */
     uint8_t                             *pvSendFrame;
     /** The xmit buffer. */
