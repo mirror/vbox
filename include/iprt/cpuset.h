@@ -111,7 +111,7 @@ DECLINLINE(int) RTCpuSetDel(PRTCPUSET pSet, RTCPUID idCpu)
  * @param   pSet    Pointer to the set.
  * @param   idCpu   The identifier of the CPU to look for.
  */
-DECLINLINE(int) RTCpuSetIsMember(PCRTCPUSET pSet, RTCPUID idCpu)
+DECLINLINE(bool) RTCpuSetIsMember(PCRTCPUSET pSet, RTCPUID idCpu)
 {
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
     if (RT_UNLIKELY(iCpu < 0))
