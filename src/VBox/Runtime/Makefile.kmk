@@ -345,12 +345,13 @@ RuntimeR3_SOURCES.os2   = \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
+	r3/os2/filelock-os2.cpp \
+	r3/os2/mp-os2.cpp \
 	r3/os2/sched-os2.cpp \
 	r3/os2/sems-os2.cpp \
 	r3/os2/system-os2.cpp \
 	r3/os2/thread-os2.cpp \
 	r3/os2/time-os2.cpp \
-	r3/os2/filelock-os2.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \

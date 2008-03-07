@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - System, OS/2.
+ * innotek Portable Runtime - Multiprocessor, OS/2.
  */
 
 /*
@@ -33,11 +33,55 @@
 #include <os2.h>
 #undef RT_MAX
 
-#include <iprt/system.h>
+#include <iprt/mp.h>
+#include <iprt/cpuset.h>
 #include <iprt/assert.h>
 
+/** @todo RTMpCpuId() */
 
-RTDECL(unsigned) RTSystemProcessorGetCount(void)
+RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
+{
+    return idCpu < RTCPUSET_MAX_CPUS ? idCpu : -1;
+}
+
+
+RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
+{
+    return (unsigned)iCpu < RTCPUSET_MAX_CPUS ? iCpu : NIL_RTCPUID;
+}
+
+
+RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
+{
+    return RTCPUSET_MAX_CPUS;
+}
+
+
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+{
+    RTCPUSET Set;
+    return RTCpuSetIsMember(RTMpGetOnlineSet(&Set), idCpu);
+}
+
+
+RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu)
+{
+    RTCPUSET Set;
+    return RTCpuSetIsMember(RTMpGetSet(&Set), idCpu);
+}
+
+
+RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
+{
+    RTCPUID idCpu = RTMpGetCount();
+    RTCpuSetEmpty(pSet);
+    while (idCpu-- > 0)
+        RTCpuSetAdd(pSet, idCpu);
+    return pSet;
+}
+
+
+RTDECL(RTCPUID) RTMpGetCount(void)
 {
     ULONG cCpus = 1;
     int rc = DosQuerySysInfo(QSV_NUMPROCESSORS, QSV_NUMPROCESSORS, &cCpus, sizeof(cCpus));
@@ -47,7 +91,7 @@ RTDECL(unsigned) RTSystemProcessorGetCount(void)
 }
 
 
-RTR3DECL(uint64_t) RTSystemProcessorGetActiveMask(void)
+RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet);
 {
     union
     {
@@ -58,6 +102,14 @@ RTR3DECL(uint64_t) RTSystemProcessorGetActiveMask(void)
     int rc = DosQueryThreadAffinity(AFNTY_SYSTEM, &u.mpaff);
     if (rc)
         u.u64 = 1;
-    return u.u64;
+    return RTCpuSetFromU64(pSet, u.u64);
+}
+
+
+RTDECL(RTCPUID) RTMpGetOnlineCount(void)
+{
+    RTCPUSET Set;
+    RTMpGetOnlineSet(&Set);
+    return RTCpuSetCount(&Set);
 }
 
