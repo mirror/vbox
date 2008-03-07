@@ -431,7 +431,8 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 #define VERR_GETOPT_REQUIRED_ARGUMENT_MISSING  (-79)
 /** RTGetOpt: command line option has argument with bad format. */
 #define VERR_GETOPT_INVALID_ARGUMENT_FORMAT (-80)
-
+/** Generic not found error. */
+#define VERR_NOT_FOUND                      (-81)
 /** @} */
 
 
