@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - RTMpGetCount, POSIX.
+ * innotek Portable Runtime - System, OS/2.
  */
 
 /*
@@ -28,41 +28,36 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/mp.h>
+#define INCL_BASE
+#define INCL_ERRORS
+#include <os2.h>
+#undef RT_MAX
+
+#include <iprt/system.h>
 #include <iprt/assert.h>
 
-#include <unistd.h>
-#if !defined(RT_OS_SOLARIS)
-# include <sys/sysctl.h>
-#endif
 
-
-RTDECL(RTCPUID) RTMpGetCount(void)
+RTDECL(unsigned) RTSystemProcessorGetCount(void)
 {
-    int cCpus; NOREF(cCpus);
+    ULONG cCpus = 1;
+    int rc = DosQuerySysInfo(QSV_NUMPROCESSORS, QSV_NUMPROCESSORS, &cCpus, sizeof(cCpus));
+    if (rc || !cCpus)
+        cCpus = 1;
+    return cCpus;
+}
 
-    /*
-     * The sysconf way (linux and others).
-     */
-#ifdef _SC_NPROCESSORS_ONLN
-    cCpus = sysconf(_SC_NPROCESSORS_ONLN);
-    if (cCpus >= 1)
-        return cCpus;
-#endif
 
-    /*
-     * The BSD 4.4 way.
-     */
-#if defined(CTL_HW) && defined(HW_NCPU)
-    int aiMib[2];
-    aiMib[0] = CTL_HW;
-    aiMib[1] = HW_NCPU;
-    cCpus = -1;
-    size_t cb = sizeof(cCpus);
-    int rc = sysctl(aiMib, ELEMENTS(aiMib), &cCpus, &cb, NULL, 0);
-    if (rc != -1 && cCpus >= 1)
-        return cCpus;
-#endif
-    return 1;
+RTR3DECL(uint64_t) RTSystemProcessorGetActiveMask(void)
+{
+    union
+    {
+        uint64_t u64;
+        MPAFFINITY mpaff;
+    } u;
+
+    int rc = DosQueryThreadAffinity(AFNTY_SYSTEM, &u.mpaff);
+    if (rc)
+        u.u64 = 1;
+    return u.u64;
 }
 
