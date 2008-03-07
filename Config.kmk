@@ -281,6 +281,8 @@ VBOX_WITH_CROSSBOW = 1
 #VBOX_WITH_SUID_WRAPPER = 1
 # Enable the PDM Lock and let I/O threads call into the PICs.
 #VBOX_WITH_PDM_LOCK = 1
+# Enable Seamless mode
+VBOX_X11_SEAMLESS_GUEST = 1
 
 
 #
