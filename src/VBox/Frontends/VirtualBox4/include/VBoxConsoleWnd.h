@@ -21,7 +21,8 @@
 
 #include "COMDefs.h"
 
-#include <q3mainwindow.h>
+/* Qt includes */
+#include <QMainWindow>
 
 #include <qmap.h>
 #include <qobject.h>
@@ -31,7 +32,6 @@
 #include <QContextMenuEvent>
 #include <q3hbox.h>
 #include <QLabel>
-#include <Q3PopupMenu>
 #include <QEvent>
 #include <Q3ActionGroup>
 #include <QShowEvent>
@@ -51,6 +51,7 @@ class Q3ActionGroup;
 class Q3HBox;
 class QLabel;
 class QSpacerItem;
+class QMenu;
 
 class VBoxConsoleView;
 class QIStateIndicator;
@@ -58,7 +59,7 @@ class QIStateIndicator;
 class VBoxUSBMenu;
 class VBoxSwitchMenu;
 
-class VBoxConsoleWnd : public Q3MainWindow
+class VBoxConsoleWnd : public QMainWindow
 {
     Q_OBJECT
 
@@ -202,7 +203,7 @@ private slots:
 private:
 
     /** Popup version of the main menu */
-    Q3PopupMenu *mMainMenu;
+    QMenu *mMainMenu;
 
     Q3ActionGroup *mRunningActions;
     Q3ActionGroup *mRunningOrPausedActions;
@@ -251,11 +252,11 @@ private:
     VBoxSwitchMenu *vmDisMouseIntegrMenu;
 
     // Devices popup menus
-    Q3PopupMenu *devicesMenu;
-    Q3PopupMenu *devicesMountFloppyMenu;
-    Q3PopupMenu *devicesMountDVDMenu;
-    Q3PopupMenu *devicesSFMenu;
-    Q3PopupMenu *devicesNetworkMenu;
+    QMenu *devicesMenu;
+    QMenu *devicesMountFloppyMenu;
+    QMenu *devicesMountDVDMenu;
+    QMenu *devicesSFMenu;
+    QMenu *devicesNetworkMenu;
     VBoxUSBMenu *devicesUSBMenu;
     VBoxSwitchMenu *devicesVRDPMenu;
 

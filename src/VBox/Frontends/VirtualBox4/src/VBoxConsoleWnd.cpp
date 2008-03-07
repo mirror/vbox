@@ -29,6 +29,8 @@
 #include "QIStatusBar.h"
 #include "QIHotKeyEdit.h"
 
+/* Qt includes */
+#include <QX11Info>
 #include <qaction.h>
 #include <qmenubar.h>
 #include <q3buttongroup.h>
@@ -53,7 +55,6 @@
 #include <QEvent>
 #include <Q3VBoxLayout>
 #include <Q3Frame>
-#include <Q3PopupMenu>
 #include <Q3ActionGroup>
 
 #include <VBox/VBoxGuest.h>
@@ -117,7 +118,7 @@ class Q3HttpResponseHeader;
 VBoxConsoleWnd::
 VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
                 Qt::WFlags aFlags)
-    : Q3MainWindow (aParent, aName, aFlags)
+    : QMainWindow (aParent, aName, aFlags)
     , mMainMenu (0)
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , dbgStatisticsAction (NULL)
@@ -296,11 +297,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     ///// Menubar ///////////////////////////////////////////////////////////
 
-    mMainMenu = new Q3PopupMenu (this, "mMainMenu");
+    mMainMenu = new QMenu (this);
 
     /* Machine submenu */
 
-    Q3PopupMenu *vmMenu = new Q3PopupMenu (this, "vmMenu");
+    QMenu *vmMenu = new QMenu (this);
 
     /* dynamic & status line popup menus */
     vmAutoresizeMenu = new VBoxSwitchMenu (vmMenu, vmAutoresizeGuestAction);
@@ -334,13 +335,13 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* Devices submenu */
 
-    devicesMenu = new Q3PopupMenu (this, "devicesMenu");
+    devicesMenu = new QMenu (this);
 
     /* dynamic & statusline popup menus */
-    devicesMountFloppyMenu = new Q3PopupMenu (devicesMenu, "devicesMountFloppyMenu");
-    devicesMountDVDMenu = new Q3PopupMenu (devicesMenu, "devicesMountDVDMenu");
-    devicesSFMenu = new Q3PopupMenu (devicesMenu, "devicesSFMenu");
-    devicesNetworkMenu = new Q3PopupMenu (devicesMenu, "devicesNetworkMenu");
+    devicesMountFloppyMenu = new QMenu (devicesMenu);
+    devicesMountDVDMenu = new QMenu (devicesMenu);
+    devicesSFMenu = new QMenu (devicesMenu);
+    devicesNetworkMenu = new QMenu (devicesMenu);
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
     devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction);
 
@@ -383,7 +384,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     /* Debug popup menu */
     if (vboxGlobal().isDebuggerEnabled())
     {
-        dbgMenu = new Q3PopupMenu (this, "dbgMenu");
+        dbgMenu = new QMenu (this);
         dbgStatisticsAction->addTo (dbgMenu);
         dbgCommandLineAction->addTo (dbgMenu);
         menuBar()->insertItem (QString::null, dbgMenu, dbgMenuId);
@@ -395,7 +396,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* Help submenu */
 
-    Q3PopupMenu *helpMenu = new Q3PopupMenu( this, "helpMenu" );
+    QMenu *helpMenu = new QMenu (this);
 
     helpContentsAction->addTo (helpMenu);
     helpWebAction->addTo( helpMenu );
@@ -673,7 +674,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         pMainLayout->addMultiCell(mShiftingSpacerBottom, 2, 2, 0, 2);
     }
 
-    vmPauseAction->setOn (false);
+    vmPauseAction->setChecked (false);
 
     VBoxDefs::RenderMode mode = vboxGlobal().vmRenderMode();
 
@@ -735,16 +736,16 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
         str = cmachine.GetExtraData (VBoxDefs::GUI_Fullscreen);
         if (str == "on")
-            vmFullscreenAction->setOn (true);
+            vmFullscreenAction->setChecked (true);
 
         vmSeamlessAction->setEnabled (false);
         str = cmachine.GetExtraData (VBoxDefs::GUI_Seamless);
         if (str == "on")
-            vmSeamlessAction->setOn (true);
+            vmSeamlessAction->setChecked (true);
 
         str = cmachine.GetExtraData (VBoxDefs::GUI_AutoresizeGuest);
         if (str != "off")
-            vmAutoresizeGuestAction->setOn (true);
+            vmAutoresizeGuestAction->setChecked (true);
 
         str = cmachine.GetExtraData (VBoxDefs::GUI_FirstRun);
         if (str == "yes")
@@ -953,7 +954,7 @@ void VBoxConsoleWnd::finalizeOpenView()
 
     /* If seamless mode should be enabled then check if it is enabled
      * currently and re-enable it if seamless is supported */
-    if (vmSeamlessAction->isOn() && mIsSeamlessSupported)
+    if (vmSeamlessAction->isChecked() && mIsSeamlessSupported)
         toggleFullscreenMode (true, true);
     mIsOpenViewFinished = true;
     LogFlowFuncLeave();
@@ -997,11 +998,11 @@ void VBoxConsoleWnd::closeView()
         machine.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);
 
         machine.SetExtraData (VBoxDefs::GUI_Fullscreen,
-                              vmFullscreenAction->isOn() ? "on" : "off");
+                              vmFullscreenAction->isChecked() ? "on" : "off");
         machine.SetExtraData (VBoxDefs::GUI_Seamless,
-                              vmSeamlessAction->isOn() ? "on" : "off");
+                              vmSeamlessAction->isChecked() ? "on" : "off");
         machine.SetExtraData (VBoxDefs::GUI_AutoresizeGuest,
-                              vmAutoresizeGuestAction->isOn() ? "on" : "off");
+                              vmAutoresizeGuestAction->isChecked() ? "on" : "off");
     }
 
     console->detach();
@@ -1102,7 +1103,7 @@ void VBoxConsoleWnd::exitSeamless()
 
 void VBoxConsoleWnd::setMouseIntegrationLocked (bool aDisabled)
 {
-    vmDisableMouseIntegrAction->setOn (aDisabled);
+    vmDisableMouseIntegrAction->setChecked (aDisabled);
     vmDisableMouseIntegrAction->setEnabled (false);
 }
 
@@ -1180,7 +1181,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
             break;
     }
 
-    return Q3MainWindow::event (e);
+    return QMainWindow::event (e);
 }
 
 void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
@@ -1466,53 +1467,53 @@ void VBoxConsoleWnd::languageChange()
 
     /* VM actions */
 
-    vmFullscreenAction->setMenuText (tr ("&Fullscreen Mode") + "\tHost+F");
+    vmFullscreenAction->setText (tr ("&Fullscreen Mode") + "\tHost+F");
     vmFullscreenAction->setStatusTip (tr ("Switch to fullscreen mode" ));
 
-    vmSeamlessAction->setMenuText (tr ("Seam&less Mode") + "\tHost+L");
+    vmSeamlessAction->setText (tr ("Seam&less Mode") + "\tHost+L");
     vmSeamlessAction->setStatusTip (tr ("Switch to seamless desktop integration mode"));
 
     vmDisMouseIntegrMenu->setToolTip (tr ("Mouse Integration",
                                           "enable/disable..."));
     vmAutoresizeMenu->setToolTip (tr ("Auto-resize Guest Display",
                                       "enable/disable..."));
-    vmAutoresizeGuestAction->setMenuText (tr ("Auto-resize &Guest Display") +
+    vmAutoresizeGuestAction->setText (tr ("Auto-resize &Guest Display") +
                                           "\tHost+G");
     vmAutoresizeGuestAction->setStatusTip (
         tr ("Automatically resize the guest display when the window is resized "
             "(requires Guest Additions)"));
 
-    vmAdjustWindowAction->setMenuText (tr ("&Adjust Window Size") + "\tHost+A");
+    vmAdjustWindowAction->setText (tr ("&Adjust Window Size") + "\tHost+A");
     vmAdjustWindowAction->setStatusTip (
         tr ("Adjust window size and position to best fit the guest display"));
 
-    vmTypeCADAction->setMenuText (tr ("&Insert Ctrl-Alt-Del") + "\tHost+Del");
+    vmTypeCADAction->setText (tr ("&Insert Ctrl-Alt-Del") + "\tHost+Del");
     vmTypeCADAction->setStatusTip (
         tr ("Send the Ctrl-Alt-Del sequence to the virtual machine"));
 
 #if defined(Q_WS_X11)
-    vmTypeCABSAction->setMenuText (tr ("&Insert Ctrl-Alt-Backspace") +
+    vmTypeCABSAction->setText (tr ("&Insert Ctrl-Alt-Backspace") +
                                    "\tHost+Backspace");
     vmTypeCABSAction->setStatusTip (
         tr ("Send the Ctrl-Alt-Backspace sequence to the virtual machine"));
 #endif
 
-    vmResetAction->setMenuText (tr ("&Reset") + "\tHost+R");
+    vmResetAction->setText (tr ("&Reset") + "\tHost+R");
     vmResetAction->setStatusTip (tr ("Reset the virtual machine"));
 
     /* vmPauseAction is set up in updateAppearanceOf() */
 
-    vmACPIShutdownAction->setMenuText (tr ("ACPI S&hutdown") + "\tHost+H");
+    vmACPIShutdownAction->setText (tr ("ACPI S&hutdown") + "\tHost+H");
     vmACPIShutdownAction->setStatusTip (
         tr ("Send the ACPI Power Button press event to the virtual machine"));
 
-    vmCloseAction->setMenuText (tr ("&Close..." ) + "\tHost+Q");
+    vmCloseAction->setText (tr ("&Close..." ) + "\tHost+Q");
     vmCloseAction->setStatusTip (tr ("Close the virtual machine"));
 
-    vmTakeSnapshotAction->setMenuText (tr ("Take &Snapshot..." ) + "\tHost+S");
+    vmTakeSnapshotAction->setText (tr ("Take &Snapshot..." ) + "\tHost+S");
     vmTakeSnapshotAction->setStatusTip (tr ("Take a snapshot of the virtual machine"));
 
-    vmShowInformationDlgAction->setMenuText (tr ("Session I&nformation Dialog") +
+    vmShowInformationDlgAction->setText (tr ("Session I&nformation Dialog") +
                                              "\tHost+N");
     vmShowInformationDlgAction->setStatusTip (tr ("Show Session Information Dialog"));
 
@@ -1520,32 +1521,32 @@ void VBoxConsoleWnd::languageChange()
 
     /* Devices actions */
 
-    devicesMountFloppyImageAction->setMenuText (tr ("&Floppy Image..."));
+    devicesMountFloppyImageAction->setText (tr ("&Floppy Image..."));
     devicesMountFloppyImageAction->setStatusTip (tr ("Mount a floppy image file"));
 
-    devicesUnmountFloppyAction->setMenuText (tr ("Unmount F&loppy"));
+    devicesUnmountFloppyAction->setText (tr ("Unmount F&loppy"));
     devicesUnmountFloppyAction->setStatusTip (
         tr ("Unmount the currently mounted floppy media"));
 
-    devicesMountDVDImageAction->setMenuText (tr ("&CD/DVD-ROM Image..."));
+    devicesMountDVDImageAction->setText (tr ("&CD/DVD-ROM Image..."));
     devicesMountDVDImageAction->setStatusTip (
         tr ("Mount a CD/DVD-ROM image file"));
 
-    devicesUnmountDVDAction->setMenuText (tr ("Unmount C&D/DVD-ROM"));
+    devicesUnmountDVDAction->setText (tr ("Unmount C&D/DVD-ROM"));
     devicesUnmountDVDAction->setStatusTip (
         tr ("Unmount the currently mounted CD/DVD-ROM media"));
 
     devicesVRDPMenu->setToolTip (tr ("Remote Desktop (RDP) Server",
                                      "enable/disable..."));
-    devicesSwitchVrdpAction->setMenuText (tr ("Remote Dis&play"));
+    devicesSwitchVrdpAction->setText (tr ("Remote Dis&play"));
     devicesSwitchVrdpAction->setStatusTip (
         tr ("Enable or disable remote desktop (RDP) connections to this machine"));
 
-    devicesSFDialogAction->setMenuText (tr ("&Shared Folders..."));
+    devicesSFDialogAction->setText (tr ("&Shared Folders..."));
     devicesSFDialogAction->setStatusTip (
         tr ("Open the dialog to operate on shared folders"));
 
-    devicesInstallGuestToolsAction->setMenuText (tr ("&Install Guest Additions..."));
+    devicesInstallGuestToolsAction->setText (tr ("&Install Guest Additions..."));
     devicesInstallGuestToolsAction->setStatusTip (
         tr ("Mount the Guest Additions installation image"));
 
@@ -1553,28 +1554,28 @@ void VBoxConsoleWnd::languageChange()
     /* Debug actions */
 
     if (dbgStatisticsAction)
-        dbgStatisticsAction->setMenuText (tr ("&Statistics..."));
+        dbgStatisticsAction->setText (tr ("&Statistics..."));
     if (dbgCommandLineAction)
-        dbgCommandLineAction->setMenuText (tr ("&Command line..."));
+        dbgCommandLineAction->setText (tr ("&Command line..."));
 #endif
 
     /* Help actions */
 
-    helpContentsAction->setMenuText (tr ("&Contents..."));
+    helpContentsAction->setText (tr ("&Contents..."));
     helpContentsAction->setStatusTip (tr ("Show the online help contents"));
 
-    helpWebAction->setMenuText (tr ("&VirtualBox Web Site..."));
+    helpWebAction->setText (tr ("&VirtualBox Web Site..."));
     helpWebAction->setStatusTip (
         tr ("Open the browser and go to the VirtualBox product web site"));
 
-    helpRegisterAction->setMenuText (tr ("R&egister VirtualBox..."));
+    helpRegisterAction->setText (tr ("R&egister VirtualBox..."));
     helpRegisterAction->setStatusTip (
         tr ("Open VirtualBox registration form"));
 
-    helpAboutAction->setMenuText (tr ("&About VirtualBox..."));
+    helpAboutAction->setText (tr ("&About VirtualBox..."));
     helpAboutAction->setStatusTip (tr ("Show a dialog with product information"));
 
-    helpResetMessagesAction->setMenuText (tr ("&Reset All Warnings"));
+    helpResetMessagesAction->setText (tr ("&Reset All Warnings"));
     helpResetMessagesAction->setStatusTip (
         tr ("Cause all suppressed warnings and messages to be shown again"));
 
@@ -1588,11 +1589,12 @@ void VBoxConsoleWnd::languageChange()
     /* main menu & seamless popup menu */
 
     menuBar()->changeItem (vmMenuId, tr ("&Machine"));
-    mMainMenu->changeItem (vmMenuId,
-        VBoxGlobal::iconSet (":/machine_16px.png"), tr ("&Machine"));
+#warning port me: check this if the menu popups in the vm. (H+HOME?)
+//    mMainMenu->changeItem (vmMenuId,
+//        VBoxGlobal::iconSet (":/machine_16px.png"), tr ("&Machine"));
     menuBar()->changeItem (devicesMenuId, tr ("&Devices"));
-    mMainMenu->changeItem (devicesMenuId,
-        VBoxGlobal::iconSet (":/settings_16px.png"), tr ("&Devices"));
+//    mMainMenu->changeItem (devicesMenuId,
+//        VBoxGlobal::iconSet (":/settings_16px.png"), tr ("&Devices"));
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
     {
@@ -1601,8 +1603,8 @@ void VBoxConsoleWnd::languageChange()
     }
 #endif
     menuBar()->changeItem (helpMenuId, tr ("&Help"));
-    mMainMenu->changeItem (helpMenuId,
-        VBoxGlobal::iconSet (":/help_16px.png"), tr ("&Help"));
+//    mMainMenu->changeItem (helpMenuId,
+//        VBoxGlobal::iconSet (":/help_16px.png"), tr ("&Help"));
 
     /* status bar widgets */
 
@@ -1856,7 +1858,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         {
             /* update menu&status icon state */
             bool isVRDPEnabled = vrdpsrv.GetEnabled();
-            devicesSwitchVrdpAction->setOn (isVRDPEnabled);
+            devicesSwitchVrdpAction->setChecked (isVRDPEnabled);
 #if 0
             vrdp_state->setState (isVRDPEnabled ? 1 : 0);
 
@@ -1922,15 +1924,15 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     }
     if (element & PauseAction)
     {
-        if (!vmPauseAction->isOn())
+        if (!vmPauseAction->isChecked())
         {
-            vmPauseAction->setMenuText (tr ("&Pause") + "\tHost+P");
+            vmPauseAction->setText (tr ("&Pause") + "\tHost+P");
             vmPauseAction->setStatusTip (
                 tr ("Suspend the execution of the virtual machine"));
         }
         else
         {
-            vmPauseAction->setMenuText (tr ("R&esume") + "\tHost+P");
+            vmPauseAction->setText (tr ("R&esume") + "\tHost+P");
             vmPauseAction->setStatusTip (
                 tr ("Resume the execution of the virtual machine" ) );
         }
@@ -1938,16 +1940,16 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     }
     if (element & DisableMouseIntegrAction)
     {
-        if (!vmDisableMouseIntegrAction->isOn())
+        if (!vmDisableMouseIntegrAction->isChecked())
         {
-            vmDisableMouseIntegrAction->setMenuText (tr ("Disable &Mouse Integration") +
+            vmDisableMouseIntegrAction->setText (tr ("Disable &Mouse Integration") +
                                                      "\tHost+I");
             vmDisableMouseIntegrAction->setStatusTip (
                 tr ("Temporarily disable host mouse pointer integration"));
         }
         else
         {
-            vmDisableMouseIntegrAction->setMenuText (tr ("Enable &Mouse Integration") +
+            vmDisableMouseIntegrAction->setText (tr ("Enable &Mouse Integration") +
                                                      "\tHost+I");
             vmDisableMouseIntegrAction->setStatusTip (
                 tr ("Enable temporarily disabled host mouse pointer integration"));
@@ -2002,8 +2004,8 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     if (aOn)
     {
         /* Take the toggle hot key from the menu item. */
-        QString hotKey = aSeamless ? vmSeamlessAction->menuText() :
-                                     vmFullscreenAction->menuText();
+        QString hotKey = aSeamless ? vmSeamlessAction->text() :
+                                     vmFullscreenAction->text();
         hotKey = QStringList::split ('\t', hotKey) [1];
         Assert (!hotKey.isEmpty());
 
@@ -2027,12 +2029,12 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     if (aSeamless)
     {
         /* Activate the auto-resize feature required for the seamless mode. */
-        if (!vmAutoresizeGuestAction->isOn())
-            vmAutoresizeGuestAction->setOn (true);
+        if (!vmAutoresizeGuestAction->isChecked())
+            vmAutoresizeGuestAction->setChecked (true);
 
         /* Activate the mouse integration feature for the seamless mode. */
-        if (vmDisableMouseIntegrAction->isOn())
-            vmDisableMouseIntegrAction->setOn (false);
+        if (vmDisableMouseIntegrAction->isChecked())
+            vmDisableMouseIntegrAction->setChecked (false);
 
         vmAdjustWindowAction->setEnabled (!aOn);
         vmFullscreenAction->setEnabled (!aOn);
@@ -2287,7 +2289,7 @@ void VBoxConsoleWnd::vmFullscreen (bool aOn)
     {
         /* on failure, restore the previous button state */
         vmFullscreenAction->blockSignals (true);
-        vmFullscreenAction->setOn (!aOn);
+        vmFullscreenAction->setChecked (!aOn);
         vmFullscreenAction->blockSignals (false);
     }
 }
@@ -2302,7 +2304,7 @@ void VBoxConsoleWnd::vmSeamless (bool aOn)
         {
             /* on failure, restore the previous button state */
             vmSeamlessAction->blockSignals (true);
-            vmSeamlessAction->setOn (!aOn);
+            vmSeamlessAction->setChecked (!aOn);
             vmSeamlessAction->blockSignals (false);
         }
     }
@@ -2746,7 +2748,7 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
         ReshapeCustomWindow (reinterpret_cast <WindowPtr> (winId()));
     }
 #else
-    Q3MainWindow::setMask (region);
+    QMainWindow::setMask (region);
 #endif
 }
 
@@ -2835,6 +2837,7 @@ void VBoxConsoleWnd::prepareDVDMenu()
     devicesMountDVDImageAction->addTo (devicesMountDVDMenu);
 
     /* if shown as a context menu */
+    
     if (devicesMenu->itemParameter (devicesMountDVDMenuId))
     {
         devicesMountDVDMenu->insertSeparator();
@@ -3138,14 +3141,14 @@ void VBoxConsoleWnd::updateMachineState (KMachineState state)
                 }
                 case KMachineState_Paused:
                 {
-                    if (!vmPauseAction->isOn())
-                        vmPauseAction->setOn (true);
+                    if (!vmPauseAction->isChecked())
+                        vmPauseAction->setChecked (true);
                     break;
                 }
                 case KMachineState_Running:
                 {
-                    if (machine_state == KMachineState_Paused && vmPauseAction->isOn())
-                        vmPauseAction->setOn (false);
+                    if (machine_state == KMachineState_Paused && vmPauseAction->isChecked())
+                        vmPauseAction->setChecked (false);
                     break;
                 }
 #ifdef Q_WS_X11
@@ -3153,7 +3156,7 @@ void VBoxConsoleWnd::updateMachineState (KMachineState state)
                 {
                     /* The keyboard handler may wish to do some release logging
                        on startup.  Tell it that the logger is now active. */
-                    doXKeyboardLogging(this->x11Display());
+                    doXKeyboardLogging(QX11Info::display());
                     break;
                 }
 #endif
@@ -3200,7 +3203,7 @@ void VBoxConsoleWnd::updateMachineState (KMachineState state)
         /// @todo for some reason, IDisplay::takeScreenShot() may not work
         /// properly on a VM which is Stuck -- investigate it.
         CDisplay dsp = cconsole.GetDisplay();
-        QImage shot = QImage (dsp.GetWidth(), dsp.GetHeight(), 32, 0);
+        QImage shot = QImage (dsp.GetWidth(), dsp.GetHeight(), QImage::Format_RGB32);
         dsp.TakeScreenShot (shot.bits(), shot.width(), shot.height());
         shot.save (QFile::encodeName (fname), "PNG");
 
