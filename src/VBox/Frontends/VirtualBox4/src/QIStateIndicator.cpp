@@ -18,12 +18,8 @@
 
 #include "QIStateIndicator.h"
 
-#include <qpainter.h>
-//Added by qt3to4:
-#include <QPixmap>
-#include <QMouseEvent>
-#include <Q3Frame>
-#include <QContextMenuEvent>
+/* Qt includes */
+#include <QPainter>
 
 /** @clas QIStateIndicator
  *
@@ -39,21 +35,25 @@
  *      the initial indicator state
  */
 QIStateIndicator::QIStateIndicator (int aState,
-                                    QWidget *aParent, const char *aName,
-                                    Qt::WFlags aFlags)
-    : Q3Frame (aParent, aName, aFlags | Qt::WStaticContents | Qt::WMouseNoMask)
+                                    QWidget *aParent)
+    : QFrame (aParent)
+//    : QFrame (aParent, aName, aFlags | Qt::WStaticContents | Qt::WMouseNoMask)
 {
     mState = aState;
     mSize = QSize (0, 0);
-    mStateIcons.setAutoDelete (true);
 
     setSizePolicy (QSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed));
 
     /* we will precompose the pixmap background using the widget bacground in
      * drawContents(), so try to set the correct bacground origin for the
      * case when a pixmap is used as a widget background. */
-    if (aParent)
-        setBackgroundOrigin (aParent->backgroundOrigin());
+//    if (aParent)
+//        setBackgroundOrigin (aParent->backgroundOrigin());
+}
+
+QIStateIndicator::~QIStateIndicator()
+{
+    qDeleteAll (mStateIcons);
 }
 
 QSize QIStateIndicator::sizeHint() const
@@ -91,66 +91,70 @@ void QIStateIndicator::setStateIcon (int aState, const QPixmap &aPixmap)
 void QIStateIndicator::setState (int aState)
 {
     mState = aState;
-    repaint (false);
+    repaint();
+}
+
+void QIStateIndicator::paintEvent (QPaintEvent * /*event*/)
+{
+    QPainter painter(this);
+    drawContents(&painter);
 }
 
 void QIStateIndicator::drawContents (QPainter *aPainter)
 {
     Icon *icon = mStateIcons [mState];
-    if (!icon)
+    if (icon)
     {
-        erase();
-    }
-    else
-    {
+#warning port me
+        /* I didn't see any benefits of caching the icon
+         * background drawing in Qt4. This is already done 
+         * by Qt itself. Also there is no "NoAutoErase" 
+         * anymore. Disable this for now. */
 //        if (testAttribute (Qt::WNoAutoErase))
-#warning port me
-        if(0)
-        {
-            QColor bgColor = paletteBackgroundColor();
-            const QPixmap *bgPixmap = paletteBackgroundPixmap();
-            QPoint bgOff = backgroundOffset();
-
-            bool bgOffChanged = icon->bgOff != bgOff;
-            bool bgPixmapChanged = icon->bgPixmap != bgPixmap ||
-                (icon->bgPixmap != NULL &&
-                 icon->bgPixmap->serialNumber() != bgPixmap->serialNumber());
-            bool bgColorChanged = icon->bgColor != bgColor;
-
-            /* re-precompose the pixmap if any of these have changed */
-            if (icon->cached.isNull() ||
-                bgOffChanged || bgPixmapChanged || bgColorChanged)
-            {
-                int w = icon->pixmap.width();
-                int h = icon->pixmap.height();
-                if (icon->cached.isNull())
-                    icon->cached = QPixmap (w, h);
-
-                if (bgPixmap || bgOffChanged || bgPixmapChanged)
-                {
-                    QPainter p (&icon->cached);
-                    p.drawTiledPixmap (QRect (0, 0, w, h), *bgPixmap, bgOff);
-                }
-                else
-                {
-                    icon->cached.fill (bgColor);
-                }
-                /* paint the icon on top of the widget background sample */
-#warning port me
+//        {
+//            QColor bgColor = paletteBackgroundColor();
+//            const QPixmap *bgPixmap = paletteBackgroundPixmap();
+//            QPoint bgOff = backgroundOffset();
+//
+//            bool bgOffChanged = icon->bgOff != bgOff;
+//            bool bgPixmapChanged = icon->bgPixmap != bgPixmap ||
+//                (icon->bgPixmap != NULL &&
+//                 icon->bgPixmap->serialNumber() != bgPixmap->serialNumber());
+//            bool bgColorChanged = icon->bgColor != bgColor;
+//
+//            /* re-precompose the pixmap if any of these have changed */
+//            if (icon->cached.isNull() ||
+//                bgOffChanged || bgPixmapChanged || bgColorChanged)
+//            {
+//                int w = icon->pixmap.width();
+//                int h = icon->pixmap.height();
+//                if (icon->cached.isNull())
+//                    icon->cached = QPixmap (w, h);
+//
+//                if (bgPixmap || bgOffChanged || bgPixmapChanged)
+//                {
+//                    QPainter p (&icon->cached);
+//                    p.drawTiledPixmap (QRect (0, 0, w, h), *bgPixmap, bgOff);
+//                }
+//                else
+//                {
+//                    icon->cached.fill (bgColor);
+//                }
+//                /* paint the icon on top of the widget background sample */
 //                bitBlt (&icon->cached, 0, 0, &icon->pixmap,
 //                        0, 0, w, h, CopyROP, false);
-                /* store the new values */
-                icon->bgColor = bgColor;
-                icon->bgPixmap = bgPixmap;
-                icon->bgOff = bgOff;
-            }
-            /* draw the precomposed pixmap */
-            aPainter->drawPixmap (contentsRect(), icon->cached);
-        }
-        else
-        {
+//                /* store the new values */
+//                icon->bgColor = bgColor;
+//                icon->bgPixmap = bgPixmap;
+//                icon->bgOff = bgOff;
+//            }
+//            /* draw the precomposed pixmap */
+//            aPainter->drawPixmap (contentsRect(), icon->cached);
+//        }
+//        else
+//        {
             aPainter->drawPixmap (contentsRect(), icon->pixmap);
-        }
+//        }
     }
 }
 
@@ -166,7 +170,7 @@ void QIStateIndicator::mousePressEvent (QMouseEvent *aEv)
     if (qme.isAccepted())
         aEv->accept();
     else
-        Q3Frame::mousePressEvent (aEv);
+        QFrame::mousePressEvent (aEv);
 }
 #endif /* Q_WS_MAC */
 

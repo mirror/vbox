@@ -158,7 +158,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     setIcon (QPixmap (":/ico40x01.png"));
 
     /* ensure status bar is created */
-    new QIStatusBar (this, "statusBar");
+    new QIStatusBar (this);
 
     ///// Actions ///////////////////////////////////////////////////////////
 
@@ -417,32 +417,32 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     Q3HBox *indicatorBox = new Q3HBox (0, "indicatorBox");
     indicatorBox->setSpacing (5);
     /* i/o devices */
-    hd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "hd_light", Qt::WNoAutoErase);
+    hd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
     hd_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/hd_16px.png"));
     hd_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/hd_read_16px.png"));
     hd_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/hd_write_16px.png"));
     hd_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/hd_disabled_16px.png"));
-    cd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "cd_light", Qt::WNoAutoErase);
+    cd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
     cd_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/cd_16px.png"));
     cd_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/cd_read_16px.png"));
     cd_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/cd_write_16px.png"));
     cd_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/cd_disabled_16px.png"));
-    fd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "fd_light", Qt::WNoAutoErase);
+    fd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
     fd_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/fd_16px.png"));
     fd_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/fd_read_16px.png"));
     fd_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/fd_write_16px.png"));
     fd_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/fd_disabled_16px.png"));
-    net_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "net_light", Qt::WNoAutoErase);
+    net_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
     net_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/nw_16px.png"));
     net_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/nw_read_16px.png"));
     net_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/nw_write_16px.png"));
     net_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/nw_disabled_16px.png"));
-    usb_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "usb_light", Qt::WNoAutoErase);
+    usb_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
     usb_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/usb_16px.png"));
     usb_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/usb_read_16px.png"));
     usb_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/usb_write_16px.png"));
     usb_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/usb_disabled_16px.png"));
-    sf_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox, "sf_light", Qt::WNoAutoErase);
+    sf_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
     sf_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/shared_folder_16px.png"));
     sf_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/shared_folder_read_16px.png"));
     sf_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/shared_folder_write_16px.png"));
@@ -464,7 +464,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 #endif
 
     /* mouse */
-    mouse_state = new QIStateIndicator (0, indicatorBox, "mouse_state", Qt::WNoAutoErase);
+    mouse_state = new QIStateIndicator (0, indicatorBox);
     mouse_state->setStateIcon (0, QPixmap (":/mouse_disabled_16px.png"));
     mouse_state->setStateIcon (1, QPixmap (":/mouse_16px.png"));
     mouse_state->setStateIcon (2, QPixmap (":/mouse_seamless_16px.png"));
@@ -473,7 +473,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     /* host key */
     hostkey_hbox = new Q3HBox (indicatorBox, "hostkey_hbox");
     hostkey_hbox->setSpacing (3);
-    hostkey_state = new QIStateIndicator (0, hostkey_hbox, "hostkey_state");
+    hostkey_state = new QIStateIndicator (0, hostkey_hbox);
     hostkey_state->setStateIcon (0, QPixmap (":/hostkey_16px.png"));
     hostkey_state->setStateIcon (1, QPixmap (":/hostkey_captured_16px.png"));
     hostkey_state->setStateIcon (2, QPixmap (":/hostkey_pressed_16px.png"));
@@ -3248,7 +3248,7 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
     mIsSeamlessSupported = aSeamlessSupported;
     /* If seamless mode should be enabled then check if it is enabled
      * currently and re-enable it if open-view procedure is finished */
-    if (vmSeamlessAction->isOn() && mIsOpenViewFinished && aSeamlessSupported)
+    if (vmSeamlessAction->isChecked() && mIsOpenViewFinished && aSeamlessSupported)
         toggleFullscreenMode (true, true);
 
     /* Check the GA version only in case of additions are active */
@@ -3421,18 +3421,21 @@ void VBoxConsoleWnd::dbgAdjustRelativePos()
 
 #endif
 
-VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession)
-    : QDialog (aParent, "VBoxSFDialog", true /* modal */,
-               Qt::WType_Dialog | Qt::WShowModal)
-    , mSettings (0), mSession (aSession)
+VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
+    : QDialog (aParent)
+    , mSettings (0)
+    , mSession (aSession)
 {
+    setModal (true);
     /* Setup Dialog's options */
-    setCaption (tr ("Shared Folders"));
-    setIcon (QPixmap (":/select_file_16px.png"));
+    setWindowTitle (tr ("Shared Folders"));
+    setWindowIcon (QIcon (":/select_file_16px.png"));
     setSizeGripEnabled (true);
 
     /* Setup main dialog's layout */
-    Q3VBoxLayout *mainLayout = new Q3VBoxLayout (this, 10, 10, "mainLayout");
+    QVBoxLayout *mainLayout = new QVBoxLayout (this);
+    mainLayout->setContentsMargins (10, 10, 10, 10);
+    mainLayout->setSpacing (10);
 
     /* Setup settings layout */
     mSettings = new VBoxSharedFoldersSettings (this, "mSettings");
@@ -3443,15 +3446,17 @@ VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession)
     mainLayout->addWidget (mSettings);
 
     /* Setup button's layout */
-    Q3HBoxLayout *buttonLayout = new Q3HBoxLayout (mainLayout, 10, "buttonLayout");
-    QPushButton *pbHelp = new QPushButton (tr ("Help"), this, "pbHelp");
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    buttonLayout->setSpacing (10);
+    mainLayout->addLayout (buttonLayout);
+    QPushButton *pbHelp = new QPushButton (tr ("Help"));
     QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    QPushButton *pbOk = new QPushButton (tr ("&OK"), this, "pbOk");
-    QPushButton *pbCancel = new QPushButton (tr ("Cancel"), this, "pbCancel");
+    QPushButton *pbOk = new QPushButton (tr ("&OK"));
+    QPushButton *pbCancel = new QPushButton (tr ("Cancel"));
     connect (pbHelp, SIGNAL (clicked()), &vboxProblem(), SLOT (showHelpHelpDialog()));
     connect (pbOk, SIGNAL (clicked()), this, SLOT (accept()));
     connect (pbCancel, SIGNAL (clicked()), this, SLOT (reject()));
-    pbHelp->setAccel (Qt::Key_F1);
+    pbHelp->setShortcut (Qt::Key_F1);
     buttonLayout->addWidget (pbHelp);
     buttonLayout->addItem (spacer);
     buttonLayout->addWidget (pbOk);

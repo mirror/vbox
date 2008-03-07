@@ -18,10 +18,9 @@
 
 #include "QIStatusBar.h"
 
-#include <qpainter.h>
-#include <qsizegrip.h>
-//Added by qt3to4:
-#include <QPaintEvent>
+/* Qt includes */
+#include <QPainter>
+//#include <qsizegrip.h>
 
 /** @clas QIStatusLine
  *
@@ -30,8 +29,8 @@
  *  around every widget on the status bar.
  */
 
-QIStatusBar::QIStatusBar (QWidget *parent, const char *name) :
-    QStatusBar (parent, name)
+QIStatusBar::QIStatusBar (QWidget *parent) :
+    QStatusBar (parent)
 {
     connect (
         this, SIGNAL( messageChanged (const QString &) ),
@@ -43,21 +42,26 @@ QIStatusBar::QIStatusBar (QWidget *parent, const char *name) :
  *  Reimplemented to disable drawing of sunken borders around statusbar's
  *  widgets.
  */
-void QIStatusBar::paintEvent (QPaintEvent *)
+void QIStatusBar::paintEvent (QPaintEvent *e)
 {
-    QPainter p (this);
-
-#ifndef QT_NO_SIZEGRIP
+    QStatusBar::paintEvent (e);
+    return;
+#warning port me: is this needed anymore?
+//    QPainter p (this);
+//
+//#ifndef QT_NO_SIZEGRIP
     // this will work provided that QStatusBar::setSizeGripEnabled() names
     // its resizer child as specified (at least Qt 3.3.x does this).
-    QSizeGrip *resizer = (QSizeGrip *) child ("QStatusBar::resizer", "QSizeGrip");
-    int psx = (resizer && resizer->isVisible()) ? resizer->x() : width() - 12;
-#else
-    int psx = width() - 12;
-#endif
-
-    if (!message.isEmpty()) {
-        p.setPen (colorGroup().foreground());
-        p.drawText (6, 0, psx, height(), Qt::AlignVCenter | Qt::TextSingleLine, message);
-    }
+//#warning port me: check this
+//    QSizeGrip *resizer = (QSizeGrip *) child ("QStatusBar::resizer", "QSizeGrip");
+//    int psx = (resizer && resizer->isVisible()) ? resizer->x() : width() - 12;
+//#else
+//    int psx = width() - 12;
+//#endif
+//
+//    if (!message.isEmpty()) 
+//    {
+//        p.setPen (colorGroup().foreground());
+//        p.drawText (6, 0, psx, height(), Qt::AlignVCenter | Qt::TextSingleLine, message);
+//    }
 }

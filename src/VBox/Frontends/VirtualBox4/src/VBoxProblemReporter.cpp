@@ -26,19 +26,13 @@
 
 #include "QIHotKeyEdit.h"
 
-#include <qmessagebox.h>
-#include <q3progressdialog.h>
-#include <qcursor.h>
-#include <q3process.h>
-#include <qeventloop.h>
-#include <qregexp.h>
+/* Qt includes */
+#include <QProgressDialog>
+#include <QProcess>
+#include <QFileInfo>
 #ifdef Q_WS_MAC
-# include <qpushbutton.h>
+# include <QPushButton>
 #endif
-//Added by qt3to4:
-#include <QTimerEvent>
-#include <Q3CString>
-#include <QCloseEvent>
 
 #include <iprt/err.h>
 #include <iprt/param.h>
@@ -62,14 +56,13 @@
  *        must not be destroyed before the created VBoxProgressDialog instance
  *        is destroyed.
  */
-class VBoxProgressDialog : public Q3ProgressDialog
+class VBoxProgressDialog : public QProgressDialog
 {
 public:
 
     VBoxProgressDialog (CProgress &aProgress, const QString &aTitle,
-                        int aMinDuration = 2000, QWidget *aCreator = 0,
-                        const char *aName = 0)
-        : Q3ProgressDialog (aCreator, aName, true,
+                        int aMinDuration = 2000, QWidget *aCreator = 0)
+        : QProgressDialog (aCreator, 
                            Qt::WStyle_Customize | Qt::WStyle_DialogBorder | Qt::WStyle_Title)
         , mProgress (aProgress)
         , mCalcelEnabled (true)
@@ -78,6 +71,7 @@ public:
         , mLoopLevel (-1)
         , mEnded (false)
     {
+        setModal (true);
         if (mOpCount > 1)
             setLabelText (QString (sOpDescTpl)
                           .arg (mProgress.GetOperationDescription())
@@ -86,12 +80,12 @@ public:
             setLabelText (QString ("%1...")
                           .arg (mProgress.GetOperationDescription()));
         setCancelButtonText (QString::null);
-        setTotalSteps (100);
-        setCaption (QString ("%1: %2")
+        setMaximum (100);
+        setWindowTitle (QString ("%1: %2")
                     .arg (aTitle, mProgress.GetDescription()));
         setMinimumDuration (aMinDuration);
         setCancelEnabled (false);
-        setProgress (0);
+        setValue (0);
     }
 
     int run (int aRefreshInterval);
@@ -103,12 +97,12 @@ protected:
 
     virtual void timerEvent (QTimerEvent *e);
 
-    virtual void reject() { if (mCalcelEnabled) Q3ProgressDialog::reject(); };
+    virtual void reject() { if (mCalcelEnabled) QProgressDialog::reject(); };
 
     virtual void closeEvent (QCloseEvent *e)
     {
         if (mCalcelEnabled)
-            Q3ProgressDialog::closeEvent (e);
+            QProgressDialog::closeEvent (e);
         else
             e->ignore();
     }
@@ -134,14 +128,18 @@ int VBoxProgressDialog::run (int aRefreshInterval)
     {
 #warning port me
         /* start a refresh timer */
-//        startTimer (aRefreshInterval);
+        startTimer (aRefreshInterval);
+        // todo: Ok here I have no clue what this mean.
+        // I never saw someone calling the eventloop directly.
+        // Very inconventient. I will investigate this later.
+        // For now it seems to working correctly.
 //        mLoopLevel = qApp->eventLoop()->loopLevel();
 //        /* enter the modal loop */
 //        qApp->eventLoop()->enterLoop();
 //        killTimers();
 //        mLoopLevel = -1;
 //        mEnded = false;
-        return result();
+        return exec();
     }
     return Rejected;
 }
@@ -157,12 +155,16 @@ void VBoxProgressDialog::timerEvent (QTimerEvent *e)
         killTimer (e->timerId());
         if (mProgress.isOk())
         {
-            setProgress (100);
-            setResult (Accepted);
+            setValue (100);
+            accepted();
+//            setResult (Accepted);
         }
         else
-            setResult (Rejected);
-        mEnded = justEnded = true;
+            rejected();
+//            setResult (Rejected);
+        //
+//        mEnded = justEnded = true;
+        return;
     }
 
     if (mEnded)
@@ -198,7 +200,7 @@ void VBoxProgressDialog::timerEvent (QTimerEvent *e)
             .arg (mProgress.GetOperationDescription())
             .arg (mCurOp).arg (mOpCount));
     }
-    setProgress (mProgress.GetPercent());
+    setValue (mProgress.GetPercent());
 }
 
 
@@ -299,8 +301,8 @@ int VBoxProblemReporter::message (QWidget *aParent, Type aType, const QString &a
     if (aAutoConfirmId)
     {
         vbox = vboxGlobal().virtualBox();
-        msgs = QStringList::split (',', vbox.GetExtraData (VBoxDefs::GUI_SuppressMessages));
-        if (msgs.findIndex (aAutoConfirmId) >= 0) {
+        msgs = vbox.GetExtraData (VBoxDefs::GUI_SuppressMessages).split (',');
+        if (msgs.contains (aAutoConfirmId)) {
             int rc = AutoConfirmed;
             if (aButton1 & QIMessageBox::Default)
                 rc |= (aButton1 & QIMessageBox::ButtonMask);
@@ -417,7 +419,7 @@ bool VBoxProblemReporter::showModalProgressDialog (
     QApplication::setOverrideCursor (QCursor (Qt::WaitCursor));
 
     VBoxProgressDialog progressDlg (aProgress, aTitle, aMinDuration,
-                                    aParent, "progressDlg");
+                                    aParent);
 
     /* run the dialog with the 100 ms refresh interval */
     progressDlg.run (100);
@@ -442,18 +444,18 @@ QWidget *VBoxProblemReporter::mainWindowShown()
 #if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
     if (vboxGlobal().isVMConsoleProcess())
     {
-        if (vboxGlobal().consoleWnd().isShown())
+        if (vboxGlobal().consoleWnd().isVisible())
             return &vboxGlobal().consoleWnd();
     }
     else
     {
-        if (vboxGlobal().selectorWnd().isShown())
+        if (vboxGlobal().selectorWnd().isVisible())
             return &vboxGlobal().selectorWnd();
     }
 #else
-    if (vboxGlobal().consoleWnd().isShown())
+    if (vboxGlobal().consoleWnd().isVisible())
         return &vboxGlobal().consoleWnd();
-    if (vboxGlobal().selectorWnd().isShown())
+    if (vboxGlobal().selectorWnd().isVisible())
         return &vboxGlobal().selectorWnd();
 #endif
     return 0;
@@ -963,8 +965,8 @@ bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
     {
         /* this should be in sync with VBoxVMListBoxItem::recache() */
         QFileInfo fi (machine.GetSettingsFilePath());
-        name = fi.extension().lower() == "xml" ?
-               fi.baseName (true) : fi.fileName();
+        name = fi.suffix().toLower() == "xml" ?
+               fi.completeBaseName() : fi.fileName();
         msg = tr ("<p>Are you sure you want to unregister the inaccessible "
                   "virtual machine <b>%1</b>?</p>"
                   "<p>You will no longer be able to register it back from "
@@ -1843,7 +1845,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     //  - make warning messages modeless
     //  - add common buttons like Retry/Save/PowerOff/whatever
 
-    Q3CString autoConfimId = "showRuntimeError.";
+    QByteArray autoConfimId = "showRuntimeError.";
 
     CConsole console = aConsole;
     KMachineState state = console.GetState();
@@ -1873,7 +1875,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
         autoConfimId += "warning.";
     }
 
-    autoConfimId += errorID.utf8();
+    autoConfimId += errorID.toUtf8();
 
     QString formatted;
 
@@ -2090,15 +2092,13 @@ void VBoxProblemReporter::showHelpHelpDialog()
     rc = RTPathAppDocs (szDocsPath, sizeof (szDocsPath));
     Assert(RT_SUCCESS(rc));
     rc = RTPathAppPrivateArch (szViewerPath, sizeof (szViewerPath));
+    Assert(RT_SUCCESS(rc));
 
-    QString fullProgPath = QString(szDocsPath);
-    Q3Process kchmViewer (QString(szViewerPath) + "/kchmviewer");
-    kchmViewer.addArgument (fullProgPath + "/VirtualBox.chm");
-    kchmViewer.launch (QString(""));
+    QProcess::startDetached (QString(szViewerPath) + "/kchmviewer", 
+                             QStringList (QString(szDocsPath) + "/VirtualBox.chm"));
 #elif defined (Q_WS_MAC)
-    Q3Process openApp (QString("/usr/bin/open"));
-    openApp.addArgument (qApp->applicationDirPath() + "/UserManual.pdf");
-    openApp.launch (QString(""));
+    QProcess::startDetached ("/usr/bin/open", 
+                             QStringList (qApp->applicationDirPath() + "/UserManual.pdf"));
 #endif
 #endif /* VBOX_OSE */
 }

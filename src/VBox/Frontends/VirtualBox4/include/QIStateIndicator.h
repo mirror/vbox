@@ -19,23 +19,18 @@
 #ifndef __QIStateIndicator_h__
 #define __QIStateIndicator_h__
 
-#include <q3frame.h>
-#include <qpixmap.h>
+/* Qt includes */
+#include <QFrame>
+#include <QHash>
 
-#include <q3intdict.h>
-//Added by qt3to4:
-#include <QMouseEvent>
-#include <QContextMenuEvent>
-
-class QIStateIndicator : public Q3Frame
+class QIStateIndicator : public QFrame
 {
     Q_OBJECT
 
 public:
 
-    QIStateIndicator (int aState,
-                      QWidget *aParent, const char *aName = 0,
-                      Qt::WFlags aFlags = 0);
+    QIStateIndicator (int aState, QWidget *aParent);
+    ~QIStateIndicator();
 
     virtual QSize sizeHint() const;
 
@@ -58,6 +53,7 @@ signals:
 
 protected:
 
+    virtual void paintEvent (QPaintEvent *event);
     virtual void drawContents (QPainter *aPainter);
 
 #ifdef Q_WS_MAC
@@ -84,7 +80,7 @@ private:
         QPoint bgOff;
     };
 
-    Q3IntDict <Icon> mStateIcons;
+    QHash <int, Icon *> mStateIcons;
 };
 
 #endif // __QIStateIndicator_h__

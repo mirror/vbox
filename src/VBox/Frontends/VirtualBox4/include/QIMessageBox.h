@@ -19,13 +19,11 @@
 #ifndef __QIMessageBox_h__
 #define __QIMessageBox_h__
 
-#include <qdialog.h>
-#include <q3vbox.h>
-#include <qmessagebox.h>
-#include <qcheckbox.h>
-#include <q3textedit.h>
-//Added by qt3to4:
-#include <QLabel>
+/* Qt includes */
+#include <QDialog>
+#include <QMessageBox>
+#include <QCheckBox>
+#include <QTextEdit>
 
 class QIRichLabel;
 class QLabel;
@@ -67,21 +65,21 @@ public:
     QString buttonText (int aButton) const;
     void setButtonText (int aButton, const QString &aText);
 
-    QString flagText() const { return mFlagCB->isShown() ? mFlagCB->text() : QString::null; }
+    QString flagText() const { return mFlagCB->isVisible() ? mFlagCB->text() : QString::null; }
     void setFlagText (const QString &aText);
 
     bool isFlagChecked() const { return mFlagCB->isChecked(); }
     void setFlagChecked (bool aChecked) { mFlagCB->setChecked (aChecked); }
 
-    QString detailsText () const { return mDetailsText->text(); }
+    QString detailsText () const { return mDetailsText->toHtml(); }
     void setDetailsText (const QString &aText);
 
-    bool isDetailsShown() const { return mDetailsVBox->isShown(); }
+    bool isDetailsShown() const { return mDetailsVBox->isVisible(); }
     void setDetailsShown (bool aShown);
 
 private:
 
-    QPushButton *createButton (QWidget *aParent, int aButton);
+    QPushButton *createButton (int aButton);
 
 private slots:
 
@@ -101,10 +99,9 @@ private:
     QLabel *mIconLabel;
     QIRichLabel *mTextLabel;
     QPushButton *mButton0PB, *mButton1PB, *mButton2PB;
-    Q3VBox *mMessageVBox;
     QCheckBox *mFlagCB, *mFlagCB_Main, *mFlagCB_Details;
-    Q3VBox *mDetailsVBox;
-    Q3TextEdit *mDetailsText;
+    QWidget *mDetailsVBox;
+    QTextEdit *mDetailsText;
     QSpacerItem *mSpacer;
 };
 

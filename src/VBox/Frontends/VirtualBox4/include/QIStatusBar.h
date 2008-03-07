@@ -19,9 +19,8 @@
 #ifndef __QIStatusBar_h__
 #define __QIStatusBar_h__
 
-#include <qstatusbar.h>
-//Added by qt3to4:
-#include <QPaintEvent>
+/* Qt includes */
+#include <QStatusBar>
 
 class QPaintEvent;
 
@@ -31,7 +30,7 @@ class QIStatusBar : public QStatusBar
 
 public:
 
-    QIStatusBar (QWidget *parent = 0, const char *name = 0);
+    QIStatusBar (QWidget *parent = 0);
 
 protected:
 

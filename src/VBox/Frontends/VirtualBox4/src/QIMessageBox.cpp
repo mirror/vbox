@@ -17,20 +17,13 @@
  */
 
 #include "QIMessageBox.h"
-//Added by qt3to4:
-#include <Q3HBoxLayout>
-#include <q3mimefactory.h>
-#include <Q3VBoxLayout>
 #include "VBoxDefs.h"
 #include "QIRichLabel.h"
 
-#include <qpixmap.h>
-#include <qlabel.h>
-#include <qpushbutton.h>
-#include <q3hbox.h>
-#include <qlayout.h>
-
-#include <qfontmetrics.h>
+/* Qt includes */
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QLabel>
 
 /** @class QIMessageBox
  *
@@ -53,50 +46,58 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
                aFlags | Qt::WStyle_Customize | Qt::WStyle_NormalBorder |
                         Qt::WStyle_Title | Qt::WStyle_SysMenu)
 {
-    setCaption (aCaption);
+    setWindowTitle (aCaption);
 
     mButton0 = aButton0;
     mButton1 = aButton1;
     mButton2 = aButton2;
 
-    Q3VBoxLayout *layout = new Q3VBoxLayout (this);
-    /* setAutoAdd() behavior is really poor (it messes up with the order
-     * of widgets), never use it: layout->setAutoAdd (true); */
+    QVBoxLayout *layout = new QVBoxLayout (this);
     layout->setMargin (11);
     layout->setSpacing (10);
-    layout->setResizeMode (QLayout::SetMinimumSize);
+    layout->setSizeConstraint (QLayout::SetMinimumSize);
 
-    Q3HBox *main = new Q3HBox (this);
-    main->setMargin (0);
-    main->setSpacing (10);
+    QWidget *main = new QWidget();
+
+    QHBoxLayout *hLayout = new QHBoxLayout (main);
+    hLayout->setContentsMargins (0, 0, 0, 0);
+    hLayout->setSpacing (10);
     layout->addWidget (main);
 
-    mIconLabel = new QLabel (main);
+    mIconLabel = new QLabel();
 	if (aIcon < GuruMeditation)
         mIconLabel->setPixmap (QMessageBox::standardIcon ((QMessageBox::Icon) aIcon));
     else if (aIcon == GuruMeditation)
         mIconLabel->setPixmap (QPixmap (":/meditation_32px.png"));
     mIconLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
     mIconLabel->setAlignment (Qt::AlignHCenter | Qt::AlignTop);
+    hLayout->addWidget (mIconLabel);
 
-    mMessageVBox = new Q3VBox (main);
-    mMessageVBox->setMargin (0);
-    mMessageVBox->setSpacing (10);
+    QVBoxLayout* messageVBoxLayout = new QVBoxLayout();
+    messageVBoxLayout->setContentsMargins (0, 0, 0, 0);
+    messageVBoxLayout->setSpacing (10);
+    hLayout->addLayout (messageVBoxLayout);
 
-    mTextLabel = new QIRichLabel (aText, mMessageVBox);
+    mTextLabel = new QIRichLabel (aText, NULL);
     mTextLabel->setAlignment (Qt::AlignLeft | Qt::AlignTop | Qt::TextExpandTabs | Qt::TextWordWrap);
-    mTextLabel->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred, true);
+    QSizePolicy sp (QSizePolicy::Preferred, QSizePolicy::Preferred);
+    sp.setHeightForWidth (true);
+    mTextLabel->setSizePolicy (sp);
     mTextLabel->setMinimumWidth (mTextLabel->sizeHint().width());
+    messageVBoxLayout->addWidget (mTextLabel);
 
-    mFlagCB_Main = new QCheckBox (mMessageVBox);
+    mFlagCB_Main = new QCheckBox();
     mFlagCB_Main->hide();
+    messageVBoxLayout->addWidget (mFlagCB_Main);
 
-    mDetailsVBox = new Q3VBox (this);
-    mDetailsVBox->setMargin (0);
-    mDetailsVBox->setSpacing (10);
+    mDetailsVBox = new QWidget();
     layout->addWidget (mDetailsVBox);
 
-    mDetailsText = new Q3TextEdit (mDetailsVBox);
+    QVBoxLayout* detailsVBoxLayout = new QVBoxLayout(mDetailsVBox);
+    detailsVBoxLayout->setContentsMargins (0, 0, 0, 0);
+    detailsVBoxLayout->setSpacing (10);
+
+    mDetailsText = new QTextEdit();
     {
         /* calculate the minimum size dynamically, approx. for 40 chars and
          * 6 lines */
@@ -104,34 +105,43 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
         mDetailsText->setMinimumSize (40 * fm.width ('m'), fm.lineSpacing() * 6);
     }
     mDetailsText->setReadOnly (true);
-    mDetailsText->setWrapPolicy (Q3TextEdit::AtWordOrDocumentBoundary);
     mDetailsText->setSizePolicy (QSizePolicy::Expanding,
                                  QSizePolicy::MinimumExpanding);
+    detailsVBoxLayout->addWidget (mDetailsText);
 
-    mFlagCB_Details = new QCheckBox (mDetailsVBox);
+    mFlagCB_Details = new QCheckBox();
     mFlagCB_Details->hide();
+    detailsVBoxLayout->addWidget (mFlagCB_Details);
 
     mSpacer = new QSpacerItem (0, 0);
     layout->addItem (mSpacer);
 
-    Q3HBoxLayout *buttons = new Q3HBoxLayout (new QWidget (this));
-    layout->addWidget (buttons->mainWidget());
-    buttons->setAutoAdd (true);
-    buttons->setSpacing (5);
+    QHBoxLayout *buttonsHLayout = new QHBoxLayout();
+    buttonsHLayout->setSpacing (5);
+    layout->addLayout (buttonsHLayout);
 
     mButtonEsc = 0;
 
-    mButton0PB = createButton (buttons->mainWidget(), aButton0);
+    mButton0PB = createButton (aButton0);
     if (mButton0PB)
+    {
+        buttonsHLayout->addWidget (mButton0PB);
         connect (mButton0PB, SIGNAL (clicked()), SLOT (done0()));
-    mButton1PB = createButton (buttons->mainWidget(), aButton1);
+    }
+    mButton1PB = createButton (aButton1);
     if (mButton1PB)
+    {
+        buttonsHLayout->addWidget (mButton1PB);
         connect (mButton1PB, SIGNAL (clicked()), SLOT (done1()));
-    mButton2PB = createButton (buttons->mainWidget(), aButton2);
+    }
+    mButton2PB = createButton (aButton2);
     if (mButton2PB)
+    {
+        buttonsHLayout->addWidget (mButton2PB);
         connect (mButton2PB, SIGNAL (clicked()), SLOT (done2()));
+    }
 
-    buttons->setAlignment (Qt::AlignHCenter);
+    buttonsHLayout->setAlignment (Qt::AlignHCenter);
 
     /* this call is a must -- it initializes mFlagCB and mSpacer */
     setDetailsShown (false);
@@ -218,7 +228,7 @@ void QIMessageBox::setFlagText (const QString &aText)
  *  @see #setFlagText()
  */
 
-QPushButton *QIMessageBox::createButton (QWidget *aParent, int aButton)
+QPushButton *QIMessageBox::createButton (int aButton)
 {
     if (aButton == 0)
         return 0;
@@ -236,7 +246,7 @@ QPushButton *QIMessageBox::createButton (QWidget *aParent, int aButton)
             return NULL;
     }
 
-    QPushButton *b = new QPushButton (text, aParent);
+    QPushButton *b = new QPushButton (text);
 
     if (aButton & Default)
     {
@@ -290,21 +300,21 @@ void QIMessageBox::setDetailsShown (bool aShown)
 {
     if (aShown)
     {
-        mFlagCB_Details->setShown (mFlagCB_Main->isShown());
+        mFlagCB_Details->setVisible (mFlagCB_Main->isVisible());
         mFlagCB_Details->setChecked (mFlagCB_Main->isChecked());
         mFlagCB_Details->setText (mFlagCB_Main->text());
         if (mFlagCB_Main->hasFocus())
             mFlagCB_Details->setFocus();
-        mFlagCB_Main->setShown (false);
+        mFlagCB_Main->setVisible (false);
         mFlagCB = mFlagCB_Details;
         mSpacer->changeSize (0, 0, QSizePolicy::Minimum, QSizePolicy::Minimum);
     }
 
-    mDetailsVBox->setShown (aShown);
+    mDetailsVBox->setVisible (aShown);
 
     if (!aShown)
     {
-        mFlagCB_Main->setShown (mFlagCB_Details->isShown());
+        mFlagCB_Main->setVisible (mFlagCB_Details->isVisible());
         mFlagCB_Main->setChecked (mFlagCB_Details->isChecked());
         mFlagCB_Main->setText (mFlagCB_Details->text());
         if (mFlagCB_Details->hasFocus())
