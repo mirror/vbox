@@ -24,9 +24,6 @@ include	$(PATH_KBUILD)/subheader.kmk
 #
 PROGRAMS += VBoxClient
 
-# Enable Seamless mode
-VBOX_X11_SEAMLESS_GUEST := 1
-
 VBoxClient_TEMPLATE = VBOXGUESTR3CPPEXE
 VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_HGCM
 VBoxClient_DEFS.linux += _GNU_SOURCE
