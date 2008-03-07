@@ -746,8 +746,6 @@ private slots:
 
     void processAboutToShow();
 
-//    void processActivated (int);
-
 private:
 
     QAction *mAction;

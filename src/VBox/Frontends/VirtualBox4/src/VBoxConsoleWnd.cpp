@@ -1609,20 +1609,20 @@ void VBoxConsoleWnd::languageChange()
 #if 0
     QToolTip::add (autoresize_state,
         tr ("Indicates whether the guest display auto-resize function is On "
-            "(<img src=auto_resize_on_16px.png/>) or Off (<img src=auto_resize_off_16px.png/>). "
+            "(<img src=:/auto_resize_on_16px.png/>) or Off (<img src=:/auto_resize_off_16px.png/>). "
             "Note that this function requires Guest Additions to be installed in the guest OS."));
 #endif
     QToolTip::add (mouse_state,
         tr ("Indicates whether the host mouse pointer is captured by the guest OS:<br>"
-            "<nobr><img src=mouse_disabled_16px.png/>&nbsp;&nbsp;pointer is not captured</nobr><br>"
-            "<nobr><img src=mouse_16px.png/>&nbsp;&nbsp;pointer is captured</nobr><br>"
-            "<nobr><img src=mouse_seamless_16px.png/>&nbsp;&nbsp;mouse integration (MI) is On</nobr><br>"
-            "<nobr><img src=mouse_can_seamless_16px.png/>&nbsp;&nbsp;MI is Off, pointer is captured</nobr><br>"
-            "<nobr><img src=mouse_can_seamless_uncaptured_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr><br>"
+            "<nobr><img src=:/mouse_disabled_16px.png/>&nbsp;&nbsp;pointer is not captured</nobr><br>"
+            "<nobr><img src=:/mouse_16px.png/>&nbsp;&nbsp;pointer is captured</nobr><br>"
+            "<nobr><img src=:/mouse_seamless_16px.png/>&nbsp;&nbsp;mouse integration (MI) is On</nobr><br>"
+            "<nobr><img src=:/mouse_can_seamless_16px.png/>&nbsp;&nbsp;MI is Off, pointer is captured</nobr><br>"
+            "<nobr><img src=:/mouse_can_seamless_uncaptured_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr><br>"
             "Note that the mouse integration feature requires Guest Additions to be installed in the guest OS."));
     QToolTip::add (hostkey_state,
         tr ("Indicates whether the keyboard is captured by the guest OS "
-            "(<img src=hostkey_captured_16px.png/>) or not (<img src=hostkey_16px.png/>)."));
+            "(<img src=:/hostkey_captured_16px.png/>) or not (<img src=:/hostkey_16px.png/>)."));
     QToolTip::add (hostkey_name,
         tr ("Shows the currently assigned Host key.<br>"
             "This key, when pressed alone, toggles the the keyboard and mouse "
@@ -1862,8 +1862,8 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
 
             /* compose status icon tooltip */
             QString tip = tr ("Indicates whether the Remote Display (VRDP Server) "
-                              "is enabled (<img src=vrdp_16px.png/>) or not "
-                              "(<img src=vrdp_disabled_16px.png/>)."
+                              "is enabled (<img src=:/vrdp_16px.png/>) or not "
+                              "(<img src=:/vrdp_disabled_16px.png/>)."
                               );
             if (vrdpsrv.GetEnabled())
                 tip += tr ("<hr>VRDP Server is listening on port %1").arg (vrdpsrv.GetPort());
@@ -3066,9 +3066,8 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
 #if 0
         devicesSFMenu->exec (e->globalPos());
 #else
-#warning port me
-//        if (devicesSFDialogAction->isEnabled())
-//            devicesSFDialogAction->activate();
+        if (devicesSFDialogAction->isEnabled())
+            devicesSFDialogAction->trigger();
 #endif
     }
     else

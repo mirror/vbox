@@ -4262,10 +4262,9 @@ VBoxSwitchMenu::VBoxSwitchMenu (QWidget *aParent, QAction *aAction,
 {
     /* this menu works only with toggle action */
     Assert (aAction->isCheckable());
+    addAction(aAction);
     connect (this, SIGNAL (aboutToShow()),
              this, SLOT   (processAboutToShow()));
-//    connect (this, SIGNAL (activated (int)),
-//             this, SLOT   (processActivated (int)));
 }
 
 void VBoxSwitchMenu::setToolTip (const QString &aTip)
@@ -4278,12 +4277,6 @@ void VBoxSwitchMenu::processAboutToShow()
     QString text = mAction->isChecked() ^ mInverted ? tr ("Disable") : tr ("Enable");
     mAction->setText (text);
 }
-
-#warning port me: no longer needed?
-//void VBoxSwitchMenu::processActivated (int /*aIndex*/)
-//{
-//    mAction->toggle();
-//}
 
 #ifdef Q_WS_X11
 #include "VBoxGlobal.moc"
