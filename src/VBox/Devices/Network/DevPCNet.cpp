@@ -144,7 +144,7 @@ struct PCNetState_st
     uint32_t                            Alignment2;
 #endif
     /** Buffer address of current send frame */
-    uint8_t                             *pvSendFrame;
+    R3PTRTYPE(uint8_t *)                pvSendFrame;
     /** The xmit buffer. */
     uint8_t                             abSendBuf[4096];
     /** The recv buffer. */
