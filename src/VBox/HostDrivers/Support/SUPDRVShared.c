@@ -128,6 +128,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0MemObjAllocPage",                    (void *)RTR0MemObjAllocPage },
     { "RTR0MemObjAllocPhys",                    (void *)RTR0MemObjAllocPhys },
     { "RTR0MemObjAllocPhysNC",                  (void *)RTR0MemObjAllocPhysNC },
+    { "RTR0MemObjAllocCont",                    (void *)RTR0MemObjAllocCont },
     { "RTR0MemObjLockUser",                     (void *)RTR0MemObjLockUser },
     { "RTR0MemObjMapKernel",                    (void *)RTR0MemObjMapKernel },
     { "RTR0MemObjMapUser",                      (void *)RTR0MemObjMapUser },
