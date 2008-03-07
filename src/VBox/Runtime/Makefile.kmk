@@ -933,6 +933,15 @@ RuntimeR0Drv_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwinKern.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \
+	generic/RTMpCpuIdFromSetIndex-generic.cpp \
+	generic/RTMpCpuIdToSetIndex-generic.cpp \
+	generic/RTMpDoesCpuExist-generic.cpp \
+	generic/RTMpGetCount-generic.cpp \
+	generic/RTMpGetMaxCpuId-generic.cpp \
+	generic/RTMpGetOnlineCount-generic.cpp \
+	generic/RTMpGetOnlineSet-generic.cpp \
+	generic/RTMpGetSet-generic.cpp \
+	generic/RTMpIsCpuOnline-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/timer-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
@@ -967,6 +976,16 @@ RuntimeR0Drv_SOURCES.os2 = \
 	common/misc/thread.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \
+	generic/RTMpCpuIdFromSetIndex-generic.cpp \
+	generic/RTMpCpuIdToSetIndex-generic.cpp \
+	generic/RTMpDoesCpuExist-generic.cpp \
+	generic/RTMpGetCount-generic.cpp \
+	generic/RTMpGetMaxCpuId-generic.cpp \
+	generic/RTMpGetOnlineCount-generic.cpp \
+	generic/RTMpGetOnlineSet-generic.cpp \
+	generic/RTMpGetSet-generic.cpp \
+	generic/RTMpIsCpuOnline-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm \
 	r0drv/memobj-r0drv.cpp \
@@ -1001,6 +1020,16 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \
+	generic/RTMpCpuIdFromSetIndex-generic.cpp \
+	generic/RTMpCpuIdToSetIndex-generic.cpp \
+	generic/RTMpDoesCpuExist-generic.cpp \
+	generic/RTMpGetCount-generic.cpp \
+	generic/RTMpGetMaxCpuId-generic.cpp \
+	generic/RTMpGetOnlineCount-generic.cpp \
+	generic/RTMpGetOnlineSet-generic.cpp \
+	generic/RTMpGetSet-generic.cpp \
+	generic/RTMpIsCpuOnline-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/freebsd/alloc-r0drv-freebsd.c \
