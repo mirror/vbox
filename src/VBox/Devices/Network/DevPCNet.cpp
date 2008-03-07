@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2006-2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,7 +67,7 @@
 /* Enable this to catch writes to the ring descriptors instead of using excessive polling */
 /* #define PCNET_NO_POLLING */
 
-/* Enable to handle frequent io reads in the guest context */
+/* Enable to handle frequent io reads in the guest context (recommended) */
 #define PCNET_GC_ENABLED
 
 /* Experimental: queue TX packets */
@@ -95,6 +95,7 @@
 /* Maximum number of times we report a link down to the guest (failure to send frame) */
 #define PCNET_MAX_LINKDOWN_REPORTED     3
 
+/* Maximum frame size we handle */
 #define MAX_FRAME                       1536
 
 
