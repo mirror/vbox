@@ -4316,7 +4316,7 @@ HRESULT VirtualBox::backupSettingsFile (const Bstr &aFileName,
     Utf8Str of = aFileName;
     Utf8Str nf = Utf8StrFmt ("%s.%s.bak", of.raw(), aOldFormat.raw());
 
-    int vrc = RTFileCopyEx (of, nf, RTFILECOPY_FLAG_NO_DENY_WRITE,
+    int vrc = RTFileCopyEx (of, nf, RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE,
                             NULL, NULL);
 
     /* try progressive suffix from .0 to .9 on failure */
@@ -4326,7 +4326,7 @@ HRESULT VirtualBox::backupSettingsFile (const Bstr &aFileName,
         for (int i = 0; i <= 9 && RT_FAILURE (vrc); ++ i)
         {
             nf = Utf8StrFmt ("%s.%d", tmp.raw(), i);
-            vrc = RTFileCopyEx (of, nf, RTFILECOPY_FLAG_NO_DENY_WRITE,
+            vrc = RTFileCopyEx (of, nf, RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE,
                                 NULL, NULL);
         }
     }

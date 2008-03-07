@@ -326,19 +326,19 @@ RTDECL(int) RTFileCopyEx(const char *pszSrc, const char *pszDst, uint32_t fFlags
     AssertMsgReturn(VALID_PTR(pszDst), ("pszDst=%p\n", pszDst), VERR_INVALID_PARAMETER);
     AssertMsgReturn(*pszDst, ("pszDst=%p\n", pszDst), VERR_INVALID_PARAMETER);
     AssertMsgReturn(!pfnProgress || VALID_PTR(pfnProgress), ("pfnProgress=%p\n", pfnProgress), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!(fFlags & ~RTFILECOPY_FLAGS_MASK), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
 
     /*
      * Open the files.
      */
     RTFILE FileSrc;
-    uint32_t fSrcOpen = RTFILE_O_READ | RTFILE_O_OPEN;
-    if (!(fFlags & RTFILECOPY_FLAG_NO_DENY_WRITE))
-        fSrcOpen |= RTFILE_O_DENY_WRITE;
-    int rc = RTFileOpen(&FileSrc, pszSrc, fSrcOpen);
+    int rc = RTFileOpen(&FileSrc, pszSrc,
+                        RTFILE_O_READ | (fFlags & RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE ? 0 : RTFILE_O_DENY_WRITE) | RTFILE_O_OPEN);
     if (RT_SUCCESS(rc))
     {
         RTFILE FileDst;
-        rc = RTFileOpen(&FileDst, pszDst, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE);
+        rc = RTFileOpen(&FileDst, pszDst,
+                        RTFILE_O_READ | (fFlags & RTFILECOPY_FLAGS_NO_DST_DENY_WRITE ? 0 : RTFILE_O_DENY_WRITE) | RTFILE_O_OPEN);
         if (RT_SUCCESS(rc))
         {
             /*
