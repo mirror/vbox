@@ -26,19 +26,17 @@
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
 #include <VBox/com/Guid.h>
+#include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/EventQueue.h>
 
 #include <VBox/com/VirtualBox.h>
 
-/// @todo later, when the settings file update funciton is reimplemented using
-/// libxslt (search for CFGLDR to find related parts of code below)
-// #include <VBox/settings.h>
-
 #include <stdlib.h>
 #include <stdarg.h>
 
 #include <vector>
+#include <list>
 
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
@@ -260,8 +258,14 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd == USAGE_ALL)
     {
-        RTPrintf("VBoxManage [-v|-version]    print version number and exit\n");
-        RTPrintf("VBoxManage -nologo ...      suppress the logo\n"
+        RTPrintf("VBoxManage [-v|-version]    print version number and exit\n"
+                 "VBoxManage -nologo ...      suppress the logo\n"
+                 "\n"
+                 "VBoxManage -convertSettings ...        allow to auto-convert settings files\n"
+                 "VBoxManage -convertSettingsBackup ...  allow to auto-convert settings files\n"
+                 "                                       but create backup copies before\n"
+                 "VBoxManage -convertSettingsIgnore ...  allow to auto-convert settings files\n"
+                 "                                       but don't explicitly save the results\n"
                  "\n");
     }
 
@@ -607,13 +611,6 @@ static void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage sharedfolder     remove <vmname>|<uuid>\n"
                  "                            -name <name> [-transient]\n"
-                 "\n");
-    }
-
-    if (u64Cmd & USAGE_UPDATESETTINGS)
-    {
-        RTPrintf("VBoxManage updatesettings   [<dir>|<file>] [-apply]\n"
-                 "                            [-nobackup] [-skipinvalid]\n"
                  "\n");
     }
 
@@ -7386,263 +7383,164 @@ static int handleVMStatistics(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-enum HUSPD { HUSPD_DryRun, HUSPD_Apply, HUSPD_ApplyNoBackup };
-
-static int handleUpdateSettings_processFile (const char *filePath, HUSPD mode)
+enum ConvertSettings
 {
-    RTPrintf ("%s\n", filePath);
+    ConvertSettings_No      = 0,
+    ConvertSettings_Yes     = 1,
+    ConvertSettings_Backup  = 2,
+    ConvertSettings_Ignore  = 3,
+};
 
-/// @todo later, when the settings file update funciton is reimplemented using
-/// libxslt (search for CFGLDR to find related parts of code below). Note that
-/// it doesn't make sense to enable this code since CFGLDR is no more
-/// available.
-#if 0
+/**
+ * Checks if any of the settings files were auto-converted and informs the
+ * user if so.
+ *
+ * @return @false if the program should terminate and @true otherwise.
+ */
+static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
+                                           ComPtr<ISession> session,
+                                           ConvertSettings fConvertSettings)
+{
+    /* return early if nothing to do */
+    if (fConvertSettings == ConvertSettings_Ignore)
+        return true;
 
-    CFGHANDLE config = 0;
-    char *errMsg = NULL;
+    HRESULT rc;
 
-    int vrc = CFGLDRLoad (&config, filePath, NIL_RTFILE,
-                          NULL, false, NULL, //cfgLdrEntityResolver,
-                          &errMsg);
-    if (VBOX_SUCCESS (vrc))
+    do
     {
-        CFGNODE vbox = 0;
-        CFGLDRGetNode (config, "VirtualBox", 0, &vbox);
+        Bstr formatVersion;
+        CHECK_RC_BREAK (virtualBox->
+                        COMGETTER(SettingsFormatVersion) (formatVersion.asOutParam()));
+
+        bool isGlobalConverted = false;
+        std::list <ComPtr <IMachine> > cvtMachines;
+        std::list <Utf8Str> fileList;
         Bstr version;
-        CFGLDRQueryBSTR (vbox, "version", version.asOutParam());
-        CFGLDRReleaseNode (vbox);
+        Bstr filePath;
 
-        RTPrintf ("    current version : %ls\n", version.raw());
+        com::SafeIfaceArray <IMachine> machines;
+        CHECK_RC_BREAK (virtualBox->
+                        COMGETTER(Machines2) (ComSafeArrayAsOutParam (machines)));
 
-        /// @todo (dmik) use cfgLdrEntityResolver later
-        vrc = CFGLDRTransform (config, "SettingsConverter.xsl", NULL, &errMsg);
-        if (VBOX_SUCCESS (vrc))
+        for (size_t i = 0; i < machines.size(); ++ i)
         {
-            CFGLDRGetNode (config, "VirtualBox", 0, &vbox);
-            CFGLDRQueryBSTR (vbox, "version", version.asOutParam());
-            CFGLDRReleaseNode (vbox);
-
-            RTPrintf ("    new version     : %ls\n\n", version.raw());
-
-            if (mode != HUSPD_DryRun)
-            {
-                if (mode != HUSPD_ApplyNoBackup)
-                {
-                    Utf8StrFmt filePathBak ("%s.bak", filePath);
-                    vrc = RTFileCopy (filePath, filePathBak);
-                    if (VBOX_FAILURE (vrc))
-                    {
-                        RTPrintf ("Error copying '%s' to '%s' (%Vrc)\n",
-                                  filePath, filePathBak.raw(), vrc);
-                    }
-                }
-
-                if (VBOX_SUCCESS (vrc))
-                {
-                    vrc = CFGLDRSave (config, &errMsg);
-                    if (VBOX_FAILURE (vrc))
-                    {
-                        RTPrintf ("Error saving the settings file '%s' (%Vrc)%s%s\n",
-                                  filePath, vrc,
-                                  errMsg ? "\n" : "", errMsg ? errMsg : "");
-                    }
-                }
-            }
-        }
-        else
-        {
-            RTPrintf ("Could not convert the settings file '%s' (%Vrc)%s%s\n",
-                      filePath, vrc, errMsg ? "\n" : "", errMsg ? errMsg : "");
-        }
-
-        CFGLDRFree (config);
-    }
-    else
-    {
-        RTPrintf ("Error loading the settings file '%s' (%Vrc)%s%s\n",
-                  filePath, vrc, errMsg ? "\n" : "", errMsg ? errMsg : "");
-    }
-
-    if (errMsg)
-        RTStrFree (errMsg);
-
-    return vrc;
-
-#else
-
-    RTPrintf ("Error converting settings file '%s': "
-              "THE FUNCTION IS TEMPORARILY DISABLED!\n");
-    return 1;
-
-#endif
-}
-
-static int handleUpdateSettings_processDir (const char *dirPath, HUSPD mode,
-                                            bool skipInvalid)
-{
-    PRTDIR dir;
-    int vrc = RTDirOpen (&dir, dirPath);
-    if (VBOX_FAILURE (vrc))
-    {
-        return vrc;
-    }
-
-    RTDIRENTRYEX entry;
-    while (VBOX_SUCCESS (vrc))
-    {
-        vrc = RTDirReadEx (dir, &entry, NULL, RTFSOBJATTRADD_UNIX);
-        if (VBOX_FAILURE (vrc))
-        {
-            if (vrc == VERR_NO_MORE_FILES)
-                vrc = VINF_SUCCESS;
-            else
-                RTPrintf ("Error reading directory '%s' (%Vrc)\n", dirPath, vrc);
-            break;
-        }
-
-        if (RTFS_IS_DIRECTORY (entry.Info.Attr.fMode))
-        {
-            if (entry.szName[0] == '.' &&
-                (entry.szName[1] == 0 ||
-                 (entry.szName[1] == '.' && entry.szName[2] == 0)))
+            BOOL accessible;
+            CHECK_RC_BREAK (machines [i]->
+                            COMGETTER(Accessible) (&accessible));
+            if (!accessible)
                 continue;
 
-            vrc = handleUpdateSettings_processDir (
-                Utf8StrFmt ("%s%c%s", dirPath, RTPATH_DELIMITER, entry.szName),
-                mode, skipInvalid);
-            if (VBOX_FAILURE (vrc))
-                break;
+            CHECK_RC_BREAK (machines [i]->
+                            COMGETTER(SettingsFileVersion) (version.asOutParam()));
 
-            continue;
-        }
-        else if (RTFS_IS_FILE (entry.Info.Attr.fMode))
-        {
-            const char *ext = RTPathExt (entry.szName);
-            if (!ext || strcmp (ext, ".xml") != 0)
-                continue;
-        }
-        else
-            continue;
-
-        Utf8Str filePath = Utf8StrFmt ("%s%c%s", dirPath, RTPATH_DELIMITER,
-                                       entry.szName);
-
-        vrc = handleUpdateSettings_processFile (filePath, mode);
-
-        if (skipInvalid)
-            vrc = VINF_SUCCESS;
-    }
-
-    RTDirClose (dir);
-
-    return vrc;
-}
-
-static int handleUpdateSettings (int argc, char *argv[])
-{
-    const char *dirOrFilePath = NULL;
-    bool apply = false;
-    bool nobackup = false;
-    bool skipinvalid = false;
-
-    for (int i = 0; i < argc; i++)
-    {
-        if (i == 0 && argv[i][0] != '-')
-        {
-            dirOrFilePath = argv[i];
-        }
-        else if (argv[i][0] == '-')
-        {
-            if (strcmp (&argv[i][1], "apply") == 0)
-                apply = true;
-            else if (strcmp (&argv[i][1], "nobackup") == 0)
-                nobackup = true;
-            else if (strcmp (&argv[i][1], "skipinvalid") == 0)
-                skipinvalid = true;
-            else
+            if (version != formatVersion)
             {
-                return errorSyntax(USAGE_UPDATESETTINGS, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+                cvtMachines.push_back (machines [i]);
+                Bstr filePath;
+                CHECK_RC_BREAK (machines [i]->
+                                COMGETTER(SettingsFilePath) (filePath.asOutParam()));
+                fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),
+                                                version.raw()));
             }
         }
-        else
+
+        CHECK_RC_BREAK (rc);
+
+        CHECK_RC_BREAK (virtualBox->
+                        COMGETTER(SettingsFileVersion) (version.asOutParam()));
+        if (version != formatVersion)
         {
-            return errorSyntax(USAGE_UPDATESETTINGS, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+            isGlobalConverted = true;
+            CHECK_RC_BREAK (virtualBox->
+                            COMGETTER(SettingsFilePath) (filePath.asOutParam()));
+            fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),
+                                            version.raw()));
         }
-    }
 
-    HUSPD mode = HUSPD_DryRun;
-    if (apply)
-        mode = nobackup ? HUSPD_ApplyNoBackup : HUSPD_Apply;
-
-/// @todo later, when the settings file update funciton is reimplemented using
-/// libxslt (search for CFGLDR to find related parts of code below). Note that
-/// it doesn't make sense to enable this code since CFGLDR is no more
-/// available.
-#if 0
-
-    int vrc = CFGLDRInitialize();
-    if (VBOX_FAILURE (vrc))
-    {
-        RTPrintf ("Could not initialize XML subsystem (%Vrc)\n", vrc);
-        return 1;
-    }
-
-    if (dirOrFilePath)
-    {
-        if (RTDirExists (dirOrFilePath))
+        if (fileList.size() > 0)
         {
-            char fullPath [RTPATH_MAX];
-            vrc = RTPathReal (dirOrFilePath, fullPath, RTPATH_MAX);
-            if (VBOX_FAILURE (vrc))
+            switch (fConvertSettings)
             {
-                RTPrintf ("Invalid directory path '%s' (%Vrc)\n", dirOrFilePath, vrc);
-                return 1;
+                case ConvertSettings_No:
+                {
+                    RTPrintf (
+"WARNING! The following VirtualBox settings files have been automatically\n"
+"converted to the new settings file format version '%ls':\n"
+"\n",
+                              formatVersion.raw());
+
+                    for (std::list <Utf8Str>::const_iterator f = fileList.begin();
+                         f != fileList.end(); ++ f)
+                        RTPrintf ("  %S\n", (*f).raw());
+                    RTPrintf (
+"\n"
+"The current command was aborted to prevent overwriting the above settings\n"
+"files with the results of the auto-conversion without your permission.\n"
+"Please put one of the following command line switches to the beginning of\n"
+"the VBoxManage command line and repeat the command:\n"
+"\n"
+"  -convertSettings       - to save all auto-converted files (it will not\n"
+"                           be possible to use these settings files with an\n"
+"                           older version of VirtualBox in the future);\n"
+"  -convertSettingsBackup - to create backup copies of the settings files in\n"
+"                           the old format before saving them in the new format;\n"
+"  -convertSettingsIgnore - to not save the auto-converted settings files.\n"
+"\n"
+"Note that if you use -convertSettingsIgnore, the auto-converted settings files\n"
+"will be implicitly saved in the new format anyway once you change a setting or\n"
+"start a virtual machine, but NO backup copies will be created in this case.\n");
+                    return false;
+                }
+                case ConvertSettings_Yes:
+                case ConvertSettings_Backup:
+                {
+                    break;
+                }
+                default:
+                    AssertFailedReturn (false);
             }
 
-            RTPrintf ("Updating settings files in the following directory:\n"
-                      "\n    %s\n\n", fullPath);
+            for (std::list <ComPtr <IMachine> >::const_iterator m = cvtMachines.begin();
+                 m != cvtMachines.end(); ++ m)
+            {
+                Guid id;
+                CHECK_RC_BREAK ((*m)->COMGETTER(Id) (id.asOutParam()));
 
-            vrc = handleUpdateSettings_processDir (dirOrFilePath, mode, skipinvalid);
-        }
-        else
-        {
-            vrc = handleUpdateSettings_processFile (dirOrFilePath, mode);
+                /* open a session for the VM */
+                CHECK_ERROR_BREAK (virtualBox, OpenSession (session, id));
+
+                ComPtr <IMachine> sm;
+                CHECK_RC_BREAK (session->COMGETTER(Machine) (sm.asOutParam()));
+
+                Bstr bakFileName;
+                if (fConvertSettings == ConvertSettings_Backup)
+                    CHECK_ERROR (sm, SaveSettingsWithBackup (bakFileName.asOutParam()));
+                else
+                    CHECK_ERROR (sm, SaveSettings());
+
+                session->Close();
+
+                CHECK_RC_BREAK (rc);
+            }
+
+            CHECK_RC_BREAK (rc);
+
+            if (isGlobalConverted)
+            {
+                Bstr bakFileName;
+                if (fConvertSettings == ConvertSettings_Backup)
+                    CHECK_ERROR (virtualBox, SaveSettingsWithBackup (bakFileName.asOutParam()));
+                else
+                    CHECK_ERROR (virtualBox, SaveSettings());
+            }
+
+            CHECK_RC_BREAK (rc);
         }
     }
-    else
-    {
-        char homeDir [RTPATH_MAX];
-        vrc = GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
+    while (0);
 
-        AssertRC (vrc);
-        if (VBOX_SUCCESS (vrc))
-        {
-            RTPrintf ("Updating settings files in the following VirtualBox Home Directory:\n"
-                      "\n    %s\n\n", homeDir);
-
-            vrc = handleUpdateSettings_processDir (homeDir, mode, skipinvalid);
-        }
-    }
-
-    if (mode == HUSPD_DryRun)
-    {
-        RTPrintf ("NOTE: No actual changes to the setting files were made.\n"
-                  "      Repeat the command with the -apply option supplied.\n");
-    }
-
-    CFGLDRShutdown();
-
-    return VBOX_SUCCESS (vrc) ? 0 : 1;
-
-#else
-
-    NOREF (mode);
-
-    RTPrintf ("THE SETTINGS FILE UPDATE FUNCTION IS TEMPORARILY DISABLED!\n");
-    return 1;
-
-
-#endif
+    return SUCCEEDED (rc);
 }
 
 // main
@@ -7660,6 +7558,9 @@ int main(int argc, char *argv[])
     int  iCmd      = 1;
     int  iCmdArg;
 
+    ConvertSettings fConvertSettings = ConvertSettings_No;
+
+    /* global options */
     for (int i = 1; i < argc || argc <= iCmd; i++)
     {
         if (    argc <= iCmd
@@ -7682,18 +7583,33 @@ int main(int argc, char *argv[])
             RTPrintf("%sr%d\n", VBOX_VERSION_STRING, VBoxSVNRev ());
             exit(0);
         }
-        else if (strcmp(argv[i], "-nologo") == 0)
-        {
-            /* suppress the logo */
-            fShowLogo = false;
-            iCmd++;
-        }
         else if (strcmp(argv[i], "-dumpopts") == 0)
         {
             /* Special option to dump really all commands,
              * even the ones not understood on this platform. */
             printUsage(USAGE_DUMPOPTS);
             return 0;
+        }
+        else if (strcmp(argv[i], "-nologo") == 0)
+        {
+            /* suppress the logo */
+            fShowLogo = false;
+            iCmd++;
+        }
+        else if (strcmp(argv[i], "-convertSettings") == 0)
+        {
+            fConvertSettings = ConvertSettings_Yes;
+            iCmd++;
+        }
+        else if (strcmp(argv[i], "-convertSettingsBackup") == 0)
+        {
+            fConvertSettings = ConvertSettings_Backup;
+            iCmd++;
+        }
+        else if (strcmp(argv[i], "-convertSettingsIgnore") == 0)
+        {
+            fConvertSettings = ConvertSettings_Ignore;
+            iCmd++;
         }
         else
         {
@@ -7727,13 +7643,6 @@ int main(int argc, char *argv[])
     // scopes all the stuff till shutdown
     ////////////////////////////////////////////////////////////////////////////
 
-    /* update settings command (no VirtualBox instantiation!) */
-    if (argc >= iCmdArg && (strcmp(argv[iCmd], "updatesettings") == 0))
-    {
-        rc = handleUpdateSettings(argc - iCmdArg, argv + iCmdArg);
-        break;
-    }
-
     /* convertdd: does not need a VirtualBox instantiation) */
     if (argc >= iCmdArg && (strcmp(argv[iCmd], "convertdd") == 0))
     {
@@ -7766,6 +7675,9 @@ int main(int argc, char *argv[])
      * after the session is closed) */
 
     EventQueue eventQ;
+
+    if (!checkForAutoConvertedSettings (virtualBox, session, fConvertSettings))
+        break;
 
     /*
      * All registered command handlers
