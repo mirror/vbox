@@ -2785,7 +2785,7 @@
         The version string has the following format:
         <pre>
           x.y-platform
-        /pre>
+        </pre>
         where <tt>x</tt> and <tt>y</tt> are the major and the minor format
         versions, and <tt>platform</tt> is the platform identifier.
 
