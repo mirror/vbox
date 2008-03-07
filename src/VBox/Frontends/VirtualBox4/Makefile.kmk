@@ -40,7 +40,21 @@ include $(PATH_KBUILD)/header.kmk
 VBOX_WITH_DEBUGGER_GUI :=
 DEFS := $(filter-out VBOX_WITH_DEBUGGER_GUI,$(DEFS))
 
-# Handmade configuration of qt4
+#
+# Handmade configuration of qt4 - very annoying, this needs to
+# be cleaned up properly later some time (not important now).
+#
+ifndef VBOX_PATH_QT4
+ if1of ($(USERNAME), bird)
+  # gentoo (64-bit)
+  VBOX_PATH_QT4          ?= /usr
+  VBOX_PATH_QT4_BIN      ?= /usr/bin
+  VBOX_PATH_QT4_INCLUDE  ?= /usr/include/qt4
+  VBOX_PATH_QT4_LIB      ?= /usr/lib/qt4
+  VBOX_PATH_QT4_LIB64    ?= /usr/lib/qt4
+  VBOX_PATH_QT4_SHARE    ?= /usr/share/qt4
+ endif
+endif
 VBOX_PATH_QT4          ?= /usr
 VBOX_PATH_QT4_BIN      ?= $(VBOX_PATH_QT4)/bin
 VBOX_PATH_QT4_INCLUDE  ?= $(VBOX_PATH_QT4)/include
@@ -52,15 +66,16 @@ VBOX_MODULE_QT4     = QtCore QtGui QtNetwork Qt3Support
 VBOX_DEFS_QT4       = QT_CORE_LIB QT_GUI_LIB QT_NETWORK_LIB QT_QT3SUPPORT_LIB
 
 ifeq ($(BUILD_TARGET),darwin)
-VBOX_MODULE_QT4 	+= QtSql QtXml
-VBOX_DEFS_QT4       = QT_SQL_LIB QT_XML_LIB
-VBOX_INCS_QT4       = $(foreach mod, $(VBOX_MODULE_QT4), $(join $(join /Library/Frameworks/, $(mod)), .framework/Headers))
-VBOX_LIBS_QT4       = 
+ VBOX_MODULE_QT4    += QtSql QtXml
+ VBOX_DEFS_QT4       = QT_SQL_LIB QT_XML_LIB
+ VBOX_INCS_QT4       = $(foreach mod, $(VBOX_MODULE_QT4), $(join $(join /Library/Frameworks/, $(mod)), .framework/Headers))
+ VBOX_LIBS_QT4       =
 else
-VBOX_INCS_QT4       = $(VBOX_PATH_QT4_SHARE)/mkspecs/linux-g++ \
-                      $(foreach mod, $(VBOX_MODULE_QT4), $(join $(VBOX_PATH_QT4_INCLUDE)/, $(mod))) \
-                      $(VBOX_PATH_QT4_INCLUDE)/Qt $(VBOX_PATH_QT4_INCLUDE)
-VBOX_LIBS_QT4       = $(VBOX_MODULE_QT4)
+ VBOX_INCS_QT4       = \
+	$(VBOX_PATH_QT4_SHARE)/mkspecs/linux-g++ \
+	$(addprefix $(VBOX_PATH_QT4_INCLUDE)/, $(VBOX_MODULE_QT4) Qt) \
+	$(VBOX_PATH_QT4_INCLUDE)
+ VBOX_LIBS_QT4       = $(VBOX_MODULE_QT4)
 endif
 
 # Warn about all what you know about porting qt3->qt4.
@@ -657,9 +672,10 @@ $(target)_GENSRCS_REAL += $(mocsrc)
 $(mocsrc): $(mochdr)
 	$$(call MSG_TOOL,moc,$(target),$(mochdr),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
-	$$(QUIET)$$(VBOX_MOC4) $(foreach def,$($(target)_DEFS),-D$(def)) \
-                           $(foreach inc,$($(target)_INCS),-I$(inc)) \
-                           $(mochdr) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) \
+		$(addprefix -D,$($(target)_DEFS)) \
+		$(addprefix -I,$($(target)_INCS)) \
+		$(mochdr) -o $$@
 
 endef
 
@@ -680,9 +696,10 @@ $(mocobj): $(mocinc)
 $(mocinc): $(mocsrc)
 	$$(call MSG_TOOL,moc,$(target),$(mocsrc),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
-	$$(QUIET)$$(VBOX_MOC4) $(foreach def,$($(target)_DEFS),-D$(def)) \
-                           $(foreach inc,$($(target)_INCS),-I$(inc)) \
-                           -i $(mocsrc) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) \
+		$(addprefix -D,$($(target)_DEFS)) \
+		$(addprefix -I,$($(target)_INCS)) \
+		-i $(mocsrc) -o $$@
 
 endef
 
@@ -703,9 +720,10 @@ $(uisrc): $(mocuiinc)
 $(mocuiinc): $(mocuihdr)
 	$$(call MSG_TOOL,moc,$(target),$(mocuihdr),$$@)
 	$$(QUIET)$$(MKDIR) -p $$(@D)
-	$$(QUIET)$$(VBOX_MOC4) $(foreach def,$($(target)_DEFS),-D$(def)) \
-                           $(foreach inc,$($(target)_INCS),-I$(inc)) \
-                           -i $(mocuihdr) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) \
+		$(addprefix -D,$($(target)_DEFS)) \
+		$(addprefix -I,$($(target)_INCS)) \
+		-i $(mocuihdr) -o $$@
 
 endef
 
@@ -734,9 +752,10 @@ $(uisrc): $(uihdr) $(uifile) $(wildcard $(uifile).h) | $$(call DIRDEP,$(dir $(ui
 
 $(mocsrc): $(uihdr) | $$(call DIRDEP,$(dir $(mocsrc)))
 	$$(call MSG_TOOL,moc,$(target),$(uihdr),$$@)
-	$$(QUIET)$$(VBOX_MOC4) $(foreach def,$($(target)_DEFS),-D$(def)) \
-                           $(foreach inc,$($(target)_INCS),-I$(inc)) \
-                           $(uihdr) -o $$@
+	$$(QUIET)$$(VBOX_MOC4) \
+		$(addprefix -D,$($(target)_DEFS)) \
+		$(addprefix -I,$($(target)_INCS)) \
+		$(uihdr) -o $$@
 
 endef
 
