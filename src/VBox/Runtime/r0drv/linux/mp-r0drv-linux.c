@@ -122,7 +122,7 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 # else
     RTCPUSET Set;
     RTMpGetSet(&Set);
-    return RTCpuSetCount(pSet);
+    return RTCpuSetCount(&Set);
 # endif
 #else
     return 1;
@@ -158,7 +158,7 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 # else
     RTCPUSET Set;
     RTMpGetOnlineSet(&Set);
-    return RTCpuSetCount(pSet);
+    return RTCpuSetCount(&Set);
 # endif
 #else
     return 1;
