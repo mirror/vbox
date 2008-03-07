@@ -31,9 +31,6 @@ endif
 ifdef VBOX_WITH_VBOXFB
  include $(PATH_SUB_CURRENT)/VBoxFB/Makefile.kmk
 endif
-ifdef VBOX_WITH_VRDP
- include $(PATH_SUB_CURRENT)/VBoxVRDP/Makefile.kmk
-endif
 ifdef VBOX_WITH_HEADLESS
  include $(PATH_SUB_CURRENT)/VBoxHeadless/Makefile.kmk
 endif
