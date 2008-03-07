@@ -1112,9 +1112,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         case VERR_ACCESS_DENIED:
                             return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
                                              "Failed to open '/dev/net/tun' for read/write access. Please check the "
-                                             "permissions of that node. Either do 'chmod 0666 /dev/net/tun' or "
-                                             "change the group of that node and get member of that group. Make "
-                                             "sure that these changes are permanently in particular if you are "
+                                             "permissions of that node. Either run 'chmod 0666 /dev/net/tun' or "
+                                             "change the group of that node and make yourself a member of that group. Make "
+                                             "sure that these changes are permanent, especially if you are "
                                              "using udev"));
 #endif /* RT_OS_LINUX */
                         default:
