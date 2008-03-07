@@ -22,9 +22,8 @@
 #include "COMDefs.h"
 #include "QIMessageBox.h"
 
-#include <qobject.h>
-
-class Q3Process;
+/* Qt icludes */
+#include <QObject>
 
 class VBoxProblemReporter : public QObject
 {

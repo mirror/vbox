@@ -29,6 +29,7 @@
 #include <qdialog.h>
 //Added by qt3to4:
 #include <QContextMenuEvent>
+#include <q3hbox.h>
 #include <QLabel>
 #include <Q3PopupMenu>
 #include <QEvent>

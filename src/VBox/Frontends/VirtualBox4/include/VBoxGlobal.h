@@ -732,7 +732,7 @@ private:
  *  Enable/Disable Menu class.
  *  This class provides enable/disable menu items.
  */
-class VBoxSwitchMenu : public Q3PopupMenu
+class VBoxSwitchMenu : public QMenu
 {
     Q_OBJECT
 
@@ -746,12 +746,11 @@ private slots:
 
     void processAboutToShow();
 
-    void processActivated (int);
+//    void processActivated (int);
 
 private:
 
     QAction *mAction;
-    QString  mTip;
     bool     mInverted;
 };
 

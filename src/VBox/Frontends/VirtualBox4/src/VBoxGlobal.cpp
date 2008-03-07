@@ -27,8 +27,6 @@
 
 //Added by qt3to4:
 #include <QDesktopWidget>
-#include <Q3CString>
-#include <q3mimefactory.h>
 #include <QTranslator>
 #include <Q3VBoxLayout>
 #include <Q3Frame>
@@ -50,6 +48,13 @@
 #include <qimage.h>
 #include <qlabel.h>
 #include <qtoolbutton.h>
+#include <qfileinfo.h>
+#include <qdir.h>
+#include <qmutex.h>
+#include <qregexp.h>
+#include <qlocale.h>
+#include <QProcess>
+#include <QList>
 
 #ifdef Q_WS_X11
 #include <q3textbrowser.h>
@@ -57,14 +62,6 @@
 #include <qlayout.h>
 #endif
 
-#include <qfileinfo.h>
-#include <qdir.h>
-#include <qmutex.h>
-#include <qregexp.h>
-#include <qlocale.h>
-#include <q3process.h>
-
-#include <QList>
 
 #if defined (Q_WS_MAC)
 #include <Carbon/Carbon.h> // for HIToolbox/InternetConfig
@@ -3676,10 +3673,10 @@ bool VBoxGlobal::openURL (const QString &aURL)
 
     for (size_t i = 0; i < ELEMENTS (commands); ++ i)
     {
-        QStringList args = QStringList::split (':', commands [i]);
+        QStringList args = QString(commands [i]).split (':');
         args += aURL;
-        Q3Process cmd (args);
-        if (cmd.start())
+        QString command = args.takeFirst();
+        if (QProcess::startDetached (command, args))
             return true;
     }
 
@@ -3700,7 +3697,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
     if (error == noErr)
     {
         ConstStr255Param hint (0x0);
-        Q3CString cs = aURL.local8Bit();
+        QByteArray cs = aURL.toLocal8Bit();
         const char* data = cs.data();
         long length = cs.length();
         long start (0);
@@ -4261,34 +4258,32 @@ void VBoxUSBMenu::processHighlighted (int aIndex)
  */
 VBoxSwitchMenu::VBoxSwitchMenu (QWidget *aParent, QAction *aAction,
                                 bool aInverted)
-    : Q3PopupMenu (aParent), mAction (aAction), mInverted (aInverted)
+    : QMenu (aParent), mAction (aAction), mInverted (aInverted)
 {
     /* this menu works only with toggle action */
-    Assert (aAction->isToggleAction());
+    Assert (aAction->isCheckable());
     connect (this, SIGNAL (aboutToShow()),
              this, SLOT   (processAboutToShow()));
-    connect (this, SIGNAL (activated (int)),
-             this, SLOT   (processActivated (int)));
+//    connect (this, SIGNAL (activated (int)),
+//             this, SLOT   (processActivated (int)));
 }
 
 void VBoxSwitchMenu::setToolTip (const QString &aTip)
 {
-    mTip = aTip;
+    mAction->setToolTip (aTip);
 }
 
 void VBoxSwitchMenu::processAboutToShow()
 {
-    clear();
-    QString text = mAction->isOn() ^ mInverted ? tr ("Disable") : tr ("Enable");
-    int id = insertItem (text);
-    setItemEnabled (id, mAction->isEnabled());
-    QToolTip::add (this, tr ("%1 %2").arg (text).arg (mTip));
+    QString text = mAction->isChecked() ^ mInverted ? tr ("Disable") : tr ("Enable");
+    mAction->setText (text);
 }
 
-void VBoxSwitchMenu::processActivated (int /*aIndex*/)
-{
-    mAction->setOn (!mAction->isOn());
-}
+#warning port me: no longer needed?
+//void VBoxSwitchMenu::processActivated (int /*aIndex*/)
+//{
+//    mAction->toggle();
+//}
 
 #ifdef Q_WS_X11
 #include "VBoxGlobal.moc"
