@@ -175,7 +175,7 @@ static void rtmpLinuxWrapper(void *pvInfo)
 {
     PRTMPARGS pArgs = (PRTMPARGS)pvInfo;
     ASMAtomicIncU32(&pArgs->cHits);
-    pArgs->pfnWorker(smp_processor_id(), pArgs->pvUser1, pArgs->pvUser2);
+    pArgs->pfnWorker(RTMpCpuId(), pArgs->pvUser1, pArgs->pvUser2);
 }
 
 
@@ -183,6 +183,7 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     int rc;
     RTMPARGS Args;
+
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
@@ -214,6 +215,7 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     int rc;
     RTMPARGS Args;
+
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
@@ -233,33 +235,69 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 }
 
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+/**
+ * Wrapper between the native linux per-cpu callbacks and PFNRTWORKER
+ * employed by RTMpOnSpecific on older kernels that lacks smp_call_function_single.
+ *
+ * @param   pvInfo      Pointer to the RTMPARGS package.
+ */
+static void rtmpOnSpecificLinuxWrapper(void *pvInfo)
+{
+    PRTMPARGS pArgs = (PRTMPARGS)pvInfo;
+    RTCPUID idCpu = RTMpCpuId();
+
+    if (idCpu == pArgs->idCpu)
+    {
+        pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
+        ASMAtomicIncU32(&pArgs->cHits);
+    }
+}
+#endif
+
+
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     int rc;
     RTMPARGS Args;
+
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
     Args.idCpu = idCpu;
     Args.cHits = 0;
 
-    /** @todo validate idCpu . */
+    if (!RTMpDoesCpuExist(idCpu))
+        return VERR_CPU_NOT_FOUND;
 
 # ifdef preempt_disable
     preempt_disable();
 # endif
     if (idCpu != RTMpCpuId())
-        rc = smp_call_function_single(idCpu, rtmpLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
+    {
+        if (RTMpIsCpuOnline(idCpu))
+        {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+            rc = smp_call_function_single(idCpu, rtmpLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
+#else
+            rc = smp_call_function(rtmpOnSpecificLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
+#endif
+            Assert(rc == 0);
+            rc = Args.cHits ? VINF_SUCCESS : VERR_CPU_OFFLINE;
+        }
+        else
+            rc = VERR_CPU_OFFLINE;
+    }
     else
     {
         rtmpLinuxWrapper(&Args);
-        rc = 0;
+        rc = VINF_SUCCESS;
     }
 # ifdef preempt_enable
     preempt_enable();
 # endif
 
-    Assert(rc == 0); NOREF(rc);
-    return VINF_SUCCESS;
+    NOREF(rc);
+    return rc;
 }
 
