@@ -345,7 +345,7 @@ RTDECL(int) RTFileCopyByHandles(RTFILE FileSrc, RTFILE FileDst);
 #define RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE  RT_BIT(0)
 /** Do not use RTFILE_O_DENY_WRITE on the target file. */
 #define RTFILECOPY_FLAGS_NO_DST_DENY_WRITE  RT_BIT(1)
-/** Do not use RTFILE_O_DENY_WRITE on either of the two file. */
+/** Do not use RTFILE_O_DENY_WRITE on either of the two files. */
 #define RTFILECOPY_FLAGS_NO_DENY_WRITE      ( RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE | RTFILECOPY_FLAGS_NO_DST_DENY_WRITE )
 /** */
 #define RTFILECOPY_FLAGS_MASK               UINT32_C(0x00000003)
