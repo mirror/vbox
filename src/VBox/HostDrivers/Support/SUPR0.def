@@ -50,6 +50,7 @@ EXPORTS
     RTR0MemObjAllocPage
     RTR0MemObjAllocPhys
     RTR0MemObjAllocPhysNC
+    RTR0MemObjAllocCont
     RTR0MemObjLockUser
     RTR0MemObjMapKernel
     RTR0MemObjMapUser
