@@ -70,19 +70,6 @@
 /* Enable to handle frequent io reads in the guest context */
 #define PCNET_GC_ENABLED
 
-#if 0
-#define LOG_REGISTER(a)                 LogRel(a)
-#else
-#define LOG_REGISTER(a)
-#endif
-#if 0
-#define LOG_PACKET(name, buf, count)    LogPkt(name, buf, count)
-#define LOG_PACKETS
-#else
-#define LOG_PACKET(name, buf, count)
-#undef  LOG_PACKETS
-#endif
-
 #if defined(LOG_ENABLED)
 #define PCNET_DEBUG_IO
 #define PCNET_DEBUG_BCR
@@ -104,6 +91,8 @@
 
 /* Maximum number of times we report a link down to the guest (failure to send frame) */
 #define PCNET_MAX_LINKDOWN_REPORTED     3
+
+#define MAX_FRAME                       1536
 
 /* Frame cache */
 typedef struct PCNETFRAME
@@ -249,7 +238,7 @@ struct PCNetState_st
     bool                                afAlignment[1];
     uint32_t                            u32LinkSpeed;
 
-/* #define PCNET_QUEUE_SEND_PACKETS */
+//#define PCNET_QUEUE_SEND_PACKETS
 #ifdef PCNET_QUEUE_SEND_PACKETS
     #define PCNET_MAX_XMIT_SLOTS         128
     #define PCNET_MAX_XMIT_SLOTS_MASK    (PCNET_MAX_XMIT_SLOTS-1)
@@ -262,7 +251,6 @@ struct PCNetState_st
 
     STAMCOUNTER                         StatReceiveBytes;
     STAMCOUNTER                         StatTransmitBytes;
-
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILEADV                      StatMMIOReadGC;
     STAMPROFILEADV                      StatMMIOReadHC;
@@ -308,8 +296,9 @@ struct PCNetState_st
 #endif /* VBOX_WITH_STATISTICS */
 };
 
-#define PCNETSTATE_2_DEVINS(pPCNet)            ( (pPCNet)->CTXSUFF(pDevIns) )
-#define PCIDEV_2_PCNETSTATE(pPciDev)           ( (PCNetState *)(pPciDev) )
+#define PCNETSTATE_2_DEVINS(pPCNet)            ((pPCNet)->CTXSUFF(pDevIns))
+#define PCIDEV_2_PCNETSTATE(pPciDev)           ((PCNetState *)(pPciDev))
+#define PCNET_INST_NR                          (PCNETSTATE_2_DEVINS(pData)->iInstance)
 
 /* BUS CONFIGURATION REGISTERS */
 #define BCR_MSRDA       0
@@ -812,24 +801,6 @@ struct ether_header
 };
 #pragma pack()
 
-#ifdef LOG_PACKETS
-static void LogPkt(const char *name, const void *const src, int count)
-{
-    int i, j;
-    const uint8_t * const p = (const uint8_t * const)src;
-    LogRel(("%s:  ", name));
-    i  = 14;               // length of MAC header
-    i += 4*(p[i] & 15);    // length of IP  header
-    i += 4*(p[i+12] >> 4); // length of TCP header
-    for (j=i; j<70 && j<count; j++)
-        LogRel((" %02x", p[j]));
-    LogRel((" ("));
-    for (j=i; j<70 && j<count; j++)
-        LogRel(("%c", p[j] >= 32 && p[j] < 127 ? p[j] : '.'));
-    LogRel((")\n"));
-}
-#endif
-
 #define PRINT_PKTHDR(BUF) do {                                        \
     struct ether_header *hdr = (struct ether_header *)(BUF);          \
     Log(("packet dhost=%02x:%02x:%02x:%02x:%02x:%02x, "               \
@@ -960,12 +931,10 @@ DECLINLINE(int) padr_match(PCNetState *pData, const uint8_t *buf, int size)
 
 #ifdef PCNET_DEBUG_MATCH
     Log(("#%d packet dhost=%02x:%02x:%02x:%02x:%02x:%02x, "
-         "padr=%02x:%02x:%02x:%02x:%02x:%02x\n",
-         PCNETSTATE_2_DEVINS(pData)->iInstance,
+         "padr=%02x:%02x:%02x:%02x:%02x:%02x => %d\n", PCNET_INST_NR,
          hdr->ether_dhost[0],hdr->ether_dhost[1],hdr->ether_dhost[2],
          hdr->ether_dhost[3],hdr->ether_dhost[4],hdr->ether_dhost[5],
-         padr[0],padr[1],padr[2],padr[3],padr[4],padr[5]));
-    Log(("padr_match result=%d\n", result));
+         padr[0],padr[1],padr[2],padr[3],padr[4],padr[5], result));
 #endif
     return result;
 }
@@ -976,7 +945,7 @@ DECLINLINE(int) padr_bcast(PCNetState *pData, const uint8_t *buf, int size)
     struct ether_header *hdr = (struct ether_header *)buf;
     int result = !CSR_DRCVBC(pData) && !memcmp(hdr->ether_dhost, aBCAST, 6);
 #ifdef PCNET_DEBUG_MATCH
-    Log(("#%d padr_bcast result=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance, result));
+    Log(("#%d padr_bcast result=%d\n", PCNET_INST_NR, result));
 #endif
    return result;
 }
@@ -1075,7 +1044,7 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 {
     PCNetState *pData   = (PCNetState *)pvUser;
 
-    Log(("#%d pcnetHandleRingWriteGC: write to %#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, GCPhysFault));
+    Log(("#%d pcnetHandleRingWriteGC: write to %#010x\n", PCNET_INST_NR, GCPhysFault));
 
     uint32_t cb;
     int rc = CTXALLSUFF(pData->pfnEMInterpretInstruction)(pVM, pRegFrame, pvFault, &cb);
@@ -1136,7 +1105,7 @@ static DECLCALLBACK(int) pcnetHandleRingWrite(PVM pVM, RTGCPHYS GCPhys, void *pv
     PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
     PCNetState *pData   = PDMINS2DATA(pDevIns, PCNetState *);
 
-    Log(("#%d pcnetHandleRingWrite: write to %#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, GCPhys));
+    Log(("#%d pcnetHandleRingWrite: write to %#010x\n", PCNET_INST_NR, GCPhys));
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&CTXSUFF(pData->StatRingWrite));
     if (GCPhys >= pData->GCRDRA && GCPhys < pcnetRdraAddr(pData, 0))
@@ -1171,7 +1140,7 @@ static DECLCALLBACK(int) pcnetHandleRingWrite(PVM pVM, RTGCPHYS GCPhys, void *pv
 
 static void pcnetSoftReset(PCNetState *pData)
 {
-    Log(("#%d pcnetSoftReset:\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
+    Log(("#%d pcnetSoftReset:\n", PCNET_INST_NR));
 
     pData->u32Lnkst = 0x40;
     pData->GCRDRA   = 0;
@@ -1256,7 +1225,7 @@ static void pcnetUpdateIrq(PCNetState *pData)
     {
         pData->aCSR[4] &= ~0x0080; /* clear UINTCMD */
         pData->aCSR[4] |=  0x0040; /* set UINT */
-        Log(("#%d user int\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
+        Log(("#%d user int\n", PCNET_INST_NR));
     }
     if (pData->aCSR[4] & csr0 & 0x0040 /* CSR_INEA */)
     {
@@ -1270,7 +1239,7 @@ static void pcnetUpdateIrq(PCNetState *pData)
         pData->aCSR[4] |=  0x0040; /* set UINT */
         csr0           |=  0x0080; /* set INTR */
         iISR = 1;
-        Log(("#%d user int\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
+        Log(("#%d user int\n", PCNET_INST_NR));
     }
 #endif /* !VBOX */
 
@@ -1290,12 +1259,12 @@ static void pcnetUpdateIrq(PCNetState *pData)
 
     pData->aCSR[0] = csr0;
 
-    Log2(("#%d set irq iISR=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance, iISR));
+    Log2(("#%d set irq iISR=%d\n", PCNET_INST_NR, iISR));
 
     /* normal path is to _not_ change the IRQ status */
     if (RT_UNLIKELY(iISR != pData->iISR))
     {
-        Log(("#%d INTA=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance, iISR));
+        Log(("#%d INTA=%d\n", PCNET_INST_NR, iISR));
         PDMDevHlpPCISetIrqNoWait(PCNETSTATE_2_DEVINS(pData), 0, iISR);
         pData->iISR = iISR;
     }
@@ -1395,8 +1364,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pData)
 static void pcnetInit(PCNetState *pData)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
-    Log(("#%d pcnetInit: init_addr=%#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
-         PHYSADDR(pData, CSR_IADR(pData))));
+    Log(("#%d pcnetInit: init_addr=%#010x\n", PCNET_INST_NR, PHYSADDR(pData, CSR_IADR(pData))));
 
     /** @todo Documentation says that RCVRL and XMTRL are stored as two's complement!
      *        Software is allowed to write these registers directly. */
@@ -1424,7 +1392,7 @@ static void pcnetInit(PCNetState *pData)
         pData->GCUpperPhys = 0;
         PCNET_INIT();
         Log(("#%d initblk.rlen=%#04x, initblk.tlen=%#04x\n",
-             PCNETSTATE_2_DEVINS(pData)->iInstance, initblk.rlen, initblk.tlen));
+             PCNET_INST_NR, initblk.rlen, initblk.tlen));
     }
     else
     {
@@ -1432,7 +1400,7 @@ static void pcnetInit(PCNetState *pData)
         pData->GCUpperPhys = (0xff00 & (uint32_t)pData->aCSR[2]) << 16;
         PCNET_INIT();
         Log(("#%d initblk.rlen=%#04x, initblk.tlen=%#04x\n",
-             PCNETSTATE_2_DEVINS(pData)->iInstance, initblk.rlen, initblk.tlen));
+             PCNET_INST_NR, initblk.rlen, initblk.tlen));
     }
 
 #undef PCNET_INIT
@@ -1452,7 +1420,7 @@ static void pcnetInit(PCNetState *pData)
     CSR_CXST(pData) = CSR_CXBC(pData) = CSR_NXST(pData) = CSR_NXBC(pData) = 0;
 
     LogRel(("PCNet#%d: Init: ss32=%d GCRDRA=%#010x[%d] GCTDRA=%#010x[%d]\n",
-            PCNETSTATE_2_DEVINS(pData)->iInstance, BCR_SSIZE32(pData),
+            PCNET_INST_NR, BCR_SSIZE32(pData),
             pData->GCRDRA, CSR_RCVRL(pData), pData->GCTDRA, CSR_XMTRL(pData)));
 
     pData->aCSR[0] |=  0x0101;       /* Initialization done */
@@ -1465,7 +1433,7 @@ static void pcnetInit(PCNetState *pData)
  */
 static void pcnetStart(PCNetState *pData)
 {
-    Log(("#%d pcnetStart:\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
+    Log(("#%d pcnetStart:\n", PCNET_INST_NR));
     if (!CSR_DTX(pData))
         pData->aCSR[0] |= 0x0010;    /* set TXON */
     if (!CSR_DRX(pData))
@@ -1479,7 +1447,7 @@ static void pcnetStart(PCNetState *pData)
  */
 static void pcnetStop(PCNetState *pData)
 {
-    Log(("#%d pcnetStop:\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
+    Log(("#%d pcnetStop:\n", PCNET_INST_NR));
     pData->aCSR[0] &= ~0x7feb;
     pData->aCSR[0] |=  0x0014;
     pData->aCSR[4] &= ~0x02c2;
@@ -1552,7 +1520,7 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
                 STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatRdtePoll), a);
                 /* This is not problematic since we don't own the descriptor */
                 LogRel(("PCNet#%d: BAD RMD ENTRIES AT %#010x (i=%d)\n",
-                        PCNETSTATE_2_DEVINS(pData)->iInstance, addr, i));
+                        PCNET_INST_NR, addr, i));
                 return;
             }
         }
@@ -1582,7 +1550,7 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
             STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatRdtePoll), a);
             /* This is not problematic since we don't own the descriptor */
             LogRel(("PCNet#%d: BAD RMD ENTRIES + AT %#010x (i=%d)\n",
-                    PCNETSTATE_2_DEVINS(pData)->iInstance, addr, i));
+                    PCNET_INST_NR, addr, i));
             return;
         }
 
@@ -1619,7 +1587,7 @@ static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
         {
             STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatTdtePoll), a);
             LogRel(("PCNet#%d: BAD TMD XDA=%#010x\n",
-                    PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, cxda)));
+                    PCNET_INST_NR, PHYSADDR(pData, cxda)));
             return 0;
         }
 
@@ -1667,7 +1635,7 @@ static int pcnetCanReceiveNoSync(PCNetState *pData)
     }
 
     /* byte count stored in two's complement 12 bits wide */
-    Log(("#%d pcnetCanReceiveNoSync %d bytes\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log(("#%d pcnetCanReceiveNoSync %d bytes\n", PCNET_INST_NR,
          4096 - CSR_CRBC(pData)));
     return 4096 - CSR_CRBC(pData);
 }
@@ -1685,9 +1653,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
     if (RT_UNLIKELY(CSR_DRX(pData) || CSR_STOP(pData) || CSR_SPND(pData) || !size))
         return;
 
-    Log(("#%d pcnetReceiveNoSync: size=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance, size));
-
-    LOG_PACKET("rraw", buf, size);
+    Log(("#%d pcnetReceiveNoSync: size=%d\n", PCNET_INST_NR, size));
 
     /*
      * Perform address matching.
@@ -1704,7 +1670,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
             /* Not owned by controller. This should not be possible as
              * we already called pcnetCanReceive(). */
             LogRel(("PCNet#%d: no buffer: RCVRC=%d\n",
-                    PCNETSTATE_2_DEVINS(pData)->iInstance, CSR_RCVRC(pData)));
+                    PCNET_INST_NR, CSR_RCVRC(pData)));
             /* Dump the status of all RX descriptors */
             const unsigned  cb = 1 << pData->iLog2DescSize;
             RTGCPHYS32      GCPhys = pData->GCRDRA;
@@ -1802,7 +1768,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
             else
             {
                 LogRel(("PCNet#%d: Overflow by %ubytes\n",
-                         PCNETSTATE_2_DEVINS(pData)->iInstance, size));
+                         PCNET_INST_NR, size));
                 rmd.rmd1.oflo = 1;
                 rmd.rmd1.buff = 1;
                 rmd.rmd1.err  = 1;
@@ -1813,7 +1779,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
 
             pData->aCSR[0] |= 0x0400;
 
-            Log(("#%d RCVRC=%d CRDA=%#010x BLKS=%d\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+            Log(("#%d RCVRC=%d CRDA=%#010x BLKS=%d\n", PCNET_INST_NR,
                  CSR_RCVRC(pData), PHYSADDR(pData, CSR_CRDA(pData)), pktcount));
 #ifdef PCNET_DEBUG_RMD
             PRINT_RMD(&rmd);
@@ -1951,7 +1917,7 @@ DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pData)
     pData->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&pData->StatTransmitSend, a);
 
-    return PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    return PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
 #endif
 }
 
@@ -1967,7 +1933,7 @@ static void pcnetXmitFailTMDLinkDown(PCNetState *pData, TMD *pTmd)
     pData->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR */
     pData->Led.Asserted.s.fError = pData->Led.Actual.s.fError = 1;
     Log(("#%d pcnetTransmit: Signaling send error. swstyle=%#x\n",
-         PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aBCR[BCR_SWS]));
+         PCNET_INST_NR, pData->aBCR[BCR_SWS]));
 }
 
 /**
@@ -1980,7 +1946,7 @@ static void pcnetXmitFailTMDGeneric(PCNetState *pData, TMD *pTmd)
     pData->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR */
     pData->Led.Asserted.s.fError = pData->Led.Actual.s.fError = 1;
     Log(("#%d pcnetTransmit: Signaling send error. swstyle=%#x\n",
-         PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aBCR[BCR_SWS]));
+         PCNET_INST_NR, pData->aBCR[BCR_SWS]));
 }
 
 
@@ -2080,7 +2046,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
         pData->Led.Actual.s.fWriting = 0;
         STAM_PROFILE_ADV_STOP(&pData->StatTransmitSend, a);
 
-        PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+        PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
 
         pData->cbXmitRingBuffer[pData->ulXmitRingBufCons] = 0;
         pData->ulXmitRingBufCons                          = (pData->ulXmitRingBufCons+1) & PCNET_MAX_XMIT_SLOTS_MASK;
@@ -2123,7 +2089,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
             break;
 
 #ifdef PCNET_DEBUG_TMD
-        Log2(("#%d TMDLOAD %#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, CSR_CXDA(pData))));
+        Log2(("#%d TMDLOAD %#010x\n", PCNET_INST_NR, PHYSADDR(pData, CSR_CXDA(pData))));
         PRINT_TMD(&tmd);
 #endif
         pcnetXmitScrapFrame(pData);
@@ -2134,7 +2100,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
         if (tmd.tmd1.stp && tmd.tmd1.enp)
         {
             const unsigned cb = 4096 - tmd.tmd1.bcnt;
-            Log(("#%d pcnetTransmit: stp&enp: cb=%d xmtrc=%#x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, cb, CSR_XMTRC(pData)));
+            Log(("#%d pcnetTransmit: stp&enp: cb=%d xmtrc=%#x\n", PCNET_INST_NR, cb, CSR_XMTRC(pData)));
 
             if (RT_LIKELY(pcnetIsLinkUp(pData) || CSR_LOOP(pData)))
             {
@@ -2142,7 +2108,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                  * long as it is not the last buffer in a chain (STP = 0 and
                  * ENP = 1).'' That means that the first buffer might have a
                  * zero length if it is not the last one in the chain. */
-                if (RT_LIKELY(cb <= 1536))
+                if (RT_LIKELY(cb <= MAX_FRAME))
                 {
                     pcnetXmitRead1st(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
                     if (CSR_LOOP(pData))
@@ -2166,7 +2132,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                      * length is 0, the OWN bit will be cleared. In the C-LANCE
                      * the buffer length of 0 is interpreted as a 4096-byte
                      * buffer.'' */
-                    LogRel(("PCNET: pcnetAsyncTransmit: illegal 4kb frame -> ignoring\n"));
+                    LogRel(("PCNet#%d: pcnetAsyncTransmit: illegal 4kb frame -> ignoring\n", PCNET_INST_NR));
                     pcnetTmdStorePassHost(pData, &tmd, PHYSADDR(pData, CSR_CXDA(pData)));
                     break;
                 }
@@ -2174,7 +2140,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                 {
                     /* Signal error, as this violates the Ethernet specs. */
                     /** @todo check if the correct error is generated. */
-                    LogRel(("PCNET: pcnetAsyncTransmit: illegal 4kb frame -> signalling error\n"));
+                    LogRel(("PCNet#%d: pcnetAsyncTransmit: illegal 4kb frame -> signalling error\n", PCNET_INST_NR));
 
                     pcnetXmitFailTMDGeneric(pData, &tmd);
                 }
@@ -2196,7 +2162,6 @@ static int pcnetAsyncTransmit(PCNetState *pData)
             /*
              * Read TMDs until end-of-packet or tdte poll fails (underflow).
              */
-            const unsigned cbMaxFrame = 1536;
             bool fDropFrame = false;
             unsigned cb = 4096 - tmd.tmd1.bcnt;
             pcnetXmitRead1st(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
@@ -2240,7 +2205,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
 #endif
                 pcnetTmdLoad(pData, &tmd, PHYSADDR(pData, CSR_CXDA(pData)), false);
                 cb = 4096 - tmd.tmd1.bcnt;
-                if (    pData->SendFrame.cb + cb < cbMaxFrame
+                if (    pData->SendFrame.cb + cb < MAX_FRAME
                     &&  !fDropFrame)
                     pcnetXmitReadMore(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
                 else
@@ -2251,7 +2216,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                 }
                 if (tmd.tmd1.enp)
                 {
-                    Log(("#%d pcnetTransmit: stp: cb=%d xmtrc=%#x-%#x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+                    Log(("#%d pcnetTransmit: stp: cb=%d xmtrc=%#x-%#x\n", PCNET_INST_NR,
                          pData->SendFrame.cb, iStart, CSR_XMTRC(pData)));
                     if (pcnetIsLinkUp(pData) && !fDropFrame)
                     {
@@ -2286,7 +2251,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
              * Simply stop the transmitting for now.
              */
             /** @todo according to the specs we're supposed to clear the own bit and move on to the next one. */
-            Log(("#%d pcnetTransmit: guest is giving us shit!\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
+            Log(("#%d pcnetTransmit: guest is giving us shit!\n", PCNET_INST_NR));
             break;
         }
         /* Update TDMD, TXSTRT and TINT. */
@@ -2362,7 +2327,7 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
          * Perform async send. Mind that we might be requested to
          * suspended while waiting for the critical section.
          */
-        rc = PDMCritSectEnter(&pThis->CritSect, VERR_PERMISSION_DENIED);
+        rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
         AssertReleaseRCReturn(rc, rc);
 
         if (pThread->enmState == PDMTHREADSTATE_RUNNING)
@@ -2420,20 +2385,20 @@ static void pcnetPollTimer(PCNetState *pData)
     TMD dummy;
     if (CSR_STOP(pData) || CSR_SPND(pData))
         Log2(("#%d pcnetPollTimer time=%#010llx CSR_STOP=%d CSR_SPND=%d\n",
-             PCNETSTATE_2_DEVINS(pData)->iInstance, RTTimeMilliTS(), CSR_STOP(pData), CSR_SPND(pData)));
+             PCNET_INST_NR, RTTimeMilliTS(), CSR_STOP(pData), CSR_SPND(pData)));
     else
         Log2(("#%d pcnetPollTimer time=%#010llx TDMD=%d TXON=%d POLL=%d TDTE=%d TDRA=%#x\n",
-             PCNETSTATE_2_DEVINS(pData)->iInstance, RTTimeMilliTS(), CSR_TDMD(pData), CSR_TXON(pData),
+             PCNET_INST_NR, RTTimeMilliTS(), CSR_TDMD(pData), CSR_TXON(pData),
              !CSR_DPOLL(pData), pcnetTdtePoll(pData, &dummy), pData->GCTDRA));
     Log2(("#%d pcnetPollTimer: CSR_CXDA=%#x CSR_XMTRL=%d CSR_XMTRC=%d\n",
-          PCNETSTATE_2_DEVINS(pData)->iInstance, CSR_CXDA(pData), CSR_XMTRL(pData), CSR_XMTRC(pData)));
+          PCNET_INST_NR, CSR_CXDA(pData), CSR_XMTRL(pData), CSR_XMTRC(pData)));
 #endif
 #ifdef PCNET_DEBUG_TMD
     if (CSR_CXDA(pData))
     {
         TMD tmd;
         pcnetTmdLoad(pData, &tmd, PHYSADDR(pData, CSR_CXDA(pData)), false);
-        Log2(("#%d pcnetPollTimer: TMDLOAD %#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, PHYSADDR(pData, CSR_CXDA(pData))));
+        Log2(("#%d pcnetPollTimer: TMDLOAD %#010x\n", PCNET_INST_NR, PHYSADDR(pData, CSR_CXDA(pData))));
         PRINT_TMD(&tmd);
     }
 #endif
@@ -2475,7 +2440,7 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
     uint16_t val = new_value;
     int      rc  = VINF_SUCCESS;
 #ifdef PCNET_DEBUG_CSR
-    Log(("#%d pcnetCSRWriteU16: rap=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
+    Log(("#%d pcnetCSRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
 #endif
     switch (u32RAP)
     {
@@ -2492,18 +2457,15 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
                 if ((val & 7) == 7)
                     val &= ~3;
 
-                Log(("#%d pcnetWriteCSR0: %#06x => %#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aCSR[0], csr0));
+                Log(("#%d pcnetWriteCSR0: %#06x => %#06x\n", PCNET_INST_NR, pData->aCSR[0], csr0));
 
 #ifndef IN_RING3
                 if (!(csr0 & 0x0001/*init*/) && (val & 1))
                 {
-                    Log(("#%d pcnetCSRWriteU16: pcnetInit requested => HC\n", PCNETSTATE_2_DEVINS(pData)->iInstance));
+                    Log(("#%d pcnetCSRWriteU16: pcnetInit requested => HC\n", PCNET_INST_NR));
                     return VINF_IOM_HC_IOPORT_WRITE;
                 }
 #endif
-                LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %#06x => %#06x (%#06x)\n",
-                              PCNETSTATE_2_DEVINS(pData)->iInstance,
-                              u32RAP, new_value, csr0, pData->aCSR[0]));
                 pData->aCSR[0] = csr0;
 
                 if (!CSR_STOP(pData) && (val & 4))
@@ -2562,23 +2524,14 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
         case 112: /* MISSC */
             if (CSR_STOP(pData) || CSR_SPND(pData))
                 break;
-            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %#06x\n",
-                         PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
-            return rc;
         case 3: /* Interrupt Mask and Deferral Control */
-            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %#06x\n",
-                         PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             break;
         case 4: /* Test and Features Control */
-            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %#06x\n",
-                         PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             pData->aCSR[4] &= ~(val & 0x026a);
             val &= ~0x026a;
             val |= pData->aCSR[4] & 0x026a;
             break;
         case 5: /* Extended Control and Interrupt 1 */
-            LOG_REGISTER(("PCNet#%d: WRITE CSR%d, %#06x\n",
-                        PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             pData->aCSR[5] &= ~(val & 0x0a90);
             val &= ~0x0a90;
             val |= pData->aCSR[5] & 0x0a90;
@@ -2595,8 +2548,7 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
         case 15: /* Mode */
             if ((pData->aCSR[15] & 0x8000) != (val & 0x8000) && pData->pDrv)
             {
-                Log(("PCNet#%d: promiscuous mode changed to %d\n",
-                     PCNETSTATE_2_DEVINS(pData)->iInstance, !!(val & 0x8000)));
+                Log(("#%d: promiscuous mode changed to %d\n", PCNET_INST_NR, !!(val & 0x8000)));
 #ifndef IN_RING3
                 return VINF_IOM_HC_IOPORT_WRITE;
 #else
@@ -2619,14 +2571,14 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
         case 25: /* BADRU */
             if (!CSR_STOP(pData) && !CSR_SPND(pData))
             {
-                Log(("PCNet#%d: WRITE CSR%d, %#06x !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
+                Log(("#%d: WRITE CSR%d, %#06x !!\n", PCNET_INST_NR, u32RAP, val));
                 return rc;
             }
             if (u32RAP == 24)
                 pData->GCRDRA = (pData->GCRDRA & 0xffff0000) | (val & 0x0000ffff);
             else
                 pData->GCRDRA = (pData->GCRDRA & 0x0000ffff) | ((val & 0x0000ffff) << 16);
-            Log(("PCNet#%d: WRITE CSR%d, %#06x => GCRDRA=%08x (alt init)\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+            Log(("#%d: WRITE CSR%d, %#06x => GCRDRA=%08x (alt init)\n", PCNET_INST_NR,
                  u32RAP, val, pData->GCRDRA));
             break;
 
@@ -2638,20 +2590,18 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
         case 31: /* BADXU */
             if (!CSR_STOP(pData) && !CSR_SPND(pData))
             {
-                Log(("PCNet#%d: WRITE CSR%d, %#06x !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
+                Log(("#%d: WRITE CSR%d, %#06x !!\n", PCNET_INST_NR, u32RAP, val));
                 return rc;
             }
             if (u32RAP == 30)
                 pData->GCTDRA = (pData->GCTDRA & 0xffff0000) | (val & 0x0000ffff);
             else
                 pData->GCTDRA = (pData->GCTDRA & 0x0000ffff) | ((val & 0x0000ffff) << 16);
-            Log(("PCNet#%d: WRITE CSR%d, %#06x => GCTDRA=%08x (alt init)\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+            Log(("#%d: WRITE CSR%d, %#06x => GCTDRA=%08x (alt init)\n", PCNET_INST_NR,
                  u32RAP, val, pData->GCTDRA));
             break;
 
         case 58: /* Software Style */
-            LOG_REGISTER(("PCNet#%d: WRITE SW_STYLE, %#06x\n",
-                         PCNETSTATE_2_DEVINS(pData)->iInstance, val));
             rc = pcnetBCRWriteU16(pData, BCR_SWS, val);
             break;
 
@@ -2665,10 +2615,10 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
                              /** @todo transmit ring length is stored in two's complement! */
             if (!CSR_STOP(pData) && !CSR_SPND(pData))
             {
-                Log(("PCNet#%d: WRITE CSR%d, %#06x !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
+                Log(("#%d: WRITE CSR%d, %#06x !!\n", PCNET_INST_NR, u32RAP, val));
                 return rc;
             }
-            Log(("PCNet#%d: WRITE CSR%d, %#06x (hacked %#06x) (alt init)\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+            Log(("#%d: WRITE CSR%d, %#06x (hacked %#06x) (alt init)\n", PCNET_INST_NR,
                  u32RAP, val, 1 + ~(uint16_t)val));
             val = 1 + ~(uint16_t)val;
 
@@ -2726,11 +2676,9 @@ static uint32_t pcnetCSRReadU16(PCNetState *pData, uint32_t u32RAP)
             break;
         default:
             val = pData->aCSR[u32RAP];
-            LOG_REGISTER(("PCNet#%d: read  CSR%d => %#06x\n",
-                    PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
     }
 #ifdef PCNET_DEBUG_CSR
-    Log(("#%d pcnetCSRReadU16: rap=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log(("#%d pcnetCSRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR,
          u32RAP, val));
 #endif
     return val;
@@ -2741,7 +2689,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
     int rc = VINF_SUCCESS;
     u32RAP &= 0x7f;
 #ifdef PCNET_DEBUG_BCR
-    Log2(("#%d pcnetBCRWriteU16: rap=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetBCRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR,
          u32RAP, val));
 #endif
     switch (u32RAP)
@@ -2753,7 +2701,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
             switch (val & 0x00ff)
             {
                 default:
-                    Log(("Bad SWSTYLE=%#04x\n", val & 0xff));
+                    Log(("#%d Bad SWSTYLE=%#04x\n", PCNET_INST_NR, val & 0xff));
                     // fall through
                 case 0:
                     val |= 0x0200; /* 16 bit */
@@ -2772,9 +2720,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
                     pData->GCUpperPhys   = 0;
                     break;
             }
-            LOG_REGISTER(("PCNet#%d: WRITE SW_STYLE, %#06x\n",
-                         PCNETSTATE_2_DEVINS(pData)->iInstance, val));
-            Log(("BCR_SWS=%#06x\n", val));
+            Log(("#%d BCR_SWS=%#06x\n", PCNET_INST_NR, val));
             pData->aCSR[58] = val;
             /* fall through */
         case BCR_LNKST:
@@ -2788,8 +2734,6 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
         case BCR_PLAT:
         case BCR_MIICAS:
         case BCR_MIIADDR:
-            LOG_REGISTER(("PCNet#%d: WRITE BCR%d, %#06x\n",
-                         PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             pData->aBCR[u32RAP] = val;
             break;
 
@@ -2801,11 +2745,9 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
             break;
 
         case BCR_MIIMDR:
-            LOG_REGISTER(("PCNet#%d: WRITE MII%d, %#06x\n",
-                         PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
             pData->aMII[pData->aBCR[BCR_MIIADDR] & 0x1f] = val;
 #ifdef PCNET_DEBUG_MII
-            Log(("#%d pcnet: mii write %d <- %#x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+            Log(("#%d pcnet: mii write %d <- %#x\n", PCNET_INST_NR,
                    pData->aBCR[BCR_MIIADDR] & 0x1f, val));
 #endif
             break;
@@ -2925,7 +2867,7 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
     }
 
 #ifdef PCNET_DEBUG_MII
-    Log(("#%d pcnet: mii read %d -> %#x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log(("#%d pcnet: mii read %d -> %#x\n", PCNET_INST_NR,
          miiaddr, val));
 #endif
     return val;
@@ -2967,7 +2909,7 @@ static uint32_t pcnetBCRReadU16(PCNetState *pData, uint32_t u32RAP)
             break;
     }
 #ifdef PCNET_DEBUG_BCR
-    Log2(("#%d pcnetBCRReadU16: rap=%d val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetBCRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR,
          u32RAP, val));
 #endif
     return val;
@@ -3019,7 +2961,7 @@ static void pcnetAPROMWriteU8(PCNetState *pData, uint32_t addr, uint32_t val)
 {
     addr &= 0x0f;
     val  &= 0xff;
-    Log(("#%d pcnetAPROMWriteU8: addr=%#010x val=%#04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log(("#%d pcnetAPROMWriteU8: addr=%#010x val=%#04x\n", PCNET_INST_NR,
          addr, val));
     /* Check APROMWE bit to enable write access */
     if (pcnetBCRReadU16(pData, 2) & 0x80)
@@ -3029,7 +2971,7 @@ static void pcnetAPROMWriteU8(PCNetState *pData, uint32_t addr, uint32_t val)
 static uint32_t pcnetAPROMReadU8(PCNetState *pData, uint32_t addr)
 {
     uint32_t val = pData->aPROM[addr &= 0x0f];
-    Log(("#%d pcnetAPROMReadU8: addr=%#010x val=%#04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log(("#%d pcnetAPROMReadU8: addr=%#010x val=%#04x\n", PCNET_INST_NR,
          addr, val));
     return val;
 }
@@ -3039,7 +2981,7 @@ static int pcnetIoportWriteU16(PCNetState *pData, uint32_t addr, uint32_t val)
     int rc = VINF_SUCCESS;
 
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoportWriteU16: addr=%#010x val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportWriteU16: addr=%#010x val=%#06x\n", PCNET_INST_NR,
          addr, val));
 #endif
     if (RT_LIKELY(!BCR_DWIO(pData)))
@@ -3060,7 +3002,7 @@ static int pcnetIoportWriteU16(PCNetState *pData, uint32_t addr, uint32_t val)
         }
     }
     else
-        Log(("#%d pcnetIoportWriteU16: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, addr, val));
+        Log(("#%d pcnetIoportWriteU16: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNET_INST_NR, addr, val));
 
     return rc;
 }
@@ -3098,14 +3040,13 @@ static uint32_t pcnetIoportReadU16(PCNetState *pData, uint32_t addr, int *pRC)
         }
     }
     else
-        Log(("#%d pcnetIoportReadU16: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, addr, val & 0xffff));
+        Log(("#%d pcnetIoportReadU16: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNET_INST_NR, addr, val & 0xffff));
 
     pcnetUpdateIrq(pData);
 
 skip_update_irq:
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoportReadU16: addr=%#010x val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
-         addr, val & 0xffff));
+    Log2(("#%d pcnetIoportReadU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xffff));
 #endif
     return val;
 }
@@ -3115,7 +3056,7 @@ static int pcnetIoportWriteU32(PCNetState *pData, uint32_t addr, uint32_t val)
     int rc = VINF_SUCCESS;
 
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoportWriteU32: addr=%#010x val=%#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportWriteU32: addr=%#010x val=%#010x\n", PCNET_INST_NR,
          addr, val));
 #endif
     if (RT_LIKELY(BCR_DWIO(pData)))
@@ -3144,7 +3085,7 @@ static int pcnetIoportWriteU32(PCNetState *pData, uint32_t addr, uint32_t val)
 #endif
     }
     else
-        Log(("#%d pcnetIoportWriteU32: addr=%#010x val=%#010x !BCR_DWIO !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, addr, val));
+        Log(("#%d pcnetIoportWriteU32: addr=%#010x val=%#010x !BCR_DWIO !!\n", PCNET_INST_NR, addr, val));
 
     return rc;
 }
@@ -3182,12 +3123,12 @@ static uint32_t pcnetIoportReadU32(PCNetState *pData, uint32_t addr, int *pRC)
         }
     }
     else
-        Log(("#%d pcnetIoportReadU32: addr=%#010x val=%#010x !BCR_DWIO !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, addr, val));
+        Log(("#%d pcnetIoportReadU32: addr=%#010x val=%#010x !BCR_DWIO !!\n", PCNET_INST_NR, addr, val));
     pcnetUpdateIrq(pData);
 
 skip_update_irq:
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoportReadU32: addr=%#010x val=%#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetIoportReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR,
          addr, val));
 #endif
     return val;
@@ -3196,7 +3137,7 @@ skip_update_irq:
 static void pcnetMMIOWriteU8(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU8: addr=%#010x val=%#04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOWriteU8: addr=%#010x val=%#04x\n", PCNET_INST_NR,
          addr, val));
 #endif
     if (!(addr & 0x10))
@@ -3209,7 +3150,7 @@ static uint32_t pcnetMMIOReadU8(PCNetState *pData, RTGCPHYS addr)
     if (!(addr & 0x10))
         val = pcnetAPROMReadU8(pData, addr);
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOReadU8: addr=%#010x val=%#04x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOReadU8: addr=%#010x val=%#04x\n", PCNET_INST_NR,
          addr, val & 0xff));
 #endif
     return val;
@@ -3218,7 +3159,7 @@ static uint32_t pcnetMMIOReadU8(PCNetState *pData, RTGCPHYS addr)
 static void pcnetMMIOWriteU16(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU16: addr=%#010x val=%#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOWriteU16: addr=%#010x val=%#06x\n", PCNET_INST_NR,
          addr, val));
 #endif
     if (addr & 0x10)
@@ -3244,7 +3185,7 @@ static uint32_t pcnetMMIOReadU16(PCNetState *pData, RTGCPHYS addr)
         val |= pcnetAPROMReadU8(pData, addr);
     }
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOReadU16: addr=%#010x val = %#06x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOReadU16: addr=%#010x val = %#06x\n", PCNET_INST_NR,
          addr, val & 0xffff));
 #endif
     return val;
@@ -3253,7 +3194,7 @@ static uint32_t pcnetMMIOReadU16(PCNetState *pData, RTGCPHYS addr)
 static void pcnetMMIOWriteU32(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU32: addr=%#010x val=%#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOWriteU32: addr=%#010x val=%#010x\n", PCNET_INST_NR,
          addr, val));
 #endif
     if (addr & 0x10)
@@ -3285,7 +3226,7 @@ static uint32_t pcnetMMIOReadU32(PCNetState *pData, RTGCPHYS addr)
         val |= pcnetAPROMReadU8(pData, addr  );
     }
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOReadU32: addr=%#010x val=%#010x\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+    Log2(("#%d pcnetMMIOReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR,
          addr, val));
 #endif
     return val;
@@ -3327,14 +3268,14 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser,
                   | (pcnetAPROMReadU8(pData, Port + 3) << 24);
         else
         {
-            Log(("#%d pcnetIOPortAPromRead: Port=%RTiop cb=%d BCR_DWIO !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, Port, cb));
+            Log(("#%d pcnetIOPortAPromRead: Port=%RTiop cb=%d BCR_DWIO !!\n", PCNET_INST_NR, Port, cb));
             rc = VERR_IOM_IOPORT_UNUSED;
         }
         PDMCritSectLeave(&pData->CritSect);
     }
     STAM_PROFILE_ADV_STOP(&pData->StatAPROMRead, a);
     LogFlow(("#%d pcnetIOPortAPromRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Vrc\n",
-             PCNETSTATE_2_DEVINS(pData)->iInstance, Port, *pu32, cb, rc));
+             PCNET_INST_NR, Port, *pu32, cb, rc));
     return rc;
 }
 
@@ -3360,7 +3301,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser,
     {
         STAM_PROFILE_ADV_START(&pData->StatAPROMWrite, a);
         rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
-        if (rc == VINF_SUCCESS)
+        if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             pcnetAPROMWriteU8(pData, Port, u32);
             PDMCritSectLeave(&pData->CritSect);
@@ -3373,7 +3314,11 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser,
         rc = VINF_SUCCESS;
     }
     LogFlow(("#%d pcnetIOPortAPromWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Vrc\n",
-             PCNETSTATE_2_DEVINS(pData)->iInstance, Port, u32, cb, rc));
+             PCNET_INST_NR, Port, u32, cb, rc));
+#ifdef LOG_ENABLED
+    if (rc == VINF_IOM_HC_IOPORT_WRITE)
+        LogFlow(("#%d => HC\n", PCNET_INST_NR));
+#endif
     return rc;
 }
 
@@ -3397,7 +3342,7 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
 
     STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatIORead), a);
     rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_READ);
-    if (rc == VINF_SUCCESS)
+    if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         switch (cb)
         {
@@ -3411,7 +3356,11 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
     }
     STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatIORead), a);
     LogFlow(("#%d pcnetIOPortRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Vrc\n",
-             PCNETSTATE_2_DEVINS(pData)->iInstance, Port, *pu32, cb, rc));
+             PCNET_INST_NR, Port, *pu32, cb, rc));
+#ifdef LOG_ENABLED
+    if (rc == VINF_IOM_HC_IOPORT_READ)
+        LogFlow(("#%d => HC\n", PCNET_INST_NR));
+#endif
     return rc;
 }
 
@@ -3435,7 +3384,7 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
 
     STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatIOWrite), a);
     rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
-    if (rc == VINF_SUCCESS)
+    if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         switch (cb)
         {
@@ -3450,7 +3399,11 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
     }
     STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatIOWrite), a);
     LogFlow(("#%d pcnetIOPortWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Vrc\n",
-             PCNETSTATE_2_DEVINS(pData)->iInstance, Port, u32, cb, rc));
+             PCNET_INST_NR, Port, u32, cb, rc));
+#ifdef LOG_ENABLED
+    if (rc == VINF_IOM_HC_IOPORT_WRITE)
+        LogFlow(("#%d => HC\n", PCNET_INST_NR));
+#endif
     return rc;
 }
 
@@ -3479,7 +3432,7 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
     {
         STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatMMIORead), a);
         rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_MMIO_READ);
-        if (rc == VINF_SUCCESS)
+        if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             switch (cb)
             {
@@ -3499,7 +3452,11 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
         memset(pv, 0, cb);
 
     LogFlow(("#%d pcnetMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Vrc\n",
-             PCNETSTATE_2_DEVINS(pData)->iInstance, pv, cb, pv, cb, GCPhysAddr, rc));
+             PCNET_INST_NR, pv, cb, pv, cb, GCPhysAddr, rc));
+#ifdef LOG_ENABLED
+    if (rc == VINF_IOM_HC_MMIO_READ)
+        LogFlow(("#%d => HC\n", PCNET_INST_NR));
+#endif
     return rc;
 }
 
@@ -3528,7 +3485,7 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
     {
         STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatMMIOWrite), a);
         rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_MMIO_WRITE);
-        if (rc == VINF_SUCCESS)
+        if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             switch (cb)
             {
@@ -3547,7 +3504,11 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
         STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatMMIOWrite), a);
     }
     LogFlow(("#%d pcnetMMIOWrite: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Vrc\n",
-             PCNETSTATE_2_DEVINS(pData)->iInstance, pv, cb, pv, cb, GCPhysAddr, rc));
+             PCNET_INST_NR, pv, cb, pv, cb, GCPhysAddr, rc));
+#ifdef LOG_ENABLED
+    if (rc == VINF_IOM_HC_MMIO_WRITE)
+        LogFlow(("#%d => HC\n", PCNET_INST_NR));
+#endif
     return rc;
 }
 
@@ -4423,7 +4384,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     rc = CFGMR3QueryU32(pCfgHandle, "LineSpeed", &pData->u32LinkSpeed);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->u32LinkSpeed = 100000;    /* 100 Mbps (in kbps units)*/
+        pData->u32LinkSpeed = 1000000;    /* 1GBit/s (in kbps units)*/
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"LineSpeed\" value"));
@@ -4658,11 +4619,11 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 #ifdef PCNET_QUEUE_SEND_PACKETS
     pData->ulXmitRingBufProd   = 0;
     pData->ulXmitRingBufCons   = 0;
-    pData->pXmitRingBuffer[0]  = (char *)RTMemAlloc(PCNET_MAX_XMIT_SLOTS * 1536);
+    pData->pXmitRingBuffer[0]  = (char *)RTMemAlloc(PCNET_MAX_XMIT_SLOTS * MAX_FRAME);
     pData->cbXmitRingBuffer[0] = 0;
     for (i = 1; i < PCNET_MAX_XMIT_SLOTS; i++)
     {
-        pData->pXmitRingBuffer[i]  = pData->pXmitRingBuffer[i-1] + 1536;
+        pData->pXmitRingBuffer[i]  = pData->pXmitRingBuffer[i-1] + MAX_FRAME;
         pData->cbXmitRingBuffer[i] = 0;
     }
 #endif
@@ -4697,14 +4658,14 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTmdStoreHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in HC",     "/Devices/PCNet%d/TmdStoreHC", iInstance);
 
     for (i = 0; i < ELEMENTS(pData->aStatXmitFlush) - 1; i++)
-        PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "",                                       "/Devices/PCNet%d/XmitFlushIrq/%d", iInstance, i + 1);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,    "",                                    "/Devices/PCNet%d/XmitFlushIrq/%d+", iInstance, i + 1);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,       "",                                   "/Devices/PCNet%d/XmitFlushIrq/%d", iInstance, i + 1);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitFlush[i],      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,       "",                                   "/Devices/PCNet%d/XmitFlushIrq/%d+", iInstance, i + 1);
 
     for (i = 0; i < ELEMENTS(pData->aStatXmitChainCounts) - 1; i++)
-        PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "",                                  "/Devices/PCNet%d/XmitChainCounts/%d", iInstance, i + 1);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,    "",                                   "/Devices/PCNet%d/XmitChainCounts/%d+", iInstance, i + 1);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,  "",                                   "/Devices/PCNet%d/XmitChainCounts/%d", iInstance, i + 1);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,      "",                                   "/Devices/PCNet%d/XmitChainCounts/%d+", iInstance, i + 1);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,    "",                                    "/Devices/PCNet%d/Xmit/Skipped", iInstance, i + 1);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "",                                   "/Devices/PCNet%d/Xmit/Skipped", iInstance, i + 1);
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet interrupt checks",   "/Devices/PCNet%d/UpdateIRQ", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatPollTimer,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet poll timer",         "/Devices/PCNet%d/PollTimer", iInstance);
@@ -4715,12 +4676,12 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteHC,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/HC/Writes", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteR0,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/R0/Writes", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteGC,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/GC/Writes", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedHC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",   "/Devices/PCNet%d/Ring/HC/Failed", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedR0,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",   "/Devices/PCNet%d/Ring/R0/Failed", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedGC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",   "/Devices/PCNet%d/Ring/GC/Failed", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeHC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring range",   "/Devices/PCNet%d/Ring/HC/Outside", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeR0,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring range",   "/Devices/PCNet%d/Ring/R0/Outside", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeGC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring range",   "/Devices/PCNet%d/Ring/GC/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedHC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCNet%d/Ring/HC/Failed", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedR0,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCNet%d/Ring/R0/Failed", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedGC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCNet%d/Ring/GC/Failed", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeHC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Nr of monitored writes outside ring range", "/Devices/PCNet%d/Ring/HC/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeR0,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Nr of monitored writes outside ring range", "/Devices/PCNet%d/Ring/R0/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeGC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Nr of monitored writes outside ring range", "/Devices/PCNet%d/Ring/GC/Outside", iInstance);
 # endif /* PCNET_NO_POLLING */
 #endif
 
