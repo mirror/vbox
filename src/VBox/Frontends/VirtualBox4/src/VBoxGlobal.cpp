@@ -1887,43 +1887,32 @@ void VBoxGlobal::checkForAutoConvertedSettings()
             /* backup (optionally) and save all settings files
              * (QIMessageBox::No = Backup, QIMessageBox::Yes = Save) */
 
-            for (QList <CMachine>::Iterator m = machines.begin();
-                 /* machines.end() means global config => manual loop break */ ;)
+            foreach (CMachine m, machines)
             {
-                if (m == machines.end())
+                CSession session = openSession (m.GetId());
+                if (!session.isNull())
                 {
-                    if (isGlobalConverted)
-                    {
-                        if (rc == QIMessageBox::No)
-                            mVBox.SaveSettingsWithBackup();
-                        else
-                            mVBox.SaveSettings();
-
-                        if (!mVBox.isOk())
-                            vboxProblem().cannotSaveGlobalSettings (mVBox);
-                    }
+                    CMachine sm = session.GetMachine();
+                    if (rc == QIMessageBox::No)
+                        sm.SaveSettingsWithBackup();
+                    else
+                        sm.SaveSettings();
+                    ;
+                    if (!sm.isOk())
+                        vboxProblem().cannotSaveMachineSettings (sm);
+                    session.Close();
                 }
+            }
+
+            if (isGlobalConverted)
+            {
+                if (rc == QIMessageBox::No)
+                    mVBox.SaveSettingsWithBackup();
                 else
-                {
-                    CSession session = openSession ((*m).GetId());
-                    if (!session.isNull())
-                    {
-                        CMachine sm = session.GetMachine();
-                        if (rc == QIMessageBox::No)
-                            sm.SaveSettingsWithBackup();
-                        else
-                            sm.SaveSettings();
-                        ;
-                        if (!sm.isOk())
-                            vboxProblem().cannotSaveMachineSettings (sm);
-                        session.Close();
-                    }
-                }
+                    mVBox.SaveSettings();
 
-                if (m == machines.end())
-                    break;
-
-                ++ m;
+                if (!mVBox.isOk())
+                    vboxProblem().cannotSaveGlobalSettings (mVBox);
             }
         }
     }
