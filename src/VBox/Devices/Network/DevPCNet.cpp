@@ -70,6 +70,9 @@
 /* Enable to handle frequent io reads in the guest context */
 #define PCNET_GC_ENABLED
 
+/* Experimental: queue TX packets */
+//#define PCNET_QUEUE_SEND_PACKETS
+
 #if defined(LOG_ENABLED)
 #define PCNET_DEBUG_IO
 #define PCNET_DEBUG_BCR
@@ -94,19 +97,6 @@
 
 #define MAX_FRAME                       1536
 
-/* Frame cache */
-typedef struct PCNETFRAME
-{
-    /** The current frame size. Starts at -1. Only the top frame can be expanded. */
-    int32_t  cb;
-#if HC_ARCH_BITS == 64
-    uint32_t Alignment;
-#endif
-    /** The virtual address of the frame (copied or direct pointer) */
-    RTR3PTR  pvBuf;
-} PCNETFRAME;
-/* Pointer to PCNETFRAME */
-typedef PCNETFRAME *PPCNETFRAME;
 
 typedef struct PCNetState_st PCNetState;
 
@@ -148,8 +138,10 @@ struct PCNetState_st
     /** Last time we polled the queues */
     uint64_t                            u64LastPoll;
 
-    /** Array of frames. */
-    PCNETFRAME                          SendFrame;
+    /** Size of current send frame */
+    uint32_t                            cbSendFrame;
+    /** Buffer address of current send frame */
+    uint8_t                             *pvSendFrame;
     /** The xmit buffer. */
     uint8_t                             abSendBuf[4096];
     /** The recv buffer. */
@@ -238,15 +230,16 @@ struct PCNetState_st
     bool                                afAlignment[1];
     uint32_t                            u32LinkSpeed;
 
-//#define PCNET_QUEUE_SEND_PACKETS
 #ifdef PCNET_QUEUE_SEND_PACKETS
     #define PCNET_MAX_XMIT_SLOTS         128
     #define PCNET_MAX_XMIT_SLOTS_MASK    (PCNET_MAX_XMIT_SLOTS-1)
 
-    uint32_t                            ulXmitRingBufProd;
-    uint32_t                            ulXmitRingBufCons;
+    uint32_t                            iXmitRingBufProd;
+    uint32_t                            iXmitRingBufCons;
+    /* XXX currently atomic operations on this variable are overkill */
+    volatile int32_t                    cXmitRingBufPending;
     uint16_t                            cbXmitRingBuffer[PCNET_MAX_XMIT_SLOTS];
-    R3PTRTYPE(char *)                   pXmitRingBuffer[PCNET_MAX_XMIT_SLOTS];
+    R3PTRTYPE(uint8_t *)                apXmitRingBuffer[PCNET_MAX_XMIT_SLOTS];
 #endif
 
     STAMCOUNTER                         StatReceiveBytes;
@@ -578,7 +571,7 @@ AssertCompileSize(RMD, 16);
         (R)->rmd2.rcc, (R)->rmd2.rpc, (R)->rmd2.mcnt,   \
         (R)->rmd2.zeros))
 
-#ifdef PCNET_QUEUE_SEND_PACKETS
+#if defined(PCNET_QUEUE_SEND_PACKETS) && defined(IN_RING3)
 static int pcnetSyncTransmit(PCNetState *pData);
 #endif
 
@@ -1832,7 +1825,10 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     /* Clear counter .*/
     ASMAtomicAndU32(&pData->cPendingSends, 0);
 #ifdef PCNET_QUEUE_SEND_PACKETS
+    int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
+    AssertReleaseRC(rc);
     pcnetSyncTransmit(pData);
+    PDMCritSectLeave(&pData->CritSect);
 #else
     int rc = RTSemEventSignal(pData->hSendEventSem);
     AssertRC(rc);
@@ -1847,19 +1843,8 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
  */
 DECLINLINE(void) pcnetXmitScrapFrame(PCNetState *pData)
 {
-    pData->SendFrame.pvBuf = NULL;
-    pData->SendFrame.cb    = -1;
-}
-
-
-/**
- * If we are in RING3 don't copy the frame from GC here but only store the address. We
- * don't need to buffer the frames because a direct address translation was possible.
- */
-DECLINLINE(void) pcnetXmitZeroCopyFrame(PCNetState *pData, RTR3PTR pv, const unsigned cbFrame)
-{
-    pData->SendFrame.pvBuf = pv;
-    pData->SendFrame.cb    = cbFrame;
+    pData->pvSendFrame = NULL;
+    pData->cbSendFrame = 0;
 }
 
 
@@ -1868,11 +1853,17 @@ DECLINLINE(void) pcnetXmitZeroCopyFrame(PCNetState *pData, RTR3PTR pv, const uns
  */
 DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame)
 {
+    Assert(PDMCritSectIsOwner(&pData->CritSect));
     Assert(cbFrame < sizeof(pData->abSendBuf));
 
-    PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame, &pData->abSendBuf[0], cbFrame);
-    pData->SendFrame.pvBuf = pData->abSendBuf;
-    pData->SendFrame.cb    = cbFrame;
+#ifdef PCNET_QUEUE_SEND_PACKETS
+    AssertRelease(pData->cXmitRingBufPending < PCNET_MAX_XMIT_SLOTS-1);
+    pData->pvSendFrame = pData->apXmitRingBuffer[pData->iXmitRingBufProd];
+#else
+    pData->pvSendFrame = pData->abSendBuf;
+#endif
+    PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame, pData->pvSendFrame, cbFrame);
+    pData->cbSendFrame = cbFrame;
 }
 
 
@@ -1881,9 +1872,9 @@ DECLINLINE(void) pcnetXmitRead1st(PCNetState *pData, RTGCPHYS32 GCPhysFrame, con
  */
 DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame)
 {
-    Assert(pData->SendFrame.cb + cbFrame < sizeof(pData->abSendBuf));
-    PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame, &pData->abSendBuf[pData->SendFrame.cb], cbFrame);
-    pData->SendFrame.cb += cbFrame;
+    Assert(pData->cbSendFrame + cbFrame <= MAX_FRAME);
+    PDMDevHlpPhysRead(pData->CTXSUFF(pDevIns), GCPhysFrame, pData->pvSendFrame + pData->cbSendFrame, cbFrame);
+    pData->cbSendFrame += cbFrame;
 }
 
 
@@ -1894,10 +1885,13 @@ DECLINLINE(void) pcnetXmitReadMore(PCNetState *pData, RTGCPHYS32 GCPhysFrame, co
 DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pData)
 {
 #ifdef PCNET_QUEUE_SEND_PACKETS
-    Assert(!pData->cbXmitRingBuffer[pData->ulXmitRingBufProd]);
-    memcpy(pData->pXmitRingBuffer[pData->ulXmitRingBufProd], pData->SendFrame.pvBuf, pData->SendFrame.cb);
-    pData->cbXmitRingBuffer[pData->ulXmitRingBufProd] = (uint16_t)pData->SendFrame.cb;
-    pData->ulXmitRingBufProd                          = (pData->ulXmitRingBufProd+1) & PCNET_MAX_XMIT_SLOTS_MASK;
+    Assert(PDMCritSectIsOwner(&pData->CritSect));
+    AssertRelease(pData->cXmitRingBufPending < PCNET_MAX_XMIT_SLOTS-1);
+    Assert(!pData->cbXmitRingBuffer[pData->iXmitRingBufProd]);
+
+    pData->cbXmitRingBuffer[pData->iXmitRingBufProd] = (uint16_t)pData->cbSendFrame;
+    pData->iXmitRingBufProd = (pData->iXmitRingBufProd+1) & PCNET_MAX_XMIT_SLOTS_MASK;
+    ASMAtomicIncS32(&pData->cXmitRingBufPending);
 
     int rc = RTSemEventSignal(pData->hSendEventSem);
     AssertRC(rc);
@@ -1909,11 +1903,11 @@ DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pData)
     PDMCritSectLeave(&pData->CritSect);
 
     STAM_PROFILE_ADV_START(&pData->StatTransmitSend, a);
-    if (pData->SendFrame.cb > 70) /* unqualified guess */
+    if (pData->cbSendFrame > 70) /* unqualified guess */
         pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
 
-    pData->pDrv->pfnSend(pData->pDrv, pData->SendFrame.pvBuf, pData->SendFrame.cb);
-    STAM_REL_COUNTER_ADD(&pData->StatTransmitBytes, pData->SendFrame.cb);
+    pData->pDrv->pfnSend(pData->pDrv, pData->pvSendFrame, pData->cbSendFrame);
+    STAM_REL_COUNTER_ADD(&pData->StatTransmitBytes, pData->cbSendFrame);
     pData->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&pData->StatTransmitSend, a);
 
@@ -1959,8 +1953,8 @@ DECLINLINE(void) pcnetXmitLoopbackFrame(PCNetState *pData)
     if (HOST_IS_OWNER(CSR_CRST(pData)))
         pcnetRdtePoll(pData);
 
-    Assert(pData->SendFrame.pvBuf);
-    pcnetReceiveNoSync(pData, (const uint8_t *)pData->SendFrame.pvBuf, pData->SendFrame.cb);
+    Assert(pData->pvSendFrame);
+    pcnetReceiveNoSync(pData, (const uint8_t *)pData->pvSendFrame, pData->cbSendFrame);
     pcnetXmitScrapFrame(pData);
     pData->Led.Actual.s.fReading = 0;
 }
@@ -2030,26 +2024,31 @@ static void pcnetTransmit(PCNetState *pData)
 static int pcnetAsyncTransmit(PCNetState *pData)
 {
     Assert(PDMCritSectIsOwner(&pData->CritSect));
+    size_t cb;
 
-    while (pData->cbXmitRingBuffer[pData->ulXmitRingBufCons])
+    while ((pData->cXmitRingBufPending > 0))
     {
+        cb = pData->cbXmitRingBuffer[pData->iXmitRingBufCons];
+
         /* Don't hold the critical section while transmitting data. */
         /** @note also avoids deadlocks with NAT as it can call us right back. */
         PDMCritSectLeave(&pData->CritSect);
 
         STAM_PROFILE_ADV_START(&pData->StatTransmitSend, a);
-        if (pData->SendFrame.cb > 70) /* unqualified guess */
+        if (cb > 70) /* unqualified guess */
             pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
 
-        pData->pDrv->pfnSend(pData->pDrv, pData->pXmitRingBuffer[pData->ulXmitRingBufCons], pData->cbXmitRingBuffer[pData->ulXmitRingBufCons]);
-        STAM_REL_COUNTER_ADD(&pData->StatTransmitBytes, pData->cbXmitRingBuffer[pData->ulXmitRingBufCons]);
+        pData->pDrv->pfnSend(pData->pDrv, pData->apXmitRingBuffer[pData->iXmitRingBufCons], cb);
+        STAM_REL_COUNTER_ADD(&pData->StatTransmitBytes, cb);
         pData->Led.Actual.s.fWriting = 0;
         STAM_PROFILE_ADV_STOP(&pData->StatTransmitSend, a);
 
-        PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
+        int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
+        AssertReleaseRC(rc);
 
-        pData->cbXmitRingBuffer[pData->ulXmitRingBufCons] = 0;
-        pData->ulXmitRingBufCons                          = (pData->ulXmitRingBufCons+1) & PCNET_MAX_XMIT_SLOTS_MASK;
+        pData->cbXmitRingBuffer[pData->iXmitRingBufCons] = 0;
+        pData->iXmitRingBufCons = (pData->iXmitRingBufCons+1) & PCNET_MAX_XMIT_SLOTS_MASK;
+        ASMAtomicDecS32(&pData->cXmitRingBufPending);
     }
     return VINF_SUCCESS;
 }
@@ -2205,19 +2204,19 @@ static int pcnetAsyncTransmit(PCNetState *pData)
 #endif
                 pcnetTmdLoad(pData, &tmd, PHYSADDR(pData, CSR_CXDA(pData)), false);
                 cb = 4096 - tmd.tmd1.bcnt;
-                if (    pData->SendFrame.cb + cb < MAX_FRAME
+                if (    pData->cbSendFrame + cb < MAX_FRAME
                     &&  !fDropFrame)
                     pcnetXmitReadMore(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
                 else
                 {
                     AssertMsg(fDropFrame, ("pcnetTransmit: Frame is too big!!! %d bytes\n",
-                                           pData->SendFrame.cb + cb));
+                                           pData->cbSendFrame + cb));
                     fDropFrame = true;
                 }
                 if (tmd.tmd1.enp)
                 {
                     Log(("#%d pcnetTransmit: stp: cb=%d xmtrc=%#x-%#x\n", PCNET_INST_NR,
-                         pData->SendFrame.cb, iStart, CSR_XMTRC(pData)));
+                         pData->cbSendFrame, iStart, CSR_XMTRC(pData)));
                     if (pcnetIsLinkUp(pData) && !fDropFrame)
                     {
                         int rc = pcnetXmitCompleteFrame(pData);
@@ -3527,7 +3526,7 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
     int         rc;
 
     STAM_PROFILE_ADV_START(&pData->StatTimer, a);
-    rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     pcnetPollTimer(pData);
@@ -3567,7 +3566,7 @@ static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
-    int         rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    int         rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     rc = VERR_GENERAL_FAILURE;
@@ -3924,7 +3923,8 @@ static DECLCALLBACK(int) pcnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
 
-    PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
+    AssertRC(rc);
 
     pData->fSaving = true;
     /* From now on drop all received packets to prevent altering of main memory after
@@ -3986,7 +3986,8 @@ static DECLCALLBACK(int) pcnetSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
 
-    PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
+    AssertRC(rc);
     pData->fSaving = false;
     PDMCritSectLeave(&pData->CritSect);
     return VINF_SUCCESS;
@@ -4110,7 +4111,7 @@ static DECLCALLBACK(size_t) pcnetCanReceive(PPDMINETWORKPORT pInterface)
     int    rc;
     PCNetState *pData = INETWORKPORT_2_DATA(pInterface);
 
-    rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     cb = pcnetCanReceiveNoSync(pData);
@@ -4135,7 +4136,7 @@ static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKPORT pInterface, const void *p
     int         rc;
 
     STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-    rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
+    rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     if (!pData->fSaving)
@@ -4320,8 +4321,8 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
         PDMR3CritSectDelete(&pData->CritSect);
     }
 #ifdef PCNET_QUEUE_SEND_PACKETS
-    if (pData->pXmitRingBuffer)
-        RTMemFree(pData->pXmitRingBuffer[0]);
+    if (pData->apXmitRingBuffer)
+        RTMemFree(pData->apXmitRingBuffer[0]);
 #endif
     return VINF_SUCCESS;
 }
@@ -4617,15 +4618,9 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     NOREF(i);
 
 #ifdef PCNET_QUEUE_SEND_PACKETS
-    pData->ulXmitRingBufProd   = 0;
-    pData->ulXmitRingBufCons   = 0;
-    pData->pXmitRingBuffer[0]  = (char *)RTMemAlloc(PCNET_MAX_XMIT_SLOTS * MAX_FRAME);
-    pData->cbXmitRingBuffer[0] = 0;
+    pData->apXmitRingBuffer[0] = (uint8_t *)RTMemAlloc(PCNET_MAX_XMIT_SLOTS * MAX_FRAME);
     for (i = 1; i < PCNET_MAX_XMIT_SLOTS; i++)
-    {
-        pData->pXmitRingBuffer[i]  = pData->pXmitRingBuffer[i-1] + MAX_FRAME;
-        pData->cbXmitRingBuffer[i] = 0;
-    }
+        pData->apXmitRingBuffer[i] = pData->apXmitRingBuffer[0] + i*MAX_FRAME;
 #endif
 
 #ifdef VBOX_WITH_STATISTICS
