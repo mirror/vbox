@@ -1667,7 +1667,8 @@ int VBoxProblemReporter::warnAboutAutoConvertedSettings (const QString &aFormatV
             "</ul>"
             "<p>Note that if you select <b>Cancel</b>, the auto-converted "
             "settings files will be implicitly saved in the new format anyway "
-            "once you change a setting or start a virtual machine.</p>")
+            "once you change a setting or start a virtual machine, but "
+            "<b>no</b> backup copies will be created in this case.</p>")
             .arg (aFormatVersion),
         aFileList,
         NULL /* aAutoConfirmId */,

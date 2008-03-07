@@ -1885,69 +1885,11 @@ void VBoxGlobal::checkForAutoConvertedSettings()
         int rc = vboxProblem()
             .warnAboutAutoConvertedSettings (formatVersion, fileList);
 
-        if (rc == QIMessageBox::No)
+        if (rc == QIMessageBox::No || rc == QIMessageBox::Yes)
         {
-            /* create backup copies */
-            for (QList <CMachine>::Iterator m = machines.begin();
-                 /* machines.end() means global config => manual loop break */ ;)
-            {
-                QString of, nf;
+            /* backup (optionally) and save all settings files
+             * (QIMessageBox::No = Backup, QIMessageBox::Yes = Save) */
 
-                if (m == machines.end())
-                {
-                    if (!isGlobalConverted)
-                        break;
-                    of = mVBox.GetSettingsFilePath();
-                    nf = QString ("%1.%2.bak").arg (of, mVBox.GetSettingsFileVersion());
-                }
-                else
-                {
-                    of = (*m).GetSettingsFilePath();
-                    nf = QString ("%1.%2.bak").arg (of, (*m).GetSettingsFileVersion());
-                }
-
-                int vrc = RTFileCopyEx (of.utf8(), nf.utf8(),
-                                        RTFILECOPY_FLAG_NO_DENY_WRITE,
-                                        NULL, NULL);
-
-                /* try progressive suffix on failure */
-                if (vrc == VERR_ALREADY_EXISTS)
-                {
-                    QString tmp = nf;
-                    for (int i = 0; i < 9 && RT_FAILURE (vrc); ++ i)
-                    {
-                        nf = QString ("%1.%2"). arg (tmp).arg (i);
-                        vrc = RTFileCopyEx (of.utf8(), nf.utf8(),
-                                            RTFILECOPY_FLAG_NO_DENY_WRITE,
-                                            NULL, NULL);
-                    }
-                }
-
-                if (RT_FAILURE (vrc))
-                {
-                    vboxProblem().cannotCopyFile (of, nf, vrc);
-                    if (m == machines.end())
-                    {
-                        /* remove from further processing */
-                        isGlobalConverted = false;
-                        break;
-                    }
-                    else
-                        /* remove from further processing */
-                        m = machines.remove (m);
-                }
-                else
-                {
-                    if (m == machines.end())
-                        break;
-                    ++ m;
-                }
-            }
-        }
-
-        if (rc == QIMessageBox::Yes || rc == QIMessageBox::No)
-        {
-            /* save all settings files */
             for (QList <CMachine>::Iterator m = machines.begin();
                  /* machines.end() means global config => manual loop break */ ;)
             {
@@ -1955,7 +1897,11 @@ void VBoxGlobal::checkForAutoConvertedSettings()
                 {
                     if (isGlobalConverted)
                     {
-                        mVBox.SaveSettings();
+                        if (rc == QIMessageBox::No)
+                            mVBox.SaveSettingsWithBackup();
+                        else
+                            mVBox.SaveSettings();
+
                         if (!mVBox.isOk())
                             vboxProblem().cannotSaveGlobalSettings (mVBox);
                     }
@@ -1966,7 +1912,11 @@ void VBoxGlobal::checkForAutoConvertedSettings()
                     if (!session.isNull())
                     {
                         CMachine sm = session.GetMachine();
-                        sm.SaveSettings();
+                        if (rc == QIMessageBox::No)
+                            sm.SaveSettingsWithBackup();
+                        else
+                            sm.SaveSettings();
+                        ;
                         if (!sm.isOk())
                             vboxProblem().cannotSaveMachineSettings (sm);
                         session.Close();
