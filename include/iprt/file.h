@@ -342,7 +342,13 @@ RTDECL(int) RTFileCopyByHandles(RTFILE FileSrc, RTFILE FileDst);
 /** Flags for RTFileCopyEx().
  * @{ */
 /** Do not use RTFILE_O_DENY_WRITE on the source file to allow for copying files opened for writing. */
-#define RTFILECOPY_FLAG_NO_DENY_WRITE   0x0001
+#define RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE  RT_BIT(0)
+/** Do not use RTFILE_O_DENY_WRITE on the target file. */
+#define RTFILECOPY_FLAGS_NO_DST_DENY_WRITE  RT_BIT(1)
+/** Do not use RTFILE_O_DENY_WRITE on either of the two file. */
+#define RTFILECOPY_FLAGS_NO_DENY_WRITE      ( RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE | RTFILECOPY_FLAGS_NO_DST_DENY_WRITE )
+/** */
+#define RTFILECOPY_FLAGS_MASK               UINT32_C(0x00000003)
 /** @} */
 
 /**
