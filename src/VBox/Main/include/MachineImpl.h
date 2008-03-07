@@ -495,6 +495,7 @@ public:
     STDMETHOD(GetExtraData)(INPTR BSTR aKey, BSTR *aValue);
     STDMETHOD(SetExtraData)(INPTR BSTR aKey, INPTR BSTR aValue);
     STDMETHOD(SaveSettings)();
+    STDMETHOD(SaveSettingsWithBackup) (BSTR *aBakFileName);
     STDMETHOD(DiscardSettings)();
     STDMETHOD(DeleteSettings)();
     STDMETHOD(GetSnapshot) (INPTR GUIDPARAM aId, ISnapshot **aSnapshot);

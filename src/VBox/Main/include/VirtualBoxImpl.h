@@ -182,6 +182,7 @@ public:
                                       BSTR *aChanged, BSTR *aValues);
 
     STDMETHOD(SaveSettings)();
+    STDMETHOD(SaveSettingsWithBackup) (BSTR *aBakFileName);
 
     /* public methods only for internal purposes */
 
@@ -328,6 +329,10 @@ public:
     static HRESULT saveSettingsTree (settings::TreeBackend &aTree,
                                      settings::File &aFile,
                                      Utf8Str &aFormatVersion);
+
+    static HRESULT backupSettingsFile (const Bstr &aFileName,
+                                       const Utf8Str &aOldFormat,
+                                       Bstr &aBakFileName);
 
     static HRESULT handleUnexpectedExceptions (RT_SRC_POS_DECL);
 

@@ -2247,6 +2247,40 @@ STDMETHODIMP Machine::SaveSettings()
     return saveSettings();
 }
 
+STDMETHODIMP Machine::SaveSettingsWithBackup (BSTR *aBakFileName)
+{
+    if (!aBakFileName)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* saveSettings() needs mParent lock */
+    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
+    /* the settings file path may never be null */
+    ComAssertRet (mData->mConfigFileFull, E_FAIL);
+
+    /* perform backup only when there was auto-conversion */
+    if (mData->mSettingsFileVersion != VBOX_XML_VERSION_FULL)
+    {
+        Bstr bakFileName;
+
+        HRESULT rc = VirtualBox::backupSettingsFile (mData->mConfigFileFull,
+                                                     mData->mSettingsFileVersion,
+                                                     bakFileName);
+        CheckComRCReturnRC (rc);
+
+        bakFileName.cloneTo (aBakFileName);
+    }
+
+    /* save all VM data excluding snapshots */
+    return saveSettings();
+}
+
 STDMETHODIMP Machine::DiscardSettings()
 {
     AutoCaller autoCaller (this);

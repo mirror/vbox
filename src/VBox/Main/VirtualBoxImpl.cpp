@@ -2144,6 +2144,36 @@ STDMETHODIMP VirtualBox::WaitForPropertyChange (INPTR BSTR aWhat, ULONG aTimeout
 
 STDMETHODIMP VirtualBox::SaveSettings()
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    return saveSettings();
+}
+
+STDMETHODIMP VirtualBox::SaveSettingsWithBackup (BSTR *aBakFileName)
+{
+    if (!aBakFileName)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* saveSettings() needs write lock */
+    AutoLock alock (this);
+
+    /* perform backup only when there was auto-conversion */
+    if (mData.mSettingsFileVersion != VBOX_XML_VERSION_FULL)
+    {
+        Bstr bakFileName;
+
+        HRESULT rc = backupSettingsFile (mData.mCfgFile.mName,
+                                         mData.mSettingsFileVersion,
+                                         bakFileName);
+        CheckComRCReturnRC (rc);
+
+        bakFileName.cloneTo (aBakFileName);
+    }
+
     return saveSettings();
 }
 
@@ -4265,6 +4295,48 @@ HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
                          tr ("Could not save the settings file '%s' (%Vrc)"),
                          aFile.uri(), err.rc());
     }
+
+    return S_OK;
+}
+
+/**
+ * Creates a backup copy of the given settings file by suffixing it with the
+ * supplied version format string and optionally with numbers from .0 to .9
+ * if the backup file already exists.
+ *
+ * @param aFileName     Orignal settings file name.
+ * @param aOldFormat    Version of the original format.
+ * @param aBakFileName  File name of the created backup copy (only on success).
+ */
+/* static */
+HRESULT VirtualBox::backupSettingsFile (const Bstr &aFileName,
+                                        const Utf8Str &aOldFormat,
+                                        Bstr &aBakFileName)
+{
+    Utf8Str of = aFileName;
+    Utf8Str nf = Utf8StrFmt ("%s.%s.bak", of.raw(), aOldFormat.raw());
+
+    int vrc = RTFileCopyEx (of, nf, RTFILECOPY_FLAG_NO_DENY_WRITE,
+                            NULL, NULL);
+
+    /* try progressive suffix from .0 to .9 on failure */
+    if (vrc == VERR_ALREADY_EXISTS)
+    {
+        Utf8Str tmp = nf;
+        for (int i = 0; i <= 9 && RT_FAILURE (vrc); ++ i)
+        {
+            nf = Utf8StrFmt ("%s.%d", tmp.raw(), i);
+            vrc = RTFileCopyEx (of, nf, RTFILECOPY_FLAG_NO_DENY_WRITE,
+                                NULL, NULL);
+        }
+    }
+
+    if (RT_FAILURE (vrc))
+        return setError (E_FAIL,
+            tr ("Could not copy the settings file '%s' to '%s' (%Vrc)"),
+            of.raw(), nf.raw(), vrc);
+
+    aBakFileName = nf;
 
     return S_OK;
 }
