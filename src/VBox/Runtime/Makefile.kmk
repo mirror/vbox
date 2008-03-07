@@ -265,6 +265,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/fileio-win.cpp \
 	r3/win/fs-win.cpp \
 	r3/win/ldrNative-win.cpp \
+	r3/win/mp-win.cpp \
 	r3/win/path-win.cpp \
 	r3/win/process-win.cpp \
 	r3/win/RTLogWriteDebugger-win.cpp \
