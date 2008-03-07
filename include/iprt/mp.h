@@ -37,12 +37,6 @@ __BEGIN_DECLS
  * @{
  */
 
-/** Maximum number of CPUs we support in one system.
- * @remarks The current limit in Windows (affinity mask)
- */
-#define RT_MP_MAX_CPU                   64
-
-
 /**
  * Gets the identifier of the CPU executing the call.
  *
@@ -53,22 +47,6 @@ __BEGIN_DECLS
  * @returns CPU Id.
  */
 RTDECL(RTCPUID) RTMpCpuId(void);
-
-/**
- * Checks if a CPU is online or not.
- *
- * @returns true/false accordingly.
- * @param   idCpu       The identifier of the CPU.
- */
-RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu);
-
-/**
- * Checks if a CPU exist or not / validates a CPU id.
- *
- * @returns true/false accordingly.
- * @param   idCpu       The identifier of the CPU.
- */
-RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu);
 
 /**
  * Converts a CPU identifier to a CPU set index.
@@ -100,6 +78,22 @@ RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu);
  * @returns The current higest CPU identifier value.
  */
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void);
+
+/**
+ * Checks if a CPU is online or not.
+ *
+ * @returns true/false accordingly.
+ * @param   idCpu       The identifier of the CPU.
+ */
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu);
+
+/**
+ * Checks if a CPU exist or not / validates a CPU id.
+ *
+ * @returns true/false accordingly.
+ * @param   idCpu       The identifier of the CPU.
+ */
+RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu);
 
 /**
  * Gets set of the CPUs present in the system.

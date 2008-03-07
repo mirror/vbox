@@ -38,6 +38,13 @@ __BEGIN_DECLS
  */
 
 /**
+ * The maximum number of CPUs a set can contain and IPRT is able
+ * to reference.
+ * @remarks This is the maximum value of the supported platforms.
+ */
+#define RTCPUSET_MAX_CPUS       64
+
+/**
  * Clear all CPUs.
  *
  * @returns pSet.

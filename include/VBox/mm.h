@@ -47,6 +47,7 @@ __BEGIN_DECLS
  * Bits 0-11 only since they are fitted into the offset part of a physical memory address.
  * @{
  */
+#if 1
 /** Reserved - Not RAM, ROM nor MMIO2.
  * If this bit is cleared the memory is assumed to be some kind of RAM.
  * Normal MMIO may set it but that depends on whether the RAM range was
@@ -75,6 +76,7 @@ __BEGIN_DECLS
  * @remark Involved in the shadow ROM hack.
  */
 #define MM_RAM_FLAGS_MMIO2              RT_BIT(3)
+#endif
 
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 /** Physical backing memory is allocated dynamically. Not set implies a one time static allocation. */
