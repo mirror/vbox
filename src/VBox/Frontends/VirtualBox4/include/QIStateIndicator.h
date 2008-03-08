@@ -53,12 +53,12 @@ signals:
 
 protected:
 
-    virtual void paintEvent (QPaintEvent *event);
+    virtual void paintEvent (QPaintEvent *aEv);
     virtual void drawContents (QPainter *aPainter);
 
 #ifdef Q_WS_MAC
     virtual void mousePressEvent (QMouseEvent *aEv);
-#endif 
+#endif
     virtual void mouseDoubleClickEvent (QMouseEvent *aEv);
     virtual void contextMenuEvent (QContextMenuEvent *aEv);
 

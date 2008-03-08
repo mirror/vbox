@@ -94,10 +94,10 @@ void QIStateIndicator::setState (int aState)
     repaint();
 }
 
-void QIStateIndicator::paintEvent (QPaintEvent * /*event*/)
+void QIStateIndicator::paintEvent (QPaintEvent * /* aEv */)
 {
-    QPainter painter(this);
-    drawContents(&painter);
+    QPainter painter (this);
+    drawContents (&painter);
 }
 
 void QIStateIndicator::drawContents (QPainter *aPainter)
@@ -107,8 +107,8 @@ void QIStateIndicator::drawContents (QPainter *aPainter)
     {
 #warning port me
         /* I didn't see any benefits of caching the icon
-         * background drawing in Qt4. This is already done 
-         * by Qt itself. Also there is no "NoAutoErase" 
+         * background drawing in Qt4. This is already done
+         * by Qt itself. Also there is no "NoAutoErase"
          * anymore. Disable this for now. */
 //        if (testAttribute (Qt::WNoAutoErase))
 //        {
@@ -159,9 +159,9 @@ void QIStateIndicator::drawContents (QPainter *aPainter)
 }
 
 #ifdef Q_WS_MAC
-/** 
- * Make the left button also show the context menu to make things 
- * simpler for users with single mouse button mice (laptops++). 
+/**
+ * Make the left button also show the context menu to make things
+ * simpler for users with single mouse button mice (laptops++).
  */
 void QIStateIndicator::mousePressEvent (QMouseEvent *aEv)
 {
