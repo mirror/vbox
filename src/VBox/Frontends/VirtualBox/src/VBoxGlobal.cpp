@@ -1887,7 +1887,7 @@ void VBoxGlobal::checkForAutoConvertedSettings()
                         sm.SaveSettingsWithBackup();
                     else
                         sm.SaveSettings();
-                    ;
+
                     if (!sm.isOk())
                         vboxProblem().cannotSaveMachineSettings (sm);
                     session.Close();
