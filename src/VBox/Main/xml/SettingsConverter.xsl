@@ -50,7 +50,6 @@
 <!--
  *  Forbid non-VirtualBox root nodes
 -->
-
 <xsl:template match="/*">
   <xsl:message terminate="yes">
 Cannot convert an unknown XML file with the root node '<xsl:value-of select="name()"/>'!
@@ -60,7 +59,6 @@ Cannot convert an unknown XML file with the root node '<xsl:value-of select="nam
 <!--
  *  Forbid all unsupported VirtualBox settings versions
 -->
-
 <xsl:template match="/vb:VirtualBox">
   <xsl:if test="@version=concat($recentVer,'-',$curVerPlat)">
     <xsl:message terminate="yes">
@@ -75,38 +73,92 @@ The source version is not supported.
 </xsl:template>
 
 <!--
- *  Accept supported settings versions (source setting filess to convert)
+ * Accept supported settings versions (source setting files we can convert)
+ *
+ * Note that in order to simplify conversion from versions prior to the previous
+ * one, we support multi-step conversion like this: step 1: 1.0 => 1.1,
+ * step 2: 1.1 => 1.2, where 1.2 is the most recent version. If you want to use
+ * such multi-step mode, you need to ensure that only 1.0 => 1.1 is possible, by
+ * using the 'mode=1.1' attribute on both 'apply-templates' within the starting
+ * '/vb:VirtualBox[1.0]' template and within all templates that this
+ * 'apply-templates' should apply.
+ *
+ * If no 'mode' attribute is used as described above, then a direct conversion
+ * (1.0 => 1.2 in the above example) will happen when version 1.0 of the settings
+ * files is detected. Note that the direct conversion from pre-previous versions
+ * will require to patch their conversion templates so that they include all
+ * modifications from all newer versions, which is error-prone. It's better to
+ * use the milt-step mode.
 -->
 
 <!-- @todo temporary -->
-<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.999']">
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='0.1']">
   <xsl:copy>
-    <xsl:attribute name="version"><xsl:value-of select="concat($recentVer,'-',$curVerPlat)"/></xsl:attribute>
-    <xsl:apply-templates select="node()"/>
+    <xsl:attribute name="version"><xsl:value-of select="concat('0.2','-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()" mode="v0.2"/>
+  </xsl:copy>
+</xsl:template>
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='0.2']">
+  <xsl:copy>
+    <xsl:attribute name="version"><xsl:value-of select="concat('0.3','-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()" mode="v0.3"/>
   </xsl:copy>
 </xsl:template>
 
-<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.1']">
-  <xsl:copy>
-    <xsl:attribute name="version"><xsl:value-of select="concat($recentVer,'-',$curVerPlat)"/></xsl:attribute>
-    <xsl:apply-templates select="node()"/>
-  </xsl:copy>
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='0.1']/vb:Machine"
+              mode="v0.2">
+  <Machine>
+    0.2
+  </Machine>
 </xsl:template>
 
-<!--
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *  Individual conversions
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
--->
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='0.2']/vb:Machine"
+              mode="v0.3">
+  <Machine>
+    0.3
+  </Machine>
+</xsl:template>
 
 <!--
  *  all non-root elements that are not explicitly matched are copied as is
 -->
-<xsl:template match="@*|node()[../..]">
+<xsl:template match="@*|node()[../..]" mode="v0.2">
   <xsl:copy>
-    <xsl:apply-templates select="@*|node()[../..]"/>
+    <xsl:apply-templates select="@*|node()[../..]" mode="v0.2"/>
   </xsl:copy>
 </xsl:template>
+
+<!--
+ *  all non-root elements that are not explicitly matched are copied as is
+-->
+<xsl:template match="@*|node()[../..]" mode="v0.3">
+  <xsl:copy>
+    <xsl:apply-templates select="@*|node()[../..]" mode="v0.3"/>
+  </xsl:copy>
+</xsl:template>
+
+<!-- @todo do 1.1 => 1.2 => current? -->
+<!--xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.1']">
+  <xsl:copy>
+    <xsl:attribute name="version"><xsl:value-of select="concat($recentVer,'-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()"/>
+  </xsl:copy>
+</xsl:template-->
+
+  <!--
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.2"]">
+  <xsl:copy>
+    <xsl:attribute name="version"><xsl:value-of select="concat($recentVer,'-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()"/>
+  </xsl:copy>
+</xsl:template>
+  -->
+
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  1.1 => 1.2 ???
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
 
 <!--
  *  Global settings
@@ -165,5 +217,11 @@ The source version is not supported.
     </xsl:for-each>
   </HardDiskAttachments>
 </xsl:template>
+
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  1.2 => current
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
 
 </xsl:stylesheet>

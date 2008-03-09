@@ -271,7 +271,7 @@ public:
         settings::Input *resolveEntity (const char *aURI, const char *aID);
 
         // AutoConverter interface
-        bool needsConversion (const settings::Key &aRoot, char *&aOldVersion) const;
+        bool needsConversion (const settings::Key &aRoot, char **aOldVersion) const;
         const char *templateUri() const;
     };
 

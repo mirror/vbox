@@ -74,19 +74,35 @@ VirtualBox::SettingsTreeHelper::resolveEntity (const char *aURI, const char *aID
  * required.
  *
  * The implementation normally checks for the "version" value of the
- * root key to determine if the conversion is necessary. The
- * implementation must return a string representing the old version
- * (before conversion) in the @c aOldVersion argument -- this string is
- * used by XmlTreeBackend::oldVersion() and must be non-NULL to indicate
- * that the conversion has been performed on the tree. The returned
- * string must be allocated using RTStrDup or such.
+ * root key to determine if the conversion is necessary. When the
+ * @a aOldVersion argument is not NULL, the implementation must return a
+ * non-NULL non-empty string representing the old version (before
+ * conversion) in it this string is used by XmlTreeBackend::oldVersion()
+ * and must be non-NULL to indicate that the conversion has been
+ * performed on the tree. The returned string must be allocated using
+ * RTStrDup() or such.
+ *
+ * This method is called again after the successful transformation to
+ * let the implementation retry the version check and request another
+ * transformation if necessary. This may be used to perform multi-step
+ * conversion like this: 1.1 => 1.2, 1.2 => 1.3 (instead of 1.1 => 1.3)
+ * which saves from the need to update all previous conversion
+ * templates to make each of them convert directly to the recent
+ * version.
+ *
+ * @note Multi-step transformations are performed in a loop that exits
+ *       only when this method returns @false. It's up to the
+ *       implementation to detect cycling (repeated requests to convert
+ *       from the same version) wrong version order, etc. and throw an
+ *       EConversionCycle exception to break the loop without returning
+ *       @false (which means the transformation succeeded).
  *
  * @param aRoot                 Root settings key.
- * @param aOldVersionString     Old version string (allocated by
- *                              RTStrDup or such).
+ * @param aOldVersionString     Where to store old version string
+ *                              pointer. May be NULL.
  */
 bool VirtualBox::SettingsTreeHelper::
-needsConversion (const settings::Key &aRoot, char *&aOldVersion) const
+needsConversion (const settings::Key &aRoot, char **aOldVersion) const
 {
     if (strcmp (aRoot.name(), "VirtualBox") == 0)
     {
@@ -97,7 +113,9 @@ needsConversion (const settings::Key &aRoot, char *&aOldVersion) const
             if (strcmp (version, VBOX_XML_VERSION_FULL) != 0)
             {
                 /* version mismatch */
-                aOldVersion = RTStrDup (version);
+                if (aOldVersion != NULL)
+                    *aOldVersion = RTStrDup (version);
+
                 return true;
             }
         }
