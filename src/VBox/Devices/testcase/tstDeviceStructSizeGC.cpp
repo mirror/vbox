@@ -873,6 +873,8 @@ int main()
     GEN_CHECK_OFF(AHCIPort, regSERR);
     GEN_CHECK_OFF(AHCIPort, regSACT);
     GEN_CHECK_OFF(AHCIPort, regCI);
+    GEN_CHECK_OFF(AHCIPort, GCPhysAddrClb);
+    GEN_CHECK_OFF(AHCIPort, GCPhysAddrFb);
     GEN_CHECK_OFF(AHCIPort, fAsyncInterface);
     GEN_CHECK_OFF(AHCIPort, pAsyncIOThread);
     GEN_CHECK_OFF(AHCIPort, AsyncIORequestSem);
@@ -880,6 +882,7 @@ int main()
     GEN_CHECK_OFF(AHCIPort, ahciIOTasks[AHCI_NR_COMMAND_SLOTS-1]);
     GEN_CHECK_OFF(AHCIPort, uActWritePos);
     GEN_CHECK_OFF(AHCIPort, uActReadPos);
+    GEN_CHECK_OFF(AHCIPort, uActTasksActive);
     GEN_CHECK_OFF(AHCIPort, fPoweredOn);
     GEN_CHECK_OFF(AHCIPort, fSpunUp);
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
@@ -899,8 +902,6 @@ int main()
     GEN_CHECK_OFF(AHCIPort, pIOBufferHC);
     GEN_CHECK_OFF(AHCIPort, u32TasksFinished);
     GEN_CHECK_OFF(AHCIPort, u32QueuedTasksFinished);
-    GEN_CHECK_OFF(AHCIPort, pNotifierQueueHC);
-    GEN_CHECK_OFF(AHCIPort, pNotifierQueueGC);
     GEN_CHECK_OFF(AHCIPort, StatAsyncTime);
 
     GEN_CHECK_SIZE(AHCI);
@@ -917,6 +918,8 @@ int main()
     GEN_CHECK_OFF(AHCI, regHbaCccPorts);
     GEN_CHECK_OFF(AHCI, pHbaCccTimerHC);
     GEN_CHECK_OFF(AHCI, pHbaCccTimerGC);
+    GEN_CHECK_OFF(AHCI, pNotifierQueueHC);
+    GEN_CHECK_OFF(AHCI, pNotifierQueueGC);
     GEN_CHECK_OFF(AHCI, uCccPortNr);
     GEN_CHECK_OFF(AHCI, uCccTimeout);
     GEN_CHECK_OFF(AHCI, uCccNr);
