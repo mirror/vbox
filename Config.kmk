@@ -283,7 +283,10 @@ VBOX_WITH_CROSSBOW = 1
 #VBOX_WITH_PDM_LOCK = 1
 # Enable Seamless mode
 VBOX_X11_SEAMLESS_GUEST = 1
-
+# Enable the virtual SATA/AHCI controller
+VBOX_WITH_AHCI = 1
+# Enable the new async completion manager
+VBOX_WITH_PDM_ASYNC_COMPLETION = 1
 
 #
 # Skip stuff.
@@ -314,6 +317,7 @@ ifeq ($(BUILD_TARGET),l4)
  VBOX_WITH_DOCS=
  VBOX_WITH_ISCSI=
  VBOX_WITH_INTERNAL_NETWORKING=
+ VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
 # Darwin have to skip a few things at present.
@@ -325,6 +329,7 @@ ifeq ($(BUILD_TARGET),darwin)
  # Later:
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
+ VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
 # Most stuff doesn't build yet on the new targets.
@@ -337,6 +342,7 @@ ifeq ($(BUILD_TARGET),os2)
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=
  VBOX_WITH_DOCS=
+ VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
 ifeq ($(BUILD_TARGET),solaris)
@@ -344,6 +350,7 @@ ifeq ($(BUILD_TARGET),solaris)
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
  VBOX_WITH_OGL=
+ VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
 ifeq ($(BUILD_TARGET),freebsd)
@@ -355,6 +362,7 @@ ifeq ($(BUILD_TARGET),freebsd)
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=
  VBOX_WITH_DOCS=
+ VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
 
@@ -423,6 +431,8 @@ ifdef VBOX_OSE
   # Only the Linux installer is public
   VBOX_WITH_INSTALLER=
  endif
+ VBOX_WITH_AHCI=
+ VBOX_WITH_PDM_ASYNC_COMPLETION=
 endif
 
 #
