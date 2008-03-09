@@ -61,44 +61,32 @@ int listVMs(IVirtualBox *virtualBox)
     /*
      * First we have to get a list of all registered VMs
      */
-    IMachineCollection *collection = NULL;
-    IMachineEnumerator *enumerator = NULL;
+    SAFEARRAY *machinesArray = NULL;
 
-    do
+    rc = virtualBox->get_Machines2(&machinesArray);
+    if (SUCCEEDED(rc))
     {
-        rc = virtualBox->get_Machines(&collection);
-        if (SUCCEEDED(rc))
-            rc = collection->Enumerate(&enumerator);
-
+        IMachine **machines;
+        rc = SafeArrayAccessData (machinesArray, (void **) &machines);
         if (SUCCEEDED(rc))
         {
-            BOOL hasMore;
-            while (enumerator->HasMore(&hasMore), hasMore)
+            for (ULONG i = 0; i < machinesArray->rgsabound[0].cElements; ++i)
             {
-                /*
-                 * Get the machine object
-                 */
-                IMachine *machine = NULL;
-                rc = enumerator->GetNext(&machine);
+                BSTR str;
+
+                rc = machines[i]->get_Name(&str);
                 if (SUCCEEDED(rc))
                 {
-                    BSTR str;
-
-                    machine->get_Name(&str);
                     printf("Name: %S\n", str);
-
                     SysFreeString(str);
-
-                    machine->Release();
                 }
             }
-        }
-    } while (0);
 
-    if (enumerator)
-        enumerator->Release();
-    if (collection)
-        collection->Release();
+            SafeArrayUnaccessData (machinesArray);
+        }
+
+        SafeArrayDestroy (machinesArray);
+    }
 
     return 0;
 }
