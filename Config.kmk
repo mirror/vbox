@@ -284,9 +284,9 @@ VBOX_WITH_CROSSBOW = 1
 # Enable Seamless mode
 VBOX_X11_SEAMLESS_GUEST = 1
 # Enable the virtual SATA/AHCI controller
-VBOX_WITH_AHCI = 1
+#VBOX_WITH_AHCI = 1
 # Enable the new async completion manager
-VBOX_WITH_PDM_ASYNC_COMPLETION = 1
+#VBOX_WITH_PDM_ASYNC_COMPLETION = 1
 
 #
 # Skip stuff.
