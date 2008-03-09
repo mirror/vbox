@@ -1298,6 +1298,28 @@ public:
     };
 
     /**
+     * The Error class represents errors that may happen when parsing or
+     * validating the XML document representing the settings tree.
+     */
+    class VBOXSETTINGS_CLASS Error : public RuntimeError
+    {
+    public:
+
+        Error (const char *aMsg = NULL) : RuntimeError (aMsg) {}
+    };
+
+    /**
+     * The EConversionCycle class represents a conversion cycle detected by the
+     * AutoConverter::needsConversion() implementation.
+     */
+    class VBOXSETTINGS_CLASS EConversionCycle : public Error
+    {
+    public:
+
+        EConversionCycle (const char *aMsg = NULL) : Error (aMsg) {}
+    };
+
+    /**
      * The InputResolver class represents an interface to provide input streams
      * for external entities given an URL and entity ID.
      */
@@ -1336,19 +1358,35 @@ public:
          * required.
          *
          * The implementation normally checks for the "version" value of the
-         * root key to determine if the conversion is necessary. The
-         * implementation must return a string representing the old version
-         * (before conversion) in the @c aOldVersion argument -- this string is
-         * used by XmlTreeBackend::oldVersion() and must be non-NULL to indicate
-         * that the conversion has been performed on the tree. The returned
-         * string must be allocated using RTStrDup or such.
+         * root key to determine if the conversion is necessary. When the
+         * @a aOldVersion argument is not NULL, the implementation must return a
+         * non-NULL non-empty string representing the old version (before
+         * conversion) in it this string is used by XmlTreeBackend::oldVersion()
+         * and must be non-NULL to indicate that the conversion has been
+         * performed on the tree. The returned string must be allocated using
+         * RTStrDup() or such.
+         *
+         * This method is called again after the successful transformation to
+         * let the implementation retry the version check and request another
+         * transformation if necessary. This may be used to perform multi-step
+         * conversion like this: 1.1 => 1.2, 1.2 => 1.3 (instead of 1.1 => 1.3)
+         * which saves from the need to update all previous conversion
+         * templates to make each of them convert directly to the recent
+         * version.
+         *
+         * @note Multi-step transformations are performed in a loop that exits
+         *       only when this method returns @false. It's up to the
+         *       implementation to detect cycling (repeated requests to convert
+         *       from the same version) wrong version order, etc. and throw an
+         *       EConversionCycle exception to break the loop without returning
+         *       @false (which means the transformation succeeded).
          *
          * @param aRoot                 Root settings key.
-         * @param aOldVersionString     Old version string (allocated by
-         *                              RTStrDup or such).
+         * @param aOldVersionString     Where to store old version string
+         *                              pointer. May be NULL.
          */
         virtual bool needsConversion (const Key &aRoot,
-                                      char *&aOldVersion) const = 0;
+                                      char **aOldVersion) const = 0;
 
         /**
          * Returns the URI of the XSLT template to perform the conversion.
@@ -1356,17 +1394,6 @@ public:
          * returns @c true for this tree.
          */
         virtual const char *templateUri() const = 0;
-    };
-
-    /**
-     * The Error class represents errors that may happen when parsing or
-     * validating the XML document representing the settings tree.
-     */
-    class VBOXSETTINGS_CLASS Error : public RuntimeError
-    {
-    public:
-
-        Error (const char *aMsg = NULL) : RuntimeError (aMsg) {}
     };
 
     XmlTreeBackend();
