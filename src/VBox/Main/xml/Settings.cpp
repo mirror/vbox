@@ -892,6 +892,9 @@ const char *XmlTreeBackend::oldVersion() const
     return m->oldVersion;
 }
 
+extern "C" xmlGenericErrorFunc xsltGenericError;
+extern "C" void *xsltGenericErrorContext;
+
 void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
                               int aFlags /* = 0 */)
 {
@@ -904,49 +907,52 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
      * Making it thread-safe would require a) guarding this method with a
      * mutex and b) requiring our API caller not to use libxml2 on some other
      * thread (which is not practically possible). So, our API is not
-     * thread-safe for now. */
+     * thread-safe for now (note that there are more thread-unsafe assumptions
+     * below like xsltGenericError which is also a libxslt limitation).*/
     xmlExternalEntityLoader oldEntityLoader = xmlGetExternalEntityLoader();
     sThat = this;
     xmlSetExternalEntityLoader (ExternalEntityLoader);
 
-    /* Note: when parsing we use XML_PARSE_NOBLANKS to instruct libxml2 to
-     * remove text nodes that contain only blanks. This is important because
-     * otherwise xmlSaveDoc() won't be able to do proper indentation on
-     * output. */
+    xmlDocPtr doc = NULL;
 
-    /* parse the stream */
-    /* NOTE: new InputCtxt instance will be deleted when the stream is closed by
-     * the libxml2 API (e.g. when calling xmlFreeParserCtxt()) */
-    xmlDocPtr doc = xmlCtxtReadIO (m->ctxt,
-                                   ReadCallback, CloseCallback,
-                                   new Data::InputCtxt (&aInput, m->trappedErr),
-                                   aInput.uri(), NULL,
-                                   XML_PARSE_NOBLANKS);
-    if (doc == NULL)
+    try
     {
-        /* restore the previous entity resolver */
-        xmlSetExternalEntityLoader (oldEntityLoader);
-        sThat = NULL;
+        /* Note: when parsing we use XML_PARSE_NOBLANKS to instruct libxml2 to
+         * remove text nodes that contain only blanks. This is important because
+         * otherwise xmlSaveDoc() won't be able to do proper indentation on
+         * output. */
 
-        /* look if there was a forwared exception from the lower level */
-        if (m->trappedErr.get() != NULL)
-            m->trappedErr->rethrow();
+        /* parse the stream */
+        /* NOTE: new InputCtxt instance will be deleted when the stream is closed by
+         * the libxml2 API (e.g. when calling xmlFreeParserCtxt()) */
+        doc = xmlCtxtReadIO (m->ctxt,
+                             ReadCallback, CloseCallback,
+                             new Data::InputCtxt (&aInput, m->trappedErr),
+                             aInput.uri(), NULL,
+                             XML_PARSE_NOBLANKS);
+        if (doc == NULL)
+        {
+            /* look if there was a forwared exception from the lower level */
+            if (m->trappedErr.get() != NULL)
+                m->trappedErr->rethrow();
 
-        throw XmlError (xmlCtxtGetLastError (m->ctxt));
-    }
+            throw XmlError (xmlCtxtGetLastError (m->ctxt));
+        }
 
-    char *oldVersion = NULL;
+        char *oldVersion = NULL;
 
-    /* perform automatic document transformation if necessary */
-    if (m->autoConverter != NULL)
-    {
-        Key root = Key (new XmlKeyBackend (xmlDocGetRootElement (doc)));
-        if (m->autoConverter->needsConversion (root, oldVersion))
+        /* perform automatic document transformation if necessary */
+        if (m->autoConverter != NULL &&
+            m->autoConverter->
+                needsConversion (Key (new XmlKeyBackend (xmlDocGetRootElement (doc))),
+                                 &oldVersion))
         {
             xmlDocPtr xsltDoc = NULL;
             xsltStylesheetPtr xslt = NULL;
-            xsltTransformContextPtr tranCtxt = NULL;
             char *errorStr = NULL;
+
+            xmlGenericErrorFunc oldXsltGenericError = xsltGenericError;
+            void *oldXsltGenericErrorContext = xsltGenericErrorContext;
 
             try
             {
@@ -974,48 +980,61 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
                     throw XmlError (xmlCtxtGetLastError (m->ctxt));
                 }
 
+                /* setup stylesheet compilation and transformation error
+                 * reporting. Note that we could create a new transform context
+                 * for doing xsltApplyStylesheetUser and use
+                 * xsltSetTransformErrorFunc() on it to set a dedicated error
+                 * handler but as long as we already do several non-thread-safe
+                 * hacks, this is not really important. */
+
+                xsltGenericError = ValidityErrorCallback;
+                xsltGenericErrorContext = &errorStr;
+
                 xslt = xsltParseStylesheetDoc (xsltDoc);
                 if (xslt == NULL)
-                    throw LogicError (RT_SRC_POS);
-
-                /* setup transformation error reporting */
-                tranCtxt = xsltNewTransformContext (xslt, xsltDoc);
-                if (tranCtxt == NULL)
-                    throw LogicError (RT_SRC_POS);
-                xsltSetTransformErrorFunc (tranCtxt, &errorStr, ValidityErrorCallback);
-
-                xmlDocPtr newDoc = xsltApplyStylesheetUser (xslt, doc, NULL,
-                                                            NULL, NULL, tranCtxt);
-                if (newDoc == NULL)
-                    throw LogicError (RT_SRC_POS);
-
-                if (errorStr != NULL)
                 {
-                    xmlFreeDoc (newDoc);
-                    throw Error (errorStr);
+                    if (errorStr != NULL)
+                        throw LogicError (errorStr);
                     /* errorStr is freed in catch(...) below */
+
+                    throw LogicError (RT_SRC_POS);
                 }
 
-                /* replace the old document on success */
-                xmlFreeDoc (doc);
-                doc = newDoc;
+                /* repeat transformations until autoConverter is satisfied */
+                do
+                {
+                    xmlDocPtr newDoc = xsltApplyStylesheet (xslt, doc, NULL);
+                    if (newDoc == NULL)
+                        throw LogicError (RT_SRC_POS);
 
-                xsltFreeTransformContext (tranCtxt);
+                    if (errorStr != NULL)
+                    {
+                        xmlFreeDoc (newDoc);
+                        throw Error (errorStr);
+                        /* errorStr is freed in catch(...) below */
+                    }
+
+                    /* replace the old document on success */
+                    xmlFreeDoc (doc);
+                    doc = newDoc;
+                }
+                while (m->autoConverter->
+                       needsConversion (Key (new XmlKeyBackend (xmlDocGetRootElement (doc))),
+                                        NULL));
+
+                RTStrFree (errorStr);
 
                 /* NOTE: xsltFreeStylesheet() also fress the document
                  * passed to xsltParseStylesheetDoc(). */
                 xsltFreeStylesheet (xslt);
+
+                /* restore the previous generic error func */
+                xsltGenericError = oldXsltGenericError;
+                xsltGenericErrorContext = oldXsltGenericErrorContext;
             }
             catch (...)
             {
-                /* restore the previous entity resolver */
-                xmlSetExternalEntityLoader (oldEntityLoader);
-                sThat = NULL;
-
                 RTStrFree (errorStr);
-
-                if (tranCtxt != NULL)
-                    xsltFreeTransformContext (tranCtxt);
 
                 /* NOTE: xsltFreeStylesheet() also fress the document
                  * passed to xsltParseStylesheetDoc(). */
@@ -1024,109 +1043,120 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
                 else if (xsltDoc != NULL)
                     xmlFreeDoc (xsltDoc);
 
+                /* restore the previous generic error func */
+                xsltGenericError = oldXsltGenericError;
+                xsltGenericErrorContext = oldXsltGenericErrorContext;
+
                 RTStrFree (oldVersion);
 
                 throw;
             }
         }
-    }
 
-    /* validate the document */
-    if (aSchema != NULL)
-    {
-        xmlSchemaParserCtxtPtr schemaCtxt = NULL;
-        xmlSchemaPtr schema = NULL;
-        xmlSchemaValidCtxtPtr validCtxt = NULL;
-        char *errorStr = NULL;
-
-        try
+        /* validate the document */
+        if (aSchema != NULL)
         {
-            bool valid = false;
+            xmlSchemaParserCtxtPtr schemaCtxt = NULL;
+            xmlSchemaPtr schema = NULL;
+            xmlSchemaValidCtxtPtr validCtxt = NULL;
+            char *errorStr = NULL;
 
-            schemaCtxt = xmlSchemaNewParserCtxt (aSchema);
-            if (schemaCtxt == NULL)
-                throw LogicError (RT_SRC_POS);
-
-            /* set our error handlers */
-            xmlSchemaSetParserErrors (schemaCtxt, ValidityErrorCallback,
-                                      ValidityWarningCallback, &errorStr);
-            xmlSchemaSetParserStructuredErrors (schemaCtxt,
-                                                StructuredErrorCallback,
-                                                &errorStr);
-            /* load schema */
-            schema = xmlSchemaParse (schemaCtxt);
-            if (schema != NULL)
+            try
             {
-                validCtxt = xmlSchemaNewValidCtxt (schema);
-                if (validCtxt == NULL)
-                    throw LogicError (RT_SRC_POS);
+                bool valid = false;
 
-                /* instruct to create default attribute's values in the document */
-                if (aFlags & Read_AddDefaults)
-                    xmlSchemaSetValidOptions (validCtxt, XML_SCHEMA_VAL_VC_I_CREATE);
+                schemaCtxt = xmlSchemaNewParserCtxt (aSchema);
+                if (schemaCtxt == NULL)
+                    throw LogicError (RT_SRC_POS);
 
                 /* set our error handlers */
-                xmlSchemaSetValidErrors (validCtxt, ValidityErrorCallback,
-                                         ValidityWarningCallback, &errorStr);
+                xmlSchemaSetParserErrors (schemaCtxt, ValidityErrorCallback,
+                                          ValidityWarningCallback, &errorStr);
+                xmlSchemaSetParserStructuredErrors (schemaCtxt,
+                                                    StructuredErrorCallback,
+                                                    &errorStr);
+                /* load schema */
+                schema = xmlSchemaParse (schemaCtxt);
+                if (schema != NULL)
+                {
+                    validCtxt = xmlSchemaNewValidCtxt (schema);
+                    if (validCtxt == NULL)
+                        throw LogicError (RT_SRC_POS);
 
-                /* finally, validate */
-                valid = xmlSchemaValidateDoc (validCtxt, doc) == 0;
-            }
+                    /* instruct to create default attribute's values in the document */
+                    if (aFlags & Read_AddDefaults)
+                        xmlSchemaSetValidOptions (validCtxt, XML_SCHEMA_VAL_VC_I_CREATE);
 
-            if (!valid)
-            {
-                /* look if there was a forwared exception from the lower level */
-                if (m->trappedErr.get() != NULL)
-                    m->trappedErr->rethrow();
+                    /* set our error handlers */
+                    xmlSchemaSetValidErrors (validCtxt, ValidityErrorCallback,
+                                             ValidityWarningCallback, &errorStr);
 
-                if (errorStr == NULL)
-                    throw LogicError (RT_SRC_POS);
+                    /* finally, validate */
+                    valid = xmlSchemaValidateDoc (validCtxt, doc) == 0;
+                }
 
-                throw Error (errorStr);
-                /* errorStr is freed in catch(...) below */
-            }
+                if (!valid)
+                {
+                    /* look if there was a forwared exception from the lower level */
+                    if (m->trappedErr.get() != NULL)
+                        m->trappedErr->rethrow();
 
-            RTStrFree (errorStr);
+                    if (errorStr == NULL)
+                        throw LogicError (RT_SRC_POS);
 
-            xmlSchemaFreeValidCtxt (validCtxt);
-            xmlSchemaFree (schema);
-            xmlSchemaFreeParserCtxt (schemaCtxt);
-        }
-        catch (...)
-        {
-            /* restore the previous entity resolver */
-            xmlSetExternalEntityLoader (oldEntityLoader);
-            sThat = NULL;
+                    throw Error (errorStr);
+                    /* errorStr is freed in catch(...) below */
+                }
 
-            RTStrFree (errorStr);
+                RTStrFree (errorStr);
 
-            if (validCtxt)
                 xmlSchemaFreeValidCtxt (validCtxt);
-            if (schema)
                 xmlSchemaFree (schema);
-            if (schemaCtxt)
                 xmlSchemaFreeParserCtxt (schemaCtxt);
+            }
+            catch (...)
+            {
+                RTStrFree (errorStr);
 
-            RTStrFree (oldVersion);
+                if (validCtxt)
+                    xmlSchemaFreeValidCtxt (validCtxt);
+                if (schema)
+                    xmlSchemaFree (schema);
+                if (schemaCtxt)
+                    xmlSchemaFreeParserCtxt (schemaCtxt);
 
-            throw;
+                RTStrFree (oldVersion);
+
+                throw;
+            }
         }
+
+        /* reset the previous tree on success */
+        reset();
+
+        m->doc = doc;
+        /* assign the root key */
+        m->root = Key (new XmlKeyBackend (xmlDocGetRootElement (m->doc)));
+
+        /* memorize the old version string also used as a flag that
+         * the conversion has been performed (transfers ownership) */
+        m->oldVersion = oldVersion;
+
+        /* restore the previous entity resolver */
+        xmlSetExternalEntityLoader (oldEntityLoader);
+        sThat = NULL;
     }
+    catch (...)
+    {
+        if (doc != NULL)
+            xmlFreeDoc (doc);
 
-    /* restore the previous entity resolver */
-    xmlSetExternalEntityLoader (oldEntityLoader);
-    sThat = NULL;
+        /* restore the previous entity resolver */
+        xmlSetExternalEntityLoader (oldEntityLoader);
+        sThat = NULL;
 
-    /* reset the previous tree on success */
-    reset();
-
-    m->doc = doc;
-    /* assign the root key */
-    m->root = Key (new XmlKeyBackend (xmlDocGetRootElement (m->doc)));
-
-    /* memorize the old version string also used as a flag that
-     * the conversion has been performed (transfers ownership) */
-    m->oldVersion = oldVersion;
+        throw;
+    }
 }
 
 void XmlTreeBackend::rawWrite (Output &aOutput)
