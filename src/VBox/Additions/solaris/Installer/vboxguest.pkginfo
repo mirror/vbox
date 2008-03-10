@@ -1,0 +1,11 @@
+PKG="INNOvboxguest"
+NAME="innotek VirtualBox Guest Additions"
+ARCH="@UNAME_P@"
+VERSION="@VBOX_VERSION_STRING@"
+CATEGORY="application"
+VENDOR="innotek GmbH"
+EMAIL="info@innotek.de"
+BASEDIR="/"
+CLASSES="none"
+DESC="VirtualBox Guest Additions for Solaris guests."
+
