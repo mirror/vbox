@@ -27,6 +27,8 @@
 #include <png.h>
 #include <iprt/stream.h>
 
+//#define VBOX_SHOW_AVAILABLE_FORMATS
+
 // external constructor for dynamic loading
 /////////////////////////////////////////////////////////////////////////////
 
@@ -701,6 +703,14 @@ HRESULT FFmpegFB::setup_output_format()
     Assert(mpFormatContext != 0);
     AVOutputFormat *pOutFormat = guess_format(0, com::Utf8Str(mFileName),
                                               0);
+#ifdef VBOX_SHOW_AVAILABLE_FORMATS
+    if (!pOutFormat)
+    {
+        RTPrintf("Could not guess an output format for that extension.\n"
+                 "Available formats:\n");
+        list_formats();
+    }
+#endif
     AssertMsgReturn(pOutFormat != 0,
                     ("Could not deduce output format from file name\n"),
                     E_INVALIDARG);
@@ -729,6 +739,24 @@ HRESULT FFmpegFB::setup_output_format()
 }
 
 
+HRESULT FFmpegFB::list_formats()
+{
+    AVCodec *codec;
+    for (codec = first_avcodec; codec != NULL; codec = codec->next)
+    {
+        if (codec->type == CODEC_TYPE_VIDEO && codec->encode)
+        {
+            AVOutputFormat *ofmt;
+            for (ofmt = first_oformat; ofmt != NULL; ofmt = ofmt->next)
+            {
+                if (ofmt->video_codec == codec->id)
+                    RTPrintf(" %20s: %20s => '%s'\n", codec->name, ofmt->extensions, ofmt->long_name);
+            }
+        }
+    }
+}
+
+
 /**
  * Open the FFmpeg codec and set it up (width, etc) for our MPEG file.
  *
@@ -745,6 +773,14 @@ HRESULT FFmpegFB::open_codec()
     AVCodecContext *pCodecContext = mpStream->codec;
     AssertReturn(pCodecContext != 0, E_UNEXPECTED);
     AVCodec *pCodec = avcodec_find_encoder(pOutFormat->video_codec);
+#ifdef VBOX_SHOW_AVAILABLE_FORMATS
+    if (!pCodec)
+    {
+        RTPrintf("Could not find a suitable codec for the output format on your system\n"
+                 "Available formats:\n");
+        list_formats();
+    }
+#endif
     AssertReturn(pCodec != 0, E_UNEXPECTED);
     pCodecContext->codec_id = pOutFormat->video_codec;
     pCodecContext->codec_type = CODEC_TYPE_VIDEO;
