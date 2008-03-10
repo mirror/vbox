@@ -162,7 +162,7 @@ vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
 VBGLR3DECL(int) VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
                                              uint32_t *piDisplay)
 {
-    VBoxGuestWaitEventInfo waitEvent;
+    VBoxGuestWaitEventInfo waitEvent = { 0 };
     int rc;
 
 #ifndef VBOX_VBGLR3_XFREE86

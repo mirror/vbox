@@ -64,7 +64,7 @@ VBGLR3DECL(int) VbglR3SeamlessSetCap(bool fState)
  */
 VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
 {
-    VBoxGuestWaitEventInfo waitEvent;
+    VBoxGuestWaitEventInfo waitEvent = { 0 };
     int rc;
 
     AssertPtrReturn(pMode, VERR_INVALID_PARAMETER);
