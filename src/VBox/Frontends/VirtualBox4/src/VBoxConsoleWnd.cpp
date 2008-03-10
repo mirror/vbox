@@ -30,7 +30,6 @@
 #include "QIHotKeyEdit.h"
 
 /* Qt includes */
-#include <QX11Info>
 #include <qaction.h>
 #include <qmenubar.h>
 #include <q3buttongroup.h>
@@ -56,6 +55,9 @@
 #include <Q3VBoxLayout>
 #include <Q3Frame>
 #include <Q3ActionGroup>
+#ifdef Q_WS_X11
+# include <QX11Info>
+#endif 
 
 #include <VBox/VBoxGuest.h>
 
