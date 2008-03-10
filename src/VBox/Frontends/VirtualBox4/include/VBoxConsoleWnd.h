@@ -23,19 +23,10 @@
 
 /* Qt includes */
 #include <QMainWindow>
+#include <QMap>
+#include <QColor>
+#include <QDialog>
 
-#include <qmap.h>
-#include <qobject.h>
-#include <qcolor.h>
-#include <qdialog.h>
-//Added by qt3to4:
-#include <QContextMenuEvent>
-#include <q3hbox.h>
-#include <QLabel>
-#include <QEvent>
-#include <Q3ActionGroup>
-#include <QShowEvent>
-#include <QCloseEvent>
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
@@ -47,8 +38,7 @@
 #endif
 
 class QAction;
-class Q3ActionGroup;
-class Q3HBox;
+class QActionGroup;
 class QLabel;
 class QSpacerItem;
 class QMenu;
@@ -66,7 +56,7 @@ class VBoxConsoleWnd : public QMainWindow
 public:
 
     VBoxConsoleWnd (VBoxConsoleWnd **aSelf,
-                     QWidget* aParent = 0, const char* aName = 0,
+                     QWidget* aParent = 0,
                      Qt::WFlags aFlags = Qt::WType_TopLevel);
     virtual ~VBoxConsoleWnd();
 
@@ -205,8 +195,8 @@ private:
     /** Popup version of the main menu */
     QMenu *mMainMenu;
 
-    Q3ActionGroup *mRunningActions;
-    Q3ActionGroup *mRunningOrPausedActions;
+    QActionGroup *mRunningActions;
+    QActionGroup *mRunningOrPausedActions;
 
     // Machine actions
     QAction *vmFullscreenAction;
@@ -300,7 +290,7 @@ private:
     QIStateIndicator *mouse_state, *hostkey_state;
     QIStateIndicator *autoresize_state;
     QIStateIndicator *vrdp_state;
-    Q3HBox *hostkey_hbox;
+    QWidget *hostkey_hbox;
     QLabel *hostkey_name;
 
     QTimer *idle_timer;
