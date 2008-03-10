@@ -98,9 +98,10 @@ static unsigned _strnlenUtf16(PCRTUTF16 pwsz, unsigned cchMax)
     unsigned cwc = 0;
     while (cchMax-- > 0)
     {
-        RTUNICP cp = RTUtf16GetCp(pwsz);
-        Assert(cp != RTUNICP_INVALID);
-        if (!cp || cp == RTUNICP_INVALID)
+        RTUNICP cp;
+        int rc = RTUtf16GetCpEx(&pwsz, &cp);
+        AssertRC(rc);
+        if (RT_FAILURE(rc) || !cp)
             break;
     }
     return cwc;
