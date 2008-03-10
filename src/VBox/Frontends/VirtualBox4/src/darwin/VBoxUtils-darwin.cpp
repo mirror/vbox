@@ -19,12 +19,13 @@
 
 #include "VBoxUtils.h"
 #include "VBoxFrameBuffer.h"
-#include <qimage.h>
-#include <qpixmap.h>
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 
+/* Qt includes */
+#include <QImage>
+#include <QPixmap>
 
 /**
  * Callback for deleting the QImage object when CGImageCreate is done

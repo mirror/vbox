@@ -177,10 +177,10 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
         Q2DViewRect.setWidth (Q2DViewRect.width() - (mView->verticalScrollBar()->frameSize().width() + 2));
 
     /* Create the context to draw on */
-    WindowPtr window = static_cast <WindowPtr> (mView->viewport()->handle());
-    SetPortWindowPort (window);
-    CGContextRef ctx;
-    QDBeginCGContext (GetWindowPort (window), &ctx);
+//    WindowPtr window = static_cast <WindowPtr> (mView->viewport()->handle());
+//    SetPortWindowPort (window);
+    CGContextRef ctx = static_cast<CGContext *> (mView->viewport()->macCGHandle());
+//    QDBeginCGContext (GetWindowPort (window), &ctx);
     /* We handle the seamless mode as a special case. */
     if (static_cast <VBoxConsoleWnd*> (pMain)->isTrueSeamless())
     {
@@ -193,7 +193,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
         Assert (subImage);
         /* Clear the background (Make the rect fully transparent) */
         Rect winRect;
-        GetPortBounds (GetWindowPort (window), &winRect);
+//        GetPortBounds (GetWindowPort (window), &winRect);
         CGContextClearRect (ctx, CGRectMake (winRect.left, winRect.top, winRect.right - winRect.left, winRect.bottom - winRect.top));
         /* Grab the current visible region. */
         RegionRects *rgnRcts = (RegionRects *) ASMAtomicXchgPtr ((void * volatile *) &mRegion, NULL);
@@ -236,17 +236,19 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
         QRect is = QRect (ir.x() + mView->contentsX(), ir.y() + mView->contentsY(), ir.width(), ir.height());
         CGImageRef subImage = CGImageCreateWithImageInRect (mImage, QRectToCGRect (is));
         Assert (subImage);
+        /* Flip the y-coord */
+        CGContextScaleCTM (ctx, 1.0, -1.0);
+        CGContextTranslateCTM (ctx, Q2DViewRect.x(), -Q2DViewRect.height() - Q2DViewRect.y());
 
         /* Ok, for more performance we set a clipping path of the
          * regions given by this paint event. */
         Q3MemArray <QRect> a = pe->region().rects();
-        if (a.size() > 0)
+//        if (a.size() > 0)
+        if (0)
         {
             /* Save state for display fliping */
             CGContextSaveGState (ctx);
             /* Flip the y-coord */
-            CGContextScaleCTM (ctx, 1.0, -1.0);
-            CGContextTranslateCTM (ctx, Q2DViewRect.x(), -Q2DViewRect.height() - Q2DViewRect.y());
             CGContextBeginPath (ctx);
             /* Add all region rects to the current context as path components */
             for (unsigned int i = 0; i < a.size(); ++i)
@@ -263,7 +265,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
         QRect cr = mapYOrigin (QRect (p.x(), p.y(), ir.width(), ir.height()), pMain->height());
         CGContextDrawImage (ctx, QRectToCGRect (cr), subImage);
     }
-    QDEndCGContext (GetWindowPort (window), &ctx);
+//    QDEndCGContext (GetWindowPort (window), &ctx);
 }
 /* Save for later shadow stuff ... */
 //        CGContextSetShadow (myContext, myShadowOffset, 10);
