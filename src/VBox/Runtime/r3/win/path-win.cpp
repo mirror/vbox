@@ -475,7 +475,7 @@ RTDECL(bool) RTPathExists(const char *pszPath)
      * Try query file info.
      */
 #ifndef RT_DONT_CONVERT_FILENAMES
-    PRT16UTF pwszPath;
+    PRTUTF16 pwszPath;
     int rc = RTStrUtf8ToUcs2(&pwszPath, pszPath);
     if (RT_SUCCESS(rc))
     {
