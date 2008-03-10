@@ -20,16 +20,11 @@
 #define __VBoxFrameBuffer_h__
 
 #include "COMDefs.h"
-//Added by qt3to4:
-#include <QMoveEvent>
-#include <QPaintEvent>
 
-class VBoxConsoleView;
-
-#include <qmutex.h>
-#include <qevent.h>
-#include <qpixmap.h>
-#include <qimage.h>
+/* Qt includes */
+#include <QImage>
+#include <QPixmap>
+#include <QMutex>
 
 #if defined (VBOX_GUI_USE_SDL)
 #include <SDL.h>
@@ -44,6 +39,8 @@ class VBoxConsoleView;
 #undef HIBYTE
 #include <ddraw.h>
 #endif
+
+class VBoxConsoleView;
 
 //#define VBOX_GUI_FRAMEBUF_STAT
 
@@ -150,11 +147,30 @@ inline bool display_to_pixmap( const CConsole &c, QPixmap &pm )
     uint8_t *addr = (uint8_t *) display.LockFramebuffer();
     AssertMsg (addr, ("The buffer address must not be null"));
 
-    bool rc = pm.convertFromImage (QImage (addr,
-                                           display.GetWidth(), display.GetHeight(),
-                                           display.GetBitsPerPixel(),
-                                           0, 0, QImage::LittleEndian));
-    AssertMsg (rc, ("convertFromImage() must always return true"));
+    QImage::Format format = QImage::Format_Invalid;
+    switch (display.GetBitsPerPixel())
+    {
+        /* 32-, 8- and 1-bpp are the only depths suported by QImage */
+        case 32:
+            format = QImage::Format_RGB32;
+            break;
+        case 8:
+            format = QImage::Format_Indexed8;
+            break;
+        case 1:
+            format = QImage::Format_Mono;
+            break;
+    }
+
+    bool rc = false;
+    if(format != QImage::Format_Invalid)
+    {
+        pm = QPixmap::fromImage (QImage (addr,
+                                         display.GetWidth(), display.GetHeight(),
+                                         format));
+        rc = !pm.isNull();
+        AssertMsg (rc, ("convertFromImage() must always return true"));
+    }
 
     display.UnlockFramebuffer();
 

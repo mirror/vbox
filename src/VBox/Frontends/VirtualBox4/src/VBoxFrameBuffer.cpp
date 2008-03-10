@@ -22,9 +22,8 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxGlobal.h"
 
-#include <qapplication.h>
-//Added by qt3to4:
-#include <QPaintEvent>
+/* Qt includes */
+#include <QPainter>
 
 //
 // VBoxFrameBuffer class
@@ -41,7 +40,7 @@ NS_IMPL_ISUPPORTS1_CI (VBoxFrameBuffer, IFramebuffer)
 #endif
 
 VBoxFrameBuffer::VBoxFrameBuffer (VBoxConsoleView *aView)
-    : mView (aView), mMutex (new QMutex (true))
+    : mView (aView), mMutex (new QMutex (QMutex::Recursive))
     , mWdt (0), mHgt (0)
 #if defined (Q_OS_WIN32)
     , refcnt (0)
@@ -335,32 +334,37 @@ void VBoxQImageFrameBuffer::paintEvent (QPaintEvent *pe)
 
     FRAMEBUF_DEBUG_START (xxx);
 
-    if (r.width() < mWdt * 2 / 3)
-    {
-        /* this method is faster for narrow updates */
-        mPM.convertFromImage (mImg.copy (r.x() + mView->contentsX(),
-                                         r.y() + mView->contentsY(),
-                                         r.width(), r.height()));
-
-#warning port me
+    /* In Qt4 there is not bitblt anymore. So 
+     * we create a qpainter object and paint on 
+     * that. Todo: Do some performance test. */
+#warning port me: do it faster?
+    QPainter painter (mView->viewport());
+    painter.drawImage (r.x(), r.y(), mImg, 
+                       r.x() + mView->contentsX(),
+                       r.y() + mView->contentsY(),
+                       r.width(), r.height());
+//    if (r.width() < mWdt * 2 / 3)
+//    {
+//        /* this method is faster for narrow updates */
+//        mPM.convertFromImage (mImg.copy (r.x() + mView->contentsX(),
+//                                         r.y() + mView->contentsY(),
+//                                         r.width(), r.height()));
 //        ::bitBlt (mView->viewport(), r.x(), r.y(),
 //                  &mPM, 0, 0,
 //                  r.width(), r.height(),
 //                  Qt::CopyROP, TRUE);
-    }
-    else
-    {
-        /* this method is faster for wide updates */
-        mPM.convertFromImage (QImage (mImg.scanLine (r.y() + mView->contentsY()),
-                                      mImg.width(), r.height(), mImg.depth(),
-                                      0, 0, QImage::LittleEndian));
-
-#warning port me
+//    }
+//    else
+//    {
+//        /* this method is faster for wide updates */
+//        mPM.convertFromImage (QImage (mImg.scanLine (r.y() + mView->contentsY()),
+//                                      mImg.width(), r.height(), mImg.depth(),
+//                                      0, 0, QImage::LittleEndian));
 //        ::bitBlt (mView->viewport(), r.x(), r.y(),
 //                  &mPM, r.x() + mView->contentsX(), 0,
 //                  r.width(), r.height(),
 //                  Qt::CopyROP, TRUE);
-    }
+//    }
 
     FRAMEBUF_DEBUG_STOP (xxx, r.width(), r.height());
 }
@@ -383,13 +387,19 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     /* check if we support the pixel format and can use the guest VRAM directly */
     if (re->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB)
     {
+        QImage::Format format;
         switch (re->bitsPerPixel())
         {
             /* 32-, 8- and 1-bpp are the only depths suported by QImage */
             case 32:
+                format = QImage::Format_RGB32;
                 break;
             case 8:
+                format = QImage::Format_Indexed8;
+                remind = true;
+                break;
             case 1:
+                format = QImage::Format_Mono;
                 remind = true;
                 break;
             default:
@@ -406,8 +416,7 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
             Assert (!fallback);
             if (!fallback)
             {
-                mImg = QImage ((uchar *) re->VRAM(), mWdt, mHgt,
-                               re->bitsPerPixel(), NULL, 0, QImage::LittleEndian);
+                mImg = QImage ((uchar *) re->VRAM(), mWdt, mHgt, format);
                 mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
                 mUsesGuestVRAM = true;
             }
@@ -422,7 +431,7 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     {
         /* we don't support either the pixel format or the color depth,
          * fallback to a self-provided 32bpp RGB buffer */
-        mImg = QImage (mWdt, mHgt, 32, 0, QImage::LittleEndian);
+        mImg = QImage (mWdt, mHgt, QImage::Format_RGB32);
         mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
         mUsesGuestVRAM = false;
     }
