@@ -28,29 +28,12 @@
 #include "QIHotKeyEdit.h"
 #endif
 
-#include <qapplication.h>
-#include <qstatusbar.h>
-#include <qlabel.h>
-#include <qpainter.h>
-#include <qpixmap.h>
-#include <qimage.h>
-#include <qbitmap.h>
-#include <qcursor.h>
-#include <qthread.h>
-
-#include <qmenudata.h>
-#include <qmenubar.h>
-#include <qwidget.h>
-#include <qtimer.h>
-//Added by qt3to4:
+/* Qt includes */
+#include <QMenuBar>
 #include <QDesktopWidget>
-#include <QTimerEvent>
-#include <QMoveEvent>
-#include <QWheelEvent>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QEvent>
-#include <QPaintEvent>
+#include <QTimer>
+#include <QStatusBar>
+#include <QPainter>
 
 #ifdef Q_WS_WIN
 // VBox/cdefs.h defines these:
@@ -440,7 +423,7 @@ public:
     {
         CGuest guest = mView->console().GetGuest();
         LogFlowFunc (("ver=%s, active=%d\n",
-                      guest.GetAdditionsVersion().latin1(),
+                      guest.GetAdditionsVersion().toLatin1().constData(),
                       guest.GetAdditionsActive()));
         QApplication::postEvent (mView,
                                  new GuestAdditionsEvent (
@@ -520,8 +503,8 @@ public:
     {
         QApplication::postEvent (mView,
                                  new RuntimeErrorEvent (!!fatal,
-                                                        QString::fromUcs2 (id),
-                                                        QString::fromUcs2 (message)));
+                                                        QString::fromUtf16 (id),
+                                                        QString::fromUtf16 (message)));
         return S_OK;
     }
 
@@ -663,7 +646,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
 #ifdef Q_WS_X11
     /* initialize the X keyboard subsystem */
-    initXKeyboard (this->x11Display());
+    initXKeyboard (QX11Info::display());
 #endif
 
     ::memset (mPressedKeys, 0, SIZEOF_ARRAY (mPressedKeys));
@@ -673,6 +656,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
              this, SLOT (doResizeHint()));
 
     mToggleFSModeTimer = new QTimer (this);
+    mToggleFSModeTimer->setSingleShot (true);
     connect (mToggleFSModeTimer, SIGNAL (timeout()),
              this, SIGNAL (resizeHintDone()));
 
@@ -706,7 +690,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 # ifdef Q_WS_X11
             /* This is somehow necessary to prevent strange X11 warnings on
              * i386 and segfaults on x86_64. */
-            XFlush(this->x11Display());
+            XFlush(QX11Info::display());
 # endif
             mFrameBuf = new VBoxSDLFrameBuffer (this);
             /*
@@ -755,7 +739,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     mConsole.RegisterCallback (mCallback);
     AssertWrapperOk (mConsole);
 
-    viewport()->setEraseColor (Qt::black);
+    QPalette palette (viewport()->palette());
+    palette.setColor (viewport()->backgroundRole(), Qt::black);
+    viewport()->setPalette (palette);
 
     setSizePolicy (QSizePolicy (QSizePolicy::Maximum, QSizePolicy::Maximum));
     setMaximumSize (sizeHint());
@@ -906,8 +892,8 @@ void VBoxConsoleView::normalizeGeometry (bool adjustPosition /* = false */)
 
     /* resize the frame to fit the contents */
     s -= tlw->size();
-    fr.rRight() += s.width();
-    fr.rBottom() += s.height();
+    fr.setRight (fr.right() + s.width());
+    fr.setBottom (fr.bottom() + s.height());
 
     if (adjustPosition)
     {
@@ -1117,7 +1103,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 VBoxRepaintEvent *re = (VBoxRepaintEvent *) e;
                 viewport()->repaint (re->x() - contentsX(),
                                      re->y() - contentsY(),
-                                     re->width(), re->height(), false);
+                                     re->width(), re->height());
                 /* mConsole.GetDisplay().UpdateCompleted(); - the event was acked already */
                 return true;
             }
@@ -1132,7 +1118,7 @@ bool VBoxConsoleView::event (QEvent *e)
                     mLastVisibleRegion = sre->region();
                     mMainWnd->setMask (sre->region());
                 }
-                else if (!mLastVisibleRegion.isNull() &&
+                else if (!mLastVisibleRegion.isEmpty() &&
                          !mMainWnd->isTrueSeamless())
                     mLastVisibleRegion = QRegion();
                 return true;
@@ -1234,7 +1220,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 QWidgetList list = QApplication::topLevelWidgets();
                 bool destroyed = list.indexOf (mMainWnd) < 0;
                 if (!destroyed && mMainWnd->statusBar())
-                    mMainWnd->statusBar()->clear();
+                    mMainWnd->statusBar()->clearMessage();
 
                 return true;
             }
@@ -1916,7 +1902,7 @@ bool VBoxConsoleView::x11Event (XEvent *event)
     }
 
     /* perform the mega-complex translation using the wine algorithms */
-    handleXKeyEvent (this->x11Display(), event, &wineKeyboardInfo);
+    handleXKeyEvent (QX11Info::display(), event, &wineKeyboardInfo);
 
 #if 0
     char buf [256];
@@ -2256,7 +2242,7 @@ void VBoxConsoleView::toggleFSMode()
             newSize = mNormalSize;
         doResizeHint (newSize);
     }
-    mToggleFSModeTimer->start (2000, true);
+    mToggleFSModeTimer->start (2000);
 }
 
 /**
@@ -2506,7 +2492,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
         delete[] list;
 #elif defined (Q_WS_X11)
         NOREF(aUniKey);
-        Display *display = x11Display();
+        Display *display = QX11Info::display();
         int keysyms_per_keycode = getKeysymsPerKeycode();
         KeyCode kc = XKeysymToKeycode (display, aKey);
         // iterate over the first level (not shifted) keysyms in every group
@@ -2735,13 +2721,13 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
                 int dx = 0, dy = 0;
                 if (scrGeo.width() < contentsWidth())
                 {
-                    if (scrGeo.rLeft() == aGlobalPos.x()) dx = -1;
-                    if (scrGeo.rRight() == aGlobalPos.x()) dx = +1;
+                    if (scrGeo.left() == aGlobalPos.x()) dx = -1;
+                    if (scrGeo.right() == aGlobalPos.x()) dx = +1;
                 }
                 if (scrGeo.height() < contentsHeight())
                 {
-                    if (scrGeo.rTop() == aGlobalPos.y()) dy = -1;
-                    if (scrGeo.rBottom() == aGlobalPos.y()) dy = +1;
+                    if (scrGeo.top() == aGlobalPos.y()) dy = -1;
+                    if (scrGeo.bottom() == aGlobalPos.y()) dy = +1;
                 }
                 if (dx || dy)
                     scrollBy (dx, dy);
@@ -2829,7 +2815,7 @@ void VBoxConsoleView::onStateChange (KMachineState state)
                  *  Take a screen snapshot. Note that TakeScreenShot() always
                  *  needs a 32bpp image
                  */
-                QImage shot = QImage (mFrameBuf->width(), mFrameBuf->height(), 32, 0);
+                QImage shot = QImage (mFrameBuf->width(), mFrameBuf->height(), QImage::Format_RGB32);
                 CDisplay dsp = mConsole.GetDisplay();
                 dsp.TakeScreenShot (shot.bits(), shot.width(), shot.height());
                 /*
@@ -2840,7 +2826,7 @@ void VBoxConsoleView::onStateChange (KMachineState state)
                 if (dsp.isOk())
                 {
                     dimImage (shot);
-                    mPausedShot = shot;
+                    mPausedShot = QPixmap::fromImage (shot);
                     /* fully repaint to pick up mPausedShot */
                     viewport()->repaint();
                 }
@@ -2861,7 +2847,7 @@ void VBoxConsoleView::onStateChange (KMachineState state)
                 if (mode != VBoxDefs::TimerMode && mFrameBuf)
                 {
                     /* reset the pixmap to free memory */
-                    mPausedShot.resize (0, 0);
+                    mPausedShot = QPixmap ();
                     /*
                      *  ask for full guest display update (it will also update
                      *  the viewport through IFramebuffer::NotifyUpdate)
@@ -3014,11 +3000,11 @@ void VBoxConsoleView::captureKbd (bool aCapture, bool aEmitSignal /* = true */)
     /**/
 #elif defined (Q_WS_X11)
 	if (aCapture)
-		XGrabKey (x11Display(), AnyKey, AnyModifier,
+		XGrabKey (QX11Info::display(), AnyKey, AnyModifier,
                   topLevelWidget()->winId(), False,
                   GrabModeAsync, GrabModeAsync);
 	else
-		XUngrabKey (x11Display(),  AnyKey, AnyModifier,
+		XUngrabKey (QX11Info::display(),  AnyKey, AnyModifier,
                     topLevelWidget()->winId());
 #elif defined (Q_WS_MAC)
     if (aCapture)
@@ -3460,7 +3446,7 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
                 dstShapePtr += me->width();
             }
 
-            Cursor cur = XcursorImageLoadCursor (x11Display(), img);
+            Cursor cur = XcursorImageLoadCursor (QX11Info::display(), img);
             Assert (cur);
             if (cur)
             {

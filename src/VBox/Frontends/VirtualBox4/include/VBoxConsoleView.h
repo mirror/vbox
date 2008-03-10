@@ -24,17 +24,8 @@
 #include "VBoxDefs.h"
 #include "VBoxGlobalSettings.h"
 
-#include <qdatetime.h>
+/* Qt includes */
 #include <q3scrollview.h>
-#include <qpixmap.h>
-#include <qimage.h>
-
-#include <qkeysequence.h>
-//Added by qt3to4:
-#include <QTimerEvent>
-#include <QPaintEvent>
-#include <QLabel>
-#include <QEvent>
 
 #if defined (Q_WS_PM)
 #include "src/os2/VBoxHlp.h"
