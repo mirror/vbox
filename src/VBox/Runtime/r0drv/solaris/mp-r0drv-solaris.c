@@ -43,6 +43,24 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 }
 
 
+RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
+{
+    return idCpu < NCPU ? idCpu : -1;
+}
+
+
+RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
+{
+    return (unsigned)iCpu < NCPU ? iCpu : NIL_RTCPUID;
+}
+
+
+RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
+{
+    return NCPU - 1;
+}
+
+
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
     cpu_t *pCpu = idCpu < NCPU ? cpu_get(idCpu) : NULL;
@@ -55,18 +73,6 @@ RTDECL(bool) RTMpDoesCpuExist(RTCPUID idCpu)
 {
     cpu_t *pCpu = idCpu < NCPU ? cpu_get(idCpu) : NULL;
     return pCpu != NULL;
-}
-
-
-RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
-{
-    return idCpu < NCPU ? idCpu : -1;
-}
-
-
-RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
-{
-    return (unsigned)iCpu < NCPU ? iCpu : NIL_RTCPUID;
 }
 
 
