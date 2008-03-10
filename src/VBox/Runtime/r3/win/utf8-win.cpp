@@ -66,15 +66,15 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCP(char **ppszString, const char *pszString)
     /*
      * Convert to wide char first.
      */
-    PRTUCS2 pucszString = NULL;
-    int rc = RTStrUtf8ToUcs2(&pucszString, pszString);
+    PRTUTF16 pwszString = NULL;
+    int rc = RTStrToUtf16(pszString, &pwszString);
     if (RT_FAILURE(rc))
         return rc;
 
     /*
      * First calc result string length.
      */
-    int cbResult = WideCharToMultiByte(CP_ACP, 0, pucszString, -1, NULL, 0, NULL, NULL);
+    int cbResult = WideCharToMultiByte(CP_ACP, 0, pwszString, -1, NULL, 0, NULL, NULL);
     if (cbResult > 0)
     {
         /*
@@ -86,11 +86,11 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCP(char **ppszString, const char *pszString)
             /*
              * Do the translation.
              */
-            if (WideCharToMultiByte(CP_ACP, 0, pucszString, -1, lpString, cbResult, NULL, NULL) > 0)
+            if (WideCharToMultiByte(CP_ACP, 0, pwszString, -1, lpString, cbResult, NULL, NULL) > 0)
             {
                 /* ok */
                 *ppszString = lpString;
-                RTMemTmpFree(pucszString);
+                RTMemTmpFree(pwszString);
                 return VINF_SUCCESS;
             }
 
@@ -110,7 +110,7 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCP(char **ppszString, const char *pszString)
         AssertMsgFailed(("Unicode to ACP translation failed lasterr=%d\n", iLastErr));
         rc = RTErrConvertFromWin32(iLastErr);
     }
-    RTMemTmpFree(pucszString);
+    RTMemTmpFree(pwszString);
     return rc;
 }
 
@@ -128,7 +128,7 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8(char **ppszString, const char *pszString)
     Assert(pszString);
     *ppszString = NULL;
 
-    /** @todo is there a quicker way? Currently: ACP -> UCS-2 -> UTF-8 */
+    /** @todo is there a quicker way? Currently: ACP -> UTF-16 -> UTF-8 */
 
     size_t cch = strlen(pszString);
     if (cch <= 0)
@@ -144,28 +144,28 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8(char **ppszString, const char *pszString)
      * First calc result string length.
      */
     int rc;
-    int cuc = MultiByteToWideChar(CP_ACP, 0, pszString, -1, NULL, 0);
-    if (cuc > 0)
+    int cwc = MultiByteToWideChar(CP_ACP, 0, pszString, -1, NULL, 0);
+    if (cwc > 0)
     {
         /*
          * Alloc space for result buffer.
          */
-        PRTUCS2 pucszString = (PRTUCS2)RTMemTmpAlloc(cuc * sizeof(RTUCS2));
-        if (pucszString)
+        PRTUTF16 pwszString = (PRTUTF16)RTMemTmpAlloc(cwc * sizeof(RTUTF16));
+        if (pwszString)
         {
             /*
              * Do the translation.
              */
-            if (MultiByteToWideChar(CP_ACP, 0, pszString, -1, pucszString, cuc) > 0)
+            if (MultiByteToWideChar(CP_ACP, 0, pszString, -1, pwszString, cwc) > 0)
             {
                 /*
-                 * Now we got UCS-2. Convert to UTF-8
+                 * Now we got UTF-16, convert it to UTF-8
                  */
-                rc = RTStrUcs2ToUtf8(ppszString, pucszString);
-                RTMemTmpFree(pucszString);
+                rc = RTUtf16ToUtf8(pwszString, ppszString);
+                RTMemTmpFree(pwszString);
                 return rc;
             }
-            RTMemTmpFree(pucszString);
+            RTMemTmpFree(pwszString);
             /* translation error */
             int iLastErr = GetLastError();
             AssertMsgFailed(("ACP to Unicode translation failed. lasterr=%d\n", iLastErr));

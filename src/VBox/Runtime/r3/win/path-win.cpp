@@ -192,7 +192,7 @@ RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath)
     /*
      * Convert and return.
      */
-    return RTStrUcs2ToUtf8Ex(&pszPath, cchPath, &wszPath[0]);
+    return RTUtf16ToUtf8Ex(&wszPath[0], RTSTR_MAX, &pszPath, cchPath, NULL);
 }
 
 
@@ -224,7 +224,7 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
     WIN32_FILE_ATTRIBUTE_DATA Data;
 #ifndef RT_DONT_CONVERT_FILENAMES
     PRTUTF16 pwszPath;
-    int rc = RTStrUtf8ToUcs2(&pwszPath, pszPath);
+    int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (RT_FAILURE(rc))
         return rc;
     if (!GetFileAttributesExW(pwszPath, GetFileExInfoStandard, &Data))
@@ -476,7 +476,7 @@ RTDECL(bool) RTPathExists(const char *pszPath)
      */
 #ifndef RT_DONT_CONVERT_FILENAMES
     PRTUTF16 pwszPath;
-    int rc = RTStrUtf8ToUcs2(&pwszPath, pszPath);
+    int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (RT_SUCCESS(rc))
     {
         if (GetFileAttributesW(pwszPath) == INVALID_FILE_ATTRIBUTES)

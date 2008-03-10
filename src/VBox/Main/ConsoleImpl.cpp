@@ -4479,7 +4479,7 @@ HRESULT Console::createSharedFolder (INPTR BSTR aName, SharedFolderData aData)
 
     Log (("Adding shared folder '%ls' -> '%ls'\n", aName, aData.mHostPath.raw()));
 
-    cbString = (RTStrUcs2Len (aData.mHostPath) + 1) * sizeof (RTUCS2);
+    cbString = (RTUtf16Len (aData.mHostPath) + 1) * sizeof (RTUTF16);
     if (cbString >= UINT16_MAX)
         return setError (E_INVALIDARG, tr ("The name is too long"));
     pFolderName = (SHFLSTRING *) RTMemAllocZ (sizeof (SHFLSTRING) + cbString);
@@ -4487,13 +4487,13 @@ HRESULT Console::createSharedFolder (INPTR BSTR aName, SharedFolderData aData)
     memcpy (pFolderName->String.ucs2, aData.mHostPath, cbString);
 
     pFolderName->u16Size   = (uint16_t)cbString;
-    pFolderName->u16Length = (uint16_t)cbString - sizeof(RTUCS2);
+    pFolderName->u16Length = (uint16_t)cbString - sizeof(RTUTF16);
 
     parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[0].u.pointer.addr = pFolderName;
     parms[0].u.pointer.size = sizeof (SHFLSTRING) + (uint16_t)cbString;
 
-    cbString = (RTStrUcs2Len (aName) + 1) * sizeof (RTUCS2);
+    cbString = (RTUtf16Len (aName) + 1) * sizeof (RTUTF16);
     if (cbString >= UINT16_MAX)
     {
         RTMemFree (pFolderName);
@@ -4504,7 +4504,7 @@ HRESULT Console::createSharedFolder (INPTR BSTR aName, SharedFolderData aData)
     memcpy (pMapName->String.ucs2, aName, cbString);
 
     pMapName->u16Size   = (uint16_t)cbString;
-    pMapName->u16Length = (uint16_t)cbString - sizeof (RTUCS2);
+    pMapName->u16Length = (uint16_t)cbString - sizeof (RTUTF16);
 
     parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[1].u.pointer.addr = pMapName;
@@ -4550,7 +4550,7 @@ HRESULT Console::removeSharedFolder (INPTR BSTR aName)
 
     Log (("Removing shared folder '%ls'\n", aName));
 
-    cbString = (RTStrUcs2Len (aName) + 1) * sizeof (RTUCS2);
+    cbString = (RTUtf16Len (aName) + 1) * sizeof (RTUTF16);
     if (cbString >= UINT16_MAX)
         return setError (E_INVALIDARG, tr ("The name is too long"));
     pMapName = (SHFLSTRING *) RTMemAllocZ (sizeof (SHFLSTRING) + cbString);
@@ -4558,7 +4558,7 @@ HRESULT Console::removeSharedFolder (INPTR BSTR aName)
     memcpy (pMapName->String.ucs2, aName, cbString);
 
     pMapName->u16Size   = (uint16_t)cbString;
-    pMapName->u16Length = (uint16_t)cbString - sizeof (RTUCS2);
+    pMapName->u16Length = (uint16_t)cbString - sizeof (RTUTF16);
 
     parms.type = VBOX_HGCM_SVC_PARM_PTR;
     parms.u.pointer.addr = pMapName;
@@ -6120,7 +6120,7 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
     char           *psz = NULL;
     BSTR            str = NULL;
     *phrc = S_OK;
-#define STR_CONV()  do { rc = RTStrUcs2ToUtf8(&psz, str); RC_CHECK(); } while (0)
+#define STR_CONV()  do { rc = RTUtf16ToUtf8(str, &psz); RC_CHECK(); } while (0)
 #define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } if (psz) { RTStrFree(psz); psz = NULL; } } while (0)
 #define RC_CHECK()  do { if (VBOX_FAILURE(rc)) { AssertMsgFailed(("rc=%Vrc\n", rc)); STR_FREE(); return rc; } } while (0)
 #define H() do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%#x\n", hrc)); STR_FREE(); *phrc = hrc; return VERR_GENERAL_FAILURE; } } while (0)

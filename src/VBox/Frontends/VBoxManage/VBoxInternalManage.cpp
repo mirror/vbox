@@ -205,8 +205,8 @@ static HRESULT RemoveKey(ComPtr<IMachine> pMachine, const char *pszKeyBase, cons
         return S_OK;
 
     char *pszKeys;
-    int rc = RTStrUcs2ToUtf8(&pszKeys, Keys.raw());
-    if (VBOX_SUCCESS(rc))
+    int rc = RTUtf16ToUtf8(Keys.raw(), &pszKeys);
+    if (RT_SUCCESS(rc))
     {
         /* locate it */
         size_t cchKey = strlen(pszKey);
@@ -419,12 +419,11 @@ int CmdModUninstall(void)
     int rc = SUPUninstall();
 
     rc = SUPInstall();
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return 0;
-    else if (rc == VERR_NOT_IMPLEMENTED)
+    if (rc == VERR_NOT_IMPLEMENTED)
         return 0;
-    else
-        return E_FAIL;
+    return E_FAIL;
 }
 
 /**
@@ -434,15 +433,14 @@ int CmdModUninstall(void)
  */
 int CmdModInstall(void)
 {
-    int rc = SUPInstall();
+    int rc = SUPInstall(); /** @todo r=bird: this cannot be right. */
 
     rc = SUPInstall();
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return 0;
-    else if (rc == VERR_NOT_IMPLEMENTED)
+    if (rc == VERR_NOT_IMPLEMENTED)
         return 0;
-    else
-        return E_FAIL;
+    return E_FAIL;
 }
 
 /**

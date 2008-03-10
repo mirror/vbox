@@ -49,7 +49,7 @@ static int g_cErrors = 0;
 /**
  * Generate a random codepoint for simple UTF-16 encoding.
  */
-static RTUTF16 GetRandUcs2(void)
+static RTUTF16 GetRandUtf16(void)
 {
     RTUTF16 wc;
     do
@@ -99,7 +99,7 @@ static void test1(void)
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
     srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
-        pwszRand[i] = GetRandUcs2();
+        pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
 
     rc = RTUtf16ToUtf8(pwszRand, &pszUtf8);
@@ -140,7 +140,7 @@ static void test1(void)
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
     srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
-        pwszRand[i] = GetRandUcs2();
+        pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
     rc = RTUtf16ToUtf8(pwszRand, &pszUtf8);
     if (rc == VINF_SUCCESS)
@@ -180,7 +180,7 @@ static void test1(void)
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
     srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
-        pwszRand[i] = GetRandUcs2();
+        pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
 
     char szUtf8Array[120];
@@ -222,7 +222,7 @@ static void test1(void)
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
     srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
-        pwszRand[i] = GetRandUcs2();
+        pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
 
     RTUTF16     wszBuf[70];
@@ -260,7 +260,7 @@ static void test1(void)
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
     srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
-        pwszRand[i] = GetRandUcs2();
+        pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
 
     rc = RTUtf16ToUtf8Ex(pwszRand, RTSTR_MAX, &pszUtf8Array, 20, NULL);
@@ -279,7 +279,7 @@ static void test1(void)
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
     srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
-        pwszRand[i] = GetRandUcs2();
+        pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
 
     rc = RTUtf16ToUtf8(pwszRand, &pszUtf8);
@@ -487,16 +487,16 @@ void test2(void)
             g_cErrors++;
         }
 
-        PRTUTF16 puszUcs2;
-        rc = RTStrToUtf16(pszUtf8, &puszUcs2);
+        PRTUTF16 pwszUtf16;
+        rc = RTStrToUtf16(pszUtf8, &pwszUtf16);
         if (rc == VINF_SUCCESS)
         {
-            if (mymemcmp(puszUcs2, g_wszAll, sizeof(g_wszAll), 16))
+            if (mymemcmp(pwszUtf16, g_wszAll, sizeof(g_wszAll), 16))
             {
                 RTPrintf("tstUtf8: FAILURE - the full #1: UTF-8 -> UTF-16 failed compare!\n");
                 g_cErrors++;
             }
-            RTUtf16Free(puszUcs2);
+            RTUtf16Free(pwszUtf16);
         }
         else
         {
@@ -516,18 +516,18 @@ void test2(void)
      * Convert to UTF-16 and back. (just in case the above test fails)
      */
     RTPrintf("tstUtf8: #2: UTF-8 -> UTF-16 -> UTF-8...\n");
-    PRTUTF16 puszUcs2;
-    rc = RTStrToUtf16(&g_szAll[0], &puszUcs2);
+    PRTUTF16 pwszUtf16;
+    rc = RTStrToUtf16(&g_szAll[0], &pwszUtf16);
     if (rc == VINF_SUCCESS)
     {
-        if (mymemcmp(puszUcs2, g_wszAll, sizeof(g_wszAll), 16))
+        if (mymemcmp(pwszUtf16, g_wszAll, sizeof(g_wszAll), 16))
         {
             RTPrintf("tstUtf8: FAILURE - the full #2: UTF-8 -> UTF-16 failed compare!\n");
             g_cErrors++;
         }
 
         char *pszUtf8;
-        rc = RTUtf16ToUtf8(puszUcs2, &pszUtf8);
+        rc = RTUtf16ToUtf8(pwszUtf16, &pszUtf8);
         if (rc == VINF_SUCCESS)
         {
             if (mymemcmp(pszUtf8, g_szAll, sizeof(g_szAll), 8))
@@ -542,7 +542,7 @@ void test2(void)
             RTPrintf("tstUtf8: FAILURE - the full #2: UTF-16 -> UTF-8 failed, rc=%Rrc.\n", rc);
             g_cErrors++;
         }
-        RTStrUcs2Free(puszUcs2);
+        RTUtf16Free(pwszUtf16);
     }
     else
     {

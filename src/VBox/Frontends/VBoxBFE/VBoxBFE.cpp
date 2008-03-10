@@ -1181,33 +1181,33 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             VBOXHGCMSVCPARM  parms[SHFL_CPARMS_ADD_MAPPING];
             SHFLSTRING      *pFolderName, *pMapName;
             int              cbString;
-            PRTUCS2          aHostPath, aMapName;
+            PRTUTF16         aHostPath, aMapName;
             int              rc;
 
-            rc = RTStrUtf8ToUcs2(&aHostPath, g_pszShareDir[i]);
+            rc = RTStrToUtf16(g_pszShareDir[i], &aHostPath);
             AssertRC(rc);
-            rc = RTStrUtf8ToUcs2(&aMapName, g_pszShareName[i]);
+            rc = RTStrToUtf16(g_pszShareName[i], &aMapName);
             AssertRC(rc);
 
-            cbString = (RTStrUcs2Len (aHostPath) + 1) * sizeof (RTUCS2);
+            cbString = (RTUtf16Len (aHostPath) + 1) * sizeof (RTUTF16);
             pFolderName = (SHFLSTRING *) RTMemAllocZ (sizeof (SHFLSTRING) + cbString);
             Assert (pFolderName);
             memcpy (pFolderName->String.ucs2, aHostPath, cbString);
 
             pFolderName->u16Size   = cbString;
-            pFolderName->u16Length = cbString - sizeof(RTUCS2);
+            pFolderName->u16Length = cbString - sizeof(RTUTF16);
 
             parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
             parms[0].u.pointer.addr = pFolderName;
             parms[0].u.pointer.size = sizeof (SHFLSTRING) + cbString;
 
-            cbString = (RTStrUcs2Len (aMapName) + 1) * sizeof (RTUCS2);
+            cbString = (RTUtf16Len (aMapName) + 1) * sizeof (RTUTF16);
             pMapName = (SHFLSTRING *) RTMemAllocZ (sizeof(SHFLSTRING) + cbString);
             Assert (pMapName);
             memcpy (pMapName->String.ucs2, aMapName, cbString);
 
             pMapName->u16Size   = cbString;
-            pMapName->u16Length = cbString - sizeof (RTUCS2);
+            pMapName->u16Length = cbString - sizeof (RTUTF16);
 
             parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
             parms[1].u.pointer.addr = pMapName;
@@ -1222,8 +1222,8 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             LogRel(("Added share %s: (%s)\n", g_pszShareName[i], g_pszShareDir[i]));
             RTMemFree (pFolderName);
             RTMemFree (pMapName);
-            RTStrUcs2Free (aHostPath);
-            RTStrUcs2Free (aMapName);
+            RTUtf16Free (aHostPath);
+            RTUtf16Free (aMapName);
         }
     }
 #endif

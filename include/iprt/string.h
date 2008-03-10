@@ -251,36 +251,6 @@ RTDECL(int) RTStrToUtf16(const char *pszString, PRTUTF16 *ppwszString);
  */
 RTDECL(int)  RTStrToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc);
 
-/**
- * Allocates tmp buffer, translates pszString from UTF8 to UCS-2.
- *
- * @returns iprt status code.
- * @param   ppwszString     Receives pointer of allocated UCS-2 string.
- *                          The returned pointer must be freed using RTStrUcs2Free().
- * @param   pszString       UTF-8 string to convert.
- * @deprecated Use RTStrToUtf16().
- */
-DECLINLINE(int) RTStrUtf8ToUcs2(PRTUCS2 *ppwszString, const char *pszString)
-{
-    return RTStrToUtf16(pszString, ppwszString);
-}
-
-/**
- * Translates pszString from UTF8 to backwater UCS-2, can allocate a temp buffer.
- *
- * @returns iprt status code.
- * @param   ppwszString     Receives pointer of allocated UCS-2 string.
- *                          The returned pointer must be freed using RTStrUcs2Free().
- * @param   cwc             Length of target buffer in RTUCS2s including the trailing '\\0'.
- *                          If 0 a temporary buffer is allocated.
- * @param   pszString       UTF-8 string to convert.
- * @deprecated Use RTStrToUtf16Ex().
- */
-DECLINLINE(int)  RTStrUtf8ToUcs2Ex(PRTUCS2 *ppwszString, unsigned cwc, const char *pszString)
-{
-    return RTStrToUtf16Ex(pszString, RTSTR_MAX, ppwszString, cwc, NULL);
-}
-
 
 /**
  * Get the unicode code point at the given string position.
@@ -1292,8 +1262,8 @@ RTDECL(size_t) RTUtf16Len(PCRTUTF16 pwszString);
  * @returns < 0 if the first string less than the second string.s
  * @returns 0 if the first string identical to the second string.
  * @returns > 0 if the first string greater than the second string.
- * @param   pwsz1       First UTF-16 string.
- * @param   pwsz2       Second UTF-16 string.
+ * @param   pwsz1       First UTF-16 string. Null is allowed.
+ * @param   pwsz2       Second UTF-16 string. Null is allowed.
  * @remark  This function will not make any attempt to validate the encoding.
  */
 RTDECL(int) RTUtf16Cmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2);
@@ -1308,8 +1278,8 @@ RTDECL(int) RTUtf16Cmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2);
  * @returns < 0 if the first string less than the second string.
  * @returns 0 if the first string identical to the second string.
  * @returns > 0 if the first string greater than the second string.
- * @param   pwsz1       First UTF-16 string.
- * @param   pwsz2       Second UTF-16 string.
+ * @param   pwsz1       First UTF-16 string. Null is allowed.
+ * @param   pwsz2       Second UTF-16 string. Null is allowed.
  */
 RTDECL(int) RTUtf16ICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2);
 
@@ -1324,8 +1294,8 @@ RTDECL(int) RTUtf16ICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2);
  * @returns < 0 if the first string less than the second string.
  * @returns 0 if the first string identical to the second string.
  * @returns > 0 if the first string greater than the second string.
- * @param   pwsz1       First UTF-16 string.
- * @param   pwsz2       Second UTF-16 string.
+ * @param   pwsz1       First UTF-16 string. Null is allowed.
+ * @param   pwsz2       Second UTF-16 string. Null is allowed.
  */
 RTDECL(int) RTUtf16LocaleICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2);
 
@@ -1414,109 +1384,6 @@ RTDECL(size_t) RTUtf16CalcUtf8Len(PCRTUTF16 pwsz);
  *                      This is undefined on failure.
  */
 RTDECL(int) RTUtf16CalcUtf8LenEx(PCRTUTF16 pwsz, size_t cwc, size_t *pcch);
-
-/**
- * Allocates tmp buffer, translates pwszString from UCS-2 to UTF8.
- *
- * @returns iprt status code.
- * @param   ppszString      Receives pointer of allocated UTF8 string.
- *                          The returned pointer must be freed using RTStrFree().
- * @param   pwszString      UCS-2 string to convert.
- * @deprecated Use RTUtf16ToUtf8().
- */
-DECLINLINE(int)  RTStrUcs2ToUtf8(char **ppszString, PCRTUCS2 pwszString)
-{
-    return RTUtf16ToUtf8(pwszString, ppszString);
-}
-
-/**
- * Translates UCS-2 to UTF-8 using buffer provided by the caller or
- * a fittingly sized buffer allocated by the function.
- *
- * @returns iprt status code.
- * @param   ppszString      If cch is not zero, this points to the pointer to the
- *                          buffer where the converted string shall be resulted.
- *                          If cch is zero, this is where the pointer to the allocated
- *                          buffer with the converted string is stored. The allocated
- *                          buffer must be freed by using RTStrFree().
- * @param   cch             Size of the passed in buffer (*ppszString).
- *                          If 0 a fittingly sized buffer is allocated.
- * @param   pwszString      UCS-2 string to convert.
- * @deprecated
- */
-DECLINLINE(int)  RTStrUcs2ToUtf8Ex(char **ppszString, size_t cch, PCRTUCS2 pwszString)
-{
-    return RTUtf16ToUtf8Ex(pwszString, RTSTR_MAX, ppszString, cch, NULL);
-}
-
-/**
- * Free a UCS-2 string allocated by RTStrUtf8ToUcs2().
- *
- * @returns iprt status code.
- * @param   pwszString     Pointer to buffer with unicode string to free.
- *                         NULL is accepted.
- * @deprecated
- */
-DECLINLINE(void)  RTStrUcs2Free(PRTUCS2 pwszString)
-{
-    RTUtf16Free(pwszString);
-}
-
-/**
- * Allocates a new copy of the given UCS-2 string.
- *
- * @returns Pointer to the allocated string copy. Use RTStrUcs2Free() to free it.
- * @returns NULL when out of memory.
- * @param   pwszString      UCS-2 string to duplicate.
- * @deprecated
- */
-DECLINLINE(PRTUCS2) RTStrUcs2Dup(PCRTUCS2 pwszString)
-{
-    return RTUtf16Dup(pwszString);
-}
-
-/**
- * Allocates a new copy of the given UCS-2 string.
- *
- * @returns iprt status code.
- * @param   ppwszString     Receives pointer of the allocated UCS-2 string.
- *                          The returned pointer must be freed using RTStrUcs2Free().
- * @param   pwszString      UCS-2 string to duplicate.
- * @deprecated
- */
-DECLINLINE(int) RTStrUcs2DupEx(PRTUCS2 *ppwszString, PCRTUCS2 pwszString)
-{
-    return RTUtf16DupEx(ppwszString, pwszString, 0);
-}
-
-/**
- * Returns the length of a UCS-2 string in UCS-2 characters
- * without trailing '\\0'.
- *
- * @returns Length of input string in UCS-2 characters.
- * @param   pwszString  Pointer the UCS-2 string.
- * @deprecated
- */
-DECLINLINE(size_t) RTStrUcs2Len(PCRTUCS2 pwszString)
-{
-    return RTUtf16Len(pwszString);
-}
-
-/**
- * Performs a case sensitive string compare between two UCS-2 strings.
- *
- * @returns < 0 if the first string less than the second string.
- * @returns 0 if the first string identical to the second string.
- * @returns > 0 if the first string greater than the second string.
- * @param   pwsz1       First UCS-2 string.
- * @param   pwsz2       Second UCS-2 string.
- * @deprecated
- */
-DECLINLINE(int) RTStrUcs2Cmp(register PCRTUCS2 pwsz1, register PCRTUCS2 pwsz2)
-{
-    return RTUtf16Cmp(pwsz1, pwsz2);
-}
-
 
 /**
  * Get the unicode code point at the given string position.

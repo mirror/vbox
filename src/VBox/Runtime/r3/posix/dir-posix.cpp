@@ -418,8 +418,8 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, unsigned *pcbDirEn
             /*
              * Setup the returned data.
              */
-            pDirEntry->cucShortName = 0;
-            pDirEntry->uszShortName[0] = 0;
+            pDirEntry->cwcShortName = 0;
+            pDirEntry->wszShortName[0] = 0;
             pDirEntry->cbName  = (uint16_t)cchName;
             Assert(pDirEntry->cbName == cchName);
             memcpy(pDirEntry->szName, pszName, cchName + 1);

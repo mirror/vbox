@@ -50,7 +50,7 @@
 #define VBOX_USER_HOME_SUFFIX   "Library/VirtualBox"
 #else
 #define VBOX_USER_HOME_SUFFIX   ".VirtualBox"
-#endif 
+#endif
 
 
 namespace com
@@ -116,13 +116,13 @@ void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName)
             const char *iname = NULL;
             iinfo->GetNameShared (&iname);
             char *utf8IName = NULL;
-            if (VBOX_SUCCESS (RTStrCurrentCPToUtf8 (&utf8IName, iname)))
+            if (RT_SUCCESS (RTStrCurrentCPToUtf8 (&utf8IName, iname)))
             {
                 PRTUCS2 ucs2IName = NULL;
-                if (VBOX_SUCCESS (RTStrUtf8ToUcs2 (&ucs2IName, utf8IName)))
+                if (RT_SUCCESS (RTStrToUtf16 (utf8IName, &ucs2IName)))
                 {
                     *aName = SysAllocString ((OLECHAR *) ucs2IName);
-                    RTStrUcs2Free (ucs2IName);
+                    RTUtf16Free (ucs2IName);
                 }
                 RTStrFree (utf8IName);
             }
@@ -169,7 +169,7 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
         vrc = RTPathUserHome (path, sizeof (path));
         if (RT_SUCCESS (vrc))
         {
-            size_t len = 
+            size_t len =
                 RTStrPrintf (aDir, aDirLen, "%s%c%s",
                              path, RTPATH_DELIMITER, VBOX_USER_HOME_SUFFIX);
             if (len != strlen (path) + 1 + strlen (VBOX_USER_HOME_SUFFIX))
@@ -186,6 +186,6 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
 }
 
 /* static */
-const Guid Guid::Empty; /* default ctor is OK */ 
+const Guid Guid::Empty; /* default ctor is OK */
 
 } /* namespace com */

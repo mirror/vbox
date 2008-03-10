@@ -65,14 +65,14 @@ int main()
     CHECK_RC(RTPathUserHome(szPath, sizeof(szPath)));
     if (RT_SUCCESS(rc))
         RTPrintf("UserHome={%s}\n", szPath);
-    
+
     /*
      * RTPathAbsEx
      */
     RTPrintf("tstPath: TESTING RTPathAbsEx()\n");
     static const char *aInput[] =
     {
-        // NULL, NULL, -- assertion in RTStrUtf8ToUcs2
+        // NULL, NULL, -- assertion in RTStrToUtf16
         NULL,                           "/absolute/..",
         NULL,                           "/absolute\\\\../..",
         NULL,                           "/absolute//../path",
