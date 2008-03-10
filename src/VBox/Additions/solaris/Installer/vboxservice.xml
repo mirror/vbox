@@ -1,0 +1,64 @@
+<?xml version='1.0'?>
+<!--
+# innotek VirtualBox
+# Solaris SMF service manifest for VBoxService (timesync).
+#
+# Copyright (C) 2008 innotek GmbH
+#
+# innotek GmbH confidential
+# All rights reserved
+#
+-->
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+
+<service_bundle type='manifest' name='export'>
+
+<service
+    name='system/virtualbox/vboxservice'
+    type='service'
+    version='1'>
+
+    <create_default_instance enabled='false' />
+
+    <single_instance/>
+
+    <!-- Wait for devices to be initialized as we depend on vboxguest (PCI) -->
+    <dependency
+        name='milestone'
+        grouping='require_all'
+        restart_on='none'
+        type='service'> 
+        <service_fmri value='svc:/milestone/devices:default' />
+    </dependency>
+
+    <!-- Wait for local filesystems to be mounted (just to be safe, don't start too early) -->
+    <dependency
+        name='filesystem-local'
+        grouping='require_all'
+        restart_on='none'
+        type='service'>
+        <service_fmri value='svc:/system/filesystem/local:default' />
+    </dependency> 
+
+    <exec_method
+        type='method'
+        name='start'
+        exec='/usr/bin/VBoxService'
+        timeout_seconds='30' >
+    </exec_method>
+
+    <exec_method
+        type='method'
+        name='stop'
+        exec=':kill'
+        timeout_seconds='60' />
+
+    <template>
+        <common_name>
+            <loctext xml:lang='C'>VirtualBox Time Synchronize Daemon.</loctext>
+        </common_name>
+    </template>
+</service>
+
+</service_bundle>
+
