@@ -1104,6 +1104,8 @@
 #define VERR_VMX_VMXON_FAILED                       (-4010)
 /** CPU was incorrectly left in VMX root mode; incompatible with VirtualBox */
 #define VERR_VMX_IN_VMX_ROOT_MODE                   (-4011)
+/** Somebody cleared X86_CR4_VMXE in the CR4 register. */
+#define VERR_VMX_X86_CR4_VMXE_CLEARED               (-4012)
 /** @} */
 
 /** @name VBox SVM Status Codes
