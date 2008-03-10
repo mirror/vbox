@@ -60,6 +60,12 @@ __BEGIN_DECLS
 #define VMMDEV_GUEST_SUPPORTS_SEAMLESS                      RT_BIT(0)
 /** the guest supports mapping guest to host windows */
 #define VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING     RT_BIT(1)
+/** 
+ * the guest graphical additions are active - used for fast activation
+ * and deactivation of certain graphical operations.
+ * The legacy VMMDevReq_ReportGuestCapabilities request sets this
+ * automatically, but VMMDevReq_SetGuestCapabilities does not. */
+#define VMMDEV_GUEST_SUPPORTS_GRAPHICS                      RT_BIT(2)
 /** @} */
 
 /** Size of VMMDev RAM region accessible by guest.

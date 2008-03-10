@@ -57,6 +57,7 @@ public:
     STDMETHOD(COMGETTER(AdditionsActive)) (BOOL *aAdditionsActive);
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
     STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
+    STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
@@ -72,6 +73,8 @@ public:
 
     void setSupportsSeamless (BOOL aSupportsSeamless);
 
+    void setSupportsGraphics (BOOL aSupportsGraphics);
+
     STDMETHOD(SetStatistic)(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG aStatVal);
 
     // for VirtualBoxSupportErrorInfoImpl
@@ -81,12 +84,15 @@ private:
 
     struct Data
     {
-        Data() : mAdditionsActive (FALSE), mSupportsSeamless (FALSE) {}
+        Data() : mAdditionsActive (FALSE), mSupportsSeamless (FALSE),
+                  /* Windows and OS/2 guests take this for granted */
+                 mSupportsGraphics (TRUE) {}
 
         Bstr  mOSTypeId;
         BOOL  mAdditionsActive;
         Bstr  mAdditionsVersion;
         BOOL  mSupportsSeamless;
+        BOOL  mSupportsGraphics;
     };
 
     ULONG mMemoryBalloonSize;

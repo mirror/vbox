@@ -520,6 +520,10 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 VMMDevReqGuestCapabilities *guestCaps = (VMMDevReqGuestCapabilities*)pRequestHeader;
 
+                /* Enable this automatically for guests using the old
+                   request to report their capabilities. */
+                /** @todo change this when we next bump the interface version */
+                guestCaps->caps |= VMMDEV_GUEST_SUPPORTS_GRAPHICS;
                 if (pData->guestCaps != guestCaps->caps)
                 {
                     /* make a copy of supplied information */
@@ -527,13 +531,45 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                     LogRel(("Guest Additions capability report: (0x%x) "
                             "VMMDEV_GUEST_SUPPORTS_SEAMLESS: %s "
-                            "VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING: %s\n",
+                            "VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING: %s"
+                            "VMMDEV_GUEST_SUPPORTS_GRAPHICS: %s\n",
                             guestCaps->caps,
                             guestCaps->caps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ? "yes" : "no",
-                            guestCaps->caps & VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING ? "yes" : "no"));
+                            guestCaps->caps & VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING ? "yes" : "no",
+                            guestCaps->caps & VMMDEV_GUEST_SUPPORTS_GRAPHICS ? "yes" : "no"));
 
                     pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, guestCaps->caps);
                 }
+                pRequestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
+
+        /* Change guest capabilities */
+        case VMMDevReq_SetGuestCapabilities:
+        {
+            if (pRequestHeader->size != sizeof(VMMDevReqGuestCapabilities2))
+            {
+                AssertMsgFailed(("VMMDev guest caps structure has invalid size!\n"));
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevReqGuestCapabilities2 *guestCaps = (VMMDevReqGuestCapabilities2*)pRequestHeader;
+
+                pData->guestCaps |= guestCaps->u32OrMask;
+                pData->guestCaps &= ~guestCaps->u32NotMask;
+
+                LogRel(("Guest Additions capability report: (0x%x) "
+                        "VMMDEV_GUEST_SUPPORTS_SEAMLESS: %s "
+                        "VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING: %s"
+                        "VMMDEV_GUEST_SUPPORTS_GRAPHICS: %s\n",
+                        pData->guestCaps,
+                        pData->guestCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ? "yes" : "no",
+                        pData->guestCaps & VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING ? "yes" : "no",
+                        pData->guestCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS ? "yes" : "no"));
+
+                pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, pData->guestCaps);
                 pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
@@ -2293,7 +2329,6 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /* Reset means that additions will report again. */
     pData->fu32AdditionsOk = false;
     memset (&pData->guestInfo, 0, sizeof (pData->guestInfo));
-    pData->guestCaps = 0;
 
     memset (&pData->lastReadDisplayChangeRequest, 0, sizeof (pData->lastReadDisplayChangeRequest));
 
@@ -2315,6 +2350,11 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     pData->u32GuestFilterMask    = 0;
     pData->u32NewGuestFilterMask = 0;
     pData->fNewGuestFilterMask   = 0;
+
+    /* This is the default, as Windows and OS/2 guests take this for granted. */
+    /** @todo change this when we next bump the interface version */
+    pData->guestCaps = VMMDEV_GUEST_SUPPORTS_GRAPHICS;
+    pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, pData->guestCaps);
 }
 
 

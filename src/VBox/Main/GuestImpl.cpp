@@ -171,6 +171,21 @@ STDMETHODIMP Guest::COMGETTER(SupportsSeamless) (BOOL *aSupportsSeamless)
     return S_OK;
 }
 
+STDMETHODIMP Guest::COMGETTER(SupportsGraphics) (BOOL *aSupportsGraphics)
+{
+    if (!aSupportsGraphics)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aSupportsGraphics = mData.mSupportsGraphics;
+
+    return S_OK;
+}
+
 STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
 {
     if (!aMemoryBalloonSize)
@@ -325,4 +340,14 @@ void Guest::setSupportsSeamless (BOOL aSupportsSeamless)
     AutoLock alock (this);
 
     mData.mSupportsSeamless = aSupportsSeamless;
+}
+
+void Guest::setSupportsGraphics (BOOL aSupportsGraphics)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    mData.mSupportsGraphics = aSupportsGraphics;
 }
