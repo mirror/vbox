@@ -528,7 +528,7 @@ check_mkisofs()
 
 #
 # Check for libxml2, needed by VBoxSettings
-# 2.6.24 is known to NOT work, 2.6.26 is known to work (there is not 2.6.25 release)
+# 2.6.24 is known to NOT work, 2.6.26 is known to work (there is no 2.6.25 release)
 #
 check_libxml2()
 {
@@ -607,7 +607,9 @@ EOF
 }
 
 #
-# Check for libxslt, needed by VBoxSettings
+# Check for libxslt, needed by VBoxSettings. For now we depend on 1.1.17.
+# This library is available on Ubuntu Edgy which fulfils the minimal libxml2
+# requirement (2.6.26).
 #
 check_libxslt()
 {
@@ -1625,7 +1627,7 @@ check_gcc
 [ $WITH_XPCOM  -eq 1 ] && check_libxml2
 # build libxslt on Darwin in every case
 [ "$OS" != "darwin"  ] || BUILD_LIBXSLT=1
-#[ $WITH_XPCOM  -eq 1 ] && check_libxslt
+[ $WITH_XPCOM  -eq 1 ] && check_libxslt
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
 # build openssl on Darwin in every case
 [ "$OS" != "darwin" -a $OSE -eq 0 ] && check_ssl
