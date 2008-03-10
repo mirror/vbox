@@ -103,6 +103,7 @@ static unsigned _strnlenUtf16(PCRTUTF16 pwsz, unsigned cchMax)
         AssertRC(rc);
         if (RT_FAILURE(rc) || !cp)
             break;
+        cwc++;
     }
     return cwc;
 #else   /* !IN_RING3 */
