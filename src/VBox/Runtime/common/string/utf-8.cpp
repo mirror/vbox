@@ -995,6 +995,12 @@ RTDECL(int) RTStrCmp(const char *psz1, const char *psz2)
  * specified by the unicode specs are used. It does not consider character pairs
  * as they are used in some languages, just simple upper & lower case compares.
  *
+ * The result is the difference between the mismatching codepoints after they
+ * both have been lower cased.
+ *
+ * If the string encoding is invalid the function will assert (strict builds)
+ * and use RTStrCmp for the remainder of the string.
+ *
  * @returns < 0 if the first string less than the second string.
  * @returns 0 if the first string identical to the second string.
  * @returns > 0 if the first string greater than the second string.
@@ -1010,10 +1016,55 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
     if (!psz2)
         return 1;
 
-    /** @todo implement proper UTF-8 case-insensitive string comparison. */
+#if 1 /* new */
+    const char *pszStart1 = psz1;
+    for (;;)
+    {
+        /* Get the codepoints */
+        RTUNICP cp1;
+        int rc = RTStrGetCpEx(&psz1, &cp1);
+        if (RT_FAILURE(rc))
+        {
+            AssertRC(rc);
+            psz1--;
+            break;
+        }
+
+        RTUNICP cp2;
+        rc = RTStrGetCpEx(&psz2, &cp2);
+        if (RT_FAILURE(rc))
+        {
+            AssertRC(rc);
+            psz2--;
+            psz1 = RTStrPrevCp(pszStart1, psz1);
+            break;
+        }
+
+        /* compare */
+        int iDiff = cp1 - cp2;
+        if (iDiff)
+        {
+            iDiff = RTUniCpToUpper(cp1) != RTUniCpToUpper(cp2);
+            if (iDiff)
+            {
+                iDiff = RTUniCpToLower(cp1) - RTUniCpToLower(cp2); /* lower case diff last! */
+                if (iDiff)
+                    return iDiff;
+            }
+        }
+
+        /* hit the terminator? */
+        if (!cp1)
+            return 0;
+    }
+
+    /* Hit some bad encoding, continue in case insensitive mode. */
+    return RTStrCmp(psz1, psz2);
+#else /* old */
 #ifdef RT_OS_WINDOWS
     return stricmp(psz1, psz2);
 #else /* !RT_OS_WINDOWS */
     return strcasecmp(psz1, psz2);
 #endif /* !RT_OS_WINDOWS */
+#endif
 }
