@@ -40,8 +40,9 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #ifdef IN_RING3
-#include <iprt/alloc.h>
-#include <iprt/err.h>
+# include <iprt/alloc.h>
+# include <iprt/err.h>
+# include <iprt/uni.h>
 #endif
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
@@ -64,7 +65,7 @@ typedef struct
 *   Internal Functions                                                         *
 *******************************************************************************/
 static unsigned _strnlen(const char *psz, unsigned cchMax);
-static unsigned _strnlenUCS2(PCRTUCS2 pucs, unsigned cchMax);
+static unsigned _strnlenUtf16(PCRTUTF16 pwsz, unsigned cchMax);
 static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, signed int cchWidth, signed int cchPrecision, unsigned int fFlags);
 
 
@@ -88,17 +89,29 @@ static unsigned _strnlen(const char *psz, unsigned cchMax)
 /**
  * Finds the length of a string up to cchMax.
  * @returns   Length.
- * @param     pucs    Pointer to string.
+ * @param     pwsz    Pointer to string.
  * @param     cchMax  Max length.
  */
-static unsigned _strnlenUCS2(PCRTUCS2 pucs, unsigned cchMax)
+static unsigned _strnlenUtf16(PCRTUTF16 pwsz, unsigned cchMax)
 {
-    PCRTUCS2    pucsC = pucs;
+#ifdef IN_RING3
+    unsigned cwc = 0;
+    while (cchMax-- > 0)
+    {
+        RTUNICP cp = RTUtf16GetCp(pwsz);
+        Assert(cp != RTUNICP_INVALID);
+        if (!cp || cp == RTUNICP_INVALID)
+            break;
+    }
+    return cwc;
+#else   /* !IN_RING3 */
+    PCRTUTF16    pwszC = pwsz;
 
-    while (cchMax-- > 0 &&  *pucs != '\0')
-        pucs++;
+    while (cchMax-- > 0 &&  *pwsz != '\0')
+        pwsz++;
 
-    return pucs - pucsC;
+    return pwsz - pwszC;
+#endif  /* !IN_RING3 */
 }
 
 
@@ -435,7 +448,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                     }
 
 #ifndef IN_RING3
-                    case 'S':   /* Unicode string as current code page. */
+                    case 'S':   /* Unicode string as current code page -> Unicode as UTF-8 in GC/R0. */
                         chArgSize = 'l';
                         /* fall thru */
 #endif
@@ -443,7 +456,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                     {
                         if (chArgSize == 'l')
                         {
-                            /* ucs2 -> utf8 */
+                            /* utf-16 -> utf-8 */
                             int         cchStr;
                             PCRTUTF16   pwszStr = va_arg(args, PRTUTF16);
 
@@ -452,7 +465,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                                 static RTUTF16  s_wszNull[] = {'<', 'N', 'U', 'L', 'L', '>', '\0' };
                                 pwszStr = s_wszNull;
                             }
-                            cchStr = _strnlenUCS2(pwszStr, (unsigned)cchPrecision);
+                            cchStr = _strnlenUtf16(pwszStr, (unsigned)cchPrecision);
                             if (!(fFlags & RTSTR_F_LEFT))
                                 while (--cchWidth >= cchStr)
                                     cch += pfnOutput(pvArgOutput, " ", 1);
@@ -480,8 +493,8 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
 
                             if (!VALID_PTR(puszStr))
                             {
-                                static RTUNICP uszNull[] = {'<', 'N', 'U', 'L', 'L', '>', '\0' };
-                                puszStr = uszNull;
+                                static RTUNICP s_uszNull[] = {'<', 'N', 'U', 'L', 'L', '>', '\0' };
+                                puszStr = s_uszNull;
                             }
                             cchStr = _strnlenUni(puszStr, (unsigned)cchPrecision);
                             if (!(fFlags & RTSTR_F_LEFT))
@@ -527,15 +540,16 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                     {
                         if (chArgSize == 'l')
                         {
-                            int      cchStr;
-                            PCRTUCS2 pucs2Str = va_arg(args, PRTUCS2);
-                            if (!VALID_PTR(pucs2Str))
+                            /* UTF-16 */
+                            int       cchStr;
+                            PCRTUTF16 pwsz2Str = va_arg(args, PRTUTF16);
+                            if (!VALID_PTR(pwsz2Str))
                             {
-                                static RTUCS2   ucs2Null[] = {'<', 'N', 'U', 'L', 'L', '>', '\0' };
-                                pucs2Str = ucs2Null;
+                                static RTUTF16  s_wsz2Null[] = {'<', 'N', 'U', 'L', 'L', '>', '\0' };
+                                pwsz2Str = s_wsz2Null;
                             }
 
-                            cchStr = _strnlenUCS2(pucs2Str, (unsigned)cchPrecision);
+                            cchStr = _strnlenUtf16(pwsz2Str, (unsigned)cchPrecision);
                             if (!(fFlags & RTSTR_F_LEFT))
                                 while (--cchWidth >= cchStr)
                                     cch += pfnOutput(pvArgOutput, " ", 1);
@@ -543,12 +557,12 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             if (cchStr)
                             {
                                 /* allocate temporary buffer. */
-                                PRTUCS2 pucs2Tmp = (PRTUCS2)RTMemAlloc((cchStr + 1) * sizeof(RTUCS2));
-                                memcpy(pucs2Tmp, pucs2Str, cchStr * sizeof(RTUCS2));
-                                pucs2Tmp[cchStr] = '\0';
+                                PRTUTF16 pwsz2Tmp = (PRTUTF16)RTMemTmpAlloc((cchStr + 1) * sizeof(RTUTF16));
+                                memcpy(pwsz2Tmp, pwsz2Str, cchStr * sizeof(RTUTF16));
+                                pwsz2Tmp[cchStr] = '\0';
 
                                 char *pszUtf8;
-                                int rc = RTStrUcs2ToUtf8(&pszUtf8, pucs2Tmp);
+                                int rc = RTUtf16ToUtf8(pwsz2Tmp, &pszUtf8);
                                 if (RT_SUCCESS(rc))
                                 {
                                     char *pszCurCp;
@@ -563,7 +577,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                                 if (RT_FAILURE(rc))
                                     while (cchStr-- > 0)
                                         cch += pfnOutput(pvArgOutput, "\x7f", 1);
-                                RTMemFree(pucs2Tmp);
+                                RTMemTmpFree(pwsz2Tmp);
                             }
 
                             while (--cchWidth >= cchStr)
@@ -571,12 +585,14 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                         }
                         else if (chArgSize == 'L')
                         {
+                            /* UCS-32 */
                             AssertMsgFailed(("Not implemented yet\n"));
                         }
                         else
                         {
+                            /* UTF-8 */
                             int   cchStr;
-                            const char *pszStr = va_arg(args, char*);
+                            const char *pszStr = va_arg(args, char *);
 
                             if (!VALID_PTR(pszStr))
                                 pszStr = "<NULL>";
@@ -588,7 +604,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             if (cchStr)
                             {
                                 /* allocate temporary buffer. */
-                                char *pszTmp = (char *)RTMemAlloc(cchStr + 1);
+                                char *pszTmp = (char *)RTMemTmpAlloc(cchStr + 1);
                                 memcpy(pszTmp, pszStr, cchStr);
                                 pszTmp[cchStr] = '\0';
 
@@ -602,7 +618,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                                 else
                                     while (cchStr-- > 0)
                                         cch += pfnOutput(pvArgOutput, "\x7f", 1);
-                                RTMemFree(pszTmp);
+                                RTMemTmpFree(pszTmp);
                             }
 
                             while (--cchWidth >= cchStr)
