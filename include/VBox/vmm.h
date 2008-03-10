@@ -385,6 +385,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_VMMR0_TERM,
     /** Setup the hardware accelerated raw-mode session. */
     VMMR0_DO_HWACC_SETUP_VM,
+    /** Attempt to enable or disable hardware accelerated raw-mode. */
+    VMMR0_DO_HWACC_ENABLE,
     /** Calls function in the hypervisor.
      * The caller must setup the hypervisor context so the call will be performed.
      * The difference between VMMR0_DO_RUN_GC and this one is the handling of
