@@ -597,10 +597,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     initSharedAVManager();
 # endif
     /* prepare the dock images */
-    dockImgStatePaused    = ::DarwinCreateDockBadge ("state_paused_16px.png");
-    dockImgStateSaving    = ::DarwinCreateDockBadge ("state_saving_16px.png");
-    dockImgStateRestoring = ::DarwinCreateDockBadge ("state_restoring_16px.png");
-    dockImgBack100x75     = ::DarwinCreateDockBadge ("dock_1.png");
+    dockImgStatePaused    = ::DarwinCreateDockBadge (":/state_paused_16px.png");
+    dockImgStateSaving    = ::DarwinCreateDockBadge (":/state_saving_16px.png");
+    dockImgStateRestoring = ::DarwinCreateDockBadge (":/state_restoring_16px.png");
+    dockImgBack100x75     = ::DarwinCreateDockBadge (":/dock_1.png");
     SetApplicationDockTileImage (dockImgOS);
 #endif
     mMaskShift.scale (0, 0, Qt::IgnoreAspectRatio);
