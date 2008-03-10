@@ -2685,7 +2685,7 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>La taille recommandée pou la mémoire vive de base est &lt;b&gt;%1&lt;/b&gt; Mo.</translation>
+        <translation>La taille recommandée pour la mémoire vive de base est &lt;b&gt;%1&lt;/b&gt; Mo.</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
