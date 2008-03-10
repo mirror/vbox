@@ -181,7 +181,6 @@ int main(int argc, char *argv[])
     if (NULL == pszFileName)
         pszFileName = "VBoxClient";
 
-    TRACE;
     /* Parse our option(s) */
     /** @todo Use RTGetOpt() if the arguments become more complex. */
     for (int i = 1; i < argc; ++i)
@@ -201,7 +200,6 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
-    TRACE;
     if (fDaemonise)
     {
         rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
@@ -212,14 +210,12 @@ int main(int argc, char *argv[])
         }
     }
     /* Initialise our runtime before all else. */
-    TRACE;
     RTR3Init(false);
     if (RT_FAILURE(VbglR3Init()))
     {
         std::cout << "Failed to connect to the VirtualBox kernel service" << std::endl;
         return 1;
     }
-    TRACE;
     if (fDaemonise && RT_FAILURE(vboxClientDropPrivileges()))
         return 1;
     LogRel(("VBoxClient: starting...\n"));
