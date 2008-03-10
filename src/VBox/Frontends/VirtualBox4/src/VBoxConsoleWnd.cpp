@@ -653,17 +653,17 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         pMainLayout->setSpacing (0);
 
         mShiftingSpacerLeft = new QSpacerItem (0, 0,
-                                               QSizePolicy::Preferred,
-                                               QSizePolicy::Preferred);
+                                               QSizePolicy::Fixed,
+                                               QSizePolicy::Fixed);
         mShiftingSpacerTop = new QSpacerItem (0, 0,
-                                              QSizePolicy::Preferred,
-                                              QSizePolicy::Preferred);
+                                              QSizePolicy::Fixed,
+                                              QSizePolicy::Fixed);
         mShiftingSpacerRight = new QSpacerItem (0, 0,
-                                                QSizePolicy::Preferred,
-                                                QSizePolicy::Preferred);
+                                                QSizePolicy::Fixed,
+                                                QSizePolicy::Fixed);
         mShiftingSpacerBottom = new QSpacerItem (0, 0,
-                                                 QSizePolicy::Preferred,
-                                                 QSizePolicy::Preferred);
+                                                 QSizePolicy::Fixed,
+                                                 QSizePolicy::Fixed);
         pMainLayout->addItem (mShiftingSpacerTop, 0, 0, 1, -1);
         pMainLayout->addItem (mShiftingSpacerLeft, 1, 0);
         pMainLayout->addItem (mShiftingSpacerRight, 1, 2);
@@ -2168,10 +2168,10 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         connect (console, SIGNAL (resizeHintDone()), this, SLOT (onExitFullscreen()));
 
         /* Reset the shifting spacer. */
-        mShiftingSpacerLeft->changeSize (0, 0, QSizePolicy::Preferred, QSizePolicy::Preferred);
-        mShiftingSpacerTop->changeSize (0, 0, QSizePolicy::Preferred, QSizePolicy::Preferred);
-        mShiftingSpacerRight->changeSize (0, 0, QSizePolicy::Preferred, QSizePolicy::Preferred);
-        mShiftingSpacerBottom->changeSize (0, 0, QSizePolicy::Preferred, QSizePolicy::Preferred);
+        mShiftingSpacerLeft->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
+        mShiftingSpacerTop->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
+        mShiftingSpacerRight->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
+        mShiftingSpacerBottom->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
 
         /* Restore the previous scroll-view minimum size before the exiting
          * fullscreen. Required for correct scroll-view and guest display
