@@ -1103,6 +1103,12 @@ RTDECL(int) RTStrCmp(const char *psz1, const char *psz2);
  * specified by the unicode specs are used. It does not consider character pairs
  * as they are used in some languages, just simple upper & lower case compares.
  *
+ * The result is the difference between the mismatching codepoints after they
+ * both have been lower cased.
+ *
+ * If the string encoding is invalid the function will assert (strict builds)
+ * and use RTStrCmp for the remainder of the string.
+ *
  * @returns < 0 if the first string less than the second string.
  * @returns 0 if the first string identical to the second string.
  * @returns > 0 if the first string greater than the second string.

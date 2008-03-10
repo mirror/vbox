@@ -794,6 +794,59 @@ void test3(void)
 
 
 /**
+ * Test the RTStr*Cmp functions.
+ */
+void TstRTStrXCmp(void)
+{
+    RTPrintf("tstUtf8: TESTING RTStr*Cmp\n");
+#define CHECK_DIFF(expr, op) \
+    do \
+    { \
+        int iDiff = expr; \
+        if (!(iDiff op 0)) \
+        { \
+            RTPrintf("tstUtf8(%d): failure - %d " #op " 0: %s\n", __LINE__, iDiff, #expr); \
+            g_cErrors++; \
+        } \
+    } while (0)
+
+/** @todo test the non-ascii bits. */
+
+    CHECK_DIFF(RTStrCmp(NULL, NULL), == );
+    CHECK_DIFF(RTStrCmp(NULL, ""), < );
+    CHECK_DIFF(RTStrCmp("", NULL), > );
+    CHECK_DIFF(RTStrCmp("", ""), == );
+    CHECK_DIFF(RTStrCmp("abcdef", "abcdef"), == );
+    CHECK_DIFF(RTStrCmp("abcdef", "abcde"), > );
+    CHECK_DIFF(RTStrCmp("abcde", "abcdef"), < );
+    CHECK_DIFF(RTStrCmp("abcdeg", "abcdef"), > );
+    CHECK_DIFF(RTStrCmp("abcdef", "abcdeg"), < );
+    CHECK_DIFF(RTStrCmp("abcdeF", "abcdef"), < );
+    CHECK_DIFF(RTStrCmp("abcdef", "abcdeF"), > );
+
+
+    CHECK_DIFF(RTStrICmp(NULL, NULL), == );
+    CHECK_DIFF(RTStrICmp(NULL, ""), < );
+    CHECK_DIFF(RTStrICmp("", NULL), > );
+    CHECK_DIFF(RTStrICmp("", ""), == );
+    CHECK_DIFF(RTStrICmp("abcdef", "abcdef"), == );
+    CHECK_DIFF(RTStrICmp("abcdef", "abcde"), > );
+    CHECK_DIFF(RTStrICmp("abcde", "abcdef"), < );
+    CHECK_DIFF(RTStrICmp("abcdeg", "abcdef"), > );
+    CHECK_DIFF(RTStrICmp("abcdef", "abcdeg"), < );
+
+    CHECK_DIFF(RTStrICmp("abcdeF", "abcdef"), == );
+    CHECK_DIFF(RTStrICmp("abcdef", "abcdeF"), ==);
+    CHECK_DIFF(RTStrICmp("ABCDEF", "abcdef"), ==);
+    CHECK_DIFF(RTStrICmp("abcdef", "ABCDEF"), ==);
+    CHECK_DIFF(RTStrICmp("AbCdEf", "aBcDeF"), ==);
+    CHECK_DIFF(RTStrICmp("AbCdEg", "aBcDeF"), > );
+    CHECK_DIFF(RTStrICmp("AbCdEG", "aBcDef"), > ); /* diff performed on the lower case cp. */
+}
+
+
+
+/**
  * Benchmark stuff.
  */
 void Benchmarks(void)
@@ -854,6 +907,7 @@ int main()
     test1();
     test2();
     test3();
+    TstRTStrXCmp();
     Benchmarks();
 
     /*
