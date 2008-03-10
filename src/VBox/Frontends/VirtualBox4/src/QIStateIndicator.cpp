@@ -20,6 +20,9 @@
 
 /* Qt includes */
 #include <QPainter>
+#ifdef Q_WS_MAC
+# include <QContextMenuEvent>
+#endif
 
 /** @clas QIStateIndicator
  *
