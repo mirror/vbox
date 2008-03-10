@@ -172,6 +172,7 @@ private:
 
     HRESULT setup_library();
     HRESULT setup_output_format();
+    HRESULT list_formats();
     HRESULT open_codec();
     HRESULT open_output_file();
     void copy_to_intermediate_buffer(ULONG x, ULONG y, ULONG w, ULONG h);
