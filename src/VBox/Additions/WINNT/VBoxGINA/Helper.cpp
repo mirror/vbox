@@ -97,24 +97,24 @@ bool credentialsRetrieve(void)
         Log(("VBoxGINA::credentialsRetrieve: error doing IOCTL, last error: %d\n", GetLastError()));
         return false;
     }
-    /* convert from UTF-8 to UCS2 and store in global variables */
-    PRTUCS2 ptr = NULL;
-    if (VBOX_SUCCESS(RTStrUtf8ToUcs2(&ptr, vmmreqCredentials.szUserName)) && ptr)
+    /* convert from UTF-8 to UTF-16 and store in global variables */
+    PRTUTF16 ptr = NULL;
+    if (RT_SUCCESS(RTStrToUtf16(vmmreqCredentials.szUserName, &ptr)) && ptr)
     {
         wcscpy(g_Username, ptr);
-        RTStrUcs2Free(ptr);
+        RTUtf16Free(ptr);
     }
     ptr = NULL;
-    if (VBOX_SUCCESS(RTStrUtf8ToUcs2(&ptr, vmmreqCredentials.szPassword)) && ptr)
+    if (RT_SUCCESS(RTStrToUtf16(vmmreqCredentials.szPassword, &ptr)) && ptr)
     {
         wcscpy(g_Password, ptr);
-        RTStrUcs2Free(ptr);
+        RTUtf16Free(ptr);
     }
     ptr = NULL;
-    if (VBOX_SUCCESS(RTStrUtf8ToUcs2(&ptr, vmmreqCredentials.szDomain)) && ptr)
+    if (RT_SUCCESS(RTStrToUtf16(vmmreqCredentials.szDomain, &ptr)) && ptr)
     {
         wcscpy(g_Domain, ptr);
-        RTStrUcs2Free(ptr);
+        RTUtf16Free(ptr);
     }
     Log(("VBoxGINA::credentialsRetrieve: returning user '%s', password '%s', domain '%s'\n",
          vmmreqCredentials.szUserName, vmmreqCredentials.szPassword, vmmreqCredentials.szDomain));
@@ -188,7 +188,7 @@ bool credentialsPollerTerminate(void)
     }
     /* post termination event semaphore */
     int rc = RTThreadUserSignal(gThreadPoller);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         Log(("VBoxGINA::credentialsPollerTerminate: waiting for thread to terminate\n"));
         /* wait until the thread has terminated */
