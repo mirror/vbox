@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
                 BSTR driveName;
                 char *driveNameUtf8;
                 dvdDrive->GetDriveName(&driveName);
-                RTStrUcs2ToUtf8(&driveNameUtf8, (PCRTUCS2)driveName);
+                RTUtf16ToUtf8((PCRTUTF16)driveName, &driveNameUtf8);
                 printf("Host DVD drive name: %s\n", driveNameUtf8);
                 RTStrFree(driveNameUtf8);
                 SysFreeString(driveName);
@@ -403,7 +403,7 @@ int main(int argc, char *argv[])
                 BSTR driveName;
                 char *driveNameUtf8;
                 floppyDrive->GetDriveName(&driveName);
-                RTStrUcs2ToUtf8(&driveNameUtf8, (PCRTUCS2)driveName);
+                RTUtf16ToUtf8((PCRTUTF16)driveName, &driveNameUtf8);
                 printf("Host floppy drive name: %s\n", driveNameUtf8);
                 RTStrFree(driveNameUtf8);
                 SysFreeString(driveName);

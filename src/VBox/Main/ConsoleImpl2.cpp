@@ -97,7 +97,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     BSTR            str = NULL;
     unsigned        i;
 
-#define STR_CONV()  do { rc = RTStrUcs2ToUtf8(&psz, str); RC_CHECK(); } while (0)
+#define STR_CONV()  do { rc = RTUtf16ToUtf8(str, &psz); RC_CHECK(); } while (0)
 #define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } if (psz) { RTStrFree(psz); psz = NULL; } } while (0)
 #define RC_CHECK()  do { if (VBOX_FAILURE(rc)) { AssertMsgFailed(("rc=%Vrc\n", rc)); STR_FREE(); return rc; } } while (0)
 #define H()         do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%#x\n", hrc)); STR_FREE(); return VERR_GENERAL_FAILURE; } } while (0)

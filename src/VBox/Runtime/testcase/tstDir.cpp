@@ -159,8 +159,8 @@ int main(int argc, char **argv)
                                  DirEntry.Info.ChangeTime,
                                  DirEntry.Info.ModificationTime,
                                  DirEntry.Info.AccessTime);
-                        if (fShortName && DirEntry.cucShortName)
-                            RTPrintf(" %2d %lS\n", DirEntry.cucShortName, DirEntry.uszShortName);
+                        if (fShortName && DirEntry.cwcShortName)
+                            RTPrintf(" %2d %lS\n", DirEntry.cwcShortName, DirEntry.wszShortName);
                         else
                             RTPrintf(" %2d %s\n", DirEntry.cbName, DirEntry.szName);
                         if (rc != VINF_SUCCESS)

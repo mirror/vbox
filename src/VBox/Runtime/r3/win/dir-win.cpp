@@ -51,21 +51,21 @@ RTDECL(bool) RTDirExists(const char *pszPath)
     bool fRc = false;
 
     /*
-     * Convert to UCS2.
+     * Convert to UTF-16.
      */
-    PRTUCS2 pucszString;
-    int rc = RTStrUtf8ToUcs2(&pucszString, pszPath);
+    PRTUTF16 pwszString;
+    int rc = RTStrToUtf16(pszPath, &pwszString);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
         /*
          * Query and check attributes.
          */
-        DWORD dwAttr = GetFileAttributesW((LPCWSTR)pucszString);
+        DWORD dwAttr = GetFileAttributesW((LPCWSTR)pwszString);
         fRc = dwAttr != INVALID_FILE_ATTRIBUTES
             && (dwAttr & FILE_ATTRIBUTE_DIRECTORY);
 
-        RTStrUcs2Free(pucszString);
+        RTUtf16Free(pwszString);
     }
 
     LogFlow(("RTDirExists(%p:{%s}): returns %RTbool\n", pszPath, pszPath, fRc));
@@ -83,17 +83,17 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
     if (rtFsModeIsValidPermissions(fMode))
     {
         /*
-         * Convert to UCS2.
+         * Convert to UTF-16.
          */
-        PRTUCS2 pucszString;
-        rc = RTStrUtf8ToUcs2(&pucszString, pszPath);
+        PRTUTF16 pwszString;
+        rc = RTStrToUtf16(pszPath, &pwszString);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             /*
              * Create the directory.
              */
-            if (CreateDirectoryW((LPCWSTR)pucszString, NULL))
+            if (CreateDirectoryW((LPCWSTR)pwszString, NULL))
                 rc = VINF_SUCCESS;
             else
                 rc = RTErrConvertFromWin32(GetLastError());
@@ -103,13 +103,13 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
              */
             if (RT_SUCCESS(rc))
             {
-                if (SetFileAttributesW((LPCWSTR)pucszString, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+                if (SetFileAttributesW((LPCWSTR)pwszString, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
                     rc = VINF_SUCCESS;
                 else
                     rc = RTErrConvertFromWin32(GetLastError());
             }
 
-            RTStrUcs2Free(pucszString);
+            RTUtf16Free(pwszString);
         }
     }
     else
@@ -126,22 +126,22 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
 RTDECL(int) RTDirRemove(const char *pszPath)
 {
     /*
-     * Convert to UCS2.
+     * Convert to UTF-16.
      */
-    PRTUCS2 pucszString;
-    int rc = RTStrUtf8ToUcs2(&pucszString, pszPath);
+    PRTUTF16 pwszString;
+    int rc = RTStrToUtf16(pszPath, &pwszString);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
         /*
          * Remove the directory.
          */
-        if (RemoveDirectoryW((LPCWSTR)pucszString))
+        if (RemoveDirectoryW((LPCWSTR)pwszString))
             rc = VINF_SUCCESS;
         else
             rc = RTErrConvertFromWin32(GetLastError());
 
-        RTStrUcs2Free(pucszString);
+        RTUtf16Free(pwszString);
     }
 
     LogFlow(("RTDirRemove(%p:{%s}): returns %Rrc\n", pszPath, pszPath, rc));
@@ -180,11 +180,11 @@ int rtOpenDirNative(PRTDIR pDir, char *pszPathBuf)
      */
     int rc = VINF_SUCCESS;
 #ifndef RT_DONT_CONVERT_FILENAMES
-    PRTUCS2 puszName;
-    rc = RTStrUtf8ToUcs2(&puszName, pszPathBuf);
+    PRTUTF16 pwszName;
+    rc = RTStrToUtf16(pszPathBuf, &pwszName);
     if (RT_SUCCESS(rc))
     {
-        pDir->hDir    = FindFirstFileW((LPCWSTR)puszName, &pDir->Data);
+        pDir->hDir    = FindFirstFileW((LPCWSTR)pwszName, &pDir->Data);
 #else
         pDir->hDir    = FindFirstFileA(pszPathBuf, &pDir->Data);
 #endif
@@ -196,7 +196,7 @@ int rtOpenDirNative(PRTDIR pDir, char *pszPathBuf)
         else
             rc = RTErrConvertFromWin32(GetLastError());
 #ifndef RT_DONT_CONVERT_FILENAMES
-        RTStrUcs2Free(puszName);
+        RTUtf16Free(pwszName);
     }
 #endif
 
@@ -429,21 +429,21 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, unsigned *pcbDirEn
     if (pDir->Data.cAlternateFileName[0])
     {
         /* copy and calc length */
-        PCRTUCS2 pucSrc = (PCRTUCS2)pDir->Data.cAlternateFileName;
-        PRTUCS2  pucDst = pDirEntry->uszShortName;
-        while (*pucSrc)
-            *pucDst++ = *pucSrc++;
-        pDirEntry->cucShortName = pucDst - &pDirEntry->uszShortName[0];
+        PCRTUTF16 pwszSrc = (PCRTUTF16)pDir->Data.cAlternateFileName;
+        PRTUTF16  pwszDst = pDirEntry->wszShortName;
+        while (*pwszSrc)
+            *pwszDst++ = *pwszSrc++;
+        pDirEntry->cwcShortName = pwszDst - &pDirEntry->wszShortName[0];
         /* zero the rest */
-        const PRTUCS2 pucEnd = &pDirEntry->uszShortName[ELEMENTS(pDirEntry->uszShortName)];
-        while (pucDst < pucEnd)
-            *pucDst++ = '\0';
+        const PRTUTF16 pwszEnd = &pDirEntry->wszShortName[RT_ELEMENTS(pDirEntry->wszShortName)];
+        while (pwszDst < pwszEnd)
+            *pwszDst++ = '\0';
     }
     else
 #endif
     {
-        memset(pDirEntry->uszShortName, 0, sizeof(pDirEntry->uszShortName));
-        pDirEntry->cucShortName = 0;
+        memset(pDirEntry->wszShortName, 0, sizeof(pDirEntry->wszShortName));
+        pDirEntry->cwcShortName = 0;
     }
 
     pDirEntry->Info.cbObject    = ((uint64_t)pDir->Data.nFileSizeHigh << 32)

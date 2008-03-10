@@ -175,7 +175,7 @@ int SysReAllocStringLen(BSTR *pbstr, const OLECHAR *psz, unsigned int cch)
   */
 unsigned int SysStringByteLen(BSTR bstr)
 {
-    return RTStrUcs2Len(bstr) * sizeof(OLECHAR);
+    return RTUtf16Len(bstr) * sizeof(OLECHAR);
 }
 
 /**
@@ -185,5 +185,5 @@ unsigned int SysStringByteLen(BSTR bstr)
   */
 unsigned int SysStringLen(BSTR bstr)
 {
-    return RTStrUcs2Len(bstr);
+    return RTUtf16Len(bstr);
 }

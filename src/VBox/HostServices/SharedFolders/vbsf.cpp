@@ -172,11 +172,11 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
 
     char *pszFullPath = NULL;
 
-    /* Query UCS2 root prefix for the path, cbRoot is the length in bytes including trailing (RTUCS2)0. */
+    /* Query UCS2 root prefix for the path, cbRoot is the length in bytes including trailing (RTUTF16)0. */
     uint32_t cbRoot = 0;
-    const RTUCS2 *pszRoot = vbsfMappingsQueryHostRoot (root, &cbRoot);
+    PCRTUTF16 pwszRoot = vbsfMappingsQueryHostRoot (root, &cbRoot);
 
-    if (!pszRoot || cbRoot == 0)
+    if (!pwszRoot || cbRoot == 0)
     {
         Log(("vbsfBuildFullPath: invalid root!\n"));
         return VERR_INVALID_PARAMETER;
@@ -187,7 +187,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
         int rc;
         char *utf8Root;
 
-        rc = RTUtf16ToUtf8 (pszRoot, &utf8Root);
+        rc = RTUtf16ToUtf8 (pwszRoot, &utf8Root);
         if (VBOX_SUCCESS (rc))
         {
             size_t cbUtf8Root, cbUtf8FullPath;
@@ -228,14 +228,14 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
     else
     {
         /* Client sends us UCS2, so convert it to UTF8. */
-        Log(("Root %ls path %.*ls\n", pszRoot, pPath->u16Length/sizeof(pPath->String.ucs2[0]), pPath->String.ucs2));
+        Log(("Root %ls path %.*ls\n", pwszRoot, pPath->u16Length/sizeof(pPath->String.ucs2[0]), pPath->String.ucs2));
 
         /* Allocate buffer that will be able to contain
          * the root prefix and the pPath converted to UTF8.
          * Expect a 2 bytes UCS2 to be converted to 8 bytes UTF8
          * in worst case.
          */
-        uint32_t cbFullPath = (cbRoot/sizeof (RTUCS2) + ShflStringLength (pPath)) * 4;
+        uint32_t cbFullPath = (cbRoot/sizeof (RTUTF16) + ShflStringLength (pPath)) * 4;
 
         pszFullPath = (char *)RTMemAllocZ (cbFullPath);
 
@@ -247,7 +247,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
         {
             uint32_t cb = cbFullPath;
 
-            rc = RTStrUcs2ToUtf8Ex (&pszFullPath, cb, pszRoot);
+            rc = RTUtf16ToUtf8Ex (pwszRoot, RTSTR_MAX, &pszFullPath, cb, NULL);
             if (VBOX_FAILURE(rc))
             {
                 AssertFailed();
@@ -272,7 +272,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
             if (pPath->u16Length)
             {
                 /* Convert and copy components. */
-                RTUCS2 *src = &pPath->String.ucs2[0];
+                PRTUTF16 src = &pPath->String.ucs2[0];
 
                 /* Correct path delimiters */
                 if (pClient->PathDelimiter != RTPATH_DELIMITER)
@@ -290,7 +290,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                 if (*src == RTPATH_DELIMITER)
                     src++;  /* we already appended a delimiter to the first part */
 
-                rc = RTStrUcs2ToUtf8Ex (&dst, cb, src);
+                rc = RTUtf16ToUtf8Ex (src, RTSTR_MAX, &dst, cb, NULL);
                 if (VBOX_FAILURE(rc))
                 {
                     AssertFailed();
@@ -386,7 +386,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                     src--;
                 }
                 Assert(*src == RTPATH_DELIMITER && VBOX_SUCCESS(rc));
-                if (    *src == RTPATH_DELIMITER 
+                if (    *src == RTPATH_DELIMITER
                     &&  VBOX_SUCCESS(rc))
                 {
                     src++;
@@ -653,14 +653,14 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
         case VERR_FILE_NOT_FOUND:
             pParms->Result = SHFL_FILE_NOT_FOUND;
 
-            /* This actually isn't an error, so correct the rc before return later, 
+            /* This actually isn't an error, so correct the rc before return later,
                because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
             fNoError = true;
             break;
         case VERR_PATH_NOT_FOUND:
             pParms->Result = SHFL_PATH_NOT_FOUND;
 
-            /* This actually isn't an error, so correct the rc before return later, 
+            /* This actually isn't an error, so correct the rc before return later,
                because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
             fNoError = true;
             break;
@@ -674,9 +674,9 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
             }
             pParms->Result = SHFL_FILE_EXISTS;
 
-            /* This actually isn't an error, so correct the rc before return later, 
+            /* This actually isn't an error, so correct the rc before return later,
                because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
-            fNoError = true;    
+            fNoError = true;
             break;
         default:
             pParms->Result = SHFL_NO_RESULT;
@@ -695,7 +695,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
                 == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS)))
         {
             /* For now, we do not treat a failure here as fatal. */
-            /* @todo Also set the size for SHFL_CF_ACT_CREATE_IF_NEW if 
+            /* @todo Also set the size for SHFL_CF_ACT_CREATE_IF_NEW if
                      SHFL_CF_ACT_FAIL_IF_EXISTS is set. */
             RTFileSetSize(pHandle->file.Handle, pParms->Info.cbObject);
             pParms->Result = SHFL_FILE_REPLACED;
@@ -754,7 +754,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
     }
 
     /* Report the driver that all is okay, we're done here */
-    if (fNoError) 
+    if (fNoError)
         rc = VINF_SUCCESS;
 
     LogFlow(("vbsfOpenFile: rc = %Vrc\n", rc));
@@ -1204,7 +1204,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
     uint32_t       cbDirEntry, cbBufferOrg;
     int            rc = VINF_SUCCESS;
     PSHFLDIRINFO   pSFDEntry;
-    PRTUCS2        puszString;
+    PRTUTF16       pwszString;
     PRTDIR         DirHandle;
     bool           fUtf8;
 
@@ -1332,11 +1332,11 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         else
         {
             pSFDEntry->name.String.ucs2[0] = 0;
-            puszString = pSFDEntry->name.String.ucs2;
-            int rc2 = RTStrUtf8ToUcs2Ex(&puszString, pDirEntry->cbName+1, pDirEntry->szName);
+            pwszString = pSFDEntry->name.String.ucs2;
+            int rc2 = RTStrToUtf16Ex(pDirEntry->szName, RTSTR_MAX, &pwszString, pDirEntry->cbName+1, NULL);
             AssertRC(rc2);
 
-            pSFDEntry->name.u16Length = RTStrUcs2Len (pSFDEntry->name.String.ucs2) * 2;
+            pSFDEntry->name.u16Length = RTUtf16Len (pSFDEntry->name.String.ucs2) * 2;
             pSFDEntry->name.u16Size = pSFDEntry->name.u16Length + 2;
 
             Log(("SHFL: File name size %d\n", pSFDEntry->name.u16Size));
