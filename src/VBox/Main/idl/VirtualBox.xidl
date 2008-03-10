@@ -5138,7 +5138,8 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="c101f037-b03d-4bd4-bd25-381123980be2"
+     uuid="d8556fca-81bc-12af-fca3-365528fa38ca"
+
      wsmap="suppress"
      >
     <desc>
@@ -5187,6 +5188,15 @@
       <desc>
         Flag whether seamless guest display rendering (seamless desktop
         integration) is supported.
+      </desc>
+    </attribute>
+
+    <attribute name="supportsGraphics" type="boolean" readonly="yes">
+      <desc>
+        Flag whether the guest is in graphics mode.  If it is not, then
+        seamless rendering will not work, resize hints are not immediately
+        acted on and guest display resizes are probably not initiated by
+        the guest additions.
       </desc>
     </attribute>
 

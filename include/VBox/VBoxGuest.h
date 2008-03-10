@@ -148,6 +148,7 @@ typedef enum
     VMMDevReq_GetHeightReduction         = 53,
     VMMDevReq_GetDisplayChangeRequest2   = 54,
     VMMDevReq_ReportGuestCapabilities    = 55,
+    VMMDevReq_SetGuestCapabilities       = 56,
 #ifdef VBOX_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -285,6 +286,17 @@ typedef struct
     /** capabilities (VMMDEV_GUEST_*) */
     uint32_t    caps;
 } VMMDevReqGuestCapabilities;
+
+/** guest capabilites structure */
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+    /** mask of capabilities to be added */
+    uint32_t    u32OrMask;
+    /** mask of capabilities to be removed */
+    uint32_t    u32NotMask;
+} VMMDevReqGuestCapabilities2;
 
 /** idle request structure */
 typedef struct
