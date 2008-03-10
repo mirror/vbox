@@ -895,7 +895,7 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
          *  to avoid recursion, since this method may be (and will be) called
          *  from the below constructor or from constructors/methods it calls.
          */
-        VBoxConsoleWnd *w = new VBoxConsoleWnd (&mConsoleWnd, 0, "consoleWnd");
+        VBoxConsoleWnd *w = new VBoxConsoleWnd (&mConsoleWnd, 0);
         Assert (w == mConsoleWnd);
         NOREF(w);
     }

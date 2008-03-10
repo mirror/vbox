@@ -30,31 +30,11 @@
 #include "QIHotKeyEdit.h"
 
 /* Qt includes */
-#include <qaction.h>
-#include <qmenubar.h>
-#include <q3buttongroup.h>
-#include <qradiobutton.h>
-#include <qfile.h>
-#include <qdir.h>
-#include <qpushbutton.h>
-#include <qcursor.h>
-#include <qtimer.h>
-#include <qeventloop.h>
-#include <qregexp.h>
-//Added by qt3to4:
+#include <QActionGroup>
 #include <QDesktopWidget>
-#include <QResizeEvent>
-#include <QContextMenuEvent>
-#include <QLabel>
-#include <QCloseEvent>
-#include <Q3GridLayout>
-#include <QShowEvent>
-#include <q3mimefactory.h>
-#include <Q3HBoxLayout>
-#include <QEvent>
-#include <Q3VBoxLayout>
-#include <Q3Frame>
-#include <Q3ActionGroup>
+#include <QMenuBar>
+#include <QFileInfo>
+#include <QDir>
 #ifdef Q_WS_X11
 # include <QX11Info>
 #endif 
@@ -118,9 +98,9 @@ class Q3HttpResponseHeader;
  *               recursion in VBoxGlobal::consoleWnd())
  */
 VBoxConsoleWnd::
-VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
+VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
                 Qt::WFlags aFlags)
-    : QMainWindow (aParent, aName, aFlags)
+    : QMainWindow (aParent, aFlags)
     , mMainMenu (0)
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , dbgStatisticsAction (NULL)
@@ -158,7 +138,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* default application icon (will change to the VM-specific icon in
      * openView()) */
-    setIcon (QPixmap (":/ico40x01.png"));
+    setWindowIcon (QIcon (":/ico40x01.png"));
 
     /* ensure status bar is created */
     new QIStatusBar (this);
@@ -168,113 +148,108 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     /* a group for all actions that are enabled only when the VM is running.
      * Note that only actions whose enabled state depends exclusively on the
      * execution state of the VM are added to this group. */
-    mRunningActions = new Q3ActionGroup (this);
+    mRunningActions = new QActionGroup (this);
     mRunningActions->setExclusive (false);
 
     /* a group for all actions that are enabled when the VM is running or
      * paused. Note that only actions whose enabled state depends exclusively
      * on the execution state of the VM are added to this group. */
-    mRunningOrPausedActions = new Q3ActionGroup (this);
+    mRunningOrPausedActions = new QActionGroup (this);
     mRunningOrPausedActions->setExclusive (false);
 
     /* VM menu actions */
 
-    vmFullscreenAction = new QAction (this, "vmFullscreenAction");
-    vmFullscreenAction->setIconSet (
+    vmFullscreenAction = new QAction (this);
+    vmFullscreenAction->setIcon (
         VBoxGlobal::iconSet (":/fullscreen_16px.png", ":/fullscreen_disabled_16px.png"));
-    vmFullscreenAction->setToggleAction (true);
+    vmFullscreenAction->setCheckable (true);
 
-    vmSeamlessAction = new QAction (this, "vmSeamlessAction");
-    vmSeamlessAction->setIconSet (
+    vmSeamlessAction = new QAction (this);
+    vmSeamlessAction->setIcon (
         VBoxGlobal::iconSet (":/nw_16px.png", ":/nw_disabled_16px.png"));
-    vmSeamlessAction->setToggleAction (true);
+    vmSeamlessAction->setCheckable (true);
 
-    vmAutoresizeGuestAction = new QAction (mRunningActions, "vmAutoresizeGuestAction");
-    vmAutoresizeGuestAction->setIconSet (
+    vmAutoresizeGuestAction = new QAction (mRunningActions);
+    vmAutoresizeGuestAction->setIcon (
         VBoxGlobal::iconSet (":/auto_resize_on_16px.png", ":/auto_resize_on_disabled_16px.png"));
-    vmAutoresizeGuestAction->setToggleAction (true);
+    vmAutoresizeGuestAction->setCheckable (true);
     vmAutoresizeGuestAction->setEnabled (false);
 
-    vmAdjustWindowAction = new QAction (this, "vmAdjustWindowAction");
-    vmAdjustWindowAction->setIconSet (
+    vmAdjustWindowAction = new QAction (this);
+    vmAdjustWindowAction->setIcon (
         VBoxGlobal::iconSet (":/adjust_win_size_16px.png",
                              ":/adjust_win_size_disabled_16px.png"));
 
-    vmTypeCADAction = new QAction (mRunningActions, "vmTypeCADAction");
-    vmTypeCADAction->setIconSet (VBoxGlobal::iconSet (":/hostkey_16px.png",
+    vmTypeCADAction = new QAction (mRunningActions);
+    vmTypeCADAction->setIcon (VBoxGlobal::iconSet (":/hostkey_16px.png",
                                                       ":/hostkey_disabled_16px.png"));
 
 #if defined(Q_WS_X11)
-    vmTypeCABSAction = new QAction (mRunningActions, "vmTypeCABSAction");
-    vmTypeCABSAction->setIconSet (VBoxGlobal::iconSet (":/hostkey_16px.png",
+    vmTypeCABSAction = new QAction (mRunningActions);
+    vmTypeCABSAction->setIcon (VBoxGlobal::iconSet (":/hostkey_16px.png",
                                                        ":/hostkey_disabled_16px.png"));
 #endif
 
-    vmResetAction = new QAction (mRunningActions, "vmResetAction");
-    vmResetAction->setIconSet (VBoxGlobal::iconSet (":/reset_16px.png",
+    vmResetAction = new QAction (mRunningActions);
+    vmResetAction->setIcon (VBoxGlobal::iconSet (":/reset_16px.png",
                                                     ":/reset_disabled_16px.png"));
 
-    vmPauseAction = new QAction (this, "vmPauseAction");
-    vmPauseAction->setIconSet (VBoxGlobal::iconSet (":/pause_16px.png"));
-    vmPauseAction->setToggleAction (true);
+    vmPauseAction = new QAction (this);
+    vmPauseAction->setIcon (VBoxGlobal::iconSet (":/pause_16px.png"));
+    vmPauseAction->setCheckable (true);
 
-    vmACPIShutdownAction = new QAction (mRunningActions, "vmACPIShutdownAction");
-    vmACPIShutdownAction->setIconSet (
+    vmACPIShutdownAction = new QAction (mRunningActions);
+    vmACPIShutdownAction->setIcon (
         VBoxGlobal::iconSet (":/acpi_16px.png", ":/acpi_disabled_16px.png"));
 
-    vmCloseAction = new QAction (this, "vmCloseAction");
-    vmCloseAction->setIconSet (VBoxGlobal::iconSet (":/exit_16px.png"));
+    vmCloseAction = new QAction (this);
+    vmCloseAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
 
-    vmTakeSnapshotAction = new QAction (mRunningOrPausedActions, "vmTakeSnapshotAction");
-    vmTakeSnapshotAction->setIconSet (VBoxGlobal::iconSet (
+    vmTakeSnapshotAction = new QAction (mRunningOrPausedActions);
+    vmTakeSnapshotAction->setIcon (VBoxGlobal::iconSet (
         ":/take_snapshot_16px.png", ":/take_snapshot_dis_16px.png"));
 
-    vmShowInformationDlgAction = new QAction (this, "vmShowInformationDlgAction");
-    vmShowInformationDlgAction->setIconSet (VBoxGlobal::iconSet (
+    vmShowInformationDlgAction = new QAction (this);
+    vmShowInformationDlgAction->setIcon (VBoxGlobal::iconSet (
         ":/description_16px.png", ":/description_disabled_16px.png"));
 
-    vmDisableMouseIntegrAction = new QAction (this, "vmDisableMouseIntegrAction");
-    vmDisableMouseIntegrAction->setIconSet (VBoxGlobal::iconSet (
+    vmDisableMouseIntegrAction = new QAction (this);
+    vmDisableMouseIntegrAction->setIcon (VBoxGlobal::iconSet (
         ":/mouse_can_seamless_16px.png", ":/mouse_can_seamless_disabled_16px.png"));
-    vmDisableMouseIntegrAction->setToggleAction (true);
+    vmDisableMouseIntegrAction->setCheckable (true);
 
     /* Devices menu actions */
 
-    devicesMountFloppyImageAction = new QAction (mRunningOrPausedActions,
-                                                 "devicesMountFloppyImageAction");
+    devicesMountFloppyImageAction = new QAction (mRunningOrPausedActions);
 
-    devicesUnmountFloppyAction = new QAction (this, "devicesUnmountFloppyAction");
-    devicesUnmountFloppyAction->setIconSet (VBoxGlobal::iconSet (":/fd_unmount_16px.png",
+    devicesUnmountFloppyAction = new QAction (this);
+    devicesUnmountFloppyAction->setIcon (VBoxGlobal::iconSet (":/fd_unmount_16px.png",
                                                                  ":/fd_unmount_dis_16px.png"));
 
-    devicesMountDVDImageAction = new QAction (mRunningOrPausedActions,
-                                              "devicesMountISOImageAction");
+    devicesMountDVDImageAction = new QAction (mRunningOrPausedActions);
 
-    devicesUnmountDVDAction = new QAction (this, "devicesUnmountDVDAction");
-    devicesUnmountDVDAction->setIconSet (VBoxGlobal::iconSet (":/cd_unmount_16px.png",
+    devicesUnmountDVDAction = new QAction (this);
+    devicesUnmountDVDAction->setIcon (VBoxGlobal::iconSet (":/cd_unmount_16px.png",
                                                               ":/cd_unmount_dis_16px.png"));
 
-    devicesSFDialogAction = new QAction (mRunningOrPausedActions,
-                                         "devicesSFDialogAction");
-    devicesSFDialogAction->setIconSet (VBoxGlobal::iconSet (":/shared_folder_16px.png",
+    devicesSFDialogAction = new QAction (mRunningOrPausedActions);
+    devicesSFDialogAction->setIcon (VBoxGlobal::iconSet (":/shared_folder_16px.png",
                                                             ":/shared_folder_disabled_16px.png"));
 
-    devicesSwitchVrdpAction = new QAction (mRunningOrPausedActions,
-                                           "devicesSwitchVrdpAction");
-    devicesSwitchVrdpAction->setIconSet (VBoxGlobal::iconSet (":/vrdp_16px.png",
+    devicesSwitchVrdpAction = new QAction (mRunningOrPausedActions);
+    devicesSwitchVrdpAction->setIcon (VBoxGlobal::iconSet (":/vrdp_16px.png",
                                                               ":/vrdp_disabled_16px.png"));
-    devicesSwitchVrdpAction->setToggleAction (true);
+    devicesSwitchVrdpAction->setCheckable (true);
 
-    devicesInstallGuestToolsAction = new QAction (mRunningActions,
-                                                  "devicesInstallGuestToolsAction");
-    devicesInstallGuestToolsAction->setIconSet (VBoxGlobal::iconSet (":/guesttools_16px.png",
+    devicesInstallGuestToolsAction = new QAction (mRunningActions);
+    devicesInstallGuestToolsAction->setIcon (VBoxGlobal::iconSet (":/guesttools_16px.png",
                                                                      ":/guesttools_disabled_16px.png"));
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
     {
-        dbgStatisticsAction = new QAction (this, "dbgStatisticsAction");
-        dbgCommandLineAction = new QAction (this, "dbgCommandLineAction");
+        dbgStatisticsAction = new QAction (this);
+        dbgCommandLineAction = new QAction (this);
     }
     else
     {
@@ -285,17 +260,17 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* Help menu actions */
 
-    helpContentsAction = new QAction (this, "helpContentsAction");
-    helpContentsAction->setIconSet (VBoxGlobal::iconSet (":/help_16px.png"));
-    helpWebAction = new QAction (this, "helpWebAction");
-    helpWebAction->setIconSet (VBoxGlobal::iconSet (":/site_16px.png"));
-    helpRegisterAction = new QAction (this, "helpRegisterAction");
-    helpRegisterAction->setIconSet (VBoxGlobal::iconSet (":/register_16px.png",
+    helpContentsAction = new QAction (this);
+    helpContentsAction->setIcon (VBoxGlobal::iconSet (":/help_16px.png"));
+    helpWebAction = new QAction (this);
+    helpWebAction->setIcon (VBoxGlobal::iconSet (":/site_16px.png"));
+    helpRegisterAction = new QAction (this);
+    helpRegisterAction->setIcon (VBoxGlobal::iconSet (":/register_16px.png",
                                                          ":/register_disabled_16px.png"));
-    helpAboutAction = new QAction (this, "helpAboutAction");
-    helpAboutAction->setIconSet (VBoxGlobal::iconSet (":/about_16px.png"));
-    helpResetMessagesAction = new QAction (this, "helpResetMessagesAction");
-    helpResetMessagesAction->setIconSet (VBoxGlobal::iconSet (":/reset_16px.png"));
+    helpAboutAction = new QAction (this);
+    helpAboutAction->setIcon (VBoxGlobal::iconSet (":/about_16px.png"));
+    helpResetMessagesAction = new QAction (this);
+    helpResetMessagesAction->setIcon (VBoxGlobal::iconSet (":/reset_16px.png"));
 
     ///// Menubar ///////////////////////////////////////////////////////////
 
@@ -310,27 +285,27 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vmDisMouseIntegrMenu = new VBoxSwitchMenu (vmMenu, vmDisableMouseIntegrAction,
                                                true /* inverted toggle state */);
 
-    vmFullscreenAction->addTo (vmMenu);
-    vmSeamlessAction->addTo (vmMenu);
-    vmAdjustWindowAction->addTo (vmMenu);
-    vmAutoresizeGuestAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
-    vmDisableMouseIntegrAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
-    vmTypeCADAction->addTo (vmMenu);
+    vmMenu->addAction (vmFullscreenAction); 
+    vmMenu->addAction (vmSeamlessAction);
+    vmMenu->addAction (vmAdjustWindowAction);
+    vmMenu->addAction (vmAutoresizeGuestAction);
+    vmMenu->addSeparator();
+    vmMenu->addAction (vmDisableMouseIntegrAction);
+    vmMenu->addSeparator();
+    vmMenu->addAction (vmTypeCADAction);
 #if defined(Q_WS_X11)
-    vmTypeCABSAction->addTo (vmMenu);
+    vmMenu->addAction (vmTypeCABSAction);
 #endif
-    vmMenu->insertSeparator();
-    vmTakeSnapshotAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
-    vmShowInformationDlgAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
-    vmResetAction->addTo (vmMenu);
-    vmPauseAction->addTo (vmMenu);
-    vmACPIShutdownAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
-    vmCloseAction->addTo (vmMenu);
+    vmMenu->addSeparator();
+    vmMenu->addAction (vmTakeSnapshotAction);
+    vmMenu->addSeparator();
+    vmMenu->addAction (vmShowInformationDlgAction);
+    vmMenu->addSeparator();
+    vmMenu->addAction (vmResetAction);
+    vmMenu->addAction (vmPauseAction);
+    vmMenu->addAction (vmACPIShutdownAction);
+    vmMenu->addSeparator();
+    vmMenu->addAction (vmCloseAction);
 
     menuBar()->insertItem (QString::null, vmMenu, vmMenuId);
     mMainMenu->insertItem (QString::null, vmMenu, vmMenuId);
@@ -349,30 +324,30 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     devicesMenu->insertItem (VBoxGlobal::iconSet (":/cd_16px.png", ":/cd_disabled_16px.png"),
         QString::null, devicesMountDVDMenu, devicesMountDVDMenuId);
-    devicesUnmountDVDAction->addTo (devicesMenu);
-    devicesMenu->insertSeparator();
+    devicesMenu->addAction (devicesUnmountDVDAction);
+    devicesMenu->addSeparator();
 
     devicesMenu->insertItem (VBoxGlobal::iconSet (":/fd_16px.png", ":/fd_disabled_16px.png"),
         QString::null, devicesMountFloppyMenu, devicesMountFloppyMenuId);
-    devicesUnmountFloppyAction->addTo (devicesMenu);
-    devicesMenu->insertSeparator();
+    devicesMenu->addAction (devicesUnmountFloppyAction);
+    devicesMenu->addSeparator();
 
     devicesMenu->insertItem (VBoxGlobal::iconSet (":/nw_16px.png", ":/nw_disabled_16px.png"),
         QString::null, devicesNetworkMenu, devicesNetworkMenuId);
-    devicesMenu->insertSeparator();
+    devicesMenu->addSeparator();
 
     devicesMenu->insertItem (VBoxGlobal::iconSet (":/usb_16px.png", ":/usb_disabled_16px.png"),
         QString::null, devicesUSBMenu, devicesUSBMenuId);
     devicesUSBMenuSeparatorId = devicesMenu->insertSeparator();
 
-    devicesSFDialogAction->addTo (devicesMenu);
+    devicesMenu->addAction (devicesSFDialogAction);
     devicesSFMenuSeparatorId = devicesMenu->insertSeparator();
-    devicesSFDialogAction->addTo (devicesSFMenu);
+    devicesMenu->addAction (devicesSFDialogAction);
 
-    devicesSwitchVrdpAction->addTo (devicesMenu);
+    devicesMenu->addAction (devicesSwitchVrdpAction);
     devicesVRDPMenuSeparatorId = devicesMenu->insertSeparator();
 
-    devicesInstallGuestToolsAction->addTo (devicesMenu);
+    devicesMenu->addAction (devicesInstallGuestToolsAction);
 
     menuBar()->insertItem (QString::null, devicesMenu, devicesMenuId);
     mMainMenu->insertItem (QString::null, devicesMenu, devicesMenuId);
@@ -387,8 +362,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     if (vboxGlobal().isDebuggerEnabled())
     {
         dbgMenu = new QMenu (this);
-        dbgStatisticsAction->addTo (dbgMenu);
-        dbgCommandLineAction->addTo (dbgMenu);
+        dbgMenu->addAction (dbgStatisticsAction);
+        dbgMenu->addAction (dbgCommandLineAction);
         menuBar()->insertItem (QString::null, dbgMenu, dbgMenuId);
         mMainMenu->insertItem (QString::null, dbgMenu, dbgMenuId);
     }
@@ -400,58 +375,68 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     QMenu *helpMenu = new QMenu (this);
 
-    helpContentsAction->addTo (helpMenu);
-    helpWebAction->addTo( helpMenu );
-    helpMenu->insertSeparator();
+    helpMenu->addAction (helpContentsAction);
+    helpMenu->addAction (helpWebAction);
+    helpMenu->addSeparator();
 #ifdef VBOX_WITH_REGISTRATION
-    helpRegisterAction->addTo (helpMenu);
+    helpMenu->addAction (helpRegisterAction);
     helpRegisterAction->setEnabled (vboxGlobal().virtualBox().
         GetExtraData (VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
 #endif
-    helpAboutAction->addTo( helpMenu );
-    helpMenu->insertSeparator();
-    helpResetMessagesAction->addTo (helpMenu);
+    helpMenu->addAction (helpAboutAction);
+    helpMenu->addSeparator();
+    helpMenu->addAction (helpResetMessagesAction);
 
     menuBar()->insertItem( QString::null, helpMenu, helpMenuId );
     mMainMenu->insertItem (QString::null, helpMenu, helpMenuId);
 
     ///// Status bar ////////////////////////////////////////////////////////
 
-    Q3HBox *indicatorBox = new Q3HBox (0, "indicatorBox");
-    indicatorBox->setSpacing (5);
+    QWidget *indicatorBox = new QWidget ();
+    QHBoxLayout *indicatorBoxHLayout = new QHBoxLayout (indicatorBox);
+    indicatorBoxHLayout->setContentsMargins (0, 0, 0, 0);
+    indicatorBoxHLayout->setSpacing (5);
     /* i/o devices */
-    hd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
+    hd_light = new QIStateIndicator (KDeviceActivity_Idle);
     hd_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/hd_16px.png"));
     hd_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/hd_read_16px.png"));
     hd_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/hd_write_16px.png"));
     hd_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/hd_disabled_16px.png"));
-    cd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
+    indicatorBoxHLayout->addWidget (hd_light);
+    cd_light = new QIStateIndicator (KDeviceActivity_Idle);
     cd_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/cd_16px.png"));
     cd_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/cd_read_16px.png"));
     cd_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/cd_write_16px.png"));
     cd_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/cd_disabled_16px.png"));
-    fd_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
+    indicatorBoxHLayout->addWidget (cd_light);
+    fd_light = new QIStateIndicator (KDeviceActivity_Idle);
     fd_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/fd_16px.png"));
     fd_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/fd_read_16px.png"));
     fd_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/fd_write_16px.png"));
     fd_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/fd_disabled_16px.png"));
-    net_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
+    indicatorBoxHLayout->addWidget (fd_light);
+    net_light = new QIStateIndicator (KDeviceActivity_Idle);
     net_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/nw_16px.png"));
     net_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/nw_read_16px.png"));
     net_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/nw_write_16px.png"));
     net_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/nw_disabled_16px.png"));
-    usb_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
+    indicatorBoxHLayout->addWidget (net_light);
+    usb_light = new QIStateIndicator (KDeviceActivity_Idle);
     usb_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/usb_16px.png"));
     usb_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/usb_read_16px.png"));
     usb_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/usb_write_16px.png"));
     usb_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/usb_disabled_16px.png"));
-    sf_light = new QIStateIndicator (KDeviceActivity_Idle, indicatorBox);
+    indicatorBoxHLayout->addWidget (usb_light);
+    sf_light = new QIStateIndicator (KDeviceActivity_Idle);
     sf_light->setStateIcon (KDeviceActivity_Idle, QPixmap (":/shared_folder_16px.png"));
     sf_light->setStateIcon (KDeviceActivity_Reading, QPixmap (":/shared_folder_read_16px.png"));
     sf_light->setStateIcon (KDeviceActivity_Writing, QPixmap (":/shared_folder_write_16px.png"));
     sf_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/shared_folder_disabled_16px.png"));
+    indicatorBoxHLayout->addWidget (sf_light);
 
-    (new Q3Frame (indicatorBox))->setFrameStyle (Q3Frame::VLine | Q3Frame::Sunken);
+    QFrame *separator = new QFrame();
+    separator->setFrameStyle (QFrame::VLine | QFrame::Sunken);
+    indicatorBoxHLayout->addWidget (separator);
 
 #if 0 // do not show these indicators, information overload
     /* vrdp state */
@@ -467,30 +452,36 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 #endif
 
     /* mouse */
-    mouse_state = new QIStateIndicator (0, indicatorBox);
+    mouse_state = new QIStateIndicator (0);
     mouse_state->setStateIcon (0, QPixmap (":/mouse_disabled_16px.png"));
     mouse_state->setStateIcon (1, QPixmap (":/mouse_16px.png"));
     mouse_state->setStateIcon (2, QPixmap (":/mouse_seamless_16px.png"));
     mouse_state->setStateIcon (3, QPixmap (":/mouse_can_seamless_16px.png"));
     mouse_state->setStateIcon (4, QPixmap (":/mouse_can_seamless_uncaptured_16px.png"));
+    indicatorBoxHLayout->addWidget (mouse_state);
     /* host key */
-    hostkey_hbox = new Q3HBox (indicatorBox, "hostkey_hbox");
-    hostkey_hbox->setSpacing (3);
-    hostkey_state = new QIStateIndicator (0, hostkey_hbox);
+    hostkey_hbox = new QWidget();
+    QHBoxLayout *hostkeyHBoxLayout = new QHBoxLayout (hostkey_hbox);
+    hostkeyHBoxLayout->setContentsMargins (0, 0, 0, 0);
+    hostkeyHBoxLayout->setSpacing (3);
+    indicatorBoxHLayout->addWidget (hostkey_hbox);
+
+    hostkey_state = new QIStateIndicator (0);
     hostkey_state->setStateIcon (0, QPixmap (":/hostkey_16px.png"));
     hostkey_state->setStateIcon (1, QPixmap (":/hostkey_captured_16px.png"));
     hostkey_state->setStateIcon (2, QPixmap (":/hostkey_pressed_16px.png"));
     hostkey_state->setStateIcon (3, QPixmap (":/hostkey_captured_pressed_16px.png"));
-    hostkey_name = new QLabel (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey()),
-                               hostkey_hbox, "hostkey_name");
+    hostkeyHBoxLayout->addWidget (hostkey_state);
+    hostkey_name = new QLabel (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey()));
+    hostkeyHBoxLayout->addWidget (hostkey_name);
     /* add to statusbar */
-    statusBar()->addWidget (indicatorBox, 0, true);
+    statusBar()->addPermanentWidget (indicatorBox, 0);
 
     /////////////////////////////////////////////////////////////////////////
 
     languageChange();
 
-    setCaption (caption_prefix);
+    setWindowTitle (caption_prefix);
 
     ///// Connections ///////////////////////////////////////////////////////
 
@@ -656,24 +647,27 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     if (!centralWidget())
     {
-        setCentralWidget (new QWidget (this, "centralWidget"));
-        Q3GridLayout *pMainLayout = new Q3GridLayout(centralWidget(), 3, 3, 0, 0);
+        setCentralWidget (new QWidget (this));
+        QGridLayout *pMainLayout = new QGridLayout(centralWidget());
+        pMainLayout->setContentsMargins (0, 0, 0, 0);
+        pMainLayout->setSpacing (0);
+
         mShiftingSpacerLeft = new QSpacerItem (0, 0,
-                                               QSizePolicy::Fixed,
-                                               QSizePolicy::Fixed);
+                                               QSizePolicy::Preferred,
+                                               QSizePolicy::Preferred);
         mShiftingSpacerTop = new QSpacerItem (0, 0,
-                                              QSizePolicy::Fixed,
-                                              QSizePolicy::Fixed);
+                                              QSizePolicy::Preferred,
+                                              QSizePolicy::Preferred);
         mShiftingSpacerRight = new QSpacerItem (0, 0,
-                                                QSizePolicy::Fixed,
-                                                QSizePolicy::Fixed);
+                                                QSizePolicy::Preferred,
+                                                QSizePolicy::Preferred);
         mShiftingSpacerBottom = new QSpacerItem (0, 0,
-                                                 QSizePolicy::Fixed,
-                                                 QSizePolicy::Fixed);
-        pMainLayout->addItem(mShiftingSpacerLeft, 1, 0);
-        pMainLayout->addMultiCell(mShiftingSpacerTop, 0, 0, 0, 2);
-        pMainLayout->addItem(mShiftingSpacerRight, 1, 2);
-        pMainLayout->addMultiCell(mShiftingSpacerBottom, 2, 2, 0, 2);
+                                                 QSizePolicy::Preferred,
+                                                 QSizePolicy::Preferred);
+        pMainLayout->addItem (mShiftingSpacerTop, 0, 0, 1, -1);
+        pMainLayout->addItem (mShiftingSpacerLeft, 1, 0);
+        pMainLayout->addItem (mShiftingSpacerRight, 1, 2);
+        pMainLayout->addItem (mShiftingSpacerBottom, 2, 0, 1, -1);
     }
 
     vmPauseAction->setChecked (false);
@@ -688,14 +682,14 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     activateUICustomizations();
 
-    static_cast<Q3GridLayout*>(centralWidget()->layout())->addWidget(console, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
+    static_cast<QGridLayout*>(centralWidget()->layout())->addWidget(console, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
 
     CMachine cmachine = csession.GetMachine();
 
     /* Set the VM-specific application icon */
     /* Not on Mac OS X. The dock icon is handled below. */
 #ifndef Q_WS_MAC
-    setIcon (vboxGlobal().vmGuestOSTypeIcon (cmachine.GetOSTypeId()));
+    setWindowIcon (vboxGlobal().vmGuestOSTypeIcon (cmachine.GetOSTypeId()));
 #endif
 
     /* restore the position of the window and some options */
@@ -802,7 +796,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     /* start an idle timer that will update device lighths */
     connect (idle_timer, SIGNAL (timeout()), SLOT (updateDeviceLights()));
-    idle_timer->start (50, false);
+    idle_timer->start (50);
 
     connect (console, SIGNAL (mouseStateChanged (int)),
              this, SLOT (updateMouseState (int)));
@@ -1009,7 +1003,7 @@ void VBoxConsoleWnd::closeView()
 
     console->detach();
 
-    centralWidget()->layout()->remove( console );
+    centralWidget()->layout()->removeWidget (console);
     delete console;
     console = 0;
     csession.Close();
@@ -1133,7 +1127,7 @@ void VBoxConsoleWnd::popupMainMenu (bool aCenter)
     }
 
     mMainMenu->popup (pos);
-    mMainMenu->setActiveWindow();
+    mMainMenu->activateWindow();
     mMainMenu->setActiveItem (0);
 }
 
@@ -1176,7 +1170,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         case StatusTipEvent::Type:
         {
             StatusTipEvent *ev = (StatusTipEvent*) e;
-            statusBar()->message (ev->mTip);
+            statusBar()->showMessage (ev->mTip);
             break;
         }
         default:
@@ -1253,13 +1247,13 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
             dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
             /* make the Discard checkbox invisible if there are no snapshots */
-            dlg.cbDiscardCurState->setShown ((cmachine.GetSnapshotCount() > 0));
+            dlg.cbDiscardCurState->setVisible ((cmachine.GetSnapshotCount() > 0));
 
             if (machine_state != KMachineState_Stuck)
             {
                 /* read the last user's choice for the given VM */
                 QStringList lastAction =
-                    QStringList::split (',', cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction));
+                    cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction).split (',');
                 AssertWrapperOk (cmachine);
                 if (lastAction [0] == kPowerOff)
                     dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
@@ -1341,7 +1335,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                         success = true;
 
                         /* discard the current state if requested */
-                        if (dlg.cbDiscardCurState->isShown() &&
+                        if (dlg.cbDiscardCurState->isVisible() &&
                             dlg.cbDiscardCurState->isChecked())
                         {
                             CProgress progress = cconsole.DiscardCurrentState();
@@ -1611,12 +1605,12 @@ void VBoxConsoleWnd::languageChange()
     /* status bar widgets */
 
 #if 0
-    QToolTip::add (autoresize_state,
+    autoresize_state->setToolTip (
         tr ("Indicates whether the guest display auto-resize function is On "
             "(<img src=:/auto_resize_on_16px.png/>) or Off (<img src=:/auto_resize_off_16px.png/>). "
             "Note that this function requires Guest Additions to be installed in the guest OS."));
 #endif
-    QToolTip::add (mouse_state,
+    mouse_state->setToolTip (
         tr ("Indicates whether the host mouse pointer is captured by the guest OS:<br>"
             "<nobr><img src=:/mouse_disabled_16px.png/>&nbsp;&nbsp;pointer is not captured</nobr><br>"
             "<nobr><img src=:/mouse_16px.png/>&nbsp;&nbsp;pointer is captured</nobr><br>"
@@ -1624,10 +1618,10 @@ void VBoxConsoleWnd::languageChange()
             "<nobr><img src=:/mouse_can_seamless_16px.png/>&nbsp;&nbsp;MI is Off, pointer is captured</nobr><br>"
             "<nobr><img src=:/mouse_can_seamless_uncaptured_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr><br>"
             "Note that the mouse integration feature requires Guest Additions to be installed in the guest OS."));
-    QToolTip::add (hostkey_state,
+    hostkey_state->setToolTip (
         tr ("Indicates whether the keyboard is captured by the guest OS "
             "(<img src=:/hostkey_captured_16px.png/>) or not (<img src=:/hostkey_16px.png/>)."));
-    QToolTip::add (hostkey_name,
+    hostkey_name->setToolTip (
         tr ("Shows the currently assigned Host key.<br>"
             "This key, when pressed alone, toggles the the keyboard and mouse "
             "capture state. It can also be used in combination with other keys "
@@ -1655,9 +1649,9 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             CSnapshot snapshot = cmachine.GetCurrentSnapshot();
             snapshotName = " (" + snapshot.GetName() + ")";
         }
-        setCaption (cmachine.GetName() + snapshotName +
-                    " [" + vboxGlobal().toString (machine_state) + "] - " +
-                    caption_prefix);
+        setWindowTitle (cmachine.GetName() + snapshotName +
+                        " [" + vboxGlobal().toString (machine_state) + "] - " +
+                        caption_prefix);
 //#ifdef Q_WS_MAC
 //        SetWindowTitleWithCFString (reinterpret_cast <WindowPtr> (this->winId()), CFSTR("sfds"));
 //SetWindowAlternateTitle
@@ -1705,7 +1699,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             default:
                 AssertMsgFailed (("Invalid floppy drive state: %d\n", state));
         }
-        QToolTip::add (fd_light, tip.arg (name));
+        fd_light->setToolTip (tip.arg (name));
     }
     if (element & DVDStuff)
     {
@@ -1749,7 +1743,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             default:
                 AssertMsgFailed (("Invalid DVD drive state: %d\n", state));
         }
-        QToolTip::add (cd_light, tip.arg (name));
+        cd_light->setToolTip (tip.arg (name));
     }
     if (element & HardDiskStuff)
     {
@@ -1773,7 +1767,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         if (!hasDisks)
             data += tr ("<br><nobr><b>No hard disks attached</b></nobr>",
                         "HDD tooltip");
-        QToolTip::add (hd_light, tip.arg (data));
+        hd_light->setToolTip (tip.arg (data));
         hd_light->setState (hasDisks ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
     if (element & NetworkStuff)
@@ -1813,7 +1807,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             info = tr ("<br><nobr><b>All network adapters are disabled</b></nobr>",
                        "Network adapters tooltip");
 
-        QToolTip::add (net_light, ttip.arg (info));
+        net_light->setToolTip (ttip.arg (info));
     }
     if (element & USBStuff)
     {
@@ -1850,7 +1844,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                            "USB device tooltip");
             }
 
-            QToolTip::add (usb_light, ttip.arg (info));
+            usb_light->setToolTip (ttip.arg (info));
         }
     }
     if (element & VRDPStuff)
@@ -1871,7 +1865,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                               );
             if (vrdpsrv.GetEnabled())
                 tip += tr ("<hr>VRDP Server is listening on port %1").arg (vrdpsrv.GetPort());
-            QToolTip::add (vrdp_state, tip);
+            vrdp_state->setToolTip (tip);
 #endif
         }
     }
@@ -1901,18 +1895,18 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             sfs.insert (sf.GetName(), sf.GetHostPath());
         }
 
-        for (QMap <QString, QString>::ConstIterator it = sfs.begin();
-             it != sfs.end(); ++ it)
+        for (QMap<QString, QString>::const_iterator it = sfs.constBegin(); 
+             it != sfs.constEnd(); ++it)
         {
             /* select slashes depending on the OS type */
             if (VBoxGlobal::isDOSType (cconsole.GetGuest().GetOSTypeId()))
                 data += QString ("<tr><td><nobr><b>\\\\vboxsvr\\%1</b></nobr></td>"
                                  "<td><nobr>%2</nobr></td>")
-                    .arg (it.key(), it.data());
+                    .arg (it.key(), it.value());
             else
                 data += QString ("<tr><td><nobr><b>%1</b></nobr></td>"
                                  "<td><nobr>%2</nobr></td></tr>")
-                    .arg (it.key(), it.data());
+                    .arg (it.key(), it.value());
         }
 
         if (sfs.count() == 0)
@@ -1922,7 +1916,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             data = QString ("<br><table border=0 cellspacing=0 cellpadding=0 "
                             "width=100%>%1</table>").arg (data);
 
-        QToolTip::add (sf_light, tip.arg (data));
+        sf_light->setToolTip (tip.arg (data));
     }
     if (element & PauseAction)
     {
@@ -2008,7 +2002,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         /* Take the toggle hot key from the menu item. */
         QString hotKey = aSeamless ? vmSeamlessAction->text() :
                                      vmFullscreenAction->text();
-        hotKey = QStringList::split ('\t', hotKey) [1];
+        hotKey = hotKey.split ('\t')[1];
         Assert (!hotKey.isEmpty());
 
         /* Show the info message. */
@@ -2093,12 +2087,11 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #endif
 
         /* Hide all but the central widget containing the console view. */
-        QObjectList list = queryList (NULL, NULL, false, false);
-        foreach (QObject *obj, list)
+        QList<QWidget *> list = findChildren<QWidget *>();
+        foreach (QWidget *w, list)
         {
-            if (obj->isWidgetType() && obj != centralWidget())
+            if (w != centralWidget())
             {
-                QWidget *w = (QWidget *) obj;
                 if (!w->isHidden())
                 {
                     w->hide();
@@ -2175,10 +2168,10 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         connect (console, SIGNAL (resizeHintDone()), this, SLOT (onExitFullscreen()));
 
         /* Reset the shifting spacer. */
-        mShiftingSpacerLeft->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        mShiftingSpacerTop->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        mShiftingSpacerRight->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        mShiftingSpacerBottom->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
+        mShiftingSpacerLeft->changeSize (0, 0, QSizePolicy::Preferred, QSizePolicy::Preferred);
+        mShiftingSpacerTop->changeSize (0, 0, QSizePolicy::Preferred, QSizePolicy::Preferred);
+        mShiftingSpacerRight->changeSize (0, 0, QSizePolicy::Preferred, QSizePolicy::Preferred);
+        mShiftingSpacerBottom->changeSize (0, 0, QSizePolicy::Preferred, QSizePolicy::Preferred);
 
         /* Restore the previous scroll-view minimum size before the exiting
          * fullscreen. Required for correct scroll-view and guest display
@@ -2439,7 +2432,7 @@ void VBoxConsoleWnd::vmTakeSnapshot()
     {
         /* Check the current snapshot name */
         QString name = index.GetName();
-        int pos = regExp.search (name);
+        int pos = regExp.indexIn (name);
         if (pos != -1)
             maxSnapShotIndex = regExp.cap (1).toInt() > maxSnapShotIndex ?
                                regExp.cap (1).toInt() : maxSnapShotIndex;
@@ -2453,7 +2446,7 @@ void VBoxConsoleWnd::vmTakeSnapshot()
         CConsole cconsole = csession.GetConsole();
 
         CProgress progress =
-            cconsole.TakeSnapshot (dlg.leName->text().stripWhiteSpace(),
+            cconsole.TakeSnapshot (dlg.leName->text().trimmed(),
                                    dlg.txeDescription->text());
 
         if (cconsole.isOk())
@@ -2630,7 +2623,7 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
             QString path = en.GetNext().GetFilePath();
             /* compare the name part ignoring the file case*/
             QString fn = QFileInfo (path).fileName();
-            if (RTPathCompare (name.utf8(), fn.utf8()) == 0)
+            if (RTPathCompare (name.toUtf8().constData(), fn.toUtf8().constData()) == 0)
                 return installGuestAdditionsFrom (path);
         }
         /* Download required image: */
@@ -2641,7 +2634,7 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
             QString url = QString ("http://www.virtualbox.org/download/%1/")
                                    .arg (vbox.GetVersion().remove ("_OSE")) + name;
             QString target = QDir (vboxGlobal().virtualBox().GetHomeFolder())
-                                   .absFilePath (name);
+                                   .absoluteFilePath (name);
 
             new VBoxDownloaderWgt (statusBar(), devicesInstallGuestToolsAction,
                                    url, target);
@@ -2789,14 +2782,14 @@ void VBoxConsoleWnd::prepareFloppyMenu()
     }
 
     if (devicesMountFloppyMenu->count() > 0)
-        devicesMountFloppyMenu->insertSeparator();
-    devicesMountFloppyImageAction->addTo (devicesMountFloppyMenu);
+        devicesMountFloppyMenu->addSeparator();
+    devicesMountFloppyMenu->addAction (devicesMountFloppyImageAction);
 
     /* if shown as a context menu */
     if (devicesMenu->itemParameter (devicesMountFloppyMenuId))
     {
-        devicesMountFloppyMenu->insertSeparator();
-        devicesUnmountFloppyAction->addTo (devicesMountFloppyMenu);
+        devicesMountFloppyMenu->addSeparator();
+        devicesMountFloppyMenu->addAction (devicesUnmountFloppyAction);
     }
 }
 
@@ -2835,15 +2828,15 @@ void VBoxConsoleWnd::prepareDVDMenu()
     }
 
     if (devicesMountDVDMenu->count() > 0)
-        devicesMountDVDMenu->insertSeparator();
-    devicesMountDVDImageAction->addTo (devicesMountDVDMenu);
+        devicesMountDVDMenu->addSeparator();
+    devicesMountDVDMenu->addAction (devicesMountDVDImageAction);
 
     /* if shown as a context menu */
     
     if (devicesMenu->itemParameter (devicesMountDVDMenuId))
     {
-        devicesMountDVDMenu->insertSeparator();
-        devicesUnmountDVDAction->addTo (devicesMountDVDMenu);
+        devicesMountDVDMenu->addSeparator();
+        devicesMountDVDMenu->addAction (devicesUnmountDVDAction);
     }
 }
 
@@ -2903,7 +2896,7 @@ void VBoxConsoleWnd::statusTipChanged (const QString & /*aMes*/)
 void VBoxConsoleWnd::clearStatusBar()
 {
     if (statusBarChangedInside)
-        statusBar()->clear();
+        statusBar()->clearMessage();
 }
 
 /**

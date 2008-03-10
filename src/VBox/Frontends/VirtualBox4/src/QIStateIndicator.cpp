@@ -37,9 +37,7 @@
  *  @param aState
  *      the initial indicator state
  */
-QIStateIndicator::QIStateIndicator (int aState,
-                                    QWidget *aParent)
-    : QFrame (aParent)
+QIStateIndicator::QIStateIndicator (int aState)
 //    : QFrame (aParent, aName, aFlags | Qt::WStaticContents | Qt::WMouseNoMask)
 {
     mState = aState;
