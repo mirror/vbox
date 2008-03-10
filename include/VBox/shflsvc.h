@@ -480,7 +480,7 @@ typedef struct _VBoxSFMapFolder
      * Case senstive flag
      */
     HGCMFunctionParameter fCaseSensitive;
-    
+
 } VBoxSFMapFolder;
 
 /** Number of parameters */
