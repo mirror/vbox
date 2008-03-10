@@ -1467,29 +1467,22 @@ int vboxClipboardMain(void)
     int rc;
     LogFlowFunc(("\n"));
 
-    TRACE;
     rc = vboxClipboardCreateWindow();
     if (VBOX_FAILURE(rc))
         return rc;
 
-    TRACE;
     rc = RTThreadCreate(&g_ctx.thread, vboxClipboardThread, 0, 0, RTTHREADTYPE_IO,
                         RTTHREADFLAGS_WAITABLE, "SHCLIP");
     AssertRCReturn(rc, rc);
     /* Set up a timer to poll the host clipboard */
-    TRACE;
     XtAppAddTimeOut(g_ctx.appContext, 200 /* ms */, vboxClipboardTimerProc, 0);
 
-    TRACE;
     XtAppMainLoop(g_ctx.appContext);
-    TRACE;
     g_ctx.formatList.clear();
-    TRACE;
     XtDestroyApplicationContext(g_ctx.appContext);
     /* Set the termination signal. */
     RTSemEventSignal(g_ctx.terminating);
     LogFlowFunc(("returning %d\n", rc));
-    TRACE;
     return rc;
 }
 
