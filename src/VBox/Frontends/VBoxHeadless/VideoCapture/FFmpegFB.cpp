@@ -25,6 +25,7 @@
 #include <iprt/assert.h>
 #include <VBox/log.h>
 #include <png.h>
+#include <iprt/stream.h>
 
 // external constructor for dynamic loading
 /////////////////////////////////////////////////////////////////////////////
@@ -74,6 +75,7 @@ extern "C" DECLEXPORT(HRESULT) VBoxRegisterFFmpegFB(ULONG width,
  */
 FFmpegFB::FFmpegFB(ULONG width, ULONG height, ULONG bitrate,
                    com::Bstr filename) :
+    mfUrlOpen(false),
     mBitRate(bitrate),
     mPixelFormat(FramebufferPixelFormat_Opaque),
     mBitsPerPixel(0),
@@ -130,28 +132,31 @@ FFmpegFB::~FFmpegFB()
     LogFlow(("Destroying FFmpegFB object %p\n", this));
     if (mpFormatContext != 0)
     {
-        /* Dummy update to make sure we get all the frame (timing). */
-        BOOL dummy;
-        NotifyUpdate(0, 0, 0, 0, &dummy);
-        /* Write the last pending frame before exiting */
-        int rc = do_rgb_to_yuv_conversion();
-        if (rc == S_OK)
-            do_encoding_and_write();
+        if (mfUrlOpen)
+        {
+            /* Dummy update to make sure we get all the frame (timing). */
+            BOOL dummy;
+            NotifyUpdate(0, 0, 0, 0, &dummy);
+            /* Write the last pending frame before exiting */
+            int rc = do_rgb_to_yuv_conversion();
+            if (rc == S_OK)
+                do_encoding_and_write();
 #if 1
-        /* Add another 10 seconds. */
-        for (int i = 10*25; i > 0; i--)
-            do_encoding_and_write();
+            /* Add another 10 seconds. */
+            for (int i = 10*25; i > 0; i--)
+                do_encoding_and_write();
 #endif
-        /* write a png file of the last frame */
-        write_png();
-        avcodec_close(mpStream->codec);
-        av_write_trailer(mpFormatContext);
-        /* free the streams */
-        for(int i = 0; i < mpFormatContext->nb_streams; i++) {
-            av_freep(&mpFormatContext->streams[i]->codec);
-            av_freep(&mpFormatContext->streams[i]);
+            /* write a png file of the last frame */
+            write_png();
+            avcodec_close(mpStream->codec);
+            av_write_trailer(mpFormatContext);
+            /* free the streams */
+            for(int i = 0; i < mpFormatContext->nb_streams; i++) {
+                av_freep(&mpFormatContext->streams[i]->codec);
+                av_freep(&mpFormatContext->streams[i]);
+            }
+            url_fclose(&mpFormatContext->pb);
         }
-        url_fclose(&mpFormatContext->pb);
         av_free(mpFormatContext);
     }
     RTCritSectDelete(&mCritSect);
@@ -781,6 +786,7 @@ HRESULT FFmpegFB::open_output_file()
     int rcUrlFopen = url_fopen(&mpFormatContext->pb,
                                szFileName, URL_WRONLY);
     AssertReturn(rcUrlFopen >= 0, E_UNEXPECTED);
+    mfUrlOpen = true;
     av_write_header(mpFormatContext);
     return S_OK;
 }

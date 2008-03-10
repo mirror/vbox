@@ -108,6 +108,8 @@ public:
     STDMETHOD(SetVisibleRegion)(BYTE *rectangles, ULONG count);
 
 private:
+    /** true if url_fopen actually succeeded */
+    bool mfUrlOpen;
     /** Guest framebuffer width */
     ULONG mGuestWidth;
     /** Guest framebuffer height */
