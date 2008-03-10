@@ -963,6 +963,32 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz)
 
 
 /**
+ * Performs a case sensitive string compare between two UTF-8 strings.
+ *
+ * Encoding errors are ignored by the current implementation. So, the only
+ * difference between this and the CRT strcmp function is the handling of
+ * NULL arguments.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second UTF-8 string. Null is allowed.
+ */
+RTDECL(int) RTStrCmp(const char *psz1, const char *psz2)
+{
+    if (psz1 == psz2)
+        return 0;
+    if (!psz1)
+        return -1;
+    if (!psz2)
+        return 1;
+
+    return strcmp(psz1, psz2);
+}
+
+
+/**
  * Performs a case insensitive string compare between two UTF-8 strings.
  *
  * This is a simplified compare, as only the simplified lower/upper case folding
@@ -972,11 +998,18 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz)
  * @returns < 0 if the first string less than the second string.
  * @returns 0 if the first string identical to the second string.
  * @returns > 0 if the first string greater than the second string.
- * @param   psz1        First UTF-8 string.
- * @param   psz2        Second UTF-8 string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second UTF-8 string. Null is allowed.
  */
 RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
 {
+    if (psz1 == psz2)
+        return 0;
+    if (!psz1)
+        return -1;
+    if (!psz2)
+        return 1;
+
     /** @todo implement proper UTF-8 case-insensitive string comparison. */
 #ifdef RT_OS_WINDOWS
     return stricmp(psz1, psz2);

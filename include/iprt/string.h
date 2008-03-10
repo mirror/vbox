@@ -1082,6 +1082,21 @@ RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBase, int8_t *pi8);
 RTDECL(int8_t) RTStrToInt8(const char *pszValue);
 
 /**
+ * Performs a case sensitive string compare between two UTF-8 strings.
+ *
+ * Encoding errors are ignored by the current implementation. So, the only
+ * difference between this and the CRT strcmp function is the handling of
+ * NULL arguments.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second UTF-8 string. Null is allowed.
+ */
+RTDECL(int) RTStrCmp(const char *psz1, const char *psz2);
+
+/**
  * Performs a case insensitive string compare between two UTF-8 strings.
  *
  * This is a simplified compare, as only the simplified lower/upper case folding
@@ -1091,8 +1106,8 @@ RTDECL(int8_t) RTStrToInt8(const char *pszValue);
  * @returns < 0 if the first string less than the second string.
  * @returns 0 if the first string identical to the second string.
  * @returns > 0 if the first string greater than the second string.
- * @param   psz1        First UTF-8 string.
- * @param   psz2        Second UTF-8 string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second UTF-8 string. Null is allowed.
  */
 RTDECL(int) RTStrICmp(const char *psz1, const char *psz2);
 
