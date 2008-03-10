@@ -53,10 +53,10 @@
 RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, unsigned cchRealPath)
 {
     /*
-     * Convert to UCS2, call Win32 APIs, convert back.
+     * Convert to UTF-16, call Win32 APIs, convert back.
      */
     PRTUTF16 pwszPath;
-    int rc = RTStrUtf8ToUcs2(&pwszPath, pszPath);
+    int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (!RT_SUCCESS(rc))
         return (rc);
 
@@ -68,7 +68,7 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, unsigned cchRealP
         /* Check that it exists. (Use RTPathAbs() to just resolve the name.) */
         DWORD dwAttr = GetFileAttributesW(wsz);
         if (dwAttr != INVALID_FILE_ATTRIBUTES)
-            rc = RTStrUcs2ToUtf8Ex(&pszRealPath, cchRealPath, (PRTUTF16)&wsz[0]);
+            rc = RTUtf16ToUtf8Ex((PRTUTF16)&wsz[0], RTSTR_MAX, &pszRealPath, cchRealPath, NULL);
         else
             rc = RTErrConvertFromWin32(GetLastError());
     }
@@ -77,7 +77,7 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, unsigned cchRealP
     else
         rc = VERR_FILENAME_TOO_LONG;
 
-    RTStrUcs2Free(pwszPath);
+    RTUtf16Free(pwszPath);
 
     return rc;
 }
@@ -94,24 +94,24 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, unsigned cchRealP
 RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath)
 {
     /*
-     * Convert to UCS2, call Win32 API, convert back.
+     * Convert to UTF-16, call Win32 API, convert back.
      */
-    LPWSTR lpwPath;
-    int rc = RTStrUtf8ToUcs2(&lpwPath, pszPath);
+    LPWSTR pwszPath;
+    int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (!RT_SUCCESS(rc))
         return (rc);
 
-    LPWSTR lpFile;
-    RTUCS2 ucsz[RTPATH_MAX];
-    rc = GetFullPathNameW(lpwPath, ELEMENTS(ucsz), &ucsz[0], &lpFile);
-    if (rc > 0 && rc < ELEMENTS(ucsz))
-        rc = RTStrUcs2ToUtf8Ex(&pszAbsPath, cchAbsPath, &ucsz[0]);
+    LPWSTR pwszFile; /* Ignored */
+    RTUTF16 wsz[RTPATH_MAX];
+    rc = GetFullPathNameW(pwszPath, RT_ELEMENTS(wsz), &wsz[0], &pwszFile);
+    if (rc > 0 && rc < RT_ELEMENTS(wsz))
+        rc = RTUtf16ToUtf8Ex(&wsz[0], RTSTR_MAX, &pszAbsPath, cchAbsPath, NULL);
     else if (rc <= 0)
         rc = RTErrConvertFromWin32(GetLastError());
     else
         rc = VERR_FILENAME_TOO_LONG;
 
-    RTStrUcs2Free(lpwPath);
+    RTUtf16Free(pwszPath);
 
     return rc;
 }
@@ -164,25 +164,26 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
  */
 RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath)
 {
-    RTUCS2  ucszPath[RTPATH_MAX];
+    RTUTF16 wszPath[RTPATH_MAX];
     DWORD   dwAttr;
 
     /*
      * There are multiple definitions for what WE think of as user home...
      */
-    if (    !GetEnvironmentVariableW(L"HOME", &ucszPath[0], RTPATH_MAX)
-        ||  (dwAttr = GetFileAttributesW(&ucszPath[0])) == INVALID_FILE_ATTRIBUTES
+    if (    !GetEnvironmentVariableW(L"HOME", &wszPath[0], RTPATH_MAX)
+        ||  (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
         ||  !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
     {
-        if (    !GetEnvironmentVariableW(L"USERPROFILE", &ucszPath[0], RTPATH_MAX)
-            ||  (dwAttr = GetFileAttributesW(&ucszPath[0])) == INVALID_FILE_ATTRIBUTES
+        if (    !GetEnvironmentVariableW(L"USERPROFILE", &wszPath[0], RTPATH_MAX)
+            ||  (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
             ||  !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
         {
-            if (!GetEnvironmentVariableW(L"HOMEDRIVE", &ucszPath[0], RTPATH_MAX))
+            /* %HOMEDRIVE%%HOMEPATH% */
+            if (!GetEnvironmentVariableW(L"HOMEDRIVE", &wszPath[0], RTPATH_MAX))
                 return VERR_PATH_NOT_FOUND;
-            PRTUCS2 pucsz = &ucszPath[RTStrUcs2Len(&ucszPath[0])];
-            if (    !GetEnvironmentVariableW(L"HOMEPATH", &ucszPath[0], RTPATH_MAX)
-                ||  (dwAttr = GetFileAttributesW(&ucszPath[0])) == INVALID_FILE_ATTRIBUTES
+            size_t const cwc = RTUtf16Len(&wszPath[0]);
+            if (    !GetEnvironmentVariableW(L"HOMEPATH", &wszPath[cwc], RTPATH_MAX - cwc)
+                ||  (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
                 ||  !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
                 return VERR_PATH_NOT_FOUND;
         }
@@ -191,7 +192,7 @@ RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath)
     /*
      * Convert and return.
      */
-    return RTStrUcs2ToUtf8Ex(&pszPath, cchPath, &ucszPath[0]);
+    return RTStrUcs2ToUtf8Ex(&pszPath, cchPath, &wszPath[0]);
 }
 
 
@@ -222,17 +223,17 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
      */
     WIN32_FILE_ATTRIBUTE_DATA Data;
 #ifndef RT_DONT_CONVERT_FILENAMES
-    PRTUCS2 puszPath;
-    int rc = RTStrUtf8ToUcs2(&puszPath, pszPath);
+    PRTUTF16 pwszPath;
+    int rc = RTStrUtf8ToUcs2(&pwszPath, pszPath);
     if (RT_FAILURE(rc))
         return rc;
-    if (!GetFileAttributesExW(puszPath, GetFileExInfoStandard, &Data))
+    if (!GetFileAttributesExW(pwszPath, GetFileExInfoStandard, &Data))
     {
         rc = RTErrConvertFromWin32(GetLastError());
-        RTStrUcs2Free(puszPath);
+        RTUtf16Free(pwszPath);
         return rc;
     }
-    RTStrUcs2Free(puszPath);
+    RTUtf16Free(pwszPath);
 #else
     if (!GetFileAttributesExA(pszPath, GetFileExInfoStandard, &Data))
         return RTErrConvertFromWin32(GetLastError());
@@ -456,9 +457,9 @@ RTR3DECL(int) RTPathRename(const char *pszSrc, const char *pszDst, unsigned fRen
 
 /**
  * Checks if the path exists.
- * 
+ *
  * Symbolic links will all be attempted resolved.
- * 
+ *
  * @returns true if it exists and false if it doesn't
  * @param   pszPath     The path to check.
  */
@@ -474,13 +475,13 @@ RTDECL(bool) RTPathExists(const char *pszPath)
      * Try query file info.
      */
 #ifndef RT_DONT_CONVERT_FILENAMES
-    PRTUCS2 puszPath;
-    int rc = RTStrUtf8ToUcs2(&puszPath, pszPath);
+    PRT16UTF pwszPath;
+    int rc = RTStrUtf8ToUcs2(&pwszPath, pszPath);
     if (RT_SUCCESS(rc))
     {
-        if (GetFileAttributesW(puszPath) == INVALID_FILE_ATTRIBUTES)
+        if (GetFileAttributesW(pwszPath) == INVALID_FILE_ATTRIBUTES)
             rc = VERR_GENERAL_FAILURE;
-        RTStrUcs2Free(puszPath);
+        RTUtf16Free(pwszPath);
     }
 #else
     int rc = VINF_SUCCESS;
