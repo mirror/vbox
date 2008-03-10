@@ -630,11 +630,11 @@ check_libxslt()
 extern "C" int main(void)
 {
   printf("found version %s", LIBXSLT_DOTTED_VERSION);
-#if LIBXSLT_VERSION >= 10122
+#if LIBXSLT_VERSION >= 10117
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 1.1.22 or higher\n");
+  printf(", expected version 1.1.17 or higher\n");
   return 1;
 #endif
 }
@@ -663,11 +663,11 @@ EOF
 extern "C" int main(void)
 {
   printf("found version %s", LIBXSLT_DOTTED_VERSION);
-#if LIBXSLT_VERSION >= 10122
+#if LIBXSLT_VERSION >= 10117
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 1.1.22 or higher\n");
+  printf(", expected version 1.1.17 or higher\n");
   return 1;
 #endif
 }
