@@ -2437,17 +2437,19 @@ void VBoxGlobal::adoptLabelPixmap (QLabel *aLabel)
 {
     AssertReturnVoid (aLabel);
 
+    aLabel->setAlignment (Qt::AlignTop);
+    aLabel->setFrameShape (QFrame::Box);
+    aLabel->setFrameShadow (QFrame::Plain);
+
     const QPixmap *pix = aLabel->pixmap();
     QImage img = pix->convertToImage();
     QRgb rgbBack = img.pixel (img.width() - 1, img.height() - 1);
     QRgb rgbFrame = img.pixel (img.width() - 1, 0);
 
-    aLabel->setAlignment (Qt::AlignTop);
-
-    aLabel->setPaletteBackgroundColor (QColor (rgbBack));
-    aLabel->setFrameShadow (Q3Frame::Plain);
-    aLabel->setFrameShape (Q3Frame::Box);
-    aLabel->setPaletteForegroundColor (QColor (rgbFrame));
+    QPalette pal = aLabel->palette();
+    pal.setColor (QPalette::Window, rgbBack);
+    pal.setColor (QPalette::WindowText, rgbFrame);
+    aLabel->setPalette (pal);
 }
 
 extern const char *gVBoxLangSubDir = "/nls";
