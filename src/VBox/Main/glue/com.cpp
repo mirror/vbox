@@ -118,11 +118,11 @@ void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName)
             char *utf8IName = NULL;
             if (RT_SUCCESS (RTStrCurrentCPToUtf8 (&utf8IName, iname)))
             {
-                PRTUCS2 ucs2IName = NULL;
-                if (RT_SUCCESS (RTStrToUtf16 (utf8IName, &ucs2IName)))
+                PRTUTF16 utf16IName = NULL;
+                if (RT_SUCCESS (RTStrToUtf16 (utf8IName, &utf16IName)))
                 {
-                    *aName = SysAllocString ((OLECHAR *) ucs2IName);
-                    RTUtf16Free (ucs2IName);
+                    *aName = SysAllocString ((OLECHAR *) utf16IName);
+                    RTUtf16Free (utf16IName);
                 }
                 RTStrFree (utf8IName);
             }
