@@ -162,7 +162,7 @@ vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
 VBGLR3DECL(int) VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
                                              uint32_t *piDisplay)
 {
-    VBoxGuestWaitEventInfo waitEvent = { 0 };
+    VBoxGuestWaitEventInfo waitEvent;
     int rc;
 
 #ifndef VBOX_VBGLR3_XFREE86
@@ -173,6 +173,8 @@ VBGLR3DECL(int) VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint3
 #endif
     waitEvent.u32TimeoutIn = RT_INDEFINITE_WAIT;
     waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+    waitEvent.u32Result = VBOXGUEST_WAITEVENT_ERROR;
+    waitEvent.u32EventFlagsOut = 0;
     rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
     if (RT_SUCCESS(rc))
     {
