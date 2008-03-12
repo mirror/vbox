@@ -1,7 +1,5 @@
 /** @file
- *
- * Shared Folders:
- * Main header. Common data and function prototypes definitions.
+ * Shared Folders: Main header - Common data and function prototypes definitions.
  */
 
 /*
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __SHFL__H
-#define __SHFL__H
+#ifndef ___SHFL_H
+#define ___SHFL_H
 
 #include <VBox/err.h>
 #include <VBox/hgcmsvc.h>
@@ -48,8 +46,9 @@ typedef struct _SHFLCLIENTDATA
     /** Client flags */
     uint32_t fu32Flags;
 
-    RTUCS2   PathDelimiter;
+    RTUTF16  PathDelimiter;
 } SHFLCLIENTDATA;
 
 
-#endif /* __SHFL__H */
+#endif /* !___SHFL_H */
+

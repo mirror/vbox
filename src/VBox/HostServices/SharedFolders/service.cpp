@@ -162,7 +162,7 @@ static DECLCALLBACK(int) svcSaveState(uint32_t u32ClientID, void *pvClient, PSSM
             AssertRCReturn(rc, rc);
         }
     }
-    
+
     return VINF_SUCCESS;
 }
 
@@ -602,7 +602,7 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                         Assert(pStatusLed->u32Magic == PDMLED_MAGIC);
                         pStatusLed->Asserted.s.fWriting = pStatusLed->Actual.s.fWriting = 1;
                     }
-                    
+
                     rc = vbsfWrite (pClient, root, Handle, offset, &count, pBuffer);
                     if (pStatusLed)
                         pStatusLed->Actual.s.fWriting = 0;
@@ -771,7 +771,7 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 /* Fetch parameters. */
                 PSHFLSTRING pszMapName = (PSHFLSTRING)paParms[0].u.pointer.addr;
                 SHFLROOT    root       = (SHFLROOT)paParms[1].u.uint32;
-                RTUCS2      delimiter  = (RTUCS2)paParms[2].u.uint32;
+                RTUTF16     delimiter  = (RTUTF16)paParms[2].u.uint32;
 
                 /* Execute the function. */
                 rc = vbsfMapFolder (pClient, pszMapName, delimiter, false,  &root);
@@ -807,7 +807,7 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 /* Fetch parameters. */
                 PSHFLSTRING pszMapName = (PSHFLSTRING)paParms[0].u.pointer.addr;
                 SHFLROOT    root       = (SHFLROOT)paParms[1].u.uint32;
-                RTUCS2      delimiter  = (RTUCS2)paParms[2].u.uint32;
+                RTUTF16     delimiter  = (RTUTF16)paParms[2].u.uint32;
                 bool        fCaseSensitive = !!paParms[3].u.uint32;
 
                 /* Execute the function. */
