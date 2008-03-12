@@ -228,7 +228,7 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
                               dwFlagsAndAttributes,
                               NULL);
 #else
-    PRTUCS2 pwszFilename;
+    PRTUTF16 pwszFilename;
     rc = RTStrToUtf16(pszFilename, &pwszFilename);
     if (RT_FAILURE(rc))
         return rc;

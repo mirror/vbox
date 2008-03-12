@@ -73,14 +73,14 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
     if (!cbOutput)
     {
         cbOutput2 = cbInput * cFactor;
-        pvOutput = RTMemTmpAlloc(cbOutput2 + sizeof(RTUCS2));
+        pvOutput = RTMemTmpAlloc(cbOutput2 + sizeof(RTUTF16));
         if (!pvOutput)
             return VERR_NO_TMP_MEMORY;
     }
     else
     {
         pvOutput = *ppvOutput;
-        cbOutput2 = cbOutput - (!strcmp(pszOutputCS, "UCS-2") ? sizeof(RTUCS2) : 1);
+        cbOutput2 = cbOutput - (!strcmp(pszOutputCS, "UCS-2") ? sizeof(RTUTF16) : 1);
         if (cbOutput2 > cbOutput)
             return VERR_BUFFER_OVERFLOW;
     }
@@ -100,7 +100,7 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
         if (!*pszOutputCS)
             pszOutputCS = nl_langinfo(CODESET);
 #endif
-        iconv_t icHandle = iconv_open(pszOutputCS, pszInputCS);        
+        iconv_t icHandle = iconv_open(pszOutputCS, pszInputCS);
         if (icHandle != (iconv_t)-1)
         {
             /*
@@ -124,7 +124,7 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
                      */
                     iconv_close(icHandle);
                     if (!cbOutput || !strcmp(pszOutputCS, "UCS-2"))
-                        *(PRTUCS2)pvOutputLeft = '\0';
+                        *(PRTUTF16)pvOutputLeft = '\0';
                     else
                         *(char *)pvOutputLeft = '\0';
                     *ppvOutput = pvOutput;
