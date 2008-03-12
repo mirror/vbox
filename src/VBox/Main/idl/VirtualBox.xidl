@@ -2698,7 +2698,7 @@
       <desc>
         This setting determines whether VirtualBox will try to make use of
         the host CPU's hardware virtualization extensions such as Intel VT-x
-        and AMD SVM. Note that in case such extensions are not available,
+        and AMD-V. Note that in case such extensions are not available,
         they will not be used.
       </desc>
     </attribute>
@@ -5081,7 +5081,7 @@
         This specifies the default value for hardware virtualization
         extensions. If enabled, virtual machines will make use of
         hardware virtualization extensions such as Intel VT-x and
-        AMD SVM by default. This value can be overridden by each VM
+        AMD-V by default. This value can be overridden by each VM
         using their <link to="IMachine::HWVirtExEnabled" /> property.
       </desc>
     </attribute>
