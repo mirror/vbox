@@ -32,6 +32,7 @@ void    vbglR3GRFree(VMMDevRequestHeader *pReq);
 DECLINLINE(void) VbglHGCMParmUInt32Set(HGCMFunctionParameter *pParm, uint32_t u32)
 {
     pParm->type = VMMDevHGCMParmType_32bit;
+    pParm->u.value64 = 0; /* init unused bits to 0 */
     pParm->u.value32 = u32;
 }
 
