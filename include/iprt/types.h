@@ -1056,9 +1056,9 @@ typedef const RTUNICP  *PCRTUNICP;
  * UTF-16 character.
  * @remark  wchar_t is not usable since it's compiler defined.
  * @remark  When we use the term character we're not talking about unicode code point, but
- *          the basic unit of the string encoding. Thus cuc - count of unicode chars - means
- *          count of RTUTF16. And cch means count of the typedef 'char', which is assumed
- *          to be an octet.
+ *          the basic unit of the string encoding. Thus cwc - count of wide chars - means
+ *          count of RTUTF16; cuc - count of unicode chars - means count of RTUNICP;
+ *          and cch means count of the typedef 'char', which is assumed to be an octet.
  */
 typedef uint16_t        RTUTF16;
 /** Pointer to a UTF-16 character. */
