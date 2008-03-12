@@ -1066,22 +1066,6 @@ typedef RTUTF16        *PRTUTF16;
 /** Pointer to a const UTF-16 character. */
 typedef const RTUTF16  *PCRTUTF16;
 
-/**
- * UCS-2 character.
- * @remark wchar_t is not usable since it's compiler defined.
- * @deprecated  Use RTUTF16!
- */
-typedef RTUTF16         RTUCS2;
-/** Pointer to UCS-2 character.
- * @deprecated  Use PRTUTF16!
- */
-typedef PRTUTF16        PRTUCS2;
-/** Pointer to const UCS-2 character.
- * @deprecated  Use PCRTUTF16!
- */
-typedef PCRTUTF16       PCRTUCS2;
-
-
 
 /**
  * Wait for ever if we have to.
