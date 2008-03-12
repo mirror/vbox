@@ -531,7 +531,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                     LogRel(("Guest Additions capability report: (0x%x) "
                             "VMMDEV_GUEST_SUPPORTS_SEAMLESS: %s "
-                            "VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING: %s"
+                            "VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING: %s "
                             "VMMDEV_GUEST_SUPPORTS_GRAPHICS: %s\n",
                             guestCaps->caps,
                             guestCaps->caps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ? "yes" : "no",
@@ -562,7 +562,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                 LogRel(("Guest Additions capability report: (0x%x) "
                         "VMMDEV_GUEST_SUPPORTS_SEAMLESS: %s "
-                        "VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING: %s"
+                        "VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING: %s "
                         "VMMDEV_GUEST_SUPPORTS_GRAPHICS: %s\n",
                         pData->guestCaps,
                         pData->guestCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ? "yes" : "no",
