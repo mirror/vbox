@@ -123,7 +123,7 @@ int vbsfMappingsRemove (PSHFLSTRING pMapName)
                 {
                     Log(("vbsfMappingsRemove: trying to remove active share %ls\n", pMapName->String.ucs2));
                     return VERR_PERMISSION_DENIED;
-                }   
+                }
 
                 RTMemFree(FolderMapping[i].pFolderName);
                 RTMemFree(FolderMapping[i].pMapName);
@@ -144,7 +144,7 @@ int vbsfMappingsRemove (PSHFLSTRING pMapName)
     return VINF_SUCCESS;
 }
 
-const RTUCS2 *vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot)
+PCRTUTF16 vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot)
 {
     if (root > SHFL_MAX_MAPPINGS)
     {
@@ -270,7 +270,7 @@ static int vbsfQueryMappingIndex (PRTUTF16 utf16Name, size_t *pIndex)
     return -1;
 }
 
-int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUCS2 delimiter, bool fCaseSensitive, SHFLROOT *pRoot)
+int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 delimiter, bool fCaseSensitive, SHFLROOT *pRoot)
 {
     size_t index;
 

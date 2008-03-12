@@ -1,7 +1,5 @@
 /** @file
- *
- * Shared folders:
- * Mappings header.
+ * Shared folders: Mappings header.
  */
 
 /*
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __MAPPINGS__H
-#define __MAPPINGS__H
+#ifndef ___MAPPINGS_H
+#define ___MAPPINGS_H
 
 #include "shfl.h"
 #include <VBox/shflsvc.h>
@@ -44,11 +42,12 @@ int vbsfMappingsQuery (SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t
 int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pString);
 int vbsfMappingsQueryWritable (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWritable);
 
-int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUCS2 delimiter, bool fCaseSensitive, SHFLROOT *pRoot);
+int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 delimiter, bool fCaseSensitive, SHFLROOT *pRoot);
 int vbsfUnmapFolder (SHFLCLIENTDATA *pClient, SHFLROOT root);
 
-const RTUCS2 *vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot);
+PCRTUTF16     vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot);
 bool          vbsfIsGuestMappingCaseSensitive (SHFLROOT root);
 bool          vbsfIsHostMappingCaseSensitive (SHFLROOT root);
 
-#endif /* __MAPPINGS__H */
+#endif /* !___MAPPINGS_H */
+
