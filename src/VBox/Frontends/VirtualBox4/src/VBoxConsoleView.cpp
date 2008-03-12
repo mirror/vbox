@@ -2856,10 +2856,26 @@ void VBoxConsoleView::onStateChange (KMachineState state)
                     dsp.InvalidateAndUpdate();
                 }
             }
+            else if (mLastState == KMachineState_Starting)
+            {
+                /* Suggest an initial size. */
+                sendInitialSizeHint ();
+            }
             /* reuse the focus event handler to capture input */
             if (hasFocus())
                 focusEvent (true /* aHasFocus */);
             break;
+        }
+        case KMachineState_Stopping:
+        {
+            if (mLastSizeHint.isValid())
+            {
+                CMachine cmachine = mConsole.GetMachine();
+                QString str = QString ("%1,%2")
+                                      .arg (mLastSizeHint.width())
+                                      .arg (mLastSizeHint.height());
+                cmachine.SetExtraData (VBoxDefs::GUI_LastSizeHint, str);
+            }
         }
         default:
             break;
@@ -3562,7 +3578,48 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
         mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
+        mLastSizeHint = sz;
     }
+}
+
+ 
+/**
+ * We send an initial size hint to the VM on startup, so that it can choose
+ * an initial size which is well-readable on the host screen.
+ */
+void VBoxConsoleView::sendInitialSizeHint(void)
+{
+    CMachine cmachine = mConsole.GetMachine();
+    QString str = cmachine.GetExtraData (VBoxDefs::GUI_LastSizeHint);
+    int w = 0, h = 0;
+    bool ok = true;
+    w = str.section (',', 0, 0).toInt (&ok);
+    if (ok)
+        h = str.section (',', 1, 1).toInt (&ok);
+    QRect screen = QApplication::desktop()->screenGeometry (this);
+    if (!ok || w > screen.width() || h > screen.height()) 
+    {
+        enum { NUM_RES = 4 };
+        const int sizeList[NUM_RES][2] =
+        {
+            { 640, 480 },
+            { 800, 600 },
+            { 1024, 768 },
+            { 1280, 960 }
+        };
+        unsigned i = 0;
+
+        /* Find a size that is smaller than three quarters of the reported
+           screen geometry. */
+        while (   (i + 1 < NUM_RES)
+               && (sizeList[i + 1][0] < screen.width() * 3 / 4)
+               && (sizeList[i + 1][1] < screen.height() * 3 / 4))
+            ++i;
+        w = sizeList[i][0];
+        h = sizeList[i][1];
+    }
+    LogFlowFunc (("Will suggest %d x %d\n", w, h));
+    mConsole.GetDisplay().SetVideoModeHint (w, h, 0, 0);
 }
 
 /**
