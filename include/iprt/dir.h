@@ -174,7 +174,7 @@ typedef struct RTDIRENTRYEX
 {
     /** Full information about the object. */
     RTFSOBJINFO     Info;
-    /** The length of the short field (number of RTUCS2 chars).
+    /** The length of the short field (number of RTUTF16 entries (not chars)).
      * It is 16-bit for reasons of alignment. */
     uint16_t        cwcShortName;
     /** The short name for 8.3 compatability.
