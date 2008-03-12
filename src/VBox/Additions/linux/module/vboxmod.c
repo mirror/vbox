@@ -64,6 +64,7 @@ do { \
 #include "waitcompat.h"
 
 #include <VBox/log.h>
+#include <VBox/VBoxDev.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 
@@ -939,6 +940,29 @@ static __init int init(void)
         goto fail;
     }
     VbglGRFree(&infoReq->header);
+
+    /* Unset the graphics capability until/unless X is loaded. */
+    /** @todo check the error code once we bump the additions version.
+              For now we ignore it for compatibility with older hosts. */
+    {
+        VMMDevReqGuestCapabilities2 *vmmreqGuestCaps;
+
+        
+        rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&vmmreqGuestCaps,
+                              sizeof(VMMDevReqGuestCapabilities2),
+                              VMMDevReq_SetGuestCapabilities);
+        if (VBOX_FAILURE(rcVBox))
+        {
+            LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
+            goto fail;
+        }
+        vmmreqGuestCaps->u32OrMask = 0;
+        vmmreqGuestCaps->u32NotMask = VMMDEV_GUEST_SUPPORTS_GRAPHICS;
+        rcVBox = VbglGRPerform(&vmmreqGuestCaps->header);
+        VbglGRFree(&vmmreqGuestCaps->header);
+        if (RT_FAILURE(rcVBox))
+            goto fail;
+    }
 
     /* perform hypervisor address space reservation */
     if (vboxadd_reserve_hypervisor())
