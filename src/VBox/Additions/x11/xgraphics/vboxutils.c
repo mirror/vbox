@@ -15,6 +15,7 @@
  */
 
 #include <VBox/VBoxGuest.h>
+#include <VBox/VBoxDev.h>
 
 #include <xf86Pci.h>
 #include <Pci.h>
@@ -819,6 +820,30 @@ vboxDisableVbva(ScrnInfoPtr pScrn)
     else
         memset(pVBox->pVbvaMemory, 0, sizeof(VBVAMEMORY));
     return TRUE;
+}
+
+/**
+ * Inform VBox that we are aware of advanced graphics functions
+ * (i.e. dynamic resizing, seamless).
+ *
+ * @returns TRUE for success, FALSE for failure
+ */
+Bool
+vboxEnableGraphicsCap(void)
+{
+    return RT_SUCCESS(VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0));
+}
+
+/**
+ * Inform VBox that we are no longer aware of advanced graphics functions
+ * (i.e. dynamic resizing, seamless).
+ *
+ * @returns TRUE for success, FALSE for failure
+ */
+Bool
+vboxDisableGraphicsCap(void)
+{
+    return RT_SUCCESS(VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS));
 }
 
 /**

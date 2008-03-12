@@ -924,6 +924,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         if (vboxEnableVbva(pScrn) == TRUE)
             xf86DrvMsg(scrnIndex, X_INFO,
                       "The VBox video extensions are now enabled.\n");
+        vboxEnableGraphicsCap();
     } else
         xf86DrvMsg(scrnIndex, X_ERROR, "Failed to open the VBox system device - make sure that the VirtualBox guest additions are properly installed.  If you are not sure, try reinstalling them.\n");
     return (TRUE);
@@ -946,6 +947,7 @@ VBOXLeaveVT(int scrnIndex, int flags)
     VBOXSaveRestore(pScrn, MODE_RESTORE);
     if (pVBox->useVbva == TRUE)
         vboxDisableVbva(pScrn);
+    vboxDisableGraphicsCap();
 }
 
 static Bool
@@ -956,6 +958,7 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
 
     if (pVBox->useVbva == TRUE)
         vboxDisableVbva(pScrn);
+    vboxDisableGraphicsCap();
     if (pScrn->vtSema) {
 	VBOXSaveRestore(xf86Screens[scrnIndex], MODE_RESTORE);
 	if (pVBox->savedPal)
@@ -1074,6 +1077,7 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     if (pVBox->useVbva == TRUE)
         if (vboxEnableVbva(pScrn) != TRUE)  /* Bad but not fatal */
             pVBox->useVbva = FALSE;
+    vboxEnableGraphicsCap();
     return (TRUE);
 }
 

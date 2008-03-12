@@ -160,8 +160,10 @@ extern Bool vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBOX);
 extern void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBOX);
 
 extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
-
 extern Bool vboxDisableVbva(ScrnInfoPtr pScrn);
+
+extern Bool vboxEnableGraphicsCap(void);
+extern Bool vboxDisableGraphicsCap(void);
 
 extern Bool vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx,
                                         uint32_t *pcy, uint32_t *pcBits,
