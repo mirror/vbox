@@ -400,7 +400,7 @@ init (void)
 
         if (sizeof (struct vbsf_mount_info) > PAGE_SIZE) {
                 printk (KERN_ERR
-                        "Mount information structure is too large %u\n"
+                        "Mount information structure is too large %lu\n"
                         "Must be less than or equal to %lu\n",
                         sizeof (struct vbsf_mount_info),
                         PAGE_SIZE);
