@@ -1253,6 +1253,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevGetHeightReductionRequest);
         case VMMDevReq_ReportGuestCapabilities:
             return sizeof(VMMDevReqGuestCapabilities);
+        case VMMDevReq_SetGuestCapabilities:
+            return sizeof(VMMDevReqGuestCapabilities2);
 #ifdef VBOX_HGCM
         case VMMDevReq_HGCMConnect:
             return sizeof(VMMDevHGCMConnect);
@@ -1403,6 +1405,7 @@ VBGLR3DECL(int)     VbglR3InterruptEventWaits(void);
 VBGLR3DECL(int)     VbglR3WriteLog(const char *pch, size_t cb);
 VBGLR3DECL(int)     VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot);
 VBGLR3DECL(int)     VbglR3Daemonize(bool fNoChDir, bool fNoClose);
+VBGLR3DECL(int)     VbglR3SetGuestCaps(uint32_t u32OrMask, uint32_t u32NotMask);
 
 /** @name Shared clipboard
  * @{ */
