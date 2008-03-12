@@ -329,13 +329,13 @@ typedef struct _SHFLDIRINFO
 {
     /** Full information about the object. */
     RTFSOBJINFO     Info;
-    /** The length of the short field (number of RTUCS2 chars).
+    /** The length of the short field (number of RTUTF16 chars).
      * It is 16-bit for reasons of alignment. */
     uint16_t        cucShortName;
     /** The short name for 8.3 compatability.
      * Empty string if not available.
      */
-    RTUCS2          uszShortName[14];
+    RTUTF16         uszShortName[14];
     /** @todo malc, a description, please. */
     SHFLSTRING      name;
 } SHFLDIRINFO, *PSHFLDIRINFO;
@@ -442,7 +442,7 @@ typedef struct _VBoxSFMapFolder_Old
      */
     HGCMFunctionParameter root;
 
-    /** pointer, in: RTUCS2
+    /** pointer, in: RTUTF16
      * Path delimiter
      */
     HGCMFunctionParameter delimiter;
@@ -471,7 +471,7 @@ typedef struct _VBoxSFMapFolder
      */
     HGCMFunctionParameter root;
 
-    /** pointer, in: RTUCS2
+    /** pointer, in: RTUTF16
      * Path delimiter
      */
     HGCMFunctionParameter delimiter;
