@@ -27,14 +27,12 @@
 
 <xsl:output method = "xml" indent = "yes"/>
 
-<xsl:variable name="recentVer" select="1.2"/>
-
 <xsl:variable name="curVer" select="substring-before(/vb:VirtualBox/@version, '-')"/>
 <xsl:variable name="curVerPlat" select="substring-after(/vb:VirtualBox/@version, '-')"/>
 <xsl:variable name="curVerFull" select="/vb:VirtualBox/@version"/>
 
 <xsl:template match="/">
-  <xsl:comment> Automatically converted from version '<xsl:value-of select="$curVerFull"/>' to version '<xsl:value-of select="concat($recentVer,'-',$curVerPlat)"/>' </xsl:comment>
+  <xsl:comment> Automatically converted from version '<xsl:value-of select="$curVerFull"/>' </xsl:comment>
   <xsl:copy>
     <xsl:apply-templates select="@*|node()"/>
   </xsl:copy>
@@ -60,14 +58,8 @@ Cannot convert an unknown XML file with the root node '<xsl:value-of select="nam
  *  Forbid all unsupported VirtualBox settings versions
 -->
 <xsl:template match="/vb:VirtualBox">
-  <xsl:if test="@version=concat($recentVer,'-',$curVerPlat)">
-    <xsl:message terminate="yes">
-Cannot convert settings from version '<xsl:value-of select="@version"/>' to version '<xsl:value-of select="concat($recentVer,'-',$curVerPlat)"/>'.
-The source is already at the most recent version.
-    </xsl:message>
-  </xsl:if>
   <xsl:message terminate="yes">
-Cannot convert settings from version '<xsl:value-of select="@version"/>' to version '<xsl:value-of select="concat($recentVer,'-',$curVerPlat)"/>'.
+Cannot convert settings from version '<xsl:value-of select="@version"/>'.
 The source version is not supported.
   </xsl:message>
 </xsl:template>
@@ -91,96 +83,60 @@ The source version is not supported.
  * use the milt-step mode.
 -->
 
-<!-- @todo temporary -->
-<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='0.1']">
+<!-- 1.1 => 1.2 -->
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.1']">
   <xsl:copy>
-    <xsl:attribute name="version"><xsl:value-of select="concat('0.2','-',$curVerPlat)"/></xsl:attribute>
-    <xsl:apply-templates select="node()" mode="v0.2"/>
-  </xsl:copy>
-</xsl:template>
-<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='0.2']">
-  <xsl:copy>
-    <xsl:attribute name="version"><xsl:value-of select="concat('0.3','-',$curVerPlat)"/></xsl:attribute>
-    <xsl:apply-templates select="node()" mode="v0.3"/>
+    <xsl:attribute name="version"><xsl:value-of select="concat('1.2','-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()" mode="v1.2"/>
   </xsl:copy>
 </xsl:template>
 
-<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='0.1']/vb:Machine"
-              mode="v0.2">
-  <Machine>
-    0.2
-  </Machine>
+<!-- 1.2 => 1.3.pre -->
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.2']">
+  <xsl:copy>
+    <xsl:attribute name="version"><xsl:value-of select="concat('1.3.pre','-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()" mode="v1.3.pre"/>
+  </xsl:copy>
 </xsl:template>
 
-<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='0.2']/vb:Machine"
-              mode="v0.3">
-  <Machine>
-    0.3
-  </Machine>
-</xsl:template>
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  1.1 => 1.2
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
 
 <!--
  *  all non-root elements that are not explicitly matched are copied as is
 -->
-<xsl:template match="@*|node()[../..]" mode="v0.2">
+<xsl:template match="@*|node()[../..]" mode="v1.2">
   <xsl:copy>
-    <xsl:apply-templates select="@*|node()[../..]" mode="v0.2"/>
+    <xsl:apply-templates select="@*|node()[../..]" mode="v1.2"/>
   </xsl:copy>
 </xsl:template>
-
-<!--
- *  all non-root elements that are not explicitly matched are copied as is
--->
-<xsl:template match="@*|node()[../..]" mode="v0.3">
-  <xsl:copy>
-    <xsl:apply-templates select="@*|node()[../..]" mode="v0.3"/>
-  </xsl:copy>
-</xsl:template>
-
-<!-- @todo do 1.1 => 1.2 => current? -->
-<!--xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.1']">
-  <xsl:copy>
-    <xsl:attribute name="version"><xsl:value-of select="concat($recentVer,'-',$curVerPlat)"/></xsl:attribute>
-    <xsl:apply-templates select="node()"/>
-  </xsl:copy>
-</xsl:template-->
-
-  <!--
-<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.2"]">
-  <xsl:copy>
-    <xsl:attribute name="version"><xsl:value-of select="concat($recentVer,'-',$curVerPlat)"/></xsl:attribute>
-    <xsl:apply-templates select="node()"/>
-  </xsl:copy>
-</xsl:template>
-  -->
-
-<!--
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *  1.1 => 1.2 ???
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
--->
 
 <!--
  *  Global settings
 -->
 
-<xsl:template match="VirtualBox[substring-before(@version,'-')='1.1']/
-                     Global/DiskImageRegistry/HardDiskImages//
-                     Image">
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.1']/
+                     vb:Global/vb:DiskImageRegistry/vb:HardDiskImages//
+                     vb:Image"
+              mode="v1.2">
   <DiffHardDisk>
     <xsl:attribute name="uuid"><xsl:value-of select="@uuid"/></xsl:attribute>
     <VirtualDiskImage>
       <xsl:attribute name="filePath"><xsl:value-of select="@src"/></xsl:attribute>
     </VirtualDiskImage>
-    <xsl:apply-templates select="Image"/>
+    <xsl:apply-templates select="vb:Image"/>
   </DiffHardDisk>
 </xsl:template>
 
-<xsl:template match="VirtualBox[substring-before(@version,'-')='1.1']/
-                     Global/DiskImageRegistry">
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.1']/
+                     vb:Global/vb:DiskImageRegistry"
+              mode="v1.2">
 <DiskRegistry>
   <HardDisks>
-    <xsl:for-each select="HardDiskImages/Image">
+    <xsl:for-each select="vb:HardDiskImages/vb:Image">
       <HardDisk>
         <xsl:attribute name="uuid"><xsl:value-of select="@uuid"/></xsl:attribute>
         <xsl:attribute name="type">
@@ -193,12 +149,12 @@ The source version is not supported.
         <VirtualDiskImage>
           <xsl:attribute name="filePath"><xsl:value-of select="@src"/></xsl:attribute>
         </VirtualDiskImage>
-        <xsl:apply-templates select="Image"/>
+        <xsl:apply-templates select="vb:Image"/>
       </HardDisk>
     </xsl:for-each>
   </HardDisks>
-  <xsl:copy-of select="DVDImages"/>
-  <xsl:copy-of select="FloppyImages"/>
+  <xsl:copy-of select="vb:DVDImages"/>
+  <xsl:copy-of select="vb:FloppyImages"/>
 </DiskRegistry>
 </xsl:template>
 
@@ -206,12 +162,13 @@ The source version is not supported.
  *  Machine settings
 -->
 
-<xsl:template match="VirtualBox[substring-before(@version,'-')='1.1']/
-                     Machine//HardDisks">
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.1']/
+                     vb:Machine//vb:HardDisks"
+              mode="v1.2">
   <HardDiskAttachments>
-    <xsl:for-each select="HardDisk">
+    <xsl:for-each select="vb:HardDisk">
       <HardDiskAttachment>
-        <xsl:attribute name="hardDisk"><xsl:value-of select="Image/@uuid"/></xsl:attribute>
+        <xsl:attribute name="hardDisk"><xsl:value-of select="vb:Image/@uuid"/></xsl:attribute>
         <xsl:apply-templates select="@*"/>
       </HardDiskAttachment>
     </xsl:for-each>
@@ -220,8 +177,73 @@ The source version is not supported.
 
 <!--
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *  1.2 => current
+ *  1.2 => 1.3.pre
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 -->
+
+<!--
+ *  all non-root elements that are not explicitly matched are copied as is
+-->
+<xsl:template match="@*|node()[../..]" mode="v1.3.pre">
+  <xsl:copy>
+    <xsl:apply-templates select="@*|node()[../..]" mode="v1.3.pre"/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
+ *  Global settings 
+-->
+
+<!--
+ *  Machine settings
+-->
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.2']/
+                    vb:Machine//vb:USBController"
+              mode="v1.3.pre">
+  <xsl:copy>
+    <xsl:apply-templates select="@*|node()" mode="v1.3.pre"/>
+  </xsl:copy>
+  <SATAController enabled="false"/>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.2']/
+                     vb:Machine//vb:HardDiskAttachments/vb:HardDiskAttachment"
+              mode="v1.3.pre">
+  <HardDiskAttachment>
+    <xsl:attribute name="hardDisk"><xsl:value-of select="@hardDisk"/></xsl:attribute>
+    <xsl:attribute name="bus">
+      <xsl:choose>
+        <xsl:when test="@bus='ide0'">
+          <xsl:text>IDE</xsl:text>
+        </xsl:when>
+        <xsl:when test="@bus='ide1'">
+          <xsl:text>IDE</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:message terminate="yes">
+Value '<xsl:value-of select="@bus"/>' of 'HardDiskAttachment::bus' attribute is invalid.
+          </xsl:message>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:attribute>
+    <xsl:attribute name="channel">0</xsl:attribute>
+    <xsl:attribute name="device">
+      <xsl:choose>
+        <xsl:when test="@device='master'">
+          <xsl:text>0</xsl:text>
+        </xsl:when>
+        <xsl:when test="@device='slave'">
+          <xsl:text>1</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:message terminate="yes">
+Value '<xsl:value-of select="@device"/>' of 'HardDiskAttachment::device' attribute is invalid.
+          </xsl:message>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:attribute>
+  </HardDiskAttachment>
+</xsl:template>
 
 </xsl:stylesheet>
