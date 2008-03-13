@@ -149,24 +149,25 @@ typedef struct _VBOXRec
     size_t pointerHeaderSize;
     size_t pointerSize;
     Bool pointerOffscreen;
+    Bool useDevice;
     Bool useVbva;
     VMMDevMemory *pVMMDevMemory;
     VBVAMEMORY *pVbvaMemory;
 } VBOXRec, *VBOXPtr;
 
-extern Bool vbox_init(int scrnIndex);
+extern Bool vbox_init(int scrnIndex, VBOXPtr pVBox);
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
-extern Bool vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBOX);
-extern void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBOX);
+extern Bool vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox);
+extern void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBox);
 
 extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
 extern Bool vboxDisableVbva(ScrnInfoPtr pScrn);
 
-extern Bool vboxEnableGraphicsCap(void);
-extern Bool vboxDisableGraphicsCap(void);
+extern Bool vboxEnableGraphicsCap(VBOXPtr pVBox);
+extern Bool vboxDisableGraphicsCap(VBOXPtr pVBox);
 
 extern Bool vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx,
                                         uint32_t *pcy, uint32_t *pcBits,
-                                        uint32_t *piDisplay);
+                                        uint32_t *piDisplay, VBOXPtr pVBox);
 
 #endif /* _VBOXVIDEO_H_ */
