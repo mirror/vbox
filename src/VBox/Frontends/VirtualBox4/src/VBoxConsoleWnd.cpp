@@ -3241,12 +3241,15 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
                                            bool aSeamlessSupported)
 {
     vmAutoresizeGuestAction->setEnabled (aActive);
-    vmSeamlessAction->setEnabled (aSeamlessSupported);
-    mIsSeamlessSupported = aSeamlessSupported;
-    /* If seamless mode should be enabled then check if it is enabled
-     * currently and re-enable it if open-view procedure is finished */
-    if (vmSeamlessAction->isChecked() && mIsOpenViewFinished && aSeamlessSupported)
-        toggleFullscreenMode (true, true);
+    if (mIsSeamlessSupported != aSeamlessSupported)
+    {
+        vmSeamlessAction->setEnabled (aSeamlessSupported);
+        mIsSeamlessSupported = aSeamlessSupported;
+        /* If seamless mode should be enabled then check if it is enabled
+         * currently and re-enable it if open-view procedure is finished */
+        if (vmSeamlessAction->isOn() && mIsOpenViewFinished && aSeamlessSupported)
+            toggleFullscreenMode (true, true);
+    }
 
     /* Check the GA version only in case of additions are active */
     if (!aActive)
