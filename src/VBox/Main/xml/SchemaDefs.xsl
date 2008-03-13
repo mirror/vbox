@@ -91,63 +91,66 @@ struct SchemaDefs
 
   <!-- process include statements -->
   <xsl:for-each select="xsd:include">
-    <xsl:apply-templates select="document(@schemaLocation)/xsd:schema"/>
+    <!-- skip VirtualBox-settings-root.xsd inclusion as it is computed at runtime -->
+    <xsl:if test="not(@schemaLocation='VirtualBox-settings-root.xsd')">
+      <xsl:apply-templates select="document(@schemaLocation)/xsd:schema"/>
+    </xsl:if>
   </xsl:for-each>
 
   <xsl:call-template name="defineEnumMember">
-      <xsl:with-param name="member" select="'        MinGuestRAM'"/>
-      <xsl:with-param name="select" select="
-        xsd:complexType[@name='TMemory']/xsd:attribute[@name='RAMSize']//xsd:minInclusive/@value
-      "/>
+    <xsl:with-param name="member" select="'        MinGuestRAM'"/>
+    <xsl:with-param name="select" select="
+      xsd:complexType[@name='TMemory']/xsd:attribute[@name='RAMSize']//xsd:minInclusive/@value
+    "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
-      <xsl:with-param name="member" select="'        MaxGuestRAM'"/>
-      <xsl:with-param name="select" select="
-        xsd:complexType[@name='TMemory']/xsd:attribute[@name='RAMSize']//xsd:maxInclusive/@value
-      "/>
+    <xsl:with-param name="member" select="'        MaxGuestRAM'"/>
+    <xsl:with-param name="select" select="
+      xsd:complexType[@name='TMemory']/xsd:attribute[@name='RAMSize']//xsd:maxInclusive/@value
+    "/>
   </xsl:call-template>
 
   <xsl:call-template name="defineEnumMember">
-      <xsl:with-param name="member" select="'        MinGuestVRAM'"/>
-      <xsl:with-param name="select" select="
-        xsd:complexType[@name='TDisplay']/xsd:attribute[@name='VRAMSize']//xsd:minInclusive/@value
-      "/>
+    <xsl:with-param name="member" select="'        MinGuestVRAM'"/>
+    <xsl:with-param name="select" select="
+      xsd:complexType[@name='TDisplay']/xsd:attribute[@name='VRAMSize']//xsd:minInclusive/@value
+    "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
-      <xsl:with-param name="member" select="'        MaxGuestVRAM'"/>
-      <xsl:with-param name="select" select="
-        xsd:complexType[@name='TDisplay']/xsd:attribute[@name='VRAMSize']//xsd:maxInclusive/@value
-      "/>
+    <xsl:with-param name="member" select="'        MaxGuestVRAM'"/>
+    <xsl:with-param name="select" select="
+      xsd:complexType[@name='TDisplay']/xsd:attribute[@name='VRAMSize']//xsd:maxInclusive/@value
+    "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
-      <xsl:with-param name="member" select="'        MaxGuestMonitors'"/>
-      <xsl:with-param name="select" select="
-        xsd:complexType[@name='TDisplay']/xsd:attribute[@name='MonitorCount']//xsd:maxInclusive/@value
-      "/>
+    <xsl:with-param name="member" select="'        MaxGuestMonitors'"/>
+    <xsl:with-param name="select" select="
+      xsd:complexType[@name='TDisplay']/xsd:attribute[@name='MonitorCount']//xsd:maxInclusive/@value
+    "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
-      <xsl:with-param name="member" select="'        NetworkAdapterCount'"/>
-      <xsl:with-param name="select" select="
-        xsd:complexType[@name='TNetworkAdapter']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
-      "/>
+    <xsl:with-param name="member" select="'        NetworkAdapterCount'"/>
+    <xsl:with-param name="select" select="
+      xsd:complexType[@name='TNetworkAdapter']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
+    "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
-      <xsl:with-param name="member" select="'        SerialPortCount'"/>
-      <xsl:with-param name="select" select="
-        xsd:complexType[@name='TUartPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
-      "/>
+    <xsl:with-param name="member" select="'        SerialPortCount'"/>
+    <xsl:with-param name="select" select="
+      xsd:complexType[@name='TUartPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
+    "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
-      <xsl:with-param name="member" select="'        ParallelPortCount'"/>
-      <xsl:with-param name="select" select="
-        xsd:complexType[@name='TLptPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
-      "/>
+    <xsl:with-param name="member" select="'        ParallelPortCount'"/>
+    <xsl:with-param name="select" select="
+      xsd:complexType[@name='TLptPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
+    "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
-      <xsl:with-param name="member" select="'        MaxBootPosition'"/>
-      <xsl:with-param name="select" select="
-        xsd:complexType[@name='TBoot']//xsd:element[@name='Order']//xsd:attribute[@name='position']//xsd:maxInclusive/@value
-      "/>
+    <xsl:with-param name="member" select="'        MaxBootPosition'"/>
+    <xsl:with-param name="select" select="
+      xsd:complexType[@name='TBoot']//xsd:element[@name='Order']//xsd:attribute[@name='position']//xsd:maxInclusive/@value
+    "/>
   </xsl:call-template>
 
 </xsl:template>

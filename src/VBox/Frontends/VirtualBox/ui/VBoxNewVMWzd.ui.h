@@ -360,7 +360,7 @@ bool VBoxNewVMWzd::constructMachine()
         if (!session.isNull())
         {
             CMachine m = session.GetMachine();
-            m.AttachHardDisk (uuidHD, KDiskControllerType_IDE0, 0);
+            m.AttachHardDisk (uuidHD, KStorageBus_IDE, 0, 0);
             if (m.isOk())
             {
                 m.SaveSettings();
@@ -371,7 +371,7 @@ bool VBoxNewVMWzd::constructMachine()
             }
             else
                 vboxProblem().cannotAttachHardDisk (this, m, uuidHD,
-                                                    KDiskControllerType_IDE0, 0);
+                                                    KStorageBus_IDE, 0, 0);
             session.Close();
         }
         if (!ok)

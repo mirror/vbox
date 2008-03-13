@@ -1059,7 +1059,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
     ComPtr<IHardDisk> hardDisk;
     Bstr filePath;
-    rc = machine->GetHardDisk(DiskControllerType_IDE0, 0, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(StorageBus_IDE, 0, 0, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         /// @todo (dmik) we temporarily use the location property to
@@ -1082,7 +1082,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hda=\"none\"\n");
     }
-    rc = machine->GetHardDisk(DiskControllerType_IDE0, 1, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(StorageBus_IDE, 0, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         /// @todo (dmik) we temporarily use the location property to
@@ -1105,7 +1105,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hdb=\"none\"\n");
     }
-    rc = machine->GetHardDisk(DiskControllerType_IDE1, 1, hardDisk.asOutParam());
+    rc = machine->GetHardDisk(StorageBus_IDE, 1, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         /// @todo (dmik) we temporarily use the location property to
@@ -4509,7 +4509,7 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hdds[0], "none") == 0)
             {
-                machine->DetachHardDisk(DiskControllerType_IDE0, 0);
+                machine->DetachHardDisk(StorageBus_IDE, 0, 0);
             }
             else
             {
@@ -4542,7 +4542,7 @@ static int handleModifyVM(int argc, char *argv[],
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, DiskControllerType_IDE0, 0));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 0, 0));
                 }
                 else
                     rc = E_FAIL;
@@ -4554,7 +4554,7 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hdds[1], "none") == 0)
             {
-                machine->DetachHardDisk(DiskControllerType_IDE0, 1);
+                machine->DetachHardDisk(StorageBus_IDE, 0, 1);
             }
             else
             {
@@ -4587,7 +4587,7 @@ static int handleModifyVM(int argc, char *argv[],
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, DiskControllerType_IDE0, 1));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 0, 1));
                 }
                 else
                     rc = E_FAIL;
@@ -4599,7 +4599,7 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hdds[2], "none") == 0)
             {
-                machine->DetachHardDisk(DiskControllerType_IDE1, 1);
+                machine->DetachHardDisk(StorageBus_IDE, 1, 1);
             }
             else
             {
@@ -4632,7 +4632,7 @@ static int handleModifyVM(int argc, char *argv[],
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, DiskControllerType_IDE1, 1));
+                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 1, 1));
                 }
                 else
                     rc = E_FAIL;

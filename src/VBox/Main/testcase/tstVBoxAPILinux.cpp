@@ -365,8 +365,9 @@ void createVM(IVirtualBox *virtualBox)
                     nsID *vdiUUID = nsnull;
                     hardDisk->GetId(&vdiUUID);
                     rc = machine->AttachHardDisk(*vdiUUID,
-                                                DiskControllerType::IDE0, // controler identifier
-                                                0);                       // device number on the controller
+                                                StorageBus::IDE, // controler identifier
+                                                0,               // channel number on the controller
+                                                0);              // device number on the controller
                     nsMemory::Free(vdiUUID);
                     if (NS_FAILED(rc))
                     {

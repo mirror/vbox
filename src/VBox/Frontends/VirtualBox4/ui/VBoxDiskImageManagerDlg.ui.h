@@ -2204,11 +2204,12 @@ void VBoxDiskImageManagerDlg::releaseDisk (QUuid aMachineId,
                 CHardDiskAttachment hda = en.GetNext();
                 if (hda.GetHardDisk().GetId() == aItemId)
                 {
-                    machine.DetachHardDisk (hda.GetController(),
-                                            hda.GetDeviceNumber());
+                    machine.DetachHardDisk (hda.GetBus(),
+                                            hda.GetChannel(),
+                                            hda.GetDevice());
                     if (!machine.isOk())
                         vboxProblem().cannotDetachHardDisk (this,
-                            machine, hda.GetController(), hda.GetDeviceNumber());
+                            machine, hda.GetBus(), hda.GetChannel(), hda.GetDevice());
                     break;
                 }
             }

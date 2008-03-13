@@ -48,22 +48,25 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (HardDisk *aHD, DiskControllerType_T aCtl, LONG aDev, BOOL aDirty);
+    HRESULT init (HardDisk *aHD, StorageBus_T aBus, LONG aChannel, LONG aDevice, BOOL aDirty);
 
     // IHardDiskAttachment properties
-    STDMETHOD(COMGETTER(HardDisk)) (IHardDisk **aHardDisk);
-    STDMETHOD(COMGETTER(Controller)) (DiskControllerType_T *aController);
-    STDMETHOD(COMGETTER(DeviceNumber)) (LONG *aDeviceNumber);
+    STDMETHOD(COMGETTER(HardDisk))   (IHardDisk **aHardDisk);
+    STDMETHOD(COMGETTER(Bus))        (StorageBus_T *aBus);
+    STDMETHOD(COMGETTER(Channel))    (LONG *aChannel);
+    STDMETHOD(COMGETTER(Device))     (LONG *aDevice);
 
     // public methods for internal purposes only
+    // (ensure there is a caller and a read or write lock before calling them!)
 
     BOOL isDirty() const { return mDirty; }
+    void setDirty (BOOL aDirty) { mDirty = aDirty; }
 
     const ComObjPtr <HardDisk> &hardDisk() const { return mHardDisk; }
-    DiskControllerType_T controller() const { return mController; }
-    LONG deviceNumber() const { return mDeviceNumber; }
+    StorageBus_T bus() const { return mBus; }
+    LONG channel() const { return mChannel; }
+    LONG device() const { return mDevice; }
 
-    /** @note Don't forget to lock this object! */
     void updateHardDisk (const ComObjPtr <HardDisk> &aHardDisk, BOOL aDirty)
     {
         mHardDisk = aHardDisk;
@@ -77,8 +80,9 @@ private:
 
     BOOL mDirty;
     ComObjPtr <HardDisk> mHardDisk;
-    DiskControllerType_T mController;
-    LONG mDeviceNumber;
+    StorageBus_T mBus;
+    LONG mChannel;
+    LONG mDevice;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION (HardDiskAttachment)

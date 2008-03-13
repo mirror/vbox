@@ -214,11 +214,14 @@ public:
         return sessionStates [s];
     }
 
-    QString toString (KDiskControllerType t) const
+    QString toString (KStorageBus t) const
     {
-        AssertMsg (!diskControllerTypes [t].isNull(), ("No text for %d", t));
-        return diskControllerTypes [t];
+        AssertMsg (!storageBuses [t].isNull(), ("No text for %d", t));
+        return storageBuses [t];
     }
+
+    QString toString (KStorageBus t, LONG c) const;
+    QString toString (KStorageBus t, LONG c, LONG d) const;
 
     QString toString (KHardDiskType t) const
     {
@@ -315,8 +318,6 @@ public:
         }
         return toString (aHD.GetType());
     }
-
-    QString toString (KDiskControllerType t, LONG d) const;
 
     QString toString (KDeviceType t) const
     {
@@ -630,13 +631,14 @@ private:
     QStringVector machineStates;
     QStringVector sessionStates;
     QStringVector deviceTypes;
-    QStringVector diskControllerTypes;
+    QStringVector storageBuses;
+    QStringVector storageBusDevices;
+    QStringVector storageBusChannels;
     QStringVector diskTypes;
     QStringVector diskStorageTypes;
     QStringVector vrdpAuthTypes;
     QStringVector portModeTypes;
     QStringVector usbFilterActionTypes;
-    QStringVector diskControllerDevices;
     QStringVector audioDriverTypes;
     QStringVector audioControllerTypes;
     QStringVector networkAdapterTypes;

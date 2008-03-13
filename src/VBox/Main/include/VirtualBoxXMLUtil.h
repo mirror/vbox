@@ -24,7 +24,7 @@
 #define VBOX_XML_NAMESPACE      "http://www.innotek.de/VirtualBox-settings"
 
 /** VirtualBox XML settings version number substring ("x.y")  */
-#define VBOX_XML_VERSION "1.2"
+#define VBOX_XML_VERSION        "1.3.pre"
 
 /** VirtualBox XML settings version platform substring */
 #if defined (RT_OS_DARWIN)
@@ -50,12 +50,12 @@
 /** VirtualBox XML settings full version string ("x.y-platform") */
 #define VBOX_XML_VERSION_FULL   VBOX_XML_VERSION "-" VBOX_XML_PLATFORM
 
-/** VirtualBox XML common settings version string */
-#define VBOX_XML_PLATFORM_COMMON  "common"
-
-/** VirtualBox XML settings schema file */
+/** VirtualBox XML settings platform-specific (main) schema file */
 #define VBOX_XML_SCHEMA         "VirtualBox-settings-" VBOX_XML_PLATFORM ".xsd"
-#define VBOX_XML_SCHEMA_COMMON  "VirtualBox-settings-" VBOX_XML_PLATFORM_COMMON ".xsd"
+/** VirtualBox XML settings common schema include file */
+#define VBOX_XML_SCHEMA_COMMON  "VirtualBox-settings-common.xsd"
+/** VirtualBox XML settings root element schema include file */
+#define VBOX_XML_SCHEMA_ROOT    "VirtualBox-settings-root.xsd"
 
 /** VirtualBox XML settings converter file */
 #define VBOX_XML_SETTINGS_CONVERTER "SettingsConverter.xsl"

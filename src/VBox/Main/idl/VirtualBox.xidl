@@ -384,18 +384,17 @@
   </enum>
 
   <enum
-    name="DiskControllerType"
-    uuid="1115b810-2ee7-4ebd-8b39-92e98c9a2b48"
+    name="StorageBus"
+    uuid="715984a5-093c-43bb-aa42-a16ed16828dd"
   >
-    <desc>
-      Disk controller type for hard disk attachments.
-    </desc>
+    <desc>Interface bus type for storage devices.</desc>
 
     <const name="Null"              value="0">
       <desc><tt>null</tt> value. Never used by the API.</desc>
     </const>
-    <const name="IDE0"              value="1"/>
-    <const name="IDE1"              value="2"/>
+
+    <const name="IDE"      value="1"/>
+    <const name="SATA"     value="2"/>
   </enum>
 
   <enum
@@ -2771,6 +2770,12 @@
       <desc>Associated audio adapter, always present.</desc>
     </attribute>
 
+    <attribute name="SATAController" type="ISATAController" readonly="yes">
+      <desc>
+        Associated SATA controller object.
+      </desc>
+    </attribute>
+
     <attribute name="settingsFilePath" type="wstring" readonly="yes">
       <desc>
         Full name of the file containing machine settings data.
@@ -3028,9 +3033,9 @@
       <desc>
 
         Attaches a virtual hard disk identified by the given UUID to the
-        given device slot of the given controller. The specified device
-        must not have another disk attached and the given hard disk must
-        not be already attached to this machine.
+        given device slot of the given channel on the given bus. The
+        specified device slot must not have another disk attached and the
+        given hard disk must not be already attached to this machine.
 
         See <link to="IHardDisk"/> for detailed information about
         attaching hard disks.
@@ -3045,11 +3050,14 @@
           commit all changed settings.</note>
 
       </desc>
-      <param name="diskID" type="uuid" dir="in">
+      <param name="id" type="uuid" dir="in">
         <desc>UUID of the hard disk to attach.</desc>
       </param>
-      <param name="controller" type="DiskControllerType" dir="in">
+      <param name="bus" type="StorageBus" dir="in">
         <desc>Controller to attach the hard disk to.</desc>
+      </param>
+      <param name="channel" type="long" dir="in">
+        <desc>Device slot to attach the hard disk to.</desc>
       </param>
       <param name="device" type="long" dir="in">
         <desc>Device slot to attach the hard disk to.</desc>
@@ -3061,8 +3069,9 @@
         Returns the hard disk attached to the
         given controller under the specified device number.
       </desc>
-      <param name="controller" type="DiskControllerType" dir="in"/>
-      <param name="deviceNumber" type="long" dir="in"/>
+      <param name="bus" type="StorageBus" dir="in"/>
+      <param name="channel" type="long" dir="in"/>
+      <param name="device" type="long" dir="in"/>
       <param name="hardDisk" type="IHardDisk" dir="return"/>
     </method>
 
@@ -3089,11 +3098,14 @@
         </note>
 
       </desc>
-      <param name="controller" type="DiskControllerType" dir="in">
-        <desc>Controller to dettach the hard disk from.</desc>
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>Bus to dettach the hard disk from.</desc>
+      </param>
+      <param name="channel" type="long" dir="in">
+        <desc>Channel number to dettach the hard disk from.</desc>
       </param>
       <param name="device" type="long" dir="in">
-        <desc>Device slot to dettach the hard disk from.</desc>
+        <desc>Device slot number to dettach the hard disk from.</desc>
       </param>
     </method>
 
@@ -5710,12 +5722,16 @@
       <desc>Harddisk object this attachment is about.</desc>
     </attribute>
 
-    <attribute name="controller" type="DiskControllerType" readonly="yes">
+    <attribute name="bus" type="StorageBus" readonly="yes">
       <desc>Disk controller ID of this attachment.</desc>
     </attribute>
 
-    <attribute name="deviceNumber" type="long" readonly="yes">
-      <desc>Device number of the attachment.</desc>
+    <attribute name="channel" type="long" readonly="yes">
+      <desc>Channel number of the attachment.</desc>
+    </attribute>
+
+    <attribute name="device" type="long" readonly="yes">
+      <desc>Device slot number of the attachment.</desc>
     </attribute>
 
   </interface>
@@ -9734,6 +9750,39 @@
           (no matter what is the reason of the termination).
         </note>
       </desc>
+    </method>
+
+  </interface>
+
+  <!--
+  // ISATAController
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+    name="ISATAController" extends="$unknown"
+    uuid="9a4b868b-1376-4533-8ef5-065b8e8cedff"
+    wsmap="managed"
+  >
+    <attribute name="enabled" type="boolean">
+      <desc>
+        Flag whether the SATA controller is present in the
+        guest system. If disabled, the virtual guest hardware will
+        not contain any SATA controller. Can only be changed when
+        the VM is powered off.
+      </desc>
+    </attribute>
+
+    <method name="GetIDEEmulationPort">
+      <desc>Gets the corresponding port number which is emulated as an IDE device.</desc>
+      <param name="devicePosition" type="long" dir="in"/>
+      <param name="portNumber" type="long" dir="return"/>
+    </method>
+
+    <method name="SetIDEEmulationPort">
+      <desc>Sets the port number which is emulated as an IDE device.</desc>
+      <param name="devicePosition" type="long" dir="in"/>
+      <param name="portNumber" type="long" dir="in"/>
     </method>
 
   </interface>

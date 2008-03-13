@@ -1758,9 +1758,9 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             CHardDiskAttachment hda = aen.GetNext();
             CHardDisk hd = hda.GetHardDisk();
             data += QString ("<br><nobr><b>%1 %2</b>: %3</nobr>")
-                .arg (vboxGlobal().toString (hda.GetController()))
-                .arg (vboxGlobal().toString (hda.GetController(),
-                                hda.GetDeviceNumber()))
+                .arg (vboxGlobal().toString (hda.GetBus(), hda.GetChannel()))
+                .arg (vboxGlobal().toString (hda.GetBus(), hda.GetChannel(),
+                                             hda.GetDevice()))
                 .arg (QDir::convertSeparators (hd.GetLocation()));
             hasDisks = true;
         }

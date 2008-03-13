@@ -1615,8 +1615,8 @@ int main(int argc, char *argv[])
              */
             Guid uuid;
             hardDisk->COMGETTER(Id)(uuid.asOutParam());
-            gMachine->DetachHardDisk(DiskControllerType_IDE0, 0);
-            gMachine->AttachHardDisk(uuid, DiskControllerType_IDE0, 0);
+            gMachine->DetachHardDisk(StorageBus_IDE, 0, 0);
+            gMachine->AttachHardDisk(uuid, StorageBus_IDE, 0, 0);
             /// @todo why is this attachment saved?
         }
         else

@@ -497,19 +497,13 @@
   <xsd:attribute name="bus" use="required">
     <xsd:simpleType>
       <xsd:restriction base="xsd:token">
-        <xsd:enumeration value="ide0"/>
-        <xsd:enumeration value="ide1"/>
+        <xsd:enumeration value="IDE"/>
+        <xsd:enumeration value="SATA"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
-  <xsd:attribute name="device" use="required">
-    <xsd:simpleType>
-      <xsd:restriction base="xsd:token">
-        <xsd:enumeration value="master"/>
-        <xsd:enumeration value="slave"/>
-      </xsd:restriction>
-    </xsd:simpleType>
-  </xsd:attribute>
+  <xsd:attribute name="channel" type="xsd:unsignedInt" use="required"/>
+  <xsd:attribute name="device" type="xsd:unsignedInt" default="0"/>
 </xsd:complexType>
 
 <xsd:complexType name="THardDiskAttachments">
@@ -659,6 +653,14 @@
   <xsd:attribute name="StatisticsUpdateInterval" type="xsd:unsignedInt" default="0"/>
 </xsd:complexType>
 
+<xsd:complexType name="TSATAController">
+  <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
+  <xsd:attribute name="IDE0MasterEmulationPort" type="xsd:unsignedInt" default="0"/>
+  <xsd:attribute name="IDE0SlaveEmulationPort" type="xsd:unsignedInt" default="1"/>
+  <xsd:attribute name="IDE1MasterEmulationPort" type="xsd:unsignedInt" default="2"/>
+  <xsd:attribute name="IDE1SlaveEmulationPort" type="xsd:unsignedInt" default="3"/>
+</xsd:complexType>
+
 <xsd:complexType name="THardware">
   <xsd:all>
     <xsd:element name="CPU" type="TCPU" minOccurs="0"/>
@@ -675,6 +677,7 @@
     <xsd:element name="DVDDrive" type="TDVDDrive"/>
     <xsd:element name="FloppyDrive" type="TFloppyDrive"/>
     <xsd:element name="USBController" type="TUSBController"/>
+    <xsd:element name="SATAController" type="TSATAController"/>
     <xsd:element name="Network" type="TNetwork">
       <xsd:unique name="THardware-Network-Adapter">
         <xsd:selector xpath="vb:Adapter"/>

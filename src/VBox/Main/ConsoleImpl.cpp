@@ -6130,46 +6130,53 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
      */
     ComPtr<IHardDisk> hardDisk;
     hrc = hda->COMGETTER(HardDisk)(hardDisk.asOutParam());                      H();
-    DiskControllerType_T enmCtl;
-    hrc = hda->COMGETTER(Controller)(&enmCtl);                                  H();
+    StorageBus_T enmBus;
+    hrc = hda->COMGETTER(Bus)(&enmBus);                                         H();
     LONG lDev;
-    hrc = hda->COMGETTER(DeviceNumber)(&lDev);                                  H();
+    hrc = hda->COMGETTER(Device)(&lDev);                                        H();
+    LONG lChannel;
+    hrc = hda->COMGETTER(Channel)(&lChannel);                                   H();
 
-    int i;
-    switch (enmCtl)
+    int iLUN;
+    switch (enmBus)
     {
-        case DiskControllerType_IDE0:
-            i = 0;
-            break;
-        case DiskControllerType_IDE1:
-            i = 2;
+        case StorageBus_IDE:
+        {
+            if (lChannel >= 2)
+            {
+                AssertMsgFailed(("invalid controller channel number: %d\n", lChannel));
+                return VERR_GENERAL_FAILURE;
+            }
+
+            if (lDev >= 2)
+            {
+                AssertMsgFailed(("invalid controller device number: %d\n", lDev));
+                return VERR_GENERAL_FAILURE;
+            }
+            iLUN = 2*lChannel + lDev;
+        }
+        break;
+        case StorageBus_SATA:
+            iLUN = lChannel;
             break;
         default:
-            AssertMsgFailed(("invalid disk controller type: %d\n", enmCtl));
+            AssertMsgFailed(("invalid disk controller type: %d\n", enmBus));
             return VERR_GENERAL_FAILURE;
     }
-
-    if (lDev < 0 || lDev >= 2)
-    {
-        AssertMsgFailed(("invalid controller device number: %d\n", lDev));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    i = i + lDev;
 
     /*
      * Is there an existing LUN? If not create it.
      * We ASSUME that this will NEVER collide with the DVD.
      */
     PCFGMNODE pCfg;
-    PCFGMNODE pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/piix3ide/0/LUN#%d/AttachedDriver/", i);
+    PCFGMNODE pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/piix3ide/0/LUN#%d/AttachedDriver/", iLUN);
     if (!pLunL1)
     {
         PCFGMNODE pInst = CFGMR3GetChild(CFGMR3GetRoot(pVM), "Devices/piix3ide/0/");
         AssertReturn(pInst, VERR_INTERNAL_ERROR);
 
         PCFGMNODE pLunL0;
-        rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%d", i);                        RC_CHECK();
+        rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%d", iLUN);                     RC_CHECK();
         rc = CFGMR3InsertString(pLunL0, "Driver",              "Block");            RC_CHECK();
         rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
         rc = CFGMR3InsertString(pCfg,   "Type",                "HardDisk");         RC_CHECK();
@@ -6247,7 +6254,7 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
 
         }
         else
-            LogFlowFunc (("LUN#%d: old leaf image '%s'\n", i, pszPath));
+            LogFlowFunc (("LUN#%d: old leaf image '%s'\n", iLUN, pszPath));
 
         MMR3HeapFree(pszPath);
         STR_FREE();
@@ -6255,7 +6262,7 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
         /*
          * Detach the driver and replace the config node.
          */
-        rc = PDMR3DeviceDetach(pVM, "piix3ide", 0, i);                              RC_CHECK();
+        rc = PDMR3DeviceDetach(pVM, "piix3ide", 0, iLUN);                           RC_CHECK();
         CFGMR3RemoveNode(pCfg);
         rc = CFGMR3InsertNode(pLunL1, "Config", &pCfg);                             RC_CHECK();
     }
@@ -6270,7 +6277,7 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
     //  the location property)
     hrc = hardDisk->COMGETTER(Location)(&str);                                  H();
     STR_CONV();
-    LogFlowFunc (("LUN#%d: leaf image '%s'\n", i, psz));
+    LogFlowFunc (("LUN#%d: leaf image '%s'\n", iLUN, psz));
     rc = CFGMR3InsertString(pCfg, "Path", psz);                                 RC_CHECK();
     STR_FREE();
     /* Create an inversed tree of parents. */
@@ -6302,7 +6309,7 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
     /*
      * Attach the new driver.
      */
-    rc = PDMR3DeviceAttach(pVM, "piix3ide", 0, i, NULL);                        RC_CHECK();
+    rc = PDMR3DeviceAttach(pVM, "piix3ide", 0, iLUN, NULL);                     RC_CHECK();
 
     LogFlowFunc (("Returns success\n"));
     return rc;

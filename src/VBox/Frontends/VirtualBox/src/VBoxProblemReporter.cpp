@@ -1065,26 +1065,29 @@ void VBoxProblemReporter::cannotCreateHardDiskImage (
 
 void VBoxProblemReporter::cannotAttachHardDisk (
     QWidget *parent, const CMachine &m, const QUuid &id,
-    KDiskControllerType ctl, LONG dev)
+    KStorageBus bus, LONG channel, LONG dev)
 {
     message (parent, Error,
         tr ("Failed to attach a hard disk image with UUID %1 "
-            "to the device slot %2 of the controller %3 of the machine <b>%4</b>.")
-            .arg (id).arg (vboxGlobal().toString (ctl, dev))
-            .arg (vboxGlobal().toString (ctl))
+            "to device slot %2 on channel %3 of the %4 bus of the machine <b>%5</b>.")
+            .arg (id)
+            .arg (vboxGlobal().toString (bus, channel, dev))
+            .arg (vboxGlobal().toString (bus, channel))
+            .arg (vboxGlobal().toString (bus))
             .arg (CMachine (m).GetName()),
         formatErrorInfo (m));
 }
 
 void VBoxProblemReporter::cannotDetachHardDisk (
     QWidget *parent, const CMachine &m,
-    KDiskControllerType ctl, LONG dev)
+    KStorageBus bus, LONG channel, LONG dev)
 {
     message (parent, Error,
         tr ("Failed to detach a hard disk image "
-            "from the device slot %1 of the controller %2 of the machine <b>%3</b>.")
-            .arg (vboxGlobal().toString (ctl, dev))
-            .arg (vboxGlobal().toString (ctl))
+            "from device slot %1 on channel %2 of the %3 bus of the machine <b>%4</b>.")
+            .arg (vboxGlobal().toString (bus, channel, dev))
+            .arg (vboxGlobal().toString (bus, channel))
+            .arg (vboxGlobal().toString (bus))
             .arg (CMachine (m).GetName()),
         formatErrorInfo (m));
 }
