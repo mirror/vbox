@@ -390,12 +390,11 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
                "VirtualBox guest additions video driver version "
                VBOX_VERSION_STRING "\n");
 
-    /* Initialise the guest library */
-    if (!vbox_init(pScrn->scrnIndex))
-        return FALSE;
-
      /* Get our private data from the ScrnInfoRec structure. */
     pVBox = VBOXGetRec(pScrn);
+
+    /* Initialise the guest library */
+    vbox_init(pScrn->scrnIndex, pVBox);
 
     /* Entity information seems to mean bus information. */
     pVBox->pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
@@ -466,7 +465,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     {
         uint32_t cx, cy, iDisplay, cBits = 24;
 
-        if (vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay))
+        if (vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay,
+                                        pVBox))
         {
             /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
             if (cBits != 16)
@@ -738,8 +738,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         if (vboxEnableVbva(pScrn) == TRUE)
             xf86DrvMsg(scrnIndex, X_INFO,
                       "The VBox video extensions are now enabled.\n");
-    } else
-        xf86DrvMsg(scrnIndex, X_ERROR, "Failed to open the VBox system device - make sure that the VirtualBox guest additions are properly installed.  If you are not sure, try reinstalling them.\n");
+    }
     return (TRUE);
 }
 

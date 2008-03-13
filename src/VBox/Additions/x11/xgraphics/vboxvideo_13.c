@@ -401,9 +401,10 @@ vbox_output_get_modes (xf86OutputPtr output)
     bool rc;
     DisplayModePtr pModes = NULL;
     ScrnInfoPtr pScrn = output->scrn;
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE;
-    rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display);
+    rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display, pVBox);
     /* @todo - check the display number once we support multiple displays. */
     if (rc && (0 != x) && (0 != y)) {
         vbox_output_add_mode(&pModes, NULL, x, y, TRUE);
@@ -651,12 +652,11 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
                "VirtualBox guest additions video driver version "
                VBOX_VERSION_STRING "\n");
 
-    /* Initialise the guest library */
-    if (!vbox_init(pScrn->scrnIndex))
-        return FALSE;
-
     /* Get our private data from the ScrnInfoRec structure. */
     pVBox = VBOXGetRec(pScrn);
+
+    /* Initialise the guest library */
+    vbox_init(pScrn->scrnIndex, pVBox);
 
     /* Entity information seems to mean bus information. */
     pVBox->pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
@@ -708,7 +708,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         uint32_t cx, cy, iDisplay, cBits = 24;
 
         /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
-        if (   vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay)
+        if (   vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay,
+                                           pVBox)
             && (cBits != 16))
             cBits = 24;
         if (!xf86SetDepthBpp(pScrn, cBits, 0, 0, Support32bppFb))
@@ -924,9 +925,8 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         if (vboxEnableVbva(pScrn) == TRUE)
             xf86DrvMsg(scrnIndex, X_INFO,
                       "The VBox video extensions are now enabled.\n");
-        vboxEnableGraphicsCap();
-    } else
-        xf86DrvMsg(scrnIndex, X_ERROR, "Failed to open the VBox system device - make sure that the VirtualBox guest additions are properly installed.  If you are not sure, try reinstalling them.\n");
+        vboxEnableGraphicsCap(pVBox);
+    }
     return (TRUE);
 }
 
@@ -947,7 +947,7 @@ VBOXLeaveVT(int scrnIndex, int flags)
     VBOXSaveRestore(pScrn, MODE_RESTORE);
     if (pVBox->useVbva == TRUE)
         vboxDisableVbva(pScrn);
-    vboxDisableGraphicsCap();
+    vboxDisableGraphicsCap(pVBox);
 }
 
 static Bool
@@ -958,7 +958,7 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
 
     if (pVBox->useVbva == TRUE)
         vboxDisableVbva(pScrn);
-    vboxDisableGraphicsCap();
+    vboxDisableGraphicsCap(pVBox);
     if (pScrn->vtSema) {
 	VBOXSaveRestore(xf86Screens[scrnIndex], MODE_RESTORE);
 	if (pVBox->savedPal)
@@ -1077,7 +1077,7 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     if (pVBox->useVbva == TRUE)
         if (vboxEnableVbva(pScrn) != TRUE)  /* Bad but not fatal */
             pVBox->useVbva = FALSE;
-    vboxEnableGraphicsCap();
+    vboxEnableGraphicsCap(pVBox);
     return (TRUE);
 }
 

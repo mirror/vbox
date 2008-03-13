@@ -314,15 +314,18 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
 }
 
 Bool
-vbox_init(int scrnIndex)
+vbox_init(int scrnIndex, VBOXPtr pVBox)
 {
     Bool rc = TRUE;
     int vrc = VbglR3Init();
     if (RT_FAILURE(vrc))
     {
-        xf86DrvMsg(scrnIndex, X_ERROR, "VbglR3Init failed rc=%d.\n", rc);
+        xf86DrvMsg(scrnIndex, X_ERROR,
+                   "Failed to initialize the VirtualBox device (rc=%d) - make sure that the VirtualBox guest additions are properly installed.  If you are not sure, try reinstalling them.  The X Window graphics drivers will run in compatibility mode.\n",
+                   vrc);
         rc = FALSE;
     }
+    pVBox->useDevice = rc;
     return rc;
 }
 
@@ -336,6 +339,8 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 
     TRACE_ENTRY();
 
+    if (!pVBox->useDevice)
+        return FALSE;
     pVBox->useVbva = FALSE;
 
     if (pVBox->reqp)
@@ -732,6 +737,8 @@ vbox_cursor_init(ScreenPtr pScreen)
     xf86CursorInfoPtr pCurs;
     Bool rc;
 
+    if (!pVBox->useDevice)
+        return FALSE;
     pVBox->pCurs = pCurs = xf86CreateCursorInfoRec();
     if (!pCurs)
         RETERROR(pScrn->scrnIndex, FALSE,
@@ -829,8 +836,10 @@ vboxDisableVbva(ScrnInfoPtr pScrn)
  * @returns TRUE for success, FALSE for failure
  */
 Bool
-vboxEnableGraphicsCap(void)
+vboxEnableGraphicsCap(VBOXPtr pVBox)
 {
+    if (!pVBox->useDevice)
+        return FALSE;
     return RT_SUCCESS(VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0));
 }
 
@@ -841,8 +850,10 @@ vboxEnableGraphicsCap(void)
  * @returns TRUE for success, FALSE for failure
  */
 Bool
-vboxDisableGraphicsCap(void)
+vboxDisableGraphicsCap(VBOXPtr pVBox)
 {
+    if (!pVBox->useDevice)
+        return FALSE;
     return RT_SUCCESS(VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS));
 }
 
@@ -859,12 +870,14 @@ vboxDisableGraphicsCap(void)
  */
 Bool
 vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
-                            uint32_t *pcBits, uint32_t *piDisplay)
+                            uint32_t *pcBits, uint32_t *piDisplay,
+                            VBOXPtr pVBox)
 {
+    if (!pVBox->useDevice)
+        return FALSE;
     int rc = VbglR3GetLastDisplayChangeRequest(pcx, pcy, pcBits, piDisplay);
     if (RT_SUCCESS(rc))
         return TRUE;
     xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to obtain the last resolution requested by the guest, rc=%d.\n", rc);
     return FALSE;
 }
-
