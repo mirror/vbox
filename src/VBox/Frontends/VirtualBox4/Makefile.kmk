@@ -19,7 +19,7 @@
 include VBoxUI.pro
 
 # Import QDesigner UI sources
-VirtualBox_QT_UISRCS := $(FORMS)
+VirtualBox_QT_UISRCS3 := $(FORMS)
 # Import translation sources
 VirtualBox_QT_TRANSLATIONS := $(TRANSLATIONS)
 
@@ -84,7 +84,8 @@ endif
 # Some default defs
 VBOX_DEFS_QT4 += QT3_SUPPORT QT_SHARED HAVE_CONFIG_H QT_NO_DEBUG
 
-VBOX_UIC4      ?= $(VBOX_PATH_QT4_BIN)/uic3
+VBOX_UIC3      ?= $(VBOX_PATH_QT4_BIN)/uic3
+VBOX_UIC4      ?= $(VBOX_PATH_QT4_BIN)/uic
 VBOX_MOC4      ?= $(VBOX_PATH_QT4_BIN)/moc
 VBOX_RCC4      ?= $(VBOX_PATH_QT4_BIN)/rcc
 VBOX_LUPDATE4  ?= $(VBOX_PATH_QT4_BIN)/lupdate
@@ -248,8 +249,27 @@ endif
 # exclude inappropriate UI content
 #
 ifndef VBOX_WITH_REGISTRATION
-VirtualBox_QT_UISRCS := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS))
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS3))
 endif
+
+
+#
+# filter ported UI content
+#
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxAboutDlg.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxAboutDlg.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxCloseVMDlg.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxCloseVMDlg.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxNewVMWzd.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxNewVMWzd.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxNewHDWzd.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxNewHDWzd.ui
+
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMFirstRunWzd.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMFirstRunWzd.ui
 
 
 #
@@ -371,6 +391,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIStateIndicator.h \
 	include/QIMessageBox.h \
 	include/QIRichLabel.h \
+	include/QIAbstractWizardFramework.h \
 	include/VBoxGlobalSettings.h \
 	include/VBoxUtils.h \
 	include/VBoxGlobal.h \
@@ -381,7 +402,12 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxConsoleView.h \
 	include/VBoxProblemReporter.h \
 	include/VBoxDownloaderWgt.h \
-	include/VBoxNetworkFramework.h
+	include/VBoxNetworkFramework.h \
+	include/VBoxAboutDlg.h \
+	include/VBoxCloseVMDlg.h \
+	include/VBoxNewVMWzd.h \
+	include/VBoxNewHDWzd.h \
+	include/VBoxVMFirstRunWzd.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -403,7 +429,7 @@ VirtualBox_QT_MOCUIHDRS = \
 # generation rules defined somewhere below!
 VirtualBox_GENSRCS = \
 	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCHDRS))), $(PATH_VirtualBox)/moc/moc_$(moc).cpp) \
-	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS))), $(PATH_VirtualBox)/ui/$(ui).cpp $(PATH_VirtualBox)/moc/moc_$(ui).cpp) \
+	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS3))), $(PATH_VirtualBox)/ui/$(ui).cpp $(PATH_VirtualBox)/moc/moc_$(ui).cpp) \
 	$(PATH_VirtualBox)/ui/vbox_image_collection.cpp
 
 # All generated headers. Note: this list MUST be in sync with Qt source
@@ -411,11 +437,12 @@ VirtualBox_GENSRCS = \
 VirtualBox_GENHDRS = \
 	$(foreach mocui,$(notdir $(basename $(VirtualBox_QT_MOCUIHDRS))), $(PATH_VirtualBox)/moc/$(mocui).moc) \
 	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCSRCS))), $(PATH_VirtualBox)/moc/$(moc).moc) \
-	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS))), $(PATH_VirtualBox)/ui/$(ui).h)
+	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS3))), $(PATH_VirtualBox)/ui/$(ui).h) \
+	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS4))), $(PATH_VirtualBox)/ui/$(ui).gen.h)
 
 # All existing .ui.h files for known .ui sources
 VirtualBox_QT_UIHDRS = \
-	$(wildcard $(addsuffix .h,$(VirtualBox_QT_UISRCS)))
+	$(wildcard $(addsuffix .h,$(VirtualBox_QT_UISRCS3)))
 
 # All header files
 VirtualBox_HEADERS = \
@@ -434,6 +461,7 @@ VirtualBox_SOURCES = \
 	src/QIStatusBar.cpp \
 	src/QIMessageBox.cpp \
 	src/QIRichLabel.cpp \
+	src/QIAbstractWizardFramework.cpp \
 	src/VBoxDefs.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxGlobal.cpp \
@@ -446,7 +474,12 @@ VirtualBox_SOURCES = \
 	src/VBoxVMListBox.cpp \
 	src/VBoxFrameBuffer.cpp \
 	src/HappyHttp.cpp \
-	src/VBoxNetworkFramework.cpp
+	src/VBoxNetworkFramework.cpp \
+	src/VBoxAboutDlg.cpp \
+	src/VBoxCloseVMDlg.cpp \
+	src/VBoxNewVMWzd.cpp \
+	src/VBoxNewHDWzd.cpp \
+	src/VBoxVMFirstRunWzd.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 VirtualBox_SOURCES += \
@@ -727,10 +760,10 @@ $(mocuiinc): $(mocuihdr)
 
 endef
 
-##  Generate a rule to create a header and source files from an UI
+##  Generate a rule to create a header and source files from an UI3
 #   definition source (.ui).
 #   @param  $uifile       UI definintion source file
-define def_qt_gen_src_ui
+define def_qt_gen_src_ui3
 
 $(eval uisrc  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).cpp)
 $(eval uihdr  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).h)
@@ -742,13 +775,13 @@ $(target)_GENHDRS_REAL += $(uihdr)
 .NOTPARALLEL: $(uihdr)
 $(uihdr): $(uifile) | $$(call DIRDEP,$(dir $(uihdr)))
 	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
-	$$(QUIET)$$(VBOX_UIC4) $(uifile) -o $$@
+	$$(QUIET)$$(VBOX_UIC3) $(uifile) -o $$@
 
 $(uisrc): $(uihdr) $(uifile) $(wildcard $(uifile).h) | $$(call DIRDEP,$(dir $(uisrc)))
 	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
-	$$(QUIET)$$(VBOX_UIC4) -impl $(uihdr) $(uifile) -o $$@
+	$$(QUIET)$$(VBOX_UIC3) -impl $(uihdr) $(uifile) -o $$@
 
-#$$(QUIET)$$(VBOX_UIC4) $(uifile) -i $(uihdr) -o $$@
+#$$(QUIET)$$(VBOX_UIC3) $(uifile) -i $(uihdr) -o $$@
 
 $(mocsrc): $(uihdr) | $$(call DIRDEP,$(dir $(mocsrc)))
 	$$(call MSG_TOOL,moc,$(target),$(uihdr),$$@)
@@ -756,6 +789,22 @@ $(mocsrc): $(uihdr) | $$(call DIRDEP,$(dir $(mocsrc)))
 		$(addprefix -D,$($(target)_DEFS)) \
 		$(addprefix -I,$($(target)_INCS)) \
 		$(uihdr) -o $$@
+
+endef
+
+##  Generate a rule to create a header and source files from an UI4
+#   definition source (.ui).
+#   @param  $uifile       UI definintion source file
+define def_qt_gen_src_ui4
+
+$(eval uihdr  := $(PATH_$(target))/ui/$(notdir $(basename $(uifile))).gen.h)
+
+$(target)_GENHDRS_REAL += $(uihdr)
+
+.NOTPARALLEL: $(uihdr)
+$(uihdr): $(uifile) | $$(call DIRDEP,$(dir $(uihdr)))
+	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
+	$$(QUIET)$$(VBOX_UIC4) $(uifile) -o $$@
 
 endef
 
@@ -791,8 +840,10 @@ $(foreach mochdr,$($(target)_QT_MOCHDRS),$(eval $(def_qt_gen_src_moc)))
 $(foreach mocsrc,$($(target)_QT_MOCSRCS),$(eval $(def_qt_gen_inc_moc)))
 # moc includes from UI headers with Q_OBJECT
 $(foreach mocuihdr,$($(target)_QT_MOCUIHDRS),$(eval $(def_qt_gen_inc_mocuihdr)))
-# UI sources
-$(foreach uifile,$($(target)_QT_UISRCS),$(eval $(def_qt_gen_src_ui)))
+# UI3 sources
+$(foreach uifile,$($(target)_QT_UISRCS3),$(eval $(def_qt_gen_src_ui3)))
+# UI4 sources
+$(foreach uifile,$($(target)_QT_UISRCS4),$(eval $(def_qt_gen_src_ui4)))
 # NLS files
 $(foreach tsfile,$($(target)_QT_TRANSLATIONS),$(eval $(def_qt_gen_nls)))
 $(foreach tsfile,$($(target)_QT_TRANSLATIONS_QT),$(eval $(def_qt_gen_nls)))
@@ -844,14 +895,26 @@ VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/vbox_image_collection.cpp
 # include generated headers in turn.
 #
 
-$(PATH_VirtualBox)/ui/VBoxDiskImageManagerDlg.cpp: \
-	$(PATH_VirtualBox)/ui/VBoxNewHDWzd.h
+$(PATH_VirtualBox)/moc/moc_VBoxAboutDlg.cpp: \
+	$(PATH_VirtualBox)/ui/VBoxAboutDlg.gen.h
+
+$(PATH_VirtualBox)/moc/moc_VBoxCloseVMDlg.cpp: \
+	$(PATH_VirtualBox)/ui/VBoxCloseVMDlg.gen.h
+
+$(PATH_VirtualBox)/moc/moc_VBoxNewVMWzd.cpp: \
+	$(PATH_VirtualBox)/ui/VBoxNewVMWzd.gen.h
+
+$(PATH_VirtualBox)/moc/moc_VBoxNewHDWzd.cpp: \
+	$(PATH_VirtualBox)/ui/VBoxNewHDWzd.gen.h
+
+$(PATH_VirtualBox)/moc/moc_VBoxVMFirstRunWzd.cpp: \
+	$(PATH_VirtualBox)/ui/VBoxVMFirstRunWzd.gen.h
 
 # Make all generated UI sources dependent on all generated headers (since they
 # may include them).  This is safer than indifidual dependencies above but
 # currently disabled, because will cause all UI sources to be rebuilt one a
 # single one changes.
-#$(patsubst %,$(PATH_VirtualBox)/ui/%.cpp,$(notdir $(basename $(VirtualBox_QT_UISRCS)))) : $(VirtualBox_GENHDRS)
+#$(patsubst %,$(PATH_VirtualBox)/ui/%.cpp,$(notdir $(basename $(VirtualBox_QT_UISRCS3)))) : $(VirtualBox_GENHDRS)
 
 
 #

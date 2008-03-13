@@ -1,146 +1,120 @@
-<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>VBoxAboutDlg</class>
-<widget class="QDialog">
-    <property name="name">
-        <cstring>VBoxAboutDlg</cstring>
-    </property>
-    <property name="geometry">
-        <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>600</width>
-            <height>400</height>
-        </rect>
-    </property>
-    <property name="sizePolicy">
-        <sizepolicy>
-            <hsizetype>1</hsizetype>
-            <vsizetype>1</vsizetype>
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-        </sizepolicy>
-    </property>
-    <property name="caption">
-        <string>VirtualBox - About</string>
-    </property>
-    <vbox>
-        <property name="name">
-            <cstring>unnamed</cstring>
+<ui version="4.0" >
+ <class>VBoxAboutDlg</class>
+ <widget class="QDialog" name="VBoxAboutDlg" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>432</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>VirtualBox - About</string>
+  </property>
+  <layout class="QVBoxLayout" >
+   <property name="spacing" >
+    <number>0</number>
+   </property>
+   <property name="leftMargin" >
+    <number>0</number>
+   </property>
+   <property name="topMargin" >
+    <number>0</number>
+   </property>
+   <property name="rightMargin" >
+    <number>0</number>
+   </property>
+   <property name="bottomMargin" >
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QLabel" name="mPictureLabel" >
+     <property name="minimumSize" >
+      <size>
+       <width>600</width>
+       <height>400</height>
+      </size>
+     </property>
+     <property name="maximumSize" >
+      <size>
+       <width>600</width>
+       <height>400</height>
+      </size>
+     </property>
+     <property name="text" >
+      <string/>
+     </property>
+     <property name="pixmap" >
+      <pixmap resource="../VirtualBox.qrc" >:/about.png</pixmap>
+     </property>
+     <property name="wordWrap" >
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" native="1" name="mTextContainer" >
+     <property name="autoFillBackground" >
+      <bool>true</bool>
+     </property>
+     <layout class="QVBoxLayout" >
+      <property name="spacing" >
+       <number>0</number>
+      </property>
+      <property name="leftMargin" >
+       <number>0</number>
+      </property>
+      <property name="topMargin" >
+       <number>0</number>
+      </property>
+      <property name="rightMargin" >
+       <number>0</number>
+      </property>
+      <property name="bottomMargin" >
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="mAboutLabel" >
+        <property name="lineWidth" >
+         <number>0</number>
         </property>
-        <property name="margin">
-            <number>0</number>
+        <property name="text" >
+         <string>&lt;qt>VirtualBox Graphical User Interface Version %1&lt;br>%2&lt;/qt></string>
         </property>
-        <property name="spacing">
-            <number>0</number>
+        <property name="alignment" >
+         <set>Qt::AlignBottom|Qt::AlignHCenter</set>
         </property>
-        <property name="resizeMode">
-            <enum>Fixed</enum>
+        <property name="wordWrap" >
+         <bool>true</bool>
         </property>
-        <widget class="QLabel">
-            <property name="name">
-                <cstring>textLabel1</cstring>
-            </property>
-            <property name="minimumSize">
-                <size>
-                    <width>600</width>
-                    <height>400</height>
-                </size>
-            </property>
-            <property name="maximumSize">
-                <size>
-                    <width>600</width>
-                    <height>400</height>
-                </size>
-            </property>
-            <property name="paletteBackgroundPixmap">
-                <pixmap>:/about.png</pixmap>
-            </property>
-            <property name="backgroundOrigin">
-                <enum>WidgetOrigin</enum>
-            </property>
-            <property name="text">
-                <string></string>
-            </property>
-        </widget>
-        <widget class="QFrame">
-            <property name="name">
-                <cstring>frame3</cstring>
-            </property>
-            <property name="paletteBackgroundPixmap">
-                <pixmap>:/about_tile.png</pixmap>
-            </property>
-            <property name="frameShape">
-                <enum>NoFrame</enum>
-            </property>
-            <property name="frameShadow">
-                <enum>Plain</enum>
-            </property>
-            <vbox>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <property name="margin">
-                    <number>0</number>
-                </property>
-                <property name="spacing">
-                    <number>0</number>
-                </property>
-                <widget class="QLabel">
-                    <property name="name">
-                        <cstring>mAboutLabel</cstring>
-                    </property>
-                    <property name="backgroundMode">
-                        <enum>PaletteBackground</enum>
-                    </property>
-                    <property name="paletteForegroundColor">
-                        <color>
-                            <red>255</red>
-                            <green>255</green>
-                            <blue>255</blue>
-                        </color>
-                    </property>
-                    <property name="backgroundOrigin">
-                        <enum>WidgetOrigin</enum>
-                    </property>
-                    <property name="lineWidth">
-                        <number>0</number>
-                    </property>
-                    <property name="text">
-                        <string>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
-%2&lt;/qt&gt;</string>
-                    </property>
-                    <property name="alignment">
-                        <set>WordBreak|AlignBottom|AlignHCenter</set>
-                    </property>
-                </widget>
-                <spacer>
-                    <property name="name">
-                        <cstring>spacer2</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                    <property name="sizeType">
-                        <enum>Expanding</enum>
-                    </property>
-                    <property name="sizeHint">
-                        <size>
-                            <width>20</width>
-                            <height>8</height>
-                        </size>
-                    </property>
-                </spacer>
-            </vbox>
-        </widget>
-    </vbox>
-</widget>
-<includes>
-    <include location="local" impldecl="in implementation">VBoxAboutDlg.ui.h</include>
-</includes>
-<functions>
-    <function>setup( const QString &amp; aVersion )</function>
-    <function>mouseReleaseEvent( QMouseEvent *aEv )</function>
-</functions>
-<pixmapinproject/>
-<layoutdefaults spacing="6" margin="11"/>
-</UI>
+       </widget>
+      </item>
+      <item>
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeType" >
+         <enum>QSizePolicy::Expanding</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>20</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11" />
+ <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
+ <resources>
+  <include location="../VirtualBox.qrc" />
+ </resources>
+ <connections/>
+</ui>

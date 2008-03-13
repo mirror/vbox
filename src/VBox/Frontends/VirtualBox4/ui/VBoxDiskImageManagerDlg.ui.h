@@ -16,6 +16,7 @@
 #include <Q3PopupMenu>
 #include <QMenuBar>
 #include <QMenuItem>
+#include <QDir>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -1948,7 +1949,7 @@ void VBoxDiskImageManagerDlg::newImage()
 {
     AssertReturnVoid (getCurrentListView() == hdsView);
 
-    VBoxNewHDWzd dlg (this, "VBoxNewHDWzd");
+    VBoxNewHDWzd dlg (this);
 
     if (dlg.exec() == QDialog::Accepted)
     {

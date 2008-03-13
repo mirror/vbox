@@ -22,7 +22,6 @@
 #include <qobject.h>
 #include <qevent.h>
 #include <q3listview.h>
-#include <q3textedit.h>
 #include <qlabel.h>
 #include <qlayout.h>
 //Added by qt3to4:
@@ -169,84 +168,6 @@ private:
         return QObject::eventFilter (aObject, aEvent);
     }
 };
-
-
-/**
- *  Simple QTextEdit subclass to return its minimumSizeHint() as sizeHint()
- *  for getting more compact layout.
- */
-class QITextEdit : public Q3TextEdit
-{
-    Q_OBJECT
-
-public:
-
-    QITextEdit (QWidget *aParent)
-        : Q3TextEdit (aParent) {}
-
-    QSize sizeHint() const
-    {
-        return minimumSizeHint();
-    }
-
-    QSize minimumSizeHint() const
-    {
-        return QSize (width(), heightForWidth (width()));
-    }
-};
-
-
-/**
- *  Simple QLabel subclass to re-query and return its sizeHint()
- *  before the widget to be shown for getting more compact layout.
- */
-class QILabel : public QLabel
-{
-    Q_OBJECT
-
-public:
-
-    QILabel (QWidget *aParent, const char *aName)
-         : QLabel (aParent, aName), mShowed (false)
-    {
-        /* setup default size policy and alignment */
-        setSizePolicy (QSizePolicy ((QSizePolicy::SizeType)1,
-                                    (QSizePolicy::SizeType)0,
-                                    0, 0,
-                                    sizePolicy().hasHeightForWidth()));
-        setAlignment (int (Qt::AlignTop));
-        /* install show-parent-widget watcher */
-        aParent->topLevelWidget()->installEventFilter (this);
-    }
-
-    QSize sizeHint() const
-    {
-        return mShowed ?
-            QSize (width(), heightForWidth (width())) : QLabel::sizeHint();
-    }
-
-private:
-
-    bool eventFilter (QObject *aObject, QEvent *aEvent)
-    {
-        switch (aEvent->type())
-        {
-            case QEvent::Show:
-            {
-                mShowed = true;
-                if (parent() && ((QWidget*)parent())->layout())
-                    ((QWidget*)parent())->layout()->activate();
-                break;
-            }
-            default:
-                break;
-        }
-        return QLabel::eventFilter (aObject, aEvent);
-    }
-
-    bool mShowed;
-};
-
 
 #ifdef Q_WS_MAC
 # undef PAGE_SIZE
