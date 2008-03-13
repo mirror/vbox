@@ -37,7 +37,7 @@
 #include <QDir>
 #ifdef Q_WS_X11
 # include <QX11Info>
-#endif 
+#endif
 
 #include <VBox/VBoxGuest.h>
 
@@ -285,7 +285,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     vmDisMouseIntegrMenu = new VBoxSwitchMenu (vmMenu, vmDisableMouseIntegrAction,
                                                true /* inverted toggle state */);
 
-    vmMenu->addAction (vmFullscreenAction); 
+    vmMenu->addAction (vmFullscreenAction);
     vmMenu->addAction (vmSeamlessAction);
     vmMenu->addAction (vmAdjustWindowAction);
     vmMenu->addAction (vmAutoresizeGuestAction);
@@ -877,8 +877,7 @@ void VBoxConsoleWnd::finalizeOpenView()
 
     if (mIsFirstTimeStarted)
     {
-        VBoxVMFirstRunWzd wzd (this, "VBoxVMFirstRunWzd");
-        wzd.setup (cmachine);
+        VBoxVMFirstRunWzd wzd (cmachine, this);
         wzd.exec();
 
         /* Remove GUI_FirstRun extra data key from the machine settings
@@ -1242,12 +1241,12 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
             success = false;
 
             CMachine cmachine = csession.GetMachine();
-            VBoxCloseVMDlg dlg (this, "VBoxCloseVMDlg");
+            VBoxCloseVMDlg dlg (this);
             QString typeId = cmachine.GetOSTypeId();
             dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
             /* make the Discard checkbox invisible if there are no snapshots */
-            dlg.cbDiscardCurState->setVisible ((cmachine.GetSnapshotCount() > 0));
+            dlg.mCbDiscardCurState->setVisible ((cmachine.GetSnapshotCount() > 0));
 
             if (machine_state != KMachineState_Stuck)
             {
@@ -1256,22 +1255,22 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                     cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction).split (',');
                 AssertWrapperOk (cmachine);
                 if (lastAction [0] == kPowerOff)
-                    dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
+                    dlg.mRbPowerOff->setChecked (true);
                 else if (lastAction [0] == kShutdown)
-                    dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbShutdown));
+                    dlg.mRbShutdown->setChecked (true);
                 else if (lastAction [0] == kSave)
-                    dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbSave));
+                    dlg.mRbSave->setChecked (true);
                 else /* the default is ACPI Shutdown */
-                    dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbShutdown));
-                dlg.cbDiscardCurState->setChecked (
+                    dlg.mRbShutdown->setChecked (true);
+                dlg.mCbDiscardCurState->setChecked (
                     lastAction.count() > 1 && lastAction [1] == kDiscardCurState);
             }
             else
             {
                 /* The stuck VM can only be powered off; disable anything
                  * else and choose PowerOff */
-                dlg.rbSave->setEnabled (false);
-                dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
+                dlg.mRbSave->setEnabled (false);
+                dlg.mRbPowerOff->setChecked (true);
             }
 
             bool wasShutdown = false;
@@ -1280,7 +1279,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
             {
                 CConsole cconsole = console->console();
 
-                if (dlg.rbSave->isChecked())
+                if (dlg.mRbSave->isChecked())
                 {
                     CProgress progress = cconsole.SaveState();
 
@@ -1299,7 +1298,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                         vboxProblem().cannotSaveMachineState (cconsole);
                 }
                 else
-                if (dlg.rbShutdown->isChecked())
+                if (dlg.mRbShutdown->isChecked())
                 {
                     /* unpause the VM to let it grab the ACPI shutdown event */
                     console->pause (false);
@@ -1316,7 +1315,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                     success = false;
                 }
                 else
-                if (dlg.rbPowerOff->isChecked())
+                if (dlg.mRbPowerOff->isChecked())
                 {
                     cconsole.PowerDown();
                     if (!cconsole.isOk())
@@ -1335,8 +1334,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                         success = true;
 
                         /* discard the current state if requested */
-                        if (dlg.cbDiscardCurState->isVisible() &&
-                            dlg.cbDiscardCurState->isChecked())
+                        if (dlg.mCbDiscardCurState->isVisible() &&
+                            dlg.mCbDiscardCurState->isChecked())
                         {
                             CProgress progress = cconsole.DiscardCurrentState();
                             if (cconsole.isOk())
@@ -1366,15 +1365,15 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                 {
                     /* memorize the last user's choice for the given VM */
                     QString lastAction = kPowerOff;
-                    if (dlg.rbSave->isChecked())
+                    if (dlg.mRbSave->isChecked())
                         lastAction = kSave;
-                    else if (dlg.rbShutdown->isChecked())
+                    else if (dlg.mRbShutdown->isChecked())
                         lastAction = kShutdown;
-                    else if (dlg.rbPowerOff->isChecked())
+                    else if (dlg.mRbPowerOff->isChecked())
                         lastAction = kPowerOff;
                     else
                         AssertFailed();
-                    if (dlg.cbDiscardCurState->isChecked())
+                    if (dlg.mCbDiscardCurState->isChecked())
                         (lastAction += ",") += kDiscardCurState;
                     cmachine.SetExtraData (VBoxDefs::GUI_LastCloseAction, lastAction);
                     AssertWrapperOk (cmachine);
@@ -1895,7 +1894,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             sfs.insert (sf.GetName(), sf.GetHostPath());
         }
 
-        for (QMap<QString, QString>::const_iterator it = sfs.constBegin(); 
+        for (QMap<QString, QString>::const_iterator it = sfs.constBegin();
              it != sfs.constEnd(); ++it)
         {
             /* select slashes depending on the OS type */
@@ -2832,7 +2831,7 @@ void VBoxConsoleWnd::prepareDVDMenu()
     devicesMountDVDMenu->addAction (devicesMountDVDImageAction);
 
     /* if shown as a context menu */
-    
+
     if (devicesMenu->itemParameter (devicesMountDVDMenuId))
     {
         devicesMountDVDMenu->addSeparator();

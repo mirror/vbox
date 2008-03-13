@@ -33,6 +33,18 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, const char *aName,
     : QComboBox (aParent , aName),
     mType (aType), mRequiredId (QUuid()), mUseEmptyItem (aUseEmptyItem)
 {
+    init();
+}
+
+VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
+    : QComboBox (aParent),
+    mType (-1), mRequiredId (QUuid()), mUseEmptyItem (false)
+{
+    init();
+}
+
+void VBoxMediaComboBox::init()
+{
     setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
     /* setup enumeration handlers */
     connect (&vboxGlobal(), SIGNAL (mediaEnumStarted()),
@@ -116,7 +128,7 @@ void VBoxMediaComboBox::mediaUpdated (const VBoxMedia &aMedia)
 void VBoxMediaComboBox::mediaRemoved (VBoxDefs::DiskType aType,
                                       const QUuid &aId)
 {
-    if (!(aType & mType))
+    if (mType == -1 || !(aType & mType))
         return;
 
     /* search & remove media */
@@ -134,7 +146,7 @@ void VBoxMediaComboBox::mediaRemoved (VBoxDefs::DiskType aType,
 
 void VBoxMediaComboBox::processMedia (const VBoxMedia &aMedia)
 {
-    if (!(aMedia.type & mType))
+    if (mType == -1 || !(aMedia.type & mType))
         return;
 
     switch (aMedia.type)

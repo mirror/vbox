@@ -62,7 +62,7 @@ public:
 
     VBoxProgressDialog (CProgress &aProgress, const QString &aTitle,
                         int aMinDuration = 2000, QWidget *aCreator = 0)
-        : QProgressDialog (aCreator, 
+        : QProgressDialog (aCreator,
                            Qt::WStyle_Customize | Qt::WStyle_DialogBorder | Qt::WStyle_Title)
         , mProgress (aProgress)
         , mCalcelEnabled (true)
@@ -2075,9 +2075,7 @@ void VBoxProblemReporter::showHelpAboutDialog()
     QString COMVersion = vbox.GetVersion();
     AssertWrapperOk (vbox);
 
-    VBoxAboutDlg dlg (mainWindowShown(), "VBoxAboutDlg");
-    dlg.setup (COMVersion);
-    dlg.exec();
+    VBoxAboutDlg (mainWindowShown(), COMVersion).exec();
 }
 
 void VBoxProblemReporter::showHelpHelpDialog()
@@ -2098,10 +2096,10 @@ void VBoxProblemReporter::showHelpHelpDialog()
     rc = RTPathAppPrivateArch (szViewerPath, sizeof (szViewerPath));
     Assert(RT_SUCCESS(rc));
 
-    QProcess::startDetached (QString(szViewerPath) + "/kchmviewer", 
+    QProcess::startDetached (QString(szViewerPath) + "/kchmviewer",
                              QStringList (QString(szDocsPath) + "/VirtualBox.chm"));
 #elif defined (Q_WS_MAC)
-    QProcess::startDetached ("/usr/bin/open", 
+    QProcess::startDetached ("/usr/bin/open",
                              QStringList (qApp->applicationDirPath() + "/UserManual.pdf"));
 #endif
 #endif /* VBOX_OSE */

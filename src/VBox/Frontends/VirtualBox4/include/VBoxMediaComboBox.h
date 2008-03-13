@@ -33,8 +33,9 @@ class VBoxMediaComboBox : public QComboBox
 
 public:
 
-    VBoxMediaComboBox (QWidget *aParent = 0, const char *aName = 0,
+    VBoxMediaComboBox (QWidget *aParent, const char *aName,
                        int aType = 0, bool aUseEmptyItem = false);
+    VBoxMediaComboBox (QWidget *aParent);
     ~VBoxMediaComboBox() {}
 
     void  refresh();
@@ -57,6 +58,7 @@ protected slots:
 
 protected:
 
+    void init();
     void updateToolTip (int);
     void processMedia (const VBoxMedia &);
     void processHdMedia (const VBoxMedia &);
