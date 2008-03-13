@@ -27,8 +27,9 @@ DEFINE_EMPTY_CTOR_DTOR (HardDiskAttachment)
 
 HRESULT HardDiskAttachment::FinalConstruct()
 {
-    mController = DiskControllerType_Null;
-    mDeviceNumber = 0;
+    mBus = StorageBus_Null;
+    mChannel = 0;
+    mDevice = 0;
 
     return S_OK;
 }
@@ -45,22 +46,39 @@ void HardDiskAttachment::FinalRelease()
  *  The initialized object becomes immediately dirty
  *
  *  @param aHD      hard disk object
- *  @param aCtl     controller type
- *  @param aDev     device number on the controller
+ *  @param aBus     bus type
+ *  @param aChannel channel number
+ *  @param aDevice  device number on the channel
  *  @param aDirty   whether the attachment is initially dirty or not
  */
-HRESULT HardDiskAttachment::init (HardDisk *aHD, DiskControllerType_T aCtl, LONG aDev,
+HRESULT HardDiskAttachment::init (HardDisk *aHD, StorageBus_T aBus, LONG aChannel, LONG aDevice,
                                   BOOL aDirty)
 {
     ComAssertRet (aHD, E_INVALIDARG);
+
+    if (aBus == StorageBus_IDE)
+    {
+        if (aChannel < 0 || aChannel > 1)
+            return setError (E_FAIL,
+                tr ("Invalid IDE channel for hard disk '%ls': %d. "
+                    "IDE channel number must be in range [0,1]"),
+                aHD->toString().raw(), aChannel);
+        if (aDevice < 0 || aDevice > 1 || (aChannel == 1 && aDevice == 0))
+            return setError (E_FAIL,
+                tr ("Invalid IDE device slot for hard disk '%ls': %d. "
+                    "IDE device slot number must be in range [0,1] for "
+                    "channel 0 and always 1 for channel 1"),
+                aHD->toString().raw(), aDevice);
+    }
 
     AutoLock alock (this);
 
     mDirty = aDirty;
 
     mHardDisk = aHD;
-    mController = aCtl;
-    mDeviceNumber = aDev;
+    mBus = aBus;
+    mChannel = aChannel;
+    mDevice = aDevice;
 
     setReady (true);
     return S_OK;
@@ -83,27 +101,39 @@ STDMETHODIMP HardDiskAttachment::COMGETTER(HardDisk) (IHardDisk **aHardDisk)
     return S_OK;
 }
 
-STDMETHODIMP HardDiskAttachment::COMGETTER(Controller) (DiskControllerType_T *aController)
+STDMETHODIMP HardDiskAttachment::COMGETTER(Bus) (StorageBus_T *aBus)
 {
-    if (!aController)
+    if (!aBus)
         return E_POINTER;
 
     AutoLock alock (this);
     CHECK_READY();
 
-    *aController = mController;
+    *aBus = mBus;
     return S_OK;
 }
 
-STDMETHODIMP HardDiskAttachment::COMGETTER(DeviceNumber) (LONG *aDeviceNumber)
+STDMETHODIMP HardDiskAttachment::COMGETTER(Channel) (LONG *aChannel)
 {
-    if (!aDeviceNumber)
+    if (!aChannel)
         return E_INVALIDARG;
 
     AutoLock alock (this);
     CHECK_READY();
 
-    *aDeviceNumber = mDeviceNumber;
+    *aChannel = mChannel;
+    return S_OK;
+}
+
+STDMETHODIMP HardDiskAttachment::COMGETTER(Device) (LONG *aDevice)
+{
+    if (!aDevice)
+        return E_INVALIDARG;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    *aDevice = mDevice;
     return S_OK;
 }
 

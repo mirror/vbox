@@ -484,18 +484,28 @@ void VBoxVMInformationDlg::refreshStatistics()
     }
 
     /* Hard Disk Statistics. */
+    QString primaryMaster = QString ("%1 %2")
+        .arg (vboxGlobal().toString (KStorageBus_IDE, 0))
+        .arg (vboxGlobal().toString (KStorageBus_IDE, 0, 0));
+    QString primarySlave = QString ("%1 %2")
+        .arg (vboxGlobal().toString (KStorageBus_IDE, 0))
+        .arg (vboxGlobal().toString (KStorageBus_IDE, 0, 1));
+    QString secondarySlave = QString ("%1 %2")
+        .arg (vboxGlobal().toString (KStorageBus_IDE, 1))
+        .arg (vboxGlobal().toString (KStorageBus_IDE, 1, 1));
+
     result += hdrRow.arg (":/hd_16px.png").arg (tr ("IDE Hard Disk Statistics"));
-    result += formatHardDisk (tr ("Primary Master"), KDiskControllerType_IDE0, 0, 0, 1);
+    result += formatHardDisk (primaryMaster, KStorageBus_IDE, 0, 0, 0, 1);
     result += interline;
-    result += formatHardDisk (tr ("Primary Slave"), KDiskControllerType_IDE0, 1, 4, 5);
+    result += formatHardDisk (primarySlave, KStorageBus_IDE, 0, 1, 4, 5);
     result += interline;
-    result += formatHardDisk (tr ("Secondary Slave"), KDiskControllerType_IDE1, 1, 12, 13);
+    result += formatHardDisk (secondarySlave, KStorageBus_IDE, 1, 1, 12, 13);
     result += paragraph;
 
     /* CD/DVD-ROM Statistics. */
     result += hdrRow.arg (":/cd_16px.png").arg (tr ("CD/DVD-ROM Statistics"));
-    result += formatHardDisk (QString::null /* tr ("Secondary Master") */,
-                              KDiskControllerType_IDE1, 0, 8, 9);
+    result += formatHardDisk (QString::null,
+                              KStorageBus_IDE, 1, 0, 8, 9);
     result += paragraph;
 
     /* Network Adapters Statistics. */
@@ -514,8 +524,8 @@ void VBoxVMInformationDlg::refreshStatistics()
 
 
 QString VBoxVMInformationDlg::formatHardDisk (const QString &aName,
-                                              KDiskControllerType aType,
-                                              LONG aSlot, int aStart, int aFinish)
+                                              KStorageBus aBus, LONG aChannel,
+                                              LONG aDevice, int aStart, int aFinish)
 {
     if (mSession.isNull())
         return QString::null;
@@ -524,8 +534,8 @@ QString VBoxVMInformationDlg::formatHardDisk (const QString &aName,
     CMachine machine = mSession.GetMachine();
 
     QString result = aName.isNull() ? QString::null : header.arg (aName);
-    CHardDisk hd = machine.GetHardDisk (aType, aSlot);
-    if (!hd.isNull() || (aType == KDiskControllerType_IDE1 && aSlot == 0))
+    CHardDisk hd = machine.GetHardDisk (aBus, aChannel, aDevice);
+    if (!hd.isNull() || (aBus == KStorageBus_IDE && aChannel == 1 && aDevice == 0))
     {
         result += composeArticle (QString::null, aStart, aFinish);
         result += composeArticle ("B", aStart + 2, aFinish + 2);

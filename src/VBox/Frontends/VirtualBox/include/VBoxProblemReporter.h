@@ -195,9 +195,9 @@ public:
         QWidget *parent, const CVirtualBox &vbox, const QString &src,
         const CVirtualDiskImage &vdi, const CProgress &progress);
     void cannotAttachHardDisk (QWidget *parent, const CMachine &m, const QUuid &id,
-                               KDiskControllerType ctl, LONG dev);
+                               KStorageBus bus, LONG channel, LONG dev);
     void cannotDetachHardDisk (QWidget *parent, const CMachine &m,
-                               KDiskControllerType ctl, LONG dev);
+                               KStorageBus bus, LONG channel, LONG dev);
     void cannotRegisterMedia (QWidget *parent, const CVirtualBox &vbox,
                               VBoxDefs::DiskType type, const QString &src);
     void cannotUnregisterMedia (QWidget *parent, const CVirtualBox &vbox,

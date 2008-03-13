@@ -1717,7 +1717,8 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     {
         struct
         {
-            KDiskControllerType ctl;
+            KStorageBus bus;
+            LONG channel;
             LONG dev;
             struct {
                 Q3GroupBox *grb;
@@ -1728,9 +1729,9 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         }
         diskSet[] =
         {
-            { KDiskControllerType_IDE0, 0, {grbHDA, cbHDA, txHDA, &uuidHDA} },
-            { KDiskControllerType_IDE0, 1, {grbHDB, cbHDB, txHDB, &uuidHDB} },
-            { KDiskControllerType_IDE1, 1, {grbHDD, cbHDD, txHDD, &uuidHDD} },
+            { KStorageBus_IDE, 0, 0, {grbHDA, cbHDA, txHDA, &uuidHDA} },
+            { KStorageBus_IDE, 0, 1, {grbHDB, cbHDB, txHDB, &uuidHDB} },
+            { KStorageBus_IDE, 1, 1, {grbHDD, cbHDD, txHDD, &uuidHDD} },
         };
 
         grbHDA->setChecked (false);
@@ -1744,8 +1745,9 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
             CHardDiskAttachment hda = en.GetNext();
             for (uint i = 0; i < SIZEOF_ARRAY (diskSet); i++)
             {
-                if (diskSet [i].ctl == hda.GetController() &&
-                    diskSet [i].dev == hda.GetDeviceNumber())
+                if (diskSet [i].bus == hda.GetBus() &&
+                    diskSet [i].channel == hda.GetChannel() &&
+                    diskSet [i].dev == hda.GetDevice())
                 {
                     CHardDisk hd = hda.GetHardDisk();
                     CHardDisk root = hd.GetRoot();
@@ -2100,7 +2102,8 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     {
         struct
         {
-            KDiskControllerType ctl;
+            KStorageBus bus;
+            LONG channel;
             LONG dev;
             struct {
                 Q3GroupBox *grb;
@@ -2109,9 +2112,9 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
         }
         diskSet[] =
         {
-            { KDiskControllerType_IDE0, 0, {grbHDA, &uuidHDA} },
-            { KDiskControllerType_IDE0, 1, {grbHDB, &uuidHDB} },
-            { KDiskControllerType_IDE1, 1, {grbHDD, &uuidHDD} }
+            { KStorageBus_IDE, 0, 0, {grbHDA, &uuidHDA} },
+            { KStorageBus_IDE, 0, 1, {grbHDB, &uuidHDB} },
+            { KStorageBus_IDE, 1, 1, {grbHDD, &uuidHDD} }
         };
 
         /*
@@ -2125,13 +2128,14 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
             CHardDiskAttachment hda = en.GetNext();
             for (uint i = 0; i < SIZEOF_ARRAY (diskSet); i++)
             {
-                if (diskSet [i].ctl == hda.GetController() &&
-                    diskSet [i].dev == hda.GetDeviceNumber())
+                if (diskSet [i].bus == hda.GetBus() &&
+                    diskSet [i].channel == hda.GetChannel() &&
+                    diskSet [i].dev == hda.GetDevice())
                 {
-                    cmachine.DetachHardDisk (diskSet [i].ctl, diskSet [i].dev);
+                    cmachine.DetachHardDisk (diskSet [i].bus, diskSet [i].channel, diskSet [i].dev);
                     if (!cmachine.isOk())
                         vboxProblem().cannotDetachHardDisk (
-                            this, cmachine, diskSet [i].ctl, diskSet [i].dev);
+                            this, cmachine, diskSet [i].bus, diskSet [i].channel, diskSet [i].dev);
                 }
             }
         }
@@ -2142,10 +2146,10 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
             QUuid *newId = diskSet [i].data.uuid;
             if (diskSet [i].data.grb->isChecked() && !(*newId).isNull())
             {
-                cmachine.AttachHardDisk (*newId, diskSet [i].ctl, diskSet [i].dev);
+                cmachine.AttachHardDisk (*newId, diskSet [i].bus, diskSet [i].channel, diskSet [i].dev);
                 if (!cmachine.isOk())
                     vboxProblem().cannotAttachHardDisk (
-                        this, cmachine, *newId, diskSet [i].ctl, diskSet [i].dev);
+                        this, cmachine, *newId, diskSet [i].bus, diskSet [i].channel, diskSet [i].dev);
             }
         }
     }

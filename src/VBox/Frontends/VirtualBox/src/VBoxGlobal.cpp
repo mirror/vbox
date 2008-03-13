@@ -740,13 +740,14 @@ VBoxGlobal::VBoxGlobal()
     , machineStates (KMachineState_COUNT)
     , sessionStates (KSessionState_COUNT)
     , deviceTypes (KDeviceType_COUNT)
-    , diskControllerTypes (KDiskControllerType_COUNT)
+    , storageBuses (KStorageBus_COUNT)
+    , storageBusDevices (3)
+    , storageBusChannels (3)
     , diskTypes (KHardDiskType_COUNT)
     , diskStorageTypes (KHardDiskStorageType_COUNT)
     , vrdpAuthTypes (KVRDPAuthType_COUNT)
     , portModeTypes (KPortMode_COUNT)
     , usbFilterActionTypes (KUSBDeviceFilterAction_COUNT)
-    , diskControllerDevices (3)
     , audioDriverTypes (KAudioDriverType_COUNT)
     , audioControllerTypes (KAudioControllerType_COUNT)
     , networkAdapterTypes (KNetworkAdapterType_COUNT)
@@ -962,24 +963,44 @@ QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aId) const
     return QString::null;
 }
 
-QString VBoxGlobal::toString (KDiskControllerType t, LONG d) const
+QString VBoxGlobal::toString (KStorageBus t, LONG c, LONG d) const
 {
-    Assert (diskControllerDevices.count() == 3);
+    Assert (storageBusDevices.count() == 3);
     QString dev;
+
+    NOREF(c);
     switch (t)
     {
-        case KDiskControllerType_IDE0:
-        case KDiskControllerType_IDE1:
+        case KStorageBus_IDE:
         {
             if (d == 0 || d == 1)
             {
-                dev = diskControllerDevices [d];
+                dev = storageBusDevices [d];
                 break;
             }
-            // fall through
         }
         default:
-            dev = diskControllerDevices [2].arg (d);
+            dev = storageBusDevices [2].arg (d);
+    }
+    return dev;
+}
+
+QString VBoxGlobal::toString (KStorageBus t, LONG c) const
+{
+    Assert (storageBusChannels.count() == 3);
+    QString dev;
+    switch (t)
+    {
+        case KStorageBus_IDE:
+        {
+            if (c == 0 || c == 1)
+            {
+                dev = storageBusChannels [c];
+                break;
+            }
+        }
+        default:
+            dev = storageBusChannels [2].arg (c);
     }
     return dev;
 }
@@ -1374,9 +1395,9 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                     QString src = root.GetLocation();
                     hardDisks += QString (sSectionItemTpl)
                         .arg (QString ("%1 %2")
-                              .arg (toString (hda.GetController()))
-                              .arg (toString (hda.GetController(),
-                                              hda.GetDeviceNumber())))
+                              .arg (toString (hda.GetBus(), hda.GetChannel()))
+                              .arg (toString (hda.GetBus(), hda.GetChannel(),
+                                              hda.GetDevice())))
                         .arg (QString ("%1 [<nobr>%2</nobr>]")
                               .arg (prepareFileNameForHTML (src))
                               .arg (details (hd, isNewVM /* predict */, aDoRefresh)));
@@ -2269,11 +2290,26 @@ void VBoxGlobal::languageChange()
     deviceTypes [KDeviceType_DVD] =             tr ("CD/DVD-ROM", "DeviceType");
     deviceTypes [KDeviceType_HardDisk] =        tr ("Hard Disk", "DeviceType");
     deviceTypes [KDeviceType_Network] =         tr ("Network", "DeviceType");
+    deviceTypes [KDeviceType_USB] =             tr ("USB", "DeviceType");
+    deviceTypes [KDeviceType_SharedFolder] =    tr ("Shared Folder", "DeviceType");
 
-    diskControllerTypes [KDiskControllerType_IDE0] =
-        tr ("Primary", "DiskControllerType");
-    diskControllerTypes [KDiskControllerType_IDE1] =
-        tr ("Secondary", "DiskControllerType");
+    storageBuses [KStorageBus_IDE] =
+        tr ("IDE", "StorageBus");
+    storageBuses [KStorageBus_SATA] =
+        tr ("SATA", "StorageBus");
+
+    Assert (storageBusChannels.count() == 3);
+    storageBusChannels [0] =
+        tr ("Primary", "StorageBusChannel");
+    storageBusChannels [1] =
+        tr ("Secondary", "StorageBusChannel");
+    storageBusChannels [2] =
+        tr ("Channel&nbsp;%1", "StorageBusChannel");
+
+    Assert (storageBusDevices.count() == 3);
+    storageBusDevices [0] = tr ("Master", "StorageBusDevice");
+    storageBusDevices [1] = tr ("Slave", "StorageBusDevice");
+    storageBusDevices [2] = tr ("Device&nbsp;%1", "StorageBusDevice");
 
     diskTypes [KHardDiskType_Normal] =
         tr ("Normal", "DiskType");
@@ -2311,11 +2347,6 @@ void VBoxGlobal::languageChange()
         tr ("Ignore", "USBFilterActionType");
     usbFilterActionTypes [KUSBDeviceFilterAction_Hold] =
         tr ("Hold", "USBFilterActionType");
-
-    Assert (diskControllerDevices.count() == 3);
-    diskControllerDevices [0] = tr ("Master", "DiskControllerDevice");
-    diskControllerDevices [1] = tr ("Slave", "DiskControllerDevice");
-    diskControllerDevices [2] = tr ("Device&nbsp;%1", "DiskControllerDevice");
 
     audioDriverTypes [KAudioDriverType_Null] =
         tr ("Null Audio Driver", "AudioDriverType");

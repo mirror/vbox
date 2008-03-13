@@ -96,6 +96,7 @@
 #include <ParallelPortImpl.h>
 #include <USBControllerImpl.h>
 #include <USBDeviceImpl.h>
+#include <SATAControllerImpl.h>
 #include <AudioAdapterImpl.h>
 #include <SystemPropertiesImpl.h>
 #include <Collection.h>
@@ -159,6 +160,8 @@ NS_DECL_CLASSINFO(ParallelPort)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ParallelPort, IParallelPort)
 NS_DECL_CLASSINFO(USBController)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(USBController, IUSBController)
+NS_DECL_CLASSINFO(SATAController)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SATAController, ISATAController)
 NS_DECL_CLASSINFO(USBDeviceFilter)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(USBDeviceFilter, IUSBDeviceFilter)
 NS_DECL_CLASSINFO(HostUSBDevice)

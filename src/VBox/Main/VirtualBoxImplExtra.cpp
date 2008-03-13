@@ -30,6 +30,28 @@
 /* embedded settings converter template for updating settings files */
 #include "xml_SettingsConverter_xsl.h"
 
+static const unsigned char g_ab_xml_VirtualBox_settings_root_xsd[] =
+"<xsd:schema"
+"  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\""
+"  xmlns=\"http://www.innotek.de/VirtualBox-settings\"" 
+"  xmlns:vb=\"http://www.innotek.de/VirtualBox-settings\""
+"  targetNamespace=\"http://www.innotek.de/VirtualBox-settings\""
+"  elementFormDefault=\"qualified\""
+">"
+"<xsd:element name=\"VirtualBox\">"
+"  <xsd:complexType>"
+"    <xsd:complexContent>"
+"      <xsd:extension base=\"TVirtualBox\">"
+"        <xsd:attribute name=\"version\" type=\"xsd:token\" fixed=\"" VBOX_XML_VERSION_FULL "\" use=\"required\"/>"
+"      </xsd:extension>"
+"    </xsd:complexContent>"
+"  </xsd:complexType>"
+"</xsd:element>"
+"</xsd:schema>";
+
+static const unsigned g_cb_xml_VirtualBox_settings_root_xsd =
+    sizeof (g_ab_xml_VirtualBox_settings_root_xsd);
+
 /**
  * Resolves external entities while parting and validating XML settings files.
  *
@@ -47,6 +69,13 @@ VirtualBox::SettingsTreeHelper::resolveEntity (const char *aURI, const char *aID
         return new settings::
             MemoryBuf ((const char *) g_ab_xml_VirtualBox_settings_common_xsd,
                        g_cb_xml_VirtualBox_settings_common_xsd, aURI);
+    }
+
+    if (strcmp (aURI, VBOX_XML_SCHEMA_ROOT) == 0)
+    {
+        return new settings::
+            MemoryBuf ((const char *) g_ab_xml_VirtualBox_settings_root_xsd,
+                       g_cb_xml_VirtualBox_settings_root_xsd, aURI);
     }
 
     if (strcmp (aURI, VBOX_XML_SCHEMA) == 0)

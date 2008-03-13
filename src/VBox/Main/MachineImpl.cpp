@@ -39,6 +39,7 @@
 #include "GuestOSTypeImpl.h"
 #include "VirtualBoxErrorInfoImpl.h"
 #include "GuestImpl.h"
+#include "SATAControllerImpl.h"
 
 #include "USBProxyService.h"
 
@@ -277,8 +278,9 @@ bool Machine::HDData::operator== (const HDData &that) const
         HDAttachmentList::iterator thatIt = thatAtts.begin();
         while (thatIt != thatAtts.end())
         {
-            if ((*it)->deviceNumber() == (*thatIt)->deviceNumber() &&
-                (*it)->controller() == (*thatIt)->controller() &&
+            if ((*it)->bus() == (*thatIt)->bus() &&
+                (*it)->channel() == (*thatIt)->channel() &&
+                (*it)->device() == (*thatIt)->device() &&
                 (*it)->hardDisk().equalsTo ((*thatIt)->hardDisk()))
             {
                 thatAtts.erase (thatIt);
@@ -1284,6 +1286,26 @@ STDMETHODIMP Machine::COMGETTER(USBController) (IUSBController **aUSBController)
 #endif
 }
 
+STDMETHODIMP Machine::COMGETTER(SATAController) (ISATAController **aSATAController)
+{
+#ifdef VBOX_WITH_AHCI
+    if (!aSATAController)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    return mSATAController.queryInterfaceTo (aSATAController);
+#else
+    /* Note: The GUI depends on this method returning E_NOTIMPL with no
+     * extended error info to indicate that SATA is simply not available
+     * (w/o treting it as a failure), for example, as in OSE */
+    return E_NOTIMPL;
+#endif
+}
+
 STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *aFilePath)
 {
     if (!aFilePath)
@@ -1601,15 +1623,13 @@ STDMETHODIMP Machine::GetBootOrder (ULONG aPosition, DeviceType_T *aDevice)
 }
 
 STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
-                                      DiskControllerType_T aCtl, LONG aDev)
+                                      StorageBus_T aBus, LONG aChannel, LONG aDevice)
 {
     Guid id = aId;
 
-    if (id.isEmpty() ||
-        aCtl == DiskControllerType_Null ||
-        aDev < 0 || aDev > 1)
+    if (id.isEmpty() || aBus == StorageBus_Null)
         return E_INVALIDARG;
-
+ 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -1634,20 +1654,26 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
          it != mHDData->mHDAttachments.end(); ++ it)
     {
         ComObjPtr <HardDiskAttachment> hda = *it;
-        if (hda->controller() == aCtl && hda->deviceNumber() == aDev)
+        if (hda->bus() == aBus && hda->channel() == aChannel && hda->device() == aDevice)
         {
             ComObjPtr <HardDisk> hd = hda->hardDisk();
             AutoLock hdLock (hd);
             return setError (E_FAIL,
-                tr ("Hard disk '%ls' is already attached to device slot %d "
-                    "on controller %d"),
-                hd->toString().raw(), aDev, aCtl);
+                tr ("Hard disk '%ls' is already attached to device slot %d on "
+                    "channel %d of bus %d"),
+                hd->toString().raw(), aDevice, aChannel, aBus);
         }
     }
 
     /* find a hard disk by UUID */
     ComObjPtr <HardDisk> hd;
     rc = mParent->getHardDisk (id, hd);
+    CheckComRCReturnRC (rc);
+
+    /* create an attachment object early to let it check argiuments */
+    ComObjPtr <HardDiskAttachment> attachment;
+    attachment.createObject();
+    rc = attachment->init (hd, aBus, aChannel, aDevice, false /* aDirty */);
     CheckComRCReturnRC (rc);
 
     AutoLock hdLock (hd);
@@ -1711,10 +1737,11 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
                             {
                                 return setError (E_FAIL,
                                     tr ("Normal/Writethrough hard disk '%ls' is "
-                                        "currently attached to device slot %d "
-                                        "on controller %d of this machine"),
+                                        "currently attached to device slot %d on channel %d "
+                                        "of bus %d of this machine"),
                                     hd->toString().raw(),
-                                    (*it)->deviceNumber(), (*it)->controller());
+                                    (*it)->device(),
+                                    (*it)->channel(), (*it)->bus());
                             }
                         }
                         /*
@@ -1756,9 +1783,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
         }
     }
 
-    ComObjPtr <HardDiskAttachment> attachment;
-    attachment.createObject();
-    attachment->init (hd, aCtl, aDev, dirty);
+    attachment->setDirty (dirty);
 
     mHDData.backup();
     mHDData->mHDAttachments.push_back (attachment);
@@ -1769,13 +1794,12 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
     return S_OK;
 }
 
-STDMETHODIMP Machine::GetHardDisk (DiskControllerType_T aCtl,
-                                   LONG aDev, IHardDisk **aHardDisk)
+STDMETHODIMP Machine::GetHardDisk (StorageBus_T aBus, LONG aChannel,
+                                   LONG aDevice, IHardDisk **aHardDisk)
 {
-    if (aCtl == DiskControllerType_Null ||
-        aDev < 0 || aDev > 1)
+    if (aBus == StorageBus_Null)
         return E_INVALIDARG;
-
+ 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -1787,7 +1811,7 @@ STDMETHODIMP Machine::GetHardDisk (DiskControllerType_T aCtl,
         it != mHDData->mHDAttachments.end(); ++ it)
     {
         ComObjPtr <HardDiskAttachment> hda = *it;
-        if (hda->controller() == aCtl && hda->deviceNumber() == aDev)
+        if (hda->bus() == aBus && hda->channel() == aChannel && hda->device() == aDevice)
         {
             hda->hardDisk().queryInterfaceTo (aHardDisk);
             return S_OK;
@@ -1795,14 +1819,13 @@ STDMETHODIMP Machine::GetHardDisk (DiskControllerType_T aCtl,
     }
 
     return setError (E_INVALIDARG,
-        tr ("No hard disk attached to device slot %d on controller %d"),
-            aDev, aCtl);
+        tr ("No hard disk attached to device slot %d on channel %d of bus %d"),
+            aDevice, aChannel, aBus);
 }
 
-STDMETHODIMP Machine::DetachHardDisk (DiskControllerType_T aCtl, LONG aDev)
+STDMETHODIMP Machine::DetachHardDisk (StorageBus_T aBus, LONG aChannel, LONG aDevice)
 {
-    if (aCtl == DiskControllerType_Null ||
-        aDev < 0 || aDev > 1)
+    if (aBus == StorageBus_Null)
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
@@ -1823,7 +1846,7 @@ STDMETHODIMP Machine::DetachHardDisk (DiskControllerType_T aCtl, LONG aDev)
          it != mHDData->mHDAttachments.end(); ++ it)
     {
         ComObjPtr <HardDiskAttachment> hda = *it;
-        if (hda->controller() == aCtl && hda->deviceNumber() == aDev)
+        if (hda->bus() == aBus && hda->channel() == aChannel && hda->device() == aDevice)
         {
             ComObjPtr <HardDisk> hd = hda->hardDisk();
             AutoLock hdLock (hd);
@@ -1888,8 +1911,8 @@ STDMETHODIMP Machine::DetachHardDisk (DiskControllerType_T aCtl, LONG aDev)
     }
 
     return setError (E_INVALIDARG,
-        tr ("No hard disk attached to device slot %d on controller %d"),
-        aDev, aCtl);
+        tr ("No hard disk attached to device slot %d on channel %d of bus %d"),
+        aDevice, aChannel, aBus);
 }
 
 STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
@@ -3637,6 +3660,10 @@ HRESULT Machine::initDataAndChildObjects()
     unconst (mUSBController).createObject();
     mUSBController->init (this);
 
+    /* create the SATA controller object (always present, default is disabled) */
+    unconst (mSATAController).createObject();
+    mSATAController->init (this);
+
     /* create associated network adapter objects */
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
     {
@@ -3682,6 +3709,12 @@ void Machine::uninitDataAndChildObjects()
     {
         mUSBController->uninit();
         unconst (mUSBController).setNull();
+    }
+
+    if (mSATAController)
+    {
+        mSATAController->uninit();
+        unconst (mSATAController).setNull();
     }
 
     if (mAudioAdapter)
@@ -4281,6 +4314,10 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     rc = mUSBController->loadSettings (aNode);
     CheckComRCReturnRC (rc);
 
+    /* SATA Controller */
+    rc = mSATAController->loadSettings (aNode);
+    CheckComRCReturnRC (rc);
+
     /* Network node (required) */
     {
         /* we assume that all network adapters are initially disabled
@@ -4459,9 +4496,11 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
         /* hardDisk uuid (required) */
         Guid uuid = (*it).value <Guid> ("hardDisk");
         /* bus (controller) type (required) */
-        const char *bus = (*it).stringValue ("bus");
+        const char *busStr = (*it).stringValue ("bus");
+        /* channel (required) */
+        LONG channel = (*it).value <LONG> ("channel");
         /* device (required) */
-        const char *device = (*it).stringValue ("device");
+        LONG device = (*it).value <LONG> ("device");
 
         /* find a hard disk by UUID */
         ComObjPtr <HardDisk> hd;
@@ -4490,31 +4529,15 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
         }
 
         /* attach the device */
-        DiskControllerType_T ctl = DiskControllerType_Null;
-        LONG dev = -1;
+        StorageBus_T bus = StorageBus_Null;
 
-        if (strcmp (bus, "ide0") == 0)
+        if (strcmp (busStr, "IDE") == 0)
         {
-            ctl = DiskControllerType_IDE0;
-            if (strcmp (device, "master") == 0)
-                dev = 0;
-            else if (strcmp (device, "slave") == 0)
-                dev = 1;
-            else
-                ComAssertMsgFailedRet (("Invalid device '%s'\n", device),
-                                       E_FAIL);
+            bus = StorageBus_IDE;
         }
-        else if (strcmp (bus, "ide1") == 0)
+        else if (strcmp (busStr, "SATA") == 0)
         {
-            ctl = DiskControllerType_IDE1;
-            if (strcmp (device, "master") == 0)
-                rc = setError (E_FAIL, tr("Could not attach a disk as a master "
-                                          "device on the secondary controller"));
-            else if (strcmp (device, "slave") == 0)
-                dev = 1;
-            else
-                ComAssertMsgFailedRet (("Invalid device '%s'\n", device),
-                                       E_FAIL);
+            bus = StorageBus_SATA;
         }
         else
             ComAssertMsgFailedRet (("Invalid bus '%s'\n", bus),
@@ -4522,7 +4545,7 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
 
         ComObjPtr <HardDiskAttachment> attachment;
         attachment.createObject();
-        rc = attachment->init (hd, ctl, dev, false /* aDirty */);
+        rc = attachment->init (hd, bus, channel, device, false /* aDirty */);
         CheckComRCBreakRC (rc);
 
         /* associate the hard disk with this machine */
@@ -4535,7 +4558,7 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
         mHDData->mHDAttachments.push_back (attachment);
     }
 
-    return S_OK;
+    return rc;
 }
 
 /**
@@ -5658,6 +5681,10 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
     rc = mUSBController->saveSettings (aNode);
     CheckComRCReturnRC (rc);
 
+    /* SATA Controller (required) */
+    rc = mSATAController->saveSettings (aNode);
+    CheckComRCReturnRC (rc);
+
     /* Network adapters (required) */
     {
         Key nwNode = aNode.createKey ("Network");
@@ -5792,26 +5819,18 @@ HRESULT Machine::saveHardDisks (settings::Key &aNode)
 
         {
             const char *bus = NULL;
-            switch (att->controller())
+            switch (att->bus())
             {
-                case DiskControllerType_IDE0: bus = "ide0"; break;
-                case DiskControllerType_IDE1: bus = "ide1"; break;
-                default:
-                    ComAssertFailedRet (E_FAIL);
-            }
-
-            const char *dev = NULL;
-            switch (att->deviceNumber())
-            {
-                case 0: dev = "master"; break;
-                case 1: dev = "slave"; break;
+                case StorageBus_IDE:  bus = "IDE"; break;
+                case StorageBus_SATA: bus = "SATA"; break;
                 default:
                     ComAssertFailedRet (E_FAIL);
             }
 
             hdNode.setValue <Guid> ("hardDisk", att->hardDisk()->id());
             hdNode.setStringValue ("bus", bus);
-            hdNode.setStringValue ("device", dev);
+            hdNode.setValue <LONG> ("channel", att->channel());
+            hdNode.setValue <LONG> ("device", att->device());
         }
     }
 
@@ -6072,8 +6091,9 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                          *  the first attachment that matched the hd only will
                          *  be used
                          */
-                        if ((*it)->deviceNumber() == hda->deviceNumber() &&
-                            (*it)->controller() == hda->controller())
+                        if ((*it)->device() == hda->device() &&
+                            (*it)->channel() == hda->channel() &&
+                            (*it)->bus() == hda->bus())
                         {
                             foundIt = it;
                             break;
@@ -6094,8 +6114,9 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                                  it2 != mHDData->mHDAttachments.end();
                                  ++ it2)
                             {
-                                if ((*it2)->deviceNumber() == (*it)->deviceNumber() &&
-                                    (*it2)->controller() == (*it)->controller() &&
+                                if ((*it2)->device() == (*it)->device() &&
+                                    (*it2)->channel() == (*it)->channel() &&
+                                    (*it2)->bus() == (*it)->bus() &&
                                     (*it2)->hardDisk()->root().equalsTo (hd))
                                 {
                                     /*
@@ -6164,8 +6185,9 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                                  *  the first attachment that matched the hd only will
                                  *  be used
                                  */
-                                if ((*it)->deviceNumber() == hda->deviceNumber() &&
-                                    (*it)->controller() == hda->controller())
+                                if ((*it)->device() == hda->device() &&
+                                    (*it)->channel() == hda->channel() &&
+                                    (*it)->bus() == hda->bus())
                                 {
                                     foundIt = it;
                                     break;
@@ -6481,7 +6503,7 @@ HRESULT Machine::createSnapshotDiffs (const Guid *aSnapshotId,
         {
             ComObjPtr <HardDiskAttachment> newHda;
             newHda.createObject();
-            rc = newHda->init (newHd, hda->controller(), hda->deviceNumber(),
+            rc = newHda->init (newHd, hda->bus(), hda->channel(), hda->device(),
                                false /* aDirty */);
 
             if (SUCCEEDED (rc))
@@ -6703,6 +6725,7 @@ bool Machine::isModified()
         (mFloppyDrive && mFloppyDrive->isModified()) ||
         (mAudioAdapter && mAudioAdapter->isModified()) ||
         (mUSBController && mUSBController->isModified()) ||
+        (mSATAController && mSATAController->isModified()) ||
         (mBIOSSettings && mBIOSSettings->isModified());
 }
 
@@ -6745,6 +6768,7 @@ bool Machine::isReallyModified (bool aIgnoreUserData /* = false */)
         (mFloppyDrive && mFloppyDrive->isReallyModified()) ||
         (mAudioAdapter && mAudioAdapter->isReallyModified()) ||
         (mUSBController && mUSBController->isReallyModified()) ||
+        (mSATAController && mSATAController->isReallyModified()) ||
         (mBIOSSettings && mBIOSSettings->isReallyModified());
 }
 
@@ -6804,7 +6828,7 @@ void Machine::rollback (bool aNotify)
     /* check for changes in child objects */
 
     bool vrdpChanged = false, dvdChanged = false, floppyChanged = false,
-         usbChanged = false;
+         usbChanged = false, sataChanged = false;
 
     ComPtr <INetworkAdapter> networkAdapters [ELEMENTS (mNetworkAdapters)];
     ComPtr <ISerialPort> serialPorts [ELEMENTS (mSerialPorts)];
@@ -6829,6 +6853,9 @@ void Machine::rollback (bool aNotify)
 
     if (mUSBController)
         usbChanged = mUSBController->rollback();
+
+    if (mSATAController)
+        sataChanged = mSATAController->rollback();
 
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
         if (mNetworkAdapters [slot])
@@ -6863,6 +6890,8 @@ void Machine::rollback (bool aNotify)
             that->onFloppyDriveChange();
         if (usbChanged)
             that->onUSBControllerChange();
+        if (sataChanged)
+            that->onSATAControllerChange();
 
         for (ULONG slot = 0; slot < ELEMENTS (networkAdapters); slot ++)
             if (networkAdapters [slot])
@@ -6916,6 +6945,7 @@ HRESULT Machine::commit()
     mFloppyDrive->commit();
     mAudioAdapter->commit();
     mUSBController->commit();
+    mSATAController->commit();
 
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
         mNetworkAdapters [slot]->commit();
@@ -6981,6 +7011,7 @@ void Machine::copyFrom (Machine *aThat)
     mFloppyDrive->copyFrom (aThat->mFloppyDrive);
     mAudioAdapter->copyFrom (aThat->mAudioAdapter);
     mUSBController->copyFrom (aThat->mUSBController);
+    mSATAController->copyFrom (aThat->mSATAController);
 
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
         mNetworkAdapters [slot]->copyFrom (aThat->mNetworkAdapters [slot]);
@@ -7183,6 +7214,9 @@ HRESULT SessionMachine::init (Machine *aMachine)
     /* create another USB controller object that will be mutable */
     unconst (mUSBController).createObject();
     mUSBController->init (this, aMachine->mUSBController);
+    /* create another SATA controller object that will be mutable */
+    unconst (mSATAController).createObject();
+    mSATAController->init (this, aMachine->mSATAController);
     /* create a list of network adapters that will be mutable */
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
     {
@@ -9782,6 +9816,9 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
     unconst (mUSBController).createObject();
     mUSBController->initCopy (this, mPeer->mUSBController);
 
+    unconst (mSATAController).createObject();
+    mSATAController->initCopy (this, mPeer->mSATAController);
+
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
     {
         unconst (mNetworkAdapters [slot]).createObject();
@@ -9880,6 +9917,9 @@ HRESULT SnapshotMachine::init (Machine *aMachine,
 
     unconst (mUSBController).createObject();
     mUSBController->init (this);
+
+    unconst (mSATAController).createObject();
+    mSATAController->init (this);
 
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
     {

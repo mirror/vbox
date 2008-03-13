@@ -849,7 +849,7 @@ void VBoxSelectorWnd::vmDelete()
                 while (hen.HasMore())
                 {
                     CHardDiskAttachment att = hen.GetNext();
-                    machine.DetachHardDisk (att.GetController(), att.GetDeviceNumber());
+                    machine.DetachHardDisk (att.GetBus(), att.GetChannel(), att.GetDevice());
                 }
             }
             /* commit changes */

@@ -33,6 +33,7 @@
 #include "SerialPortImpl.h"
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
+#include "SATAControllerImpl.h"
 
 // generated header
 #include "SchemaDefs.h"
@@ -465,6 +466,7 @@ public:
     STDMETHOD(COMGETTER(FloppyDrive))(IFloppyDrive **floppyDrive);
     STDMETHOD(COMGETTER(AudioAdapter))(IAudioAdapter **audioAdapter);
     STDMETHOD(COMGETTER(USBController)) (IUSBController * *aUSBController);
+    STDMETHOD(COMGETTER(SATAController)) (ISATAController **aSATAController);
     STDMETHOD(COMGETTER(SettingsFilePath)) (BSTR *aFilePath);
     STDMETHOD(COMGETTER(SettingsFileVersion)) (BSTR *aSettingsFileVersion);
     STDMETHOD(COMGETTER(SettingsModified)) (BOOL *aModified);
@@ -485,9 +487,9 @@ public:
     // IMachine methods
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);
     STDMETHOD(GetBootOrder)(ULONG aPosition, DeviceType_T *aDevice);
-    STDMETHOD(AttachHardDisk)(INPTR GUIDPARAM aId, DiskControllerType_T aCtl, LONG aDev);
-    STDMETHOD(GetHardDisk)(DiskControllerType_T aCtl, LONG aDev, IHardDisk **aHardDisk);
-    STDMETHOD(DetachHardDisk) (DiskControllerType_T aCtl, LONG aDev);
+    STDMETHOD(AttachHardDisk)(INPTR GUIDPARAM aId, StorageBus_T aBus, LONG aChannel, LONG aDevice);
+    STDMETHOD(GetHardDisk)(StorageBus_T aBus, LONG aChannel, LONG aDevice, IHardDisk **aHardDisk);
+    STDMETHOD(DetachHardDisk) (StorageBus_T aBus, LONG aChannel, LONG aDevice);
     STDMETHOD(GetSerialPort) (ULONG slot, ISerialPort **port);
     STDMETHOD(GetParallelPort) (ULONG slot, IParallelPort **port);
     STDMETHOD(GetNetworkAdapter) (ULONG slot, INetworkAdapter **adapter);
@@ -559,6 +561,7 @@ public:
     virtual HRESULT onParallelPortChange(IParallelPort *ParallelPort) { return S_OK; }
     virtual HRESULT onVRDPServerChange() { return S_OK; }
     virtual HRESULT onUSBControllerChange() { return S_OK; }
+    virtual HRESULT onSATAControllerChange() { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
 
     HRESULT saveRegistryEntry (settings::Key &aEntryNode);
@@ -718,6 +721,7 @@ protected:
         mParallelPorts [SchemaDefs::ParallelPortCount];
     const ComObjPtr <AudioAdapter> mAudioAdapter;
     const ComObjPtr <USBController> mUSBController;
+    const ComObjPtr <SATAController> mSATAController;
     const ComObjPtr <BIOSSettings> mBIOSSettings;
     const ComObjPtr <NetworkAdapter>
         mNetworkAdapters [SchemaDefs::NetworkAdapterCount];

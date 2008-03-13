@@ -95,7 +95,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     HRESULT         hrc;
     char           *psz = NULL;
     BSTR            str = NULL;
-    unsigned        i;
 
 #define STR_CONV()  do { rc = RTUtf16ToUtf8(str, &psz); RC_CHECK(); } while (0)
 #define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } if (psz) { RTStrFree(psz); psz = NULL; } } while (0)
@@ -223,6 +222,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pLunL0 = NULL;        /* /Devices/Dev/0/LUN#0/ */
     PCFGMNODE pLunL1 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/ */
     PCFGMNODE pLunL2 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/Config/ */
+    PCFGMNODE pIdeInst = NULL;      /* /Devices/piix3ide/0/ */
+    PCFGMNODE pSataInst = NULL;     /* /Devices/ahci/0/ */
 
     rc = CFGMR3InsertNode(pRoot, "Devices", &pDevices);                             RC_CHECK();
 
@@ -572,22 +573,56 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * IDE (update this when the main interface changes)
      */
     rc = CFGMR3InsertNode(pDevices, "piix3ide", &pDev); /* piix3 */                 RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          1);                     RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pIdeInst);                                RC_CHECK();
+    rc = CFGMR3InsertInteger(pIdeInst, "Trusted",              1);  /* boolean */   RC_CHECK();
+    rc = CFGMR3InsertInteger(pIdeInst, "PCIDeviceNo",          1);                  RC_CHECK();
     Assert(!afPciDeviceNo[1]);
     afPciDeviceNo[1] = true;
-    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        1);                     RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertInteger(pIdeInst, "PCIFunctionNo",        1);                  RC_CHECK();
+    rc = CFGMR3InsertNode(pIdeInst,    "Config", &pCfg);                            RC_CHECK();
     rc = CFGMR3InsertInteger(pCfg,  "PIIX4", fPIIX4);               /* boolean */   RC_CHECK();
 
     /* Attach the status driver */
-    rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                            RC_CHECK();
+    rc = CFGMR3InsertNode(pIdeInst,    "LUN#999", &pLunL0);                         RC_CHECK();
     rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          RC_CHECK();
     rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
     rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapIDELeds[0]);RC_CHECK();
     rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 RC_CHECK();
     rc = CFGMR3InsertInteger(pCfg,  "Last",     3);                                 RC_CHECK();
+
+    /*
+     * SATA controller
+     */
+    ComPtr<ISATAController> sataController;
+    hrc = pMachine->COMGETTER(SATAController)(sataController.asOutParam());
+    BOOL enabled = FALSE;
+
+    if (sataController)
+    {
+        hrc = sataController->COMGETTER(Enabled)(&enabled);                         H();
+
+        if (enabled)
+        {
+            rc = CFGMR3InsertNode(pDevices, "ahci", &pDev);                             RC_CHECK();
+            rc = CFGMR3InsertNode(pDev,     "0", &pSataInst);                           RC_CHECK();
+            rc = CFGMR3InsertInteger(pIdeInst, "Trusted",              1);              RC_CHECK();
+            rc = CFGMR3InsertInteger(pIdeInst, "PCIDeviceNo",          13);             RC_CHECK();
+            Assert(!afPciDeviceNo[13]);
+            afPciDeviceNo[13] = true;
+            rc = CFGMR3InsertInteger(pIdeInst, "PCIFunctionNo",        1);              RC_CHECK();
+            rc = CFGMR3InsertNode(pIdeInst,    "Config", &pCfg);                        RC_CHECK();
+
+            for (uint32_t i = 0; i < 4; i++)
+            {
+                const char *g_apszConfig[] =
+                    { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
+                LONG aPortNumber;
+
+                hrc = sataController->GetIDEEmulationPort(i, &aPortNumber);             H();
+                rc = CFGMR3InsertInteger(pCfg, g_apszConfig[i], aPortNumber);           RC_CHECK();
+            }
+        }
+    }
 
     /* Attach the harddisks */
     ComPtr<IHardDiskAttachmentCollection> hdaColl;
@@ -599,201 +634,216 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     while (     SUCCEEDED(hrc = hdaEnum->HasMore(&fMore))
            &&   fMore)
     {
+        PCFGMNODE pHardDiskCtl;
         ComPtr<IHardDiskAttachment> hda;
         hrc = hdaEnum->GetNext(hda.asOutParam());                                   H();
         ComPtr<IHardDisk> hardDisk;
         hrc = hda->COMGETTER(HardDisk)(hardDisk.asOutParam());                      H();
-        DiskControllerType_T enmCtl;
-        hrc = hda->COMGETTER(Controller)(&enmCtl);                                  H();
+        StorageBus_T enmBus;
+        hrc = hda->COMGETTER(Bus)(&enmBus);                                         H();
         LONG lDev;
-        hrc = hda->COMGETTER(DeviceNumber)(&lDev);                                  H();
+        hrc = hda->COMGETTER(Device)(&lDev);                                        H();
+        LONG lChannel;
+        hrc = hda->COMGETTER(Channel)(&lChannel);                                   H();
 
-        switch (enmCtl)
+        int iLUN;
+        switch (enmBus)
         {
-            case DiskControllerType_IDE0:
-                i = 0;
-                break;
-            case DiskControllerType_IDE1:
-                i = 2;
+            case StorageBus_IDE:
+            {
+                if (lChannel >= 2 || lChannel < 0)
+                {
+                    AssertMsgFailed(("invalid controller channel number: %d\n", lChannel));
+                    return VERR_GENERAL_FAILURE;
+                }
+
+                if (lDev >= 2 || lDev < 0)
+                {
+                    AssertMsgFailed(("invalid controller device number: %d\n", lDev));
+                    return VERR_GENERAL_FAILURE;
+                }
+                iLUN = 2*lChannel + lDev;
+                pHardDiskCtl = pIdeInst;
+            }
+            break;
+            case StorageBus_SATA:
+                iLUN = lChannel;
+                pHardDiskCtl = enabled ? pSataInst : NULL;
                 break;
             default:
-                AssertMsgFailed(("invalid disk controller type: %d\n", enmCtl));
+                AssertMsgFailed(("invalid disk controller type: %d\n", enmBus));
                 return VERR_GENERAL_FAILURE;
         }
 
-        if (lDev < 0 || lDev >= 2)
+        /* Can be NULL if SATA controller is not enabled and current hard disk is attached to SATA controller. */
+        if (pHardDiskCtl)
         {
-            AssertMsgFailed(("invalid controller device number: %d\n", lDev));
-            return VERR_GENERAL_FAILURE;
-        }
+            char szLUN[16];
+            RTStrPrintf(szLUN, sizeof(szLUN), "LUN#%d", iLUN);
+            rc = CFGMR3InsertNode(pHardDiskCtl,    szLUN, &pLunL0);                     RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver",               "Block");           RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+            rc = CFGMR3InsertString(pCfg,   "Type",                 "HardDisk");        RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "Mountable",            0);                 RC_CHECK();
 
-        i = i + lDev;
-
-        char szLUN[16];
-        RTStrPrintf(szLUN, sizeof(szLUN), "LUN#%d", i);
-        rc = CFGMR3InsertNode(pInst,    szLUN, &pLunL0);                            RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",               "Block");           RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
-        rc = CFGMR3InsertString(pCfg,   "Type",                 "HardDisk");        RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "Mountable",            0);                 RC_CHECK();
-
-        HardDiskStorageType_T hddType;
-        hardDisk->COMGETTER(StorageType)(&hddType);
-        if (hddType == HardDiskStorageType_VirtualDiskImage)
-        {
-            ComPtr<IVirtualDiskImage> vdiDisk = hardDisk;
-            AssertBreak (!vdiDisk.isNull(), hrc = E_FAIL);
-
-            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver",         "VBoxHDD");               RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
-            hrc = vdiDisk->COMGETTER(FilePath)(&str);                                   H();
-            STR_CONV();
-            rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
-            STR_FREE();
-
-            /* Create an inversed tree of parents. */
-            ComPtr<IHardDisk> parentHardDisk = hardDisk;
-            for (PCFGMNODE pParent = pCfg;;)
+            HardDiskStorageType_T hddType;
+            hardDisk->COMGETTER(StorageType)(&hddType);
+            if (hddType == HardDiskStorageType_VirtualDiskImage)
             {
-                ComPtr<IHardDisk> curHardDisk;
-                hrc = parentHardDisk->COMGETTER(Parent)(curHardDisk.asOutParam());      H();
-                if (!curHardDisk)
-                    break;
-
-                vdiDisk = curHardDisk;
+                ComPtr<IVirtualDiskImage> vdiDisk = hardDisk;
                 AssertBreak (!vdiDisk.isNull(), hrc = E_FAIL);
 
-                PCFGMNODE pCur;
-                rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                        RC_CHECK();
-                hrc = vdiDisk->COMGETTER(FilePath)(&str);                               H();
+                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1, "Driver",         "VBoxHDD");               RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+                hrc = vdiDisk->COMGETTER(FilePath)(&str);                                   H();
                 STR_CONV();
-                rc = CFGMR3InsertString(pCur,  "Path", psz);                            RC_CHECK();
+                rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
                 STR_FREE();
-                rc = CFGMR3InsertInteger(pCur, "ReadOnly", 1);                          RC_CHECK();
 
-                /* next */
-                pParent = pCur;
-                parentHardDisk = curHardDisk;
+                /* Create an inversed tree of parents. */
+                ComPtr<IHardDisk> parentHardDisk = hardDisk;
+                for (PCFGMNODE pParent = pCfg;;)
+                {
+                    ComPtr<IHardDisk> curHardDisk;
+                    hrc = parentHardDisk->COMGETTER(Parent)(curHardDisk.asOutParam());      H();
+                    if (!curHardDisk)
+                        break;
+
+                    vdiDisk = curHardDisk;
+                    AssertBreak (!vdiDisk.isNull(), hrc = E_FAIL);
+
+                    PCFGMNODE pCur;
+                    rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                        RC_CHECK();
+                    hrc = vdiDisk->COMGETTER(FilePath)(&str);                               H();
+                    STR_CONV();
+                    rc = CFGMR3InsertString(pCur,  "Path", psz);                            RC_CHECK();
+                    STR_FREE();
+                    rc = CFGMR3InsertInteger(pCur, "ReadOnly", 1);                          RC_CHECK();
+
+                    /* next */
+                    pParent = pCur;
+                    parentHardDisk = curHardDisk;
+                }
             }
-        }
-        else if (hddType == HardDiskStorageType_ISCSIHardDisk)
-        {
-            ComPtr<IISCSIHardDisk> iSCSIDisk = hardDisk;
-            AssertBreak (!iSCSIDisk.isNull(), hrc = E_FAIL);
-
-            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver",         "iSCSI");                 RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
-
-            /* Set up the iSCSI initiator driver configuration. */
-            hrc = iSCSIDisk->COMGETTER(Target)(&str);                                   H();
-            STR_CONV();
-            rc = CFGMR3InsertString(pCfg,   "TargetName",   psz);                       RC_CHECK();
-            STR_FREE();
-
-            // @todo currently there is no Initiator name config.
-            rc = CFGMR3InsertString(pCfg,   "InitiatorName", "iqn.2006-02.de.innotek.initiator"); RC_CHECK();
-
-            ULONG64 lun;
-            hrc = iSCSIDisk->COMGETTER(Lun)(&lun);                                      H();
-            rc = CFGMR3InsertInteger(pCfg,   "LUN",         lun);                       RC_CHECK();
-
-            hrc = iSCSIDisk->COMGETTER(Server)(&str);                                   H();
-            STR_CONV();
-            USHORT port;
-            hrc = iSCSIDisk->COMGETTER(Port)(&port);                                    H();
-            if (port != 0)
+            else if (hddType == HardDiskStorageType_ISCSIHardDisk)
             {
-                char *pszTN;
-                RTStrAPrintf(&pszTN, "%s:%u", psz, port);
-                rc = CFGMR3InsertString(pCfg,   "TargetAddress",    pszTN);             RC_CHECK();
-                RTStrFree(pszTN);
+                ComPtr<IISCSIHardDisk> iSCSIDisk = hardDisk;
+                AssertBreak (!iSCSIDisk.isNull(), hrc = E_FAIL);
+
+                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1, "Driver",         "iSCSI");                 RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+
+                /* Set up the iSCSI initiator driver configuration. */
+                hrc = iSCSIDisk->COMGETTER(Target)(&str);                                   H();
+                STR_CONV();
+                rc = CFGMR3InsertString(pCfg,   "TargetName",   psz);                       RC_CHECK();
+                STR_FREE();
+
+                // @todo currently there is no Initiator name config.
+                rc = CFGMR3InsertString(pCfg,   "InitiatorName", "iqn.2006-02.de.innotek.initiator"); RC_CHECK();
+
+                ULONG64 lun;
+                hrc = iSCSIDisk->COMGETTER(Lun)(&lun);                                      H();
+                rc = CFGMR3InsertInteger(pCfg,   "LUN",         lun);                       RC_CHECK();
+
+                hrc = iSCSIDisk->COMGETTER(Server)(&str);                                   H();
+                STR_CONV();
+                USHORT port;
+                hrc = iSCSIDisk->COMGETTER(Port)(&port);                                    H();
+                if (port != 0)
+                {
+                    char *pszTN;
+                    RTStrAPrintf(&pszTN, "%s:%u", psz, port);
+                    rc = CFGMR3InsertString(pCfg,   "TargetAddress",    pszTN);             RC_CHECK();
+                    RTStrFree(pszTN);
+                }
+                else
+                {
+                    rc = CFGMR3InsertString(pCfg,   "TargetAddress",    psz);               RC_CHECK();
+                }
+                STR_FREE();
+
+                hrc = iSCSIDisk->COMGETTER(UserName)(&str);                                 H();
+                if (str)
+                {
+                    STR_CONV();
+                    rc = CFGMR3InsertString(pCfg,   "InitiatorUsername",    psz);           RC_CHECK();
+                    STR_FREE();
+                }
+
+                hrc = iSCSIDisk->COMGETTER(Password)(&str);                                 H();
+                if (str)
+                {
+                    STR_CONV();
+                    rc = CFGMR3InsertString(pCfg,   "InitiatorSecret",      psz);           RC_CHECK();
+                    STR_FREE();
+                }
+
+                // @todo currently there is no target username config.
+                //rc = CFGMR3InsertString(pCfg,   "TargetUsername",   "");                    RC_CHECK();
+
+                // @todo currently there is no target password config.
+                //rc = CFGMR3InsertString(pCfg,   "TargetSecret",     "");                    RC_CHECK();
+
+                /* The iSCSI initiator needs an attached iSCSI transport driver. */
+                rc = CFGMR3InsertNode(pLunL1,   "AttachedDriver", &pLunL2);                 RC_CHECK();
+                rc = CFGMR3InsertString(pLunL2, "Driver",           "iSCSITCP");            RC_CHECK();
+                /* Currently the transport driver has no config options. */
+            }
+            else if (hddType == HardDiskStorageType_VMDKImage)
+            {
+                ComPtr<IVMDKImage> vmdkDisk = hardDisk;
+                AssertBreak (!vmdkDisk.isNull(), hrc = E_FAIL);
+
+                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+#if 1 /* Enable new VD container code (and new VMDK), as the bugs are fixed. */
+                rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");               RC_CHECK();
+#else
+                rc = CFGMR3InsertString(pLunL1, "Driver",         "VmdkHDD");               RC_CHECK();
+#endif
+                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+                hrc = vmdkDisk->COMGETTER(FilePath)(&str);                                  H();
+                STR_CONV();
+                rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
+                STR_FREE();
+                rc = CFGMR3InsertString(pCfg,   "Format",           "VMDK");                RC_CHECK();
+            }
+            else if (hddType == HardDiskStorageType_CustomHardDisk)
+            {
+                ComPtr<ICustomHardDisk> customHardDisk = hardDisk;
+                AssertBreak (!customHardDisk.isNull(), hrc = E_FAIL);
+
+                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");                    RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+                hrc = customHardDisk->COMGETTER(Location)(&str);                            H();
+                STR_CONV();
+                rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
+                STR_FREE();
+                hrc = customHardDisk->COMGETTER(Format)(&str);                              H();
+                STR_CONV();
+                rc = CFGMR3InsertString(pCfg,   "Format",           psz);                   RC_CHECK();
+                STR_FREE();
+            }
+            else if (hddType == HardDiskStorageType_VHDImage)
+            {
+                ComPtr<IVHDImage> vhdDisk = hardDisk;
+                AssertBreak (!vhdDisk.isNull(), hrc = E_FAIL);
+
+                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");                    RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+                hrc = vhdDisk->COMGETTER(FilePath)(&str);                                   H();
+                STR_CONV();
+                rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
+                rc = CFGMR3InsertString(pCfg,   "Format",           "VHD");                 RC_CHECK();
+                STR_FREE();
             }
             else
-            {
-                rc = CFGMR3InsertString(pCfg,   "TargetAddress",    psz);               RC_CHECK();
-            }
-            STR_FREE();
-
-            hrc = iSCSIDisk->COMGETTER(UserName)(&str);                                 H();
-            if (str)
-            {
-                STR_CONV();
-                rc = CFGMR3InsertString(pCfg,   "InitiatorUsername",    psz);           RC_CHECK();
-                STR_FREE();
-            }
-
-            hrc = iSCSIDisk->COMGETTER(Password)(&str);                                 H();
-            if (str)
-            {
-                STR_CONV();
-                rc = CFGMR3InsertString(pCfg,   "InitiatorSecret",      psz);           RC_CHECK();
-                STR_FREE();
-            }
-
-            // @todo currently there is no target username config.
-            //rc = CFGMR3InsertString(pCfg,   "TargetUsername",   "");                    RC_CHECK();
-
-            // @todo currently there is no target password config.
-            //rc = CFGMR3InsertString(pCfg,   "TargetSecret",     "");                    RC_CHECK();
-
-            /* The iSCSI initiator needs an attached iSCSI transport driver. */
-            rc = CFGMR3InsertNode(pLunL1,   "AttachedDriver", &pLunL2);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL2, "Driver",           "iSCSITCP");            RC_CHECK();
-            /* Currently the transport driver has no config options. */
+               AssertFailed();
         }
-        else if (hddType == HardDiskStorageType_VMDKImage)
-        {
-            ComPtr<IVMDKImage> vmdkDisk = hardDisk;
-            AssertBreak (!vmdkDisk.isNull(), hrc = E_FAIL);
-
-            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-#if 1 /* Enable new VD container code (and new VMDK), as the bugs are fixed. */
-            rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");               RC_CHECK();
-#else
-            rc = CFGMR3InsertString(pLunL1, "Driver",         "VmdkHDD");               RC_CHECK();
-#endif
-            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
-            hrc = vmdkDisk->COMGETTER(FilePath)(&str);                                  H();
-            STR_CONV();
-            rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
-            STR_FREE();
-            rc = CFGMR3InsertString(pCfg,   "Format",           "VMDK");                RC_CHECK();
-        }
-        else if (hddType == HardDiskStorageType_CustomHardDisk)
-        {
-            ComPtr<ICustomHardDisk> customHardDisk = hardDisk;
-            AssertBreak (!customHardDisk.isNull(), hrc = E_FAIL);
-
-            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");                    RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
-            hrc = customHardDisk->COMGETTER(Location)(&str);                            H();
-            STR_CONV();
-            rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
-            STR_FREE();
-            hrc = customHardDisk->COMGETTER(Format)(&str);                              H();
-            STR_CONV();
-            rc = CFGMR3InsertString(pCfg,   "Format",           psz);                   RC_CHECK();
-            STR_FREE();
-        }
-        else if (hddType == HardDiskStorageType_VHDImage)
-        {
-            ComPtr<IVHDImage> vhdDisk = hardDisk;
-            AssertBreak (!vhdDisk.isNull(), hrc = E_FAIL);
-
-            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");                    RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
-            hrc = vhdDisk->COMGETTER(FilePath)(&str);                                   H();
-            STR_CONV();
-            rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
-            rc = CFGMR3InsertString(pCfg,   "Format",           "VHD");                 RC_CHECK();
-            STR_FREE();
-        }
-        else
-           AssertFailed();
     }
     H();
 
@@ -802,7 +852,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     if (dvdDrive)
     {
         // ASSUME: DVD drive is always attached to LUN#2 (i.e. secondary IDE master)
-        rc = CFGMR3InsertNode(pInst,    "LUN#2", &pLunL0);                          RC_CHECK();
+        rc = CFGMR3InsertNode(pIdeInst,    "LUN#2", &pLunL0);                       RC_CHECK();
         ComPtr<IHostDVDDrive> hostDvdDrive;
         hrc = dvdDrive->GetHostDrive(hostDvdDrive.asOutParam());                    H();
         if (hostDvdDrive)
@@ -1287,7 +1337,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     ComPtr<IAudioAdapter> audioAdapter;
     hrc = pMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());             H();
-    BOOL enabled = FALSE;
     if (audioAdapter)
         hrc = audioAdapter->COMGETTER(Enabled)(&enabled);                           H();
 
