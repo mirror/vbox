@@ -223,10 +223,13 @@ bool VBoxGuestSeamlessX11::isVirtualRoot(Window hWin)
     bool rc = false;
 
     windowTypeRaw = XXGetProperty(mDisplay, hWin, XA_ATOM, WM_TYPE_PROP, &ulCount);
-    windowType = reinterpret_cast<Atom *>(windowTypeRaw);
-    if (   (ulCount != 0)
-        && (*windowType == XInternAtom(mDisplay, WM_TYPE_DESKTOP_PROP, True)))
-        rc = true;
+    if (windowTypeRaw != NULL)
+    {
+        windowType = reinterpret_cast<Atom *>(windowTypeRaw);
+        if (   (ulCount != 0)
+            && (*windowType == XInternAtom(mDisplay, WM_TYPE_DESKTOP_PROP, True)))
+            rc = true;
+    }
     return rc;
 }
 
