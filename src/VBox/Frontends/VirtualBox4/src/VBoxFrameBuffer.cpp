@@ -24,7 +24,6 @@
 
 /* Qt includes */
 #include <QPainter>
-#include <qdesktopwidget.h>
 
 //
 // VBoxFrameBuffer class
@@ -198,7 +197,7 @@ STDMETHODIMP VBoxFrameBuffer::VideoModeSupported (ULONG aWidth, ULONG aHeight,
     if (!aSupported)
         return E_POINTER;
     *aSupported = TRUE;
-    QRect screen = QApplication::desktop()->screenGeometry (mView);
+    QRect screen = mView->getDesktopGeometry();
     if (aWidth > (ULONG) screen.width())
         *aSupported = FALSE;
     if (aHeight > (ULONG) screen.height())

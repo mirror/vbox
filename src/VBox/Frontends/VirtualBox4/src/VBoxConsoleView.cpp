@@ -748,6 +748,12 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
     setFocusPolicy (Qt::WheelFocus);
 
+    /* Remember the desktop geometry and register for geometry change
+       events for telling the guest about video modes we like. */
+    mDesktopGeometry = QApplication::desktop()->screenGeometry (this);
+    connect (QApplication::desktop(), SIGNAL(workAreaResized(int)),
+             this, SLOT(doResizeDesktop(int)));
+
 #if defined (VBOX_GUI_DEBUG) && defined (VBOX_GUI_FRAMEBUF_STAT)
     VMCPUTimer::calibrate (200);
 #endif
@@ -2244,6 +2250,16 @@ void VBoxConsoleView::toggleFSMode()
 }
 
 /**
+ * Get the current desktop geometry for the console view widget
+ *
+ * @returns the geometry
+ */
+QRect VBoxConsoleView::getDesktopGeometry()
+{
+    return mDesktopGeometry;
+}
+
+/**
  *  Called on every key press and release (while in focus).
  *
  *  @param aKey        virtual scan code (virtual key on Win32 and KeySym on X11)
@@ -3579,6 +3595,10 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
     }
 }
 
+void VBoxConsoleView::doResizeDesktop (int)
+{
+    mDesktopGeometry = QApplication::desktop()->screenGeometry (this);
+}
  
 /**
  * We send an initial size hint to the VM on startup, so that it can choose
