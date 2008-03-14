@@ -18,6 +18,7 @@
 #ifndef __Additions_client_display_change_h
 # define __Additions_client_display_change_h
 
+#include <VBox/log.h>
 #include <VBox/VBoxGuest.h>         /* for the R3 guest library functions  */
 
 #include "thread.h"                 /* for VBoxGuestThread */
@@ -48,6 +49,7 @@ public:
     }
     ~VBoxGuestDisplayChangeThreadX11()
     {
+        LogFlowThisFunc(("\n"));
         if (mInit)
         {
             try
@@ -56,6 +58,7 @@ public:
             }
             catch(...) {}
         }
+        LogFlowThisFunc(("returning\n"));
     }
     /**
      * Initialise the class and check that the guest supports dynamic resizing.
@@ -118,11 +121,13 @@ public:
     { mInit = false; }
     ~VBoxGuestDisplayChangeMonitor()
     {
+        LogFlowThisFunc(("\n"));
         try
         {
             uninit(2000);
         }
         catch(...) {}
+        LogFlowThisFunc(("returning\n"));
     }
 };
 

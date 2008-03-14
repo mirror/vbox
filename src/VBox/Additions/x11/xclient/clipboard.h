@@ -19,6 +19,7 @@
 #ifndef __Additions_linux_clipboard_h
 # define __Additions_linux_clipboard_h
 
+#include <VBox/log.h>
 #include "thread.h"                 /* for VBoxGuestThread */
 
 extern void vboxClipboardDisconnect (void);
@@ -89,11 +90,13 @@ public:
      */
     int init(void)
     {
+        LogFlowThisFunc(("\n"));
         int rc = mThreadFunction.init();
         if (RT_SUCCESS(rc))
             rc = mThread.start();
         if (RT_SUCCESS(rc))
             mInit = true;
+        LogFlowThisFunc(("returning %Rrc\n", rc));
         return rc;
     }
     /**
@@ -102,8 +105,10 @@ public:
      */
     void uninit(unsigned cMillies = RT_INDEFINITE_WAIT)
     {
+        LogFlowThisFunc(("\n"));
         if (mInit)
             mThread.stop(cMillies, NULL);
+        LogFlowThisFunc(("returning\n"));
     }
 
     VBoxGuestClipboard() : mThread(&mThreadFunction, 0, RTTHREADTYPE_MSG_PUMP,
@@ -111,10 +116,12 @@ public:
     { mInit = false; }
     ~VBoxGuestClipboard()
     {
+        LogFlowThisFunc(("\n"));
         if (mInit)
             try {
                 uninit(2000);
             } catch (...) { }
+        LogFlowThisFunc(("returning\n"));
     }
 };
 

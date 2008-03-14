@@ -20,7 +20,7 @@
 *   Header files                                                             *
 *****************************************************************************/
 
-#include <iprt/log.h>
+#include <VBox/log.h>
 #include <iprt/err.h>
 
 #include "seamless-host.h"
@@ -33,6 +33,7 @@ int VBoxGuestSeamlessHost::start(void)
 {
     int rc = VERR_NOT_SUPPORTED;
 
+    LogFlowThisFunc(("\n"));
     if (mRunning)  /* Assertion */
     {
         LogRel(("VBoxClient: seamless service started twice!\n"));
@@ -62,12 +63,14 @@ int VBoxGuestSeamlessHost::start(void)
     {
         Log(("VBoxClient (seamless): failed to enable seamless capability on host, rc=%Rrc\n", rc));
     }
+    LogFlowThisFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
 /** Stops the service. */
 void VBoxGuestSeamlessHost::stop(unsigned cMillies /* = RT_INDEFINITE_WAIT */)
 {
+    LogFlowThisFunc(("returning\n"));
     if (!mRunning)  /* Assertion */
     {
         LogRel(("VBoxClient: tried to stop seamless service which is not running!\n"));
@@ -77,6 +80,7 @@ void VBoxGuestSeamlessHost::stop(unsigned cMillies /* = RT_INDEFINITE_WAIT */)
     VbglR3CtlFilterMask(0, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST);
     VbglR3SeamlessSetCap(false);
     mRunning = false;
+    LogFlowThisFunc(("returning\n"));
 }
 
 /**
@@ -88,6 +92,7 @@ int VBoxGuestSeamlessHost::nextEvent(void)
 {
     VMMDevSeamlessMode newMode = VMMDev_Seamless_Disabled;
 
+    LogFlowThisFunc(("\n"));
     int rc = VbglR3SeamlessWaitEvent(&newMode);
     if (RT_SUCCESS(rc))
     {
@@ -96,9 +101,9 @@ int VBoxGuestSeamlessHost::nextEvent(void)
             case VMMDev_Seamless_Visible_Region:
             /* A simplified seamless mode, obtained by making the host VM window borderless and
               making the guest desktop transparent. */
-    #ifdef DEBUG
+#ifdef DEBUG
                 LogRelFunc(("VMMDev_Seamless_Visible_Region request received (VBoxClient).\n"));
-    #endif
+#endif
                 mState = ENABLE;
                 mObserver->notify();
                 break;
@@ -110,9 +115,9 @@ int VBoxGuestSeamlessHost::nextEvent(void)
                 LogRelFunc(("Warning: unsupported VMMDev_Seamless request %d received (VBoxClient).\n", newMode));
                 /* fall through to case VMMDev_Seamless_Disabled */
             case VMMDev_Seamless_Disabled:
-    #ifdef DEBUG
+#ifdef DEBUG
                 LogRelFunc(("VMMDev_Seamless_Disabled set (VBoxClient).\n"));
-    #endif
+#endif
                 mState = DISABLE;
                 mObserver->notify();
         }
@@ -121,6 +126,7 @@ int VBoxGuestSeamlessHost::nextEvent(void)
     {
         LogFunc(("VbglR3SeamlessWaitEvent returned %Rrc (VBoxClient)\n", rc));
     }
+    LogFlowThisFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
@@ -129,12 +135,14 @@ int VBoxGuestSeamlessHost::nextEvent(void)
  */
 void VBoxGuestSeamlessHost::updateRects(std::auto_ptr<std::vector<RTRECT> > pRects)
 {
+    LogFlowThisFunc(("\n"));
     if (0 == pRects.get())  /* Assertion */
     {
         LogRelThisFunc(("ERROR: called with null pointer!\n"));
         return;
     }
     VbglR3SeamlessSendRects(pRects.get()->size(), pRects.get()->empty() ? NULL : &pRects.get()->front());
+    LogFlowThisFunc(("returning\n"));
 }
 
 /**
@@ -145,6 +153,7 @@ void VBoxGuestSeamlessHost::updateRects(std::auto_ptr<std::vector<RTRECT> > pRec
  */
 int VBoxGuestSeamlessHostThread::threadFunction(VBoxGuestThread *pThread)
 {
+    LogFlowThisFunc(("\n"));
     if (0 != mHost)
     {
         mThread = pThread;
@@ -158,6 +167,7 @@ int VBoxGuestSeamlessHostThread::threadFunction(VBoxGuestThread *pThread)
             }
         }
     }
+    LogFlowThisFunc(("returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
@@ -166,6 +176,7 @@ int VBoxGuestSeamlessHostThread::threadFunction(VBoxGuestThread *pThread)
  */
 void VBoxGuestSeamlessHostThread::stop(void)
 {
+    LogFlowThisFunc(("\n"));
     if (0 != mHost)
     {
         /**
@@ -180,4 +191,5 @@ void VBoxGuestSeamlessHostThread::stop(void)
             mThread->yield();
         }
     }
+    LogFlowThisFunc(("returning\n"));
 }

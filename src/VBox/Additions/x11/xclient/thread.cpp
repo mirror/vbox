@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <VBox/log.h>
 #include <iostream>   /* For std::exception */
 
 #include "thread.h"
@@ -24,6 +25,7 @@ int VBoxGuestThread::stop(unsigned cMillies, int *prc)
 {
     int rc = VINF_SUCCESS;
 
+    LogFlowThisFunc(("\n"));
     if (NIL_RTTHREAD == mSelf)  /* Assertion */
     {
         LogRelThisFunc(("Attempted to stop thread %s which is not running!\n", mName));
@@ -43,12 +45,14 @@ int VBoxGuestThread::stop(unsigned cMillies, int *prc)
             LogRelThisFunc(("Failed to stop thread %s!\n", mName));
         }
     }
+    LogFlowThisFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
 /** Destroy the class, stopping the thread if necessary. */
 VBoxGuestThread::~VBoxGuestThread(void)
 {
+    LogFlowThisFunc(("\n"));
     if (NIL_RTTHREAD != mSelf)
     {
         LogRelThisFunc(("Warning!  Stopping thread %s, as it is still running!\n", mName));
@@ -58,19 +62,25 @@ VBoxGuestThread::~VBoxGuestThread(void)
         }
         catch(...) {}
     }
+    LogFlowThisFunc(("returning\n"));
 }
 
 /** Start the thread. */
 int VBoxGuestThread::start(void)
 {
+    int rc = VINF_SUCCESS;
+
+    LogFlowThisFunc(("returning\n"));
     if (NIL_RTTHREAD != mSelf)  /* Assertion */
     {
         LogRelThisFunc(("Attempted to start thead %s twice!\n", mName));
         return VERR_INTERNAL_ERROR;
     }
     mExit = false;
-    return RTThreadCreate(&mSelf, threadFunction, reinterpret_cast<void *>(this),
+    rc = RTThreadCreate(&mSelf, threadFunction, reinterpret_cast<void *>(this),
                           mStack, mType, mFlags, mName);
+    LogFlowThisFunc(("returning %Rrc\n", rc));
+    return rc;
 }
 
 /** Yield the CPU */
@@ -83,6 +93,8 @@ bool VBoxGuestThread::yield(void)
 int VBoxGuestThread::threadFunction(RTTHREAD self, void *pvUser)
 {
     int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("\n"));
     PSELF pSelf = reinterpret_cast<PSELF>(pvUser);
     pSelf->mRunning = true;
     try
@@ -100,5 +112,6 @@ int VBoxGuestThread::threadFunction(RTTHREAD self, void *pvUser)
         rc = VERR_UNRESOLVED_ERROR;
     }
     pSelf->mRunning = false;
+    LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }

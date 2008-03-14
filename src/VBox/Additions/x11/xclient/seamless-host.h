@@ -21,6 +21,7 @@
 #include <memory>                   /* for auto_ptr */
 #include <vector>                   /* for vector */
 
+#include <VBox/log.h>
 #include <VBox/VBoxGuest.h>         /* for the R3 guest library functions  */
 
 #include "seamless-glue.h"          /* for VBoxGuestSeamlessObserver */
@@ -120,12 +121,14 @@ public:
      */
     int init(VBoxGuestSeamlessObserver *pObserver)
     {
+        LogFlowThisFunc(("\n"));
         if (mObserver != 0)  /* Assertion */
         {
             LogRel(("VBoxClient: ERROR: attempt to initialise seamless host object twice!\n"));
             return VERR_INTERNAL_ERROR;
         }
         mObserver = pObserver;
+        LogFlowThisFunc(("returning VINF_SUCCESS\n"));
         return VINF_SUCCESS;
     }
 
@@ -160,6 +163,7 @@ public:
 
     ~VBoxGuestSeamlessHost()
     {
+        LogFlowThisFunc(("\n"));
         if (mRunning)  /* Assertion */
         {
             LogRel(("VBoxClient: seamless host object still running!  Stopping...\n"));
@@ -169,6 +173,7 @@ public:
             }
             catch(...) {}
         }
+        LogFlowThisFunc(("returning\n"));
     }
 };
 
