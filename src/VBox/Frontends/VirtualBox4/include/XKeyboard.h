@@ -19,19 +19,10 @@
 #ifndef __XKeyboard_h__
 #define __XKeyboard_h__
 
-// our structure used to return keyboard event information
-typedef struct _WINEKEYBOARDINFO
-{
-    unsigned short wVk;
-    unsigned short wScan;
-    unsigned long dwFlags;
-    unsigned long time;
-} WINEKEYBOARDINFO;
-
 // initialize the X keyboard subsystem
 bool initXKeyboard(Display *dpy);
 // our custom keyboard handler
-void handleXKeyEvent(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo);
+unsigned handleXKeyEvent(XEvent *event);
 // returns the number of keysyms per keycode (only valid after initXKeyboard())
 int getKeysymsPerKeycode();
 // Called after release logging is started, in case initXKeyboard wishes to log
