@@ -97,6 +97,8 @@ public:
 
     void setIgnoreMainwndResize (bool aYes) { mIgnoreMainwndResize = aYes; }
 
+    QRect getDesktopGeometry();
+
 signals:
 
     void keyboardStateChanged (int state);
@@ -189,6 +191,7 @@ private:
 private slots:
 
     void doResizeHint (const QSize &aSize = QSize());
+    void doResizeDesktop (int);
 
 private:
 
@@ -285,6 +288,7 @@ private:
     CGImageRef mVirtualBoxLogo;
 #endif
     QSize mLastSizeHint;
+    QRect mDesktopGeometry;
 };
 
 #endif // __VBoxConsoleView_h__
