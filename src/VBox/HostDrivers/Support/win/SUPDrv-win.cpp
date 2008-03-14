@@ -568,7 +568,11 @@ static void VBoxDrvNtGipTerm(PSUPDRVDEVEXT pDevExt)
         RtlInitUnicodeString(&RoutineName, L"KeFlushQueuedDpcs");
         VOID (*pfnKeFlushQueuedDpcs)(VOID) = (VOID (*)(VOID))MmGetSystemRoutineAddress(&RoutineName);
         if (pfnKeFlushQueuedDpcs)
+        {
+            /* KeFlushQueuedDpcs must be run at IRQL PASSIVE_LEVEL */
+            AssertMsg(KeGetCurrentIrql() == PASSIVE_LEVEL, ("%d != %d (PASSIVE_LEVEL)\n", KeGetCurrentIrql(), PASSIVE_LEVEL));
             pfnKeFlushQueuedDpcs();
+        }
     }
 
     /*
