@@ -168,7 +168,7 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
         &&  !(Mask & RT_BIT_64(idCpu)))
         return VERR_CPU_NOT_FOUND;  /* can't distinguish between cpu not present or offline */
 
-    /* KeFlushQueuedDpcs is not present in Windows 2000; import it dynamically so we just fail this call. */
+    /* KeFlushQueuedDpcs is not present in Windows 2000; import it dynamically so we can just fail this call. */
     UNICODE_STRING  RoutineName;
     RtlInitUnicodeString(&RoutineName, L"KeFlushQueuedDpcs");
     VOID (*pfnKeFlushQueuedDpcs)(VOID) = (VOID (*)(VOID))MmGetSystemRoutineAddress(&RoutineName);
