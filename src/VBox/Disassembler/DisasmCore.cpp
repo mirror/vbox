@@ -449,7 +449,7 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
 {
     int subtype = OP_PARM_VSUBTYPE(pParam->param);
 
-    if(subtype == OP_PARM_v)
+    if (subtype == OP_PARM_v)
     {
         subtype = (pCpu->opmode == CPUMODE_32BIT) ? OP_PARM_d : OP_PARM_w;
     }
