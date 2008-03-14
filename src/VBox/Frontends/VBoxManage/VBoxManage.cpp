@@ -399,8 +399,13 @@ static void printUsage(USAGECATEGORY u64Cmd)
         }
         RTPrintf("                            [-usb on|off]\n"
                  "                            [-usbehci on|off]\n"
-                 "                            [-snapshotfolder default|<path>]\n"
-                 "\n");
+                 "                            [-snapshotfolder default|<path>]\n");
+#ifdef VBOX_WITH_AHCI
+        RTPrintf("                            [-sata on|off]\n"
+                 "                            [-sataport<1-30> none|<uuid>|<filename>]\n"
+                 "                            [-sataideemulation hda|hdb|hdc|hdd <1-30>]\n");
+#endif
+        RTPrintf("\n");
     }
 
     if (u64Cmd & USAGE_STARTVM)
@@ -1997,6 +2002,23 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         RTPrintf("<none>\n");
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("\n");
+
+    /*
+     * SATA.
+     */
+    ComPtr<ISATAController> SATACtl;
+    rc = machine->COMGETTER(SATAController)(SATACtl.asOutParam());
+    if (SUCCEEDED(rc))
+    {
+        BOOL fEnabled;
+        rc = SATACtl->COMGETTER(Enabled)(&fEnabled);
+        if (FAILED(rc))
+            fEnabled = false;
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("sata=\"%s\"\n", fEnabled ? "on" : "off");
+        else
+            RTPrintf("SATA:            %s\n", fEnabled ? "enabled" : "disabled");
+    }
 
     if (console)
     {
@@ -3679,7 +3701,7 @@ static int handleModifyVM(int argc, char *argv[],
     char *biospxedebug = NULL;
     DeviceType_T bootDevice[4];
     int bootDeviceChanged[4] = { false };
-    char *hdds[4] = {0};
+    char *hdds[34] = {0};
     char *dvd = NULL;
     char *dvdpassthrough = NULL;
     char *floppy = NULL;
@@ -3698,6 +3720,8 @@ static int handleModifyVM(int argc, char *argv[],
     char *snapshotFolder = NULL;
     ULONG guestMemBalloonSize = (ULONG)-1;
     ULONG guestStatInterval = (ULONG)-1;
+    int   fSataEnabled = -1;
+    int   sataBootDevices[4] = {-1,-1,-1,-1};
 
     /* VM ID + at least one parameter. Parameter arguments are checked
      * individually. */
@@ -4306,6 +4330,61 @@ static int handleModifyVM(int argc, char *argv[],
             if (vrc != VINF_SUCCESS)
                 return errorArgument("Error parsing guest statistics interval '%s'", argv[i]);
             guestStatInterval = uVal;
+        }
+        else if (strcmp(argv[i], "-sata") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            if (strcmp(argv[i], "on") == 0 || strcmp(argv[i], "enable") == 0)
+                fSataEnabled = 1;
+            else if (strcmp(argv[i], "off") == 0 || strcmp(argv[i], "disable") == 0)
+                fSataEnabled = 0;
+            else
+                return errorArgument("Invalid -usb argument '%s'", argv[i]);
+        }
+        else if (strncmp(argv[i], "-sataport", 9) == 0)
+        {
+            unsigned n = parseNum(&argv[i][9], 30, "SATA");
+            if (!n)
+                return 1;
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            hdds[n+3] = argv[i];
+        }
+        else if (strcmp(argv[i], "-sataideemulation") == 0)
+        {
+            unsigned bootDevicePos = 0;
+            unsigned n;
+
+            if (argc <= i + 2)
+            {
+                return errorArgument("Missing arguments to '%s'", argv[i]);
+            }
+            i++;
+
+            if (strcmp(argv[i], "hda") == 0)
+                bootDevicePos = 0;
+            else if (strcmp(argv[i], "hdb") == 0)
+                bootDevicePos = 1;
+            else if (strcmp(argv[i], "hdc") == 0)
+                bootDevicePos = 2;
+            else if (strcmp(argv[i], "hdd") == 0)
+                bootDevicePos = 3;
+            else
+                return errorArgument("Invalid argument to '%s'", argv[i-1]);
+
+            i++;
+            n = parseNum(argv[i], 30, "SATA");
+            if (!n)
+                return 1;
+
+            sataBootDevices[bootDevicePos] = n;
         }
         else
         {
@@ -5273,6 +5352,81 @@ static int handleModifyVM(int argc, char *argv[],
 
         if (guestStatInterval != (ULONG)-1)
             CHECK_ERROR(machine, COMSETTER(StatisticsUpdateInterval)(guestStatInterval));
+
+        /*
+         * SATA controller enable/disable
+         */
+        if (fSataEnabled != -1)
+        {
+            ComPtr<ISATAController> SataCtl;
+            CHECK_ERROR(machine, COMGETTER(SATAController)(SataCtl.asOutParam()));
+            if (SUCCEEDED(rc))
+            {
+                CHECK_ERROR(SataCtl, COMSETTER(Enabled)(!!fSataEnabled));
+            }
+        }
+
+        for (uint32_t i = 4; i < 34; i++)
+        {
+            if (hdds[i])
+            {
+                if (strcmp(hdds[i], "none") == 0)
+                {
+                    machine->DetachHardDisk(StorageBus_SATA, i-4, 0);
+                }
+                else
+                {
+                    /* first guess is that it's a UUID */
+                    Guid uuid(hdds[i]);
+                    ComPtr<IHardDisk> hardDisk;
+                    rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+                    /* not successful? Then it must be a filename */
+                    if (!hardDisk)
+                    {
+                        CHECK_ERROR(virtualBox, OpenHardDisk(Bstr(hdds[i]), hardDisk.asOutParam()));
+                        if (SUCCEEDED(rc) && hardDisk)
+                        {
+                            /* first check if it's already registered */
+                            Guid hddUUID;
+                            hardDisk->COMGETTER(Id)(hddUUID.asOutParam());
+                            ComPtr<IHardDisk> registeredHDD;
+                            rc = virtualBox->GetHardDisk(hddUUID, registeredHDD.asOutParam());
+                            if (SUCCEEDED(rc) && registeredHDD)
+                                hardDisk = registeredHDD;
+                            else
+                            {
+                                /* it has to be registered */
+                                CHECK_ERROR(virtualBox, RegisterHardDisk(hardDisk));
+                                if (FAILED(rc))
+                                    break;
+                            }
+                        }
+                    }
+                    if (hardDisk)
+                    {
+                        hardDisk->COMGETTER(Id)(uuid.asOutParam());
+                        CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_SATA, i-4, 0));
+                    }
+                    else
+                        rc = E_FAIL;
+                    if (FAILED(rc))
+                        break;
+                }
+            }
+        }
+
+        for (uint32_t i = 0; i < 4; i++)
+        {
+            if (sataBootDevices[i] != -1)
+            {
+                ComPtr<ISATAController> SataCtl;
+                CHECK_ERROR(machine, COMGETTER(SATAController)(SataCtl.asOutParam()));
+                if (SUCCEEDED(rc))
+                {
+                    CHECK_ERROR(SataCtl, SetIDEEmulationPort(i, sataBootDevices[i]));
+                }
+            }
+        }
 
         /* commit changes */
         CHECK_ERROR(machine, SaveSettings());

@@ -222,11 +222,6 @@ STDMETHODIMP SATAController::GetIDEEmulationPort(LONG DevicePosition, LONG *aPor
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
-    AutoLock alock (this);
-
     switch (DevicePosition)
     {
         case 0:
