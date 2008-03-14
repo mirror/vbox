@@ -22,6 +22,7 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
+#include <VBox/log.h>
 
 #include "VBGLR3Internal.h"
 
@@ -199,4 +200,33 @@ VBGLR3DECL(int) VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint3
             rc = VERR_TRY_AGAIN;
     }
     return rc;
+}
+
+/**
+ * Query the host as to whether it likes a specific video mode.
+ *
+ * @returns the result of the query
+ * @param   cx     the width of the mode being queried
+ * @param   cy     the height of the mode being queried
+ * @param   cBits  the bpp of the mode being queried
+ */
+VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy,
+                                          uint32_t cBits)
+{
+    bool brc = false;
+    int rc = VINF_SUCCESS;
+    VMMDevVideoModeSupportedRequest req;
+
+    vmmdevInitRequest(&req.header, VMMDevReq_VideoModeSupported);
+    req.width      = cx;
+    req.height     = cy;
+    req.bpp        = cBits;
+    req.fSupported = false;
+    rc = vbglR3GRPerform(&req.header);
+    if (RT_SUCCESS(rc) && RT_SUCCESS(req.header.rc))
+        brc = req.fSupported;
+    else
+        LogRelFunc(("error querying video mode supported status from VMMDev."
+                    "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req.header.rc));
+    return brc;
 }

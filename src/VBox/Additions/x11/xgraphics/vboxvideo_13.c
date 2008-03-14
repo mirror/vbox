@@ -345,8 +345,11 @@ vbox_output_dpms (xf86OutputPtr output, int mode)
 static int
 vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
 {
-    (void) output; (void) mode;
-    return MODE_OK;
+    if (vboxHostLikesVideoMode(mode->HDisplay, mode->VDisplay,
+                               output->scrn->bitsPerPixel))
+        return MODE_OK;
+    else
+        return MODE_BAD;
 }
 
 static Bool
@@ -409,9 +412,6 @@ vbox_output_get_modes (xf86OutputPtr output)
     if (rc && (0 != x) && (0 != y)) {
         vbox_output_add_mode(&pModes, NULL, x, y, TRUE);
     }
-    vbox_output_add_mode(&pModes, NULL, 1024, 768, FALSE);
-    vbox_output_add_mode(&pModes, NULL, 800, 600, FALSE);
-    vbox_output_add_mode(&pModes, NULL, 640, 480, FALSE);
     TRACE2;
     return pModes;
 }

@@ -881,3 +881,18 @@ vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy,
     xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to obtain the last resolution requested by the guest, rc=%d.\n", rc);
     return FALSE;
 }
+
+
+/**
+ * Query the host as to whether it likes a specific video mode.
+ *
+ * @returns the result of the query
+ * @param   cx     the width of the mode being queried
+ * @param   cy     the height of the mode being queried
+ * @param   cBits  the bpp of the mode being queried
+ */
+Bool
+vboxHostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits)
+{
+    return VbglR3HostLikesVideoMode(cx, cy, cBits);
+}
