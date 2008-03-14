@@ -157,13 +157,10 @@ void doXKeyboardLogging(Display *dpy)
 /*
  * Translate an X server scancode to a PC keyboard scancode.
  */
-void handleXKeyEvent(Display *, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo)
+unsigned handleXKeyEvent(XEvent *event)
 {
     // call the WINE event handler
-    XKeyEvent *keyEvent = &event->xkey;
-    unsigned scan = X11DRV_KeyEvent(keyEvent->keycode);
-    wineKbdInfo->wScan = scan & 0xFF;
-    wineKbdInfo->dwFlags = scan >> 8;
+    return X11DRV_KeyEvent(event->xkey.keycode);
 }
 
 /**

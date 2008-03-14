@@ -1882,8 +1882,6 @@ bool VBoxConsoleView::pmEvent (QMSG *aMsg)
  */
 bool VBoxConsoleView::x11Event (XEvent *event)
 {
-    static WINEKEYBOARDINFO wineKeyboardInfo;
-
     switch (event->type)
     {
         /* We have to handle XFocusOut right here as this event is not passed
@@ -1899,44 +1897,39 @@ bool VBoxConsoleView::x11Event (XEvent *event)
             if (mAttached)
                 break;
             /*  else fall through */
-        /// @todo (AH) later, we might want to handle these as well
-        case KeymapNotify:
-        case MappingNotify:
         default:
             return false; /* pass the event to Qt */
     }
 
-    /* perform the mega-complex translation using the wine algorithms */
-    handleXKeyEvent (QX11Info::display(), event, &wineKeyboardInfo);
+    /* Translate the keycode to a PC scan code. */
+    unsigned scan = handleXKeyEvent (event);
 
 #if 0
     char buf [256];
-    sprintf (buf, "pr=%d kc=%08X st=%08X fl=%08lX scan=%04X",
+    sprintf (buf, "pr=%d kc=%08X st=%08X extended=%s scan=%04X",
              event->type == XKeyPress ? 1 : 0, event->xkey.keycode,
-             event->xkey.state, wineKeyboardInfo.dwFlags, wineKeyboardInfo.wScan);
+             event->xkey.state, scan >> 8 ? "true" : "false", scan & 0x7F);
     mMainWnd->statusBar()->message (buf);
     LogFlow (("### %s\n", buf));
 #endif
 
-    int scan = wineKeyboardInfo.wScan & 0x7F;
     // scancodes 0x00 (no valid translation) and 0x80 are ignored
-    if (!scan)
+    if (!scan & 0x7F)
         return true;
 
     KeySym ks = ::XKeycodeToKeysym (event->xkey.display, event->xkey.keycode, 0);
 
     int flags = 0;
-    if (wineKeyboardInfo.dwFlags & 0x0001)
+    if (scan >> 8)
         flags |= KeyExtended;
     if (event->type == XKeyPress)
         flags |= KeyPressed;
 
+    /* Remove the extended flag */
+    scan &= 0x7F;
+
     switch (ks)
     {
-        case XK_Num_Lock:
-            // Wine sets the extended bit for the NumLock key. Reset it.
-            flags &= ~KeyExtended;
-            break;
         case XK_Print:
             flags |= KeyPrint;
             break;
