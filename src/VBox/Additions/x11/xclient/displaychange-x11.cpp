@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <VBox/log.h>
 #include <VBox/VBoxGuest.h>
 #include <iprt/assert.h>
 
@@ -31,6 +32,7 @@ int VBoxGuestDisplayChangeThreadX11::init(void)
 {
     int rc = VINF_SUCCESS, rcSystem, rcErrno;
 
+    LogFlowThisFunc(("\n"));
     rcSystem = system("VBoxRandR --test");
     if (-1 == rcSystem)
     {
@@ -46,13 +48,16 @@ int VBoxGuestDisplayChangeThreadX11::init(void)
         rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     if (RT_SUCCESS(rc))
         mInit = true;
+    LogFlowThisFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
 void VBoxGuestDisplayChangeThreadX11::uninit(void)
 {
+    LogFlowThisFunc(("\n"));
     VbglR3CtlFilterMask(0, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
     mInit = false;
+    LogFlowThisFunc(("returning\n"));
 }
 
 /**
@@ -61,6 +66,7 @@ void VBoxGuestDisplayChangeThreadX11::uninit(void)
 int VBoxGuestDisplayChangeThreadX11::threadFunction(VBoxGuestThread *pThread)
 {
     mThread = pThread;
+    LogFlowThisFunc(("\n"));
     while (!mThread->isStopping())
     {
         uint32_t cx, cy, cBits, iDisplay;
@@ -72,6 +78,7 @@ int VBoxGuestDisplayChangeThreadX11::threadFunction(VBoxGuestThread *pThread)
         else
             system("VBoxRandR");
     }
+    LogFlowThisFunc(("returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
@@ -86,17 +93,20 @@ void VBoxGuestDisplayChangeThreadX11::stop(void)
      *       notice that we wish it to exit.  And if it is somewhere in-between, the
      *       yield() should give it time to get to one of places mentioned above.
      */
+    LogFlowThisFunc(("\n"));
     for (int i = 0; (i < 5) && mThread->isRunning(); ++i)
     {
         VbglR3InterruptEventWaits();;
         mThread->yield();
     }
+    LogFlowThisFunc(("returning\n"));
 }
 
 int VBoxGuestDisplayChangeMonitor::init(void)
 {
     int rc = VINF_SUCCESS;
 
+    LogFlowThisFunc(("\n"));
     if (mInit)
         return VINF_SUCCESS;
     rc = mThreadFunction.init();
@@ -110,14 +120,17 @@ int VBoxGuestDisplayChangeMonitor::init(void)
     }
     if (RT_SUCCESS(rc))
         mInit = true;
+    LogFlowThisFunc(("returning %Rrc\n, rc"));
     return rc;
 }
 
 void VBoxGuestDisplayChangeMonitor::uninit(unsigned cMillies /* = RT_INDEFINITE_WAIT */)
 {
+    LogFlowThisFunc(("\n"));
     if (mInit)
     {
         if (mThread.stop(cMillies, 0))
             mThreadFunction.uninit();
     }
+    LogFlowThisFunc(("returning\n"));
 }

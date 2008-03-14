@@ -16,8 +16,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-// #define LOG_GROUP LOG_GROUP_DEV_VMM_BACKDOOR
-
 #include <VBox/VBoxGuest.h>
 #include <VBox/log.h>
 #include <iprt/initterm.h>
@@ -72,6 +70,7 @@ int vboxClientDropPrivileges(void)
     int rc = VINF_SUCCESS;
     int rcSystem, rcErrno;
 
+    LogFlowFunc(("\n"));
 #ifdef _POSIX_SAVED_IDS
     rcSystem = setuid(getuid());
 #else
@@ -83,6 +82,7 @@ int vboxClientDropPrivileges(void)
         rc = RTErrConvertFromErrno(rcErrno);
         LogRel(("VBoxClient: failed to drop privileges, error %Rrc.\n", rc));
     }
+    LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
@@ -141,6 +141,7 @@ void vboxClientSetSignalHandlers(void)
 {
     struct sigaction sigAction;
 
+    LogFlowFunc(("\n"));
     sigAction.sa_handler = vboxClientSignalHandler;
     sigemptyset(&sigAction.sa_mask);
     sigAction.sa_flags = 0;
@@ -153,6 +154,7 @@ void vboxClientSetSignalHandlers(void)
     sigaction(SIGTERM, &sigAction, NULL);
     sigaction(SIGUSR1, &sigAction, NULL);
     sigaction(SIGUSR2, &sigAction, NULL);
+    LogFlowFunc(("returning\n"));
 }
 
 /**

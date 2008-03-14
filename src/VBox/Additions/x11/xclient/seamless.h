@@ -18,6 +18,8 @@
 #ifndef __Additions_xclient_seamless_h
 # define __Additions_xclient_seamless_h
 
+#include <VBox/log.h>
+
 #include "seamless-host.h"
 #include "seamless-guest.h"
 #include "seamless-glue.h"
@@ -52,6 +54,7 @@ public:
     {
         int rc = VINF_SUCCESS;
 
+        LogFlowThisFunc(("\n"));
         rc = mGuest->start();
         if (RT_SUCCESS(rc))
         {
@@ -61,6 +64,7 @@ public:
             }
             mGuest->stop();
         }
+        LogFlowThisFunc(("returning %Rrc\n", rc));
         return rc;
     }
     /**
@@ -139,6 +143,7 @@ public:
     {
         int rc = VINF_SUCCESS;
 
+        LogFlowThisFunc(("\n"));
         if (isInitialised)  /* Assertion */
         {
             LogRelFunc(("error: called a second time! (VBoxClient)\n"));
@@ -164,11 +169,13 @@ public:
         {
             LogFunc(("returning %Rrc (VBoxClient)\n", rc));
         }
+        LogFlowThisFunc(("returning %Rrc\n", rc));
         return rc;
     }
 
     void uninit(unsigned cMillies = RT_INDEFINITE_WAIT)
     {
+        LogFlowThisFunc(("\n"));
         if (isInitialised)
         {
             mHost.stop();
@@ -176,6 +183,7 @@ public:
             mGuest.uninit();
             isInitialised = false;
         }
+        LogFlowThisFunc(("returning\n"));
     }
 
     VBoxGuestSeamless() : mGuestFunction(&mGuest, &mGuestObs),
