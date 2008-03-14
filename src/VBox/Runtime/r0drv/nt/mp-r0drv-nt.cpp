@@ -160,7 +160,8 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
     PRTMPARGS pArgs;
     KDPC     *paExecCpuDpcs;
 
-    Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
+    /* KeFlushQueuedDpcs must be run at IRQL PASSIVE_LEVEL */
+    AssertMsg(KeGetCurrentIrql() == PASSIVE_LEVEL, ("%d != %d (PASSIVE_LEVEL)\n", KeGetCurrentIrql(), PASSIVE_LEVEL));
 
     KAFFINITY Mask = KeQueryActiveProcessors();
 
