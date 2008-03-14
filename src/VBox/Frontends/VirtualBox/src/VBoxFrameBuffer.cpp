@@ -193,13 +193,17 @@ VBoxFrameBuffer::OperationSupported (FramebufferAccelerationOperation_T aOperati
 STDMETHODIMP VBoxFrameBuffer::VideoModeSupported (ULONG aWidth, ULONG aHeight,
                                                   ULONG aBPP, BOOL *aSupported)
 {
-    NOREF(aWidth);
-    NOREF(aHeight);
-    NOREF(aBPP);
     if (!aSupported)
         return E_POINTER;
-    /* for now, we swallow everything */
     *aSupported = TRUE;
+    QRect screen = QApplication::desktop()->screenGeometry (mView);
+    /* Leave 200 pixels leeway. */
+    if (aWidth > (ULONG) screen.width() - 200)
+        *aSupported = FALSE;
+    if (aHeight > (ULONG) screen.height() - 200)
+        *aSupported = FALSE;
+    if (aBPP != 32)
+        *aSupported = FALSE;
     return S_OK;
 }
 
