@@ -399,17 +399,24 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 # define LOG_DISABLED
 #endif
 
+/*
+ * If we are doing full backdoor logging disable the weaker form
+ */
+#if defined(LOG_TO_BACKDOOR_FULL)
+# undef LOG_TO_BACKDOOR
+#endif
 
 /** @def LogIt
  * Write to specific logger if group enabled.
  */
 #ifdef LOG_ENABLED
-# if defined(RT_ARCH_AMD64) || defined(LOG_USE_C99)
-#  define _LogRemoveParentheseis(...)               __VA_ARGS__
-#  define _LogIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
-#  define LogIt(pvInst, fFlags, iGroup, fmtargs)    _LogIt(pvInst, fFlags, iGroup, _LogRemoveParentheseis fmtargs)
-# else
-#  define LogIt(pvInst, fFlags, iGroup, fmtargs) \
+# if !defined(LOG_TO_BACKDOOR_FULL) || defined(LOG_NO_BACKDOOR)
+#  if defined(RT_ARCH_AMD64) || defined(LOG_USE_C99)
+#   define _LogRemoveParentheseis(...)               __VA_ARGS__
+#   define _LogIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
+#   define LogIt(pvInst, fFlags, iGroup, fmtargs)    _LogIt(pvInst, fFlags, iGroup, _LogRemoveParentheseis fmtargs)
+#  else
+#   define LogIt(pvInst, fFlags, iGroup, fmtargs) \
     do \
     { \
         register PRTLOGGER LogIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogDefaultInstance(); \
@@ -420,7 +427,20 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
                 LogIt_pLogger->pfnLogger fmtargs; \
         } \
     } while (0)
-# endif
+#  endif
+# else  /* LOG_TO_BACKDOOR_FULL defined */
+#  define LogIt(pvInst, fFlags, iGroup, fmtargs) \
+    do \
+    { \
+        register PRTLOGGER LogIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogDefaultInstance(); \
+        if (LogIt_pLogger) \
+        { \
+            register unsigned LogIt_fFlags = LogIt_pLogger->afGroups[(unsigned)(iGroup) < LogIt_pLogger->cGroups ? (unsigned)(iGroup) : 0]; \
+            if ((LogIt_fFlags & ((fFlags) | RTLOGGRPFLAGS_ENABLED)) == ((fFlags) | RTLOGGRPFLAGS_ENABLED)) \
+                RTLogBackdoorPrintf fmtargs; \
+        } \
+    } while (0)
+# endif  /* LOG_TO_BACKDOOR_FULL defined */
 #else
 # define LogIt(pvInst, fFlags, iGroup, fmtargs) do { } while (0)
 #endif
@@ -707,10 +727,11 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** @def LogIt
  * Write to specific logger if group enabled.
  */
-#if defined(RT_ARCH_AMD64) || defined(LOG_USE_C99)
-# define _LogRelRemoveParentheseis(...)                __VA_ARGS__
-#  define _LogRelIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
-#  define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \
+#if !defined(LOG_TO_BACKDOOR_FULL) || defined(LOG_NO_BACKDOOR)
+# if defined(RT_ARCH_AMD64) || defined(LOG_USE_C99)
+#  define _LogRelRemoveParentheseis(...)                __VA_ARGS__
+#   define _LogRelIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
+#   define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \
     do \
     { \
         PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogRelDefaultInstance(); \
@@ -718,8 +739,8 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
             _LogRelIt(LogRelIt_pLogger, fFlags, iGroup, _LogRelRemoveParentheseis fmtargs); \
         LogIt(LOG_INSTANCE, fFlags, iGroup, fmtargs); \
     } while (0)
-#else
-# define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \
+# else
+#  define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \
    do \
    { \
        PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogRelDefaultInstance(); \
@@ -731,7 +752,13 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
        } \
        LogIt(LOG_INSTANCE, fFlags, iGroup, fmtargs); \
   } while (0)
-#endif
+# endif
+#else /* LOG_TO_BACKDOOR_FULL defined and LOG_NO_BACKDOOR not defined */
+# define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \
+   do { \
+       RTLogBackdoorPrintf fmtargs; \
+   } while (0)
+#endif /* LOG_TO_BACKDOOR_FULL defined and LOG_NO_BACKDOOR not defined */
 
 
 /** @def LogRel
