@@ -503,13 +503,24 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* Add additional modes to the end of the mode list in case the others are
        all invalid. */
     if (pcHostModeName != NULL)
+    {
         pScrn->display->modes[i] = pcHostModeName;
-    else
-        --i;
-    pScrn->display->modes[i+1] = "1024x768";
-    pScrn->display->modes[i+2] = "800x600";
-    pScrn->display->modes[i+3] = "640x480";
-    pScrn->display->modes[i+4] = NULL;
+        ++i;
+    }
+    if (vboxHostLikesVideoMode(1024, 768, pScrn->bitsPerPixel))
+    {
+        pScrn->display->modes[i] = "1024x768";
+        ++i;
+    }
+    if (vboxHostLikesVideoMode(800, 600, pScrn->bitsPerPixel))
+    {
+        pScrn->display->modes[i] = "800x600";
+        ++i;
+    }
+    /* A mode of last resort */
+    pScrn->display->modes[i] = "640x480";
+    ++i;
+    pScrn->display->modes[i] = NULL;
 
     /* Create a builtin mode for every specified mode. This allows to specify arbitrary
      * screen resolutions */
