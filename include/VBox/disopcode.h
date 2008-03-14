@@ -580,6 +580,18 @@
 #define OP_MOV_DR       600
 #define OP_MOV_TR       601
 
+/* VT-x instructions */
+#define OP_VMREAD       650
+#define OP_VMWRITE      651
+#define OP_VMCALL       652
+#define OP_VMXON        653
+#define OP_VMXOFF       654
+#define OP_VMCLEAR      655
+#define OP_VMLAUNCH     656
+#define OP_VMRESUME     657
+#define OP_VMPTRLD      658
+#define OP_VMPTRST      659
+
 
 /* 64 bits prefix bytes */
 #define OP_REX          0x40

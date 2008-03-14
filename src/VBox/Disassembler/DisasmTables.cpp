@@ -767,8 +767,8 @@ const OPCODE g_aTwoByteMapX86_PF66[256] =
     OP("pcmpeqw %Vdq,%Wdq",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PCMPEQW, OP_PARM_Vdq,        OP_PARM_Vdq,    OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("pcmpeqd %Vdq,%Wdq",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PCMPEQD, OP_PARM_Vdq,        OP_PARM_Vdq,    OP_PARM_NONE,   OPTYPE_HARMLESS),
     INVALID_OPCODE,
-    INVALID_OPCODE,
-    INVALID_OPCODE,
+    OP("vmread %Ed,%Gd",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_VMREAD,  OP_PARM_Ed,         OP_PARM_Gd,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED),
+    OP("vmwrite %Gd,%Ed",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_VMWRITE, OP_PARM_Gd,         OP_PARM_Ed,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -2228,7 +2228,7 @@ const OPCODE g_aMapX86_Group7_mod11_rm001[8] =
 {
     /* 0F 01 MOD=11b */
     INVALID_OPCODE,
-    OP("mwait %eAX,%eCX",        0,          0,          0,          OP_MWAIT,   OP_PARM_REG_EAX,        OP_PARM_REG_ECX,    OP_PARM_NONE,   OPTYPE_HARMLESS ),
+    OP("mwait %eAX,%eCX",            0,          0,          0,          OP_MWAIT,   OP_PARM_REG_EAX,    OP_PARM_REG_ECX, OP_PARM_NONE,   OPTYPE_HARMLESS ),
     INVALID_OPCODE,
     INVALID_OPCODE,
     OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED_NOTRAP),
