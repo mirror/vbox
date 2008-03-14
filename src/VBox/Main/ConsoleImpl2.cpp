@@ -605,12 +605,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         {
             rc = CFGMR3InsertNode(pDevices, "ahci", &pDev);                             RC_CHECK();
             rc = CFGMR3InsertNode(pDev,     "0", &pSataInst);                           RC_CHECK();
-            rc = CFGMR3InsertInteger(pIdeInst, "Trusted",              1);              RC_CHECK();
-            rc = CFGMR3InsertInteger(pIdeInst, "PCIDeviceNo",          13);             RC_CHECK();
+            rc = CFGMR3InsertInteger(pSataInst, "Trusted",              1);             RC_CHECK();
+            rc = CFGMR3InsertInteger(pSataInst, "PCIDeviceNo",          13);            RC_CHECK();
             Assert(!afPciDeviceNo[13]);
             afPciDeviceNo[13] = true;
-            rc = CFGMR3InsertInteger(pIdeInst, "PCIFunctionNo",        1);              RC_CHECK();
-            rc = CFGMR3InsertNode(pIdeInst,    "Config", &pCfg);                        RC_CHECK();
+            rc = CFGMR3InsertInteger(pSataInst, "PCIFunctionNo",        0);             RC_CHECK();
+            rc = CFGMR3InsertNode(pSataInst,    "Config", &pCfg);                       RC_CHECK();
 
             for (uint32_t i = 0; i < 4; i++)
             {
