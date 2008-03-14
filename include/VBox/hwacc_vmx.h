@@ -194,7 +194,7 @@
 /** VMCS revision identifier used by the processor. */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_ID(a)                      (a & 0x7FFFFFFF)
 /** Size of the VMCS. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(a)                    ((a >> 31ULL) & 0xFFF)
+#define MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(a)                    ((a >> 32ULL) & 0xFFF)
 /** Width of physical address used for the VMCS.
  *  0 -> limited to the available amount of physical ram
  *  1 -> within the first 4 GB
