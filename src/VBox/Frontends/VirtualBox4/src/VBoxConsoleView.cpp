@@ -1087,6 +1087,11 @@ bool VBoxConsoleView::event (QEvent *e)
                 if (mMainWnd->isTrueFullscreen() || mMainWnd->isTrueSeamless())
                     updateGeometry();
 
+                /* Remember the new size for sending an initial size hint
+                   on next power up. */
+                if (mConsole.GetGuest().GetSupportsGraphics())
+                    mLastSizeHint = QSize(re->width(), re->height());
+
                 /* make sure that all posted signals are processed */
                 qApp->processEvents();
 
@@ -3578,7 +3583,6 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
         mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
-        mLastSizeHint = sz;
     }
 }
 
@@ -3599,8 +3603,7 @@ void VBoxConsoleView::sendInitialSizeHint(void)
     QRect screen = QApplication::desktop()->screenGeometry (this);
     if (!ok || w > screen.width() || h > screen.height()) 
     {
-        enum { NUM_RES = 4 };
-        const int sizeList[NUM_RES][2] =
+        static const int sizeList[][2] =
         {
             { 640, 480 },
             { 800, 600 },
@@ -3611,9 +3614,9 @@ void VBoxConsoleView::sendInitialSizeHint(void)
 
         /* Find a size that is smaller than three quarters of the reported
            screen geometry. */
-        while (   (i + 1 < NUM_RES)
-               && (sizeList[i + 1][0] < screen.width() * 3 / 4)
-               && (sizeList[i + 1][1] < screen.height() * 3 / 4))
+        while (   i + 1 < RT_ELEMENTS (sizeList)
+               && sizeList[i + 1][0] < screen.width() * 3 / 4
+               && sizeList[i + 1][1] < screen.height() * 3 / 4)
             ++i;
         w = sizeList[i][0];
         h = sizeList[i][1];
