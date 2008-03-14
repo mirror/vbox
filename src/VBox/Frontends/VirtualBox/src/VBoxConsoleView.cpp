@@ -1091,6 +1091,11 @@ bool VBoxConsoleView::event (QEvent *e)
                 if (mMainWnd->isTrueFullscreen() || mMainWnd->isTrueSeamless())
                     updateGeometry();
 
+                /* Remember the new size for sending an initial size hint
+                   on next power up. */
+                if (mConsole.GetGuest().GetSupportsGraphics())
+                    mLastSizeHint = QSize(re->width(), re->height());
+
                 /* make sure that all posted signals are processed */
                 qApp->processEvents();
 
@@ -3577,7 +3582,6 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
         LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
         mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
-        mLastSizeHint = sz;
     }
 }
 
