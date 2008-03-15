@@ -1391,13 +1391,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
 #ifdef RT_OS_WINDOWS
 #ifdef VBOX_WITH_WINMM
-            case AudioDriverType_WINMM:
+            case AudioDriverType_WinMM:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "winmm");                  RC_CHECK();
                 break;
             }
 #endif
-            case AudioDriverType_DSOUND:
+            case AudioDriverType_DirectSound:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "dsound");                 RC_CHECK();
                 break;
@@ -1425,7 +1425,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 # endif
 #endif /* RT_OS_LINUX */
 #ifdef RT_OS_DARWIN
-            case AudioDriverType_Core:
+            case AudioDriverType_CoreAudio:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "coreaudio");              RC_CHECK();
                 break;

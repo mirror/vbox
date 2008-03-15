@@ -555,11 +555,11 @@ HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
             mData->mBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
             const char *modeStr = bootMenuNode.stringValue ("mode");
 
-            if (strcmp (modeStr, "disabled") == 0)
+            if (strcmp (modeStr, "Disabled") == 0)
                 mData->mBootMenuMode = BIOSBootMenuMode_Disabled;
-            else if (strcmp (modeStr, "menuonly") == 0)
+            else if (strcmp (modeStr, "MenuOnly") == 0)
                 mData->mBootMenuMode = BIOSBootMenuMode_MenuOnly;
-            else if (strcmp (modeStr, "messageandmenu") == 0)
+            else if (strcmp (modeStr, "MessageAndMenu") == 0)
                 mData->mBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
             else
                 ComAssertMsgFailedRet (("Invalid boot menu mode '%s'\n", modeStr),
@@ -651,13 +651,13 @@ HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
         switch (mData->mBootMenuMode)
         {
             case BIOSBootMenuMode_Disabled:
-                modeStr = "disabled";
+                modeStr = "Disabled";
                 break;
             case BIOSBootMenuMode_MenuOnly:
-                modeStr = "menuonly";
+                modeStr = "MenuOnly";
                 break;
             case BIOSBootMenuMode_MessageAndMenu:
-                modeStr = "messageandmenu";
+                modeStr = "MessageAndMenu";
                 break;
             default:
                 ComAssertMsgFailedRet (("Invalid boot menu type: %d\n",

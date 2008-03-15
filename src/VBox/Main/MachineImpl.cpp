@@ -4030,10 +4030,8 @@ HRESULT Machine::loadSettings (bool aRegistered)
         /* currentStateModified (optional, default is true) */
         mData->mCurrentStateModified = machineNode.value <bool> ("currentStateModified");
 
-        /* lastStateChange (optional, for compatiblity) */
+        /* lastStateChange (optional, defaults to now) */
         {
-            /// @todo (dmik) until lastStateChange is the required attribute,
-            //  we simply set it to the current time if missing in the config
             RTTIMESPEC now;
             RTTimeNow (&now);
             mData->mLastStateChange =
@@ -4341,47 +4339,43 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
         }
     }
 
-    /* Serial node (optional) */
+    /* Serial node (required) */
     {
-        Key serialNode = aNode.findKey ("Uart");
-        if (!serialNode.isNull())
+        Key serialNode = aNode.key ("UART");
+
+        rc = S_OK;
+
+        Key::List ports = serialNode.keys ("Port");
+        for (Key::List::const_iterator it = ports.begin();
+             it != ports.end(); ++ it)
         {
-            rc = S_OK;
+            /* slot number (required) */
+            /* slot unicity is guaranteed by XML Schema */
+            uint32_t slot = (*it).value <uint32_t> ("slot");
+            AssertBreakVoid (slot < ELEMENTS (mSerialPorts));
 
-            Key::List ports = serialNode.keys ("Port");
-            for (Key::List::const_iterator it = ports.begin();
-                 it != ports.end(); ++ it)
-            {
-                /* slot number (required) */
-                /* slot unicity is guaranteed by XML Schema */
-                uint32_t slot = (*it).value <uint32_t> ("slot");
-                AssertBreakVoid (slot < ELEMENTS (mSerialPorts));
-
-                rc = mSerialPorts [slot]->loadSettings (*it);
-                CheckComRCReturnRC (rc);
-            }
+            rc = mSerialPorts [slot]->loadSettings (*it);
+            CheckComRCReturnRC (rc);
         }
     }
 
     /* Parallel node (optional) */
     {
-        Key parallelNode = aNode.findKey ("Lpt");
-        if (!parallelNode.isNull())
+        Key parallelNode = aNode.key ("LPT");
+
+        rc = S_OK;
+
+        Key::List ports = parallelNode.keys ("Port");
+        for (Key::List::const_iterator it = ports.begin();
+             it != ports.end(); ++ it)
         {
-            rc = S_OK;
+            /* slot number (required) */
+            /* slot unicity is guaranteed by XML Schema */
+            uint32_t slot = (*it).value <uint32_t> ("slot");
+            AssertBreakVoid (slot < ELEMENTS (mSerialPorts));
 
-            Key::List ports = parallelNode.keys ("Port");
-            for (Key::List::const_iterator it = ports.begin();
-                 it != ports.end(); ++ it)
-            {
-                /* slot number (required) */
-                /* slot unicity is guaranteed by XML Schema */
-                uint32_t slot = (*it).value <uint32_t> ("slot");
-                AssertBreakVoid (slot < ELEMENTS (mSerialPorts));
-
-                rc = mParallelPorts [slot]->loadSettings (*it);
-                CheckComRCReturnRC (rc);
-            }
+            rc = mParallelPorts [slot]->loadSettings (*it);
+            CheckComRCReturnRC (rc);
         }
     }
 
@@ -4389,68 +4383,55 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     rc = mAudioAdapter->loadSettings (aNode);
     CheckComRCReturnRC (rc);
 
-    /* Shared folders (optional) */
-    /// @todo (dmik) make required on next format change!
+    /* Shared folders (required) */
     {
-        Key sharedFoldersNode = aNode.findKey ("SharedFolders");
-        if (!sharedFoldersNode.isNull())
+        Key sharedFoldersNode = aNode.key ("SharedFolders");
+
+        rc = S_OK;
+
+        Key::List folders = sharedFoldersNode.keys ("SharedFolder");
+        for (Key::List::const_iterator it = folders.begin();
+             it != folders.end(); ++ it)
         {
-            rc = S_OK;
+            /* folder logical name (required) */
+            Bstr name = (*it).stringValue ("name");
+            /* folder host path (required) */
+            Bstr hostPath = (*it).stringValue ("hostPath");
 
-            Key::List folders = sharedFoldersNode.keys ("SharedFolder");
-            for (Key::List::const_iterator it = folders.begin();
-                 it != folders.end(); ++ it)
-            {
-                /* folder logical name (required) */
-                Bstr name = (*it).stringValue ("name");
-                /* folder host path (required) */
-                Bstr hostPath = (*it).stringValue ("hostPath");
+            bool writable = (*it).value <bool> ("writable");
 
-                bool writable = (*it).value <bool> ("writable");
-
-                rc = CreateSharedFolder (name, hostPath, writable);
-                CheckComRCReturnRC (rc);
-            }
+            rc = CreateSharedFolder (name, hostPath, writable);
+            CheckComRCReturnRC (rc);
         }
     }
 
-    /* Clipboard node (currently not required) */
-    /// @todo (dmik) make required on next format change!
+    /* Clipboard node (required) */
     {
-        /* default value in case if the node is not there */
-        mHWData->mClipboardMode = ClipboardMode_Disabled;
+        Key clipNode = aNode.key ("Clipboard");
 
-        Key clipNode = aNode.findKey ("Clipboard");
-        if (!clipNode.isNull())
-        {
-            const char *mode = clipNode.stringValue ("mode");
-            if      (strcmp (mode, "Disabled") == 0)
-                mHWData->mClipboardMode = ClipboardMode_Disabled;
-            else if (strcmp (mode, "HostToGuest") == 0)
-                mHWData->mClipboardMode = ClipboardMode_HostToGuest;
-            else if (strcmp (mode, "GuestToHost") == 0)
-                mHWData->mClipboardMode = ClipboardMode_GuestToHost;
-            else if (strcmp (mode, "Bidirectional") == 0)
-                mHWData->mClipboardMode = ClipboardMode_Bidirectional;
-            else
-                AssertMsgFailed (("Invalid clipboard mode '%s'\n", mode));
-        }
+        const char *mode = clipNode.stringValue ("mode");
+        if      (strcmp (mode, "Disabled") == 0)
+            mHWData->mClipboardMode = ClipboardMode_Disabled;
+        else if (strcmp (mode, "HostToGuest") == 0)
+            mHWData->mClipboardMode = ClipboardMode_HostToGuest;
+        else if (strcmp (mode, "GuestToHost") == 0)
+            mHWData->mClipboardMode = ClipboardMode_GuestToHost;
+        else if (strcmp (mode, "Bidirectional") == 0)
+            mHWData->mClipboardMode = ClipboardMode_Bidirectional;
+        else
+            AssertMsgFailed (("Invalid clipboard mode '%s'\n", mode));
     }
 
-    /* Guest node (optional) */
-    /// @todo (dmik) make required on next format change and change attribute
-    /// naming!
+    /* Guest node (required) */
     {
-        Key guestNode = aNode.findKey ("Guest");
-        if (!guestNode.isNull())
-        {
-            /* optional, defaults to 0) */
-            mHWData->mMemoryBalloonSize =
-                guestNode.value <ULONG> ("MemoryBalloonSize");
-            /* optional, defaults to 0) */
-            mHWData->mStatisticsUpdateInterval =
-                guestNode.value <ULONG> ("StatisticsUpdateInterval");
-        }
+        Key guestNode = aNode.key ("Guest");
+
+        /* optional, defaults to 0 */
+        mHWData->mMemoryBalloonSize =
+            guestNode.value <ULONG> ("memoryBalloonSize");
+        /* optional, defaults to 0 */
+        mHWData->mStatisticsUpdateInterval =
+            guestNode.value <ULONG> ("statisticsUpdateInterval");
     }
 
     AssertComRC (rc);
@@ -5583,8 +5564,8 @@ HRESULT Machine::saveSnapshot (settings::Key &aNode, Snapshot *aSnapshot, bool a
 }
 
 /**
- *  Creates Saves the VM hardware configuration.
- *  It is assumed that the given node is empty.
+ *  Saves the VM hardware configuration. It is assumed that the
+ *  given node is empty.
  *
  *  @param aNode    <Hardware> node to save the VM hardware confguration to.
  */
@@ -5702,7 +5683,8 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
 
     /* Serial ports */
     {
-        Key serialNode = aNode.createKey ("Uart");
+        Key serialNode = aNode.createKey ("UART");
+
         for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); ++ slot)
         {
             Key portNode = serialNode.appendKey ("Port");
@@ -5716,7 +5698,8 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
 
     /* Parallel ports */
     {
-        Key parallelNode = aNode.createKey ("Lpt");
+        Key parallelNode = aNode.createKey ("LPT");
+
         for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); ++ slot)
         {
             Key portNode = parallelNode.appendKey ("Port");
@@ -5780,16 +5763,11 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
 
     /* Guest */
     {
-        Key guestNode = aNode.findKey ("Guest");
-        /* first, delete the entire node if exists */
-        if (!guestNode.isNull())
-            guestNode.zap();
-        /* then recreate it */
-        guestNode = aNode.createKey ("Guest");
+        Key guestNode = aNode.createKey ("Guest");
 
-        guestNode.setValue <ULONG> ("MemoryBalloonSize",
+        guestNode.setValue <ULONG> ("memoryBalloonSize",
                                     mHWData->mMemoryBalloonSize);
-        guestNode.setValue <ULONG> ("StatisticsUpdateInterval",
+        guestNode.setValue <ULONG> ("statisticsUpdateInterval",
                                     mHWData->mStatisticsUpdateInterval);
     }
 

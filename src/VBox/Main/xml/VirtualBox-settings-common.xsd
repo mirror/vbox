@@ -156,13 +156,11 @@
   </xsd:restriction>
 </xsd:simpleType>
 
-<!--- @todo (dmik) capitalize enum values on next format change! -->
-<!--- @todo (dmik) change "null" to None" -->
 <xsd:simpleType name="TVRDPAuthType">
   <xsd:restriction base="xsd:string">
-    <xsd:enumeration value="null"/>
-    <xsd:enumeration value="guest"/>
-    <xsd:enumeration value="external"/>
+    <xsd:enumeration value="Null"/>
+    <xsd:enumeration value="Guest"/>
+    <xsd:enumeration value="External"/>
   </xsd:restriction>
 </xsd:simpleType>
 
@@ -182,12 +180,11 @@
   </xsd:restriction>
 </xsd:simpleType>
 
-<!--- @todo (dmik) capitalize enum values on next format change! -->
 <xsd:simpleType name="TBIOSBootMenuModeType">
     <xsd:restriction base="xsd:string">
-      <xsd:enumeration value="disabled"/>
-      <xsd:enumeration value="menuonly"/>
-      <xsd:enumeration value="messageandmenu"/>
+      <xsd:enumeration value="Disabled"/>
+      <xsd:enumeration value="MenuOnly"/>
+      <xsd:enumeration value="MessageAndMenu"/>
     </xsd:restriction>
 </xsd:simpleType>
 
@@ -296,15 +293,14 @@
 </xsd:complexType>
 
 <xsd:complexType name="TUSBDeviceFilter">
-  <!--- @todo (dmik) make all attr names likeThis on next format change! -->
   <xsd:attribute name="name" type="TNonEmptyString" use="required"/>
   <xsd:attribute name="active" type="xsd:boolean" use="required"/>
-  <xsd:attribute name="vendorid" type="xsd:token"/>
-  <xsd:attribute name="productid" type="xsd:token"/>
+  <xsd:attribute name="vendorId" type="xsd:token"/>
+  <xsd:attribute name="productId" type="xsd:token"/>
   <xsd:attribute name="revision" type="xsd:token"/>
   <xsd:attribute name="manufacturer" type="xsd:token"/>
   <xsd:attribute name="product" type="xsd:token"/>
-  <xsd:attribute name="serialnumber" type="xsd:token"/>
+  <xsd:attribute name="serialNumber" type="xsd:token"/>
   <xsd:attribute name="port" type="xsd:token"/>
   <xsd:attribute name="remote" type="xsd:token"/>
   <xsd:attribute name="maskedInterfaces" type="xsd:unsignedInt" default="0"/>
@@ -321,8 +317,6 @@
 <xsd:complexType name="TSystemProperties">
   <xsd:attribute name="defaultVDIFolder" type="TLocalFile"/>
   <xsd:attribute name="defaultMachineFolder" type="TLocalFile"/>
-  <!--- @todo (dmik) remove defaultSavedStateFolder on next format change! -->
-  <xsd:attribute name="defaultSavedStateFolder" type="TLocalFile"/>
   <xsd:attribute name="remoteDisplayAuthLibrary" type="TLocalFile"/>
   <xsd:attribute name="webServiceAuthLibrary" type="TLocalFile"/>
   <xsd:attribute name="HWVirtExEnabled" type="xsd:boolean"/>
@@ -444,7 +438,7 @@
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
   <xsd:attribute name="port" type="xsd:unsignedInt" default="0"/>
   <xsd:attribute name="netAddress" type="xsd:token" default=""/>
-  <xsd:attribute name="authType" type="TVRDPAuthType" default="null"/>
+  <xsd:attribute name="authType" type="TVRDPAuthType" default="Null"/>
   <xsd:attribute name="authTimeout" type="xsd:unsignedInt" default="5000"/>
   <xsd:attribute name="allowMultiConnection" type="xsd:boolean" default="false"/>
 </xsd:complexType>
@@ -471,7 +465,7 @@
     </xsd:element>
     <xsd:element name="BootMenu" minOccurs="0">
       <xsd:complexType>
-        <xsd:attribute name="mode" type="TBIOSBootMenuModeType" default="messageandmenu"/>
+        <xsd:attribute name="mode" type="TBIOSBootMenuModeType" default="MessageAndMenu"/>
       </xsd:complexType>
     </xsd:element>
     <xsd:element name="TimeOffset" minOccurs="0">
@@ -574,7 +568,7 @@
   <xsd:attribute name="tracefile" type="xsd:string"/>
 </xsd:complexType>
 
-<xsd:complexType name="TUartPort">
+<xsd:complexType name="TUARTPort">
   <xsd:attribute name="slot" use="required">
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
@@ -591,12 +585,12 @@
   <xsd:attribute name="server" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
-<xsd:complexType name="TUart">
+<xsd:complexType name="TUART">
   <xsd:sequence>
     <xsd:element name="Port" minOccurs="0" maxOccurs="unbounded">
       <xsd:complexType>
         <xsd:complexContent>
-          <xsd:extension base="TUartPort">
+          <xsd:extension base="TUARTPort">
           </xsd:extension>
         </xsd:complexContent>
       </xsd:complexType>
@@ -604,7 +598,7 @@
   </xsd:sequence>
 </xsd:complexType>
 
-<xsd:complexType name="TLptPort">
+<xsd:complexType name="TLPTPort">
   <xsd:attribute name="slot" use="required">
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
@@ -619,12 +613,12 @@
   <xsd:attribute name="path" type="TLocalFile"/>
 </xsd:complexType>
 
-<xsd:complexType name="TLpt">
+<xsd:complexType name="TLPT">
   <xsd:sequence>
     <xsd:element name="Port" minOccurs="0" maxOccurs="unbounded">
       <xsd:complexType>
         <xsd:complexContent>
-          <xsd:extension base="TLptPort">
+          <xsd:extension base="TLPTPort">
           </xsd:extension>
         </xsd:complexContent>
       </xsd:complexType>
@@ -649,8 +643,8 @@
 </xsd:complexType>
 
 <xsd:complexType name="TGuest">
-  <xsd:attribute name="MemoryBalloonSize"        type="xsd:unsignedInt" default="0"/>
-  <xsd:attribute name="StatisticsUpdateInterval" type="xsd:unsignedInt" default="0"/>
+  <xsd:attribute name="memoryBalloonSize"        type="xsd:unsignedInt" default="0"/>
+  <xsd:attribute name="statisticsUpdateInterval" type="xsd:unsignedInt" default="0"/>
 </xsd:complexType>
 
 <xsd:complexType name="TSATAController">
@@ -684,30 +678,27 @@
         <xsd:field xpath="@slot"/>
       </xsd:unique>
     </xsd:element>
-    <xsd:element name="Uart" type="TUart" minOccurs="0">
-      <xsd:unique name="THardware-Uart-Port">
+    <xsd:element name="UART" type="TUART">
+      <xsd:unique name="THardware-UART-Port">
         <xsd:selector xpath="vb:Port"/>
         <xsd:field xpath="@slot"/>
       </xsd:unique>
     </xsd:element>
-    <xsd:element name="Lpt" type="TLpt" minOccurs="0">
-      <xsd:unique name="THardware-Lpt-Port">
+    <xsd:element name="LPT" type="TLPT">
+      <xsd:unique name="THardware-LPT-Port">
         <xsd:selector xpath="vb:Port"/>
         <xsd:field xpath="@slot"/>
       </xsd:unique>
     </xsd:element>
     <xsd:element name="AudioAdapter" type="TAudioAdapter"/>
-    <!--- @todo (dmik) remove minOccurs="0" from SharedFolders on next format change! -->
-    <xsd:element name="SharedFolders" type="TSharedFolders" minOccurs="0">
+    <xsd:element name="SharedFolders" type="TSharedFolders">
       <xsd:unique name="THardware-SharedFolders-SharedFolder">
         <xsd:selector xpath="vb:SharedFolder"/>
         <xsd:field xpath="@name"/>
       </xsd:unique>
     </xsd:element>
-    <!--- @todo (dmik) remove minOccurs="0" on next format change! -->
-    <xsd:element name="Clipboard" type="TClipboard" minOccurs="0"/>
-    <!--- @todo (dmik) remove minOccurs="0" on next format change! -->
-    <xsd:element name="Guest" type="TGuest" minOccurs="0"/>
+    <xsd:element name="Clipboard" type="TClipboard"/>
+    <xsd:element name="Guest" type="TGuest"/>
   </xsd:all>
 </xsd:complexType>
 
@@ -726,7 +717,6 @@
   <xsd:attribute name="stateFile" type="TLocalFile"/>
   <xsd:attribute name="currentSnapshot" type="TNonNullUUID"/>
   <xsd:attribute name="snapshotFolder" type="TLocalFile"/>
-  <!--- @todo (dmik) make lastStateChange required on next format change! -->
   <xsd:attribute name="lastStateChange" type="TPresentDateTimeUTC"/>
   <xsd:attribute name="aborted" type="xsd:boolean" default="false"/>
   <xsd:attribute name="currentStateModified" type="xsd:boolean" default="true"/>

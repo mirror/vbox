@@ -99,6 +99,14 @@ The source version is not supported.
   </xsl:copy>
 </xsl:template>
 
+<!-- 1.3.pre => 1.3 -->
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.3.pre']">
+  <xsl:copy>
+    <xsl:attribute name="version"><xsl:value-of select="concat('1.3','-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()" mode="v1.3"/>
+  </xsl:copy>
+</xsl:template>
+
 <!--
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *  1.1 => 1.2
@@ -199,7 +207,7 @@ The source version is not supported.
 -->
 
 <xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.2']/
-                    vb:Machine//vb:USBController"
+                     vb:Machine//vb:USBController"
               mode="v1.3.pre">
   <xsl:copy>
     <xsl:apply-templates select="@*|node()" mode="v1.3.pre"/>
@@ -244,6 +252,186 @@ Value '<xsl:value-of select="@device"/>' of 'HardDiskAttachment::device' attribu
       </xsl:choose>
     </xsl:attribute>
   </HardDiskAttachment>
+</xsl:template>
+
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  1.3.pre => 1.3
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
+
+<!--
+ *  all non-root elements that are not explicitly matched are copied as is
+-->
+<xsl:template match="@*|node()[../..]" mode="v1.3">
+  <xsl:copy>
+    <xsl:apply-templates select="@*|node()[../..]" mode="v1.3"/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
+ *  Global settings 
+-->
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+                     vb:Global//vb:SystemProperties"
+              mode="v1.3">
+  <xsl:copy>
+    <xsl:apply-templates select="@*[not(name()='defaultSavedStateFolder')]|node()" mode="v1.3"/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
+ *  Machine settings
+-->
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+                     vb:Machine//vb:AudioAdapter"
+              mode="v1.3">
+  <xsl:copy>
+    <xsl:apply-templates select="@*[not(name()='driver')]|node()" mode="v1.3"/>
+    <xsl:attribute name="driver">
+      <xsl:choose>
+        <xsl:when test="@driver='null'">Null</xsl:when>
+        <xsl:when test="@driver='oss'">OSS</xsl:when>
+        <xsl:when test="@driver='alsa'">ALSA</xsl:when>
+        <xsl:when test="@driver='pulse'">Pulse</xsl:when>
+        <xsl:when test="@driver='codeaudio'">CoreAudio</xsl:when>
+        <xsl:when test="@driver='winmm'">WinMM</xsl:when>
+        <xsl:when test="@driver='dsound'">DirectSound</xsl:when>
+        <xsl:when test="@driver='esd'">ESD</xsl:when>
+        <xsl:when test="@driver='mmpm'">MMPM</xsl:when>
+        <xsl:otherwise>
+          <xsl:message terminate="yes">
+Value '<xsl:value-of select="@driver"/>' of 'AudioAdapter::driver' attribute is invalid.
+          </xsl:message>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:attribute>
+  </xsl:copy>
+  <xsl:if test="not(../vb:SharedFolders)">
+    <SharedFolders/>
+  </xsl:if>
+  <xsl:if test="not(../vb:Clipboard)">
+    <Clipboard mode="Disabled"/>
+  </xsl:if>
+  <xsl:if test="not(../vb:Guest)">
+    <Guest/>
+  </xsl:if>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+                     vb:Machine//vb:RemoteDisplay"
+              mode="v1.3">
+  <xsl:copy>
+    <xsl:apply-templates select="@*[not(name()='authType')]|node()" mode="v1.3"/>
+    <xsl:attribute name="authType">
+      <xsl:choose>
+        <xsl:when test="@authType='null'">Null</xsl:when>
+        <xsl:when test="@authType='guest'">Guest</xsl:when>
+        <xsl:when test="@authType='external'">External</xsl:when>
+        <xsl:otherwise>
+          <xsl:message terminate="yes">
+Value '<xsl:value-of select="@authType"/>' of 'RemoteDisplay::authType' attribute is invalid.
+          </xsl:message>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:attribute>
+  </xsl:copy>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+                     vb:Machine//vb:BIOS/vb:BootMenu"
+              mode="v1.3">
+  <xsl:copy>
+    <xsl:apply-templates select="@*[not(name()='mode')]|node()" mode="v1.3"/>
+    <xsl:attribute name="mode">
+      <xsl:choose>
+        <xsl:when test="@mode='disabled'">Disabled</xsl:when>
+        <xsl:when test="@mode='menuonly'">MenuOnly</xsl:when>
+        <xsl:when test="@mode='messageandmenu'">MessageAndMenu</xsl:when>
+        <xsl:otherwise>
+          <xsl:message terminate="yes">
+Value '<xsl:value-of select="@mode"/>' of 'BootMenu::mode' attribute is invalid.
+          </xsl:message>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:attribute>
+  </xsl:copy>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+                     vb:Machine//vb:USBController/vb:DeviceFilter |
+                     vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+                     vb:Global/vb:USBDeviceFilters/vb:DeviceFilter"
+              mode="v1.3">
+  <xsl:copy>
+    <xsl:apply-templates select="node()" mode="v1.3"/>
+    <xsl:for-each select="@*">
+      <xsl:choose>
+        <xsl:when test="name()='vendorid'">
+          <xsl:attribute name="vendorId"><xsl:value-of select="."/></xsl:attribute>
+        </xsl:when>
+        <xsl:when test="name()='productid'">
+          <xsl:attribute name="productId"><xsl:value-of select="."/></xsl:attribute>
+        </xsl:when>
+        <xsl:when test="name()='serialnumber'">
+          <xsl:attribute name="serialNumber"><xsl:value-of select="."/></xsl:attribute>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:apply-templates select="." mode="v1.3"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
+  </xsl:copy>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+                     vb:Machine//vb:Guest"
+              mode="v1.3">
+  <xsl:copy>
+    <xsl:apply-templates select="node()" mode="v1.3"/>
+    <xsl:for-each select="@*">
+      <xsl:choose>
+        <xsl:when test="name()='MemoryBalloonSize'">
+          <xsl:attribute name="memoryBalloonSize"><xsl:value-of select="."/></xsl:attribute>
+        </xsl:when>
+        <xsl:when test="name()='StatisticsUpdateInterval'">
+          <xsl:attribute name="statisticsUpdateInterval"><xsl:value-of select="."/></xsl:attribute>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:apply-templates select="node()" mode="v1.3"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
+  </xsl:copy>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+                     vb:Machine//vb:Uart"
+              mode="v1.3">
+  <UART>
+    <xsl:apply-templates select="@*|node()" mode="v1.3"/>
+  </UART>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+                     vb:Machine//vb:Lpt"
+              mode="v1.3">
+  <LPT>
+    <xsl:apply-templates select="@*|node()" mode="v1.3"/>
+  </LPT>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+                     vb:Machine"
+              mode="v1.3">
+  <xsl:copy>
+    <xsl:apply-templates select="@*|node()" mode="v1.3"/>
+    <xsl:if test="not(@lastStateChange)">
+      <xsl:attribute name="lastStateChange"></xsl:attribute>
+    </xsl:if>
+  </xsl:copy>
 </xsl:template>
 
 </xsl:stylesheet>
