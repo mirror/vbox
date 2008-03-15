@@ -9244,13 +9244,14 @@
     <const name="Null"          value="0">
       <desc><tt>null</tt> value. Also means "dummy audio driver".</desc>
     </const>
-    <const name="WINMM"         value="1"/>
+    <const name="WinMM"         value="1"/>
     <const name="OSS"           value="2"/>
     <const name="ALSA"          value="3"/>
-    <const name="DSOUND"        value="4"/>
-    <const name="Core"          value="5"/>
+    <const name="DirectSound"   value="4"/>
+    <const name="CoreAudio"     value="5"/>
     <const name="MMPM"          value="6"/>
     <const name="Pulse"         value="7"/>
+    <const name="ESD"           value="8"/>
   </enum>
 
   <enum

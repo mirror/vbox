@@ -874,9 +874,9 @@ void VBoxVMSettingsDlg::init()
 
     cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_Null));
 #if defined Q_WS_WIN32
-    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_DSOUND));
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_DirectSound));
 # ifdef VBOX_WITH_WINMM
-    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_WINMM));
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_WinMM));
 # endif
 #elif defined Q_OS_LINUX
     cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_OSS));
@@ -887,7 +887,7 @@ void VBoxVMSettingsDlg::init()
     cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_Pulse));
 # endif
 #elif defined Q_OS_MACX
-    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_Core));
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_CoreAudio));
 #endif
 
     cbAudioController->insertItem (vboxGlobal().toString (KAudioControllerType_AC97));

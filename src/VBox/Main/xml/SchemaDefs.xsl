@@ -137,13 +137,13 @@ struct SchemaDefs
   <xsl:call-template name="defineEnumMember">
     <xsl:with-param name="member" select="'        SerialPortCount'"/>
     <xsl:with-param name="select" select="
-      xsd:complexType[@name='TUartPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
+      xsd:complexType[@name='TUARTPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
     "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
     <xsl:with-param name="member" select="'        ParallelPortCount'"/>
     <xsl:with-param name="select" select="
-      xsd:complexType[@name='TLptPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
+      xsd:complexType[@name='TLPTPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
     "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">

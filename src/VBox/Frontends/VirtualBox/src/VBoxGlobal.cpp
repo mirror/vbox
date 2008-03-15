@@ -2350,15 +2350,15 @@ void VBoxGlobal::languageChange()
 
     audioDriverTypes [KAudioDriverType_Null] =
         tr ("Null Audio Driver", "AudioDriverType");
-    audioDriverTypes [KAudioDriverType_WINMM] =
+    audioDriverTypes [KAudioDriverType_WinMM] =
         tr ("Windows Multimedia", "AudioDriverType");
     audioDriverTypes [KAudioDriverType_OSS] =
         tr ("OSS Audio Driver", "AudioDriverType");
     audioDriverTypes [KAudioDriverType_ALSA] =
         tr ("ALSA Audio Driver", "AudioDriverType");
-    audioDriverTypes [KAudioDriverType_DSOUND] =
+    audioDriverTypes [KAudioDriverType_DirectSound] =
         tr ("Windows DirectSound", "AudioDriverType");
-    audioDriverTypes [KAudioDriverType_Core] =
+    audioDriverTypes [KAudioDriverType_CoreAudio] =
         tr ("CoreAudio", "AudioDriverType");
     audioDriverTypes [KAudioDriverType_Pulse] =
         tr ("PulseAudio", "AudioDriverType");

@@ -95,13 +95,12 @@
   <xsd:complexContent>
     <xsd:extension base="TAudioAdapterBase">
       <xsd:attribute name="driver" use="required">
-        <!--- @todo (dmik) capitalize enum values on next format change! -->
         <xsd:simpleType>
           <xsd:restriction base="xsd:token">
-            <xsd:enumeration value="null"/>
-            <xsd:enumeration value="oss"/>
-            <xsd:enumeration value="alsa"/>
-            <xsd:enumeration value="pulse"/>
+            <xsd:enumeration value="Null"/>
+            <xsd:enumeration value="OSS"/>
+            <xsd:enumeration value="ALSA"/>
+            <xsd:enumeration value="Pulse"/>
           </xsd:restriction>
         </xsd:simpleType>
       </xsd:attribute>

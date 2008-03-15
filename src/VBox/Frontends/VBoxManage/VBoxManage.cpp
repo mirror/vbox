@@ -1398,13 +1398,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                     else
                         pszDrv = "Null";
                     break;
-                case AudioDriverType_WINMM:
+                case AudioDriverType_WinMM:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "winmm";
                     else
                         pszDrv = "WINMM";
                     break;
-                case AudioDriverType_DSOUND:
+                case AudioDriverType_DirectSound:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "dsound";
                     else
@@ -1428,7 +1428,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                     else
                         pszDrv = "PulseAudio";
                     break;
-                case AudioDriverType_Core:
+                case AudioDriverType_CoreAudio:
                     if (details == VMINFO_MACHINEREADABLE)
                         pszDrv = "coreaudio";
                     else
@@ -4891,13 +4891,13 @@ static int handleModifyVM(int argc, char *argv[],
 #ifdef VBOX_WITH_WINMM
                 else if (strcmp(audio, "winmm") == 0)
                 {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WINMM));
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WinMM));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 #endif
                 else if (strcmp(audio, "dsound") == 0)
                 {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DSOUND));
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DirectSound));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 #endif /* RT_OS_WINDOWS */
@@ -4925,7 +4925,7 @@ static int handleModifyVM(int argc, char *argv[],
 #ifdef RT_OS_DARWIN
                 else if (strcmp(audio, "coreaudio") == 0)
                 {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Core));
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudio));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 

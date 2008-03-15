@@ -492,11 +492,11 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
     LogRel (("VRDPAUTH: User: [%s]. Domain: [%s]. Authentication type: [%s]\n",
                 pszUser, pszDomain,
                 authType == VRDPAuthType_Null?
-                    "null":
+                    "Null":
                     (authType == VRDPAuthType_External?
-                        "external":
+                        "External":
                         (authType == VRDPAuthType_Guest?
-                            "guest":
+                            "Guest":
                             "INVALID"
                         )
                     )

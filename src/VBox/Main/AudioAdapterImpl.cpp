@@ -227,9 +227,9 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
             case AudioDriverType_Null:
 #ifdef RT_OS_WINDOWS
 # ifdef VBOX_WITH_WINMM
-            case AudioDriverType_WINMM:
+            case AudioDriverType_WinMM:
 # endif
-            case AudioDriverType_DSOUND:
+            case AudioDriverType_DirectSound:
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_LINUX
             case AudioDriverType_OSS:
@@ -241,7 +241,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
 # endif
 #endif /* RT_OS_LINUX */
 #ifdef RT_OS_DARWIN
-            case AudioDriverType_Core:
+            case AudioDriverType_CoreAudio:
 #endif
 #ifdef RT_OS_OS2
             case AudioDriverType_MMPM:
@@ -369,30 +369,30 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
     /* now check the audio driver (required) */
     const char *driver = audioAdapterNode.stringValue ("driver");
     mData->mAudioDriver = AudioDriverType_Null;
-    if      (strcmp (driver, "null") == 0)
+    if      (strcmp (driver, "Null") == 0)
         ; /* Null has been set above */
 #ifdef RT_OS_WINDOWS
-    else if (strcmp (driver, "winmm") == 0)
+    else if (strcmp (driver, "WinMM") == 0)
 #ifdef VBOX_WITH_WINMM
-        mData->mAudioDriver = AudioDriverType_WINMM;
+        mData->mAudioDriver = AudioDriverType_WinMM;
 #else
         /* fall back to dsound */
-        mData->mAudioDriver = AudioDriverType_DSOUND;
+        mData->mAudioDriver = AudioDriverType_DirectSound;
 #endif
-    else if (strcmp (driver, "dsound") == 0)
-        mData->mAudioDriver = AudioDriverType_DSOUND;
+    else if (strcmp (driver, "DirectSound") == 0)
+        mData->mAudioDriver = AudioDriverType_DirectSound;
 #endif // RT_OS_WINDOWS
 #ifdef RT_OS_LINUX
-    else if (strcmp (driver, "oss") == 0)
+    else if (strcmp (driver, "OSS") == 0)
         mData->mAudioDriver = AudioDriverType_OSS;
-    else if (strcmp (driver, "alsa") == 0)
+    else if (strcmp (driver, "ALSA") == 0)
 # ifdef VBOX_WITH_ALSA
         mData->mAudioDriver = AudioDriverType_ALSA;
 # else
         /* fall back to OSS */
         mData->mAudioDriver = AudioDriverType_OSS;
 # endif
-    else if (strcmp (driver, "pulse") == 0)
+    else if (strcmp (driver, "Pulse") == 0)
 # ifdef VBOX_WITH_PULSE
         mData->mAudioDriver = AudioDriverType_Pulse;
 # else
@@ -401,11 +401,11 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
 # endif
 #endif // RT_OS_LINUX
 #ifdef RT_OS_DARWIN
-    else if (strcmp (driver, "coreaudio") == 0)
-        mData->mAudioDriver = AudioDriverType_Core;
+    else if (strcmp (driver, "CoreAudio") == 0)
+        mData->mAudioDriver = AudioDriverType_CoreAudio;
 #endif
 #ifdef RT_OS_OS2
-    else if (strcmp (driver, "mmpm") == 0)
+    else if (strcmp (driver, "MMPM") == 0)
         mData->mAudioDriver = AudioDriverType_MMPM;
 #endif
     else
@@ -455,20 +455,20 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
     {
         case AudioDriverType_Null:
         {
-            driverStr = "null";
+            driverStr = "Null";
             break;
         }
 #ifdef RT_OS_WINDOWS
-            case AudioDriverType_WINMM:
+            case AudioDriverType_WinMM:
 # ifdef VBOX_WITH_WINMM
             {
-                driverStr = "winmm";
+                driverStr = "WinMM";
                 break;
             }
 # endif
-            case AudioDriverType_DSOUND:
+            case AudioDriverType_DirectSound:
             {
-                driverStr = "dsound";
+                driverStr = "DirectSound";
                 break;
             }
 #endif /* RT_OS_WINDOWS */
@@ -476,34 +476,34 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
             case AudioDriverType_ALSA:
 # ifdef VBOX_WITH_ALSA
             {
-                driverStr = "alsa";
+                driverStr = "ALSA";
                 break;
             }
 # endif
             case AudioDriverType_Pulse:
 # ifdef VBOX_WITH_PULSE
             {
-                driverStr = "pulse";
+                driverStr = "Pulse";
                 break;
             }
 # endif
             case AudioDriverType_OSS:
             {
-                driverStr = "oss";
+                driverStr = "OSS";
                 break;
             }
 #endif /* RT_OS_LINUX */
 #ifdef RT_OS_DARWIN
-            case AudioDriverType_Core:
+            case AudioDriverType_CoreAudio:
             {
-                driverStr = "coreaudio";
+                driverStr = "CoreAudio";
                 break;
             }
 #endif
 #ifdef RT_OS_OS2
             case AudioDriverType_MMPM:
             {
-                driverStr = "mmpm";
+                driverStr = "MMPM";
                 break;
             }
 #endif

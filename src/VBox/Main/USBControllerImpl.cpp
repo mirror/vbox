@@ -530,12 +530,12 @@ HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
         bool active = (*it).value <bool> ("active");
 
         /* optional */
-        Bstr vendorId = (*it).stringValue ("vendorid");
-        Bstr productId = (*it).stringValue ("productid");
+        Bstr vendorId = (*it).stringValue ("vendorId");
+        Bstr productId = (*it).stringValue ("productId");
         Bstr revision = (*it).stringValue ("revision");
         Bstr manufacturer = (*it).stringValue ("manufacturer");
         Bstr product = (*it).stringValue ("product");
-        Bstr serialNumber = (*it).stringValue ("serialnumber");
+        Bstr serialNumber = (*it).stringValue ("serialNumber");
         Bstr port = (*it).stringValue ("port");
         Bstr remote = (*it).stringValue ("remote");
         ULONG maskedIfs = (*it).value <ULONG> ("maskedInterfaces");
@@ -602,9 +602,9 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
 #ifndef VBOX_WITH_USBFILTER
 
         if (data.mVendorId.string())
-            filter.setValue <Bstr> ("vendorid", data.mVendorId.string());
+            filter.setValue <Bstr> ("vendorId", data.mVendorId.string());
         if (data.mProductId.string())
-            filter.setValue <Bstr> ("productid", data.mProductId.string());
+            filter.setValue <Bstr> ("productId", data.mProductId.string());
         if (data.mRevision.string())
             filter.setValue <Bstr> ("revision", data.mRevision.string());
         if (data.mManufacturer.string())
@@ -612,7 +612,7 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
         if (data.mProduct.string())
             filter.setValue <Bstr> ("product", data.mProduct.string());
         if (data.mSerialNumber.string())
-            filter.setValue <Bstr> ("serialnumber", data.mSerialNumber.string());
+            filter.setValue <Bstr> ("serialNumber", data.mSerialNumber.string());
         if (data.mPort.string())
             filter.setValue <Bstr> ("port", data.mPort.string());
         if (data.mRemote.string())
@@ -623,11 +623,11 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
         Bstr str;
         (*it)->COMGETTER (VendorId) (str.asOutParam());
         if (!str.isNull())
-            filter.setValue <Bstr> ("vendorid", str);
+            filter.setValue <Bstr> ("vendorId", str);
 
         (*it)->COMGETTER (ProductId) (str.asOutParam());
         if (!str.isNull())
-            filter.setValue <Bstr> ("productid", str);
+            filter.setValue <Bstr> ("productId", str);
 
         (*it)->COMGETTER (Revision) (str.asOutParam());
         if (!str.isNull())
@@ -643,7 +643,7 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
 
         (*it)->COMGETTER (SerialNumber) (str.asOutParam());
         if (!str.isNull())
-            filter.setValue <Bstr> ("serialnumber", str);
+            filter.setValue <Bstr> ("serialNumber", str);
 
         (*it)->COMGETTER (Port) (str.asOutParam());
         if (!str.isNull())
