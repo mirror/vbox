@@ -792,7 +792,7 @@ $(mocsrc): $(uihdr) | $$(call DIRDEP,$(dir $(mocsrc)))
 
 endef
 
-##  Generate a rule to create a header and source files from an UI4
+##  Generate a rule to create a header file from an UI4
 #   definition source (.ui).
 #   @param  $uifile       UI definintion source file
 define def_qt_gen_src_ui4
@@ -805,6 +805,10 @@ $(target)_GENHDRS_REAL += $(uihdr)
 $(uihdr): $(uifile) | $$(call DIRDEP,$(dir $(uihdr)))
 	$$(call MSG_TOOL,uic,$(target),$(uifile),$$@)
 	$$(QUIET)$$(VBOX_UIC4) $(uifile) -o $$@
+
+# we assume that the generated header is at least included by
+# the normal header with the same name
+include/$(notdir $(basename $(uifile))).h: $(uihdr)
 
 endef
 
@@ -894,21 +898,6 @@ VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/vbox_image_collection.cpp
 # Basically, here are dependencies for generated UI source files that
 # include generated headers in turn.
 #
-
-$(PATH_VirtualBox)/moc/moc_VBoxAboutDlg.cpp: \
-	$(PATH_VirtualBox)/ui/VBoxAboutDlg.gen.h
-
-$(PATH_VirtualBox)/moc/moc_VBoxCloseVMDlg.cpp: \
-	$(PATH_VirtualBox)/ui/VBoxCloseVMDlg.gen.h
-
-$(PATH_VirtualBox)/moc/moc_VBoxNewVMWzd.cpp: \
-	$(PATH_VirtualBox)/ui/VBoxNewVMWzd.gen.h
-
-$(PATH_VirtualBox)/moc/moc_VBoxNewHDWzd.cpp: \
-	$(PATH_VirtualBox)/ui/VBoxNewHDWzd.gen.h
-
-$(PATH_VirtualBox)/moc/moc_VBoxVMFirstRunWzd.cpp: \
-	$(PATH_VirtualBox)/ui/VBoxVMFirstRunWzd.gen.h
 
 # Make all generated UI sources dependent on all generated headers (since they
 # may include them).  This is safer than indifidual dependencies above but
