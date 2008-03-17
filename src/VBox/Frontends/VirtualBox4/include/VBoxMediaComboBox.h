@@ -33,9 +33,8 @@ class VBoxMediaComboBox : public QComboBox
 
 public:
 
-    VBoxMediaComboBox (QWidget *aParent, const char *aName,
-                       int aType = 0, bool aUseEmptyItem = false);
-    VBoxMediaComboBox (QWidget *aParent);
+    VBoxMediaComboBox (QWidget *aParent, int aType = -1,
+                       bool aUseEmptyItem = false);
     ~VBoxMediaComboBox() {}
 
     void  refresh();

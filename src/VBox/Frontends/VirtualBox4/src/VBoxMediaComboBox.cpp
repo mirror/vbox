@@ -28,17 +28,10 @@
 //Added by qt3to4:
 #include <QPixmap>
 
-VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, const char *aName,
-                                      int aType, bool aUseEmptyItem)
-    : QComboBox (aParent , aName),
-    mType (aType), mRequiredId (QUuid()), mUseEmptyItem (aUseEmptyItem)
-{
-    init();
-}
-
-VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
+VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, int aType /* = -1 */,
+                                      bool aUseEmptyItem /* = false */)
     : QComboBox (aParent),
-    mType (-1), mRequiredId (QUuid()), mUseEmptyItem (false)
+    mType (aType), mRequiredId (QUuid()), mUseEmptyItem (aUseEmptyItem)
 {
     init();
 }

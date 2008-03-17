@@ -930,12 +930,12 @@
   <customwidget>
    <class>QILabel</class>
    <extends>QLabel</extends>
-   <header>QIAbstractWizardFramework.h</header>
+   <header>QIAbstractWizard.h</header>
   </customwidget>
   <customwidget>
    <class>QITextEdit</class>
    <extends>QTextEdit</extends>
-   <header>QIAbstractWizardFramework.h</header>
+   <header>QIAbstractWizard.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

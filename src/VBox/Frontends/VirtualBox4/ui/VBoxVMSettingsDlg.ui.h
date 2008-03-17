@@ -603,9 +603,9 @@ void VBoxVMSettingsDlg::init()
     Q3WhatsThis::add (static_cast <QWidget *> (grbHDD->child ("qt_groupbox_checkbox")),
                      tr ("When checked, attaches the specified virtual hard disk to the "
                          "Slave slot of the Secondary IDE controller."));
-    cbHDA = new VBoxMediaComboBox (grbHDA, "cbHDA", VBoxDefs::HD);
-    cbHDB = new VBoxMediaComboBox (grbHDB, "cbHDB", VBoxDefs::HD);
-    cbHDD = new VBoxMediaComboBox (grbHDD, "cbHDD", VBoxDefs::HD);
+    cbHDA = new VBoxMediaComboBox (grbHDA, VBoxDefs::HD);
+    cbHDB = new VBoxMediaComboBox (grbHDB, VBoxDefs::HD);
+    cbHDD = new VBoxMediaComboBox (grbHDD, VBoxDefs::HD);
 #warning port me
 //    hdaLayout->insertWidget (0, cbHDA);
 //    hdbLayout->insertWidget (0, cbHDB);
@@ -659,7 +659,7 @@ void VBoxVMSettingsDlg::init()
                      tr ("When checked, mounts the specified media to the CD/DVD drive of the "
                          "virtual machine. Note that the CD/DVD drive is always connected to the "
                          "Secondary Master IDE controller of the machine."));
-    cbISODVD = new VBoxMediaComboBox (bgDVD, "cbISODVD", VBoxDefs::CD);
+    cbISODVD = new VBoxMediaComboBox (bgDVD, VBoxDefs::CD);
 #warning port me
 //    cdLayout->insertWidget(0, cbISODVD);
     Q3WhatsThis::add (cbISODVD, tr ("Displays the image file to mount to the virtual CD/DVD "
@@ -686,7 +686,7 @@ void VBoxVMSettingsDlg::init()
     Q3WhatsThis::add (static_cast <QWidget *> (bgFloppy->child ("qt_groupbox_checkbox")),
                      tr ("When checked, mounts the specified media to the Floppy drive of the "
                          "virtual machine."));
-    cbISOFloppy = new VBoxMediaComboBox (bgFloppy, "cbISOFloppy", VBoxDefs::FD);
+    cbISOFloppy = new VBoxMediaComboBox (bgFloppy, VBoxDefs::FD);
 #warning port me
 //    fdLayout->insertWidget(0, cbISOFloppy);
     Q3WhatsThis::add (cbISOFloppy, tr ("Displays the image file to mount to the virtual Floppy "
