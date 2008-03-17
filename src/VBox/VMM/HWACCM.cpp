@@ -90,16 +90,6 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-    /** @todo Make sure both pages are either not accessible or readonly! */
-    /* Allocate one page for VMXON. */
-    pVM->hwaccm.s.vmx.pVMXON = SUPContAlloc(1, &pVM->hwaccm.s.vmx.pVMXONPhys);
-    if (pVM->hwaccm.s.vmx.pVMXON == 0)
-    {
-        AssertMsgFailed(("SUPContAlloc failed!!\n"));
-        return VERR_NO_MEMORY;
-    }
-    memset(pVM->hwaccm.s.vmx.pVMXON, 0, PAGE_SIZE);
-
     /* Allocate one page for the VM control structure (VMCS). */
     pVM->hwaccm.s.vmx.pVMCS = SUPContAlloc(1, &pVM->hwaccm.s.vmx.pVMCSPhys);
     if (pVM->hwaccm.s.vmx.pVMCS == 0)
@@ -120,8 +110,6 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     memset(pVM->hwaccm.s.vmx.pRealModeTSS, 0, PAGE_SIZE);
 
     /* Reuse those three pages for AMD SVM. (one is active; never both) */
-    pVM->hwaccm.s.svm.pHState       = pVM->hwaccm.s.vmx.pVMXON;
-    pVM->hwaccm.s.svm.pHStatePhys   = pVM->hwaccm.s.vmx.pVMXONPhys;
     pVM->hwaccm.s.svm.pVMCB         = pVM->hwaccm.s.vmx.pVMCS;
     pVM->hwaccm.s.svm.pVMCBPhys     = pVM->hwaccm.s.vmx.pVMCSPhys;
     pVM->hwaccm.s.svm.pVMCBHost     = pVM->hwaccm.s.vmx.pRealModeTSS;
@@ -261,20 +249,38 @@ static void hwaccmr3DisableRawMode(PVM pVM)
 }
 
 /**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate it self inside the GC.
+ * Initialize VT-x or AMD-V.
  *
- * @param   pVM     The VM.
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
  */
-HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
+HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 {
-#ifdef LOG_ENABLED
-    Log(("HWACCMR3Relocate to %VGv\n", MMHyperGetArea(pVM, 0)));
-#endif
+    int rc;
+
+    /*
+     * Note that we have a global setting for VT-x/AMD-V usage. VMX root mode changes the way the CPU operates. Our 64 bits switcher will trap
+     * because it turns off paging, which is not allowed in VMX root mode.
+     *
+     * To simplify matters we'll just force all running VMs to either use raw or hwaccm mode. No mixing allowed.
+     *
+     */
+
+    /* If we enabled or disabled hwaccm mode, then it can't be changed until all the VMs are shutdown. */
+    rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_ENABLE, (pVM->hwaccm.s.fAllowed) ? HWACCMSTATE_ENABLED : HWACCMSTATE_DISABLED, NULL);
+    if (VBOX_FAILURE(rc))
+    {
+        LogRel(("HWACCMR3InitFinalize: SUPCallVMMR0Ex VMMR0_DO_HWACC_ENABLE failed with %Vrc\n", rc));
+        LogRel(("HWACCMR3InitFinalize: disallowed %s of HWACCM\n", pVM->hwaccm.s.fAllowed ? "enabling" : "disabling"));
+        /* Invert the selection */
+        pVM->hwaccm.s.fAllowed ^= 1;
+        LogRel(("HWACCMR3InitFinalize: new HWACCM status = %s\n", pVM->hwaccm.s.fAllowed ? "enabled" : "disabled"));
+    }
 
     if (pVM->hwaccm.s.fAllowed == false)
-        return ;
+        return VINF_SUCCESS;    /* disabled */
+
+    Assert(!pVM->fHWACCMEnabled);
 
     if (pVM->hwaccm.s.vmx.fSupported)
     {
@@ -423,7 +429,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
             /* Bit set to 0 means redirection enabled. */
             memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
 
-            int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
+            rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
@@ -457,7 +463,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
 
-            int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
+            rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
@@ -479,7 +485,20 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
         LogRel(("HWACCM: No VMX or SVM CPU extension found. Reason %Vrc\n", pVM->hwaccm.s.lLastError));
         LogRel(("HWACCM: VMX MSR_IA32_FEATURE_CONTROL=%VX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
     }
+    return VINF_SUCCESS;
+}
 
+/**
+ * Applies relocations to data and code managed by this
+ * component. This function will be called at init and
+ * whenever the VMM need to relocate it self inside the GC.
+ *
+ * @param   pVM     The VM.
+ */
+HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
+{
+    Log(("HWACCMR3Relocate to %VGv\n", MMHyperGetArea(pVM, 0)));
+    return;
 }
 
 
@@ -525,11 +544,6 @@ HWACCMR3DECL(int) HWACCMR3Term(PVM pVM)
         pVM->hwaccm.s.pStatExitReason = 0;
     }
 
-    if (pVM->hwaccm.s.vmx.pVMXON)
-    {
-        SUPContFree(pVM->hwaccm.s.vmx.pVMXON, 1);
-        pVM->hwaccm.s.vmx.pVMXON = 0;
-    }
     if (pVM->hwaccm.s.vmx.pVMCS)
     {
         SUPContFree(pVM->hwaccm.s.vmx.pVMCS, 1);

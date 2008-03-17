@@ -35,32 +35,112 @@
 #include <iprt/param.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/string.h>
+#include <iprt/memobj.h>
+#include <iprt/cpuset.h>
 #include "HWVMXR0.h"
 #include "HWSVMR0.h"
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
+static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
+
+/*******************************************************************************
+*   Local Variables                                                            *
+*******************************************************************************/
+static struct
+{
+    struct
+    {
+        RTR0MEMOBJ  pMemObj;
+        bool        fVMXConfigured;
+        bool        fSVMConfigured;
+    } aCpuInfo[RTCPUSET_MAX_CPUS];
+
+    struct
+    {
+        /** Set by the ring-0 driver to indicate VMX is supported by the CPU. */
+        bool                        fSupported;
+
+        /** Host CR4 value (set by ring-0 VMX init) */
+        uint64_t                    hostCR4;
+
+        /** VMX MSR values */
+        struct
+        {
+            uint64_t                feature_ctrl;
+            uint64_t                vmx_basic_info;
+            uint64_t                vmx_pin_ctls;
+            uint64_t                vmx_proc_ctls;
+            uint64_t                vmx_exit;
+            uint64_t                vmx_entry;
+            uint64_t                vmx_misc;
+            uint64_t                vmx_cr0_fixed0;
+            uint64_t                vmx_cr0_fixed1;
+            uint64_t                vmx_cr4_fixed0;
+            uint64_t                vmx_cr4_fixed1;
+            uint64_t                vmx_vmcs_enum;
+        } msr;
+        /* Last instruction error */
+        uint32_t                    ulLastInstrError;
+    } vmx;
+    struct
+    {
+        /** Set by the ring-0 driver to indicate SVM is supported by the CPU. */
+        bool                        fSupported;
+
+        /** SVM revision. */
+        uint32_t                    u32Rev;
+
+        /** Maximum ASID allowed. */
+        uint32_t                    u32MaxASID;
+    } svm;
+    /** Saved error from detection */
+    int32_t         lLastError;
+
+    struct
+    {
+        uint32_t                    u32AMDFeatureECX;
+        uint32_t                    u32AMDFeatureEDX;
+    } cpuid;
+
+    HWACCMSTATE     enmHwAccmState;
+} HWACCMR0Globals;
+
+
+
 /**
- * Does Ring-0 HWACCM initialization.
- *
- * This is mainly to check that the Host CPU mode is compatible
- * with VMX.
+ * Does global Ring-0 HWACCM initialization.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
+HWACCMR0DECL(int) HWACCMR0Init()
 {
-    LogComFlow(("HWACCMR0Init: %p\n", pVM));
+    int        rc;
+    RTR0MEMOBJ pScatchMemObj;
+    void      *pvScatchPage;
+    RTHCPHYS   pScatchPagePhys;
 
-    pVM->hwaccm.s.vmx.fSupported = false;;
-    pVM->hwaccm.s.svm.fSupported = false;;
+    memset(&HWACCMR0Globals, 0, sizeof(HWACCMR0Globals));
+    HWACCMR0Globals.enmHwAccmState = HWACCMSTATE_UNINITIALIZED;
+
+    rc = RTR0MemObjAllocCont(&pScatchMemObj, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pvScatchPage    = RTR0MemObjAddress(pScatchMemObj);
+    pScatchPagePhys = RTR0MemObjGetPagePhysAddr(pScatchMemObj, 0);
+    memset(pvScatchPage, 0, PAGE_SIZE);
+
+    /* Assume success */
+    rc = VINF_SUCCESS;
 
 #ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL /* paranoia */
 
-    pVM->hwaccm.s.fHWACCMR0Init = true;
-    pVM->hwaccm.s.lLastError    = VINF_SUCCESS;
-
     /*
-     * Check for VMX capabilities
+     * Check for VT-x and AMD-V capabilities
      */
     if (ASMHasCpuId())
     {
@@ -69,10 +149,13 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
         uint32_t u32FeaturesEDX;
         uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX;
 
+        /* Make sure we don't get rescheduled to another cpu during this probe. */
+        RTCCUINTREG fFlags = ASMIntDisableFlags();
+
         ASMCpuId(0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
         ASMCpuId(1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
         /* Query AMD features. */
-        ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &pVM->hwaccm.s.cpuid.u32AMDFeatureECX, &pVM->hwaccm.s.cpuid.u32AMDFeatureEDX);
+        ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &HWACCMR0Globals.cpuid.u32AMDFeatureECX, &HWACCMR0Globals.cpuid.u32AMDFeatureEDX);
 
         if (    u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
             &&  u32VendorECX == X86_CPUID_VENDOR_INTEL_ECX
@@ -88,77 +171,74 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
                  && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
             {
-                pVM->hwaccm.s.vmx.msr.feature_ctrl    = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+                HWACCMR0Globals.vmx.msr.feature_ctrl    = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
                 /*
                  * Both the LOCK and VMXON bit must be set; otherwise VMXON will generate a #GP.
                  * Once the lock bit is set, this MSR can no longer be modified.
                  */
                 /** @todo need to check this for each cpu/core in the system!!!) */
-                if (!(pVM->hwaccm.s.vmx.msr.feature_ctrl & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK)))
+                if (!(HWACCMR0Globals.vmx.msr.feature_ctrl & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK)))
                 {
                     /* MSR is not yet locked; we can change it ourselves here */
-                    pVM->hwaccm.s.vmx.msr.feature_ctrl |= (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK);
-                    ASMWrMsr(MSR_IA32_FEATURE_CONTROL, pVM->hwaccm.s.vmx.msr.feature_ctrl);
+                    HWACCMR0Globals.vmx.msr.feature_ctrl |= (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK);
+                    ASMWrMsr(MSR_IA32_FEATURE_CONTROL, HWACCMR0Globals.vmx.msr.feature_ctrl);
                 }
 
-                if (   (pVM->hwaccm.s.vmx.msr.feature_ctrl & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
+                if (   (HWACCMR0Globals.vmx.msr.feature_ctrl & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
                                                           == (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
                 {
-                    pVM->hwaccm.s.vmx.fSupported          = true;
-                    pVM->hwaccm.s.vmx.msr.vmx_basic_info  = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
-                    pVM->hwaccm.s.vmx.msr.vmx_pin_ctls    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
-                    pVM->hwaccm.s.vmx.msr.vmx_proc_ctls   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-                    pVM->hwaccm.s.vmx.msr.vmx_exit        = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
-                    pVM->hwaccm.s.vmx.msr.vmx_entry       = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
-                    pVM->hwaccm.s.vmx.msr.vmx_misc        = ASMRdMsr(MSR_IA32_VMX_MISC);
-                    pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed0  = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
-                    pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
-                    pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed0  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
-                    pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
-                    pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum   = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
+                    HWACCMR0Globals.vmx.fSupported          = true;
+                    HWACCMR0Globals.vmx.msr.vmx_basic_info  = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
+                    HWACCMR0Globals.vmx.msr.vmx_pin_ctls    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
+                    HWACCMR0Globals.vmx.msr.vmx_proc_ctls   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+                    HWACCMR0Globals.vmx.msr.vmx_exit        = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
+                    HWACCMR0Globals.vmx.msr.vmx_entry       = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
+                    HWACCMR0Globals.vmx.msr.vmx_misc        = ASMRdMsr(MSR_IA32_VMX_MISC);
+                    HWACCMR0Globals.vmx.msr.vmx_cr0_fixed0  = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
+                    HWACCMR0Globals.vmx.msr.vmx_cr0_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
+                    HWACCMR0Globals.vmx.msr.vmx_cr4_fixed0  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
+                    HWACCMR0Globals.vmx.msr.vmx_cr4_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
+                    HWACCMR0Globals.vmx.msr.vmx_vmcs_enum   = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
 
                     /*
                      * Check CR4.VMXE
                      */
-                    pVM->hwaccm.s.vmx.hostCR4 = ASMGetCR4();
-                    if (!(pVM->hwaccm.s.vmx.hostCR4 & X86_CR4_VMXE))
+                    HWACCMR0Globals.vmx.hostCR4 = ASMGetCR4();
+                    if (!(HWACCMR0Globals.vmx.hostCR4 & X86_CR4_VMXE))
                     {
                         /* In theory this bit could be cleared behind our back. Which would cause #UD faults when we
                          * try to execute the VMX instructions...
                          */
-                        ASMSetCR4(pVM->hwaccm.s.vmx.hostCR4 | X86_CR4_VMXE);
+                        ASMSetCR4(HWACCMR0Globals.vmx.hostCR4 | X86_CR4_VMXE);
                     }
 
-                    if (    pVM->hwaccm.s.vmx.pVMXONPhys 
-                        &&  pVM->hwaccm.s.vmx.pVMXON)
-                    {
-                        /* Set revision dword at the beginning of the structure. */
-                        *(uint32_t *)pVM->hwaccm.s.vmx.pVMXON = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
+                    /* Set revision dword at the beginning of the structure. */
+                    *(uint32_t *)pvScatchPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(HWACCMR0Globals.vmx.msr.vmx_basic_info);
 
 #if HC_ARCH_BITS == 64
-                        /* Enter VMX Root Mode */
-                        int rc = VMXEnable(pVM->hwaccm.s.vmx.pVMXONPhys);
-                        if (VBOX_FAILURE(rc))
-                        {
-                            /* KVM leaves the CPU in VMX root mode. Not only is this not allowed, it will crash the host when we enter raw mode, because
-                             * (a) clearing X86_CR4_VMXE in CR4 causes a #GP    (we no longer modify this bit)
-                             * (b) turning off paging causes a #GP              (unavoidable when switching from long to 32 bits mode)
-                             *
-                             * They should fix their code, but until they do we simply refuse to run.
-                             */
-                            return VERR_VMX_IN_VMX_ROOT_MODE;
-                        }
+                    /* Enter VMX Root Mode */
+                    rc = VMXEnable(pScatchPagePhys);
+                    if (VBOX_FAILURE(rc))
+                    {
+                        /* KVM leaves the CPU in VMX root mode. Not only is this not allowed, it will crash the host when we enter raw mode, because
+                         * (a) clearing X86_CR4_VMXE in CR4 causes a #GP    (we no longer modify this bit)
+                         * (b) turning off paging causes a #GP              (unavoidable when switching from long to 32 bits mode)
+                         *
+                         * They should fix their code, but until they do we simply refuse to run.
+                         */
+                        rc = VERR_VMX_IN_VMX_ROOT_MODE;
+                    }
+                    else
                         VMXDisable();
 #endif
-                    }
                     /* Restore CR4 again; don't leave the X86_CR4_VMXE flag set if it wasn't so before (some software could incorrectly think it's in VMX mode) */
-                    ASMSetCR4(pVM->hwaccm.s.vmx.hostCR4);
+                    ASMSetCR4(HWACCMR0Globals.vmx.hostCR4);
                 }
                 else
-                    pVM->hwaccm.s.lLastError = VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR;
+                    HWACCMR0Globals.lLastError = VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR;
             }
             else
-                pVM->hwaccm.s.lLastError = VERR_VMX_NO_VMX;
+                HWACCMR0Globals.lLastError = VERR_VMX_NO_VMX;
         }
         else
         if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
@@ -170,7 +250,7 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
              * Read all SVM MSRs if SVM is available. (same goes for RDMSR/WRMSR)
              * We also assume all SVM-enabled CPUs support fxsave/fxrstor.
              */
-            if (   (pVM->hwaccm.s.cpuid.u32AMDFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
+            if (   (HWACCMR0Globals.cpuid.u32AMDFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
@@ -192,41 +272,267 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
                     if (val & MSR_K6_EFER_SVME)
                     {
                         /* Query AMD features. */
-                        ASMCpuId(0x8000000A, &pVM->hwaccm.s.svm.u32Rev, &pVM->hwaccm.s.svm.u32MaxASID, &u32Dummy, &u32Dummy);
+                        ASMCpuId(0x8000000A, &HWACCMR0Globals.svm.u32Rev, &HWACCMR0Globals.svm.u32MaxASID, &u32Dummy, &u32Dummy);
 
-                        pVM->hwaccm.s.svm.fSupported = true;
+                        HWACCMR0Globals.svm.fSupported = true;
                     }
                     else
                     {
-                        pVM->hwaccm.s.lLastError = VERR_SVM_ILLEGAL_EFER_MSR;
+                        HWACCMR0Globals.lLastError = VERR_SVM_ILLEGAL_EFER_MSR;
                         AssertFailed();
                     }
                 }
                 else
-                    pVM->hwaccm.s.lLastError = VERR_SVM_DISABLED;
+                    HWACCMR0Globals.lLastError = VERR_SVM_DISABLED;
             }
             else
-                pVM->hwaccm.s.lLastError = VERR_SVM_NO_SVM;
+                HWACCMR0Globals.lLastError = VERR_SVM_NO_SVM;
         }
         else
-            pVM->hwaccm.s.lLastError = VERR_HWACCM_UNKNOWN_CPU;
+            HWACCMR0Globals.lLastError = VERR_HWACCM_UNKNOWN_CPU;
+
+        ASMSetFlags(fFlags);
     }
     else
-        pVM->hwaccm.s.lLastError = VERR_HWACCM_NO_CPUID;
+        HWACCMR0Globals.lLastError = VERR_HWACCM_NO_CPUID;
 
 #endif /* !VBOX_WITH_HYBIRD_32BIT_KERNEL */
+
+    RTR0MemObjFree(pScatchMemObj, false);
+    return rc;
+}
+
+/**
+ * Does global Ring-0 HWACCM termination.
+ *
+ * @returns VBox status code.
+ */
+HWACCMR0DECL(int) HWACCMR0Term()
+{
+    int aRc[RTCPUSET_MAX_CPUS];
+
+    memset(aRc, 0, sizeof(aRc));
+    int rc = RTMpOnAll(HWACCMR0DisableCPU, aRc, NULL);
+    AssertRC(rc);
+
+    /* Free the per-cpu pages used for VT-x and AMD-V */
+    for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
+    {
+        AssertMsg(VBOX_SUCCESS(aRc[i]), ("HWACCMR0DisableCPU failed for cpu %d with rc=%d\n", i, aRc[i]));
+        if (HWACCMR0Globals.aCpuInfo[i].pMemObj)
+        {
+            RTR0MemObjFree(HWACCMR0Globals.aCpuInfo[i].pMemObj, false);
+            HWACCMR0Globals.aCpuInfo[i].pMemObj = NULL;
+        }
+    }
+    return rc;
+}
+
+/**
+ * Sets up HWACCM on all cpus.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM to operate on.
+ * @param   enmNewHwAccmState   New hwaccm state
+ *
+ */
+HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
+{
+    Assert(sizeof(HWACCMR0Globals.enmHwAccmState) == sizeof(uint32_t));
+    if (ASMAtomicCmpXchgU32((volatile uint32_t *)&HWACCMR0Globals.enmHwAccmState, enmNewHwAccmState, HWACCMSTATE_UNINITIALIZED))
+    {
+        int aRc[RTCPUSET_MAX_CPUS];
+        memset(aRc, 0, sizeof(aRc));
+
+        /* Allocate one page per cpu for the global vt-x and amd-v pages */
+        for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
+        {
+            Assert(!HWACCMR0Globals.aCpuInfo[i].pMemObj);
+
+            /** @todo this is rather dangerous if cpus can be taken offline; we don't care for now */
+            if (RTMpIsCpuOnline(i))
+            {
+                int rc = RTR0MemObjAllocCont(&HWACCMR0Globals.aCpuInfo[i].pMemObj, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+                if (RT_FAILURE(rc))
+                    return rc;
+
+                void *pvR0 = RTR0MemObjAddress(HWACCMR0Globals.aCpuInfo[i].pMemObj);
+                memset(pvR0, 0, PAGE_SIZE);
+            }
+        }
+
+        /* First time, so initialize each cpu/core */
+        int rc = RTMpOnAll(HWACCMR0EnableCPU, (void *)pVM, aRc);
+        if (VBOX_SUCCESS(rc))
+        {
+            for (unsigned i=0;i<RT_ELEMENTS(aRc);i++)
+            {
+                if (RTMpIsCpuOnline(i))
+                {
+                    AssertMsg(VBOX_SUCCESS(aRc[i]), ("HWACCMR0EnableCPU failed for cpu %d with rc=%d\n", i, aRc[i]));
+                    if (VBOX_FAILURE(aRc[i]))
+                    {
+                        rc = aRc[i];
+                        break;
+                    }
+                }
+            }
+        }
+        return rc;
+    }
+
+    if (HWACCMR0Globals.enmHwAccmState == enmNewHwAccmState)
+        return VINF_SUCCESS;
+
+    /* Request to change the mode is not allowed */
+    return VERR_ACCESS_DENIED;
+}
+
+/**
+ * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
+ * is to be called on the target cpus.
+ * 
+ * @param   idCpu       The identifier for the CPU the function is called on.
+ * @param   pvUser1     The 1st user argument.
+ * @param   pvUser2     The 2nd user argument.
+ */
+static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PVM      pVM = (PVM)pvUser1;
+    int     *paRc = (int *)pvUser2;
+    void    *pvPageCpu;
+    RTHCPHYS pPageCpuPhys;
+
+    Assert(pVM);
+    Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
+
+    /* Should never happen */
+    if (!HWACCMR0Globals.aCpuInfo[idCpu].pMemObj)
+    {
+        AssertFailed();
+        return;
+    }
+
+    pvPageCpu    = RTR0MemObjAddress(HWACCMR0Globals.aCpuInfo[idCpu].pMemObj);
+    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(HWACCMR0Globals.aCpuInfo[idCpu].pMemObj, 0);
+
+    if (pVM->hwaccm.s.vmx.fSupported)
+    {
+        paRc[idCpu] = VMXR0EnableCpu(idCpu, pVM, pvPageCpu, pPageCpuPhys);
+        if (VBOX_SUCCESS(paRc[idCpu]))
+            HWACCMR0Globals.aCpuInfo[idCpu].fVMXConfigured = true;
+    }
+    else
+    {
+        Assert(pVM->hwaccm.s.svm.fSupported);
+        paRc[idCpu] = SVMR0EnableCpu(idCpu, pVM, pvPageCpu, pPageCpuPhys);
+        if (VBOX_SUCCESS(paRc[idCpu]))
+            HWACCMR0Globals.aCpuInfo[idCpu].fSVMConfigured = true;
+    }
+    return;
+}
+
+/**
+ * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
+ * is to be called on the target cpus.
+ * 
+ * @param   idCpu       The identifier for the CPU the function is called on.
+ * @param   pvUser1     The 1st user argument.
+ * @param   pvUser2     The 2nd user argument.
+ */
+static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    void    *pvPageCpu;
+    RTHCPHYS pPageCpuPhys;
+    int     *paRc = (int *)pvUser1;
+
+    Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
+
+    /* Should never happen */
+    if (!HWACCMR0Globals.aCpuInfo[idCpu].pMemObj)
+    {
+        AssertFailed();
+        return;
+    }
+
+    pvPageCpu    = RTR0MemObjAddress(HWACCMR0Globals.aCpuInfo[idCpu].pMemObj);
+    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(HWACCMR0Globals.aCpuInfo[idCpu].pMemObj, 0);
+
+    if (HWACCMR0Globals.aCpuInfo[idCpu].fVMXConfigured)
+    {
+        paRc[idCpu] = VMXR0DisableCpu(idCpu, pvPageCpu, pPageCpuPhys);
+        AssertRC(paRc[idCpu]);
+        HWACCMR0Globals.aCpuInfo[idCpu].fVMXConfigured = false;
+    }
+    else
+    if (HWACCMR0Globals.aCpuInfo[idCpu].fSVMConfigured)
+    {
+        paRc[idCpu] = SVMR0DisableCpu(idCpu, pvPageCpu, pPageCpuPhys);
+        AssertRC(paRc[idCpu]);
+        HWACCMR0Globals.aCpuInfo[idCpu].fSVMConfigured = false;
+    }
+    return;
+}
+
+
+/**
+ * Does Ring-0 per VM HWACCM initialization.
+ *
+ * This is mainly to check that the Host CPU mode is compatible
+ * with VMX.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM)
+{
+    LogComFlow(("HWACCMR0Init: %p\n", pVM));
+
+    pVM->hwaccm.s.vmx.fSupported = false;
+    pVM->hwaccm.s.svm.fSupported = false;
+
+    if (HWACCMR0Globals.vmx.fSupported)
+    {
+        pVM->hwaccm.s.vmx.fSupported            = true;
+        pVM->hwaccm.s.vmx.hostCR4               = HWACCMR0Globals.vmx.hostCR4;
+        pVM->hwaccm.s.vmx.msr.feature_ctrl      = HWACCMR0Globals.vmx.msr.feature_ctrl;
+        pVM->hwaccm.s.vmx.msr.vmx_basic_info    = HWACCMR0Globals.vmx.msr.vmx_basic_info;
+        pVM->hwaccm.s.vmx.msr.vmx_pin_ctls      = HWACCMR0Globals.vmx.msr.vmx_pin_ctls;
+        pVM->hwaccm.s.vmx.msr.vmx_proc_ctls     = HWACCMR0Globals.vmx.msr.vmx_proc_ctls;
+        pVM->hwaccm.s.vmx.msr.vmx_exit          = HWACCMR0Globals.vmx.msr.vmx_exit;
+        pVM->hwaccm.s.vmx.msr.vmx_entry         = HWACCMR0Globals.vmx.msr.vmx_entry;
+        pVM->hwaccm.s.vmx.msr.vmx_misc          = HWACCMR0Globals.vmx.msr.vmx_misc;
+        pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed0    = HWACCMR0Globals.vmx.msr.vmx_cr0_fixed0;
+        pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed1    = HWACCMR0Globals.vmx.msr.vmx_cr0_fixed1;
+        pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed0    = HWACCMR0Globals.vmx.msr.vmx_cr4_fixed0;
+        pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed1    = HWACCMR0Globals.vmx.msr.vmx_cr4_fixed1;
+        pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum     = HWACCMR0Globals.vmx.msr.vmx_vmcs_enum;
+
+    }
+    else
+    if (HWACCMR0Globals.svm.fSupported)
+    {
+        pVM->hwaccm.s.svm.fSupported            = true;
+        pVM->hwaccm.s.svm.u32Rev                = HWACCMR0Globals.svm.u32Rev;
+        pVM->hwaccm.s.svm.u32MaxASID            = HWACCMR0Globals.svm.u32MaxASID;
+    }
+
+    pVM->hwaccm.s.lLastError                = HWACCMR0Globals.lLastError;
+    pVM->hwaccm.s.cpuid.u32AMDFeatureECX    = HWACCMR0Globals.cpuid.u32AMDFeatureECX;
+    pVM->hwaccm.s.cpuid.u32AMDFeatureEDX    = HWACCMR0Globals.cpuid.u32AMDFeatureEDX;
 
     return VINF_SUCCESS;
 }
 
 
+
 /**
- * Sets up and activates VMX
+ * Sets up a VT-x or AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0SetupVMX(PVM pVM)
+HWACCMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
@@ -235,21 +541,21 @@ HWACCMR0DECL(int) HWACCMR0SetupVMX(PVM pVM)
 
     /* Setup Intel VMX. */
     if (pVM->hwaccm.s.vmx.fSupported)
-        rc = VMXR0Setup(pVM);
+        rc = VMXR0SetupVM(pVM);
     else
-        rc = SVMR0Setup(pVM);
+        rc = SVMR0SetupVM(pVM);
 
     return rc;
 }
 
 
 /**
- * Enable VMX or SVN
+ * Enters the VT-x or AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0Enable(PVM pVM)
+HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
 {
     CPUMCTX *pCtx;
     int      rc;
@@ -266,7 +572,7 @@ HWACCMR0DECL(int) HWACCMR0Enable(PVM pVM)
 
     if (pVM->hwaccm.s.vmx.fSupported)
     {
-        rc  = VMXR0Enable(pVM);
+        rc  = VMXR0Enter(pVM);
         AssertRC(rc);
         rc |= VMXR0SaveHostState(pVM);
         AssertRC(rc);
@@ -278,7 +584,7 @@ HWACCMR0DECL(int) HWACCMR0Enable(PVM pVM)
     else
     {
         Assert(pVM->hwaccm.s.svm.fSupported);
-        rc  = SVMR0Enable(pVM);
+        rc  = SVMR0Enter(pVM);
         AssertRC(rc);
         rc |= SVMR0LoadGuestState(pVM, pCtx);
         AssertRC(rc);
@@ -291,12 +597,12 @@ HWACCMR0DECL(int) HWACCMR0Enable(PVM pVM)
 
 
 /**
- * Disable VMX or SVN
+ * Leaves the VT-x or AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0Disable(PVM pVM)
+HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
 {
     CPUMCTX *pCtx;
     int      rc;
@@ -322,12 +628,12 @@ HWACCMR0DECL(int) HWACCMR0Disable(PVM pVM)
 
     if (pVM->hwaccm.s.vmx.fSupported)
     {
-        return VMXR0Disable(pVM);
+        return VMXR0Leave(pVM);
     }
     else
     {
         Assert(pVM->hwaccm.s.svm.fSupported);
-        return SVMR0Disable(pVM);
+        return SVMR0Leave(pVM);
     }
 }
 

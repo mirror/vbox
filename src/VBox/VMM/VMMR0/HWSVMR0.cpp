@@ -42,12 +42,61 @@
 static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID);
 
 /**
- * Sets up and activates SVM
+ * Sets up and activates AMD-V on the current CPU
+ *
+ * @returns VBox status code.
+ * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pVM             The VM to operate on.
+ * @param   pvPageCpu       Pointer to the global cpu page
+ * @param   pPageCpuPhys    Physical address of the global cpu page
+ */
+HWACCMR0DECL(int) SVMR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+{
+    AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+    AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
+
+    /* We must turn on AMD-V and setup the host state physical address, as those MSRs are per-cpu/core. */
+
+    /* Turn on AMD-V in the EFER MSR. */
+    uint64_t val = ASMRdMsr(MSR_K6_EFER);
+    if (!(val & MSR_K6_EFER_SVME))
+        ASMWrMsr(MSR_K6_EFER, val | MSR_K6_EFER_SVME);
+
+    /* Write the physical page address where the CPU will store the host state while executing the VM. */
+    ASMWrMsr(MSR_K8_VM_HSAVE_PA, pPageCpuPhys);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Deactivates AMD-V on the current CPU
+ *
+ * @returns VBox status code.
+ * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pvPageCpu       Pointer to the global cpu page
+ * @param   pPageCpuPhys    Physical address of the global cpu page
+ */
+HWACCMR0DECL(int) SVMR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+{
+    AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
+    AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
+
+    /* Turn off AMD-V in the EFER MSR. */
+    uint64_t val = ASMRdMsr(MSR_K6_EFER);
+    ASMWrMsr(MSR_K6_EFER, val & ~MSR_K6_EFER_SVME);
+
+    /* Invalidate host state physical address. */
+    ASMWrMsr(MSR_K8_VM_HSAVE_PA, 0);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Sets up SVM for the specified VM
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) SVMR0Setup(PVM pVM)
+HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
 {
     int         rc = VINF_SUCCESS;
     SVM_VMCB   *pVMCB;
@@ -1412,26 +1461,16 @@ end:
 }
 
 /**
- * Enable SVM
+ * Enters the AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) SVMR0Enable(PVM pVM)
+HWACCMR0DECL(int) SVMR0Enter(PVM pVM)
 {
     uint64_t val;
 
     Assert(pVM->hwaccm.s.svm.fSupported);
-
-    /* We must turn on SVM and setup the host state physical address, as those MSRs are per-cpu/core. */
-
-    /* Turn on SVM in the EFER MSR. */
-    val = ASMRdMsr(MSR_K6_EFER);
-    if (!(val & MSR_K6_EFER_SVME))
-        ASMWrMsr(MSR_K6_EFER, val | MSR_K6_EFER_SVME);
-
-    /* Write the physical page address where the CPU will store the host state while executing the VM. */
-    ASMWrMsr(MSR_K8_VM_HSAVE_PA, pVM->hwaccm.s.svm.pHStatePhys);
 
     /* Force a TLB flush on VM entry. */
     pVM->hwaccm.s.svm.fResumeVM = false;
@@ -1444,22 +1483,13 @@ HWACCMR0DECL(int) SVMR0Enable(PVM pVM)
 
 
 /**
- * Disable SVM
+ * Leaves the AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) SVMR0Disable(PVM pVM)
+HWACCMR0DECL(int) SVMR0Leave(PVM pVM)
 {
-    /** @todo hopefully this is not very expensive. */
-
-    /* Turn off SVM in the EFER MSR. */
-    uint64_t val = ASMRdMsr(MSR_K6_EFER);
-    ASMWrMsr(MSR_K6_EFER, val & ~MSR_K6_EFER_SVME);
-
-    /* Invalidate host state physical address. */
-    ASMWrMsr(MSR_K8_VM_HSAVE_PA, 0);
-
     Assert(pVM->hwaccm.s.svm.fSupported);
     return VINF_SUCCESS;
 }

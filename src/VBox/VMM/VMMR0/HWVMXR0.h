@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HWACCM SVM - Internal header file.
+ * HWACCM VT-x - Internal header file.
  */
 
 /*
@@ -38,28 +38,50 @@ __BEGIN_DECLS
 #ifdef IN_RING0
 
 /**
- * Enable VMX
+ * Enters the VT-x session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0Enable(PVM pVM);
+HWACCMR0DECL(int) VMXR0Enter(PVM pVM);
 
 /**
- * Disable VMX
+ * Leaves the VT-x session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0Disable(PVM pVM);
+HWACCMR0DECL(int) VMXR0Leave(PVM pVM);
+
 
 /**
- * Sets up and activates VMX
+ * Sets up and activates VT-x on the current CPU
+ *
+ * @returns VBox status code.
+ * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pVM             The VM to operate on.
+ * @param   pvPageCpu       Pointer to the global cpu page
+ * @param   pPageCpuPhys    Physical address of the global cpu page
+ */
+HWACCMR0DECL(int) VMXR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+
+/**
+ * Deactivates VT-x on the current CPU
+ *
+ * @returns VBox status code.
+ * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pvPageCpu       Pointer to the global cpu page
+ * @param   pPageCpuPhys    Physical address of the global cpu page
+ */
+HWACCMR0DECL(int) VMXR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+
+/**
+ * Sets up VT-x for the specified VM
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0Setup(PVM pVM);
+HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM);
 
 
 /**
@@ -81,7 +103,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx);
 
 
 /**
- * Runs guest code in a VMX VM.
+ * Runs guest code in a VT-x VM.
  *
  * @note NEVER EVER turn on interrupts here. Due to our illegal entry into the kernel, it might mess things up. (XP kernel traps have been frequently observed)
  *
