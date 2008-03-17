@@ -1106,6 +1106,8 @@
 #define VERR_VMX_IN_VMX_ROOT_MODE                   (-4011)
 /** Somebody cleared X86_CR4_VMXE in the CR4 register. */
 #define VERR_VMX_X86_CR4_VMXE_CLEARED               (-4012)
+/** Unable to initialize VT-x on all CPUs in the system. */
+#define VERR_VMX_INIT_CPUS_FAILED                   (-4013)
 /** @} */
 
 /** @name VBox SVM Status Codes
