@@ -258,6 +258,14 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 {
     int rc;
 
+    if (    !pVM->hwaccm.s.vmx.fSupported
+        &&  !pVM->hwaccm.s.svm.fSupported)
+    {
+        LogRel(("HWACCM: No VMX or SVM CPU extension found. Reason %Vrc\n", pVM->hwaccm.s.lLastError));
+        LogRel(("HWACCM: VMX MSR_IA32_FEATURE_CONTROL=%VX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
+        return VINF_SUCCESS;
+    }
+
     /*
      * Note that we have a global setting for VT-x/AMD-V usage. VMX root mode changes the way the CPU operates. Our 64 bits switcher will trap
      * because it turns off paging, which is not allowed in VMX root mode.
@@ -265,7 +273,6 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
      * To simplify matters we'll just force all running VMs to either use raw or hwaccm mode. No mixing allowed.
      *
      */
-
     /* If we enabled or disabled hwaccm mode, then it can't be changed until all the VMs are shutdown. */
     rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_ENABLE, (pVM->hwaccm.s.fAllowed) ? HWACCMSTATE_ENABLED : HWACCMSTATE_DISABLED, NULL);
     if (VBOX_FAILURE(rc))
@@ -478,12 +485,6 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 pVM->fHWACCMEnabled = false;
             }
         }
-    }
-    else
-    if (pVM->hwaccm.s.fHWACCMR0Init)
-    {
-        LogRel(("HWACCM: No VMX or SVM CPU extension found. Reason %Vrc\n", pVM->hwaccm.s.lLastError));
-        LogRel(("HWACCM: VMX MSR_IA32_FEATURE_CONTROL=%VX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
     }
     return VINF_SUCCESS;
 }
