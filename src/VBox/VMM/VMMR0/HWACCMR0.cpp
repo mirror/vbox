@@ -136,7 +136,8 @@ HWACCMR0DECL(int) HWACCMR0Init()
     pScatchPagePhys = RTR0MemObjGetPagePhysAddr(pScatchMemObj, 0);
     memset(pvScatchPage, 0, PAGE_SIZE);
 
-#ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL /* paranoia */
+#ifdef RT_OS_WINDOWS /* kernel panics on Linux; disabled for now */
+ #ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL /* paranoia */
 
     /*
      * Check for VT-x and AMD-V capabilities
@@ -301,7 +302,8 @@ HWACCMR0DECL(int) HWACCMR0Init()
     else
         HWACCMR0Globals.lLastError = VERR_HWACCM_NO_CPUID;
 
-#endif /* !VBOX_WITH_HYBIRD_32BIT_KERNEL */
+ #endif /* !VBOX_WITH_HYBIRD_32BIT_KERNEL */
+#endif /* RT_OS_WINDOWS */
 
     RTR0MemObjFree(pScatchMemObj, false);
     return VINF_SUCCESS;
