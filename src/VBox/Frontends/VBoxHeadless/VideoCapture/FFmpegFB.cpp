@@ -27,7 +27,7 @@
 #include <png.h>
 #include <iprt/stream.h>
 
-//#define VBOX_SHOW_AVAILABLE_FORMATS
+#define VBOX_SHOW_AVAILABLE_FORMATS
 
 // external constructor for dynamic loading
 /////////////////////////////////////////////////////////////////////////////
