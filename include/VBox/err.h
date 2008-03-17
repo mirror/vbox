@@ -1107,7 +1107,7 @@
 /** Somebody cleared X86_CR4_VMXE in the CR4 register. */
 #define VERR_VMX_X86_CR4_VMXE_CLEARED               (-4012)
 /** VT-x features locked or unavailable in MSR. */
-#define VERR_VMX_MSR_LOCKED                         (-4013)
+#define VERR_VMX_MSR_LOCKED_OR_DISABLED             (-4013)
 /** @} */
 
 /** @name VBox SVM Status Codes
