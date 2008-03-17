@@ -374,7 +374,7 @@ HWACCMR0DECL(int) HWACCMR0Term()
  */
 static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    unsigned u32VendorEBX = (unsigned)pvUser1;
+    unsigned u32VendorEBX = (uintptr_t)pvUser1;
     int     *paRc         = (int *)pvUser2;
     uint64_t val;
 
