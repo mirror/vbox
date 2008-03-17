@@ -693,6 +693,11 @@ static int vmR3InitRing0(PVM pVM)
      */
     if (VBOX_SUCCESS(rc))
         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING0);
+
+    /** todo: move this to the VMINITCOMPLETED_RING0 notification handler once implemented */
+    if (VBOX_SUCCESS(rc))
+        rc = HWACCMR3InitFinalizeR0(pVM);
+
     LogFlow(("vmR3InitRing0: returns %Vrc\n", rc));
     return rc;
 }

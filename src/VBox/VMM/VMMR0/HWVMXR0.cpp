@@ -48,37 +48,31 @@ static void VMXR0CheckError(PVM pVM, int rc)
         RTCCUINTREG instrError;
 
         VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);
-        Log(("VMXR0CheckError -> generic error %x\n", instrError));
-
         pVM->hwaccm.s.vmx.ulLastInstrError = instrError;
-    }
-    else
-    {
-        Log(("VMXR0CheckError failed with %Vrc\n", rc));
     }
     pVM->hwaccm.s.lLastError = rc;
 }
 
 /**
- * Sets up and activates VMX
+ * Sets up and activates VT-x on the current CPU
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pVM             The VM to operate on.
+ * @param   pvPageCpu       Pointer to the global cpu page
+ * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
+HWACCMR0DECL(int) VMXR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
-    int rc = VINF_SUCCESS;
-    uint32_t val;
-
-    if (pVM == NULL)
-        return VERR_INVALID_PARAMETER;
+    AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+    AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
 
     /* Setup Intel VMX. */
     Assert(pVM->hwaccm.s.vmx.fSupported);
 
-    /* Set revision dword at the beginning of both structures. */
-    *(uint32_t *)pVM->hwaccm.s.vmx.pVMCS  = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
-    *(uint32_t *)pVM->hwaccm.s.vmx.pVMXON = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
+    /* Set revision dword at the beginning of the VMXON structure. */
+    *(uint32_t *)pvPageCpu = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
 
     /* @todo we should unmap the two pages from the virtual address space in order to prevent accidental corruption.
      * (which can have very bad consequences!!!)
@@ -88,13 +82,54 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
     ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
 
     /* Enter VMX Root Mode */
-    Log(("pVMXONPhys = %VHp\n", pVM->hwaccm.s.vmx.pVMXONPhys));
-    rc = VMXEnable(pVM->hwaccm.s.vmx.pVMXONPhys);
+    int rc = VMXEnable(pPageCpuPhys);
     if (VBOX_FAILURE(rc))
     {
         VMXR0CheckError(pVM, rc);
+        ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
         return VERR_VMX_VMXON_FAILED;
     }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Deactivates VT-x on the current CPU
+ *
+ * @returns VBox status code.
+ * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pvPageCpu       Pointer to the global cpu page
+ * @param   pPageCpuPhys    Physical address of the global cpu page
+ */
+HWACCMR0DECL(int) VMXR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+{
+    AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
+    AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
+
+    /* Leave VMX Root Mode. */
+    VMXDisable();
+
+    /* And clear the X86_CR4_VMXE bit */
+    ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Sets up VT-x for the specified VM
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
+{
+    int rc = VINF_SUCCESS;
+    uint32_t val;
+
+    if (pVM == NULL)
+        return VERR_INVALID_PARAMETER;
+
+    /* Set revision dword at the beginning of the VMCS structure. */
+    *(uint32_t *)pVM->hwaccm.s.vmx.pVMCS  = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
 
     /* Clear VM Control Structure. */
     Log(("pVMCSPhys  = %VHp\n", pVM->hwaccm.s.vmx.pVMCSPhys));
@@ -273,8 +308,6 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
 
 vmx_end:
     VMXR0CheckError(pVM, rc);
-    /* Leave VMX Root Mode. */
-    VMXDisable();
     return rc;
 }
 
@@ -1938,52 +1971,45 @@ end:
 
 
 /**
- * Enable VMX
+ * Enters the VT-x session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0Enable(PVM pVM)
+HWACCMR0DECL(int) VMXR0Enter(PVM pVM)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
 
-    /* Make sure the VMX instructions don't cause #UD faults. */
-    ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
-
-    /* Enter VMX Root Mode */
-    int rc = VMXEnable(pVM->hwaccm.s.vmx.pVMXONPhys);
-    if (VBOX_FAILURE(rc))
-        return rc;
+    unsigned cr4 = ASMGetCR4();
+    if (!(cr4 & X86_CR4_VMXE))
+    {
+        AssertMsgFailed(("X86_CR4_VMXE should be set!\n"));
+        return VERR_VMX_X86_CR4_VMXE_CLEARED;
+    }
 
     /* Activate the VM Control Structure. */
-    rc = VMXActivateVMCS(pVM->hwaccm.s.vmx.pVMCSPhys);
+    int rc = VMXActivateVMCS(pVM->hwaccm.s.vmx.pVMCSPhys);
     if (VBOX_FAILURE(rc))
-    {
-        /* Leave VMX Root Mode. */
-        VMXDisable();
         return rc;
-    }
+
     pVM->hwaccm.s.vmx.fResumeVM = false;
     return VINF_SUCCESS;
 }
 
 
 /**
- * Disable VMX
+ * Leaves the VT-x session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0Disable(PVM pVM)
+HWACCMR0DECL(int) VMXR0Leave(PVM pVM)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
 
     /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
     int rc = VMXClearVMCS(pVM->hwaccm.s.vmx.pVMCSPhys);
     AssertRC(rc);
-
-    /* Leave VMX Root Mode. */
-    VMXDisable();
 
     return VINF_SUCCESS;
 }

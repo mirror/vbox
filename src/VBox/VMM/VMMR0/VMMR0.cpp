@@ -39,6 +39,7 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
+#include <iprt/mp.h>
 
 #if defined(_MSC_VER) && defined(RT_ARCH_AMD64) /** @todo check this with with VC7! */
 #  pragma intrinsic(_AddressOfReturnAddress)
@@ -64,6 +65,9 @@ __END_DECLS
 PINTNET g_pIntNet = 0;
 #endif
 
+/*******************************************************************************
+*   Local Variables                                                            *
+*******************************************************************************/
 
 /**
  * Initialize the module.
@@ -77,7 +81,7 @@ VMMR0DECL(int) ModuleInit(void)
     LogFlow(("ModuleInit:\n"));
 
     /*
-     * Initialize the GVMM and GMM.
+     * Initialize the GVMM, GMM.& HWACCM
      */
     int rc = GVMMR0Init();
     if (RT_SUCCESS(rc))
@@ -85,22 +89,26 @@ VMMR0DECL(int) ModuleInit(void)
         rc = GMMR0Init();
         if (RT_SUCCESS(rc))
         {
-#ifdef VBOX_WITH_INTERNAL_NETWORKING
-            LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
-            g_pIntNet = NULL;
-            LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
-            rc = INTNETR0Create(&g_pIntNet);
-            if (VBOX_SUCCESS(rc))
+            rc = HWACCMR0Init();
+            if (RT_SUCCESS(rc))
             {
-                LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
-                return VINF_SUCCESS;
-            }
-            g_pIntNet = NULL;
-            LogFlow(("ModuleTerm: returns %Vrc\n", rc));
+#ifdef VBOX_WITH_INTERNAL_NETWORKING
+                LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
+                g_pIntNet = NULL;
+                LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
+                rc = INTNETR0Create(&g_pIntNet);
+                if (VBOX_SUCCESS(rc))
+                {
+                    LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
+                    return VINF_SUCCESS;
+                }
+                g_pIntNet = NULL;
+                LogFlow(("ModuleTerm: returns %Vrc\n", rc));
 #else
-            LogFlow(("ModuleInit: returns success.\n"));
-            return VINF_SUCCESS;
+                LogFlow(("ModuleInit: returns success.\n"));
+                return VINF_SUCCESS;
 #endif
+            }
         }
     }
 
@@ -127,6 +135,9 @@ VMMR0DECL(void) ModuleTerm(void)
         g_pIntNet = NULL;
     }
 #endif
+
+    /* Global HWACCM cleanup */
+    HWACCMR0Term();
 
     /*
      * Destroy the GMM and GVMM instances.
@@ -211,9 +222,7 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
         /*
          * Init HWACCM.
          */
-        RTCCUINTREG fFlags = ASMIntDisableFlags();
-        rc = HWACCMR0Init(pVM);
-        ASMSetFlags(fFlags);
+        rc = HWACCMR0InitVM(pVM);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -608,11 +617,11 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
 #ifndef RT_OS_WINDOWS /** @todo check other hosts */
             RTCCUINTREG uFlags = ASMIntDisableFlags();
 #endif
-            int rc = HWACCMR0Enable(pVM);
+            int rc = HWACCMR0Enter(pVM);
             if (VBOX_SUCCESS(rc))
             {
                 rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM); /* this may resume code. */
-                int rc2 = HWACCMR0Disable(pVM);
+                int rc2 = HWACCMR0Leave(pVM);
                 AssertRC(rc2);
             }
             pVM->vmm.s.iLastGCRc = rc;
@@ -731,12 +740,19 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
             return VMMR0Term(pVM);
 
         /*
+         * Attempt to enable hwacc mode and check the current setting.
+         *
+         */
+        case VMMR0_DO_HWACC_ENABLE:
+            return HWACCMR0EnableAllCpus(pVM, (HWACCMSTATE)u64Arg);
+
+        /*
          * Setup the hardware accelerated raw-mode session.
          */
         case VMMR0_DO_HWACC_SETUP_VM:
         {
             RTCCUINTREG fFlags = ASMIntDisableFlags();
-            int rc = HWACCMR0SetupVMX(pVM);
+            int rc = HWACCMR0SetupVM(pVM);
             ASMSetFlags(fFlags);
             return rc;
         }
@@ -746,9 +762,9 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
          */
         case VMMR0_DO_CALL_HYPERVISOR:
         {
-            /* Safety precaution as VMX disables the switcher. */
+            /* Safety precaution as HWACCM can disable the switcher. */
             Assert(!pVM->vmm.s.fSwitcherDisabled);
-            if (pVM->vmm.s.fSwitcherDisabled)
+            if (RT_UNLIKELY(pVM->vmm.s.fSwitcherDisabled))
                 return VERR_NOT_SUPPORTED;
 
             RTCCUINTREG fFlags = ASMIntDisableFlags();

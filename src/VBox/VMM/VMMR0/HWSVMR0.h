@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HWACCM SVM - Internal header file.
+ * HWACCM AMD-V - Internal header file.
  */
 
 /*
@@ -38,32 +38,53 @@ __BEGIN_DECLS
 #ifdef IN_RING0
 
 /**
- * Enable SVM
+ * Enters the AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) SVMR0Enable(PVM pVM);
+HWACCMR0DECL(int) SVMR0Enter(PVM pVM);
 
 /**
- * Disable SVM
+ * Leaves the AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) SVMR0Disable(PVM pVM);
+HWACCMR0DECL(int) SVMR0Leave(PVM pVM);
 
 /**
- * Sets up and activates SVM
+ * Sets up and activates AMD-V on the current CPU
+ *
+ * @returns VBox status code.
+ * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pVM             The VM to operate on.
+ * @param   pvPageCpu       Pointer to the global cpu page
+ * @param   pPageCpuPhys    Physical address of the global cpu page
+ */
+HWACCMR0DECL(int) SVMR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+
+/**
+ * Deactivates AMD-V on the current CPU
+ *
+ * @returns VBox status code.
+ * @param   idCpu           The identifier for the CPU the function is called on.
+ * @param   pvPageCpu       Pointer to the global cpu page
+ * @param   pPageCpuPhys    Physical address of the global cpu page
+ */
+HWACCMR0DECL(int) SVMR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+
+/**
+ * Sets up AMD-V for the specified VM
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) SVMR0Setup(PVM pVM);
+HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM);
 
 
 /**
- * Runs guest code in a SVM VM.
+ * Runs guest code in an AMD-V VM.
  *
  * @note NEVER EVER turn on interrupts here. Due to our illegal entry into the kernel, it might mess things up. (XP kernel traps have been frequently observed)
  *

@@ -153,18 +153,13 @@ typedef struct HWACCM
         /** Virtual address of the VM control structure (VMCS). */
         void                       *pVMCS;
 
-        /** Physical address of the VMXON page. */
-        RTHCPHYS                    pVMXONPhys;
-        /** Virtual address of the VMXON page. */
-        void                       *pVMXON;
-
         /** Physical address of the TSS page used for real mode emulation. */
         RTHCPHYS                    pRealModeTSSPhys;
         /** Virtual address of the TSS page used for real mode emulation. */
         PVBOXTSS                    pRealModeTSS;
 
         /** Host CR4 value (set by ring-0 VMX init) */
-        uint32_t                    hostCR4;
+        uint64_t                    hostCR4;
 
         /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS. */
         uint64_t                    proc_ctls;
@@ -215,11 +210,6 @@ typedef struct HWACCM
         RTHCPHYS                    pVMCBHostPhys;
         /** Virtual address of the host VM control block (VMCB). */
         void                       *pVMCBHost;
-
-        /** Physical address of the Host State page. */
-        RTHCPHYS                    pHStatePhys;
-        /** Virtual address of the Host State page. */
-        void                       *pHState;
 
         /** Physical address of the IO bitmap (12kb). */
         RTHCPHYS                    pIOBitmapPhys;

@@ -29,12 +29,27 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/pgm.h>
+#include <iprt/mp.h>
 
 
 /** @defgroup grp_hwaccm      The VM Hardware Manager API
  * @{
  */
 
+/**
+ * HWACCM state
+ */
+typedef enum HWACCMSTATE
+{
+    /* Not yet set */
+    HWACCMSTATE_UNINITIALIZED = 0,
+    /* Enabled */
+    HWACCMSTATE_ENABLED,
+    /* Disabled */
+    HWACCMSTATE_DISABLED,
+    /** The usual 32-bit hack. */
+    HWACCMSTATE_32BIT_HACK = 0x7fffffff
+} HWACCMSTATE;
 
 __BEGIN_DECLS
 
@@ -53,7 +68,21 @@ __BEGIN_DECLS
  */
 
 /**
- * Does Ring-0 HWACCM initialization.
+ * Does global Ring-0 HWACCM initialization.
+ *
+ * @returns VBox status code.
+ */
+HWACCMR0DECL(int) HWACCMR0Init();
+
+/**
+ * Does global Ring-0 HWACCM termination.
+ *
+ * @returns VBox status code.
+ */
+HWACCMR0DECL(int) HWACCMR0Term();
+
+/**
+ * Does Ring-0 per VM HWACCM initialization.
  *
  * This is mainly to check that the Host CPU mode is compatible
  * with VMX or SVM.
@@ -61,7 +90,17 @@ __BEGIN_DECLS
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0Init(PVM pVM);
+HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM);
+
+/**
+ * Sets up HWACCM on all cpus.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM to operate on.
+ * @param   enmNewHwAccmState   New hwaccm state
+ *
+ */
+HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState);
 
 /** @} */
 #endif
@@ -88,6 +127,14 @@ HWACCMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM);
  * @param   pVM         The VM to operate on.
  */
 HWACCMR3DECL(int) HWACCMR3Init(PVM pVM);
+
+/**
+ * Initialize VT-x or AMD-V
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ */
+HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM);
 
 /**
  * Applies relocations to data and code managed by this
@@ -164,12 +211,12 @@ HWACCMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode);
  */
 
 /**
- * Does Ring-0 VMX initialization.
+ * Sets up a VT-x or AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0SetupVMX(PVM pVM);
+HWACCMR0DECL(int) HWACCMR0SetupVM(PVM pVM);
 
 
 /**
@@ -181,21 +228,21 @@ HWACCMR0DECL(int) HWACCMR0SetupVMX(PVM pVM);
 HWACCMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM);
 
 /**
- * Enable VMX or SVN
+ * Enters the VT-x or AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0Enable(PVM pVM);
+HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM);
 
 
 /**
- * Disable VMX or SVN
+ * Leaves the VT-x or AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0Disable(PVM pVM);
+HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM);
 
 
 /** @} */
