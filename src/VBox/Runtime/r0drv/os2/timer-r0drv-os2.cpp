@@ -108,21 +108,6 @@ __END_DECLS
 
 
 
-RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIMER pfnTimer, void *pvUser)
-{
-    int rc = RTTimerCreateEx(ppTimer, uMilliesInterval * UINT64_C(1000000), 0, pfnTimer, pvUser);
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTTimerStart(*ppTimer, 0);
-        if (RT_SUCCESS(rc))
-            return rc;
-        int rc2 = RTTimerDestroy(*ppTimer); AssertRC(rc2);
-        *ppTimer = NULL;
-    }
-    return rc;
-}
-
-
 RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
 {
     *ppTimer = NULL;
