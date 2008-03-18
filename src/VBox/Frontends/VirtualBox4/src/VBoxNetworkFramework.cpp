@@ -168,6 +168,8 @@ void VBoxNetworkFramework::postRequest (const QString &aHost,
         QString   mUrl;
     };
 
+    if (mNetworkThread)
+        mNetworkThread->wait (1000);
     delete mNetworkThread;
     mNetworkThread = new Thread (this, aHost, aUrl);
     mNetworkThread->start();

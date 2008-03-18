@@ -3771,12 +3771,10 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
         if (mVBox.isOk())
         {
             /* We've got the "mutex", create a new registration dialog */
-#warning port me
-//            VBoxRegistrationDlg *dlg =
-//                new VBoxRegistrationDlg (0, 0, false, Qt::WDestructiveClose);
-//            dlg->setup (&mRegDlg);
-//            Assert (dlg == mRegDlg);
-//            mRegDlg->show();
+            VBoxRegistrationDlg *dlg =
+                new VBoxRegistrationDlg (&mRegDlg, 0, Qt::WDestructiveClose);
+            Assert (dlg == mRegDlg);
+            mRegDlg->show();
         }
     }
 #endif

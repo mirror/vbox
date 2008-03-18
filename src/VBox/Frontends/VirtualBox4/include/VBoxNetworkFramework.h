@@ -41,7 +41,11 @@ public:
         : mDataStream (&mDataArray, QIODevice::ReadWrite)
         , mNetworkThread (0) {}
 
-    ~VBoxNetworkFramework() { delete mNetworkThread; }
+    ~VBoxNetworkFramework()
+    {
+        mNetworkThread->wait (1000);
+        delete mNetworkThread;
+    }
 
     void postRequest (const QString &aHost, const QString &aUrl);
 
