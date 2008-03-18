@@ -754,6 +754,7 @@ HRESULT FFmpegFB::list_formats()
             }
         }
     }
+    return S_OK;
 }
 
 
