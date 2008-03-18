@@ -288,6 +288,12 @@ Value '<xsl:value-of select="@device"/>' of 'HardDiskAttachment::device' attribu
 <xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
                      vb:Machine//vb:AudioAdapter"
               mode="v1.3">
+  <xsl:if test="not(../vb:Uart)">
+    <UART/>
+  </xsl:if>
+  <xsl:if test="not(../vb:Lpt)">
+    <LPT/>
+  </xsl:if>
   <xsl:copy>
     <xsl:apply-templates select="@*[not(name()='driver')]|node()" mode="v1.3"/>
     <xsl:attribute name="driver">
