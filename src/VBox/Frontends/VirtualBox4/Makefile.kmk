@@ -271,6 +271,9 @@ VirtualBox_QT_UISRCS4 += ui/VBoxNewHDWzd.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMFirstRunWzd.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxVMFirstRunWzd.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxRegistrationDlg.ui
+
 
 #
 # The targets.
@@ -407,7 +410,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxCloseVMDlg.h \
 	include/VBoxNewVMWzd.h \
 	include/VBoxNewHDWzd.h \
-	include/VBoxVMFirstRunWzd.h
+	include/VBoxVMFirstRunWzd.h \
+	include/VBoxRegistrationDlg.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -479,7 +483,8 @@ VirtualBox_SOURCES = \
 	src/VBoxCloseVMDlg.cpp \
 	src/VBoxNewVMWzd.cpp \
 	src/VBoxNewHDWzd.cpp \
-	src/VBoxVMFirstRunWzd.cpp
+	src/VBoxVMFirstRunWzd.cpp \
+	src/VBoxRegistrationDlg.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 VirtualBox_SOURCES += \
