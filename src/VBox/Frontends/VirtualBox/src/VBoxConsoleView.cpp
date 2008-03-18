@@ -3607,8 +3607,8 @@ void VBoxConsoleView::doResizeDesktop (int)
 }
 
 /**
- * We send an initial size hint to the VM on startup, so that it can choose
- * an initial size which is well-readable on the host screen.
+ * We send an initial size hint to the VM on startup, based on the last
+ * resize event in the last session (if any).
  */
 void VBoxConsoleView::sendInitialSizeHint(void)
 {
@@ -3620,28 +3620,11 @@ void VBoxConsoleView::sendInitialSizeHint(void)
     if (ok)
         h = str.section (',', 1, 1).toInt (&ok);
     QRect screen = QApplication::desktop()->screenGeometry (this);
-    if (!ok || w > screen.width() || h > screen.height())
+    if (ok && w <= screen.width() && h <= screen.height())
     {
-        static const int sizeList[][2] =
-        {
-            { 640, 480 },
-            { 800, 600 },
-            { 1024, 768 },
-            { 1280, 960 }
-        };
-        unsigned i = 0;
-
-        /* Find a size that is smaller than three quarters of the reported
-           screen geometry. */
-        while (   i + 1 < RT_ELEMENTS (sizeList)
-               && sizeList[i + 1][0] < screen.width() * 3 / 4
-               && sizeList[i + 1][1] < screen.height() * 3 / 4)
-            ++i;
-        w = sizeList[i][0];
-        h = sizeList[i][1];
+        LogFlowFunc (("Will suggest %d x %d\n", w, h));
+        mConsole.GetDisplay().SetVideoModeHint (w, h, 0, 0);
     }
-    LogFlowFunc (("Will suggest %d x %d\n", w, h));
-    mConsole.GetDisplay().SetVideoModeHint (w, h, 0, 0);
 }
 
 /**
