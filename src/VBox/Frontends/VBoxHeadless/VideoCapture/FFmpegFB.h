@@ -33,6 +33,7 @@
 # define VBOX_DEBUG_FF DEBUG
 # include <avcodec.h>
 # include <avformat.h>
+# undef  DEBUG
 # define DEBUG VBOX_DEBUG_FF
 #else /* DEBUG not defined */
 # include <avcodec.h>
