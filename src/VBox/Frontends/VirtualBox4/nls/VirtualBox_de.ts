@@ -585,7 +585,7 @@
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
-        <translation>&amp;Fernsteuerung</translation>
+        <translation>&amp;Fernsteuerung aktivieren</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
