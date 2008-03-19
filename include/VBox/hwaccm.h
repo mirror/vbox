@@ -93,6 +93,14 @@ HWACCMR0DECL(int) HWACCMR0Term();
 HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM);
 
 /**
+ * Does Ring-0 per VM HWACCM termination.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) HWACCMR0TermVM(PVM pVM);
+
+/**
  * Sets up HWACCM on all cpus.
  *
  * @returns VBox status code.
