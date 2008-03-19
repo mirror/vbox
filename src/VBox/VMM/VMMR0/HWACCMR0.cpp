@@ -449,6 +449,10 @@ HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
         int     aRc[RTCPUSET_MAX_CPUS];
         RTCPUID idCpu = 0;
 
+        /* Don't setup hwaccm as that might not work (vt-x & 64 bits raw mode) */
+        if (enmNewHwAccmState == HWACCMSTATE_DISABLED)
+            return VINF_SUCESS;
+
         memset(aRc, 0, sizeof(aRc));
 
         /* Allocate one page per cpu for the global vt-x and amd-v pages */
