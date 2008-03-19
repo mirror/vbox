@@ -171,7 +171,6 @@ HWACCMR0DECL(int) HWACCMR0Init()
                     HWACCMR0Globals.lLastError = hwaccmr0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
                 AssertMsg(VBOX_SUCCESS(HWACCMR0Globals.lLastError), ("HWACCMR0InitCPU failed for cpu %d with rc=%d\n", idCpu, HWACCMR0Globals.lLastError));
-
                 if (VBOX_SUCCESS(HWACCMR0Globals.lLastError))
                 {
                     /* Reread in case we've changed it. */
@@ -382,6 +381,10 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
     int     *paRc         = (int *)pvUser2;
     uint64_t val;
 
+#ifdef LOG_ENABLED
+    SUPR0Printf("HWACCMR0InitCPU cpu %d\n", idCpu);
+#endif
+
     if (u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX)
     {
         val = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
@@ -462,9 +465,14 @@ HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
 
                 void *pvR0 = RTR0MemObjAddress(HWACCMR0Globals.aCpuInfo[i].pMemObj);
                 memset(pvR0, 0, PAGE_SIZE);
+
+#ifdef LOG_ENABLED
+                RTHCPHYS pPageCpuPhys = RTR0MemObjGetPagePhysAddr(HWACCMR0Globals.aCpuInfo[i].pMemObj, 0);
+
+                SUPR0Printf("address %x phys %x\n", pvR0, (uint32_t)pPageCpuPhys);
+#endif
             }
         }
-
         /* First time, so initialize each cpu/core */
         int rc = RTMpOnAll(HWACCMR0EnableCPU, (void *)pVM, aRc);
 
