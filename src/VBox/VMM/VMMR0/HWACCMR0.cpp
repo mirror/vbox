@@ -121,20 +121,9 @@ static struct
 HWACCMR0DECL(int) HWACCMR0Init()
 {
     int        rc;
-    RTR0MEMOBJ pScatchMemObj;
-    void      *pvScatchPage;
-    RTHCPHYS   pScatchPagePhys;
 
     memset(&HWACCMR0Globals, 0, sizeof(HWACCMR0Globals));
     HWACCMR0Globals.enmHwAccmState = HWACCMSTATE_UNINITIALIZED;
-
-    rc = RTR0MemObjAllocCont(&pScatchMemObj, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pvScatchPage    = RTR0MemObjAddress(pScatchMemObj);
-    pScatchPagePhys = RTR0MemObjGetPagePhysAddr(pScatchMemObj, 0);
-    memset(pvScatchPage, 0, PAGE_SIZE);
 
 #ifdef RT_OS_WINDOWS /* kernel panics on Linux; disabled for now */
  #ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL /* paranoia */
@@ -203,14 +192,30 @@ HWACCMR0DECL(int) HWACCMR0Init()
                         HWACCMR0Globals.vmx.msr.vmx_cr4_fixed0  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
                         HWACCMR0Globals.vmx.msr.vmx_cr4_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
                         HWACCMR0Globals.vmx.msr.vmx_vmcs_enum   = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
+                        HWACCMR0Globals.vmx.hostCR4             = ASMGetCR4();
+
+#if HC_ARCH_BITS == 64
+                        RTR0MEMOBJ pScatchMemObj;
+                        void      *pvScatchPage;
+                        RTHCPHYS   pScatchPagePhys;
+
+                        rc = RTR0MemObjAllocCont(&pScatchMemObj, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+                        if (RT_FAILURE(rc))
+                            return rc;
+
+                        pvScatchPage    = RTR0MemObjAddress(pScatchMemObj);
+                        pScatchPagePhys = RTR0MemObjGetPagePhysAddr(pScatchMemObj, 0);
+                        memset(pvScatchPage, 0, PAGE_SIZE);
+
+                        /* Set revision dword at the beginning of the structure. */
+                        *(uint32_t *)pvScatchPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(HWACCMR0Globals.vmx.msr.vmx_basic_info);
 
                         /* Make sure we don't get rescheduled to another cpu during this probe. */
                         RTCCUINTREG fFlags = ASMIntDisableFlags();
 
                         /*
-                        * Check CR4.VMXE
-                        */
-                        HWACCMR0Globals.vmx.hostCR4 = ASMGetCR4();
+                         * Check CR4.VMXE
+                         */
                         if (!(HWACCMR0Globals.vmx.hostCR4 & X86_CR4_VMXE))
                         {
                             /* In theory this bit could be cleared behind our back. Which would cause #UD faults when we
@@ -219,10 +224,6 @@ HWACCMR0DECL(int) HWACCMR0Init()
                             ASMSetCR4(HWACCMR0Globals.vmx.hostCR4 | X86_CR4_VMXE);
                         }
 
-                        /* Set revision dword at the beginning of the structure. */
-                        *(uint32_t *)pvScatchPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(HWACCMR0Globals.vmx.msr.vmx_basic_info);
-
-#if HC_ARCH_BITS == 64
                         /* Enter VMX Root Mode */
                         rc = VMXEnable(pScatchPagePhys);
                         if (VBOX_FAILURE(rc))
@@ -238,11 +239,13 @@ HWACCMR0DECL(int) HWACCMR0Init()
                         }
                         else
                             VMXDisable();
-#endif
+
                         /* Restore CR4 again; don't leave the X86_CR4_VMXE flag set if it wasn't so before (some software could incorrectly think it's in VMX mode) */
                         ASMSetCR4(HWACCMR0Globals.vmx.hostCR4);
-
                         ASMSetFlags(fFlags);
+
+                        RTR0MemObjFree(pScatchMemObj, false);
+#endif
                     }
                     else
                     {
@@ -305,7 +308,6 @@ HWACCMR0DECL(int) HWACCMR0Init()
  #endif /* !VBOX_WITH_HYBIRD_32BIT_KERNEL */
 #endif /* RT_OS_WINDOWS */
 
-    RTR0MemObjFree(pScatchMemObj, false);
     return VINF_SUCCESS;
 }
 
