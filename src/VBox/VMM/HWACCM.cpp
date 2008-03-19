@@ -237,6 +237,16 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         /* Invert the selection */
         pVM->hwaccm.s.fAllowed ^= 1;
         LogRel(("HWACCMR3InitFinalize: new HWACCM status = %s\n", pVM->hwaccm.s.fAllowed ? "enabled" : "disabled"));
+
+        if (pVM->hwaccm.s.fAllowed)
+        {
+            if (pVM->hwaccm.s.vmx.fSupported)
+                VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed", "An active VM already uses Intel VT-x hardware acceleration. It is not allowed to simultaneously use software virtualization, therefor this VM will be run using VT-x as well.\n");
+            else
+                VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed", "An active VM already uses AMD-V hardware acceleration. It is not allowed to simultaneously use software virtualization, therefor this VM will be run using AMD-V as well.\n");
+        }
+        else
+            VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed", "An active VM already uses software virtualization. It is not allowed to simultaneously use VT-x or AMD-V, therefor this VM will be run using software virtualization as well.\n");
     }
 
     if (pVM->hwaccm.s.fAllowed == false)
