@@ -71,6 +71,9 @@ HWACCMR0DECL(int) VMXR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPH
     /* Setup Intel VMX. */
     Assert(pVM->hwaccm.s.vmx.fSupported);
 
+#ifdef LOG_ENABLED
+    SUPR0Printf("VMXR0EnableCpu cpu %d page %x\n", idCpu, (uint32_t)pPageCpuPhys);
+#endif
     /* Set revision dword at the beginning of the VMXON structure. */
     *(uint32_t *)pvPageCpu = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
 
@@ -89,7 +92,6 @@ HWACCMR0DECL(int) VMXR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPH
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
         return VERR_VMX_VMXON_FAILED;
     }
-
     return VINF_SUCCESS;
 }
 
@@ -111,6 +113,10 @@ HWACCMR0DECL(int) VMXR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPage
 
     /* And clear the X86_CR4_VMXE bit */
     ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+
+#ifdef LOG_ENABLED
+    SUPR0Printf("VMXR0DisableCpu cpu %d\n", idCpu);
+#endif
     return VINF_SUCCESS;
 }
 
