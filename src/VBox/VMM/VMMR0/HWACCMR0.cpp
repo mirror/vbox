@@ -471,9 +471,7 @@ HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
                 memset(pvR0, 0, PAGE_SIZE);
 
 #ifdef LOG_ENABLED
-                RTHCPHYS pPageCpuPhys = RTR0MemObjGetPagePhysAddr(HWACCMR0Globals.aCpuInfo[i].pMemObj, 0);
-
-                SUPR0Printf("address %x phys %x\n", pvR0, (uint32_t)pPageCpuPhys);
+                SUPR0Printf("address %x phys %x\n", pvR0, (uint32_t)RTR0MemObjGetPagePhysAddr(HWACCMR0Globals.aCpuInfo[i].pMemObj, 0));
 #endif
             }
         }
