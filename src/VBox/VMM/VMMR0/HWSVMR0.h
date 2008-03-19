@@ -75,6 +75,22 @@ HWACCMR0DECL(int) SVMR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPH
 HWACCMR0DECL(int) SVMR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
+ * Does Ring-0 per VM AMD-V init.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) SVMR0InitVM(PVM pVM);
+
+/**
+ * Does Ring-0 per VM AMD-V termination.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) SVMR0TermVM(PVM pVM);
+
+/**
  * Sets up AMD-V for the specified VM
  *
  * @returns VBox status code.

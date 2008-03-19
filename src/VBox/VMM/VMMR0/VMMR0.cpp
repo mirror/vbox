@@ -250,6 +250,8 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
  */
 static int VMMR0Term(PVM pVM)
 {
+    HWACCMR0TermVM(pVM);
+
     /*
      * Deregister the logger.
      */

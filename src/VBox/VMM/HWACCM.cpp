@@ -90,51 +90,6 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-    /* Allocate one page for the VM control structure (VMCS). */
-    pVM->hwaccm.s.vmx.pVMCS = SUPContAlloc(1, &pVM->hwaccm.s.vmx.pVMCSPhys);
-    if (pVM->hwaccm.s.vmx.pVMCS == 0)
-    {
-        AssertMsgFailed(("SUPContAlloc failed!!\n"));
-        return VERR_NO_MEMORY;
-    }
-    memset(pVM->hwaccm.s.vmx.pVMCS, 0, PAGE_SIZE);
-
-    /* Allocate one page for the TSS we need for real mode emulation. */
-    pVM->hwaccm.s.vmx.pRealModeTSS = (PVBOXTSS)SUPContAlloc(1, &pVM->hwaccm.s.vmx.pRealModeTSSPhys);
-    if (pVM->hwaccm.s.vmx.pRealModeTSS == 0)
-    {
-        AssertMsgFailed(("SUPContAlloc failed!!\n"));
-        return VERR_NO_MEMORY;
-    }
-    /* We initialize it properly later as we can reuse it for SVM */
-    memset(pVM->hwaccm.s.vmx.pRealModeTSS, 0, PAGE_SIZE);
-
-    /* Reuse those three pages for AMD SVM. (one is active; never both) */
-    pVM->hwaccm.s.svm.pVMCB         = pVM->hwaccm.s.vmx.pVMCS;
-    pVM->hwaccm.s.svm.pVMCBPhys     = pVM->hwaccm.s.vmx.pVMCSPhys;
-    pVM->hwaccm.s.svm.pVMCBHost     = pVM->hwaccm.s.vmx.pRealModeTSS;
-    pVM->hwaccm.s.svm.pVMCBHostPhys = pVM->hwaccm.s.vmx.pRealModeTSSPhys;
-
-    /* Allocate 12 KB for the IO bitmap (doesn't seem to be a way to convince SVM not to use it) */
-    pVM->hwaccm.s.svm.pIOBitmap = SUPContAlloc(3, &pVM->hwaccm.s.svm.pIOBitmapPhys);
-    if (pVM->hwaccm.s.svm.pIOBitmap == 0)
-    {
-        AssertMsgFailed(("SUPContAlloc failed!!\n"));
-        return VERR_NO_MEMORY;
-    }
-    /* Set all bits to intercept all IO accesses. */
-    memset(pVM->hwaccm.s.svm.pIOBitmap, 0xff, PAGE_SIZE*3);
-
-    /* Allocate 8 KB for the MSR bitmap (doesn't seem to be a way to convince SVM not to use it) */
-    pVM->hwaccm.s.svm.pMSRBitmap = SUPContAlloc(2, &pVM->hwaccm.s.svm.pMSRBitmapPhys);
-    if (pVM->hwaccm.s.svm.pMSRBitmap == 0)
-    {
-        AssertMsgFailed(("SUPContAlloc failed!!\n"));
-        return VERR_NO_MEMORY;
-    }
-    /* Set all bits to intercept all MSR accesses. */
-    memset(pVM->hwaccm.s.svm.pMSRBitmap, 0xff, PAGE_SIZE*2);
-
     /* Misc initialisation. */
     pVM->hwaccm.s.vmx.fSupported = false;
     pVM->hwaccm.s.svm.fSupported = false;
@@ -430,12 +385,6 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
 
-            /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. Outside the TSS on purpose; the CPU will not check it
-             * for I/O operations. */
-            pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
-            /* Bit set to 0 means redirection enabled. */
-            memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
-
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
@@ -543,27 +492,6 @@ HWACCMR3DECL(int) HWACCMR3Term(PVM pVM)
     {
         MMHyperFree(pVM, pVM->hwaccm.s.pStatExitReason);
         pVM->hwaccm.s.pStatExitReason = 0;
-    }
-
-    if (pVM->hwaccm.s.vmx.pVMCS)
-    {
-        SUPContFree(pVM->hwaccm.s.vmx.pVMCS, 1);
-        pVM->hwaccm.s.vmx.pVMCS = 0;
-    }
-    if (pVM->hwaccm.s.vmx.pRealModeTSS)
-    {
-        SUPContFree(pVM->hwaccm.s.vmx.pRealModeTSS, 1);
-        pVM->hwaccm.s.vmx.pRealModeTSS = 0;
-    }
-    if (pVM->hwaccm.s.svm.pIOBitmap)
-    {
-        SUPContFree(pVM->hwaccm.s.svm.pIOBitmap, 3);
-        pVM->hwaccm.s.svm.pIOBitmap = 0;
-    }
-    if (pVM->hwaccm.s.svm.pMSRBitmap)
-    {
-        SUPContFree(pVM->hwaccm.s.svm.pMSRBitmap, 2);
-        pVM->hwaccm.s.svm.pMSRBitmap = 0;
     }
     return 0;
 }

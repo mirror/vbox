@@ -33,6 +33,7 @@
 #include <iprt/param.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/string.h>
 #include "HWVMXR0.h"
 
 
@@ -121,6 +122,77 @@ HWACCMR0DECL(int) VMXR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPage
 }
 
 /**
+ * Does Ring-0 per VM VT-x init.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
+{
+    int rc;
+
+#ifdef LOG_ENABLED
+    SUPR0Printf("VMXR0InitVM %x\n", pVM);
+#endif
+
+    /* Allocate one page for the VM control structure (VMCS). */
+    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjVMCS, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+    AssertRC(rc);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pVM->hwaccm.s.vmx.pVMCS     = RTR0MemObjAddress(pVM->hwaccm.s.vmx.pMemObjVMCS);
+    pVM->hwaccm.s.vmx.pVMCSPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.vmx.pMemObjVMCS, 0);
+    ASMMemZero32(pVM->hwaccm.s.vmx.pVMCS, PAGE_SIZE);
+
+    /* Allocate one page for the TSS we need for real mode emulation. */
+    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjRealModeTSS, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+    AssertRC(rc);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pVM->hwaccm.s.vmx.pRealModeTSS     = (PVBOXTSS)RTR0MemObjAddress(pVM->hwaccm.s.vmx.pMemObjRealModeTSS);
+    pVM->hwaccm.s.vmx.pRealModeTSSPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.vmx.pMemObjRealModeTSS, 0);
+
+    /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. Outside the TSS on purpose; the CPU will not check it
+     * for I/O operations. */
+    ASMMemZero32(pVM->hwaccm.s.vmx.pRealModeTSS, PAGE_SIZE);
+    pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
+    /* Bit set to 0 means redirection enabled. */
+    memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
+
+#ifdef LOG_ENABLED
+    SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x) RealModeTSS=%x (%x)\n", pVM, pVM->hwaccm.s.vmx.pVMCS, (uint32_t)pVM->hwaccm.s.vmx.pVMCSPhys, pVM->hwaccm.s.vmx.pRealModeTSS, (uint32_t)pVM->hwaccm.s.vmx.pRealModeTSSPhys);
+#endif
+    return VINF_SUCCESS;
+}
+
+/**
+ * Does Ring-0 per VM VT-x termination.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) VMXR0TermVM(PVM pVM)
+{
+    if (pVM->hwaccm.s.vmx.pMemObjVMCS)
+    {
+        RTR0MemObjFree(pVM->hwaccm.s.vmx.pMemObjVMCS, false);
+        pVM->hwaccm.s.vmx.pMemObjVMCS = 0;
+        pVM->hwaccm.s.vmx.pVMCS       = 0;
+        pVM->hwaccm.s.vmx.pVMCSPhys   = 0;
+    }
+    if (pVM->hwaccm.s.vmx.pMemObjRealModeTSS)
+    {
+        RTR0MemObjFree(pVM->hwaccm.s.vmx.pMemObjRealModeTSS, false);
+        pVM->hwaccm.s.vmx.pMemObjRealModeTSS = 0;
+        pVM->hwaccm.s.vmx.pRealModeTSS       = 0;
+        pVM->hwaccm.s.vmx.pRealModeTSSPhys   = 0;
+    }
+    return VINF_SUCCESS;
+}
+
+/**
  * Sets up VT-x for the specified VM
  *
  * @returns VBox status code.
@@ -131,8 +203,8 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     int rc = VINF_SUCCESS;
     uint32_t val;
 
-    if (pVM == NULL)
-        return VERR_INVALID_PARAMETER;
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+    Assert(pVM->hwaccm.s.vmx.pVMCS);
 
     /* Set revision dword at the beginning of the VMCS structure. */
     *(uint32_t *)pVM->hwaccm.s.vmx.pVMCS  = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);

@@ -25,6 +25,7 @@
 #include <VBox/dis.h>
 #include <VBox/hwaccm.h>
 #include <VBox/pgm.h>
+#include <iprt/memobj.h>
 
 __BEGIN_DECLS
 
@@ -148,15 +149,19 @@ typedef struct HWACCM
         /** Set if we can use VMXResume to execute guest code. */
         bool                        fResumeVM;
 
+        /** R0 memory object for the VM control structure (VMCS). */
+        RTR0MEMOBJ                  pMemObjVMCS;
         /** Physical address of the VM control structure (VMCS). */
         RTHCPHYS                    pVMCSPhys;
         /** Virtual address of the VM control structure (VMCS). */
-        void                       *pVMCS;
+        R0PTRTYPE(void *)           pVMCS;
 
+        /** R0 memory object for the TSS page used for real mode emulation. */
+        RTR0MEMOBJ                  pMemObjRealModeTSS;
         /** Physical address of the TSS page used for real mode emulation. */
         RTHCPHYS                    pRealModeTSSPhys;
         /** Virtual address of the TSS page used for real mode emulation. */
-        PVBOXTSS                    pRealModeTSS;
+        R0PTRTYPE(PVBOXTSS)         pRealModeTSS;
 
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    hostCR4;
@@ -201,25 +206,33 @@ typedef struct HWACCM
         /** Set if we don't have to flush the TLB on VM entry. */
         bool                        fResumeVM;
 
+        /** R0 memory object for the VM control block (VMCB). */
+        RTR0MEMOBJ                  pMemObjVMCB;
         /** Physical address of the VM control block (VMCB). */
         RTHCPHYS                    pVMCBPhys;
         /** Virtual address of the VM control block (VMCB). */
-        void                       *pVMCB;
+        R0PTRTYPE(void *)           pVMCB;
 
+        /** R0 memory object for the host VM control block (VMCB). */
+        RTR0MEMOBJ                  pMemObjVMCBHost;
         /** Physical address of the host VM control block (VMCB). */
         RTHCPHYS                    pVMCBHostPhys;
         /** Virtual address of the host VM control block (VMCB). */
-        void                       *pVMCBHost;
+        R0PTRTYPE(void *)           pVMCBHost;
 
+        /** R0 memory object for the IO bitmap (12kb). */
+        RTR0MEMOBJ                  pMemObjIOBitmap;
         /** Physical address of the IO bitmap (12kb). */
         RTHCPHYS                    pIOBitmapPhys;
         /** Virtual address of the IO bitmap. */
-        void                       *pIOBitmap;
+        R0PTRTYPE(void *)           pIOBitmap;
 
+        /** R0 memory object for the MSR bitmap (8kb). */
+        RTR0MEMOBJ                  pMemObjMSRBitmap;
         /** Physical address of the MSR bitmap (8kb). */
         RTHCPHYS                    pMSRBitmapPhys;
         /** Virtual address of the MSR bitmap. */
-        void                       *pMSRBitmap;
+        R0PTRTYPE(void *)           pMSRBitmap;
 
         /** SVM revision. */
         uint32_t                    u32Rev;
