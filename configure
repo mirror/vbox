@@ -1195,15 +1195,16 @@ EOF
                 log_success "found version $moc_ver"
                 cnf_append "VBOX_PATH_QT4" "$q"
                 test_header "Qt4 uic3"
-                for q in $QT4UIC3DIR; do
-                  if check_avail "$q/uic3" QT4UIC3DIR; then
-                    uic3_ver=`$q/uic3 -version 2>&1|sed 's+^.*version \(.*\)+\1+'`
+                for r in $q/bin $QT4UIC3DIR; do
+                  if check_avail "$r/uic3" QT4UIC3DIR; then
+                    uic3_ver=`$r/uic3 -version 2>&1|sed 's+^.*version \(.*\)+\1+'`
                     if [ $? -ne 0 ]; then
                       log_failure "not found"
                       fail
                     else
                       log_success "found version $uic3_ver"
-                      cnf_append "VBOX_UIC3" "$q/uic3"
+                      cnf_append "VBOX_UIC3" "$r/uic3"
+		      break
                     fi
                   fi
                 done
