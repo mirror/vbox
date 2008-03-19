@@ -76,6 +76,22 @@ HWACCMR0DECL(int) VMXR0EnableCpu(RTCPUID idCpu, PVM pVM, void *pvPageCpu, RTHCPH
 HWACCMR0DECL(int) VMXR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
+ * Does Ring-0 per VM VT-x init.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) VMXR0InitVM(PVM pVM);
+
+/**
+ * Does Ring-0 per VM VT-x termination.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) VMXR0TermVM(PVM pVM);
+
+/**
  * Sets up VT-x for the specified VM
  *
  * @returns VBox status code.

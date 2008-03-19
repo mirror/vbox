@@ -585,10 +585,16 @@ static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void 
  */
 HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 {
-    LogComFlow(("HWACCMR0Init: %p\n", pVM));
+    int rc = VINF_SUCCESS;
 
-    pVM->hwaccm.s.vmx.fSupported = HWACCMR0Globals.vmx.fSupported;
-    pVM->hwaccm.s.svm.fSupported = HWACCMR0Globals.svm.fSupported;
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+
+#ifdef LOG_ENABLED
+    SUPR0Printf("HWACCMR0InitVM: %p\n", pVM);
+#endif
+
+    pVM->hwaccm.s.vmx.fSupported            = HWACCMR0Globals.vmx.fSupported;
+    pVM->hwaccm.s.svm.fSupported            = HWACCMR0Globals.svm.fSupported;
 
     pVM->hwaccm.s.vmx.msr.feature_ctrl      = HWACCMR0Globals.vmx.msr.feature_ctrl;
     pVM->hwaccm.s.vmx.hostCR4               = HWACCMR0Globals.vmx.hostCR4;
@@ -608,9 +614,43 @@ HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     pVM->hwaccm.s.cpuid.u32AMDFeatureECX    = HWACCMR0Globals.cpuid.u32AMDFeatureECX;
     pVM->hwaccm.s.cpuid.u32AMDFeatureEDX    = HWACCMR0Globals.cpuid.u32AMDFeatureEDX;
     pVM->hwaccm.s.lLastError                = HWACCMR0Globals.lLastError;
-    return VINF_SUCCESS;
+
+    /* Init a VT-x or AMD-V VM. */
+    if (pVM->hwaccm.s.vmx.fSupported)
+        rc = VMXR0InitVM(pVM);
+    else
+    if (pVM->hwaccm.s.svm.fSupported)
+        rc = SVMR0InitVM(pVM);
+
+    return rc;
 }
 
+
+/**
+ * Does Ring-0 per VM HWACCM termination.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) HWACCMR0TermVM(PVM pVM)
+{
+    int rc = VINF_SUCCESS;
+
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+
+#ifdef LOG_ENABLED
+    SUPR0Printf("HWACCMR0TermVM: %p\n", pVM);
+#endif
+
+    /* Terminate a VT-x or AMD-V VM. */
+    if (pVM->hwaccm.s.vmx.fSupported)
+        rc = VMXR0TermVM(pVM);
+    else
+    if (pVM->hwaccm.s.svm.fSupported)
+        rc = SVMR0TermVM(pVM);
+
+    return rc;
+}
 
 
 /**
@@ -623,13 +663,17 @@ HWACCMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
-    if (pVM == NULL)
-        return VERR_INVALID_PARAMETER;
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* Setup Intel VMX. */
+#ifdef LOG_ENABLED
+    SUPR0Printf("HWACCMR0SetupVM: %p\n", pVM);
+#endif
+
+    /* Setup VT-x or AMD-V. */
     if (pVM->hwaccm.s.vmx.fSupported)
         rc = VMXR0SetupVM(pVM);
     else
+    if (pVM->hwaccm.s.svm.fSupported)
         rc = SVMR0SetupVM(pVM);
 
     return rc;

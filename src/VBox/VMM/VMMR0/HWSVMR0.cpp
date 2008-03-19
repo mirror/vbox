@@ -91,7 +91,97 @@ HWACCMR0DECL(int) SVMR0DisableCpu(RTCPUID idCpu, void *pvPageCpu, RTHCPHYS pPage
 }
 
 /**
- * Sets up SVM for the specified VM
+ * Does Ring-0 per VM AMD-V init.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
+{
+    int rc;
+
+    /* Allocate one page for the VM control block (VMCB). */
+    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjVMCB, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pVM->hwaccm.s.svm.pVMCB     = RTR0MemObjAddress(pVM->hwaccm.s.svm.pMemObjVMCB);
+    pVM->hwaccm.s.svm.pVMCBPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.svm.pMemObjVMCB, 0);
+    ASMMemZero32(pVM->hwaccm.s.svm.pVMCB, PAGE_SIZE);
+
+    /* Allocate one page for the host context */
+    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjVMCBHost, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pVM->hwaccm.s.svm.pVMCBHost     = RTR0MemObjAddress(pVM->hwaccm.s.svm.pMemObjVMCBHost);
+    pVM->hwaccm.s.svm.pVMCBHostPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.svm.pMemObjVMCBHost, 0);
+    ASMMemZero32(pVM->hwaccm.s.svm.pVMCBHost, PAGE_SIZE);
+
+    /* Allocate 12 KB for the IO bitmap (doesn't seem to be a way to convince SVM not to use it) */
+    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjIOBitmap, 3 << PAGE_SHIFT, true /* executable R0 mapping */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pVM->hwaccm.s.svm.pIOBitmap     = RTR0MemObjAddress(pVM->hwaccm.s.svm.pMemObjIOBitmap);
+    pVM->hwaccm.s.svm.pIOBitmapPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.svm.pMemObjIOBitmap, 0);
+    /* Set all bits to intercept all IO accesses. */
+    ASMMemFill32(pVM->hwaccm.s.svm.pIOBitmap, PAGE_SIZE*3, 0xffffffff);
+
+    /* Allocate 8 KB for the MSR bitmap (doesn't seem to be a way to convince SVM not to use it) */
+    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjMSRBitmap, 2 << PAGE_SHIFT, true /* executable R0 mapping */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pVM->hwaccm.s.svm.pMSRBitmap     = RTR0MemObjAddress(pVM->hwaccm.s.svm.pMemObjMSRBitmap);
+    pVM->hwaccm.s.svm.pMSRBitmapPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.svm.pMemObjMSRBitmap, 0);
+    /* Set all bits to intercept all MSR accesses. */
+    ASMMemFill32(pVM->hwaccm.s.svm.pMSRBitmap, PAGE_SIZE*2, 0xffffffff);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Does Ring-0 per VM AMD-V termination.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+HWACCMR0DECL(int) SVMR0TermVM(PVM pVM)
+{
+    if (pVM->hwaccm.s.svm.pMemObjVMCB)
+    {
+        RTR0MemObjFree(pVM->hwaccm.s.svm.pMemObjVMCB, false);
+        pVM->hwaccm.s.svm.pVMCB       = 0;
+        pVM->hwaccm.s.svm.pVMCBPhys   = 0;
+        pVM->hwaccm.s.svm.pMemObjVMCB = 0;
+    }
+    if (pVM->hwaccm.s.svm.pMemObjVMCBHost)
+    {
+        RTR0MemObjFree(pVM->hwaccm.s.svm.pMemObjVMCBHost, false);
+        pVM->hwaccm.s.svm.pVMCBHost       = 0;
+        pVM->hwaccm.s.svm.pVMCBHostPhys   = 0;
+        pVM->hwaccm.s.svm.pMemObjVMCBHost = 0;
+    }
+    if (pVM->hwaccm.s.svm.pMemObjIOBitmap)
+    {
+        RTR0MemObjFree(pVM->hwaccm.s.svm.pMemObjIOBitmap, false);
+        pVM->hwaccm.s.svm.pIOBitmap       = 0;
+        pVM->hwaccm.s.svm.pIOBitmapPhys   = 0;
+        pVM->hwaccm.s.svm.pMemObjIOBitmap = 0;
+    }
+    if (pVM->hwaccm.s.svm.pMemObjMSRBitmap)
+    {
+        RTR0MemObjFree(pVM->hwaccm.s.svm.pMemObjMSRBitmap, false);
+        pVM->hwaccm.s.svm.pMSRBitmap       = 0;
+        pVM->hwaccm.s.svm.pMSRBitmapPhys   = 0;
+        pVM->hwaccm.s.svm.pMemObjMSRBitmap = 0;
+    }
+    return VINF_SUCCESS;
+}
+
+/**
+ * Sets up AMD-V for the specified VM
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
@@ -101,10 +191,8 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     int         rc = VINF_SUCCESS;
     SVM_VMCB   *pVMCB;
 
-    if (pVM == NULL)
-        return VERR_INVALID_PARAMETER;
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* Setup AMD SVM. */
     Assert(pVM->hwaccm.s.svm.fSupported);
 
     pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
@@ -1468,8 +1556,6 @@ end:
  */
 HWACCMR0DECL(int) SVMR0Enter(PVM pVM)
 {
-    uint64_t val;
-
     Assert(pVM->hwaccm.s.svm.fSupported);
 
     /* Force a TLB flush on VM entry. */
