@@ -464,10 +464,12 @@ HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
             if (RTMpIsCpuOnline(i))
             {
                 int rc = RTR0MemObjAllocCont(&HWACCMR0Globals.aCpuInfo[i].pMemObj, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+                AssertRC(rc);
                 if (RT_FAILURE(rc))
                     return rc;
 
                 void *pvR0 = RTR0MemObjAddress(HWACCMR0Globals.aCpuInfo[i].pMemObj);
+                Assert(pvR0);
                 memset(pvR0, 0, PAGE_SIZE);
 
 #ifdef LOG_ENABLED
@@ -524,6 +526,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
     if (pVM->hwaccm.s.vmx.fSupported)
     {
         paRc[idCpu] = VMXR0EnableCpu(idCpu, pVM, pvPageCpu, pPageCpuPhys);
+        AssertRC(paRc[idCpu]);
         if (VBOX_SUCCESS(paRc[idCpu]))
             HWACCMR0Globals.aCpuInfo[idCpu].fVMXConfigured = true;
     }
@@ -531,6 +534,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
     if (pVM->hwaccm.s.svm.fSupported)
     {
         paRc[idCpu] = SVMR0EnableCpu(idCpu, pVM, pvPageCpu, pPageCpuPhys);
+        AssertRC(paRc[idCpu]);
         if (VBOX_SUCCESS(paRc[idCpu]))
             HWACCMR0Globals.aCpuInfo[idCpu].fSVMConfigured = true;
     }
