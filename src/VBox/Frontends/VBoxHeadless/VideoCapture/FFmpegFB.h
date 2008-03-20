@@ -155,14 +155,8 @@ private:
     AVStream *mpStream;
     /** Information for ffmpeg describing the current frame */
     AVFrame *mFrame;
-    /** An AVPicture structure containing information about the
-      * guest framebuffer */
-    AVPicture mGuestPicture;
     /** ffmpeg pixel format of guest framebuffer */
     int mFFMPEGPixelFormat;
-    /** An AVPicture structure containing information about the
-      * MPEG frame framebuffer */
-    AVPicture mFramePicture;
     /** Since we are building without exception support, we use this
         to signal allocation failure in the constructor */
     bool mOutOfMemory;
@@ -185,5 +179,272 @@ private:
 #endif
 };
 
+/**
+ * Iterator class for running through an BGRA32 image buffer and converting
+ * it to RGB.
+ */
+class FFmpegBGRA32Iter
+{
+private:
+    enum { PIX_SIZE = 4 };
+public:
+    FFmpegBGRA32Iter(unsigned aWidth, unsigned aHeight, uint8_t *aBuffer)
+    {
+        mPos = 0;
+        mSize = aWidth * aHeight * PIX_SIZE;
+        mBuffer = aBuffer;
+    }
+    /**
+     * Convert the next pixel to RGB.
+     * @returns true on success, false if we have reached the end of the buffer
+     * @param   aRed    where to store the red value
+     * @param   aGreen  where to store the green value
+     * @param   aBlue   where to store the blue value
+     */
+    bool getRGB(unsigned *aRed, unsigned *aGreen, unsigned *aBlue)
+    {
+        bool rc = false;
+        if (mPos + PIX_SIZE <= mSize)
+        {
+            *aRed = mBuffer[mPos + 2];
+            *aGreen = mBuffer[mPos + 1];
+            *aBlue = mBuffer[mPos];
+            mPos += PIX_SIZE;
+            rc = true;
+        }
+        return rc;
+    }
+
+    /**
+     * Skip forward by a certain number of pixels
+     * @param aPixels  how many pixels to skip
+     */
+    void skip(unsigned aPixels)
+    {
+        mPos += PIX_SIZE * aPixels;
+    }
+private:
+    /** Size of the picture buffer */
+    unsigned mSize;
+    /** Current position in the picture buffer */
+    unsigned mPos;
+    /** Address of the picture buffer */
+    uint8_t *mBuffer;
+};
+
+/**
+ * Iterator class for running through an BGR24 image buffer and converting
+ * it to RGB.
+ */
+class FFmpegBGR24Iter
+{
+private:
+    enum { PIX_SIZE = 3 };
+public:
+    FFmpegBGR24Iter(unsigned aWidth, unsigned aHeight, uint8_t *aBuffer)
+    {
+        mPos = 0;
+        mSize = aWidth * aHeight * PIX_SIZE;
+        mBuffer = aBuffer;
+    }
+    /**
+     * Convert the next pixel to RGB.
+     * @returns true on success, false if we have reached the end of the buffer
+     * @param   aRed    where to store the red value
+     * @param   aGreen  where to store the green value
+     * @param   aBlue   where to store the blue value
+     */
+    bool getRGB(unsigned *aRed, unsigned *aGreen, unsigned *aBlue)
+    {
+        bool rc = false;
+        if (mPos + PIX_SIZE <= mSize)
+        {
+            *aRed = mBuffer[mPos + 2];
+            *aGreen = mBuffer[mPos + 1];
+            *aBlue = mBuffer[mPos];
+            mPos += PIX_SIZE;
+            rc = true;
+        }
+        return rc;
+    }
+
+    /**
+     * Skip forward by a certain number of pixels
+     * @param aPixels  how many pixels to skip
+     */
+    void skip(unsigned aPixels)
+    {
+        mPos += PIX_SIZE * aPixels;
+    }
+private:
+    /** Size of the picture buffer */
+    unsigned mSize;
+    /** Current position in the picture buffer */
+    unsigned mPos;
+    /** Address of the picture buffer */
+    uint8_t *mBuffer;
+};
+
+/**
+ * Iterator class for running through an BGR565 image buffer and converting
+ * it to RGB.
+ */
+class FFmpegBGR565Iter
+{
+private:
+    enum { PIX_SIZE = 2 };
+public:
+    FFmpegBGR565Iter(unsigned aWidth, unsigned aHeight, uint8_t *aBuffer)
+    {
+        mPos = 0;
+        mSize = aWidth * aHeight * PIX_SIZE;
+        mBuffer = aBuffer;
+    }
+    /**
+     * Convert the next pixel to RGB.
+     * @returns true on success, false if we have reached the end of the buffer
+     * @param   aRed    where to store the red value
+     * @param   aGreen  where to store the green value
+     * @param   aBlue   where to store the blue value
+     */
+    bool getRGB(unsigned *aRed, unsigned *aGreen, unsigned *aBlue)
+    {
+        bool rc = false;
+        if (mPos + PIX_SIZE <= mSize)
+        {
+            unsigned uFull =   (((unsigned) mBuffer[mPos + 1]) << 8)
+                             | ((unsigned) mBuffer[mPos]);
+            *aRed = (uFull >> 8) & ~7;
+            *aGreen = (uFull >> 3) & ~3 & 0xff;
+            *aBlue = (uFull << 3) & ~7 & 0xff;
+            mPos += PIX_SIZE;
+            rc = true;
+        }
+        return rc;
+    }
+
+    /**
+     * Skip forward by a certain number of pixels
+     * @param aPixels  how many pixels to skip
+     */
+    void skip(unsigned aPixels)
+    {
+        mPos += PIX_SIZE * aPixels;
+    }
+private:
+    /** Size of the picture buffer */
+    unsigned mSize;
+    /** Current position in the picture buffer */
+    unsigned mPos;
+    /** Address of the picture buffer */
+    uint8_t *mBuffer;
+};
+
+
+/**
+ * Convert an image to YUV420p format
+ * @returns true on success, false on failure
+ * @param aWidth    width of image
+ * @param aHeight   height of image
+ * @param aDestBuf  an allocated memory buffer large enough to hold the
+ *                  destination image (i.e. width * height * 12bits)
+ * @param aSrcBuf   the source image as an array of bytes
+ */
+template <class T>
+inline bool FFmpegWriteYUV420p(unsigned aWidth, unsigned aHeight, uint8_t *aDestBuf,
+                        uint8_t *aSrcBuf)
+{
+    AssertReturn(0 == (aWidth & 1), false);
+    AssertReturn(0 == (aHeight & 1), false);
+    bool rc = true;
+    T iter1(aWidth, aHeight, aSrcBuf);
+    T iter2 = iter1;
+    iter2.skip(aWidth);
+    unsigned cPixels = aWidth * aHeight;
+    unsigned offY = 0;
+    unsigned offU = cPixels;
+    unsigned offV = cPixels + cPixels / 4;
+    for (unsigned i = 0; (i < aHeight / 2) && rc; ++i)
+    {
+        for (unsigned j = 0; (j < aWidth / 2) && rc; ++j)
+        {
+            unsigned red, green, blue, u, v;
+            rc = iter1.getRGB(&red, &green, &blue);
+            if (rc)
+            {
+                aDestBuf[offY] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
+                u = (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
+                v = (((112 * red - 94 * green - 18 * blue + 128) >> 8) + 128) / 4;
+                rc = iter1.getRGB(&red, &green, &blue);
+            }
+            if (rc)
+            {
+                aDestBuf[offY + 1] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
+                u += (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
+                v += (((112 * red - 94 * green - 18 * blue + 128) >> 8) + 128) / 4;
+                rc = iter2.getRGB(&red, &green, &blue);
+            }
+            if (rc)
+            {
+                aDestBuf[offY + aWidth] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
+                u += (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
+                v += (((112 * red - 94 * green - 18 * blue + 128) >> 8) + 128) / 4;
+                rc = iter2.getRGB(&red, &green, &blue);
+            }
+            if (rc)
+            {
+                aDestBuf[offY + aWidth + 1] = ((66 * red + 129 * green + 25 * blue + 128) >> 8) + 16;
+                u += (((-38 * red - 74 * green + 112 * blue + 128) >> 8) + 128) / 4;
+                v += (((112 * red - 94 * green - 18 * blue + 128) >> 8) + 128) / 4;
+                aDestBuf[offU] = u;
+                aDestBuf[offV] = v;
+                offY += 2;
+                ++offU;
+                ++offV;
+            }
+        }
+        if (rc)
+        {
+            iter1.skip(aWidth);
+            iter2.skip(aWidth);
+            offY += aWidth;
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Convert an image to RGB24 format
+ * @returns true on success, false on failure
+ * @param aWidth    width of image
+ * @param aHeight   height of image
+ * @param aDestBuf  an allocated memory buffer large enough to hold the
+ *                  destination image (i.e. width * height * 12bits)
+ * @param aSrcBuf   the source image as an array of bytes
+ */
+template <class T>
+inline bool FFmpegWriteRGB24(unsigned aWidth, unsigned aHeight, uint8_t *aDestBuf,
+                        uint8_t *aSrcBuf)
+{
+    enum { PIX_SIZE = 3 };
+    bool rc = true;
+    AssertReturn(0 == (aWidth & 1), false);
+    AssertReturn(0 == (aHeight & 1), false);
+    T iter(aWidth, aHeight, aSrcBuf);
+    unsigned cPixels = aWidth * aHeight;
+    for (unsigned i = 0; (i < cPixels) && rc; ++i)
+    {
+        unsigned red, green, blue;
+        rc = iter.getRGB(&red, &green, &blue);
+        if (rc)
+        {
+            aDestBuf[i * PIX_SIZE] = red;
+            aDestBuf[i * PIX_SIZE + 1] = green;
+            aDestBuf[i * PIX_SIZE + 2] = blue;
+        }
+    }
+    return rc;
+}
 
 #endif /* !_H_FFMPEGFB */
