@@ -91,7 +91,7 @@ FFmpegFB::FFmpegFB(ULONG width, ULONG height, ULONG bitrate,
     ULONG cPixels = width * height;
 
     LogFlow(("Creating FFmpegFB object %p, width=%lu, height=%lu\n",
-             this, width, height));
+             this, (unsigned long) width,  (unsigned long) height));
     Assert(width % 2 == 0 && height % 2 == 0);
     /* For temporary RGB frame we allocate enough memory to deal with
        RGB16 to RGB32 */
@@ -153,7 +153,7 @@ FFmpegFB::~FFmpegFB()
             avcodec_close(mpStream->codec);
             av_write_trailer(mpFormatContext);
             /* free the streams */
-            for(int i = 0; i < mpFormatContext->nb_streams; i++) {
+            for(unsigned i = 0; i < mpFormatContext->nb_streams; i++) {
                 av_freep(&mpFormatContext->streams[i]->codec);
                 av_freep(&mpFormatContext->streams[i]);
             }
@@ -210,10 +210,6 @@ HRESULT FFmpegFB::init()
        elegant, but that is the API. */
     avpicture_fill((AVPicture *) mFrame, mYUVBuffer, PIX_FMT_YUV420P,
                    mFrameWidth, mFrameHeight);
-    /* Fill in the AVPicture structure describing the MPEG frame
-       framebuffer - in fact another representation of the same data */
-    avpicture_fill(&mFramePicture, mYUVBuffer, PIX_FMT_YUV420P,
-                   mFrameWidth, mFrameHeight);
     /* Set the initial framebuffer size to the mpeg frame dimensions */
     BOOL finished;
     RequestResize(0, FramebufferPixelFormat_Opaque, NULL, 0, 0,
@@ -255,7 +251,8 @@ STDMETHODIMP FFmpegFB::COMGETTER(Width) (ULONG *width)
 {
     if (!width)
         return E_POINTER;
-    LogFlow(("FFmpeg::COMGETTER(Width): returning width %lu\n", mGuestWidth));
+    LogFlow(("FFmpeg::COMGETTER(Width): returning width %lu\n",
+              (unsigned long) mGuestWidth));
     *width = mGuestWidth;
     return S_OK;
 }
@@ -270,7 +267,8 @@ STDMETHODIMP FFmpegFB::COMGETTER(Height) (ULONG *height)
 {
     if (!height)
         return E_POINTER;
-    LogFlow(("FFmpeg::COMGETTER(Height): returning height %lu\n", mGuestHeight));
+    LogFlow(("FFmpeg::COMGETTER(Height): returning height %lu\n",
+              (unsigned long) mGuestHeight));
     *height = mGuestHeight;
     return S_OK;
 }
@@ -291,7 +289,7 @@ STDMETHODIMP FFmpegFB::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
         return E_POINTER;
     *bitsPerPixel = mBitsPerPixel;
     LogFlow(("FFmpeg::COMGETTER(BitsPerPixel): returning depth %lu\n",
-             *bitsPerPixel));
+              (unsigned long) *bitsPerPixel));
     return S_OK;
 }
 
@@ -305,7 +303,8 @@ STDMETHODIMP FFmpegFB::COMGETTER(BytesPerLine) (ULONG *bytesPerLine)
 {
     if (!bytesPerLine)
         return E_POINTER;
-    LogFlow(("FFmpeg::COMGETTER(BytesPerLine): returning line size %lu\n", mBytesPerLine));
+    LogFlow(("FFmpeg::COMGETTER(BytesPerLine): returning line size %lu\n",
+              (unsigned long) mBytesPerLine));
     *bytesPerLine = mBytesPerLine;
     return S_OK;
 }
@@ -320,8 +319,8 @@ STDMETHODIMP FFmpegFB::COMGETTER(PixelFormat) (ULONG *pixelFormat)
 {
     if (!pixelFormat)
         return E_POINTER;
-    LogFlow(("FFmpeg::COMGETTER(PixelFormat): returning pixel format: %d\n",
-             mPixelFormat));
+    LogFlow(("FFmpeg::COMGETTER(PixelFormat): returning pixel format: %lu\n",
+              (unsigned long) mPixelFormat));
     *pixelFormat = mPixelFormat;
     return S_OK;
 }
@@ -337,8 +336,8 @@ STDMETHODIMP FFmpegFB::COMGETTER(UsesGuestVRAM) (BOOL *usesGuestVRAM)
     if (!usesGuestVRAM)
         return E_POINTER;
     LogFlow(("FFmpeg::COMGETTER(UsesGuestVRAM): uses guest VRAM? %d\n",
-             FALSE));
-    *usesGuestVRAM = mRGBBuffer == NULL;
+             mRGBBuffer == NULL));
+    *usesGuestVRAM = (mRGBBuffer == NULL);
     return S_OK;
 }
 
@@ -417,7 +416,8 @@ STDMETHODIMP FFmpegFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h,
     int64_t iCurrentTime = RTTimeMilliTS();
 
     LogFlow(("FFmpeg::NotifyUpdate called: x=%lu, y=%lu, w=%lu, h=%lu\n",
-             x, y, w, h));
+              (unsigned long) x,  (unsigned long) y,  (unsigned long) w,
+               (unsigned long) h));
     if (!finished)
         return E_POINTER;
     /* For now we will do things synchronously */
@@ -499,9 +499,11 @@ STDMETHODIMP FFmpegFB::RequestResize(ULONG aScreenId, ULONG pixelFormat,
     NOREF(aScreenId);
     if (!finished)
         return E_POINTER;
-    LogFlow(("FFmpeg::RequestResize called: pixelFormat=%d, vram=%lu, "
+    LogFlow(("FFmpeg::RequestResize called: pixelFormat=%lu, vram=%lu, "
              "bpp=%lu bpl=%lu, w=%lu, h=%lu\n",
-             pixelFormat, vram, bitsPerPixel, bytesPerLine, w, h));
+              (unsigned long) pixelFormat, (unsigned long) vram,
+              (unsigned long) bitsPerPixel, (unsigned long) bytesPerLine,
+              (unsigned long) w, (unsigned long) h));
     /* For now, we are doing things synchronously */
     *finished = true;
 
@@ -549,7 +551,8 @@ STDMETHODIMP FFmpegFB::RequestResize(ULONG aScreenId, ULONG pixelFormat,
         mBytesPerLine = bytesPerLine;
         mBitsPerPixel = bitsPerPixel;
         mRGBBuffer = 0;
-        Log2(("FFmpeg::RequestResize: setting mBufferAddress to vram and mLineSize to %lu\n", mBytesPerLine));
+        Log2(("FFmpeg::RequestResize: setting mBufferAddress to vram and mLineSize to %lu\n",
+              (unsigned long) mBytesPerLine));
     }
     else
     {
@@ -562,15 +565,11 @@ STDMETHODIMP FFmpegFB::RequestResize(ULONG aScreenId, ULONG pixelFormat,
         mBitsPerPixel = 32;
         mRGBBuffer = reinterpret_cast<uint8_t *>(RTMemAlloc(mBytesPerLine * h));
         AssertReturn(mRGBBuffer != 0, E_OUTOFMEMORY);
-        Log2(("FFmpeg::RequestResize: alloc'ing mBufferAddress and mRGBBuffer to %p and mBytesPerLine to %lu\n", mBufferAddress,
-              mBytesPerLine));
+        Log2(("FFmpeg::RequestResize: alloc'ing mBufferAddress and mRGBBuffer to %p and mBytesPerLine to %lu\n",
+              mBufferAddress, (unsigned long) mBytesPerLine));
         mBufferAddress = mRGBBuffer;
     }
 
-    /* Fill in the structure describing the (intermediate) guest
-       framebuffer so that ffmpeg can copy correctly between the two */
-    avpicture_fill(&mGuestPicture, mTempRGBBuffer, mFFMPEGPixelFormat,
-                   mFrameWidth, mFrameHeight);
     /* Blank out the intermediate frame framebuffer */
     memset(mTempRGBBuffer, 0, mFrameWidth * mFrameHeight * 4);
     return S_OK;
@@ -846,7 +845,7 @@ HRESULT FFmpegFB::open_output_file()
 void FFmpegFB::copy_to_intermediate_buffer(ULONG x, ULONG y, ULONG w, ULONG h)
 {
     Log2(("FFmpegFB::copy_to_intermediate_buffer: x=%lu, y=%lu, w=%lu, h=%lu\n",
-          x, y, w, h));
+          (unsigned long) x, (unsigned long) y, (unsigned long) w, (unsigned long) h));
     /* Perform clipping and calculate the destination co-ordinates */
     ULONG destX, destY, bpp;
     LONG xDiff = (LONG(mFrameWidth) - LONG(mGuestWidth)) / 2;
@@ -923,14 +922,26 @@ void FFmpegFB::copy_to_intermediate_buffer(ULONG x, ULONG y, ULONG w, ULONG h)
  */
 HRESULT FFmpegFB::do_rgb_to_yuv_conversion()
 {
-    int rc = img_convert(&mFramePicture, PIX_FMT_YUV420P,
-                         &mGuestPicture, mFFMPEGPixelFormat,
-                         mFrameWidth, mFrameHeight);
-    AssertMsg(rc >= 0, ("img_convert() failed.  rc=%d, mFFMPEGPixelFormat=%d\n"
-                   "mFrameWidth=%u, mFrameHeight=%u\n", rc,
-                   mFFMPEGPixelFormat, mFrameWidth, mFrameHeight));
-    if (rc < 0)
-        return E_UNEXPECTED;
+    switch (mFFMPEGPixelFormat)
+    {
+        case PIX_FMT_RGBA32:
+            if (!FFmpegWriteYUV420p<FFmpegBGRA32Iter>(mFrameWidth, mFrameHeight,
+                                                      mYUVBuffer, mTempRGBBuffer))
+                return E_UNEXPECTED;
+            break;
+        case PIX_FMT_RGB24:
+            if (!FFmpegWriteYUV420p<FFmpegBGR24Iter>(mFrameWidth, mFrameHeight,
+                                                     mYUVBuffer, mTempRGBBuffer))
+                return E_UNEXPECTED;
+            break;
+        case PIX_FMT_RGB565:
+            if (!FFmpegWriteYUV420p<FFmpegBGR565Iter>(mFrameWidth, mFrameHeight,
+                                                      mYUVBuffer, mTempRGBBuffer))
+                return E_UNEXPECTED;
+            break;
+        default:
+            return E_UNEXPECTED;
+    }
     return S_OK;
 }
 
@@ -990,9 +1001,7 @@ HRESULT FFmpegFB::write_png()
     char PNGFileName[RTPATH_MAX], oldName[RTPATH_MAX];
     png_structp png_ptr;
     png_infop info_ptr;
-    AVPicture libPNGPicture;
     uint8_t *PNGBuffer;
-    int rc;
     /* Work out the new file name - for some reason, we can't use
        the com::Utf8Str() directly, but have to copy it */
     strcpy(oldName, com::Utf8Str(mFileName));
@@ -1035,13 +1044,26 @@ HRESULT FFmpegFB::write_png()
                                                 * sizeof(png_bytep)));
     if (row_pointers == 0)
         goto av_malloc_pointers_failed;
-    avpicture_fill(&libPNGPicture, PNGBuffer, PIX_FMT_RGB24,
-                   mFrameWidth, mFrameHeight);
-    rc = img_convert(&libPNGPicture, PIX_FMT_RGB24,
-                         &mGuestPicture, mFFMPEGPixelFormat,
-                         mFrameWidth, mFrameHeight);
-    if (rc < 0)
-        goto setjmp_exception;
+    switch (mFFMPEGPixelFormat)
+    {
+        case PIX_FMT_RGBA32:
+            if (!FFmpegWriteRGB24<FFmpegBGRA32Iter>(mFrameWidth, mFrameHeight,
+                                                    PNGBuffer, mTempRGBBuffer))
+                goto setjmp_exception;
+            break;
+        case PIX_FMT_RGB24:
+            if (!FFmpegWriteRGB24<FFmpegBGR24Iter>(mFrameWidth, mFrameHeight,
+                                                   PNGBuffer, mTempRGBBuffer))
+                goto setjmp_exception;
+            break;
+        case PIX_FMT_RGB565:
+            if (!FFmpegWriteRGB24<FFmpegBGR565Iter>(mFrameWidth, mFrameHeight,
+                                                    PNGBuffer, mTempRGBBuffer))
+                goto setjmp_exception;
+            break;
+        default:
+            goto setjmp_exception;
+    }
     /* libpng exception handling */
     if (setjmp(png_jmpbuf(png_ptr)))
        goto setjmp_exception;
