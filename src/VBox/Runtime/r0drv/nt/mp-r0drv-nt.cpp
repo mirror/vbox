@@ -160,8 +160,10 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
     PRTMPARGS pArgs;
     KDPC     *paExecCpuDpcs;
 
+#ifdef DEBUG_sandervl
     /* KeFlushQueuedDpcs must be run at IRQL PASSIVE_LEVEL */
     AssertMsg(KeGetCurrentIrql() == PASSIVE_LEVEL, ("%d != %d (PASSIVE_LEVEL)\n", KeGetCurrentIrql(), PASSIVE_LEVEL));
+#endif
 
     KAFFINITY Mask = KeQueryActiveProcessors();
 
@@ -226,12 +228,16 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
 
         for (unsigned i = 0; i < MAXIMUM_PROCESSORS; i++)
         {
-            if (    (i != iSelf || enmCpuid != RT_NT_CPUID_OTHERS)
+            if (    (i != iSelf)
                 &&  (Mask & RT_BIT_64(i)))
             {
                 BOOLEAN ret = KeInsertQueueDpc(&paExecCpuDpcs[i], 0, 0);
                 Assert(ret);
             }
+        }
+        if (enmCpuid != RT_NT_CPUID_OTHERS)
+        {
+            pfnWorker(iSelf, pvUser1, pvUser2);
         }
     }
 
