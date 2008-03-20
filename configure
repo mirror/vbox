@@ -1204,15 +1204,18 @@ EOF
                     else
                       log_success "found version $uic3_ver"
                       cnf_append "VBOX_UIC3" "$r/uic3"
-		      break
+		      return
                     fi
                   fi
                 done
+                log_failure "not found"
+                fail
               fi
-              break
             fi
           done
         fi
+        log_failure "not found"
+        fail
       fi
     fi
   else
