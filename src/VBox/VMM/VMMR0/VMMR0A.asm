@@ -72,6 +72,14 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     call    eax
     add     esp, 12
     mov     edx, [esp + 4h]             ; pJmpBuf
+
+    ; restore the registers that we're not allowed to modify
+    ; otherwise a resume might restore the wrong values (from the previous run)
+    mov     edi, [edx + VMMR0JMPBUF.edi]
+    mov     esi, [edx + VMMR0JMPBUF.esi]
+    mov     ebx, [edx + VMMR0JMPBUF.ebx]
+    mov     ebp, [edx + VMMR0JMPBUF.ebp]
+
     and     dword [edx + VMMR0JMPBUF.eip], byte 0 ; used for valid check.
     ret
 
@@ -170,6 +178,19 @@ GLOBALNAME vmmR0CallHostSetJmpEx
  %endif
     call    r11
     mov     rdx, [rbp - 8]              ; pJmpBuf
+
+    ; restore the registers that we're not allowed to modify
+    ; otherwise a resume might restore the wrong values (from the previous run)
+    mov     rbx, [rdx + VMMR0JMPBUF.rbx]
+ %ifdef ASM_CALL64_MSC
+    mov     rsi, [rdx + VMMR0JMPBUF.rsi]
+    mov     rdi, [rdx + VMMR0JMPBUF.rdi]
+ %endif
+    mov     r12, [rdx + VMMR0JMPBUF.r12]
+    mov     r13, [rdx + VMMR0JMPBUF.r13]
+    mov     r14, [rdx + VMMR0JMPBUF.r14]
+    mov     r15, [rdx + VMMR0JMPBUF.r15]
+
     and     qword [rdx + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
     leave
     ret
