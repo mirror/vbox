@@ -750,7 +750,8 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
     /* Remember the desktop geometry and register for geometry change
        events for telling the guest about video modes we like. */
-    mDesktopGeometry = QApplication::desktop()->screenGeometry (this);
+
+    doResizeDesktop(0);
     connect (QApplication::desktop(), SIGNAL(workAreaResized(int)),
              this, SLOT(doResizeDesktop(int)));
 
@@ -3591,15 +3592,47 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
             sz -= QSize (frameWidth() * 2, frameWidth() * 2);
         LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
+        /* Increase the desktop geometry if needed */
+        setDesktopGeometry(sz.width(), sz.height());
+
         mConsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
     }
 }
 
 void VBoxConsoleView::doResizeDesktop (int)
 {
-    mDesktopGeometry = QApplication::desktop()->screenGeometry (this);
+    setDesktopGeometry(0, 0);
 }
  
+/**
+ * Set the maximum size allowed for the guest desktop to the available area
+ * minus 100 pixels each way, or to the specified minimum width and height,
+ * whichever is greater.
+ *
+ * @param minWidth   The width that the guest screen should at least be
+ *                   allowed to increase to
+ * @param minHeight  The height that the guest screen should at least be
+ *                   allowed to increase to
+ */
+void VBoxConsoleView::setDesktopGeometry(int minWidth, int minHeight)
+{
+    LogFlowThisFunc(("minWidth=%d, minHeight=%d\n", minWidth, minHeight));
+    QRect desktopGeometry = QApplication::desktop()->screenGeometry (this);
+    int width = desktopGeometry.width();
+    if (width - 100 < minWidth)
+        width = minWidth;
+    else
+        width = width - 100;
+    int height = desktopGeometry.height();
+    if (height - 100 < minHeight)
+        height = minHeight;
+    else
+        height = height - 100;
+    LogFlowThisFunc(("Setting %d, %d\n", width, height));
+    mDesktopGeometry = QRect(0, 0, width, height);
+}
+
+
 /**
  * We send an initial size hint to the VM on startup, based on the last
  * resize event in the last session (if any).

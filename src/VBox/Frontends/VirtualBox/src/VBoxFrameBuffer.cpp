@@ -193,17 +193,20 @@ VBoxFrameBuffer::OperationSupported (FramebufferAccelerationOperation_T aOperati
 STDMETHODIMP VBoxFrameBuffer::VideoModeSupported (ULONG aWidth, ULONG aHeight,
                                                   ULONG aBPP, BOOL *aSupported)
 {
+    LogFlowThisFunc(("aWidth=%lu, aHeight=%lu, aBPP=%lu\n",
+                     (unsigned long) aWidth,  (unsigned long) aHeight,
+                      (unsigned long) aBPP));
     if (!aSupported)
         return E_POINTER;
     *aSupported = TRUE;
     QRect screen = mView->getDesktopGeometry();
-    /* Leave 200 pixels leeway. */
     if (aWidth > (ULONG) screen.width())
         *aSupported = FALSE;
     if (aHeight > (ULONG) screen.height())
         *aSupported = FALSE;
     if (aBPP != 32)
         *aSupported = FALSE;
+    LogFlowThisFunc(("returning aSupported=%d\n", *aSupported));
     return S_OK;
 }
 

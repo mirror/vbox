@@ -191,6 +191,7 @@ private slots:
 
 private:
 
+    void setDesktopGeometry(int minWidth, int minHeight);
     void sendInitialSizeHint(void);
     void maybeRestrictMinimumSize();
 
