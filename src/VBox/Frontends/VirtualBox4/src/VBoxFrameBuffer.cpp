@@ -194,6 +194,9 @@ VBoxFrameBuffer::OperationSupported (FramebufferAccelerationOperation_T aOperati
 STDMETHODIMP VBoxFrameBuffer::VideoModeSupported (ULONG aWidth, ULONG aHeight,
                                                   ULONG aBPP, BOOL *aSupported)
 {
+    LogFlowThisFunc(("aWidth=%lu, aHeight=%lu, aBPP=%lu\n",
+                     (unsigned long) aWidth,  (unsigned long) aHeight,
+                      (unsigned long) aBPP));
     if (!aSupported)
         return E_POINTER;
     *aSupported = TRUE;
@@ -204,6 +207,7 @@ STDMETHODIMP VBoxFrameBuffer::VideoModeSupported (ULONG aWidth, ULONG aHeight,
         *aSupported = FALSE;
     if (aBPP != 32)
         *aSupported = FALSE;
+    LogFlowThisFunc(("returning aSupported=%d\n", *aSupported));
     return S_OK;
 }
 
