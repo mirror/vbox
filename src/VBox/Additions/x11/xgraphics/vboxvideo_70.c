@@ -471,6 +471,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
             /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
             if (cBits != 16)
                 cBits = 24;
+            cx -= cx % 8;
             pcHostModeName = XNFprintf("%dx%d", cx, cy);
         }
         if (!xf86SetDepthBpp(pScrn, cBits, 0, 0, Support32bppFb))

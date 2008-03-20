@@ -47,6 +47,7 @@
  * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
  */
 
+// #define DEBUG_VIDEO 1
 #ifdef DEBUG_VIDEO
 
 #define TRACE \
@@ -214,9 +215,9 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
     if (width % 8 != 0)
     {
         xf86DrvMsg(scrn->scrnIndex, X_WARNING,
-                   "VirtualBox only supports virtual screen widths which are a multiple of 8.  Rounding up from %d to %d\n",
-                   width, width - (width % 8) + 8);
-        width = width - (width % 8) + 8;
+                   "VirtualBox only supports virtual screen widths which are a multiple of 8.  Rounding down from %d to %d\n",
+                   width, width - (width % 8));
+        width = width - (width % 8);
     }
     if (width * height * bpp / 8 >= scrn->videoRam * 1024)
     {
@@ -410,6 +411,8 @@ vbox_output_get_modes (xf86OutputPtr output)
     rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display, pVBox);
     /* @todo - check the display number once we support multiple displays. */
     if (rc && (0 != x) && (0 != y)) {
+        /* We prefer a slightly smaller size to a slightly larger one */
+        x -= (x % 8);
         vbox_output_add_mode(&pModes, NULL, x, y, TRUE);
     }
     TRACE2;
