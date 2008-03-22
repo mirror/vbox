@@ -7134,11 +7134,21 @@ HRESULT SessionMachine::init (Machine *aMachine)
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     Utf8Str configFile = aMachine->mData->mConfigFileFull;
     char *configFileCP = NULL;
+    int error;
     RTStrUtf8ToCurrentCP (&configFileCP, configFile);
     key_t key = ::ftok (configFileCP, 0);
     RTStrFree (configFileCP);
     mIPCSem = ::semget (key, 1, S_IRWXU | S_IRWXG | S_IRWXO | IPC_CREAT);
-    ComAssertMsgRet (mIPCSem >= 0, ("Cannot create IPC semaphore, errno=%d", errno),
+    error = errno;
+    if (mIPCSem < 0 && error == ENOSYS)
+    {
+        setError(E_FAIL, 
+                tr ("Cannot create IPC semaphore. Most likely your host kernel lacks "
+                     "support for SysV IPC. Check the host kernel configuration for "
+                     "CONFIG_SYSVIPC=y"));
+        return E_FAIL;
+    }
+    ComAssertMsgRet (mIPCSem >= 0, ("Cannot create IPC semaphore, errno=%d", error),
                      E_FAIL);
     /* set the initial value to 1 */
     int rv = ::semctl (mIPCSem, 0, SETVAL, 1);
