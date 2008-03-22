@@ -69,13 +69,21 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
             return VERR_INVALID_PARAMETER;
     }
 
+#if __FreeBSD_version < 700000
     /* Do like they're doing in subr_ntoskrnl.c... */
     mtx_lock_spin(&sched_lock);
+#else
+    thread_lock(curthread);
+#endif
     sched_prio(curthread, iPriority);
 #if __FreeBSD_version < 600000
     curthread->td_base_pri = iPriority;
 #endif
+#if __FreeBSD_version < 700000
     mtx_unlock_spin(&sched_lock);
+#else
+    thread_unlock(curthread);
+#endif
 
     return VINF_SUCCESS;
 }

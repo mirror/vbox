@@ -21,7 +21,7 @@ include	$(PATH_KBUILD)/subheader.kmk
 
 # Include sub-makefile.
 include $(PATH_SUB_CURRENT)/VBoxGuestLib/Makefile.kmk
-if1of ($(BUILD_TARGET),os2 solaris)
+if1of ($(BUILD_TARGET),os2 solaris freebsd)
 include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk
 endif

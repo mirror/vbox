@@ -67,6 +67,10 @@ typedef RTGCPHYS32 vmmDevHypPhys;
 /** device name */
 # define VBOXGUEST_DEVICE_NAME_DOS    L"\\DosDevices\\VBoxGuest"
 
+#elif defined(RT_OS_FREEBSD)
+/** The support device name. */
+# define VBOXGUEST_DEVICE_NAME        "/dev/vboxguest"
+
 #else
 /* PORTME */
 #endif
@@ -1014,9 +1018,10 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 # define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       VBOXGUEST_IOCTL_CODE(_IOC_NR((Code)), 0)
 
-#elif 0 /* BSD style - needs some adjusting since _IORW takes a type and not a size. */
+#elif defined(RT_OS_FREEBSD)
 # include <sys/ioccom.h>
-# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IORW('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
+
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IOWR('V', (Function) | VBOXGUEST_IOCTL_FLAG, VBGLBIGREQ)
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 # define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       IOCBASECMD(Code)
 

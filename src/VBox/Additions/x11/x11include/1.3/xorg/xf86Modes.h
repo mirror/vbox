@@ -29,7 +29,10 @@
 #define _XF86MODES_H_
 
 #include <stddef.h>
+/* Including this header results in compiler errors on FreeBSD */
+#ifndef RT_OS_FREEBSD
 #include <string.h>
+#endif
 #include <stdio.h>
 
 #include "xf86.h"

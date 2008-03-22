@@ -532,6 +532,8 @@ RuntimeGuestR3_DEFS.$(BUILD_PLATFORM)	:= $(RuntimeR3_DEFS.$(BUILD_PLATFORM))
 RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
 RuntimeGuestR3_INCS.$(BUILD_TARGET)     := $(RuntimeR3_INCS.$(BUILD_TARGET))
 RuntimeGuestR3_INCS.$(BUILD_PLATFORM)   := $(RuntimeR3_INCS.$(BUILD_PLATFORM))
+RuntimeGuestR3_LIBS.freebsd             := \
+    iconv
 RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
@@ -589,6 +591,10 @@ RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/path-posix.cpp \
 	r3/posix/utf8-posix.cpp
 RuntimeGuestR3Mini_SOURCES.solaris = \
+	r3/posix/fileio-posix.cpp \
+	r3/posix/path-posix.cpp \
+	r3/posix/utf8-posix.cpp
+RuntimeGuestR3Mini_SOURCES.freebsd = \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/utf8-posix.cpp
@@ -1023,6 +1029,8 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	common/string/memchr.asm \
 	common/string/memmove.asm \
 	common/string/strpbrk.cpp \
+	common/string/memcmp.asm \
+	common/string/strchr.asm \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \
@@ -1104,6 +1112,10 @@ RuntimeGuestR0_SOURCES.win += \
 	common/string/memmove.asm \
 	common/string/strlen.cpp
 endif
+RuntimeGuestR0_SOURCES.freebsd += \
+	common/string/memset.cpp \
+	common/string/memcmp.cpp \
+	common/string/strchr.asm
 
 RuntimeOS2GuestR0_TEMPLATE      = VBOXOS2GUESTR0LIB
 RuntimeOS2GuestR0_SOURCES       = \
