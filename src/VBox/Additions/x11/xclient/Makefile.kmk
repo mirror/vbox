@@ -39,6 +39,10 @@ VBoxClient_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	X11 \
 	Xt
+VBoxClient_LIBPATH.freebsd += \
+	/usr/local/lib
+VBoxClient_LIBS.freebsd += \
+	iconv
 ifdef VBOX_X11_SEAMLESS_GUEST
  VBoxClient_DEFS += SEAMLESS_GUEST DYNAMIC_RESIZE
  VBoxClient_SOURCES += \

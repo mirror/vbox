@@ -52,6 +52,9 @@ endif
 ifeq ($(BUILD_TARGET),solaris)
  VBOX_WITH_ADDITIONS_ISO.solaris.x86 = 1
 endif
+ifeq ($(BUILD_TARGET),freebsd)
+ VBOX_WITH_ADDITIONS_ISO.freebsd.x86 = 1
+endif
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/common/Makefile.kmk
@@ -66,6 +69,9 @@ ifdef VBOX_WITH_X11_ADDITIONS
 endif
 ifeq ($(BUILD_TARGET),solaris)
  include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
+endif
+ifeq ($(BUILD_TARGET),freebsd)
+ include $(PATH_SUB_CURRENT)/freebsd/Makefile.kmk
 endif
 
 # The packing target rule, but only if we're on the local build box.
@@ -169,6 +175,19 @@ ifdef VBOX_WITH_ADDITIONS_ISO.solaris.x86
  	VBoxSolarisAdditions=$(VBOX_PATH_ADDITIONS.solaris.x86)/VBoxSolarisAdditions
 endif
 
+#
+# The x86 FreeBSD .iso file spec.
+#
+ifdef VBOX_WITH_ADDITIONS_ISO.freebsd.x86
+ ifdef VBOX_ONLY_ADDITIONS
+  VBOX_PATH_ADDITIONS.freebsd.x86 = $(PATH_OUT_BASE)/freebsd.x86/$(BUILD_TYPE)/bin/additions
+ else
+  # 32-bit only hack
+  VBOX_PATH_ADDITIONS.freebsd.x86 = $(VBOX_PATH_ADDITIONS)
+ endif
+ GUESTADDITIONS_FILESPEC.freebsd.x86 = \
+ 	VBoxFreeBSDAdditions.tbz=$(VBOX_PATH_ADDITIONS.freebsd.x86)/VBoxFreeBSDAdditions.tbz
+endif
 
 #
 # Build the Guest Additions ISO image.
@@ -191,7 +210,8 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 		$(GUESTADDITIONS_FILESPEC.win.x86) \
 		$(GUESTADDITIONS_FILESPEC.linux.x86) \
 		$(GUESTADDITIONS_FILESPEC.solaris.x86) \
-		$(GUESTADDITIONS_FILESPEC.os2.x86)
+		$(GUESTADDITIONS_FILESPEC.os2.x86) \
+		$(GUESTADDITIONS_FILESPEC.freebsd.x86)
 endif
 
 

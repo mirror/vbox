@@ -1056,7 +1056,13 @@ MousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     pMse->CommonOptions = MouseCommonOptions;
 
 #ifdef VBOX
+
+/* ImPS/2 is not supported on FreeBSD */
+# ifdef RT_OS_FREEBSD
+    protocol = "PS/2";
+# else
     protocol = "ImPS/2";
+# endif
     protocolFrom = X_CONFIG;
 #else
     /* Find the protocol type. */

@@ -23,7 +23,7 @@
 # define INCL_BASE
 # define INCL_ERRORS
 # include <os2.h>
-#elif defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <errno.h>
@@ -225,7 +225,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
         return vrc;
     return RTErrConvertFromOS2(rc);
 
-#elif defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     VBGLBIGREQ Hdr;
     Hdr.u32Magic = VBGLBIGREQ_MAGIC;
     Hdr.cbData = cbData;
@@ -243,6 +243,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 #elif defined(VBOX_VBGLR3_XFREE86)
     /* PORTME - This is preferred over the RTFileIOCtl variant below, just be careful with the (int). */
 /** @todo test status code passing! */
+    
     int rc = xf86ioctl(g_File, iFunction, pvData);
     if (rc == -1)
         return VERR_FILE_IO_ERROR;  /* This is purely legacy stuff, it has to work and no more. */

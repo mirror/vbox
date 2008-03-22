@@ -56,6 +56,8 @@ typedef struct _VBGLDRIVER
     uint32_t u32Session; /**< just for sanity checking. */
 #elif defined (RT_OS_SOLARIS)
     void *pvOpaque;
+#elif defined (RT_OS_FREEBSD)
+    void *pvOpaque;
 #else
 # error "Port me"
 #endif

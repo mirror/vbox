@@ -57,7 +57,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
         }
     }
 
-#elif defined(RT_OS_LINUX)
+#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     NOREF(ppvCtx);
     NOREF(pv);
     NOREF(u32Size);
@@ -91,7 +91,7 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
         IoFreeMdl (pMdl);
     }
 
-#elif defined(RT_OS_LINUX)
+#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     NOREF(pvCtx);
 
 #else
@@ -137,6 +137,14 @@ extern DECLVBGL(void *) VBoxGuestSolarisServiceOpen (uint32_t *pu32Version);
 extern DECLVBGL(void) VBoxGuestSolarisServiceClose (void *pvOpaque);
 extern DECLVBGL(int) VBoxGuestSolarisServiceCall (void *pvOpaque, unsigned int iCmd, void *pvData, size_t cbSize, size_t *pcbReturn);
 __END_DECLS
+
+#elif defined (RT_OS_FREEBSD)
+__BEGIN_DECLS
+extern DECLVBGL(void *) VBoxGuestFreeBSDServiceOpen (uint32_t *pu32Version);
+extern DECLVBGL(void) VBoxGuestFreeBSDServiceClose (void *pvOpaque);
+extern DECLVBGL(int) VBoxGuestFreeBSDServiceCall (void *pvOpaque, unsigned int iCmd, void *pvData, size_t cbSize, size_t *pcbReturn);
+__END_DECLS
+
 #endif
 
 int vbglDriverOpen (VBGLDRIVER *pDriver)
@@ -193,6 +201,15 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     pDriver->pvOpaque = VBoxGuestSolarisServiceOpen(&u32VMMDevVersion);
     if (    pDriver->pvOpaque
         &&  u32VMMDevVersion == VMMDEV_VERSION)
+        return VINF_SUCCESS;
+
+    Log(("vbglDriverOpen: failed\n"));
+    return VERR_FILE_NOT_FOUND;
+
+#elif defined (RT_OS_FREEBSD)
+    uint32_t u32VMMDevVersion;
+    pDriver->pvOpaque = VBoxGuestFreeBSDServiceOpen(&u32VMMDevVersion);
+    if (pDriver->pvOpaque && (u32VMMDevVersion == VMMDEV_VERSION))
         return VINF_SUCCESS;
 
     Log(("vbglDriverOpen: failed\n"));
@@ -259,6 +276,9 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
 #elif defined (RT_OS_SOLARIS)
     return VBoxGuestSolarisServiceCall(pDriver->pvOpaque, u32Function, pvData, cbData, NULL);
 
+#elif defined (RT_OS_FREEBSD)
+    return VBoxGuestFreeBSDServiceCall(pDriver->pvOpaque, u32Function, pvData, cbData, NULL);
+
 #else
 # error "Port me"
 #endif
@@ -278,6 +298,9 @@ void vbglDriverClose (VBGLDRIVER *pDriver)
 
 #elif defined (RT_OS_SOLARIS)
     VBoxGuestSolarisServiceClose (pDriver->pvOpaque);
+
+#elif defined (RT_OS_FREEBSD)
+    VBoxGuestFreeBSDServiceClose(pDriver->pvOpaque);
 
 #else
 # error "Port me"
