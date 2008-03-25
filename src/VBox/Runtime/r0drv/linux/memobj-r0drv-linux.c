@@ -219,8 +219,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
     for (iPage = 0; iPage < cPages; iPage++)
     {
         pMemLnx->apPages[iPage] = &paPages[iPage];
-        if (pgprot_val(MY_PAGE_KERNEL_EXEC) != pgprot_val(PAGE_KERNEL))
-            MY_CHANGE_PAGE_ATTR(pMemLnx->apPages[iPage], 1, MY_PAGE_KERNEL_EXEC);
+        MY_SET_PAGES_EXEC(pMemLnx->apPages[iPage], 1);
         if (PageHighMem(pMemLnx->apPages[iPage]))
             BUG();
     }
@@ -260,8 +259,7 @@ static void rtR0MemObjLinuxFreePages(PRTR0MEMOBJLNX pMemLnx)
             ClearPageReserved(pMemLnx->apPages[iPage]);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 22)
 #else
-            if (pgprot_val(MY_PAGE_KERNEL_EXEC) != pgprot_val(PAGE_KERNEL))
-                MY_CHANGE_PAGE_ATTR(pMemLnx->apPages[iPage], 1, PAGE_KERNEL);
+            MY_SET_PAGES_NOEXEC(pMemLnx->apPages[iPage]);
 #endif
         }
 
