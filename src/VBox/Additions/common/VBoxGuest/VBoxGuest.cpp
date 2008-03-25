@@ -272,6 +272,8 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
     int rc2;
     Log(("VBoxGuestDeleteDevExt:\n"));
 
+/** @todo tell VMMDev that the guest additions are no longer running (clear all capability masks). */
+
     rc2 = RTSpinlockDestroy(pDevExt->WaitSpinlock); AssertRC(rc2);
 
     VBoxGuestDeleteWaitList(&pDevExt->WaitList);
