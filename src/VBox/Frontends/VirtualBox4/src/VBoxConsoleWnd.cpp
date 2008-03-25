@@ -3437,9 +3437,7 @@ VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
     mainLayout->setSpacing (10);
 
     /* Setup settings layout */
-    mSettings = new VBoxSharedFoldersSettings (this, "mSettings");
-    mSettings->setDialogType (VBoxSharedFoldersSettings::MachineType |
-                              VBoxSharedFoldersSettings::ConsoleType);
+    mSettings = new VBoxSharedFoldersSettings (this, MachineType | ConsoleType);
     mSettings->getFromConsole (aSession.GetConsole());
     mSettings->getFromMachine (aSession.GetMachine());
     mainLayout->addWidget (mSettings);

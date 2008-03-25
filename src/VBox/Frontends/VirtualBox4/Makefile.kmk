@@ -274,6 +274,9 @@ VirtualBox_QT_UISRCS4 += ui/VBoxVMFirstRunWzd.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxRegistrationDlg.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxSharedFoldersSettings.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxSharedFoldersSettings.ui
+
 
 #
 # The targets.
@@ -411,7 +414,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxNewVMWzd.h \
 	include/VBoxNewHDWzd.h \
 	include/VBoxVMFirstRunWzd.h \
-	include/VBoxRegistrationDlg.h
+	include/VBoxRegistrationDlg.h \
+	include/VBoxSharedFoldersSettings.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -425,8 +429,7 @@ endif
 # UI headers (ui.h) containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCUIHDRS = \
 	ui/VBoxVMSettingsDlg.ui.h \
-	ui/VBoxVMLogViewer.ui.h \
-	ui/VBoxSharedFoldersSettings.ui.h
+	ui/VBoxVMLogViewer.ui.h
 
 
 # All generated sources. Note: this list MUST be in sync with Qt source
@@ -484,7 +487,8 @@ VirtualBox_SOURCES = \
 	src/VBoxNewVMWzd.cpp \
 	src/VBoxNewHDWzd.cpp \
 	src/VBoxVMFirstRunWzd.cpp \
-	src/VBoxRegistrationDlg.cpp
+	src/VBoxRegistrationDlg.cpp \
+	src/VBoxSharedFoldersSettings.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 VirtualBox_SOURCES += \
