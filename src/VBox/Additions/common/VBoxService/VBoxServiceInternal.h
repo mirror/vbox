@@ -92,10 +92,6 @@ extern int VBoxServiceError(const char *pszFormat, ...);
 extern void VBoxServiceVerbose(int iLevel, const char *pszFormat, ...);
 extern int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32_t *pu32, uint32_t u32Min, uint32_t u32Max);
 
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-extern int daemon(int, int);
-#endif
-
 extern VBOXSERVICE g_TimeSync;
 extern VBOXSERVICE g_Clipboard;
 extern VBOXSERVICE g_Control;
