@@ -881,6 +881,7 @@ static __init int init(void)
     if (!vboxDev->io_port || !vboxDev->vmmdevmem || !vboxDev->vmmdevmem_size)
     {
         LogRelFunc(("did not find expected hardware resources!\n"));
+        err = -ENXIO;
         goto fail;
     }
 
@@ -888,6 +889,7 @@ static __init int init(void)
     if (request_mem_region(vboxDev->vmmdevmem, vboxDev->vmmdevmem_size, "vboxadd") == 0)
     {
         LogRelFunc(("failed to request adapter memory!\n"));
+        err = -ENXIO;
         goto fail;
     }
 
@@ -897,6 +899,7 @@ static __init int init(void)
     if (!vboxDev->pVMMDevMemory)
     {
         LogRelFunc(("ioremap failed\n"));
+        err = -ENOMEM;
         goto fail;
     }
 
@@ -904,6 +907,7 @@ static __init int init(void)
     {
         LogRelFunc(("invalid VMM device memory version! (got 0x%x, expected 0x%x)\n",
                     vboxDev->pVMMDevMemory->u32Version, VMMDEV_MEMORY_VERSION));
+        err = -ENXIO;
         goto fail;
     }
 
@@ -912,6 +916,7 @@ static __init int init(void)
     if (VBOX_FAILURE(rcVBox))
     {
         LogRelFunc(("could not initialize VBGL subsystem! rc = %Vrc\n", rcVBox));
+        err = -ENXIO;
         goto fail;
     }
 
@@ -921,6 +926,7 @@ static __init int init(void)
     if (VBOX_FAILURE(rcVBox))
     {
         LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
+        err = -ENOMEM;
         goto fail;
     }
 
@@ -937,6 +943,7 @@ static __init int init(void)
         LogRelFunc(("error reporting guest info to host! rc = %Vrc, header.rc = %Vrc\n",
                     rcVBox, infoReq->header.rc));
         VbglGRFree(&infoReq->header);
+        err = -ENXIO;
         goto fail;
     }
     VbglGRFree(&infoReq->header);
@@ -954,6 +961,7 @@ static __init int init(void)
         if (VBOX_FAILURE(rcVBox))
         {
             LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
+            err = -ENOMEM;
             goto fail;
         }
         vmmreqGuestCaps->u32OrMask = 0;
@@ -961,7 +969,10 @@ static __init int init(void)
         rcVBox = VbglGRPerform(&vmmreqGuestCaps->header);
         VbglGRFree(&vmmreqGuestCaps->header);
         if (RT_FAILURE(rcVBox))
+        {
+            err = -ENXIO;
             goto fail;
+        }
     }
 
     /* perform hypervisor address space reservation */
@@ -976,6 +987,7 @@ static __init int init(void)
     if (VBOX_FAILURE(rcVBox))
     {
         LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
+        err = -ENOMEM;
         goto fail;
     }
 
