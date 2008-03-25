@@ -457,10 +457,11 @@ typedef struct _MDL {
 // switch to DBG when appropriate
 //
 
-#if DBG
+#ifdef DEBUG
 #define PAGED_CODE() \
     { if (KeGetCurrentIrql() > APC_LEVEL) { \
           KdPrint(( "EX: Pageable code called at IRQL %d\n", KeGetCurrentIrql() )); \
+          Log(("i8042prt: %s: EXECPTION: IOCTL_MRX_VBOX_GETGLOBALCONN: Pageable code called at IRQL = %d! This driver will raise a bugcheck now ....\n", __FUNCTION__, KeGetCurrentIrql())); \
           ASSERT(FALSE); \
        } \
     }
