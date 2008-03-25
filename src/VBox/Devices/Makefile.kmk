@@ -240,11 +240,11 @@ DevicesR3_SOURCES       = \
 	Parallel/DevParallel.cpp
 
 ifdef VBOX_WITH_E1000
-DevicesR3_SOURCES      += \
+ DevicesR3_DEFS        += VBOX_WITH_E1000
+ DevicesR3_SOURCES     += \
 	Network/DevE1000.cpp \
 	Network/DevE1000Phy.cpp \
 	Network/DevEEPROM.cpp
-DevicesR3_DEFS	       += VBOX_WITH_E1000
 endif
 
 ifndef VBOX_OSE
@@ -345,11 +345,11 @@ VBoxDDGC_SOURCES        = \
 	Parallel/DevParallel.cpp
 
 ifdef VBOX_WITH_E1000
-VBoxDDGC_SOURCES       += \
+ VBoxDDGC_DEFS         += VBOX_WITH_E1000
+ VBoxDDGC_SOURCES      += \
 	Network/DevE1000.cpp \
 	Network/DevE1000Phy.cpp \
 	Network/DevEEPROM.cpp
-VBoxDDGC_DEFS          += VBOX_WITH_E1000
 endif
 
 ifdef VBOX_WITH_USB
@@ -404,11 +404,11 @@ VBoxDDR0_SOURCES        = \
 	Parallel/DevParallel.cpp
 
 ifdef VBOX_WITH_E1000
-VBoxDDR0_SOURCES       += \
+ VBoxDDR0_DEFS         += VBOX_WITH_E1000
+ VBoxDDR0_SOURCES      += \
 	Network/DevE1000.cpp \
 	Network/DevE1000Phy.cpp \
 	Network/DevEEPROM.cpp
-VBoxDDR0_DEFS          += VBOX_WITH_E1000
 endif
 
 ifdef VBOX_WITH_USB
