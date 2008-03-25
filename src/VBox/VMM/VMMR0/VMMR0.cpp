@@ -209,7 +209,7 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
     }
 
     /*
-     * nitalize the per VM data for GVMM and GMM.
+     * Initialize the per VM data for GVMM and GMM.
      */
     int rc = GVMMR0InitVM(pVM);
 //    if (RT_SUCCESS(rc))
