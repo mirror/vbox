@@ -9774,6 +9774,13 @@
       </desc>
     </attribute>
 
+    <attribute name="portCount" type="unsigned long">
+      <desc>
+        The number of usable ports on the sata controller.
+        It ranges from 1 to 30.
+      </desc>
+    </attribute>
+
     <method name="GetIDEEmulationPort">
       <desc>Gets the corresponding port number which is emulated as an IDE device.</desc>
       <param name="devicePosition" type="long" dir="in"/>
