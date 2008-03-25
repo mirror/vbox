@@ -42,6 +42,7 @@ VBoxService_SOURCES.os2   = \
 VBoxService_LIBS          = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)
+## @todo r=bird: Move to the template.
 VBoxService_LIBS.freebsd = \
 	iconv
 VBoxService_LIBPATH.freebsd = \
