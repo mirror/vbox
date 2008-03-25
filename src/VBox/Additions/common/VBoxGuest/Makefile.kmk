@@ -21,7 +21,7 @@ include	$(PATH_KBUILD)/subheader.kmk
 
 # PORTME: OSes using mixed case driver names join OS/2, the others join Solaris below.
 
-if1of ($(BUILD_TARGET),os2) 
+if1of ($(BUILD_TARGET), os2)
  #
  # VBoxGuest - The Guest Additions Driver (mixed case).
  #
@@ -54,7 +54,7 @@ if1of ($(BUILD_TARGET),os2)
   	end
   ## When debugging init with kDrvTest:
   #VBoxGuest_NAME          = VBoxGst
-  
+
   VBoxGuestLibOs2Hack_TEMPLATE   = VBOXGUESTR0LIB
   VBoxGuestLibOs2Hack_NOINST     = 1
   VBoxGuestLibOs2Hack_DEFS       = $(VBoxGuest_DEFS)
@@ -67,70 +67,53 @@ if1of ($(BUILD_TARGET),os2)
   	VBoxGuest.cpp
  endif # OS/2
 
-else if1of ($(BUILD_TARGET),solaris)
+else if1of ($(BUILD_TARGET), freebsd solaris)
  #
  # vboxguest - The Guest Additions Driver (lower cased).
  #
  SYSMODS.solaris += vboxguest
+ SYSMODS.freebsd += vboxguest
  vboxguest_TEMPLATE      = VBOXGUESTR0
  vboxguest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
- vboxguest_INCS         := $(PATH_SUB_CURRENT)
- vboxguest_SOURCES       = \
- 	VBoxGuest-$(BUILD_TARGET).c \
- 	VBoxGuest.cpp
- vboxguest_LIBS          = \
- 	$(VBOX_LIB_VBGL_R0BASE) \
- 	$(VBOX_LIB_IPRT_GUEST_R0)
-
-else if1of ($(BUILD_TARGET),freebsd)
- #
- # vboxguest - The Guest Additions Driver
- #
-
- SYSMODS.freebsd        += vboxguest
- vboxguest_TEMPLATE      = VBOXGUESTR0
- vboxguest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
- vboxguest_INCS          = \
-	$(PATH_SUB_CURRENT) \
+ vboxguest_INCS         := \
+	$(PATH_SUB_CURRENT)
 	$(PATH_TARGET)
- vboxguest_DEPS          = \
-	$(PATH_TARGET)/pci_if.h \
-	$(PATH_TARGET)/bus_if.h \
-	$(PATH_TARGET)/device_if.h
  vboxguest_SOURCES       = \
  	VBoxGuest-$(BUILD_TARGET).c \
  	VBoxGuest.cpp
  vboxguest_LIBS          = \
  	$(VBOX_LIB_VBGL_R0BASE) \
  	$(VBOX_LIB_IPRT_GUEST_R0)
- vboxguest_CLEAN        += \
+ vboxguest_DEPS.freebsd  = \
 	$(PATH_TARGET)/pci_if.h \
 	$(PATH_TARGET)/bus_if.h \
 	$(PATH_TARGET)/device_if.h
+ vboxguest_CLEAN.freebsd = $(vboxguest_DEPS.freebsd)
 
- # We need to generate some headers with awk to make building work
- VBOX_AWKCMD := /usr/bin/awk
-
- # We cannot give a path to the awk program where the header should be generated but can only
- # make it produce the header at the location of the source file rather than in the current directory.
- # Thatshwy we copy the source file to the destination of the header first and execute the program with the copied file
- # afterwards.
+ #
+ # FreeBSD: Genereate bus, device and pci interface headers. (explain why)
+ #
+ # We cannot give a output path to the awk program, it will always generate
+ # the header next to the source. So, we'll have to temporarily copy the
+ # source file to the destination direction for it to work out correctly.
+ #
+ VBOX_AWK := /usr/bin/awk
  $(PATH_TARGET)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m
 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
 	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/bus_if.m $(PATH_TARGET)/bus_if.m
-	$(QUIET)$(VBOX_AWKCMD) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_TARGET)/bus_if.m -h -p
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_TARGET)/bus_if.m -h -p
 	$(QUIET)$(RM) $(PATH_TARGET)/bus_if.m
 
  $(PATH_TARGET)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m
 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
 	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/device_if.m $(PATH_TARGET)/device_if.m
-	$(QUIET)$(VBOX_AWKCMD) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_TARGET)/device_if.m -h -p
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_TARGET)/device_if.m -h -p
 	$(QUIET)$(RM) $(PATH_TARGET)/device_if.m
 
  $(PATH_TARGET)/pci_if.h: $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m
 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
 	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m $(PATH_TARGET)/pci_if.m
-	$(QUIET)$(VBOX_AWKCMD) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_TARGET)/pci_if.m -h -p
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_TARGET)/pci_if.m -h -p
 	$(QUIET)$(RM) $(PATH_TARGET)/pci_if.m
 
 endif
