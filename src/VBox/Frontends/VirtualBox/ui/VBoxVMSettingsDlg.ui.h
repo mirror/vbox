@@ -862,6 +862,8 @@ void VBoxVMSettingsDlg::init()
 # ifdef VBOX_WITH_WINMM
     cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_WinMM));
 # endif
+#elif defined Q_OS_SOLARIS
+    cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_SolAudio));
 #elif defined Q_OS_LINUX
     cbAudioDriver->insertItem (vboxGlobal().toString (KAudioDriverType_OSS));
 # ifdef VBOX_WITH_ALSA

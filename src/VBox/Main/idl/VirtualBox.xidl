@@ -9251,7 +9251,7 @@
     <const name="CoreAudio"     value="5"/>
     <const name="MMPM"          value="6"/>
     <const name="Pulse"         value="7"/>
-    <const name="ESD"           value="8"/>
+    <const name="SolAudio"      value="8"/>
   </enum>
 
   <enum

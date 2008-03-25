@@ -231,6 +231,9 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
 # endif
             case AudioDriverType_DirectSound:
 #endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_SOLARIS
+            case AudioDriverType_SolAudio:
+#endif
 #ifdef RT_OS_LINUX
             case AudioDriverType_OSS:
 # ifdef VBOX_WITH_ALSA
@@ -382,6 +385,10 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
     else if (strcmp (driver, "DirectSound") == 0)
         mData->mAudioDriver = AudioDriverType_DirectSound;
 #endif // RT_OS_WINDOWS
+#ifdef RT_OS_SOLARIS
+    else if (strcmp (driver, "SolAudio") == 0)
+        mData->mAudioDriver = AudioDriverType_SolAudio;
+#endif // RT_OS_SOLARIS
 #ifdef RT_OS_LINUX
     else if (strcmp (driver, "OSS") == 0)
         mData->mAudioDriver = AudioDriverType_OSS;
@@ -472,6 +479,13 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
                 break;
             }
 #endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_SOLARIS
+            case AudioDriverType_SolAudio:
+            {
+                driverStr = "SolAudio";
+                break;
+            }
+#endif
 #ifdef RT_OS_LINUX
             case AudioDriverType_ALSA:
 # ifdef VBOX_WITH_ALSA

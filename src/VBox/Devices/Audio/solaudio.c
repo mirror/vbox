@@ -58,7 +58,7 @@ struct
     int cbBuffer;
 } conf =
 {
-    INIT_FIELD (cbBuffer =) 8912,
+    INIT_FIELD (cbBuffer =) 4352,
 };
 
 
@@ -122,12 +122,12 @@ static int sol_to_audfmt (int fmt, int encoding)
 }
 
 
-static char *solaudio_getdevice ()
+static char *solaudio_getdevice (void)
 {
     /* This is for multiple audio devices where env. var determines current one,
      * otherwise else we fallback to default.
      */
-    char *pszAudioDev = RTEnvGet("AUDIODEV");
+    const char *pszAudioDev = RTEnvGet("AUDIODEV");
     if (pszAudioDev)
         return RTStrDup(pszAudioDev);
 
@@ -140,36 +140,37 @@ static int solaudio_open (int in, audio_info_t *info, int *pfd, int *pctl_fd)
     int AudioDev;
     int AudioCtl;
     struct stat FileStat;
-    const char *pszAudioDev = NULL;
-    const char *pszAudioCtl = "/dev/audioctl";
+    char *pszAudioDev = NULL;
+    char *pszAudioCtl = NULL;
     audio_info_t AudioInfo;
 
     pszAudioDev = solaudio_getdevice();
     if (!pszAudioDev)
     {
         LogRel(("solaudio: solaudio_getdevice() failed to return a valid device.\n"));
-        goto err;
+        return -1;
     }
 
     if (stat(pszAudioDev, &FileStat) < 0)
     {
         LogRel(("solaudio: failed to stat %s\n", pszAudioDev));
-        goto err;
+        goto err2;
     }
 
     if (!S_ISCHR(FileStat.st_mode))
     {
         LogRel(("solaudio: invalid mode for %s\n", pszAudioDev));
-        goto err;
+        goto err2;
     }
 
     AudioDev = open(pszAudioDev, O_WRONLY | O_NONBLOCK);
     if (AudioDev < 0)
     {
         LogRel(("solaudio: failed to open %s\n", pszAudioDev));
-        goto err;
+        goto err2;
     }
 
+    RTStrAPrintf(&pszAudioCtl, "%sctl", pszAudioDev);
     AudioCtl = open(pszAudioCtl, O_WRONLY | O_NONBLOCK);
     if (AudioCtl < 0)
     {
@@ -192,7 +193,6 @@ static int solaudio_open (int in, audio_info_t *info, int *pfd, int *pctl_fd)
     AudioInfo.play.encoding = info->play.encoding;
     AudioInfo.play.buffer_size = info->play.buffer_size;
     AudioInfo.play.gain = AUDIO_MAX_GAIN;
-    AudioInfo.play.balance = AUDIO_MID_BALANCE;
     if (ioctl(AudioDev, AUDIO_SETINFO, &AudioInfo) < 0)
     {
         LogRel(("solaudio: AUDIO_SETINFO failed\n"));
@@ -203,9 +203,13 @@ static int solaudio_open (int in, audio_info_t *info, int *pfd, int *pctl_fd)
     LogFlow(("solaudio: buffer_size=%d\n", AudioInfo.play.buffer_size));
     *pfd = AudioDev;
     *pctl_fd = AudioCtl;
+    RTStrFree(pszAudioDev);
+    RTStrFree(pszAudioCtl);
     return 0;
 
 err:
+    RTStrFree(pszAudioCtl);
+err2:
     RTStrFree(pszAudioDev);
     return -1;
 }
@@ -223,7 +227,14 @@ static int solaudio_init_out (HWVoiceOut *hw, audsettings_t *as)
     AudioInfo.play.sample_rate = as->freq;
     AudioInfo.play.channels = as->nchannels;
     AudioInfo.play.precision = aud_to_solfmt(as->fmt);
+#if 0
+    /* Not really needed. */
+    int cbPerSample = (AudioInfo.play.channels * AudioInfo.play.precision) / 8;
+    int cbPerSecond = cbPerSample * AudioInfo.play.sample_rate;
+    AudioInfo.play.buffer_size = cbPerSecond > 131072 ? conf.cbBuffer : conf.cbBuffer / 2;
+#endif
     AudioInfo.play.buffer_size = conf.cbBuffer;
+
     if (as->fmt == AUD_FMT_U8)
         AudioInfo.play.encoding = AUDIO_ENCODING_LINEAR8;
     else
@@ -259,6 +270,7 @@ static int solaudio_init_out (HWVoiceOut *hw, audsettings_t *as)
 
 static void solaudio_stop (solaudioVoiceOut *sol)
 {
+    audio_info_t AudioInfo;
     LogFlow(("solaudio: stop\n"));
     if (sol->AudioDev < 0 || sol->AudioCtl < 0)
     {
@@ -268,25 +280,26 @@ static void solaudio_stop (solaudioVoiceOut *sol)
 
     if (ioctl(sol->AudioCtl, I_SETSIG, 0) < 0)
     {
-        LogRel(("solaudio: failed to stop signalling\n"));
+        Log(("solaudio: failed to stop signalling\n"));
         return;
     }
 
     if (ioctl(sol->AudioDev, I_FLUSH, FLUSHW) < 0)
     {
-        Log(("solaudio: failed to drop unplayed buffers\n"));
+        LogRel(("solaudio: failed to drop unplayed buffers\n"));
         return;
     }
 
-    close(sol->AudioDev);
-    sol->AudioDev = -1;
-    close(sol->AudioCtl);
-    sol->AudioCtl = -1;
+    AUDIO_INITINFO(&AudioInfo);
+    AudioInfo.play.samples = 0;
+    AudioInfo.play.pause = 0;
+    AudioInfo.play.eof = 0;
+    AudioInfo.play.error = 0;
     sol->cBuffersPlayed = 0;
-    if (sol->pPCMBuf)
+    if (ioctl(sol->AudioDev, AUDIO_SETINFO, &AudioInfo) < 0)
     {
-        RTMemFree(sol->pPCMBuf);
-        sol->pPCMBuf = NULL;
+        LogRel(("solaudio: AUDIO_SETINFO failed during stop.\n"));
+        return;
     }
 }
 
@@ -295,6 +308,17 @@ static void solaudio_fini_out (HWVoiceOut *hw)
 {
     solaudioVoiceOut *sol = (solaudioVoiceOut *) hw;
     solaudio_stop (sol);
+
+    close(sol->AudioDev);
+    sol->AudioDev = -1;
+    close(sol->AudioCtl);
+    sol->AudioCtl = -1;
+    if (sol->pPCMBuf)
+    {
+        RTMemFree(sol->pPCMBuf);
+        sol->pPCMBuf = NULL;
+    }
+
     LogFlow(("solaudio: fini_out done\n"));
 }
 
@@ -311,7 +335,8 @@ static int solaudio_availbuf (solaudioVoiceOut *sol)
         return -1;
     }
 
-    cbBuffer = AudioInfo.play.buffer_size * (2 + AudioInfo.play.eof - sol->cBuffersPlayed);
+    if (sol->cBuffersPlayed - AudioInfo.play.eof <= 2)
+        cbBuffer = AudioInfo.play.buffer_size;
 
     LogFlow(("avail: eof=%d samples=%d bufsize=%d bufplayed=%d avail=%d\n", AudioInfo.play.eof, AudioInfo.play.samples,
         AudioInfo.play.buffer_size, sol->cBuffersPlayed, cbBuffer));
@@ -327,9 +352,9 @@ static void solaudio_yield (solaudioVoiceOut *pSol)
         return;
 
     WaitTimeSpec.tv_sec = 0;
-    WaitTimeSpec.tv_nsec = 1000000;
+    WaitTimeSpec.tv_nsec = 100000000;
 
-    while (AudioInfo.play.eof < pSol->cBuffersPlayed - 2)
+    while (AudioInfo.play.eof + 10 < pSol->cBuffersPlayed)
     {
         nanosleep(&WaitTimeSpec, NULL);
         if (ioctl(pSol->AudioDev, AUDIO_GETINFO, &AudioInfo) < 0)
@@ -372,12 +397,13 @@ static int solaudio_run_out (HWVoiceOut *hw)
         if (cbWritten < 0)
             break;
 
+        /* Increment eof marker for synchronous buffer processed */
+        write (pSol->AudioDev, NULL, 0);
+        pSol->cBuffersPlayed++;
+
         hw->rpos   = (hw->rpos + csToWrite) % hw->samples;
         csSamples -= csToWrite;
     }
-    /* Increment eof marker for synchronous buffer processed */
-    write (pSol->AudioDev, NULL, 0);
-    pSol->cBuffersPlayed++;
     return csDecr;
 }
 
@@ -391,6 +417,7 @@ static int solaudio_ctl_out (HWVoiceOut *hw, int cmd, ...)
         {
             /* reset the eof marker and samples markers */
             audio_info_t AudioInfo;
+            LogFlow(("solaudio: voice_enable\n"));
             AUDIO_INITINFO(&AudioInfo);
             ioctl(pSol->AudioDev, AUDIO_GETINFO, &AudioInfo);
             AudioInfo.play.eof = 0;
@@ -399,7 +426,6 @@ static int solaudio_ctl_out (HWVoiceOut *hw, int cmd, ...)
             pSol->cBuffersPlayed = 0;
 
             audio_pcm_info_clear_buf(&hw->info, pSol->pPCMBuf, hw->samples);
-            LogFlow(("solaudio: voice_enable\n"));
             break;
         }
 
@@ -428,11 +454,12 @@ static void *solaudio_audio_init (void)
 
 static void solaudio_audio_fini (void *opaque)
 {
-    (void) opaque;
+    NOREF(opaque);
 }
 
 
-static struct audio_pcm_ops solaudio_pcm_ops = {
+static struct audio_pcm_ops solaudio_pcm_ops =
+{
     solaudio_init_out,
     solaudio_fini_out,
     solaudio_run_out,
@@ -446,13 +473,15 @@ static struct audio_pcm_ops solaudio_pcm_ops = {
     NULL
 };
 
-static struct audio_option solaudio_options[] = {
+static struct audio_option solaudio_options[] =
+{
     {"BUFFER_SIZE", AUD_OPT_INT, &conf.cbBuffer,
      "Size of the buffer in bytes", NULL, 0},
     {NULL, 0, NULL, NULL, NULL, 0}
 };
 
-struct audio_driver solaudio_audio_driver = {
+struct audio_driver solaudio_audio_driver =
+{
     INIT_FIELD (name           = ) "solaudio",
     INIT_FIELD (descr          = ) "SolarisAudio http://sun.com",
     INIT_FIELD (options        = ) solaudio_options,
