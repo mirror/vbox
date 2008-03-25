@@ -74,7 +74,7 @@ VBGLR3DECL(int) VbglR3Init(void)
 #endif
     if (cInits > 1)
     {
-        /* 
+        /*
          * This will fail if two (or more) threads race each other calling VbglR3Init.
          * However it will work fine for single threaded or otherwise serialized
          * processed calling us more than once.
@@ -83,7 +83,7 @@ VBGLR3DECL(int) VbglR3Init(void)
         if (g_File == NIL_RTFILE)
 #else
         if (g_File == -1)
-#endif 
+#endif
             return VERR_INTERNAL_ERROR;
         return VINF_SUCCESS;
     }
@@ -91,7 +91,7 @@ VBGLR3DECL(int) VbglR3Init(void)
     if (g_File != NIL_RTFILE)
 #else
     if (g_File != -1)
-#endif 
+#endif
         return VERR_INTERNAL_ERROR;
 
 #if defined(RT_OS_OS2)
@@ -243,7 +243,6 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 #elif defined(VBOX_VBGLR3_XFREE86)
     /* PORTME - This is preferred over the RTFileIOCtl variant below, just be careful with the (int). */
 /** @todo test status code passing! */
-    
     int rc = xf86ioctl(g_File, iFunction, pvData);
     if (rc == -1)
         return VERR_FILE_IO_ERROR;  /* This is purely legacy stuff, it has to work and no more. */
