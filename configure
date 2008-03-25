@@ -1196,7 +1196,7 @@ EOF
                 cnf_append "VBOX_PATH_QT4" "$q"
                 test_header "Qt4 uic3"
                 for r in $q/bin $QT4UIC3DIR; do
-                  if which_wrapper "$r/uic3"; then
+                  if which_wrapper "$r/uic3" > /dev/null; then
                     uic3_ver=`$r/uic3 -version 2>&1|sed 's+^.*version \(.*\)+\1+'`
                     if [ $? -ne 0 ]; then
                       log_failure "not found"
