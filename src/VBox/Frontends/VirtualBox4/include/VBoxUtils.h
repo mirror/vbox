@@ -169,6 +169,36 @@ private:
     }
 };
 
+/**
+ *  Simple class which simulates focus-proxy rule redirecting widget
+ *  assigned shortcur to desired widget.
+ */
+class QIFocusProxy : protected QObject
+{
+public:
+
+    QIFocusProxy (QWidget *aFrom, QWidget *aTo)
+        : QObject (aFrom), mFrom (aFrom), mTo (aTo)
+    {
+        mFrom->installEventFilter (this);
+    }
+
+protected:
+
+    bool eventFilter (QObject *aObject, QEvent *aEvent)
+    {
+        if (aObject == mFrom && aEvent->type() == QEvent::Shortcut)
+        {
+            mTo->setFocus();
+            return true;
+        }
+        return QObject::eventFilter (aObject, aEvent);
+    }
+
+    QWidget *mFrom;
+    QWidget *mTo;
+};
+
 #ifdef Q_WS_MAC
 # undef PAGE_SIZE
 # undef PAGE_SHIFT
