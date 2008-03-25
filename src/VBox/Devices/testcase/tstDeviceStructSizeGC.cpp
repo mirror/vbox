@@ -927,7 +927,7 @@ int main()
     GEN_CHECK_OFF(AHCI, uCccNr);
     GEN_CHECK_OFF(AHCI, uCccCurrentNr);
     GEN_CHECK_OFF(AHCI, ahciPort);
-    GEN_CHECK_OFF(AHCI, ahciPort[AHCI_NR_PORTS_IMPL-1]);
+    GEN_CHECK_OFF(AHCI, ahciPort[AHCI_MAX_NR_PORTS_IMPL-1]);
     GEN_CHECK_OFF(AHCI, aCts);
     GEN_CHECK_OFF(AHCI, aCts[1]);
     GEN_CHECK_OFF(AHCI, u32PortsInterrupted);
@@ -936,6 +936,7 @@ int main()
     GEN_CHECK_OFF(AHCI, fGCEnabled);
     GEN_CHECK_OFF(AHCI, fR0Enabled);
     GEN_CHECK_OFF(AHCI, lock);
+    GEN_CHECK_OFF(AHCI, cPortsImpl);
 #endif /* VBOX_WITH_AHCI */
 
     return (0);
