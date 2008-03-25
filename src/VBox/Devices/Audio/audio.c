@@ -1869,7 +1869,6 @@ void AUD_set_volume (audmixerctl_t mt, int *mute, uint8_t *lvol, uint8_t *rvol)
             break;
         case AUD_MIXER_PCM:
             name = "PCM_OUT";
-            vol  = &pcm_out_volume;
             break;
         case AUD_MIXER_LINE_IN:
             name = "LINE_IN";
