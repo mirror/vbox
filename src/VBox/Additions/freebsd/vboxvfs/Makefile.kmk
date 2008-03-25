@@ -1,0 +1,65 @@
+# $Id$
+## @file
+# Sub-Makefile for the FreeBSD Shared folder kernel module.
+#
+
+#
+# Copyright (C) 2007 innotek GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+DEPTH ?= ../../../../..
+SUB_DEPTH = ../..
+include	$(PATH_KBUILD)/subheader.kmk
+
+ifneq ($(BUILD_PLATFORM),freebsd)
+$(error "The FreeBSD guest additions can only be built on FreeBSD!")
+endif
+
+#
+# vboxvfs - The Shared Folder Driver
+#
+SYSMODS.freebsd      += vboxvfs
+vboxvfs_TEMPLATE      = VBOXGUESTR0
+vboxvfs_DEFS          = VBOX_HGCM
+vboxvfs_INCS         := \
+       $(PATH_SUB_CURRENT) \
+       $(PATH_TARGET)
+vboxvfs_SOURCES       = \
+	vboxvfs_vfsops.c \
+	vboxvfs_vnops.c
+vboxvfs_LIBS          = \
+	$(VBOX_LIB_VBGL_R0) \
+	$(VBOX_LIB_IPRT_GUEST_R0)
+vboxvfs_DEPS          = \
+       $(PATH_TARGET)/vnode_if.h \
+       $(PATH_TARGET)/vnode_if_newproto.h \
+       $(PATH_TARGET)/vnode_if_typedef.h
+vboxvfs_CLEAN        += $(vboxvfs_DEPS)
+
+VBOX_AWK := /usr/bin/awk
+
+$(PATH_TARGET)/vnode_if.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
+       $(call MSG_TOOL,awk,VBoxGuest,$<,$@)
+       $(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -h
+       $(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if.h $(PATH_TARGET)/vnode_if.h
+
+$(PATH_TARGET)/vnode_if_newproto.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
+       $(call MSG_TOOL,awk,VBoxGuest,$<,$@)
+       $(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -p
+       $(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if_newproto.h $(PATH_TARGET)/vnode_if_newproto.h
+
+$(PATH_TARGET)/vnode_if_typedef.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
+       $(call MSG_TOOL,awk,VBoxGuest,$<,$@)
+       $(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -q
+       $(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if_typedef.h $(PATH_TARGET)/vnode_if_typedef.h
+
+include	$(PATH_KBUILD)/subfooter.kmk
+

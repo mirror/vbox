@@ -1,0 +1,85 @@
+# $Id$
+## @file
+# Sub-Makefile for the FreeBSD guest additions base directory.
+#
+
+#
+# Copyright (C) 2008 innotek GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+DEPTH ?= ../../../..
+SUB_DEPTH = ..
+include	$(PATH_KBUILD)/subheader.kmk
+
+ifneq ($(BUILD_PLATFORM),freebsd)
+$(error "The FreeBSD guest additions installer can only be built on FreeBSD!")
+endif
+
+include $(PATH_SUB_CURRENT)/vboxvfs/Makefile.kmk
+
+PKGFILENAME    := VBoxFreeBSDAdditions.tbz
+PKGINFO_ARCH    = $(shell uname -p)
+VBOX_PATH_FREEBSD_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/Installer
+VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installer
+FREEBSDINSTDIR := $(PATH_TARGET)/install
+
+ifeq ($(BUILD_TYPE),debug)
+ BIN_COPY         := $(CP) -f
+ BIN_COPY_SYMBOLS := $(CP) -f
+else
+ BIN_COPY         := objcopy -S -R .comment
+ BIN_COPY_SYMBOLS := objcopy -g -R .comment
+endif
+
+PACKING     += $(PATH_BIN)/additions/$(PKGFILENAME)
+OTHER_CLEAN += $(PACKING)
+
+include	$(PATH_KBUILD)/subfooter.kmk
+
+$(PATH_BIN)/additions/VBoxFreeBSDAdditions.tbz: \
+		$(VBOX_VERSION_STAMP) \
+		$(VBOX_PATH_FREEBSD_ADDITION_INSTALLER)/pkg-descr \
+		$(VBOX_PATH_FREEBSD_ADDITION_INSTALLER)/vboxguest.sh \
+		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
+		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
+		$(PATH_BIN)/additions/vboxguest.ko \
+		$(PATH_BIN)/additions/VBoxClient \
+		$(PATH_BIN)/additions/VBoxService \
+		$(PATH_BIN)/additions/vboxvideo_drv_13.so \
+		$(PATH_BIN)/additions/vboxvideo_drv_14.so \
+		$(PATH_BIN)/additions/vboxvideo_drv_70.so \
+		$(PATH_BIN)/additions/vboxvideo_drv_71.so \
+		$(PATH_BIN)/additions/vboxmouse_drv_14.so \
+		$(PATH_BIN)/additions/vboxmouse_drv_70.so \
+		$(PATH_BIN)/additions/vboxmouse_drv_71.so \
+		$(PATH_SUB_CURRENT)/freebsd/Makefile.kmk
+	$(call MSG_L1,Installing guest additions)
+	@# Clear out the existing package files if needed
+	$(QUIET)rm -rf $(FREEBSDINSTDIR)
+	$(QUIET)$(MKDIR) -p $(FREEBSDINSTDIR)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_FREEBSD_ADDITION_INSTALLER)/vboxguest.sh                     $(FREEBSDINSTDIR)/vboxguest.sh
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient                    $(FREEBSDINSTDIR)/1099.vboxclient
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl                         $(FREEBSDINSTDIR)/x11config.pl
+	$(QUIET)$(CP) -f $(PATH_BIN)/additions/vboxguest.ko                                                 $(FREEBSDINSTDIR)/vboxguest.ko
+	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(FREEBSDINSTDIR)/vboxguest.ko,)
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxClient                                                $(FREEBSDINSTDIR)/VBoxClient
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxService                                               $(FREEBSDINSTDIR)/VBoxService
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so                                       $(FREEBSDINSTDIR)/vboxvideo_drv_13.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so                                       $(FREEBSDINSTDIR)/vboxvideo_drv_14.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so                                       $(FREEBSDINSTDIR)/vboxvideo_drv_70.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_71.so                                       $(FREEBSDINSTDIR)/vboxvideo_drv_71.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_14.so                                       $(FREEBSDINSTDIR)/vboxmouse_drv_14.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_70.so                                       $(FREEBSDINSTDIR)/vboxmouse_drv_70.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so                                       $(FREEBSDINSTDIR)/vboxmouse_drv_71.so
+	$(call MSG_L1,Creating install package: $@)
+	$(QUIET)$(VBOX_MAKESELF) $(FREEBSDINSTDIR) $@ \
+		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for FreeBSD installation" /bin/sh ./install.sh " 1> /dev/null 2> /dev/null"
+
