@@ -30,7 +30,6 @@
 #include <VBox/dbgf.h>
 #include <VBox/vm.h>
 #include <VBox/vmm.h>
-#include <VBox/hwaccm.h>
 
 #include <VBox/version.h>
 #include <VBox/log.h>
@@ -1275,9 +1274,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPO
     LogFlow(("pdmR3DevHlp_IOPortRegisterR0: caller='%s'/%d: Port=%#x cPorts=%#x pvUser=%p pszOut=%p:{%s} pszIn=%p:{%s} pszOutStr=%p:{%s} pszInStr=%p:{%s} pszDesc=%p:{%s}\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance,
              Port, cPorts, pvUser, pszOut, pszOut, pszIn, pszIn, pszOutStr, pszOutStr, pszInStr, pszInStr, pszDesc, pszDesc));
 
-    if (!HWACCMR3IsAllowed(pDevIns->Internal.s.pVMHC))
-        return VINF_SUCCESS; /* NOP */
-
     /*
      * Resolve the functions (one of the can be NULL).
      */
@@ -1417,9 +1413,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
     LogFlow(("pdmR3DevHlp_MMIORegisterHC: caller='%s'/%d: GCPhysStart=%VGp cbRange=%#x pvUser=%p pszWrite=%p:{%s} pszRead=%p:{%s} pszFill=%p:{%s} pszDesc=%p:{%s}\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pszWrite, pszWrite, pszRead, pszRead, pszFill, pszFill, pszDesc, pszDesc));
-
-    if (!HWACCMR3IsAllowed(pDevIns->Internal.s.pVMHC))
-        return VINF_SUCCESS; /* NOP */
 
     /*
      * Resolve the functions.
@@ -2533,8 +2526,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     /*
      * Resolve and init the R0 bits.
      */
-    if (    HWACCMR3IsAllowed(pVM)
-        &&  pPciBusReg->pszSetIrqR0)
+    if (pPciBusReg->pszSetIrqR0)
     {
         int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPciBusReg->pszSetIrqR0, &pPciBus->pfnSetIrqR0);
         AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pPciBusReg->pszSetIrqR0, rc));
@@ -2671,8 +2663,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     /*
      * R0 stuff.
      */
-    if (    HWACCMR3IsAllowed(pVM)
-        &&  pPicReg->pszSetIrqR0)
+    if (pPicReg->pszSetIrqR0)
     {
         int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPicReg->pszSetIrqR0, &pVM->pdm.s.Pic.pfnSetIrqR0);
         AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pPicReg->pszSetIrqR0, rc));
@@ -2867,8 +2858,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     /*
      * Resolve & initialize the R0 bits.
      */
-    if (    HWACCMR3IsAllowed(pVM)
-        &&  pApicReg->pszGetInterruptR0)
+    if (pApicReg->pszGetInterruptR0)
     {
         int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetInterruptR0, &pVM->pdm.s.Apic.pfnGetInterruptR0);
         AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetInterruptR0, rc));
@@ -3032,8 +3022,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     /*
      * Resolve & initialize the R0 bits.
      */
-    if (    HWACCMR3IsAllowed(pVM)
-        &&  pIoApicReg->pszSetIrqR0)
+    if (pIoApicReg->pszSetIrqR0)
     {
         int rc = PDMR3GetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pIoApicReg->pszSetIrqR0, &pVM->pdm.s.IoApic.pfnSetIrqR0);
         AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pIoApicReg->pszSetIrqR0, rc));
