@@ -1441,6 +1441,7 @@ VMR3DECL(int)   VMR3Destroy(PVM pVM)
 DECLCALLBACK(int) vmR3Destroy(PVM pVM)
 {
     PUVM pUVM = pVM->pUVM;
+    NOREF(pUVM);
     LogFlow(("vmR3Destroy: pVM=%p pUVM=%p\n", pVM, pUVM));
     VM_ASSERT_EMT(pVM);
 
