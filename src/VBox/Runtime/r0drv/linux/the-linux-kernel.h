@@ -207,14 +207,6 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 # endif  /* !RT_ARCH_AMD64 */
 #endif /* !NO_REDHAT_HACKS */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
-# define MY_SET_PAGES_EXEC(pPages, cPages)    set_pages_x(pPages, cPages)
-# define MY_SET_PAGES_NOEXEC(pPages, cPages)  set_pages_nx(pPages, cPages)
-#else
-# define MY_SET_PAGES_EXEC(pPages, cPages)    MY_CHANGE_PAGE_ATTR(pPages, cPages, MY_PAGE_KERNEL_EXEC)
-# define MY_SET_PAGES_NOEXEC(pPages, cPages)  MY_CHANGE_PAGE_ATTR(pPages, cPages, PAGE_KERNEL)
-#endif
-
 #ifndef MY_DO_MUNMAP
 # define MY_DO_MUNMAP(a,b,c) do_munmap(a, b, c)
 #endif
@@ -229,6 +221,22 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 # else
 #  define MY_CHANGE_PAGE_ATTR(pPages, cPages, prot) change_page_attr(pPages, cPages, prot)
 # endif
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
+# define MY_SET_PAGES_EXEC(pPages, cPages)    set_pages_x(pPages, cPages)
+# define MY_SET_PAGES_NOEXEC(pPages, cPages)  set_pages_nx(pPages, cPages)
+#else
+# define MY_SET_PAGES_EXEC(pPages, cPages) \
+    do { \
+        if (pgprot_val(MY_PAGE_KERNEL_EXEC) != pgprot_val(PAGE_KERNEL)) \
+            MY_CHANGE_PAGE_ATTR(pPages, cPages, MY_PAGE_KERNEL_EXEC) \
+    } while (0)
+# define MY_SET_PAGES_NOEXEC(pPages, cPages) \
+    do { \
+        if (pgprot_val(MY_PAGE_KERNEL_EXEC) != pgprot_val(PAGE_KERNEL)) \
+            MY_CHANGE_PAGE_ATTR(pPages, cPages, PAGE_KERNEL) \
+    } while (0)
 #endif
 
 #ifndef PAGE_OFFSET_MASK
