@@ -1449,8 +1449,8 @@ VBGLR3DECL(int)     VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *p
                                                       uint32_t *pcBits,uint32_t *piDisplay);
 VBGLR3DECL(int)     VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
                                                  uint32_t *piDisplay);
-VBGLR3DECL(bool)    VbglR3HostLikesVideoMode(uint32_t width, uint32_t height,
-                                             uint32_t bpp);
+VBGLR3DECL(bool)    VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy,
+                                             uint32_t cBits);
 /** @}  */
 
 
