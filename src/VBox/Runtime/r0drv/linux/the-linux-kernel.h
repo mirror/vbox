@@ -230,12 +230,12 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 # define MY_SET_PAGES_EXEC(pPages, cPages) \
     do { \
         if (pgprot_val(MY_PAGE_KERNEL_EXEC) != pgprot_val(PAGE_KERNEL)) \
-            MY_CHANGE_PAGE_ATTR(pPages, cPages, MY_PAGE_KERNEL_EXEC) \
+            MY_CHANGE_PAGE_ATTR(pPages, cPages, MY_PAGE_KERNEL_EXEC); \
     } while (0)
 # define MY_SET_PAGES_NOEXEC(pPages, cPages) \
     do { \
         if (pgprot_val(MY_PAGE_KERNEL_EXEC) != pgprot_val(PAGE_KERNEL)) \
-            MY_CHANGE_PAGE_ATTR(pPages, cPages, PAGE_KERNEL) \
+            MY_CHANGE_PAGE_ATTR(pPages, cPages, PAGE_KERNEL); \
     } while (0)
 #endif
 
