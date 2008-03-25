@@ -532,8 +532,6 @@ RuntimeGuestR3_DEFS.$(BUILD_PLATFORM)	:= $(RuntimeR3_DEFS.$(BUILD_PLATFORM))
 RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
 RuntimeGuestR3_INCS.$(BUILD_TARGET)     := $(RuntimeR3_INCS.$(BUILD_TARGET))
 RuntimeGuestR3_INCS.$(BUILD_PLATFORM)   := $(RuntimeR3_INCS.$(BUILD_PLATFORM))
-RuntimeGuestR3_LIBS.freebsd             := \
-    iconv
 RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
