@@ -197,8 +197,10 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 		$(filter-out %=deleteme=,\
 			$(subst =,=deleteme= ,\
 				$(GUESTADDITIONS_FILESPEC.win.x86) \
-				$(GUESTADDITIONS_FILESPEC.linux.x86) \
+				$(GUESTADDITIONS_FILESPEC.solaris.x86) \
 				$(GUESTADDITIONS_FILESPEC.os2.x86) \
+				$(GUESTADDITIONS_FILESPEC.linux.x86) \
+				$(GUESTADDITIONS_FILESPEC.freebsd.x86) \
 			)\
 		) \
 		$(VBOX_SVN_REV_KMK) \
@@ -208,9 +210,9 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 	$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 4 \
 		-volid "VBOXADDITIONS_$(VBOX_VERSION_STRING)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
 		$(GUESTADDITIONS_FILESPEC.win.x86) \
-		$(GUESTADDITIONS_FILESPEC.linux.x86) \
 		$(GUESTADDITIONS_FILESPEC.solaris.x86) \
 		$(GUESTADDITIONS_FILESPEC.os2.x86) \
+		$(GUESTADDITIONS_FILESPEC.linux.x86) \
 		$(GUESTADDITIONS_FILESPEC.freebsd.x86)
 endif
 
