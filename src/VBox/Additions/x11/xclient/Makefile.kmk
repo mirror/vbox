@@ -39,6 +39,7 @@ VBoxClient_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	X11 \
 	Xt
+## @todo r=bird: move to the template (that's what they are there for). ditto for VBoxService.
 VBoxClient_LIBPATH.freebsd += \
 	/usr/local/lib
 VBoxClient_LIBS.freebsd += \
