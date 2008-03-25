@@ -98,7 +98,7 @@
         <xsd:simpleType>
           <xsd:restriction base="xsd:token">
             <xsd:enumeration value="Null"/>
-            <xsd:enumeration value="ESD"/>
+            <xsd:enumeration value="SolAudio"/>
           </xsd:restriction>
         </xsd:simpleType>
       </xsd:attribute>

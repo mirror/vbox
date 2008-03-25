@@ -2352,6 +2352,8 @@ void VBoxGlobal::languageChange()
         tr ("Null Audio Driver", "AudioDriverType");
     audioDriverTypes [KAudioDriverType_WinMM] =
         tr ("Windows Multimedia", "AudioDriverType");
+    audioDriverTypes [KAudioDriverType_SolAudio] =
+        tr ("Solaris Audio", "AudioDriverType");
     audioDriverTypes [KAudioDriverType_OSS] =
         tr ("OSS Audio Driver", "AudioDriverType");
     audioDriverTypes [KAudioDriverType_ALSA] =

@@ -305,7 +305,7 @@ Value '<xsl:value-of select="@device"/>' of 'HardDiskAttachment::device' attribu
         <xsl:when test="@driver='codeaudio'">CoreAudio</xsl:when>
         <xsl:when test="@driver='winmm'">WinMM</xsl:when>
         <xsl:when test="@driver='dsound'">DirectSound</xsl:when>
-        <xsl:when test="@driver='esd'">ESD</xsl:when>
+        <xsl:when test="@driver='solaudio'">SolAudio</xsl:when>
         <xsl:when test="@driver='mmpm'">MMPM</xsl:when>
         <xsl:otherwise>
           <xsl:message terminate="yes">

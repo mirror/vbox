@@ -1403,6 +1403,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             }
 #endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_SOLARIS
+            case AudioDriverType_SolAudio:
+            {
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "solaudio");               RC_CHECK();            
+                break;
+            }
+#endif
 #ifdef RT_OS_LINUX
             case AudioDriverType_OSS:
             {

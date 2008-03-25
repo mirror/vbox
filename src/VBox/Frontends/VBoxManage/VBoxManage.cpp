@@ -234,6 +234,11 @@ static void printUsage(USAGECATEGORY u64Cmd)
 #else
     bool fWin = false;
 #endif
+#ifdef RT_OS_SOLARIS
+    bool fSolaris = true;
+#else
+    bool fSolaris = false;
+#endif
 #ifdef RT_OS_DARWIN
     bool fDarwin = true;
 #else
@@ -369,6 +374,10 @@ static void printUsage(USAGECATEGORY u64Cmd)
 #else
             RTPrintf(                        "|dsound");
 #endif
+        }
+        if (fSolaris)
+        {
+            RTPrintf(                        "|solaudio");
         }
         if (fLinux)
         {
@@ -1433,6 +1442,12 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                         pszDrv = "coreaudio";
                     else
                         pszDrv = "CoreAudio";
+                    break;
+                case AudioDriverType_SolAudio:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        pszDrv = "solaudio";
+                    else
+                        pszDrv = "SolAudio";
                     break;
                 default:
                     if (details == VMINFO_MACHINEREADABLE)
@@ -4922,6 +4937,14 @@ static int handleModifyVM(int argc, char *argv[],
                 }
 # endif
 #endif /* !RT_OS_LINUX */
+#ifdef RT_OS_SOLARIS
+                else if (strcmp(audio, "solaudio") == 0)
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_SolAudio));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
+
+#endif /* !RT_OS_SOLARIS */
 #ifdef RT_OS_DARWIN
                 else if (strcmp(audio, "coreaudio") == 0)
                 {
