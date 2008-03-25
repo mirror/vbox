@@ -702,6 +702,7 @@ static void __exit VBoxDrvLinuxUnload(void)
 {
     int                 rc;
     dprintf(("VBoxDrvLinuxUnload\n"));
+    NOREF(rc);
 
     /*
      * I Don't think it's possible to unload a driver which processes have
@@ -720,11 +721,7 @@ static void __exit VBoxDrvLinuxUnload(void)
      */
     VBOX_UNREGISTER_DEVFS(g_hDevFsVBoxDrv);
 # endif /* devfs */
-    rc = VBOX_UNREGISTER_DEVICE(g_iModuleMajor, DEVICE_NAME);
-    if (rc < 0)
-    {
-        dprintf(("VBOX_UNREGISTER_DEVICE failed with rc=%#x (major:%d)\n", rc, g_iModuleMajor));
-    }
+    VBOX_UNREGISTER_DEVICE(g_iModuleMajor, DEVICE_NAME);
 #endif /* !CONFIG_VBOXDRV_AS_MISC */
 
     /*
