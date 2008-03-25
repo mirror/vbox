@@ -211,6 +211,49 @@ STDMETHODIMP SATAController::COMSETTER(Enabled) (BOOL aEnabled)
     return S_OK;
 }
 
+STDMETHODIMP SATAController::COMGETTER(PortCount) (ULONG *aPortCount)
+{
+    if (!aPortCount)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aPortCount = mData->mPortCount;
+
+    return S_OK;
+}
+
+
+STDMETHODIMP SATAController::COMSETTER(PortCount) (ULONG aPortCount)
+{
+    LogFlowThisFunc (("aPortCount=%u\n", aPortCount));
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
+
+    if (mData->mPortCount != aPortCount)
+    {
+        mData.backup();
+        mData->mPortCount = aPortCount;
+
+        /* leave the lock for safety */
+        alock.leave();
+
+        mParent->onSATAControllerChange();
+    }
+
+    return S_OK;
+}
+
 // ISATAController methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -274,7 +317,6 @@ STDMETHODIMP SATAController::SetIDEEmulationPort(LONG DevicePosition, LONG aPort
     return S_OK;
 }
 
-
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -302,6 +344,9 @@ HRESULT SATAController::loadSettings (const settings::Key &aMachineNode)
 
     /* enabled (required) */
     mData->mEnabled = controller.value <bool> ("enabled");
+
+    /* number of useable ports */
+    mData->mPortCount = controller.valueOr <ULONG> ("PortCount", 30);
 
     /* ide emulation settings (optional, default to 0,1,2,3 respectively) */
     mData->mPortIde0Master = controller.value <ULONG> ("IDE0MasterEmulationPort");
@@ -339,6 +384,9 @@ HRESULT SATAController::saveSettings (settings::Key &aMachineNode)
 
     /* enabled */
     controller.setValue <bool> ("enabled", !!mData->mEnabled);
+
+    /* number of useable ports */
+    controller.setValue <ULONG> ("PortCount", mData->mPortCount);
 
     /* ide emulation settings */
     controller.setValue <ULONG> ("IDE0MasterEmulationPort", mData->mPortIde0Master);

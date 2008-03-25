@@ -224,6 +224,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pLunL2 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/Config/ */
     PCFGMNODE pIdeInst = NULL;      /* /Devices/piix3ide/0/ */
     PCFGMNODE pSataInst = NULL;     /* /Devices/ahci/0/ */
+	PCFGMNODE pBiosCfg = NULL;      /* /Devices/pcbios/0/Config/ */
 
     rc = CFGMR3InsertNode(pRoot, "Devices", &pDevices);                             RC_CHECK();
 
@@ -241,13 +242,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertNode(pDevices, "pcbios", &pDev);                               RC_CHECK();
     rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "RamSize",              cRamMBs * _1M);         RC_CHECK();
-    rc = CFGMR3InsertString(pCfg,   "HardDiskDevice",       "piix3ide");            RC_CHECK();
-    rc = CFGMR3InsertString(pCfg,   "FloppyDevice",         "i82078");              RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",               fIOAPIC);               RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "PXEDebug",             fPXEDebug);             RC_CHECK();
-    rc = CFGMR3InsertBytes(pCfg,    "UUID", pUuid, sizeof(*pUuid));                 RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pBiosCfg);                           RC_CHECK();
+    rc = CFGMR3InsertInteger(pBiosCfg,  "RamSize",              cRamMBs * _1M);     RC_CHECK();
+    rc = CFGMR3InsertString(pBiosCfg,   "HardDiskDevice",       "piix3ide");        RC_CHECK();
+    rc = CFGMR3InsertString(pBiosCfg,   "FloppyDevice",         "i82078");          RC_CHECK();
+    rc = CFGMR3InsertInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);           RC_CHECK();
+    rc = CFGMR3InsertInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);         RC_CHECK();
+    rc = CFGMR3InsertBytes(pBiosCfg,    "UUID", pUuid, sizeof(*pUuid));             RC_CHECK();
 
     DeviceType_T bootDevice;
     if (SchemaDefs::MaxBootPosition > 9)
@@ -286,7 +287,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 AssertMsgFailed(("Invalid bootDevice=%d\n", bootDevice));
                 return VERR_INVALID_PARAMETER;
         }
-        rc = CFGMR3InsertString(pCfg, szParamName, pszBootDevice);                 RC_CHECK();
+        rc = CFGMR3InsertString(pBiosCfg, szParamName, pszBootDevice);              RC_CHECK();
     }
 
     /*
@@ -294,16 +295,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     BOOL fFadeIn;
     hrc = biosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                            H();
-    rc = CFGMR3InsertInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);                    RC_CHECK();
+    rc = CFGMR3InsertInteger(pBiosCfg,  "FadeIn",  fFadeIn ? 1 : 0);                RC_CHECK();
     BOOL fFadeOut;
     hrc = biosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                          H();
-    rc = CFGMR3InsertInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);                    RC_CHECK();
+    rc = CFGMR3InsertInteger(pBiosCfg,  "FadeOut", fFadeOut ? 1: 0);                RC_CHECK();
     ULONG logoDisplayTime;
     hrc = biosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);               H();
-    rc = CFGMR3InsertInteger(pCfg,  "LogoTime", logoDisplayTime);                   RC_CHECK();
+    rc = CFGMR3InsertInteger(pBiosCfg,  "LogoTime", logoDisplayTime);               RC_CHECK();
     Bstr logoImagePath;
     hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());       H();
-    rc = CFGMR3InsertString(pCfg,   "LogoFile", logoImagePath ? Utf8Str(logoImagePath) : ""); RC_CHECK();
+    rc = CFGMR3InsertString(pBiosCfg,   "LogoFile", logoImagePath ? Utf8Str(logoImagePath) : ""); RC_CHECK();
 
     /*
      * Boot menu
@@ -322,7 +323,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         default:
             value = 2;
     }
-    rc = CFGMR3InsertInteger(pCfg, "ShowBootMenu", value);                          RC_CHECK();
+    rc = CFGMR3InsertInteger(pBiosCfg, "ShowBootMenu", value);                      RC_CHECK();
 
     /*
      * The time offset
@@ -603,6 +604,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         if (enabled)
         {
+            ULONG nrPorts = 0;
+
             rc = CFGMR3InsertNode(pDevices, "ahci", &pDev);                             RC_CHECK();
             rc = CFGMR3InsertNode(pDev,     "0", &pSataInst);                           RC_CHECK();
             rc = CFGMR3InsertInteger(pSataInst, "Trusted",              1);             RC_CHECK();
@@ -612,15 +615,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pSataInst, "PCIFunctionNo",        0);             RC_CHECK();
             rc = CFGMR3InsertNode(pSataInst,    "Config", &pCfg);                       RC_CHECK();
 
+            hrc = sataController->COMGETTER(PortCount)(&nrPorts);                       H();
+            rc = CFGMR3InsertInteger(pCfg, "PortCount", nrPorts);                       RC_CHECK();
+
+            /* Needed configuration values for the bios. */
+            rc = CFGMR3InsertString(pBiosCfg, "SataHardDiskDevice", "ahci");            RC_CHECK();
+
             for (uint32_t i = 0; i < 4; i++)
             {
                 const char *g_apszConfig[] =
                     { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
+                const char *g_apszBiosConfig[] =
+                    { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
                 LONG aPortNumber;
 
                 hrc = sataController->GetIDEEmulationPort(i, &aPortNumber);             H();
                 rc = CFGMR3InsertInteger(pCfg, g_apszConfig[i], aPortNumber);           RC_CHECK();
+                rc = CFGMR3InsertInteger(pBiosCfg, g_apszBiosConfig[i], aPortNumber);   RC_CHECK();
             }
+
         }
     }
 

@@ -38,6 +38,7 @@ private:
     {
         /* Constructor. */
         Data() : mEnabled (FALSE),
+                 mPortCount (30),
                  mPortIde0Master (0),
                  mPortIde0Slave (1),
                  mPortIde1Master (2),
@@ -46,6 +47,7 @@ private:
         bool operator== (const Data &that) const
         {
             return this == &that || ((mEnabled == that.mEnabled) &&
+                    (mPortCount      == mPortCount) &&
                     (mPortIde0Master == that.mPortIde0Master) &&
                     (mPortIde0Slave  == that.mPortIde0Slave)  &&
                     (mPortIde1Master == that.mPortIde1Master) &&
@@ -54,6 +56,8 @@ private:
 
         /** Enabled indicator. */
         BOOL  mEnabled;
+        /** Number of usable ports. */
+        ULONG mPortCount;
         /** Port which acts as primary master for ide emulation. */
         ULONG mPortIde0Master;
         /** Port which acts as primary slave for ide emulation. */
@@ -93,6 +97,8 @@ public:
     // ISATAController properties
     STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
+    STDMETHOD(COMGETTER(PortCount)) (ULONG *aPortCount);
+    STDMETHOD(COMSETTER(PortCount)) (ULONG aPortCount);
 
     // ISATAController methods
     STDMETHOD(GetIDEEmulationPort) (LONG DevicePosition, LONG *aPortNumber);

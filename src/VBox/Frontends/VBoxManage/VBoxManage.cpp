@@ -411,6 +411,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-snapshotfolder default|<path>]\n");
 #ifdef VBOX_WITH_AHCI
         RTPrintf("                            [-sata on|off]\n"
+                 "                            [-sataportcount <1-30>]\n"
                  "                            [-sataport<1-30> none|<uuid>|<filename>]\n"
                  "                            [-sataideemulation hda|hdb|hdc|hdd <1-30>]\n");
 #endif
@@ -3736,6 +3737,7 @@ static int handleModifyVM(int argc, char *argv[],
     ULONG guestMemBalloonSize = (ULONG)-1;
     ULONG guestStatInterval = (ULONG)-1;
     int   fSataEnabled = -1;
+    int   sataPortCount = -1;
     int   sataBootDevices[4] = {-1,-1,-1,-1};
 
     /* VM ID + at least one parameter. Parameter arguments are checked
@@ -4359,6 +4361,21 @@ static int handleModifyVM(int argc, char *argv[],
                 fSataEnabled = 0;
             else
                 return errorArgument("Invalid -usb argument '%s'", argv[i]);
+        }
+        else if (strcmp(argv[i], "-sataportcount") == 0)
+        {
+            unsigned n;
+
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing arguments to '%s'", argv[i]);
+            }
+            i++;
+
+            n = parseNum(argv[i], 30, "SATA");
+            if (!n)
+                return 1;
+            sataPortCount = n;
         }
         else if (strncmp(argv[i], "-sataport", 9) == 0)
         {
@@ -5448,6 +5465,16 @@ static int handleModifyVM(int argc, char *argv[],
                 {
                     CHECK_ERROR(SataCtl, SetIDEEmulationPort(i, sataBootDevices[i]));
                 }
+            }
+        }
+
+        if (sataPortCount != -1)
+        {
+            ComPtr<ISATAController> SataCtl;
+            CHECK_ERROR(machine, COMGETTER(SATAController)(SataCtl.asOutParam()));
+            if (SUCCEEDED(rc))
+            {
+                CHECK_ERROR(SataCtl, COMSETTER(PortCount)(sataPortCount));
             }
         }
 
