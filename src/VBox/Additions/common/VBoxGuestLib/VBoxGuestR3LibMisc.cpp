@@ -85,25 +85,26 @@ VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
  * Report a change in the capabilities that we support to the host.
  *
  * @returns IPRT status value
- * @param   u32OrMask  Capabilities which have been added
- * @param   u32NotMask Capabilities which have been removed
+ * @param   fOr     Capabilities which have been added.
+ * @param   fNot    Capabilities which have been removed.
  */
-VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t u32OrMask, uint32_t u32NotMask)
+VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
 {
     VMMDevReqGuestCapabilities2 vmmreqGuestCaps;
-    int rc = VINF_SUCCESS;
+    int rc;
 
     vmmdevInitRequest(&vmmreqGuestCaps.header, VMMDevReq_SetGuestCapabilities);
-    vmmreqGuestCaps.u32OrMask = u32OrMask;
-    vmmreqGuestCaps.u32NotMask = u32NotMask;
+    vmmreqGuestCaps.u32OrMask = fOr;
+    vmmreqGuestCaps.u32NotMask = fNot;
     rc = vbglR3GRPerform(&vmmreqGuestCaps.header);
 #ifdef DEBUG
     if (RT_SUCCESS(rc))
         LogRel(("Successfully changed guest capabilities: or mask 0x%x, not mask 0x%x.\n",
-                u32OrMask, u32NotMask));
+                fOr, fNot));
     else
         LogRel(("Failed to change guest capabilities: or mask 0x%x, not mask 0x%x.  rc = %Rrc.\n",
-                u32OrMask, u32NotMask, rc));
+                fOr, fNot, rc));
 #endif
     return rc;
 }
+
