@@ -57,7 +57,9 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
         }
     }
 
-#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) /** @todo r=bird: I don't think FreeBSD shouldn't go here, solaris and OS/2 doesn't
+                                                      * (ignore linux as it's not using the same ioctl code).
+                                                      * That said, the assumption below might be wrong for in kernel calls... */
     NOREF(ppvCtx);
     NOREF(pv);
     NOREF(u32Size);
