@@ -291,7 +291,11 @@ sf_lookup (struct inode *parent, struct dentry *dentry
                 }
 
                 ino = iunique (parent->i_sb, 1);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 25)
+                inode = iget_locked (parent->i_sb, ino);
+#else
                 inode = iget (parent->i_sb, ino);
+#endif
                 if (!inode) {
                         LogFunc(("iget failed\n"));
                         err = -ENOMEM;          /* XXX: ??? */
@@ -301,6 +305,10 @@ sf_lookup (struct inode *parent, struct dentry *dentry
                 SET_INODE_INFO (inode, sf_new_i);
                 sf_init_inode (sf_g, inode, &fsinfo);
                 sf_new_i->path = path;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 25)
+                unlock_new_inode(inode);
+#endif
         }
 
         sf_i->force_restat = 0;
@@ -342,7 +350,11 @@ sf_instantiate (const char *caller, struct inode *parent,
         }
 
         ino = iunique (parent->i_sb, 1);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 25)
+        inode = iget_locked (parent->i_sb, ino);
+#else
         inode = iget (parent->i_sb, ino);
+#endif
         if (!inode) {
                 LogFunc(("iget failed.  caller=%s\n", caller));
                 err = -ENOMEM;
@@ -358,6 +370,11 @@ sf_instantiate (const char *caller, struct inode *parent,
         sf_new_i->force_restat = 1;
 
         d_instantiate (dentry, inode);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 25)
+                unlock_new_inode(inode);
+#endif
+
         return 0;
 
  fail1:

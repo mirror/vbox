@@ -224,7 +224,11 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
         sb->s_blocksize = 1024;
         sb->s_op = &sf_super_ops;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 25)
+        iroot = iget_locked (sb, 0);
+#else
         iroot = iget (sb, 0);
+#endif
         if (!iroot) {
                 err = -ENOMEM;  /* XXX */
                 LogFunc(("could not get root inode\n"));
@@ -233,6 +237,10 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
 
         sf_init_inode (sf_g, iroot, &fsinfo);
         SET_INODE_INFO (iroot, sf_i);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 25)
+        unlock_new_inode(iroot);
+#endif
 
         droot = d_alloc_root (iroot);
         if (!droot) {
@@ -296,10 +304,12 @@ sf_clear_inode (struct inode *inode)
    the only thing that is known about inode at this point is its index
    hence we can't do anything here, and let lookup/whatever with the
    job to properly fill then [inode] */
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 25)
 static void
 sf_read_inode (struct inode *inode)
 {
 }
+#endif
 
 /* vfs is done with [sb] (umount called) call [sf_glob_free] to unmap
    the folder and free [sf_g] */
@@ -337,7 +347,9 @@ sf_remount_fs (struct super_block *sb, int *flags, char *data)
 
 static struct super_operations sf_super_ops = {
         .clear_inode = sf_clear_inode,
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 25)
         .read_inode  = sf_read_inode,
+#endif
         .put_super   = sf_put_super,
         .statfs      = sf_statfs,
         .remount_fs  = sf_remount_fs
