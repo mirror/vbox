@@ -154,6 +154,18 @@ volume_t nominal_volume = {
 };
 
 #ifdef VBOX
+volume_t sum_out_volume =
+{
+    0,
+    INT_MAX,
+    INT_MAX
+};
+volume_t master_out_volume =
+{
+    0,
+    INT_MAX,
+    INT_MAX
+};
 volume_t pcm_out_volume =
 {
     0,
@@ -1008,7 +1020,7 @@ int audio_pcm_sw_write (SWVoiceOut *sw, void *buf, int size)
 #ifndef VBOX
         sw->conv (sw->buf, buf, swlim, &sw->vol);
 #else
-        sw->conv (sw->buf, buf, swlim, &pcm_out_volume);
+        sw->conv (sw->buf, buf, swlim, &sum_out_volume);
 #endif
     }
 
@@ -1865,10 +1877,11 @@ void AUD_set_volume (audmixerctl_t mt, int *mute, uint8_t *lvol, uint8_t *rvol)
     {
         case AUD_MIXER_VOLUME:
             name = "MASTER";
-            vol  = &pcm_out_volume;
+            vol  = &master_out_volume;
             break;
         case AUD_MIXER_PCM:
             name = "PCM_OUT";
+            vol  = &pcm_out_volume;
             break;
         case AUD_MIXER_LINE_IN:
             name = "LINE_IN";
@@ -1881,13 +1894,20 @@ void AUD_set_volume (audmixerctl_t mt, int *mute, uint8_t *lvol, uint8_t *rvol)
 
     if (vol)
     {
+        uint32_t u32VolumeLeft  = (uint32_t)*lvol;
+        uint32_t u32VolumeRight = (uint32_t)*rvol;
+        /* 0x00..0xff => 0x01..0x100 */
+        if (u32VolumeLeft)
+            u32VolumeLeft++;
+        if (u32VolumeRight)
+            u32VolumeRight++;
         vol->mute  = *mute;
-        vol->l     = ((uint32_t)*lvol) * 0x808080; /* maximum is INT_MAX = 0x7fffffff */
-        vol->r     = ((uint32_t)*rvol) * 0x808080; /* maximum is INT_MAX = 0x7fffffff */
+        vol->l     = u32VolumeLeft  * 0x800000; /* maximum is 0x80000000 */
+        vol->r     = u32VolumeRight * 0x800000; /* maximum is 0x80000000 */
     }
-#if 0
-    LogRel(("AUDIO: Set '%s' volume to %d%%/%d%%\n", name, (*lvol*100)/255, (*rvol*100)/255l));
-#endif
+    sum_out_volume.mute = master_out_volume.mute || pcm_out_volume.mute;
+    sum_out_volume.l    = ASMMultU64ByU32DivByU32(master_out_volume.l, pcm_out_volume.l, 0x80000000U);
+    sum_out_volume.r    = ASMMultU64ByU32DivByU32(master_out_volume.r, pcm_out_volume.r, 0x80000000U);
 }
 
 void AUD_set_record_source (audrecsource_t *ars, audrecsource_t *als)
