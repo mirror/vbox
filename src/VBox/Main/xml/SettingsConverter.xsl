@@ -199,7 +199,7 @@ The source version is not supported.
 </xsl:template>
 
 <!--
- *  Global settings 
+ *  Global settings
 -->
 
 <!--
@@ -270,7 +270,7 @@ Value '<xsl:value-of select="@device"/>' of 'HardDiskAttachment::device' attribu
 </xsl:template>
 
 <!--
- *  Global settings 
+ *  Global settings
 -->
 
 <xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
@@ -302,7 +302,7 @@ Value '<xsl:value-of select="@device"/>' of 'HardDiskAttachment::device' attribu
         <xsl:when test="@driver='oss'">OSS</xsl:when>
         <xsl:when test="@driver='alsa'">ALSA</xsl:when>
         <xsl:when test="@driver='pulse'">Pulse</xsl:when>
-        <xsl:when test="@driver='codeaudio'">CoreAudio</xsl:when>
+        <xsl:when test="@driver='coreaudio'">CoreAudio</xsl:when>
         <xsl:when test="@driver='winmm'">WinMM</xsl:when>
         <xsl:when test="@driver='dsound'">DirectSound</xsl:when>
         <xsl:when test="@driver='solaudio'">SolAudio</xsl:when>
