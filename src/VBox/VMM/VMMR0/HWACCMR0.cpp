@@ -169,7 +169,6 @@ HWACCMR0DECL(int) HWACCMR0Init()
                 if (VBOX_SUCCESS(HWACCMR0Globals.lLastError))
                     HWACCMR0Globals.lLastError = hwaccmr0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
-                AssertMsg(VBOX_SUCCESS(HWACCMR0Globals.lLastError), ("HWACCMR0InitCPU failed for cpu %d with rc=%d\n", idCpu, HWACCMR0Globals.lLastError));
                 if (VBOX_SUCCESS(HWACCMR0Globals.lLastError))
                 {
                     /* Reread in case we've changed it. */
@@ -253,7 +252,12 @@ HWACCMR0DECL(int) HWACCMR0Init()
                 }
             }
             else
+            {
+#ifdef LOG_ENABLED
+                SUPR0Printf("HWACCMR0InitCPU failed for cpu %d with rc=%d\n", idCpu, HWACCMR0Globals.lLastError);
+#endif
                 HWACCMR0Globals.lLastError = VERR_VMX_NO_VMX;
+            }
         }
         else
         if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
