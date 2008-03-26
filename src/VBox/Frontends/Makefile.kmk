@@ -39,6 +39,9 @@ endif
 ifdef VBOX_WITH_QTGUI
 SUBDIRS_AFTER += VirtualBox
 endif
+ifdef VBOX_WITH_QT4GUI
+SUBDIRS_AFTER += VirtualBox4
+endif
 
 include $(PATH_KBUILD)/subfooter.kmk
 
