@@ -47,19 +47,19 @@ vboxvfs_CLEAN        += $(vboxvfs_DEPS)
 VBOX_AWK := /usr/bin/awk
 
 $(PATH_TARGET)/vnode_if.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
-       $(call MSG_TOOL,awk,VBoxGuest,$<,$@)
-       $(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -h
-       $(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if.h $(PATH_TARGET)/vnode_if.h
+	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -h
+	$(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if.h $(PATH_TARGET)/vnode_if.h
 
 $(PATH_TARGET)/vnode_if_newproto.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
-       $(call MSG_TOOL,awk,VBoxGuest,$<,$@)
-       $(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -p
-       $(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if_newproto.h $(PATH_TARGET)/vnode_if_newproto.h
+	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -p
+	$(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if_newproto.h $(PATH_TARGET)/vnode_if_newproto.h
 
 $(PATH_TARGET)/vnode_if_typedef.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
-       $(call MSG_TOOL,awk,VBoxGuest,$<,$@)
-       $(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -q
-       $(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if_typedef.h $(PATH_TARGET)/vnode_if_typedef.h
+	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -q
+	$(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if_typedef.h $(PATH_TARGET)/vnode_if_typedef.h
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
