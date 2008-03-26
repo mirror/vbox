@@ -47,6 +47,7 @@
 #endif
 
 #ifdef Q_WS_MAC
+#include "VBoxUtils.h"
 #include "VBoxIChatTheaterWrapper.h"
 #endif
 
@@ -2115,8 +2116,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         console_style = console->frameStyle();
         console->setFrameStyle (Q3Frame::NoFrame);
         console->setMaximumSize (scrGeo.size());
-        console->setVScrollBarMode (Q3ScrollView::AlwaysOff);
-        console->setHScrollBarMode (Q3ScrollView::AlwaysOff);
+#warning port me
+/*        console->setVScrollBarMode (Q3ScrollView::AlwaysOff);*/
+/*        console->setHScrollBarMode (Q3ScrollView::AlwaysOff);*/
 
         /* Going fullscreen */
         setWindowState (windowState() ^ Qt::WindowFullScreen);
@@ -2201,8 +2203,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         centralWidget()->setBackgroundMode (Qt::PaletteBackground);
         console->setFrameStyle (console_style);
         console->setMaximumSize (console->sizeHint());
-        console->setVScrollBarMode (Q3ScrollView::Auto);
-        console->setHScrollBarMode (Q3ScrollView::Auto);
+#warning port me
+/*        console->setVScrollBarMode (Q3ScrollView::Auto);*/
+/*        console->setHScrollBarMode (Q3ScrollView::Auto);*/
 
         /* Show everything hidden when going fullscreen. */
         foreach (QObject *obj, hidden_children)
