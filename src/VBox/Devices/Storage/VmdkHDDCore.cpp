@@ -38,7 +38,7 @@
 
 /** Maximum encoded string size (including NUL) we allow for VMDK images.
  * Deliberately not set high to avoid running out of descriptor space. */
-#define VMDK_ENCRYPTED_COMMENT_MAX 1024
+#define VMDK_ENCODED_COMMENT_MAX 1024
 
 /** VMDK descriptor DDB entry for PCHS cylinders. */
 #define VMDK_DDB_GEO_PCHS_CYLINDERS "ddb.geometry.cylinders"
@@ -459,6 +459,7 @@ static int vmdkFileOpen(PVMDKIMAGE pImage, PRTFILE pFile,
     }
     else
     {
+        RTStrFree((char *)(void *)pVmdkFile->pszFilename);
         RTMemFree(pVmdkFile);
         *pFile = NIL_RTFILE;
     }
@@ -544,7 +545,7 @@ static int vmdkFileCheckAllClose(PVMDKIMAGE pImage)
  */
 static char *vmdkEncodeString(const char *psz)
 {
-    char szEnc[VMDK_ENCRYPTED_COMMENT_MAX + 3];
+    char szEnc[VMDK_ENCODED_COMMENT_MAX + 3];
     char *pszDst = szEnc;
 
     Assert(VALID_PTR(psz));
@@ -570,7 +571,7 @@ static char *vmdkEncodeString(const char *psz)
         }
         else
             pszDst = RTStrPutCp(pszDst, Cp);
-        if (pszDst - szEnc >= VMDK_ENCRYPTED_COMMENT_MAX - 1)
+        if (pszDst - szEnc >= VMDK_ENCODED_COMMENT_MAX - 1)
         {
             pszDst = pszDstPrev;
             break;
