@@ -77,6 +77,7 @@ else if1of ($(BUILD_TARGET), freebsd solaris)
  vboxguest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
  vboxguest_INCS         := \
 	$(PATH_SUB_CURRENT)
+ vboxguest_INCS.freebsd  = \
 	$(PATH_TARGET)
  vboxguest_SOURCES       = \
  	VBoxGuest-$(BUILD_TARGET).c \
