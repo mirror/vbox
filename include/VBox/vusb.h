@@ -918,7 +918,7 @@ typedef struct VUSBURB
     struct VUSBURBHCI
     {
         /** The endpoint descriptor address. */
-        uint32_t        EdAddr;
+        RTGCPHYS32      EdAddr;
         /** Number of Tds in the array. */
         uint32_t        cTds;
         /** Pointer to an array of TD info items.*/
@@ -927,7 +927,7 @@ typedef struct VUSBURB
             /** Type of TD (private) */
             uint32_t        TdType;
             /** The address of the */
-            uint32_t        TdAddr;
+            RTGCPHYS32      TdAddr;
             /** A copy of the TD. */
             uint32_t        TdCopy[16];
         }              *paTds;
