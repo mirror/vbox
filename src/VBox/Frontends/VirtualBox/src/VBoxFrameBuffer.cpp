@@ -204,8 +204,6 @@ STDMETHODIMP VBoxFrameBuffer::VideoModeSupported (ULONG aWidth, ULONG aHeight,
         *aSupported = FALSE;
     if (aHeight > (ULONG) screen.height())
         *aSupported = FALSE;
-    if (aBPP != 32)
-        *aSupported = FALSE;
     LogFlowThisFunc(("returning aSupported=%d\n", *aSupported));
     return S_OK;
 }
