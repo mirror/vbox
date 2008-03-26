@@ -147,6 +147,8 @@ AssertCompileSize(RTCCUINTREG, 4);
 
 #endif
 
+AssertCompileSize(RTGCPHYS64, 8);
+AssertCompileSize(RTGCPHYS32, 4);
 AssertCompileSize(RTGCPHYS, 4);
 
 
