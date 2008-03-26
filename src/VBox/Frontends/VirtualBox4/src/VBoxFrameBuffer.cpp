@@ -194,6 +194,7 @@ VBoxFrameBuffer::OperationSupported (FramebufferAccelerationOperation_T aOperati
 STDMETHODIMP VBoxFrameBuffer::VideoModeSupported (ULONG aWidth, ULONG aHeight,
                                                   ULONG aBPP, BOOL *aSupported)
 {
+    NOREF(aBPP);
     LogFlowThisFunc(("aWidth=%lu, aHeight=%lu, aBPP=%lu\n",
                      (unsigned long) aWidth,  (unsigned long) aHeight,
                       (unsigned long) aBPP));
