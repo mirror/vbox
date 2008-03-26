@@ -214,6 +214,8 @@ VBOX_WITH_VBOXSDL = 1
 VBOX_WITH_VBOXBFE = 1
 # The Qt GUI.
 VBOX_WITH_QTGUI = 1
+# The Qt 4 GUI (experimental).
+#VBOX_WITH_QT4GUI
 # The headless frontend.
 VBOX_WITH_HEADLESS = 1
 ## the Direct Framebuffer GUI
