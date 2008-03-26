@@ -733,7 +733,7 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
     if (pCtx->eflags.Bits.u1VM)
         Log(("EMV86: %04X:%08X IF=%d\n", pCtx->cs, pCtx->eip, pCtx->eflags.Bits.u1IF));
     else
-        Log(("EMR%d: %08X ESP=%08X IF=%d CR0=%x\n", cpl, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->cr0));
+        Log(("EMR%d: %08X ESP=%08X IF=%d CR0=%x\n", cpl, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0));
 #endif
     STAM_PROFILE_ADV_START(&pVM->em.s.StatREMTotal, a);
 
@@ -1447,7 +1447,7 @@ static int emR3RawGuestTrap(PVM pVM)
     RTGCPHYS    GCPhys = 0;
     int rc2 = PGMGstGetPage(pVM, uCR2, &fFlags, &GCPhys);
     Log(("emR3RawGuestTrap: cs:eip=%04x:%08x: trap=%02x err=%08x cr2=%08x cr0=%08x%s: Phys=%VGp fFlags=%08llx %s %s %s%s rc2=%d\n",
-         pCtx->cs, pCtx->eip, u8TrapNo, uErrorCode, uCR2, pCtx->cr0, (enmType == TRPM_SOFTWARE_INT) ? " software" : "",  GCPhys, fFlags,
+         pCtx->cs, pCtx->eip, u8TrapNo, uErrorCode, uCR2, (uint32_t)pCtx->cr0, (enmType == TRPM_SOFTWARE_INT) ? " software" : "",  GCPhys, fFlags,
          fFlags & X86_PTE_P  ? "P " : "NP", fFlags & X86_PTE_US ? "U"  : "S",
          fFlags & X86_PTE_RW ? "RW" : "R0", fFlags & X86_PTE_G  ? " G" : "", rc2));
 #endif
@@ -1620,7 +1620,7 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
         }
 #endif
         Log(("emR3PatchTrap: in patch: eip=%08x: trap=%02x err=%08x cr2=%08x cr0=%08x\n",
-             pCtx->eip, u8TrapNo, uErrorCode, uCR2, pCtx->cr0));
+             pCtx->eip, u8TrapNo, uErrorCode, uCR2, (uint32_t)pCtx->cr0));
 
         RTGCPTR pNewEip;
         rc = PATMR3HandleTrap(pVM, pCtx, pCtx->eip, &pNewEip);
@@ -2657,7 +2657,7 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         if (pCtx->eflags.Bits.u1VM)
             Log(("HWV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
         else
-            Log(("HWR%d: %08X ESP=%08X IF=%d CR0=%x\n", cpl, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->cr0));
+            Log(("HWR%d: %08X ESP=%08X IF=%d CR0=%x\n", cpl, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0));
 #endif
 
         /*
