@@ -235,7 +235,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
      */
     if (PdeSrc.n.u1Present)
     {
-        RTGCPHYS    GCPhys = ~0U;
+        RTGCPHYS    GCPhys = NIL_RTGCPHYS;
 
 # if PGM_WITH_PAGING(PGM_GST_TYPE)
         uint32_t    cr4 = CPUMGetGuestCR4(pVM);
@@ -268,7 +268,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         /*
          * If we have a GC address we'll check if it has any flags set.
          */
-        if (GCPhys != ~0U)
+        if (GCPhys != NIL_RTGCPHYS)
         {
             STAM_PROFILE_START(&pVM->pgm.s.StatHandlers, b);
 
