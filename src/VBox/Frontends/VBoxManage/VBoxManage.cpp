@@ -358,7 +358,9 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                                            server <pipe>|\n"
                  "                                            client <pipe>|\n"
                  "                                            <devicename>]\n"
+#ifdef VBOX_WITH_MEM_BALLOONING
                  "                            [-guestmemoryballoon <balloonsize>]\n"
+#endif
                  "                            [-gueststatisticsinterval <seconds>]\n"
                  );
         if (fLinux)
@@ -2176,6 +2178,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("Guest:\n\n");
 
+#ifdef VBOX_WITH_MEM_BALLOONING
     rc = machine->COMGETTER(MemoryBalloonSize)(&guestVal);
     if (SUCCEEDED(rc))
     {
@@ -2184,7 +2187,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         else
             RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
     }
-
+#endif
     rc = machine->COMGETTER(StatisticsUpdateInterval)(&guestVal);
     if (SUCCEEDED(rc))
     {
@@ -2300,6 +2303,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                     RTPrintf("CPU%d: Free physical memory   %-4d MB\n", 0, statVal);
             }
 
+#ifdef VBOX_WITH_MEM_BALLOONING
             rc = guest->GetStatistic(0, GuestStatisticType_PhysMemBalloon, &statVal);
             if (SUCCEEDED(rc))
             {
@@ -2308,7 +2312,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 else
                     RTPrintf("CPU%d: Memory balloon size    %-4d MB\n", 0, statVal);
             }
-
+#endif
             rc = guest->GetStatistic(0, GuestStatisticType_MemCommitTotal, &statVal);
             if (SUCCEEDED(rc))
             {
@@ -4324,6 +4328,7 @@ static int handleModifyVM(int argc, char *argv[],
                 uarts_irq[n - 1]  = uVal;
             }
         }
+#ifdef VBOX_WITH_MEM_BALLOONING
         else if (strncmp(argv[i], "-guestmemoryballoon", 19) == 0)
         {
             if (argc <= i + 1)
@@ -4336,6 +4341,7 @@ static int handleModifyVM(int argc, char *argv[],
                 return errorArgument("Error parsing guest memory balloon size '%s'", argv[i]);
             guestMemBalloonSize = uVal;
         }
+#endif
         else if (strncmp(argv[i], "-gueststatisticsinterval", 24) == 0)
         {
             if (argc <= i + 1)
@@ -5923,6 +5929,7 @@ static int handleControlVM(int argc, char *argv[],
                 CHECK_ERROR(floppyDrive, MountImage(uuid));
             }
         }
+#ifdef VBOX_WITH_MEM_BALLOONING
         else if (strncmp(argv[1], "-guestmemoryballoon", 19) == 0)
         {
             if (argc != 3)
@@ -5948,6 +5955,7 @@ static int handleControlVM(int argc, char *argv[],
             if (SUCCEEDED(rc))
                 CHECK_ERROR(guest, COMSETTER(MemoryBalloonSize)(uVal));
         }
+#endif
         else if (strncmp(argv[1], "-gueststatisticsinterval", 24) == 0)
         {
             if (argc != 3)
@@ -5961,7 +5969,7 @@ static int handleControlVM(int argc, char *argv[],
             vrc = RTStrToUInt32Ex(argv[2], NULL, 0, &uVal);
             if (vrc != VINF_SUCCESS)
             {
-                errorArgument("Error parsing guest memory balloon size '%s'", argv[2]);
+                errorArgument("Error parsing guest statistics interval '%s'", argv[2]);
                 rc = E_FAIL;
                 break;
             }
