@@ -1,296 +1,159 @@
-<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>VBoxSnapshotDetailsDlg</class>
-<comment>
-:mode=html:tabSize=4:indentSize=4:noTabs=true:
-:folding=explicit:collapseFolds=1:
-
-     Copyright (C) 2006-2007 innotek GmbH
-    
-     This file is part of VirtualBox Open Source Edition (OSE), as
-     available from http://www.virtualbox.org. This file is free software;
-     you can redistribute it and/or modify it under the terms of the GNU
-     General Public License (GPL) as published by the Free Software
-     Foundation, in version 2 as it comes in the "COPYING" file of the
-     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-</comment>
-<widget class="QDialog">
-    <property name="name">
-        <cstring>VBoxSnapshotDetailsDlg</cstring>
-    </property>
-    <property name="geometry">
-        <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>510</width>
-            <height>454</height>
-        </rect>
-    </property>
-    <property name="caption">
-        <string>VBoxSnapshotDetailsDlg</string>
-    </property>
-    <property name="sizeGripEnabled">
+<ui version="4.0" >
+ <class>VBoxSnapshotDetailsDlg</class>
+ <widget class="QDialog" name="VBoxSnapshotDetailsDlg" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>408</width>
+    <height>388</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>VBoxSnapshotDetailsDlg</string>
+  </property>
+  <property name="windowIcon" >
+   <iconset resource="../VirtualBox.qrc" >:/settings_16px.png</iconset>
+  </property>
+  <layout class="QVBoxLayout" >
+   <item>
+    <widget class="QGroupBox" name="mGbSnapshotDetails" >
+     <property name="title" >
+      <string>Snapshot Details</string>
+     </property>
+     <layout class="QVBoxLayout" >
+      <property name="topMargin" >
+       <number>4</number>
+      </property>
+      <item>
+       <layout class="QVBoxLayout" >
+        <item>
+         <widget class="QLabel" name="mTxName" >
+          <property name="text" >
+           <string>&amp;Name</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mLeName</cstring>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="mLeName" />
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" >
+        <item>
+         <widget class="QLabel" name="mTxDescription" >
+          <property name="text" >
+           <string>&amp;Description</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mTeDescription</cstring>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTextEdit" name="mTeDescription" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="tabChangesFocus" >
+           <bool>true</bool>
+          </property>
+          <property name="acceptRichText" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="mGbMachineDetails" >
+     <property name="title" >
+      <string>&amp;Machine Details</string>
+     </property>
+     <layout class="QVBoxLayout" >
+      <property name="topMargin" >
+       <number>4</number>
+      </property>
+      <item>
+       <widget class="QTextEdit" name="mTeSummary" >
+        <property name="sizePolicy" >
+         <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="frameShape" >
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow" >
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="readOnly" >
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" >
+     <item>
+      <widget class="QPushButton" name="mBtnHelp" >
+       <property name="text" >
+        <string>Help</string>
+       </property>
+       <property name="shortcut" >
+        <string>F1</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer>
+       <property name="orientation" >
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" >
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="mBtnOk" >
+       <property name="text" >
+        <string>&amp;OK</string>
+       </property>
+       <property name="default" >
         <bool>true</bool>
-    </property>
-    <vbox>
-        <property name="name">
-            <cstring>unnamed</cstring>
-        </property>
-        <property name="spacing">
-            <number>10</number>
-        </property>
-        <property name="resizeMode">
-            <enum>Minimum</enum>
-        </property>
-        <widget class="QGroupBox">
-            <property name="name">
-                <cstring>groupBox2</cstring>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>5</hsizetype>
-                    <vsizetype>4</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>1</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="title">
-                <string> Snapshot Details </string>
-            </property>
-            <vbox>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <widget class="QLayoutWidget">
-                    <property name="name">
-                        <cstring>layout4</cstring>
-                    </property>
-                    <vbox>
-                        <property name="name">
-                            <cstring>unnamed</cstring>
-                        </property>
-                        <widget class="QLabel">
-                            <property name="name">
-                                <cstring>txName</cstring>
-                            </property>
-                            <property name="text">
-                                <string>&amp;Name</string>
-                            </property>
-                            <property name="buddy" stdset="0">
-                                <cstring>leName</cstring>
-                            </property>
-                        </widget>
-                        <widget class="QLineEdit">
-                            <property name="name">
-                                <cstring>leName</cstring>
-                            </property>
-                            <property name="frameShape">
-                                <enum>LineEditPanel</enum>
-                            </property>
-                            <property name="frameShadow">
-                                <enum>Sunken</enum>
-                            </property>
-                        </widget>
-                    </vbox>
-                </widget>
-                <widget class="QLayoutWidget">
-                    <property name="name">
-                        <cstring>layout6</cstring>
-                    </property>
-                    <vbox>
-                        <property name="name">
-                            <cstring>unnamed</cstring>
-                        </property>
-                        <widget class="QLabel">
-                            <property name="name">
-                                <cstring>txDescription</cstring>
-                            </property>
-                            <property name="text">
-                                <string>&amp;Description</string>
-                            </property>
-                            <property name="buddy" stdset="0">
-                                <cstring>txeDescription</cstring>
-                            </property>
-                        </widget>
-                        <widget class="QTextEdit">
-                            <property name="name">
-                                <cstring>txeDescription</cstring>
-                            </property>
-                            <property name="sizePolicy">
-                                <sizepolicy>
-                                    <hsizetype>5</hsizetype>
-                                    <vsizetype>7</vsizetype>
-                                    <horstretch>0</horstretch>
-                                    <verstretch>0</verstretch>
-                                </sizepolicy>
-                            </property>
-                            <property name="textFormat">
-                                <enum>PlainText</enum>
-                            </property>
-                            <property name="tabChangesFocus">
-                                <bool>true</bool>
-                            </property>
-                        </widget>
-                    </vbox>
-                </widget>
-            </vbox>
-        </widget>
-        <widget class="QGroupBox">
-            <property name="name">
-                <cstring>groupBox1</cstring>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>5</hsizetype>
-                    <vsizetype>7</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>2</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="title">
-                <string>&amp;Machine Details</string>
-            </property>
-            <hbox>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <widget class="QTextEdit">
-                    <property name="name">
-                        <cstring>txeSummary</cstring>
-                    </property>
-                    <property name="sizePolicy">
-                        <sizepolicy>
-                            <hsizetype>3</hsizetype>
-                            <vsizetype>3</vsizetype>
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                        </sizepolicy>
-                    </property>
-                    <property name="frameShape">
-                        <enum>NoFrame</enum>
-                    </property>
-                    <property name="readOnly">
-                        <bool>true</bool>
-                    </property>
-                </widget>
-            </hbox>
-        </widget>
-        <widget class="QLayoutWidget">
-            <property name="name">
-                <cstring>layout23</cstring>
-            </property>
-            <hbox>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>buttonHelp</cstring>
-                    </property>
-                    <property name="text">
-                        <string>Help</string>
-                    </property>
-                    <property name="accel">
-                        <string>F1</string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
-                    </property>
-                </widget>
-                <spacer>
-                    <property name="name">
-                        <cstring>spacer21</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                        <enum>Expanding</enum>
-                    </property>
-                    <property name="sizeHint">
-                        <size>
-                            <width>61</width>
-                            <height>20</height>
-                        </size>
-                    </property>
-                </spacer>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>buttonOk</cstring>
-                    </property>
-                    <property name="text">
-                        <string>&amp;OK</string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
-                    </property>
-                    <property name="default">
-                        <bool>true</bool>
-                    </property>
-                </widget>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>buttonCancel</cstring>
-                    </property>
-                    <property name="text">
-                        <string>Cancel</string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
-                    </property>
-                </widget>
-            </hbox>
-        </widget>
-    </vbox>
-</widget>
-<connections>
-    <connection>
-        <sender>buttonOk</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxSnapshotDetailsDlg</receiver>
-        <slot>accept()</slot>
-    </connection>
-    <connection>
-        <sender>buttonCancel</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxSnapshotDetailsDlg</receiver>
-        <slot>reject()</slot>
-    </connection>
-    <connection>
-        <sender>leName</sender>
-        <signal>textChanged(const QString&amp;)</signal>
-        <receiver>VBoxSnapshotDetailsDlg</receiver>
-        <slot>leName_textChanged(const QString&amp;)</slot>
-    </connection>
-    <connection>
-        <sender>buttonHelp</sender>
-        <signal>clicked()</signal>
-        <receiver>&amp;vboxProblem()</receiver>
-        <slot>showHelpHelpDialog()</slot>
-    </connection>
-</connections>
-<tabstops>
-    <tabstop>leName</tabstop>
-    <tabstop>txeDescription</tabstop>
-    <tabstop>txeSummary</tabstop>
-</tabstops>
-<includes>
-    <include location="local" impldecl="in declaration">COMDefs.h</include>
-    <include location="local" impldecl="in implementation">VBoxUtils.h</include>
-    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
-    <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
-</includes>
-<slots>
-    <slot>leName_textChanged( const QString &amp; aText )</slot>
-</slots>
-<variables>
-    <variable access="private">CSnapshot csnapshot;</variable>
-</variables>
-<functions>
-    <function access="private">init()</function>
-    <function>getFromSnapshot( const CSnapshot &amp; s )</function>
-    <function>putBackToSnapshot()</function>
-</functions>
-<pixmapinproject/>
-<layoutdefaults spacing="6" margin="11"/>
-</UI>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="mBtnCancel" >
+       <property name="text" >
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../VirtualBox.qrc" />
+ </resources>
+ <connections/>
+</ui>
