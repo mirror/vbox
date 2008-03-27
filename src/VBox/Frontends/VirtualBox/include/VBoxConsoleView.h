@@ -166,9 +166,6 @@ private:
     void doRefresh();
 
     void viewportPaintEvent( QPaintEvent * );
-#ifdef VBOX_GUI_USE_REFRESH_TIMER
-    void timerEvent( QTimerEvent * );
-#endif
 
     void captureKbd (bool aCapture, bool aEmitSignal = true);
     void captureMouse (bool aCapture, bool aEmitSignal = true);
@@ -260,11 +257,6 @@ private:
     UInt32 mDarwinKeyModifiers;
     /** The darwin cursor handle (see DarwinCursor.h/.cpp). */
     DARWINCURSOR mDarwinCursor;
-#endif
-
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-    QPixmap pm;
-    int tid;        /**< Timer id */
 #endif
 
     VBoxFrameBuffer *mFrameBuf;

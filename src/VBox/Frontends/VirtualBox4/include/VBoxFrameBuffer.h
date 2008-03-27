@@ -126,61 +126,6 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-
-/**
- *  Copies the current VM video buffer contents to the pixmap referenced
- *  by the argument. The return value indicates whether the
- *  buffer has been updated since the last call to this method or not.
- *
- *  The copy operation is atomic (guarded by a mutex).
- *
- *  This method is intentionally inlined for faster execution and should be
- *  called only by VBoxConsoleView members.
- *
- *  @return true if the pixmap is updated, and false otherwise.
- */
-inline bool display_to_pixmap( const CConsole &c, QPixmap &pm )
-{
-    CDisplay display = c.GetDisplay();
-
-    uint8_t *addr = (uint8_t *) display.LockFramebuffer();
-    AssertMsg (addr, ("The buffer address must not be null"));
-
-    QImage::Format format = QImage::Format_Invalid;
-    switch (display.GetBitsPerPixel())
-    {
-        /* 32-, 8- and 1-bpp are the only depths suported by QImage */
-        case 32:
-            format = QImage::Format_RGB32;
-            break;
-        case 8:
-            format = QImage::Format_Indexed8;
-            break;
-        case 1:
-            format = QImage::Format_Mono;
-            break;
-    }
-
-    bool rc = false;
-    if(format != QImage::Format_Invalid)
-    {
-        pm = QPixmap::fromImage (QImage (addr,
-                                         display.GetWidth(), display.GetHeight(),
-                                         format));
-        rc = !pm.isNull();
-        AssertMsg (rc, ("convertFromImage() must always return true"));
-    }
-
-    display.UnlockFramebuffer();
-
-    return rc;
-}
-
-#endif
-
-/////////////////////////////////////////////////////////////////////////////
-
 /**
  *  Common IFramebuffer implementation for all methods used by GUI to maintain
  *  the VM display video memory.

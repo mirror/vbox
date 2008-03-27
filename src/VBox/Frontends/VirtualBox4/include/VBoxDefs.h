@@ -56,9 +56,6 @@
   #if defined (VBOX_GUI_USE_EXT_FRAMEBUFFER)
     #undef VBOX_GUI_USE_EXT_FRAMEBUFFER
   #endif
-  #if !defined (VBOX_GUI_USE_REFRESH_TIMER)
-    #define VBOX_GUI_USE_REFRESH_TIMER
-  #endif
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
