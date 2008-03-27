@@ -2249,6 +2249,7 @@ SSMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
     return VERR_SSM_INVALID_STATE;
 }
 
+
 /**
  * Saves a 64 bits GC physical address item to the current data unit.
  *
@@ -2806,6 +2807,7 @@ SSMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a 64 bits GC physical address item from the current data unit.
