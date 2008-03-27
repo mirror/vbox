@@ -9,7 +9,7 @@
  *  and should be reviewed on every Schema change.
 
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -26,6 +26,8 @@
 <xsl:output method="text"/>
 
 <xsl:strip-space elements="*"/>
+
+<xsl:param name="mode" expr=''/>
 
 <!--
 //  helpers
@@ -53,47 +55,73 @@
  *  shut down all implicit templates
 -->
 <xsl:template match="*"/>
+<xsl:template match="*" mode="declare"/>
+<xsl:template match="*" mode="declare.enum"/>
+<xsl:template match="*" mode="define"/>
+
+<xsl:template match="/">
+  <xsl:choose>
+    <xsl:when test="$mode='declare'">
+      <xsl:apply-templates select="/" mode="declare"/>
+    </xsl:when>
+    <xsl:when test="$mode='define'">
+      <xsl:apply-templates select="/" mode="define"/>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:message terminate="yes">
+Value '<xsl:value-of select="$mode"/>' of parameter 'mode' is invalid!
+      </xsl:message>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
 
 <!--
- *  header
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  declare mode (C++ header file)
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 -->
-<xsl:template match="/">
+
+<xsl:template match="/" mode="declare">
 <xsl:text>
 /*
  *  DO NOT EDIT.
  *
- *  This header is automatically generated from the VirtualBox XML Schema
- *  and contains selected schema constraints defined in C.
+ *  This header is automatically generated from the VirtualBox XML Settings
+ *  Schema and contains selected schema constraints declared in C++.
  */
 
 #ifndef ____H_SCHEMADEFS
 #define ____H_SCHEMADEFS
 
-struct SchemaDefs
+namespace SchemaDefs
 {
     enum
     {
 </xsl:text>
 
-  <xsl:apply-templates select="xsd:schema"/>
+  <xsl:apply-templates select="xsd:schema" mode="declare.enum"/>
 
 <xsl:text>    };
-};
+</xsl:text>
+
+<xsl:apply-templates select="xsd:schema" mode="declare"/>
+
+<xsl:text>}
 
 #endif // ____H_SCHEMADEFS
 </xsl:text>
 </xsl:template>
 
 <!--
- *  extract schema definitions
+ *  enumeration values
 -->
-<xsl:template match="xsd:schema">
+<xsl:template match="xsd:schema" mode="declare.enum">
 
   <!-- process include statements -->
   <xsl:for-each select="xsd:include">
     <!-- skip VirtualBox-settings-root.xsd inclusion as it is computed at runtime -->
     <xsl:if test="not(@schemaLocation='VirtualBox-settings-root.xsd')">
-      <xsl:apply-templates select="document(@schemaLocation)/xsd:schema"/>
+      <xsl:apply-templates select="document(@schemaLocation)/xsd:schema" mode="declare.enum"/>
     </xsl:if>
   </xsl:for-each>
 
@@ -122,6 +150,7 @@ struct SchemaDefs
       xsd:complexType[@name='TDisplay']/xsd:attribute[@name='VRAMSize']//xsd:maxInclusive/@value
     "/>
   </xsl:call-template>
+
   <xsl:call-template name="defineEnumMember">
     <xsl:with-param name="member" select="'        MaxGuestMonitors'"/>
     <xsl:with-param name="select" select="
@@ -134,18 +163,21 @@ struct SchemaDefs
       xsd:complexType[@name='TNetworkAdapter']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
     "/>
   </xsl:call-template>
+
   <xsl:call-template name="defineEnumMember">
     <xsl:with-param name="member" select="'        SerialPortCount'"/>
     <xsl:with-param name="select" select="
       xsd:complexType[@name='TUARTPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
     "/>
   </xsl:call-template>
+
   <xsl:call-template name="defineEnumMember">
     <xsl:with-param name="member" select="'        ParallelPortCount'"/>
     <xsl:with-param name="select" select="
       xsd:complexType[@name='TLPTPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
     "/>
   </xsl:call-template>
+
   <xsl:call-template name="defineEnumMember">
     <xsl:with-param name="member" select="'        MaxBootPosition'"/>
     <xsl:with-param name="select" select="
@@ -154,5 +186,85 @@ struct SchemaDefs
   </xsl:call-template>
 
 </xsl:template>
+
+<!--
+ *  aliases (defines) for individual OSTypeIds array elements
+-->
+<xsl:template match="xsd:schema" mode="declare">
+
+  <xsl:text>&#x0A;    extern const char *OSTypeIds[];&#x0A;</xsl:text>
+
+  <xsl:text>&#x0A;    enum { OSTypeId_COUNT = </xsl:text>
+  <xsl:value-of select="count (
+    xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration |
+    document(xsd:include[not(@schemaLocation='VirtualBox-settings-root.xsd')]/@schemaLocation)/xsd:schema/xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration
+  )"/>
+  <xsl:text> };&#x0A;&#x0A;</xsl:text>
+
+  <xsl:for-each select="
+    xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration |
+    document(xsd:include[not(@schemaLocation='VirtualBox-settings-root.xsd')]/@schemaLocation)/xsd:schema/xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration
+  ">
+    <xsl:text>    #define SchemaDefs_OSTypeId_</xsl:text>
+    <xsl:value-of select="@value"/>
+    <xsl:text> SchemaDefs::OSTypeIds [</xsl:text>
+    <xsl:value-of select="position()-1"/>
+    <xsl:text>]&#x0A;</xsl:text>
+  </xsl:for-each>
+
+</xsl:template>
+
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  define mode (C++ source file)
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
+
+<xsl:template match="/" mode="define">
+<xsl:text>
+/*
+ *  DO NOT EDIT.
+ *
+ *  This source is automatically generated from the VirtualBox XML Settings
+ *  Schema and contains selected schema constraints defined in C++.
+ */
+
+#include "SchemaDefs.h"
+
+namespace SchemaDefs
+{
+</xsl:text>
+
+<xsl:apply-templates select="xsd:schema" mode="define"/>
+
+<xsl:text>}
+</xsl:text>
+</xsl:template>
+
+<!--
+ *  array of OSTypeIds
+-->
+<xsl:template match="xsd:schema" mode="define">
+  <xsl:text>    const char *OSTypeIds[] =
+    {
+</xsl:text>
+  <xsl:for-each select="
+    xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration |
+    document(xsd:include[not(@schemaLocation='VirtualBox-settings-root.xsd')]/@schemaLocation)/xsd:schema/xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration
+  ">
+    <xsl:text>        "</xsl:text>
+    <xsl:value-of select="@value"/>
+    <xsl:text>",
+</xsl:text>
+  </xsl:for-each>
+  <xsl:text>    };
+</xsl:text>
+</xsl:template>
+
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  END
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
 
 </xsl:stylesheet>

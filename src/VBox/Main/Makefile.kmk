@@ -502,22 +502,29 @@ OTHER_CLEAN += \
 
 
 #
-# Generate SchemaDefs.h from XML Schema
+# Generate SchemaDefs.h and SchemaDefs.cpp from XML Schema
 #
 VBOX_XML_SCHEMADEFS_H   = $(PATH_TARGET)/SchemaDefs.h
+VBOX_XML_SCHEMADEFS_CPP = $(PATH_TARGET)/SchemaDefs.cpp
 VBOX_XML_SCHEMADEFS_XSL = xml/SchemaDefs.xsl
 
 VBoxC_DEPS      += $(VBOX_XML_SCHEMADEFS_H)
 VBoxC_INCS      += $(PATH_TARGET)
+
 VBoxSVC_DEPS    += $(VBOX_XML_SCHEMADEFS_H)
 VBoxSVC_INCS    += $(PATH_TARGET)
+VBoxSVC_SOURCES += $(VBOX_XML_SCHEMADEFS_CPP)
 
 $(VBOX_XML_SCHEMADEFS_H): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(BUILD_TARGET)) $(VBOX_XML_SCHEMA_COMMON)
-	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(filter-out $(VBOX_XML_SCHEMA_COMMON),$^)
+	$(call MSG_TOOL,xsltproc,SchemaDefs,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC)  --stringparam mode declare -o $@ $(filter-out $(VBOX_XML_SCHEMA_COMMON),$^)
 
-OTHER_CLEAN     += $(VBOX_XML_SCHEMADEFS_H)
-.NOTPARALLEL:      $(VBOX_XML_SCHEMADEFS_H)
+$(VBOX_XML_SCHEMADEFS_CPP): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(BUILD_TARGET)) $(VBOX_XML_SCHEMA_COMMON)
+	$(call MSG_TOOL,xsltproc,SchemaDefs,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC)  --stringparam mode define -o $@ $(filter-out $(VBOX_XML_SCHEMA_COMMON),$^)
+
+OTHER_CLEAN     += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
+.NOTPARALLEL:      $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
 
 #
@@ -663,6 +670,8 @@ else
 testidl: $(IDLFILE) $(PATH_VBoxCOM)/VirtualBox_i.c
 
 endif
+
+testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
 $(PATH_BIN)/comregister.cmd: win32/comregister.cmd
 	$(CP) $< $@

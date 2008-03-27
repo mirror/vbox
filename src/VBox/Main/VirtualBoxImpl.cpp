@@ -4478,35 +4478,46 @@ HRESULT VirtualBox::registerGuestOSTypes()
         const uint32_t recommendedRAM;
         const uint32_t recommendedVRAM;
         const uint32_t recommendedHDD;
-    } OSTypes[] =
+    } OSTypes [SchemaDefs::OSTypeId_COUNT] =
     {
         /// @todo (dmik) get the list of OS types from the XML schema
         /* NOTE1: we assume that unknown is always the first entry!
          * NOTE2: please use powers of 2 when specifying the size of harddisks since
          *        '2GB' looks better than '1.95GB' (= 2000MB) */
-        { "unknown",    tr ("Other/Unknown"),  VBOXOSTYPE_Unknown,     64,   4,  2 * _1K },
-        { "dos",        "DOS",                 VBOXOSTYPE_DOS,         32,   4,      512 },
-        { "win31",      "Windows 3.1",         VBOXOSTYPE_Win31,       32,   4,  1 * _1K },
-        { "win95",      "Windows 95",          VBOXOSTYPE_Win95,       64,   4,  2 * _1K },
-        { "win98",      "Windows 98",          VBOXOSTYPE_Win98,       64,   4,  2 * _1K },
-        { "winme",      "Windows Me",          VBOXOSTYPE_WinMe,       64,   4,  4 * _1K },
-        { "winnt4",     "Windows NT 4",        VBOXOSTYPE_WinNT4,     128,   4,  2 * _1K },
-        { "win2k",      "Windows 2000",        VBOXOSTYPE_Win2k,      168,   4,  4 * _1K },
-        { "winxp",      "Windows XP",          VBOXOSTYPE_WinXP,      192,   4, 10 * _1K },
-        { "win2k3",     "Windows Server 2003", VBOXOSTYPE_Win2k3,     256,   4, 20 * _1K },
-        { "winvista",   "Windows Vista",       VBOXOSTYPE_WinVista,   512,   4, 20 * _1K },
-        { "os2warp3",   "OS/2 Warp 3",         VBOXOSTYPE_OS2Warp3,    48,   4,  1 * _1K },
-        { "os2warp4",   "OS/2 Warp 4",         VBOXOSTYPE_OS2Warp4,    64,   4,  2 * _1K },
-        { "os2warp45",  "OS/2 Warp 4.5",       VBOXOSTYPE_OS2Warp45,   96,   4,  2 * _1K },
-        { "linux22",    "Linux 2.2",           VBOXOSTYPE_Linux22,     64,   4,  2 * _1K },
-        { "linux24",    "Linux 2.4",           VBOXOSTYPE_Linux24,    128,   4,  4 * _1K },
-        { "linux26",    "Linux 2.6",           VBOXOSTYPE_Linux26,    256,   4,  8 * _1K },
-        { "freebsd",    "FreeBSD",             VBOXOSTYPE_FreeBSD,     64,   4,  2 * _1K },
-        { "openbsd",    "OpenBSD",             VBOXOSTYPE_OpenBSD,     64,   4,  2 * _1K },
-        { "netbsd",     "NetBSD",              VBOXOSTYPE_NetBSD,      64,   4,  2 * _1K },
-        { "netware",    "Netware",             VBOXOSTYPE_Netware,    128,   4,  4 * _1K },
-        { "solaris",    "Solaris",             VBOXOSTYPE_Solaris,    128,   4,  8 * _1K },
-        { "l4",         "L4",                  VBOXOSTYPE_L4,          64,   4,  2 * _1K }
+        { SchemaDefs_OSTypeId_unknown,   tr ("Other/Unknown"),  VBOXOSTYPE_Unknown,    64,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_dos,       "DOS",                 VBOXOSTYPE_DOS,        32,   4,      512 },
+        { SchemaDefs_OSTypeId_win31,     "Windows 3.1",         VBOXOSTYPE_Win31,      32,   4,  1 * _1K },
+        { SchemaDefs_OSTypeId_win95,     "Windows 95",          VBOXOSTYPE_Win95,      64,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_win98,     "Windows 98",          VBOXOSTYPE_Win98,      64,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_winme,     "Windows Me",          VBOXOSTYPE_WinMe,      64,   4,  4 * _1K },
+        { SchemaDefs_OSTypeId_winnt4,    "Windows NT 4",        VBOXOSTYPE_WinNT4,    128,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_win2k,     "Windows 2000",        VBOXOSTYPE_Win2k,     168,   4,  4 * _1K },
+        { SchemaDefs_OSTypeId_winxp,     "Windows XP",          VBOXOSTYPE_WinXP,     192,   4, 10 * _1K },
+        { SchemaDefs_OSTypeId_win2k3,    "Windows Server 2003", VBOXOSTYPE_Win2k3,    256,   4, 20 * _1K },
+        { SchemaDefs_OSTypeId_winvista,  "Windows Vista",       VBOXOSTYPE_WinVista,  512,   4, 20 * _1K },
+        { SchemaDefs_OSTypeId_win2k8,    "Windows Server 2008", VBOXOSTYPE_Win2k8,    256,   4, 20 * _1K },
+        { SchemaDefs_OSTypeId_os2warp3,  "OS/2 Warp 3",         VBOXOSTYPE_OS2Warp3,   48,   4,  1 * _1K },
+        { SchemaDefs_OSTypeId_os2warp4,  "OS/2 Warp 4",         VBOXOSTYPE_OS2Warp4,   64,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_os2warp45, "OS/2 Warp 4.5",       VBOXOSTYPE_OS2Warp45,  96,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_ecs,       "eComStation",         VBOXOSTYPE_ECS,        96,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_linux22,   "Linux 2.2",           VBOXOSTYPE_Linux22,    64,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_linux24,   "Linux 2.4",           VBOXOSTYPE_Linux24,   128,   4,  4 * _1K },
+        { SchemaDefs_OSTypeId_linux26,   "Linux 2.6",           VBOXOSTYPE_Linux26,   256,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_archlinux, "Arch Linux",          VBOXOSTYPE_ArchLinux, 256,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_debian,    "Debian",              VBOXOSTYPE_Debian,    256,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_opensuse,  "openSUSE",            VBOXOSTYPE_OpenSUSE,  256,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_fedoracore,"Fedora Core",         VBOXOSTYPE_FedoraCore,256,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_gentoo,    "Gentoo Linux",        VBOXOSTYPE_Gentoo,    256,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_mandriva,  "Mandriva",            VBOXOSTYPE_Mandriva,  256,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_redhat,    "Red Hat",             VBOXOSTYPE_RedHat,    256,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_ubuntu,    "Ubuntu",              VBOXOSTYPE_Ubuntu,    256,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_xandros,   "Xandros",             VBOXOSTYPE_Xandros,   256,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_freebsd,   "FreeBSD",             VBOXOSTYPE_FreeBSD,    64,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_openbsd,   "OpenBSD",             VBOXOSTYPE_OpenBSD,    64,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_netbsd,    "NetBSD",              VBOXOSTYPE_NetBSD,     64,   4,  2 * _1K },
+        { SchemaDefs_OSTypeId_netware,   "Netware",             VBOXOSTYPE_Netware,   128,   4,  4 * _1K },
+        { SchemaDefs_OSTypeId_solaris,   "Solaris",             VBOXOSTYPE_Solaris,   128,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_l4,        "L4",                  VBOXOSTYPE_L4,         64,   4,  2 * _1K }
     };
 
     for (uint32_t i = 0; i < ELEMENTS (OSTypes) && SUCCEEDED (rc); i++)
