@@ -837,7 +837,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     /* set the correct initial machine_state value */
     machine_state = cconsole.GetState();
 
-    console->normalizeGeometry (true /* adjustPosition */);
+    console->normalizeGeometry (false /* adjustPosition */);
 
     updateAppearanceOf (AllStuff);
 
@@ -2117,8 +2117,11 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #endif
 
         /* Adjust colors and appearance. */
-        mEraseColor = centralWidget()->eraseColor();
-        centralWidget()->setEraseColor (Qt::black);
+        mErasePalette = centralWidget()->palette();
+        QPalette palette(mErasePalette);
+        palette.setColor (centralWidget()->backgroundRole(), Qt::black);
+        centralWidget()->setPalette (palette);
+        centralWidget()->setAutoFillBackground (true);
         console_style = console->frameStyle();
         console->setFrameStyle (QFrame::NoFrame);
         console->setMaximumSize (scrGeo.size());
@@ -2204,8 +2207,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
         /* Adjust colors and appearance. */
         clearMask();
-        centralWidget()->setEraseColor (mEraseColor);
+        centralWidget()->setPalette (mErasePalette);
         centralWidget()->setBackgroundMode (Qt::PaletteBackground);
+        centralWidget()->setAutoFillBackground (false);
         console->setFrameStyle (console_style);
         console->setMaximumSize (console->sizeHint());
         console->setHorizontalScrollBarPolicy (Qt::ScrollBarAsNeeded);
