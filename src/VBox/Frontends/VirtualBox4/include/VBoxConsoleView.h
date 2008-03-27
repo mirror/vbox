@@ -25,7 +25,8 @@
 #include "VBoxGlobalSettings.h"
 
 /* Qt includes */
-#include <q3scrollview.h>
+#include <QAbstractScrollArea>
+#include <QScrollBar>
 
 #if defined (Q_WS_PM)
 #include "src/os2/VBoxHlp.h"
@@ -45,7 +46,7 @@ class QPainter;
 class QLabel;
 class QMenuData;
 
-class VBoxConsoleView : public Q3ScrollView
+class VBoxConsoleView : public QAbstractScrollArea
 {
     Q_OBJECT
 
@@ -63,7 +64,7 @@ public:
     VBoxConsoleView (VBoxConsoleWnd *mainWnd,
                      const CConsole &console,
                      VBoxDefs::RenderMode rm,
-                     QWidget *parent = 0, const char *name = 0, Qt::WFlags f = 0);
+                     QWidget *parent = 0);
     ~VBoxConsoleView();
 
     QSize sizeHint() const;
@@ -94,6 +95,26 @@ public:
     void setIgnoreMainwndResize (bool aYes) { mIgnoreMainwndResize = aYes; }
 
     QRect getDesktopGeometry();
+
+    /* todo: This are some support functions for the qt4 port. Maybe we get rid
+     * of them some day. */
+    int contentsX() const { return horizontalScrollBar()->value(); }
+    int contentsY() const { return verticalScrollBar()->value(); }
+    int contentsWidth() const;
+    int contentsHeight() const;
+    int visibleWidth() const { return horizontalScrollBar()->pageStep(); }
+    int visibleHeight() const { return verticalScrollBar()->pageStep(); }
+    void scrollBy (int dx, int dy) 
+    { 
+        horizontalScrollBar()->setValue (horizontalScrollBar()->value() + dx);
+        verticalScrollBar()->setValue (verticalScrollBar()->value() + dy);
+    }
+    QPoint viewportToContents ( const QPoint & vp ) const
+    {
+        return QPoint (vp.x() + contentsX(), 
+                       vp.y() + contentsY());
+    }
+    void updateSliders();
 
 signals:
 
@@ -140,7 +161,7 @@ private:
                    wchar_t *aUniKey = NULL);
     bool mouseEvent (int aType, const QPoint &aPos, const QPoint &aGlobalPos,
                      Qt::ButtonState aButton,
-                     Qt::ButtonState aState, Qt::ButtonState aStateAfter,
+                     Qt::MouseButtons aButtons, Qt::KeyboardModifiers aModifiers,
                      int aWheelDelta, Qt::Orientation aWheelDir);
 
     void emitKeyboardStateChanged()
@@ -161,7 +182,8 @@ private:
 
     void doRefresh();
 
-    void viewportPaintEvent( QPaintEvent * );
+    void resizeEvent (QResizeEvent *);
+    void paintEvent (QPaintEvent *);
 #ifdef VBOX_GUI_USE_REFRESH_TIMER
     void timerEvent( QTimerEvent * );
 #endif
@@ -169,7 +191,7 @@ private:
     void captureKbd (bool aCapture, bool aEmitSignal = true);
     void captureMouse (bool aCapture, bool aEmitSignal = true);
 
-    bool processHotKey (const QKeySequence &key, QMenuData *data);
+    bool processHotKey (const QKeySequence &key, const QList<QAction*>& data);
     void updateModifiers (bool fNumLock, bool fCapsLock, bool fScrollLock);
 
     void releaseAllPressedKeys (bool aReleaseHostKey = true);
@@ -234,7 +256,6 @@ private:
     long muNumLockAdaptionCnt;
     long muCapsLockAdaptionCnt;
 
-    QTimer *resize_hint_timer;
     QTimer *mToggleFSModeTimer;
 
     VBoxDefs::RenderMode mode;
