@@ -3160,10 +3160,10 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     Bstr type (aType);
     if (type == "gui")
     {
-        char VirtualBox_exe[sz];
+        char *VirtualBox_exe = (char *) RTMemAlloc (sz);
         size_t cchActual;
         vrc = RTEnvGetEx (env, "VBOXGUIPATH", VirtualBox_exe, sz, &cchActual);
-        AssertRCBreakVoid (vrc);
+        AssertRCBreak (vrc, RTStrFree (VirtualBox_exe));
         strcpy (cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
@@ -3174,6 +3174,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
 #endif
         vrc = RTProcCreate (path, args, env, 0, &pid);
+        RTStrFree (VirtualBox_exe);
     }
     else
 #ifdef VBOX_VRDP
