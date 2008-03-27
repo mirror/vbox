@@ -368,7 +368,7 @@ IOMDECL(int)  IOMMMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
                                 GCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, GCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                 GCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
-    LogFlow(("IOMMMIORegisterGC: pDevIns=%p GCPhysStart=%#x cbRange=%#x pvUser=%VGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
+    LogFlow(("IOMMMIORegisterGC: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
 
     /*
@@ -376,13 +376,13 @@ IOMDECL(int)  IOMMMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
      */
     if (!pfnWriteCallback && !pfnReadCallback)
     {
-        AssertMsgFailed(("No callbacks! %#x LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
+        AssertMsgFailed(("No callbacks! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
         return VERR_INVALID_PARAMETER;
     }
     RTGCPHYS GCPhysLast = GCPhysStart + (cbRange - 1);
     if (GCPhysLast < GCPhysStart)
     {
-        AssertMsgFailed(("Wrapped! %#x LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
+        AssertMsgFailed(("Wrapped! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
 
@@ -395,7 +395,7 @@ IOMDECL(int)  IOMMMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
         PIOMMMIORANGER3 pRange = (PIOMMMIORANGER3)RTAvlroGCPhysRangeGet(&pVM->iom.s.CTXSUFF(pTrees)->MMIOTreeR3, GCPhys);
         if (!pRange)
         {
-            AssertMsgFailed(("No R3 range! GCPhys=%#x %#x LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc));
+            AssertMsgFailed(("No R3 range! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc));
             return VERR_IOM_NO_HC_MMIO_RANGE;
         }
 #ifndef IOM_NO_PDMINS_CHECKS
@@ -405,7 +405,7 @@ IOMDECL(int)  IOMMMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
         if (pRange->pDevIns != MMHyperGC2HC(pVM, pDevIns))
         #endif
         {
-            AssertMsgFailed(("Not owner! GCPhys=%#x %#x LB%#x %s / %#x-%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc,
+            AssertMsgFailed(("Not owner! GCPhys=%VGp %VGp LB%#x %s / %#x-%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc,
                              pRange->Core.Key, pRange->Core.KeyLast, MMHyper2HC(pVM, (uintptr_t)pRange->pszDesc)));
             return VERR_IOM_NOT_MMIO_RANGE_OWNER;
         }
@@ -445,7 +445,7 @@ IOMDECL(int)  IOMMMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
         if (RTAvlroGCPhysInsert(&pVM->iom.s.CTXSUFF(pTrees)->MMIOTreeGC, &pRange->Core))
             return VINF_SUCCESS;
 
-        AssertMsgFailed(("Conflict! %#x LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
+        AssertMsgFailed(("Conflict! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
         MMHyperFree(pVM, pRange);
         rc = VERR_IOM_MMIO_RANGE_CONFLICT;
     }
@@ -593,7 +593,7 @@ IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
                                 R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                 R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
-    LogFlow(("IOMMMIORegisterR0: pDevIns=%p GCPhysStart=%#x cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
+    LogFlow(("IOMMMIORegisterR0: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
 
     /*
@@ -601,13 +601,13 @@ IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
      */
     if (!pfnWriteCallback && !pfnReadCallback)
     {
-        AssertMsgFailed(("No callbacks! %#x LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
+        AssertMsgFailed(("No callbacks! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
         return VERR_INVALID_PARAMETER;
     }
     RTGCPHYS GCPhysLast = GCPhysStart + (cbRange - 1);
     if (GCPhysLast < GCPhysStart)
     {
-        AssertMsgFailed(("Wrapped! %#x LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
+        AssertMsgFailed(("Wrapped! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
 
@@ -620,7 +620,7 @@ IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
         PIOMMMIORANGER3 pRange = (PIOMMMIORANGER3)RTAvlroGCPhysRangeGet(&pVM->iom.s.CTXSUFF(pTrees)->MMIOTreeR3, GCPhys);
         if (!pRange)
         {
-            AssertMsgFailed(("No R3 range! GCPhys=%#x %#x LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc));
+            AssertMsgFailed(("No R3 range! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc));
             return VERR_IOM_NO_HC_MMIO_RANGE;
         }
 #ifndef IOM_NO_PDMINS_CHECKS
@@ -630,7 +630,7 @@ IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
         if (pRange->pDevIns != MMHyperGC2HC(pVM, pDevIns))
 # endif
         {
-            AssertMsgFailed(("Not owner! GCPhys=%#x %#x LB%#x %s / %#x-%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc,
+            AssertMsgFailed(("Not owner! GCPhys=%VGp %VGp LB%#x %s / %#x-%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc,
                              pRange->Core.Key, pRange->Core.KeyLast, MMHyper2HC(pVM, (uintptr_t)pRange->pszDesc)));
             return VERR_IOM_NOT_MMIO_RANGE_OWNER;
         }
@@ -673,7 +673,7 @@ IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
         if (RTAvlroGCPhysInsert(&pVM->iom.s.CTXSUFF(pTrees)->MMIOTreeR0, &pRange->Core))
             return VINF_SUCCESS;
 
-        AssertMsgFailed(("Conflict! %#x LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
+        AssertMsgFailed(("Conflict! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
         MMHyperFree(pVM, pRange);
         rc = VERR_IOM_MMIO_RANGE_CONFLICT;
     }
