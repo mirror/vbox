@@ -1063,7 +1063,7 @@ static void pgmPhysCacheAdd(PVM pVM, PGMPHYSCACHE *pCache, RTGCPHYS GCPhys, uint
 
     Assert(VM_IS_EMT(pVM));
 
-    GCPhys = PAGE_ADDRESS(GCPhys);
+    GCPhys = GCPhys & X86_PTE_PAE_PG_MASK;
     pbHC   = (uint8_t *)PAGE_ADDRESS(pbHC);
 
     iCacheIndex = ((GCPhys >> PAGE_SHIFT) & PGM_MAX_PHYSCACHE_ENTRIES_MASK);
