@@ -324,7 +324,7 @@ private:
     bool was_max : 1;
     QObjectList hidden_children;
     int console_style;
-    QColor mEraseColor;
+    QPalette mErasePalette;
 
     bool mIsOpenViewFinished : 1;
     bool mIsFirstTimeStarted : 1;
