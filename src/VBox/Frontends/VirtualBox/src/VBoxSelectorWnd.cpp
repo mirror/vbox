@@ -928,15 +928,7 @@ void VBoxSelectorWnd::vmStart()
     }
 #endif
 
-#if defined (Q_WS_MAC) /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
-    env += "\nVBOXGUIPATH=../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
-#elif defined (Q_WS_WIN)
-    env += "\nVBOXGUIPATH=VirtualBox.exe";
-#else
-    env += "\nVBOXGUIPATH=VirtualBox";
-#endif
-
-    CProgress progress = vbox.OpenRemoteSession (session, id, "gui", env);
+    CProgress progress = vbox.OpenRemoteSession (session, id, "GUI/Qt3", env);
     if (!vbox.isOk())
     {
         vboxProblem().cannotOpenSession (vbox, item->machine());

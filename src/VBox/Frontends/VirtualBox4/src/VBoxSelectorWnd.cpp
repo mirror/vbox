@@ -542,7 +542,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     vmMenu->addAction (vmShowLogsAction);
 
     mVMCtxtMenu = new QMenu (this);
-    mVMCtxtMenu->addAction (vmConfigAction); 
+    mVMCtxtMenu->addAction (vmConfigAction);
     mVMCtxtMenu->addAction (vmDeleteAction);
     mVMCtxtMenu->addSeparator();
     mVMCtxtMenu->addAction (vmStartAction);
@@ -932,15 +932,7 @@ void VBoxSelectorWnd::vmStart()
     }
 #endif
 
-#if defined (Q_WS_MAC) /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
-    env += "\nVBOXGUIPATH=../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM4";
-#elif defined (Q_WS_WIN)
-    env += "\nVBOXGUIPATH=VirtualBox4.exe";
-#else
-    env += "\nVBOXGUIPATH=VirtualBox4";
-#endif
-
-    CProgress progress = vbox.OpenRemoteSession (session, id, "gui", env);
+    CProgress progress = vbox.OpenRemoteSession (session, id, "GUI/Qt4", env);
     if (!vbox.isOk())
     {
         vboxProblem().cannotOpenSession (vbox, item->machine());
