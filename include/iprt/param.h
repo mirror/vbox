@@ -83,7 +83,7 @@
  * Get the page aligned address of a POINTER in the CURRENT context.
  *
  * @returns Page aligned address (it's an uintptr_t).
- * @param   pv      The address to align.
+ * @param   pv      The virtual address to align.
  *
  * @remarks Physical addresses are always masked using X86_PTE_PAE_PG_MASK!
  * @remarks This only works with POINTERS in the current context.
@@ -95,10 +95,9 @@
  * Get the page aligned address of a physical address
  *
  * @returns Page aligned address (it's an RTHCPHYS or RTGCPHYS).
- * @param   pv      The address to align.
- *
+ * @param   Phys    The physical address to align.
  */
-#define PHYS_PAGE_ADDRESS(pv)    (pv & X86_PTE_PAE_PG_MASK)
+#define PHYS_PAGE_ADDRESS(Phys) ((Phys) & X86_PTE_PAE_PG_MASK)
 
 /**
  * Host max path (the reasonable value).
