@@ -1553,7 +1553,7 @@ SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3)
      */
     if (supdrvPageWasLockedByPageAlloc(pSession, pvR3))
     {
-        Log(("Page will be unlocked in SUPR0PageFree -> ignore\n"));
+        LogFlow(("Page will be unlocked in SUPR0PageFree -> ignore\n"));
         return VINF_SUCCESS;
     }
 #endif
