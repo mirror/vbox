@@ -3933,37 +3933,48 @@ void VBoxGlobal::init()
     }
 
     /* fill in OS type icon dictionary */
-    static const char *osTypeIcons[][2] =
+    static const char *kOSTypeIcons [][2] =
     {
-        {"unknown", ":/os_other.png"},
-        {"dos", ":/os_dos.png"},
-        {"win31", ":/os_win31.png"},
-        {"win95", ":/os_win95.png"},
-        {"win98", ":/os_win98.png"},
-        {"winme", ":/os_winme.png"},
-        {"winnt4", ":/os_winnt.png"},
-        {"win2k", ":/os_win2000.png"},
-        {"winxp", ":/os_winxp.png"},
-        {"win2k3", ":/os_win2003.png"},
-        {"winvista", ":/os_winvista.png"},
-        {"os2warp3", ":/os_os2.png"},
-        {"os2warp4", ":/os_os2.png"},
-        {"os2warp45", ":/os_os2.png"},
-        {"linux22", ":/os_linux.png"},
-        {"linux24", ":/os_linux.png"},
-        {"linux26", ":/os_linux.png"},
-        {"freebsd", ":/os_freebsd.png"},
-        {"openbsd", ":/os_openbsd.png"},
-        {"netbsd", ":/os_netbsd.png"},
-        {"netware", ":/os_netware.png"},
-        {"solaris", ":/os_solaris.png"},
-        {"l4", ":/os_l4.png"},
+        {"unknown",   ":/os_unknown.png"},
+        {"dos",       ":/os_dos.png"},
+        {"win31",     ":/os_win31.png"},
+        {"win95",     ":/os_win95.png"},
+        {"win98",     ":/os_win98.png"},
+        {"winme",     ":/os_winme.png"},
+        {"winnt4",    ":/os_winnt4.png"},
+        {"win2k",     ":/os_win2k.png"},
+        {"winxp",     ":/os_winxp.png"},
+        {"win2k3",    ":/os_win2k3.png"},
+        {"winvista",  ":/os_winvista.png"},
+        {"win2k8",    ":/os_win2k8.png"},
+        {"os2warp3",  ":/os_os2warp3.png"},
+        {"os2warp4",  ":/os_os2warp4.png"},
+        {"os2warp45", ":/os_os2warp4.png"},
+        {"ecs",       ":/os_ecs.png"},
+        {"linux22",   ":/os_linux.png"},
+        {"linux24",   ":/os_linux.png"},
+        {"linux26",   ":/os_linux.png"},
+        {"archlinux", ":/os_archlinux.png"},
+        {"debian",    ":/os_debian.png"},
+        {"opensuse",  ":/os_opensuse.png"},
+        {"fedoracore",":/os_fedoracore.png"},
+        {"gentoo",    ":/os_gentoo.png"},
+        {"mandriva",  ":/os_mandriva.png"},
+        {"redhat",    ":/os_redhat.png"},
+        {"ubuntu",    ":/os_ubuntu.png"},
+        {"xandros",   ":/os_xandros.png"},
+        {"freebsd",   ":/os_freebsd.png"},
+        {"openbsd",   ":/os_openbsd.png"},
+        {"netbsd",    ":/os_netbsd.png"},
+        {"netware",   ":/os_netware.png"},
+        {"solaris",   ":/os_solaris.png"},
+        {"l4",        ":/os_l4.png"},
     };
     vm_os_type_icons.setAutoDelete (true); /* takes ownership of elements */
-    for (uint n = 0; n < SIZEOF_ARRAY (osTypeIcons); n ++)
+    for (uint n = 0; n < SIZEOF_ARRAY (kOSTypeIcons); n ++)
     {
-        vm_os_type_icons.insert (osTypeIcons [n][0],
-            new QPixmap (osTypeIcons [n][1]));
+        vm_os_type_icons.insert (kOSTypeIcons [n][0],
+            new QPixmap (kOSTypeIcons [n][1]));
     }
 
     /* fill in VM state icon dictionary */

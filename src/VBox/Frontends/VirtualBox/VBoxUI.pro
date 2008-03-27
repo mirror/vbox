@@ -58,25 +58,37 @@ IMAGES	= images/tpixel.png \
 	images/vm_show_logs_disabled_32px.png \
 	images/vm_start_32px.png \
 	images/vm_start_disabled_32px.png \
-	images/os_freebsd.png \
-	images/os_openbsd.png \
-	images/os_netbsd.png \
+	images/os_archlinux.png \
+	images/os_debian.png \
 	images/os_dos.png \
-	images/os_linux.png \
+	images/os_ecs.png \
+	images/os_fedoracore.png \
+	images/os_freebsd.png \
+	images/os_gentoo.png \
 	images/os_l4.png \
+	images/os_linux.png \
+	images/os_mandriva.png \
+	images/os_netbsd.png \
 	images/os_netware.png \
-	images/os_os2.png \
-	images/os_other.png \
+	images/os_openbsd.png \
+	images/os_opensuse.png \
+	images/os_os2warp3.png \
+	images/os_os2warp4.png \
+	images/os_redhat.png \
 	images/os_solaris.png \
-	images/os_win2000.png \
-	images/os_win2003.png \
+	images/os_ubuntu.png \
+	images/os_unknown.png \
+	images/os_win2k.png \
+	images/os_win2k3.png \
+	images/os_win2k8.png \
 	images/os_win31.png \
 	images/os_win95.png \
 	images/os_win98.png \
 	images/os_winme.png \
-	images/os_winnt.png \
+	images/os_winnt4.png \
 	images/os_winvista.png \
 	images/os_winxp.png \
+	images/os_xandros.png \
 	images/state_aborted_16px.png \
 	images/state_discarding_16px.png \
 	images/state_paused_16px.png \
