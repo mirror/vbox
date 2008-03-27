@@ -104,14 +104,14 @@ public:
     int contentsHeight() const;
     int visibleWidth() const { return horizontalScrollBar()->pageStep(); }
     int visibleHeight() const { return verticalScrollBar()->pageStep(); }
-    void scrollBy (int dx, int dy) 
-    { 
+    void scrollBy (int dx, int dy)
+    {
         horizontalScrollBar()->setValue (horizontalScrollBar()->value() + dx);
         verticalScrollBar()->setValue (verticalScrollBar()->value() + dy);
     }
     QPoint viewportToContents ( const QPoint & vp ) const
     {
-        return QPoint (vp.x() + contentsX(), 
+        return QPoint (vp.x() + contentsX(),
                        vp.y() + contentsY());
     }
     void updateSliders();
@@ -184,9 +184,6 @@ private:
 
     void resizeEvent (QResizeEvent *);
     void paintEvent (QPaintEvent *);
-#ifdef VBOX_GUI_USE_REFRESH_TIMER
-    void timerEvent( QTimerEvent * );
-#endif
 
     void captureKbd (bool aCapture, bool aEmitSignal = true);
     void captureMouse (bool aCapture, bool aEmitSignal = true);
@@ -277,11 +274,6 @@ private:
     UInt32 mDarwinKeyModifiers;
     /** The darwin cursor handle (see DarwinCursor.h/.cpp). */
     DARWINCURSOR mDarwinCursor;
-#endif
-
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-    QPixmap pm;
-    int tid;        /**< Timer id */
 #endif
 
     VBoxFrameBuffer *mFrameBuf;

@@ -89,10 +89,6 @@ const int XKeyRelease = KeyRelease;
 # include <VBox/err.h>
 #endif /* defined (Q_WS_MAC) */
 
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-enum { UPDATE_FREQ = 1000 / 60 }; // a-la 60Hz
-#endif
-
 #if defined (Q_WS_WIN32)
 
 static HHOOK gKbdHook = NULL;
@@ -671,21 +667,12 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     CDisplay display = mConsole.GetDisplay();
     Assert (!display.isNull());
 
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-    tid = 0;
-#endif
     mFrameBuf = 0;
 
     LogFlowFunc (("Rendering mode: %d\n", mode));
 
     switch (mode)
     {
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-        case VBoxDefs::TimerMode:
-            display.SetupInternalFramebuffer (32);
-            tid = startTimer (UPDATE_FREQ);
-            break;
-#endif
 #if defined (VBOX_GUI_USE_QIMAGE)
         case VBoxDefs::QImageMode:
             mFrameBuf = new VBoxQImageFrameBuffer (this);
@@ -794,10 +781,6 @@ VBoxConsoleView::~VBoxConsoleView()
         DestroyIcon (mAlphaCursor);
 #endif
 
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-    if (tid)
-        killTimer (tid);
-#endif
     if (mFrameBuf)
     {
         /* detach our framebuffer from Display */
@@ -821,19 +804,8 @@ VBoxConsoleView::~VBoxConsoleView()
 
 QSize VBoxConsoleView::sizeHint() const
 {
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-    if (mode == VBoxDefs::TimerMode)
-    {
-        CDisplay display = mConsole.GetDisplay();
-        return QSize (display.GetWidth() + frameWidth() * 2,
-                      display.GetHeight() + frameWidth() * 2);
-    }
-    else
-#endif
-    {
-        return QSize (mFrameBuf->width() + frameWidth() * 2,
-                      mFrameBuf->height() + frameWidth() * 2);
-    }
+    return QSize (mFrameBuf->width() + frameWidth() * 2,
+                  mFrameBuf->height() + frameWidth() * 2);
 }
 
 /**
@@ -2909,109 +2881,50 @@ void VBoxConsoleView::onStateChange (KMachineState state)
 
 void VBoxConsoleView::doRefresh()
 {
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-    if (mode == VBoxDefs::TimerMode)
-    {
-        FRAMEBUF_DEBUG_START (xxx);
-        QSize last_sz = pm.size();
-        bool rc = display_to_pixmap (mConsole, pm);
-        if (rc)
-        {
-            if (pm.size() != last_sz)
-            {
-                int pw = pm.width(), ph = pm.height();
-                resizeContents (pw, ph);
-                updateGeometry();
-                setMaximumSize (sizeHint());
-                /* let our toplevel widget calculate its sizeHint properly */
-                QApplication::sendPostedEvents (0, QEvent::LayoutHint);
-                normalizeGeometry();
-            }
-            else
-            {
-                /* the alternative is to update, so we will be repainted
-                 * on the next event loop iteration. currently disabled.
-                 * updateContents(); */
-                repaintContents (false);
-            }
-        }
-        if (rc)
-            FRAMEBUF_DEBUG_STOP (xxx, pm.width(), pm.height());
-    }
-    else
-#endif
-        repaintContents (false);
+    repaintContents (false);
 }
 
 void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
 {
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-    if (mode == VBoxDefs::TimerMode)
+    if (mPausedShot.isNull())
     {
-        if (!pm.isNull())
-        {
-            /* draw a part of vbuf */
-            const QRect &r = pe->rect();
-            ::bitBlt (viewport(), r.x(), r.y(),
-                      &pm, r.x() + contentsX(), r.y() + contentsY(),
-                      r.width(), r.height(),
-                      CopyROP, TRUE);
-        }
-        else
-        {
-            viewport()->erase (pe->rect());
-        }
-    }
-    else
-#endif
-    {
-        if (mPausedShot.isNull())
-        {
-            /* delegate the paint function to the VBoxFrameBuffer interface */
-            mFrameBuf->paintEvent (pe);
+        /* delegate the paint function to the VBoxFrameBuffer interface */
+        mFrameBuf->paintEvent (pe);
 #ifdef Q_WS_MAC
-            /* Update the dock icon if we are in the running state */
-            if (isRunning())
-            {
+        /* Update the dock icon if we are in the running state */
+        if (isRunning())
+        {
 # if defined (VBOX_GUI_USE_QUARTZ2D)
-                if (mode == VBoxDefs::Quartz2DMode)
-                {
-                    /* If the render mode is Quartz2D we could use the
-                     * CGImageRef of the framebuffer for the dock icon creation.
-                     * This saves some conversion time. */
-                    CGImageRef ir =
-                        static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
-                    ::DarwinUpdateDockPreview (ir, mVirtualBoxLogo);
-                }
-                else
-# endif
-                    ::DarwinUpdateDockPreview (mFrameBuf, mVirtualBoxLogo);
+            if (mode == VBoxDefs::Quartz2DMode)
+            {
+                /* If the render mode is Quartz2D we could use the
+                 * CGImageRef of the framebuffer for the dock icon creation.
+                 * This saves some conversion time. */
+                CGImageRef ir =
+                    static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
+                ::DarwinUpdateDockPreview (ir, mVirtualBoxLogo);
             }
-#endif
-            return;
+            else
+# endif
+                ::DarwinUpdateDockPreview (mFrameBuf, mVirtualBoxLogo);
         }
+#endif
+        return;
+    }
 
-        /* we have a snapshot for the paused state */
-        QRect r = pe->rect().intersect (viewport()->rect());
-        QPainter pnt (viewport());
-        pnt.drawPixmap (r.x(), r.y(), mPausedShot,
-                        r.x() + contentsX(), r.y() + contentsY(),
-                        r.width(), r.height());
+    /* we have a snapshot for the paused state */
+    QRect r = pe->rect().intersect (viewport()->rect());
+    QPainter pnt (viewport());
+    pnt.drawPixmap (r.x(), r.y(), mPausedShot,
+                    r.x() + contentsX(), r.y() + contentsY(),
+                    r.width(), r.height());
 
 #ifdef Q_WS_MAC
-        ::DarwinUpdateDockPreview (DarwinQPixmapToCGImage (&mPausedShot),
-                                   mVirtualBoxLogo,
-                                   mMainWnd->dockImageState());
+    ::DarwinUpdateDockPreview (DarwinQPixmapToCGImage (&mPausedShot),
+                               mVirtualBoxLogo,
+                               mMainWnd->dockImageState());
 #endif
-    }
 }
-
-#ifdef VBOX_GUI_USE_REFRESH_TIMER
-void VBoxConsoleView::timerEvent( QTimerEvent * )
-{
-    doRefresh();
-}
-#endif
 
 /**
  *  Captures the keyboard. When captured, no keyboard input reaches the host

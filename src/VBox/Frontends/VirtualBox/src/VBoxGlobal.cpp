@@ -694,10 +694,6 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
     if (aModeStr)
     {
         if (0) ;
-#if defined (VBOX_GUI_USE_REFRESH_TIMER)
-        else if (::strcmp (aModeStr, "timer") == 0)
-            mode = VBoxDefs::TimerMode;
-#endif
 #if defined (VBOX_GUI_USE_QIMAGE)
         else if (::strcmp (aModeStr, "image") == 0)
             mode = VBoxDefs::QImageMode;
