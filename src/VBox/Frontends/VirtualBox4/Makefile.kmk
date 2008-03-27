@@ -363,7 +363,7 @@ endif
 
 ifeq ($(BUILD_TARGET),darwin)
 # For the launch trick we need different inode numbers.
-VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
+VirtualBox_INST = $(INST_BIN)VirtualBox4 $(INST_BIN)VirtualBoxVM4
 
  # For testing iChat Theater stuff change
  # the sdk path
