@@ -679,7 +679,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     AssertWrapperOk (csession);
 
     console = new VBoxConsoleView (this, cconsole, mode,
-                                   centralWidget(), "console");
+                                   centralWidget());
 
     activateUICustomizations();
 
@@ -836,6 +836,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     /* set the correct initial machine_state value */
     machine_state = cconsole.GetState();
+
+    console->normalizeGeometry (true /* adjustPosition */);
 
     updateAppearanceOf (AllStuff);
 
@@ -2090,7 +2092,11 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         QList<QWidget *> list = findChildren<QWidget *>();
         foreach (QWidget *w, list)
         {
-            if (w != centralWidget())
+            /* todo: The list is now recursive. So think about a better way to
+             * prevent the childrens of the centralWidget to be hidden */
+            if (w != centralWidget() &&
+                w != console &&
+                w != console->viewport())
             {
                 if (!w->isHidden())
                 {
@@ -2114,11 +2120,10 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         mEraseColor = centralWidget()->eraseColor();
         centralWidget()->setEraseColor (Qt::black);
         console_style = console->frameStyle();
-        console->setFrameStyle (Q3Frame::NoFrame);
+        console->setFrameStyle (QFrame::NoFrame);
         console->setMaximumSize (scrGeo.size());
-#warning port me
-/*        console->setVScrollBarMode (Q3ScrollView::AlwaysOff);*/
-/*        console->setHScrollBarMode (Q3ScrollView::AlwaysOff);*/
+        console->setHorizontalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
+        console->setVerticalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
 
         /* Going fullscreen */
         setWindowState (windowState() ^ Qt::WindowFullScreen);
@@ -2203,9 +2208,8 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         centralWidget()->setBackgroundMode (Qt::PaletteBackground);
         console->setFrameStyle (console_style);
         console->setMaximumSize (console->sizeHint());
-#warning port me
-/*        console->setVScrollBarMode (Q3ScrollView::Auto);*/
-/*        console->setHScrollBarMode (Q3ScrollView::Auto);*/
+        console->setHorizontalScrollBarPolicy (Qt::ScrollBarAsNeeded);
+        console->setVerticalScrollBarPolicy (Qt::ScrollBarAsNeeded);
 
         /* Show everything hidden when going fullscreen. */
         foreach (QObject *obj, hidden_children)

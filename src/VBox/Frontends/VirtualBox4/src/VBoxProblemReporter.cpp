@@ -1506,7 +1506,7 @@ bool VBoxProblemReporter::confirmInputCapture (bool *aAutoConfirmed /* = NULL */
             "keyboard and mouse (if it is captured) and return them to normal "
             "operation. The currently assigned host key is shown on the status bar "
             "at the bottom of the Virtual Machine window, next to the&nbsp;"
-            "<img src=hostkey_16px.png/>&nbsp;icon. This icon, together "
+            "<img src=:/hostkey_16px.png/>&nbsp;icon. This icon, together "
             "with the mouse icon placed nearby, indicate the current keyboard "
             "and mouse capture state."
             "</p>") +
@@ -1539,7 +1539,7 @@ void VBoxProblemReporter::remindAboutAutoCapture()
             "keyboard and mouse (if it is captured) and return them to normal "
             "operation. The currently assigned host key is shown on the status bar "
             "at the bottom of the Virtual Machine window, next to the&nbsp;"
-            "<img src=hostkey_16px.png/>&nbsp;icon. This icon, together "
+            "<img src=:/hostkey_16px.png/>&nbsp;icon. This icon, together "
             "with the mouse icon placed nearby, indicate the current keyboard "
             "and mouse capture state."
             "</p>") +
@@ -1580,7 +1580,7 @@ void VBoxProblemReporter::remindAboutMouseIntegration (bool aSupportsAbsolute)
                 "uncaptured."
                 "</p>"
                 "<p>The mouse icon on the status bar will look like&nbsp;"
-                "<img src=mouse_seamless_16px.png/>&nbsp;to inform you that mouse "
+                "<img src=:/mouse_seamless_16px.png/>&nbsp;to inform you that mouse "
                 "pointer integration is supported by the guest OS and is "
                 "currently turned on."
                 "</p>"
@@ -1699,7 +1699,7 @@ bool VBoxProblemReporter::confirmGoingFullscreen (const QString &aHotKey)
             "<b>fullscreen</b> mode. "
             "You can go back to windowed mode at any time by pressing "
             "<b>%1</b>. Note that the <i>Host</i> key is currently "
-            "defined as <b>%1</b>.</p>"
+            "defined as <b>%2</b>.</p>"
             "<p>Note that the main menu bar is hidden in fullscreen mode. You "
             "can access it by pressing <b>Host+Home</b>.</p>")
             .arg (aHotKey)
@@ -1721,7 +1721,7 @@ bool VBoxProblemReporter::confirmGoingSeamless (const QString &aHotKey)
             "<b>Seamless</b> mode. "
             "You can go back to windowed mode at any time by pressing "
             "<b>%1</b>. Note that the <i>Host</i> key is currently "
-            "defined as <b>%1</b>.</p>"
+            "defined as <b>%2</b>.</p>"
             "<p>Note that the main menu bar is hidden in seamless mode. You "
             "can access it by pressing <b>Host+Home</b>.</p>")
             .arg (aHotKey)

@@ -258,14 +258,12 @@ private:
 class ActivateMenuEvent : public QEvent
 {
 public:
-    ActivateMenuEvent (QMenuData *menuData, uint index) :
+    ActivateMenuEvent (QAction *aData) :
         QEvent ((QEvent::Type) VBoxDefs::ActivateMenuEventType),
-        md (menuData), i (index) {}
-    QMenuData *menuData() const { return md; }
-    uint index() const { return i; }
+        mAction (aData) {}
+    QAction *action() const { return mAction; }
 private:
-    QMenuData *md;
-    uint i;
+    QAction *mAction;
 };
 
 /** VM Runtime error event */
@@ -573,6 +571,24 @@ NS_DECL_CLASSINFO (VBoxConsoleCallback)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VBoxConsoleCallback, IConsoleCallback)
 #endif
 
+class VBoxViewport: public QWidget
+{
+public:
+    VBoxViewport (QWidget *aParent)
+        : QWidget (aParent)
+    {
+        /* No need for background drawing */
+        setAttribute (Qt::WA_OpaquePaintEvent);
+    }
+    virtual QPaintEngine * paintEngine() const 
+    { 
+        if (testAttribute (Qt::WA_PaintOnScreen))
+            return NULL; 
+        else 
+            return QWidget::paintEngine();
+    } 
+};
+
 //
 // VBoxConsoleView class
 /////////////////////////////////////////////////////////////////////////////
@@ -586,8 +602,8 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VBoxConsoleCallback, IConsoleCallback)
 VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
                                   const CConsole &console,
                                   VBoxDefs::RenderMode rm,
-                                  QWidget *parent, const char *name, Qt::WFlags f)
-    : Q3ScrollView (parent, name, f | Qt::WStaticContents | Qt::WNoAutoErase)
+                                  QWidget *parent)
+    : QAbstractScrollArea (parent)
     , mMainWnd (mainWnd)
     , mConsole (console)
     , gs (vboxGlobal().settings())
@@ -629,6 +645,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     mVirtualBoxLogo = ::DarwinQPixmapFromMimeSourceToCGImage ("VirtualBox_48px.png");
 #endif
 
+    VBoxViewport *pViewport = new VBoxViewport (this);
+    setViewport (pViewport);
+
     /* enable MouseMove events */
     viewport()->setMouseTracking (true);
 
@@ -650,10 +669,6 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
 
     ::memset (mPressedKeys, 0, SIZEOF_ARRAY (mPressedKeys));
-
-    resize_hint_timer = new QTimer (this);
-    connect (resize_hint_timer, SIGNAL (timeout()),
-             this, SLOT (doResizeHint()));
 
     mToggleFSModeTimer = new QTimer (this);
     mToggleFSModeTimer->setSingleShot (true);
@@ -687,6 +702,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
 #if defined (VBOX_GUI_USE_SDL)
         case VBoxDefs::SDLMode:
+            /* Indicate that we are doing all 
+             * drawing stuff ourself */
+            pViewport->setAttribute (Qt::WA_PaintOnScreen);
 # ifdef Q_WS_X11
             /* This is somehow necessary to prevent strange X11 warnings on
              * i386 and segfaults on x86_64. */
@@ -1057,7 +1075,7 @@ bool VBoxConsoleView::event (QEvent *e)
                           re->width(), re->height(), re->bitsPerPixel()));
 
                 if (mToggleFSModeTimer->isActive())
-                    mToggleFSModeTimer->stop();
+                    mToggleFSModeTimer->stop(); 
 
                 /* do frame buffer dependent resize */
                 mFrameBuf->resizeEvent (re);
@@ -1079,7 +1097,8 @@ bool VBoxConsoleView::event (QEvent *e)
                 maybeRestrictMinimumSize();
 
                 /* resize the guest canvas */
-                resizeContents (re->width(), re->height());
+                resize (re->width(), re->height());
+                updateSliders();
                 /* let our toplevel widget calculate its sizeHint properly */
                 QApplication::sendPostedEvents (0, QEvent::LayoutRequest);
 
@@ -1220,8 +1239,7 @@ bool VBoxConsoleView::event (QEvent *e)
             case VBoxDefs::ActivateMenuEventType:
             {
                 ActivateMenuEvent *ame = (ActivateMenuEvent *) e;
-#warning port me
-//                ame->menuData()->activateItemAt (ame->index());
+                ame->action()->trigger();
 
                 /*
                  *  The main window and its children can be destroyed at this
@@ -1413,9 +1431,8 @@ bool VBoxConsoleView::event (QEvent *e)
                     {
                         /* process hot keys not processed in keyEvent()
                          * (as in case of non-alphanumeric keys) */
-#warning port me
-//                        processHotKey (QKeySequence (ke->key()),
-//                                       mMainWnd->menuBar());
+                        processHotKey (QKeySequence (ke->key()),
+                                       mMainWnd->menuBar()->actions());
                     }
                 }
                 else if (!mIsHostkeyPressed && e->type() == QEvent::KeyRelease)
@@ -1460,7 +1477,7 @@ bool VBoxConsoleView::event (QEvent *e)
         }
     }
 
-    return Q3ScrollView::event (e);
+    return QAbstractScrollArea::event (e);
 }
 
 bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
@@ -1476,7 +1493,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             {
                 QMouseEvent *me = (QMouseEvent *) e;
                 if (mouseEvent (me->type(), me->pos(), me->globalPos(),
-                                me->button(), me->state(), me->stateAfter(),
+                                me->button(), me->buttons(), me->modifiers(),
                                 0, Qt::Horizontal))
                     return true; /* stop further event handling */
                 break;
@@ -1485,7 +1502,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             {
                 QWheelEvent *we = (QWheelEvent *) e;
                 if (mouseEvent (we->type(), we->pos(), we->globalPos(),
-                                Qt::NoButton, we->state(), we->state(),
+                                Qt::NoButton, we->buttons(), we->modifiers(),
                                 we->delta(), we->orientation()))
                     return true; /* stop further event handling */
                 break;
@@ -1554,7 +1571,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             {
                 if (!mIgnoreMainwndResize &&
                     mIsAdditionsActive && mAutoresizeGuest)
-                    resize_hint_timer->start (300, TRUE);
+                    QTimer::singleShot (300, this, SLOT (doResizeHint()));
                 break;
             }
 
@@ -1581,7 +1598,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             case QEvent::KeyPress:
             {
                 QKeyEvent *ke = (QKeyEvent *) e;
-                if (ke->key() == Qt::Key_Escape && !(ke->state() & Qt::KeyboardModifierMask))
+                if (ke->key() == Qt::Key_Escape && (ke->modifiers() == Qt::NoModifier))
                     if (mMainWnd->menuBar()->hasFocus())
                         setFocus();
                 break;
@@ -1591,7 +1608,7 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
         }
     }
 
-    return Q3ScrollView::eventFilter (watched, e);
+    return QAbstractScrollArea::eventFilter (watched, e);
 }
 
 #if defined(Q_WS_WIN32)
@@ -2502,7 +2519,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
             if (ch)
                 processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
                                                 QChar (ch).upper().unicode()),
-                                           mMainWnd->menuBar());
+                                           mMainWnd->menuBar()->actions());
         }
         delete[] list;
 #elif defined (Q_WS_X11)
@@ -2520,18 +2537,16 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
             if (ch)
             {
                 QChar c = QString::fromLocal8Bit (&ch, 1) [0];
-#warning port me
-//                processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
-//                                                c.upper().unicode()),
-//                                           mMainWnd->menuBar());
+                processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
+                                                         c.toUpper().unicode()),
+                                           mMainWnd->menuBar()->actions());
             }
         }
 #elif defined (Q_WS_MAC)
-#warning port me
-//        if (aUniKey && aUniKey [0] && !aUniKey [1])
-//            processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
-//                                                     QChar (aUniKey [0]).upper().unicode()),
-//                                       mMainWnd->menuBar());
+        if (aUniKey && aUniKey [0] && !aUniKey [1])
+            processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
+                                                     QChar (aUniKey [0]).upper().unicode()),
+                                       mMainWnd->menuBar()->actions());
 
         /* Don't consider the hot key as pressed since the guest never saw
          * it. (probably a generic thing) */
@@ -2584,28 +2599,28 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
  */
 bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
                                   const QPoint &aGlobalPos, Qt::ButtonState aButton,
-                                  Qt::ButtonState aState, Qt::ButtonState aStateAfter,
+                                  Qt::MouseButtons aButtons, Qt::KeyboardModifiers aModifiers,
                                   int aWheelDelta, Qt::Orientation aWheelDir)
 {
 #if 0
     char buf [256];
     sprintf (buf,
-             "MOUSE: type=%03d x=%03d y=%03d btn=%03d st=%08X stAfter=%08X "
+             "MOUSE: type=%03d x=%03d y=%03d btn=%03d btns=%08X mod=%08X "
              "wdelta=%03d wdir=%03d",
-             aType, aPos.x(), aPos.y(), aButton, aState, aStateAfter,
+             aType, aPos.x(), aPos.y(), aButton, aButtons, aModifiers,
              aWheelDelta, aWheelDir);
     mMainWnd->statusBar()->message (buf);
 #else
     Q_UNUSED (aButton);
-    Q_UNUSED (aState);
+    Q_UNUSED (aModifiers);
 #endif
 
     int state = 0;
-    if (aStateAfter & Qt::LeftButton)
+    if (aButtons & Qt::LeftButton)
         state |= KMouseButtonState_LeftButton;
-    if (aStateAfter & Qt::RightButton)
+    if (aButtons & Qt::RightButton)
         state |= KMouseButtonState_RightButton;
-    if (aStateAfter & Qt::MidButton)
+    if (aButtons & Qt::MidButton)
         state |= KMouseButtonState_MiddleButton;
 
     int wheel = 0;
@@ -2783,7 +2798,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
         {
             if (hasFocus() &&
                 (aType == QEvent::MouseButtonRelease &&
-                 !aStateAfter))
+                 aButtons == Qt::NoButton))
             {
                 if (isPaused())
                 {
@@ -2843,7 +2858,7 @@ void VBoxConsoleView::onStateChange (KMachineState state)
                     dimImage (shot);
                     mPausedShot = QPixmap::fromImage (shot);
                     /* fully repaint to pick up mPausedShot */
-                    viewport()->repaint();
+                    repaint();
                 }
             }
             /* fall through */
@@ -2912,7 +2927,7 @@ void VBoxConsoleView::doRefresh()
             if (pm.size() != last_sz)
             {
                 int pw = pm.width(), ph = pm.height();
-                resizeContents (pw, ph);
+                viewport()->resize (pw, ph);
                 updateGeometry();
                 setMaximumSize (sizeHint());
                 /* let our toplevel widget calculate its sizeHint properly */
@@ -2924,7 +2939,7 @@ void VBoxConsoleView::doRefresh()
                 /* the alternative is to update, so we will be repainted
                  * on the next event loop iteration. currently disabled.
                  * updateContents(); */
-                repaintContents (false);
+                viewport()->repaint();
             }
         }
         if (rc)
@@ -2932,30 +2947,35 @@ void VBoxConsoleView::doRefresh()
     }
     else
 #endif
-        repaintContents (false);
+        viewport()->repaint();
 }
 
-void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
+void VBoxConsoleView::resizeEvent (QResizeEvent *)
+{
+    updateSliders();
+}
+
+void VBoxConsoleView::paintEvent (QPaintEvent *pe)
 {
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
-    if (mode == VBoxDefs::TimerMode)
-    {
-        if (!pm.isNull())
-        {
-            /* draw a part of vbuf */
-            const QRect &r = pe->rect();
-#warning port me
+#warning "port me: Is this needed anymore?"
+//    if (mode == VBoxDefs::TimerMode)
+//    {
+//        if (!pm.isNull())
+//        {
+//            /* draw a part of vbuf */
+//            const QRect &r = pe->rect();
 //            ::bitBlt (viewport(), r.x(), r.y(),
 //                      &pm, r.x() + contentsX(), r.y() + contentsY(),
 //                      r.width(), r.height(),
 //                      CopyROP, TRUE);
-        }
-        else
-        {
-            viewport()->erase (pe->rect());
-        }
-    }
-    else
+//        }
+//        else
+//        {
+//            viewport()->erase (pe->rect());
+//        }
+//    }
+//    else
 #endif
     {
         if (mPausedShot.isNull())
@@ -3117,52 +3137,33 @@ void VBoxConsoleView::captureMouse (bool aCapture, bool aEmitSignal /* = true */
  *  Searches for a menu item with a given hot key (shortcut). If the item
  *  is found, activates it and returns true. Otherwise returns false.
  */
-bool VBoxConsoleView::processHotKey (const QKeySequence &key,  QMenuData *data)
+bool VBoxConsoleView::processHotKey (const QKeySequence &key, const QList<QAction*>& data)
 {
-    if (!data) return false;
+    foreach (QAction *pAction, data)
+    {
+        if (QMenu *menu = pAction->menu())
+            return processHotKey (key, menu->actions());
 
-    /*
-     *  Note: below, we use the internal class QMenuItem, that is subject
-     *  to change w/o notice... (the alternative would be to explicitly assign
-     *  specific IDs to all popup submenus in VBoxConsoleWnd and then
-     *  look through its children in order to find a popup with a given ID,
-     *  which is unconvenient).
-     */
-
-#warning port me
-//    for (uint i = 0; i < data->count(); i++)
-//    {
-//        int id = data->idAt (i);
-//        QMenuItem *item = data->findItem (id);
-//        if (item->popup())
-//        {
-//            if (processHotKey (key, item->popup()))
-//                return true;
-//        }
-//        else
-//        {
-//            QStringList list = QStringList::split ("\tHost+", data->text (id));
-//            if (list.count() == 2)
-//            {
-//                if (key.matches (QKeySequence (list[1])) == Identical)
-//                {
-//                    /*
-//                     *  we asynchronously post a special event instead of calling
-//                     *  data->activateItemAt (i) directly, to let key presses
-//                     *  and releases be processed correctly by Qt first.
-//                     *  Note: we assume that nobody will delete the menu item
-//                     *  corresponding to the key sequence, so that the pointer to
-//                     *  menu data posted along with the event will remain valid in
-//                     *  the event handler, at least until the main window is closed.
-//                     */
-//
-//                    QApplication::postEvent (this,
-//                                             new ActivateMenuEvent (data, i));
-//                    return true;
-//                }
-//            }
-//        }
-//    }
+        QStringList list = pAction->text().split ("\tHost+");
+        if (list.count() == 2)
+        {
+            if (key.matches (QKeySequence (list[1])) == QKeySequence::ExactMatch)
+            {
+                /*
+                 *  we asynchronously post a special event instead of calling
+                 *  pAction->trigger() directly, to let key presses and
+                 *  releases be processed correctly by Qt first. Note: we
+                 *  assume that nobody will delete the menu item corresponding
+                 *  to the key sequence, so that the pointer to menu data
+                 *  posted along with the event will remain valid in the event
+                 *  handler, at least until the main window is closed.
+                 */
+                QApplication::postEvent (this,
+                                         new ActivateMenuEvent (pAction));
+                return true;
+            }
+        }
+    }
 
     return false;
 }
@@ -3675,3 +3676,30 @@ void VBoxConsoleView::maybeRestrictMinimumSize()
             setMinimumSize (0, 0);
     }
 }
+
+int VBoxConsoleView::contentsWidth() const 
+{ 
+    return mFrameBuf->width(); 
+}
+
+int VBoxConsoleView::contentsHeight() const 
+{ 
+    return mFrameBuf->height(); 
+}
+
+void VBoxConsoleView::updateSliders()
+{
+    QSize p = viewport()->size();
+    QSize m = maximumViewportSize();
+
+    QSize v = QSize (mFrameBuf->width(), mFrameBuf->height());
+    /* no scroll bars needed */
+    if (m.expandedTo(v) == m)
+        p = m;
+
+    horizontalScrollBar()->setRange(0, v.width() - p.width());
+    verticalScrollBar()->setRange(0, v.height() - p.height());
+    horizontalScrollBar()->setPageStep(p.width());
+    verticalScrollBar()->setPageStep(p.height());
+}
+
