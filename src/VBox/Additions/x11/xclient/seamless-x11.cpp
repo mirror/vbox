@@ -30,6 +30,8 @@
 #include <X11/Xatom.h>
 #include <X11/Xmu/WinUtil.h>
 
+#include <limits.h>
+
 /* This is defined wrong in my X11 header files! */
 #define VBoxShapeNotify 64
 
