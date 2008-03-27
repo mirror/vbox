@@ -40,9 +40,9 @@ PGMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys)
     }
     else
     if (    ASMBitTest(&pVM->pgm.s.pgmphysreadcache.aEntries, (iCacheIndex = ((GCPhys >> PAGE_SHIFT) & PGM_MAX_PHYSCACHE_ENTRIES_MASK)))
-        &&  pVM->pgm.s.pgmphysreadcache.Entry[iCacheIndex].GCPhys == PAGE_ADDRESS(GCPhys) /** @todo r=bird: wrong macro. You don't want an uintptr_t! */
+        &&  pVM->pgm.s.pgmphysreadcache.Entry[iCacheIndex].GCPhys == PHYS_PAGE_ADDRESS(GCPhys)
 #if PGMPHYS_DATASIZE != 1
-        &&  PAGE_ADDRESS(GCPhys) == PAGE_ADDRESS(GCPhys + sizeof(PGMPHYS_DATATYPE) - 1) /** (GCPhys & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(PGMPHYS_DATATYPE) */
+        &&  PHYS_PAGE_ADDRESS(GCPhys) == PHYS_PAGE_ADDRESS(GCPhys + sizeof(PGMPHYS_DATATYPE) - 1) /** (GCPhys & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(PGMPHYS_DATATYPE) */
 #endif
        )
     {
@@ -82,9 +82,9 @@ PGMDECL(void) PGMPHYSFN_WRITENAME(PVM pVM, RTGCPHYS GCPhys, PGMPHYS_DATATYPE val
     }
     else
     if (    ASMBitTest(&pVM->pgm.s.pgmphyswritecache.aEntries, (iCacheIndex = ((GCPhys >> PAGE_SHIFT) & PGM_MAX_PHYSCACHE_ENTRIES_MASK)))
-        &&  pVM->pgm.s.pgmphyswritecache.Entry[iCacheIndex].GCPhys == PAGE_ADDRESS(GCPhys)
+        &&  pVM->pgm.s.pgmphyswritecache.Entry[iCacheIndex].GCPhys == PHYS_PAGE_ADDRESS(GCPhys)
 #if PGMPHYS_DATASIZE != 1
-        &&  PAGE_ADDRESS(GCPhys) == PAGE_ADDRESS(GCPhys + sizeof(val) - 1)
+        &&  PHYS_PAGE_ADDRESS(GCPhys) == PHYS_PAGE_ADDRESS(GCPhys + sizeof(val) - 1)
 #endif
        )
     {

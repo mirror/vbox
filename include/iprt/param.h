@@ -92,6 +92,15 @@
 #define PAGE_ADDRESS(pv)    ((uintptr_t)(pv) & ~(uintptr_t)0xfff)
 
 /**
+ * Get the page aligned address of a physical address
+ *
+ * @returns Page aligned address (it's an RTHCPHYS or RTGCPHYS).
+ * @param   pv      The address to align.
+ *
+ */
+#define PHYS_PAGE_ADDRESS(pv)    (pv & X86_PTE_PAE_PG_MASK)
+
+/**
  * Host max path (the reasonable value).
  */
 #define RTPATH_MAX   (4096 + 4)      /* (PATH_MAX + 1) on linux w/ some alignment */
