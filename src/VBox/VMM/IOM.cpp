@@ -391,6 +391,7 @@ PIOMIOPORTSTATS iomr3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDe
  */
 PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc)
 {
+    AssertGCPhys32(GCPhys);
     /* check if it already exists. */
     PIOMMMIOSTATS pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pVM->iom.s.pTreesHC->MMIOStatTree, GCPhys);
     if (pStats)
@@ -1150,7 +1151,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                     R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
-    LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p GCPhysStart=%#x cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
+    LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
 
     /*
@@ -1158,7 +1159,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      */
     if (GCPhysStart + (cbRange - 1) < GCPhysStart)
     {
-        AssertMsgFailed(("Wrapped! %#x %#x bytes\n", GCPhysStart, cbRange));
+        AssertMsgFailed(("Wrapped! %VGp %#x bytes\n", GCPhysStart, cbRange));
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
 
@@ -1220,7 +1221,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  */
 IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
 {
-    LogFlow(("IOMR3MMIODeregister: pDevIns=%p GCPhysStart=#x cbRange=%#x\n", pDevIns, GCPhysStart, cbRange));
+    LogFlow(("IOMR3MMIODeregister: pDevIns=%p GCPhysStart=%VGp cbRange=%#x\n", pDevIns, GCPhysStart, cbRange));
 
     /*
      * Validate input.
@@ -1244,13 +1245,13 @@ IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 #ifndef IOM_NO_PDMINS_CHECKS
         if (pRange->pDevIns != pDevIns)
         {
-            AssertMsgFailed(("Not owner! GCPhys=%#x %#x LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc));
+            AssertMsgFailed(("Not owner! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc));
             return VERR_IOM_NOT_MMIO_RANGE_OWNER;
         }
 #endif /* !IOM_NO_PDMINS_CHECKS */
         if (pRange->Core.KeyLast > GCPhysLast)
         {
-            AssertMsgFailed(("Incomplete R3 range! GCPhys=%#x %#x LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc));
+            AssertMsgFailed(("Incomplete R3 range! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc));
             return VERR_IOM_INCOMPLETE_MMIO_RANGE;
         }
         /* next */
