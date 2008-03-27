@@ -167,7 +167,7 @@ function RegInit()
       end if
       set objLocator = CreateObject("Wbemscripting.SWbemLocator")
       set objServices = objLocator.ConnectServer("", "root\default", "", "", , , , g_objRegCtx)
-      set g_objReg = objServices.Get("StdRegProv") 
+      set g_objReg = objServices.Get("StdRegProv")
       g_blnRegistry = true
    end if
    RegInit = true
@@ -181,7 +181,7 @@ function RegGetString(strName)
    if RegInit() then
       dim strRoot, strKey, strValue
       dim iRoot
-   
+
       ' split up into root, key and value parts.
       strRoot = left(strName, instr(strName, "\") - 1)
       strKey = mid(strName, instr(strName, "\") + 1, instrrev(strName, "\") - instr(strName, "\"))
@@ -524,7 +524,7 @@ end function
 
 ''
 ' Finds the first directory matching the pattern.
-' If no directory is found, log the failure, 
+' If no directory is found, log the failure,
 ' else return the complete path to the found directory.
 function LogFindDir(strPath, strPattern)
    dim str
@@ -1808,7 +1808,7 @@ g_strQtDll = ""
 ''
 ' Checks for any Qt binaries. Failure here isn't fatal.
 sub CheckForQt(strOptQt)
-   dim strPathQt, str
+   dim strPathQt, str, blnQtWinFree
 
    PrintHdr "Qt"
 
@@ -1816,7 +1816,7 @@ sub CheckForQt(strOptQt)
    ' Try find the Qt installation (user specified path with --with-qt=).
    '
    strPathQt = ""
-   bQtWinFree = False
+   blnQtWinFree = False
 
    LogPrint "Checking for user specified path of Qt ..."
    if (strPathQt = "") And (strOptQt <> "") then
@@ -1827,7 +1827,7 @@ sub CheckForQt(strOptQt)
          LogPrint "Checking for user specified path of Qt/free ..."
          if CheckForQtWinFreeSub(strOptQt) then
             strPathQt = strOptQt
-            bQtWinFree = True
+            blnQtWinFree = True
          end if
       end if
 
@@ -1843,18 +1843,18 @@ sub CheckForQt(strOptQt)
          if CheckForQtSub(str) then strPathQt = str
       end if
    end if
-   
+
    '
-   ' Try to find the Open Source project "qtwin" Qt/free, 
+   ' Try to find the Open Source project "qtwin" Qt/free,
    ' located at http://qtwin.sf.net
    '
    if strPathQt = "" then
       LogPrint "Checking for Qt/free ..."
       str = LogFindDir(g_strPathDev & "/win.x86/qt", "v3.*")
       if (str <> "") then
-         if CheckForQtWinFreeSub(str) then 
+         if CheckForQtWinFreeSub(str) then
             strPathQt = str
-            bQtWinFree = True
+            blnQtWinFree = True
           end if
       end if
    end if
@@ -1865,12 +1865,12 @@ sub CheckForQt(strOptQt)
    if strPathQt = "" then
       CfgPrint "VBOX_WITH_QTGUI="
       PrintResult "Qt", "not found"
-   else                               
+   else
       CfgPrint "VBOX_PATH_QT          := " & strPathQt
       CfgPrint "QTDIR                  = $(VBOX_PATH_QT)"
-   
-      if bQtWinFree = True then     ' The "qtwin"
-         PrintResult "Qt (v" & g_strQtVer & ", QtWin/Free)", strPathQt   
+
+      if blnQtWinFree = True then     ' The "qtwin"
+         PrintResult "Qt (v" & g_strQtVer & ", QtWin/Free)", strPathQt
       else                          ' Licensed from Trolltech
          PrintResult "Qt (v" & g_strQtVer & ")", strPathQt
       end if
