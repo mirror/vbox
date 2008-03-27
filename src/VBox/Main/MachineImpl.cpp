@@ -3160,12 +3160,10 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     Bstr type (aType);
     if (type == "gui")
     {
-#ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
-        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
-#else
-        const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
-#endif
-        Assert (sz >= sizeof (VirtualBox_exe));
+        char VirtualBox_exe[sz];
+        size_t cchActual;
+        vrc = RTEnvGetEx (env, "VBOXGUIPATH", VirtualBox_exe, sz, &cchActual);
+        AssertRCBreakVoid (vrc);
         strcpy (cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
