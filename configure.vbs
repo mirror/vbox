@@ -523,6 +523,32 @@ end function
 
 
 ''
+' Finds the first directory matching the pattern.
+' If no directory is found, log the failure, 
+' else return the complete path to the found directory.
+function LogFindDir(strPath, strPattern)
+   dim str
+
+   '
+   ' Yes, there are some facy database kinda interface to the filesystem
+   ' however, breaking down the path and constructing a usable query is
+   ' too much hassle. So, we'll do it the unix way...
+   '
+
+   ' List the alphabetically last names as first entries (with /O-N).
+   if Shell("dir /B /AD /O-N """ & DosSlashes(strPath) & "\" & DosSlashes(strPattern) & """", True) = 0 _
+    And InStr(1, g_strShellOutput, Chr(13)) > 1 _
+      then
+      ' return the first word.
+      LogFindDir = strPath & "/" & Left(g_strShellOutput, InStr(1, g_strShellOutput, Chr(13)) - 1)
+   else
+      LogPrint "Testing '" & strPath & "': " & strPattern & " not found"
+      LogFindDir = ""
+   end if
+end function
+
+
+''
 ' Initializes the config file.
 sub CfgInit
    FileDelete g_strCfgFile
@@ -1770,9 +1796,14 @@ function CheckForXalanSub(strPathXalan)
    end if
 end function
 
-
-dim g_strQtVer
+dim g_strQtVer    ' Global version number of Qt (3, 333, 338 for example)
 g_strQtVer = ""
+
+dim g_strQtLib    ' Full path to Qt .lib found
+g_strQtLib = ""
+
+dim g_strQtDll    ' Full path to Qt .dll found
+g_strQtDll = ""
 
 ''
 ' Checks for any Qt binaries. Failure here isn't fatal.
@@ -1782,17 +1813,50 @@ sub CheckForQt(strOptQt)
    PrintHdr "Qt"
 
    '
-   ' Try find the Qt installation.
+   ' Try find the Qt installation (user specified path with --with-qt=).
    '
    strPathQt = ""
+   bQtWinFree = False
 
+   LogPrint "Checking for user specified path of Qt ..."
    if (strPathQt = "") And (strOptQt <> "") then
+      strOptQt = UnixSlashes(strOptQt)
       if CheckForQtSub(strOptQt) then strPathQt = strOptQt
+
+      if (strPathQt = "") And (strOptQt <> "") then
+         LogPrint "Checking for user specified path of Qt/free ..."
+         if CheckForQtWinFreeSub(strOptQt) then
+            strPathQt = strOptQt
+            bQtWinFree = True
+         end if
+      end if
+
    end if
 
+   '
+   ' Search for any 3.x version
+   '
+   LogPrint "Checking for licensed version of Qt ..."
    if strPathQt = "" then
-      str = g_strPathDev & "/win.x86/qt/v3.3.3"
-      if CheckForQtSub(str) then strPathQt = str
+      str = LogFindDir(g_strPathDev & "/win.x86/qt", "v3.*")
+      if (str <> "") then
+         if CheckForQtSub(str) then strPathQt = str
+      end if
+   end if
+   
+   '
+   ' Try to find the Open Source project "qtwin" Qt/free, 
+   ' located at http://qtwin.sf.net
+   '
+   if strPathQt = "" then
+      LogPrint "Checking for Qt/free ..."
+      str = LogFindDir(g_strPathDev & "/win.x86/qt", "v3.*")
+      if (str <> "") then
+         if CheckForQtWinFreeSub(str) then 
+            strPathQt = str
+            bQtWinFree = True
+          end if
+      end if
    end if
 
    '' @todo check for Qt installations and stuff later.
@@ -1801,14 +1865,21 @@ sub CheckForQt(strOptQt)
    if strPathQt = "" then
       CfgPrint "VBOX_WITH_QTGUI="
       PrintResult "Qt", "not found"
-   else
+   else                               
       CfgPrint "VBOX_PATH_QT          := " & strPathQt
       CfgPrint "QTDIR                  = $(VBOX_PATH_QT)"
-      CfgPrint "LIB_QT                 = $(VBOX_PATH_QT)/lib/dynamic/qt-mt" & g_strQtVer & ".lib"
-      CfgPrint "VBOX_DLL_QT            = $(VBOX_PATH_QT)/bin/qt-mt" & g_strQtVer & ".dll"
-      PrintResult "Qt (" & g_strQtVer & ")", strPathQt
+   
+      if bQtWinFree = True then     ' The "qtwin"
+         PrintResult "Qt (v" & g_strQtVer & ", QtWin/Free)", strPathQt   
+      else                          ' Licensed from Trolltech
+         PrintResult "Qt (v" & g_strQtVer & ")", strPathQt
+      end if
+
+      CfgPrint "LIB_QT                 = " & g_strQtLib
+      CfgPrint "VBOX_DLL_QT            = " & g_strQtDll
    end if
 end sub
+
 
 ''
 ' Checks if the specified path points to an usable Qt install or not.
@@ -1816,6 +1887,9 @@ function CheckForQtSub(strPathQt)
 
    CheckForQtSub = False
    LogPrint "trying: strPathQt=" & strPathQt
+
+   ' For Qt 3.3.3
+   dim str
    if   LogFileExists(strPathQt, "bin/moc.exe") _
     And LogFileExists(strPathQt, "bin/uic.exe") _
     And LogFileExists(strPathQt, "include/qvbox.h") _
@@ -1824,14 +1898,71 @@ function CheckForQtSub(strPathQt)
     And LogFileExists(strPathQt, "include/qtextedit.h") _
     And LogFileExists(strPathQt, "lib/dynamic/qtmain.lib") _
       then
-      dim str
 
       ' This check might need improving.
       str = LogFindFile(strPathQt, "lib/dynamic/qt-mt33*.lib")
       if str <> "" then
          g_strQtVer = Mid(str, Len("qt-mt") + 1, Len(str) - Len("qt-mt.lib"))
          if LogFileExists(strPathQt, "bin/qt-mt" & g_strQtVer & ".dll") then
+            g_strQtLib = strPathQt & "/lib/dynamic/" & str
+            g_strQtDll = strPathQt & "/bin/qt-mt" & g_strQtVer & ".dll"
             CheckForQtSub = True
+         end if
+      end if
+   end if
+
+   ' For >= Qt 3.3.8 (no "dynamic" folder, VBoxQt338.lib /.dll instead of qt-mt33*.lib /.dll)
+   str = ""
+   if   LogFileExists(strPathQt, "bin/moc.exe") _
+    And LogFileExists(strPathQt, "bin/uic.exe") _
+    And LogFileExists(strPathQt, "include/qvbox.h") _
+    And LogFileExists(strPathQt, "include/qt_windows.h") _
+    And LogFileExists(strPathQt, "include/qapplication.h") _
+    And LogFileExists(strPathQt, "include/qtextedit.h") _
+    And LogFileExists(strPathQt, "lib/qtmain.lib") _
+      then
+
+      ' This check might need improving.
+      str = LogFindFile(strPathQt, "lib/VBoxQt3*.lib")
+      if str <> "" then
+         g_strQtVer = Mid(str, Len("VBoxQt") + 1, Len(str) - Len("VBoxQt.lib"))
+         if LogFileExists(strPathQt, "bin/VBoxQt" & g_strQtVer & ".dll") then
+            g_strQtLib = strPathQt & "/lib/" & str
+            g_strQtDll = strPathQt & "/bin/VBoxQt" & g_strQtVer & ".dll"
+            CheckForQtSub = True
+         end if
+      end if
+   end if
+
+end function
+
+
+''
+' Checks if the specified path points to an usable "qtwin" Qt/Free install or not.
+' "qtwin" is an Open Source project located at http://qtwin.sf.net and builds Qt 3.x.x sources
+' of the official GPL'ed Qt 4.x sources from Trolltech.
+function CheckForQtWinFreeSub(strPathQt)
+
+   CheckForQtWinFreeSub = False
+   LogPrint "trying: strPathQt=" & strPathQt
+   if   LogFileExists(strPathQt, "bin/moc.exe") _
+    And LogFileExists(strPathQt, "bin/uic.exe") _
+    And LogFileExists(strPathQt, "include/qvbox.h") _
+    And LogFileExists(strPathQt, "include/qt_windows.h") _
+    And LogFileExists(strPathQt, "include/qapplication.h") _
+    And LogFileExists(strPathQt, "include/qtextedit.h") _
+    And LogFileExists(strPathQt, "lib/qtmain.lib") _
+      then
+      dim str
+
+      ' This check might need improving.
+      str = LogFindFile(strPathQt, "lib/qt-mt3.lib")
+      if str <> "" then
+         g_strQtVer = Mid(str, Len("qt-mt") + 1, Len(str) - Len("qt-mt.lib"))
+         if LogFileExists(strPathQt, "bin/qt-mt" & g_strQtVer & ".dll") then
+            g_strQtLib = strPathQt & "/lib/" & str
+            g_strQtDll = strPathQt & "/bin/qt-mt" & g_strQtVer & ".dll"
+            CheckForQtWinFreeSub = True
          end if
       end if
    end if
