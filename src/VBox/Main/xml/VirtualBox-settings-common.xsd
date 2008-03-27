@@ -130,6 +130,9 @@
 
 <xsd:simpleType name="TGuestOSType">
   <xsd:restriction base="xsd:string">
+    <!-- @todo on next format change, rename dos to DOS, win2k3 to Win2003 and
+    so on. Possibly also use prefixes that determine the platform family:
+    Win_31, Win_Vista, Linux_ArchLinux, Unix_FreeBSD and so on. -->
     <xsd:enumeration value="unknown"/>
     <xsd:enumeration value="dos"/>
     <xsd:enumeration value="win31"/>
@@ -141,12 +144,23 @@
     <xsd:enumeration value="winxp"/>
     <xsd:enumeration value="win2k3"/>
     <xsd:enumeration value="winvista"/>
+    <xsd:enumeration value="win2k8"/>
     <xsd:enumeration value="os2warp3"/>
     <xsd:enumeration value="os2warp4"/>
     <xsd:enumeration value="os2warp45"/>
+    <xsd:enumeration value="ecs"/>
     <xsd:enumeration value="linux22"/>
     <xsd:enumeration value="linux24"/>
     <xsd:enumeration value="linux26"/>
+    <xsd:enumeration value="archlinux"/>
+    <xsd:enumeration value="debian"/>
+    <xsd:enumeration value="opensuse"/>
+    <xsd:enumeration value="fedoracore"/>
+    <xsd:enumeration value="gentoo"/>
+    <xsd:enumeration value="mandriva"/>
+    <xsd:enumeration value="redhat"/>
+    <xsd:enumeration value="ubuntu"/>
+    <xsd:enumeration value="xandros"/>
     <xsd:enumeration value="freebsd"/>
     <xsd:enumeration value="openbsd"/>
     <xsd:enumeration value="netbsd"/>
@@ -181,11 +195,11 @@
 </xsd:simpleType>
 
 <xsd:simpleType name="TBIOSBootMenuModeType">
-    <xsd:restriction base="xsd:string">
-      <xsd:enumeration value="Disabled"/>
-      <xsd:enumeration value="MenuOnly"/>
-      <xsd:enumeration value="MessageAndMenu"/>
-    </xsd:restriction>
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="Disabled"/>
+    <xsd:enumeration value="MenuOnly"/>
+    <xsd:enumeration value="MessageAndMenu"/>
+  </xsd:restriction>
 </xsd:simpleType>
 
 <xsd:simpleType name="TIDEControllerType">
@@ -196,20 +210,20 @@
 </xsd:simpleType>
 
 <xsd:simpleType name="TClipboardMode">
-    <xsd:restriction base="xsd:string">
-      <xsd:enumeration value="Disabled"/>
-      <xsd:enumeration value="HostToGuest"/>
-      <xsd:enumeration value="GuestToHost"/>
-      <xsd:enumeration value="Bidirectional"/>
-    </xsd:restriction>
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="Disabled"/>
+    <xsd:enumeration value="HostToGuest"/>
+    <xsd:enumeration value="GuestToHost"/>
+    <xsd:enumeration value="Bidirectional"/>
+  </xsd:restriction>
 </xsd:simpleType>
 
 <xsd:simpleType name="TPortMode">
-    <xsd:restriction base="xsd:string">
-      <xsd:enumeration value="Disconnected"/>
-      <xsd:enumeration value="HostPipe"/>
-      <xsd:enumeration value="HostDevice"/>
-    </xsd:restriction>
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="Disconnected"/>
+    <xsd:enumeration value="HostPipe"/>
+    <xsd:enumeration value="HostDevice"/>
+  </xsd:restriction>
 </xsd:simpleType>
 
 <!--
