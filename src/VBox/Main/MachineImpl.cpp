@@ -1629,7 +1629,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
 
     if (id.isEmpty() || aBus == StorageBus_Null)
         return E_INVALIDARG;
- 
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -1799,7 +1799,7 @@ STDMETHODIMP Machine::GetHardDisk (StorageBus_T aBus, LONG aChannel,
 {
     if (aBus == StorageBus_Null)
         return E_INVALIDARG;
- 
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -3158,12 +3158,14 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     }
 
     Bstr type (aType);
-    if (type == "gui")
+    if (type == "gui" || type == "GUI/Qt3")
     {
-        char *VirtualBox_exe = (char *) RTMemAlloc (sz);
-        size_t cchActual;
-        vrc = RTEnvGetEx (env, "VBOXGUIPATH", VirtualBox_exe, sz, &cchActual);
-        AssertRCBreak (vrc, RTStrFree (VirtualBox_exe));
+#ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
+        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
+#else
+        const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
+#endif
+        Assert (sz >= sizeof (VirtualBox_exe));
         strcpy (cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
@@ -3174,7 +3176,26 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
 #endif
         vrc = RTProcCreate (path, args, env, 0, &pid);
-        RTStrFree (VirtualBox_exe);
+    }
+    else
+    if (type == "GUI/Qt4")
+    {
+#ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
+        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM4";
+#else
+        const char VirtualBox_exe[] = "VirtualBox4" HOSTSUFF_EXE;
+#endif
+        Assert (sz >= sizeof (VirtualBox_exe));
+        strcpy (cmd, VirtualBox_exe);
+
+        Utf8Str idStr = mData->mUuid.toString();
+#ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
+        const char * args[] = {path, "-startvm", idStr, 0 };
+#else
+        Utf8Str name = mUserData->mName;
+        const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
+#endif
+        vrc = RTProcCreate (path, args, env, 0, &pid);
     }
     else
 #ifdef VBOX_VRDP
@@ -7141,7 +7162,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
     error = errno;
     if (mIPCSem < 0 && error == ENOSYS)
     {
-        setError(E_FAIL, 
+        setError(E_FAIL,
                 tr ("Cannot create IPC semaphore. Most likely your host kernel lacks "
                      "support for SysV IPC. Check the host kernel configuration for "
                      "CONFIG_SYSVIPC=y"));
