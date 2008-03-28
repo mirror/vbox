@@ -414,7 +414,7 @@ init (void)
                 printk (KERN_ERR
                         "Mount information structure is too large %lu\n"
                         "Must be less than or equal to %lu\n",
-                        sizeof (struct vbsf_mount_info),
+                        (unsigned long)sizeof (struct vbsf_mount_info),
                         PAGE_SIZE);
                 return -EINVAL;
         }
