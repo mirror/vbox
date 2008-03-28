@@ -1940,6 +1940,12 @@ __END_DECLS
  */
 #define AssertPtrNullBreakVoid(pv)  AssertMsgBreakVoid(VALID_PTR(pv) || (pv) == NULL, ("%p\n", (pv)))
 
+/** @def AssertGCPhys32
+ * Asserts that the high dword of a physical address is zero
+ *
+ * @param   pv      The pointer.
+ */
+#define AssertGCPhys32(pv)          AssertMsg(VALID_PHYS32_PTR(pv), ("%p\n", (pv)))
 
 __BEGIN_DECLS
 

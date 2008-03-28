@@ -219,6 +219,8 @@ typedef struct _AVLOGCPhysNodeCore
     AVLOGCPHYS          pRight;
     /** Height of this tree: max(height(left), height(right)) + 1 */
     unsigned char       uchHeight;
+    /** Padding */
+    unsigned char       Padding[7];
 } AVLOGCPHYSNODECORE, *PAVLOGCPHYSNODECORE;
 
 /** A offset base tree with uint32_t keys. */
@@ -270,6 +272,8 @@ typedef struct _AVLROGCPhysNodeCore
     AVLROGCPHYS         pRight;
     /** Height of this tree: max(height(left), height(right)) + 1 */
     unsigned char       uchHeight;
+    /** Padding */
+    unsigned char       Padding[7];
 } AVLROGCPHYSNODECORE, *PAVLROGCPHYSNODECORE;
 
 /** A offset base tree with uint32_t keys. */

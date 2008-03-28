@@ -740,7 +740,7 @@ typedef RTGCUINTPTR     *PRTGCUINTPTR;
 typedef const RTGCUINTPTR *PCRTGCUINTPTR;
 
 /** Guest Physical Memory Address.*/
-typedef uint32_t        RTGCPHYS;
+typedef uint64_t        RTGCPHYS;
 /** Pointer to Guest Physical Memory Address. */
 typedef RTGCPHYS       *PRTGCPHYS;
 /** Pointer to const Guest Physical Memory Address. */
@@ -751,7 +751,7 @@ typedef const RTGCPHYS *PCRTGCPHYS;
  * to the NULL pointer. Note that this value may actually be valid in
  * some contexts.
  */
-#define NIL_RTGCPHYS     ((RTGCPHYS)~0U) /** @todo change this to (~(RTGCPHYS)0) or maybe NIL_RTGCPHYS32? */
+#define NIL_RTGCPHYS     (~(RTGCPHYS)0U)
 
 
 /** Guest Physical Memory Address; limited to 32 bits.*/
