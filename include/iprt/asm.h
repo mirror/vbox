@@ -2267,7 +2267,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS32(volatile int32_t *pi32, const int32_t i32Ne
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64New, const uint64_t u64Old);
 #else
-DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64New, const uint64_t u64Old)
+DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64New, uint64_t u64Old)
 {
 # if RT_INLINE_ASM_USES_INTRIN
    return _InterlockedCompareExchange64((__int64 *)pu64, u64New, u64Old) == u64Old;
@@ -2275,12 +2275,13 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
 # elif defined(RT_ARCH_AMD64)
 #  if RT_INLINE_ASM_GNU_STYLE
     uint8_t u8Ret;
-    __asm__ __volatile__("lock; cmpxchgq %2, %0\n\t"
+    __asm__ __volatile__("lock; cmpxchgq %3, %0\n\t"
                          "setz  %1\n\t"
                          : "=m" (*pu64),
-                           "=qm" (u8Ret)
+                           "=qm" (u8Ret),
+                           "=a" (u64Old)
                          : "r" (u64New),
-                           "a" (u64Old));
+                           "2" (u64Old));
     return (bool)u8Ret;
 #  else
     bool fRet;
