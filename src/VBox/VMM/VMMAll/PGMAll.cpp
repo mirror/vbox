@@ -62,22 +62,6 @@ typedef struct PGMHVUSTATE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-/** @def DUMP_PDE_BIG
- * Debug routine for dumping a big PDE.
- */
-#ifdef DEBUG_Sander
-/** Debug routine for dumping a big PDE. */
-static void pgmDumpPDEBig(const char *pszPrefix, int iPD, VBOXPDE Pde)
-{
-    Log(("%s: BIG %d u10PageNo=%08X P=%d W=%d U=%d CACHE=%d ACC=%d DIR=%d GBL=%d\n", pszPrefix, iPD, Pde.b.u10PageNo, Pde.b.u1Present, Pde.b.u1Write, Pde.b.u1User, Pde.b.u1CacheDisable, Pde.b.u1Accessed, Pde.b.u1Dirty, Pde.b.u1Global));
-    Log(("%s: BIG %d WRT=%d AVAIL=%X RSV=%X PAT=%d\n", pszPrefix, iPD, Pde.b.u1WriteThru, Pde.b.u3Available, Pde.b.u8PageNoHigh, Pde.b.u1PAT));
-}
-#define DUMP_PDE_BIG(a, b, c) pgmDumpPDEBig(a, b, c)
-#else
-#define DUMP_PDE_BIG(a, b, c) do { } while (0)
-#endif
-
-
 
 #if 1///@todo ndef RT_ARCH_AMD64
 /*
@@ -273,11 +257,13 @@ PGMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame
             STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUSWrite);
         else if (uErr & X86_TRAP_PF_RSVD)
             STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUSReserved);
+        else if (uErr & X86_TRAP_PF_ID)
+            STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUSNXE);
         else
             STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUSRead);
     }
     else
-    {   //supervisor
+    {   /* Supervisor */
         if (!(uErr & X86_TRAP_PF_P))
         {
             if (uErr & X86_TRAP_PF_RW)
@@ -287,6 +273,8 @@ PGMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame
         }
         else if (uErr & X86_TRAP_PF_RW)
             STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eSVWrite);
+        else if (uErr & X86_TRAP_PF_ID)
+            STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eSNXE);
         else if (uErr & X86_TRAP_PF_RSVD)
             STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eSVReserved);
     }
@@ -581,17 +569,12 @@ PGMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
  */
 PGMDECL(int) PGMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-#ifdef IN_RING0
-    /** @todo */
-    int rc = VINF_EM_RAW_EMULATE_INSTR;
-#else
     uint32_t cb;
     int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
     if (rc != VINF_SUCCESS)
         Log(("PGMInterpretInstruction: returns %Rrc (pvFault=%VGv)\n", rc, pvFault));
-#endif
     return rc;
 }
 

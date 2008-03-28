@@ -211,6 +211,12 @@
  */
 #define PGM_WITH_PAGING(uType)  ((uType) >= PGM_TYPE_32BIT)
 
+/** Macro for checking if the guest supports the NX bit.
+ * @param uType     PGM_TYPE_*
+ * @remark  ASSUMES certain order of the PGM_TYPE_* values.
+ */
+#define PGM_WITH_NX(uType)  ((uType) >= PGM_TYPE_PAE)
+
 
 /** @def PGM_HCPHYS_2_PTR
  * Maps a HC physical page pool address to a virtual address.
@@ -341,15 +347,15 @@ typedef struct PGMMAPPING
         /** The HC physical address of the second PAE page table. */
         RTHCPHYS                HCPhysPaePT1;
         /** The HC virtual address of the 32-bit page table. */
-        R3PTRTYPE(PVBOXPT)      pPTR3;
+        R3PTRTYPE(PX86PT)       pPTR3;
         /** The HC virtual address of the two PAE page table. (i.e 1024 entries instead of 512) */
         R3PTRTYPE(PX86PTPAE)    paPaePTsR3;
         /** The GC virtual address of the 32-bit page table. */
-        GCPTRTYPE(PVBOXPT)      pPTGC;
+        GCPTRTYPE(PX86PT)       pPTGC;
         /** The GC virtual address of the two PAE page table. */
         GCPTRTYPE(PX86PTPAE)    paPaePTsGC;
         /** The GC virtual address of the 32-bit page table. */
-        R0PTRTYPE(PVBOXPT)      pPTR0;
+        R0PTRTYPE(PX86PT)       pPTR0;
         /** The GC virtual address of the two PAE page table. */
         R0PTRTYPE(PX86PTPAE)    paPaePTsR0;
     } aPTs[1];
@@ -1763,7 +1769,7 @@ typedef struct PGMMODEDATA
     DECLR3CALLBACKMEMBER(int,       pfnR3BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
@@ -1773,7 +1779,7 @@ typedef struct PGMMODEDATA
     DECLGCCALLBACKMEMBER(int,       pfnGCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
-    DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncPage,(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
@@ -1783,7 +1789,7 @@ typedef struct PGMMODEDATA
     DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
@@ -1846,9 +1852,9 @@ typedef struct PGM
     /** @name 32-bit Guest Paging.
      * @{ */
     /** The guest's page directory, HC pointer. */
-    R3R0PTRTYPE(PVBOXPD)        pGuestPDHC;
+    R3R0PTRTYPE(PX86PD)         pGuestPDHC;
     /** The guest's page directory, static GC mapping. */
-    GCPTRTYPE(PVBOXPD)          pGuestPDGC;
+    GCPTRTYPE(PX86PD)           pGuestPDGC;
     /** @} */
 
     /** @name PAE Guest Paging.
@@ -1992,7 +1998,7 @@ typedef struct PGM
     DECLR3CALLBACKMEMBER(int,       pfnR3BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
@@ -2000,7 +2006,7 @@ typedef struct PGM
     DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
@@ -2008,7 +2014,7 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,       pfnGCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
-    DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncPage,(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLGCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
@@ -2238,12 +2244,14 @@ typedef struct PGM
     STAMCOUNTER     StatGCTrap0eUSNotPresentWrite;
     STAMCOUNTER     StatGCTrap0eUSWrite;
     STAMCOUNTER     StatGCTrap0eUSReserved;
+    STAMCOUNTER     StatGCTrap0eUSNXE;
     STAMCOUNTER     StatGCTrap0eUSRead;
 
     STAMCOUNTER     StatGCTrap0eSVNotPresentRead;
     STAMCOUNTER     StatGCTrap0eSVNotPresentWrite;
     STAMCOUNTER     StatGCTrap0eSVWrite;
     STAMCOUNTER     StatGCTrap0eSVReserved;
+    STAMCOUNTER     StatGCTrap0eSNXE;
 
     STAMCOUNTER     StatGCTrap0eUnhandled;
     STAMCOUNTER     StatGCTrap0eMap;
@@ -2504,7 +2512,7 @@ PGMGCDECL(int)  pgmGCGuestPDWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXC
 PGMDECL(int)    pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 int             pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode);
 
-int             pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PVBOXPD pPDSrc, int iPDOld);
+int             pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, int iPDOld);
 PPGMMAPPING     pgmGetMapping(PVM pVM, RTGCPTR GCPtr);
 void            pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, int iPDOld, int iPDNew);
 DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -3198,7 +3206,7 @@ DECLINLINE(uint64_t) pgmGstGetPaePDE(PPGM pPGM, RTGCUINTPTR GCPtr)
             return pPD->a[iPD].u;
         AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, CTXSUFF(pPGM->pGstPaePDPTR)->a[iPdPtr].u));
     }
-    return 0;
+    return 0ULL;
 }
 
 

@@ -981,11 +981,11 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, un
                 }
                 else
                 {   /* (normal page) */
-                    PVBOXPT pPT;
+                    PX86PT pPT;
                     rc = PGM_GCPHYS_2_PTR(pVM, Pde.u & X86_PDE_PG_MASK, &pPT);
                     if (VBOX_SUCCESS(rc))
                     {
-                        VBOXPTE Pte = pPT->a[((RTGCUINTPTR)GCPtr >> X86_PT_SHIFT) & X86_PT_MASK];
+                        X86PTE Pte = pPT->a[((RTGCUINTPTR)GCPtr >> X86_PT_SHIFT) & X86_PT_MASK];
                         if (Pte.n.u1Present)
                             return PGMPhysGCPhys2HCPtr(pVM, (Pte.u & X86_PTE_PG_MASK) | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within one page */, pHCPtr);
                         rc = VERR_PAGE_NOT_PRESENT;

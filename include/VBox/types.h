@@ -467,25 +467,6 @@ typedef VBOXGDTR *PVBOXGDTR;
 /** @} */
 
 
-/** @defgroup grp_types_pg  Page Structures
- * @ingroup grp_types
- * @{
- */
-
-/** These absolete / belong to PGM. Use VBox/x86.h structs everywhere else. */
-#define VBOXPTE     X86PTE
-#define PVBOXPTE    PX86PTE
-#define VBOXPT      X86PT
-#define PVBOXPT     PX86PT
-#define VBOXPDE     X86PDE
-#define PVBOXPDE    PX86PDE
-#define VBOXPD      X86PD
-#define PVBOXPD     PX86PD
-
-/** @} */
-
-
-
 /**
  * Task Segment
  */

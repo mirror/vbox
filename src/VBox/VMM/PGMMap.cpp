@@ -158,7 +158,7 @@ PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
         /*
          * 32-bit.
          */
-        pNew->aPTs[i].pPTR3    = (PVBOXPT)pbPTs;
+        pNew->aPTs[i].pPTR3    = (PX86PT)pbPTs;
         pNew->aPTs[i].pPTGC    = MMHyperR3ToGC(pVM, pNew->aPTs[i].pPTR3);
         pNew->aPTs[i].pPTR0    = MMHyperR3ToR0(pVM, pNew->aPTs[i].pPTR3);
         pNew->aPTs[i].HCPhysPT = MMR3HyperHCVirt2HCPhys(pVM, pNew->aPTs[i].pPTR3);
@@ -875,7 +875,7 @@ void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, int iPDOld, int iPDNew)
 
 /**
  * Resolves a conflict between a page table based GC mapping and
- * the Guest OS page tables.
+ * the Guest OS page tables. (32 bits version)
  *
  * @returns VBox status code.
  * @param   pVM         VM Handle.
@@ -883,7 +883,7 @@ void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, int iPDOld, int iPDNew)
  * @param   pPDSrc      The page directory of the guest OS.
  * @param   iPDOld      The index to the start of the current mapping.
  */
-int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PVBOXPD pPDSrc, int iPDOld)
+int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, int iPDOld)
 {
     STAM_PROFILE_START(&pVM->pgm.s.StatHCResolveConflict, a);
 
@@ -937,7 +937,6 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PVBOXPD pPDSrc, in
 }
 
 
-
 /**
  * Checks guest PD for conflicts with VMM GC mappings.
  *
@@ -958,9 +957,9 @@ PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint32_t cr3, bool fRawR0) /** @to
     /*
      * Resolve the page directory.
      */
-    PVBOXPD pPD = pVM->pgm.s.pGuestPDHC; /** @todo Fix PAE! */
+    PX86PD pPD = pVM->pgm.s.pGuestPDHC; /** @todo Fix PAE! */
     Assert(pPD);
-    Assert(pPD == (PVBOXPD)MMPhysGCPhys2HCVirt(pVM, cr3 & X86_CR3_PAGE_MASK, sizeof(*pPD)));
+    Assert(pPD == (PX86PD)MMPhysGCPhys2HCVirt(pVM, cr3 & X86_CR3_PAGE_MASK, sizeof(*pPD)));
 
     /*
      * Iterate mappings.
