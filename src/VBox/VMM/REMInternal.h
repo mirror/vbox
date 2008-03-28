@@ -127,7 +127,9 @@ typedef struct REMPHYSREGISTRATION
     RTGCPHYS        GCPhys;
     RTHCUINTPTR     HCVirt;
     RTUINT          cb;
+#if HC_ARCH_BITS == 64
     uint32_t        u32Padding;
+#endif
 } REMPHYSREGISTRATION, *PREMPHYSREGISTRATION;
 
 /**
