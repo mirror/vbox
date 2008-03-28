@@ -72,11 +72,11 @@ typedef struct IOMMMIORANGER0
 {
     /** Avl node core with GCPhys as Key and GCPhys + cbSize - 1 as KeyLast. */
     AVLROGCPHYSNODECORE         Core;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
-    uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
-#endif
     /** Start physical address. */
     RTGCPHYS                    GCPhys;
+#if HC_ARCH_BITS == 64
+    uint32_t                    u32Alignment;
+#endif
     /** Size of the range. */
     RTUINT                      cbSize;
     /** Pointer to user argument. */
@@ -102,13 +102,13 @@ typedef struct IOMMMIORANGEGC
 {
     /** Avl node core with GCPhys as Key and GCPhys + cbSize - 1 as KeyLast. */
     AVLROGCPHYSNODECORE         Core;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
-    uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
-#endif
     /** Start physical address. */
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
     RTUINT                      cbSize;
+#if HC_ARCH_BITS == 64
+    uint32_t                    u32Alignment;
+#endif
     /** Pointer to user argument. */
     RTGCPTR                     pvUser;
     /** Pointer to device instance. */

@@ -98,7 +98,7 @@ typedef struct REMHANDLERNOTIFICATION
             bool                fHasHCHandler;
             bool                fRestoreAsRAM;
         } PhysicalModify;
-        uint64_t                padding[3 + (HC_ARCH_BITS == 64)];
+        uint64_t                padding[5];
     } u;
 } REMHANDLERNOTIFICATION, *PREMHANDLERNOTIFICATION;
 
@@ -124,8 +124,8 @@ typedef struct REMCHUNKINFO
  */
 typedef struct REMPHYSREGISTRATION
 {
-    RTHCUINTPTR     HCVirt;
     RTGCPHYS        GCPhys;
+    RTHCUINTPTR     HCVirt;
     RTUINT          cb;
 } REMPHYSREGISTRATION, *PREMPHYSREGISTRATION;
 

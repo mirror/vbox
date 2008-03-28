@@ -630,6 +630,9 @@ int avlrogcphys(void)
     RTGCPHYS            k;
     PAVLROGCPHYSTREE    pTree = (PAVLROGCPHYSTREE)calloc(sizeof(*pTree), 1);
 
+    AssertCompileSize(AVLOGCPHYSNODECORE, 24);
+    AssertCompileSize(AVLROGCPHYSNODECORE, 32);
+
     /*
      * Simple linear insert, get and remove.
      */
