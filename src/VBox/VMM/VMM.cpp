@@ -2212,7 +2212,8 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
 
         case VMMCALLHOST_PGM_RAM_GROW_RANGE:
         {
-            pVM->vmm.s.rcCallHost = PGM3PhysGrowRange(pVM, &pVM->vmm.s.u64CallHostArg);
+            RTGCPHYS GCPhys = pVM->vmm.s.u64CallHostArg;
+            pVM->vmm.s.rcCallHost = PGM3PhysGrowRange(pVM, &GCPhys);
             break;
         }
 #endif
