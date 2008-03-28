@@ -919,9 +919,11 @@ typedef struct PGMRAMRANGE
     /** The range description. */
     R3PTRTYPE(const char *)             pszDesc;
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
+#ifdef VBOX_WITH_NEW_PHYS_CODE
     uint32_t                            au32Reserved[2];
+#elif HC_ARCH_BITS == 32
+    uint32_t                            au32Reserved[1];
 #endif
 
     /** Array of physical guest page tracking structures. */
