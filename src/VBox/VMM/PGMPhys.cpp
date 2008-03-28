@@ -1163,8 +1163,10 @@ PGMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, siz
  * @param   pVM             The VM handle.
  * @param   GCPhys          GC physical address of the RAM range. (page aligned)
  */
-PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
+PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, PCRTGCPHYS pGCPhys)
 {
+    RTGCPHYS GCPhys = *pGCPhys;
+
     /*
      * Walk range list.
      */
@@ -1214,10 +1216,11 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
     if (!VM_IS_EMT(pVM))
     {
         PVMREQ pReq;
+        const RTGCPHYS GCPhysParam = GCPhys;
 
         AssertMsg(!PDMCritSectIsOwner(&pVM->pgm.s.CritSect), ("We own the PGM lock -> deadlock danger!!\n"));
 
-        rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PGM3PhysGrowRange, 1 + sizeof(RTGCPHYS)/sizeof(uintptr_t), pVM, GCPhys);
+        rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PGM3PhysGrowRange, 2, pVM, &GCPhysParam);
         if (VBOX_SUCCESS(rc))
         {
             rc = pReq->iStatus;
