@@ -36,10 +36,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#ifdef DEBUG
-# define MMHYPER_HEAP_STRICT 1
-#endif
-
 #define ASSERT_L(u1, u2)    AssertMsg((u1) <  (u2), ("u1=%#x u2=%#x\n", u1, u2))
 #define ASSERT_LE(u1, u2)   AssertMsg((u1) <= (u2), ("u1=%#x u2=%#x\n", u1, u2))
 #define ASSERT_GE(u1, u2)   AssertMsg((u1) >= (u2), ("u1=%#x u2=%#x\n", u1, u2))
@@ -148,7 +144,7 @@ static void mmR3HyperStatRegisterOne(PVM pVM, PMMHYPERSTAT pStat);
 #endif
 static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk);
 #ifdef MMHYPER_HEAP_STRICT
-static void mmR3HyperHeapCheck(PMMHYPERHEAP pHeap);
+static void mmHyperHeapCheck(PMMHYPERHEAP pHeap);
 #endif
 
 
@@ -298,7 +294,11 @@ static PMMHYPERCHUNK mmHyperAllocChunk(PMMHYPERHEAP pHeap, uint32_t cb, unsigned
 {
     Log3(("mmHyperAllocChunk: Enter cb=%#x uAlignment=%#x\n", cb, uAlignment));
 #ifdef MMHYPER_HEAP_STRICT
-    mmR3HyperHeapCheck(pHeap);
+    mmHyperHeapCheck(pHeap);
+#endif
+#ifdef MMHYPER_HEAP_STRICT_FENCE
+    uint32_t cbFence = RT_MAX(MMHYPER_HEAP_STRICT_FENCE_SIZE, uAlignment);
+    cb += cbFence;
 #endif
 
     /*
@@ -508,8 +508,17 @@ static PMMHYPERCHUNK mmHyperAllocChunk(PMMHYPERHEAP pHeap, uint32_t cb, unsigned
         pFree = pFree->offNext ? (PMMHYPERCHUNKFREE)((char *)pFree + pFree->offNext) : NULL;
     }
 
+#ifdef MMHYPER_HEAP_STRICT_FENCE
+    uint32_t *pu32End = (uint32_t *)((uint8_t *)(pRet + 1) + cb);
+    uint32_t *pu32EndReal = pRet->offNext
+                          ? (uint32_t *)((uint8_t *)pRet + pRet->offNext)
+                          : (uint32_t *)(pHeap->CTXSUFF(pbHeap) + pHeap->cbHeap);
+    cbFence += (uintptr_t)pu32EndReal - (uintptr_t)pu32End; Assert(!(cbFence & 0x3));
+    ASMMemFill32((uint8_t *)pu32EndReal - cbFence, cbFence, MMHYPER_HEAP_STRICT_FENCE_U32);
+    pu32EndReal[-1] = cbFence;
+#endif
 #ifdef MMHYPER_HEAP_STRICT
-    mmR3HyperHeapCheck(pHeap);
+    mmHyperHeapCheck(pHeap);
 #endif
     return pRet;
 }
@@ -530,7 +539,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
     Log3(("mmHyperAllocPages: Enter cb=%#x\n", cb));
 
 #ifdef MMHYPER_HEAP_STRICT
-    mmR3HyperHeapCheck(pHeap);
+    mmHyperHeapCheck(pHeap);
 #endif
 
     /*
@@ -614,7 +623,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
     Log3(("mmHyperAllocPages: Returning %p (page aligned)\n", pvRet));
 
 #ifdef MMHYPER_HEAP_STRICT
-    mmR3HyperHeapCheck(pHeap);
+    mmHyperHeapCheck(pHeap);
 #endif
     return pvRet;
 }
@@ -775,6 +784,10 @@ Assert(pHeap == CTXSUFF(pVM->mm.s.pHyperHeap));
                     (char *)CTXSUFF(pHeap->pbHeap) + pHeap->offPageAligned),
                     VERR_INVALID_POINTER);
 
+#ifdef MMHYPER_HEAP_STRICT
+    mmHyperHeapCheck(pHeap);
+#endif
+
 #if defined(VBOX_WITH_STATISTICS) || defined(MMHYPER_HEAP_FREE_POISON)
     /* calc block size. */
     const uint32_t cbChunk = pChunk->offNext
@@ -856,10 +869,6 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
 {
     Log3(("mmHyperFree: Enter pHeap=%p pChunk=%p\n", pHeap, pChunk));
     PMMHYPERCHUNKFREE   pFree = (PMMHYPERCHUNKFREE)pChunk;
-
-#ifdef MMHYPER_HEAP_STRICT
-    mmR3HyperHeapCheck(pHeap);
-#endif
 
     /*
      * Insert into the free list (which is sorted on address).
@@ -1008,17 +1017,57 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
     ASSERT_CHUNK_FREE(pHeap, pFree);
 
 #ifdef MMHYPER_HEAP_STRICT
-    mmR3HyperHeapCheck(pHeap);
+    mmHyperHeapCheck(pHeap);
 #endif
     return VINF_SUCCESS;
 }
+
+
+#if defined(DEBUG) || defined(MMHYPER_HEAP_STRICT)
+/**
+ * Dumps a heap chunk to the log.
+ *
+ * @param   pHeap       Pointer to the heap.
+ * @param   pCur        Pointer to the chunk.
+ */
+static void mmHyperHeapDumpOne(PMMHYPERHEAP pHeap, PMMHYPERCHUNKFREE pCur)
+{
+    if (MMHYPERCHUNK_ISUSED(&pCur->core))
+    {
+        if (pCur->core.offStat)
+        {
+            PMMHYPERSTAT pStat = (PMMHYPERSTAT)((uintptr_t)pCur + pCur->core.offStat);
+            const char *pszSelf = pCur->core.offStat == sizeof(MMHYPERCHUNK) ? " stat record" : "";
+#ifdef IN_RING3
+            Log(("%p  %06x USED offNext=%06x offPrev=-%06x %s%s\n",
+                 pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
+                 pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core),
+                 mmR3GetTagName((MMTAG)pStat->Core.Key), pszSelf));
+#else
+            Log(("%p  %06x USED offNext=%06x offPrev=-%06x %d%s\n",
+                 pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
+                 pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core),
+                 (MMTAG)pStat->Core.Key, pszSelf));
+#endif
+        }
+        else
+            Log(("%p  %06x USED offNext=%06x offPrev=-%06x\n",
+                 pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
+                 pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core)));
+    }
+    else
+        Log(("%p  %06x FREE offNext=%06x offPrev=-%06x : cb=%06x offNext=%06x offPrev=-%06x\n",
+             pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
+             pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core), pCur->cb, pCur->offNext, pCur->offPrev));
+}
+#endif /* DEBUG || MMHYPER_HEAP_STRICT */
 
 
 #ifdef MMHYPER_HEAP_STRICT
 /**
  * Internal consitency check.
  */
-static void mmR3HyperHeapCheck(PMMHYPERHEAP pHeap)
+static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
 {
     PMMHYPERCHUNKFREE pPrev = NULL;
     PMMHYPERCHUNKFREE pCur = (PMMHYPERCHUNKFREE)CTXSUFF(pHeap->pbHeap);
@@ -1032,6 +1081,33 @@ static void mmR3HyperHeapCheck(PMMHYPERHEAP pHeap)
             AssertMsg((int32_t)pPrev->core.offNext == -MMHYPERCHUNK_GET_OFFPREV(&pCur->core),
                       ("pPrev->core.offNext=%d offPrev=%d\n", pPrev->core.offNext, MMHYPERCHUNK_GET_OFFPREV(&pCur->core)));
 
+# ifdef MMHYPER_HEAP_STRICT_FENCE
+        uint32_t off = (uint8_t *)pCur - CTXSUFF(pHeap->pbHeap);
+        if (    MMHYPERCHUNK_ISUSED(&pCur->core)
+            &&  off < pHeap->offPageAligned)
+        {
+            uint32_t cbCur = pCur->core.offNext
+                           ? pCur->core.offNext
+                           : pHeap->cbHeap - off;
+            uint32_t *pu32End = ((uint32_t *)((uint8_t *)pCur + cbCur));
+            uint32_t cbFence = pu32End[-1];
+            if (RT_UNLIKELY(    cbFence >= cbCur - sizeof(*pCur)
+                            ||  cbFence < MMHYPER_HEAP_STRICT_FENCE_SIZE))
+            {
+                mmHyperHeapDumpOne(pHeap, pCur);
+                Assert(cbFence < cbCur - sizeof(*pCur));
+                Assert(cbFence >= MMHYPER_HEAP_STRICT_FENCE_SIZE);
+            }
+
+            uint32_t *pu32Bad = ASMMemIsAllU32((uint8_t *)pu32End - cbFence, cbFence - sizeof(uint32_t), MMHYPER_HEAP_STRICT_FENCE_U32);
+            if (RT_UNLIKELY(pu32Bad))
+            {
+                mmHyperHeapDumpOne(pHeap, pCur);
+                Assert(!pu32Bad);
+            }
+        }
+# endif
+
         /* next */
         if (!pCur->core.offNext)
             break;
@@ -1040,6 +1116,20 @@ static void mmR3HyperHeapCheck(PMMHYPERHEAP pHeap)
     }
 }
 #endif
+
+
+/**
+ * Performs consistency checks on the heap if MMHYPER_HEAP_STRICT was
+ * defined at build time.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ */
+MMDECL(void) MMHyperHeapCheck(PVM pVM)
+{
+#ifdef MMHYPER_HEAP_STRICT
+    mmHyperHeapCheck(CTXSUFF(pVM->mm.s.pHyperHeap));
+#endif
+}
 
 
 #ifdef DEBUG
@@ -1054,33 +1144,7 @@ MMDECL(void) MMHyperHeapDump(PVM pVM)
     PMMHYPERCHUNKFREE pCur = (PMMHYPERCHUNKFREE)CTXSUFF(pHeap->pbHeap);
     for (;;)
     {
-        if (MMHYPERCHUNK_ISUSED(&pCur->core))
-        {
-            if (pCur->core.offStat)
-            {
-                PMMHYPERSTAT pStat = (PMMHYPERSTAT)((uintptr_t)pCur + pCur->core.offStat);
-                const char *pszSelf = pCur->core.offStat == sizeof(MMHYPERCHUNK) ? " stat record" : "";
-#ifdef IN_RING3
-                Log(("%p  %06x USED offNext=%06x offPrev=-%06x %s%s\n",
-                     pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
-                     pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core),
-                     mmR3GetTagName((MMTAG)pStat->Core.Key), pszSelf));
-#else
-                Log(("%p  %06x USED offNext=%06x offPrev=-%06x %d%s\n",
-                     pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
-                     pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core),
-                     (MMTAG)pStat->Core.Key, pszSelf));
-#endif
-            }
-            else
-                Log(("%p  %06x USED offNext=%06x offPrev=-%06x\n",
-                     pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
-                     pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core)));
-        }
-        else
-            Log(("%p  %06x FREE offNext=%06x offPrev=-%06x : cb=%06x offNext=%06x offPrev=-%06x\n",
-                 pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
-                 pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core), pCur->cb, pCur->offNext, pCur->offPrev));
+        mmHyperHeapDumpOne(pHeap, pCur);
 
         /* next */
         if (!pCur->core.offNext)

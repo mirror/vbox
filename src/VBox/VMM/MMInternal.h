@@ -146,6 +146,23 @@ typedef MMHEAP *PMMHEAP;
 # define MMHYPER_HEAP_FREE_POISON   0xCB
 #endif
 
+/** @def MMHYPER_HEAP_STRICT
+ * Enables a bunch of assertions in the heap code. */
+#if defined(VBOX_STRICT) || defined(__DOXYGEN__)
+# define MMHYPER_HEAP_STRICT 1
+# if 0 || defined(__DOXYGEN__)
+/** @def MMHYPER_HEAP_STRICT_FENCE
+ * Enables tail fence. */
+#  define MMHYPER_HEAP_STRICT_FENCE
+/** @def MMHYPER_HEAP_STRICT_FENCE_SIZE
+ * The fence size in bytes. */
+#  define MMHYPER_HEAP_STRICT_FENCE_SIZE    256
+/** @def MMHYPER_HEAP_STRICT_FENCE_U32
+ * The fence filler. */
+#  define MMHYPER_HEAP_STRICT_FENCE_U32     0xdeadbeef
+# endif
+#endif
+
 /**
  * Hypervisor heap statistics record.
  * There is one global and one per allocation tag.
