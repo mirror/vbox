@@ -2196,16 +2196,17 @@ DECLINLINE(void *) ASMAtomicXchgPtr(void * volatile *ppv, void *pv)
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
 DECLASM(bool) ASMAtomicCmpXchgU32(volatile uint32_t *pu32, const uint32_t u32New, const uint32_t u32Old);
 #else
-DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t *pu32, const uint32_t u32New, const uint32_t u32Old)
+DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t *pu32, const uint32_t u32New, uint32_t u32Old)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     uint8_t u8Ret;
-    __asm__ __volatile__("lock; cmpxchgl %2, %0\n\t"
+    __asm__ __volatile__("lock; cmpxchgl %3, %0\n\t"
                          "setz  %1\n\t"
                          : "=m" (*pu32),
-                           "=qm" (u8Ret)
+                           "=qm" (u8Ret),
+                           "=a" (u32Old)
                          : "r" (u32New),
-                           "a" (u32Old));
+                           "2" (u32Old));
     return (bool)u8Ret;
 
 # elif RT_INLINE_ASM_USES_INTRIN
