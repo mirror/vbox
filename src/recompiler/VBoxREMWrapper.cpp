@@ -663,7 +663,7 @@ static const REMPARMDESC g_aArgsPGMPhysGCPtr2HCPtrByGstCR3[] =
 static const REMPARMDESC g_aArgsPGM3PhysGrowRange[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(PCRTGCPHYS), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PCRTGCPHYS), NULL }
 };
 static const REMPARMDESC g_aArgsPGMPhysIsGCPhysValid[] =
 {
