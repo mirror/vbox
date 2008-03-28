@@ -206,7 +206,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
      * Convert timeout value.
      */
     struct timespec ts;
-    struct timespec *pTimeout = 0;
+    struct timespec *pTimeout = NULL;
     if (cMillies != RT_INDEFINITE_WAIT)
     {
         ts.tv_sec  = cMillies / 1000;
@@ -279,6 +279,7 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
 {
     int rc = rtSemEventWait(EventSem, cMillies, true);
     Assert(rc != VERR_INTERRUPTED);
+    Assert(rc != VERR_TIMEOUT || cMillies != RT_INDEFINITE_WAIT);
     return rc;
 }
 
