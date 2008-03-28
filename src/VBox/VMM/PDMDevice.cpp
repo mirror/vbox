@@ -3157,6 +3157,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPh
     {
         Log(("pdmR3DevHlp_PhysRead: caller='%s'/%d: Requesting call in EMT...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
         PVMREQ pReq;
+        AssertCompileSize(RTGCPHYS, 4);
         int rc = VMR3ReqCallVoid(pDevIns->Internal.s.pVMHC, &pReq, RT_INDEFINITE_WAIT,
                                  (PFNRT)PGMPhysRead, 4, pDevIns->Internal.s.pVMHC, GCPhys, pvBuf, cbRead);
         while (rc == VERR_TIMEOUT)
@@ -3189,6 +3190,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCP
     {
         Log(("pdmR3DevHlp_PhysWrite: caller='%s'/%d: Requesting call in EMT...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
         PVMREQ pReq;
+        AssertCompileSize(RTGCPHYS, 4);
         int rc = VMR3ReqCallVoid(pDevIns->Internal.s.pVMHC, &pReq, RT_INDEFINITE_WAIT,
                                  (PFNRT)PGMPhysWrite, 4, pDevIns->Internal.s.pVMHC, GCPhys, pvBuf, cbWrite);
         while (rc == VERR_TIMEOUT)

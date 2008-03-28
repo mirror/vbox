@@ -58,7 +58,7 @@
 #define CSAM_MONITOR_CODE_PAGES
 /* Enable to monitor all scanned pages
 #define CSAM_MONITOR_CSAM_CODE_PAGES */
-/* Enable to scan beyond ret instructions.  
+/* Enable to scan beyond ret instructions.
 #define CSAM_ANALYSE_BEYOND_RET */
 
 /*******************************************************************************
@@ -172,7 +172,7 @@ CSAMR3DECL(int) CSAMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->csam.s.StatFlushDirtyPages,  STAMTYPE_PROFILE, "/PROF/CSAM/FlushDirtyPage",   STAMUNIT_TICKS_PER_CALL, "Dirty page flushing overhead.");
     STAM_REG(pVM, &pVM->csam.s.StatCheckGates,       STAMTYPE_PROFILE, "/PROF/CSAM/CheckGates",       STAMUNIT_TICKS_PER_CALL, "CSAMR3CheckGates overhead.");
 
-    /* 
+    /*
      * Check CFGM option and enable/disable CSAM.
      */
     bool fEnabled;
@@ -1194,7 +1194,7 @@ static int csamAnalyseCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTY
             ||  (cpu.pCurInstr->opcode == OP_CALL && cpu.param1.flags == USE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
         {
             /* We need to parse 'call dword ptr [address]' type of calls to catch cpuid instructions in some recent Linux distributions (e.g. OpenSuse 10.3) */
-            if (    cpu.pCurInstr->opcode == OP_CALL 
+            if (    cpu.pCurInstr->opcode == OP_CALL
                 &&  cpu.param1.flags == USE_DISPLACEMENT32)
             {
                 addr = 0;
@@ -1921,6 +1921,7 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
          *        (if it writes the same data as the patch jump and we replace it with obsolete opcodes)
          */
         Log(("CSAMCodePageWriteHandler: delayed write!\n"));
+        AssertCompileSize(RTGCPTR, 4);
         rc = VMR3ReqCallEx(pVM, NULL, 0, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID,
                            (PFNRT)CSAMDelayedWriteHandler, 3, pVM, GCPtr, cbBuf);
     }
@@ -2356,7 +2357,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
                 Log(("CSAMCheckGates: check gate %d failed due to rc %Vrc GCPtrBase=%VGv limit=%x\n", iGate, rc, selInfo.GCPtrBase, selInfo.cbLimit));
                 continue;
             }
-            
+
 
             if (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32)
             {
