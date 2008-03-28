@@ -330,12 +330,13 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
          * Allocate the first chunk, as we'll map ROM ranges there.
          * If requested, allocated the rest too.
          */
-        rc = PGM3PhysGrowRange(pVM, (RTGCPHYS)0);
+        RTGCPHYS GCPhys = (RTGCPHYS)0;
+        rc = PGM3PhysGrowRange(pVM, &GCPhys);
         if (RT_SUCCESS(rc) && fPreAlloc)
-            for (RTGCPHYS GCPhys = PGM_DYNAMIC_CHUNK_SIZE;
+            for (GCPhys = PGM_DYNAMIC_CHUNK_SIZE;
                  GCPhys < cbRam && RT_SUCCESS(rc);
                  GCPhys += PGM_DYNAMIC_CHUNK_SIZE)
-                rc = PGM3PhysGrowRange(pVM, GCPhys);
+                rc = PGM3PhysGrowRange(pVM, &GCPhys);
     }
 #endif
 
