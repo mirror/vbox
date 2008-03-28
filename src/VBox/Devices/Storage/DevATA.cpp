@@ -5279,7 +5279,7 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
              * per remaining thread. Just to be on the safe side. */
             int64_t cMsElapsed = RTTimeMilliTS() - u64Start;
             rc = RTThreadWait(pData->aCts[i].AsyncIOThread,
-                              RT_MAX(cMsElapsed + 5000, 100),
+                              RT_MAX(5000 - cMsElapsed, 100),
                               NULL);
             if (VBOX_FAILURE(rc) && rc != VERR_INVALID_HANDLE)
                 rc2 = rc;
