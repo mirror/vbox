@@ -3869,7 +3869,7 @@ DECLASM(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8);
 #else
 DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
 {
-/** @todo rewrite this in inline assembly. */
+/** @todo rewrite this in inline assembly? */
     uint8_t const *pb = (uint8_t const *)pv;
     for (; cb; cb--, pb++)
         if (RT_UNLIKELY(*pb != u8))
@@ -3878,6 +3878,32 @@ DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
 }
 #endif
 
+
+/**
+ * Checks if a memory block is filled with the specified 32-bit value.
+ *
+ * This is a sort of inverted memchr.
+ *
+ * @returns Pointer to the first value which doesn't equal u32.
+ * @returns NULL if all equal to u32.
+ *
+ * @param   pv      Pointer to the memory block.
+ * @param   cb      Number of bytes in the block. This MUST be aligned on 32-bit!
+ * @param   u32     The value it's supposed to be filled with.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint32_t *) ASMMemIsAllU32(void const *pv, size_t cb, uint32_t u32);
+#else
+DECLINLINE(uint32_t *) ASMMemIsAllU32(void const *pv, size_t cb, uint32_t u32)
+{
+/** @todo rewrite this in inline assembly? */
+    uint32_t const *pu32 = (uint32_t const *)pv;
+    for (; cb; cb -= 4, pu32++)
+        if (RT_UNLIKELY(*pu32 != u32))
+            return (uint32_t *)pu32;
+    return NULL;
+}
+#endif
 
 
 /**
