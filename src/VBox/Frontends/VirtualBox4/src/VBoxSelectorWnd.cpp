@@ -28,6 +28,7 @@
 #include "VBoxVMSettingsDlg.h"
 #include "VBoxGlobalSettingsDlg.h"
 #include "VBoxVMLogViewer.h"
+#include "VBoxUtils.h"
 
 #ifdef Q_WS_X11
 #include <iprt/env.h>
@@ -244,7 +245,7 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent)
     /* main layout */
     QVBoxLayout *vMainLayout = new QVBoxLayout (this);
     vMainLayout->setSpacing (10);
-    vMainLayout->setContentsMargins (0, 0, 0, 0);
+    setLayoutMargin (vMainLayout, 0);
 
     /* mBrowser */
     mBrowser = new QTextBrowser (this);
@@ -452,7 +453,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     QHBoxLayout *centralLayout =
         new QHBoxLayout (centralWidget());
     centralLayout->setSpacing (9);
-    centralLayout->setContentsMargins (5, 5, 5, 5);
+    setLayoutMargin (centralLayout, 5);
 
     /* left vertical box */
     QVBoxLayout *leftVLayout = new QVBoxLayout ();
