@@ -70,7 +70,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                                 </sizepolicy>
                             </property>
                             <property name="pixmap">
-                                <pixmap>os_other.png</pixmap>
+                                <pixmap>os_unknown.png</pixmap>
                             </property>
                             <property name="scaledContents">
                                 <bool>false</bool>

@@ -340,7 +340,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
                                     <number>1</number>
                                 </property>
                                 <property name="pixmap">
-                                    <pixmap>os_other.png</pixmap>
+                                    <pixmap>os_unknown.png</pixmap>
                                 </property>
                                 <property name="scaledContents">
                                     <bool>false</bool>
