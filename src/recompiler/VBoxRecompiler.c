@@ -2557,7 +2557,7 @@ void remR3GrowDynRange(unsigned long physaddr)
     PVM pVM = cpu_single_env->pVM;
 
     Log(("remR3GrowDynRange %VGp\n", physaddr));
-    RTGCPHYS GCPhys = physaddr;
+    const RTGCPHYS GCPhys = physaddr;
     rc = PGM3PhysGrowRange(pVM, &GCPhys);
     if (VBOX_SUCCESS(rc))
         return;
