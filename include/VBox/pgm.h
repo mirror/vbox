@@ -433,7 +433,6 @@ PGMDECL(unsigned) PGMAssertCR3(PVM pVM, uint32_t cr3, uint32_t cr4);
 PGMGCDECL(int)  PGMGCDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 PGMGCDECL(int)  PGMGCDynMapGCPageEx(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 PGMGCDECL(int)  PGMGCDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
-PGMGCDECL(int)  PGMGCSyncPT(PVM pVM, unsigned iPD, PVBOXPD pPDSrc);
 PGMGCDECL(int)  PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
 /** @} */
 #endif /* IN_GC */
@@ -514,7 +513,6 @@ PDMR3DECL(int)  PGMR3PoolGrow(PVM pVM);
 PGMR3DECL(int)  PGMR3DumpHierarchyHC(PVM pVM, uint32_t cr3, uint32_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp);
 #endif
 PGMR3DECL(int)  PGMR3DumpHierarchyGC(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCPHYS PhysSearch);
-PGMR3DECL(void) PGMR3DumpPD(PVM pVM, PVBOXPD pPD);
 
 /** @todo r=bird: s/Byte/U8/ s/Word/U16/ s/Dword/U32/ to match other functions names and returned types. */
 PGMR3DECL(uint8_t) PGMR3PhysReadByte(PVM pVM, RTGCPHYS GCPhys);

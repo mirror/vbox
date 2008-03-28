@@ -245,11 +245,11 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     | ((RTGCPHYS)pvFault & (GST_BIG_PAGE_OFFSET_MASK ^ PAGE_OFFSET_MASK));
         else
         {
-            PVBOXPT pPTSrc;
+            PX86PT pPTSrc;
 #  ifdef IN_GC
             rc = PGMGCDynMapGCPage(pVM, PdeSrc.u & GST_PDE_PG_MASK, (void **)&pPTSrc);
 #  else
-            pPTSrc = (PVBOXPT)MMPhysGCPhys2HCVirt(pVM, PdeSrc.u & GST_PDE_PG_MASK, sizeof(*pPTSrc));
+            pPTSrc = (PX86PT)MMPhysGCPhys2HCVirt(pVM, PdeSrc.u & GST_PDE_PG_MASK, sizeof(*pPTSrc));
             if (pPTSrc == 0)
                 rc = VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 #  endif
@@ -610,7 +610,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         CSAMMarkPage(pVM, pvFault, true);
                     }
                 }
-#  endif /* PGM_WITH_PAGING(PGM_GST_TYPE) */
+#  endif /* PGM_WITH_PAGING(PGM_GST_TYPE) && !defined(IN_RING0) */
                 rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
                 if (VBOX_SUCCESS(rc))
                 {
@@ -754,7 +754,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
  */
 PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 {
-#if PGM_GST_TYPE == PGM_TYPE_32BIT
+#if    PGM_GST_TYPE == PGM_TYPE_32BIT \
+    || PGM_GST_TYPE == PGM_TYPE_PAE
 
     LogFlow(("InvalidatePage %x\n", GCPtrPage));
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE
@@ -784,7 +785,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
 #  else /* PAE */
     unsigned        iPDSrc;
-    PX86PD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+    PX86PDPAE       pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
 
     GSTPDE          PdeSrc;;
     PdeSrc.u      = pgmGstGetPaePDE(&pVM->pgm.s, GCPtrPage);
@@ -941,7 +942,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPDDst);
             pPdeDst->u = 0;
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePage4MBPages));
-            DUMP_PDE_BIG("PGMInvalidatePage", iPDSrc, PdeSrc);
             PGM_INVL_BIG_PG(GCPtrPage);
         }
     }
@@ -970,15 +970,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 #  error "Guest 32-bit mode and shadow AMD64 mode doesn't add up!"
 # endif
     return VINF_SUCCESS;
-
-#elif PGM_GST_TYPE == PGM_TYPE_PAE
-# if PGM_SHW_TYPE == PGM_TYPE_PAE
-//# error not implemented
-    return VERR_INTERNAL_ERROR;
-
-# else  /* PGM_SHW_TYPE != PGM_TYPE_AMD64 */
-#  error "Guest PAE mode, but not the shadow mode ; 32bit - maybe, but amd64 no."
-# endif /* PGM_SHW_TYPE != PGM_TYPE_AMD64 */
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
 # if PGM_SHW_TYPE == PGM_TYPE_AMD64
@@ -1106,7 +1097,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVM pVM, PPGMPOOLPAGE p
  *
  * @remark  Not used for 2/4MB pages!
  */
-DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE PdeSrc, VBOXPTE PteSrc, PPGMPOOLPAGE pShwPage, unsigned iPTDst)
+DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc, PPGMPOOLPAGE pShwPage, unsigned iPTDst)
 {
     if (PteSrc.n.u1Present)
     {
@@ -1242,7 +1233,8 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
 {
     LogFlow(("SyncPage: GCPtrPage=%VGv cPages=%d uErr=%#x\n", GCPtrPage, cPages, uErr));
 
-#if PGM_GST_TYPE == PGM_TYPE_32BIT
+#if    PGM_GST_TYPE == PGM_TYPE_32BIT \
+    || PGM_GST_TYPE == PGM_TYPE_PAE
 
 # if PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE
 #  error "Invalid shadow mode for 32-bit guest mode!"
@@ -1293,6 +1285,9 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
         &&  PdeSrc.n.u1Present
         &&  (PdeSrc.n.u1User == PdeDst.n.u1User)
         &&  (PdeSrc.n.u1Write == PdeDst.n.u1Write || !PdeDst.n.u1Write)
+# if PGM_GST_TYPE == PGM_TYPE_PAE
+        &&  (PdeSrc.n.u1NoExecute == PdeDst.n.u1NoExecute)
+# endif
        )
     {
 # ifdef PGM_SYNC_ACCESSED_BIT
@@ -1310,7 +1305,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                 /*
                  * 4KB Page - Map the guest page table.
                  */
-                PVBOXPT pPTSrc;
+                PGSTPT pPTSrc;
                 int rc = PGM_GCPHYS_2_PTR(pVM, PdeSrc.u & GST_PDE_PG_MASK, &pPTSrc);
                 if (VBOX_SUCCESS(rc))
                 {
@@ -1340,7 +1335,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                         {
                             if (!pPTDst->a[iPTDst].n.u1Present)
                             {
-                                VBOXPTE PteSrc = pPTSrc->a[offPTSrc + iPTDst];
+                                GSTPTE PteSrc = pPTSrc->a[offPTSrc + iPTDst];
                                 RTGCUINTPTR GCPtrCurPage = ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
                                 NOREF(GCPtrCurPage);
 #ifndef IN_RING0
@@ -1372,7 +1367,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
 # endif /* PGM_SYNC_N_PAGES */
                     {
                         const unsigned iPTSrc = (GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK;
-                        VBOXPTE PteSrc = pPTSrc->a[iPTSrc];
+                        GSTPTE PteSrc = pPTSrc->a[iPTSrc];
                         const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                         PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPage: 4K  %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s\n",
@@ -1528,7 +1523,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
         {
             if (!pPTDst->a[iPTDst].n.u1Present)
             {
-                VBOXPTE PteSrc;
+                GSTPTE PteSrc;
 
                 RTGCUINTPTR GCPtrCurPage = ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
 
@@ -1555,7 +1550,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     else
 # endif /* PGM_SYNC_N_PAGES */
     {
-        VBOXPTE PteSrc;
+        GSTPTE PteSrc;
         const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
         RTGCUINTPTR GCPtrCurPage = ((RTGCUINTPTR)GCPtrPage & ~(RTGCUINTPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
 
@@ -1610,9 +1605,9 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
      */
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPdeSrc->n.u1Present
-#if PGM_GST_TYPE == PGM_TYPE_PAE
+#  if PGM_WITH_NX(PGM_GST_TYPE)
         ||  ((uErr & X86_TRAP_PF_ID) &&  pPdeSrc->n.u1NoExecute)
-#endif
+#  endif
         ||  ((uErr & X86_TRAP_PF_RW) && !pPdeSrc->n.u1Write)
         ||  ((uErr & X86_TRAP_PF_US) && !pPdeSrc->n.u1User) )
     {
@@ -1700,9 +1695,9 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
         PGSTPTE        pPteSrc = &pPTSrc->a[(GCPtrPage >> PAGE_SHIFT) & GST_PT_MASK];
         const GSTPTE   PteSrc = *pPteSrc;
         if (    !PteSrc.n.u1Present
-#if PGM_GST_TYPE == PGM_TYPE_PAE
+#  if PGM_WITH_NX(PGM_GST_TYPE)
             ||  ((uErr & X86_TRAP_PF_ID) && !PteSrc.n.u1NoExecute)
-#endif
+#  endif
             ||  ((uErr & X86_TRAP_PF_RW) && !PteSrc.n.u1Write)
             ||  ((uErr & X86_TRAP_PF_US) && !PteSrc.n.u1User)
            )
@@ -1841,7 +1836,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     STAM_COUNTER_INC(&pVM->pgm.s.StatGCSyncPtPD[iPDSrc]);
     LogFlow(("SyncPT: GCPtrPage=%VGv\n", GCPtrPage));
 
-#if PGM_GST_TYPE == PGM_TYPE_32BIT
+#if    PGM_GST_TYPE == PGM_TYPE_32BIT \
+    || PGM_GST_TYPE == PGM_TYPE_PAE
 
 # if PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE
 #  error "Invalid shadow mode for 32-bit guest mode!"
@@ -1860,6 +1856,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     PSHWPDE         pPdeDst = &pPDDst->a[iPDDst];
     SHWPDE          PdeDst = *pPdeDst;
 
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
     /*
      * Check for conflicts.
      * GC: In case of a conflict we'll go to Ring-3 and do a full SyncCR3.
@@ -1868,11 +1865,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     if (PdeDst.u & PGM_PDFLAGS_MAPPING)
     {
         Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-# ifndef IN_RING3
+#  ifndef IN_RING3
         Log(("SyncPT: Conflict at %VGv\n", GCPtrPage));
         STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncPT), a);
         return VERR_ADDRESS_CONFLICT;
-# else
+#  else
         PPGMMAPPING pMapping = pgmGetMapping(pVM, (RTGCPTR)GCPtrPage);
         Assert(pMapping);
         int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPDSrc);
@@ -1882,8 +1879,12 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             return rc;
         }
         PdeDst = *pPdeDst;
-# endif
+#  endif
     }
+# else /* PGM_GST_TYPE == PGM_TYPE_32BIT */
+    /* PAE and AMD64 modes are hardware accelerated only, so there are no mappings. */
+    Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
+# endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
     /*
@@ -2602,6 +2603,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
         if (    PdeSrc.n.u1Present
             &&  (PdeSrc.n.u1User || fRawR0Enabled))
         {
+#  if PGM_GST_TYPE == PGM_TYPE_32BIT
             /*
              * Check for conflicts with GC mappings.
              */
@@ -2618,7 +2620,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                     continue;
                 }
 
-#ifdef IN_RING3
+#   ifdef IN_RING3
                 int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD);
                 if (VBOX_FAILURE(rc))
                     return rc;
@@ -2630,12 +2632,15 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                 while (pMapping && pMapping->GCPtr < (iPD << X86_PD_SHIFT))
                     pMapping = pMapping->pNextR3;
                 iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
-#else
+#   else
                 LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
                 return VINF_PGM_SYNC_CR3;
-#endif
+#   endif
             }
-
+#  else /* PGM_GST_TYPE == PGM_TYPE_32BIT */
+            /* PAE and AMD64 modes are hardware accelerated only, so there are no mappings. */
+            Assert(iPD != iPdNoMapping);
+#  endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
             /*
              * Sync page directory entry.
              *
@@ -2741,6 +2746,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
         }
         else
         {
+#  if PGM_GST_TYPE == PGM_TYPE_32BIT
             Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
             const unsigned cPTs = pMapping->cPTs;
             if (pVM->pgm.s.fMappingsFixed)
@@ -2762,7 +2768,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                     if (    pPDSrc->a[iPD + iPT].n.u1Present
                         &&  (pPDSrc->a[iPD + iPT].n.u1User || fRawR0Enabled))
                     {
-#  ifdef IN_RING3
+#   ifdef IN_RING3
                         int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD);
                         if (VBOX_FAILURE(rc))
                             return rc;
@@ -2775,10 +2781,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                             pMapping = pMapping->CTXALLSUFF(pNext);
                         iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
                         break;
-#  else
+#   else
                         LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
                         return VINF_PGM_SYNC_CR3;
-#  endif
+#   endif
                     }
                 }
                 if (iPdNoMapping == ~0U && pMapping)
@@ -2787,7 +2793,12 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                     if (pMapping)
                         iPdNoMapping = pMapping->GCPtr >> X86_PD_SHIFT;
                 }
+#  else /* PGM_GST_TYPE == PGM_TYPE_32BIT */
+                /* PAE and AMD64 modes are hardware accelerated only, so there are no mappings. */
+                AssertFailed();
+#  endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
             }
+
             /* advance. */
             iPD += cPTs - 1;
             pPDEDst += cPTs + (PGM_SHW_TYPE != PGM_TYPE_32BIT) * cPTs;

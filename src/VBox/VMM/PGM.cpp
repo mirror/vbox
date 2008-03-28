@@ -1347,12 +1347,14 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatGCTrap0eUSNotPresentWrite,     STAMTYPE_COUNTER, "/PGM/GC/Trap0e/User/NPWrite",        STAMUNIT_OCCURENCES,     "Number of user mode not present write page faults.");
     STAM_REG(pVM, &pPGM->StatGCTrap0eUSWrite,               STAMTYPE_COUNTER, "/PGM/GC/Trap0e/User/Write",          STAMUNIT_OCCURENCES,     "Number of user mode write page faults.");
     STAM_REG(pVM, &pPGM->StatGCTrap0eUSReserved,            STAMTYPE_COUNTER, "/PGM/GC/Trap0e/User/Reserved",       STAMUNIT_OCCURENCES,     "Number of user mode reserved bit page faults.");
+    STAM_REG(pVM, &pPGM->StatGCTrap0eUSNXE,                 STAMTYPE_COUNTER, "/PGM/GC/Trap0e/User/NXE",            STAMUNIT_OCCURENCES,     "Number of user mode NXE page faults.");
     STAM_REG(pVM, &pPGM->StatGCTrap0eUSRead,                STAMTYPE_COUNTER, "/PGM/GC/Trap0e/User/Read",           STAMUNIT_OCCURENCES,     "Number of user mode read page faults.");
 
     STAM_REG(pVM, &pPGM->StatGCTrap0eSVNotPresentRead,      STAMTYPE_COUNTER, "/PGM/GC/Trap0e/Supervisor/NPRead",   STAMUNIT_OCCURENCES,     "Number of supervisor mode not present read page faults.");
     STAM_REG(pVM, &pPGM->StatGCTrap0eSVNotPresentWrite,     STAMTYPE_COUNTER, "/PGM/GC/Trap0e/Supervisor/NPWrite",  STAMUNIT_OCCURENCES,     "Number of supervisor mode not present write page faults.");
     STAM_REG(pVM, &pPGM->StatGCTrap0eSVWrite,               STAMTYPE_COUNTER, "/PGM/GC/Trap0e/Supervisor/Write",    STAMUNIT_OCCURENCES,     "Number of supervisor mode write page faults.");
     STAM_REG(pVM, &pPGM->StatGCTrap0eSVReserved,            STAMTYPE_COUNTER, "/PGM/GC/Trap0e/Supervisor/Reserved", STAMUNIT_OCCURENCES,     "Number of supervisor mode reserved bit page faults.");
+    STAM_REG(pVM, &pPGM->StatGCTrap0eSNXE,                  STAMTYPE_COUNTER, "/PGM/GC/Trap0e/Supervisor/NXE",      STAMUNIT_OCCURENCES,     "Number of supervisor mode NXE page faults.");
     STAM_REG(pVM, &pPGM->StatGCTrap0eUnhandled,             STAMTYPE_COUNTER, "/PGM/GC/Trap0e/GuestPF/Unhandled",   STAMUNIT_OCCURENCES,     "Number of guest real page faults.");
     STAM_REG(pVM, &pPGM->StatGCTrap0eMap,                   STAMTYPE_COUNTER, "/PGM/GC/Trap0e/GuestPF/Map",         STAMUNIT_OCCURENCES,     "Number of guest page faults due to map accesses.");
 
@@ -2312,7 +2314,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
     /*
      * Get page directory addresses.
      */
-    PVBOXPD     pPDSrc = pVM->pgm.s.pGuestPDHC;
+    PX86PD     pPDSrc = pVM->pgm.s.pGuestPDHC;
     Assert(pPDSrc);
     Assert(MMPhysGCPhys2HCVirt(pVM, (RTGCPHYS)(CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 
@@ -2321,7 +2323,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
      */
     for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
     {
-        VBOXPDE PdeSrc = pPDSrc->a[iPD];
+        X86PDE PdeSrc = pPDSrc->a[iPD];
         if (PdeSrc.n.u1Present)
         {
             if (PdeSrc.b.u1Size && fPSE)
