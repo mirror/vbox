@@ -221,7 +221,7 @@ OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
 /* Qt 4.2.0 support function */
 inline void setLayoutMargin (QLayout *aLayout, int aMargin)
 {
-#if QT_VERSION < 0x040200
+#if QT_VERSION < 0x040300
     /* Deprecated since > 4.2 */
     aLayout->setMargin (aMargin);
 #else
