@@ -127,6 +127,7 @@ typedef struct REMPHYSREGISTRATION
     RTGCPHYS        GCPhys;
     RTHCUINTPTR     HCVirt;
     RTUINT          cb;
+    uint32_t        u32Padding;
 } REMPHYSREGISTRATION, *PREMPHYSREGISTRATION;
 
 /**
