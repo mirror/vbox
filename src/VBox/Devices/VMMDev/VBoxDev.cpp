@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox Guest/VMM/host communication:
- * Virtual communication device
+ * VMMDev - Guest <-> VMM/Host communication device.
  */
 
 /*
@@ -20,9 +19,6 @@
 
 /* Enable dev_vmm Log3 statements to get IRQ-related logging. */
 
-#include <stdio.h>
-#include <string.h>
-
 #define LOG_GROUP LOG_GROUP_DEV_VMM
 #include <VBox/log.h>
 
@@ -35,6 +31,7 @@
 #include <VBox/vm.h> /* for VM_IS_EMT */
 
 #include <iprt/assert.h>
+#include <iprt/string.h>
 #include <iprt/time.h>
 #ifndef IN_GC
 #include <iprt/mem.h>
@@ -1235,10 +1232,10 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevVRDPChangeRequest *vrdpChangeRequest = (VMMDevVRDPChangeRequest*)pRequestHeader;
                 /* just pass on the information */
                 Log(("VMMDev: returning VRDP status %d level %d\n", pData->fVRDPEnabled, pData->u32VRDPExperienceLevel));
-                
+
                 vrdpChangeRequest->u8VRDPActive = pData->fVRDPEnabled;
                 vrdpChangeRequest->u32VRDPExperienceLevel = pData->u32VRDPExperienceLevel;
-                
+
                 pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
@@ -1258,7 +1255,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 /* just pass on the information */
                 Log(("VMMDev: returning memory balloon size =%d\n", pData->u32MemoryBalloonSize));
                 memBalloonChangeRequest->u32BalloonSize = pData->u32MemoryBalloonSize;
-                memBalloonChangeRequest->u32PhysMemSize = (pData->u64GuestRAMSize / (uint64_t)_1M);
+                memBalloonChangeRequest->u32PhysMemSize = pData->cbGuestRAM / (uint64_t)_1M;
 
                 if (memBalloonChangeRequest->eventAck == VMMDEV_EVENT_BALLOON_CHANGE_REQUEST)
                 {
@@ -1380,7 +1377,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                 if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_MEM_SYSTEM_CACHE)
                     Log(("CPU%d: System cache size      %-4d MB\n", pGuestStats->u32CpuId, pGuestStats->u32MemSystemCache / (_1M/pGuestStats->u32PageSize)));
-    
+
                 if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PAGE_FILE_SIZE)
                     Log(("CPU%d: Page file size         %-4d MB\n", pGuestStats->u32CpuId, pGuestStats->u32PageFileSize / (_1M/pGuestStats->u32PageSize)));
                 Log(("Statistics end *******************\n"));
@@ -1563,64 +1560,31 @@ end:
  */
 static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
-    int         rc;
-    VMMDevState *pData = PCIDEV_2_VMMDEVSTATE(pPciDev);
     LogFlow(("vmmdevR3IORAMRegionMap: iRegion=%d GCPhysAddress=%VGp cb=%#x enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
+    VMMDevState *pData = PCIDEV_2_VMMDEVSTATE(pPciDev);
+    int rc;
 
-
+    AssertReturn(iRegion == 1 && enmType == PCI_ADDRESS_SPACE_MEM, VERR_INTERNAL_ERROR);
     Assert(pData->pVMMDevRAMHC != NULL);
 
-    memset (pData->pVMMDevRAMHC, 0, sizeof (VMMDevMemory));
-    pData->pVMMDevRAMHC->u32Size = sizeof (VMMDevMemory);
-    pData->pVMMDevRAMHC->u32Version = VMMDEV_MEMORY_VERSION;
-
-    /*
-     * VMMDev RAM mapping.
-     */
-    if (iRegion == 1 && enmType == PCI_ADDRESS_SPACE_MEM)
+    if (GCPhysAddress != NIL_RTGCPHYS)
     {
         /*
-         * Register and lock the RAM.
-         *
-         * Windows usually re-initializes the PCI devices, so we have to check whether the memory was
-         * already registered before trying to do that all over again.
+         * Map the MMIO2 memory.
          */
-        PVM pVM = PDMDevHlpGetVM(pPciDev->pDevIns);
-
-        if (pData->GCPhysVMMDevRAM)
-        {
-            /*
-             * Relocate the already registered VMMDevRAM.
-             */
-            rc = MMR3PhysRelocate(pVM, pData->GCPhysVMMDevRAM, GCPhysAddress, VMMDEV_RAM_SIZE);
-            if (VBOX_SUCCESS(rc))
-            {
-                pData->GCPhysVMMDevRAM = GCPhysAddress;
-                return VINF_SUCCESS;
-            }
-            AssertReleaseMsgFailed(("Failed to relocate VMMDev RAM from %VGp to %VGp! rc=%Vra\n", pData->GCPhysVMMDevRAM, GCPhysAddress, rc));
-        }
-        else
-        {
-            /*
-             * Register and lock the VMMDevRAM.
-             */
-            /** @todo MM_RAM_FLAGS_MMIO2 seems to be appropriate for a RW memory.
-             * Need to check. May be a RO memory is enough for the device.
-             */
-            rc = MMR3PhysRegister(pVM, pData->pVMMDevRAMHC, GCPhysAddress, VMMDEV_RAM_SIZE, MM_RAM_FLAGS_MMIO2, "VBoxDev");
-            if (VBOX_SUCCESS(rc))
-            {
-                pData->GCPhysVMMDevRAM = GCPhysAddress;
-                return VINF_SUCCESS;
-            }
-            AssertReleaseMsgFailed(("Failed to register VMMDev RAM! rc=%Vra\n", rc));
-        }
-        return rc;
+        pData->GCPhysVMMDevRAM = GCPhysAddress;
+        rc = PDMDevHlpMMIO2Map(pPciDev->pDevIns, iRegion, GCPhysAddress);
+    }
+    else
+    {
+        /*
+         * It is about to be unmapped, just clean up.
+         */
+        pData->GCPhysVMMDevRAM = NIL_RTGCPHYS;
+        rc = VINF_SUCCESS;
     }
 
-    AssertReleaseMsgFailed(("VMMDev wrong region type: iRegion=%d enmType=%d\n", iRegion, enmType));
-    return VERR_INTERNAL_ERROR;
+    return rc;
 }
 
 
@@ -2098,6 +2062,18 @@ static DECLCALLBACK(int) vmmdevLoadStateDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
 }
 
 /**
+ * (Re-)initializes the MMIO2 data.
+ *
+ * @param   pData           Pointer to the VMMDev instance data.
+ */
+static void vmmdevInitRam(VMMDevState *pData)
+{
+    memset(pData->pVMMDevRAMHC, 0, sizeof(VMMDevMemory));
+    pData->pVMMDevRAMHC->u32Size = sizeof(VMMDevMemory);
+    pData->pVMMDevRAMHC->u32Version = VMMDEV_MEMORY_VERSION;
+}
+
+/**
  * Construct a device instance for a VM.
  *
  * @returns VBox status.
@@ -2159,35 +2135,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->dev.config[0x3d] = 0x01;
 
     /*
-     * Register the backdoor logging port
-     */
-    rc = PDMDevHlpIOPortRegister(pDevIns, RTLOG_DEBUG_PORT, 1, NULL, vmmdevBackdoorLog, NULL, NULL, NULL, "VMMDev backdoor logging");
-    AssertRCReturn(rc, rc);
-
-#ifdef TIMESYNC_BACKDOOR
-    /*
-     * Alternative timesync source (temporary!)
-     */
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0x505, 1, NULL, vmmdevTimesyncBackdoorWrite, vmmdevTimesyncBackdoorRead, NULL, NULL, "VMMDev timesync backdoor");
-    AssertRCReturn(rc, rc);
-#endif
-
-    /*
-     * Register the PCI device.
-     */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pData->dev);
-    if (VBOX_FAILURE(rc))
-        return rc;
-    if (pData->dev.devfn == 32 || iInstance != 0)
-        Log(("!!WARNING!!: pData->dev.devfn=%d (ignore if testcase or no started by Main)\n", pData->dev.devfn));
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x20, PCI_ADDRESS_SPACE_IO, vmmdevIOPortRegionMap);
-    if (VBOX_FAILURE(rc))
-        return rc;
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, VMMDEV_RAM_SIZE, PCI_ADDRESS_SPACE_MEM, vmmdevIORAMRegionMap);
-    if (VBOX_FAILURE(rc))
-        return rc;
-
-    /*
      * Interfaces
      */
     /* Base */
@@ -2207,15 +2154,56 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->Port.pfnVRDPChange             = vmmdevVRDPChange;
 
     /* Shared folder LED */
-    pData->SharedFolders.Led.u32Magic                 = PDMLED_MAGIC;
-    pData->SharedFolders.ILeds.pfnQueryStatusLed      = vmmdevQueryStatusLed;
+    pData->SharedFolders.Led.u32Magic     = PDMLED_MAGIC;
+    pData->SharedFolders.ILeds.pfnQueryStatusLed = vmmdevQueryStatusLed;
 
 #ifdef VBOX_HGCM
     /* HGCM port */
     pData->HGCMPort.pfnCompleted          = hgcmCompleted;
 #endif
 
-    /*    
+    /** @todo convert this into a config parameter like we do everywhere else.*/
+    pData->cbGuestRAM = MMR3PhysGetRamSize(PDMDevHlpGetVM(pDevIns));
+
+    /*
+     * Register the backdoor logging port
+     */
+    rc = PDMDevHlpIOPortRegister(pDevIns, RTLOG_DEBUG_PORT, 1, NULL, vmmdevBackdoorLog, NULL, NULL, NULL, "VMMDev backdoor logging");
+    AssertRCReturn(rc, rc);
+
+#ifdef TIMESYNC_BACKDOOR
+    /*
+     * Alternative timesync source (temporary!)
+     */
+    rc = PDMDevHlpIOPortRegister(pDevIns, 0x505, 1, NULL, vmmdevTimesyncBackdoorWrite, vmmdevTimesyncBackdoorRead, NULL, NULL, "VMMDev timesync backdoor");
+    AssertRCReturn(rc, rc);
+#endif
+
+    /*
+     * Allocate and initialize the MMIO2 memory.
+     */
+    rc = PDMDevHlpMMIO2Register(pDevIns, 1 /*iRegion*/, VMMDEV_RAM_SIZE, (void **)&pData->pVMMDevRAMHC, "VMMDev");
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Failed to allocate %u bytes of memory for the VMM device"), VMMDEV_RAM_SIZE);
+    vmmdevInitRam(pData);
+
+    /*
+     * Register the PCI device.
+     */
+    rc = PDMDevHlpPCIRegister(pDevIns, &pData->dev);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    if (pData->dev.devfn == 32 || iInstance != 0)
+        Log(("!!WARNING!!: pData->dev.devfn=%d (ignore if testcase or no started by Main)\n", pData->dev.devfn));
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x20, PCI_ADDRESS_SPACE_IO, vmmdevIOPortRegionMap);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, VMMDEV_RAM_SIZE, PCI_ADDRESS_SPACE_MEM, vmmdevIORAMRegionMap);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
+    /*
      * Get the corresponding connector interface
      */
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->Base, &pData->pDrvBase, "VMM Driver Port");
@@ -2255,7 +2243,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return rc;
     }
 
-    /* 
+    /*
      * Register saved state and init the HGCM CmdList critsect.
      */
     rc = PDMDevHlpSSMRegister(pDevIns, "VMMDev", iInstance, VMMDEV_SSM_VERSION, sizeof(*pData),
@@ -2270,19 +2258,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->u32HGCMEnabled = 0;
 #endif /* VBOX_HGCM */
 
-    /*
-     * Allocate the VMMDev RAM region.
-     */
-    /** @todo freeing of the RAM. */
-    rc = SUPPageAlloc(VMMDEV_RAM_SIZE >> PAGE_SHIFT, (void **)&pData->pVMMDevRAMHC);
-    AssertMsgRCReturn(rc, ("VMMDev SUPPageAlloc(%#x,) -> %Vrc\n", VMMDEV_RAM_SIZE, rc), rc);
-
-    /* initialize the VMMDev memory */
-    pData->pVMMDevRAMHC->u32Size = sizeof (VMMDevMemory);
-    pData->pVMMDevRAMHC->u32Version = VMMDEV_MEMORY_VERSION;
-
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
-    pData->u64GuestRAMSize = MMR3PhysGetRamSize(pVM);
     return rc;
 }
 
@@ -2310,13 +2285,9 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 
     pData->u32HostEventFlags = 0;
 
+    /* re-initialize the VMMDev memory */
     if (pData->pVMMDevRAMHC)
-    {
-        /* re-initialize the VMMDev memory */
-        memset (pData->pVMMDevRAMHC, 0, VMMDEV_RAM_SIZE);
-        pData->pVMMDevRAMHC->u32Size = sizeof (VMMDevMemory);
-        pData->pVMMDevRAMHC->u32Version = VMMDEV_MEMORY_VERSION;
-    }
+        vmmdevInitRam(pData);
 
     /* credentials have to go away */
     memset(pData->credentialsLogon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);

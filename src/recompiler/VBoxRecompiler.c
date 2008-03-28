@@ -2610,11 +2610,13 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 
 
 /**
- * Notification about a successful MMR3PhysRegister() call.
+ * Notification about a successful memory deregistration or reservation.
  *
  * @param   pVM         VM Handle.
  * @param   GCPhys      Start physical address.
  * @param   cb          The size of the range.
+ * @todo    Rename to REMR3NotifyPhysRamDeregister (for MMIO2) as we won't
+ *          reserve any memory soon.
  */
 REMR3DECL(void) REMR3NotifyPhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
 {
@@ -2699,6 +2701,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
     Assert(!pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = true;
 
+/** @todo this isn't right, MMIO can (in theory) be restored as RAM. */
     if (enmType == PGMPHYSHANDLERTYPE_MMIO)
         cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
     else if (fHasHCHandler)
@@ -2710,9 +2713,8 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
         }
         else
         {
-            /* This is not perfect, but it'll do for PD monitoring... */
-            Assert(cb == PAGE_SIZE);
             Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
+            Assert(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb);
             cpu_register_physical_memory(GCPhys, cb, GCPhys);
         }
     }
@@ -2784,7 +2786,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
  *
  * @remark  This function will only work correctly in VBOX_STRICT builds!
  */
-REMDECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys)
+REMR3DECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys)
 {
 #ifdef VBOX_STRICT
     if (pVM->rem.s.cHandlerNotifications)

@@ -106,6 +106,7 @@
 #include "PDMInternal.h"
 #include <VBox/pdm.h>
 #include <VBox/mm.h>
+#include <VBox/pgm.h>
 #include <VBox/ssm.h>
 #include <VBox/vm.h>
 #include <VBox/uvm.h>
@@ -427,6 +428,7 @@ PDMR3DECL(int) PDMR3Term(PVM pVM)
         pdmR3CritSectDeleteDevice(pVM, pDevIns);
         //pdmR3ThreadDestroyDevice(pVM, pDevIns);
         //PDMR3QueueDestroyDevice(pVM, pDevIns);
+        PGMR3PhysMMIO2Deregister(pVM, pDevIns, UINT32_MAX);
     }
 
     /*

@@ -182,6 +182,22 @@ MMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
                 break;
             }
 
+            case MMLOOKUPHYPERTYPE_MMIO2:
+            {
+                const RTGCPHYS offEnd = pLookup->u.MMIO2.off + pLookup->cb;
+                for (RTGCPHYS offCur = pLookup->u.MMIO2.off; offCur < offEnd; offCur += PAGE_SIZE)
+                {
+                    RTHCPHYS HCPhys;
+                    rc = PGMR3PhysMMIO2GetHCPhys(pVM, pLookup->u.MMIO2.pDevIns, pLookup->u.MMIO2.iRegion, offCur, &HCPhys);
+                    if (RT_FAILURE(rc))
+                        break;
+                    rc = PGMMap(pVM, GCPtr + (offCur - pLookup->u.MMIO2.off), HCPhys, PAGE_SIZE, 0);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+                break;
+            }
+
             case MMLOOKUPHYPERTYPE_DYNAMIC:
                 /* do nothing here since these are either fences or managed by someone else using PGM. */
                 break;
@@ -382,6 +398,89 @@ MMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char
     }
     return rc;
 }
+
+
+/**
+ * Maps a portion of an MMIO2 region into the hypervisor region.
+ *
+ * Callers of this API must never deregister the MMIO2 region before the
+ * VM is powered off. If this becomes a requirement MMR3HyperUnmapMMIO2
+ * API will be needed to perform cleanups.
+ *
+ * @return VBox status code.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pDevIns     The device owning the MMIO2 memory.
+ * @param   iRegion     The region.
+ * @param   off         The offset into the region. Will be rounded down to closest page boundrary.
+ * @param   cb          The number of bytes to map. Will be rounded up to the closest page boundrary.
+ * @param   pszDesc     Mapping description.
+ * @param   pGCPtr      Where to store the GC address.
+ */
+MMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
+                                const char *pszDesc, PRTGCPTR pGCPtr)
+{
+    LogFlow(("MMR3HyperMapMMIO2: pDevIns=%p iRegion=%#x off=%VGp cb=%VGp pszDesc=%p:{%s} pGCPtr=%p\n",
+             pDevIns, iRegion, off, cb, pszDesc, pszDesc, pGCPtr));
+    int rc;
+
+    /*
+     * Validate input.
+     */
+    AssertReturn(pszDesc && *pszDesc, VERR_INVALID_PARAMETER);
+    AssertReturn(off + cb > off, VERR_INVALID_PARAMETER);
+    uint32_t const offPage = off & PAGE_OFFSET_MASK;
+    off &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
+    cb += offPage;
+    cb = RT_ALIGN_Z(cb, PAGE_SIZE);
+    const RTGCPHYS offEnd = off + cb;
+    AssertReturn(offEnd > off, VERR_INVALID_PARAMETER);
+    for (RTGCPHYS offCur = off; offCur < offEnd; offCur += PAGE_SIZE)
+    {
+        RTHCPHYS HCPhys;
+        rc = PGMR3PhysMMIO2GetHCPhys(pVM, pDevIns, iRegion, offCur, &HCPhys);
+        AssertMsgRCReturn(rc, ("rc=%Rrc - iRegion=%d off=%RGp\n", rc, iRegion, off), rc);
+    }
+
+    /*
+     * Add the memory to the hypervisor area.
+     */
+    RTGCPTR         GCPtr;
+    PMMLOOKUPHYPER  pLookup;
+    rc = mmR3HyperMap(pVM, cb, pszDesc, &GCPtr, &pLookup);
+    if (VBOX_SUCCESS(rc))
+    {
+        pLookup->enmType = MMLOOKUPHYPERTYPE_MMIO2;
+        pLookup->u.MMIO2.pDevIns = pDevIns;
+        pLookup->u.MMIO2.iRegion = iRegion;
+        pLookup->u.MMIO2.off = off;
+
+        /*
+         * Update the page table.
+         */
+        if (pVM->mm.s.fPGMInitialized)
+        {
+            for (RTGCPHYS offCur = off; offCur < offEnd; offCur += PAGE_SIZE)
+            {
+                RTHCPHYS HCPhys;
+                rc = PGMR3PhysMMIO2GetHCPhys(pVM, pDevIns, iRegion, offCur, &HCPhys);
+                AssertRCReturn(rc, VERR_INTERNAL_ERROR);
+                rc = PGMMap(pVM, GCPtr + (offCur - off), HCPhys, PAGE_SIZE, 0);
+                if (VBOX_FAILURE(rc))
+                {
+                    AssertMsgFailed(("rc=%Vrc offCur=%RGp %s\n", rc, offCur, pszDesc));
+                    break;
+                }
+            }
+        }
+
+        if (VBOX_SUCCESS(rc) && pGCPtr)
+            *pGCPtr = GCPtr | offPage;
+    }
+    return rc;
+}
+
+
 
 
 /**
@@ -854,8 +953,9 @@ MMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvHC)
             }
 
             case MMLOOKUPHYPERTYPE_GCPHYS:
+            case MMLOOKUPHYPERTYPE_MMIO2:
             case MMLOOKUPHYPERTYPE_DYNAMIC:
-                /* can convert these kind of records. */
+                /* can (or don't want to) convert these kind of records. */
                 break;
 
             default:
@@ -974,6 +1074,15 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 sizeof(RTHCPTR) * 2, "",
                                 pLookup->u.GCPhys.GCPhys, RT_ABS(sizeof(RTHCPHYS) - sizeof(RTGCPHYS)) * 2, "",
+                                pLookup->pszDesc);
+                break;
+
+            case MMLOOKUPHYPERTYPE_MMIO2:
+                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %*s MMIO2   %VGp%*s %s\n",
+                                pLookup->off + pVM->mm.s.pvHyperAreaGC,
+                                pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
+                                sizeof(RTHCPTR) * 2, "",
+                                pLookup->u.MMIO2.off, RT_ABS(sizeof(RTHCPHYS) - sizeof(RTGCPHYS)) * 2, "",
                                 pLookup->pszDesc);
                 break;
 

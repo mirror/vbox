@@ -292,6 +292,7 @@ MMDECL(RTGCPTR)     MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr);
 MMDECL(RTHCPTR)     MMHyperGC2HC(PVM pVM, RTGCPTR GCPtr);
 MMDECL(int)         MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
 MMDECL(int)         MMHyperFree(PVM pVM, void *pv);
+MMDECL(void)        MMHyperHeapCheck(PVM pVM);
 #ifdef DEBUG
 MMDECL(void)        MMHyperHeapDump(PVM pVM);
 #endif
@@ -336,7 +337,7 @@ MMR3DECL(int)       MMR3Term(PVM pVM);
 MMR3DECL(void)      MMR3TermUVM(PUVM pUVM);
 MMR3DECL(void)      MMR3Reset(PVM pVM);
 MMR3DECL(int)       MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages);
-MMR3DECL(int)       MMR3IncreaseFixedReservation(PVM pVM, uint32_t cAddFixedPages);
+MMR3DECL(int)       MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc);
 MMR3DECL(int)       MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages);
 
 MMR3DECL(int)       MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv);
@@ -350,6 +351,7 @@ MMR3DECL(int)       MMR3WriteGCVirt(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc
 MMDECL(int)         MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
 MMR3DECL(int)       MMR3HyperMapHCPhys(PVM pVM, void *pvHC, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
 MMR3DECL(int)       MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
+MMR3DECL(int)       MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTGCPTR pGCPtr);
 MMR3DECL(int)       MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, const char *pszDesc, PRTGCPTR pGCPtr);
 MMR3DECL(int)       MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages, const char *pszDesc, PRTGCPTR pGCPtr);
 MMR3DECL(int)       MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGCPTR pGCPtr);
@@ -368,7 +370,6 @@ MMR3DECL(int)       MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsi
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 MMR3DECL(int)       MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc);
 #endif
-MMR3DECL(int)       MMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, unsigned cb);
 MMR3DECL(int)       MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc);
 MMR3DECL(int)       MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
 MMR3DECL(int)       MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
