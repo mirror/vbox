@@ -28,6 +28,7 @@
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
 #include "QIHotKeyEdit.h"
+#include "VBoxUtils.h"
 
 /* Qt includes */
 #include <QActionGroup>
@@ -395,7 +396,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     QWidget *indicatorBox = new QWidget ();
     QHBoxLayout *indicatorBoxHLayout = new QHBoxLayout (indicatorBox);
-    indicatorBoxHLayout->setContentsMargins (0, 0, 0, 0);
+    setLayoutMargin (indicatorBoxHLayout, 0);
     indicatorBoxHLayout->setSpacing (5);
     /* i/o devices */
     hd_light = new QIStateIndicator (KDeviceActivity_Idle);
@@ -463,7 +464,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     /* host key */
     hostkey_hbox = new QWidget();
     QHBoxLayout *hostkeyHBoxLayout = new QHBoxLayout (hostkey_hbox);
-    hostkeyHBoxLayout->setContentsMargins (0, 0, 0, 0);
+    setLayoutMargin (hostkeyHBoxLayout, 0);
     hostkeyHBoxLayout->setSpacing (3);
     indicatorBoxHLayout->addWidget (hostkey_hbox);
 
@@ -650,7 +651,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     {
         setCentralWidget (new QWidget (this));
         QGridLayout *pMainLayout = new QGridLayout(centralWidget());
-        pMainLayout->setContentsMargins (0, 0, 0, 0);
+        setLayoutMargin (pMainLayout, 0);
         pMainLayout->setSpacing (0);
 
         mShiftingSpacerLeft = new QSpacerItem (0, 0,
@@ -3444,7 +3445,7 @@ VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
 
     /* Setup main dialog's layout */
     QVBoxLayout *mainLayout = new QVBoxLayout (this);
-    mainLayout->setContentsMargins (10, 10, 10, 10);
+    setLayoutMargin (mainLayout, 10);
     mainLayout->setSpacing (10);
 
     /* Setup settings layout */

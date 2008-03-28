@@ -19,6 +19,7 @@
 #include "QIMessageBox.h"
 #include "VBoxDefs.h"
 #include "QIRichLabel.h"
+#include "VBoxUtils.h"
 
 /* Qt includes */
 #include <QHBoxLayout>
@@ -53,14 +54,14 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mButton2 = aButton2;
 
     QVBoxLayout *layout = new QVBoxLayout (this);
-    layout->setMargin (11);
+    setLayoutMargin (layout, 11);
     layout->setSpacing (10);
     layout->setSizeConstraint (QLayout::SetMinimumSize);
 
     QWidget *main = new QWidget();
 
     QHBoxLayout *hLayout = new QHBoxLayout (main);
-    hLayout->setContentsMargins (0, 0, 0, 0);
+    setLayoutMargin (hLayout, 0);
     hLayout->setSpacing (10);
     layout->addWidget (main);
 
@@ -74,7 +75,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     hLayout->addWidget (mIconLabel);
 
     QVBoxLayout* messageVBoxLayout = new QVBoxLayout();
-    messageVBoxLayout->setContentsMargins (0, 0, 0, 0);
+    setLayoutMargin (messageVBoxLayout, 0);
     messageVBoxLayout->setSpacing (10);
     hLayout->addLayout (messageVBoxLayout);
 
@@ -94,7 +95,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     layout->addWidget (mDetailsVBox);
 
     QVBoxLayout* detailsVBoxLayout = new QVBoxLayout(mDetailsVBox);
-    detailsVBoxLayout->setContentsMargins (0, 0, 0, 0);
+    setLayoutMargin (detailsVBoxLayout, 0);
     detailsVBoxLayout->setSpacing (10);
 
     mDetailsText = new QTextEdit();
