@@ -68,6 +68,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
             }
 
             case MMLOOKUPHYPERTYPE_GCPHYS:  /* (for now we'll not allow these kind of conversions) */
+            case MMLOOKUPHYPERTYPE_MMIO2:
             case MMLOOKUPHYPERTYPE_DYNAMIC:
                 break;
 
@@ -534,6 +535,7 @@ MMDECL(RTGCPTR) MMHyperHC2GC(PVM pVM, RTHCPTR HCPtr)
             }
 
             case MMLOOKUPHYPERTYPE_GCPHYS:  /* (for now we'll not allow these kind of conversions) */
+            case MMLOOKUPHYPERTYPE_MMIO2:
             case MMLOOKUPHYPERTYPE_DYNAMIC:
                 break;
 

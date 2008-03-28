@@ -572,7 +572,8 @@ typedef PPGMPAGE *PPPGMPAGE;
         (pPage)->fWrittenToX    = 0; \
         (pPage)->fSomethingElse = 0; \
         (pPage)->idPageX        = (_idPage); \
-        (pPage)->u3Type         = (_uType); \
+        /*(pPage)->u3Type         = (_uType); - later */ \
+        PGM_PAGE_SET_TYPE(pPage, _uType); \
         (pPage)->u29B           = 0; \
     } while (0)
 
@@ -598,7 +599,8 @@ typedef PPGMPAGE *PPPGMPAGE;
  * This is a per-VM page that's never ever mapped writable. */
 #define PGM_PAGE_STATE_ZERO             0
 /** A allocated page.
- * This is a per-VM page allocated from the page pool.
+ * This is a per-VM page allocated from the page pool (or wherever
+ * we get MMIO2 pages from if the type is MMIO2).
  */
 #define PGM_PAGE_STATE_ALLOCATED        1
 /** A allocated page that's being monitored for writes.
@@ -712,8 +714,21 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  * @param   _enmType    The new page type (PGMPAGETYPE).
  */
+#ifdef VBOX_WITH_NEW_PHYS_CODE
 #define PGM_PAGE_SET_TYPE(pPage, _enmType) \
                                         do { (pPage)->u3Type = (_enmType); } while (0)
+#else
+#define PGM_PAGE_SET_TYPE(pPage, _enmType) \
+    do { \
+        (pPage)->u3Type = (_enmType); \
+        if ((_enmType) == PGMPAGETYPE_ROM) \
+            (pPage)->HCPhys |= MM_RAM_FLAGS_ROM; \
+        else if ((_enmType) == PGMPAGETYPE_ROM_SHADOW) \
+            (pPage)->HCPhys |= MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2; \
+        else if ((_enmType) == PGMPAGETYPE_MMIO2) \
+            (pPage)->HCPhys |= MM_RAM_FLAGS_MMIO2; \
+    } while (0)
+#endif
 
 
 /**
@@ -984,7 +999,7 @@ typedef struct PGMROMRANGE
     R3PTRTYPE(struct PGMROMRANGE *) pNextR3;
     /** Pointer to the next range - R0. */
     R0PTRTYPE(struct PGMROMRANGE *) pNextR0;
-    /** Pointer to the next range - R0. */
+    /** Pointer to the next range - GC. */
     GCPTRTYPE(struct PGMROMRANGE *) pNextGC;
 #if GC_ARCH_BITS == 32
     RTGCPTR                         GCPtrAlignment; /**< Pointer alignment. */
@@ -1009,6 +1024,45 @@ typedef struct PGMROMRANGE
 } PGMROMRANGE;
 /** Pointer to a ROM range. */
 typedef PGMROMRANGE *PPGMROMRANGE;
+
+
+/**
+ * A registered MMIO2 (= Device RAM) range.
+ *
+ * There are a few reason why we need to keep track of these
+ * registrations. One of them is the deregistration & cleanup
+ * stuff, while another is that the PGMRAMRANGE associated with
+ * such a region may have to be removed from the ram range list.
+ *
+ * Overlapping with a RAM range has to be 100% or none at all. The
+ * pages in the existing RAM range must not be ROM nor MMIO. A guru
+ * meditation will be raised if a partial overlap or an overlap of
+ * ROM pages is encountered. On an overlap we will free all the
+ * existing RAM pages and put in the ram range pages instead.
+ */
+typedef struct PGMMMIO2RANGE
+{
+    /** The owner of the range. (a device) */
+    PPDMDEVINSR3                        pDevInsR3;
+    /** Pointer to the ring-3 mapping of the allocation. */
+    RTR3PTR                             pvR3;
+    /** Pointer to the next range - R3. */
+    R3PTRTYPE(struct PGMMMIO2RANGE *)   pNextR3;
+    /** Whether it's mapped or not. */
+    bool                                fMapped;
+    /** Whether it's overlapping or not. */
+    bool                                fOverlapping;
+    /** The PCI region number.
+     * @remarks This ASSUMES that nobody will ever really need to have multiple
+     *          PCI devices with matching MMIO region numbers on a single device. */
+    uint8_t                             iRegion;
+    /**< Alignment padding for putting the ram range on a PGMPAGE alignment boundrary. */
+    uint8_t                             abAlignemnt[HC_ARCH_BITS == 32 ? 1 : 5];
+    /** The associated RAM range. */
+    PGMRAMRANGE                         RamRange;
+} PGMMMIO2RANGE;
+/** Pointer to a MMIO2 range. */
+typedef PGMMMIO2RANGE *PPGMMMIO2RANGE;
 
 
 
@@ -2047,6 +2101,10 @@ typedef struct PGM
     /** Alignment padding. */
     RTGCPTR                         GCPtrPadding2;
 
+    /** Pointer to the list of MMIO2 ranges - for R3.
+     * Registration order. */
+    R3PTRTYPE(PPGMMMIO2RANGE)       pMmio2RangesR3;
+
     /** PGM offset based trees - HC Ptr. */
     R3R0PTRTYPE(PPGMTREES)          pTreesHC;
     /** PGM offset based trees - GC Ptr. */
@@ -2528,6 +2586,7 @@ void            pgmHandlerVirtualDumpPhysPages(PVM pVM);
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
+void            pgmPhysFreePage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
 int             pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv);

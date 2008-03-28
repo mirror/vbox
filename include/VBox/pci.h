@@ -74,10 +74,16 @@ typedef enum PCIADDRESSSPACE
  * @return VBox status code.
  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
  * @param   iRegion         The region number.
- * @param   GCPhysAddress   Physical address of the region. If iType is PCI_ADDRESS_SPACE_IO, this is an
- *                          I/O port, else it's a physical address.
- *                          This address is *NOT* relative to pci_mem_base like earlier!
+ * @param   GCPhysAddress   Physical address of the region. If enmType is PCI_ADDRESS_SPACE_IO, this
+ *                          is an I/O port, otherwise it's a physical address.
+ *
+ *                          NIL_RTGCPHYS indicates that a MMIO2 mapping is about to be unmapped and
+ *                          that the device deregister access handlers for it and update its internal
+ *                          state to reflect this.
+ *
  * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
+ *
+ * @remarks The address is *NOT* relative to pci_mem_base.
  */
 typedef DECLCALLBACK(int) FNPCIIOREGIONMAP(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType);
 /** Pointer to a FNPCIIOREGIONMAP() function. */

@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox Guest/VMM/host communication:
- * HGCM - Host-Guest Communication Manager header
+ * VMMDev - Guest <-> VMM/Host communication device, Internal header.
  */
 
 /*
@@ -16,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VMMDevState_h__
-#define __VMMDevState_h__
+#ifndef ___VMMDevState_h___
+#define ___VMMDevState_h___
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -71,7 +70,7 @@ typedef struct VMMDevState
     uint32_t irq;
     /** Current host side event flags */
     uint32_t u32HostEventFlags;
-    /** Mask of events guest is interested in. Note that the HGCM events 
+    /** Mask of events guest is interested in. Note that the HGCM events
      *  are enabled automatically by the VMMDev device when guest issues
      *  HGCM commands.
      */
@@ -135,7 +134,7 @@ typedef struct VMMDevState
     uint32_t    u32MemoryBalloonSize, u32LastMemoryBalloonSize;
 
     /* guest ram size */
-    uint64_t    u64GuestRAMSize;
+    uint64_t    cbGuestRAM;
 
     /* statistics interval change request */
     uint32_t    u32StatIntervalSize, u32LastStatIntervalSize;
@@ -145,12 +144,12 @@ typedef struct VMMDevState
 
     bool fVRDPEnabled;
     uint32_t u32VRDPExperienceLevel;
-        
+
 #ifdef TIMESYNC_BACKDOOR
     bool fTimesyncBackdoorLo;
     uint64_t hostTime;
 #endif
-    /** Set if GetHostTime should fail. 
+    /** Set if GetHostTime should fail.
      * Loaded from the GetHostTimeDisabled configuration value. */
     bool fGetHostTimeDisabled;
 
@@ -184,4 +183,5 @@ void VMMDevCtlSetGuestFilterMask (VMMDevState *pVMMDevState,
                                   uint32_t u32OrMask,
                                   uint32_t u32NotMask);
 
-#endif /* __VMMDevState_h__ */
+#endif /* !___VMMDevState_h___ */
+

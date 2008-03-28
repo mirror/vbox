@@ -466,6 +466,12 @@ PGMR3DECL(int)  PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
 PGMR3DECL(int)  PGM3PhysGrowRange(PVM pVM, PCRTGCPHYS GCPhys);
 #endif /* !VBOX_WITH_NEW_PHYS_CODE */
 PGMR3DECL(int)  PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const char *pszDesc);
+PDMR3DECL(int)  PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, void **ppv, const char *pszDesc);
+PDMR3DECL(int)  PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion);
+PDMR3DECL(int)  PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+PDMR3DECL(int)  PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+PDMR3DECL(bool) PGMR3PhysMMIO2IsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys);
+PDMR3DECL(int)  PGMR3PhysMMIO2GetHCPhys(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, PRTHCPHYS pHCPhys);
 
 /** @group PGMR3PhysRegisterRom flags.
  * @{ */
@@ -483,7 +489,6 @@ PGMR3DECL(int)  PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t 
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 PGMR3DECL(int)  PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t cb, unsigned fFlags, const SUPPAGE *paPages, const char *pszDesc);
 #endif /* !VBOX_WITH_NEW_PHYS_CODE */
-PGMR3DECL(int)  PGMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, size_t cb);
 PGMR3DECL(int)  PGMR3PhysSetFlags(PVM pVM, RTGCPHYS GCPhys, size_t cb, unsigned fFlags, unsigned fMask);
 PGMDECL(void)   PGMR3PhysSetA20(PVM pVM, bool fEnable);
 PGMR3DECL(int)  PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc);

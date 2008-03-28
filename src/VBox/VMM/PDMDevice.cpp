@@ -68,6 +68,7 @@ typedef const PDMDEVREGCBINT *PCPDMDEVREGCBINT;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+__BEGIN_DECLS
 static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pDevReg);
 static DECLCALLBACK(void *) pdmR3DevReg_MMHeapAlloc(PPDMDEVREGCB pCallbacks, size_t cb);
 static DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem);
@@ -161,6 +162,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg,
 static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
                                                uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 static DECLCALLBACK(int) pdmR3DevHlp_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, void **ppv, const char *pszDesc);
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion);
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+static DECLCALLBACK(int) pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTGCPTR pGCPtr);
 
 static DECLCALLBACK(PVM) pdmR3DevHlp_Untrusted_GetVM(PPDMDEVINS pDevIns);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3);
@@ -195,6 +201,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSRead(PPDMDEVINS pDevIns, unsi
 static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_QueryCPUId(PPDMDEVINS pDevIns, uint32_t iLeaf,
                                                            uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, void **ppv, const char *pszDesc);
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion);
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTGCPTR pGCPtr);
 /** @} */
 
 
@@ -246,6 +257,7 @@ static DECLCALLBACK(PCPDMIOAPICHLPR0) pdmR3IoApicHlp_GetR0Helpers(PPDMDEVINS pDe
  */
 static DECLCALLBACK(void) pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 static DECLCALLBACK(void) pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+static DECLCALLBACK(bool) pdmR3PciHlp_IsMMIO2Base(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys);
 #ifdef VBOX_WITH_PDM_LOCK
 static DECLCALLBACK(int) pdmR3PciHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR3PciHlp_Unlock(PPDMDEVINS pDevIns);
@@ -269,6 +281,8 @@ static int pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename
  * Allow physical read and writes from any thread
  */
 #define PDM_PHYS_READWRITE_FROM_ANY_THREAD
+
+__END_DECLS
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -358,6 +372,11 @@ const PDMDEVHLP g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_CMOSRead,
     pdmR3DevHlp_GetCpuId,
     pdmR3DevHlp_ROMProtectShadow,
+    pdmR3DevHlp_MMIO2Register,
+    pdmR3DevHlp_MMIO2Deregister,
+    pdmR3DevHlp_MMIO2Map,
+    pdmR3DevHlp_MMIO2Unmap,
+    pdmR3DevHlp_MMHyperMapMMIO2,
     PDM_DEVHLP_VERSION /* the end */
 };
 
@@ -447,6 +466,11 @@ const PDMDEVHLP g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_CMOSRead,
     pdmR3DevHlp_Untrusted_QueryCPUId,
     pdmR3DevHlp_Untrusted_ROMProtectShadow,
+    pdmR3DevHlp_Untrusted_MMIO2Register,
+    pdmR3DevHlp_Untrusted_MMIO2Deregister,
+    pdmR3DevHlp_Untrusted_MMIO2Map,
+    pdmR3DevHlp_Untrusted_MMIO2Unmap,
+    pdmR3DevHlp_Untrusted_MMHyperMapMMIO2,
     PDM_DEVHLP_VERSION /* the end */
 };
 
@@ -513,12 +537,13 @@ const PDMPCIHLPR3 g_pdmR3DevPciHlp =
     PDM_PCIHLPR3_VERSION,
     pdmR3PciHlp_IsaSetIrq,
     pdmR3PciHlp_IoApicSetIrq,
+    pdmR3PciHlp_IsMMIO2Base,
+    pdmR3PciHlp_GetGCHelpers,
+    pdmR3PciHlp_GetR0Helpers,
 #ifdef VBOX_WITH_PDM_LOCK
     pdmR3PciHlp_Lock,
     pdmR3PciHlp_Unlock,
 #endif
-    pdmR3PciHlp_GetGCHelpers,
-    pdmR3PciHlp_GetR0Helpers,
     PDM_PCIHLPR3_VERSION, /* the end */
 };
 
@@ -1883,6 +1908,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
 
     LogFlow(("pdmR3DevHlp_ISASetIrq: caller='%s'/%d: returns void\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
 }
+
 
 /** @copydoc PDMDEVHLP::pfnISASetIrqNoWait */
 static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
@@ -3597,6 +3623,96 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPH
 }
 
 
+/**
+ * @copydoc PDMDEVHLP::pfnMMIO2Register
+ */
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, void **ppv, const char *pszDesc)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
+    LogFlow(("pdmR3DevHlp_MMIO2Register: caller='%s'/%d: iRegion=#x cb=%#RGp ppv=%p pszDescp=%p:{%s}\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iRegion, cb, ppv, pszDesc, pszDesc));
+
+    int rc = PGMR3PhysMMIO2Register(pDevIns->Internal.s.pVMHC, pDevIns, iRegion, cb, ppv, pszDesc);
+
+    LogFlow(("pdmR3DevHlp_MMIO2Register: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/**
+ * @copydoc PDMDEVHLP::pfnMMIO2Deregister
+ */
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
+    LogFlow(("pdmR3DevHlp_MMIO2Deregister: caller='%s'/%d: iRegion=#x\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iRegion));
+
+    AssertReturn(iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
+
+    int rc = PGMR3PhysMMIO2Deregister(pDevIns->Internal.s.pVMHC, pDevIns, iRegion);
+
+    LogFlow(("pdmR3DevHlp_MMIO2Deregister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/**
+ * @copydoc PDMDEVHLP::pfnMMIO2Map
+ */
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
+    LogFlow(("pdmR3DevHlp_MMIO2Map: caller='%s'/%d: iRegion=#x GCPhys=%#RGp\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iRegion, GCPhys));
+
+    int rc = PGMR3PhysMMIO2Map(pDevIns->Internal.s.pVMHC, pDevIns, iRegion, GCPhys);
+
+    LogFlow(("pdmR3DevHlp_MMIO2Map: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/**
+ * @copydoc PDMDEVHLP::pfnMMIO2Unmap
+ */
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
+    LogFlow(("pdmR3DevHlp_MMIO2Unmap: caller='%s'/%d: iRegion=#x GCPhys=%#RGp\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iRegion, GCPhys));
+
+    int rc = PGMR3PhysMMIO2Unmap(pDevIns->Internal.s.pVMHC, pDevIns, iRegion, GCPhys);
+
+    LogFlow(("pdmR3DevHlp_MMIO2Unmap: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/**
+ * @copydoc PDMDEVHLP::pfnMMHyperMapMMIO2
+ */
+static DECLCALLBACK(int) pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
+                                                     const char *pszDesc, PRTGCPTR pGCPtr)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
+    LogFlow(("pdmR3DevHlp_MMHyperMapMMIO2: caller='%s'/%d: iRegion=#x off=%RGp cb=%RGp pszDesc=%p:{%s} pGCPtr=%p\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iRegion, off, cb, pszDesc, pszDesc, pGCPtr));
+
+    int rc = MMR3HyperMapMMIO2(pDevIns->Internal.s.pVMHC, pDevIns, iRegion, off, cb, pszDesc, pGCPtr);
+
+    LogFlow(("pdmR3DevHlp_MMHyperMapMMIO2: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+
+
 
 /** @copydoc PDMDEVHLP::pfnGetVM */
 static DECLCALLBACK(PVM) pdmR3DevHlp_Untrusted_GetVM(PPDMDEVINS pDevIns)
@@ -3907,6 +4023,53 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_ROMProtectShadow(PPDMDEVINS pDevI
 }
 
 
+/** @copydoc PDMDEVHLP::pfnMMIO2Register */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, void **ppv, const char *pszDesc)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @copydoc PDMDEVHLP::pfnMMIO2Deregister */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @copydoc PDMDEVHLP::pfnMMIO2Map */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @copydoc PDMDEVHLP::pfnMMIO2Unmap */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @copydoc PDMDEVHLP::pfnMMHyperMapMMIO2 */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTGCPTR pGCPtr)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+
+
 /** @copydoc PDMPICHLPR3::pfnSetInterruptFF */
 static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
@@ -4152,6 +4315,17 @@ static DECLCALLBACK(void) pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 #endif
     Log4(("pdmR3PciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
     PDMIoApicSetIrq(pDevIns->Internal.s.pVMHC, iIrq, iLevel);
+}
+
+
+/** @copydoc PDMPCIHLPR3::pfnIsMMIO2Base */
+static DECLCALLBACK(bool) pdmR3PciHlp_IsMMIO2Base(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
+    bool fRc = PGMR3PhysMMIO2IsBase(pDevIns->Internal.s.pVMHC, pOwner, GCPhys);
+    Log4(("pdmR3PciHlp_IsMMIO2Base: pOwner=%p GCPhys=%RGp -> %RTbool\n", pOwner, GCPhys, fRc));
+    return fRc;
 }
 
 

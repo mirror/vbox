@@ -1998,7 +1998,7 @@ static int vga_draw_graphic(VGAState *s, int full_update)
     y2 = s->cr[0x09] & 0x1F;    /* starting row scan count */
     for(y = 0; y < height; y++) {
         addr = addr1;
-        /* CGA/MDA compatibility. Note that these addresses are all 
+        /* CGA/MDA compatibility. Note that these addresses are all
          * shifted left by two compared to VGA specs.
          */
         if (!(s->cr[0x17] & 1)) {
@@ -4107,7 +4107,7 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 /* -=-=-=-=-=- Ring 3: PCI Device -=-=-=-=-=- */
 
 /**
- * Callback function for mapping an PCI I/O region.
+ * Callback function for unmapping and/or mapping the VRAM MMIO2 region (called by the PCI bus).
  *
  * @return VBox status code.
  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
@@ -4120,71 +4120,44 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
     int         rc;
-    PVGASTATE   pData = PDMINS2DATA(pPciDev->pDevIns, PVGASTATE);
+    PPDMDEVINS  pDevIns = pPciDev->pDevIns;
+    PVGASTATE   pData = PDMINS2DATA(pDevIns, PVGASTATE);
     LogFlow(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%VGp cb=%#x enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
+    AssertReturn(iRegion == 0 && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
 
-    /*
-     * VRam mapping.
-     */
-    if (iRegion == 0 && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH)
+    if (GCPhysAddress != NIL_RTGCPHYS)
     {
         /*
-         * Register and lock the VRAM.
-         *
-         * Windows usually re-initializes the PCI devices, so we have to check whether the memory was
-         * already registered before trying to do that all over again.
+         * Mapping the VRAM.
          */
-        PVM pVM = PDMDevHlpGetVM(pPciDev->pDevIns);
-        if (pData->GCPhysVRAM)
+        rc = PDMDevHlpMMIO2Map(pDevIns, iRegion, GCPhysAddress);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
         {
-            AssertMsg(pData->GCPhysVRAM == GCPhysAddress,
-                      ("The Guest OS relocated our LFB! old GCPhysVRAM=%VGp new GCPhysAddress=%VGp\n",
-                       pData->GCPhysVRAM, GCPhysAddress));
-            rc = VINF_SUCCESS;
+            rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
+                                              PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
+                                              GCPhysAddress, GCPhysAddress + (pData->vram_size - 1),
+                                              vgaR3LFBAccessHandler, pData,
+                                              g_DeviceVga.szR0Mod, "vgaR0LFBAccessHandler", pDevIns->pvInstanceDataR0,
+                                              g_DeviceVga.szGCMod, "vgaGCLFBAccessHandler", pDevIns->pvInstanceDataGC,
+                                              "VGA LFB");
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+                pData->GCPhysVRAM = GCPhysAddress;
         }
-        else
-        {
-            /*
-             * Register and lock the VRAM.
-             */
-            rc = MMR3PhysRegister(pVM, pData->vram_ptrHC, GCPhysAddress, pData->vram_size, MM_RAM_FLAGS_MMIO2, "VRam");
-            if (VBOX_SUCCESS(rc))
-            {
-                if (!pData->GCPhysVRAM)
-                    rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
-                                                      GCPhysAddress, GCPhysAddress + (pData->vram_size - 1),
-                                                      vgaR3LFBAccessHandler, pData,
-                                                      g_DeviceVga.szR0Mod, "vgaR0LFBAccessHandler", pData->pDevInsHC->pvInstanceDataR0,
-                                                      g_DeviceVga.szGCMod, "vgaGCLFBAccessHandler", pData->pDevInsHC->pvInstanceDataGC,
-                                                      "VGA LFB");
-                if (VBOX_SUCCESS(rc))
-                {
-                    /*
-                     * Map the first 256KB of the VRAM into GC for GC VGA support.
-                     */
-                    RTGCPTR GCPtr;
-                    rc = MMR3HyperMapGCPhys(pVM, GCPhysAddress, VGA_MAPPING_SIZE, "VGA VRam", &GCPtr);
-                    if (VBOX_SUCCESS(rc))
-                    {
-                        MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
-
-                        pData->vram_ptrGC = GCPtr;
-                        pData->GCPhysVRAM = GCPhysAddress;
-                        return VINF_SUCCESS;
-                    }
-                    AssertMsgFailed(("MMR3HyperMapGCPhys failed, rc=%Vrc\n", rc));
-                }
-                else
-                    AssertMsgFailed(("Failed to register write handler for VRAM! rc=%Vrc\n", rc));
-            }
-            else
-                AssertReleaseMsgFailed(("Failed to register VRAM! rc=%Vra\n", rc));
-        }
-        return rc;
     }
     else
-        AssertReleaseMsgFailed(("Huh!?! iRegion=%d enmType=%d\n", iRegion, enmType));
-    return VERR_INTERNAL_ERROR;
+    {
+        /*
+         * Unmapping of the VRAM in progress.
+         * Deregister the access handler so PGM doesn't get upset.
+         */
+        Assert(pData->GCPhysVRAM);
+        rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pData->GCPhysVRAM);
+        AssertRC(rc);
+        pData->GCPhysVRAM = 0;
+    }
+    return rc;
 }
 
 
@@ -4618,6 +4591,15 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
 
     /*
+     * Allocate the VRAM and map the first 256KB of it into GC so we can speed up VGA support.
+     */
+    rc = PDMDevHlpMMIO2Register(pDevIns, 0 /* iRegion */, pData->vram_size, (void **)&pData->vram_ptrHC, "VRam");
+    AssertMsgRC(rc, ("PDMDevHlpMMIO2Register(%#x,) -> %Rrc\n", pData->vram_size, rc));
+
+    rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 0 /* iRegion */, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pData->vram_ptrGC);
+    AssertMsgRC(rc, ("MMR3HyperMapGCPhys(%#x,) -> %Rrc\n", pData->vram_size, rc));
+
+    /*
      * Register I/O ports, ROM and save state.
      */
     rc = PDMDevHlpIOPortRegister(pDevIns,  0x3c0, 16, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3c0");
@@ -4761,7 +4743,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
     AssertReleaseMsg(g_cbVgaBiosBinary <= _64K && g_cbVgaBiosBinary >= 32*_1K, ("g_cbVgaBiosBinary=%#x\n", g_cbVgaBiosBinary));
     AssertReleaseMsg(RT_ALIGN_Z(g_cbVgaBiosBinary, PAGE_SIZE) == g_cbVgaBiosBinary, ("g_cbVgaBiosBinary=%#x\n", g_cbVgaBiosBinary));
-    rc = PDMDevHlpROMRegister(pDevIns, 0x000c0000, g_cbVgaBiosBinary, &g_abVgaBiosBinary[0], 
+    rc = PDMDevHlpROMRegister(pDevIns, 0x000c0000, g_cbVgaBiosBinary, &g_abVgaBiosBinary[0],
                               false /* fShadow */, "VGA BIOS");
     if (VBOX_FAILURE(rc))
         return rc;
@@ -4780,7 +4762,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*AssertMsg(pData->Dev.devfn == 16 || iInstance != 0, ("pData->Dev.devfn=%d\n", pData->Dev.devfn));*/
     if (pData->Dev.devfn != 16 && iInstance == 0)
         Log(("!!WARNING!!: pData->dev.devfn=%d (ignore if testcase or no started by Main)\n", pData->Dev.devfn));
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, pData->vram_size, PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
+
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0 /* iRegion */, pData->vram_size, PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -4797,16 +4780,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = vgaAttach(pDevIns, 0 /* display LUN # */);
     if (VBOX_FAILURE(rc))
         return rc;
-
-    /*
-     * Allocate the VRAM.
-     */
-    rc = SUPPageAlloc(pData->vram_size >> PAGE_SHIFT, (void **)&pData->vram_ptrHC);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("SUPPageAlloc(%#x,) -> %d\n", pData->vram_size, rc));
-        return rc;
-    }
 
 #ifdef VBE_NEW_DYN_LIST
     /*

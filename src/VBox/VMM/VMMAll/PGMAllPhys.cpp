@@ -242,6 +242,24 @@ PDMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
 }
 
 
+/**
+ * Frees the specified RAM page.
+ *
+ * This is used by ballooning and remapping MMIO2.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pPage       Pointer to the page structure.
+ * @param   GCPhys      The guest physical address of the page, if applicable.
+ */
+void pgmPhysFreePage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
+{
+    AssertFatal(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
+
+    /** @todo implement this... */
+    AssertFatalFailed();
+}
+
+
 
 /**
  * Makes sure that there is at least one handy page ready for use.

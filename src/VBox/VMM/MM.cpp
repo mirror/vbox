@@ -526,6 +526,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
  */
 int mmR3UpdateReservation(PVM pVM)
 {
+    VM_ASSERT_EMT(pVM);
     if (pVM->mm.s.fDoneMMR3InitPaging)
         return GMMR3UpdateReservation(pVM,
                                       RT_MAX(pVM->mm.s.cBasePages, 1),
@@ -540,7 +541,7 @@ int mmR3UpdateReservation(PVM pVM)
  *
  * This can be called before MMR3InitPaging.
  *
- * @returns VBox status code.
+ * @returns VBox status code. Will set VM error on failure.
  * @param   pVM             The shared VM structure.
  * @param   cAddBasePages   The number of pages to add.
  */
@@ -560,23 +561,25 @@ MMR3DECL(int) MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
 
 
 /**
- * Interface for PGM to increase the reservation of fixed pages.
+ * Interface for PGM to adjust the reservation of fixed pages.
  *
  * This can be called before MMR3InitPaging.
  *
- * @returns VBox status code.
- * @param   pVM             The shared VM structure.
- * @param   cAddFixedPages  The number of pages to add.
+ * @returns VBox status code. Will set VM error on failure.
+ * @param   pVM                 The shared VM structure.
+ * @param   cDeltaFixedPages    The number of pages to add (positive) or subtract (negative).
+ * @param   pszDesc             Some description associated with the reservation.
  */
-MMR3DECL(int) MMR3IncreaseFixedReservation(PVM pVM, uint32_t cAddFixedPages)
+MMR3DECL(int) MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc)
 {
     const uint32_t cOld = pVM->mm.s.cFixedPages;
-    pVM->mm.s.cFixedPages += cAddFixedPages;
-    LogFlow(("MMR3AddFixedReservation: +%u (%u -> %u)\n", cAddFixedPages, cOld, pVM->mm.s.cFixedPages));
+    pVM->mm.s.cFixedPages += cDeltaFixedPages;
+    LogFlow(("MMR3AdjustFixedReservation: %d (%u -> %u)\n", cDeltaFixedPages, cOld, pVM->mm.s.cFixedPages));
     int rc = mmR3UpdateReservation(pVM);
     if (RT_FAILURE(rc))
     {
-        VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to reserve physical memory (%#x -> %#x)"), cOld, pVM->mm.s.cFixedPages);
+        VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to reserve physical memory (%#x -> %#x; %s)"),
+                   cOld, pVM->mm.s.cFixedPages, pszDesc);
         pVM->mm.s.cFixedPages = cOld;
     }
     return rc;
@@ -588,7 +591,7 @@ MMR3DECL(int) MMR3IncreaseFixedReservation(PVM pVM, uint32_t cAddFixedPages)
  *
  * This can be called before MMR3InitPaging.
  *
- * @returns VBox status code.
+ * @returns VBox status code. Will set VM error on failure.
  * @param   pVM             The shared VM structure.
  * @param   cShadowPages    The new page count.
  */

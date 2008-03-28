@@ -1,6 +1,6 @@
+/* $Id: $ */
 /** @file
- *
- * PCI Device.
+ * PCI BUS Device.
  */
 
 /*
@@ -213,6 +213,7 @@ static uint32_t pci_addr_readl(PCIBus *s, uint32_t addr)
 
 static void pci_update_mappings(PCIDevice *d)
 {
+    PPCIBUS pBus = d->Int.s.pBus;
     PCIIORegion *r;
     int cmd, i;
     uint32_t last_addr, new_addr, config_ofs;
@@ -278,20 +279,24 @@ static void pci_update_mappings(PCIDevice *d)
                             AssertRC(rc);
                         }
                     } else {
-                        int rc = d->pDevIns->pDevHlp->pfnMMIODeregister(d->pDevIns,
-                                                                        r->addr + PCIBUS2PCIGLOBALS(d->Int.s.pBus)->pci_mem_base,
-                                                                        r->size);
-#if 0 /** @todo deal correctly with deregistration of MMIO2 ranges and such like. */
-                        AssertMsg(VBOX_SUCCESS(rc) || !strcmp(d->name, "vga") || !strcmp(d->name, "VMMDev"), ("rc=%Vrc d=%s\n", rc, d->name)); NOREF(rc);
-#else /* less strict check */
-                        AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_IOM_MMIO_RANGE_NOT_FOUND, ("rc=%Vrc d=%s\n", rc, d->name)); NOREF(rc);
-#endif 
+                        RTGCPHYS GCPhysBase = r->addr + PCIBUS2PCIGLOBALS(pBus)->pci_mem_base;
+                        int rc;
+                        if (pBus->pPciHlpR3->pfnIsMMIO2Base(pBus->pDevInsHC, d->pDevIns, GCPhysBase))
+                        {
+                            /* unmap it. */
+                            int rc = r->map_func(d, i, NIL_RTGCPHYS, r->size, (PCIADDRESSSPACE)(r->type));
+                            AssertRC(rc);
+                            rc = PDMDevHlpMMIO2Unmap(d->pDevIns, i, GCPhysBase);
+                        }
+                        else
+                            rc = d->pDevIns->pDevHlp->pfnMMIODeregister(d->pDevIns, GCPhysBase, r->size);
+                        AssertMsgRC(rc, ("rc=%Rrc d=%s i=%d GCPhysBase=%RGp size=%#x\n", rc, d->name, i, GCPhysBase, r->size));
                     }
                 }
                 r->addr = new_addr;
                 if (r->addr != ~0U) {
                     int rc = r->map_func(d, i,
-                                         r->addr + (r->type & PCI_ADDRESS_SPACE_IO ? 0 : PCIBUS2PCIGLOBALS(d->Int.s.pBus)->pci_mem_base),
+                                         r->addr + (r->type & PCI_ADDRESS_SPACE_IO ? 0 : PCIBUS2PCIGLOBALS(pBus)->pci_mem_base),
                                          r->size, (PCIADDRESSSPACE)(r->type));
                     AssertRC(rc);
                 }
@@ -771,7 +776,7 @@ static void pci_bios_init_device(PCIDevice *d)
     switch(devclass)
     {
     case 0x0101:
-        if (vendor_id == 0x8086 && 
+        if (vendor_id == 0x8086 &&
             (device_id == 0x7010 || device_id == 0x7111)) {
             /* PIIX3 or PIIX4 IDE */
             pci_config_writew(d, 0x40, 0x8000); /* enable IDE0 */
@@ -1082,7 +1087,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         {
             if (pData->devices[i])
             {
-                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pData->devices[i]->name, 
+                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pData->devices[i]->name,
                         PCIDevGetVendorId(pData->devices[i]), PCIDevGetDeviceId(pData->devices[i])));
                 if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
                     AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
@@ -1099,7 +1104,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         pDev = pData->devices[i];
         if (!pDev)
         {
-            LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i, 
+            LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
                     PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp)));
             if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
                 AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
@@ -1117,7 +1122,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
 
         /* commit the loaded device config. */
         memcpy(pDev->config, DevTmp.config, sizeof(pDev->config));
-        if (DevTmp.Int.s.iIrq >= PCI_DEVICES_MAX) 
+        if (DevTmp.Int.s.iIrq >= PCI_DEVICES_MAX)
         {
             LogRel(("Device %s: Too many devices %d (max=%d)\n", pDev->name, DevTmp.Int.s.iIrq, PCI_DEVICES_MAX));
             AssertFailedReturn(VERR_TOO_MUCH_DATA);
@@ -1325,10 +1330,10 @@ static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPci
 }
 
 
-/** 
+/**
  * @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksHC
  */
-static DECLCALLBACK(void) pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+static DECLCALLBACK(void) pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                 PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
     if (ppfnReadOld)
@@ -1494,6 +1499,10 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Failed to register ourselves as a PCI Bus"));
+    if (pBus->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION)
+        return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
+                                   N_("PCI helper version mismatch; got %#x expected %#x"),
+                                   pBus->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION);
 
     pBus->pPciHlpGC = pBus->pPciHlpR3->pfnGetGCHelpers(pDevIns);
     pBus->pPciHlpR0 = pBus->pPciHlpR3->pfnGetR0Helpers(pDevIns);

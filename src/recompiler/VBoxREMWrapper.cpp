@@ -2040,7 +2040,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
 #endif
 }
 
-REMDECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys)
+REMR3DECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys)
 {
 #ifdef USE_REM_STUBS
     return false;
