@@ -29,7 +29,7 @@
 #undef GST_BIG_PAGE_SIZE
 #undef GST_BIG_PAGE_OFFSET_MASK
 #undef GST_PDE_PG_MASK
-#undef GST_PDE4M_PG_MASK
+#undef GST_PDE_BIG_PG_MASK
 #undef GST_PD_SHIFT
 #undef GST_PD_MASK
 #undef GST_PTE_PG_MASK
@@ -48,7 +48,7 @@
 # define GST_BIG_PAGE_SIZE          X86_PAGE_4M_SIZE
 # define GST_BIG_PAGE_OFFSET_MASK   X86_PAGE_4M_OFFSET_MASK
 # define GST_PDE_PG_MASK            X86_PDE_PG_MASK
-# define GST_PDE4M_PG_MASK          X86_PDE4M_PG_MASK
+# define GST_PDE_BIG_PG_MASK        X86_PDE4M_PG_MASK
 # define GST_PD_SHIFT               X86_PD_SHIFT
 # define GST_PD_MASK                X86_PD_MASK
 # define GST_PTE_PG_MASK            X86_PTE_PG_MASK
@@ -66,7 +66,7 @@
 # define GST_BIG_PAGE_SIZE          X86_PAGE_2M_SIZE
 # define GST_BIG_PAGE_OFFSET_MASK   X86_PAGE_2M_OFFSET_MASK
 # define GST_PDE_PG_MASK            X86_PDE_PAE_PG_MASK
-# define GST_PDE4M_PG_MASK          X86_PDE4M_PAE_PG_MASK
+# define GST_PDE_BIG_PG_MASK        X86_PDE2M_PAE_PG_MASK
 # define GST_PD_SHIFT               X86_PD_PAE_SHIFT
 # define GST_PD_MASK                X86_PD_PAE_MASK
 # define GST_PTE_PG_MASK            X86_PTE_PAE_PG_MASK

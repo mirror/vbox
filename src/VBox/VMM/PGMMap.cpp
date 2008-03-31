@@ -464,7 +464,7 @@ PGMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
  * @param   cbPages     Number of bytes to map.
  *
  * @remark  This API shall not be used to anything but mapping the switcher code.
- */
+z */
 PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages)
 {
     LogFlow(("PGMR3MapIntermediate: Addr=%RTptr HCPhys=%VHp cbPages=%#x\n", Addr, HCPhys, cbPages));
@@ -733,6 +733,8 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, int iNewPDE)
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
+    Assert(PGMGetGuestMode(pVM) <= PGMMODE_32_BIT);
+
     /*
      * Init the page tables and insert them into the page directories.
      */
@@ -953,6 +955,8 @@ PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint32_t cr3, bool fRawR0) /** @to
      */
     if (pVM->pgm.s.fMappingsFixed)
         return false;
+
+    Assert(PGMGetGuestMode(pVM) <= PGMMODE_32_BIT);
 
     /*
      * Resolve the page directory.
