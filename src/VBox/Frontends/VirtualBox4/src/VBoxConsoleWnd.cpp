@@ -37,6 +37,7 @@
 #include <QMenuBar>
 #include <QFileInfo>
 #include <QDir>
+#include <QTimer>
 #ifdef Q_WS_X11
 # include <QX11Info>
 #endif
