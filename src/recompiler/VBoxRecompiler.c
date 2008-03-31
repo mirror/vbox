@@ -3262,6 +3262,8 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
     void      *pvPC;
     if (f32BitCode && (env->cr[0] & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG))
     {
+        Assert(PGMGetGuestMode(env->pVM) < PGMMODE_AMD64);
+
         /* convert eip to physical address. */
         int rc = PGMPhysGCPtr2HCPtrByGstCR3(env->pVM,
                                             GCPtrPC,
