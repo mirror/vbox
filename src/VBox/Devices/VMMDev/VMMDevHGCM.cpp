@@ -945,7 +945,8 @@ int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
                             break;
                         }
                         default:
-                           AssertReleaseFailed();
+                            AssertMsgFailed(("Unknown request type %x during LoadState\n", requestHeader->requestType));
+                            LogRel(("VMMDEV: Ignoring unknown request type %x during LoadState\n", requestHeader->requestType));
                     }
                 }
             }
