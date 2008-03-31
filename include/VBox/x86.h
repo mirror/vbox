@@ -898,7 +898,7 @@ typedef X86PGPAEUINT *PX86PGPAEUINT;
 /** Bits 12-31 - - Physical Page number of the next level. */
 #define X86_PTE_PG_MASK                     ( 0xfffff000 )
 
-/** Bits 12-51 - - PAE - Physical Page number of the next level. */
+/** Bits 12-36 - - PAE - Physical Page number of the next level. */
 #if 1 /* we're using this internally and have to mask of the top 16-bit. */
 #define X86_PTE_PAE_PG_MASK                 ( 0x0000fffffffff000ULL )
 #else
@@ -1209,15 +1209,10 @@ typedef const X86PDEPAEBITS *PCX86PDEPAEBITS;
 /** The number of bits to the high part of the page number. */
 #define X86_PDE4M_PG_HIGH_SHIFT             19
 
-/** Bits 21-36 - - PAE - Physical Page number. */
-#define X86_PDE2M_PAE_PG_MASK               ( 0x0000000fffe00000ULL )
-/** Bits 63 - NX - PAE - No execution flag. */
-#define X86_PDE2M_PAE_NX                    RT_BIT_64(63)
-
-/** Bits 21-39 - - AMD64 - Physical Page number. (bits 40-51 are reserved) */
-#define X86_PDE2M_AMD64_PG_MASK             ( 0x000000ffffe00000ULL )
-/** Bits 63 - NX - AMD64 - No execution flag. */
-#define X86_PDE2M_AMD64_NX                  X86_PDE2M_PAE_NX
+/** Bits 21-51 - - PAE & AMD64 - Physical Page number. (bits 40-51 (long mode) & bits 36-51 (pae legacy) are reserved according to the Intel docs; AMD allows for more) */
+#define X86_PDE2M_PAE_PG_MASK               ( 0x000fffffffe00000ULL )
+/** Bits 63 - NX - PAE & AMD64 - No execution flag. */
+#define X86_PDE2M_PAE_NX                    X86_PDE2M_PAE_NX
 
 /**
  * 4MB page directory entry.

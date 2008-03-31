@@ -61,7 +61,8 @@
 # define GST_PT_SHIFT               X86_PT_SHIFT
 # define GST_PT_MASK                X86_PT_MASK
 # define GST_CR3_PAGE_MASK          X86_CR3_PAGE_MASK
-#elif PGM_GST_TYPE == PGM_TYPE_PAE
+#elif   PGM_GST_TYPE == PGM_TYPE_PAE \
+     || PGM_GST_TYPE == PGM_TYPE_AMD64
 # define GSTPT                      X86PTPAE
 # define PGSTPT                     PX86PTPAE
 # define GSTPTE                     X86PTEPAE
@@ -77,27 +78,6 @@
 # define GST_PD_SHIFT               X86_PD_PAE_SHIFT
 # define GST_PD_MASK                X86_PD_PAE_MASK
 # define GST_TOTAL_PD_ENTRIES       (X86_PG_PAE_ENTRIES*4)
-# define GST_PTE_PG_MASK            X86_PTE_PAE_PG_MASK
-# define GST_PT_SHIFT               X86_PT_PAE_SHIFT
-# define GST_PT_MASK                X86_PT_PAE_MASK
-# define GST_CR3_PAGE_MASK          X86_CR3_PAE_PAGE_MASK
-#elif PGM_GST_TYPE == PGM_TYPE_AMD64
-/* @todo */
-# define GSTPT                      X86PTPAE
-# define PGSTPT                     PX86PTPAE
-# define GSTPTE                     X86PTEPAE
-# define PGSTPTE                    PX86PTEPAE
-# define GSTPD                      X86PDPAE
-# define PGSTPD                     PX86PDPAE
-# define GSTPDE                     X86PDEPAE
-# define PGSTPDE                    PX86PDEPAE
-# define GST_BIG_PAGE_SIZE          X86_PAGE_2M_SIZE
-# define GST_BIG_PAGE_OFFSET_MASK   X86_PAGE_2M_OFFSET_MASK
-# define GST_PDE_PG_MASK            X86_PDE_PAE_PG_MASK
-# define GST_PDE_BIG_PG_MASK        X86_PDE2M_AMD64_PG_MASK
-# define GST_PD_SHIFT               X86_PD_PAE_SHIFT
-# define GST_PD_MASK                X86_PD_PAE_MASK
-# define GST_TOTAL_PD_ENTRIES       (X86_PG_PAE_ENTRIES*512)
 # define GST_PTE_PG_MASK            X86_PTE_PAE_PG_MASK
 # define GST_PT_SHIFT               X86_PT_PAE_SHIFT
 # define GST_PT_MASK                X86_PT_PAE_MASK
