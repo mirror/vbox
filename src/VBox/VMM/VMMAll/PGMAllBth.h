@@ -241,7 +241,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         uint32_t    cr4 = CPUMGetGuestCR4(pVM);
         if (    PdeSrc.b.u1Size
             &&  (cr4 & X86_CR4_PSE))
-            GCPhys = (PdeSrc.u & GST_PDE4M_PG_MASK)
+            GCPhys = (PdeSrc.u & GST_PDE_BIG_PG_MASK)
                     | ((RTGCPHYS)pvFault & (GST_BIG_PAGE_OFFSET_MASK ^ PAGE_OFFSET_MASK));
         else
         {
@@ -907,7 +907,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
              */
             /* Before freeing the page, check if anything really changed. */
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
-            RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE4M_PG_MASK;
+            RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE_BIG_PG_MASK;
 #  if PGM_SHW_TYPE != PGM_TYPE_32BIT
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 #  endif
@@ -1272,7 +1272,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     }
     else
     {
-        GCPhys = PdeSrc.u & GST_PDE4M_PG_MASK;
+        GCPhys = PdeSrc.u & GST_PDE_BIG_PG_MASK;
 # if PGM_SHW_TYPE != PGM_TYPE_32BIT
         GCPhys |= GCPtrPage & X86_PAGE_2M_SIZE;
 # endif
@@ -1387,7 +1387,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                  * (There are many causes of getting here, it's no longer only CSAM.)
                  */
                 /* Calculate the GC physical address of this 4KB shadow page. */
-                RTGCPHYS GCPhys = (PdeSrc.u & GST_PDE4M_PG_MASK) | ((RTGCUINTPTR)GCPtrPage & GST_BIG_PAGE_OFFSET_MASK);
+                RTGCPHYS GCPhys = (PdeSrc.u & GST_PDE_BIG_PG_MASK) | ((RTGCUINTPTR)GCPtrPage & GST_BIG_PAGE_OFFSET_MASK);
                 /* Find ram range. */
                 PPGMPAGE pPage;
                 int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
@@ -1907,7 +1907,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
         }
         else
         {
-            GCPhys = PdeSrc.u & GST_PDE4M_PG_MASK;
+            GCPhys = PdeSrc.u & GST_PDE_BIG_PG_MASK;
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             GCPhys |= GCPtrPage & RT_BIT(X86_PAGE_2M_SHIFT);
 # endif
@@ -2665,7 +2665,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                     }
                     else
                     {
-                        GCPhys = PdeSrc.u & GST_PDE4M_PG_MASK;
+                        GCPhys = PdeSrc.u & GST_PDE_BIG_PG_MASK;
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                         GCPhys |= i * X86_PAGE_2M_SIZE;
 #  endif
@@ -2995,7 +2995,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                     cErrors++;
                     continue;
                 }
-                GCPhysGst = PdeSrc.u & GST_PDE4M_PG_MASK;
+                GCPhysGst = PdeSrc.u & GST_PDE_BIG_PG_MASK;
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 GCPhysGst |= GCPtr & RT_BIT(X86_PAGE_2M_SHIFT);
 # endif
