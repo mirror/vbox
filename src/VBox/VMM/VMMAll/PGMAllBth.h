@@ -865,7 +865,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE_PG_MASK;
 #  if    PGM_SHW_TYPE != PGM_TYPE_32BIT \
       && PGM_GST_TYPE == PGM_TYPE_32BIT    
-            /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
+            /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. (32 bits guest; PAE shadow) */
             GCPhys |= (iPDDst & 1) * (PAGE_SIZE/2);
 #  endif
             if (pShwPage->GCPhys == GCPhys)
@@ -912,7 +912,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE_BIG_PG_MASK;
 #  if    PGM_SHW_TYPE != PGM_TYPE_32BIT \
       && PGM_GST_TYPE == PGM_TYPE_32BIT    
-            /* Select the right PDE as we're emulating a 4MB page with two 2 MB shadow PDEs */
+            /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs. (32 bits guest; PAE shadow)*/
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 #  endif
             if (    pShwPage->GCPhys == GCPhys
@@ -1272,8 +1272,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
         GCPhys = PdeSrc.u & GST_PDE_PG_MASK;
 #  if    PGM_SHW_TYPE != PGM_TYPE_32BIT \
       && PGM_GST_TYPE == PGM_TYPE_32BIT    
-            /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
-        /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
+        /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. (32 bits guest; PAE shadow) */
         GCPhys |= (iPDDst & 1) * (PAGE_SIZE/2);
 # endif
     }
@@ -1282,7 +1281,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
         GCPhys = PdeSrc.u & GST_PDE_BIG_PG_MASK;
 #  if    PGM_SHW_TYPE != PGM_TYPE_32BIT \
       && PGM_GST_TYPE == PGM_TYPE_32BIT
-        /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs */
+        /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs. (32 bits guest; PAE shadow)*/
         GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 # endif
     }
@@ -1326,9 +1325,11 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                          * deal with locality.
                          */
                         unsigned        iPTDst    = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
+#  if    PGM_SHW_TYPE == PGM_TYPE_32BIT \
+      || PGM_GST_TYPE != PGM_TYPE_32BIT
                         const unsigned  offPTSrc  = 0;
 #  else
+                        /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. (32 bits guest; PAE shadow) */
                         const unsigned  offPTSrc  = ((GCPtrPage >> SHW_PD_SHIFT) & 1) * 512;
 #  endif
                         const unsigned  iPTDstEnd = RT_MIN(iPTDst + PGM_SYNC_NR_PAGES / 2, ELEMENTS(pPTDst->a));
@@ -1502,11 +1503,13 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
     PSHWPT pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
 
-#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
+# if    PGM_SHW_TYPE == PGM_TYPE_32BIT \
+     || PGM_GST_TYPE != PGM_TYPE_32BIT
     const unsigned  offPTSrc  = 0;
-#  else
+# else
+    /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. (32 bits guest; PAE shadow) */
     const unsigned  offPTSrc  = ((GCPtrPage >> SHW_PD_SHIFT) & 1) * 512;
-#  endif
+# endif
 
     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
     if (cPages > 1 && !(uErr & X86_TRAP_PF_P))
@@ -2007,9 +2010,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                 unsigned        iPTDst    = 0;
                 const unsigned  iPTDstEnd = ELEMENTS(pPTDst->a);
 # endif /* !PGM_SYNC_N_PAGES */
-#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
+#  if    PGM_SHW_TYPE == PGM_TYPE_32BIT \
+      || PGM_GST_TYPE != PGM_TYPE_32BIT
                 const unsigned  offPTSrc  = 0;
 #  else
+                /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. (32 bits guest; PAE shadow) */
                 const unsigned  offPTSrc  = ((GCPtrPage >> SHW_PD_SHIFT) & 1) * 512;
 #  endif
                 for (; iPTDst < iPTDstEnd; iPTDst++)
@@ -3069,11 +3074,13 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                 }
 
                 /* iterate the page table. */
-#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
+# if    PGM_SHW_TYPE == PGM_TYPE_32BIT \
+     || PGM_GST_TYPE != PGM_TYPE_32BIT
                 const unsigned offPTSrc  = 0;
-#  else
+# else
+                /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. (32 bits guest; PAE shadow) */
                 const unsigned offPTSrc  = ((GCPtr >> SHW_PD_SHIFT) & 1) * 512;
-#  endif
+# endif
                 for (unsigned iPT = 0, off = 0;
                      iPT < ELEMENTS(pPTDst->a);
                      iPT++, off += PAGE_SIZE)
