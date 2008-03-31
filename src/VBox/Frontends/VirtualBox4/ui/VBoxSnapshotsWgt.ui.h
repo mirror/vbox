@@ -578,10 +578,10 @@ void VBoxSnapshotsWgt::takeSnapshot()
     ListViewItem *item = static_cast <ListViewItem *> (listView->currentItem());
     AssertReturn (item, (void) 0);
 
-    VBoxTakeSnapshotDlg dlg (this, "VBoxTakeSnapshotDlg");
+    VBoxTakeSnapshotDlg dlg (this);
 
     QString typeId = mMachine.GetOSTypeId();
-    dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
+    dlg.mLbIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
     /* search for the max available filter index */
     int maxSnapShotIndex = 0;
@@ -597,7 +597,7 @@ void VBoxSnapshotsWgt::takeSnapshot()
                                regExp.cap (1).toInt() : maxSnapShotIndex;
         ++ iterator;
     }
-    dlg.leName->setText (snapShotName.arg (maxSnapShotIndex + 1));
+    dlg.mLeName->setText (snapShotName.arg (maxSnapShotIndex + 1));
 
     if (dlg.exec() == QDialog::Accepted)
     {
@@ -608,8 +608,8 @@ void VBoxSnapshotsWgt::takeSnapshot()
 
         CConsole console = session.GetConsole();
         CProgress progress =
-                console.TakeSnapshot (dlg.leName->text().stripWhiteSpace(),
-                                      dlg.txeDescription->text());
+                console.TakeSnapshot (dlg.mLeName->text().stripWhiteSpace(),
+                                      dlg.mTeDescription->text());
         if (console.isOk())
         {
             /* show the progress dialog */
