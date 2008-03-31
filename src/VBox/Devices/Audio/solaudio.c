@@ -397,13 +397,13 @@ static int solaudio_run_out (HWVoiceOut *hw)
         if (cbWritten < 0)
             break;
 
-        /* Increment eof marker for synchronous buffer processed */
-        write (pSol->AudioDev, NULL, 0);
-        pSol->cBuffersPlayed++;
-
         hw->rpos   = (hw->rpos + csToWrite) % hw->samples;
         csSamples -= csToWrite;
     }
+
+    /* Increment eof marker for synchronous buffer processed */
+    write (pSol->AudioDev, NULL, 0);
+    pSol->cBuffersPlayed++;
     return csDecr;
 }
 
