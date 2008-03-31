@@ -280,6 +280,9 @@ VirtualBox_QT_UISRCS4 += ui/VBoxSharedFoldersSettings.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxSnapshotDetailsDlg.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxSnapshotDetailsDlg.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMInformationDlg.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMInformationDlg.ui
+
 
 #
 # The targets.
@@ -401,6 +404,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIMessageBox.h \
 	include/QIRichLabel.h \
 	include/QIAbstractWizard.h \
+	include/QIAbstractDialog.h \
 	include/VBoxGlobalSettings.h \
 	include/VBoxUtils.h \
 	include/VBoxGlobal.h \
@@ -419,7 +423,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMFirstRunWzd.h \
 	include/VBoxRegistrationDlg.h \
 	include/VBoxSharedFoldersSettings.h \
-	include/VBoxSnapshotDetailsDlg.h
+	include/VBoxSnapshotDetailsDlg.h \
+	include/VBoxVMInformationDlg.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -473,6 +478,7 @@ VirtualBox_SOURCES = \
 	src/QIMessageBox.cpp \
 	src/QIRichLabel.cpp \
 	src/QIAbstractWizard.cpp \
+	src/QIAbstractDialog.cpp \
 	src/VBoxDefs.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxGlobal.cpp \
@@ -493,7 +499,8 @@ VirtualBox_SOURCES = \
 	src/VBoxVMFirstRunWzd.cpp \
 	src/VBoxRegistrationDlg.cpp \
 	src/VBoxSharedFoldersSettings.cpp \
-	src/VBoxSnapshotDetailsDlg.cpp
+	src/VBoxSnapshotDetailsDlg.cpp \
+	src/VBoxVMInformationDlg.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 VirtualBox_SOURCES += \
