@@ -1432,10 +1432,10 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                 /*
                  * Virtual handlers
                  */
-                if (    PGM_PAGE_HAVE_ACTIVE_VIRTUAL_HANDLERS(pPage)
+                if (    PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage)
                     && !(pPage->HCPhys & MM_RAM_FLAGS_MMIO)) /// @todo PAGE FLAGS
                 {
-                    if (PGM_PAGE_HAVE_ACTIVE_PHYSICAL_HANDLERS(pPage))
+                    if (PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(pPage))
                     {
                         /*
                          * Physical write handler + virtual write handler.
