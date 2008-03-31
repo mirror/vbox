@@ -365,7 +365,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
     /* Setup image parameters. */
     vdiSetupImageDesc(pImage);
 
-    /* create file */
+    /* Create image file. */
     rc = RTFileOpen(&File, pImage->pszFilename,
                     RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL);
     if (VBOX_FAILURE(rc))
@@ -380,8 +380,8 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
 
     if (enmType == VD_IMAGE_TYPE_FIXED)
     {
-        /* check the free space on the disk and leave early if there is not
-         * sufficient space available */
+        /* Check the free space on the disk and leave early if there is not
+         * sufficient space available. */
         RTFOFF cbFree = 0;
         rc = RTFsQuerySizes(pImage->pszFilename, NULL, &cbFree, NULL, NULL);
         if (VBOX_SUCCESS(rc) /* ignore errors */ && ((uint64_t)cbFree < cbTotal))
@@ -459,7 +459,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
 
         cbFill = (uint64_t)getImageBlocks(&pImage->Header) * pImage->cbTotalBlockData;
         uOff = 0;
-        /* do loop to fill all image. */
+        /* Write data to all image blocks. */
         while (uOff < cbFill)
         {
             unsigned cbChunk = (unsigned)RT_MIN(cbFill, cbBuf);
@@ -710,7 +710,7 @@ static int vdiCheckIfValid(const char *pszFilename)
     int rc = VINF_SUCCESS;
     PVDIIMAGEDESC pImage;
 
-    if (   !pszFilename
+    if (   !VALID_PTR(pszFilename)
         || !*pszFilename)
     {
         rc = VERR_INVALID_PARAMETER;
@@ -800,7 +800,7 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
     }
 
     /* Check remaining arguments. */
-    if (   !pszFilename
+    if (   !VALID_PTR(pszFilename)
         || !*pszFilename
         || (enmType != VD_IMAGE_TYPE_NORMAL && enmType != VD_IMAGE_TYPE_FIXED)
         || cbSize < VDI_IMAGE_DEFAULT_BLOCK_SIZE
