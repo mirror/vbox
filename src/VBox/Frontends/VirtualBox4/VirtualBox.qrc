@@ -26,7 +26,9 @@
     <file alias="os_freebsd.png">images/os_freebsd.png</file>
     <file alias="os_gentoo.png">images/os_gentoo.png</file>
     <file alias="os_l4.png">images/os_l4.png</file>
-    <file alias="os_linux.png">images/os_linux.png</file>
+    <file alias="os_linux22.png">images/os_linux22.png</file>
+    <file alias="os_linux24.png">images/os_linux24.png</file>
+    <file alias="os_linux26.png">images/os_linux26.png</file>
     <file alias="os_mandriva.png">images/os_mandriva.png</file>
     <file alias="os_netbsd.png">images/os_netbsd.png</file>
     <file alias="os_netware.png">images/os_netware.png</file>
@@ -34,6 +36,7 @@
     <file alias="os_opensuse.png">images/os_opensuse.png</file>
     <file alias="os_os2warp3.png">images/os_os2warp3.png</file>
     <file alias="os_os2warp4.png">images/os_os2warp4.png</file>
+    <file alias="os_os2warp45.png">images/os_os2warp45.png</file>
     <file alias="os_redhat.png">images/os_redhat.png</file>
     <file alias="os_solaris.png">images/os_solaris.png</file>
     <file alias="os_ubuntu.png">images/os_ubuntu.png</file>
