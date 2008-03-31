@@ -1214,6 +1214,11 @@ typedef const X86PDEPAEBITS *PCX86PDEPAEBITS;
 /** Bits 63 - NX - PAE - No execution flag. */
 #define X86_PDE2M_PAE_NX                    RT_BIT_64(63)
 
+/** Bits 21-39 - - AMD64 - Physical Page number. (bits 40-51 are reserved) */
+#define X86_PDE2M_AMD64_PG_MASK             ( 0x000000ffffe00000ULL )
+/** Bits 63 - NX - AMD64 - No execution flag. */
+#define X86_PDE2M_AMD64_NX                  X86_PDE2M_PAE_NX
+
 /**
  * 4MB page directory entry.
  */
