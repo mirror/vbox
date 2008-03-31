@@ -273,6 +273,8 @@ typedef enum LOGGROUP
     LOG_GROUP_TRPM,
     /** Generic virtual disk layer. */
     LOG_GROUP_VD,
+    /** Raw virtual disk backend. */
+    LOG_GROUP_VD_RAW,
     /** VDI virtual disk backend. */
     LOG_GROUP_VD_VDI,
     /** VHD virtual disk backend. */
@@ -413,6 +415,7 @@ typedef enum LOGGROUP
     "TM",           \
     "TRPM",         \
     "VD",           \
+    "VD_RAW",       \
     "VD_VDI",       \
     "VD_VHD",       \
     "VD_VMDK",      \
