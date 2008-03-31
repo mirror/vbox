@@ -828,6 +828,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
              * Conflict - Let SyncPT deal with it to avoid duplicate code.
              */
             Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
+            Assert(PGMGetGuestMode(pVM) <= PGMMODE_32_BIT);
             rc = PGM_BTH_NAME(SyncPT)(pVM, iPDSrc, pPDSrc, GCPtrPage);
         }
         else if (   PdeSrc.n.u1User != PdeDst.n.u1User
@@ -1241,9 +1242,6 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     /*
      * Assert preconditions.
      */
-# if GC_ARCH_BITS != 32
-    Assert(GCPtrPage < _4G); //???
-# endif
     STAM_COUNTER_INC(&pVM->pgm.s.StatGCSyncPagePD[(GCPtrPage >> X86_PD_SHIFT) & GST_PD_MASK]);
     Assert(PdeSrc.n.u1Present);
     Assert(cPages);
@@ -1389,7 +1387,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                  * (There are many causes of getting here, it's no longer only CSAM.)
                  */
                 /* Calculate the GC physical address of this 4KB shadow page. */
-                RTGCPHYS GCPhys = (PdeSrc.u & X86_PDE4M_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtrPage & GST_BIG_PAGE_OFFSET_MASK);
+                RTGCPHYS GCPhys = (PdeSrc.u & X86_PDE4M_PG_MASK) | ((RTGCUINTPTR)GCPtrPage & GST_BIG_PAGE_OFFSET_MASK);
                 /* Find ram range. */
                 PPGMPAGE pPage;
                 int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
@@ -1441,7 +1439,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                         PdeDst.n.u1Write = PdeSrc.n.u1Write;
                     }
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
-                    pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst]        = PdeDst;
+                    pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst]    = PdeDst;
 #  else /* PAE */
                     pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[iPDDst] = PdeDst;
 #  endif
@@ -2567,7 +2565,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
 
     Assert(pPDSrc);
 #ifndef IN_GC
-    Assert(MMPhysGCPhys2HCVirt(pVM, (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
+    Assert(MMPhysGCPhys2HCVirt(pVM, (RTGCPHYS)(cr3 & GST_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 #endif
 
     /*
@@ -2890,19 +2888,19 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
     /*
      * Check that the Guest CR3 and all it's mappings are correct.
      */
-    AssertMsgReturn(pPGM->GCPhysCR3 == (cr3 & X86_CR3_PAGE_MASK),
+    AssertMsgReturn(pPGM->GCPhysCR3 == (cr3 & GST_CR3_PAGE_MASK),
                     ("Invalid GCPhysCR3=%VGp cr3=%VGp\n", pPGM->GCPhysCR3, (RTGCPHYS)cr3),
                     false);
     rc = PGMShwGetPage(pVM, pPGM->pGuestPDGC, NULL, &HCPhysShw);
     AssertRCReturn(rc, 1);
     HCPhys = NIL_RTHCPHYS;
-    rc = pgmRamGCPhys2HCPhys(pPGM, cr3 & X86_CR3_PAGE_MASK, &HCPhys);
+    rc = pgmRamGCPhys2HCPhys(pPGM, cr3 & GST_CR3_PAGE_MASK, &HCPhys);
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%VHp HCPhyswShw=%VHp (cr3)\n", HCPhys, HCPhysShw), false);
 # ifdef IN_RING3
     RTGCPHYS GCPhys;
     rc = PGMR3DbgHCPtr2GCPhys(pVM, pPGM->pGuestPDHC, &GCPhys);
     AssertRCReturn(rc, 1);
-    AssertMsgReturn((cr3 & X86_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%VGp cr3=%VGp\n", GCPhys, (RTGCPHYS)cr3), false);
+    AssertMsgReturn((cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%VGp cr3=%VGp\n", GCPhys, (RTGCPHYS)cr3), false);
 # endif
     const X86PD *pPDSrc = CTXSUFF(pPGM->pGuestPD);
 

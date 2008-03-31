@@ -1017,6 +1017,8 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, un
     else
     {
         /** @todo long mode! */
+        Assert(PGMGetGuestMode(pVM) < PGMMODE_AMD64);
+
         PX86PDPTR pPdptr;
         rc = PGM_GCPHYS_2_PTR(pVM, cr3 & X86_CR3_PAE_PAGE_MASK, &pPdptr);
         if (VBOX_SUCCESS(rc))
@@ -1033,7 +1035,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, un
                     {
                         if ((fFlags & X86_CR4_PSE) && Pde.b.u1Size)
                         {   /* (big page) */
-                            rc = PGMPhysGCPhys2HCPtr(pVM, (Pde.u & X86_PDE4M_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtr & X86_PAGE_4M_OFFSET_MASK), 1 /* we always stay within one page */, pHCPtr);
+                            rc = PGMPhysGCPhys2HCPtr(pVM, (Pde.u & X86_PDE2M_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtr & X86_PAGE_2M_OFFSET_MASK), 1 /* we always stay within one page */, pHCPtr);
                         }
                         else
                         {   /* (normal page) */
