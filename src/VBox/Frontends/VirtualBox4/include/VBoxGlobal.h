@@ -40,6 +40,7 @@
 //Added by qt3to4:
 #include <QLabel>
 #include <QEvent>
+#include <QLayout>
 
 class QAction;
 class QLabel;
@@ -529,6 +530,18 @@ public:
     static QWidget *findWidget (QWidget *aParent, const char *aName,
                                 const char *aClassName = NULL,
                                 bool aRecursive = false);
+
+    /* Qt 4.2.0 support function */
+    static inline void setLayoutMargin (QLayout *aLayout, int aMargin)
+    {
+#if QT_VERSION < 0x040300
+        /* Deprecated since > 4.2 */
+        aLayout->setMargin (aMargin);
+#else
+        /* New since > 4.2 */
+        aLayout->setContentsMargins (aMargin, aMargin, aMargin, aMargin);
+#endif
+    }
 
 signals:
 
