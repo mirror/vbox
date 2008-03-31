@@ -347,7 +347,9 @@ typedef enum CPUMCPUIDFEATURE
     /** The sysenter/sysexit feature bit. (Std+Ext) */
     CPUMCPUIDFEATURE_SEP,
     /** The PAE feature bit. (Std+Ext) */
-    CPUMCPUIDFEATURE_PAE
+    CPUMCPUIDFEATURE_PAE,
+    /** The LONG MODE feature bit. (Ext) */
+    CPUMCPUIDFEATURE_LONG_MODE
 } CPUMCPUIDFEATURE;
 
 

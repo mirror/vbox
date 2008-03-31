@@ -1041,6 +1041,28 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
         }
 
+        /*
+         * Set the LONG MODE bit in the extended feature mask.
+         * Assumes the caller knows what it's doing! (host must support these)
+         */
+        case CPUMCPUIDFEATURE_LONG_MODE:
+        {
+            uint32_t ulEdx, ulDummy;
+
+            ASMCpuId(0x80000001, &ulDummy, &ulDummy, &ulDummy, &ulEdx);
+            if (!(ulEdx & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
+            {
+                AssertMsgFailed(("ERROR: Can't turn on LONG MODE when the host doesn't support it!!\n"));
+                return;
+            }
+
+            if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
+                &&  pVM->cpum.s.aGuestCpuIdExt[1].edx)
+                pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_LONG_MODE;
+            Log(("CPUMSetGuestCpuIdFeature: Enabled LONG MODE\n"));
+            break;
+        }
+
         default:
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
