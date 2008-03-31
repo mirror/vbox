@@ -1999,8 +1999,10 @@ static void pcnetTransmit(PCNetState *pData)
     if (!pcnetTdtePoll(pData, &tmd))
         return;
 
-    /* Update TDMD, TXSTRT and TINT. */
-    pData->aCSR[0] &= ~0x0008;       /* clear TDMD */
+    /*
+     * Clear TDMD.
+     */
+    pData->aCSR[0] &= ~0x0008;
 
     /*
      * If we're in Ring-3 we should flush the queue now, in GC/R0 we'll queue a flush job.
@@ -2266,13 +2268,12 @@ static int pcnetAsyncTransmit(PCNetState *pData)
         /* Update TDMD, TXSTRT and TINT. */
         pData->aCSR[0] &= ~0x0008;       /* clear TDMD */
 
-        pData->aCSR[4] |=  0x0004;       /* set TXSTRT */
+        pData->aCSR[4] |=  0x0008;       /* set TXSTRT */
         if (    !CSR_TOKINTD(pData)      /* Transmit OK Interrupt Disable, no infl. on errors. */
             ||  (CSR_LTINTEN(pData) && tmd.tmd1.ltint)
             ||  tmd.tmd1.err)
         {
             cFlushIrq++;
-            pData->aCSR[0] |= 0x0200;    /* set TINT */
         }
 
         /** @todo should we continue after an error (tmd.tmd1.err) or not? */
@@ -2284,6 +2285,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
     if (cFlushIrq)
     {
         STAM_COUNTER_INC(&pData->aStatXmitFlush[RT_MIN(cFlushIrq, ELEMENTS(pData->aStatXmitFlush)) - 1]);
+        pData->aCSR[0] |= 0x0200;    /* set TINT */
         pcnetUpdateIrq(pData);
     }
 
