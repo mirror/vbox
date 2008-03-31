@@ -1210,7 +1210,7 @@ typedef const X86PDEPAEBITS *PCX86PDEPAEBITS;
 #define X86_PDE4M_PG_HIGH_SHIFT             19
 
 /** Bits 21-36 - - PAE - Physical Page number. */
-#define X86_PDE2M_PAE_PG_MASK               ( 0x000fffffffe00000ULL )
+#define X86_PDE2M_PAE_PG_MASK               ( 0x0000000fffe00000ULL )
 /** Bits 63 - NX - PAE - No execution flag. */
 #define X86_PDE2M_PAE_NX                    RT_BIT_64(63)
 
