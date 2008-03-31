@@ -2431,10 +2431,10 @@ void VBoxConsoleWnd::vmTakeSnapshot()
 
     CMachine cmachine = csession.GetMachine();
 
-    VBoxTakeSnapshotDlg dlg (this, "VBoxTakeSnapshotDlg");
+    VBoxTakeSnapshotDlg dlg (this);
 
     QString typeId = cmachine.GetOSTypeId();
-    dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
+    dlg.mLbIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
     /* search for the max available filter index */
     int maxSnapShotIndex = 0;
@@ -2452,15 +2452,15 @@ void VBoxConsoleWnd::vmTakeSnapshot()
         /* Traversing to the next child */
         index = index.GetChildren().GetItemAt (0);
     }
-    dlg.leName->setText (snapShotName.arg (maxSnapShotIndex + 1));
+    dlg.mLeName->setText (snapShotName.arg (maxSnapShotIndex + 1));
 
     if (dlg.exec() == QDialog::Accepted)
     {
         CConsole cconsole = csession.GetConsole();
 
         CProgress progress =
-            cconsole.TakeSnapshot (dlg.leName->text().trimmed(),
-                                   dlg.txeDescription->text());
+            cconsole.TakeSnapshot (dlg.mLeName->text().trimmed(),
+                                   dlg.mTeDescription->text());
 
         if (cconsole.isOk())
         {
