@@ -66,7 +66,9 @@ IMAGES	= images/tpixel.png \
 	images/os_freebsd.png \
 	images/os_gentoo.png \
 	images/os_l4.png \
-	images/os_linux.png \
+	images/os_linux22.png \
+	images/os_linux24.png \
+	images/os_linux26.png \
 	images/os_mandriva.png \
 	images/os_netbsd.png \
 	images/os_netware.png \
@@ -74,6 +76,7 @@ IMAGES	= images/tpixel.png \
 	images/os_opensuse.png \
 	images/os_os2warp3.png \
 	images/os_os2warp4.png \
+	images/os_os2warp45.png \
 	images/os_redhat.png \
 	images/os_solaris.png \
 	images/os_ubuntu.png \
