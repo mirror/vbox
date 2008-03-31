@@ -999,10 +999,7 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
          */
         case CPUMCPUIDFEATURE_SEP:
         {
-            uint32_t ulEdx, ulDummy;
-
-            ASMCpuId(1, &ulDummy, &ulDummy, &ulDummy, &ulEdx);
-            if (!(ulEdx & X86_CPUID_FEATURE_EDX_SEP))
+            if (!(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SEP))
             {
                 AssertMsgFailed(("ERROR: Can't turn on SEP when the host doesn't support it!!\n"));
                 return;
