@@ -37,6 +37,7 @@
 #undef GST_PT_SHIFT
 #undef GST_PT_MASK
 #undef GST_TOTAL_PD_ENTRIES
+#undef GST_CR3_PAGE_MASK
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
 # define GSTPT                      X86PT
@@ -57,6 +58,7 @@
 # define GST_PTE_PG_MASK            X86_PTE_PG_MASK
 # define GST_PT_SHIFT               X86_PT_SHIFT
 # define GST_PT_MASK                X86_PT_MASK
+# define GST_CR3_PAGE_MASK          X86_CR3_PAGE_MASK
 #else
 # define GSTPT                      X86PTPAE
 # define PGSTPT                     PX86PTPAE
@@ -69,13 +71,14 @@
 # define GST_BIG_PAGE_SIZE          X86_PAGE_2M_SIZE
 # define GST_BIG_PAGE_OFFSET_MASK   X86_PAGE_2M_OFFSET_MASK
 # define GST_PDE_PG_MASK            X86_PDE_PAE_PG_MASK
-# define GST_PDE4M_PG_MASK          X86_PDE4M_PAE_PG_MASK
+# define GST_PDE4M_PG_MASK          X86_PDE2M_PAE_PG_MASK
 # define GST_PD_SHIFT               X86_PD_PAE_SHIFT
 # define GST_PD_MASK                X86_PD_PAE_MASK
 # define GST_TOTAL_PD_ENTRIES       (X86_PG_PAE_ENTRIES*4)
 # define GST_PTE_PG_MASK            X86_PTE_PAE_PG_MASK
 # define GST_PT_SHIFT               X86_PT_PAE_SHIFT
 # define GST_PT_MASK                X86_PT_PAE_MASK
+# define GST_CR3_PAGE_MASK          X86_CR3_PAE_PAGE_MASK
 #endif
 
 
@@ -285,7 +288,7 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
             /*
              * 4MB Page table
              */
-            Pde.u = (Pde.u & (fMask | ((fMask & X86_PTE_PAT) << X86_PDE4M_PAT_SHIFT) | X86_PDE4M_PAE_PG_MASK | X86_PDE4M_PS)) /** @todo pse36 */
+            Pde.u = (Pde.u & (fMask | ((fMask & X86_PTE_PAT) << X86_PDE4M_PAT_SHIFT) | GST_PDE4M_PG_MASK | X86_PDE4M_PS)) /** @todo pse36 */
                   | (fFlags & ~GST_PTE_PG_MASK)
                   | ((fFlags & X86_PTE_PAT) << X86_PDE4M_PAT_SHIFT);
             *pPde = Pde;
