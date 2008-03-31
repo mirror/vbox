@@ -4082,10 +4082,7 @@ static int vmdkGetComment(void *pBackendData, char *pszComment,
         if (pszComment)
             rc = vmdkDecodeString(pszCommentEncoded, pszComment, cbComment);
         else
-        {
-            *pszComment = '\0';
             rc = VINF_SUCCESS;
-        }
         if (pszCommentEncoded)
             RTStrFree((char *)(void *)pszCommentEncoded);
     }
