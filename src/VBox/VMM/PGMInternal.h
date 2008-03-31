@@ -815,14 +815,14 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAVE_ANY_PHYSICAL_HANDLERS(pPage)      ( (pPage)->u2HandlerPhysStateX != PGM_PAGE_HNDL_PHYS_STATE_NONE )
+#define PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage)      ( (pPage)->u2HandlerPhysStateX != PGM_PAGE_HNDL_PHYS_STATE_NONE )
 
 /**
  * Checks if the page has any active physical access handlers.
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAVE_ACTIVE_PHYSICAL_HANDLERS(pPage)   ( (pPage)->u2HandlerPhysStateX >= PGM_PAGE_HNDL_PHYS_STATE_WRITE )
+#define PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(pPage)   ( (pPage)->u2HandlerPhysStateX >= PGM_PAGE_HNDL_PHYS_STATE_WRITE )
 
 
 /** @name Virtual Access Handler State values (PGMPAGE::u2HandlerVirtStateX).
@@ -859,15 +859,15 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS(pPage)    ( (pPage)->u2HandlerVirtStateX != PGM_PAGE_HNDL_VIRT_STATE_NONE )
+#define PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(pPage)    ( (pPage)->u2HandlerVirtStateX != PGM_PAGE_HNDL_VIRT_STATE_NONE )
 
 /**
- * Same as PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS - can't disable pages in
+ * Same as PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS - can't disable pages in
  * virtual handlers.
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAVE_ACTIVE_VIRTUAL_HANDLERS(pPage) PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS(pPage)
+#define PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage) PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(pPage)
 
 
 
@@ -876,7 +876,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAVE_ANY_HANDLERS(pPage) \
+#define PGM_PAGE_HAS_ANY_HANDLERS(pPage) \
     (   (pPage)->u2HandlerPhysStateX != PGM_PAGE_HNDL_PHYS_STATE_NONE \
      || (pPage)->u2HandlerVirtStateX != PGM_PAGE_HNDL_VIRT_STATE_NONE )
 
@@ -885,7 +885,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage) \
+#define PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) \
     (   (pPage)->u2HandlerPhysStateX >= PGM_PAGE_HNDL_PHYS_STATE_WRITE \
      || (pPage)->u2HandlerVirtStateX >= PGM_PAGE_HNDL_VIRT_STATE_WRITE )
 
@@ -894,7 +894,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage) \
+#define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage) \
     (   (pPage)->u2HandlerPhysStateX == PGM_PAGE_HNDL_PHYS_STATE_ALL \
      || (pPage)->u2HandlerVirtStateX == PGM_PAGE_HNDL_VIRT_STATE_ALL )
 

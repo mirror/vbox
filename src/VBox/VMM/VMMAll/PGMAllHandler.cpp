@@ -1369,7 +1369,7 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
         for (unsigned iPage = 0; iPage < cPages; iPage++)
         {
             PGMPAGE const *pPage = &pRam->aPages[iPage];
-            if (PGM_PAGE_HAVE_ANY_HANDLERS(pPage))
+            if (PGM_PAGE_HAS_ANY_HANDLERS(pPage))
             {
                 State.GCPhys = pRam->GCPhys + (iPage << PAGE_SHIFT);
 
@@ -1377,7 +1377,7 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                  * Physical first - calculate the state based on the handlers
                  *                  active on the page, then compare.
                  */
-                if (PGM_PAGE_HAVE_ANY_PHYSICAL_HANDLERS(pPage))
+                if (PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage))
                 {
                     /* the first */
                     PPGMPHYSHANDLER pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pPGM->CTXSUFF(pTrees)->PhysHandlers, State.GCPhys);
@@ -1437,7 +1437,7 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                 /*
                  * Virtual handlers.
                  */
-                if (PGM_PAGE_HAVE_ACTIVE_VIRTUAL_HANDLERS(pPage))
+                if (PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage))
                 {
                     State.uVirtState = PGM_PAGE_GET_HNDL_VIRT_STATE(pPage);
 #if 1

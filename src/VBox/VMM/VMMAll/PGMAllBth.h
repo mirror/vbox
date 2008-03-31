@@ -276,9 +276,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
             rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
             if (VBOX_SUCCESS(rc))
             {
-                if (PGM_PAGE_HAVE_ANY_HANDLERS(pPage))
+                if (PGM_PAGE_HAS_ANY_HANDLERS(pPage))
                 {
-                    if (PGM_PAGE_HAVE_ANY_PHYSICAL_HANDLERS(pPage))
+                    if (PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage))
                     {
                         /*
                          * Physical page access handler.
@@ -435,7 +435,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                      */
                     STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersUnhandled);
 
-                    if (    !PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage)
+                    if (    !PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)
                         &&  !(uErr & X86_TRAP_PF_P))
                     {
                         rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
@@ -457,8 +457,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     rc = PGMInterpretInstruction(pVM, pRegFrame, pvFault);
                     LogFlow(("PGM: PGMInterpretInstruction -> rc=%d HCPhys=%RHp%s%s\n",
                              rc, pPage->HCPhys,
-                             PGM_PAGE_HAVE_ANY_PHYSICAL_HANDLERS(pPage) ? " phys" : "",
-                             PGM_PAGE_HAVE_ANY_VIRTUAL_HANDLERS(pPage)  ? " virt" : ""));
+                             PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage) ? " phys" : "",
+                             PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(pPage)  ? " virt" : ""));
                     STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
                     STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eHndUnhandled; });
                     return rc;
@@ -785,10 +785,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
 #  else /* PAE */
     unsigned        iPDSrc;
-    PX86PDPAE       pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
-
-    GSTPDE          PdeSrc;;
-    PdeSrc.u      = pgmGstGetPaePDE(&pVM->pgm.s, GCPtrPage);
+    PX86PDPAE       pPDSrc      = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+    GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
 #  endif
 
     const uint32_t  cr4         = CPUMGetGuestCR4(pVM);
@@ -863,7 +861,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
              * 4KB - page.
              */
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
-            RTGCPHYS        GCPhys = PdeSrc.u & GST_PDE_PG_MASK;
+            RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE_PG_MASK;
 #  if PGM_SHW_TYPE != PGM_TYPE_32BIT
             GCPhys |= (iPDDst & 1) * (PAGE_SIZE/2);
 #  endif
@@ -908,7 +906,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
              */
             /* Before freeing the page, check if anything really changed. */
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
-            RTGCPHYS        GCPhys = PdeSrc.u & GST_PDE4M_PG_MASK;
+            RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE4M_PG_MASK;
 #  if PGM_SHW_TYPE != PGM_TYPE_32BIT
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 #  endif
@@ -1114,10 +1112,10 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
              */
             const RTHCPHYS HCPhys = pPage->HCPhys; /** @todo FLAGS */
             SHWPTE PteDst;
-            if (PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage))
+            if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
             {
                 /** @todo r=bird: Are we actually handling dirty and access bits for pages with access handlers correctly? No. */
-                if (!PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage))
+                if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
                     PteDst.u = (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT | X86_PTE_RW))
                              | (HCPhys & X86_PTE_PAE_PG_MASK);
                 else
@@ -1349,7 +1347,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                                     ||  iPTDst == ((GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK)   /* always sync GCPtrPage */
                                     ||  !CSAMDoesPageNeedScanning(pVM, (RTGCPTR)GCPtrCurPage)
                                     ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK))
-                                         && PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage))
+                                         && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                                    )
 #endif /* else: CSAM not active */
                                     PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
@@ -1404,9 +1402,9 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                     SHWPTE PteDst;
                     PteDst.u = (PdeSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
                              | (HCPhys & X86_PTE_PAE_PG_MASK);
-                    if (PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage))
+                    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                     {
-                        if (!PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage))
+                        if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
                             PteDst.n.u1Write = 0;
                         else
                             PteDst.u = 0;
@@ -1766,7 +1764,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
 #  ifdef VBOX_STRICT
                         PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & GST_PTE_PG_MASK);
                         if (pPage)
-                            AssertMsg(!PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage),
+                            AssertMsg(!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage),
                                       ("Unexpected dirty bit tracking on monitored page %VGv (phys %VGp)!!!!!!\n", GCPtrPage, pPteSrc->u & X86_PTE_PAE_PG_MASK));
 #  endif
                         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,DirtyPageTrap));
@@ -2024,7 +2022,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                         if (    ((PdeSrc.u & pPTSrc->a[iPTSrc].u) & (X86_PTE_RW | X86_PTE_US))
                             ||  !CSAMDoesPageNeedScanning(pVM, (RTGCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)))
                             ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK))
-                                 &&  PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage))
+                                 &&  PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                            )
 #endif
                             PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
@@ -2123,9 +2121,9 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                             }
                         }
 
-                        if (PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPage))
+                        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                         {
-                            if (!PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPage))
+                            if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
                             {
                                 PteDst.u = PGM_PAGE_GET_HCPHYS(pPage) | PteDstBase.u;
                                 PteDst.n.u1Write = 0;
@@ -3153,9 +3151,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                     }
 
                     /* flags */
-                    if (PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPhysPage))
+                    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPhysPage))
                     {
-                        if (!PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPhysPage))
+                        if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPhysPage))
                         {
                             if (PteDst.n.u1Write)
                             {
@@ -3382,9 +3380,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                     }
 
                     /* flags */
-                    if (PGM_PAGE_HAVE_ACTIVE_HANDLERS(pPhysPage))
+                    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPhysPage))
                     {
-                        if (!PGM_PAGE_HAVE_ACTIVE_ALL_HANDLERS(pPhysPage))
+                        if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPhysPage))
                         {
                             if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPhysPage) != PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
                             {
