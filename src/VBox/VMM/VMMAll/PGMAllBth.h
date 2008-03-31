@@ -910,7 +910,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE_BIG_PG_MASK;
 #  if    PGM_SHW_TYPE != PGM_TYPE_32BIT \
       && PGM_GST_TYPE == PGM_TYPE_32BIT    
-            /* Select the right PDE as we're emulating a 4MB page with two 2 MB shadow pages */
+            /* Select the right PDE as we're emulating a 4MB page with two 2 MB shadow PDEs */
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 #  endif
             if (    pShwPage->GCPhys == GCPhys
@@ -1275,8 +1275,10 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     else
     {
         GCPhys = PdeSrc.u & GST_PDE_BIG_PG_MASK;
-# if PGM_SHW_TYPE != PGM_TYPE_32BIT
-        GCPhys |= GCPtrPage & X86_PAGE_2M_SIZE;
+#  if    PGM_SHW_TYPE != PGM_TYPE_32BIT \
+      && PGM_GST_TYPE == PGM_TYPE_32BIT
+        /* Select the right PDE as we're emulating a 4MB page with two 2 MB shadow PDEs */
+        GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 # endif
     }
     if (    pShwPage->GCPhys == GCPhys
