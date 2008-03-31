@@ -16,10 +16,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "QIMessageBox.h"
 #include "VBoxDefs.h"
+#include "VBoxGlobal.h"
+
+#include "QIMessageBox.h"
 #include "QIRichLabel.h"
-#include "VBoxUtils.h"
 
 /* Qt includes */
 #include <QHBoxLayout>
@@ -54,14 +55,14 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mButton2 = aButton2;
 
     QVBoxLayout *layout = new QVBoxLayout (this);
-    setLayoutMargin (layout, 11);
+    VBoxGlobal::setLayoutMargin (layout, 11);
     layout->setSpacing (10);
     layout->setSizeConstraint (QLayout::SetMinimumSize);
 
     QWidget *main = new QWidget();
 
     QHBoxLayout *hLayout = new QHBoxLayout (main);
-    setLayoutMargin (hLayout, 0);
+    VBoxGlobal::setLayoutMargin (hLayout, 0);
     hLayout->setSpacing (10);
     layout->addWidget (main);
 
@@ -75,7 +76,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     hLayout->addWidget (mIconLabel);
 
     QVBoxLayout* messageVBoxLayout = new QVBoxLayout();
-    setLayoutMargin (messageVBoxLayout, 0);
+    VBoxGlobal::setLayoutMargin (messageVBoxLayout, 0);
     messageVBoxLayout->setSpacing (10);
     hLayout->addLayout (messageVBoxLayout);
 
@@ -95,7 +96,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     layout->addWidget (mDetailsVBox);
 
     QVBoxLayout* detailsVBoxLayout = new QVBoxLayout(mDetailsVBox);
-    setLayoutMargin (detailsVBoxLayout, 0);
+    VBoxGlobal::setLayoutMargin (detailsVBoxLayout, 0);
     detailsVBoxLayout->setSpacing (10);
 
     mDetailsText = new QTextEdit();
@@ -148,7 +149,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     setDetailsShown (false);
 }
 
-/** 
+/**
  *  Returns the text of the given message box button.
  *  See QMessageBox::buttonText() for details.
  *
@@ -167,7 +168,7 @@ QString QIMessageBox::buttonText (int aButton) const
     return QString::null;
 }
 
-/** 
+/**
  *  Sets the text of the given message box button.
  *  See QMessageBox::setButtonText() for details.
  *
