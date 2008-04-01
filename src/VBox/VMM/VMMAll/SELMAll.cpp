@@ -457,12 +457,10 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL 
                     )
             {
                 /*
-                 * Limit check.
+                 * Limit check. Note that the limit in the hidden register is the 
+                 * final value. The granularity bit was included in its calculation.
                  */
                 uint32_t    u32Limit = pHidCS->u32Limit;
-                /** @todo correct with hidden limit value?? */
-                if (pHidCS->Attr.n.u1Granularity)
-                    u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
                 if ((RTGCUINTPTR)Addr <= u32Limit)
                 {
                     *ppvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr + pHidCS->u32Base );
