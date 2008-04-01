@@ -848,8 +848,43 @@ out:
 static int vdiRename(void *pBackendData, const char *pszFilename)
 {
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
-    int rc = VERR_NOT_IMPLEMENTED;
 
+    int rc = VINF_SUCCESS;
+    PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
+
+    /* Check arguments. */
+    if (   !pImage
+        || !pszFilename
+        || !*pszFilename)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
+    /* Close the image. */
+    vdiFreeImage(pImage, false);
+
+    /* Rename the file. */
+    rc = RTFileMove(pImage->pszFilename, pszFilename, 0);
+    if (VBOX_FAILURE(rc))
+    {   
+        /* The move failed, try to reopen the original image. */
+        int rc2 = vdiOpenImage(pImage, pImage->uOpenFlags);
+        if (VBOX_FAILURE(rc2))
+            rc = rc2;
+
+        goto out;
+    }
+
+    /* Update pImage with the new information. */
+    pImage->pszFilename = pszFilename;
+
+    /* Open the new image. */
+    rc = vdiOpenImage(pImage, pImage->uOpenFlags);
+    if (VBOX_FAILURE(rc))
+        goto out;
+
+out:
     LogFlowFunc(("returns %Vrc\n", rc));
     return rc;
 }
