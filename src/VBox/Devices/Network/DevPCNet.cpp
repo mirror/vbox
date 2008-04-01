@@ -234,6 +234,10 @@ struct PCNetState_st
     /** The hypervisor/guest context of the shared memory used for the private interface. */
     GCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOGC;
 
+#if HC_ARCH_BITS == 64
+    uint32_t                            Alignment3;
+#endif
+
     /** True if host and guest admitted to use the private interface. */
     bool                                fPrivIfEnabled;
     bool                                fGCEnabled;
