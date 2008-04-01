@@ -156,6 +156,9 @@ typedef struct VMMDevState
     /** Set if backdoor logging should be disabled (output will be ignored then) */
     bool fBackdoorLogDisabled;
 
+    /** Don't clear credentials */
+    bool fKeepCredentials;
+
 #ifdef VBOX_HGCM
     /** List of pending HGCM requests, used for saving the HGCM state. */
     PVBOXHGCMCMD pHGCMCmdList;

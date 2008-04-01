@@ -1435,12 +1435,15 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                         credentials->u32Flags &= ~VMMDEV_CREDENTIALS_NOLOCALLOGON;
                 }
 
-                /* does the caller want us to destroy the logon credentials? */
-                if (credentials->u32Flags & VMMDEV_CREDENTIALS_CLEAR)
+                if (!pData->fKeepCredentials)
                 {
-                    memset(pData->credentialsLogon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                    memset(pData->credentialsLogon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                    memset(pData->credentialsLogon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                    /* does the caller want us to destroy the logon credentials? */
+                    if (credentials->u32Flags & VMMDEV_CREDENTIALS_CLEAR)
+                    {
+                        memset(pData->credentialsLogon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                        memset(pData->credentialsLogon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                        memset(pData->credentialsLogon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                    }
                 }
 
                 /* does the guest want to read credentials for verification? */
@@ -2096,7 +2099,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GetHostTimeDisabled\0BackdoorLogDisabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GetHostTimeDisabled\0BackdoorLogDisabled\0KeepCredentials\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBool(pCfgHandle, "GetHostTimeDisabled", &pData->fGetHostTimeDisabled);
@@ -2112,6 +2115,13 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"BackdoorLogDisabled\" as a boolean"));
+
+    rc = CFGMR3QueryBool(pCfgHandle, "KeepCredentials", &pData->fKeepCredentials);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->fKeepCredentials = false;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"KeepCredentials\" as a boolean"));
 
     /*
      * Initialize data (most of it anyway).
@@ -2289,10 +2299,13 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     if (pData->pVMMDevRAMHC)
         vmmdevInitRam(pData);
 
-    /* credentials have to go away */
-    memset(pData->credentialsLogon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-    memset(pData->credentialsLogon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-    memset(pData->credentialsLogon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+    /* credentials have to go away (by default) */
+    if (!pData->fKeepCredentials)
+    {
+        memset(pData->credentialsLogon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
+        memset(pData->credentialsLogon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
+        memset(pData->credentialsLogon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+    }
     memset(pData->credentialsJudge.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
     memset(pData->credentialsJudge.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
     memset(pData->credentialsJudge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
