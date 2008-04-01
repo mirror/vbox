@@ -155,12 +155,12 @@ private slots:
     void prepareDVDMenu();
     void prepareNetworkMenu();
 
-    void setDynamicMenuItemStatusTip (int aId);
+    void setDynamicMenuItemStatusTip (QAction *aAction);
 
-    void captureFloppy (int aId);
-    void captureDVD (int aId);
-    void activateNetworkMenu (int aId);
-    void switchUSB (int aId);
+    void captureFloppy (QAction *aAction);
+    void captureDVD (QAction *aAction);
+    void activateNetworkMenu (QAction *aAction);
+    void switchUSB (QAction *aAction);
 
     void statusTipChanged (const QString &);
     void clearStatusBar();
@@ -242,31 +242,27 @@ private:
     VBoxSwitchMenu *vmDisMouseIntegrMenu;
 
     // Devices popup menus
-    QMenu *devicesMenu;
-    QMenu *devicesMountFloppyMenu;
-    QMenu *devicesMountDVDMenu;
-    QMenu *devicesSFMenu;
-    QMenu *devicesNetworkMenu;
-    VBoxUSBMenu *devicesUSBMenu;
-    VBoxSwitchMenu *devicesVRDPMenu;
-
-    int devicesUSBMenuSeparatorId;
-    int devicesVRDPMenuSeparatorId;
-    int devicesSFMenuSeparatorId;
-
     bool waitForStatusBarChange;
     bool statusBarChangedInside;
 
-    QSpacerItem *mShiftingSpacerLeft;
-    QSpacerItem *mShiftingSpacerTop;
-    QSpacerItem *mShiftingSpacerRight;
-    QSpacerItem *mShiftingSpacerBottom;
-    QSize mMaskShift;
+    QAction *mDevicesUSBMenuSeparator;
+    QAction *mDevicesVRDPMenuSeparator;
+    QAction *mDevicesSFMenuSeparator;
 
+    QMenu *mVMMenu;
+    QMenu *mDevicesMenu;
+    QMenu *mDevicesMountFloppyMenu;
+    QMenu *mDevicesMountDVDMenu;
+    /* see showIndicatorContextMenu for a description of mDevicesSFMenu */
+    /* QMenu *mDevicesSFMenu; */
+    QMenu *mDevicesNetworkMenu;
+    VBoxUSBMenu *mDevicesUSBMenu;
+    /* VBoxSwitchMenu *mDevicesVRDPMenu; */
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger popup menu
-    Q3PopupMenu *dbgMenu;
+    QMenu *mDbgMenu;
 #endif
+    QMenu *mHelpMenu;
 
     // Menu identifiers
     enum {
@@ -281,6 +277,12 @@ private:
 #endif
         helpMenuId,
     };
+
+    QSpacerItem *mShiftingSpacerLeft;
+    QSpacerItem *mShiftingSpacerTop;
+    QSpacerItem *mShiftingSpacerRight;
+    QSpacerItem *mShiftingSpacerBottom;
+    QSize mMaskShift;
 
     CSession csession;
 
@@ -299,8 +301,8 @@ private:
 
     bool no_auto_close : 1;
 
-    QMap <int, CHostDVDDrive> hostDVDMap;
-    QMap <int, CHostFloppyDrive> hostFloppyMap;
+    QMap <QAction *, CHostDVDDrive> hostDVDMap;
+    QMap <QAction *, CHostFloppyDrive> hostFloppyMap;
 
     QPoint normal_pos;
     QSize normal_size;

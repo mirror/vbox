@@ -30,6 +30,7 @@
 #include <quuid.h>
 #include <qthread.h>
 #include <q3popupmenu.h>
+#include <QMenu>
 #include <qtooltip.h>
 
 #include <q3ptrvector.h>
@@ -716,17 +717,15 @@ public:
  *  USB Popup Menu class.
  *  This class provides the list of USB devices attached to the host.
  */
-class VBoxUSBMenu : public Q3PopupMenu
+class VBoxUSBMenu : public QMenu
 {
     Q_OBJECT
 
 public:
 
-    enum { USBDevicesMenuNoDevicesId = 1 };
-
     VBoxUSBMenu (QWidget *);
 
-    const CUSBDevice& getUSB (int);
+    const CUSBDevice& getUSB (QAction *aAction);
 
     void setConsole (const CConsole &);
 
@@ -734,14 +733,12 @@ private slots:
 
     void processAboutToShow();
 
-    void processHighlighted (int);
-
 private:
+    bool event(QEvent *aEvent);
 
-    QMap <int, CUSBDevice> mUSBDevicesMap;
+    QMap <QAction *, CUSBDevice> mUSBDevicesMap;
     CConsole mConsole;
 };
-
 
 /**
  *  Enable/Disable Menu class.

@@ -171,10 +171,10 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *pe)
     QPoint p = mView->viewport()->mapTo (pMain, QPoint (0, 0));
     QRect Q2DViewRect = mapYOrigin (QRect (p.x(), p.y(), mView->width(), mView->height()), pMain->height());
     /* We have to pay special attention to the scrollbars */
-    if (mView->horizontalScrollBar()->isVisible())
-        Q2DViewRect.setY (Q2DViewRect.y() + (mView->horizontalScrollBar()->frameSize().height() + 2));
-    if (mView->verticalScrollBar()->isVisible())
-        Q2DViewRect.setWidth (Q2DViewRect.width() - (mView->verticalScrollBar()->frameSize().width() + 2));
+//    if (mView->horizontalScrollBar()->isVisible())
+//        Q2DViewRect.setY (Q2DViewRect.y() + (mView->horizontalScrollBar()->frameSize().height() + 2));
+//    if (mView->verticalScrollBar()->isVisible())
+//        Q2DViewRect.setWidth (Q2DViewRect.width() - (mView->verticalScrollBar()->frameSize().width() + 2));
 
     /* Create the context to draw on */
 //    WindowPtr window = static_cast <WindowPtr> (mView->viewport()->handle());

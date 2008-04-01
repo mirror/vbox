@@ -1336,7 +1336,7 @@ to the system default language.&lt;/qt&gt;
     <slot>lvUSBFilters_setCurrentText( const QString &amp; )</slot>
     <slot>tbAddUSBFilter_clicked()</slot>
     <slot>tbAddUSBFilterFrom_clicked()</slot>
-    <slot>menuAddUSBFilterFrom_activated( int )</slot>
+    <slot>menuAddUSBFilterFrom_activated( QAction * )</slot>
     <slot>tbRemoveUSBFilter_clicked()</slot>
     <slot>tbUSBFilterUp_clicked()</slot>
     <slot>tbUSBFilterDown_clicked()</slot>
