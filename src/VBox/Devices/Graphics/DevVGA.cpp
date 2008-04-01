@@ -4665,8 +4665,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             return rc;
 
 #if 0
-        /* This now causes conflicts with Win2k & XP; it is not aware this range is taken
-           and tries to map other devices there */
+        /* This now causes conflicts with Win2k & XP; they are not aware this range is taken
+           and try to map other devices there */
         /* Old Bochs. */
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, 0xff80,  1, 0, "vgaIOPortWriteVBEIndex", "vgaIOPortReadVBEIndex", "VGA/VBE - Index Old (GC)");
         if (VBOX_FAILURE(rc))
@@ -4706,8 +4706,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             return rc;
 
 #if 0
-        /* This now causes conflicts with Win2k & XP; it is not aware this range is taken
-           and tries to map other devices there */
+        /* This now causes conflicts with Win2k & XP; they are not aware this range is taken
+           and try to map other devices there */
         /* Old Bochs. */
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0xff80,  1, 0, "vgaIOPortWriteVBEIndex", "vgaIOPortReadVBEIndex", "VGA/VBE - Index Old (GC)");
         if (VBOX_FAILURE(rc))
@@ -4761,7 +4761,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
     /*AssertMsg(pData->Dev.devfn == 16 || iInstance != 0, ("pData->Dev.devfn=%d\n", pData->Dev.devfn));*/
     if (pData->Dev.devfn != 16 && iInstance == 0)
-        Log(("!!WARNING!!: pData->dev.devfn=%d (ignore if testcase or no started by Main)\n", pData->Dev.devfn));
+        Log(("!!WARNING!!: pData->dev.devfn=%d (ignore if testcase or not started by Main)\n", pData->Dev.devfn));
 
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0 /* iRegion */, pData->vram_size, PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
     if (VBOX_FAILURE(rc))
