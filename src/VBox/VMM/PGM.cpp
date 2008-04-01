@@ -834,44 +834,6 @@ static const DBGCCMD    g_aCmds[] =
 #define PGM_SHW_NAME_R0_STR(name)   PGM_SHW_NAME_R0_AMD64_STR(name)
 #include "PGMShw.h"
 
-/* Guest - real mode */
-#define PGM_GST_TYPE                PGM_TYPE_REAL
-#define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
-#define PGM_GST_NAME_GC_STR(name)   PGM_GST_NAME_GC_REAL_STR(name)
-#define PGM_GST_NAME_R0_STR(name)   PGM_GST_NAME_R0_REAL_STR(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_AMD64_REAL(name)
-#define PGM_BTH_NAME_GC_STR(name)   PGM_BTH_NAME_GC_AMD64_REAL_STR(name)
-#define PGM_BTH_NAME_R0_STR(name)   PGM_BTH_NAME_R0_AMD64_REAL_STR(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
-#include "PGMBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_BTH_NAME_GC_STR
-#undef PGM_BTH_NAME_R0_STR
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
-#undef PGM_GST_NAME_GC_STR
-#undef PGM_GST_NAME_R0_STR
-
-/* Guest - protected mode */
-#define PGM_GST_TYPE                PGM_TYPE_PROT
-#define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
-#define PGM_GST_NAME_GC_STR(name)   PGM_GST_NAME_GC_PROT_STR(name)
-#define PGM_GST_NAME_R0_STR(name)   PGM_GST_NAME_R0_PROT_STR(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_AMD64_PROT(name)
-#define PGM_BTH_NAME_GC_STR(name)   PGM_BTH_NAME_GC_AMD64_PROT_STR(name)
-#define PGM_BTH_NAME_R0_STR(name)   PGM_BTH_NAME_R0_AMD64_PROT_STR(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
-#include "PGMBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_BTH_NAME_GC_STR
-#undef PGM_BTH_NAME_R0_STR
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
-#undef PGM_GST_NAME_GC_STR
-#undef PGM_GST_NAME_R0_STR
-
 /* Guest - AMD64 mode */
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
@@ -2502,21 +2464,18 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     pModeData->uGstType = PGM_TYPE_REAL;
     rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_REAL(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_BTH_NAME_AMD64_REAL(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_AMD64, PGM_TYPE_PROT)];
     pModeData->uShwType = PGM_TYPE_AMD64;
     pModeData->uGstType = PGM_TYPE_PROT;
     rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_PROT(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_BTH_NAME_AMD64_PROT(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_AMD64, PGM_TYPE_AMD64)];
     pModeData->uShwType = PGM_TYPE_AMD64;
     pModeData->uGstType = PGM_TYPE_AMD64;
     rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-    rc = PGM_BTH_NAME_AMD64_AMD64(InitData)(pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
@@ -2927,7 +2886,7 @@ int pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                     break;
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
-                    rc2 = PGM_BTH_NAME_AMD64_REAL(Enter)(pVM, NIL_RTGCPHYS);
+                    rc2 = PGM_BTH_NAME_PAE_REAL(Enter)(pVM, NIL_RTGCPHYS);
                     break;
                 default: AssertFailed(); break;
             }
@@ -2946,7 +2905,7 @@ int pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                     break;
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
-                    rc2 = PGM_BTH_NAME_AMD64_PROT(Enter)(pVM, NIL_RTGCPHYS);
+                    rc2 = PGM_BTH_NAME_PAE_PROT(Enter)(pVM, NIL_RTGCPHYS);
                     break;
                 default: AssertFailed(); break;
             }
@@ -3205,7 +3164,7 @@ static int  pgmR3DumpHierarchyHCPaePDPTR(PVM pVM, RTHCPHYS HCPhys, uint64_t u64A
     }
 
     int rc = VINF_SUCCESS;
-    const unsigned c = fLongMode ? ELEMENTS(pPDPTR->a) : 4;
+    const unsigned c = fLongMode ? ELEMENTS(pPDPTR->a) : X86_PG_PAE_PDPTE_ENTRIES;
     for (unsigned i = 0; i < c; i++)
     {
         X86PDPE Pdpe = pPDPTR->a[i];

@@ -1717,8 +1717,6 @@ typedef PGMTREES *PPGMTREES;
 #define PGM_BTH_NAME_PAE_PROT(name)     PGM_CTX(pgm,BthPAEProt##name)
 #define PGM_BTH_NAME_PAE_32BIT(name)    PGM_CTX(pgm,BthPAE32Bit##name)
 #define PGM_BTH_NAME_PAE_PAE(name)      PGM_CTX(pgm,BthPAEPAE##name)
-#define PGM_BTH_NAME_AMD64_REAL(name)   PGM_CTX(pgm,BthAMD64Real##name)
-#define PGM_BTH_NAME_AMD64_PROT(name)   PGM_CTX(pgm,BthAMD64Prot##name)
 #define PGM_BTH_NAME_AMD64_AMD64(name)  PGM_CTX(pgm,BthAMD64AMD64##name)
 #define PGM_BTH_NAME_GC_32BIT_REAL_STR(name)   "pgmGCBth32BitReal" #name
 #define PGM_BTH_NAME_GC_32BIT_PROT_STR(name)   "pgmGCBth32BitProt" #name
@@ -1727,8 +1725,6 @@ typedef PGMTREES *PPGMTREES;
 #define PGM_BTH_NAME_GC_PAE_PROT_STR(name)     "pgmGCBthPAEProt" #name
 #define PGM_BTH_NAME_GC_PAE_32BIT_STR(name)    "pgmGCBthPAE32Bit" #name
 #define PGM_BTH_NAME_GC_PAE_PAE_STR(name)      "pgmGCBthPAEPAE" #name
-#define PGM_BTH_NAME_GC_AMD64_REAL_STR(name)   "pgmGCBthAMD64Real" #name
-#define PGM_BTH_NAME_GC_AMD64_PROT_STR(name)   "pgmGCBthAMD64Prot" #name
 #define PGM_BTH_NAME_GC_AMD64_AMD64_STR(name)  "pgmGCBthAMD64AMD64" #name
 #define PGM_BTH_NAME_R0_32BIT_REAL_STR(name)   "pgmR0Bth32BitReal" #name
 #define PGM_BTH_NAME_R0_32BIT_PROT_STR(name)   "pgmR0Bth32BitProt" #name
@@ -1737,8 +1733,6 @@ typedef PGMTREES *PPGMTREES;
 #define PGM_BTH_NAME_R0_PAE_PROT_STR(name)     "pgmR0BthPAEProt" #name
 #define PGM_BTH_NAME_R0_PAE_32BIT_STR(name)    "pgmR0BthPAE32Bit" #name
 #define PGM_BTH_NAME_R0_PAE_PAE_STR(name)      "pgmR0BthPAEPAE" #name
-#define PGM_BTH_NAME_R0_AMD64_REAL_STR(name)   "pgmR0BthAMD64Real" #name
-#define PGM_BTH_NAME_R0_AMD64_PROT_STR(name)   "pgmR0BthAMD64Prot" #name
 #define PGM_BTH_NAME_R0_AMD64_AMD64_STR(name)  "pgmR0BthAMD64AMD64" #name
 #define PGM_BTH_DECL(type, name)        PGM_CTX_DECL(type) PGM_BTH_NAME(name)
 #define PGM_BTH_PFN(name, pVM)          ((pVM)->pgm.s.PGM_CTX(pfn,Bth##name))
