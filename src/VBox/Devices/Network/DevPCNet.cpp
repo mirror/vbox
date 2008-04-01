@@ -235,6 +235,9 @@ struct PCNetState_st
     GCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOGC;
 
     /** True if host and guest admitted to use the private interface. */
+#if HC_ARCH_BITS == 64
+    uint32_t                            Alignment3;
+#endif
     bool                                fPrivIfEnabled;
     bool                                fGCEnabled;
     bool                                fR0Enabled;
