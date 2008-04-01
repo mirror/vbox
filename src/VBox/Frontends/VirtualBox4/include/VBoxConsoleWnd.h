@@ -322,7 +322,6 @@ private:
     bool mIsFullscreen : 1;
     bool mIsSeamless : 1;
     bool mIsSeamlessSupported : 1;
-    int normal_wflags;
     bool was_max : 1;
     QObjectList hidden_children;
     int console_style;
