@@ -284,7 +284,7 @@ static void pci_update_mappings(PCIDevice *d)
                         if (pBus->pPciHlpR3->pfnIsMMIO2Base(pBus->pDevInsHC, d->pDevIns, GCPhysBase))
                         {
                             /* unmap it. */
-                            int rc = r->map_func(d, i, NIL_RTGCPHYS, r->size, (PCIADDRESSSPACE)(r->type));
+                            rc = r->map_func(d, i, NIL_RTGCPHYS, r->size, (PCIADDRESSSPACE)(r->type));
                             AssertRC(rc);
                             rc = PDMDevHlpMMIO2Unmap(d->pDevIns, i, GCPhysBase);
                         }
