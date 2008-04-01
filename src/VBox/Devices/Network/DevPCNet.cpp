@@ -609,7 +609,7 @@ DECLINLINE(bool) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr, bool
         /* RX/TX descriptors shared between host and guest => direct copy */
         uint8_t *pv = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
                     + (addr - pData->GCTDRA)
-                    + pData->CTXSUFF(pSharedMMIO)->V.V1.u32OffTxDescriptors;
+                    + pData->CTXSUFF(pSharedMMIO)->V.V1.offTxDescriptors;
         if (!(pv[7] & 0x80) && fRetIfNotOwn)
             return false;
         memcpy(tmd, pv, 16);
@@ -671,7 +671,7 @@ DECLINLINE(void) pcnetTmdStorePassHost(PCNetState *pData, TMD *tmd, RTGCPHYS32 a
         /* RX/TX descriptors shared between host and guest => direct copy */
         uint8_t *pv = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
                     + (addr - pData->GCTDRA)
-                    + pData->CTXSUFF(pSharedMMIO)->V.V1.u32OffTxDescriptors;
+                    + pData->CTXSUFF(pSharedMMIO)->V.V1.offTxDescriptors;
         memcpy(pv, tmd, 16);
         pv[7] &= ~0x80;
     }
@@ -728,7 +728,7 @@ DECLINLINE(int) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool 
         /* RX/TX descriptors shared between host and guest => direct copy */
         uint8_t *pb = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
                     + (addr - pData->GCRDRA)
-                    + pData->CTXSUFF(pSharedMMIO)->V.V1.u32OffRxDescriptors;
+                    + pData->CTXSUFF(pSharedMMIO)->V.V1.offRxDescriptors;
         if (!(pb[7] & 0x80) && fRetIfNotOwn)
             return false;
         memcpy(rmd, pb, 16);
@@ -788,7 +788,7 @@ DECLINLINE(void) pcnetRmdStorePassHost(PCNetState *pData, RMD *rmd, RTGCPHYS32 a
         /* RX/TX descriptors shared between host and guest => direct copy */
         uint8_t *pv = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
                     + (addr - pData->GCRDRA)
-                    + pData->CTXSUFF(pSharedMMIO)->V.V1.u32OffRxDescriptors;
+                    + pData->CTXSUFF(pSharedMMIO)->V.V1.offRxDescriptors;
         memcpy(pv, rmd, 16);
         pv[7] &= ~0x80;
     }
@@ -872,21 +872,24 @@ static void pcnetInitSharedMemory(PCNetState *pData)
 {
     uint32_t u32Off = 0;
     memset(pData->pSharedMMIOHC, 0, sizeof(PCNETGUESTSHAREDMEMORY));
-    pData->pSharedMMIOHC->u32Size = sizeof(PCNETGUESTSHAREDMEMORY);
     pData->pSharedMMIOHC->u32Version = PCNET_GUEST_INTERFACE_VERSION;
     u32Off = 2048; /* Leave some space for more fields within the header */
-    pData->pSharedMMIOHC->V.V1.u32OffTxDescriptors = u32Off;
+    pData->pSharedMMIOHC->V.V1.offTxDescriptors = u32Off;
     u32Off = RT_ALIGN(u32Off + PCNET_GUEST_TX_DESCRIPTOR_SIZE * PCNET_GUEST_MAX_TX_DESCRIPTORS, 32);
-    pData->pSharedMMIOHC->V.V1.u32OffRxDescriptors = u32Off;
+    pData->pSharedMMIOHC->V.V1.offRxDescriptors = u32Off;
     u32Off = RT_ALIGN(u32Off + PCNET_GUEST_RX_DESCRIPTOR_SIZE * PCNET_GUEST_MAX_RX_DESCRIPTORS, 32);
     /* Map the RX/TX descriptors into the hypervisor. Make sure we don't need too much space. */
     AssertRelease(u32Off <= 8192);
-    pData->pSharedMMIOHC->V.V1.u32OffTxBuffers = u32Off;
+#if 0
+    /* Don't allocate TX buffers since Windows guests cannot use it */
+    pData->pSharedMMIOHC->V.V1.offTxBuffers = u32Off;
     u32Off = RT_ALIGN(u32Off + PCNET_GUEST_NIC_BUFFER_SIZE * PCNET_GUEST_MAX_TX_DESCRIPTORS, 32);
-    pData->pSharedMMIOHC->V.V1.u32OffRxBuffers = u32Off;
+#endif
+    pData->pSharedMMIOHC->V.V1.offRxBuffers = u32Off;
     pData->pSharedMMIOHC->fFlags = PCNET_GUEST_FLAGS_ADMIT_HOST;
     u32Off = RT_ALIGN(u32Off + PCNET_GUEST_NIC_BUFFER_SIZE * PCNET_GUEST_MAX_RX_DESCRIPTORS, 32);
     AssertRelease(u32Off <= PCNET_GUEST_SHARED_MEMORY_SIZE);
+    pData->pSharedMMIOHC->cbSize = u32Off;
 }
 
 #define MULTICAST_FILTER_LEN 8
@@ -1804,7 +1807,16 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
 
             int count = RT_MIN(4096 - (int)rmd.rmd1.bcnt, size);
             RTGCPHYS32 rbadr = PHYSADDR(pData, rmd.rmd0.rbadr);
-            PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
+#if 0
+            if (pData->fPrivIfEnabled)
+            {
+                uint8_t *pb = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
+                            + rbadr - pData->GCRDRA + pData->CTXSUFF(pSharedMMIO)->V.V1.offRxDescriptors;
+                memcpy(pb, src, count);
+            }
+            else
+#endif
+                PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
             src  += count;
             size -= count;
             pktcount++;
@@ -1833,8 +1845,17 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
                 rmd  = next_rmd;
 
                 count = RT_MIN(4096 - (int)rmd.rmd1.bcnt, size);
-                rbadr = PHYSADDR(pData, rmd.rmd0.rbadr);
-                PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
+                RTGCPHYS32 rbadr = PHYSADDR(pData, rmd.rmd0.rbadr);
+#if 0
+                if (pData->fPrivIfEnabled)
+                {
+                    uint8_t *pb = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
+                                + rbadr - pData->GCRDRA + pData->CTXSUFF(pSharedMMIO)->V.V1.offRxDescriptors;
+                    memcpy(pb, src, count);
+                }
+                else
+#endif
+                    PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
                 src  += count;
                 size -= count;
                 pktcount++;
@@ -2386,7 +2407,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
  */
 static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    PCNetState *pThis = PDMINS2DATA(pDevIns, PCNetState *);
+    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
 
     /*
      * We can enter this function in two states, initializing or resuming.
@@ -2411,7 +2432,7 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
          * Block until we've got something to send or is supposed
          * to leave the running state.
          */
-        int rc = RTSemEventWait(pThis->hSendEventSem, RT_INDEFINITE_WAIT);
+        int rc = RTSemEventWait(pData->hSendEventSem, RT_INDEFINITE_WAIT);
         AssertRCReturn(rc, rc);
         if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
             break;
@@ -2420,16 +2441,16 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
          * Perform async send. Mind that we might be requested to
          * suspended while waiting for the critical section.
          */
-        rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+        rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
         AssertReleaseRCReturn(rc, rc);
 
         if (pThread->enmState == PDMTHREADSTATE_RUNNING)
         {
-            rc = pcnetAsyncTransmit(pThis);
+            rc = pcnetAsyncTransmit(pData);
             AssertReleaseRC(rc);
         }
 
-        PDMCritSectLeave(&pThis->CritSect);
+        PDMCritSectLeave(&pData->CritSect);
     }
 
     /* The thread is being suspended or terminated. */
@@ -2446,8 +2467,8 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
  */
 static DECLCALLBACK(int) pcnetAsyncSendThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    PCNetState *pThis = PDMINS2DATA(pDevIns, PCNetState *);
-    return RTSemEventSignal(pThis->hSendEventSem);
+    PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
+    return RTSemEventSignal(pData->hSendEventSem);
 }
 
 #endif /* IN_RING3 */

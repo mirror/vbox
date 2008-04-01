@@ -33,7 +33,7 @@
  */
 
 #define PCNET_GUEST_INTERFACE_VERSION         (1)
-#define PCNET_GUEST_SHARED_MEMORY_SIZE        _1M
+#define PCNET_GUEST_SHARED_MEMORY_SIZE        _512K
 #define PCNET_GUEST_TX_DESCRIPTOR_SIZE        16
 #define PCNET_GUEST_RX_DESCRIPTOR_SIZE        16
 #define PCNET_GUEST_MAX_TX_DESCRIPTORS        128
@@ -48,17 +48,15 @@
 #pragma pack(1) /* paranoia */
 typedef struct
 {
-    /** The size of the shared memory.
-     * This is sizeof(PCNETGUESTSHAREDMEMORY) not PCNET_GUEST_SHARED_MEMORY_SIZE as one would expect.
-     * @todo r=bird: why not rename to cbHdr or something more descriptive? */
-    uint32_t u32Size;
+    /** The size of the shared memory. */
+    uint32_t cbSize;
     /** Version (PCNET_GUEST_INTERFACE_VERSION). */
     uint32_t u32Version;
     /** Flags (See PCNET_GUEST_FLAGS_*). */
     uint32_t fFlags;
+    /** align the following members to 64 bit */
+    uint32_t u32Alignment;
 
-    /** @todo r=bird: You might consider aligning this on a 8(/16) byte boundrary to
-     * avoid future uint64_t issues. */
     union
     {
         struct
@@ -67,15 +65,14 @@ typedef struct
             uint32_t    cbTxDescriptors;
             /** The size (in bytes) of the receive descriptor array. */
             uint32_t    cbRxDescriptors;
-            /** Offset of the transmit descriptors relative to this header.
-             * @todo r=bird: offTxDescriptors is IMO a better name. */
-            uint32_t    u32OffTxDescriptors;
+            /** Offset of the transmit descriptors relative to this header. */
+            uint32_t    offTxDescriptors;
             /** Offset of the receive descriptors relative to this header. */
-            uint32_t    u32OffRxDescriptors;
+            uint32_t    offRxDescriptors;
             /** Offset of the transmit buffers relative to this header. */
-            uint32_t    u32OffTxBuffers;
+            uint32_t    offTxBuffers;
             /** Offset of the receive buffers relative to this header. */
-            uint32_t    u32OffRxBuffers;
+            uint32_t    offRxBuffers;
         } V1;
     } V;
 
