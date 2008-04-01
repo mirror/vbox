@@ -1575,7 +1575,220 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                          bool fMoveByRename, uint64_t cbSize,
                          PFNVMPROGRESS pfnProgress, void *pvUser)
 {
-    return VERR_NOT_IMPLEMENTED;
+    int rc, rc2 = VINF_SUCCESS;
+    void *pvBuf = NULL;
+    PVDIMAGE pImageTo = NULL;
+
+    LogFlowFunc(("pDiskFrom=%#p nImage=%u pDiskTo=%#p pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu pfnProgress=%#p pvUser=%#p\n",
+                 pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename, cbSize, pfnProgress, pvUser));
+
+    do {
+        /* Check arguments. */
+        AssertMsgBreak(VALID_PTR(pDiskFrom), ("pDiskFrom=%#p\n", pDiskFrom),
+                       rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDiskFrom->u32Signature == VBOXHDDDISK_SIGNATURE,
+                  ("u32Signature=%08x\n", pDiskFrom->u32Signature)); 
+
+        PVDIMAGE pImageFrom = vdGetImageByNumber(pDiskFrom, nImage);
+        AssertBreak(VALID_PTR(pImageFrom), rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertMsgBreak(VALID_PTR(pDiskTo), ("pDiskTo=%#p\n", pDiskTo),
+                       rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDiskTo->u32Signature == VBOXHDDDISK_SIGNATURE,
+                  ("u32Signature=%08x\n", pDiskTo->u32Signature)); 
+
+        /* If the containers are equal and the backend is the same, rename the image. */
+        if (   (pDiskFrom == pDiskTo)
+            && (!strcmp(pszBackend, pImageFrom->Backend->pszBackendName)))
+        {
+            /* Rename the image. */
+            rc = pImageFrom->Backend->pfnRename(pImageFrom->pvBackendData, pszFilename ? pszFilename : pImageFrom->pszFilename);
+            break;
+        }
+
+        /* If the fMoveByRename flag is set and the backend is the same, rename the image. */
+        if (   (fMoveByRename == true)
+            && (!strcmp(pszBackend, pImageFrom->Backend->pszBackendName)))
+        {
+            /* Close the source image. */
+            rc = pImageFrom->Backend->pfnClose(pImageFrom->pvBackendData, false);
+            if (VBOX_FAILURE(rc))
+                break;
+
+            /* Open the source image in the destination container. */
+            rc = VDOpen(pDiskTo, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags);
+            if (VBOX_FAILURE(rc))
+                goto movefail;
+
+            pImageTo = pDiskTo->pLast;
+
+            /* Rename the image. */
+            rc = pImageTo->Backend->pfnRename(pImageTo->pvBackendData, pszFilename ? pszFilename : pImageTo->pszFilename);
+            if (VBOX_FAILURE(rc))
+                goto movefail;
+
+            /* Cleanup the leftovers. */
+            vdRemoveImageFromList(pDiskFrom, pImageFrom);
+            pImageFrom->pvBackendData = NULL;
+
+            if (pImageFrom->hPlugin != NIL_RTLDRMOD)
+                RTLdrClose(pImageFrom->hPlugin);
+
+            if (pImageFrom->pszFilename)
+                RTStrFree(pImageFrom->pszFilename);
+
+            RTMemFree(pImageFrom);
+
+            break;
+movefail:
+            /* In case of failure, re-open the source image in the source container. */
+            rc2 = VDOpen(pDiskFrom, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags);
+            if (VBOX_FAILURE(rc2))
+                /* @todo Uncertain what to do on error. If this happens pImageFrom and pImageTo are both closed. */
+                rc = rc2;
+            break;
+        }
+
+        /* If fMoveByRename is set pszFilename is allowed to be NULL, so do the parameter check here. */
+        AssertMsgBreak(VALID_PTR(pszFilename) && *pszFilename,
+                       ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                       rc = VERR_INVALID_PARAMETER);
+
+        /* Collect properties of source image. */
+        VDIMAGETYPE enmTypeFrom;
+        rc = VDGetImageType(pDiskFrom, nImage, &enmTypeFrom);
+        if (VBOX_FAILURE(rc))
+            break;
+
+        uint64_t cbSizeFrom = VDGetSize(pDiskFrom, nImage);
+        if (cbSizeFrom == 0)
+        {
+            rc = VERR_VDI_VALUE_NOT_FOUND;
+            break;
+        }
+        
+        if (cbSize == 0)
+            cbSize = cbSizeFrom;
+
+        unsigned uImageFlagsFrom;
+        rc = VDGetImageFlags(pDiskFrom, nImage, &uImageFlagsFrom);
+        if (VBOX_FAILURE(rc))
+            break;
+     
+        /* @todo Get this from the source image. */
+        PDMMEDIAGEOMETRY PCHSGeometryFrom = {0, 0, 0};
+        PDMMEDIAGEOMETRY LCHSGeometryFrom = {0, 0, 0};
+        
+        unsigned uOpenFlagsFrom;
+        rc = VDGetOpenFlags(pDiskFrom, nImage, &uOpenFlagsFrom);
+        if (VBOX_FAILURE(rc))
+            break;
+
+        /* Create destination image with the properties of the source image. */
+        /* @todo Copy the comment. */
+        if (enmTypeFrom == VD_IMAGE_TYPE_DIFF)
+        {
+            rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlagsFrom,
+                              "", uOpenFlagsFrom, NULL, NULL);
+        } else {
+            rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, enmTypeFrom,
+                              cbSize, uImageFlagsFrom, "",
+                              &PCHSGeometryFrom, &LCHSGeometryFrom,
+                              uOpenFlagsFrom, NULL, NULL);
+        }
+        if (VBOX_FAILURE(rc))
+            break;
+
+        pImageTo = pDiskTo->pLast;
+        AssertBreak(VALID_PTR(pImageTo), rc = VERR_VDI_IMAGE_NOT_FOUND);
+
+        /* Allocate tmp buffer. */
+        pvBuf = RTMemTmpAlloc(VD_MERGE_BUFFER_SIZE);
+        if (!pvBuf)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        /* Copy the data. */
+        uint64_t uOffset = 0;
+        uint64_t cbRemaining = cbSize;
+        
+        do
+        {
+            size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
+
+            rc = vdReadHelper(pDiskFrom, pImageFrom, uOffset, pvBuf,
+                              cbThisRead);
+            if (VBOX_FAILURE(rc))
+                break;
+
+            rc = vdWriteHelper(pDiskTo, pImageTo, uOffset, pvBuf,
+                               cbThisRead);
+            if (VBOX_FAILURE(rc))
+                break;
+
+            uOffset += cbThisRead;
+            cbRemaining -= cbThisRead;
+            if (pfnProgress)
+            {
+                rc = pfnProgress(NULL /* WARNING! pVM=NULL  */,
+                                 ((cbSize - cbRemaining) * 100) / cbSize,
+                                 pvUser);
+                if (VBOX_FAILURE(rc))
+                    break;
+            }
+        } while (uOffset < cbSize);
+
+        /* If fMoveByRename is set but the backend is different, close and delete pImageFrom. */
+        if (   (fMoveByRename == true)
+            && (strcmp(pszBackend, pImageFrom->Backend->pszBackendName)))
+        {
+            vdRemoveImageFromList(pDiskFrom, pImageFrom);
+
+            /* Close and delete image. */
+            rc2 = pImageFrom->Backend->pfnClose(pImageFrom->pvBackendData, true);
+            AssertRC(rc2);
+            pImageFrom->pvBackendData = NULL;
+
+            /* Free remaining resources. */
+            if (pImageFrom->hPlugin != NIL_RTLDRMOD)
+                RTLdrClose(pImageFrom->hPlugin);
+
+            if (pImageFrom->pszFilename)
+                RTStrFree(pImageFrom->pszFilename);
+
+            RTMemFree(pImageFrom);
+        }
+    } while (0);
+
+    if (VBOX_FAILURE(rc) && pImageTo)
+    {
+        /* Error detected, but new image created. Remove image from list. */
+        vdRemoveImageFromList(pDiskTo, pImageTo);
+
+        /* Close and delete image. */
+        rc2 = pImageTo->Backend->pfnClose(pImageTo->pvBackendData, true);
+        AssertRC(rc2);
+        pImageTo->pvBackendData = NULL;
+
+        /* Free remaining resources. */
+        if (pImageTo->hPlugin != NIL_RTLDRMOD)
+            RTLdrClose(pImageTo->hPlugin);
+
+        if (pImageTo->pszFilename)
+            RTStrFree(pImageTo->pszFilename);
+        
+        RTMemFree(pImageTo);
+    }
+
+    if (pvBuf)
+        RTMemTmpFree(pvBuf);
+
+    if (VBOX_SUCCESS(rc) && pfnProgress)
+        pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
+
+    LogFlowFunc(("returns %Vrc\n", rc));
+    return rc;
 }
 
 /**
