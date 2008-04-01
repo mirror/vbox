@@ -3164,7 +3164,7 @@ static int  pgmR3DumpHierarchyHCPaePDPTR(PVM pVM, RTHCPHYS HCPhys, uint64_t u64A
     }
 
     int rc = VINF_SUCCESS;
-    const unsigned c = fLongMode ? ELEMENTS(pPDPTR->a) : X86_PG_PAE_PDPTE_ENTRIES;
+    const unsigned c = fLongMode ? ELEMENTS(pPDPTR->a) : X86_PG_PAE_PDPE_ENTRIES;
     for (unsigned i = 0; i < c; i++)
     {
         X86PDPE Pdpe = pPDPTR->a[i];

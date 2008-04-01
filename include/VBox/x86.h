@@ -836,12 +836,12 @@ typedef X86PGPAEUINT *PX86PGPAEUINT;
 /** Number of entries in a PAE PT/PD/PDPTR/L4/L5. */
 #define X86_PG_PAE_ENTRIES                  512
 /** Number of entries in a PAE PDPTE. */
-#define X86_PG_PAE_PDPTE_ENTRIES            4
+#define X86_PG_PAE_PDPE_ENTRIES             4
 
 /** Number of entries in an AMD64 PT/PD/PDPTR/L4/L5. */
 #define X86_PG_AMD64_ENTRIES                X86_PG_PAE_ENTRIES
 /** Number of entries in an AMD64 PDPTE. */
-#define X86_PG_AMD64_PDPTE_ENTRIES          512
+#define X86_PG_AMD64_PDPE_ENTRIES           512
 
 /** The size of a 4KB page. */
 #define X86_PAGE_4K_SIZE                    _4K
@@ -1484,7 +1484,7 @@ typedef const X86PDPE *PCX86PDPE;
 typedef struct X86PDPTR
 {
     /** PDE Array. */
-    X86PDPE         a[X86_PG_AMD64_PDPTE_ENTRIES];
+    X86PDPE         a[X86_PG_AMD64_PDPE_ENTRIES];
 } X86PDPTR;
 /** Pointer to a page directory pointer table. */
 typedef X86PDPTR *PX86PDPTR;
