@@ -1,0 +1,11 @@
+PKG="INNOvbox"
+NAME="innotek VirtualBox"
+ARCH="@UNAME_P@"
+VERSION="@VBOX_VERSION_STRING@"
+CATEGORY="application"
+VENDOR="innotek GmbH"
+EMAIL="info@innotek.de"
+BASEDIR="/"
+CLASSES=none sed
+DESC="A powerful PC virtualization solution."
+
