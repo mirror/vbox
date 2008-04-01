@@ -369,9 +369,13 @@ int main()
     GEN_CHECK_OFF(PCNetState, pfnEMInterpretInstructionGC
     GEN_CHECK_OFF(PCNetState, pfnEMInterpretInstructionR0
 #endif
+    GEN_CHECK_OFF(PCNetState, pSharedMMIOHC);
+    GEN_CHECK_OFF(PCNetState, pSharedMMIOGC);
+    GEN_CHECK_OFF(PCNetState, fPrivIfEnabled);
     GEN_CHECK_OFF(PCNetState, fGCEnabled);
     GEN_CHECK_OFF(PCNetState, fR0Enabled);
     GEN_CHECK_OFF(PCNetState, fAm79C973);
+    GEN_CHECK_OFF(PCNetState, u32LinkSpeed);
 #ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(PCNetState, StatMMIOReadGC);
     GEN_CHECK_OFF(PCNetState, StatMIIReads);
