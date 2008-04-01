@@ -429,8 +429,8 @@ ifdef VBOX_OSE
   # Qt/Mac v3.3.x requires patching to work for us.
   VBOX_WITH_QTGUI=
  endif
- ifneq ($(BUILD_TARGET),linux)
-  # Only the Linux installer is public
+ ifn1of ($(BUILD_TARGET),linux solaris)
+  # Only the Linux, Solaris installers are public
   VBOX_WITH_INSTALLER=
  endif
  VBOX_WITH_AHCI=
