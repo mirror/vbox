@@ -52,6 +52,7 @@
 #include <VBox/pdmdev.h>
 #include <VBox/pgm.h>
 #include <VBox/vm.h> /* for VM_IS_EMT */
+#include <VBox/DevPCNet.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
@@ -228,10 +229,16 @@ struct PCNetState_st
     DECLR0CALLBACKMEMBER(int, pfnEMInterpretInstructionR0, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
 #endif
 
+    /** The host context of the shared memory used for the private interface. */
+    PPCNETGUESTSHAREDMEMORY             pSharedMMIOHC;
+    /** The hypervisor/guest context of the shared memory used for the private interface. */
+    GCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOGC;
+
+    /** True if host and guest admitted to use the private interface. */
+    bool                                fPrivIfEnabled;
     bool                                fGCEnabled;
     bool                                fR0Enabled;
     bool                                fAm79C973;
-    bool                                afAlignment[1];
     uint32_t                            u32LinkSpeed;
 
 #ifdef PCNET_QUEUE_SEND_PACKETS
@@ -593,7 +600,18 @@ DECLINLINE(bool) pcnetTmdLoad(PCNetState *pData, TMD *tmd, RTGCPHYS32 addr, bool
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     uint8_t    ownbyte;
 
-    if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
+    if (pData->fPrivIfEnabled)
+    {
+        /* RX/TX descriptors shared between host and guest => direct copy */
+        uint8_t *pv = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
+                    + (addr - pData->GCTDRA)
+                    + pData->CTXSUFF(pSharedMMIO)->V.V1.u32OffTxDescriptors;
+        if (!(pv[7] & 0x80) && fRetIfNotOwn)
+            return false;
+        memcpy(tmd, pv, 16);
+        return true;
+    }
+    else if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
     {
         uint16_t xda[4];
 
@@ -644,7 +662,16 @@ DECLINLINE(void) pcnetTmdStorePassHost(PCNetState *pData, TMD *tmd, RTGCPHYS32 a
 {
     STAM_PROFILE_ADV_START(&pData->CTXSUFF(StatTmdStore), a);
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
-    if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
+    if (pData->fPrivIfEnabled)
+    {
+        /* RX/TX descriptors shared between host and guest => direct copy */
+        uint8_t *pv = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
+                    + (addr - pData->GCTDRA)
+                    + pData->CTXSUFF(pSharedMMIO)->V.V1.u32OffTxDescriptors;
+        memcpy(pv, tmd, 16);
+        pv[7] &= ~0x80;
+    }
+    else if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
     {
         uint16_t xda[4];
         xda[0] =   ((uint32_t *)tmd)[0]        & 0xffff;
@@ -692,7 +719,18 @@ DECLINLINE(int) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool 
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     uint8_t    ownbyte;
 
-    if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
+    if (pData->fPrivIfEnabled)
+    {
+        /* RX/TX descriptors shared between host and guest => direct copy */
+        uint8_t *pv = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
+                    + (addr - pData->GCRDRA)
+                    + pData->CTXSUFF(pSharedMMIO)->V.V1.u32OffRxDescriptors;
+        if (!(pv[7] & 0x80) && fRetIfNotOwn)
+            return false;
+        memcpy(rmd, pv, 16);
+        return true;
+    }
+    else if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
     {
         uint16_t rda[4];
         PDMDevHlpPhysRead(pDevIns, addr+3, &ownbyte, 1);
@@ -741,7 +779,16 @@ DECLINLINE(int) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool 
 DECLINLINE(void) pcnetRmdStorePassHost(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
-    if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
+    if (pData->fPrivIfEnabled)
+    {
+        /* RX/TX descriptors shared between host and guest => direct copy */
+        uint8_t *pv = (uint8_t*)pData->CTXSUFF(pSharedMMIO)
+                    + (addr - pData->GCRDRA)
+                    + pData->CTXSUFF(pSharedMMIO)->V.V1.u32OffRxDescriptors;
+        memcpy(pv, rmd, 16);
+        pv[7] &= ~0x80;
+    }
+    else if (RT_UNLIKELY(BCR_SWSTYLE(pData) == 0))
     {
         uint16_t rda[4];
         rda[0] =   ((uint32_t *)rmd)[0]      & 0xffff;
@@ -813,6 +860,30 @@ struct ether_header
 
 
 #ifdef IN_RING3
+
+/**
+ * Initialize the shared memory for the private guest interface.
+ */
+static void pcnetInitSharedMemory(PCNetState *pData)
+{
+    uint32_t u32Off = 0;
+    memset(pData->pSharedMMIOHC, 0, sizeof(PCNETGUESTSHAREDMEMORY));
+    pData->pSharedMMIOHC->u32Size = sizeof(PCNETGUESTSHAREDMEMORY);
+    pData->pSharedMMIOHC->u32Version = PCNET_GUEST_INTERFACE_VERSION;
+    u32Off = 2048; /* Leave some space for more fields within the header */
+    pData->pSharedMMIOHC->V.V1.u32OffTxDescriptors = u32Off;
+    u32Off = RT_ALIGN(u32Off + PCNET_GUEST_TX_DESCRIPTOR_SIZE * PCNET_GUEST_MAX_TX_DESCRIPTORS, 32);
+    pData->pSharedMMIOHC->V.V1.u32OffRxDescriptors = u32Off;
+    u32Off = RT_ALIGN(u32Off + PCNET_GUEST_RX_DESCRIPTOR_SIZE * PCNET_GUEST_MAX_RX_DESCRIPTORS, 32);
+    /* Map the RX/TX descriptors into the hypervisor. Make sure we don't need too much space. */
+    AssertRelease(u32Off <= 8192);
+    pData->pSharedMMIOHC->V.V1.u32OffTxBuffers = u32Off;
+    u32Off = RT_ALIGN(u32Off + PCNET_GUEST_NIC_BUFFER_SIZE * PCNET_GUEST_MAX_TX_DESCRIPTORS, 32);
+    pData->pSharedMMIOHC->V.V1.u32OffRxBuffers = u32Off;
+    pData->pSharedMMIOHC->fFlags = PCNET_GUEST_FLAGS_ADMIT_HOST;
+    u32Off = RT_ALIGN(u32Off + PCNET_GUEST_NIC_BUFFER_SIZE * PCNET_GUEST_MAX_RX_DESCRIPTORS, 32);
+    AssertRelease(u32Off <= PCNET_GUEST_SHARED_MEMORY_SIZE);
+}
 
 #define MULTICAST_FILTER_LEN 8
 
@@ -1383,6 +1454,13 @@ static void pcnetInit(PCNetState *pData)
         pData->GCTDRA    = PHYSADDR(pData, initblk.tdra);                    \
 } while (0)
 
+    bool fPrivIfEnabled =       pData->pSharedMMIOHC
+                          && !!(pData->pSharedMMIOHC->fFlags & PCNET_GUEST_FLAGS_ADMIT_GUEST);
+    if (fPrivIfEnabled != pData->fPrivIfEnabled)
+    {
+        pData->fPrivIfEnabled = fPrivIfEnabled;
+        LogRel(("PCNet#%d: %s private interface\n", PCNET_INST_NR, fPrivIfEnabled ? "Enabling" : "Disabling"));
+    }
     if (BCR_SSIZE32(pData))
     {
         struct INITBLK32 initblk;
@@ -2222,13 +2300,13 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                 else
                 {
                     AssertMsg(fDropFrame, ("pcnetTransmit: Frame is too big!!! %d bytes\n",
-                                           pData->cbSendFrame + cb));
+                                pData->cbSendFrame + cb));
                     fDropFrame = true;
                 }
                 if (tmd.tmd1.enp)
                 {
                     Log(("#%d pcnetTransmit: stp: cb=%d xmtrc=%#x-%#x\n", PCNET_INST_NR,
-                         pData->cbSendFrame, iStart, CSR_XMTRC(pData)));
+                                pData->cbSendFrame, iStart, CSR_XMTRC(pData)));
                     if (pcnetIsLinkUp(pData) && !fDropFrame)
                     {
                         int rc = pcnetXmitCompleteFrame(pData);
@@ -3697,6 +3775,29 @@ static DECLCALLBACK(int) pcnetMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegi
 
 
 /**
+ * Callback function for mapping the MMIO region.
+ *
+ * @return VBox status code.
+ * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
+ * @param   iRegion         The region number.
+ * @param   GCPhysAddress   Physical address of the region. If iType is PCI_ADDRESS_SPACE_IO, this is an
+ *                          I/O port, else it's a physical address.
+ *                          This address is *NOT* relative to pci_mem_base like earlier!
+ * @param   cb              Region size.
+ * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
+ */
+static DECLCALLBACK(int) pcnetMMIOSharedMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
+                                            RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+{
+    if (GCPhysAddress != NIL_RTGCPHYS)
+        return PDMDevHlpMMIO2Map(pPciDev->pDevIns, iRegion, GCPhysAddress);
+
+    /* nothing to clean up */
+    return VINF_SUCCESS;
+}
+
+
+/**
  * PCNET status info callback.
  *
  * @param   pDevIns     The device instance.
@@ -4283,6 +4384,8 @@ static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
         TMTimerStop(pData->pTimerRestore);
         pcnetTimerRestore(pDevIns, pData->pTimerRestore);
     }
+    if (pData->pSharedMMIOHC)
+        pcnetInitSharedMemory(pData);
 
     /** @todo How to flush the queues? */
     pcnetHardReset(pData);
@@ -4298,6 +4401,7 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     pData->pDevInsGC     = PDMDEVINS_2_GCPTR(pDevIns);
     pData->pXmitQueueGC  = PDMQueueGCPtr(pData->pXmitQueueHC);
     pData->pCanRxQueueGC = PDMQueueGCPtr(pData->pCanRxQueueHC);
+    pData->pSharedMMIOGC += offDelta;
 #ifdef PCNET_NO_POLLING
     *(RTHCUINTPTR *)&pData->pfnEMInterpretInstructionGC += offDelta;
 #else
@@ -4370,7 +4474,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0CableConnected\0Am79C973\0LineSpeed\0GCEnabled\0R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0CableConnected\0Am79C973\0LineSpeed\0GCEnabled\0R0Enabled\0PrivIfEnabled\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for pcnet device"));
 
@@ -4486,6 +4590,35 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                       PCI_ADDRESS_SPACE_MEM, pcnetMMIOMap);
     if (VBOX_FAILURE(rc))
         return rc;
+
+    bool fPrivIfEnabled;
+    rc = CFGMR3QueryBool(pCfgHandle, "PrivIfEnabled", &fPrivIfEnabled);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        fPrivIfEnabled = true;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"PrivIfEnabled\" value"));
+
+    if (fPrivIfEnabled)
+    {
+        /*
+         * Initialize shared memory between host and guest for descriptors and RX buffers. Most guests
+         * should not care if there is an additional PCI ressource but just in case we made this configurable.
+         */
+        rc = PDMDevHlpMMIO2Register(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE, (void**)&pData->pSharedMMIOHC, "PCNetShMem");
+        if (VBOX_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Failed to allocate %u bytes of memory for the PCNet device"), PCNET_GUEST_SHARED_MEMORY_SIZE);
+        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 2, 0, 8192, "PCNetShMem", &pData->pSharedMMIOGC);
+        if (VBOX_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Failed to map 8192 bytes of memory for the PCNet device into the hyper memory"));
+        pcnetInitSharedMemory(pData);
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE,
+                                          PCI_ADDRESS_SPACE_MEM, pcnetMMIOSharedMap);
+        if (VBOX_FAILURE(rc))
+            return rc;
+    }
 
 #ifdef PCNET_NO_POLLING
     rc = PDMR3GetSymbolR0Lazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", &pData->pfnEMInterpretInstructionR0);
