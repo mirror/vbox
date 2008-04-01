@@ -970,9 +970,9 @@ void VBoxGlobalSettingsDlg::tbAddUSBFilterFrom_clicked()
     usbDevicesMenu->exec (QCursor::pos());
 }
 
-void VBoxGlobalSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
+void VBoxGlobalSettingsDlg::menuAddUSBFilterFrom_activated (QAction *aAction)
 {
-    CUSBDevice usb = usbDevicesMenu->getUSB (aIndex);
+    CUSBDevice usb = usbDevicesMenu->getUSB (aAction);
 
     // if null then some other item but a USB device is selected
     if (usb.isNull())

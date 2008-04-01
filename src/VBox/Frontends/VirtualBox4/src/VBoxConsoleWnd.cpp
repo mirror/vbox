@@ -117,8 +117,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     , mIsFullscreen (false)
     , mIsSeamless (false)
     , mIsSeamlessSupported (false)
-#warning port me
-//    , normal_wflags (getWFlags())
     , was_max (false)
     , console_style (0)
     , mIsOpenViewFinished (false)
@@ -282,84 +280,75 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     /* Machine submenu */
 
-    QMenu *vmMenu = new QMenu (this);
+    mVMMenu = menuBar()->addMenu (QString::null);
+    mMainMenu->addMenu (mVMMenu);
 
     /* dynamic & status line popup menus */
-    vmAutoresizeMenu = new VBoxSwitchMenu (vmMenu, vmAutoresizeGuestAction);
-    vmDisMouseIntegrMenu = new VBoxSwitchMenu (vmMenu, vmDisableMouseIntegrAction,
+    vmAutoresizeMenu = new VBoxSwitchMenu (mVMMenu, vmAutoresizeGuestAction);
+    vmDisMouseIntegrMenu = new VBoxSwitchMenu (mVMMenu, vmDisableMouseIntegrAction,
                                                true /* inverted toggle state */);
 
-    vmMenu->addAction (vmFullscreenAction);
-    vmMenu->addAction (vmSeamlessAction);
-    vmMenu->addAction (vmAdjustWindowAction);
-    vmMenu->addAction (vmAutoresizeGuestAction);
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmDisableMouseIntegrAction);
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmTypeCADAction);
+    mVMMenu->addAction (vmFullscreenAction);
+    mVMMenu->addAction (vmSeamlessAction);
+    mVMMenu->addAction (vmAdjustWindowAction);
+    mVMMenu->addAction (vmAutoresizeGuestAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmDisableMouseIntegrAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmTypeCADAction);
 #if defined(Q_WS_X11)
-    vmMenu->addAction (vmTypeCABSAction);
+    mVMMenu->addAction (vmTypeCABSAction);
 #endif
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmTakeSnapshotAction);
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmShowInformationDlgAction);
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmResetAction);
-    vmMenu->addAction (vmPauseAction);
-    vmMenu->addAction (vmACPIShutdownAction);
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmCloseAction);
-
-    menuBar()->insertItem (QString::null, vmMenu, vmMenuId);
-    mMainMenu->insertItem (QString::null, vmMenu, vmMenuId);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmTakeSnapshotAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmShowInformationDlgAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmResetAction);
+    mVMMenu->addAction (vmPauseAction);
+    mVMMenu->addAction (vmACPIShutdownAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmCloseAction);
 
     /* Devices submenu */
 
-    devicesMenu = new QMenu (this);
+    mDevicesMenu = menuBar()->addMenu (QString::null);
+    mMainMenu->addMenu (mDevicesMenu);
 
     /* dynamic & statusline popup menus */
-    devicesMountFloppyMenu = new QMenu (devicesMenu);
-    devicesMountDVDMenu = new QMenu (devicesMenu);
-    devicesSFMenu = new QMenu (devicesMenu);
-    devicesNetworkMenu = new QMenu (devicesMenu);
-    devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
-    devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction);
 
-    devicesMenu->insertItem (VBoxGlobal::iconSet (":/cd_16px.png", ":/cd_disabled_16px.png"),
-        QString::null, devicesMountDVDMenu, devicesMountDVDMenuId);
-    devicesMenu->addAction (devicesUnmountDVDAction);
-    devicesMenu->addSeparator();
+    mDevicesMountDVDMenu = mDevicesMenu->addMenu (VBoxGlobal::iconSet (":/cd_16px.png", ":/cd_disabled_16px.png"), QString::null);
+    mDevicesMenu->addAction (devicesUnmountDVDAction);
+    mDevicesMenu->addSeparator();
 
-    devicesMenu->insertItem (VBoxGlobal::iconSet (":/fd_16px.png", ":/fd_disabled_16px.png"),
-        QString::null, devicesMountFloppyMenu, devicesMountFloppyMenuId);
-    devicesMenu->addAction (devicesUnmountFloppyAction);
-    devicesMenu->addSeparator();
+    mDevicesMountFloppyMenu = mDevicesMenu->addMenu (VBoxGlobal::iconSet (":/fd_16px.png", ":/fd_disabled_16px.png"), QString::null);
+    mDevicesMenu->addAction (devicesUnmountFloppyAction);
+    mDevicesMenu->addSeparator();
 
-    devicesMenu->insertItem (VBoxGlobal::iconSet (":/nw_16px.png", ":/nw_disabled_16px.png"),
-        QString::null, devicesNetworkMenu, devicesNetworkMenuId);
-    devicesMenu->addSeparator();
+    mDevicesNetworkMenu = mDevicesMenu->addMenu (VBoxGlobal::iconSet (":/nw_16px.png", ":/nw_disabled_16px.png"), QString::null);
+    mDevicesMenu->addSeparator();
 
-    devicesMenu->insertItem (VBoxGlobal::iconSet (":/usb_16px.png", ":/usb_disabled_16px.png"),
-        QString::null, devicesUSBMenu, devicesUSBMenuId);
-    devicesUSBMenuSeparatorId = devicesMenu->insertSeparator();
+    mDevicesUSBMenu = new VBoxUSBMenu (mDevicesMenu);
+    mDevicesMenu->addMenu (mDevicesUSBMenu);
+    mDevicesUSBMenu->setIcon (VBoxGlobal::iconSet (":/usb_16px.png", ":/usb_disabled_16px.png"));
+    mDevicesUSBMenuSeparator = mDevicesMenu->addSeparator();
 
-    devicesMenu->addAction (devicesSFDialogAction);
-    devicesSFMenuSeparatorId = devicesMenu->insertSeparator();
-    devicesMenu->addAction (devicesSFDialogAction);
+    /* see showIndicatorContextMenu for a description of mDevicesSFMenu */
+    /* mDevicesSFMenu = mDevicesMenu->addMenu (QString::null); */
+    mDevicesMenu->addAction (devicesSFDialogAction);
+    mDevicesSFMenuSeparator = mDevicesMenu->addSeparator();
 
-    devicesMenu->addAction (devicesSwitchVrdpAction);
-    devicesVRDPMenuSeparatorId = devicesMenu->insertSeparator();
+    /* Currently not needed cause there is no state icon in the statusbar */
+    /* mDevicesVRDPMenu = new VBoxSwitchMenu (mDevicesMenu, devicesSwitchVrdpAction); */
+    mDevicesMenu->addAction (devicesSwitchVrdpAction);
+    mDevicesVRDPMenuSeparator = mDevicesMenu->addSeparator();
 
-    devicesMenu->addAction (devicesInstallGuestToolsAction);
-
-    menuBar()->insertItem (QString::null, devicesMenu, devicesMenuId);
-    mMainMenu->insertItem (QString::null, devicesMenu, devicesMenuId);
+    mDevicesMenu->addAction (devicesInstallGuestToolsAction);
 
     /* reset the "context menu" flag */
-    devicesMenu->setItemParameter (devicesMountFloppyMenuId, 0);
-    devicesMenu->setItemParameter (devicesMountDVDMenuId, 0);
-    devicesMenu->setItemParameter (devicesUSBMenuId, 0);
+    mDevicesMountFloppyMenu->menuAction()->setData (false);
+    mDevicesMountDVDMenu->menuAction()->setData (false);
+    mDevicesUSBMenu->menuAction()->setData (false);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Debug popup menu */
@@ -377,22 +366,20 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     /* Help submenu */
 
-    QMenu *helpMenu = new QMenu (this);
+    mHelpMenu = menuBar()->addMenu (QString::null);
+    mMainMenu->addMenu (mHelpMenu);
 
-    helpMenu->addAction (helpContentsAction);
-    helpMenu->addAction (helpWebAction);
-    helpMenu->addSeparator();
+    mHelpMenu->addAction (helpContentsAction);
+    mHelpMenu->addAction (helpWebAction);
+    mHelpMenu->addSeparator();
 #ifdef VBOX_WITH_REGISTRATION
-    helpMenu->addAction (helpRegisterAction);
+    mHelpMenu->addAction (helpRegisterAction);
     helpRegisterAction->setEnabled (vboxGlobal().virtualBox().
         GetExtraData (VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
 #endif
-    helpMenu->addAction (helpAboutAction);
-    helpMenu->addSeparator();
-    helpMenu->addAction (helpResetMessagesAction);
-
-    menuBar()->insertItem( QString::null, helpMenu, helpMenuId );
-    mMainMenu->insertItem (QString::null, helpMenu, helpMenuId);
+    mHelpMenu->addAction (helpAboutAction);
+    mHelpMenu->addSeparator();
+    mHelpMenu->addAction (helpResetMessagesAction);
 
     ///// Status bar ////////////////////////////////////////////////////////
 
@@ -521,33 +508,33 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     connect (devicesInstallGuestToolsAction, SIGNAL(activated()), this, SLOT(devicesInstallGuestAdditions()));
 
 
-    connect (devicesMountFloppyMenu, SIGNAL(aboutToShow()), this, SLOT(prepareFloppyMenu()));
-    connect (devicesMountDVDMenu, SIGNAL(aboutToShow()), this, SLOT(prepareDVDMenu()));
-    connect (devicesNetworkMenu, SIGNAL(aboutToShow()), this, SLOT(prepareNetworkMenu()));
+    connect (mDevicesMountFloppyMenu, SIGNAL(aboutToShow()), this, SLOT(prepareFloppyMenu()));
+    connect (mDevicesMountDVDMenu, SIGNAL(aboutToShow()), this, SLOT(prepareDVDMenu()));
+    connect (mDevicesNetworkMenu, SIGNAL(aboutToShow()), this, SLOT(prepareNetworkMenu()));
 
     connect (statusBar(), SIGNAL(messageChanged (const QString &)), this, SLOT(statusTipChanged (const QString &)));
 
-    connect (devicesMountFloppyMenu, SIGNAL(activated(int)), this, SLOT(captureFloppy(int)));
-    connect (devicesMountDVDMenu, SIGNAL(activated(int)), this, SLOT(captureDVD(int)));
-    connect (devicesUSBMenu, SIGNAL(activated(int)), this, SLOT(switchUSB(int)));
-    connect (devicesNetworkMenu, SIGNAL(activated(int)), this, SLOT(activateNetworkMenu(int)));
+    connect (mDevicesMountFloppyMenu, SIGNAL(triggered(QAction *)), this, SLOT(captureFloppy(QAction *)));
+    connect (mDevicesMountDVDMenu, SIGNAL(triggered(QAction *)), this, SLOT(captureDVD(QAction *)));
+    connect (mDevicesUSBMenu, SIGNAL(triggered(QAction *)), this, SLOT(switchUSB(QAction *)));
+    connect (mDevicesNetworkMenu, SIGNAL(triggered(QAction *)), this, SLOT(activateNetworkMenu(QAction *)));
 
-    connect (devicesMountFloppyMenu, SIGNAL (highlighted (int)),
-             this, SLOT (setDynamicMenuItemStatusTip (int)));
-    connect (devicesMountDVDMenu, SIGNAL (highlighted (int)),
-             this, SLOT (setDynamicMenuItemStatusTip (int)));
-    connect (devicesNetworkMenu, SIGNAL (highlighted (int)),
-             this, SLOT (setDynamicMenuItemStatusTip (int)));
+    connect (mDevicesMountFloppyMenu, SIGNAL (hovered (QAction *)),
+             this, SLOT (setDynamicMenuItemStatusTip (QAction *)));
+    connect (mDevicesMountDVDMenu, SIGNAL (hovered (QAction *)),
+             this, SLOT (setDynamicMenuItemStatusTip (QAction *)));
+    connect (mDevicesNetworkMenu, SIGNAL (hovered (QAction *)),
+             this, SLOT (setDynamicMenuItemStatusTip (QAction *)));
 
     /* Cleanup the status bar tip when a menu with dynamic items is
      * hidden. This is necessary for context menus in the first place but also
      * for normal menus (because Qt will not do it on pressing ESC if the menu
      * is constructed of dynamic items only) */
-    connect (devicesMountFloppyMenu, SIGNAL (aboutToHide()),
+    connect (mDevicesMountFloppyMenu, SIGNAL (aboutToHide()),
              this, SLOT (clearStatusBar()));
-    connect (devicesMountDVDMenu, SIGNAL (aboutToHide()),
+    connect (mDevicesMountDVDMenu, SIGNAL (aboutToHide()),
              this, SLOT (clearStatusBar()));
-    connect (devicesNetworkMenu, SIGNAL (aboutToHide()),
+    connect (mDevicesNetworkMenu, SIGNAL (aboutToHide()),
              this, SLOT (clearStatusBar()));
 
     connect (helpContentsAction, SIGNAL (activated()),
@@ -763,15 +750,15 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     if (usbctl.isNull())
     {
         /* hide usb_menu & usb_separator & usb_status_led */
-        devicesMenu->setItemVisible (devicesUSBMenuId, false);
-        devicesMenu->setItemVisible (devicesUSBMenuSeparatorId, false);
+        mDevicesUSBMenu->setVisible (false);
+        mDevicesUSBMenuSeparator->setVisible (false);
         usb_light->setHidden (true);
     }
     else
     {
         bool isUSBEnabled = usbctl.GetEnabled();
-        devicesUSBMenu->setEnabled (isUSBEnabled);
-        devicesUSBMenu->setConsole (cconsole);
+        mDevicesUSBMenu->setEnabled (isUSBEnabled);
+        mDevicesUSBMenu->setConsole (cconsole);
         usb_light->setState (isUSBEnabled ? KDeviceActivity_Idle
                                           : KDeviceActivity_Null);
     }
@@ -782,7 +769,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     {
         /* hide vrdp_menu_action & vrdp_separator & vrdp_status_icon */
         devicesSwitchVrdpAction->setVisible (false);
-        devicesMenu->setItemVisible (devicesVRDPMenuSeparatorId, false);
+        mDevicesVRDPMenuSeparator->setVisible (false);
 #if 0
         vrdp_state->setHidden (true);
 #endif
@@ -794,7 +781,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     {
         /* hide shared folders menu action & sf_separator & sf_status_icon */
         devicesSFDialogAction->setVisible (false);
-        devicesMenu->setItemVisible (devicesSFMenuSeparatorId, false);
+        mDevicesSFMenuSeparator->setVisible (false);
         sf_light->setHidden (true);
     }
 
@@ -1133,7 +1120,7 @@ void VBoxConsoleWnd::popupMainMenu (bool aCenter)
 
     mMainMenu->popup (pos);
     mMainMenu->activateWindow();
-    mMainMenu->setActiveItem (0);
+    mMainMenu->setActiveAction (mMainMenu->actions().first());
 }
 
 //
@@ -1537,8 +1524,8 @@ void VBoxConsoleWnd::languageChange()
     devicesUnmountDVDAction->setStatusTip (
         tr ("Unmount the currently mounted CD/DVD-ROM media"));
 
-    devicesVRDPMenu->setToolTip (tr ("Remote Desktop (RDP) Server",
-                                     "enable/disable..."));
+    /* mDevicesVRDPMenu->setToolTip (tr ("Remote Desktop (RDP) Server",
+                                     "enable/disable...")); */
     devicesSwitchVrdpAction->setText (tr ("Remote Dis&play"));
     devicesSwitchVrdpAction->setStatusTip (
         tr ("Enable or disable remote desktop (RDP) connections to this machine"));
@@ -1582,20 +1569,19 @@ void VBoxConsoleWnd::languageChange()
 
     /* Devices menu submenus */
 
-    devicesMenu->changeItem (devicesMountFloppyMenuId, tr ("Mount &Floppy"));
-    devicesMenu->changeItem (devicesMountDVDMenuId, tr ("Mount &CD/DVD-ROM"));
-    devicesMenu->changeItem (devicesNetworkMenuId, tr ("&Network Adapters"));
-    devicesMenu->changeItem (devicesUSBMenuId, tr ("&USB Devices"));
+    mDevicesMountFloppyMenu->setTitle (tr ("Mount &Floppy"));
+    mDevicesMountDVDMenu->setTitle (tr ("Mount &CD/DVD-ROM"));
+    mDevicesNetworkMenu->setTitle (tr ("&Network Adapters"));
+    mDevicesUSBMenu->setTitle (tr ("&USB Devices"));
 
     /* main menu & seamless popup menu */
 
-    menuBar()->changeItem (vmMenuId, tr ("&Machine"));
-#warning port me: check this if the menu popups in the vm. (H+HOME?)
-//    mMainMenu->changeItem (vmMenuId,
-//        VBoxGlobal::iconSet (":/machine_16px.png"), tr ("&Machine"));
-    menuBar()->changeItem (devicesMenuId, tr ("&Devices"));
-//    mMainMenu->changeItem (devicesMenuId,
-//        VBoxGlobal::iconSet (":/settings_16px.png"), tr ("&Devices"));
+    mVMMenu->setTitle (tr ("&Machine")); 
+//    mVMMenu->setIcon (VBoxGlobal::iconSet (":/machine_16px.png"));
+
+    mDevicesMenu->setTitle (tr ("&Devices"));
+//    mDevicesMenu->setIcon (VBoxGlobal::iconSet (":/settings_16px.png"));
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
     {
@@ -1603,9 +1589,8 @@ void VBoxConsoleWnd::languageChange()
         mMainMenu->changeItem (dbgMenuId, tr ("De&bug"));
     }
 #endif
-    menuBar()->changeItem (helpMenuId, tr ("&Help"));
-//    mMainMenu->changeItem (helpMenuId,
-//        VBoxGlobal::iconSet (":/help_16px.png"), tr ("&Help"));
+    mHelpMenu->setTitle (tr ("&Help"));
+//    mHelpMenu->setIcon (VBoxGlobal::iconSet (":/help_16px.png"));
 
     /* status bar widgets */
 
@@ -1664,7 +1649,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     }
     if (element & FloppyStuff)
     {
-        devicesMountFloppyMenu->setEnabled (isRunningOrPaused);
+        mDevicesMountFloppyMenu->setEnabled (isRunningOrPaused);
         CFloppyDrive floppy = cmachine.GetFloppyDrive();
         KDriveState state = floppy.GetState();
         bool mounted = state != KDriveState_NotMounted;
@@ -1708,7 +1693,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     }
     if (element & DVDStuff)
     {
-        devicesMountDVDMenu->setEnabled (isRunningOrPaused);
+        mDevicesMountDVDMenu->setEnabled (isRunningOrPaused);
         CDVDDrive dvd = cmachine.GetDVDDrive();
         KDriveState state = dvd.GetState();
         bool mounted = state != KDriveState_NotMounted;
@@ -1786,7 +1771,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         net_light->setState (count > 0 ? KDeviceActivity_Idle
                                        : KDeviceActivity_Null);
 
-        devicesNetworkMenu->setEnabled (isRunningOrPaused && count > 0);
+        mDevicesNetworkMenu->setEnabled (isRunningOrPaused && count > 0);
 
         /* update tooltip */
         QString ttip = tr ("<qt><nobr>Indicates the activity of the network "
@@ -1828,7 +1813,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             bool isUSBEnabled = cmachine.GetUSBController().GetEnabled();
             if (isUSBEnabled)
             {
-                devicesUSBMenu->setEnabled (isRunningOrPaused);
+                mDevicesUSBMenu->setEnabled (isRunningOrPaused);
 
                 CUSBDeviceEnumerator en = cconsole.GetUSBDevices().Enumerate();
                 while (en.HasMore())
@@ -1843,7 +1828,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             }
             else
             {
-                devicesUSBMenu->setEnabled (false);
+                mDevicesUSBMenu->setEnabled (false);
 
                 info = tr ("<br><nobr><b>USB Controller is disabled</b></nobr>",
                            "USB device tooltip");
@@ -1981,15 +1966,11 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                           * 8; /* to bits */
         ULONG64 usedBits = screen.width() /* display width */
                          * screen.height() /* display height */
-#warning port me: check this
                          * depth(); /* bit per pixel */
-//                         * QColor::numBitPlanes(); /* bit per pixel */
         if (aOn && (availBits < usedBits))
         {
             vboxProblem().cannotEnterSeamlessMode (screen.width(),
-#warning port me: check this
                 screen.height(), depth());
-//                screen.height(), QColor::numBitPlanes());
             return false;
         }
     }
@@ -2211,7 +2192,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         /* Adjust colors and appearance. */
         clearMask();
         centralWidget()->setPalette (mErasePalette);
-        centralWidget()->setBackgroundMode (Qt::PaletteBackground);
         centralWidget()->setAutoFillBackground (false);
         console->setFrameStyle (console_style);
         console->setMaximumSize (console->sizeHint());
@@ -2460,7 +2440,7 @@ void VBoxConsoleWnd::vmTakeSnapshot()
 
         CProgress progress =
             cconsole.TakeSnapshot (dlg.mLeName->text().trimmed(),
-                                   dlg.mTeDescription->text());
+                                   dlg.mTeDescription->toPlainText());
 
         if (cconsole.isOk())
         {
@@ -2768,7 +2748,7 @@ void VBoxConsoleWnd::prepareFloppyMenu()
 {
     if (!console) return;
 
-    devicesMountFloppyMenu->clear();
+    mDevicesMountFloppyMenu->clear();
 
     CHostFloppyDrive selected = csession.GetMachine().GetFloppyDrive().GetHostDrive();
 
@@ -2784,25 +2764,26 @@ void VBoxConsoleWnd::prepareFloppyMenu()
         QString fullName = description.isEmpty() ?
             drvName :
             QString ("%1 (%2)").arg (description, drvName);
-        int id = devicesMountFloppyMenu->insertItem (
-            tr ("Host Drive ") + fullName);
-        hostFloppyMap [id] = hostFloppy;
+        QAction *action = mDevicesMountFloppyMenu->addAction (tr ("Host Drive ") + fullName);
+        action->setStatusTip (tr ("Mount the selected physical drive of the host PC",
+                                  "Floppy tip"));
+        hostFloppyMap [action] = hostFloppy;
         if (machine_state != KMachineState_Running && machine_state != KMachineState_Paused)
-            devicesMountFloppyMenu->setItemEnabled (id, false);
+            action->setEnabled (false);
         else if (!selected.isNull())
             if (!selected.GetName().compare (hostFloppy.GetName()))
-                devicesMountFloppyMenu->setItemEnabled (id, false);
+                action->setEnabled (false);
     }
 
-    if (devicesMountFloppyMenu->count() > 0)
-        devicesMountFloppyMenu->addSeparator();
-    devicesMountFloppyMenu->addAction (devicesMountFloppyImageAction);
+    if (mDevicesMountFloppyMenu->actions().count() > 0)
+        mDevicesMountFloppyMenu->addSeparator();
+    mDevicesMountFloppyMenu->addAction (devicesMountFloppyImageAction);
 
     /* if shown as a context menu */
-    if (devicesMenu->itemParameter (devicesMountFloppyMenuId))
+    if(mDevicesMountFloppyMenu->menuAction()->data().toBool())
     {
-        devicesMountFloppyMenu->addSeparator();
-        devicesMountFloppyMenu->addAction (devicesUnmountFloppyAction);
+        mDevicesMountFloppyMenu->addSeparator();
+        mDevicesMountFloppyMenu->addAction (devicesUnmountFloppyAction);
     }
 }
 
@@ -2814,7 +2795,7 @@ void VBoxConsoleWnd::prepareDVDMenu()
 {
     if (!console) return;
 
-    devicesMountDVDMenu->clear();
+    mDevicesMountDVDMenu->clear();
 
     CHostDVDDrive selected = csession.GetMachine().GetDVDDrive().GetHostDrive();
 
@@ -2830,26 +2811,27 @@ void VBoxConsoleWnd::prepareDVDMenu()
         QString fullName = description.isEmpty() ?
             drvName :
             QString ("%1 (%2)").arg (description, drvName);
-        int id = devicesMountDVDMenu->insertItem (
+        QAction *action = mDevicesMountDVDMenu->addAction (
             tr ("Host Drive ") + fullName);
-        hostDVDMap [id] = hostDVD;
+        action->setStatusTip (tr ("Mount the selected physical drive of the host PC",
+                                  "CD/DVD tip"));
+        hostDVDMap [action] = hostDVD;
         if (machine_state != KMachineState_Running && machine_state != KMachineState_Paused)
-            devicesMountDVDMenu->setItemEnabled (id, false);
+            action->setEnabled (false);
         else if (!selected.isNull())
             if (!selected.GetName().compare (hostDVD.GetName()))
-                devicesMountDVDMenu->setItemEnabled (id, false);
+                action->setEnabled (false);
     }
 
-    if (devicesMountDVDMenu->count() > 0)
-        devicesMountDVDMenu->addSeparator();
-    devicesMountDVDMenu->addAction (devicesMountDVDImageAction);
+    if (mDevicesMountDVDMenu->actions().count() > 0)
+        mDevicesMountDVDMenu->addSeparator();
+    mDevicesMountDVDMenu->addAction (devicesMountDVDImageAction);
 
     /* if shown as a context menu */
-
-    if (devicesMenu->itemParameter (devicesMountDVDMenuId))
+    if(mDevicesMountDVDMenu->menuAction()->data().toBool())
     {
-        devicesMountDVDMenu->addSeparator();
-        devicesMountDVDMenu->addAction (devicesUnmountDVDAction);
+        mDevicesMountDVDMenu->addSeparator();
+        mDevicesMountDVDMenu->addAction (devicesUnmountDVDAction);
     }
 }
 
@@ -2858,36 +2840,26 @@ void VBoxConsoleWnd::prepareDVDMenu()
  */
 void VBoxConsoleWnd::prepareNetworkMenu()
 {
-    devicesNetworkMenu->clear();
+    mDevicesNetworkMenu->clear();
     ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
     for (ulong slot = 0; slot < count; ++ slot)
     {
         CNetworkAdapter adapter = csession.GetMachine().GetNetworkAdapter (slot);
-        int id = devicesNetworkMenu->insertItem (tr ("Adapter %1", "network").arg (slot));
-        devicesNetworkMenu->setItemEnabled (id, adapter.GetEnabled());
-        devicesNetworkMenu->setItemChecked (id, adapter.GetEnabled() && adapter.GetCableConnected());
+        QAction *action = mDevicesNetworkMenu->addAction (tr ("Adapter %1", "network").arg (slot));
+        action->setEnabled (adapter.GetEnabled());
+        action->setCheckable (true);
+        action->setChecked (adapter.GetEnabled() && adapter.GetCableConnected());
+        action->setData (static_cast<qulonglong> (slot));
     }
 }
 
-void VBoxConsoleWnd::setDynamicMenuItemStatusTip (int aId)
+void VBoxConsoleWnd::setDynamicMenuItemStatusTip (QAction *aAction)
 {
     QString tip;
 
-    if (sender() == devicesMountFloppyMenu)
+    if (sender() == mDevicesNetworkMenu)
     {
-        if (hostFloppyMap.find (aId) != hostFloppyMap.end())
-            tip = tr ("Mount the selected physical drive of the host PC",
-                      "Floppy tip");
-    }
-    else if (sender() == devicesMountDVDMenu)
-    {
-        if (hostDVDMap.find (aId) != hostDVDMap.end())
-            tip = tr ("Mount the selected physical drive of the host PC",
-                      "CD/DVD tip");
-    }
-    else if (sender() == devicesNetworkMenu)
-    {
-        tip = devicesNetworkMenu->isItemChecked (aId) ?
+        tip = aAction->isChecked() ?
             tr ("Disconnect the cable from the selected virtual network adapter") :
             tr ("Connect the cable to the selected virtual network adapter");
     }
@@ -2913,13 +2885,13 @@ void VBoxConsoleWnd::clearStatusBar()
 }
 
 /**
- *  Captures a floppy device corresponding to a given menu id.
+ *  Captures a floppy device corresponding to a given menu action.
  */
-void VBoxConsoleWnd::captureFloppy (int aId)
+void VBoxConsoleWnd::captureFloppy (QAction *aAction)
 {
     if (!console) return;
 
-    CHostFloppyDrive d = hostFloppyMap [aId];
+    CHostFloppyDrive d = hostFloppyMap [aAction];
     /* if null then some other item but host drive is selected */
     if (d.isNull()) return;
 
@@ -2940,13 +2912,13 @@ void VBoxConsoleWnd::captureFloppy (int aId)
 }
 
 /**
- *  Captures a CD/DVD-ROM device corresponding to a given menu id.
+ *  Captures a CD/DVD-ROM device corresponding to a given menu action.
  */
-void VBoxConsoleWnd::captureDVD (int aId)
+void VBoxConsoleWnd::captureDVD (QAction *aAction)
 {
     if (!console) return;
 
-    CHostDVDDrive d = hostDVDMap [aId];
+    CHostDVDDrive d = hostDVDMap [aAction];
     /* if null then some other item but host drive is selected */
     if (d.isNull()) return;
 
@@ -2969,38 +2941,31 @@ void VBoxConsoleWnd::captureDVD (int aId)
 /**
  *  Switch the cable connected/disconnected for the selected network adapter
  */
-void VBoxConsoleWnd::activateNetworkMenu (int aId)
+void VBoxConsoleWnd::activateNetworkMenu (QAction *aAction)
 {
-    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
-    for (ulong slot = 0; slot < count; ++ slot)
-    {
-        if (aId == devicesNetworkMenu->idAt (slot))
-        {
-            CNetworkAdapter adapter = csession.GetMachine().GetNetworkAdapter (slot);
-            bool connected = adapter.GetCableConnected();
-            if (adapter.GetEnabled())
-                adapter.SetCableConnected (!connected);
-            break;
-        }
-    }
+    ulong slot = aAction->data().toULongLong();
+    CNetworkAdapter adapter = csession.GetMachine().GetNetworkAdapter (slot);
+    bool connected = adapter.GetCableConnected();
+    if (adapter.GetEnabled())
+        adapter.SetCableConnected (!connected);
 }
 
 /**
  *  Attach/Detach selected USB Device.
  */
-void VBoxConsoleWnd::switchUSB (int aId)
+void VBoxConsoleWnd::switchUSB (QAction *aAction)
 {
     if (!console) return;
 
     CConsole cconsole = csession.GetConsole();
     AssertWrapperOk (csession);
 
-    CUSBDevice usb = devicesUSBMenu->getUSB (aId);
+    CUSBDevice usb = mDevicesUSBMenu->getUSB (aAction);
     /* if null then some other item but a USB device is selected */
     if (usb.isNull())
         return;
 
-    if (devicesUSBMenu->isItemChecked (aId))
+    if (!aAction->isChecked())
     {
         cconsole.DetachUSBDevice (usb.GetId());
         if (!cconsole.isOk())
@@ -3029,35 +2994,35 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     if (ind == cd_light)
     {
         /* set "this is a context menu" flag */
-        devicesMenu->setItemParameter (devicesMountDVDMenuId, 1);
-        devicesMountDVDMenu->exec (e->globalPos());
-        devicesMenu->setItemParameter (devicesMountDVDMenuId, 0);
+        mDevicesMountDVDMenu->menuAction()->setData (true);
+        mDevicesMountDVDMenu->exec (e->globalPos());
+        mDevicesMountDVDMenu->menuAction()->setData (false);
     }
     else
     if (ind == fd_light)
     {
         /* set "this is a context menu" flag */
-        devicesMenu->setItemParameter (devicesMountFloppyMenuId, 1);
-        devicesMountFloppyMenu->exec (e->globalPos());
-        devicesMenu->setItemParameter (devicesMountFloppyMenuId, 0);
+        mDevicesMountFloppyMenu->menuAction()->setData (true);
+        mDevicesMountFloppyMenu->exec (e->globalPos());
+        mDevicesMountFloppyMenu->menuAction()->setData (false);
     }
     else
     if (ind == usb_light)
     {
-        if (devicesUSBMenu->isEnabled())
+        if (mDevicesUSBMenu->isEnabled())
         {
             /* set "this is a context menu" flag */
-            devicesMenu->setItemParameter (devicesUSBMenuId, 1);
-            devicesUSBMenu->exec (e->globalPos());
-            devicesMenu->setItemParameter (devicesUSBMenuId, 0);
+            mDevicesUSBMenu->menuAction()->setData (true);
+            mDevicesUSBMenu->exec (e->globalPos());
+            mDevicesUSBMenu->menuAction()->setData (false);
         }
     }
     else
-    if (ind == vrdp_state)
+    /* if (ind == vrdp_state)
     {
-        devicesVRDPMenu->exec (e->globalPos());
+        mDevicesVRDPMenu->exec (e->globalPos());
     }
-    else
+    else */
     if (ind == autoresize_state)
     {
         vmAutoresizeMenu->exec (e->globalPos());
@@ -3074,22 +3039,19 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
          * bit stupid; let's better execute this item's action directly. The
          * menu itself is kept just in case if we need more than one item in
          * the future. */
-#if 0
-        devicesSFMenu->exec (e->globalPos());
-#else
+        /* mDevicesSFMenu->exec (e->globalPos()); */
         if (devicesSFDialogAction->isEnabled())
             devicesSFDialogAction->trigger();
-#endif
     }
     else
     if (ind == net_light)
     {
-        if (devicesNetworkMenu->isEnabled())
+        if (mDevicesNetworkMenu->isEnabled())
         {
             /* set "this is a context menu" flag */
-            devicesMenu->setItemParameter (devicesNetworkMenuId, 1);
-            devicesNetworkMenu->exec (e->globalPos());
-            devicesMenu->setItemParameter (devicesNetworkMenuId, 0);
+            mDevicesNetworkMenu->menuAction()->setData (true);
+            mDevicesNetworkMenu->exec (e->globalPos());
+            mDevicesNetworkMenu->menuAction()->setData (false);
         }
     }
 }
@@ -3260,7 +3222,7 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
         mIsSeamlessSupported = aSeamlessSupported;
         /* If seamless mode should be enabled then check if it is enabled
          * currently and re-enable it if open-view procedure is finished */
-        if (vmSeamlessAction->isOn() && mIsOpenViewFinished && aSeamlessSupported)
+        if (vmSeamlessAction->isChecked() && mIsOpenViewFinished && aSeamlessSupported)
             toggleFullscreenMode (true, true);
     }
 
@@ -3331,7 +3293,13 @@ void VBoxConsoleWnd::updateNetworkAdarptersState()
  */
 void VBoxConsoleWnd::tryClose()
 {
-#warning port me
+#warning "port me"
+    /* @todo: I'm not sure if it is the right way to force an shutdown if modal
+     * child widgets are open. Anyway, currently I didn't know how to achieve
+     * this. So for now we simply call close. */
+     
+     close();
+
 //    LogFlowFunc (("eventLoopLevel=%d\n", qApp->eventLoop()->loopLevel()));
 //
 //    if (qApp->eventLoop()->loopLevel() > 1)
@@ -3353,7 +3321,7 @@ void VBoxConsoleWnd::tryClose()
 //        QTimer::singleShot (0, this, SLOT (tryClose()));
 //    }
 //    else
-//        close();
+//     close();
 }
 
 /**

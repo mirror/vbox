@@ -775,7 +775,7 @@ void VBoxVMSettingsDlg::init()
     tbUSBFilterDown->setIconSet (VBoxGlobal::iconSet (":/usb_movedown_16px.png",
                                                       ":/usb_movedown_disabled_16px.png"));
     usbDevicesMenu = new VBoxUSBMenu (this);
-    connect (usbDevicesMenu, SIGNAL(activated(int)), this, SLOT(menuAddUSBFilterFrom_activated(int)));
+    connect (usbDevicesMenu, SIGNAL(triggered(QAction *)), this, SLOT(menuAddUSBFilterFrom_activated(QAction *)));
     mUSBFilterListModified = false;
 
     /* VRDP Page */
@@ -2685,9 +2685,9 @@ void VBoxVMSettingsDlg::tbAddUSBFilterFrom_clicked()
     usbDevicesMenu->exec (QCursor::pos());
 }
 
-void VBoxVMSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
+void VBoxVMSettingsDlg::menuAddUSBFilterFrom_activated (QAction *aAction)
 {
-    CUSBDevice usb = usbDevicesMenu->getUSB (aIndex);
+    CUSBDevice usb = usbDevicesMenu->getUSB (aAction);
     /* if null then some other item but a USB device is selected */
     if (usb.isNull())
         return;
