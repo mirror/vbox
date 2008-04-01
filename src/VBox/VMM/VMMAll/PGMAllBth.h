@@ -1927,11 +1927,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
              */
             if (fPageTable)
                 PdeDst.u = pShwPage->Core.Key
-                         | (PdeSrc.u & ~(X86_PDE_PAE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
+                         | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
             else
             {
                 PdeDst.u = pShwPage->Core.Key
-                         | (PdeSrc.u & ~(X86_PDE_PAE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
+                         | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
 # ifdef PGM_SYNC_DIRTY_BIT /* (see explanation and assumptions further down.) */
                 if (!PdeSrc.b.u1Dirty && PdeSrc.b.u1Write)
                 {
@@ -1973,8 +1973,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                 /*
                  * Start by syncing the page directory entry so CSAM's TLB trick works.
                  */
-                PdeDst.u = (PdeDst.u & (X86_PDE_PAE_PG_MASK | X86_PDE_AVL_MASK))
-                         | (PdeSrc.u & ~(X86_PDE_PAE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
+                PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | X86_PDE_AVL_MASK))
+                         | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
                 *pPdeDst = PdeDst;
 
                 /*
@@ -2059,8 +2059,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             /*
              * Start by syncing the page directory entry.
              */
-            PdeDst.u = (PdeDst.u & (X86_PDE_PAE_PG_MASK | (X86_PDE_AVL_MASK & ~PGM_PDFLAGS_TRACK_DIRTY)))
-                     | (PdeSrc.u & ~(X86_PDE_PAE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
+            PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | (X86_PDE_AVL_MASK & ~PGM_PDFLAGS_TRACK_DIRTY)))
+                     | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
 
 # ifdef PGM_SYNC_DIRTY_BIT
             /*
@@ -2087,7 +2087,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
              */
             /* Get address and flags from the source PDE. */
             SHWPTE PteDstBase;
-            PteDstBase.u = PdeSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT);
+            PteDstBase.u = PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT);
 
             /* Loop thru the entries in the shadow PT. */
             const RTGCUINTPTR GCPtr  = (GCPtrPage >> SHW_PD_SHIFT) << SHW_PD_SHIFT; NOREF(GCPtr);
@@ -2348,7 +2348,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
 
 #if (PGM_GST_TYPE == PGM_TYPE_32BIT ||  PGM_GST_TYPE == PGM_TYPE_REAL ||  PGM_GST_TYPE == PGM_TYPE_PROT || PGM_GST_TYPE == PGM_TYPE_PAE) && PGM_SHW_TYPE != PGM_TYPE_AMD64
 
-#  ifndef IN_RING0
+# ifndef IN_RING0
     if (!(fPage & X86_PTE_US))
     {
         /*
@@ -2358,7 +2358,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
         Log(("CSAMMarkPage %VGv; scanned=%d\n", GCPtrPage, true));
         CSAMMarkPage(pVM, (RTGCPTR)GCPtrPage, true);
     }
-#  endif
+# endif
     /*
      * Get guest PD and index.
      */
@@ -2572,13 +2572,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
         pMapping      = 0;
         iPdNoMapping  = ~0U;
     }
-#  if PGM_GST_TYPE == PGM_TYPE_PAE
-    for (unsigned iPDPTRE = 0; iPDPTRE < X86_PG_PAE_PDPTE_ENTRIES; iPDPTRE++)
-#  elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    for (unsigned iPDPTRE = 0; iPDPTRE < X86_PG_AMD64_PDPTE_ENTRIES; iPDPTRE++)
-#  endif
-    {
 #  if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
+    for (unsigned iPDPTRE = 0; iPDPTRE < GST_PDPE_ENTRIES; iPDPTRE++)
+    {
         unsigned        iPDSrc;
 #   if PGM_SHW_TYPE == PGM_TYPE_PAE 
         PX86PDPAE       pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[iPDPTRE * X86_PG_PAE_ENTRIES];
@@ -2595,6 +2591,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
             pVM->pgm.s.CTXMID(p,PaePDPTR)->a[iPDPTRE].n.u1Present = 0;
             continue;
         }
+#  else
+   {
 #  endif /* if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64 */
         for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
         {
@@ -3243,7 +3241,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                 /*
                  * Big Page.
                  */
-                uint64_t fIgnoreFlags = X86_PDE_AVL_MASK | X86_PDE_PAE_PG_MASK | X86_PDE4M_G | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_PWT | X86_PDE4M_PCD;
+                uint64_t fIgnoreFlags = X86_PDE_AVL_MASK | GST_PDE_PG_MASK | X86_PDE4M_G | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_PWT | X86_PDE4M_PCD;
                 if (!PdeSrc.b.u1Dirty && PdeSrc.b.u1Write)
                 {
                     if (PdeDst.n.u1Write)
