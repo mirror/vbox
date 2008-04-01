@@ -1576,6 +1576,7 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
          * Map the MMIO2 memory.
          */
         pData->GCPhysVMMDevRAM = GCPhysAddress;
+        Assert(pData->GCPhysVMMDevRAM == GCPhysAddress);
         rc = PDMDevHlpMMIO2Map(pPciDev->pDevIns, iRegion, GCPhysAddress);
     }
     else
