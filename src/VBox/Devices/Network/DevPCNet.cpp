@@ -851,9 +851,9 @@ struct ether_header
 
 #define PRINT_PKTHDR(BUF) do {                                        \
     struct ether_header *hdr = (struct ether_header *)(BUF);          \
-    Log(("packet dhost=%02x:%02x:%02x:%02x:%02x:%02x, "               \
+    Log(("#%d packet dhost=%02x:%02x:%02x:%02x:%02x:%02x, "          \
          "shost=%02x:%02x:%02x:%02x:%02x:%02x, "                      \
-         "type=%#06x (bcast=%d)\n",                                  \
+         "type=%#06x (bcast=%d)\n", PCNET_INST_NR,                    \
          hdr->ether_dhost[0],hdr->ether_dhost[1],hdr->ether_dhost[2], \
          hdr->ether_dhost[3],hdr->ether_dhost[4],hdr->ether_dhost[5], \
          hdr->ether_shost[0],hdr->ether_shost[1],hdr->ether_shost[2], \
@@ -2572,7 +2572,7 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
                 if ((val & 7) == 7)
                     val &= ~3;
 
-                Log(("#%d pcnetWriteCSR0: %#06x => %#06x\n", PCNET_INST_NR, pData->aCSR[0], csr0));
+                Log(("#%d CSR0: old=%#06x new=%#06x\n", PCNET_INST_NR, pData->aCSR[0], csr0));
 
 #ifndef IN_RING3
                 if (!(csr0 & 0x0001/*init*/) && (val & 1))
