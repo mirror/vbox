@@ -1575,10 +1575,10 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     }
     return VINF_SUCCESS;
 
-#else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
+#else /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
     AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_GST_TYPE, PGM_SHW_TYPE));
     return VERR_INTERNAL_ERROR;
-#endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
+#endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 }
 
 
@@ -2246,11 +2246,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncPT), a);
     return rc;
 
-#else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
+#else /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
     AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_GST_TYPE, PGM_SHW_TYPE));
     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncPT), a);
     return VERR_INTERNAL_ERROR;
-#endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
+#endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 }
 
 
@@ -2324,11 +2324,11 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     }
     return rc;
 
-#else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
+#else /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 
     AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_SHW_TYPE, PGM_GST_TYPE));
     return VERR_INTERNAL_ERROR;
-#endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
+#endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 }
 
 
@@ -2576,7 +2576,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
     for (unsigned iPDPTRE = 0; iPDPTRE < GST_PDPE_ENTRIES; iPDPTRE++)
     {
         unsigned        iPDSrc;
-#   if PGM_SHW_TYPE == PGM_TYPE_PAE 
+#   if PGM_SHW_TYPE == PGM_TYPE_PAE
         PX86PDPAE       pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[iPDPTRE * X86_PG_PAE_ENTRIES];
 #   else
         AssertFailed(); /* @todo */
@@ -2591,9 +2591,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
             pVM->pgm.s.CTXMID(p,PaePDPTR)->a[iPDPTRE].n.u1Present = 0;
             continue;
         }
-#  else
-   {
-#  endif /* if PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64 */
+#  else  /* PGM_GST_TYPE != PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_AMD64 */
+    {
+#  endif /* PGM_GST_TYPE != PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_AMD64 */
         for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
         {
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
@@ -2638,10 +2638,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                     return VINF_PGM_SYNC_CR3;
 #   endif
                 }
-#  else /* PGM_GST_TYPE == PGM_TYPE_32BIT */
+#  else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
                 /* PAE and AMD64 modes are hardware accelerated only, so there are no mappings. */
                 Assert(iPD != iPdNoMapping);
-#  endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
+#  endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
                 /*
                  * Sync page directory entry.
                  *
@@ -2801,10 +2801,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                 /* advance. */
                 iPD += cPTs - 1;
                 pPDEDst += cPTs + (PGM_SHW_TYPE != PGM_TYPE_32BIT) * cPTs;
-#  else /* PGM_GST_TYPE == PGM_TYPE_32BIT */
+#  else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
                 /* PAE and AMD64 modes are hardware accelerated only, so there are no mappings. */
                 AssertFailed();
-#  endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
+#  endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
             }
 
         } /* for iPD */
