@@ -59,7 +59,7 @@
 /** The module name. */
 #define DEVICE_NAME              "vboxdrv"
 /** The module description as seen in 'modinfo'. */
-#define DEVICE_DESC              "VirtualBox Driver"
+#define DEVICE_DESC              "VirtualBox Host Driver"
 /** Maximum number of driver instances. */
 #define DEVICE_MAXINSTANCES      16
 
