@@ -2047,7 +2047,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     const RTCPUID idCpu = RTMpCpuId();
 #endif
                     psz += RTStrFormatNumber(psz, idCpu, 16, sizeof(idCpu) * 2, 0, RTSTR_F_ZEROPAD);
-                    psz++ = ' ';
+                    *psz++ = ' ';
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_FLAG_NO)
                 {
