@@ -2693,8 +2693,7 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
                 pData->GCRDRA = (pData->GCRDRA & 0xffff0000) | (val & 0x0000ffff);
             else
                 pData->GCRDRA = (pData->GCRDRA & 0x0000ffff) | ((val & 0x0000ffff) << 16);
-            Log(("#%d: WRITE CSR%d, %#06x => GCRDRA=%08x (alt init)\n", PCNET_INST_NR,
-                 u32RAP, val, pData->GCRDRA));
+            Log(("#%d: WRITE CSR%d, %#06x => GCRDRA=%08x (alt init)\n", PCNET_INST_NR, u32RAP, val, pData->GCRDRA));
             break;
 
         /*
@@ -2712,8 +2711,7 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
                 pData->GCTDRA = (pData->GCTDRA & 0xffff0000) | (val & 0x0000ffff);
             else
                 pData->GCTDRA = (pData->GCTDRA & 0x0000ffff) | ((val & 0x0000ffff) << 16);
-            Log(("#%d: WRITE CSR%d, %#06x => GCTDRA=%08x (alt init)\n", PCNET_INST_NR,
-                 u32RAP, val, pData->GCTDRA));
+            Log(("#%d: WRITE CSR%d, %#06x => GCTDRA=%08x (alt init)\n", PCNET_INST_NR, u32RAP, val, pData->GCTDRA));
             break;
 
         case 58: /* Software Style */
@@ -2793,8 +2791,7 @@ static uint32_t pcnetCSRReadU16(PCNetState *pData, uint32_t u32RAP)
             val = pData->aCSR[u32RAP];
     }
 #ifdef PCNET_DEBUG_CSR
-    Log(("#%d pcnetCSRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR,
-         u32RAP, val));
+    Log(("#%d pcnetCSRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
 #endif
     return val;
 }
@@ -2804,8 +2801,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
     int rc = VINF_SUCCESS;
     u32RAP &= 0x7f;
 #ifdef PCNET_DEBUG_BCR
-    Log2(("#%d pcnetBCRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR,
-         u32RAP, val));
+    Log2(("#%d pcnetBCRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
 #endif
     switch (u32RAP)
     {
@@ -2862,8 +2858,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
         case BCR_MIIMDR:
             pData->aMII[pData->aBCR[BCR_MIIADDR] & 0x1f] = val;
 #ifdef PCNET_DEBUG_MII
-            Log(("#%d pcnet: mii write %d <- %#x\n", PCNET_INST_NR,
-                   pData->aBCR[BCR_MIIADDR] & 0x1f, val));
+            Log(("#%d pcnet: mii write %d <- %#x\n", PCNET_INST_NR, pData->aBCR[BCR_MIIADDR] & 0x1f, val));
 #endif
             break;
 
@@ -2982,8 +2977,7 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
     }
 
 #ifdef PCNET_DEBUG_MII
-    Log(("#%d pcnet: mii read %d -> %#x\n", PCNET_INST_NR,
-         miiaddr, val));
+    Log(("#%d pcnet: mii read %d -> %#x\n", PCNET_INST_NR, miiaddr, val));
 #endif
     return val;
 }
@@ -3024,8 +3018,7 @@ static uint32_t pcnetBCRReadU16(PCNetState *pData, uint32_t u32RAP)
             break;
     }
 #ifdef PCNET_DEBUG_BCR
-    Log2(("#%d pcnetBCRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR,
-         u32RAP, val));
+    Log2(("#%d pcnetBCRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
 #endif
     return val;
 }
@@ -3076,8 +3069,7 @@ static void pcnetAPROMWriteU8(PCNetState *pData, uint32_t addr, uint32_t val)
 {
     addr &= 0x0f;
     val  &= 0xff;
-    Log(("#%d pcnetAPROMWriteU8: addr=%#010x val=%#04x\n", PCNET_INST_NR,
-         addr, val));
+    Log(("#%d pcnetAPROMWriteU8: addr=%#010x val=%#04x\n", PCNET_INST_NR, addr, val));
     /* Check APROMWE bit to enable write access */
     if (pcnetBCRReadU16(pData, 2) & 0x80)
         pData->aPROM[addr] = val;
@@ -3086,8 +3078,7 @@ static void pcnetAPROMWriteU8(PCNetState *pData, uint32_t addr, uint32_t val)
 static uint32_t pcnetAPROMReadU8(PCNetState *pData, uint32_t addr)
 {
     uint32_t val = pData->aPROM[addr &= 0x0f];
-    Log(("#%d pcnetAPROMReadU8: addr=%#010x val=%#04x\n", PCNET_INST_NR,
-         addr, val));
+    Log(("#%d pcnetAPROMReadU8: addr=%#010x val=%#04x\n", PCNET_INST_NR, addr, val));
     return val;
 }
 
@@ -3243,8 +3234,7 @@ static uint32_t pcnetIoportReadU32(PCNetState *pData, uint32_t addr, int *pRC)
 
 skip_update_irq:
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetIoportReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR,
-         addr, val));
+    Log2(("#%d pcnetIoportReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
 #endif
     return val;
 }
@@ -3252,8 +3242,7 @@ skip_update_irq:
 static void pcnetMMIOWriteU8(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU8: addr=%#010x val=%#04x\n", PCNET_INST_NR,
-         addr, val));
+    Log2(("#%d pcnetMMIOWriteU8: addr=%#010x val=%#04x\n", PCNET_INST_NR, addr, val));
 #endif
     if (!(addr & 0x10))
         pcnetAPROMWriteU8(pData, addr, val);
@@ -3265,8 +3254,7 @@ static uint32_t pcnetMMIOReadU8(PCNetState *pData, RTGCPHYS addr)
     if (!(addr & 0x10))
         val = pcnetAPROMReadU8(pData, addr);
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOReadU8: addr=%#010x val=%#04x\n", PCNET_INST_NR,
-         addr, val & 0xff));
+    Log2(("#%d pcnetMMIOReadU8: addr=%#010x val=%#04x\n", PCNET_INST_NR, addr, val & 0xff));
 #endif
     return val;
 }
@@ -3274,8 +3262,7 @@ static uint32_t pcnetMMIOReadU8(PCNetState *pData, RTGCPHYS addr)
 static void pcnetMMIOWriteU16(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU16: addr=%#010x val=%#06x\n", PCNET_INST_NR,
-         addr, val));
+    Log2(("#%d pcnetMMIOWriteU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val));
 #endif
     if (addr & 0x10)
         pcnetIoportWriteU16(pData, addr & 0x0f, val);
@@ -3300,8 +3287,7 @@ static uint32_t pcnetMMIOReadU16(PCNetState *pData, RTGCPHYS addr)
         val |= pcnetAPROMReadU8(pData, addr);
     }
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOReadU16: addr=%#010x val = %#06x\n", PCNET_INST_NR,
-         addr, val & 0xffff));
+    Log2(("#%d pcnetMMIOReadU16: addr=%#010x val = %#06x\n", PCNET_INST_NR, addr, val & 0xffff));
 #endif
     return val;
 }
@@ -3309,8 +3295,7 @@ static uint32_t pcnetMMIOReadU16(PCNetState *pData, RTGCPHYS addr)
 static void pcnetMMIOWriteU32(PCNetState *pData, RTGCPHYS addr, uint32_t val)
 {
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOWriteU32: addr=%#010x val=%#010x\n", PCNET_INST_NR,
-         addr, val));
+    Log2(("#%d pcnetMMIOWriteU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
 #endif
     if (addr & 0x10)
         pcnetIoportWriteU32(pData, addr & 0x0f, val);
@@ -3341,8 +3326,7 @@ static uint32_t pcnetMMIOReadU32(PCNetState *pData, RTGCPHYS addr)
         val |= pcnetAPROMReadU8(pData, addr  );
     }
 #ifdef PCNET_DEBUG_IO
-    Log2(("#%d pcnetMMIOReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR,
-         addr, val));
+    Log2(("#%d pcnetMMIOReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
 #endif
     return val;
 }
@@ -3389,8 +3373,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser,
         PDMCritSectLeave(&pData->CritSect);
     }
     STAM_PROFILE_ADV_STOP(&pData->StatAPROMRead, a);
-    LogFlow(("#%d pcnetIOPortAPromRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Vrc\n",
-             PCNET_INST_NR, Port, *pu32, cb, rc));
+    LogFlow(("#%d pcnetIOPortAPromRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Vrc\n", PCNET_INST_NR, Port, *pu32, cb, rc));
     return rc;
 }
 
@@ -3428,8 +3411,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser,
         AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
         rc = VINF_SUCCESS;
     }
-    LogFlow(("#%d pcnetIOPortAPromWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Vrc\n",
-             PCNET_INST_NR, Port, u32, cb, rc));
+    LogFlow(("#%d pcnetIOPortAPromWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Vrc\n", PCNET_INST_NR, Port, u32, cb, rc));
 #ifdef LOG_ENABLED
     if (rc == VINF_IOM_HC_IOPORT_WRITE)
         LogFlow(("#%d => HC\n", PCNET_INST_NR));
@@ -3470,8 +3452,7 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
         PDMCritSectLeave(&pData->CritSect);
     }
     STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatIORead), a);
-    LogFlow(("#%d pcnetIOPortRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Vrc\n",
-             PCNET_INST_NR, Port, *pu32, cb, rc));
+    Log2(("#%d pcnetIOPortRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Vrc\n", PCNET_INST_NR, Port, *pu32, cb, rc));
 #ifdef LOG_ENABLED
     if (rc == VINF_IOM_HC_IOPORT_READ)
         LogFlow(("#%d => HC\n", PCNET_INST_NR));
@@ -3513,8 +3494,7 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
         PDMCritSectLeave(&pData->CritSect);
     }
     STAM_PROFILE_ADV_STOP(&pData->CTXSUFF(StatIOWrite), a);
-    LogFlow(("#%d pcnetIOPortWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Vrc\n",
-             PCNET_INST_NR, Port, u32, cb, rc));
+    Log2(("#%d pcnetIOPortWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Vrc\n", PCNET_INST_NR, Port, u32, cb, rc));
 #ifdef LOG_ENABLED
     if (rc == VINF_IOM_HC_IOPORT_WRITE)
         LogFlow(("#%d => HC\n", PCNET_INST_NR));
