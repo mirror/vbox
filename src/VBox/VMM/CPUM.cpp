@@ -546,6 +546,9 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
 
     pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
     pCtx->fpu.FCW                   = 0x37f;
+
+    /* Init PAT MSR */
+    pCtx->msrPAT                    = 0x0007040600070406ULL; /* @todo correct? */
 }
 
 
