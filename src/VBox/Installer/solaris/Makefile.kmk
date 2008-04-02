@@ -204,7 +204,7 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 		--output $(SOLARISINSTDIR)/vbox.pkginfo \
 		$(PATH_CURRENT)/vbox.pkginfo
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf               $(SOLARISINSTDIR)/vboxdrv.conf
-	$(QUIET)$(if $(VBOX_OSE),,$(if $(VBOX_WITH_DOCS),$(INSTALL) -m 0755 $(PATH_BIN)/UserManual.pdf          $(SOLARISINSTDIR)/UserManual.pdf,))
+	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_DOCS)),$(INSTALL) -m 0755 $(PATH_BIN)/UserManual.pdf  $(SOLARISINSTDIR)/UserManual.pdf)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0755 $(PATH_BIN)/LICENSE                                        $(SOLARISINSTDIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0755 $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html               $(SOLARISINSTDIR)/License-$(VBOX_LICENSE_VER).html)
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/components/VBoxXPCOMBase.xpt                                     $(SOLARISINSTDIR)/components/VBoxXPCOMBase.xpt
