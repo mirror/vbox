@@ -255,6 +255,16 @@ struc CPUM
     .Hyper.SysEnter.eip       resb    8
     .Hyper.SysEnter.esp       resb    8
 
+    .Hyper.msrEFER            resb    8
+    .Hyper.msrSTAR            resb    8
+    .Hyper.msrPAT             resb    8
+    .Hyper.msrLSTAR           resb    8
+    .Hyper.msrCSTAR           resb    8
+    .Hyper.msrSFMASK          resb    8
+    .Hyper.msrFSBASE          resb    8
+    .Hyper.msrGSBASE          resb    8
+    .Hyper.msrKERNELGSBASE    resb    8
+
     .Hyper.ldtrHid.u32Base    resd    1
     .Hyper.ldtrHid.u32Limit   resd    1
     .Hyper.ldtrHid.Attr       resd    1
@@ -264,7 +274,7 @@ struc CPUM
     .Hyper.trHid.Attr         resd    1
 
     ; padding
-    .Hyper.padding            resd    4
+    .Hyper.padding            resd    2
 
 
 
@@ -361,6 +371,16 @@ struc CPUM
     .Guest.SysEnter.eip       resb    8
     .Guest.SysEnter.esp       resb    8
 
+    .Guest.msrEFER            resb    8
+    .Guest.msrSTAR            resb    8
+    .Guest.msrPAT             resb    8
+    .Guest.msrLSTAR           resb    8
+    .Guest.msrCSTAR           resb    8
+    .Guest.msrSFMASK          resb    8
+    .Guest.msrFSBASE          resb    8
+    .Guest.msrGSBASE          resb    8
+    .Guest.msrKERNELGSBASE    resb    8
+
     .Guest.ldtrHid.u32Base    resd    1
     .Guest.ldtrHid.u32Limit   resd    1
     .Guest.ldtrHid.Attr       resd    1
@@ -370,7 +390,7 @@ struc CPUM
     .Guest.trHid.Attr         resd    1
 
     ; padding
-    .Guest.padding            resd    4
+    .Guest.padding            resd    2
 
 
 
@@ -407,8 +427,8 @@ struc CPUM
     .aGuestCpuIdCentaur   resb    16*4
     .GuestCpuIdDef        resb    16
 
-    ; debug stuff...
-    .GuestEntry           resb    960
+    ; CPUMCTX debug stuff...
+    .GuestEntry           resb   1024
 
 endstruc
 

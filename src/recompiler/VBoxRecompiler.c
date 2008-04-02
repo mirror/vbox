@@ -1858,6 +1858,20 @@ REMR3DECL(int) REMR3State(PVM pVM)
             pVM->rem.s.Env.segs[R_GS].newselector = 0;
     }
 
+    /* Update MSRs. */
+    pVM->rem.s.Env.efer         = pCtx->msrEFER;
+    pVM->rem.s.Env.star         = pCtx->msrSTAR;
+    pVM->rem.s.Env.pat          = pCtx->msrPAT;
+#ifdef TARGET_X86_64
+    pVM->rem.s.Env.lstar        = pCtx->msrLSTAR;
+    pVM->rem.s.Env.cstar        = pCtx->msrCSTAR;
+    pVM->rem.s.Env.fmask        = pCtx->msrSFMASK;
+    pVM->rem.s.Env.kernelgsbase = pCtx->msrKERNELGSBASE;
+#endif
+    /* Note that FS_BASE & GS_BASE are already synced; QEmu keeps them in the hidden selector registers. 
+     * So we basically assume the hidden registers are in sync with these MSRs (vt-x & amd-v). Correct??
+     */
+
     /*
      * Check for traps.
      */
@@ -2112,6 +2126,19 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     pCtx->SysEnter.cs      = pVM->rem.s.Env.sysenter_cs;
     pCtx->SysEnter.eip     = pVM->rem.s.Env.sysenter_eip;
     pCtx->SysEnter.esp     = pVM->rem.s.Env.sysenter_esp;
+
+    /* System MSRs. */
+    pCtx->msrEFER          = pVM->rem.s.Env.efer;
+    pCtx->msrSTAR          = pVM->rem.s.Env.star;
+    pCtx->msrPAT           = pVM->rem.s.Env.pat;
+#ifdef TARGET_X86_64
+    pCtx->msrLSTAR         = pVM->rem.s.Env.lstar;
+    pCtx->msrCSTAR         = pVM->rem.s.Env.cstar;
+    pCtx->msrSFMASK        = pVM->rem.s.Env.fmask;
+    pCtx->msrFSBASE        = pVM->rem.s.Env.segs[R_FS].base;
+    pCtx->msrGSBASE        = pVM->rem.s.Env.segs[R_GS].base;
+    pCtx->msrKERNELGSBASE  = pVM->rem.s.Env.kernelgsbase;
+#endif
 
     remR3TrapClear(pVM);
 

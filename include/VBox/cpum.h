@@ -305,6 +305,19 @@ typedef struct CPUMCTX
      * This member is not used by the hypervisor context. */
     CPUMSYSENTER    SysEnter;
 
+    /** System MSRs.
+     * @{ */
+    uint64_t        msrEFER;
+    uint64_t        msrSTAR;
+    uint64_t        msrPAT;
+    uint64_t        msrLSTAR;
+    uint64_t        msrCSTAR;
+    uint64_t        msrSFMASK;
+    uint64_t        msrFSBASE;
+    uint64_t        msrGSBASE;
+    uint64_t        msrKERNELGSBASE;
+    /** @} */
+
     /** Hidden selector registers.
      * @{ */
     CPUMSELREGHID   ldtrHid;
@@ -312,7 +325,7 @@ typedef struct CPUMCTX
     /** @} */
 
     /* padding to get 32byte aligned size */
-    uint32_t        padding[4];
+    uint32_t        padding[2];
 } CPUMCTX;
 #pragma pack()
 
