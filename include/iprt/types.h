@@ -739,6 +739,20 @@ typedef RTGCUINTPTR     *PRTGCUINTPTR;
 /** Pointer to unsigned interger which can contain a GC pointer. */
 typedef const RTGCUINTPTR *PCRTGCUINTPTR;
 
+/** Unsigned integer which can contain a 32 bits GC pointer. */
+typedef uint32_t        RTGCUINTPTR32;
+/** Pointer to unsigned interger which can contain a 32 bits GC pointer. */
+typedef RTGCUINTPTR32   *PRTGCUINTPTR32;
+/** Pointer to unsigned interger which can contain a 32 bits GC pointer. */
+typedef const RTGCUINTPTR32 *PCRTGCUINTPTR32;
+
+/** Unsigned integer which can contain a 64 bits GC pointer. */
+typedef uint64_t        RTGCUINTPTR64;
+/** Pointer to unsigned interger which can contain a 32 bits GC pointer. */
+typedef RTGCUINTPTR64   *PRTGCUINTPTR64;
+/** Pointer to unsigned interger which can contain a 32 bits GC pointer. */
+typedef const RTGCUINTPTR64 *PCRTGCUINTPTR64;
+
 /** Guest Physical Memory Address.*/
 typedef uint64_t        RTGCPHYS;
 /** Pointer to Guest Physical Memory Address. */
@@ -801,6 +815,35 @@ typedef const RTGCPTR  *PCRTGCPTR;
  */
 #define NIL_RTGCPTR     ((RTGCPTR)0)
 
+/** Guest context pointer, 32 bits.
+ * Keep in mind that this type is an unsigned integer in
+ * HC and void pointer in GC.
+ */
+#ifdef IN_GC
+typedef void           *RTGCPTR32;
+#else
+typedef RTGCUINTPTR32   RTGCPTR32;
+#endif
+/** Pointer to a guest context pointer. */
+typedef RTGCPTR32      *PRTGCPTR32;
+/** Pointer to a const guest context pointer. */
+typedef const RTGCPTR32 *PCRTGCPTR32;
+/** @def NIL_RTGCPTR32
+ * NIL GC pointer.
+ */
+#define NIL_RTGCPTR32   ((RTGCPTR32)0)
+
+/** Guest context pointer, 64 bits.
+ */
+typedef RTGCUINTPTR64   RTGCPTR64;
+/** Pointer to a guest context pointer. */
+typedef RTGCPTR64      *PRTGCPTR64;
+/** Pointer to a const guest context pointer. */
+typedef const RTGCPTR64 *PCRTGCPTR64;
+/** @def NIL_RTGCPTR64
+ * NIL GC pointer.
+ */
+#define NIL_RTGCPTR64   ((RTGCPTR64)0)
 
 /** Unsigned integer register in the guest context. */
 #if GC_ARCH_BITS == 32
