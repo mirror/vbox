@@ -187,6 +187,7 @@
 %define MSR_IA32_SYSENTER_CS                0x174
 %define MSR_IA32_SYSENTER_ESP               0x175
 %define MSR_IA32_SYSENTER_EIP               0x176
+%define IA32_CR_PAT                         0x277
 %define MSR_IA32_VMX_BASIC_INFO             0x480
 %define MSR_IA32_VMX_PINBASED_CTLS          0x481
 %define MSR_IA32_VMX_PROCBASED_CTLS         0x482
@@ -245,6 +246,9 @@
 %define MSR_K8_VM_HSAVE_PA                  0xc0010117
 %define X86_PG_ENTRIES                      1024
 %define X86_PG_PAE_ENTRIES                  512
+%define X86_PG_PAE_PDPE_ENTRIES             4
+%define X86_PG_AMD64_ENTRIES                X86_PG_PAE_ENTRIES
+%define X86_PG_AMD64_PDPE_ENTRIES           X86_PG_AMD64_ENTRIES
 %define X86_PAGE_4K_SIZE                    _4K
 %define X86_PAGE_4K_SHIFT                   12
 %define X86_PAGE_4K_OFFSET_MASK             0xfff
@@ -305,8 +309,8 @@
 %define X86_PDE4M_PG_MASK                   ( 0xffc00000 )
 %define X86_PDE4M_PG_HIGH_MASK              ( 0x001fe000 )
 %define X86_PDE4M_PG_HIGH_SHIFT             19
-%define X86_PDE4M_PAE_PG_MASK               ( 0x000fffffffc00000ULL )
-%define X86_PDE4M_PAE_NX                    RT_BIT_64(63)
+%define X86_PDE2M_PAE_PG_MASK               ( 0x000fffffffe00000ULL )
+%define X86_PDE2M_PAE_NX                    X86_PDE2M_PAE_NX
 %define X86_PD_SHIFT                        22
 %define X86_PD_MASK                         0x3ff
 %define X86_PD_PAE_SHIFT                    21
