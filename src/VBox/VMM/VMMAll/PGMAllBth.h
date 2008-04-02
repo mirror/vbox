@@ -2813,14 +2813,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
     return VINF_SUCCESS;
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
-# if PGM_SHW_TYPE == PGM_TYPE_AMD64
 //# error not implemented
     return VERR_INTERNAL_ERROR;
-
-# else  /* PGM_SHW_TYPE != PGM_TYPE_AMD64 */
-#  error "Guest AMD64 mode, but not the shadow mode - that can't be right!"
-# endif /* PGM_SHW_TYPE != PGM_TYPE_AMD64 */
-
 #else /* guest real and protected mode */
     return VINF_SUCCESS;
 #endif
