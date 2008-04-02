@@ -87,7 +87,7 @@
 #define PCNET_IOPORT_SIZE               0x20
 #define PCNET_PNPMMIO_SIZE              0x20
 
-#define PCNET_SAVEDSTATE_VERSION        8
+#define PCNET_SAVEDSTATE_VERSION        9
 
 #define BCR_MAX_RAP                     50
 #define MII_MAX_REG                     32
@@ -867,6 +867,7 @@ struct ether_header
 
 /**
  * Initialize the shared memory for the private guest interface.
+ * @note Changing this layout will break SSM for guests using the private guest interface!
  */
 static void pcnetInitSharedMemory(PCNetState *pData)
 {
@@ -4089,6 +4090,7 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3PutU32(pSSMHandle, pData->u32RAP);
     SSMR3PutS32(pSSMHandle, pData->iISR);
     SSMR3PutU32(pSSMHandle, pData->u32Lnkst);
+    SSMR3PutBool(pSSMHandle, pData->fPrivIfEnabled);
     SSMR3PutGCPhys32(pSSMHandle, pData->GCRDRA);
     SSMR3PutGCPhys32(pSSMHandle, pData->GCTDRA);
     SSMR3PutMem(pSSMHandle, pData->aPROM, sizeof(pData->aPROM));
@@ -4152,6 +4154,13 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3GetU32(pSSMHandle, &pData->u32RAP);
     SSMR3GetS32(pSSMHandle, &pData->iISR);
     SSMR3GetU32(pSSMHandle, &pData->u32Lnkst);
+    if (   SSM_VERSION_MAJOR(u32Version) >  0
+        || SSM_VERSION_MINOR(u32Version) >= 9)
+    {
+        SSMR3GetBool(pSSMHandle, &pData->fPrivIfEnabled);
+        if (pData->fPrivIfEnabled)
+            LogRel(("PCNet#%d: Enabling private interface\n", PCNET_INST_NR));
+    }
     SSMR3GetGCPhys32(pSSMHandle, &pData->GCRDRA);
     SSMR3GetGCPhys32(pSSMHandle, &pData->GCTDRA);
     SSMR3GetMem(pSSMHandle, &pData->aPROM, sizeof(pData->aPROM));
