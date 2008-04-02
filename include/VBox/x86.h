@@ -712,6 +712,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_SYSENTER_EIP               0x176
 #endif
 
+/* Page Attribute Table. */
+#define IA32_CR_PAT                         0x277
+
 /** Basic VMX information. */
 #define MSR_IA32_VMX_BASIC_INFO             0x480
 /** Allowed settings for pin-based VM execution controls */

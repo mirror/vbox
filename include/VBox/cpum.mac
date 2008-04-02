@@ -184,6 +184,16 @@ struc CPUMCTX
     .SysEnter.eip       resb    8
     .SysEnter.esp       resb    8
 
+    .msrEFER            resb    8
+    .msrSTAR            resb    8
+    .msrPAT             resb    8
+    .msrLSTAR           resb    8
+    .msrCSTAR           resb    8
+    .msrSFMASK          resb    8
+    .msrFSBASE          resb    8
+    .msrGSBASE          resb    8
+    .msrKERNELGSBASE    resb    8
+
     .ldtrHid.u32Base    resd    1
     .ldtrHid.u32Limit   resd    1
     .ldtrHid.Attr       resd    1
@@ -193,7 +203,7 @@ struc CPUMCTX
     .trHid.Attr         resd    1
 
     ; padding
-    .padding            resd    4
+    .padding            resd    2
 endstruc
 
 %endif
