@@ -917,7 +917,7 @@ check_sdl()
 #include <cstdio>
 #include <SDL.h>
 #include <SDL_main.h>
-extern "C" int main(void)
+extern "C" int main(int argc, char** argv)
 {
   printf("found version %d.%d.%d",
          SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
