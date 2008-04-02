@@ -831,20 +831,21 @@ typedef X86PGUINT *PX86PGUINT;
 #define X86_PG_ENTRIES                      1024
 
 
-/** PAE page table/page directory/pdptr/l4/l5 entry as an unsigned integer. */
+/** PAE page table/page directory/pdpt/l4/l5 entry as an unsigned integer. */
 typedef uint64_t X86PGPAEUINT;
-/** Pointer to a PAE page table/page directory/pdptr/l4/l5 entry as an unsigned integer. */
+/** Pointer to a PAE page table/page directory/pdpt/l4/l5 entry as an unsigned integer. */
 typedef X86PGPAEUINT *PX86PGPAEUINT;
 
-/** Number of entries in a PAE PT/PD/PDPTR/L4/L5. */
+/** Number of entries in a PAE PT/PD. */
 #define X86_PG_PAE_ENTRIES                  512
-/** Number of entries in a PAE PDPTE. */
+/** Number of entries in a PAE PDPT. */
 #define X86_PG_PAE_PDPE_ENTRIES             4
 
-/** Number of entries in an AMD64 PT/PD/PDPTR/L4/L5. */
+/** Number of entries in an AMD64 PT/PD/PDPT/L4/L5. */
 #define X86_PG_AMD64_ENTRIES                X86_PG_PAE_ENTRIES
-/** Number of entries in an AMD64 PDPTE. */
-#define X86_PG_AMD64_PDPE_ENTRIES           512
+/** Number of entries in an AMD64 PDPT.
+ * Just for complementing X86_PG_PAE_PDPE_ENTRIES, using X86_PG_AMD64_ENTRIES for this is fine too. */
+#define X86_PG_AMD64_PDPE_ENTRIES           X86_PG_AMD64_ENTRIES
 
 /** The size of a 4KB page. */
 #define X86_PAGE_4K_SIZE                    _4K
@@ -907,7 +908,7 @@ typedef X86PGPAEUINT *PX86PGPAEUINT;
 /** Bits 12-31 - - Physical Page number of the next level. */
 #define X86_PTE_PG_MASK                     ( 0xfffff000 )
 
-/** Bits 12-36 - - PAE - Physical Page number of the next level. */
+/** Bits 12-51 - - PAE - Physical Page number of the next level. */
 #if 1 /* we're using this internally and have to mask of the top 16-bit. */
 #define X86_PTE_PAE_PG_MASK                 ( 0x0000fffffffff000ULL )
 #else
@@ -1218,7 +1219,8 @@ typedef const X86PDEPAEBITS *PCX86PDEPAEBITS;
 /** The number of bits to the high part of the page number. */
 #define X86_PDE4M_PG_HIGH_SHIFT             19
 
-/** Bits 21-51 - - PAE & AMD64 - Physical Page number. (bits 40-51 (long mode) & bits 36-51 (pae legacy) are reserved according to the Intel docs; AMD allows for more) */
+/** Bits 21-51 - - PAE & AMD64 - Physical Page number.
+ * (Bits 40-51 (long mode) & bits 36-51 (pae legacy) are reserved according to the Intel docs; AMD allows for more.) */
 #define X86_PDE2M_PAE_PG_MASK               ( 0x000fffffffe00000ULL )
 /** Bits 63 - NX - PAE & AMD64 - No execution flag. */
 #define X86_PDE2M_PAE_NX                    X86_PDE2M_PAE_NX
@@ -1483,6 +1485,7 @@ typedef const X86PDPE *PCX86PDPE;
 
 /**
  * Page directory pointer table.
+ * @todo Rename to PDPT - The 'r' in PDPTR is 'register' according to the intel docs.
  */
 typedef struct X86PDPTR
 {
