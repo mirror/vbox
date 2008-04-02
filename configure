@@ -915,8 +915,8 @@ check_sdl()
     [ "$OS" = "linux" -o "$OS" = "darwin" -o "$OS" = "solaris" ] && LIBSDLMAIN=""
     cat > .tmp_src.cc << EOF
 #include <cstdio>
-#include <SDL/SDL.h>
-#include <SDL/SDL_main.h>
+#include <SDL.h>
+#include <SDL_main.h>
 extern "C" int main(void)
 {
   printf("found version %d.%d.%d",
@@ -953,7 +953,7 @@ check_sdl_ttf()
   test_header SDL_ttf
   cat > .tmp_src.cc << EOF
 #include <cstdio>
-#include <SDL/SDL_ttf.h>
+#include <SDL_ttf.h>
 #ifndef SDL_TTF_MAJOR_VERSION
 #define SDL_TTF_MAJOR_VERSION TTF_MAJOR_VERSION
 #define SDL_TTF_MINOR_VERSION TTF_MINOR_VERSION
@@ -972,7 +972,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-  if test_compile "-lSDL_ttf" SDL_ttf SDL_ttf; then
+  if test_compile "-lSDL_ttf $I_INCSDL" SDL_ttf SDL_ttf; then
     test_execute
   fi
 }
