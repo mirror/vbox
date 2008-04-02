@@ -34,6 +34,7 @@
 # include <iprt/process.h>
 # include <iprt/semaphore.h>
 # include <iprt/thread.h>
+# include <iprt/mp.h>
 #endif
 #ifdef IN_RING3
 # include <iprt/file.h>
@@ -1195,6 +1196,7 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
             { "abs",          sizeof("abs"         ) - 1,   RTLOGFLAGS_REL_TS,              true  },
             { "dec",          sizeof("dec"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          false },
             { "hex",          sizeof("hex"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          true  },
+            { "cpuid",        sizeof("cpuid"       ) - 1,   RTLOGFLAGS_PREFIX_CPUID,        false },
             { "pid",          sizeof("pid"         ) - 1,   RTLOGFLAGS_PREFIX_PID,          false },
             { "flagno",       sizeof("flagno"      ) - 1,   RTLOGFLAGS_PREFIX_FLAG_NO,      false },
             { "flag",         sizeof("flag"        ) - 1,   RTLOGFLAGS_PREFIX_FLAG,         false },
@@ -1870,9 +1872,9 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 
                 /*
                  * Flush the buffer if there isn't enough room for the maximum prefix config.
-                 * Max is 198, add a couple of extra bytes.
+                 * Max is 214, add a couple of extra bytes.
                  */
-                if (cb < 198 + 16)
+                if (cb < 214 + 16)
                 {
                     rtlogFlush(pLogger);
                     cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
@@ -2036,6 +2038,15 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     do
                         *psz++ = ' ';
                     while (cch++ < 8);                                                          /* +17  */
+                }
+                if (pLogger->fFlags & RTLOGFLAGS_PREFIX_CPUID)
+                {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+                    const uint8_t idCpu = ASMGetApicId();
+#else
+                    const RTCPUID idCpu = RTMpCpuId();
+#endif
+                    psz += RTStrFormatNumber(psz, idCpu, 16, sizeof(idCpu) * 2, 0, RTSTR_F_ZEROPAD);
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_FLAG_NO)
                 {
