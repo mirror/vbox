@@ -1,0 +1,11 @@
+#!/bin/sh
+# innotek VirtualBox
+# Start the Guest Additions X11 clipboard client
+#
+#
+# Copyright 2007-2008 innotek GmbH
+#
+# Use only with permission
+#
+
+/usr/bin/VBoxClient
