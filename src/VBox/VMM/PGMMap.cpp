@@ -586,7 +586,7 @@ static int pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cP
         /*
          * PAE.
          */
-        const unsigned iPDPE= (uAddress >> X86_PDPTR_SHIFT) & X86_PDPTR_MASK;
+        const unsigned iPDPE= (uAddress >> X86_PDPT_SHIFT) & X86_PDPT_MASK;
         iPDE = (uAddress >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
         iPTE = (uAddress >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK;
         Assert(iPDPE < 4);
@@ -659,7 +659,7 @@ static void pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPh
         /*
          * PAE
          */
-        const unsigned iPDPE= (uAddress >> X86_PDPTR_SHIFT) & X86_PDPTR_MASK;
+        const unsigned iPDPE= (uAddress >> X86_PDPT_SHIFT) & X86_PDPT_MASK;
         iPDE = (uAddress >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
         iPTE = (uAddress >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK;
         Assert(iPDPE < 4);

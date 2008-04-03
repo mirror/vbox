@@ -387,8 +387,8 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
             const unsigned off = GCPhysCR3 & X86_CR3_PAE_PAGE_MASK;
-            pVM->pgm.s.pGstPaePDPTRHC = (R3R0PTRTYPE(PX86PDPTR))((RTHCUINTPTR)HCPtrGuestCR3 | off);
-            pVM->pgm.s.pGstPaePDPTRGC = (GCPTRTYPE(PX86PDPTR))((RTGCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping | off);
+            pVM->pgm.s.pGstPaePDPTHC = (R3R0PTRTYPE(PX86PDPT))((RTHCUINTPTR)HCPtrGuestCR3 | off);
+            pVM->pgm.s.pGstPaePDPTGC = (GCPTRTYPE(PX86PDPT))((RTGCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping | off);
 
             /*
              * Map the 4 PDs too.
@@ -396,11 +396,11 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             RTGCUINTPTR GCPtr = (RTGCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping + PAGE_SIZE;
             for (unsigned i = 0; i < 4; i++, GCPtr += PAGE_SIZE)
             {
-                if (pVM->pgm.s.CTXSUFF(pGstPaePDPTR)->a[i].n.u1Present)
+                if (pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[i].n.u1Present)
                 {
                     RTHCPTR     HCPtr;
                     RTHCPHYS    HCPhys;
-                    RTGCPHYS    GCPhys = pVM->pgm.s.CTXSUFF(pGstPaePDPTR)->a[i].u & X86_PDPE_PG_MASK;
+                    RTGCPHYS    GCPhys = pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[i].u & X86_PDPE_PG_MASK;
                     int rc2 = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
                     if (VBOX_SUCCESS(rc2))
                     {
@@ -451,8 +451,8 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     pVM->pgm.s.pGuestPDGC = 0;
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
-    pVM->pgm.s.pGstPaePDPTRHC = 0;
-    pVM->pgm.s.pGstPaePDPTRGC = 0;
+    pVM->pgm.s.pGstPaePDPTHC = 0;
+    pVM->pgm.s.pGstPaePDPTGC = 0;
     /** PAE todo: pVM->pgm.s.apGstPaePDsHC? -> unmap?? */
     AssertFailed();
 
@@ -528,9 +528,9 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
      */
     for (unsigned i = 0; i < 4; i++)
     {
-        if (CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].n.u1Present)
+        if (CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].n.u1Present)
         {
-            RTGCPHYS GCPhys = CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].u & X86_PDPE_PG_MASK;
+            RTGCPHYS GCPhys = CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].u & X86_PDPE_PG_MASK;
 # ifndef PGMPOOL_WITH_MIXED_PT_CR3
             if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != GCPhys)
             {
@@ -969,8 +969,8 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
          */
         for (unsigned i = 0; i < 4; i++)
         {
-            if (    CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].n.u1Present
-                &&  (   CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].u & X86_PDPE_PG_MASK)
+            if (    CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].n.u1Present
+                &&  (   CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].u & X86_PDPE_PG_MASK)
                      != pVM->pgm.s.aGCPhysGstPaePDsMonitored[i])
             {
                 /*
@@ -985,7 +985,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
                  */
                 pVM->pgm.s.fSyncFlags |= PGM_SYNC_MONITOR_CR3;
                 Log(("pgmXXGstPaeWriteHandlerCR3: detected updated PDPE; [%d] = %#llx, Old GCPhys=%VGp\n",
-                     i, CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].u, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]));
+                     i, CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].u, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]));
             }
         }
 
@@ -1034,9 +1034,9 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
          */
         RTGCUINTPTR i;
         for (i = 0; i < 4; i++)
-            if (CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].u == (GCPhysFault & X86_PTE_PAE_PG_MASK))
+            if (CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].u == (GCPhysFault & X86_PTE_PAE_PG_MASK))
             {
-                PX86PDPAE           pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPTR_SHIFT);
+                PX86PDPAE           pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPT_SHIFT);
                 const RTGCUINTPTR offPD  = GCPhysFault & PAGE_OFFSET_MASK;
                 const unsigned      iPD1   = offPD / sizeof(X86PDEPAE);
                 const unsigned      iPD2   = (offPD + cb - 1) / sizeof(X86PDEPAE);
@@ -1047,19 +1047,19 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
 
 #ifdef DEBUG
                 Log(("pgmXXGstPaeWriteHandlerPD: emulated change to i=%d iPD1=%#05x (%VGv)\n",
-                     i, iPD1, (i << X86_PDPTR_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT)));
+                     i, iPD1, (i << X86_PDPT_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT)));
                 if (iPD1 != iPD2)
                     Log(("pgmXXGstPaeWriteHandlerPD: emulated change to i=%d iPD2=%#05x (%VGv)\n",
-                         i, iPD2, (i << X86_PDPTR_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT)));
+                         i, iPD2, (i << X86_PDPT_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT)));
 #endif
 
                 if (!pVM->pgm.s.fMappingsFixed)
                 {
                     if (    (   pPDSrc->a[iPD1].n.u1Present
-                             && pgmGetMapping(pVM, (RTGCPTR)((i << X86_PDPTR_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT))) )
+                             && pgmGetMapping(pVM, (RTGCPTR)((i << X86_PDPT_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT))) )
                         ||  (   iPD1 != iPD2
                              && pPDSrc->a[iPD2].n.u1Present
-                             && pgmGetMapping(pVM, (RTGCPTR)((i << X86_PDPTR_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT))) )
+                             && pgmGetMapping(pVM, (RTGCPTR)((i << X86_PDPT_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT))) )
                        )
                     {
                         Log(("pgmXXGstPaeWriteHandlerPD: detected conflict iPD1=%#x iPD2=%#x\n", iPD1, iPD2));

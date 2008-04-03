@@ -634,7 +634,7 @@ MMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages
 
 /**
  * Reserves a hypervisor memory area.
- * Most frequent usage is fence pages and dynamically mappings like the guest PD and PDPTR.
+ * Most frequent usage is fence pages and dynamically mappings like the guest PD and PDPT.
  *
  * @return VBox status code.
  *

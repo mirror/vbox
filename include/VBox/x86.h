@@ -1485,24 +1485,23 @@ typedef const X86PDPE *PCX86PDPE;
 
 /**
  * Page directory pointer table.
- * @todo Rename to PDPT - The 'r' in PDPTR is 'register' according to the intel docs.
  */
-typedef struct X86PDPTR
+typedef struct X86PDPT
 {
     /** PDE Array. */
     X86PDPE         a[X86_PG_AMD64_PDPE_ENTRIES];
-} X86PDPTR;
+} X86PDPT;
 /** Pointer to a page directory pointer table. */
-typedef X86PDPTR *PX86PDPTR;
+typedef X86PDPT *PX86PDPT;
 /** Pointer to a const page directory pointer table. */
-typedef const X86PDPTR *PCX86PDPTR;
+typedef const X86PDPT *PCX86PDPT;
 
-/** The page shift to get the PDPTR index. */
-#define X86_PDPTR_SHIFT             30
-/** The PDPTR index mask (apply to a shifted page address). (32 bits PAE) */
-#define X86_PDPTR_MASK_32           0x3
-/** The PDPTR index mask (apply to a shifted page address). (64 bits PAE)*/
-#define X86_PDPTR_MASK              0x1ff
+/** The page shift to get the PDPT index. */
+#define X86_PDPT_SHIFT             30
+/** The PDPT index mask (apply to a shifted page address). (32 bits PAE) */
+#define X86_PDPT_MASK_32           0x3
+/** The PDPT index mask (apply to a shifted page address). (64 bits PAE)*/
+#define X86_PDPT_MASK              0x1ff
 
 /** @} */
 

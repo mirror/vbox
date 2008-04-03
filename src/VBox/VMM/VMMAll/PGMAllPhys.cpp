@@ -1019,11 +1019,11 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, un
         /** @todo long mode! */
         Assert(PGMGetGuestMode(pVM) < PGMMODE_AMD64);
 
-        PX86PDPTR pPdptr;
-        rc = PGM_GCPHYS_2_PTR(pVM, cr3 & X86_CR3_PAE_PAGE_MASK, &pPdptr);
+        PX86PDPT pPdpt;
+        rc = PGM_GCPHYS_2_PTR(pVM, cr3 & X86_CR3_PAE_PAGE_MASK, &pPdpt);
         if (VBOX_SUCCESS(rc))
         {
-            X86PDPE Pdpe = pPdptr->a[((RTGCUINTPTR)GCPtr >> X86_PDPTR_SHIFT) & X86_PDPTR_MASK];
+            X86PDPE Pdpe = pPdpt->a[((RTGCUINTPTR)GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK];
             if (Pdpe.n.u1Present)
             {
                 PX86PDPAE pPD;

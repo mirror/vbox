@@ -53,7 +53,7 @@
  *
  *  [..]
  *
- * Because of guest context mappings requires PDPTR and PML4 entries to allow
+ * Because of guest context mappings requires PDPT and PML4 entries to allow
  * writing on AMD64, the two upper levels will have fixed flags whatever the
  * guest is thinking of using there. So, when shadowing the PD level we will
  * calculate the effective flags of PD and all the higher levels. In legacy
@@ -887,8 +887,8 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.GCPhysCR3        = NIL_RTGCPHYS;
     pVM->pgm.s.GCPhysGstCR3Monitored = NIL_RTGCPHYS;
     pVM->pgm.s.fA20Enabled      = true;
-    pVM->pgm.s.pGstPaePDPTRHC   = NULL;
-    pVM->pgm.s.pGstPaePDPTRGC   = 0;
+    pVM->pgm.s.pGstPaePDPTHC    = NULL;
+    pVM->pgm.s.pGstPaePDPTGC    = 0;
     for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apGstPaePDsHC); i++)
     {
         pVM->pgm.s.apGstPaePDsHC[i]     = NULL;
@@ -1072,8 +1072,8 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.apInterPaePDs[1] = (PX86PDPAE)MMR3PageAlloc(pVM);
     pVM->pgm.s.apInterPaePDs[2] = (PX86PDPAE)MMR3PageAlloc(pVM);
     pVM->pgm.s.apInterPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    pVM->pgm.s.pInterPaePDPTR   = (PX86PDPTR)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.pInterPaePDPTR64 = (PX86PDPTR)MMR3PageAllocLow(pVM);
+    pVM->pgm.s.pInterPaePDPT    = (PX86PDPT)MMR3PageAllocLow(pVM);
+    pVM->pgm.s.pInterPaePDPT64  = (PX86PDPT)MMR3PageAllocLow(pVM);
     pVM->pgm.s.pInterPaePML4    = (PX86PML4)MMR3PageAllocLow(pVM);
     if (    !pVM->pgm.s.pInterPD
         ||  !pVM->pgm.s.apInterPTs[0]
@@ -1084,8 +1084,8 @@ static int pgmR3InitPaging(PVM pVM)
         ||  !pVM->pgm.s.apInterPaePDs[1]
         ||  !pVM->pgm.s.apInterPaePDs[2]
         ||  !pVM->pgm.s.apInterPaePDs[3]
-        ||  !pVM->pgm.s.pInterPaePDPTR
-        ||  !pVM->pgm.s.pInterPaePDPTR64
+        ||  !pVM->pgm.s.pInterPaePDPT
+        ||  !pVM->pgm.s.pInterPaePDPT64
         ||  !pVM->pgm.s.pInterPaePML4)
     {
         AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
@@ -1094,13 +1094,13 @@ static int pgmR3InitPaging(PVM pVM)
 
     pVM->pgm.s.HCPhysInterPD = MMPage2Phys(pVM, pVM->pgm.s.pInterPD);
     AssertRelease(pVM->pgm.s.HCPhysInterPD != NIL_RTHCPHYS && !(pVM->pgm.s.HCPhysInterPD & PAGE_OFFSET_MASK));
-    pVM->pgm.s.HCPhysInterPaePDPTR = MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPTR);
-    AssertRelease(pVM->pgm.s.HCPhysInterPaePDPTR != NIL_RTHCPHYS && !(pVM->pgm.s.HCPhysInterPaePDPTR & PAGE_OFFSET_MASK));
+    pVM->pgm.s.HCPhysInterPaePDPT = MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPT);
+    AssertRelease(pVM->pgm.s.HCPhysInterPaePDPT != NIL_RTHCPHYS && !(pVM->pgm.s.HCPhysInterPaePDPT & PAGE_OFFSET_MASK));
     pVM->pgm.s.HCPhysInterPaePML4 = MMPage2Phys(pVM, pVM->pgm.s.pInterPaePML4);
     AssertRelease(pVM->pgm.s.HCPhysInterPaePML4 != NIL_RTHCPHYS && !(pVM->pgm.s.HCPhysInterPaePML4 & PAGE_OFFSET_MASK));
 
     /*
-     * Initialize the pages, setting up the PML4 and PDPTR for repetitive 4GB action.
+     * Initialize the pages, setting up the PML4 and PDPT for repetitive 4GB action.
      */
     ASMMemZeroPage(pVM->pgm.s.pInterPD);
     ASMMemZeroPage(pVM->pgm.s.apInterPTs[0]);
@@ -1109,32 +1109,32 @@ static int pgmR3InitPaging(PVM pVM)
     ASMMemZeroPage(pVM->pgm.s.apInterPaePTs[0]);
     ASMMemZeroPage(pVM->pgm.s.apInterPaePTs[1]);
 
-    ASMMemZeroPage(pVM->pgm.s.pInterPaePDPTR);
+    ASMMemZeroPage(pVM->pgm.s.pInterPaePDPT);
     for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apInterPaePDs); i++)
     {
         ASMMemZeroPage(pVM->pgm.s.apInterPaePDs[i]);
-        pVM->pgm.s.pInterPaePDPTR->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT
+        pVM->pgm.s.pInterPaePDPT->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT
                                           | MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[i]);
     }
 
-    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.pInterPaePDPTR64->a); i++)
+    for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.pInterPaePDPT64->a); i++)
     {
         const unsigned iPD = i % ELEMENTS(pVM->pgm.s.apInterPaePDs);
-        pVM->pgm.s.pInterPaePDPTR64->a[i].u = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_A | PGM_PLXFLAGS_PERMANENT
+        pVM->pgm.s.pInterPaePDPT64->a[i].u = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_A | PGM_PLXFLAGS_PERMANENT
                                             | MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[iPD]);
     }
 
-    RTHCPHYS HCPhysInterPaePDPTR64 = MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPTR64);
+    RTHCPHYS HCPhysInterPaePDPT64 = MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPT64);
     for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.pInterPaePML4->a); i++)
         pVM->pgm.s.pInterPaePML4->a[i].u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A | PGM_PLXFLAGS_PERMANENT
-                                         | HCPhysInterPaePDPTR64;
+                                         | HCPhysInterPaePDPT64;
 
     /*
      * Allocate pages for the three possible guest contexts (AMD64, PAE and plain 32-Bit).
      * We allocate pages for all three posibilities to in order to simplify mappings and
      * avoid resource failure during mode switches. So, we need to cover all levels of the
      * of the first 4GB down to PD level.
-     * As with the intermediate context, AMD64 uses the PAE PDPTR and PDs.
+     * As with the intermediate context, AMD64 uses the PAE PDPT and PDs.
      */
     pVM->pgm.s.pHC32BitPD    = (PX86PD)MMR3PageAllocLow(pVM);
     pVM->pgm.s.apHCPaePDs[0] = (PX86PDPAE)MMR3PageAlloc(pVM);
@@ -1144,14 +1144,14 @@ static int pgmR3InitPaging(PVM pVM)
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[1] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[2]);
     pVM->pgm.s.apHCPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[2] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[3]);
-    pVM->pgm.s.pHCPaePDPTR   = (PX86PDPTR)MMR3PageAllocLow(pVM);
+    pVM->pgm.s.pHCPaePDPT    = (PX86PDPT)MMR3PageAllocLow(pVM);
     pVM->pgm.s.pHCPaePML4    = (PX86PML4)MMR3PageAllocLow(pVM);
     if (    !pVM->pgm.s.pHC32BitPD
         ||  !pVM->pgm.s.apHCPaePDs[0]
         ||  !pVM->pgm.s.apHCPaePDs[1]
         ||  !pVM->pgm.s.apHCPaePDs[2]
         ||  !pVM->pgm.s.apHCPaePDs[3]
-        ||  !pVM->pgm.s.pHCPaePDPTR
+        ||  !pVM->pgm.s.pHCPaePDPT
         ||  !pVM->pgm.s.pHCPaePML4)
     {
         AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
@@ -1165,25 +1165,25 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.aHCPhysPaePDs[1] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[1]);
     pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[2]);
     pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[3]);
-    pVM->pgm.s.HCPhysPaePDPTR   = MMPage2Phys(pVM, pVM->pgm.s.pHCPaePDPTR);
+    pVM->pgm.s.HCPhysPaePDPT    = MMPage2Phys(pVM, pVM->pgm.s.pHCPaePDPT);
     pVM->pgm.s.HCPhysPaePML4    = MMPage2Phys(pVM, pVM->pgm.s.pHCPaePML4);
 
     /*
-     * Initialize the pages, setting up the PML4 and PDPTR for action below 4GB.
+     * Initialize the pages, setting up the PML4 and PDPT for action below 4GB.
      */
     ASMMemZero32(pVM->pgm.s.pHC32BitPD, PAGE_SIZE);
 
-    ASMMemZero32(pVM->pgm.s.pHCPaePDPTR, PAGE_SIZE);
+    ASMMemZero32(pVM->pgm.s.pHCPaePDPT, PAGE_SIZE);
     for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
     {
         ASMMemZero32(pVM->pgm.s.apHCPaePDs[i], PAGE_SIZE);
-        pVM->pgm.s.pHCPaePDPTR->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.aHCPhysPaePDs[i];
+        pVM->pgm.s.pHCPaePDPT->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.aHCPhysPaePDs[i];
         /* The flags will be corrected when entering and leaving long mode. */
     }
 
     ASMMemZero32(pVM->pgm.s.pHCPaePML4, PAGE_SIZE);
     pVM->pgm.s.pHCPaePML4->a[0].u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_A
-                                  | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.HCPhysPaePDPTR;
+                                  | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.HCPhysPaePDPT;
 
     CPUMSetHyperCR3(pVM, (uint32_t)pVM->pgm.s.HCPhys32BitPD);
 
@@ -1226,16 +1226,16 @@ static int pgmR3InitPaging(PVM pVM)
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
 #if HC_ARCH_BITS == 64
-LogRel(("Debug: HCPhys32BitPD=%VHp aHCPhysPaePDs={%VHp,%VHp,%VHp,%VHp} HCPhysPaePDPTR=%VHp HCPhysPaePML4=%VHp\n",
+LogRel(("Debug: HCPhys32BitPD=%VHp aHCPhysPaePDs={%VHp,%VHp,%VHp,%VHp} HCPhysPaePDPT=%VHp HCPhysPaePML4=%VHp\n",
         pVM->pgm.s.HCPhys32BitPD, pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3],
-        pVM->pgm.s.HCPhysPaePDPTR, pVM->pgm.s.HCPhysPaePML4));
-LogRel(("Debug: HCPhysInterPD=%VHp HCPhysInterPaePDPTR=%VHp HCPhysInterPaePML4=%VHp\n",
-        pVM->pgm.s.HCPhysInterPD, pVM->pgm.s.HCPhysInterPaePDPTR, pVM->pgm.s.HCPhysInterPaePML4));
-LogRel(("Debug: apInterPTs={%VHp,%VHp} apInterPaePTs={%VHp,%VHp} apInterPaePDs={%VHp,%VHp,%VHp,%VHp} pInterPaePDPTR64=%VHp\n",
+        pVM->pgm.s.HCPhysPaePDPT, pVM->pgm.s.HCPhysPaePML4));
+LogRel(("Debug: HCPhysInterPD=%VHp HCPhysInterPaePDPT=%VHp HCPhysInterPaePML4=%VHp\n",
+        pVM->pgm.s.HCPhysInterPD, pVM->pgm.s.HCPhysInterPaePDPT, pVM->pgm.s.HCPhysInterPaePML4));
+LogRel(("Debug: apInterPTs={%VHp,%VHp} apInterPaePTs={%VHp,%VHp} apInterPaePDs={%VHp,%VHp,%VHp,%VHp} pInterPaePDPT64=%VHp\n",
         MMPage2Phys(pVM, pVM->pgm.s.apInterPTs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPTs[1]),
         MMPage2Phys(pVM, pVM->pgm.s.apInterPaePTs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePTs[1]),
         MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[1]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[2]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[3]),
-        MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPTR64)));
+        MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPT64)));
 #endif
 
         return VINF_SUCCESS;
@@ -1320,6 +1320,8 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatGCTrap0eUnhandled,             STAMTYPE_COUNTER, "/PGM/GC/Trap0e/GuestPF/Unhandled",   STAMUNIT_OCCURENCES,     "Number of guest real page faults.");
     STAM_REG(pVM, &pPGM->StatGCTrap0eMap,                   STAMTYPE_COUNTER, "/PGM/GC/Trap0e/GuestPF/Map",         STAMUNIT_OCCURENCES,     "Number of guest page faults due to map accesses.");
 
+    STAM_REG(pVM, &pPGM->StatTrap0eWPEmulGC,                STAMTYPE_COUNTER, "/PGM/GC/Trap0e/WP/InGC",             STAMUNIT_OCCURENCES,     "Number of guest page faults due to X86_CR0_WP emulation.");
+    STAM_REG(pVM, &pPGM->StatTrap0eWPEmulR3,                STAMTYPE_COUNTER, "/PGM/GC/Trap0e/WP/ToR3",             STAMUNIT_OCCURENCES,     "Number of guest page faults due to X86_CR0_WP emulation (forward to R3 for emulation).");
 
     STAM_REG(pVM, &pPGM->StatGCGuestCR3WriteHandled,        STAMTYPE_COUNTER, "/PGM/GC/CR3WriteInt",                STAMUNIT_OCCURENCES,     "The number of times the Guest CR3 change was successfully handled.");
     STAM_REG(pVM, &pPGM->StatGCGuestCR3WriteUnhandled,      STAMTYPE_COUNTER, "/PGM/GC/CR3WriteEmu",                STAMUNIT_OCCURENCES,     "The number of times the Guest CR3 change was passed back to the recompiler.");
@@ -1523,9 +1525,9 @@ PGMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     AssertRelease((RTGCUINTPTR)pVM->pgm.s.apGCPaePDs[2] + PAGE_SIZE == (RTGCUINTPTR)pVM->pgm.s.apGCPaePDs[3]);
     GCPtr += PAGE_SIZE; /* reserved page */
 
-    rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhysPaePDPTR, PAGE_SIZE, 0);
+    rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhysPaePDPT, PAGE_SIZE, 0);
     AssertRCReturn(rc, rc);
-    pVM->pgm.s.pGCPaePDPTR = GCPtr;
+    pVM->pgm.s.pGCPaePDPT = GCPtr;
     GCPtr += PAGE_SIZE;
     GCPtr += PAGE_SIZE; /* reserved page */
 
@@ -1586,7 +1588,7 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     pVM->pgm.s.pGuestPDGC += offDelta;
     for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apGCPaePDs); i++)
         pVM->pgm.s.apGCPaePDs[i] += offDelta;
-    pVM->pgm.s.pGCPaePDPTR += offDelta;
+    pVM->pgm.s.pGCPaePDPT += offDelta;
     pVM->pgm.s.pGCPaePML4 += offDelta;
 
     pgmR3ModeDataInit(pVM, true /* resolve GC/R0 symbols */);
@@ -3151,10 +3153,10 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
  * @param   cMaxDepth   The maxium depth.
  * @param   pHlp        Pointer to the output functions.
  */
-static int  pgmR3DumpHierarchyHCPaePDPTR(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Address, uint32_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp)
+static int  pgmR3DumpHierarchyHCPaePDPT(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Address, uint32_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp)
 {
-    PX86PDPTR pPDPTR = (PX86PDPTR)MMPagePhys2Page(pVM, HCPhys);
-    if (!pPDPTR)
+    PX86PDPT pPDPT = (PX86PDPT)MMPagePhys2Page(pVM, HCPhys);
+    if (!pPDPT)
     {
         pHlp->pfnPrintf(pHlp, "%0*llx error! Page directory pointer table at HCPhys=%#VHp was not found in the page pool!\n",
                         fLongMode ? 16 : 8, u64Address, HCPhys);
@@ -3162,16 +3164,16 @@ static int  pgmR3DumpHierarchyHCPaePDPTR(PVM pVM, RTHCPHYS HCPhys, uint64_t u64A
     }
 
     int rc = VINF_SUCCESS;
-    const unsigned c = fLongMode ? ELEMENTS(pPDPTR->a) : X86_PG_PAE_PDPE_ENTRIES;
+    const unsigned c = fLongMode ? ELEMENTS(pPDPT->a) : X86_PG_PAE_PDPE_ENTRIES;
     for (unsigned i = 0; i < c; i++)
     {
-        X86PDPE Pdpe = pPDPTR->a[i];
+        X86PDPE Pdpe = pPDPT->a[i];
         if (Pdpe.n.u1Present)
         {
             if (fLongMode)
                 pHlp->pfnPrintf(pHlp,         /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
                                 "%016llx 1  |   P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx\n",
-                                u64Address + ((uint64_t)i << X86_PDPTR_SHIFT),
+                                u64Address + ((uint64_t)i << X86_PDPT_SHIFT),
                                 Pdpe.n.u1Write       ? 'W'  : 'R',
                                 Pdpe.n.u1User        ? 'U'  : 'S',
                                 Pdpe.n.u1Accessed    ? 'A'  : '-',
@@ -3188,7 +3190,7 @@ static int  pgmR3DumpHierarchyHCPaePDPTR(PVM pVM, RTHCPHYS HCPhys, uint64_t u64A
             else
                 pHlp->pfnPrintf(pHlp,      /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
                                 "%08x 0 |    P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx\n",
-                                i << X86_PDPTR_SHIFT,
+                                i << X86_PDPT_SHIFT,
                                 Pdpe.n.u1Write       ? '!'  : '.', /* mbz */
                                 Pdpe.n.u1User        ? '!'  : '.', /* mbz */
                                 Pdpe.n.u1Accessed    ? '!'  : '.', /* mbz */
@@ -3204,7 +3206,7 @@ static int  pgmR3DumpHierarchyHCPaePDPTR(PVM pVM, RTHCPHYS HCPhys, uint64_t u64A
                                 Pdpe.u & X86_PDPE_PG_MASK);
             if (cMaxDepth >= 1)
             {
-                int rc2 = pgmR3DumpHierarchyHCPaePD(pVM, Pdpe.u & X86_PDPE_PG_MASK, u64Address + ((uint64_t)i << X86_PDPTR_SHIFT),
+                int rc2 = pgmR3DumpHierarchyHCPaePD(pVM, Pdpe.u & X86_PDPE_PG_MASK, u64Address + ((uint64_t)i << X86_PDPT_SHIFT),
                                                     cr4, fLongMode, cMaxDepth - 1, pHlp);
                 if (rc2 < rc && VBOX_SUCCESS(rc))
                     rc = rc2;
@@ -3240,7 +3242,7 @@ static int pgmR3DumpHierarchyHcPaePML4(PVM pVM, RTHCPHYS HCPhys, uint32_t cr4, u
         X86PML4E Pml4e = pPML4->a[i];
         if (Pml4e.n.u1Present)
         {
-            uint64_t u64Address = ((uint64_t)i << X86_PML4_SHIFT) | (((uint64_t)i >> (X86_PML4_SHIFT - X86_PDPTR_SHIFT - 1)) * 0xffff000000000000ULL);
+            uint64_t u64Address = ((uint64_t)i << X86_PML4_SHIFT) | (((uint64_t)i >> (X86_PML4_SHIFT - X86_PDPT_SHIFT - 1)) * 0xffff000000000000ULL);
             pHlp->pfnPrintf(pHlp,         /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
                             "%016llx 0 |    P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx\n",
                             u64Address,
@@ -3260,7 +3262,7 @@ static int pgmR3DumpHierarchyHcPaePML4(PVM pVM, RTHCPHYS HCPhys, uint32_t cr4, u
 
             if (cMaxDepth >= 1)
             {
-                int rc2 = pgmR3DumpHierarchyHCPaePDPTR(pVM, Pml4e.u & X86_PML4E_PG_MASK, u64Address, cr4, true, cMaxDepth - 1, pHlp);
+                int rc2 = pgmR3DumpHierarchyHCPaePDPT(pVM, Pml4e.u & X86_PML4E_PG_MASK, u64Address, cr4, true, cMaxDepth - 1, pHlp);
                 if (rc2 < rc && VBOX_SUCCESS(rc))
                     rc = rc2;
             }
@@ -3596,7 +3598,7 @@ PGMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint32_t cr3, uint32_t cr4, bool fL
     {
         if (fLongMode)
             return pgmR3DumpHierarchyHcPaePML4(pVM, cr3 & X86_CR3_PAGE_MASK, cr4, cMaxDepth, pHlp);
-        return pgmR3DumpHierarchyHCPaePDPTR(pVM, cr3 & X86_CR3_PAE_PAGE_MASK, 0, cr4, false, cMaxDepth, pHlp);
+        return pgmR3DumpHierarchyHCPaePDPT(pVM, cr3 & X86_CR3_PAE_PAGE_MASK, 0, cr4, false, cMaxDepth, pHlp);
     }
     return pgmR3DumpHierarchyHC32BitPD(pVM, cr3 & X86_CR3_PAGE_MASK, cr4, cMaxDepth, pHlp);
 }

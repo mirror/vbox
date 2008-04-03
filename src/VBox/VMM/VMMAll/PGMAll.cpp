@@ -752,7 +752,7 @@ PGMDECL(uint32_t) PGMGetHyperCR3(PVM pVM)
 
         case PGMMODE_PAE:
         case PGMMODE_PAE_NX:
-            return pVM->pgm.s.HCPhysPaePDPTR;
+            return pVM->pgm.s.HCPhysPaePDPT;
 
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
@@ -783,7 +783,7 @@ PGMDECL(uint32_t) PGMGetHyper32BitCR3(PVM pVM)
  */
 PGMDECL(uint32_t) PGMGetHyperPaeCR3(PVM pVM)
 {
-    return pVM->pgm.s.HCPhysPaePDPTR;
+    return pVM->pgm.s.HCPhysPaePDPT;
 }
 
 
@@ -815,13 +815,13 @@ PGMDECL(uint32_t) PGMGetInterHCCR3(PVM pVM)
         case SUPPAGINGMODE_PAE_GLOBAL:
         case SUPPAGINGMODE_PAE_NX:
         case SUPPAGINGMODE_PAE_GLOBAL_NX:
-            return pVM->pgm.s.HCPhysInterPaePDPTR;
+            return pVM->pgm.s.HCPhysInterPaePDPT;
 
         case SUPPAGINGMODE_AMD64:
         case SUPPAGINGMODE_AMD64_GLOBAL:
         case SUPPAGINGMODE_AMD64_NX:
         case SUPPAGINGMODE_AMD64_GLOBAL_NX:
-            return pVM->pgm.s.HCPhysInterPaePDPTR;
+            return pVM->pgm.s.HCPhysInterPaePDPT;
 
         default:
             AssertMsgFailed(("enmHostMode=%d\n", pVM->pgm.s.enmHostMode));
@@ -844,7 +844,7 @@ PGMDECL(uint32_t) PGMGetInterGCCR3(PVM pVM)
 
         case PGMMODE_PAE:
         case PGMMODE_PAE_NX:
-            return pVM->pgm.s.HCPhysInterPaePDPTR;
+            return pVM->pgm.s.HCPhysInterPaePDPT;
 
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
@@ -875,7 +875,7 @@ PGMDECL(uint32_t) PGMGetInter32BitCR3(PVM pVM)
  */
 PGMDECL(uint32_t) PGMGetInterPaeCR3(PVM pVM)
 {
-    return pVM->pgm.s.HCPhysInterPaePDPTR;
+    return pVM->pgm.s.HCPhysInterPaePDPT;
 }
 
 
@@ -893,7 +893,7 @@ PGMDECL(uint32_t) PGMGetInterAmd64CR3(PVM pVM)
 /**
  * Performs and schedules necessary updates following a CR3 load or reload.
  *
- * This will normally involve mapping the guest PD or nPDPTR
+ * This will normally involve mapping the guest PD or nPDPT
  *
  * @returns VBox status code.
  * @retval  VINF_PGM_SYNC_CR3 if monitoring requires a CR3 sync. This can
