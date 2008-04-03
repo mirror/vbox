@@ -804,6 +804,8 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         }
         /* Note: protected mode & paging are always enabled; we use them for emulating real and protected mode without paging too. */
         val |= X86_CR0_PE | X86_CR0_PG;
+        /* Note: We must also set this as we rely on protecting various pages for which supervisor writes must be caught. */
+        val |= X86_CR0_WP;
 
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_CR0,              val);
         Log2(("Guest CR0 %08x\n", val));
@@ -811,7 +813,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
          * the VM will exit.
          */
         val =   X86_CR0_PE  /* Must monitor this bit (assumptions are made for real mode emulation) */
-              | X86_CR0_WP  /** @todo do we care? (we do if we start patching the guest) */
+              | X86_CR0_WP  /* Must monitor this bit (it must always be enabled). */
               | X86_CR0_PG  /* Must monitor this bit (assumptions are made for real mode & protected mode without paging emulation) */
               | X86_CR0_TS
               | X86_CR0_ET
