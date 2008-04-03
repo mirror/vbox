@@ -33,31 +33,6 @@
 #include <iprt/assert.h>
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-
-/**
- * Array for fast recode of the operand size (1/2/4/8 bytes) to bit shift value.
- */
-static const unsigned g_aSize2Shift[] =
-{
-    ~0,    /* 0 - invalid */
-    0,     /* *1 == 2^0 */
-    1,     /* *2 == 2^1 */
-    ~0,    /* 3 - invalid */
-    2,     /* *4 == 2^2 */
-    ~0,    /* 5 - invalid */
-    ~0,    /* 6 - invalid */
-    ~0,    /* 7 - invalid */
-    3      /* *8 == 2^3 */
-};
-
-/**
- * Macro for fast recode of the operand size (1/2/4/8 bytes) to bit shift value.
- */
-#define SIZE2SHIFT(cb) (g_aSize2Shift[cb])
-
 /**
  * Calculates the size of register parameter.
  *
@@ -715,10 +690,10 @@ IOMDECL(void) IOMFlushCache(PVM pVM)
 /**
  * Reads an I/O port register.
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  *
@@ -858,10 +833,10 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
 /**
  * Reads the string buffer of an I/O port register.
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  *
@@ -875,7 +850,7 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
 {
 #ifdef LOG_ENABLED
     const RTGCUINTREG cTransfers = *pcTransfers;
-#endif 
+#endif
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Get the statistics record.
@@ -984,10 +959,10 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
 /**
  * Writes to an I/O port register.
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  *
@@ -1105,10 +1080,10 @@ IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
 /**
  * Writes the string buffer of an I/O port register.
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  *
@@ -1122,7 +1097,7 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
 {
 #ifdef LOG_ENABLED
     const RTGCUINTREG cTransfers = *pcTransfers;
-#endif 
+#endif
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Get the statistics record.
@@ -1231,7 +1206,7 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
  * Checks that the operation is allowed according to the IOPL
  * level and I/O bitmap.
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure.
  * @retval  VINF_SUCCESS                Success.
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
@@ -1326,10 +1301,10 @@ IOMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
 /**
  * IN <AL|AX|EAX>, <DX|imm16>
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
@@ -1385,10 +1360,10 @@ IOMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 /**
  * OUT <DX|imm16>, <AL|AX|EAX>
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
