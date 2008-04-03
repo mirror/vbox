@@ -21,9 +21,10 @@
 
 #include <limits.h>
 
-#include <qobject.h>
-#include <qvalidator.h>
-#include <q3valuelist.h>
+/* Qt includes */
+#include <QObject>
+#include <QValidator>
+#include <QList>
 
 class QIWidgetValidator : public QObject
 {
@@ -31,11 +32,9 @@ class QIWidgetValidator : public QObject
 
 public:
 
-    QIWidgetValidator (QWidget *aWidget, QObject *aParent = 0,
-                       const char *aName = 0);
+    QIWidgetValidator (QWidget *aWidget, QObject *aParent = 0);
     QIWidgetValidator (const QString &aCaption,
-                       QWidget *aWidget, QObject *aParent = 0,
-                       const char *aName = 0);
+                       QWidget *aWidget, QObject *aParent = 0);
     ~QIWidgetValidator();
 
     QWidget *widget() const { return mWidget; }
@@ -73,7 +72,7 @@ private:
         QValidator::State state;
     };
 
-    Q3ValueList <Watched> mWatched;
+    QList <Watched> mWatched;
     Watched mLastInvalid;
 
 private slots:
@@ -85,12 +84,12 @@ class QIULongValidator : public QValidator
 {
 public:
 
-    QIULongValidator (QObject *aParent, const char *aName = 0)
+    QIULongValidator (QObject *aParent)
         : QValidator (aParent)
         , mBottom (0), mTop (ULONG_MAX) {}
 
     QIULongValidator (ulong aMinimum, ulong aMaximum,
-                      QObject *aParent, const char *aName = 0)
+                      QObject *aParent)
         : QValidator (aParent)
         , mBottom (aMinimum), mTop (aMaximum) {}
 

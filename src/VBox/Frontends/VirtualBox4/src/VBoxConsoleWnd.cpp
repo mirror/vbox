@@ -143,7 +143,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     setWindowIcon (QIcon (":/ico40x01.png"));
 
     /* ensure status bar is created */
-    new QIStatusBar (this);
+    setStatusBar (new QIStatusBar (this));
 
     ///// Actions ///////////////////////////////////////////////////////////
 
@@ -3294,12 +3294,13 @@ void VBoxConsoleWnd::updateNetworkAdarptersState()
 void VBoxConsoleWnd::tryClose()
 {
 #warning "port me"
-    /* @todo: I'm not sure if it is the right way to force an shutdown if modal
-     * child widgets are open. Anyway, currently I didn't know how to achieve
-     * this. So for now we simply call close. */
+    /* It seems that Qt4 closes all child widgets if the parent widget get
+     * closed. So nothing to do here than to call close. */
      
      close();
 
+    /* We have this to test on Windows and Mac or maybe I forgot something, so
+     * we keep this as a reference: */
 //    LogFlowFunc (("eventLoopLevel=%d\n", qApp->eventLoop()->loopLevel()));
 //
 //    if (qApp->eventLoop()->loopLevel() > 1)
