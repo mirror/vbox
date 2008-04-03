@@ -21,7 +21,8 @@
 
 #include "CIShared.h"
 
-#include <qobject.h>
+/* Qt includes */
+#include <QObject>
 
 class CVirtualBox;
 

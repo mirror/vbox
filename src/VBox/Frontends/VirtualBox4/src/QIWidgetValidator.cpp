@@ -18,12 +18,10 @@
 
 #include "QIWidgetValidator.h"
 
-#include <qobject.h>
-#include <qlineedit.h>
-#include <qcombobox.h>
-#include <qlabel.h>
-//Added by qt3to4:
-#include <Q3ValueList>
+/* Qt includes */
+#include <QLineEdit>
+#include <QComboBox>
+#include <QLabel>
 
 #include <iprt/assert.h>
 
@@ -78,9 +76,8 @@
  *
  *  @param aWidget  Widget whose children should be checked.
  */
-QIWidgetValidator::QIWidgetValidator (QWidget *aWidget, QObject *aParent,
-                                      const char *aName)
-    : QObject (aParent, aName)
+QIWidgetValidator::QIWidgetValidator (QWidget *aWidget, QObject *aParent)
+    : QObject (aParent)
     , mWidget (aWidget)
     , mOtherValid (true)
 {
@@ -95,9 +92,8 @@ QIWidgetValidator::QIWidgetValidator (QWidget *aWidget, QObject *aParent,
  *  @param aWidget  Widget whose children should be checked.
  */
 QIWidgetValidator::QIWidgetValidator (const QString &aCaption,
-                                      QWidget *aWidget, QObject *aParent,
-                                      const char *aName)
-    : QObject (aParent, aName)
+                                      QWidget *aWidget, QObject *aParent)
+    : QObject (aParent)
     , mCaption (aCaption)
     , mWidget (aWidget)
     , mOtherValid (true)
@@ -153,11 +149,8 @@ bool QIWidgetValidator::isValid() const
 
     QValidator::State state = QValidator::Acceptable;
 
-    for (Q3ValueList <Watched>::ConstIterator it = mWatched.begin();
-         it != mWatched.end(); ++ it)
+    foreach (Watched watched, mWatched)
     {
-        Watched watched = *it;
-
         if (watched.widget->inherits ("QLineEdit"))
         {
             QLineEdit *le = ((QLineEdit *) watched.widget);
@@ -213,17 +206,17 @@ void QIWidgetValidator::rescan()
 
     Watched watched;
 
-    QObjectList list = mWidget->queryList();
-    QObject *obj;
+    QList<QWidget *> list = mWidget->findChildren<QWidget *>();
+    QWidget *wgt;
 
     /* detect all widgets that support validation */
-    QListIterator<QObject*> it (list);
+    QListIterator<QWidget *> it (list);
     while (it.hasNext())
     {
-        obj = it.next();
-        if (obj->inherits ("QLineEdit"))
+        wgt = it.next();
+
+        if (QLineEdit *le = qobject_cast<QLineEdit *> (wgt))
         {
-            QLineEdit *le = ((QLineEdit *) obj);
             if (!le->validator())
                 continue;
             /* disconnect to avoid duplicate connections */
@@ -232,9 +225,9 @@ void QIWidgetValidator::rescan()
             connect (le, SIGNAL (textChanged (const QString &)),
                      this, SLOT (doRevalidate()));
         }
-        else if (obj->inherits ("QComboBox"))
+        else if (QComboBox *cb = qobject_cast<QComboBox *> (wgt))
         {
-            QComboBox *cb = ((QComboBox *) obj);
+            
             if (!cb->validator() || !cb->lineEdit())
                 continue;
             /* disconnect to avoid duplicate connections */
@@ -244,23 +237,20 @@ void QIWidgetValidator::rescan()
                      this, SLOT (doRevalidate()));
         }
 
-        watched.widget = (QWidget *) obj;
+        watched.widget = wgt;
 
         /* try to find a buddy widget in order to determine the title for
          * the watched widget which is used in the warning text */
-        QListIterator<QObject*> it2 (list);
+        QListIterator<QWidget *> it2 (list);
         while (it2.hasNext())
         {
-            obj = it2.next();
-            if (obj->inherits ("QLabel"))
-            {
-                QLabel *label = (QLabel *) obj;
+            wgt = it2.next();
+            if (QLabel *label = qobject_cast<QLabel *> (wgt))
                 if (label->buddy() == watched.widget)
                 {
                     watched.buddy = label;
                     break;
                 }
-            }
         }
 
         /* memorize */
@@ -362,10 +352,10 @@ QValidator::State QIULongValidator::validate (QString &aInput, int &aPos) const
 {
     Q_UNUSED (aPos);
 
-    QString stripped = aInput.stripWhiteSpace();
+    QString stripped = aInput.trimmed();
 
     if (stripped.isEmpty() ||
-        stripped.upper() == QString ("0x").upper())
+        stripped.toUpper() == QString ("0x").toUpper())
         return Intermediate;
 
     bool ok;

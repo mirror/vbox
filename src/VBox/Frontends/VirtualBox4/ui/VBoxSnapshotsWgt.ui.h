@@ -302,6 +302,7 @@ void VBoxSnapshotsWgt::init()
     toolBar->setUsesBigPixmaps (true);
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 #warning port me
+    vboxLayout->insertWidget (0, toolBar);
 //    VBoxSnapshotsWgtLayout->insertWidget (0, toolBar);
 #ifdef Q_WS_MAC
     toolBar->setMacStyle();
