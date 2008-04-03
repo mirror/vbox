@@ -772,6 +772,15 @@ static int cfgmR3CreateDefault(PVM pVM)
     RTUuidClear(&Uuid);
     rc = CFGMR3InsertBytes(pCfg,    "UUID", &Uuid, sizeof(Uuid));
     UPDATERC();
+    /* Bios logo. */
+    rc = CFGMR3InsertInteger(pCfg,  "FadeIn",               1);
+    UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "FadeOut",              1);
+    UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "LogoTime",             0);
+    UPDATERC();
+    rc = CFGMR3InsertString(pCfg,   "LogoFile",             "");
+    UPDATERC();
 
     /*
      * PCI bus.
@@ -876,17 +885,6 @@ static int cfgmR3CreateDefault(PVM pVM)
     UPDATERC();
     rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             4 * _1M);
     UPDATERC();
-
-    /* Bios logo. */
-    rc = CFGMR3InsertInteger(pCfg,  "FadeIn",               1);
-    UPDATERC();
-    rc = CFGMR3InsertInteger(pCfg,  "FadeOut",              1);
-    UPDATERC();
-    rc = CFGMR3InsertInteger(pCfg,  "LogoTime",             0);
-    UPDATERC();
-    rc = CFGMR3InsertString(pCfg,   "LogoFile",             "");
-    UPDATERC();
-
 #if 0
     rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);
     UPDATERC();
