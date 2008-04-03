@@ -2498,10 +2498,11 @@ int main(int argc, char *argv[])
                 {
                     uResizeWidth  = event.resize.w;
 #ifdef VBOX_SECURELABEL
-                    uResizeHeight = RT_MAX(0, event.resize.h - SECURE_LABEL_HEIGHT);
-#else
-                    uResizeHeight = event.resize.h;
+                    if (fSecureLabel)
+                        uResizeHeight = RT_MAX(0, event.resize.h - SECURE_LABEL_HEIGHT);
+                    else
 #endif
+                        uResizeHeight = event.resize.h;
                     if (gSdlResizeTimer)
                         SDL_RemoveTimer(gSdlResizeTimer);
                     gSdlResizeTimer = SDL_AddTimer(300, ResizeTimer, NULL);
