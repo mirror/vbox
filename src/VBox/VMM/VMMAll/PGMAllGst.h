@@ -149,26 +149,28 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
         *pGCPhys = GCPtr & PAGE_BASE_GC_MASK;
     return VINF_SUCCESS;
 
-#elif PGM_GST_TYPE == PGM_TYPE_32BIT \
-   || PGM_GST_TYPE == PGM_TYPE_PAE \
-   || PGM_GST_TYPE == PGM_TYPE_AMD64
- 	
-#if PGM_GST_TYPE == PGM_TYPE_AMD64
+#elif PGM_GST_TYPE == PGM_TYPE_AMD64
     /* later */
+    /* check level 3 & 4 bits as well (r/w, u/s, nxe) */
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
-#endif
 
+#elif PGM_GST_TYPE == PGM_GST_32BIT || PGM_GST_TYPE == PGM_GST_PAE
 
     /*
      * Get the PDE.
      */
-#if PGM_GST_TYPE == PGM_TYPE_32BIT
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
     const X86PDE Pde = CTXSUFF(pVM->pgm.s.pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
-#else /* PAE */
-    X86PDEPAE   Pde;
+# else /* PAE */
+    X86PDEPAE    Pde;
+    bool         fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+
+    /* pgmGstGetPaePDE will return 0 if the PDPTE is marked as not present
+     * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx)
+     */
     Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
-#endif
+# endif
 
     /*
      * Lookup the page.
@@ -202,8 +204,8 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
                      & ((Pde.u & (X86_PTE_RW | X86_PTE_US)) | ~(uint64_t)(X86_PTE_RW | X86_PTE_US));
 # if PGM_WITH_NX(PGM_GST_TYPE)
             /* The NX bit is determined by a bitwise OR between the PT and PD */
-            if (Pde.u & X86_PTE_PAE_NX)
-                *pfFlags |= X86_PTE_PAE_NX;
+            if (fNoExecuteBitValid)
+                *pFlags |= (Pte.u & Pde.u & X86_PTE_PAE_NX);
 # endif
         }
         if (pGCPhys)
@@ -215,8 +217,15 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
          * Map big to 4k PTE and store the result
          */
         if (pfFlags)
+        {
             *pfFlags = (Pde.u & ~(GST_PTE_PG_MASK | X86_PTE_PAT))
                      | ((Pde.u & X86_PDE4M_PAT) >> X86_PDE4M_PAT_SHIFT);
+# if PGM_WITH_NX(PGM_GST_TYPE)
+            /* The NX bit is determined by a bitwise OR between the PT and PD */
+            if (fNoExecuteBitValid)
+                *pfFlags |= (Pde.u & X86_PTE_PAE_NX);
+# endif
+        }
         if (pGCPhys)
             *pGCPhys = (Pde.u & GST_PDE_BIG_PG_MASK) | (GCPtr & (~GST_PDE_BIG_PG_MASK ^ ~GST_PTE_PG_MASK)); /** @todo pse36 */
     }
@@ -248,6 +257,7 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
 
 #if PGM_GST_TYPE == PGM_TYPE_AMD64
     /* later */
+    /* check level 3 & 4 bits as well (r/w, u/s, nxe) */
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 #endif
@@ -260,6 +270,9 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
         PX86PDE pPde = &CTXSUFF(pVM->pgm.s.pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
 #else /* PAE */
+        /* pgmGstGetPaePDEPtr will return 0 if the PDPTE is marked as not present
+         * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx)
+         */
         PX86PDEPAE pPde = pgmGstGetPaePDEPtr(&pVM->pgm.s, GCPtr);
         Assert(pPde);
         if (!pPde)

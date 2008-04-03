@@ -1621,9 +1621,12 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
  */
 PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTPDE pPdeSrc, RTGCUINTPTR GCPtrPage)
 {
-    bool fWriteProtect   = !!(CPUMGetGuestCR0(pVM) & X86_CR0_WP);
-    bool fUserLevelFault = !!(uErr & X86_TRAP_PF_US);
-    bool fWriteFault     = !!(uErr & X86_TRAP_PF_RW);
+    bool fWriteProtect      = !!(CPUMGetGuestCR0(pVM) & X86_CR0_WP);
+    bool fUserLevelFault    = !!(uErr & X86_TRAP_PF_US);
+    bool fWriteFault        = !!(uErr & X86_TRAP_PF_RW);
+# if PGM_WITH_NX(PGM_GST_TYPE)
+    bool fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+# endif
 
     STAM_PROFILE_START(&pVM->pgm.s.CTXMID(Stat, DirtyBitTracking), a);
     LogFlow(("CheckPageFault: GCPtrPage=%VGv uErr=%#x PdeSrc=%08x\n", GCPtrPage, uErr, pPdeSrc->u));
@@ -1638,7 +1641,9 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
      */
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPdpeSrc->n.u1Present
-        ||  ((uErr & X86_TRAP_PF_ID) &&  pPdpeSrc->n.u1NoExecute)
+# if PGM_WITH_NX(PGM_GST_TYPE)
+        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) &&  pPdpeSrc->n.u1NoExecute)
+# endif
         ||  (fWriteFault && !pPdpeSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
         ||  (fUserLevelFault && !pPdpeSrc->n.u1User) )
     {
@@ -1684,9 +1689,9 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
      */
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPdeSrc->n.u1Present
-#  if PGM_WITH_NX(PGM_GST_TYPE)
-        ||  ((uErr & X86_TRAP_PF_ID) &&  pPdeSrc->n.u1NoExecute)
-#  endif
+# if PGM_WITH_NX(PGM_GST_TYPE)
+        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) &&  pPdeSrc->n.u1NoExecute)
+# endif
         ||  (fWriteFault && !pPdeSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
         ||  (fUserLevelFault && !pPdeSrc->n.u1User) )
     {

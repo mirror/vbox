@@ -638,6 +638,10 @@ CPUMDECL(int) CPUMSetGuestGS(PVM pVM, uint16_t gs)
     return VINF_SUCCESS;
 }
 
+CPUMDECL(void) CPUMSetGuestEFER(PVM pVM, uint64_t val)
+{
+    pVM->cpum.s.Guest.msrEFER = val;
+}
 
 CPUMDECL(uint32_t) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
 {
@@ -685,7 +689,6 @@ CPUMDECL(RTSEL) CPUMGetGuestLDTR(PVM pVM)
 {
     return pVM->cpum.s.Guest.ldtr;
 }
-
 
 CPUMDECL(uint32_t) CPUMGetGuestCR0(PVM pVM)
 {
@@ -850,6 +853,11 @@ CPUMDECL(int) CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint32_t *pValue)
             return VERR_INVALID_PARAMETER;
     }
     return VINF_SUCCESS;
+}
+
+CPUMDECL(uint64_t) CPUMGetGuestEFER(PVM pVM)
+{
+    return pVM->cpum.s.Guest.msrEFER;
 }
 
 /**

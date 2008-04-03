@@ -1422,7 +1422,7 @@ typedef const X86PDPAE *PCX86PDPAE;
 #else
 #define X86_PDPE_PG_MASK                    ( 0x000ffffffffff000ULL )
 #endif
-/** Bits 63 - NX - PAE - No execution flag. */
+/** Bits 63 - NX - PAE - No execution flag. Long Mode only. */
 #define X86_PDPE_NX                         RT_BIT_64(63)
 
 /**
