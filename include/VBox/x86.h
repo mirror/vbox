@@ -1499,9 +1499,9 @@ typedef const X86PDPT *PCX86PDPT;
 /** The page shift to get the PDPT index. */
 #define X86_PDPT_SHIFT             30
 /** The PDPT index mask (apply to a shifted page address). (32 bits PAE) */
-#define X86_PDPT_MASK_32           0x3
+#define X86_PDPT_MASK_PAE          0x3
 /** The PDPT index mask (apply to a shifted page address). (64 bits PAE)*/
-#define X86_PDPT_MASK              0x1ff
+#define X86_PDPT_MASK_AMD64        0x1ff
 
 /** @} */
 
