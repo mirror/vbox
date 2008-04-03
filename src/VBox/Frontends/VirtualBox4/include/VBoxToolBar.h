@@ -21,9 +21,7 @@
 
 /* Qt includes */
 #include <QToolBar>
-#include <QToolButton>
 #include <QMainWindow>
-#include <QContextMenuEvent>
 #ifdef Q_WS_MAC
 //# include "VBoxAquaStyle.h"
 #endif
@@ -34,18 +32,18 @@
  */
 class VBoxToolBar : public QToolBar
 {
+
 public:
 
-    VBoxToolBar (QMainWindow *aMainWindow, QWidget *aParent = NULL)
-        : QToolBar (aParent), 
-          mMainWindow (aMainWindow)
+    VBoxToolBar (QWidget *aParent)
+        : QToolBar (aParent)
+        , mMainWindow (qobject_cast<QMainWindow*> (aParent))
     {
         setFloatable (false);
         setMovable (false);
-    };
-
-    /** Reimplements and does nothing to disable the context menu */
-    void contextMenuEvent (QContextMenuEvent *) {};
+        if (layout())
+            layout()->setContentsMargins (0, 0, 0, 0);;
+    }
 
     /**
      *  Substitutes for QMainWindow::setUsesBigPixmaps() when QMainWindow is
@@ -53,10 +51,10 @@ public:
      */
     void setUsesBigPixmaps (bool enable)
     {
-        QSize size (32, 32);
+        QSize size (24, 24);
         if (!enable)
             size = QSize (16, 16);
-                
+
         if (mMainWindow)
             mMainWindow->setIconSize (size);
         else
@@ -68,7 +66,7 @@ public:
         Qt::ToolButtonStyle tbs = Qt::ToolButtonTextUnderIcon;
         if (!enable)
             tbs = Qt::ToolButtonIconOnly;
-            
+
         if (mMainWindow)
             mMainWindow->setToolButtonStyle (tbs);
         else
@@ -76,11 +74,11 @@ public:
     }
 
 #ifdef Q_WS_MAC
-    /** 
-     * This is a temporary hack, we'll set the style globally later. 
+    /**
+     * This is a temporary hack, we'll set the style globally later.
      */
 #warning port me
-    void setMacStyle() 
+    void setMacStyle()
     {
         /* self */
 //        QStyle *qs = &VBoxAquaStyle::instance();
@@ -100,9 +98,12 @@ public:
 
         /** @todo the separator */
     }
-#endif 
+#endif
+
 private:
+
     QMainWindow *mMainWindow;
 };
 
 #endif // __VBoxToolBar_h__
+
