@@ -205,7 +205,7 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
 # if PGM_WITH_NX(PGM_GST_TYPE)
             /* The NX bit is determined by a bitwise OR between the PT and PD */
             if (fNoExecuteBitValid)
-                *pFlags |= (Pte.u & Pde.u & X86_PTE_PAE_NX);
+                *pfFlags |= (Pte.u & Pde.u & X86_PTE_PAE_NX);
 # endif
         }
         if (pGCPhys)
@@ -231,6 +231,7 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
     }
     return VINF_SUCCESS;
 #else
+# error "shouldn't be here!"
     /* something else... */
     return VERR_NOT_SUPPORTED;
 #endif
