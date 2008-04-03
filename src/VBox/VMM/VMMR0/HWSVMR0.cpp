@@ -526,6 +526,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             val &= ~X86_CR0_NW;     /* Illegal when cache is turned on. */
 
         val |= X86_CR0_PG;          /* Paging is always enabled; even when the guest is running in real mode or PE without paging. */
+        val |= X86_CR0_WP;          /* Must set this as we rely on protect various pages and supervisor writes must be caught. */
         pVMCB->guest.u64CR0 = val;
     }
     /* CR2 as well */
