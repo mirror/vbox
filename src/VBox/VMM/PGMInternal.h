@@ -917,7 +917,7 @@ typedef struct PGMRAMRANGE
     GCPTRTYPE(struct PGMRAMRANGE *)     pNextGC;
 #if GC_ARCH_BITS == 32
     /** Pointer alignment. */
-    RTGCPTR                             GCPtrAlignment; 
+    RTGCPTR                             GCPtrAlignment;
 #endif
     /** Start of the range. Page aligned. */
     RTGCPHYS                            GCPhys;
@@ -3267,7 +3267,8 @@ DECLINLINE(uint64_t) pgmGstGetPaePDE(PPGM pPGM, RTGCUINTPTR GCPtr)
 
 
 /**
- * Gets the page directory for the specified address and returns the index into the page directory
+ * Gets the page directory pointer table entry for the specified address
+ * and returns the index into the page directory
  *
  * @returns Pointer to the page directory in question.
  * @returns NULL if the page directory is not present or on an invalid page.
@@ -3275,7 +3276,7 @@ DECLINLINE(uint64_t) pgmGstGetPaePDE(PPGM pPGM, RTGCUINTPTR GCPtr)
  * @param   GCPtr       The address.
  * @param   piPD        Receives the index into the returned page directory
  */
-DECLINLINE(PX86PDPAE) pgmGstGetPaePDPt(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *piPD)
+DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *piPD)
 {
     const unsigned iPdPt = GCPtr >> X86_PDPT_SHIFT;
     if (CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].n.u1Present)
