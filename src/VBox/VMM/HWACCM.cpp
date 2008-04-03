@@ -404,6 +404,9 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 pVM->fHWACCMEnabled = true;
                 pVM->hwaccm.s.vmx.fEnabled = true;
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
+#if 0 /* not yet */
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
+#endif
                 LogRel(("HWACCM: VMX enabled!\n"));
             }
             else
@@ -435,6 +438,9 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             {
                 hwaccmr3DisableRawMode(pVM);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
+#if 0 /* not yet */
+                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
+#endif
 
                 pVM->fHWACCMEnabled = true;
                 pVM->hwaccm.s.svm.fEnabled = true;
@@ -568,10 +574,6 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     if (pCtx->csHid.Attr.n.u1Present == 0)
         return false;
     if (pCtx->ssHid.Attr.n.u1Present == 0)
-        return false;
-
-    /** @todo if we remove this check, then Windows XP install fails during the textmode phase */
-    if (!(pCtx->cr0 & X86_CR0_WRITE_PROTECT))
         return false;
 #endif
 
