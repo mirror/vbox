@@ -1912,12 +1912,12 @@ typedef struct PGM
     /** The guest's page directory pointer table, HC pointer. */
     R3R0PTRTYPE(PX86PDPT)       pGstPaePDPTHC;
     /** The guest's page directories, HC pointers.
-     * These are individual pointers and doesn't have to be adjecent.
-     * These doesn't have to be update to date - use pgmGstGetPaePD() to access them. */
+     * These are individual pointers and don't have to be adjecent.
+     * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
     R3R0PTRTYPE(PX86PDPAE)      apGstPaePDsHC[4];
     /** The guest's page directories, static GC mapping.
      * Unlike the HC array the first entry can be accessed as a 2048 entry PD.
-     * These doesn't have to be update to date - use pgmGstGetPaePD() to access them. */
+     * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
     GCPTRTYPE(PX86PDPAE)        apGstPaePDsGC[4];
     /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC. */
     RTGCPHYS                    aGCPhysGstPaePDs[4];

@@ -1628,6 +1628,57 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
     STAM_PROFILE_START(&pVM->pgm.s.CTXMID(Stat, DirtyBitTracking), a);
     LogFlow(("CheckPageFault: GCPtrPage=%VGv uErr=%#x PdeSrc=%08x\n", GCPtrPage, uErr, pPdeSrc->u));
 
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
+    AssertFailed();
+# elif PGM_GST_TYPE == PGM_TYPE_PAE
+    PX86PDPE pPdpeSrc = &pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[(GCPtrPage >> GST_PDPT_SHIFT) & GST_PDPT_MASK];
+
+    /*
+     * Real page fault?
+     */
+    if (    (uErr & X86_TRAP_PF_RSVD)
+        ||  !pPdpeSrc->n.u1Present
+        ||  ((uErr & X86_TRAP_PF_ID) &&  pPdpeSrc->n.u1NoExecute)
+        ||  (fWriteFault && !pPdpeSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
+        ||  (fUserLevelFault && !pPdpeSrc->n.u1User) )
+    {
+#  ifdef IN_GC
+        STAM_COUNTER_INC(&pVM->pgm.s.StatGCDirtyTrackRealPF);
+#  endif
+        STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat, DirtyBitTracking), a);
+        LogFlow(("CheckPageFault: real page fault at %VGv (0)\n", GCPtrPage));
+
+        if (    pPdpeSrc->n.u1Present
+            &&  pPdeSrc->n.u1Present)
+        {
+            /* Check the present bit as the shadow tables can cause different error codes by being out of sync.
+            * See the 2nd case below as well.
+            */
+            if (pPdeSrc->b.u1Size && (CPUMGetGuestCR4(pVM) & X86_CR4_PSE))
+            {
+                TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
+            }
+            else
+            {
+                /*
+                * Map the guest page table.
+                */
+                PGSTPT pPTSrc;
+                int rc = PGM_GCPHYS_2_PTR(pVM, pPdeSrc->u & GST_PDE_PG_MASK, &pPTSrc);
+                if (VBOX_SUCCESS(rc))
+                {
+                    PGSTPTE         pPteSrc = &pPTSrc->a[(GCPtrPage >> PAGE_SHIFT) & GST_PT_MASK];
+                    const GSTPTE    PteSrc = *pPteSrc;
+                    if (pPteSrc->n.u1Present)
+                        TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
+                }
+                AssertRC(rc);
+            }
+        }
+        return VINF_EM_RAW_GUEST_TRAP;
+    }
+# endif
+
     /*
      * Real page fault?
      */
