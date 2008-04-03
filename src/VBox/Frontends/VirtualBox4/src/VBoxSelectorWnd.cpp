@@ -475,7 +475,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     /* VM tab widget containing details and snapshots tabs */
     vmTabWidget = new QTabWidget ();
     rightVLayout->addWidget (vmTabWidget);
-    vmTabWidget->setContentsMargins (10, 10, 10, 10);
 
     /* VM details view */
     vmDetailsView = new VBoxVMDetailsView (NULL,
@@ -483,13 +482,15 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     vmTabWidget->addTab (vmDetailsView,
                          VBoxGlobal::iconSet (":/settings_16px.png"),
                          QString::null);
+    vmDetailsView->setContentsMargins (10, 10, 10, 10);
 
     /* VM snapshots list */
-    vmSnapshotsWgt = new VBoxSnapshotsWgt (NULL, "vmSnapshotsWgt");
+    vmSnapshotsWgt = new VBoxSnapshotsWgt (NULL);
     vmTabWidget->addTab (vmSnapshotsWgt,
                          VBoxGlobal::iconSet (":/take_snapshot_16px.png",
                                               ":/take_snapshot_dis_16px.png"),
                          QString::null);
+    vmSnapshotsWgt->setContentsMargins (10, 10, 10, 10);
 
     /* VM comments page */
     vmDescriptionPage = new VBoxVMDescriptionPage (this);
@@ -497,6 +498,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
                          VBoxGlobal::iconSet (":/description_16px.png",
                                               ":/description_disabled_16px.png"),
                          QString::null);
+    vmDescriptionPage->setContentsMargins (10, 10, 10, 10);
 
     /* add actions to the toolbar */
 

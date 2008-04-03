@@ -1,315 +1,47 @@
-<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>VBoxSnapshotsWgt</class>
-<comment>
-:mode=html:tabSize=4:indentSize=4:noTabs=true:
-:folding=explicit:collapseFolds=1:
-
-     Copyright (C) 2006-2007 innotek GmbH
-    
-     This file is part of VirtualBox Open Source Edition (OSE), as
-     available from http://www.virtualbox.org. This file is free software;
-     you can redistribute it and/or modify it under the terms of the GNU
-     General Public License (GPL) as published by the Free Software
-     Foundation, in version 2 as it comes in the "COPYING" file of the
-     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-</comment>
-<widget class="QWidget">
-    <property name="name">
-        <cstring>VBoxSnapshotsWgt</cstring>
-    </property>
-    <property name="geometry">
-        <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>600</width>
-            <height>480</height>
-        </rect>
-    </property>
-    <property name="caption">
-        <string>VBoxSnapshotsWgt</string>
-    </property>
-    <vbox>
-        <property name="name">
-            <cstring>unnamed</cstring>
-        </property>
-        <property name="margin">
-            <number>0</number>
-        </property>
-        <property name="spacing">
-            <number>10</number>
-        </property>
-        <widget class="QWidgetStack">
-            <property name="name">
-                <cstring>widgetStack</cstring>
-            </property>
-            <widget class="QWidget">
-                <property name="name">
-                    <cstring>pageListView</cstring>
-                </property>
-                <attribute name="id">
-                    <number>0</number>
-                </attribute>
-                <vbox>
-                    <property name="name">
-                        <cstring>unnamed</cstring>
-                    </property>
-                    <property name="margin">
-                        <number>0</number>
-                    </property>
-                    <property name="spacing">
-                        <number>0</number>
-                    </property>
-                    <widget class="QListView">
-                        <column>
-                            <property name="text">
-                                <string>[snapshot]</string>
-                            </property>
-                            <property name="clickable">
-                                <bool>false</bool>
-                            </property>
-                            <property name="resizable">
-                                <bool>true</bool>
-                            </property>
-                        </column>
-                        <property name="name">
-                            <cstring>listView</cstring>
-                        </property>
-                    </widget>
-                </vbox>
-            </widget>
-        </widget>
-    </vbox>
-</widget>
-<toolbars>
-</toolbars>
-<actions>
-    <actiongroup>
-        <property name="name">
-            <cstring>snapshotActionGroup</cstring>
-        </property>
-        <property name="text">
-            <string>snapshotActionGroup</string>
-        </property>
-        <property name="usesDropDown">
-            <bool>false</bool>
-        </property>
-        <action>
-            <property name="name">
-                <cstring>discardSnapshotAction</cstring>
-            </property>
-            <property name="text">
-                <string>Discard Snapshot</string>
-            </property>
-            <property name="menuText">
-                <string>&amp;Discard Snapshot</string>
-            </property>
-            <property name="accel">
-                <string>Ctrl+Shift+D</string>
-            </property>
-            <property name="statusTip">
-                <string>Discard the selected snapshot of the virtual machine</string>
-            </property>
-        </action>
-    </actiongroup>
-    <actiongroup>
-        <property name="name">
-            <cstring>curStateActionGroup</cstring>
-        </property>
-        <property name="text">
-            <string>curStateActionGroup</string>
-        </property>
-        <property name="usesDropDown">
-            <bool>false</bool>
-        </property>
-        <action>
-            <property name="name">
-                <cstring>takeSnapshotAction</cstring>
-            </property>
-            <property name="text">
-                <string>Take Snapshot</string>
-            </property>
-            <property name="menuText">
-                <string>Take &amp;Snapshot</string>
-            </property>
-            <property name="accel">
-                <string>Ctrl+Shift+S</string>
-            </property>
-            <property name="statusTip">
-                <string>Take a snapshot of the current virtual machine state</string>
-            </property>
-        </action>
-        <action>
-            <property name="name">
-                <cstring>revertToCurSnapAction</cstring>
-            </property>
-            <property name="text">
-                <string>Revert to Current Snapshot</string>
-            </property>
-            <property name="menuText">
-                <string>&amp;Revert to Current Snapshot</string>
-            </property>
-            <property name="accel">
-                <string>Ctrl+Shift+R</string>
-            </property>
-            <property name="statusTip">
-                <string>Restore the virtual machine state from the state stored in the current snapshot</string>
-            </property>
-        </action>
-        <action>
-            <property name="name">
-                <cstring>discardCurSnapAndStateAction</cstring>
-            </property>
-            <property name="text">
-                <string>Discard Current Snapshot and State</string>
-            </property>
-            <property name="menuText">
-                <string>D&amp;iscard Current Snapshot and State</string>
-            </property>
-            <property name="accel">
-                <string>Ctrl+Shift+B</string>
-            </property>
-            <property name="statusTip">
-                <string>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</string>
-            </property>
-        </action>
-    </actiongroup>
-    <action>
-        <property name="name">
-            <cstring>showSnapshotDetailsAction</cstring>
-        </property>
-        <property name="text">
-            <string>Show Details</string>
-        </property>
-        <property name="menuText">
-            <string>S&amp;how Details</string>
-        </property>
-        <property name="accel">
-            <string>Ctrl+Space</string>
-        </property>
-        <property name="statusTip">
-            <string>Show details of the selected snapshot</string>
-        </property>
-    </action>
-</actions>
-<connections>
-    <connection>
-        <sender>listView</sender>
-        <signal>currentChanged(QListViewItem*)</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>listView_currentChanged(QListViewItem*)</slot>
-    </connection>
-    <connection>
-        <sender>listView</sender>
-        <signal>contextMenuRequested(QListViewItem*,const QPoint&amp;,int)</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>listView_contextMenuRequested(QListViewItem*,const QPoint&amp;,int)</slot>
-    </connection>
-    <connection>
-        <sender>discardSnapshotAction</sender>
-        <signal>activated()</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>discardSnapshot()</slot>
-    </connection>
-    <connection>
-        <sender>takeSnapshotAction</sender>
-        <signal>activated()</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>takeSnapshot()</slot>
-    </connection>
-    <connection>
-        <sender>revertToCurSnapAction</sender>
-        <signal>activated()</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>discardCurState()</slot>
-    </connection>
-    <connection>
-        <sender>discardCurSnapAndStateAction</sender>
-        <signal>activated()</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>discardCurSnapAndState()</slot>
-    </connection>
-    <connection>
-        <sender>showSnapshotDetailsAction</sender>
-        <signal>activated()</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>showSnapshotDetails()</slot>
-    </connection>
-    <connection>
-        <sender>&amp;vboxGlobal()</sender>
-        <signal>machineDataChanged (const VBoxMachineDataChangeEvent &amp;)</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>machineDataChanged (const VBoxMachineDataChangeEvent &amp;)</slot>
-    </connection>
-    <connection>
-        <sender>&amp;vboxGlobal()</sender>
-        <signal>machineStateChanged (const VBoxMachineStateChangeEvent &amp;)</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>machineStateChanged (const VBoxMachineStateChangeEvent &amp;)</slot>
-    </connection>
-    <connection>
-        <sender>&amp;vboxGlobal()</sender>
-        <signal>sessionStateChanged (const VBoxSessionStateChangeEvent &amp;)</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>sessionStateChanged (const VBoxSessionStateChangeEvent &amp;)</slot>
-    </connection>
-    <connection>
-        <sender>&amp;vboxGlobal()</sender>
-        <signal>snapshotChanged (const VBoxSnapshotEvent &amp;)</signal>
-        <receiver>VBoxSnapshotsWgt</receiver>
-        <slot>snapshotChanged (const VBoxSnapshotEvent &amp;)</slot>
-    </connection>
-</connections>
-<includes>
-    <include location="global" impldecl="in declaration">qaction.h</include>
-    <include location="global" impldecl="in declaration">qpopupmenu.h</include>
-    <include location="global" impldecl="in implementation">qpainter.h</include>
-    <include location="global" impldecl="in implementation">qdatetime.h</include>
-    <include location="global" impldecl="in implementation">qtooltip.h</include>
-    <include location="global" impldecl="in implementation">qmetaobject.h</include>
-    <include location="global" impldecl="in implementation">qregexp.h</include>
-    <include location="local" impldecl="in declaration">COMDefs.h</include>
-    <include location="local" impldecl="in implementation">VBoxUtils.h</include>
-    <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
-    <include location="local" impldecl="in implementation">VBoxToolBar.h</include>
-    <include location="local" impldecl="in implementation">VBoxSelectorWnd.h</include>
-    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
-    <include location="local" impldecl="in implementation">VBoxSnapshotDetailsDlg.h</include>
-    <include location="local" impldecl="in implementation">VBoxTakeSnapshotDlg.h</include>
-    <include location="local" impldecl="in implementation">VBoxSnapshotsWgt.ui.h</include>
-</includes>
-<variables>
-    <variable access="private">CMachine mMachine;</variable>
-    <variable access="private">QUuid mMachineId;</variable>
-    <variable access="private">KSessionState mSessionState;</variable>
-    <variable access="private">class ListViewItem; ListViewItem *mCurSnapshotItem;</variable>
-    <variable access="private">class ToolTip; ToolTip *mToolTip;</variable>
-    <variable access="private">QPopupMenu *mContextMenu;</variable>
-    <variable access="private">bool mContextMenuDirty;</variable>
-</variables>
-<slots>
-    <slot>listView_currentChanged( QListViewItem * )</slot>
-    <slot>listView_contextMenuRequested( QListViewItem *, const QPoint &amp;, int )</slot>
-    <slot>discardSnapshot()</slot>
-    <slot>takeSnapshot()</slot>
-    <slot>discardCurState()</slot>
-    <slot>discardCurSnapAndState()</slot>
-    <slot>showSnapshotDetails()</slot>
-    <slot>machineDataChanged (const VBoxMachineDataChangeEvent &amp; aE)</slot>
-    <slot>machineStateChanged (const VBoxMachineStateChangeEvent &amp; aE)</slot>
-    <slot>sessionStateChanged (const VBoxSessionStateChangeEvent &amp; aE)</slot>
-    <slot>snapshotChanged (const VBoxSnapshotEvent &amp; aE)</slot>
-</slots>
-<functions>
-    <function access="private">init()</function>
-    <function access="private">destroy()</function>
-    <function>setMachine( const CMachine &amp; aMachine )</function>
-    <function>refreshAll (bool aKeepSelected = false)</function>
-    <function access="private" returnType="ListViewItem *">findItem (const QUuid &amp; aSnapshotId)</function>
-    <function access="private" returnType="ListViewItem *">curStateItem()</function>
-    <function access="private">populateSnapshots( const CSnapshot &amp; snapshot, QListViewItem * item )</function>
-</functions>
-<pixmapinproject/>
-<layoutdefaults spacing="6" margin="11"/>
-</UI>
-
+<ui version="4.0" >
+ <class>VBoxSnapshotsWgt</class>
+ <widget class="QWidget" name="VBoxSnapshotsWgt" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>VBoxSnapshotsWgt</string>
+  </property>
+  <layout class="QVBoxLayout" >
+   <property name="leftMargin" >
+    <number>0</number>
+   </property>
+   <property name="topMargin" >
+    <number>0</number>
+   </property>
+   <property name="rightMargin" >
+    <number>0</number>
+   </property>
+   <property name="bottomMargin" >
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QTreeWidget" name="mTreeWidget" >
+     <property name="contextMenuPolicy" >
+      <enum>Qt::CustomContextMenu</enum>
+     </property>
+     <property name="allColumnsShowFocus" >
+      <bool>true</bool>
+     </property>
+     <column>
+      <property name="text" >
+       <string>[snapshot]</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
