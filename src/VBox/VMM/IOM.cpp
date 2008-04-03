@@ -52,6 +52,7 @@
 #include <VBox/mm.h>
 #include <VBox/stam.h>
 #include <VBox/dbgf.h>
+#include <VBox/pdm.h>
 #include "IOMInternal.h"
 #include <VBox/vm.h>
 
@@ -109,6 +110,8 @@ IOMR3DECL(int) IOMR3Init(PVM pVM)
     if (VBOX_SUCCESS(rc))
     {
         pVM->iom.s.pTreesGC = MMHyperHC2GC(pVM, pVM->iom.s.pTreesHC);
+        pVM->iom.s.pfnMMIOHandlerGC = NIL_RTGCPTR;
+        pVM->iom.s.pfnMMIOHandlerR0 = NIL_RTR0PTR;
 
         /*
          * Info.
@@ -1411,6 +1414,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 {
     LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
+    int rc;
 
     /*
      * Validate input.
@@ -1422,16 +1426,27 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     }
 
     /*
+     * Resolve the GC/R0 handler addresses lazily because of init order.
+     */
+    if (pVM->iom.s.pfnMMIOHandlerR0 == NIL_RTR0PTR)
+    {
+        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerGC);
+        AssertLogRelRCReturn(rc, rc);
+        rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerR0);
+        AssertLogRelRCReturn(rc, rc);
+    }
+
+    /*
      * Allocate new range record and initialize it.
      */
     PIOMMMIORANGER3 pRange;
-    int rc = MMHyperAlloc(pVM, sizeof(*pRange), 0, MM_TAG_IOM, (void **)&pRange);
+    rc = MMHyperAlloc(pVM, sizeof(*pRange), 0, MM_TAG_IOM, (void **)&pRange);
     if (VBOX_SUCCESS(rc))
     {
         pRange->Core.Key        = GCPhysStart;
         pRange->Core.KeyLast    = GCPhysStart + (cbRange - 1);
         pRange->GCPhys          = GCPhysStart;
-        pRange->cbSize          = cbRange;
+        pRange->cb              = cbRange;
         pRange->pvUser          = pvUser;
         pRange->pDevIns         = pDevIns;
         pRange->pfnReadCallback = pfnReadCallback;
@@ -1442,12 +1457,10 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         /*
          * Try register it with PGM and then insert it into the tree.
          */
-        //rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange);
-        //if (RT_SUCCESS(rc))
-            rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_MMIO, GCPhysStart, GCPhysStart + (cbRange - 1),
-                                              /*IOMR3MMIOHandler*/ NULL, pRange,
-                                              NULL, "IOMMMIOHandler", MMHyperR3ToR0(pVM, pRange),
-                                              NULL, "IOMMMIOHandler", MMHyperR3ToGC(pVM, pRange), pszDesc);
+        rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
+                                   /*IOMR3MMIOHandler*/ NULL, pRange,
+                                   pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
+                                   pVM->iom.s.pfnMMIOHandlerGC, MMHyperR3ToGC(pVM, pRange), pszDesc);
         if (RT_SUCCESS(rc))
         {
             if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesHC->MMIOTreeR3, &pRange->Core))
@@ -1518,11 +1531,11 @@ IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
             return VERR_IOM_NO_HC_MMIO_RANGE;
         }
 #ifndef IOM_NO_PDMINS_CHECKS
-        #ifndef IN_GC
+# ifndef IN_GC
         if (pRange->pDevIns != pDevIns)
-        #else
+# else
         if (pRange->pDevIns != MMHyperGC2HC(pVM, pDevIns))
-        #endif
+# endif
         {
             AssertMsgFailed(("Not owner! GCPhys=%VGp %VGp LB%#x %s / %#x-%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc,
                              pRange->Core.Key, pRange->Core.KeyLast, MMHyper2HC(pVM, (uintptr_t)pRange->pszDesc)));
@@ -1545,7 +1558,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         pRange->Core.Key        = GCPhysStart;
         pRange->Core.KeyLast    = GCPhysStart + (cbRange - 1);
         pRange->GCPhys          = GCPhysStart;
-        pRange->cbSize          = cbRange;
+        pRange->cb              = cbRange;
         pRange->pvUser          = pvUser;
         pRange->pfnReadCallback = pfnReadCallback;
         pRange->pfnWriteCallback= pfnWriteCallback;
@@ -1654,7 +1667,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         pRange->Core.Key        = GCPhysStart;
         pRange->Core.KeyLast    = GCPhysStart + (cbRange - 1);
         pRange->GCPhys          = GCPhysStart;
-        pRange->cbSize          = cbRange;
+        pRange->cb              = cbRange;
         pRange->pvUser          = pvUser;
         pRange->pfnReadCallback = pfnReadCallback;
         pRange->pfnWriteCallback= pfnWriteCallback;
@@ -1789,7 +1802,7 @@ IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         Assert(pRange->Core.Key == GCPhys && pRange->Core.KeyLast <= GCPhysLast);
 
         /* remove it from PGM */
-        int rc = PGMHandlerPhysicalDeregister(pVM, GCPhys);
+        int rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
         AssertRC(rc);
 
         /* next and delete. */

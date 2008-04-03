@@ -466,6 +466,12 @@ PGMR3DECL(int)  PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
 PGMR3DECL(int)  PGM3PhysGrowRange(PVM pVM, PCRTGCPHYS GCPhys);
 #endif /* !VBOX_WITH_NEW_PHYS_CODE */
 PGMR3DECL(int)  PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const char *pszDesc);
+PDMR3DECL(int)  PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                      R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
+                                      R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
+                                      GCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RTGCPTR pvUserGC,
+                                      R3PTRTYPE(const char *) pszDesc);
+PDMR3DECL(int)  PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
 PDMR3DECL(int)  PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, void **ppv, const char *pszDesc);
 PDMR3DECL(int)  PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion);
 PDMR3DECL(int)  PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);

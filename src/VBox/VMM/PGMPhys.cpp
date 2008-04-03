@@ -277,9 +277,18 @@ PGMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
  * register the callbacks.
  *
  */
-PDMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
+PDMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                     R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
+                                     R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
+                                     GCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RTGCPTR pvUserGC,
+                                     R3PTRTYPE(const char *) pszDesc)
 {
-    return -1;
+
+    int rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_MMIO, GCPhys, GCPhys + (cb - 1),
+                                          pfnHandlerR3, pvUserR3,
+                                          pfnHandlerR0, pvUserR0,
+                                          pfnHandlerGC, pvUserGC, pszDesc);
+    return rc;
 }
 
 
@@ -292,7 +301,9 @@ PDMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
  */
 PDMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
 {
-    return -1;
+    int rc = PGMHandlerPhysicalDeregister(pVM, GCPhys);
+
+    return rc;
 }
 
 

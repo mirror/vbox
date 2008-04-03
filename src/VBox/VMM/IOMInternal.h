@@ -22,6 +22,7 @@
 #include <VBox/types.h>
 #include <VBox/iom.h>
 #include <VBox/stam.h>
+#include <VBox/pgm.h>
 #include <iprt/avl.h>
 
 #if !defined(IN_IOM_R3) && !defined(IN_IOM_R0) && !defined(IN_IOM_GC)
@@ -48,7 +49,7 @@ typedef struct IOMMMIORANGER3
     /** Start physical address. */
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
-    RTUINT                      cbSize;
+    RTUINT                      cb;
     /** Pointer to user argument. */
     RTR3PTR                     pvUser;
     /** Pointer to device instance. */
@@ -78,7 +79,7 @@ typedef struct IOMMMIORANGER0
     uint32_t                    u32Alignment;
 #endif
     /** Size of the range. */
-    RTUINT                      cbSize;
+    RTUINT                      cb;
     /** Pointer to user argument. */
     RTR0PTR                     pvUser;
     /** Pointer to device instance. */
@@ -105,7 +106,7 @@ typedef struct IOMMMIORANGEGC
     /** Start physical address. */
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
-    RTUINT                      cbSize;
+    RTUINT                      cb;
 #if HC_ARCH_BITS == 64
     uint32_t                    u32Alignment;
 #endif
@@ -121,7 +122,7 @@ typedef struct IOMMMIORANGEGC
     GCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallback;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     RTGCPTR                     GCPtrAlignment; /**< pszDesc is 8 byte aligned. */
-#endif 
+#endif
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
 } IOMMMIORANGEGC;
@@ -265,7 +266,7 @@ typedef struct IOMIOPORTRANGEGC
     GCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     RTGCPTR                     GCPtrAlignment; /**< pszDesc is 8 byte aligned. */
-#endif 
+#endif
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
 } IOMIOPORTRANGEGC;
@@ -374,6 +375,11 @@ typedef struct IOM
     /** Pointer to the trees - HC ptr. */
     R3R0PTRTYPE(PIOMTREES)          pTreesHC;
 
+    /** The ring-0 address of IOMMMIOHandler. */
+    R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnMMIOHandlerR0;
+    /** The GC address of IOMMMIOHandler. */
+    GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnMMIOHandlerGC;
+    RTGCPTR                         Alignment;
 
     /** @name Caching of I/O Port ranges and statistics.
      * (Saves quite some time in rep outs/ins instruction emulation.)
