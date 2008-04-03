@@ -20,14 +20,15 @@
 #define __VBoxDownloaderWgt_h__
 
 #include "HappyHttp.h"
-#include "qwidget.h"
-#include "q3url.h"
-#include "qmutex.h"
-//Added by qt3to4:
-#include <QEvent>
+
+/* Qt includes */
+#include <QWidget>
+#include <QUrl>
+#include <QMutex>
+
 class QStatusBar;
 class QAction;
-class Q3ProgressBar;
+class QProgressBar;
 class QToolButton;
 class QThread;
 class QTimer;
@@ -87,11 +88,11 @@ private:
 
     void abortConnection();
 
-    Q3Url mUrl;
+    QUrl mUrl;
     QString mTarget;
     QStatusBar *mStatusBar;
     QAction *mAction;
-    Q3ProgressBar *mProgressBar;
+    QProgressBar *mProgressBar;
     QToolButton *mCancelButton;
     bool mIsChecking;
     bool mSuicide;
