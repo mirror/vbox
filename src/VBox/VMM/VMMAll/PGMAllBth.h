@@ -93,7 +93,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     PGSTPD          pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
 #  else /* PAE */
     unsigned        iPDSrc;
-    PGSTPD          pPDSrc = pgmGstGetPaePDPt(&pVM->pgm.s, (RTGCUINTPTR)pvFault, &iPDSrc);
+    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, (RTGCUINTPTR)pvFault, &iPDSrc);
 #  endif
 # else
     PGSTPD          pPDSrc = NULL;
@@ -522,7 +522,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
             STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
 
             /* Check to see if we need to emulate the instruction as X86_CR0_WP has been cleared. */
-            if (    CPUMGetGuestCPL(pVM, pRegFrame) == 0                
+            if (    CPUMGetGuestCPL(pVM, pRegFrame) == 0
                 &&  ((CPUMGetGuestCR0(pVM) & (X86_CR0_WP|X86_CR0_PG)) == X86_CR0_PG)
                 &&  (uErr & X86_TRAP_PF_RW))
             {
@@ -821,7 +821,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
 #  else /* PAE */
     unsigned        iPDSrc;
-    PX86PDPAE       pPDSrc      = pgmGstGetPaePDPt(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+    PX86PDPAE       pPDSrc      = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
     GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
 #  endif
 
@@ -2304,7 +2304,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     PGSTPD          pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
 #  else /* PAE */
     unsigned        iPDSrc;
-    PGSTPD          pPDSrc = pgmGstGetPaePDPt(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
 #  endif
     const GSTPDE    PdeSrc = pPDSrc->a[iPDSrc];
 # else
@@ -2394,7 +2394,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
     PGSTPD          pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
 #  else /* PAE */
     unsigned        iPDSrc;
-    PGSTPD          pPDSrc = pgmGstGetPaePDPt(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
 #  endif
 # else
     PGSTPD          pPDSrc = NULL;
@@ -2608,7 +2608,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
         PX86PDPE        pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[iPDPTE * X86_PG_AMD64_ENTRIES];
 #   endif
         PX86PDEPAE      pPDEDst   = &pPDPAE->a[0];
-        PGSTPD          pPDSrc    = pgmGstGetPaePDPt(&pVM->pgm.s, iPDPTE << X86_PDPT_SHIFT, &iPDSrc);
+        PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, iPDPTE << X86_PDPT_SHIFT, &iPDSrc);
 
         if (pPDSrc == NULL)
         {
