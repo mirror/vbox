@@ -108,8 +108,8 @@ void *pgmGCPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
             return pVM->pgm.s.pGC32BitPD;
         case PGMPOOL_IDX_PAE_PD:
             return pVM->pgm.s.apGCPaePDs[0];
-        case PGMPOOL_IDX_PDPTR:
-            return pVM->pgm.s.pGCPaePDPTR;
+        case PGMPOOL_IDX_PDPT:
+            return pVM->pgm.s.pGCPaePDPT;
         case PGMPOOL_IDX_PML4:
             return pVM->pgm.s.pGCPaePML4;
         default:
@@ -895,7 +895,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
             {
                 case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
-                case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
+                case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
                 case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
@@ -909,7 +909,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
          */
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
-        case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
             switch (enmKind2)
             {
@@ -930,7 +930,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
          */
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
-        case PGMPOOLKIND_ROOT_PDPTR:
+        case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
             return false;
 
@@ -1113,10 +1113,10 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
                 case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-                case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
+                case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
                 case PGMPOOLKIND_ROOT_32BIT_PD:
                 case PGMPOOLKIND_ROOT_PAE_PD:
-                case PGMPOOLKIND_ROOT_PDPTR:
+                case PGMPOOLKIND_ROOT_PDPT:
                 case PGMPOOLKIND_ROOT_PML4:
                 {
                     /* find the head */
@@ -1183,8 +1183,8 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-        case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
-        case PGMPOOLKIND_ROOT_PDPTR:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+        case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
@@ -1264,8 +1264,8 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-        case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
-        case PGMPOOLKIND_ROOT_PDPTR:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+        case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
@@ -1936,9 +1936,9 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-        case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_ROOT_PAE_PD:
-        case PGMPOOLKIND_ROOT_PDPTR:
+        case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
             return 8;
 
@@ -1972,9 +1972,9 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-        case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_ROOT_PAE_PD:
-        case PGMPOOLKIND_ROOT_PDPTR:
+        case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
             return 8;
 
@@ -2277,7 +2277,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             Assert(!(u.pau64[pUser->iUser] & PGM_PDFLAGS_MAPPING));
             Assert(pUser->iUserTable < 2048 && pUser->iUser == PGMPOOL_IDX_PAE_PD);
             break;
-        case PGMPOOLKIND_ROOT_PDPTR:
+        case PGMPOOLKIND_ROOT_PDPT:
             Assert(!(u.pau64[pUser->iUserTable] & PGM_PLXFLAGS_PERMANENT));
             Assert(pUser->iUserTable < 4);
             break;
@@ -2285,7 +2285,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
             Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
             break;
-        case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
             Assert(!(u.pau64[pUser->iUserTable] & PGM_PLXFLAGS_PERMANENT));
             Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
@@ -2308,10 +2308,10 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
 
         /* 64-bit entries */
         case PGMPOOLKIND_ROOT_PAE_PD:
-        case PGMPOOLKIND_ROOT_PDPTR:
+        case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-        case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
             u.pau64[pUser->iUserTable] = 0;
             break;
@@ -2835,19 +2835,19 @@ DECLINLINE(void) pgmPoolTrackDerefPDPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86
  *
  * @param   pPool       The pool.
  * @param   pPage       The page.
- * @param   pShwPdPtr   The shadow page directory pointer table (mapping of the page).
+ * @param   pShwPDPT   The shadow page directory pointer table (mapping of the page).
  */
-DECLINLINE(void) pgmPoolTrackDerefPDPTR64Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PDPTR pShwPdPtr)
+DECLINLINE(void) pgmPoolTrackDerefPDPT64Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PDPT pShwPDPT)
 {
-    for (unsigned i = 0; i < ELEMENTS(pShwPdPtr->a); i++)
+    for (unsigned i = 0; i < ELEMENTS(pShwPDPT->a); i++)
     {
-        if (pShwPdPtr->a[i].n.u1Present)
+        if (pShwPDPT->a[i].n.u1Present)
         {
-            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPdPtr->a[i].u & X86_PDPE_PG_MASK);
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & X86_PDPE_PG_MASK);
             if (pSubPage)
                 pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
             else
-                AssertFatalMsgFailed(("%RX64\n", pShwPdPtr->a[i].u & X86_PDPE_PG_MASK));
+                AssertFatalMsgFailed(("%RX64\n", pShwPDPT->a[i].u & X86_PDPE_PG_MASK));
             /** @todo 64-bit guests: have to ensure that we're not exhausting the dynamic mappings! */
         }
     }
@@ -2935,8 +2935,8 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             pgmPoolTrackDerefPDPae(pPool, pPage, (PX86PDPAE)pvShw);
             break;
 
-        case PGMPOOLKIND_64BIT_PDPTR_FOR_64BIT_PDPTR:
-            pgmPoolTrackDerefPDPTR64Bit(pPool, pPage, (PX86PDPTR)pvShw);
+        case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+            pgmPoolTrackDerefPDPT64Bit(pPool, pPage, (PX86PDPT)pvShw);
             break;
 
         default:
@@ -2999,7 +2999,7 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
                         u.pau64[iPage] = 0;
                 break;
 
-            case PGMPOOLKIND_ROOT_PDPTR:
+            case PGMPOOLKIND_ROOT_PDPT:
                 /* Not root of shadowed pages currently, ignore it. */
                 break;
         }

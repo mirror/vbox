@@ -341,11 +341,11 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, vo
          */
         for (unsigned i = 0; i < 4; i++)
         {
-            if (    pVM->pgm.s.pGstPaePDPTRHC->a[i].n.u1Present
-                &&  (pVM->pgm.s.pGstPaePDPTRHC->a[i].u & X86_PDPE_PG_MASK) != pVM->pgm.s.aGCPhysGstPaePDsMonitored[i])
+            if (    pVM->pgm.s.pGstPaePDPTHC->a[i].n.u1Present
+                &&  (pVM->pgm.s.pGstPaePDPTHC->a[i].u & X86_PDPE_PG_MASK) != pVM->pgm.s.aGCPhysGstPaePDsMonitored[i])
             {
                 Log(("pgmR3GstPAEWriteHandlerCR3: detected updated PDPE; [%d] = %#llx, Old GCPhys=%VGp\n",
-                     i, pVM->pgm.s.pGstPaePDPTRHC->a[i].u, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]));
+                     i, pVM->pgm.s.pGstPaePDPTHC->a[i].u, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]));
                 /*
                  * The PD has changed.
                  * We will schedule a monitoring update for the next TLB Flush,
@@ -405,18 +405,18 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerPD(PVM pVM, RTGCPHYS GCPhys, voi
          */
         unsigned i;
         for (i = 0; i < 4; i++)
-            if (pVM->pgm.s.pGstPaePDPTRHC->a[i].u == (GCPhys & X86_PTE_PAE_PG_MASK))
+            if (pVM->pgm.s.pGstPaePDPTHC->a[i].u == (GCPhys & X86_PTE_PAE_PG_MASK))
             {
-                PX86PDPAE           pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPTR_SHIFT);
+                PX86PDPAE           pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPT_SHIFT);
                 const RTGCUINTPTR   offPD = GCPhys & PAGE_OFFSET_MASK;
                 const unsigned      iPD1 = offPD / sizeof(X86PDEPAE);
                 const unsigned      iPD2 = (offPD + cbBuf - 1) / sizeof(X86PDEPAE);
                 Assert(iPD1 - iPD2 <= 1);
                 if (    (   pPDSrc->a[iPD1].n.u1Present
-                         && pgmGetMapping(pVM, (i << X86_PDPTR_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT)) )
+                         && pgmGetMapping(pVM, (i << X86_PDPT_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT)) )
                     ||  (   iPD1 != iPD2
                          && pPDSrc->a[iPD2].n.u1Present
-                         && pgmGetMapping(pVM, (i << X86_PDPTR_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT)) )
+                         && pgmGetMapping(pVM, (i << X86_PDPT_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT)) )
                    )
                 {
                     Log(("pgmR3GstPaePD3WriteHandler: detected conflict. i=%d iPD1=%#x iPD2=%#x GCPhys=%VGp\n",

@@ -245,12 +245,12 @@ int pgmR3PoolInit(PVM pVM)
     pPool->aPages[PGMPOOL_IDX_PAE_PD].enmKind   = PGMPOOLKIND_ROOT_PAE_PD;
     pPool->aPages[PGMPOOL_IDX_PAE_PD].idx       = PGMPOOL_IDX_PAE_PD;
 
-    /* The Shadow PDPTR. */
-    pPool->aPages[PGMPOOL_IDX_PDPTR].Core.Key  = NIL_RTHCPHYS;
-    pPool->aPages[PGMPOOL_IDX_PDPTR].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_PDPTR].pvPageHC  = pVM->pgm.s.pHCPaePDPTR;
-    pPool->aPages[PGMPOOL_IDX_PDPTR].enmKind   = PGMPOOLKIND_ROOT_PDPTR;
-    pPool->aPages[PGMPOOL_IDX_PDPTR].idx       = PGMPOOL_IDX_PDPTR;
+    /* The Shadow PDPT. */
+    pPool->aPages[PGMPOOL_IDX_PDPT].Core.Key  = NIL_RTHCPHYS;
+    pPool->aPages[PGMPOOL_IDX_PDPT].GCPhys    = NIL_RTGCPHYS;
+    pPool->aPages[PGMPOOL_IDX_PDPT].pvPageHC  = pVM->pgm.s.pHCPaePDPT;
+    pPool->aPages[PGMPOOL_IDX_PDPT].enmKind   = PGMPOOLKIND_ROOT_PDPT;
+    pPool->aPages[PGMPOOL_IDX_PDPT].idx       = PGMPOOL_IDX_PDPT;
 
     /* The Shadow Page Map Level-4. */
     pPool->aPages[PGMPOOL_IDX_PML4].Core.Key  = NIL_RTHCPHYS;
