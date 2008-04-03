@@ -21,16 +21,13 @@
 #include "VBoxConsoleWnd.h"
 #include "VBoxDownloaderWgt.h"
 
-#include "qaction.h"
-#include "q3progressbar.h"
-#include "qtoolbutton.h"
-#include "qlayout.h"
-#include "qstatusbar.h"
-#include "qdir.h"
-#include "qtimer.h"
-//Added by qt3to4:
-#include <Q3HBoxLayout>
-#include <QEvent>
+/* Qt includes */
+#include <QProgressBar>
+#include <QHBoxLayout>
+#include <QTimer>
+#include <QToolButton>
+#include <QStatusBar>
+#include <QDir>
 
 /* These notifications are used to notify the GUI thread about different
  * downloading events: Downloading Started, Downloading in Progress,
@@ -59,7 +56,7 @@ class ProcessDownloadEvent : public QEvent
 public:
     ProcessDownloadEvent (const char *aData, ulong aSize)
         : QEvent ((QEvent::Type) ProcessDownloadEventType)
-        , mData (QByteArray().duplicate (aData, aSize)) {}
+        , mData (aData, aSize) {}
 
     QByteArray mData;
 };
@@ -124,28 +121,29 @@ void OnComplete (const happyhttp::Response*, void *aUserdata)
 
 VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
                                       const QString &aUrl, const QString &aTarget)
-    : QWidget (0, "VBoxDownloaderWgt")
+    : QWidget ()
     , mUrl (aUrl), mTarget (aTarget)
     , mStatusBar (aStatusBar), mAction (aAction)
     , mProgressBar (0), mCancelButton (0)
     , mIsChecking (true), mSuicide (false)
-    , mConn (new HConnect (mUrl.host(), 80))
+    , mConn (new HConnect (mUrl.host().toAscii().constData(), 80))
     , mRequestThread (0)
     , mDataStream (&mDataArray, QIODevice::WriteOnly)
     , mTimeout (new QTimer (this))
 {
     /* Disable the associated action */
     mAction->setEnabled (false);
+    mTimeout->setSingleShot (true);
     connect (mTimeout, SIGNAL (timeout()),
              this, SLOT (processTimeout()));
 
     /* Drawing itself */
     setFixedHeight (16);
 
-    mProgressBar = new Q3ProgressBar (this);
+    mProgressBar = new QProgressBar (this);
     mProgressBar->setFixedWidth (100);
-    mProgressBar->setPercentageVisible (true);
-    mProgressBar->setProgress (0);
+    mProgressBar->setFormat ("%p%");
+    mProgressBar->setValue (0);
 
     mCancelButton = new QToolButton (this);
     mCancelButton->setAutoRaise (true);
@@ -153,17 +151,18 @@ VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
     connect (mCancelButton, SIGNAL (clicked()),
              this, SLOT (processAbort()));
 
-    Q3HBoxLayout *mainLayout = new Q3HBoxLayout (this);
+    QHBoxLayout *mainLayout = new QHBoxLayout (this);
+    mainLayout->setSpacing (0);
+    VBoxGlobal::setLayoutMargin (mainLayout, 0);
     mainLayout->addWidget (mProgressBar);
     mainLayout->addWidget (mCancelButton);
-    mainLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
-                                                QSizePolicy::Fixed));
+    mainLayout->addStretch (1);
 
     /* Prepare the connection */
     mConn->setcallbacks (OnBegin, OnData, OnComplete, this);
 
     languageChange();
-    mStatusBar->addWidget (this);
+    mStatusBar->addWidget (this, 1);
 
     /* Try to get the required file for the information */
     getFile();
@@ -173,12 +172,12 @@ void VBoxDownloaderWgt::languageChange()
 {
     mCancelButton->setText (tr ("Cancel"));
     /// @todo the below title should be parametrized
-    QToolTip::add (mProgressBar, tr ("Downloading the VirtualBox Guest Additions "
-                                     "CD image from <nobr><b>%1</b>...</nobr>")
-                                 .arg (mUrl.toString()));
+    mProgressBar->setToolTip (tr ("Downloading the VirtualBox Guest Additions "
+                                  "CD image from <nobr><b>%1</b>...</nobr>")
+                              .arg (mUrl.toString()));
     /// @todo the below title should be parametrized
-    QToolTip::add (mCancelButton, tr ("Cancel the VirtualBox Guest "
-                                      "Additions CD image download"));
+    mCancelButton->setToolTip (tr ("Cancel the VirtualBox Guest "
+                                   "Additions CD image download"));
 }
 
 /* This slot is used to control the connection timeout. */
@@ -229,9 +228,9 @@ bool VBoxDownloaderWgt::event (QEvent *aEvent)
         {
             ProcessDownloadEvent *e = static_cast<ProcessDownloadEvent*> (aEvent);
 
-            mTimeout->start (20000, true);
-            mProgressBar->setProgress (mProgressBar->progress() + e->mData.size());
-            mDataStream.writeRawBytes (e->mData.data(), e->mData.size());
+            mTimeout->start (20000);
+            mProgressBar->setValue (mProgressBar->value() + e->mData.size());
+            mDataStream.writeRawData (e->mData.data(), e->mData.size());
 
             return true;
         }
@@ -245,7 +244,7 @@ bool VBoxDownloaderWgt::event (QEvent *aEvent)
                 QFile file (mTarget);
                 if (file.open (QIODevice::WriteOnly))
                 {
-                    file.writeBlock (mDataArray);
+                    file.write (mDataArray);
                     file.close();
                     /// @todo the below action is not part of the generic
                     //  VBoxDownloaderWgt functionality, so this class should just
@@ -270,12 +269,12 @@ bool VBoxDownloaderWgt::event (QEvent *aEvent)
                 /// @todo read the todo above (probably should just parametrize
                 /// the title)
                 QString target = vboxGlobal().getExistingDirectory (
-                    QFileInfo (mTarget).dirPath(), this, "selectSaveDir",
+                    QFileInfo (mTarget).absolutePath(), this, "selectSaveDir",
                     tr ("Select folder to save Guest Additions image to"), true);
                 if (target.isNull())
                     QTimer::singleShot (0, this, SLOT (suicide()));
                 else
-                    mTarget = QDir (target).absFilePath (QFileInfo (mTarget).fileName());
+                    mTarget = QDir (target).absoluteFilePath (QFileInfo (mTarget).fileName());
             }
 
             return true;
@@ -312,7 +311,7 @@ void VBoxDownloaderWgt::getFile()
         {
             try
             {
-                mConn->request ("GET", mPath);
+                mConn->request ("GET", mPath.toAscii().constData());
                 while (mConn->outstanding())
                 {
                     QMutexLocker locker (mMutex);
@@ -337,7 +336,7 @@ void VBoxDownloaderWgt::getFile()
     if (!mRequestThread)
         mRequestThread = new Thread (this, mConn, mUrl.path(), &mMutex);
     mRequestThread->start();
-    mTimeout->start (20000, true);
+    mTimeout->start (20000);
 }
 
 /* This function is used to ask the user about he wants to download the
@@ -355,7 +354,7 @@ void VBoxDownloaderWgt::processFile (int aSize)
     if (vboxProblem().confirmDownloadAdditions (mUrl.toString(), aSize))
     {
         mIsChecking = false;
-        mProgressBar->setTotalSteps (aSize);
+        mProgressBar->setMaximum (aSize);
         getFile();
     }
     else
