@@ -151,14 +151,14 @@ static const unsigned g_aSize2Shift[] =
 /**
  * Macro for fast recode of the operand size (1/2/4/8 bytes) to bit shift value.
  */
-#define SIZE2SHIFT(cb) (g_aSize2Shift[cb])
+#define SIZE_2_SHIFT(cb)    (g_aSize2Shift[cb])
 
 
 /**
  * Wrapper which does the write and updates range statistics when such are enabled.
  * @warning VBOX_SUCCESS(rc=VINF_IOM_HC_MMIO_WRITE) is TRUE!
  */
-inline int iomMMIODoWrite(PVM pVM, CTXALLSUFF(PIOMMMIORANGE) pRange, RTGCPHYS GCPhysFault, const void *pvData, unsigned cbSize)
+DECLINLINE(int) iomMMIODoWrite(PVM pVM, CTXALLSUFF(PIOMMMIORANGE) pRange, RTGCPHYS GCPhysFault, const void *pvData, unsigned cbSize)
 {
 #ifdef VBOX_WITH_STATISTICS
     if (pRange->cbSize <= PAGE_SIZE)
@@ -179,7 +179,7 @@ inline int iomMMIODoWrite(PVM pVM, CTXALLSUFF(PIOMMMIORANGE) pRange, RTGCPHYS GC
 /**
  * Wrapper which does the read and updates range statistics when such are enabled.
  */
-inline int iomMMIODoRead(PVM pVM, CTXALLSUFF(PIOMMMIORANGE) pRange, RTGCPHYS GCPhysFault, void *pvData, unsigned cbSize)
+DECLINLINE(int) iomMMIODoRead(PVM pVM, CTXALLSUFF(PIOMMMIORANGE) pRange, RTGCPHYS GCPhysFault, void *pvData, unsigned cbSize)
 {
 #ifdef VBOX_WITH_STATISTICS
     if (pRange->cbSize <= PAGE_SIZE)
@@ -527,8 +527,8 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
     int      offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cbSize : (signed)cbSize;
 
 #ifdef VBOX_WITH_STATISTICS
-    if (pVM->iom.s.cMovsMaxBytes < (cTransfers << SIZE2SHIFT(cbSize)))
-        pVM->iom.s.cMovsMaxBytes = cTransfers << SIZE2SHIFT(cbSize);
+    if (pVM->iom.s.cMovsMaxBytes < (cTransfers << SIZE_2_SHIFT(cbSize)))
+        pVM->iom.s.cMovsMaxBytes = cTransfers << SIZE_2_SHIFT(cbSize);
 #endif
 
     RTGCPHYS Phys = GCPhysFault;
@@ -767,8 +767,8 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     int      offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cbSize : (signed)cbSize;
 
 #ifdef VBOX_WITH_STATISTICS
-    if (pVM->iom.s.cStosMaxBytes < (cTransfers << SIZE2SHIFT(cbSize)))
-        pVM->iom.s.cStosMaxBytes = cTransfers << SIZE2SHIFT(cbSize);
+    if (pVM->iom.s.cStosMaxBytes < (cTransfers << SIZE_2_SHIFT(cbSize)))
+        pVM->iom.s.cStosMaxBytes = cTransfers << SIZE_2_SHIFT(cbSize);
 #endif
 
 
@@ -788,7 +788,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
-                pRegFrame->edi += cTransfers << SIZE2SHIFT(cbSize);
+                pRegFrame->edi += cTransfers << SIZE_2_SHIFT(cbSize);
                 if (pCpu->prefix & PREFIX_REP)
                     pRegFrame->ecx = 0;
             }
@@ -796,11 +796,11 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         else
         {
             /* addr-- variant. */
-            rc = pRange->pfnFillCallback(pRange->pDevIns, pRange->pvUser, (Phys - (cTransfers - 1)) << SIZE2SHIFT(cbSize), u32Data, cbSize, cTransfers);
+            rc = pRange->pfnFillCallback(pRange->pDevIns, pRange->pvUser, (Phys - (cTransfers - 1)) << SIZE_2_SHIFT(cbSize), u32Data, cbSize, cTransfers);
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
-                pRegFrame->edi -= cTransfers << SIZE2SHIFT(cbSize);
+                pRegFrame->edi -= cTransfers << SIZE_2_SHIFT(cbSize);
                 if (pCpu->prefix & PREFIX_REP)
                     pRegFrame->ecx = 0;
             }
