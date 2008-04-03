@@ -409,6 +409,7 @@ CPUMDECL(uint32_t)  CPUMGetGuestCpuIdStdMax(PVM pVM);
 CPUMDECL(uint32_t)  CPUMGetGuestCpuIdExtMax(PVM pVM);
 CPUMDECL(uint32_t)  CPUMGetGuestCpuIdCentaurMax(PVM pVM);
 CPUMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM);
+CPUMDECL(uint64_t)  CPUMGetGuestEFER(PVM pVM);
 /** @} */
 
 /** @name Guest Register Setters.
@@ -445,6 +446,7 @@ CPUMDECL(int)       CPUMSetGuestES(PVM pVM, uint16_t es);
 CPUMDECL(int)       CPUMSetGuestFS(PVM pVM, uint16_t fs);
 CPUMDECL(int)       CPUMSetGuestGS(PVM pVM, uint16_t gs);
 CPUMDECL(int)       CPUMSetGuestSS(PVM pVM, uint16_t ss);
+CPUMDECL(void)      CPUMSetGuestEFER(PVM pVM, uint64_t val);
 CPUMDECL(void)      CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 CPUMDECL(void)      CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 CPUMDECL(void)      CPUMSetGuestCtx(PVM pVM, const PCPUMCTX pCtx);
