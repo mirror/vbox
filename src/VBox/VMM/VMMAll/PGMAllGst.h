@@ -155,7 +155,7 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 
-#elif PGM_GST_TYPE == PGM_GST_32BIT || PGM_GST_TYPE == PGM_GST_PAE
+#elif PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
 
     /*
      * Get the PDE.
