@@ -538,6 +538,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         STAM_COUNTER_INC(&pVM->pgm.s.StatTrap0eWPEmulR3);
                     return rc;
                 }
+                else
+                    AssertFailed(); /* This shouldn't happen; the above check is paranoid. */
             }
 
 # ifdef PGM_OUT_OF_SYNC_IN_GC
