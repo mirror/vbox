@@ -470,7 +470,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
 
     pHyperCtx->cr0 = X86_CR0_PE | X86_CR0_WP | X86_CR0_PG | X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP;
     pHyperCtx->cr4 = X86_CR4_PGE | X86_CR4_OSFSXR | X86_CR4_OSXMMEEXCPT;
-    PGMChangeMode(pVM, pHyperCtx->cr0, pHyperCtx->cr4, 0);
+    PGMChangeMode(pVM, pHyperCtx->cr0, pHyperCtx->cr4, pHyperCtx->msrEFER);
     PGMSyncCR3(pVM, pHyperCtx->cr0, CR3Phys, pHyperCtx->cr4, true);
 
     VM_FF_CLEAR(pVM, VM_FF_TO_R3);
