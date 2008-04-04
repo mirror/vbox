@@ -521,27 +521,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
             }
             STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
 
-            /* Check to see if we need to emulate the instruction as X86_CR0_WP has been cleared. */
-            if (    CPUMGetGuestCPL(pVM, pRegFrame) == 0
-                &&  ((CPUMGetGuestCR0(pVM) & (X86_CR0_WP|X86_CR0_PG)) == X86_CR0_PG)
-                &&  (uErr & X86_TRAP_PF_RW))
-            {
-                uint64_t fPageGst;
-                rc = PGMGstGetPage(pVM, pvFault, &fPageGst, NULL);
-                if (    VBOX_SUCCESS(rc)
-                    && !(fPageGst & X86_PTE_RW))
-                {
-                    rc = PGMInterpretInstruction(pVM, pRegFrame, pvFault);
-                    if (VBOX_SUCCESS(rc))
-                        STAM_COUNTER_INC(&pVM->pgm.s.StatTrap0eWPEmulGC);
-                    else
-                        STAM_COUNTER_INC(&pVM->pgm.s.StatTrap0eWPEmulR3);
-                    return rc;
-                }
-                else
-                    AssertFailed(); /* This shouldn't happen; the above check is paranoid. */
-            }
-
 # ifdef PGM_OUT_OF_SYNC_IN_GC
             /*
              * We are here only if page is present in Guest page tables and trap is not handled
@@ -696,6 +675,28 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eOutOfSyncObsHnd; });
                         return VINF_SUCCESS;
                     }
+
+                    /* Check to see if we need to emulate the instruction as X86_CR0_WP has been cleared. */
+                    if (    CPUMGetGuestCPL(pVM, pRegFrame) == 0
+                        &&  ((CPUMGetGuestCR0(pVM) & (X86_CR0_WP|X86_CR0_PG)) == X86_CR0_PG)
+                        &&  (uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_P)) == (X86_TRAP_PF_RW | X86_TRAP_PF_P))
+                    {
+                        uint64_t fPageGst;
+                        rc = PGMGstGetPage(pVM, pvFault, &fPageGst, NULL);
+                        if (    VBOX_SUCCESS(rc)
+                            && !(fPageGst & X86_PTE_RW))
+                        {
+                            rc = PGMInterpretInstruction(pVM, pRegFrame, pvFault);
+                            if (VBOX_SUCCESS(rc))
+                                STAM_COUNTER_INC(&pVM->pgm.s.StatTrap0eWPEmulGC);
+                            else
+                                STAM_COUNTER_INC(&pVM->pgm.s.StatTrap0eWPEmulR3);
+                            return rc;
+                        }
+                        else
+                            AssertMsgFailed(("Unexpected r/w page %x flag=%x\n", pvFault, (uint32_t)fPageGst));
+                    }
+
                 }
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE)
