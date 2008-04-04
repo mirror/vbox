@@ -213,6 +213,9 @@ IOMR3DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesHC->IOPortTreeGC, true, iomr3RelocateIOPortCallback, &offDelta);
     RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesHC->MMIOTreeGC, true, iomr3RelocateMMIOCallback, &offDelta);
 
+    if (pVM->iom.s.pfnMMIOHandlerGC)
+        pVM->iom.s.pfnMMIOHandlerGC += offDelta;
+
     /*
      * Apply relocations to the cached GC handlers
      */
