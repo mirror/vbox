@@ -146,24 +146,6 @@
 #define PGM_SHW_NAME(name)          PGM_SHW_NAME_AMD64(name)
 #include "PGMGCShw.h"
 
-/* Guest - real mode */
-#define PGM_GST_TYPE                PGM_TYPE_REAL
-#define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_AMD64_REAL(name)
-#include "PGMGCBth.h"
-#undef PGM_BTH_NAME
-#undef PGM_GST_NAME
-#undef PGM_GST_TYPE
-
-/* Guest - protected mode */
-#define PGM_GST_TYPE                PGM_TYPE_PROT
-#define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_AMD64_PROT(name)
-#include "PGMGCBth.h"
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
-
 /* Guest - AMD64 mode */
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
