@@ -394,10 +394,10 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
      */
     RTHCPHYS    HCPhysGuestCR3;
     RTHCPTR     HCPtrGuestCR3;
-    int rc = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhysCR3, &HCPtrGuestCR3, &HCPhysGuestCR3);
+    int rc = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhysCR3 & GST_CR3_PAGE_MASK, &HCPtrGuestCR3, &HCPhysGuestCR3);
     if (VBOX_SUCCESS(rc))
     {
-        rc = PGMMap(pVM, (RTGCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping, HCPhysGuestCR3 & X86_PTE_PAE_PG_MASK, PAGE_SIZE, 0);
+        rc = PGMMap(pVM, (RTGCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping, HCPhysGuestCR3, PAGE_SIZE, 0);
         if (VBOX_SUCCESS(rc))
         {
             PGM_INVL_PG(pVM->pgm.s.GCPtrCR3Mapping);
@@ -406,9 +406,8 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             pVM->pgm.s.pGuestPDGC = (GCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
-            const unsigned off = GCPhysCR3 & X86_CR3_PAE_PAGE_MASK;
-            pVM->pgm.s.pGstPaePDPTHC = (R3R0PTRTYPE(PX86PDPT))((RTHCUINTPTR)HCPtrGuestCR3 | off);
-            pVM->pgm.s.pGstPaePDPTGC = (GCPTRTYPE(PX86PDPT))((RTGCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping | off);
+            pVM->pgm.s.pGstPaePDPTHC = (R3R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+            pVM->pgm.s.pGstPaePDPTGC = (GCPTRTYPE(PX86PDPT))pVM->pgm.s.GCPtrCR3Mapping;
 
             /*
              * Map the 4 PDs too.
