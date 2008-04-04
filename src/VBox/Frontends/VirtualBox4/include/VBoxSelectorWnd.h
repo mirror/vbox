@@ -102,8 +102,12 @@ private slots:
     void snapshotChanged (const VBoxSnapshotEvent &e);
 
 private:
+    /* Main menus */
+    QMenu *mFileMenu;
+    QMenu *mVMMenu;
+    QMenu *mHelpMenu;
 
-    /** VM list context menu */
+    /* VM list context menu */
     QMenu *mVMCtxtMenu;
 
     /* actions */
