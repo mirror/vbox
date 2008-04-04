@@ -5284,7 +5284,8 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
             if (VBOX_FAILURE(rc) && rc != VERR_INVALID_HANDLE)
                 rc2 = rc;
         }
-        AssertMsg(VBOX_SUCCESS(rc2), ("Some of the async I/O threads are still running!\n"));
+        AssertMsgRC(rc2, ("Some of the async I/O threads are still running! (%RU64 ms)\n",
+                          RTTimeMilliTS() - u64Start));
     }
     else
         AssertMsgFailed(("Async I/O is still busy!\n"));
