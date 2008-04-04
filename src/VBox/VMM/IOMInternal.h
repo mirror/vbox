@@ -23,6 +23,7 @@
 #include <VBox/iom.h>
 #include <VBox/stam.h>
 #include <VBox/pgm.h>
+#include <VBox/param.h>
 #include <iprt/avl.h>
 
 #if !defined(IN_IOM_R3) && !defined(IN_IOM_R0) && !defined(IN_IOM_GC)
@@ -37,97 +38,57 @@
  */
 
 /**
- * MMIO range descriptor, R3 version.
+ * MMIO range descriptor.
  */
-typedef struct IOMMMIORANGER3
+typedef struct IOMMMIORANGE
 {
     /** Avl node core with GCPhys as Key and GCPhys + cbSize - 1 as KeyLast. */
     AVLROGCPHYSNODECORE         Core;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
-    uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
-#endif
     /** Start physical address. */
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
-    RTUINT                      cb;
+    uint32_t                    cb;
+    uint32_t                    u32Alignment; /**< Alignment padding. */
+
     /** Pointer to user argument. */
-    RTR3PTR                     pvUser;
+    RTR3PTR                     pvUserR3;
     /** Pointer to device instance. */
-    R3PTRTYPE(PPDMDEVINS)       pDevIns;
+    PPDMDEVINSR3                pDevInsR3;
     /** Pointer to write callback function. */
-    R3PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallback;
+    R3PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR3;
     /** Pointer to read callback function. */
-    R3PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallback;
+    R3PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackR3;
     /** Pointer to fill (memset) callback function. */
-    R3PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallback;
+    R3PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR3;
+
+    /** Pointer to user argument. */
+    RTR0PTR                     pvUserR0;
+    /** Pointer to device instance. */
+    PPDMDEVINSR0                pDevInsR0;
+    /** Pointer to write callback function. */
+    R0PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR0;
+    /** Pointer to read callback function. */
+    R0PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackR0;
+    /** Pointer to fill (memset) callback function. */
+    R0PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR0;
+
+    /** Pointer to user argument. */
+    RTGCPTR                     pvUserGC;
+    /** Pointer to device instance. */
+    PPDMDEVINSGC                pDevInsGC;
+    /** Pointer to write callback function. */
+    GCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackGC;
+    /** Pointer to read callback function. */
+    GCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackGC;
+    /** Pointer to fill (memset) callback function. */
+    GCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackGC;
+    RTGCPTR                     GCPtrAlignment; /**< Alignment padding */
+
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
-} IOMMMIORANGER3;
+} IOMMMIORANGE;
 /** Pointer to a MMIO range descriptor, R3 version. */
-typedef struct IOMMMIORANGER3 *PIOMMMIORANGER3;
-
-/**
- * MMIO range descriptor, R0 version.
- */
-typedef struct IOMMMIORANGER0
-{
-    /** Avl node core with GCPhys as Key and GCPhys + cbSize - 1 as KeyLast. */
-    AVLROGCPHYSNODECORE         Core;
-    /** Start physical address. */
-    RTGCPHYS                    GCPhys;
-#if HC_ARCH_BITS == 64
-    uint32_t                    u32Alignment;
-#endif
-    /** Size of the range. */
-    RTUINT                      cb;
-    /** Pointer to user argument. */
-    RTR0PTR                     pvUser;
-    /** Pointer to device instance. */
-    R0PTRTYPE(PPDMDEVINS)       pDevIns;
-    /** Pointer to write callback function. */
-    R0PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallback;
-    /** Pointer to read callback function. */
-    R0PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallback;
-    /** Pointer to fill (memset) callback function. */
-    R0PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallback;
-    /** Description / Name. For easing debugging. */
-    R3PTRTYPE(const char *)     pszDesc;
-} IOMMMIORANGER0;
-/** Pointer to a MMIO range descriptor, R0 version. */
-typedef struct IOMMMIORANGER0 *PIOMMMIORANGER0;
-
-/**
- * MMIO range descriptor, GC version.
- */
-typedef struct IOMMMIORANGEGC
-{
-    /** Avl node core with GCPhys as Key and GCPhys + cbSize - 1 as KeyLast. */
-    AVLROGCPHYSNODECORE         Core;
-    /** Start physical address. */
-    RTGCPHYS                    GCPhys;
-    /** Size of the range. */
-    RTUINT                      cb;
-#if HC_ARCH_BITS == 64
-    uint32_t                    u32Alignment;
-#endif
-    /** Pointer to user argument. */
-    RTGCPTR                     pvUser;
-    /** Pointer to device instance. */
-    GCPTRTYPE(PPDMDEVINS)       pDevIns;
-    /** Pointer to write callback function. */
-    GCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallback;
-    /** Pointer to read callback function. */
-    GCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallback;
-    /** Pointer to fill (memset) callback function. */
-    GCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallback;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
-    RTGCPTR                     GCPtrAlignment; /**< pszDesc is 8 byte aligned. */
-#endif
-    /** Description / Name. For easing debugging. */
-    R3PTRTYPE(const char *)     pszDesc;
-} IOMMMIORANGEGC;
-/** Pointer to a MMIO range descriptor, GC version. */
-typedef struct IOMMMIORANGEGC *PIOMMMIORANGEGC;
+typedef struct IOMMMIORANGE *PIOMMMIORANGE;
 
 
 /**
@@ -339,12 +300,8 @@ typedef struct IOMTREES
     /** Tree containing I/O port range descriptors registered for GC (IOMIOPORTRANGEGC). */
     AVLROIOPORTTREE         IOPortTreeGC;
 
-    /** Tree containing MMIO range descriptors registered for HC (IOMMMIORANGEHC). */
-    AVLROGCPHYSTREE         MMIOTreeR3;
-    /** Tree containing MMIO range descriptors registered for R0 (IOMMMIORANGER0). */
-    AVLROGCPHYSTREE         MMIOTreeR0;
-    /** Tree containing MMIO range descriptors registered for GC (IOMMMIORANGEGC). */
-    AVLROGCPHYSTREE         MMIOTreeGC;
+    /** Tree containing the MMIO range descriptors (IOMMMIORANGE). */
+    AVLROGCPHYSTREE         MMIOTree;
 
     /** Tree containing I/O port statistics (IOMIOPORTSTATS). */
     AVLOIOPORTTREE          IOPortStatTree;
@@ -381,23 +338,29 @@ typedef struct IOM
     GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnMMIOHandlerGC;
     RTGCPTR                         Alignment;
 
-    /** @name Caching of I/O Port ranges and statistics.
+    /** @name Caching of I/O Port and MMIO ranges and statistics.
      * (Saves quite some time in rep outs/ins instruction emulation.)
      * @{ */
     R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastReadR3;
     R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastWriteR3;
     R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR3;
     R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR3;
+    R3PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR3;
+    R3PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR3;
 
-    R3R0PTRTYPE(PIOMIOPORTRANGER0)  pRangeLastReadR0;
-    R3R0PTRTYPE(PIOMIOPORTRANGER0)  pRangeLastWriteR0;
-    R3R0PTRTYPE(PIOMIOPORTSTATS)    pStatsLastReadR0;
-    R3R0PTRTYPE(PIOMIOPORTSTATS)    pStatsLastWriteR0;
+    R0PTRTYPE(PIOMIOPORTRANGER0)    pRangeLastReadR0;
+    R0PTRTYPE(PIOMIOPORTRANGER0)    pRangeLastWriteR0;
+    R0PTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR0;
+    R0PTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR0;
+    R0PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR0;
+    R0PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR0;
 
     GCPTRTYPE(PIOMIOPORTRANGEGC)    pRangeLastReadGC;
     GCPTRTYPE(PIOMIOPORTRANGEGC)    pRangeLastWriteGC;
     GCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadGC;
     GCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteGC;
+    GCPTRTYPE(PIOMMMIORANGE)        pMMIORangeLastGC;
+    GCPTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastGC;
     /** @} */
 
     /** @name I/O Port statistics.
@@ -471,7 +434,7 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
  * @param   pIOM    IOM instance data.
  * @param   Port    Port to lookup.
  */
-inline CTXALLSUFF(PIOMIOPORTRANGE) iomIOPortGetRange(PIOM pIOM, RTIOPORT Port)
+DECLINLINE(CTXALLSUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PIOM pIOM, RTIOPORT Port)
 {
     CTXALLSUFF(PIOMIOPORTRANGE) pRange = (CTXALLSUFF(PIOMIOPORTRANGE))RTAvlroIOPortRangeGet(&pIOM->CTXSUFF(pTrees)->CTXALLSUFF(IOPortTree), Port);
     return pRange;
@@ -486,7 +449,7 @@ inline CTXALLSUFF(PIOMIOPORTRANGE) iomIOPortGetRange(PIOM pIOM, RTIOPORT Port)
  * @param   pIOM    IOM instance data.
  * @param   Port    Port to lookup.
  */
-inline PIOMIOPORTRANGER3 iomIOPortGetRangeHC(PIOM pIOM, RTIOPORT Port)
+DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeHC(PIOM pIOM, RTIOPORT Port)
 {
     PIOMIOPORTRANGER3 pRange = (PIOMIOPORTRANGER3)RTAvlroIOPortRangeGet(&pIOM->CTXSUFF(pTrees)->IOPortTreeR3, Port);
     return pRange;
@@ -502,40 +465,46 @@ inline PIOMIOPORTRANGER3 iomIOPortGetRangeHC(PIOM pIOM, RTIOPORT Port)
  * @param   pIOM    IOM instance data.
  * @param   GCPhys  Physical address to lookup.
  */
-inline CTXALLSUFF(PIOMMMIORANGE) iomMMIOGetRange(PIOM pIOM, RTGCPHYS GCPhys)
+DECLINLINE(PIOMMMIORANGE) iomMMIOGetRange(PIOM pIOM, RTGCPHYS GCPhys)
 {
-    CTXALLSUFF(PIOMMMIORANGE) pRange = (CTXALLSUFF(PIOMMMIORANGE))RTAvlroGCPhysRangeGet(&pIOM->CTXSUFF(pTrees)->CTXALLSUFF(MMIOTree), GCPhys);
+    PIOMMMIORANGE pRange = CTXALLSUFF(pIOM->pMMIORangeLast);
+    if (    !pRange
+        ||  GCPhys - pRange->GCPhys >= pRange->cb)
+        CTXALLSUFF(pIOM->pMMIORangeLast) = pRange = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pIOM->CTXSUFF(pTrees)->MMIOTree, GCPhys);
     return pRange;
 }
 
-
-/**
- * Gets the MMIO range for the specified physical address in the current context.
- *
- * @returns Pointer to MMIO range.
- * @returns NULL if address not in a MMIO range.
- *
- * @param   pIOM    IOM instance data.
- * @param   GCPhys  Physical address to lookup.
- */
-inline PIOMMMIORANGER3 iomMMIOGetRangeHC(PIOM pIOM, RTGCPHYS GCPhys)
-{
-    PIOMMMIORANGER3 pRange = (PIOMMMIORANGER3)RTAvlroGCPhysRangeGet(&pIOM->CTXSUFF(pTrees)->MMIOTreeR3, GCPhys);
-    return pRange;
-}
 
 #ifdef VBOX_WITH_STATISTICS
 /**
  * Gets the MMIO statistics record.
- * @returns Pointer to MMIO stats.
- * @returns NULL if not found.
  *
- * @param   pIOM    IOM instance data.
- * @param   GCPhys  Physical address to lookup.
+ * In ring-3 this will lazily create missing records, while in GC/R0 the caller has to
+ * return the appropriate status to defer the operation to ring-3.
+ *
+ * @returns Pointer to MMIO stats.
+ * @returns NULL if not found (R0/GC), or out of memory (R3).
+ *
+ * @param   pIOM        IOM instance data.
+ * @param   GCPhys      Physical address to lookup.
+ * @param   pRange      The MMIO range.
  */
-inline PIOMMMIOSTATS iomMMIOGetStats(PIOM pIOM, RTGCPHYS GCPhys)
+DECLINLINE(PIOMMMIOSTATS) iomMMIOGetStats(PIOM pIOM, RTGCPHYS GCPhys, PIOMMMIORANGE pRange)
 {
-    PIOMMMIOSTATS pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pIOM->CTXSUFF(pTrees)->MMIOStatTree, GCPhys);
+    /* For large ranges, we'll put everything on the first byte. */
+    if (pRange->cb > PAGE_SIZE)
+        GCPhys = pRange->GCPhys;
+
+    PIOMMMIOSTATS pStats = CTXALLSUFF(pIOM->pMMIOStatsLast);
+    if (    !pStats
+        ||  pStats->Core.Key != GCPhys)
+    {
+        pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pIOM->CTXSUFF(pTrees)->MMIOStatTree, GCPhys);
+# ifdef IN_RING3
+        if (!pStats)
+            pStats = iomR3MMIOStatsCreate(IOM2VM(pIOM), GCPhys, pRange->pszDesc);
+# endif
+    }
     return pStats;
 }
 #endif

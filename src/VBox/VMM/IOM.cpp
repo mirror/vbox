@@ -164,20 +164,26 @@ static void iomR3FlushCache(PVM pVM)
     /*
      * Caching of port and statistics (saves some time in rep outs/ins instruction emulation)
      */
-    pVM->iom.s.pRangeLastReadGC  = 0;
-    pVM->iom.s.pRangeLastWriteGC = 0;
-    pVM->iom.s.pStatsLastReadGC  = 0;
-    pVM->iom.s.pStatsLastWriteGC = 0;
+    pVM->iom.s.pRangeLastReadR0  = NIL_RTR0PTR;
+    pVM->iom.s.pRangeLastWriteR0 = NIL_RTR0PTR;
+    pVM->iom.s.pStatsLastReadR0  = NIL_RTR0PTR;
+    pVM->iom.s.pStatsLastWriteR0 = NIL_RTR0PTR;
+    pVM->iom.s.pMMIORangeLastR0  = NIL_RTR0PTR;
+    pVM->iom.s.pMMIOStatsLastR0  = NIL_RTR0PTR;
 
-    pVM->iom.s.pRangeLastReadR3  = 0;
-    pVM->iom.s.pRangeLastWriteR3 = 0;
-    pVM->iom.s.pStatsLastReadR3  = 0;
-    pVM->iom.s.pStatsLastWriteR3 = 0;
+    pVM->iom.s.pRangeLastReadR3  = NULL;
+    pVM->iom.s.pRangeLastWriteR3 = NULL;
+    pVM->iom.s.pStatsLastReadR3  = NULL;
+    pVM->iom.s.pStatsLastWriteR3 = NULL;
+    pVM->iom.s.pMMIORangeLastR3  = NULL;
+    pVM->iom.s.pMMIOStatsLastR3  = NULL;
 
-    pVM->iom.s.pRangeLastReadR0  = 0;
-    pVM->iom.s.pRangeLastWriteR0 = 0;
-    pVM->iom.s.pStatsLastReadR0  = 0;
-    pVM->iom.s.pStatsLastWriteR0 = 0;
+    pVM->iom.s.pRangeLastReadGC  = NIL_RTGCPTR;
+    pVM->iom.s.pRangeLastWriteGC = NIL_RTGCPTR;
+    pVM->iom.s.pStatsLastReadGC  = NIL_RTGCPTR;
+    pVM->iom.s.pStatsLastWriteGC = NIL_RTGCPTR;
+    pVM->iom.s.pMMIORangeLastGC  = NIL_RTGCPTR;
+    pVM->iom.s.pMMIOStatsLastGC  = NIL_RTGCPTR;
 }
 
 
@@ -211,7 +217,7 @@ IOMR3DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     pVM->iom.s.pTreesGC = MMHyperHC2GC(pVM, pVM->iom.s.pTreesHC);
     RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesHC->IOPortTreeGC, true, iomr3RelocateIOPortCallback, &offDelta);
-    RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesHC->MMIOTreeGC, true, iomr3RelocateMMIOCallback, &offDelta);
+    RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesHC->MMIOTree, true, iomr3RelocateMMIOCallback, &offDelta);
 
     if (pVM->iom.s.pfnMMIOHandlerGC)
         pVM->iom.s.pfnMMIOHandlerGC += offDelta;
@@ -227,6 +233,10 @@ IOMR3DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVM->iom.s.pStatsLastReadGC  += offDelta;
     if (pVM->iom.s.pStatsLastWriteGC)
         pVM->iom.s.pStatsLastWriteGC += offDelta;
+    if (pVM->iom.s.pMMIORangeLastGC)
+        pVM->iom.s.pMMIORangeLastGC  += offDelta;
+    if (pVM->iom.s.pMMIOStatsLastGC)
+        pVM->iom.s.pMMIOStatsLastGC  += offDelta;
 }
 
 
@@ -244,18 +254,17 @@ static DECLCALLBACK(int) iomr3RelocateIOPortCallback(PAVLROIOPORTNODECORE pNode,
     RTGCINTPTR      offDelta = *(PRTGCINTPTR)pvUser;
 
     Assert(pRange->pDevIns);
-    pRange->pDevIns         += offDelta;
+    pRange->pDevIns                 += offDelta;
     if (pRange->pfnOutCallback)
-        pRange->pfnOutCallback  += offDelta;
+        pRange->pfnOutCallback      += offDelta;
     if (pRange->pfnInCallback)
-        pRange->pfnInCallback   += offDelta;
+        pRange->pfnInCallback       += offDelta;
     if (pRange->pfnOutStrCallback)
-        pRange->pfnOutStrCallback  += offDelta;
+        pRange->pfnOutStrCallback   += offDelta;
     if (pRange->pfnInStrCallback)
-        pRange->pfnInStrCallback   += offDelta;
-    /** @todo IOMIOPORTRANGEGC::pvUser hack - relocate if 64KB or higher. This hack should be removed! */
+        pRange->pfnInStrCallback    += offDelta;
     if (pRange->pvUser > _64K)
-        pRange->pvUser          += offDelta;
+        pRange->pvUser              += offDelta;
     return 0;
 }
 
@@ -264,27 +273,26 @@ static DECLCALLBACK(int) iomr3RelocateIOPortCallback(PAVLROIOPORTNODECORE pNode,
  * Callback function for relocating a MMIO range.
  *
  * @returns 0 (continue enum)
- * @param   pNode       Pointer to a IOMMMIORANGEGC node.
+ * @param   pNode       Pointer to a IOMMMIORANGE node.
  * @param   pvUser      Pointer to the offDelta. This is a pointer to the delta since we're
  *                      not certain the delta will fit in a void pointer for all possible configs.
  */
 static DECLCALLBACK(int) iomr3RelocateMMIOCallback(PAVLROGCPHYSNODECORE pNode, void *pvUser)
 {
-    PIOMMMIORANGEGC pRange = (PIOMMMIORANGEGC)pNode;
+    PIOMMMIORANGE pRange = (PIOMMMIORANGE)pNode;
     RTGCINTPTR    offDelta = *(PRTGCINTPTR)pvUser;
 
-    Assert(pRange->pDevIns);
-    pRange->pDevIns         += offDelta;
+    if (pRange->pDevInsGC)
+        pRange->pDevInsGC           += offDelta;
+    if (pRange->pfnWriteCallbackGC)
+        pRange->pfnWriteCallbackGC  += offDelta;
+    if (pRange->pfnReadCallbackGC)
+        pRange->pfnReadCallbackGC   += offDelta;
+    if (pRange->pfnFillCallbackGC)
+        pRange->pfnFillCallbackGC   += offDelta;
+    if (pRange->pvUserGC > _64K)
+        pRange->pvUserGC            += offDelta;
 
-    if (pRange->pfnWriteCallback)
-        pRange->pfnWriteCallback += offDelta;
-    if (pRange->pfnReadCallback)
-        pRange->pfnReadCallback  += offDelta;
-    if (pRange->pfnFillCallback)
-        pRange->pfnFillCallback  += offDelta;
-    /** @todo IOMMMIORANGEGC::pvUser hack - relocate if 64KB or higher. This hack should be removed! */
-    if (pRange->pvUser > _64K)
-        pRange->pvUser           += offDelta;
     return 0;
 }
 
@@ -432,7 +440,7 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
     PIOMMMIOSTATS pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pVM->iom.s.pTreesHC->MMIOStatTree, GCPhys);
     if (pStats)
         return pStats;
-#if 1
+
     /* allocate stats node. */
     int rc = MMHyperAlloc(pVM, sizeof(*pStats), 0, MM_TAG_IOM_STATS, (void **)&pStats);
     AssertRC(rc);
@@ -443,70 +451,39 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
         if (RTAvloGCPhysInsert(&pVM->iom.s.pTreesHC->MMIOStatTree, &pStats->Core))
         {
             /* register the statistics counters. */
-            char szName[64];
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-R3", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ReadR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ReadR3,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-R3", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-R3", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->WriteR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->WriteR3,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-R3", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-GC", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ReadGC, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ReadGC,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-GC", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-GC", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->WriteGC, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->WriteGC,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-GC", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-GC-2-R3", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ReadGCToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ReadGCToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-GC-2-R3", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-GC-2-R3", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->WriteGCToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->WriteGCToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-GC-2-R3", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-R0", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ReadR0, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ReadR0,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-R0", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-R0", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->WriteR0, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->WriteR0,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-R0", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-R0-2-R3", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ReadR0ToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ReadR0ToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Read-R0-2-R3", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-R0-2-R3", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->WriteR0ToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->WriteR0ToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, pszDesc, "/IOM/MMIO/%RGp-Write-R0-2-R3", GCPhys);
             AssertRC(rc);
 
             /* Profiling */
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-R3/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ProfReadR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ProfReadR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, pszDesc, "/IOM/MMIO/%RGp-Read-R3/Prof", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-R3/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ProfWriteR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ProfWriteR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, pszDesc, "/IOM/MMIO/%RGp-Write-R3/Prof", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-GC/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ProfReadGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ProfReadGC,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, pszDesc, "/IOM/MMIO/%RGp-Read-GC/Prof", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-GC/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ProfWriteGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ProfWriteGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, pszDesc, "/IOM/MMIO/%RGp-Write-GC/Prof", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Read-R0/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ProfReadR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ProfReadR0,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, pszDesc, "/IOM/MMIO/%RGp-Read-R0/Prof", GCPhys);
             AssertRC(rc);
-
-            RTStrPrintf(szName, sizeof(szName), "/IOM/MMIO/%RGp-Write-R0/Prof", GCPhys);
-            rc = STAMR3Register(pVM, &pStats->ProfWriteR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+            rc = STAMR3RegisterF(pVM, &pStats->ProfWriteR0, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, pszDesc, "/IOM/MMIO/%RGp-Write-R0/Prof", GCPhys);
             AssertRC(rc);
 
             return pStats;
@@ -514,7 +491,6 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
         AssertMsgFailed(("what! GCPhys=%RGp\n", GCPhys));
         MMHyperFree(pVM, pStats);
     }
-#endif
     return NULL;
 }
 #endif /* VBOX_WITH_STATISTICS */
@@ -1367,26 +1343,26 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
     if (pVM->iom.s.pRangeLastReadR0)
     {
-        PIOMIOPORTRANGER0 pRange = pVM->iom.s.pRangeLastReadR0;
+        PIOMIOPORTRANGER0 pRange = (PIOMIOPORTRANGER0)MMHyperR0ToCC(pVM, pVM->iom.s.pRangeLastReadR0);
         pHlp->pfnPrintf(pHlp, "R0 Read  Ports: %#04x-%#04x %VGv %s\n",
                         pRange->Port, pRange->Port + pRange->cPorts, pRange, pRange->pszDesc);
     }
     if (pVM->iom.s.pStatsLastReadR0)
     {
-        PIOMIOPORTSTATS pRange = pVM->iom.s.pStatsLastReadR0;
+        PIOMIOPORTSTATS pRange = (PIOMIOPORTSTATS)MMHyperR0ToCC(pVM, pVM->iom.s.pStatsLastReadR0);
         pHlp->pfnPrintf(pHlp, "R0 Read  Stats: %#04x %VGv\n",
                         pRange->Core.Key, pRange);
     }
 
     if (pVM->iom.s.pRangeLastWriteR0)
     {
-        PIOMIOPORTRANGER0 pRange = pVM->iom.s.pRangeLastWriteR0;
+        PIOMIOPORTRANGER0 pRange = (PIOMIOPORTRANGER0)MMHyperR0ToCC(pVM, pVM->iom.s.pRangeLastWriteR0);
         pHlp->pfnPrintf(pHlp, "R0 Write Ports: %#04x-%#04x %VGv %s\n",
                         pRange->Port, pRange->Port + pRange->cPorts, pRange, pRange->pszDesc);
     }
     if (pVM->iom.s.pStatsLastWriteR0)
     {
-        PIOMIOPORTSTATS pRange = pVM->iom.s.pStatsLastWriteR0;
+        PIOMIOPORTSTATS pRange = (PIOMIOPORTSTATS)MMHyperR0ToCC(pVM, pVM->iom.s.pStatsLastWriteR0);
         pHlp->pfnPrintf(pHlp, "R0 Write Stats: %#04x %VGv\n",
                         pRange->Core.Key, pRange);
     }
@@ -1442,20 +1418,33 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     /*
      * Allocate new range record and initialize it.
      */
-    PIOMMMIORANGER3 pRange;
+    PIOMMMIORANGE pRange;
     rc = MMHyperAlloc(pVM, sizeof(*pRange), 0, MM_TAG_IOM, (void **)&pRange);
     if (VBOX_SUCCESS(rc))
     {
-        pRange->Core.Key        = GCPhysStart;
-        pRange->Core.KeyLast    = GCPhysStart + (cbRange - 1);
-        pRange->GCPhys          = GCPhysStart;
-        pRange->cb              = cbRange;
-        pRange->pvUser          = pvUser;
-        pRange->pDevIns         = pDevIns;
-        pRange->pfnReadCallback = pfnReadCallback;
-        pRange->pfnWriteCallback= pfnWriteCallback;
-        pRange->pfnFillCallback = pfnFillCallback;
-        pRange->pszDesc         = pszDesc;
+        pRange->Core.Key            = GCPhysStart;
+        pRange->Core.KeyLast        = GCPhysStart + (cbRange - 1);
+        pRange->GCPhys              = GCPhysStart;
+        pRange->cb                  = cbRange;
+        pRange->pszDesc             = pszDesc;
+
+        pRange->pvUserR3            = pvUser;
+        pRange->pDevInsR3           = pDevIns;
+        pRange->pfnReadCallbackR3   = pfnReadCallback;
+        pRange->pfnWriteCallbackR3  = pfnWriteCallback;
+        pRange->pfnFillCallbackR3   = pfnFillCallback;
+
+        //pRange->pvUserR0            = NIL_RTR0PTR;
+        //pRange->pDevInsR0           = NIL_RTR0PTR;
+        //pRange->pfnReadCallbackR0   = NIL_RTR0PTR;
+        //pRange->pfnWriteCallbackR0  = NIL_RTR0PTR;
+        //pRange->pfnFillCallbackR0   = NIL_RTR0PTR;
+
+        //pRange->pvUserGC            = NIL_RTGCPTR;
+        //pRange->pDevInsGC           = NIL_RTGCPTR;
+        //pRange->pfnReadCallbackGC   = NIL_RTGCPTR;
+        //pRange->pfnWriteCallbackGC  = NIL_RTGCPTR;
+        //pRange->pfnFillCallbackGC   = NIL_RTGCPTR;
 
         /*
          * Try register it with PGM and then insert it into the tree.
@@ -1466,7 +1455,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                    pVM->iom.s.pfnMMIOHandlerGC, MMHyperR3ToGC(pVM, pRange), pszDesc);
         if (RT_SUCCESS(rc))
         {
-            if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesHC->MMIOTreeR3, &pRange->Core))
+            if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesHC->MMIOTree, &pRange->Core))
                 return VINF_SUCCESS;
 
             DBGFR3Info(pVM, "mmio", NULL, NULL);
@@ -1514,78 +1503,23 @@ IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         AssertMsgFailed(("No callbacks! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
         return VERR_INVALID_PARAMETER;
     }
-    RTGCPHYS GCPhysLast = GCPhysStart + (cbRange - 1);
-    if (GCPhysLast < GCPhysStart)
-    {
-        AssertMsgFailed(("Wrapped! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
-        return VERR_IOM_INVALID_MMIO_RANGE;
-    }
 
     /*
-     * Check that a ring-3 MMIO range exists.
+     * Find the MMIO range and check that the input matches.
      */
-    RTGCPHYS GCPhys = GCPhysStart;
-    while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
-    {
-        PIOMMMIORANGER3 pRange = (PIOMMMIORANGER3)RTAvlroGCPhysRangeGet(&pVM->iom.s.CTXSUFF(pTrees)->MMIOTreeR3, GCPhys);
-        if (!pRange)
-        {
-            AssertMsgFailed(("No R3 range! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc));
-            return VERR_IOM_NO_HC_MMIO_RANGE;
-        }
-#ifndef IOM_NO_PDMINS_CHECKS
-# ifndef IN_GC
-        if (pRange->pDevIns != pDevIns)
-# else
-        if (pRange->pDevIns != MMHyperGC2HC(pVM, pDevIns))
-# endif
-        {
-            AssertMsgFailed(("Not owner! GCPhys=%VGp %VGp LB%#x %s / %#x-%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc,
-                             pRange->Core.Key, pRange->Core.KeyLast, MMHyper2HC(pVM, (uintptr_t)pRange->pszDesc)));
-            return VERR_IOM_NOT_MMIO_RANGE_OWNER;
-        }
-#endif /* !IOM_NO_PDMINS_CHECKS */
-        /* next */
-        Assert(GCPhys <= pRange->Core.KeyLast);
-        GCPhys = pRange->Core.KeyLast + 1;
-    }
+    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
+    AssertReturn(pRange, VERR_IOM_MMIO_RANGE_NOT_FOUND);
+    AssertReturn(pRange->pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
+    AssertReturn(pRange->GCPhys == GCPhysStart, VERR_IOM_INVALID_MMIO_RANGE);
+    AssertReturn(pRange->cb == cbRange, VERR_IOM_INVALID_MMIO_RANGE);
 
+    pRange->pvUserGC          = pvUser;
+    pRange->pfnReadCallbackGC = pfnReadCallback;
+    pRange->pfnWriteCallbackGC= pfnWriteCallback;
+    pRange->pfnFillCallbackGC = pfnFillCallback;
+    pRange->pDevInsGC         = MMHyperCCToGC(pVM, pDevIns);
 
-    /*
-     * Allocate new range record and initialize it.
-     */
-    PIOMMMIORANGEGC pRange;
-    int rc = MMHyperAlloc(pVM, sizeof(*pRange), 0, MM_TAG_IOM, (void **)&pRange);
-    if (VBOX_SUCCESS(rc))
-    {
-        pRange->Core.Key        = GCPhysStart;
-        pRange->Core.KeyLast    = GCPhysStart + (cbRange - 1);
-        pRange->GCPhys          = GCPhysStart;
-        pRange->cb              = cbRange;
-        pRange->pvUser          = pvUser;
-        pRange->pfnReadCallback = pfnReadCallback;
-        pRange->pfnWriteCallback= pfnWriteCallback;
-        pRange->pfnFillCallback = pfnFillCallback;
-#ifdef IN_GC
-        pRange->pDevIns         = pDevIns;
-        pRange->pszDesc         = MMHyperGC2HC(pVM, (void *)pszDesc);
-#else
-        pRange->pDevIns         = MMHyperHC2GC(pVM, pDevIns);
-        pRange->pszDesc         = pszDesc;
-#endif
-
-        /*
-         * Try insert it.
-         */
-        if (RTAvlroGCPhysInsert(&pVM->iom.s.CTXSUFF(pTrees)->MMIOTreeGC, &pRange->Core))
-            return VINF_SUCCESS;
-
-        AssertMsgFailed(("Conflict! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
-        MMHyperFree(pVM, pRange);
-        rc = VERR_IOM_MMIO_RANGE_CONFLICT;
-    }
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -1623,81 +1557,23 @@ IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         AssertMsgFailed(("No callbacks! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
         return VERR_INVALID_PARAMETER;
     }
-    RTGCPHYS GCPhysLast = GCPhysStart + (cbRange - 1);
-    if (GCPhysLast < GCPhysStart)
-    {
-        AssertMsgFailed(("Wrapped! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
-        return VERR_IOM_INVALID_MMIO_RANGE;
-    }
 
     /*
-     * Check that a ring-3 MMIO range exists.
+     * Find the MMIO range and check that the input matches.
      */
-    RTGCPHYS GCPhys = GCPhysStart;
-    while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
-    {
-        PIOMMMIORANGER3 pRange = (PIOMMMIORANGER3)RTAvlroGCPhysRangeGet(&pVM->iom.s.CTXSUFF(pTrees)->MMIOTreeR3, GCPhys);
-        if (!pRange)
-        {
-            AssertMsgFailed(("No R3 range! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc));
-            return VERR_IOM_NO_HC_MMIO_RANGE;
-        }
-#ifndef IOM_NO_PDMINS_CHECKS
-# ifndef IN_GC
-        if (pRange->pDevIns != pDevIns)
-# else
-        if (pRange->pDevIns != MMHyperGC2HC(pVM, pDevIns))
-# endif
-        {
-            AssertMsgFailed(("Not owner! GCPhys=%VGp %VGp LB%#x %s / %#x-%#x %s\n", GCPhys, GCPhysStart, cbRange, pszDesc,
-                             pRange->Core.Key, pRange->Core.KeyLast, MMHyper2HC(pVM, (uintptr_t)pRange->pszDesc)));
-            return VERR_IOM_NOT_MMIO_RANGE_OWNER;
-        }
-#endif /* !IOM_NO_PDMINS_CHECKS */
-        /* next */
-        Assert(GCPhys <= pRange->Core.KeyLast);
-        GCPhys = pRange->Core.KeyLast + 1;
-    }
+    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
+    AssertReturn(pRange, VERR_IOM_MMIO_RANGE_NOT_FOUND);
+    AssertReturn(pRange->pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
+    AssertReturn(pRange->GCPhys == GCPhysStart, VERR_IOM_INVALID_MMIO_RANGE);
+    AssertReturn(pRange->cb == cbRange, VERR_IOM_INVALID_MMIO_RANGE);
 
+    pRange->pvUserR0          = pvUser;
+    pRange->pfnReadCallbackR0 = pfnReadCallback;
+    pRange->pfnWriteCallbackR0= pfnWriteCallback;
+    pRange->pfnFillCallbackR0 = pfnFillCallback;
+    pRange->pDevInsR0         = MMHyperCCToR0(pVM, pDevIns);
 
-    /*
-     * Allocate new range record and initialize it.
-     */
-    PIOMMMIORANGER0 pRange;
-    int rc = MMHyperAlloc(pVM, sizeof(*pRange), 0, MM_TAG_IOM, (void **)&pRange);
-    if (VBOX_SUCCESS(rc))
-    {
-        pRange->Core.Key        = GCPhysStart;
-        pRange->Core.KeyLast    = GCPhysStart + (cbRange - 1);
-        pRange->GCPhys          = GCPhysStart;
-        pRange->cb              = cbRange;
-        pRange->pvUser          = pvUser;
-        pRange->pfnReadCallback = pfnReadCallback;
-        pRange->pfnWriteCallback= pfnWriteCallback;
-        pRange->pfnFillCallback = pfnFillCallback;
-#ifdef IN_GC
-        pRange->pDevIns         = MMHyperGCToR0(pVM, pDevIns);
-        pRange->pszDesc         = MMHyperGCToR3(pVM, (void *)pszDesc);
-#elif defined(IN_RING3)
-        pRange->pDevIns         = MMHyperR3ToR0(pVM, pDevIns);
-        pRange->pszDesc         = pszDesc;
-#else
-        pRange->pDevIns         = pDevIns;
-        pRange->pszDesc         = MMHyperR0ToR3(pVM, (RTR0PTR)pszDesc);
-#endif
-
-        /*
-         * Try insert it.
-         */
-        if (RTAvlroGCPhysInsert(&pVM->iom.s.CTXSUFF(pTrees)->MMIOTreeR0, &pRange->Core))
-            return VINF_SUCCESS;
-
-        AssertMsgFailed(("Conflict! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
-        MMHyperFree(pVM, pRange);
-        rc = VERR_IOM_MMIO_RANGE_CONFLICT;
-    }
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -1731,76 +1607,33 @@ IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     }
 
     /*
-     * Check ownership and such.
+     * Check ownership and such for the entire area.
      */
     RTGCPHYS GCPhys = GCPhysStart;
     while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
     {
-        PIOMMMIORANGER3 pRange = (PIOMMMIORANGER3)RTAvlroGCPhysGet(&pVM->iom.s.pTreesHC->MMIOTreeR3, GCPhys);
+        PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
         if (!pRange)
             return VERR_IOM_MMIO_RANGE_NOT_FOUND;
-#ifndef IOM_NO_PDMINS_CHECKS
-        if (pRange->pDevIns != pDevIns)
-        {
-            AssertMsgFailed(("Not owner! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc));
-            return VERR_IOM_NOT_MMIO_RANGE_OWNER;
-        }
-#endif /* !IOM_NO_PDMINS_CHECKS */
-        if (pRange->Core.KeyLast > GCPhysLast)
-        {
-            AssertMsgFailed(("Incomplete R3 range! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc));
-            return VERR_IOM_INCOMPLETE_MMIO_RANGE;
-        }
+        AssertMsgReturn(pRange->pDevInsR3 == pDevIns,
+                        ("Not owner! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
+                        VERR_IOM_NOT_MMIO_RANGE_OWNER);
+        AssertMsgReturn(pRange->Core.KeyLast <= GCPhysLast,
+                        ("Incomplete R3 range! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
+                        VERR_IOM_INCOMPLETE_MMIO_RANGE);
+
         /* next */
         Assert(GCPhys <= pRange->Core.KeyLast);
         GCPhys = pRange->Core.KeyLast + 1;
     }
 
     /*
-     * Remove GC ranges.
+     * Do the actual removing of the MMIO ranges.
      */
     GCPhys = GCPhysStart;
     while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
     {
-        PIOMMMIORANGEGC pRange = (PIOMMMIORANGEGC)RTAvlroGCPhysRemove(&pVM->iom.s.pTreesHC->MMIOTreeGC, GCPhys);
-        if (pRange)
-        {
-            Assert(pRange->Core.Key == GCPhys && pRange->Core.KeyLast <= GCPhysLast);
-
-            /* next and delete. */
-            GCPhys = pRange->Core.KeyLast + 1;
-            MMHyperFree(pVM, pRange);
-        }
-        else /* next - this'll be damned slow! */
-            GCPhys++;
-    }
-
-    /*
-     * Remove R0 ranges.
-     */
-    GCPhys = GCPhysStart;
-    while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
-    {
-        PIOMMMIORANGER0 pRange = (PIOMMMIORANGER0)RTAvlroGCPhysRemove(&pVM->iom.s.pTreesHC->MMIOTreeR0, GCPhys);
-        if (pRange)
-        {
-            Assert(pRange->Core.Key == GCPhys && pRange->Core.KeyLast <= GCPhysLast);
-
-            /* next and delete. */
-            GCPhys = pRange->Core.KeyLast + 1;
-            MMHyperFree(pVM, pRange);
-        }
-        else /* next - this'll be damned slow! */
-            GCPhys++;
-    }
-
-    /*
-     * Remove R3 ranges.
-     */
-    GCPhys = GCPhysStart;
-    while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
-    {
-        PIOMMMIORANGER3 pRange = (PIOMMMIORANGER3)RTAvlroGCPhysRemove(&pVM->iom.s.pTreesHC->MMIOTreeR3, GCPhys);
+        PIOMMMIORANGE pRange = (PIOMMMIORANGE)RTAvlroGCPhysRemove(&pVM->iom.s.pTreesHC->MMIOTree, GCPhys);
         Assert(pRange);
         Assert(pRange->Core.Key == GCPhys && pRange->Core.KeyLast <= GCPhysLast);
 
@@ -1808,61 +1641,53 @@ IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         int rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
         AssertRC(rc);
 
-        /* next and delete. */
+        /* advance and free. */
         GCPhys = pRange->Core.KeyLast + 1;
         MMHyperFree(pVM, pRange);
     }
 
+    iomR3FlushCache(pVM);
     return VINF_SUCCESS;
 }
 
 
 /**
- * Display a single MMIO R3 range.
+ * Display a single MMIO range.
  *
  * @returns 0
  * @param   pNode   Pointer to MMIO R3 range.
  * @param   pvUser  Pointer to info output callback structure.
  */
-static DECLCALLBACK(int) iomR3MMIOInfoOneR3(PAVLROGCPHYSNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) iomR3MMIOInfoOne(PAVLROGCPHYSNODECORE pNode, void *pvUser)
 {
-    PIOMMMIORANGER3 pRange = (PIOMMMIORANGER3)pNode;
+    PIOMMMIORANGE pRange = (PIOMMMIORANGE)pNode;
     PCDBGFINFOHLP pHlp = (PCDBGFINFOHLP)pvUser;
     pHlp->pfnPrintf(pHlp,
                     "%VGp-%VGp %VHv %VHv %VHv %VHv %VHv %s\n",
                     pRange->Core.Key,
                     pRange->Core.KeyLast,
-                    pRange->pDevIns,
-                    pRange->pfnReadCallback,
-                    pRange->pfnWriteCallback,
-                    pRange->pfnFillCallback,
-                    pRange->pvUser,
+                    pRange->pDevInsR3,
+                    pRange->pfnReadCallbackR3,
+                    pRange->pfnWriteCallbackR3,
+                    pRange->pfnFillCallbackR3,
+                    pRange->pvUserR3,
                     pRange->pszDesc);
-    return 0;
-}
-
-
-/**
- * Display a single MMIO GC range.
- *
- * @returns 0
- * @param   pNode   Pointer to MMIO GC range.
- * @param   pvUser  Pointer to info output callback structure.
- */
-static DECLCALLBACK(int) iomR3MMIOInfoOneGC(PAVLROGCPHYSNODECORE pNode, void *pvUser)
-{
-    PIOMMMIORANGEGC pRange = (PIOMMMIORANGEGC)pNode;
-    PCDBGFINFOHLP pHlp = (PCDBGFINFOHLP)pvUser;
     pHlp->pfnPrintf(pHlp,
-                    "%VGp-%VGp %VGv %VGv %VGv %VGv %VGv %s\n",
-                    pRange->Core.Key,
-                    pRange->Core.KeyLast,
-                    pRange->pDevIns,
-                    pRange->pfnReadCallback,
-                    pRange->pfnWriteCallback,
-                    pRange->pfnFillCallback,
-                    pRange->pvUser,
-                    pRange->pszDesc);
+                    "%*s %VHv %VHv %VHv %VHv %VHv\n",
+                    sizeof(RTGCPHYS) * 2 * 2 + 1, "R0",
+                    pRange->pDevInsR0,
+                    pRange->pfnReadCallbackR0,
+                    pRange->pfnWriteCallbackR0,
+                    pRange->pfnFillCallbackR0,
+                    pRange->pvUserR0);
+    pHlp->pfnPrintf(pHlp,
+                    "%*s %VGv %VGv %VGv %VGv %VGv\n",
+                    sizeof(RTGCPHYS) * 2 * 2 + 1, "GC",
+                    pRange->pDevInsGC,
+                    pRange->pfnReadCallbackGC,
+                    pRange->pfnWriteCallbackGC,
+                    pRange->pfnFillCallbackGC,
+                    pRange->pvUserGC);
     return 0;
 }
 
@@ -1878,7 +1703,7 @@ static DECLCALLBACK(void) iomR3MMIOInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 {
     NOREF(pszArgs);
     pHlp->pfnPrintf(pHlp,
-                    "MMIO R3 ranges (pVM=%p)\n"
+                    "MMIO ranges (pVM=%p)\n"
                     "%.*s %.*s %.*s %.*s %.*s %.*s %s\n",
                     pVM,
                     sizeof(RTGCPHYS) * 4 + 1, "GC Phys Range                    ",
@@ -1887,34 +1712,8 @@ static DECLCALLBACK(void) iomR3MMIOInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                     sizeof(RTHCPTR) * 2,      "Write           ",
                     sizeof(RTHCPTR) * 2,      "Fill            ",
                     sizeof(RTHCPTR) * 2,      "pvUser          ",
-                                                "Description");
-    RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesHC->MMIOTreeR3, true, iomR3MMIOInfoOneR3, (void *)pHlp);
-
-    pHlp->pfnPrintf(pHlp,
-                    "MMIO R0 ranges (pVM=%p)\n"
-                    "%.*s %.*s %.*s %.*s %.*s %.*s %s\n",
-                    pVM,
-                    sizeof(RTGCPHYS) * 4 + 1, "GC Phys Range                    ",
-                    sizeof(RTGCPTR) * 2,      "pDevIns         ",
-                    sizeof(RTGCPTR) * 2,      "Read            ",
-                    sizeof(RTGCPTR) * 2,      "Write           ",
-                    sizeof(RTGCPTR) * 2,      "Fill            ",
-                    sizeof(RTGCPTR) * 2,      "pvUser          ",
-                                                "Description");
-    RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesHC->MMIOTreeR0, true, iomR3MMIOInfoOneR3, (void *)pHlp);
-
-    pHlp->pfnPrintf(pHlp,
-                    "MMIO GC ranges (pVM=%p)\n"
-                    "%.*s %.*s %.*s %.*s %.*s %.*s %s\n",
-                    pVM,
-                    sizeof(RTGCPHYS) * 4 + 1, "GC Phys Range                    ",
-                    sizeof(RTGCPTR) * 2,      "pDevIns         ",
-                    sizeof(RTGCPTR) * 2,      "Read            ",
-                    sizeof(RTGCPTR) * 2,      "Write           ",
-                    sizeof(RTGCPTR) * 2,      "Fill            ",
-                    sizeof(RTGCPTR) * 2,      "pvUser          ",
-                                                "Description");
-    RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesHC->MMIOTreeGC, true, iomR3MMIOInfoOneGC, (void *)pHlp);
+                                              "Description");
+    RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesHC->MMIOTree, true, iomR3MMIOInfoOne, (void *)pHlp);
 }
 
 
