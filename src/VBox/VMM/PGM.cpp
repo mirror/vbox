@@ -1738,6 +1738,8 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM)
     LogFlow(("PGMR3Reset:\n"));
     VM_ASSERT_EMT(pVM);
 
+    pgmLock(pVM);
+
     /*
      * Unfix any fixed mappings and disable CR3 monitoring.
      */
@@ -1769,55 +1771,30 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM)
     VM_FF_CLEAR(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
 
     /*
-     * Zero memory.
+     * Reset (zero) RAM pages.
      */
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
+    rc = pgmR3PhysRamReset(pVM);
+    if (RT_SUCCESS(rc))
     {
-        unsigned iPage = pRam->cb >> PAGE_SHIFT;
-        while (iPage-- > 0)
+#ifdef VBOX_WITH_NEW_PHYS_CODE
+        /*
+         * Reset (zero) shadow ROM pages.
+         */
+        rc = pgmR3PhysRomReset(pVM);
+#endif
+        if (RT_SUCCESS(rc))
         {
-            if (pRam->aPages[iPage].HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2)) /** @todo PAGE FLAGS */
-            {
-                /* shadow ram is reloaded elsewhere. */
-                Log4(("PGMR3Reset: not clearing phys page %RGp due to flags %RHp\n", pRam->GCPhys + (iPage << PAGE_SHIFT), pRam->aPages[iPage].HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO))); /** @todo PAGE FLAGS */
-                continue;
-            }
-            if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-            {
-                unsigned iChunk = iPage >> (PGM_DYNAMIC_CHUNK_SHIFT - PAGE_SHIFT);
-                if (pRam->pavHCChunkHC[iChunk])
-                    ASMMemZero32((char *)pRam->pavHCChunkHC[iChunk] + ((iPage << PAGE_SHIFT) & PGM_DYNAMIC_CHUNK_OFFSET_MASK), PAGE_SIZE);
-            }
-            else
-                ASMMemZero32((char *)pRam->pvHC + (iPage << PAGE_SHIFT), PAGE_SIZE);
+            /*
+             * Switch mode back to real mode.
+             */
+            rc = pgmR3ChangeMode(pVM, PGMMODE_REAL);
+            STAM_REL_COUNTER_RESET(&pVM->pgm.s.cGuestModeChanges);
         }
     }
 
-#ifdef VBOX_WITH_NEW_PHYS_CODE
-    /*
-     * Zero shadow ROM pages.
-     */
-    rc = pgmR3PhysRomReset(pVM);
-#endif
-
-    /*
-     * Switch mode back to real mode.
-     */
-    rc = pgmR3ChangeMode(pVM, PGMMODE_REAL);
+    pgmUnlock(pVM);
+    //return rc;
     AssertReleaseRC(rc);
-    STAM_REL_COUNTER_RESET(&pVM->pgm.s.cGuestModeChanges);
-}
-
-
-/**
- * Terminates the PGM.
- *
- * @returns VBox status code.
- * @param   pVM     Pointer to VM structure.
- */
-PGMR3DECL(int) PGMR3Term(PVM pVM)
-{
-    return PDMR3CritSectDelete(&pVM->pgm.s.CritSect);
 }
 
 
@@ -1832,6 +1809,18 @@ static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmSta
         pVM->pgm.s.fNoMorePhysWrites = false;
 }
 #endif
+
+
+/**
+ * Terminates the PGM.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to VM structure.
+ */
+PGMR3DECL(int) PGMR3Term(PVM pVM)
+{
+    return PDMR3CritSectDelete(&pVM->pgm.s.CritSect);
+}
 
 
 /**

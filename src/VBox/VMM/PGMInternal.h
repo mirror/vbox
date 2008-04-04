@@ -562,7 +562,7 @@ typedef PPGMPAGE *PPPGMPAGE;
     } while (0)
 
 /**
- * Clears the page structure.
+ * Initializes the page structure.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_INIT(pPage, _HCPhys, _idPage, _uType, _uState) \
@@ -578,19 +578,19 @@ typedef PPGMPAGE *PPPGMPAGE;
     } while (0)
 
 /**
- * Clears the page structure.
+ * Initializes the page structure of a ZERO page.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #ifdef VBOX_WITH_NEW_PHYS_CODE
 # define PGM_PAGE_INIT_ZERO(pPage, pVM, _uType)  \
-    PGM_PAGE_INIT(pPage, (pVM)->pgm.s.HCPhysZeroPg, NIL_GMM_PAGEID, PGM_PAGE_STATE_ZERO, (_uType))
+    PGM_PAGE_INIT(pPage, (pVM)->pgm.s.HCPhysZeroPg, NIL_GMM_PAGEID, (_uType), PGM_PAGE_STATE_ZERO)
 #else
 # define PGM_PAGE_INIT_ZERO(pPage, pVM, _uType)  \
-    PGM_PAGE_INIT(pPage, 0, NIL_GMM_PAGEID, PGM_PAGE_STATE_ZERO, (_uType))
+    PGM_PAGE_INIT(pPage, 0, NIL_GMM_PAGEID, (_uType), PGM_PAGE_STATE_ZERO)
 #endif
 /** Temporary hack. Replaced by PGM_PAGE_INIT_ZERO once the old code is kicked out. */
 # define PGM_PAGE_INIT_ZERO_REAL(pPage, pVM, _uType)  \
-    PGM_PAGE_INIT(pPage, (pVM)->pgm.s.HCPhysZeroPg, NIL_GMM_PAGEID, PGM_PAGE_STATE_ZERO, (_uType))
+    PGM_PAGE_INIT(pPage, (pVM)->pgm.s.HCPhysZeroPg, NIL_GMM_PAGEID, (_uType), PGM_PAGE_STATE_ZERO)
 
 
 /** @name The Page state, PGMPAGE::u2StateX.
@@ -2589,6 +2589,7 @@ int             pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
 int             pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv);
 #ifdef IN_RING3
 int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk);
+int             pgmR3PhysRamReset(PVM pVM);
 int             pgmR3PhysRomReset(PVM pVM);
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 int             pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
