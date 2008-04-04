@@ -2659,12 +2659,12 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
     {
         unsigned        iPDSrc;
 #   if PGM_SHW_TYPE == PGM_TYPE_PAE
-        PX86PDPAE       pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[iPDPTE * X86_PG_PAE_ENTRIES];
+        PX86PDPAE       pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
 #   else
         AssertFailed(); /* @todo */
         PX86PDPE        pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[iPDPTE * X86_PG_AMD64_ENTRIES];
 #   endif
-        PX86PDEPAE      pPDEDst   = &pPDPAE->a[0];
+        PX86PDEPAE      pPDEDst   = &pPDPAE->a[iPDPTE * X86_PG_PAE_ENTRIES];
         PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, iPDPTE << X86_PDPT_SHIFT, &iPDSrc);
 
         if (pPDSrc == NULL)
