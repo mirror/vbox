@@ -1755,7 +1755,8 @@ typedef struct PDMDEVHLP
      * @param   pszWrite            Name of the GC function which is gonna handle Write operations.
      * @param   pszRead             Name of the GC function which is gonna handle Read operations.
      * @param   pszFill             Name of the GC function which is gonna handle Fill/memset operations. (optional)
-     * @param   pszDesc             Pointer to description string. This must not be freed.
+     * @param   pszDesc             Obsolete. NULL is fine.
+     * @todo    Remove pszDesc in the next major revision of PDMDEVHLP.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIORegisterGC,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill,
@@ -1775,7 +1776,8 @@ typedef struct PDMDEVHLP
      * @param   pszWrite            Name of the GC function which is gonna handle Write operations.
      * @param   pszRead             Name of the GC function which is gonna handle Read operations.
      * @param   pszFill             Name of the GC function which is gonna handle Fill/memset operations. (optional)
-     * @param   pszDesc             Pointer to description string. This must not be freed.
+     * @param   pszDesc             Obsolete. NULL is fine.
+     * @todo    Remove pszDesc in the next major revision of PDMDEVHLP.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill,
@@ -3109,18 +3111,18 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
  * @copydoc PDMDEVHLP::pfnMMIORegisterGC
  */
 DECLINLINE(int) PDMDevHlpMMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
-                                        const char *pszWrite, const char *pszRead, const char *pszFill, const char *pszDesc)
+                                        const char *pszWrite, const char *pszRead, const char *pszFill)
 {
-    return pDevIns->pDevHlp->pfnMMIORegisterGC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, pszDesc);
+    return pDevIns->pDevHlp->pfnMMIORegisterGC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
 }
 
 /**
  * @copydoc PDMDEVHLP::pfnMMIORegisterR0
  */
 DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
-                                        const char *pszWrite, const char *pszRead, const char *pszFill, const char *pszDesc)
+                                        const char *pszWrite, const char *pszRead, const char *pszFill)
 {
-    return pDevIns->pDevHlp->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, pszDesc);
+    return pDevIns->pDevHlp->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
 }
 
 /**

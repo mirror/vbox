@@ -245,14 +245,17 @@ IOMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
 IOMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts);
 
 IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                    R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                    R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc);
+                                    R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
+                                    R3PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
+                                    R3PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback, const char *pszDesc);
 IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
-                                    R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                    R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc);
+                                    R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
+                                    R0PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
+                                    R0PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
 IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
-                                    GCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, GCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                    GCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc);
+                                    GCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
+                                    GCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
+                                    GCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
 IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
 /** @} */
 #endif /* IN_RING3 */
