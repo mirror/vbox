@@ -58,7 +58,8 @@ typedef enum TMCLOCK
      * This is a special clock and timer queue for synchronizing virtual timers and
      * virtual time sources. This clock is trying to keep up with TMCLOCK_VIRTUAL,
      * but will wait for timers to be executed. If it lags too far behind TMCLOCK_VIRTUAL,
-     * it will try speed up to close the distance. */
+     * it will try speed up to close the distance.
+     * @remarks Do not use this unless you *must*. */
     TMCLOCK_VIRTUAL_SYNC,
     /** Virtual CPU timestamp. (Running only when we're executing guest code.) */
     TMCLOCK_TSC,
