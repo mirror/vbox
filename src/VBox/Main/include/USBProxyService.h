@@ -386,6 +386,32 @@ private:
 # endif /* RT_OS_LINUX */
 
 
+# ifdef RT_OS_SOLARIS
+#  include <libdevinfo.h>
+
+/**
+ * The Solaris hosted USB Proxy Service.
+ */
+class USBProxyServiceSolaris : public USBProxyService
+{
+public:
+    USBProxyServiceSolaris (Host *aHost);
+    ~USBProxyServiceSolaris();
+
+    virtual int captureDevice (HostUSBDevice *aDevice);
+    virtual int releaseDevice (HostUSBDevice *aDevice);
+    virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
+    virtual void deviceAdded (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
+
+protected:
+    virtual int wait (unsigned aMillies);
+    virtual int interruptWait (void);
+    virtual PUSBDEVICE getDevices (void);
+    int addDeviceToChain (PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc);
+};
+#endif  /* RT_OS_SOLARIS */
+
+
 # ifdef RT_OS_WINDOWS
 /**
  * The Win32 hosted USB Proxy Service.

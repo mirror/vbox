@@ -168,7 +168,8 @@ VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
 VBoxSVC_LIBS.solaris = \
-	adm
+	adm \
+	devinfo
 
 VBoxSVC_SOURCES = \
 	Logging.cpp \
@@ -231,6 +232,7 @@ ifdef VBOX_WITH_USB
 VBoxSVC_SOURCES.darwin += darwin/USBProxyServiceDarwin.cpp
 VBoxSVC_SOURCES.linux += linux/USBProxyServiceLinux.cpp
 VBoxSVC_SOURCES.os2 += os2/USBProxyServiceOs2.cpp
+VBoxSVC_SOURCES.solaris += solaris/USBProxyServiceSolaris.cpp
 VBoxSVC_SOURCES.win   += win32/USBProxyServiceWin32.cpp
 endif
 
