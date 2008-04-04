@@ -1704,7 +1704,7 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
                 rc = PGMFlushTLB(pVM, CPUMGetGuestCR3(pVM), true /* global */);
                 AssertRCReturn(rc, rc);
             }
-# ifndef IN_RING3 /** @todo check this out IN_RING0! */
+# ifdef IN_GC
             /* Feeling extremely lazy. */
             if (    (oldval & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME))
                 !=  (val32  & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME)))
