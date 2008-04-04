@@ -2114,7 +2114,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          * Paging mode change.
          */
         case VINF_PGM_CHANGE_MODE:
-            rc = PGMChangeMode(pVM, pCtx->cr0, pCtx->cr4, 0);
+            rc = PGMChangeMode(pVM, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
             if (VBOX_SUCCESS(rc))
                 rc = VINF_EM_RESCHEDULE;
             break;
