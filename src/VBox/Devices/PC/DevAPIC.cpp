@@ -1758,7 +1758,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     if (fGCEnabled) {
         rc = PDMDevHlpMMIORegisterGC(pDevIns, pData->apicbase & ~0xfff, 0x1000, 0,
-                                     "apicMMIOWrite", "apicMMIORead", NULL, "APIC Memory");
+                                     "apicMMIOWrite", "apicMMIORead", NULL);
         if (VBOX_FAILURE(rc))
             return rc;
     }
@@ -1767,7 +1767,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         pData->pApicHlpR0 = pData->pApicHlpR3->pfnGetR0Helpers(pDevIns);
 
         rc = PDMDevHlpMMIORegisterR0(pDevIns, pData->apicbase & ~0xfff, 0x1000, 0,
-                                     "apicMMIOWrite", "apicMMIORead", NULL, "APIC Memory");
+                                     "apicMMIOWrite", "apicMMIORead", NULL);
         if (VBOX_FAILURE(rc))
             return rc;
     }
@@ -2036,7 +2036,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     if (fGCEnabled) {
         rc = PDMDevHlpMMIORegisterGC(pDevIns, 0xfec00000, 0x1000, 0,
-                                     "ioapicMMIOWrite", "ioapicMMIORead", NULL, "I/O APIC Memory");
+                                     "ioapicMMIOWrite", "ioapicMMIORead", NULL);
         if (VBOX_FAILURE(rc))
             return rc;
     }
@@ -2045,7 +2045,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         s->pIoApicHlpR0 = s->pIoApicHlpR3->pfnGetR0Helpers(pDevIns);
 
         rc = PDMDevHlpMMIORegisterR0(pDevIns, 0xfec00000, 0x1000, 0,
-                                     "ioapicMMIOWrite", "ioapicMMIORead", NULL, "I/O APIC Memory");
+                                     "ioapicMMIOWrite", "ioapicMMIORead", NULL);
         if (VBOX_FAILURE(rc))
             return rc;
     }

@@ -1486,21 +1486,20 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  * @param   pfnWriteCallback    Pointer to function which is gonna handle Write operations.
  * @param   pfnReadCallback     Pointer to function which is gonna handle Read operations.
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
- * @param   pszDesc             Pointer to description string. This must not be freed.
  */
 IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                     GCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, GCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                    GCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
+                                    GCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MMIORegisterGC: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
-             pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
+    LogFlow(("IOMR3MMIORegisterGC: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+             pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
 
     /*
      * Validate input.
      */
     if (!pfnWriteCallback && !pfnReadCallback)
     {
-        AssertMsgFailed(("No callbacks! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
+        AssertMsgFailed(("No callbacks! %VGp LB%#x %s\n", GCPhysStart, cbRange));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1540,21 +1539,21 @@ IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  * @param   pfnWriteCallback    Pointer to function which is gonna handle Write operations.
  * @param   pfnReadCallback     Pointer to function which is gonna handle Read operations.
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
- * @param   pszDesc             Pointer to description string. This must not be freed.
  */
 IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
-                                    R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                    R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
+                                    R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
+                                    R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
+                                    R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MMIORegisterR0: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
-             pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
+    LogFlow(("IOMR3MMIORegisterR0: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+             pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
 
     /*
      * Validate input.
      */
     if (!pfnWriteCallback && !pfnReadCallback)
     {
-        AssertMsgFailed(("No callbacks! %VGp LB%#x %s\n", GCPhysStart, cbRange, pszDesc));
+        AssertMsgFailed(("No callbacks! %VGp LB%#x %s\n", GCPhysStart, cbRange));
         return VERR_INVALID_PARAMETER;
     }
 
