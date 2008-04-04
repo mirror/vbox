@@ -2814,10 +2814,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                 /*
                  * Check if there is any page directory to mark not present here.
                  */
-#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
-                const unsigned iPdShw = iPD; NOREF(iPdShw);
-#  else
+#  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
+#  else
+                const unsigned iPdShw = iPD; NOREF(iPdShw);
 #  endif
                 {
                     if (pPDEDst->n.u1Present)
