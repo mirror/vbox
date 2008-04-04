@@ -522,27 +522,27 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* add actions to menubar */
 
-    QMenu *fileMenu = menuBar()->addMenu (tr ("&File"));
-    fileMenu->addAction (fileDiskMgrAction);
-    fileMenu->addSeparator();
-    fileMenu->addAction (fileSettingsAction);
-    fileMenu->addSeparator();
-    fileMenu->addAction (fileExitAction);
+    mFileMenu = menuBar()->addMenu (QString::null);
+    mFileMenu->addAction (fileDiskMgrAction);
+    mFileMenu->addSeparator();
+    mFileMenu->addAction (fileSettingsAction);
+    mFileMenu->addSeparator();
+    mFileMenu->addAction (fileExitAction);
 
-    QMenu *vmMenu = menuBar()->addMenu (tr ("&Machine"));
-    vmMenu->addAction (vmNewAction);
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmConfigAction);
-    vmMenu->addAction (vmDeleteAction);
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmStartAction);
-    vmMenu->addAction (vmDiscardAction);
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmPauseAction);
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmRefreshAction);
-    vmMenu->addSeparator();
-    vmMenu->addAction (vmShowLogsAction);
+    mVMMenu = menuBar()->addMenu (QString::null);
+    mVMMenu->addAction (vmNewAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmConfigAction);
+    mVMMenu->addAction (vmDeleteAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmStartAction);
+    mVMMenu->addAction (vmDiscardAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmPauseAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmRefreshAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction (vmShowLogsAction);
 
     mVMCtxtMenu = new QMenu (this);
     mVMCtxtMenu->addAction (vmConfigAction);
@@ -557,18 +557,18 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMCtxtMenu->addSeparator();
     mVMCtxtMenu->addAction (vmShowLogsAction);
 
-    QMenu *helpMenu = menuBar()->addMenu (tr ("&Help"));
-    helpMenu->addAction (helpContentsAction);
-    helpMenu->addAction (helpWebAction);
-    helpMenu->addSeparator();
+    mHelpMenu = menuBar()->addMenu (QString::null);
+    mHelpMenu->addAction (helpContentsAction);
+    mHelpMenu->addAction (helpWebAction);
+    mHelpMenu->addSeparator();
 #ifdef VBOX_WITH_REGISTRATION
-    helpMenu->addAction (helpRegisterAction);
+    mHelpMenu->addAction (helpRegisterAction);
     helpRegisterAction->setEnabled (vboxGlobal().virtualBox().
         GetExtraData (VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
 #endif
-    helpMenu->addAction (helpAboutAction);
-    helpMenu->addSeparator();
-    helpMenu->addAction (helpResetMessagesAction);
+    mHelpMenu->addAction (helpAboutAction);
+    mHelpMenu->addSeparator();
+    mHelpMenu->addAction (helpResetMessagesAction);
 
     languageChange();
 
@@ -1204,12 +1204,9 @@ void VBoxSelectorWnd::languageChange()
     helpResetMessagesAction->setStatusTip (
         tr ("Cause all suppressed warnings and messages to be shown again"));
 
-    if (menuBar()->findItem(1))
-        menuBar()->findItem(1)->setText(tr("&File"));
-    if (menuBar()->findItem(2))
-        menuBar()->findItem(2)->setText (tr ("&Machine"));
-    if (menuBar()->findItem(3))
-        menuBar()->findItem(3)->setText (tr ("&Help"));
+    mFileMenu->setTitle (tr("&File"));
+    mVMMenu->setTitle (tr ("&Machine"));
+    mHelpMenu->setTitle (tr ("&Help"));
 
     vmDetailsView->languageChange();
     vmDescriptionPage->languageChange();
