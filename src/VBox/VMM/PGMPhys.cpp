@@ -300,7 +300,7 @@ int pgmR3PhysRamReset(PVM pVM)
                         break;
 
                     case PGMPAGETYPE_MMIO2:
-                    case PGMPAGETYPE_ROM_SHADOW: /// @todo ??
+                    case PGMPAGETYPE_ROM_SHADOW: /* handled by pgmR3PhysRomReset. */
                     case PGMPAGETYPE_ROM:
                     case PGMPAGETYPE_MMIO:
                         break;
@@ -320,7 +320,6 @@ int pgmR3PhysRamReset(PVM pVM)
                 {
 #ifndef VBOX_WITH_NEW_PHYS_CODE
                     case PGMPAGETYPE_INVALID:
-                    case PGMPAGETYPE_MMIO2: /** @todo fix MMIO2 resetting. */
                     case PGMPAGETYPE_RAM:
                         if (pRam->aPages[iPage].HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2)) /** @todo PAGE FLAGS */
                         {
@@ -337,7 +336,7 @@ int pgmR3PhysRamReset(PVM pVM)
                         else
                             ASMMemZero32((char *)pRam->pvHC + (iPage << PAGE_SHIFT), PAGE_SIZE);
                         break;
-#else
+#else /* VBOX_WITH_NEW_PHYS_CODE */
                     case PGMPAGETYPE_RAM:
                         switch (PGM_PAGE_GET_STATE(pPage))
                         {
@@ -358,9 +357,9 @@ int pgmR3PhysRamReset(PVM pVM)
                             }
                         }
                         break;
+#endif /* VBOX_WITH_NEW_PHYS_CODE */
 
                     case PGMPAGETYPE_MMIO2:
-#endif
                     case PGMPAGETYPE_ROM_SHADOW:
                     case PGMPAGETYPE_ROM:
                     case PGMPAGETYPE_MMIO:
@@ -633,10 +632,11 @@ DECLINLINE(PPGMMMIO2RANGE) pgmR3PhysMMIO2Find(PVM pVM, PPDMDEVINS pDevIns, uint3
  *                          this number has to be the number of that region. Otherwise
  *                          it can be any number safe UINT8_MAX.
  * @param   cb              The size of the region. Must be page aligned.
+ * @param   fFlags          Reserved for future use, must be zero.
  * @param   ppv             Where to store the pointer to the ring-3 mapping of the memory.
  * @param   pszDesc         The description.
  */
-PDMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, void **ppv, const char *pszDesc)
+PDMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc)
 {
     /*
      * Validate input.
@@ -650,6 +650,7 @@ PDMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
     AssertReturn(pgmR3PhysMMIO2Find(pVM, pDevIns, iRegion) == NULL, VERR_ALREADY_EXISTS);
     AssertReturn(!(cb & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(cb, VERR_INVALID_PARAMETER);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
     const uint32_t cPages = cb >> PAGE_SHIFT;
     AssertLogRelReturn((RTGCPHYS)cPages << PAGE_SHIFT == cb, VERR_INVALID_PARAMETER);

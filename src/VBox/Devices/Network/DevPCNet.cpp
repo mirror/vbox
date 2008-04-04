@@ -867,30 +867,46 @@ struct ether_header
 
 /**
  * Initialize the shared memory for the private guest interface.
+ *
  * @note Changing this layout will break SSM for guests using the private guest interface!
  */
 static void pcnetInitSharedMemory(PCNetState *pData)
 {
-    uint32_t u32Off = 0;
-    memset(pData->pSharedMMIOHC, 0, sizeof(PCNETGUESTSHAREDMEMORY));
+    /* Clear the entire block for pcnetReset usage. */
+    memset(pData->pSharedMMIOHC, 0, PCNET_GUEST_SHARED_MEMORY_SIZE);
+
     pData->pSharedMMIOHC->u32Version = PCNET_GUEST_INTERFACE_VERSION;
-    u32Off = 2048; /* Leave some space for more fields within the header */
-    pData->pSharedMMIOHC->V.V1.offTxDescriptors = u32Off;
-    u32Off = RT_ALIGN(u32Off + PCNET_GUEST_TX_DESCRIPTOR_SIZE * PCNET_GUEST_MAX_TX_DESCRIPTORS, 32);
-    pData->pSharedMMIOHC->V.V1.offRxDescriptors = u32Off;
-    u32Off = RT_ALIGN(u32Off + PCNET_GUEST_RX_DESCRIPTOR_SIZE * PCNET_GUEST_MAX_RX_DESCRIPTORS, 32);
-    /* Map the RX/TX descriptors into the hypervisor. Make sure we don't need too much space. */
-    AssertRelease(u32Off <= 8192);
+    uint32_t off = 2048; /* Leave some space for more fields within the header */
+
+    /*
+     * The Descriptor arrays.
+     */
+    pData->pSharedMMIOHC->V.V1.offTxDescriptors = off;
+    off = RT_ALIGN(off + PCNET_GUEST_TX_DESCRIPTOR_SIZE * PCNET_GUEST_MAX_TX_DESCRIPTORS, 32);
+
+    pData->pSharedMMIOHC->V.V1.offRxDescriptors = off;
+    off = RT_ALIGN(off + PCNET_GUEST_RX_DESCRIPTOR_SIZE * PCNET_GUEST_MAX_RX_DESCRIPTORS, 32);
+
+    /* Make sure all the descriptors are mapped into HMA space (and later ring-0). The 8192
+       bytes limit is hardcoded in the PDMDevHlpMMHyperMapMMIO2 call down in pcnetConstruct. */
+    AssertRelease(off <= 8192);
+
+    /*
+     * The buffer arrays.
+     */
 #if 0
     /* Don't allocate TX buffers since Windows guests cannot use it */
-    pData->pSharedMMIOHC->V.V1.offTxBuffers = u32Off;
-    u32Off = RT_ALIGN(u32Off + PCNET_GUEST_NIC_BUFFER_SIZE * PCNET_GUEST_MAX_TX_DESCRIPTORS, 32);
+    pData->pSharedMMIOHC->V.V1.offTxBuffers = off;
+    off = RT_ALIGN(off + PCNET_GUEST_NIC_BUFFER_SIZE * PCNET_GUEST_MAX_TX_DESCRIPTORS, 32);
 #endif
-    pData->pSharedMMIOHC->V.V1.offRxBuffers = u32Off;
+
+    pData->pSharedMMIOHC->V.V1.offRxBuffers = off;
     pData->pSharedMMIOHC->fFlags = PCNET_GUEST_FLAGS_ADMIT_HOST;
-    u32Off = RT_ALIGN(u32Off + PCNET_GUEST_NIC_BUFFER_SIZE * PCNET_GUEST_MAX_RX_DESCRIPTORS, 32);
-    AssertRelease(u32Off <= PCNET_GUEST_SHARED_MEMORY_SIZE);
-    pData->pSharedMMIOHC->cbSize = u32Off;
+    off = RT_ALIGN(off + PCNET_GUEST_NIC_BUFFER_SIZE * PCNET_GUEST_MAX_RX_DESCRIPTORS, 32);
+    AssertRelease(off <= PCNET_GUEST_SHARED_MEMORY_SIZE);
+
+    /* Update the header with the final size. */
+    pData->pSharedMMIOHC->cbUsed = off;
 }
 
 #define MULTICAST_FILTER_LEN 8
@@ -4619,7 +4635,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
          * Initialize shared memory between host and guest for descriptors and RX buffers. Most guests
          * should not care if there is an additional PCI ressource but just in case we made this configurable.
          */
-        rc = PDMDevHlpMMIO2Register(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE, (void**)&pData->pSharedMMIOHC, "PCNetShMem");
+        rc = PDMDevHlpMMIO2Register(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE, 0, (void **)&pData->pSharedMMIOHC, "PCNetShMem");
         if (VBOX_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to allocate %u bytes of memory for the PCNet device"), PCNET_GUEST_SHARED_MEMORY_SIZE);

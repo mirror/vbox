@@ -4285,7 +4285,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
             RTLogPrintf("VGA textmode END:\n\n");
         }
 
-#endif
+#endif /* LOG_ENABLED */
         memset(pData->vram_ptrHC, 0, pData->vram_size);
     }
 
@@ -4593,7 +4593,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Allocate the VRAM and map the first 256KB of it into GC so we can speed up VGA support.
      */
-    rc = PDMDevHlpMMIO2Register(pDevIns, 0 /* iRegion */, pData->vram_size, (void **)&pData->vram_ptrHC, "VRam");
+    rc = PDMDevHlpMMIO2Register(pDevIns, 0 /* iRegion */, pData->vram_size, 0, (void **)&pData->vram_ptrHC, "VRam");
     AssertMsgRC(rc, ("PDMDevHlpMMIO2Register(%#x,) -> %Rrc\n", pData->vram_size, rc));
 
     rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 0 /* iRegion */, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pData->vram_ptrGC);
@@ -5013,20 +5013,6 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
         MMR3HeapFree(pData->pu8VBEExtraData);
         pData->pu8VBEExtraData = NULL;
     }
-#endif
-
-#if 0 /** @todo r=bird: We can't free the buffer here because it's still locked.
-       * (That's the reason why we didn't do it earlier.) */
-    /*
-     * Free the VRAM.
-     */
-    int rc = SUPPageFree(pData->vram_ptrHC, pData->vram_size >> PAGE_SHIFT);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("SUPPageFree(%p, %#x) -> %d\n", pData->vram_ptrHC, pData->vram_size, rc));
-        return rc;
-    }
-    pData->vram_ptrHC = NULL;
 #endif
 
     return VINF_SUCCESS;

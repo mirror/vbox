@@ -2592,11 +2592,12 @@ typedef struct PDMDEVHLP
      *                          this must be known to the PCI bus device too. If it's not associated
      *                          with the PCI device, then any number up to UINT8_MAX is fine.
      * @param   cb              The size (in bytes) of the region.
+     * @param   fFlags          Reserved for future use, must be zero.
      * @param   ppv             Where to store the address of the ring-3 mapping of the memory.
      * @param   pszDesc         Pointer to description string. This must not be freed.
      * @thread  EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIO2Register,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, void **ppv, const char *pszDesc));
+    DECLR3CALLBACKMEMBER(int, pfnMMIO2Register,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc));
 
     /**
      * Deregisters and frees a MMIO2 region.
@@ -3143,9 +3144,9 @@ DECLINLINE(int) PDMDevHlpROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSta
 /**
  * @copydoc PDMDEVHLP::pfnMMIO2Register
  */
-DECLINLINE(int) PDMDevHlpMMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, void **ppv, const char *pszDesc)
+DECLINLINE(int) PDMDevHlpMMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc)
 {
-    return pDevIns->pDevHlp->pfnMMIO2Register(pDevIns, iRegion, cb, ppv, pszDesc);
+    return pDevIns->pDevHlp->pfnMMIO2Register(pDevIns, iRegion, cb, fFlags, ppv, pszDesc);
 }
 
 /**

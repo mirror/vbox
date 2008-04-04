@@ -48,13 +48,14 @@
 #pragma pack(1) /* paranoia */
 typedef struct
 {
-    /** The size of the shared memory. */
-    uint32_t cbSize;
+    /** The size of the shared memory that's being used.
+     * (This is <= PCNET_GUEST_SHARED_MEMORY_SIZE.) */
+    uint32_t cbUsed;
     /** Version (PCNET_GUEST_INTERFACE_VERSION). */
     uint32_t u32Version;
     /** Flags (See PCNET_GUEST_FLAGS_*). */
     uint32_t fFlags;
-    /** align the following members to 64 bit */
+    /** Align the following members to 64 bit. */
     uint32_t u32Alignment;
 
     union
