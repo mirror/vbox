@@ -121,37 +121,10 @@ PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
         ||  GCPhys > pRam->GCPhysLast)
     {
 #ifdef IN_RING3
-        /*
-         * If this is an MMIO registration, we'll just add a range for it.
-         */
-        if (    enmType == PGMPHYSHANDLERTYPE_MMIO
-            &&  (   !pRam
-                 || GCPhysLast < pRam->GCPhys)
-           )
-        {
-            size_t cb = GCPhysLast - GCPhys + 1;
-            Assert(cb == RT_ALIGN_Z(cb, PAGE_SIZE));
-            int rc = PGMR3PhysRegister(pVM, NULL, GCPhys, cb, MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO, NULL, pszDesc);
-            if (VBOX_FAILURE(rc))
-                return rc;
-
-            /* search again. */
-            pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
-            while (pRam && GCPhys > pRam->GCPhysLast)
-                pRam = CTXALLSUFF(pRam->pNext);
-        }
-
-        if (    !pRam
-            ||  GCPhysLast < pRam->GCPhys
-            ||  GCPhys > pRam->GCPhysLast)
-#endif /* IN_RING3 */
-        {
-#ifdef IN_RING3
-            DBGFR3Info(pVM, "phys", NULL, NULL);
+        DBGFR3Info(pVM, "phys", NULL, NULL);
 #endif
-            AssertMsgFailed(("No RAM range for %VGp-%VGp\n", GCPhys, GCPhysLast));
-            return VERR_PGM_HANDLER_PHYSICAL_NO_RAM_RANGE;
-        }
+        AssertMsgFailed(("No RAM range for %VGp-%VGp\n", GCPhys, GCPhysLast));
+        return VERR_PGM_HANDLER_PHYSICAL_NO_RAM_RANGE;
     }
 
     /*
