@@ -844,6 +844,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                  * Optional.
                  * There are some nameless device in the iMac, apply names to them.
                  */
+                /** @todo Device Speed -> enmSpeed; (2 == high speed). */
                 darwinDictGetString(PropsRef, CFSTR("USB Vendor Name"),     (char **)&pCur->pszManufacturer);
                 if (    !pCur->pszManufacturer
                     &&  pCur->idVendor == kIOUSBVendorIDAppleComputer)

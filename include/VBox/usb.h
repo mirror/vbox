@@ -143,6 +143,26 @@ typedef enum USBDEVICESTATE
 
 
 /**
+ * The USB device speed.
+ */
+typedef enum USBDEVICESPEED
+{
+    /** Unknown. */
+    USBDEVICESPEED_UNKNOWN = 0,
+    /** Low speed (1.5 Mbit/s). */
+    USBDEVICESPEED_LOW,
+    /** Full speed (12 Mbit/s). */
+    USBDEVICESPEED_FULL,
+    /** High speed (480 Mbit/s). */
+    USBDEVICESPEED_HIGH,
+    /** Variable speed - USB 2.5 / wireless. */
+    USBDEVICESPEED_VARIABLE,
+    /** The usual 32-bit hack. */
+    USBDEVICESPEED_32BIT_HACK = 0x7fffffff
+} USBDEVICESPEED;
+
+
+/**
  * USB host device description.
  * Used for enumeration of USB devices.
  */
@@ -176,6 +196,8 @@ typedef struct USBDEVICE
     PUSBCONFIG      paConfigurations;
     /** The device state. */
     USBDEVICESTATE  enmState;
+    /** The device speed. */
+    USBDEVICESPEED  enmSpeed;
     /** The address of the device. */
     const char     *pszAddress;
 
@@ -235,7 +257,7 @@ typedef USBDESCHDR *PUSBDESCHDR;
 # define USB_DT_REPORT              0x22
 # define USB_DT_PHYSICAL            0x23
 # define USB_DT_HUB                 0x29
-#endif 
+#endif
 /** @} */
 
 
