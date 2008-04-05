@@ -233,63 +233,6 @@ static bool g_fResetting = false;
 static bool g_fSaveState = false;
 
 
-static int loadLibrary (const char *pszName, PRTLDRMOD phLdrMod)
-{
-    /* Load the specified library.
-     * If the full path is specified, only this path is used.
-     * If only library name is specified, then try to load it from:
-     *   - RTPathAppPrivateArch
-     *   - RTPathSharedLibs (legacy)
-     */
-    int rc = VINF_SUCCESS;
-
-    if (RTPathHavePath (pszName))
-    {
-        /* Path specified, respect it. */
-        rc = RTLdrLoad (pszName, phLdrMod);
-    }
-    else
-    {
-        /* Try default locations. */
-        char szBase[RTPATH_MAX];
-
-        /* Get the appropriate base path. */
-        int i;
-        for (i = 0; i < 2; i++)
-        {
-            if (i == 0)
-            {
-                rc = RTPathAppPrivateArch(szBase, sizeof (szBase));
-            }
-            else
-            {
-                rc = RTPathSharedLibs(szBase, sizeof (szBase));
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                char szPath[RTPATH_MAX];
-
-                /* szPath = pszBase + pszName */
-                rc = RTPathAbsEx (szBase, pszName, szPath, sizeof (szPath));
-
-                if (RT_SUCCESS(rc))
-                {
-                    rc = RTLdrLoad (szPath, phLdrMod);
-
-                    if (RT_SUCCESS(rc))
-                    {
-                        /* Successfully loaded a library. */
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    return rc;
-}
-
 /** Helper function to load a local service DLL.
  *
  *  @return VBox code
@@ -303,9 +246,7 @@ int HGCMService::loadServiceDLL (void)
         return VERR_INVALID_PARAMETER;
     }
 
-    int rc = VINF_SUCCESS;
-
-    rc = loadLibrary (m_pszSvcLibrary, &m_hLdrMod);
+    int rc = RTLdrLoadAppSharedLib (m_pszSvcLibrary, &m_hLdrMod);
 
     if (VBOX_SUCCESS(rc))
     {
