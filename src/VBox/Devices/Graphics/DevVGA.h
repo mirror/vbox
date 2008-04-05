@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox VGA/VESA device
  */
 
@@ -316,33 +316,33 @@ typedef struct VGAState {
     uint16_t                    u16VBEExtraAddress;
     uint16_t                    Padding7[2];    /**< Alignment padding. */
 #endif
-    /** Current logo command. */
-    uint16_t                    LogoCommand;
     /** Current logo data offset. */
     uint32_t                    offLogoData;
-    /** Bitmap image to use. */
-    uint8_t                     BmpImage;
     /** The size of the BIOS logo data. */
     uint32_t                    cbLogo;
     /** The BIOS logo data. */
-    uint8_t                     *pu8Logo;
+    R3PTRTYPE(uint8_t *)        pu8Logo;
     /** The name of the logo file. */
-    char                        *pszLogoFile;
+    R3PTRTYPE(char *)           pszLogoFile;
+    /** Current logo command. */
+    uint16_t                    LogoCommand;
+    /** Bitmap image to use. */
+    uint8_t                     BmpImage;
+    uint8_t                     Padding8;       /**< Alignment padding. */
     /** Logo X. */
-    uint16_t                     LogoX;
+    uint16_t                    LogoX;
     /** Logo Y. */
-    uint16_t                     LogoY;
+    uint16_t                    LogoY;
     /** Logo width. */
-    uint16_t                     LogoWidth;
+    uint16_t                    LogoWidth;
     /** Logo height. */
-    uint16_t                     LogoHeight;
+    uint16_t                    LogoHeight;
     /** Logo depth. */
-    uint16_t                     LogoDepth;
-    /** Palette data. */
-    uint32_t                     Palette[256];
+    uint16_t                    LogoDepth;
     /** Palette size. */
-    uint16_t                     PalSize;
-
+    uint16_t                    PalSize;
+    /** Palette data. */
+    uint32_t                    Palette[256];
 #endif /* VBOX */
 } VGAState;
 #ifdef VBOX
@@ -427,7 +427,7 @@ typedef VBEHEADER *PVBEHEADER;
 /**
  * PC Bios logo data structure.
  */
-#pragma pack(2) /* pack(2) is important! (seems that bios compiled with pack(2)...) */
+#pragma pack(2) /* pack(2) is important! (seems that bios compiled with pack(2)...) */ /** @todo r=bird: add 3 uint8_t's before cbLogo and it'll be just fine. */
 typedef struct LOGOHDR
 {
     /** Signature (LOGO_HDR_MAGIC/0x66BB). */
