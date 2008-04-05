@@ -87,6 +87,7 @@
 #include <VBox/pgm.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/file.h>
 #include <iprt/string.h>
 
 #include <VBox/VBoxGuest.h>
@@ -102,6 +103,41 @@
 #include "Builtins.h"
 #include "Builtins2.h"
 
+/* "Press F12 to select boot device." bitmap. */
+uint8_t LogoF12BootText[] = {
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x07, 0x0F, 0x7C,
+  0xF8, 0xF0, 0x01, 0xE0, 0x81, 0x9F, 0x3F, 0x00, 0x70, 0xF8, 0x00, 0xE0, 0xC3,
+  0x07, 0x0F, 0x1F, 0x3E, 0x70, 0x00, 0xF0, 0xE1, 0xC3, 0x07, 0x0E, 0x00, 0x6E,
+  0x7C, 0x60, 0xE0, 0xE1, 0xC3, 0x07, 0xC6, 0x80, 0x81, 0x31, 0x63, 0xC6, 0x00,
+  0x30, 0x80, 0x61, 0x0C, 0x00, 0x36, 0x63, 0x00, 0x8C, 0x19, 0x83, 0x61, 0xCC,
+  0x18, 0x36, 0x00, 0xCC, 0x8C, 0x19, 0xC3, 0x06, 0xC0, 0x8C, 0x31, 0x3C, 0x30,
+  0x8C, 0x19, 0x83, 0x31, 0x60, 0x60, 0x00, 0x0C, 0x18, 0x00, 0x0C, 0x60, 0x18,
+  0x00, 0x80, 0xC1, 0x18, 0x00, 0x30, 0x06, 0x60, 0x18, 0x30, 0x80, 0x01, 0x00,
+  0x33, 0x63, 0xC6, 0x30, 0x00, 0x30, 0x63, 0x80, 0x19, 0x0C, 0x03, 0x06, 0x00,
+  0x0C, 0x18, 0x18, 0xC0, 0x81, 0x03, 0x00, 0x03, 0x18, 0x0C, 0x00, 0x60, 0x30,
+  0x06, 0x00, 0x87, 0x01, 0x18, 0x06, 0x0C, 0x60, 0x00, 0xC0, 0xCC, 0x98, 0x31,
+  0x0C, 0x00, 0xCC, 0x18, 0x30, 0x0C, 0xC3, 0x80, 0x01, 0x00, 0x03, 0x66, 0xFE,
+  0x18, 0x30, 0x00, 0xC0, 0x02, 0x06, 0x06, 0x00, 0x18, 0x8C, 0x01, 0x60, 0xE0,
+  0x0F, 0x86, 0x3F, 0x03, 0x18, 0x00, 0x30, 0x33, 0x66, 0x0C, 0x03, 0x00, 0x33,
+  0xFE, 0x0C, 0xC3, 0x30, 0xE0, 0x0F, 0xC0, 0x87, 0x9B, 0x31, 0x63, 0xC6, 0x00,
+  0xF0, 0x80, 0x01, 0x03, 0x00, 0x06, 0x63, 0x00, 0x8C, 0x19, 0x83, 0x61, 0xCC,
+  0x18, 0x06, 0x00, 0x6C, 0x8C, 0x19, 0xC3, 0x00, 0x80, 0x8D, 0x31, 0xC3, 0x30,
+  0x8C, 0x19, 0x03, 0x30, 0xB3, 0xC3, 0x87, 0x0F, 0x1F, 0x00, 0x2C, 0x60, 0x80,
+  0x01, 0xE0, 0x87, 0x0F, 0x00, 0x3E, 0x7C, 0x60, 0xF0, 0xE1, 0xE3, 0x07, 0x00,
+  0x0F, 0x3E, 0x7C, 0xFC, 0x00, 0xC0, 0xC3, 0xC7, 0x30, 0x0E, 0x3E, 0x7C, 0x00,
+  0xCC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x23, 0x1E, 0xC0, 0x00, 0x60, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x60, 0x00, 0xC0, 0x00, 0x00, 0x00,
+  0x0C, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0xC0, 0x0C, 0x87, 0x31, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x06, 0x00, 0x00, 0x18, 0x00, 0x30, 0x00, 0x00, 0x00, 0x03, 0x00, 0x30,
+  0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0xE0, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0xF8, 0x83, 0xC1, 0x07, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x01, 0x00,
+  0x00, 0x04, 0x00, 0x0E, 0x00, 0x00, 0x80, 0x00, 0x00, 0x0E, 0x00, 0x00, 0x30,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
@@ -129,6 +165,8 @@ PDMBOTHCBDECL(int) vgaR0LFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXC
 PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 # endif
+PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 #endif /* IN_RING3 */
 
 
@@ -3508,6 +3546,352 @@ PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 }
 # endif /* VBE_NEW_DYN_LIST */
 
+/**
+ * Port I/O Handler for BIOS Logo OUT operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument - ignored.
+ * @param   Port        Port number used for the IN operation.
+ * @param   u32         The value to output.
+ * @param   cb          The value size in bytes.
+ */
+PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    PVGASTATE pData = PDMINS2DATA(pDevIns, PVGASTATE);
+    NOREF(pvUser);
+    NOREF(Port);
+
+    Log(("vbeIOPortWriteCMDLogo: cb=%d u32=%#04x(%#04d) (byte)\n", cb, u32, u32));
+
+    if (cb == 2)
+    {
+        /* Get the logo data */
+        if (pData->LogoCommand)
+        {
+            switch (pData->LogoCommand)
+            {
+                case LOGO_CMD_SET_OFFSET:
+                    pData->offLogoData = u32;
+                break;
+                case LOGO_CMD_SET_X:
+                    pData->LogoX = u32;
+                break;
+                case LOGO_CMD_SET_Y:
+                    pData->LogoY = u32;
+                break;
+                case LOGO_CMD_SET_WIDTH:
+                    pData->LogoWidth = u32;
+                break;
+                case LOGO_CMD_SET_HEIGHT:
+                    pData->LogoHeight = u32;
+                break;
+                case LOGO_CMD_SET_DEPTH:
+                    pData->LogoDepth = u32;
+                break;
+                case LOGO_CMD_SET_PALSIZE:
+                    pData->PalSize = u32;
+                break;
+                default:
+                    Log(("vbeIOPortWriteCMDLogo: invalid command %d\n", pData->LogoCommand));
+                    break;
+            }
+
+            pData->LogoCommand = LOGO_CMD_NOP;
+            return VINF_SUCCESS;
+        }
+
+        /* Get the logo command */
+        switch (u32 & 0xFF00)
+        {
+            int  i, j;
+            case LOGO_CMD_SET_OFFSET:
+            case LOGO_CMD_SET_X:
+            case LOGO_CMD_SET_Y:
+            case LOGO_CMD_SET_WIDTH:
+            case LOGO_CMD_SET_HEIGHT:
+            case LOGO_CMD_SET_DEPTH:
+            case LOGO_CMD_SET_PALSIZE:
+                pData->LogoCommand = u32 & 0xFF00;
+            break;
+            case LOGO_CMD_SET_DEFAULT:
+                pData->BmpImage = LOGO_IMAGE_DEFAULT;
+                pData->offLogoData = 0;
+                pData->LogoCommand = LOGO_CMD_NOP;
+            break;
+            case LOGO_CMD_SET_PAL:
+            {
+                uint8_t    *pu8Pal;
+
+                if (pData->BmpImage == LOGO_IMAGE_EXTERNAL)
+                    pu8Pal = (uint8_t *)&pData->pu8Logo[pData->offLogoData];
+                else
+                    pu8Pal = (uint8_t *)&g_abVgaDefBiosLogo[pData->offLogoData];
+
+                for (i = 0; i <= pData->PalSize; i++)
+                {
+                    uint8_t  b;
+                    uint32_t p = 0;
+
+                    for (j = 0; j < 3; j++)
+                    {
+                        p <<= 8;
+                        b = (uint8_t)*pu8Pal++;
+                        p |= b;
+                    }
+                    *pu8Pal++;
+
+                    pData->Palette[i] = p;
+                }
+            }
+            break;
+            case LOGO_CMD_CLS:
+            {
+                /* Clear vram */
+                uint32_t *pu32TmpPtr = (uint32_t *)pData->vram_ptrHC;
+                for (i = 0; i < LOGO_MAX_WIDTH; i++)
+                {
+                    for (j = 0; j < LOGO_MAX_HEIGHT; j++)
+                        *pu32TmpPtr++ = 0;
+                }
+            }
+            break;
+            case LOGO_CMD_SHOW_BMP:
+            case LOGO_CMD_SHOW_TEXT:
+            {
+                uint8_t cbStep = u32 & 0xFF;
+
+                /*
+                 * Determin bytes per pixel in the destination buffer.
+                 */
+                size_t      scr_cx = LOGO_MAX_WIDTH;
+                size_t      scr_cy = LOGO_MAX_HEIGHT;
+
+                if ((u32 & 0xFF00) == LOGO_CMD_SHOW_TEXT)
+                {
+                    pData->LogoX = LOGO_F12TEXT_X;
+                    pData->LogoY = LOGO_F12TEXT_Y;
+
+                    pData->LogoWidth = LOGO_F12TEXT_WIDTH;
+                    pData->LogoHeight = LOGO_F12TEXT_HEIGHT;
+                    pData->LogoDepth = 1;
+                }
+
+                uint32_t    cx = pData->LogoWidth;
+                uint32_t    cy = pData->LogoHeight;
+                uint8_t    *pu8Src;
+                uint8_t    *pu8TmpPtr;
+                size_t      cbPadBytes  = 0;
+                size_t      cbLineDst   = pData->pDrv->cbScanline;
+                uint8_t    *pu8Dst      = pData->vram_ptrHC;
+                uint32_t    cyLeft      = cy;
+                uint16_t    i;
+
+                pu8Dst += pData->LogoX * 4 + pData->LogoY * cbLineDst;
+
+                switch (pData->LogoDepth)
+                {
+                    case 1:
+                        pu8Dst += pData->LogoHeight * cbLineDst;
+                        cbPadBytes = 0;
+                    break;
+                    case 4:
+                        if (((pData->LogoWidth % 8) == 0) || ((pData->LogoWidth % 8) > 6))
+                            cbPadBytes = 0;
+                        else if ((pData->LogoWidth % 8) <= 2)
+                            cbPadBytes = 3;
+                        else if ((pData->LogoWidth % 8) <= 4)
+                            cbPadBytes = 2;
+                        else
+                            cbPadBytes = 1;
+                    break;
+                    case 8:
+                        cbPadBytes = ((pData->LogoWidth % 4) == 0) ? 0 : (4 - (pData->LogoWidth % 4));
+                    break;
+                    case 24:
+                        cbPadBytes = cx % 4;
+                    break;
+                }
+
+                if (pData->LogoDepth == 1)
+                {
+                    pu8Src = (uint8_t *)&LogoF12BootText;
+                }
+                else
+                {
+                    if (pData->BmpImage == LOGO_IMAGE_EXTERNAL)
+                        pu8Src = (uint8_t *)&pData->pu8Logo[pData->offLogoData];
+                    else
+                        pu8Src = (uint8_t *)&g_abVgaDefBiosLogo[pData->offLogoData];
+                }
+
+                uint8_t j = 0, c = 0;
+
+                while (cyLeft-- > 0)
+                {
+                    pu8TmpPtr = pu8Dst;
+
+                    if (pData->LogoDepth != 1)
+                        j = 0;
+
+                    for (i = 0; i < cx; i++)
+                    {
+                        uint8_t pix;
+
+                        switch (pData->LogoDepth)
+                        {
+                            case 1:
+                            {
+                                if (!j)
+                                    c = *pu8Src++;
+
+                                pix = (c & 1) ? 0xFF : 0;
+                                c >>= 1;
+
+                                *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
+                                *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
+                                *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
+                                *pu8TmpPtr++;
+
+                                if (j++ >= 7) j = 0;
+                            }
+                            break;
+                            case 4:
+                            {
+                                uint32_t p;
+
+                                if (!j)
+                                    c = *pu8Src++;
+
+                                pix = (c >> 4) & 0xF;
+                                c <<= 4;
+
+                                p = pData->Palette[pix];
+
+                                pix = (p >> 16) & 0xFF;
+                                *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
+                                pix = (p >> 8) & 0xFF;
+                                *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
+                                pix = p & 0xFF;
+                                *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
+                                *pu8TmpPtr++;
+
+                                if (j++ >= 1) j = 0;
+                            }
+                            break;
+                            case 8:
+                            {
+                                uint32_t p;
+
+                                p = pData->Palette[*pu8Src++];
+
+                                pix = (p >> 16) & 0xFF;
+                                *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
+                                pix = (p >> 8) & 0xFF;
+                                *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
+                                pix = p & 0xFF;
+                                *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
+                                *pu8TmpPtr++;
+                            }
+                            break;
+                            case 24:
+                                *pu8TmpPtr++ = *pu8Src++ * cbStep / LOGO_SHOW_STEPS;
+                                *pu8TmpPtr++ = *pu8Src++ * cbStep / LOGO_SHOW_STEPS;
+                                *pu8TmpPtr++ = *pu8Src++ * cbStep / LOGO_SHOW_STEPS;
+                                *pu8TmpPtr++;
+                            break;
+                        }
+                    }
+
+                    pu8Dst -= cbLineDst;
+                    pu8Src += cbPadBytes;
+                }
+
+                /*
+                 * Invalidate the area.
+                 */
+                pData->pDrv->pfnUpdateRect(pData->pDrv, 0, 0, scr_cx, scr_cy);
+
+                pData->LogoCommand = LOGO_CMD_NOP;
+            }
+            break;
+            default:
+                Log(("vbeIOPortWriteCMDLogo: invalid command %d\n", u32));
+                pData->LogoCommand = LOGO_CMD_NOP;
+                break;
+        }
+
+        return VINF_SUCCESS;
+    }
+
+    Log(("vbeIOPortWriteCMDLogo: Ignoring invalid cb=%d writes to the VBE Extra port!!!\n", cb));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Port I/O Handler for BIOS Logo IN operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument - ignored.
+ * @param   Port        Port number used for the IN operation.
+ * @param   pu32        Where to store the result.
+ * @param   cb          Number of bytes read.
+ */
+PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+{
+    PVGASTATE pData = PDMINS2DATA(pDevIns, PVGASTATE);
+    NOREF(pvUser);
+    NOREF(Port);
+
+    PRTUINT64U  p;
+
+    if (pData->BmpImage == LOGO_IMAGE_DEFAULT)
+    {
+        /*
+         * Default bios logo.
+         */
+        if (pData->offLogoData + cb > g_cbVgaDefBiosLogo)
+        {
+            Log(("vbeIOPortReadCMDLogo: Requested address is out of Logo data!!! offLogoData=%#x(%d) cbLogo=%#x(%d)\n",
+                 pData->offLogoData, pData->offLogoData, g_cbVgaDefBiosLogo, g_cbVgaDefBiosLogo));
+            return VINF_SUCCESS;
+        }
+        p = (PRTUINT64U)&g_abVgaDefBiosLogo[pData->offLogoData];
+    }
+    else
+    {
+        /*
+         * Custom logo.
+         */
+        if (pData->offLogoData + cb > pData->cbLogo)
+        {
+            Log(("vbeIOPortReadCMDLogo: Requested address is out of Logo data!!! offLogoData=%#x(%d) cbLogo=%#x(%d)\n",
+                 pData->offLogoData, pData->offLogoData, pData->cbLogo, pData->cbLogo));
+            return VINF_SUCCESS;
+        }
+        p = (PRTUINT64U)&pData->pu8Logo[pData->offLogoData];
+    }
+
+    switch (cb)
+    {
+        case 1: *pu32 = p->au8[0]; break;
+        case 2: *pu32 = p->au16[0]; break;
+        case 4: *pu32 = p->au32[0]; break;
+        //case 8: *pu32 = p->au64[0]; break;
+        default: AssertFailed(); break;
+    }
+    Log(("vbeIOPortReadCMDLogo: LogoOffset=%#x(%d) cb=%#x %.*Vhxs\n", pData->offLogoData, pData->offLogoData, cb, cb, pu32));
+
+    pData->LogoCommand = LOGO_CMD_NOP;
+    pData->offLogoData += cb;
+
+    return VINF_SUCCESS;
+}
+
 
 
 
@@ -4331,6 +4715,12 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
         AssertRC(rc);
     }
 
+    /*
+     * Reset the logo data.
+     */
+    pData->LogoCommand = LOGO_CMD_NOP;
+    pData->offLogoData = 0;
+
     /* notify port handler */
     if (pData->pDrv)
         pData->pDrv->pfnReset(pData->pDrv);
@@ -4503,6 +4893,11 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (!CFGMR3AreValuesValid(pCfgHandle, "VRamSize\0"
                                           "GCEnabled\0"
                                           "R0Enabled\0"
+                                          "FadeIn\0"
+                                          "FadeOut\0"
+                                          "LogoTime\0"
+                                          "LogoFile\0"
+                                          "ShowBootMenu\0"
                                           "CustomVideoModes\0"
                                           "HeightReduction\0"
                                           "CustomVideoMode1\0"
@@ -4980,6 +5375,136 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #endif
 
     /*
+     * Register I/O Port for the BIOS Logo.
+     */
+    rc = PDMDevHlpIOPortRegister(pDevIns, VBE_LOGO_PORT, 1, NULL, vbeIOPortWriteCMDLogo, vbeIOPortReadCMDLogo, NULL, NULL, "BIOS Logo");
+    if (VBOX_FAILURE(rc))
+        return rc;
+
+    /*
+     * Construct the logo header.
+     */
+    LOGOHDR LogoHdr = { LOGO_HDR_MAGIC, 0, 0, 0, 0, 0 };
+
+    rc = CFGMR3QueryU8(pCfgHandle, "FadeIn", &LogoHdr.u8FadeIn);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        LogoHdr.u8FadeIn = 1;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"FadeIn\" as integer failed"));
+
+    rc = CFGMR3QueryU8(pCfgHandle, "FadeOut", &LogoHdr.u8FadeOut);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        LogoHdr.u8FadeOut = 1;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"FadeOut\" as integer failed"));
+
+    rc = CFGMR3QueryU16(pCfgHandle, "LogoTime", &LogoHdr.u16LogoMillies);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        LogoHdr.u16LogoMillies = 1;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"LogoTime\" as integer failed"));
+
+    rc = CFGMR3QueryU8(pCfgHandle, "ShowBootMenu", &LogoHdr.u8ShowBootMenu);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        LogoHdr.u8ShowBootMenu = 0;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"ShowBootMenu\" as integer failed"));
+
+    /*
+     * Get the Logo file name.
+     */
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "LogoFile", &pData->pszLogoFile);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->pszLogoFile = NULL;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"LogoFile\" as a string failed"));
+    else if (!*pData->pszLogoFile)
+    {
+        MMR3HeapFree(pData->pszLogoFile);
+        pData->pszLogoFile = NULL;
+    }
+
+    /*
+     * Determine the logo size, open any specified logo file in the process.
+     */
+    LogoHdr.cbLogo = g_cbVgaDefBiosLogo;
+    RTFILE FileLogo = NIL_RTFILE;
+    if (pData->pszLogoFile)
+    {
+        rc = RTFileOpen(&FileLogo, pData->pszLogoFile,
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+        if (VBOX_SUCCESS(rc))
+        {
+            uint64_t cbFile;
+            rc = RTFileGetSize(FileLogo, &cbFile);
+            if (VBOX_SUCCESS(rc))
+            {
+                if (cbFile > 0)
+                    LogoHdr.cbLogo = (uint32_t)cbFile;
+                else
+                    rc = VERR_TOO_MUCH_DATA;
+            }
+        }
+        if (VBOX_FAILURE(rc))
+        {
+            /*
+             * Ignore failure and fall back to the default logo.
+             */
+            LogRel(("vgaR3Construct: Failed to open logo file '%s', rc=%Vrc!\n", pData->pszLogoFile, rc));
+            RTFileClose(FileLogo);
+            FileLogo = NIL_RTFILE;
+            MMR3HeapFree(pData->pszLogoFile);
+            pData->pszLogoFile = NULL;
+        }
+    }
+
+    /*
+     * Allocate buffer for the logo data.
+     * RT_MAX() is applied to let us fall back to default logo on read failure.
+     */
+    pData->cbLogo = sizeof(LogoHdr) + LogoHdr.cbLogo;
+    pData->pu8Logo = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, RT_MAX(pData->cbLogo, g_cbVgaDefBiosLogo + sizeof(LogoHdr)));
+    if (pData->pu8Logo)
+    {
+        /*
+         * Write the logo header.
+         */
+        PLOGOHDR pLogoHdr = (PLOGOHDR)pData->pu8Logo;
+        *pLogoHdr = LogoHdr;
+
+        /*
+         * Write the logo bitmap.
+         */
+        if (pData->pszLogoFile)
+        {
+            rc = RTFileRead(FileLogo, pLogoHdr + 1, LogoHdr.cbLogo, NULL);
+            if (VBOX_FAILURE(rc))
+            {
+                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Vrc\n", LogoHdr.cbLogo, rc));
+                pLogoHdr->cbLogo = LogoHdr.cbLogo = g_cbVgaDefBiosLogo;
+                memcpy(pLogoHdr + 1, g_abVgaDefBiosLogo, LogoHdr.cbLogo);
+            }
+        }
+        else
+            memcpy(pLogoHdr + 1, g_abVgaDefBiosLogo, LogoHdr.cbLogo);
+
+        pData->BmpImage = LOGO_IMAGE_EXTERNAL;
+
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    /* cleanup */
+    if (FileLogo != NIL_RTFILE)
+        RTFileClose(FileLogo);
+
+    /*
      * Statistics.
      */
     STAM_REG(pVM, &pData->StatGCMemoryRead,     STAMTYPE_PROFILE, "/Devices/VGA/GC/Memory/Read",         STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryRead() body.");
@@ -4987,7 +5512,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     STAM_REG(pVM, &pData->StatGCIOPortRead,     STAMTYPE_PROFILE, "/Devices/VGA/GC/IOPort/Read",         STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCIOPortRead() body.");
     STAM_REG(pVM, &pData->StatGCIOPortWrite,    STAMTYPE_PROFILE, "/Devices/VGA/GC/IOPort/Write",        STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCIOPortWrite() body.");
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 

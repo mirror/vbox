@@ -1,18 +1,37 @@
-#define COMPRESS_NONE  0
-#define COMPRESS_RLE8  1
-#define COMPRESS_RLE4  2
+#define COMPRESS_NONE        0
+#define COMPRESS_RLE8        1
+#define COMPRESS_RLE4        2
 
-#define BMP_HEADER_OS21  12
-#define BMP_HEADER_OS22  64
-#define BMP_HEADER_WIN3  40
+#define BMP_HEADER_OS21      12
+#define BMP_HEADER_OS22      64
+#define BMP_HEADER_WIN3      40
 
-#define WAIT_HZ         64
-#define WAIT_MS         16
+#define WAIT_HZ              64
+#define WAIT_MS              16
 
-#define F12_SCAN_CODE   0x86
-#define F12_WAIT_TIME   (3 * WAIT_HZ)   /* 3 seconds. Used only if logo disabled. */
+#define F12_SCAN_CODE        0x86
+#define F12_WAIT_TIME        (3 * WAIT_HZ)   /* 3 seconds. Used only if logo disabled. */
 
-#define LOGO_IO_PORT    0x506
+#define LOGO_SHOW_STEPS      64
+
+#define LOGO_IMAGE_DEFAULT   0
+#define LOGO_IMAGE_EXTERNAL  1
+
+#define LOGO_CMD_NOP         0
+#define LOGO_CMD_SET_OFFSET  0x100
+#define LOGO_CMD_SET_X       0x200
+#define LOGO_CMD_SET_Y       0x300
+#define LOGO_CMD_SET_WIDTH   0x400
+#define LOGO_CMD_SET_HEIGHT  0x500
+#define LOGO_CMD_SET_DEPTH   0x600
+#define LOGO_CMD_SET_PALSIZE 0x700
+#define LOGO_CMD_SET_DEFAULT 0x800
+#define LOGO_CMD_SET_PAL     0x900
+#define LOGO_CMD_SHOW_BMP    0xA00
+#define LOGO_CMD_SHOW_TEXT   0xB00
+#define LOGO_CMD_CLS         0xC00
+
+#define LOGO_IO_PORT         0x3b8
 
 typedef struct
 {
@@ -93,41 +112,6 @@ typedef struct
 
 } LOGOHDR;
 
-// Width and height of the "Press F12 to select boot device." bitmap. Anything
-// that exceeds the limit of F12BootText below is filled with background.
-#define F12BOOTTEXTWIDTH 284
-#define F12BOOTTEXTHEIGHT 13
-// "Press F12 to select boot device." bitmap.
-Bit8u F12BootText[] = {
-  0x3F, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x1F, 0x0C, 0x3E, 0x00, 0x20, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x0E, 0x00, 0x00, 0x20, 0x00, 0x70, 0x00, 0x00, 0x00,
-  0x04, 0x00, 0x70, 0x00, 0x00, 0x80, 0x01, 0x00, 0x00, 0x60, 0x06, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x98, 0xE1, 0x30, 0x06, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00,
-  0xC0, 0x00, 0x00, 0x00, 0x03, 0x00, 0x06, 0x00, 0x00, 0x60, 0x00, 0x00, 0x06,
-  0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
-  0x11, 0x0F, 0x60, 0x00, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x00,
-  0x30, 0x00, 0x60, 0x00, 0x00, 0x00, 0x06, 0x00, 0x60, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x60, 0x66, 0x87, 0x0F, 0x1F, 0x3E, 0x00, 0x58, 0xC0, 0x00, 0x03,
-  0xC0, 0x0F, 0x1F, 0x00, 0x7C, 0xF8, 0xC0, 0xE0, 0xC3, 0xC7, 0x0F, 0x00, 0x1E,
-  0x7C, 0xF8, 0xF8, 0x01, 0x80, 0x87, 0x8F, 0x61, 0x1C, 0x7C, 0xF8, 0x00, 0x3E,
-  0xDC, 0x8C, 0x19, 0x33, 0x06, 0x80, 0x07, 0x0C, 0x18, 0x00, 0x30, 0x18, 0x03,
-  0x60, 0xCC, 0x18, 0x0C, 0x63, 0xC6, 0x30, 0x00, 0x60, 0x63, 0xCC, 0x18, 0x06,
-  0x00, 0x6C, 0x8C, 0x19, 0x86, 0x61, 0xCC, 0x18, 0x60, 0xC0, 0xCC, 0x1F, 0x03,
-  0x06, 0x00, 0x58, 0xC0, 0xC0, 0x00, 0x00, 0x83, 0x31, 0x00, 0x0C, 0xFC, 0xC1,
-  0xF0, 0x67, 0x00, 0x03, 0x00, 0x66, 0xC6, 0x8C, 0x61, 0x00, 0x60, 0xC6, 0x9F,
-  0x61, 0x18, 0x06, 0xFC, 0x01, 0x06, 0x0C, 0x0C, 0xE0, 0xC0, 0x01, 0x80, 0x01,
-  0x0C, 0x06, 0x00, 0x30, 0x18, 0x03, 0x80, 0xC3, 0x00, 0x0C, 0x03, 0x06, 0x30,
-  0x00, 0x60, 0x66, 0xCC, 0x18, 0x06, 0x00, 0x66, 0x0C, 0x18, 0x86, 0x61, 0xC0,
-  0x00, 0x60, 0xC0, 0xC0, 0x00, 0x18, 0x30, 0x00, 0x18, 0xC0, 0x30, 0x00, 0x00,
-  0x83, 0x31, 0x00, 0x60, 0x0C, 0xC0, 0x30, 0x60, 0x00, 0x03, 0x00, 0x66, 0xC6,
-  0x8C, 0x61, 0x00, 0x60, 0xC6, 0x00, 0x33, 0x18, 0x06, 0x0C, 0x00, 0x06, 0x0C,
-  0x8C, 0x19, 0x33, 0x06, 0x80, 0x01, 0x0C, 0x63, 0x00, 0xB0, 0x19, 0x03, 0x60,
-  0xCC, 0x18, 0x0C, 0x63, 0xC6, 0xB0, 0x01, 0x60, 0x66, 0xCC, 0x18, 0x36, 0x00,
-  0x66, 0x8C, 0xE1, 0x81, 0x61, 0xCC, 0x18, 0xFC, 0xE0, 0x81, 0x0F, 0x1F, 0x3E,
-  0x00, 0x3C, 0xF0, 0xF3, 0x07, 0x00, 0x0E, 0x1F, 0x00, 0x7C, 0xF8, 0xE0, 0xE1,
-  0xC3, 0x07, 0x0E, 0x00, 0x3E, 0x7C, 0xF8, 0xC0, 0x01, 0xC0, 0x8D, 0x0F, 0x0C,
-  0x3C, 0x7C, 0xF8, 0xC0
-};
 
 static unsigned char get_mode();
 static void          set_mode();
@@ -334,178 +318,6 @@ ASM_END
     return scan_code;
 }
 
-void read_palette(pal_seg, bmp_off, size, type)
-  Bit16u pal_seg;
-  Bit16u bmp_off;
-  Bit16u size;
-  Bit16u type;
-  {
-    Bit16u i;
-    RGBPAL *palette;
-
-    palette = 0;
-
-    for (i = 0; i < size; i++)
-    {
-        Bit8u pal;
-
-        pal = read_logo_byte(bmp_off);
-        write_byte(pal_seg, &palette->Blue, pal);
-        bmp_off++;
-
-        pal = read_logo_byte(bmp_off);
-        write_byte(pal_seg, &palette->Green, pal);
-        bmp_off++;
-
-        pal = read_logo_byte(bmp_off);
-        write_byte(pal_seg, &palette->Red, pal);
-        bmp_off++;
-
-        if (type != BMP_HEADER_OS21)
-        {
-            // Skip 4th byte
-            bmp_off++;
-        }
-
-        *palette++;
-    }
-}
-
-void set_dark_palette(palette_size)
-  Bit16u palette_size;
-  {
-    Bit16u i;
-
-    // Set bitmap palette (dark)
-    outb(0x03c8, palette_size);
-
-    for (i = 0; i < palette_size; i++)
-    {
-        outb(0x03c8, i);
-        outb(0x03c9, 0);
-        outb(0x03c9, 0);
-        outb(0x03c9, 0);
-    }
-}
-
-void set_bitmap_palette(palette_seg, palette_size)
-  Bit16u palette_seg;
-  Bit16u palette_size;
-  {
-    RGBPAL *palette;
-    Bit16u i;
-
-    palette = 0;
-
-    outb(0x03c6, palette_size);
-
-    for (i = 0; i < palette_size; i++)
-    {
-        Bit8u b;
-
-        outb(0x03c8, i);
-
-        b = read_byte(palette_seg, &palette->Red);
-        outb(0x03c9, b >> 2);
-        b = read_byte(palette_seg, &palette->Green);
-        outb(0x03c9, b >> 2);
-        b = read_byte(palette_seg, &palette->Blue);
-        outb(0x03c9, b >> 2);
-
-        *palette++;
-    }
-}
-
-/**
- * Fade in and check for keystroke.
- * @returns   1 if F12 was pressed, 0 if not.
- */
-Bit8u fade_in(palette_seg, palette_size)
-  Bit16u palette_seg;
-  Bit16u palette_size;
-  {
-    RGBPAL *palette;
-    Bit16u i, j;
-    Bit8u  scode;
-
-    // Fade in
-    for (i = 0; i < 0x3F; i++)
-    {
-        outb(0x03c6, palette_size);
-        palette = 0;
-
-        for (j = 0; j < palette_size; j++)
-        {
-            Bit8u r, g, b;
-
-            r = read_byte(palette_seg, &palette->Red) >> 2;
-            g = read_byte(palette_seg, &palette->Green) >> 2;
-            b = read_byte(palette_seg, &palette->Blue) >> 2;
-
-            if (r > 0 && r >= i) r = i;
-            if (g > 0 && g >= i) g = i;
-            if (b > 0 && b >= i) b = i;
-
-            outb(0x03c8, j);
-            outb(0x03c9, r);
-            outb(0x03c9, g);
-            outb(0x03c9, b);
-
-            *palette++;
-        }
-        scode = wait(16 / WAIT_MS, 0);
-        if (scode == F12_SCAN_CODE)
-            return 1;
-    }
-
-    return 0; // F12 not pressed
-}
-
-/**
- * Fade out and check for keystroke.
- * @returns    1 if F12 was pressed, 0 if not.
- */
-Bit8u fade_out(palette_seg, palette_size)
-  Bit16u palette_seg;
-  Bit16u palette_size;
-  {
-    RGBPAL *palette;
-    Bit16u i, j;
-    Bit8u  scode;
-
-    // Fade out
-    for (i = 0x3F; i > 0; i--)
-    {
-        outb(0x03c6, palette_size);
-        palette = 0;
-
-        for (j = 0; j < palette_size; j++)
-        {
-            Bit8u r, g, b;
-
-            r = read_byte(palette_seg, &palette->Red) >> 2;
-            g = read_byte(palette_seg, &palette->Green) >> 2;
-            b = read_byte(palette_seg, &palette->Blue) >> 2;
-
-            if (r > 0 && r >= i) r = i;
-            if (g > 0 && g >= i) g = i;
-            if (b > 0 && b >= i) b = i;
-
-            outb(0x03c8, j);
-            outb(0x03c9, r);
-            outb(0x03c9, g);
-            outb(0x03c9, b);
-
-            *palette++;
-        }
-        scode = wait(16 / WAIT_MS, 0);
-        if (scode == F12_SCAN_CODE)
-            return 1;
-    }
-
-    return 0; // F12 not pressed
-}
-
 void vesa_set_bank(bank)
   Bit16u bank;
   {
@@ -533,8 +345,11 @@ Bit8u read_logo_byte(offset)
 {
     if (offset)
     {
+        outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
         outw(LOGO_IO_PORT, offset);
     }
+    else
+        outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
 
     return inb(LOGO_IO_PORT);
 }
@@ -544,14 +359,64 @@ Bit16u read_logo_word(offset)
 {
     if (offset)
     {
+        outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
         outw(LOGO_IO_PORT, offset);
     }
+    else
+        outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
 
     return inw(LOGO_IO_PORT);
 }
 
-#define VID_SEG         0xA000
-#define TMP_SEG         0x1000
+Bit16u set_logo_x(x)
+  Bit16u x;
+{
+    outw(LOGO_IO_PORT, LOGO_CMD_SET_X);
+    outw(LOGO_IO_PORT, x);
+}
+
+Bit16u set_logo_y(y)
+  Bit16u y;
+{
+    outw(LOGO_IO_PORT, LOGO_CMD_SET_Y);
+    outw(LOGO_IO_PORT, y);
+}
+
+Bit16u set_logo_width(w)
+  Bit16u w;
+{
+    outw(LOGO_IO_PORT, LOGO_CMD_SET_WIDTH);
+    outw(LOGO_IO_PORT, w);
+}
+
+Bit16u set_logo_height(h)
+  Bit16u h;
+{
+    outw(LOGO_IO_PORT, LOGO_CMD_SET_HEIGHT);
+    outw(LOGO_IO_PORT, h);
+}
+
+Bit16u set_logo_depth(d)
+  Bit16u d;
+{
+    outw(LOGO_IO_PORT, LOGO_CMD_SET_DEPTH);
+    outw(LOGO_IO_PORT, d);
+}
+
+Bit16u set_pal_size(s)
+  Bit16u s;
+{
+    outw(LOGO_IO_PORT, LOGO_CMD_SET_PALSIZE);
+    outw(LOGO_IO_PORT, s);
+}
+
+Bit16u set_pal_data(offset)
+  Bit16u offset;
+{
+    outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
+    outw(LOGO_IO_PORT, offset);
+    outw(LOGO_IO_PORT, LOGO_CMD_SET_PAL);
+}
 
 void clear_screen()
 {
@@ -659,6 +524,13 @@ Bit8u get_boot_drive(scode)
     return 0x08;
 }
 
+show_boot_text(step)
+   Bit16u step;
+{
+    outw(LOGO_IO_PORT, LOGO_CMD_SHOW_TEXT | step);
+}
+
+
 void show_logo()
 {
     Bit16u ebda_seg=read_word(0x0040,0x000E);
@@ -668,20 +540,16 @@ void show_logo()
     OS2HDR      *os2_head;
     OS22HDR     *os22_head;
     WINHDR      *win_head;
-    Bit16u       rom_seg, pal_seg, logo_hdr_size, tmp, i;
-    Bit32u       hdr_size;
-    Bit8u        vid_mode;
+    Bit16u      logo_hdr_size, tmp, i;
+    Bit32u      hdr_size;
 
     Bit8u       is_fade_in, is_fade_out, is_logo_failed, uBootMenu;
     Bit16u      logo_time;
 
     Bit32u      offset;
-    Bit16u      bank = 0;
-    Bit8u       logo_bank = 0;
-    Bit16u      address;
 
     Bit8u       scode, f12_pressed = 0;
-    Bit8u c;
+    Bit8u       c;
 
     // Set PIT to 1ms ticks
     wait_init();
@@ -720,11 +588,9 @@ show_bmp:
     }
     else
     {
-        Bit16u scr_width, scr_height, start_x, start_y, bmp_data, j;
+        Bit16u scr_width, scr_height, start_x, start_y;
         Bit16u width, height, compr, clr_used;
         Bit16u pad_bytes, depth, planes, palette_size, palette_data;
-        Bit16u bidx, didx;
-        int x, y;
 
         // Check the size of the information header that indicates
         // the structure type
@@ -770,7 +636,7 @@ show_bmp:
         if (planes != 1)
             goto error;
 
-        if (depth < 4 || depth > 8)
+        if (depth != 4 && depth != 8 && depth != 24)
             goto error;
 
         if (clr_used > 256)
@@ -802,248 +668,55 @@ show_bmp:
                 palette_size = (Bit16u) (1 << (planes * depth));
         }
 
-        pal_seg = TMP_SEG;
+        set_pal_size(palette_size);
+
         palette_data = logo_hdr_size + sizeof(BMPINFO) + hdr_size;
+        set_pal_data(palette_data);
 
-        read_palette(pal_seg, palette_data, palette_size, hdr_size);
-
-        //  Get current video mode
-        vid_mode = get_mode();
-
-        // Set video mode #0x101 640x480x8bpp
-        vesa_set_mode(0x101);
-
-        // Set dark/bitmap palette
-        if (is_fade_in)
-            set_dark_palette(palette_size);
-        else
-            set_bitmap_palette(pal_seg, palette_size);
+        // Set video mode #0x142 640x480x32bpp
+        vesa_set_mode(0x142);
 
         // 0 bank
         vesa_set_bank(0);
 
         // Show bitmap
         tmp = read_logo_word(&bmp_info->Offset);
+        outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
         outw(LOGO_IO_PORT, logo_hdr_size + tmp);
 
-        switch(depth)
-        {
-            case 4:
-                // Compute padding bytes
-                if (((width % 8) == 0) || ((width % 8) > 6))
-                    pad_bytes = 0;
-                else if ((width % 8) <= 2)
-                    pad_bytes = 3;
-                else if ((width % 8) <= 4)
-                    pad_bytes = 2;
-                else
-                    pad_bytes = 1;
+        // Clear screen
+        outw(LOGO_IO_PORT, LOGO_CMD_CLS);
 
-                 // For 4 bits per pixel, each byte is two pixels.
-                 // The upper half go to the first pixel,
-                 // and the lower half to the second.
-                for (y = height; y > 0; y--)
-                {
-                    Bit8u z;
-
-                    for (x = 0; x < width; x += 2)
-                    {
-                        Bit8u c;
-
-                        c = read_logo_byte(0);
-
-                        for (z = 0; z < 2; z++)
-                        {
-                            Bit8u color;
-                            Bit16u new_bank;
-
-                            offset = (((Bit32u)start_y + (Bit32u)y) * (Bit32u)scr_width) + ((Bit32u)start_x + (Bit32u)x + (Bit32u)z);
-                            new_bank = (offset >> 16);
-                            address = (Bit16u)(offset & 0xffffL);
-
-                            if (bank != new_bank)
-                            {
-                                bank = new_bank;
-                                vesa_set_bank(bank);
-                            }
-
-                            if (z & 1)
-                                color = c & 0xF;
-                            else
-                                color = (c >> 4) & 0xF;
-
-                            write_byte(VID_SEG, address, color);
-                        }
-                    }
-
-                    for (z = 0; z < pad_bytes; z++)
-                    {
-                        c = read_logo_byte(0);
-                    }
-                }
-            break;
-
-            case 8:
-                // Compute padding bytes
-                pad_bytes = ((width % 4) == 0) ? 0 : (4 - (width % 4));
-
-                 // For 8 bits per pixel, each byte is one pixel.
-                for (y = height; y > 0; y--)
-                {
-                    Bit8u z;
-
-                    for (x = 0; x < width; x++)
-                    {
-                        Bit8u c, z;
-                        Bit16u new_bank;
-
-                        c = read_logo_byte(0);
-
-                        offset = (((Bit32u)start_y + (Bit32u)y) * (Bit32u)scr_width) + ((Bit32u)start_x + (Bit32u)x);
-                        new_bank = (offset >> 16);
-                        address = (Bit16u)(offset & 0xffffL);
-
-                        if (bank != new_bank)
-                        {
-                            bank = new_bank;
-                            vesa_set_bank(bank);
-                        }
-
-                        write_byte(VID_SEG, address, c);
-                    }
-
-                    for (z = 0; z < pad_bytes; z++)
-                    {
-                        c = read_logo_byte(0);
-                    }
-                }
-            break;
-
-#if 0 // 24bpp bitmaps are unsupported
-            case 24:
-                // Compute padding bytes
-                pad_bytes = width % 4;
-
-                // For 24 bits per pixel it's RGB structure.
-                for (y = height; y > 0; y--)
-                {
-                    Bit8u z;
-                    for (x = 0; x < width; x++)
-                    {
-                        for (z = 0; z < 3; z++)
-                        {
-                            Bit8u color;
-                            Bit16u new_bank;
-
-                            color = read_logo_byte(0);
-
-                            offset = (((Bit32u)start_y + (Bit32u)y) * (Bit32u)scr_width*3) + (((Bit32u)start_x + (Bit32u)x) * (Bit32u)3 + z);
-                            new_bank = (offset >> 16);
-                            address = (Bit16u)(offset & 0xffffL);
-
-                            if (bank != new_bank)
-                            {
-                                bank = new_bank;
-                                vesa_set_bank(bank);
-                            }
-
-                            write_byte(VID_SEG, address, color);
-                        }
-                    }
-
-                    for (z = 0; z < pad_bytes; z++)
-                    {
-                        c = read_logo_byte(0);
-                    }
-                }
-            break;
-#endif
-        }
-
-        // If Setup menu enabled
-        if (uBootMenu == 2 && (is_fade_in || is_fade_out || logo_time))
-        {
-            RGBPAL *palette = 0;
-            Bit16u blum, dlum;
-
-            // Get the brightest and the darkest palette indexes
-            bidx = didx = blum = 0;
-            dlum = 3 * 0xff;
-
-            for (i = 0; i < palette_size; i++)
-            {
-                Bit8u r, g, b;
-                Bit16u lum;
-
-                r = read_byte(pal_seg, &palette->Red) >> 2;
-                g = read_byte(pal_seg, &palette->Green) >> 2;
-                b = read_byte(pal_seg, &palette->Blue) >> 2;
-                lum = (Bit16u)r + (Bit16u)g + (Bit16u)b;
-
-                if (lum > blum) { blum = lum; bidx = i; }
-
-                if (lum < dlum) { dlum = lum; didx = i; }
-
-                *palette++;
-            }
-
-            // 0 bank
-            vesa_set_bank(0);
-
-            // Top-left corner of screen
-            start_x = 340;
-            start_y = 450;
-
-            // Image size
-            width = (start_x + F12BOOTTEXTWIDTH <= scr_width) ? F12BOOTTEXTWIDTH : scr_width - start_x;
-            height = (start_y + F12BOOTTEXTHEIGHT <= scr_height) ? F12BOOTTEXTHEIGHT : scr_height - start_y;
-            bmp_data = j = 0;
-
-            for (y = 0; y < height; y++)
-            {
-                for (x = 0; x < width; x++)
-                {
-                    Bit16u new_bank;
-                    Bit8u pix_idx;
-
-                    if (!j)
-                    {
-                        if (bmp_data < sizeof(F12BootText))
-                            c = read_byte(0xf000, F12BootText + bmp_data++);
-                        else
-                            c = 0;
-                    }
-
-                    offset = (((Bit32u)start_y + (Bit32u)y) * (Bit32u)scr_width) + ((Bit32u)start_x + (Bit32u)x);
-                    new_bank = (offset >> 16);
-                    address = (Bit16u)(offset & 0xffffL);
-
-                    if (bank != new_bank)
-                    {
-                        bank = new_bank;
-                        vesa_set_bank(bank);
-                    }
-
-                    pix_idx = c & 1;
-                    c >>= 1;
-
-                    if (pix_idx)
-                        pix_idx = bidx;
-                    else
-                        pix_idx = didx;
-
-                    write_byte(VID_SEG, address, pix_idx);
-
-                    if (j++ >= 7) j = 0;
-                }
-            }
-        }
-
-        // Fade in
         if (is_fade_in)
         {
-            if (fade_in(pal_seg, palette_size))
-                f12_pressed = 1;
+            for (i = 0; i <= LOGO_SHOW_STEPS; i++)
+            {
+                set_logo_x(start_x);
+                set_logo_y(scr_height - start_y);
+                set_logo_width(width);
+                set_logo_height(height);
+                set_logo_depth(depth);
+
+                outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | i);
+
+                if (uBootMenu == 2)
+                    show_boot_text(i);
+    
+                wait(16 / WAIT_MS, 0);
+            }
+        }
+        else
+        {
+            set_logo_x(start_x);
+            set_logo_y(scr_height - start_y);
+            set_logo_width(width);
+            set_logo_height(height);
+            set_logo_depth(depth);
+
+            outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | LOGO_SHOW_STEPS);
+
+            if (uBootMenu == 2)
+                show_boot_text(LOGO_SHOW_STEPS);
         }
 
         // Wait (interval in milliseconds)
@@ -1057,8 +730,22 @@ show_bmp:
         // Fade out (only if F12 was not pressed)
         if (is_fade_out && !f12_pressed)
         {
-            if (fade_out(pal_seg, palette_size))
-                f12_pressed = 1;
+            for (i = LOGO_SHOW_STEPS; i > 0 ; i--)
+            {
+                set_logo_x(start_x);
+                set_logo_y(scr_height - start_y);
+                set_logo_width(width);
+                set_logo_height(height);
+                set_logo_depth(depth);
+                outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | i);
+
+                if (uBootMenu == 2)
+                    show_boot_text(i);
+
+                scode = wait(16 / WAIT_MS, 0);
+                if (scode == F12_SCAN_CODE)
+                    f12_pressed = 1;
+            }
         }
     }
 
@@ -1072,7 +759,7 @@ error:
         logo_hdr_size = 0;
 
         // Switch to defaul logo
-        outw(LOGO_IO_PORT, 0xFFFF);
+        outw(LOGO_IO_PORT, LOGO_CMD_SET_DEFAULT);
 
         goto show_bmp;
     }

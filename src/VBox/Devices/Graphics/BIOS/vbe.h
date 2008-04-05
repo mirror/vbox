@@ -311,7 +311,7 @@ typedef struct ModeInfoListItem
 
   /**
    * VBE Bios Extra Data structure.
-   * @remark duplicated in vga_int.h.
+   * @remark duplicated in DevVGA.h.
    */
   typedef struct VBEHeader
   {
@@ -322,16 +322,15 @@ typedef struct ModeInfoListItem
   } VBEHeader;
 
   /** The value of the VBEHEADER::u16Signature field.
-   * @remark duplicated in vga_int.h. */
+   * @remark duplicated in DevVGA.h. */
   #define VBEHEADER_MAGIC      0x77CC
   
   /** The extra port which is used to read the mode list.
-   * @remark duplicated in vga_int.h. */
+   * @remark duplicated in DevVGA.h. */
   #define VBE_EXTRA_PORT       0x3b6
 
   /** The extra port which is used for debug printf.
-   * @remark duplicated in vga_int.h. */
+   * @remark duplicated in DevVGA.h. */
   #define VBE_PRINTF_PORT      0x3b7
-
 
 #endif

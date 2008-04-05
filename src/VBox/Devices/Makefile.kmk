@@ -142,7 +142,7 @@ endif
 VBoxDD_LIBS             = \
 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/PcDefBiosLogo$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VgaDefBiosLogo$(VBOX_SUFF_LIB) \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
 ifeq ($(BUILD_TARGET),win)

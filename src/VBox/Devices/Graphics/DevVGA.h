@@ -316,6 +316,32 @@ typedef struct VGAState {
     uint16_t                    u16VBEExtraAddress;
     uint16_t                    Padding7[2];    /**< Alignment padding. */
 #endif
+    /** Current logo command. */
+    uint16_t                    LogoCommand;
+    /** Current logo data offset. */
+    uint32_t                    offLogoData;
+    /** Bitmap image to use. */
+    uint8_t                     BmpImage;
+    /** The size of the BIOS logo data. */
+    uint32_t                    cbLogo;
+    /** The BIOS logo data. */
+    uint8_t                     *pu8Logo;
+    /** The name of the logo file. */
+    char                        *pszLogoFile;
+    /** Logo X. */
+    uint16_t                     LogoX;
+    /** Logo Y. */
+    uint16_t                     LogoY;
+    /** Logo width. */
+    uint16_t                     LogoWidth;
+    /** Logo height. */
+    uint16_t                     LogoHeight;
+    /** Logo depth. */
+    uint16_t                     LogoDepth;
+    /** Palette data. */
+    uint32_t                     Palette[256];
+    /** Palette size. */
+    uint16_t                     PalSize;
 
 #endif /* VBOX */
 } VGAState;
@@ -357,6 +383,73 @@ typedef VBEHEADER *PVBEHEADER;
 #define VBE_PRINTF_PORT      0x3b7
 
 #endif /* VBE_NEW_DYN_LIST */
+
+/** The extra port which is used to show the BIOS logo.
+ * @remark duplicated in logo.c. */
+#define VBE_LOGO_PORT        0x3b8
+
+/** The BIOS logo fade in/fade out steps.
+ * @remark duplicated in logo.c. */
+#define LOGO_SHOW_STEPS      64
+
+/** The BIOS boot menu text position. */
+#define LOGO_F12TEXT_X       340
+#define LOGO_F12TEXT_Y       455
+
+/** Width and height of the "Press F12 to select boot device." bitmap.
+    Anything that exceeds the limit of F12BootText below is filled with
+    background. */
+#define LOGO_F12TEXT_WIDTH   286
+#define LOGO_F12TEXT_HEIGHT  12
+
+/** The BIOS logo commands.
+ * @remark duplicated in logo.c. */
+#define LOGO_IMAGE_DEFAULT   0
+#define LOGO_IMAGE_EXTERNAL  1
+
+#define LOGO_MAX_WIDTH       640
+#define LOGO_MAX_HEIGHT      480
+
+#define LOGO_CMD_NOP         0
+#define LOGO_CMD_SET_OFFSET  0x100
+#define LOGO_CMD_SET_X       0x200
+#define LOGO_CMD_SET_Y       0x300
+#define LOGO_CMD_SET_WIDTH   0x400
+#define LOGO_CMD_SET_HEIGHT  0x500
+#define LOGO_CMD_SET_DEPTH   0x600
+#define LOGO_CMD_SET_PALSIZE 0x700
+#define LOGO_CMD_SET_DEFAULT 0x800
+#define LOGO_CMD_SET_PAL     0x900
+#define LOGO_CMD_SHOW_BMP    0xA00
+#define LOGO_CMD_SHOW_TEXT   0xB00
+#define LOGO_CMD_CLS         0xC00
+
+/**
+ * PC Bios logo data structure.
+ */
+#pragma pack(2) /* pack(2) is important! (seems that bios compiled with pack(2)...) */
+typedef struct LOGOHDR
+{
+    /** Signature (LOGO_HDR_MAGIC/0x66BB). */
+    uint16_t        u16Signature;
+    /** Fade in - boolean. */
+    uint8_t         u8FadeIn;
+    /** Fade out - boolean. */
+    uint8_t         u8FadeOut;
+    /** Logo time (msec). */
+    uint16_t        u16LogoMillies;
+    /** Show setup - boolean. */
+    uint8_t         u8ShowBootMenu;
+    /** Logo file size. */
+    uint32_t        cbLogo;
+} LOGOHDR, *PLOGOHDR;
+#pragma pack()
+
+/** The value of the LOGOHDR::u16Signature field. */
+#define LOGO_HDR_MAGIC      0x66BB
+
+/** The value which will switch you the default logo. */
+#define LOGO_DEFAULT_LOGO   0xFFFF
 
 #if !defined(VBOX) || defined(IN_RING3)
 static inline int c6_to_8(int v)

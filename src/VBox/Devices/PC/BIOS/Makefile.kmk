@@ -46,7 +46,6 @@ PcBiosBin_CLEAN     = \
 	$(PATH_TARGET)/pcbios.tmp \
 	$(PATH_TARGET)/pcbios.bin \
 	$(PATH_TARGET)/PcBiosBin.c \
-	$(PATH_TARGET)/PcDefBiosLogo.c \
 	$(PATH_TARGET)/pcbios-syms.h
 
 #
@@ -95,22 +94,6 @@ $(PATH_TARGET)/pcbios-syms.h: $(PATH_TARGET)/pcbios.lst $(MAKEFILE_CURRENT)
 		-e 's/^[0-9][0-9][0-9][0-9][0-9]                       \(000[0-9A-F]*\)            [[:space:]]*\([a-zA-Z0-9_]*\):.*$$/    DEFSYM(0x\1, "\2"),/' \
 		--output $@ \
 		$(PATH_TARGET)/pcbios.lst
-
-
-#
-# The PC BIOS Logo.
-#
-LIBRARIES += PcDefBiosLogo
-PcDefBiosLogo_TEMPLATE  = VBOXR3
-PcDefBiosLogo_INCS      = $(VBOX_PATH_DEVICES_SRC)
-PcDefBiosLogo_SOURCES   = $(PATH_TARGET)/PcDefBiosLogo.c
-
-#
-# Rule for making the bios logo.
-#
-$(PATH_TARGET)/PcDefBiosLogo.c: $(PATH_SUB_CURRENT)/innotek_logo.bmp $(VBOX_BIN2C)
-	$(call MSG_TOOL,bin2c,PcBiosBin,$<,$@)
-	$(QUIET)$(VBOX_BIN2C) -max 64 PcDefBiosLogo $< $@
 
 
 include	$(PATH_KBUILD)/subfooter.kmk
