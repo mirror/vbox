@@ -125,16 +125,6 @@ typedef struct DEVPCBIOS
     char            szMsg[256];
     /** Bios message buffer index. */
     uint32_t        iMsg;
-    /** Current logo data offset. */
-    uint32_t        offLogoData;
-    /** Use built-in or loaded logo. */
-    bool            fDefaultLogo;
-    /** The size of the BIOS logo data. */
-    uint32_t        cbLogo;
-    /** The BIOS logo data. */
-    uint8_t        *pu8Logo;
-    /** The name of the logo file. */
-    char           *pszLogoFile;
     /** The system BIOS ROM data. */
     uint8_t        *pu8PcBios;
     /** The size of the system BIOS ROM. */
@@ -154,42 +144,6 @@ typedef struct DEVPCBIOS
     /** PXE debug logging enabled? */
     uint8_t        u8PXEDebug;
 } DEVPCBIOS, *PDEVPCBIOS;
-
-
-/** @todo The logo stuff shared with the BIOS goes into a header of course. */
-
-/**
- * PC Bios logo data structure.
- */
-#pragma pack(2) /* pack(2) is important! (seems that bios compiled with pack(2)...) */
-typedef struct LOGOHDR
-{
-    /** Signature (LOGO_HDR_MAGIC/0x66BB). */
-    uint16_t        u16Signature;
-    /** Fade in - boolean. */
-    uint8_t         u8FadeIn;
-    /** Fade out - boolean. */
-    uint8_t         u8FadeOut;
-    /** Logo time (msec). */
-    uint16_t        u16LogoMillies;
-    /** Show setup - boolean. */
-    uint8_t         u8ShowBootMenu;
-    /** Logo file size. */
-    uint32_t        cbLogo;
-} LOGOHDR, *PLOGOHDR;
-#pragma pack()
-
-/** PC port for Logo I/O */
-#define LOGO_IO_PORT        0x506
-
-/** The value of the LOGOHDR::u16Signature field. */
-#define LOGO_HDR_MAGIC      0x66BB
-
-/** The value which will switch you the default logo. */
-#define LOGO_DEFAULT_LOGO   0xFFFF
-
-/** The maximal logo size in bytes. (640x480x8bpp + header/palette) */
-#define LOGO_MAX_SIZE       640 * 480 + 0x442
 
 #pragma pack(1)
 
@@ -310,17 +264,6 @@ typedef struct MPSIOINTERRUPTENTRY
 AssertCompileSize(MPSIOINTERRUPTENTRY, 8);
 
 #pragma pack()
-
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-__BEGIN_DECLS
-
-static DECLCALLBACK(int) logoIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-static DECLCALLBACK(int) logoIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-
-__END_DECLS
 
 /* Attempt to guess the LCHS disk geometry from the MS-DOS master boot
  * record (partition table). */
@@ -855,95 +798,6 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
 
 
 /**
- * LOGO port I/O Handler for IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
- */
-static DECLCALLBACK(int) logoIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
-{
-    PDEVPCBIOS  pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
-    Log(("logoIOPortRead call Port:%x pu32:%x cb:%d (%d)\n", Port, pu32, cb, pData->offLogoData));
-
-    PRTUINT64U  p;
-    if (pData->fDefaultLogo)
-    {
-        /*
-         * Default bios logo.
-         */
-        if (pData->offLogoData + cb > g_cbPcDefBiosLogo)
-        {
-            Log(("logoIOPortRead: Requested address is out of Logo data!!! offLogoData=%#x(%d) cbLogo=%#x(%d)\n",
-                 pData->offLogoData, pData->offLogoData, g_cbPcDefBiosLogo, g_cbPcDefBiosLogo));
-            return VINF_SUCCESS;
-        }
-        p = (PRTUINT64U)&g_abPcDefBiosLogo[pData->offLogoData];
-    }
-    else
-    {
-        /*
-         * Custom logo.
-         */
-        if (pData->offLogoData + cb > pData->cbLogo)
-        {
-            Log(("logoIOPortRead: Requested address is out of Logo data!!! offLogoData=%#x(%d) cbLogo=%#x(%d)\n",
-                 pData->offLogoData, pData->offLogoData, pData->cbLogo, pData->cbLogo));
-            return VINF_SUCCESS;
-        }
-        p = (PRTUINT64U)&pData->pu8Logo[pData->offLogoData];
-    }
-
-    switch (cb)
-    {
-        case 1: *pu32 = p->au8[0]; break;
-        case 2: *pu32 = p->au16[0]; break;
-        case 4: *pu32 = p->au32[0]; break;
-        //case 8: *pu32 = p->au64[0]; break;
-        default: AssertFailed(); break;
-    }
-    Log(("logoIOPortRead: LogoOffset=%#x(%d) cb=%#x %.*Vhxs\n", pData->offLogoData, pData->offLogoData, cb, cb, pu32));
-    pData->offLogoData += cb;
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * LOGO port I/O Handler for OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
- */
-static DECLCALLBACK(int) logoIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
-{
-    PDEVPCBIOS  pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
-    Log(("logoIOPortWrite: Port=%x cb=%d u32=%#04x (byte)\n", Port, cb, u32));
-
-    /* Switch to default BIOS logo or change logo data offset. */
-    if (    cb == 2
-        &&  u32 == LOGO_DEFAULT_LOGO)
-    {
-        pData->fDefaultLogo = true;
-        pData->offLogoData = 0;
-    }
-    else
-        pData->offLogoData = u32;
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Construct the DMI table.
  *
  * @returns VBox status code.
@@ -1212,75 +1066,6 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     PDEVPCBIOS  pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
     LogFlow(("pcbiosReset:\n"));
 
-    pData->fDefaultLogo = false;
-    pData->offLogoData = 0;
-    /** @todo Should we perhaps do pcbiosInitComplete() on reset? */
-
-#if 1
-    /*
-     * Paranoia: Check that the BIOS ROM hasn't changed.
-     */
-    uint8_t abBuf[PAGE_SIZE];
-    const uint8_t *pu8PcBiosBinary;
-    uint64_t cbPcBiosBinary;
-
-    /* Work with either built-in ROM image or one loaded from file.
-     */
-    if (pData->pu8PcBios == NULL)
-    {
-        pu8PcBiosBinary = g_abPcBiosBinary;
-        cbPcBiosBinary  = g_cbPcBiosBinary;
-    }
-    else
-    {
-        pu8PcBiosBinary = pData->pu8PcBios;
-        cbPcBiosBinary  = pData->cbPcBios;
-    }
-    Assert(pu8PcBiosBinary);
-    Assert(cbPcBiosBinary);
-
-    /* the low ROM mapping. */
-    unsigned cb = RT_MIN(cbPcBiosBinary, 128 * _1K);
-    RTGCPHYS32 GCPhys = 0x00100000 - cb;
-    const uint8_t *pbVirgin = &pu8PcBiosBinary[cbPcBiosBinary - cb];
-    while (GCPhys < 0x00100000)
-    {
-        PDMDevHlpPhysRead(pDevIns, GCPhys, abBuf, PAGE_SIZE);
-        if (memcmp(abBuf, pbVirgin, PAGE_SIZE))
-        {
-            LogRel(("low ROM mismatch! GCPhys=%VGp - Ignore if you've loaded an old saved state with an different VirtualBox version.\n", GCPhys));
-            for (unsigned off = 0; off < PAGE_SIZE; off++)
-                if (abBuf[off] != pbVirgin[off])
-                    LogRel(("%VGp: %02x expected %02x\n", GCPhys + off, abBuf[off], pbVirgin[off]));
-            AssertFailed();
-        }
-
-        /* next page */
-        GCPhys += PAGE_SIZE;
-        pbVirgin += PAGE_SIZE;
-    }
-
-    /* the high ROM mapping. */
-    GCPhys = UINT32_C(0xffffffff) - (cbPcBiosBinary - 1);
-    pbVirgin = &pu8PcBiosBinary[0];
-    while (pbVirgin < &pu8PcBiosBinary[cbPcBiosBinary])
-    {
-        PDMDevHlpPhysRead(pDevIns, GCPhys, abBuf, PAGE_SIZE);
-        if (memcmp(abBuf, pbVirgin, PAGE_SIZE))
-        {
-            LogRel(("high ROM mismatch! GCPhys=%VGp - Ignore if you've loaded an old saved state with an different VirtualBox version.\n", GCPhys));
-            for (unsigned off = 0; off < PAGE_SIZE; off++)
-                if (abBuf[off] != pbVirgin[off])
-                    LogRel(("%VGp: %02x expected %02x\n", GCPhys + off, abBuf[off], pbVirgin[off]));
-            AssertFailed();
-        }
-
-        /* next page */
-        GCPhys += PAGE_SIZE;
-        pbVirgin += PAGE_SIZE;
-    }
-#endif
-
     if (pData->u8IOAPIC)
         pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + 0x100);
 }
@@ -1324,18 +1109,6 @@ static DECLCALLBACK(int) pcbiosDestruct(PPDMDEVINS pDevIns)
     {
         MMR3HeapFree(pData->pszLanBootFile);
         pData->pszLanBootFile = NULL;
-    }
-
-    if (pData->pu8Logo)
-    {
-        MMR3HeapFree(pData->pu8Logo);
-        pData->pu8Logo = NULL;
-    }
-
-    if (pData->pszLogoFile)
-    {
-        MMR3HeapFree(pData->pszLogoFile);
-        pData->pszLogoFile = NULL;
     }
 
     return VINF_SUCCESS;
@@ -1417,11 +1190,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "SataSecondaryMasterLUN\0"
                               "SataSecondarySlaveLUN\0"
                               "FloppyDevice\0"
-                              "FadeIn\0"
-                              "FadeOut\0"
-                              "LogoTime\0"
-                              "LogoFile\0"
-                              "ShowBootMenu\0"
                               "DelayBoot\0"
                               "BiosRom\0"
                               "LanBootRom\0"
@@ -1657,137 +1425,9 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 
     /*
-     * Register the BIOS Logo port
+     * Call reset to set values and stuff.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, LOGO_IO_PORT, 1, NULL, logoIOPortWrite, logoIOPortRead, NULL, NULL, "PC BIOS - Logo port");
-    if (VBOX_FAILURE(rc))
-        return rc;
-
-    /*
-     * Construct the logo header.
-     */
-    LOGOHDR LogoHdr = { LOGO_HDR_MAGIC, 0, 0, 0, 0, 0 };
-
-    rc = CFGMR3QueryU8(pCfgHandle, "FadeIn", &LogoHdr.u8FadeIn);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        LogoHdr.u8FadeIn = 1;
-    else if (VBOX_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"FadeIn\" as integer failed"));
-
-    rc = CFGMR3QueryU8(pCfgHandle, "FadeOut", &LogoHdr.u8FadeOut);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        LogoHdr.u8FadeOut = 1;
-    else if (VBOX_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"FadeOut\" as integer failed"));
-
-    rc = CFGMR3QueryU16(pCfgHandle, "LogoTime", &LogoHdr.u16LogoMillies);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        LogoHdr.u16LogoMillies = 1;
-    else if (VBOX_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"LogoTime\" as integer failed"));
-
-    rc = CFGMR3QueryU8(pCfgHandle, "ShowBootMenu", &LogoHdr.u8ShowBootMenu);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        LogoHdr.u8ShowBootMenu = 0;
-    else if (VBOX_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"ShowBootMenu\" as integer failed"));
-
-    /*
-     * Get the Logo file name.
-     */
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "LogoFile", &pData->pszLogoFile);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->pszLogoFile = NULL;
-    else if (VBOX_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"LogoFile\" as a string failed"));
-    else if (!*pData->pszLogoFile)
-    {
-        MMR3HeapFree(pData->pszLogoFile);
-        pData->pszLogoFile = NULL;
-    }
-
-    /*
-     * Determine the logo size, open any specified logo file in the process.
-     */
-    LogoHdr.cbLogo = g_cbPcDefBiosLogo;
-    RTFILE FileLogo = NIL_RTFILE;
-    if (pData->pszLogoFile)
-    {
-        rc = RTFileOpen(&FileLogo, pData->pszLogoFile,
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-        if (VBOX_SUCCESS(rc))
-        {
-            uint64_t cbFile;
-            rc = RTFileGetSize(FileLogo, &cbFile);
-            if (VBOX_SUCCESS(rc))
-            {
-                if (    cbFile > 0
-                    &&  cbFile < LOGO_MAX_SIZE)
-                    LogoHdr.cbLogo = (uint32_t)cbFile;
-                else
-                    rc = VERR_TOO_MUCH_DATA;
-            }
-        }
-        if (VBOX_FAILURE(rc))
-        {
-            /*
-             * Ignore failure and fall back to the default logo.
-             */
-            LogRel(("pcbiosConstruct: Failed to open logo file '%s', rc=%Vrc!\n", pData->pszLogoFile, rc));
-            RTFileClose(FileLogo);
-            FileLogo = NIL_RTFILE;
-            MMR3HeapFree(pData->pszLogoFile);
-            pData->pszLogoFile = NULL;
-        }
-    }
-
-    /*
-     * Allocate buffer for the logo data.
-     * RT_MAX() is applied to let us fall back to default logo on read failure.
-     */
-    pData->cbLogo = sizeof(LogoHdr) + LogoHdr.cbLogo;
-    pData->pu8Logo = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, RT_MAX(pData->cbLogo, g_cbPcDefBiosLogo + sizeof(LogoHdr)));
-    if (pData->pu8Logo)
-    {
-        /*
-         * Write the logo header.
-         */
-        PLOGOHDR pLogoHdr = (PLOGOHDR)pData->pu8Logo;
-        *pLogoHdr = LogoHdr;
-
-        /*
-         * Write the logo bitmap.
-         */
-        if (pData->pszLogoFile)
-        {
-            rc = RTFileRead(FileLogo, pLogoHdr + 1, LogoHdr.cbLogo, NULL);
-            if (VBOX_FAILURE(rc))
-            {
-                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Vrc\n", LogoHdr.cbLogo, rc));
-                pLogoHdr->cbLogo = LogoHdr.cbLogo = g_cbPcDefBiosLogo;
-                memcpy(pLogoHdr + 1, g_abPcDefBiosLogo, LogoHdr.cbLogo);
-            }
-        }
-        else
-            memcpy(pLogoHdr + 1, g_abPcDefBiosLogo, LogoHdr.cbLogo);
-
-        /*
-         * Call reset to set values and stuff.
-         */
-        pcbiosReset(pDevIns);
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    /* cleanup */
-    if (FileLogo != NIL_RTFILE)
-        RTFileClose(FileLogo);
+    pcbiosReset(pDevIns);
 
     /*
      * Get the LAN boot ROM file name.

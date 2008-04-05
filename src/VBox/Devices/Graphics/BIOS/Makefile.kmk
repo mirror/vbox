@@ -46,6 +46,7 @@ VgaBiosBin_CLEAN    = \
 	$(PATH_TARGET)/vgabios.lst \
 	$(PATH_TARGET)/vgabios.bin \
 	$(PATH_TARGET)/VgaBiosBin.c \
+	$(PATH_TARGET)/VgaDefBiosLogo.c \
 	\
 	$(PATH_TARGET)/_vgabios-cirrus_.c \
 	$(PATH_TARGET)/vgabios-cirrus0.s \
@@ -95,6 +96,21 @@ $(PATH_TARGET)/vgabios.bin: $(PATH_TARGET)/vgabios.tmp $$(TARGET_vgabiossums)
 	$(call MSG_TOOL,vgabiossums,VgaBiosBin,$<,$@)
 	$(QUIET)$(CP) -f $(PATH_TARGET)/vgabios.tmp $@
 	$(QUIET)$(TARGET_vgabiossums) $@
+
+#
+# The VGA BIOS Logo.
+#
+LIBRARIES += VgaDefBiosLogo
+VgaDefBiosLogo_TEMPLATE  = VBOXR3
+VgaDefBiosLogo_INCS      = $(VBOX_PATH_DEVICES_SRC)
+VgaDefBiosLogo_SOURCES   = $(PATH_TARGET)/VgaDefBiosLogo.c
+
+#
+# Rule for making the bios logo.
+#
+$(PATH_TARGET)/VgaDefBiosLogo.c: $(PATH_SUB_CURRENT)/innotek_logo.bmp $(VBOX_BIN2C)
+	$(call MSG_TOOL,bin2c,VgaBiosBin,$<,$@)
+	$(QUIET)$(VBOX_BIN2C) -max 64 VgaDefBiosLogo $< $@
 
 
 include	$(PATH_KBUILD)/subfooter.kmk

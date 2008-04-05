@@ -291,41 +291,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
 
     /*
-     * BIOS logo
-     */
-    BOOL fFadeIn;
-    hrc = biosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                            H();
-    rc = CFGMR3InsertInteger(pBiosCfg,  "FadeIn",  fFadeIn ? 1 : 0);                RC_CHECK();
-    BOOL fFadeOut;
-    hrc = biosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                          H();
-    rc = CFGMR3InsertInteger(pBiosCfg,  "FadeOut", fFadeOut ? 1: 0);                RC_CHECK();
-    ULONG logoDisplayTime;
-    hrc = biosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);               H();
-    rc = CFGMR3InsertInteger(pBiosCfg,  "LogoTime", logoDisplayTime);               RC_CHECK();
-    Bstr logoImagePath;
-    hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());       H();
-    rc = CFGMR3InsertString(pBiosCfg,   "LogoFile", logoImagePath ? Utf8Str(logoImagePath) : ""); RC_CHECK();
-
-    /*
-     * Boot menu
-     */
-    BIOSBootMenuMode_T bootMenuMode;
-    int value;
-    biosSettings->COMGETTER(BootMenuMode)(&bootMenuMode);
-    switch (bootMenuMode)
-    {
-        case BIOSBootMenuMode_Disabled:
-            value = 0;
-            break;
-        case BIOSBootMenuMode_MenuOnly:
-            value = 1;
-            break;
-        default:
-            value = 2;
-    }
-    rc = CFGMR3InsertInteger(pBiosCfg, "ShowBootMenu", value);                      RC_CHECK();
-
-    /*
      * The time offset
      */
     LONG64 timeOffset;
@@ -532,6 +497,41 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
     hrc = pMachine->COMGETTER(VRAMSize)(&cRamMBs);                                  H();
     rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             cRamMBs * _1M);         RC_CHECK();
+
+    /*
+     * BIOS logo
+     */
+    BOOL fFadeIn;
+    hrc = biosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                            H();
+    rc = CFGMR3InsertInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);                RC_CHECK();
+    BOOL fFadeOut;
+    hrc = biosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                          H();
+    rc = CFGMR3InsertInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);                RC_CHECK();
+    ULONG logoDisplayTime;
+    hrc = biosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);               H();
+    rc = CFGMR3InsertInteger(pCfg,  "LogoTime", logoDisplayTime);               RC_CHECK();
+    Bstr logoImagePath;
+    hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());       H();
+    rc = CFGMR3InsertString(pCfg,   "LogoFile", logoImagePath ? Utf8Str(logoImagePath) : ""); RC_CHECK();
+
+    /*
+     * Boot menu
+     */
+    BIOSBootMenuMode_T bootMenuMode;
+    int value;
+    biosSettings->COMGETTER(BootMenuMode)(&bootMenuMode);
+    switch (bootMenuMode)
+    {
+        case BIOSBootMenuMode_Disabled:
+            value = 0;
+            break;
+        case BIOSBootMenuMode_MenuOnly:
+            value = 1;
+            break;
+        default:
+            value = 2;
+    }
+    rc = CFGMR3InsertInteger(pCfg, "ShowBootMenu", value);                      RC_CHECK();
 
     /* Custom VESA mode list */
     unsigned cModes = 0;
