@@ -92,6 +92,8 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned
 static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_t cPorts, PCPDMUSBHUBREG pUsbHubReg, PPCPDMUSBHUBHLP ppUsbHubHlp);
 static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                                      PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+static DECLCALLBACK(VMSTATE) pdmR3DrvHlp_VMState(PPDMDRVINS pDrvIns);
+
 
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
@@ -102,7 +104,12 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS
  * Asserts the validity of the driver instance.
  */
 #ifdef VBOX_STRICT
-# define PDMDRV_ASSERT_DRVINS(pDrvIns)   do { Assert(pDrvIns); Assert(pDrvIns->u32Version == PDM_DRVINS_VERSION); Assert(pDrvIns->pvInstanceData == (void *)&pDrvIns->achInstanceData[0]); } while (0)
+# define PDMDRV_ASSERT_DRVINS(pDrvIns) \
+    do { \
+        AssertPtr(pDrvIns); \
+        Assert(pDrvIns->u32Version == PDM_DRVINS_VERSION); \
+        Assert(pDrvIns->pvInstanceData == (void *)&pDrvIns->achInstanceData[0]); \
+    } while (0)
 #else
 # define PDMDRV_ASSERT_DRVINS(pDrvIns)   do { } while (0)
 #endif
@@ -144,6 +151,7 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_SUPCallVMMR0Ex,
     pdmR3DrvHlp_USBRegisterHub,
     pdmR3DrvHlp_PDMThreadCreate,
+    pdmR3DrvHlp_VMState,
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate,
 #endif
@@ -1073,7 +1081,22 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTH
     return rc;
 }
 
+
+/** @copydoc PDMDEVHLP::pfnVMState */
+static DECLCALLBACK(VMSTATE) pdmR3DrvHlp_VMState(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+
+    VMSTATE enmVMState = VMR3GetState(pDrvIns->Internal.s.pVM);
+
+    LogFlow(("pdmR3DrvHlp_VMState: caller='%s'/%d: returns %d (%s)\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance,
+             enmVMState, VMR3GetStateName(enmVMState)));
+    return enmVMState;
+}
+
+
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+/** @copydoc PDMDRVHLP::pfnPDMAsyncCompletionTemplateCreate */
 static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
                                                                       PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc)
 {

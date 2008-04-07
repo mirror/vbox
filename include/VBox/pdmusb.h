@@ -557,6 +557,15 @@ typedef struct PDMUSBHLP
      */
     DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMUSBINS pUsbIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va));
 
+    /**
+     * Gets the VM state.
+     *
+     * @returns VM state.
+     * @param   pUsbIns             The USB device instance.
+     * @thread  Any thread (just keep in mind that it's volatile info).
+     */
+    DECLR3CALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMUSBINS pUsbIns));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMUSBHLP;
@@ -566,7 +575,7 @@ typedef PDMUSBHLP *PPDMUSBHLP;
 typedef const PDMUSBHLP *PCPDMUSBHLP;
 
 /** Current USBHLP version number. */
-#define PDM_USBHLP_VERSION  0xec020000
+#define PDM_USBHLP_VERSION  0xec020001
 
 #endif /* IN_RING3 */
 
@@ -683,10 +692,15 @@ DECLINLINE(int) PDMUsbDBGFStop(PPDMUSBINS pUsbIns, RT_SRC_POS_DECL, const char *
 #endif
 }
 
+/**
+ * @copydoc PDMUSBHLP::pfnVMState
+ */
+DECLINLINE(VMSTATE) PDMUsbHlpVMState(PPDMUSBINS pUsbIns)
+{
+    return pUsbIns->pUsbHlp->pfnVMState(pUsbIns);
+}
 
-/* inline wrappers */
-
-#endif
+#endif /* IN_RING3 */
 
 
 

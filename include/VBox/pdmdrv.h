@@ -654,6 +654,16 @@ typedef struct PDMDRVHLP
      */
     DECLR3CALLBACKMEMBER(int, pfnPDMThreadCreate,(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                                   PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
+
+    /**
+     * Gets the VM state.
+     *
+     * @returns VM state.
+     * @param   pDrvIns         The driver instance.
+     * @thread  Any thread (just keep in mind that it's volatile info).
+     */
+    DECLR3CALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMDRVINS pDrvIns));
+
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     /**
      * Creates a async completion template for a driver instance.
@@ -666,7 +676,7 @@ typedef struct PDMDRVHLP
      * @param   pfnCompleted    The completion callback routine.
      * @param   pszDesc         Description.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPDMAsyncCompletionTemplateCreate,(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, 
+    DECLR3CALLBACKMEMBER(int, pfnPDMAsyncCompletionTemplateCreate,(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
                                                                    PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc));
 #endif
 
@@ -679,7 +689,7 @@ typedef PDMDRVHLP *PPDMDRVHLP;
 typedef const PDMDRVHLP *PCPDMDRVHLP;
 
 /** Current DRVHLP version number. */
-#define PDM_DRVHLP_VERSION  0x90020000
+#define PDM_DRVHLP_VERSION  0x90020001
 
 
 
@@ -827,11 +837,19 @@ DECLINLINE(int) PDMDrvHlpPDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThrea
     return pDrvIns->pDrvHlp->pfnPDMThreadCreate(pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 }
 
+/**
+ * @copydoc PDMDRVHLP::pfnVMState
+ */
+DECLINLINE(VMSTATE) PDMDrvHlpVMState(PPDMDRVINS pDrvIns)
+{
+    return pDrvIns->pDrvHlp->pfnVMState(pDrvIns);
+}
+
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 /**
  * @copydoc PDMDRVHLP::pfnPDMAsyncCompletionTemplateCreate
  */
-DECLINLINE(int) PDMDrvHlpPDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, 
+DECLINLINE(int) PDMDrvHlpPDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
                                                           PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc)
 {
     return pDrvIns->pDrvHlp->pfnPDMAsyncCompletionTemplateCreate(pDrvIns, ppTemplate, pfnCompleted, pszDesc);
