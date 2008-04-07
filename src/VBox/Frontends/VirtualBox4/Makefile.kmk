@@ -289,6 +289,10 @@ VirtualBox_QT_UISRCS4 += ui/VBoxTakeSnapshotDlg.ui
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxSnapshotsWgt.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxSnapshotsWgt.ui
 
+VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxVMLogViewer.ui,$(VirtualBox_QT_UISRCS3))
+VirtualBox_QT_UISRCS4 += ui/VBoxVMLogViewer.ui
+
+
 #
 # The targets.
 #
@@ -431,7 +435,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxSnapshotDetailsDlg.h \
 	include/VBoxVMInformationDlg.h \
 	include/VBoxTakeSnapshotDlg.h \
-	include/VBoxSnapshotsWgt.h
+	include/VBoxSnapshotsWgt.h \
+	include/VBoxVMLogViewer.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -509,7 +514,8 @@ VirtualBox_SOURCES = \
 	src/VBoxSnapshotDetailsDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
 	src/VBoxTakeSnapshotDlg.cpp \
-	src/VBoxSnapshotsWgt.cpp
+	src/VBoxSnapshotsWgt.cpp \
+	src/VBoxVMLogViewer.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 VirtualBox_SOURCES += \

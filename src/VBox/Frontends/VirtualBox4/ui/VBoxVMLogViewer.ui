@@ -1,224 +1,111 @@
-<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>VBoxVMLogViewer</class>
-<comment>
-:mode=html:tabSize=4:indentSize=4:noTabs=true:
-:folding=explicit:collapseFolds=1:
-
-     Copyright (C) 2007 innotek GmbH
-    
-     This file is part of VirtualBox Open Source Edition (OSE), as
-     available from http://www.virtualbox.org. This file is free software;
-     you can redistribute it and/or modify it under the terms of the GNU
-     General Public License (GPL) as published by the Free Software
-     Foundation, in version 2 as it comes in the "COPYING" file of the
-     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-</comment>
-<widget class="QMainWindow">
-    <property name="name">
-        <cstring>VBoxVMLogViewer</cstring>
-    </property>
-    <property name="geometry">
-        <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>600</width>
-            <height>480</height>
-        </rect>
-    </property>
-    <property name="caption">
-        <string>Log Viewer</string>
-    </property>
-    <vbox>
-        <property name="name">
-            <cstring>unnamed</cstring>
+<ui version="4.0" >
+ <class>VBoxVMLogViewer</class>
+ <widget class="QMainWindow" name="VBoxVMLogViewer" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>588</width>
+    <height>409</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Log Viewer</string>
+  </property>
+  <property name="windowIcon" >
+   <iconset resource="../VirtualBox.qrc" >:/show_logs_16px.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget" >
+   <layout class="QVBoxLayout" >
+    <item>
+     <widget class="QWidget" native="1" name="mLogsFrame" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" >
+      <item>
+       <widget class="QPushButton" name="mBtnHelp" >
+        <property name="text" >
+         <string>Help</string>
         </property>
-        <property name="margin">
-            <number>10</number>
+        <property name="shortcut" >
+         <string>F1</string>
         </property>
-        <property name="spacing">
-            <number>10</number>
+        <property name="autoDefault" >
+         <bool>true</bool>
         </property>
-        <widget class="QFrame">
-            <property name="name">
-                <cstring>mLogsFrame</cstring>
-            </property>
-            <property name="frameShape">
-                <enum>NoFrame</enum>
-            </property>
-            <property name="frameShadow">
-                <enum>Plain</enum>
-            </property>
-        </widget>
-        <widget class="QLayoutWidget">
-            <property name="name">
-                <cstring>layout2</cstring>
-            </property>
-            <hbox>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>mHelpButton</cstring>
-                    </property>
-                    <property name="text">
-                        <string>Help</string>
-                    </property>
-                    <property name="accel">
-                        <string>F1</string>
-                    </property>
-                </widget>
-                <spacer>
-                    <property name="name">
-                        <cstring>spacer3</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                        <enum>Expanding</enum>
-                    </property>
-                    <property name="sizeHint">
-                        <size>
-                            <width>270</width>
-                            <height>20</height>
-                        </size>
-                    </property>
-                </spacer>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>mFindButton</cstring>
-                    </property>
-                    <property name="text">
-                        <string>&amp;Find</string>
-                    </property>
-                </widget>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>mSaveButton</cstring>
-                    </property>
-                    <property name="text">
-                        <string>&amp;Save</string>
-                    </property>
-                    <property name="autoDefault">
-                        <bool>true</bool>
-                    </property>
-                    <property name="default">
-                        <bool>true</bool>
-                    </property>
-                </widget>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>mRefreshButton</cstring>
-                    </property>
-                    <property name="text">
-                        <string>&amp;Refresh</string>
-                    </property>
-                </widget>
-                <widget class="QPushButton">
-                    <property name="name">
-                        <cstring>mCloseButton</cstring>
-                    </property>
-                    <property name="text">
-                        <string>Close</string>
-                    </property>
-                </widget>
-            </hbox>
-        </widget>
-    </vbox>
-</widget>
-<toolbars>
-</toolbars>
-<connections>
-    <connection>
-        <sender>mHelpButton</sender>
-        <signal>clicked()</signal>
-        <receiver>&amp;vboxProblem()</receiver>
-        <slot>showHelpHelpDialog()</slot>
-    </connection>
-    <connection>
-        <sender>mFindButton</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxVMLogViewer</receiver>
-        <slot>search()</slot>
-    </connection>
-    <connection>
-        <sender>mSaveButton</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxVMLogViewer</receiver>
-        <slot>save()</slot>
-    </connection>
-    <connection>
-        <sender>mRefreshButton</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxVMLogViewer</receiver>
-        <slot>refresh()</slot>
-    </connection>
-    <connection>
-        <sender>mCloseButton</sender>
-        <signal>clicked()</signal>
-        <receiver>VBoxVMLogViewer</receiver>
-        <slot>close()</slot>
-    </connection>
-</connections>
-<includes>
-    <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
-    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
-    <include location="global" impldecl="in implementation">qsizegrip.h</include>
-    <include location="global" impldecl="in implementation">qstatusbar.h</include>
-    <include location="global" impldecl="in implementation">qtabwidget.h</include>
-    <include location="global" impldecl="in implementation">qtextbrowser.h</include>
-    <include location="global" impldecl="in implementation">qdir.h</include>
-    <include location="global" impldecl="in implementation">qfiledialog.h</include>
-    <include location="global" impldecl="in implementation">qdatetime.h</include>
-    <include location="global" impldecl="in implementation">qobjectlist.h</include>
-    <include location="global" impldecl="in implementation">qcheckbox.h</include>
-    <include location="global" impldecl="in implementation">qlabel.h</include>
-    <include location="global" impldecl="in implementation">qlineedit.h</include>
-    <include location="global" impldecl="in implementation">qtoolbutton.h</include>
-    <include location="global" impldecl="in implementation">qmessagebox.h</include>
-</includes>
-<forwards>
-    <forward>class QSizeGrip</forward>
-    <forward>class QTabWidget</forward>
-    <forward>class QTextBrowser</forward>
-    <forward>class VBoxLogSearchPanel</forward>
-</forwards>
-<variables>
-    <variable access="private">typedef QMap &lt;QString, VBoxVMLogViewer*&gt; LogViewersMap;</variable>
-    <variable access="private">static LogViewersMap mSelfArray;</variable>
-    <variable access="private">bool mFirstRun;</variable>
-    <variable access="private">bool mIsPolished;</variable>
-    <variable access="private">QSizeGrip *mSizeGrip;</variable>
-    <variable access="private">CMachine mMachine;</variable>
-    <variable access="private">QTabWidget *mLogList;</variable>
-    <variable access="private">QStringList mLogFilesList;</variable>
-    <variable access="private">QPushButton *mDefaultButton;</variable>
-    <variable access="private">VBoxLogSearchPanel *mSearchPanel;</variable>
-</variables>
-<slots>
-    <slot access="pritave">refresh()</slot>
-    <slot access="private">save()</slot>
-    <slot access="private">search()</slot>
-</slots>
-<functions>
-    <function specifier="static">createLogViewer( CMachine&amp; )</function>
-    <function access="private">init()</function>
-    <function access="private">destroy()</function>
-    <function>setup( CMachine &amp; )</function>
-    <function returnType="const CMachine&amp;">machine()</function>
-    <function access="pritave">languageChangeImp()</function>
-    <function access="pritave" returnType="QPushButton*">searchDefaultButton()</function>
-    <function access="protected" returnType="bool">eventFilter( QObject*, QEvent* )</function>
-    <function access="protected" returnType="bool">event( QEvent* )</function>
-    <function access="protected">keyPressEvent( QKeyEvent* )</function>
-    <function access="protected">showEvent( QShowEvent* )</function>
-    <function access="protected">resizeEvent( QResizeEvent* )</function>
-    <function access="pritave">loadLogFile( const QString &amp; )</function>
-    <function access="pritave" returnType="QTextBrowser*">createLogPage( const QString &amp; )</function>
-    <function returnType="QTextBrowser*">currentLogPage()</function>
-</functions>
-<pixmapinproject/>
-<layoutdefaults spacing="6" margin="11"/>
-</UI>
+       </widget>
+      </item>
+      <item>
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="mBtnFind" >
+        <property name="text" >
+         <string>&amp;Find</string>
+        </property>
+        <property name="autoDefault" >
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="mBtnSave" >
+        <property name="text" >
+         <string>&amp;Save</string>
+        </property>
+        <property name="autoDefault" >
+         <bool>true</bool>
+        </property>
+        <property name="default" >
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="mBtnRefresh" >
+        <property name="text" >
+         <string>&amp;Refresh</string>
+        </property>
+        <property name="autoDefault" >
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="mBtnClose" >
+        <property name="text" >
+         <string>&amp;Close</string>
+        </property>
+        <property name="autoDefault" >
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar" />
+ </widget>
+ <resources>
+  <include location="../VirtualBox.qrc" />
+ </resources>
+ <connections/>
+</ui>
