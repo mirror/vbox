@@ -1716,30 +1716,6 @@ static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
 #ifdef IN_RING3
 
 /**
- * Check if there is at least one free receive buffer available.
- */
-static int pcnetCanReceiveNoSync(PCNetState *pData)
-{
-    if (RT_UNLIKELY(CSR_DRX(pData) || CSR_STOP(pData) || CSR_SPND(pData)))
-        return 0;
-
-    if (HOST_IS_OWNER(CSR_CRST(pData)) && pData->GCRDRA)
-        pcnetRdtePoll(pData);
-
-    if (HOST_IS_OWNER(CSR_CRST(pData)))
-    {
-        /** @todo Notify the guest _now_. Will potentially increase the interrupt load */
-        pData->aCSR[0] |= 0x1000; /* Set MISS flag */
-        return 0;
-    }
-
-    /* byte count stored in two's complement 12 bits wide */
-    Log(("#%d pcnetCanReceiveNoSync %d bytes\n", PCNET_INST_NR,
-         4096 - CSR_CRBC(pData)));
-    return 4096 - CSR_CRBC(pData);
-}
-
-/**
  * Write data into guest receive buffers.
  */
 static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
@@ -2566,9 +2542,8 @@ static void pcnetPollTimer(PCNetState *pData)
 }
 
 
-static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_value)
+static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
 {
-    uint16_t val = new_value;
     int      rc  = VINF_SUCCESS;
 #ifdef PCNET_DEBUG_CSR
     Log(("#%d pcnetCSRWriteU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
@@ -4250,14 +4225,30 @@ static DECLCALLBACK(void *) pcnetQueryInterface(struct PDMIBASE *pInterface, PDM
  */
 static DECLCALLBACK(size_t) pcnetCanReceive(PPDMINETWORKPORT pInterface)
 {
-    size_t cb;
+    size_t cb = 0;
     int    rc;
     PCNetState *pData = INETWORKPORT_2_DATA(pInterface);
 
     rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
-    cb = pcnetCanReceiveNoSync(pData);
+    if (RT_LIKELY(!CSR_DRX(pData) && !CSR_STOP(pData) && !CSR_SPND(pData)))
+    {
+        if (HOST_IS_OWNER(CSR_CRST(pData)) && pData->GCRDRA)
+            pcnetRdtePoll(pData);
+
+        if (HOST_IS_OWNER(CSR_CRST(pData)))
+        {
+            /** @todo Notify the guest _now_. Will potentially increase the interrupt load */
+            pData->aCSR[0] |= 0x1000; /* Set MISS flag */
+        }
+        else
+        {
+            /* byte count stored in two's complement 12 bits wide */
+            Log(("#%d pcnetCanReceiveNoSync %d bytes\n", PCNET_INST_NR, 4096 - CSR_CRBC(pData)));
+            cb = 4096 - CSR_CRBC(pData);
+        }
+    }
 
     PDMCritSectLeave(&pData->CritSect);
     return cb;
