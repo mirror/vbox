@@ -39,6 +39,7 @@
 #include <QMutex>
 #include <QToolButton>
 #include <QProcess>
+#include <QThread>
 
 #ifdef Q_WS_X11
 #include <QTextBrowser>
