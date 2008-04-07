@@ -1,0 +1,42 @@
+
+VirtualBox for OpenSolaris
+--------------------------
+
+Installing:
+-----------
+
+* Important Note:
+You must boot OpenSolaris in the same instruction set as the VirtualBox install package.
+This means if you are installing the 64-bit version of VirtualBox you MUST boot in
+64-bit mode. This is because the installer will setup the VirtualBox driver.
+
+Use the command "isainfo -k" to check what instruction set is currently being used. If
+the output is "amd64" you have booted in 64-bit mode, otherwise it is 32-bit.
+
+
+After extracting the contents of the tar.gz file perform the following steps:
+
+1. Login as root using the "su" command.
+
+2. Run the command:
+        pkgadd -d VirtualBox-opensolaris-amd64-1.5.51-r28040-beta1
+
+3. The installer would then ask you to "Select package(s) you wish to process"
+        For this type "1" or "all".
+
+4. Then type "y" when asked about continuing with the installation.
+
+Now all the necessary files would be installed on your system.
+Start VirtualBox by typing "VirtualBox" from a terminal.
+
+
+Un-Installating:
+----------------
+
+To remove VirtualBox from your system perform the following steps:
+
+1. Login as root using the "su" command.
+
+2. Run the command:
+        pkgrm INNOvbox
+
