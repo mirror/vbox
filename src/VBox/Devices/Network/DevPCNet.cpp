@@ -192,16 +192,13 @@ struct PCNetState_st
     bool                                fLinkUp;
     /** If set the link is temporarily down because of a saved state load. */
     bool                                fLinkTempDown;
-    /** This flag is set on SavePrep to prevent altering of memory after pgmR3Save() was called
-     * @todo r=bird: This is inadequate, we are not supposed to do anything at all while the VM
-     *               isn't running. Naturally, the problem really lies with the driver and not
-     *               the pcnet code. We will have to address this properly at some time. */
-    bool                                fSaving;
 
     /** Number of times we've reported the link down. */
     RTUINT                              cLinkDownReported;
     /** The configured MAC address. */
     PDMMAC                              MacConfigured;
+    /** Alignment padding. */
+    uint8_t                             Alignment4[HC_ARCH_BITS == 64 ? 6 : 2];
 
     /** The LED. */
     PDMLED                              Led;
@@ -4022,8 +4019,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 
 
 /**
- * Prepares for state saving.
- * We must stop the RX process to prevent altering of the main memory after saving.
+ * Serializes the receive thread, it may be working inside the critsect.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
@@ -4035,12 +4031,8 @@ static DECLCALLBACK(int) pcnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 
     int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
-
-    pData->fSaving = true;
-    /* From now on drop all received packets to prevent altering of main memory after
-     * pgmR3Save() was called but before the RX thread is terminated */
-
     PDMCritSectLeave(&pData->CritSect);
+
     return VINF_SUCCESS;
 }
 
@@ -4087,20 +4079,20 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 
 
 /**
- * Cleanup after saving.
+ * Serializes the receive thread, it may be working inside the critsect.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to save the state to.
  */
-static DECLCALLBACK(int) pcnetSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
 
     int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
-    pData->fSaving = false;
     PDMCritSectLeave(&pData->CritSect);
+
     return VINF_SUCCESS;
 }
 
@@ -4273,14 +4265,10 @@ static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKPORT pInterface, const void *p
     rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
-    if (!pData->fSaving)
-    {
-        if (cb > 70) /* unqualified guess */
-            pData->Led.Asserted.s.fReading = pData->Led.Actual.s.fReading = 1;
-        pcnetReceiveNoSync(pData, (const uint8_t *)pvBuf, cb);
-        pData->Led.Actual.s.fReading = 0;
-    }
-    /* otherwise junk the data to Nirwana. */
+    if (cb > 70) /* unqualified guess */
+        pData->Led.Asserted.s.fReading = pData->Led.Actual.s.fReading = 1;
+    pcnetReceiveNoSync(pData, (const uint8_t *)pvBuf, cb);
+    pData->Led.Actual.s.fReading = 0;
 
     PDMCritSectLeave(&pData->CritSect);
     STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
@@ -4683,11 +4671,10 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         AssertMsgFailed(("pfnTMTimerCreate pcnetTimerRestore -> %Vrc\n", rc));
         return rc;
     }
-/** @todo r=bird: we're not locking down pcnet properly during saving and loading! */
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
                               PCNET_SAVEDSTATE_VERSION, sizeof(*pData),
-                              pcnetSavePrep, pcnetSaveExec, pcnetSaveDone,
-                              NULL, pcnetLoadExec, NULL);
+                              pcnetSavePrep, pcnetSaveExec, NULL,
+                              pcnetLoadPrep, pcnetLoadExec, NULL);
     if (VBOX_FAILURE(rc))
         return rc;
 
