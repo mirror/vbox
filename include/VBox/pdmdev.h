@@ -2227,9 +2227,17 @@ typedef struct PDMDEVHLP
      */
     DECLR3CALLBACKMEMBER(int, pfnPhysGCPtr2GCPhys, (PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys));
 
+    /**
+     * Gets the VM state.
+     *
+     * @returns VM state.
+     * @param   pDevIns         The device instance.
+     * @thread  Any thread (just keep in mind that it's volatile info).
+     */
+    DECLR3CALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMDEVINS pDevIns));
+
     /** Space reserved for future members.
      * @{ */
-    DECLR3CALLBACKMEMBER(void, pfnReserved3,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved5,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved6,(void));
@@ -2670,7 +2678,7 @@ typedef R3PTRTYPE(struct PDMDEVHLP *) PPDMDEVHLP;
 typedef R3PTRTYPE(const struct PDMDEVHLP *) PCPDMDEVHLP;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf2050001
+#define PDM_DEVHLP_VERSION  0xf2050002
 
 
 /**
@@ -3350,6 +3358,14 @@ DECLINLINE(int) PDMDevHlpPhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT
 DECLINLINE(int) PDMDevHlpPhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
     return pDevIns->pDevHlp->pfnPhysGCPtr2GCPhys(pDevIns, GCPtr, pGCPhys);
+}
+
+/**
+ * @copydoc PDMDEVHLP::pfnVMState
+ */
+DECLINLINE(VMSTATE) PDMDevHlpVMState(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pDevHlp->pfnVMState(pDevIns);
 }
 
 /**

@@ -143,6 +143,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pv
 static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb);
 static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
+static DECLCALLBACK(VMSTATE) pdmR3DevHlp_VMState(PPDMDEVINS pDevIns);
 static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable);
 static DECLCALLBACK(int) pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns);
@@ -267,10 +268,15 @@ static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @} */
 
 /** @def PDMDEV_ASSERT_DEVINS
- * Asserts the validity of the driver instance.
+ * Asserts the validity of the device instance.
  */
 #ifdef VBOX_STRICT
-# define PDMDEV_ASSERT_DEVINS(pDevIns)   do { Assert(pDevIns); Assert(pDevIns->u32Version == PDM_DEVINS_VERSION); Assert(pDevIns->pvInstanceDataR3 == (void *)&pDevIns->achInstanceData[0]); } while (0)
+# define PDMDEV_ASSERT_DEVINS(pDevIns)   \
+    do { \
+        AssertPtr(pDevIns); \
+        Assert(pDevIns->u32Version == PDM_DEVINS_VERSION); \
+        Assert(pDevIns->pvInstanceDataR3 == (void *)&pDevIns->achInstanceData[0]); \
+    } while (0)
 #else
 # define PDMDEV_ASSERT_DEVINS(pDevIns)   do { } while (0)
 #endif
@@ -333,7 +339,7 @@ const PDMDEVHLP g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_UTCNow,
     pdmR3DevHlp_PDMThreadCreate,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
-    0,
+    pdmR3DevHlp_VMState,
     0,
     0,
     0,
@@ -427,7 +433,7 @@ const PDMDEVHLP g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_UTCNow,
     pdmR3DevHlp_PDMThreadCreate,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
-    0,
+    pdmR3DevHlp_VMState,
     0,
     0,
     0,
@@ -3284,6 +3290,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GC
     return rc;
 }
 
+
 /** @copydoc PDMDEVHLP::pfnPhysGCPtr2GCPhys */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
@@ -3301,6 +3308,19 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPT
     LogFlow(("pdmR3DevHlp_PhysGCPtr2GCPhys: caller='%s'/%d: returns %Vrc *pGCPhys=%VGp\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *pGCPhys));
 
     return rc;
+}
+
+
+/** @copydoc PDMDEVHLP::pfnVMState */
+static DECLCALLBACK(VMSTATE) pdmR3DevHlp_VMState(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    VMSTATE enmVMState = VMR3GetState(pDevIns->Internal.s.pVMHC);
+
+    LogFlow(("pdmR3DevHlp_VMState: caller='%s'/%d: returns %d (%s)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance,
+             enmVMState, VMR3GetStateName(enmVMState)));
+    return enmVMState;
 }
 
 
