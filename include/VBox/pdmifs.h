@@ -1519,7 +1519,7 @@ typedef enum PDMPARALLELPORTMODE
     PDM_PARALLEL_PORT_MODE_EPP,
     PDM_PARALLEL_PORT_MODE_ECP
 } PDMPARALLELPORTMODE;
- 
+
 /** Pointer to a host parallel port interface. */
 typedef struct PDMIHOSTPARALLELPORT *PPDMIHOSTPARALLELPORT;
 /**
@@ -1590,7 +1590,7 @@ typedef struct PDMIHOSTPARALLELCONNECTOR
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnWriteControl,(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t fReg));
- 
+
     /**
      * Read control register bits.
      *
