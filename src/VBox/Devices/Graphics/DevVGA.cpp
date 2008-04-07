@@ -104,6 +104,7 @@
 #include "Builtins.h"
 #include "Builtins2.h"
 
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -144,6 +145,7 @@ static const uint8_t g_abLogoF12BootText[] =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
+
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
@@ -3580,25 +3582,25 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
             {
                 case LOGO_CMD_SET_OFFSET:
                     pData->offLogoData = u32;
-                break;
+                    break;
                 case LOGO_CMD_SET_X:
-                    pData->LogoX = u32;
-                break;
+                    pData->xLogo = u32;
+                    break;
                 case LOGO_CMD_SET_Y:
-                    pData->LogoY = u32;
-                break;
+                    pData->yLogo = u32;
+                    break;
                 case LOGO_CMD_SET_WIDTH:
-                    pData->LogoWidth = u32;
-                break;
+                    pData->cxLogo = u32;
+                    break;
                 case LOGO_CMD_SET_HEIGHT:
-                    pData->LogoHeight = u32;
-                break;
+                    pData->cyLogo = u32;
+                    break;
                 case LOGO_CMD_SET_DEPTH:
-                    pData->LogoDepth = u32;
-                break;
+                    pData->cBitsLogo = u32;
+                    break;
                 case LOGO_CMD_SET_PALSIZE:
-                    pData->PalSize = u32;
-                break;
+                    pData->cbPal = u32;
+                    break;
                 default:
                     Log(("vbeIOPortWriteCMDLogo: invalid command %d\n", pData->LogoCommand));
                     break;
@@ -3620,12 +3622,14 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
             case LOGO_CMD_SET_DEPTH:
             case LOGO_CMD_SET_PALSIZE:
                 pData->LogoCommand = u32 & 0xFF00;
-            break;
+                break;
+
             case LOGO_CMD_SET_DEFAULT:
                 pData->BmpImage = LOGO_IMAGE_DEFAULT;
                 pData->offLogoData = 0;
                 pData->LogoCommand = LOGO_CMD_NOP;
-            break;
+                break;
+
             case LOGO_CMD_SET_PAL:
             {
                 uint8_t    *pu8Pal;
@@ -3635,23 +3639,23 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 else
                     pu8Pal = (uint8_t *)&g_abVgaDefBiosLogo[pData->offLogoData];
 
-                for (i = 0; i <= pData->PalSize; i++)
+                for (i = 0; i <= pData->cbPal; i++)
                 {
-                    uint8_t  b;
-                    uint32_t p = 0;
+                    uint32_t u32Pal = 0;
 
                     for (j = 0; j < 3; j++)
                     {
-                        p <<= 8;
-                        b = (uint8_t)*pu8Pal++;
-                        p |= b;
+                        uint8_t b = *pu8Pal++;
+                        u32Pal <<= 8;
+                        u32Pal |= b;
                     }
-                    *pu8Pal++;
+                    pu8Pal++; /* skip unused byte */
 
-                    pData->Palette[i] = p;
+                    pData->au32Palette[i] = u32Pal;
                 }
+                break;
             }
-            break;
+
             case LOGO_CMD_CLS:
             {
                 /* Clear vram */
@@ -3661,8 +3665,9 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     for (j = 0; j < LOGO_MAX_HEIGHT; j++)
                         *pu32TmpPtr++ = 0;
                 }
+                break;
             }
-            break;
+
             case LOGO_CMD_SHOW_BMP:
             case LOGO_CMD_SHOW_TEXT:
             {
@@ -3671,21 +3676,18 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 /*
                  * Determin bytes per pixel in the destination buffer.
                  */
-                size_t      scr_cx = LOGO_MAX_WIDTH;
-                size_t      scr_cy = LOGO_MAX_HEIGHT;
-
                 if ((u32 & 0xFF00) == LOGO_CMD_SHOW_TEXT)
                 {
-                    pData->LogoX = LOGO_F12TEXT_X;
-                    pData->LogoY = LOGO_F12TEXT_Y;
+                    pData->xLogo = LOGO_F12TEXT_X;
+                    pData->yLogo = LOGO_F12TEXT_Y;
 
-                    pData->LogoWidth = LOGO_F12TEXT_WIDTH;
-                    pData->LogoHeight = LOGO_F12TEXT_HEIGHT;
-                    pData->LogoDepth = 1;
+                    pData->cxLogo = LOGO_F12TEXT_WIDTH;
+                    pData->cyLogo = LOGO_F12TEXT_HEIGHT;
+                    pData->cBitsLogo = 1;
                 }
 
-                uint32_t        cx = pData->LogoWidth;
-                uint32_t        cy = pData->LogoHeight;
+                uint32_t        cx = pData->cxLogo;
+                uint32_t        cy = pData->cyLogo;
                 const uint8_t  *pu8Src;
                 uint8_t        *pu8TmpPtr;
                 size_t          cbPadBytes  = 0;
@@ -3694,33 +3696,36 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 uint32_t        cyLeft      = cy;
                 uint16_t        i;
 
-                pu8Dst += pData->LogoX * 4 + pData->LogoY * cbLineDst;
+                pu8Dst += pData->xLogo * 4 + pData->yLogo * cbLineDst;
 
-                switch (pData->LogoDepth)
+                switch (pData->cBitsLogo)
                 {
                     case 1:
-                        pu8Dst += pData->LogoHeight * cbLineDst;
+                        pu8Dst += pData->cyLogo * cbLineDst;
                         cbPadBytes = 0;
-                    break;
+                        break;
+
                     case 4:
-                        if (((pData->LogoWidth % 8) == 0) || ((pData->LogoWidth % 8) > 6))
+                        if (((pData->cxLogo % 8) == 0) || ((pData->cxLogo % 8) > 6))
                             cbPadBytes = 0;
-                        else if ((pData->LogoWidth % 8) <= 2)
+                        else if ((pData->cxLogo % 8) <= 2)
                             cbPadBytes = 3;
-                        else if ((pData->LogoWidth % 8) <= 4)
+                        else if ((pData->cxLogo % 8) <= 4)
                             cbPadBytes = 2;
                         else
                             cbPadBytes = 1;
-                    break;
+                        break;
+
                     case 8:
-                        cbPadBytes = ((pData->LogoWidth % 4) == 0) ? 0 : (4 - (pData->LogoWidth % 4));
-                    break;
+                        cbPadBytes = ((pData->cxLogo % 4) == 0) ? 0 : (4 - (pData->cxLogo % 4));
+                        break;
+
                     case 24:
                         cbPadBytes = cx % 4;
-                    break;
+                        break;
                 }
 
-                if (pData->LogoDepth == 1)
+                if (pData->cBitsLogo == 1)
                     pu8Src = &g_abLogoF12BootText[0];
                 else
                 {
@@ -3736,14 +3741,14 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 {
                     pu8TmpPtr = pu8Dst;
 
-                    if (pData->LogoDepth != 1)
+                    if (pData->cBitsLogo != 1)
                         j = 0;
 
                     for (i = 0; i < cx; i++)
                     {
                         uint8_t pix;
 
-                        switch (pData->LogoDepth)
+                        switch (pData->cBitsLogo)
                         {
                             case 1:
                             {
@@ -3758,53 +3763,52 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                                 *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
                                 *pu8TmpPtr++;
 
-                                if (j++ >= 7) j = 0;
+                                j = (j + 1) % 8;
+                                break;
                             }
-                            break;
+
                             case 4:
                             {
-                                uint32_t p;
-
                                 if (!j)
                                     c = *pu8Src++;
 
                                 pix = (c >> 4) & 0xF;
                                 c <<= 4;
 
-                                p = pData->Palette[pix];
+                                uint32_t u32Pal = pData->au32Palette[pix];
 
-                                pix = (p >> 16) & 0xFF;
+                                pix = (u32Pal >> 16) & 0xFF;
                                 *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                                pix = (p >> 8) & 0xFF;
+                                pix = (u32Pal >> 8) & 0xFF;
                                 *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                                pix = p & 0xFF;
+                                pix = u32Pal & 0xFF;
                                 *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
                                 *pu8TmpPtr++;
 
-                                if (j++ >= 1) j = 0;
+                                j = (j + 1) % 2;
+                                break;
                             }
-                            break;
+
                             case 8:
                             {
-                                uint32_t p;
+                                uint32_t u32Pal = pData->au32Palette[*pu8Src++];
 
-                                p = pData->Palette[*pu8Src++];
-
-                                pix = (p >> 16) & 0xFF;
+                                pix = (u32Pal >> 16) & 0xFF;
                                 *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                                pix = (p >> 8) & 0xFF;
+                                pix = (u32Pal >> 8) & 0xFF;
                                 *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                                pix = p & 0xFF;
+                                pix = u32Pal & 0xFF;
                                 *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
                                 *pu8TmpPtr++;
+                                break;
                             }
-                            break;
+
                             case 24:
                                 *pu8TmpPtr++ = *pu8Src++ * cbStep / LOGO_SHOW_STEPS;
                                 *pu8TmpPtr++ = *pu8Src++ * cbStep / LOGO_SHOW_STEPS;
                                 *pu8TmpPtr++ = *pu8Src++ * cbStep / LOGO_SHOW_STEPS;
                                 *pu8TmpPtr++;
-                            break;
+                                break;
                         }
                     }
 
@@ -3815,11 +3819,13 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 /*
                  * Invalidate the area.
                  */
-                pData->pDrv->pfnUpdateRect(pData->pDrv, 0, 0, scr_cx, scr_cy);
+/** @todo cannot call this here. Just set the appropriate dirty bits. */
+                pData->pDrv->pfnUpdateRect(pData->pDrv, 0, 0, LOGO_MAX_WIDTH, LOGO_MAX_WIDTH);
 
                 pData->LogoCommand = LOGO_CMD_NOP;
+                break;
             }
-            break;
+
             default:
                 Log(("vbeIOPortWriteCMDLogo: invalid command %d\n", u32));
                 pData->LogoCommand = LOGO_CMD_NOP;
@@ -5448,7 +5454,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             rc = RTFileGetSize(FileLogo, &cbFile);
             if (VBOX_SUCCESS(rc))
             {
-                if (cbFile > 0)
+                if (cbFile > 0 && cbFile < 32*_1M)
                     LogoHdr.cbLogo = (uint32_t)cbFile;
                 else
                     rc = VERR_TOO_MUCH_DATA;
@@ -5460,7 +5466,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
              * Ignore failure and fall back to the default logo.
              */
             LogRel(("vgaR3Construct: Failed to open logo file '%s', rc=%Vrc!\n", pData->pszLogoFile, rc));
-            RTFileClose(FileLogo);
+            if (FileLogo != NIL_RTFILE)
+                RTFileClose(FileLogo);
             FileLogo = NIL_RTFILE;
             MMR3HeapFree(pData->pszLogoFile);
             pData->pszLogoFile = NULL;
