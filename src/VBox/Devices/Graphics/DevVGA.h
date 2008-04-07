@@ -330,19 +330,19 @@ typedef struct VGAState {
     uint8_t                     BmpImage;
     uint8_t                     Padding8;       /**< Alignment padding. */
     /** Logo X. */
-    uint16_t                    LogoX;
+    uint16_t                    xLogo;
     /** Logo Y. */
-    uint16_t                    LogoY;
+    uint16_t                    yLogo;
     /** Logo width. */
-    uint16_t                    LogoWidth;
+    uint16_t                    cxLogo;
     /** Logo height. */
-    uint16_t                    LogoHeight;
+    uint16_t                    cyLogo;
     /** Logo depth. */
-    uint16_t                    LogoDepth;
+    uint16_t                    cBitsLogo;
     /** Palette size. */
-    uint16_t                    PalSize;
+    uint16_t                    cbPal;
     /** Palette data. */
-    uint32_t                    Palette[256];
+    uint32_t                    au32Palette[256];
 #endif /* VBOX */
 } VGAState;
 #ifdef VBOX
