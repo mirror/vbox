@@ -28,6 +28,7 @@
 #include <QToolButton>
 #include <QStatusBar>
 #include <QDir>
+#include <QThread>
 
 /* These notifications are used to notify the GUI thread about different
  * downloading events: Downloading Started, Downloading in Progress,
