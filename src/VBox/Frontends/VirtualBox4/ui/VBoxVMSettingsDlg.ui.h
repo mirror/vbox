@@ -8,6 +8,7 @@
 #include <Q3HBoxLayout>
 #include <QEvent>
 #include <Q3VBoxLayout>
+#include <QToolTip>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):

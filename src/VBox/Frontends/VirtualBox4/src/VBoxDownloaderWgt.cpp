@@ -269,7 +269,7 @@ bool VBoxDownloaderWgt::event (QEvent *aEvent)
                 /// @todo read the todo above (probably should just parametrize
                 /// the title)
                 QString target = vboxGlobal().getExistingDirectory (
-                    QFileInfo (mTarget).absolutePath(), this, "selectSaveDir",
+                    QFileInfo (mTarget).absolutePath(), this, 
                     tr ("Select folder to save Guest Additions image to"), true);
                 if (target.isNull())
                     QTimer::singleShot (0, this, SLOT (suicide()));

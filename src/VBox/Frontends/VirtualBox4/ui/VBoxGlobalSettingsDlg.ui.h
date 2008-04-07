@@ -842,8 +842,7 @@ void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
         initDir = vboxGlobal().virtualBox().GetHomeFolder();
 
     QString path = le == leVRDPLib ?
-        VBoxGlobal::getOpenFileName (initDir, QString::null, this,
-                                     "getFile", QString::null) :
+        VBoxGlobal::getOpenFileName (initDir, QString::null, this, QString::null) :
         VBoxGlobal::getExistingDirectory (initDir, this);
     if (path.isNull())
         return;

@@ -23,25 +23,12 @@
 
 #include "VBoxGlobalSettings.h"
 
-#include <qapplication.h>
-#include <qpixmap.h>
-#include <qicon.h>
-#include <qcolor.h>
-#include <quuid.h>
-#include <qthread.h>
-#include <q3popupmenu.h>
-#include <QMenu>
-#include <qtooltip.h>
-
-#include <q3ptrvector.h>
-#include <q3valuevector.h>
-#include <q3valuelist.h>
-#include <q3dict.h>
-#include <q3intdict.h>
-//Added by qt3to4:
-#include <QLabel>
-#include <QEvent>
+/* Qt includes */
+#include <QApplication>
 #include <QLayout>
+#include <QHash>
+#include <QPixmap>
+#include <QMenu>
 
 class QAction;
 class QLabel;
@@ -65,7 +52,7 @@ struct VBoxMedia
     Status status;
 };
 
-typedef Q3ValueList <VBoxMedia> VBoxMediaList;
+typedef QList <VBoxMedia> VBoxMediaList;
 
 // VirtualBox callback events
 ////////////////////////////////////////////////////////////////////////////////
@@ -195,7 +182,7 @@ public:
 
     QPixmap toIcon (KMachineState s) const
     {
-        QPixmap *pm = mStateIcons [s];
+        QPixmap *pm = mStateIcons.value (s);
         AssertMsg (pm, ("Icon for VM state %d must be defined", s));
         return pm ? *pm : QPixmap();
     }
@@ -203,26 +190,26 @@ public:
     const QColor &toColor (KMachineState s) const
     {
         static const QColor none;
-        AssertMsg (vm_state_color [s], ("No color for %d", s));
-        return vm_state_color [s] ? *vm_state_color [s] : none;
+        AssertMsg (vm_state_color.value (s), ("No color for %d", s));
+        return vm_state_color.value (s) ? *vm_state_color.value(s) : none;
     }
 
     QString toString (KMachineState s) const
     {
-        AssertMsg (!machineStates [s].isNull(), ("No text for %d", s));
-        return machineStates [s];
+        AssertMsg (!machineStates.value (s).isNull(), ("No text for %d", s));
+        return machineStates.value (s);
     }
 
     QString toString (KSessionState s) const
     {
-        AssertMsg (!sessionStates [s].isNull(), ("No text for %d", s));
-        return sessionStates [s];
+        AssertMsg (!sessionStates.value (s).isNull(), ("No text for %d", s));
+        return sessionStates.value (s);
     }
 
     QString toString (KStorageBus t) const
     {
-        AssertMsg (!storageBuses [t].isNull(), ("No text for %d", t));
-        return storageBuses [t];
+        AssertMsg (!storageBuses.value (t).isNull(), ("No text for %d", t));
+        return storageBuses.value (t);
     }
 
     QString toString (KStorageBus t, LONG c) const;
@@ -230,38 +217,38 @@ public:
 
     QString toString (KHardDiskType t) const
     {
-        AssertMsg (!diskTypes [t].isNull(), ("No text for %d", t));
-        return diskTypes [t];
+        AssertMsg (!diskTypes.value (t).isNull(), ("No text for %d", t));
+        return diskTypes.value (t);
     }
 
     QString toString (KHardDiskStorageType t) const
     {
-        AssertMsg (!diskStorageTypes [t].isNull(), ("No text for %d", t));
-        return diskStorageTypes [t];
+        AssertMsg (!diskStorageTypes.value (t).isNull(), ("No text for %d", t));
+        return diskStorageTypes.value (t);
     }
 
     QString toString (KVRDPAuthType t) const
     {
-        AssertMsg (!vrdpAuthTypes [t].isNull(), ("No text for %d", t));
-        return vrdpAuthTypes [t];
+        AssertMsg (!vrdpAuthTypes.value (t).isNull(), ("No text for %d", t));
+        return vrdpAuthTypes.value (t);
     }
 
     QString toString (KPortMode t) const
     {
-        AssertMsg (!portModeTypes [t].isNull(), ("No text for %d", t));
-        return portModeTypes [t];
+        AssertMsg (!portModeTypes.value (t).isNull(), ("No text for %d", t));
+        return portModeTypes.value (t);
     }
 
     QString toString (KUSBDeviceFilterAction t) const
     {
-        AssertMsg (!usbFilterActionTypes [t].isNull(), ("No text for %d", t));
-        return usbFilterActionTypes [t];
+        AssertMsg (!usbFilterActionTypes.value (t).isNull(), ("No text for %d", t));
+        return usbFilterActionTypes.value (t);
     }
 
     QString toString (KClipboardMode t) const
     {
-        AssertMsg (!clipboardTypes [t].isNull(), ("No text for %d", t));
-        return clipboardTypes [t];
+        AssertMsg (!clipboardTypes.value (t).isNull(), ("No text for %d", t));
+        return clipboardTypes.value (t);
     }
 
     KClipboardMode toClipboardModeType (const QString &s) const
@@ -274,8 +261,8 @@ public:
 
     QString toString (KIDEControllerType t) const
     {
-        AssertMsg (!ideControllerTypes [t].isNull(), ("No text for %d", t));
-        return ideControllerTypes [t];
+        AssertMsg (!ideControllerTypes.value (t).isNull(), ("No text for %d", t));
+        return ideControllerTypes.value (t);
     }
 
     KIDEControllerType toIDEControllerType (const QString &s) const
@@ -326,8 +313,8 @@ public:
 
     QString toString (KDeviceType t) const
     {
-        AssertMsg (!deviceTypes [t].isNull(), ("No text for %d", t));
-        return deviceTypes [t];
+        AssertMsg (!deviceTypes.value (t).isNull(), ("No text for %d", t));
+        return deviceTypes.value (t);
     }
 
     KDeviceType toDeviceType (const QString &s) const
@@ -342,8 +329,8 @@ public:
 
     QString toString (KAudioDriverType t) const
     {
-        AssertMsg (!audioDriverTypes [t].isNull(), ("No text for %d", t));
-        return audioDriverTypes [t];
+        AssertMsg (!audioDriverTypes.value (t).isNull(), ("No text for %d", t));
+        return audioDriverTypes.value (t);
     }
 
     KAudioDriverType toAudioDriverType (const QString &s) const
@@ -356,8 +343,8 @@ public:
 
     QString toString (KAudioControllerType t) const
     {
-        AssertMsg (!audioControllerTypes [t].isNull(), ("No text for %d", t));
-        return audioControllerTypes [t];
+        AssertMsg (!audioControllerTypes.value (t).isNull(), ("No text for %d", t));
+        return audioControllerTypes.value (t);
     }
 
     KAudioControllerType toAudioControllerType (const QString &s) const
@@ -370,8 +357,8 @@ public:
 
     QString toString (KNetworkAdapterType t) const
     {
-        AssertMsg (!networkAdapterTypes [t].isNull(), ("No text for %d", t));
-        return networkAdapterTypes [t];
+        AssertMsg (!networkAdapterTypes.value (t).isNull(), ("No text for %d", t));
+        return networkAdapterTypes.value (t);
     }
 
     KNetworkAdapterType toNetworkAdapterType (const QString &s) const
@@ -384,8 +371,8 @@ public:
 
     QString toString (KNetworkAttachmentType t) const
     {
-        AssertMsg (!networkAttachmentTypes [t].isNull(), ("No text for %d", t));
-        return networkAttachmentTypes [t];
+        AssertMsg (!networkAttachmentTypes.value (t).isNull(), ("No text for %d", t));
+        return networkAttachmentTypes.value (t);
     }
 
     KNetworkAttachmentType toNetworkAttachmentType (const QString &s) const
@@ -398,8 +385,8 @@ public:
 
     QString toString (KUSBDeviceState aState) const
     {
-        AssertMsg (!USBDeviceStates [aState].isNull(), ("No text for %d", aState));
-        return USBDeviceStates [aState];
+        AssertMsg (!USBDeviceStates.value (aState).isNull(), ("No text for %d", aState));
+        return USBDeviceStates.value (aState);
     }
 
     QStringList COMPortNames() const;
@@ -512,14 +499,12 @@ public:
     static QString systemLanguageId();
 
     static QString getExistingDirectory (const QString &aDir, QWidget *aParent,
-                                         const char *aName = 0,
                                          const QString &aCaption = QString::null,
                                          bool aDirOnly = TRUE,
                                          bool resolveSymlinks = TRUE);
 
     static QString getOpenFileName (const QString &, const QString &, QWidget*,
-                                    const char*, const QString &,
-                                    QString *defaultFilter = 0,
+                                    const QString &, QString *defaultFilter = 0,
                                     bool resolveSymLinks = true);
 
     static QString getFirstExistingDir (const QString &);
@@ -600,7 +585,7 @@ protected:
 private:
 
     VBoxGlobal();
-    ~VBoxGlobal() {}
+    ~VBoxGlobal();
 
     void init();
 
@@ -636,15 +621,15 @@ private:
 
     CVirtualBoxCallback callback;
 
-    typedef Q3ValueVector <QString> QStringVector;
+    typedef QVector <QString> QStringVector;
 
     QString verString;
 
-    Q3ValueVector <CGuestOSType> vm_os_types;
-    Q3Dict <QPixmap> vm_os_type_icons;
-    Q3PtrVector <QColor> vm_state_color;
+    QVector <CGuestOSType> vm_os_types;
+    QHash <QString, QPixmap *> vm_os_type_icons;
+    QVector <QColor *> vm_state_color;
 
-    Q3IntDict <QPixmap> mStateIcons;
+    QHash <long int, QPixmap *> mStateIcons;
     QPixmap mOfflineSnapshotIcon, mOnlineSnapshotIcon;
 
     QStringVector machineStates;
