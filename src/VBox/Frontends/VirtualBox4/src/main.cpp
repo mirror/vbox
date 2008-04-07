@@ -101,6 +101,13 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
             RTStrmPrintf(g_pStdErr, "Qt WARNING: %s\n", msg);
 #endif
             break;
+        case QtCriticalMsg:
+            Log (("Qt CRITICAL: %s\n", msg));
+#ifdef Q_WS_X11
+            /* Needed for instance for the message ``cannot connect to X server'' */
+            RTStrmPrintf(g_pStdErr, "Qt CRITICAL: %s\n", msg);
+#endif
+            break;
         case QtFatalMsg:
             Log (("Qt FATAL: %s\n", msg));
 #ifdef Q_WS_X11
@@ -200,13 +207,13 @@ int main (int argc, char **argv)
         {
             QString msg =
                 QApplication::tr ("Executable <b>%1</b> requires Qt %2.x, found Qt %3.")
-                                  .arg (QString::fromLatin1 (qAppName()))
+                                  .arg (qAppName())
                                   .arg (ver_str_base)
                                   .arg (rt_ver_str);
             QMessageBox::critical (
                 0, QApplication::tr ("Incompatible Qt Library Error"),
                 msg, QMessageBox::Abort, 0);
-            qFatal (msg.ascii());
+            qFatal (msg.toAscii().constData());
         }
 #endif
 
