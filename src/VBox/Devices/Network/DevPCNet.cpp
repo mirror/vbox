@@ -1731,7 +1731,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
     /*
      * Drop packets if the VM is not running yet/anymore.
      */
-    if (VMR3GetState(PDMDevHlpGetVM(pDevIns)) != VMSTATE_RUNNING)
+    if (PDMDevHlpVMState(pDevIns) != VMSTATE_RUNNING)
         return;
 
     Log(("#%d pcnetReceiveNoSync: size=%d\n", PCNET_INST_NR, size));
