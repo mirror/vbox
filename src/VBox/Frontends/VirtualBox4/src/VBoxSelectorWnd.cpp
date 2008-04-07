@@ -466,7 +466,13 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* VM list toolbar */
     VBoxToolBar *vmTools = new VBoxToolBar (this);
+#if defined (Q_WS_MAC) && (QT_VERSION >= 0x040300)
+    /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
+    setUnifiedTitleAndToolBarOnMac (true);
+    addToolBar (vmTools);
+#else
     leftVLayout->addWidget(vmTools);
+#endif
 
     /* VM list box */
     vmListBox = new VBoxVMListBox ();
