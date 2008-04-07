@@ -177,8 +177,9 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
 {
 #if 1
     /*
-     * Allocating 128KB for the low page pool can bit a bit exhausting on the kernel,
-     * it frequnetly causes the entire box to lock up on startup.
+     * Allocating 128KB continguous memory for the low page pool can bit a bit
+     * exhausting on the kernel, it frequently causes the entire box to lock
+     * up on startup.
      *
      * So, try allocate the memory using IOMallocAligned first and if we get any high
      * physical memory we'll release it and fall back on IOMAllocContiguous.
@@ -371,8 +372,11 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 
 int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
+#if 0
     /** @todo rtR0MemObjNativeAllocPhys / darwin. */
     return rtR0MemObjNativeAllocPhys(ppMem, cb, PhysHighest);
+#endif
+    return VERR_NOT_SUPPORTED;
 }
 
 
