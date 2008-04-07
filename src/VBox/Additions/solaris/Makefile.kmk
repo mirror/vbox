@@ -52,6 +52,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions: \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
+		$(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf \
 		$(PATH_BIN)/additions/vboxguest \
 		$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf \
 		$(PATH_BIN)/additions/VBoxClient \
@@ -80,6 +81,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions: \
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml                  $(SOLARISINSTDIR)/vboxservice.xml
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient                    $(SOLARISINSTDIR)/1099.vboxclient
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl                         $(SOLARISINSTDIR)/x11config.pl
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf                    $(SOLARISINSTDIR)/solaris_xorg.conf
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf  $(SOLARISINSTDIR)/vboxguest.conf
 	$(QUIET)$(CP) -f $(PATH_BIN)/additions/vboxguest                                                    $(SOLARISINSTDIR)/vboxguest
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARISINSTDIR)/vboxguest,)

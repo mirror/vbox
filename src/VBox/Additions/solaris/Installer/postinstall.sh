@@ -58,9 +58,13 @@ case "$xorgversion" in
         ;;
 esac
 
+retval=0
 if test -z "$vboxmouse_src"; then
     echo "Unknown version of the X Window System installed."
     echo "Failed to install the VirtualBox X Window System drivers."
+    
+    # Exit as partially failed installation
+    retval=2
 else
     vboxmouse_dest="/usr/lib/X11/modules/input/vboxmouse_drv.so"
     vboxvideo_dest="/usr/lib/X11/modules/input/vboxvideo_drv.so"
@@ -76,10 +80,15 @@ else
     rm -f $vboxadditions_path/vboxmouse_drv_*
     rm -f $vboxadditions_path/vboxvideo_drv_*
     /usr/sbin/removef -f $PKGINST
-fi
+    
+    # Some distros like Indiana have no xorg.conf, deal with this
+    if ! (test -f '/etc/X11/xorg.conf' -o -f '/etc/X11/.xorg.conf'); then
+        mv -f $vboxadditions_path/solaris_xorg.conf /etc/X11/.xorg.conf
+    fi
 
-echo "Configuring Xorg..."
-$vboxadditions_path/x11config.pl
+    echo "Configuring Xorg..."
+    $vboxadditions_path/x11config.pl
+fi
 
 /usr/sbin/installf -f $PKGINST
 
@@ -90,4 +99,8 @@ echo "Configuring service..."
 /usr/sbin/svcadm enable svc:/system/virtualbox/vboxservice
 
 echo "Done."
+if test $retval -eq 0; then
+    echo "Please restart X Window System for activating the X11 guest additions."
+fi
+exit $retval
 
