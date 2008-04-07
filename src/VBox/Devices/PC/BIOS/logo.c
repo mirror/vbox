@@ -12,26 +12,10 @@
 #define F12_SCAN_CODE        0x86
 #define F12_WAIT_TIME        (3 * WAIT_HZ)   /* 3 seconds. Used only if logo disabled. */
 
-#define LOGO_SHOW_STEPS      64
-
-#define LOGO_IMAGE_DEFAULT   0
-#define LOGO_IMAGE_EXTERNAL  1
-
-#define LOGO_CMD_NOP         0
-#define LOGO_CMD_SET_OFFSET  0x100
-#define LOGO_CMD_SET_X       0x200
-#define LOGO_CMD_SET_Y       0x300
-#define LOGO_CMD_SET_WIDTH   0x400
-#define LOGO_CMD_SET_HEIGHT  0x500
-#define LOGO_CMD_SET_DEPTH   0x600
-#define LOGO_CMD_SET_PALSIZE 0x700
-#define LOGO_CMD_SET_DEFAULT 0x800
-#define LOGO_CMD_SET_PAL     0x900
-#define LOGO_CMD_SHOW_BMP    0xA00
-#define LOGO_CMD_SHOW_TEXT   0xB00
-#define LOGO_CMD_CLS         0xC00
-
-#define LOGO_IO_PORT         0x3b8
+#define uint8_t    Bit8u
+#define uint16_t   Bit16u
+#define uint32_t   Bit32u
+#include <VBox/bioslogo.h>
 
 typedef struct
 {
@@ -99,18 +83,6 @@ typedef struct
     Bit32u      ClrUsed;        /* Number of Colors in Color Table  */
     Bit32u      ClrImportant;   /* Number of Important Colors       */
 } WINHDR;
-
-// Logo settings header
-typedef struct
-{
-    Bit16u Signature;
-    Bit8u  FadeIn;
-    Bit8u  FadeOut;
-    Bit16u LogoTime;
-    Bit8u  ShowBootMenu;
-    Bit32u LogoSize;
-
-} LOGOHDR;
 
 
 static unsigned char get_mode();
@@ -560,15 +532,15 @@ void show_logo()
     logo_hdr_size = sizeof(LOGOHDR);
 
     // Get main signature
-    tmp = read_logo_word(&logo_hdr->Signature);
+    tmp = read_logo_word(&logo_hdr->u16Signature);
     if (tmp != 0x66BB)
         goto done;
 
     // Get options
-    is_fade_in = read_logo_byte(&logo_hdr->FadeIn);
-    is_fade_out = read_logo_byte(&logo_hdr->FadeOut);
-    logo_time = read_logo_word(&logo_hdr->LogoTime);
-    uBootMenu = read_logo_byte(&logo_hdr->ShowBootMenu);
+    is_fade_in = read_logo_byte(&logo_hdr->fu8FadeIn);
+    is_fade_out = read_logo_byte(&logo_hdr->fu8FadeOut);
+    logo_time = read_logo_word(&logo_hdr->u16LogoMillies);
+    uBootMenu = read_logo_byte(&logo_hdr->fu8ShowBootMenu);
 
     // Is Logo disabled?
     if (!is_fade_in && !is_fade_out && !logo_time)
@@ -701,7 +673,7 @@ show_bmp:
 
                 if (uBootMenu == 2)
                     show_boot_text(i);
-    
+
                 wait(16 / WAIT_MS, 0);
             }
         }
