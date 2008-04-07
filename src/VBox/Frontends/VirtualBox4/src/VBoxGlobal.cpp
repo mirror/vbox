@@ -25,41 +25,25 @@
 #include "QIHotKeyEdit.h"
 #include "QIMessageBox.h"
 
-//Added by qt3to4:
-#include <QDesktopWidget>
-#include <QTranslator>
-#include <Q3VBoxLayout>
-#include <Q3Frame>
-#include <QEvent>
-#include <QShowEvent>
-#include <Q3PopupMenu>
-#include <Q3HBoxLayout>
-
 #ifdef VBOX_WITH_REGISTRATION
 #include "VBoxRegistrationDlg.h"
 #endif
 
-#include <qapplication.h>
-#include <qmessagebox.h>
-#include <qpixmap.h>
-#include <qicon.h>
-#include <qwidget.h>
-#include <q3filedialog.h>
-#include <qimage.h>
-#include <qlabel.h>
-#include <qtoolbutton.h>
-#include <qfileinfo.h>
-#include <qdir.h>
-#include <qmutex.h>
-#include <qregexp.h>
-#include <qlocale.h>
+/* Qt includes */
+#include <QLibraryInfo>
+#include <QDialogButtonBox>
+#include <QFileDialog>
+#include <QToolTip>
+#include <QTranslator>
+#include <QDesktopWidget>
+#include <QMutex>
+#include <QToolButton>
 #include <QProcess>
-#include <QList>
 
 #ifdef Q_WS_X11
-#include <q3textbrowser.h>
-#include <qpushbutton.h>
-#include <qlayout.h>
+#include <QTextBrowser>
+#include <QScrollBar>
+#include <QX11Info>
 #endif
 
 
@@ -69,7 +53,7 @@
 
 #if defined (Q_WS_WIN)
 #include "shlobj.h"
-#include <qeventloop.h>
+#include <QEventLoop>
 #endif
 
 #if defined (Q_WS_X11)
@@ -223,8 +207,8 @@ public:
         if (COMBase::ToQUuid (id).isNull())
         {
             /* it's a global extra data key someone wants to change */
-            QString sKey = QString::fromUcs2 (key);
-            QString sVal = QString::fromUcs2 (value);
+            QString sKey = QString::fromUtf16 (key);
+            QString sVal = QString::fromUtf16 (value);
             if (sKey.startsWith ("GUI/"))
             {
                 if (sKey == VBoxDefs::GUI_RegistrationDlgWinID)
@@ -251,7 +235,7 @@ public:
                     {
                         /* disallow the change when there is an error*/
                         *error = SysAllocString ((const OLECHAR *)
-                                                 gs.lastError().ucs2());
+                                                 gs.lastError().utf16());
                         *allowChange = FALSE;
                     }
                     else
@@ -271,8 +255,8 @@ public:
     {
         if (COMBase::ToQUuid (id).isNull())
         {
-            QString sKey = QString::fromUcs2 (key);
-            QString sVal = QString::fromUcs2 (value);
+            QString sKey = QString::fromUtf16 (key);
+            QString sVal = QString::fromUtf16 (value);
             if (sKey.startsWith ("GUI/"))
             {
                 if (sKey == VBoxDefs::GUI_RegistrationDlgWinID)
@@ -486,15 +470,15 @@ static int __stdcall winGetExistDirCallbackProc (HWND hwnd, UINT uMsg,
         QString *initDir = (QString *)(lpData);
         if (!initDir->isEmpty())
         {
-            SendMessage (hwnd, BFFM_SETSELECTION, TRUE, Q_ULONG (initDir->ucs2()));
-            //SendMessage (hwnd, BFFM_SETEXPANDED, TRUE, Q_ULONG (initDir->ucs2()));
+            SendMessage (hwnd, BFFM_SETSELECTION, TRUE, Q_ULONG (initDir->utf16()));
+            //SendMessage (hwnd, BFFM_SETEXPANDED, TRUE, Q_ULONG (initDir->utf16()));
         }
     }
     else if (uMsg == BFFM_SELCHANGED)
     {
         TCHAR path [MAX_PATH];
         SHGetPathFromIDList (LPITEMIDLIST (lParam), path);
-        QString tmpStr = QString::fromUcs2 ((ushort*)path);
+        QString tmpStr = QString::fromUtf16 ((ushort*)path);
         if (!tmpStr.isEmpty())
             SendMessage (hwnd, BFFM_ENABLEOK, 1, 1);
         else
@@ -564,32 +548,30 @@ class VBoxLicenseViewer : public QDialog
 public:
 
     VBoxLicenseViewer (const QString &aFilePath)
-        : QDialog (0, "VBoxLicenseViewerObject")
+        : QDialog ()
         , mFilePath (aFilePath)
         , mLicenseText (0), mAgreeButton (0), mDisagreeButton (0)
     {
-        setCaption ("VirtualBox License");
-        setIcon (QPixmap (":/ico40x01.png"));
+        setWindowTitle ("VirtualBox License");
+        setWindowIcon (QIcon (":/ico40x01.png"));
 
-        mLicenseText = new Q3TextBrowser (this);
+        mLicenseText = new QTextBrowser (this);
         mAgreeButton = new QPushButton (tr ("I &Agree"), this);
         mDisagreeButton = new QPushButton (tr ("I &Disagree"), this);
-
-        mLicenseText->setTextFormat (Qt::RichText);
+        QDialogButtonBox *dbb = new QDialogButtonBox (this);
+        dbb->addButton (mAgreeButton, QDialogButtonBox::AcceptRole);
+        dbb->addButton (mDisagreeButton, QDialogButtonBox::RejectRole);
 
         connect (mLicenseText->verticalScrollBar(), SIGNAL (valueChanged (int)),
                  SLOT (onScrollBarMoving (int)));
         connect (mAgreeButton, SIGNAL (clicked()), SLOT (accept()));
         connect (mDisagreeButton, SIGNAL (clicked()), SLOT (reject()));
 
-        Q3VBoxLayout *mainLayout = new Q3VBoxLayout (this, 10, 10);
+        QVBoxLayout *mainLayout = new QVBoxLayout (this);
+        mainLayout->setSpacing (10);
+        VBoxGlobal::setLayoutMargin (mainLayout, 10);
         mainLayout->addWidget (mLicenseText);
-
-        Q3HBoxLayout *buttonLayout = new Q3HBoxLayout (mainLayout, 10);
-        buttonLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
-                                                      QSizePolicy::Preferred));
-        buttonLayout->addWidget (mAgreeButton);
-        buttonLayout->addWidget (mDisagreeButton);
+        mainLayout->addWidget (dbb);
 
         mLicenseText->verticalScrollBar()->installEventFilter (this);
 
@@ -618,7 +600,7 @@ private slots:
 
     void onScrollBarMoving (int aValue)
     {
-        if (aValue == mLicenseText->verticalScrollBar()->maxValue())
+        if (aValue == mLicenseText->verticalScrollBar()->maximum())
             unlockButtons();
     }
 
@@ -644,8 +626,9 @@ private:
         switch (aEvent->type())
         {
             case QEvent::Hide:
-                if (aObject == mLicenseText->verticalScrollBar() &&
-                    (windowState() & Qt::WindowActive))
+                if (aObject == mLicenseText->verticalScrollBar())
+                    /* Doesn't work on wm's like ion3 where the window starts
+                     * maximized: isActiveWindow() */
                     unlockButtons();
             default:
                 break;
@@ -654,7 +637,7 @@ private:
     }
 
     QString       mFilePath;
-    Q3TextBrowser *mLicenseText;
+    QTextBrowser *mLicenseText;
     QPushButton  *mAgreeButton;
     QPushButton  *mDisagreeButton;
 };
@@ -818,6 +801,13 @@ VBoxGlobal &VBoxGlobal::instance()
     return vboxGlobal_instance;
 }
 
+VBoxGlobal::~VBoxGlobal()
+{
+    qDeleteAll (vm_os_type_icons);
+    qDeleteAll (mStateIcons);
+    qDeleteAll (vm_state_color);
+}
+
 /**
  *  Sets the new global settings and saves them to the VirtualBox server.
  */
@@ -926,7 +916,7 @@ CGuestOSType VBoxGlobal::vmGuestOSType (int aIndex) const
 {
     CGuestOSType type;
     if (aIndex >= 0 && aIndex < (int) vm_os_types.count())
-        type = vm_os_types [aIndex];
+        type = vm_os_types.value (aIndex);
     AssertMsg (!type.isNull(), ("Index for OS type must be valid: %d", aIndex));
     return type;
 }
@@ -953,8 +943,8 @@ int VBoxGlobal::vmGuestOSTypeIndex (const QString &aId) const
 QPixmap VBoxGlobal::vmGuestOSTypeIcon (const QString &aId) const
 {
     static const QPixmap none;
-    QPixmap *p = vm_os_type_icons [aId];
-    AssertMsg (p, ("Icon for type `%s' must be defined", aId.latin1()));
+    QPixmap *p = vm_os_type_icons.value (aId);
+    AssertMsg (p, ("Icon for type `%s' must be defined", aId.toLatin1().constData()));
     return p ? *p : none;
 }
 
@@ -1113,7 +1103,7 @@ bool VBoxGlobal::toCOMPortNumbers (const QString &aName, ulong &aIRQ,
                                    ulong &aIOBase) const
 {
     for (size_t i = 0; i < ELEMENTS (comKnownPorts); ++ i)
-        if (strcmp (comKnownPorts [i].name, aName.utf8().data()) == 0)
+        if (strcmp (comKnownPorts [i].name, aName.toUtf8().data()) == 0)
         {
             aIRQ = comKnownPorts [i].IRQ;
             aIOBase = comKnownPorts [i].IOBase;
@@ -1132,7 +1122,7 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
                                    ulong &aIOBase) const
 {
     for (size_t i = 0; i < ELEMENTS (lptKnownPorts); ++ i)
-        if (strcmp (lptKnownPorts [i].name, aName.utf8().data()) == 0)
+        if (strcmp (lptKnownPorts [i].name, aName.toUtf8().data()) == 0)
         {
             aIRQ = lptKnownPorts [i].IRQ;
             aIOBase = lptKnownPorts [i].IOBase;
@@ -1233,8 +1223,8 @@ QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */,
 QString VBoxGlobal::details (const CUSBDevice &aDevice) const
 {
     QString details;
-    QString m = aDevice.GetManufacturer().stripWhiteSpace();
-    QString p = aDevice.GetProduct().stripWhiteSpace();
+    QString m = aDevice.GetManufacturer().trimmed();
+    QString p = aDevice.GetProduct().trimmed();
     if (m.isEmpty() && p.isEmpty())
     {
         details =
@@ -1244,7 +1234,7 @@ QString VBoxGlobal::details (const CUSBDevice &aDevice) const
     }
     else
     {
-        if (p.upper().startsWith (m.upper()))
+        if (p.toUpper().startsWith (m.toUpper()))
             details = p;
         else
             details = m + " " + p;
@@ -1253,7 +1243,7 @@ QString VBoxGlobal::details (const CUSBDevice &aDevice) const
     if (r != 0)
         details += QString().sprintf (" [%04hX]", r);
 
-    return details.stripWhiteSpace();
+    return details.trimmed();
 }
 
 /**
@@ -1817,7 +1807,7 @@ bool VBoxGlobal::showVirtualBoxLicense()
     RTMemTmpFree (buffer);
     QDir docDir (path);
     docDir.setFilter (QDir::Files);
-    docDir.setNameFilter ("License-*.html");
+    docDir.setNameFilters (QStringList ("License-*.html"));
 
     /* get the license files list and search for the latest license */
     QStringList filesList = docDir.entryList();
@@ -1825,7 +1815,7 @@ bool VBoxGlobal::showVirtualBoxLicense()
     for (int index = 0; index < filesList.count(); ++ index)
     {
         QRegExp regExp ("License-([\\d\\.]+).html");
-        regExp.search (filesList [index]);
+        regExp.indexIn (filesList [index]);
         QString version = regExp.cap (1);
         if (maxVersionNumber < version.toDouble())
             maxVersionNumber = version.toDouble();
@@ -1838,7 +1828,7 @@ bool VBoxGlobal::showVirtualBoxLicense()
 
     /* compose the latest license file full path */
     QString latestVersion = QString::number (maxVersionNumber);
-    QString latestFilePath = docDir.absFilePath (
+    QString latestFilePath = docDir.absoluteFilePath (
         QString ("License-%1.html").arg (latestVersion));
 
     /* check for the agreed license version */
@@ -2469,7 +2459,7 @@ void VBoxGlobal::adoptLabelPixmap (QLabel *aLabel)
     aLabel->setFrameShadow (QFrame::Plain);
 
     const QPixmap *pix = aLabel->pixmap();
-    QImage img = pix->convertToImage();
+    QImage img = pix->toImage();
     QRgb rgbBack = img.pixel (img.width() - 1, img.height() - 1);
     QRgb rgbFrame = img.pixel (img.width() - 1, 0);
 
@@ -2490,7 +2480,7 @@ class VBoxTranslator : public QTranslator
 public:
 
     VBoxTranslator (QObject *aParent = 0)
-        : QTranslator (aParent, "VBoxTranslatorObject") {}
+        : QTranslator (aParent) {}
 
     bool loadFile (const QString &aFileName)
     {
@@ -2554,7 +2544,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     if (!langId.isEmpty() && langId != gVBoxBuiltInLangName)
     {
         QRegExp regExp (gVBoxLangIDRegExp);
-        int pos = regExp.search (langId);
+        int pos = regExp.indexIn (langId);
         /* the language ID should match the regexp completely */
         AssertReturnVoid (pos == 0);
 
@@ -2562,14 +2552,14 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
 
         if (nlsDir.exists (gVBoxLangFileBase + langId + gVBoxLangFileExt))
         {
-            languageFileName = nlsDir.absFilePath (gVBoxLangFileBase + langId +
-                                                   gVBoxLangFileExt);
+            languageFileName = nlsDir.absoluteFilePath (gVBoxLangFileBase + langId +
+                                                        gVBoxLangFileExt);
             selectedLangId = langId;
         }
         else if (nlsDir.exists (gVBoxLangFileBase + lang + gVBoxLangFileExt))
         {
-            languageFileName = nlsDir.absFilePath (gVBoxLangFileBase + lang +
-                                                   gVBoxLangFileExt);
+            languageFileName = nlsDir.absoluteFilePath (gVBoxLangFileBase + lang +
+                                                        gVBoxLangFileExt);
             selectedLangId = lang;
         }
         else
@@ -2626,7 +2616,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
 #ifdef Q_OS_UNIX
         /* We use system installations of Qt on Linux systems, so first, try
          * to load the Qt translation from the system location. */
-        languageFileName = QString (qInstallPathTranslations()) + "/qt_" +
+        languageFileName = QLibraryInfo::location(QLibraryInfo::TranslationsPath) + "/qt_" +
                            sLoadedLangId + gVBoxLangFileExt;
         QTranslator *qtSysTr = new QTranslator (sTranslator);
         Assert (qtSysTr);
@@ -2641,9 +2631,9 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
          * Win32 because we supply a Qt library there and therefore the
          * innotek translation is always the best one. */
 #endif
-        languageFileName =  nlsDir.absFilePath (QString ("qt_") +
-                                                sLoadedLangId +
-                                                gVBoxLangFileExt);
+        languageFileName =  nlsDir.absoluteFilePath (QString ("qt_") +
+                                                     sLoadedLangId +
+                                                     gVBoxLangFileExt);
         QTranslator *qtTr = new QTranslator (sTranslator);
         Assert (qtTr);
         if (qtTr && (loadOk = qtTr->load (languageFileName)))
@@ -2685,23 +2675,17 @@ iconSetEx (const char *aNormal, const char *aSmallNormal,
 {
     QIcon iconSet;
 
-    iconSet.setPixmap (QPixmap (aNormal),
-                       QIcon::Large, QIcon::Normal);
-    iconSet.setPixmap (QPixmap (aSmallNormal),
-                       QIcon::Small, QIcon::Normal);
+    iconSet.addFile (aNormal, QSize(), QIcon::Normal);
+    iconSet.addFile (aSmallNormal, QSize(), QIcon::Normal);
     if (aSmallDisabled != NULL)
     {
-        iconSet.setPixmap (QPixmap (aDisabled),
-                           QIcon::Large, QIcon::Disabled);
-        iconSet.setPixmap (QPixmap (aSmallDisabled),
-                           QIcon::Small, QIcon::Disabled);
+        iconSet.addFile (aDisabled, QSize(), QIcon::Disabled);
+        iconSet.addFile (aSmallDisabled, QSize(), QIcon::Disabled);
     }
     if (aSmallActive != NULL)
     {
-        iconSet.setPixmap (QPixmap (aActive),
-                           QIcon::Large, QIcon::Active);
-        iconSet.setPixmap (QPixmap (aSmallActive),
-                           QIcon::Small, QIcon::Active);
+        iconSet.addFile (aActive, QSize(), QIcon::Active);
+        iconSet.addFile (aSmallActive, QSize(), QIcon::Active);
     }
 
     return iconSet;
@@ -2726,14 +2710,14 @@ void VBoxGlobal::setTextLabel (QToolButton *aToolButton,
     AssertReturnVoid (aToolButton != NULL);
 
     /* remember the icon set as setText() will kill it */
-    QIcon iset = aToolButton->iconSet();
+    QIcon iset = aToolButton->icon();
     /* re-use the setText() method to detect and set the accelerator */
     aToolButton->setText (aTextLabel);
-    QKeySequence accel = aToolButton->accel();
-    aToolButton->setTextLabel (aTextLabel);
-    aToolButton->setIconSet (iset);
+    QKeySequence accel = aToolButton->shortcut();
+    aToolButton->setText (aTextLabel);
+    aToolButton->setIcon (iset);
     /* set the accel last as setIconSet() would kill it */
-    aToolButton->setAccel (accel);
+    aToolButton->setShortcut (accel);
 }
 
 /**
@@ -2752,12 +2736,12 @@ QRect VBoxGlobal::normalizeGeometry (const QRect &aRect, const QRect &aBoundRect
     /* make the bottom right corner visible */
     int rd = aBoundRect.right() - fr.right();
     int bd = aBoundRect.bottom() - fr.bottom();
-    fr.moveBy (rd < 0 ? rd : 0, bd < 0 ? bd : 0);
+    fr.translate (rd < 0 ? rd : 0, bd < 0 ? bd : 0);
 
     /* ensure the top left corner is visible */
     int ld = fr.left() - aBoundRect.left();
     int td = fr.top() - aBoundRect.top();
-    fr.moveBy (ld < 0 ? -ld : 0, td < 0 ? -td : 0);
+    fr.translate (ld < 0 ? -ld : 0, td < 0 ? -td : 0);
 
     if (aCanResize)
     {
@@ -2765,9 +2749,9 @@ QRect VBoxGlobal::normalizeGeometry (const QRect &aRect, const QRect &aBoundRect
         rd = aBoundRect.right() - fr.right();
         bd = aBoundRect.bottom() - fr.bottom();
         if (rd < 0)
-            fr.rRight() += rd;
+            fr.setRight (fr.right() + rd);
         if (bd < 0)
-            fr.rBottom() += bd;
+            fr.setBottom (fr.bottom() + bd);
     }
 
     return fr;
@@ -2873,8 +2857,7 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
 /* static */
 QChar VBoxGlobal::decimalSep()
 {
-    QString n = QLocale::system().toString (0.0, 'f', 1).stripWhiteSpace();
-    return n [1];
+    return QLocale::system().decimalPoint();
 }
 
 /**
@@ -2908,7 +2891,7 @@ QString VBoxGlobal::sizeRegexp()
 Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
 {
     QRegExp regexp (sizeRegexp());
-    int pos = regexp.search (aText);
+    int pos = regexp.indexIn (aText);
     if (pos != -1)
     {
         QString intgS = regexp.cap (1);
@@ -2939,7 +2922,7 @@ Q_UINT64 VBoxGlobal::parseSize (const QString &aText)
         if (denom == 1)
             return intg;
 
-        Q_UINT64 hund = hundS.rightJustify (2, '0').toULongLong();
+        Q_UINT64 hund = hundS.rightJustified (2, '0').toULongLong();
         hund = hund * denom / 100;
         intg = intg * denom + hund;
         return intg;
@@ -3042,7 +3025,7 @@ QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
             }
         }
         number = QString ("%1%2%3").arg (intg).arg (decimalSep())
-                                   .arg (QString::number (hund).rightJustify (2, '0'));
+                                   .arg (QString::number (hund).rightJustified (2, '0'));
     }
     else
     {
@@ -3155,7 +3138,7 @@ QString VBoxGlobal::systemLanguageId()
  *  QFileDialog::getExistingDirectory().
  */
 QString VBoxGlobal::getExistingDirectory (const QString &aDir,
-                                          QWidget *aParent, const char *aName,
+                                          QWidget *aParent,
                                           const QString &aCaption,
                                           bool aDirOnly,
                                           bool aResolveSymlinks)
@@ -3202,7 +3185,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
             BROWSEINFO bi;
             bi.hwndOwner = topParent ? topParent->winId() : 0;
             bi.pidlRoot = NULL;
-            bi.lpszTitle = (TCHAR*)title.ucs2();
+            bi.lpszTitle = (TCHAR*)title.utf16();
             bi.pszDisplayName = initPath;
             bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT | BIF_NEWDIALOGSTYLE;
             bi.lpfn = winGetExistDirCallbackProc;
@@ -3228,7 +3211,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
                 {
                     pMalloc->Free (itemIdList);
                     pMalloc->Release();
-                    result = QString::fromUcs2 ((ushort*)path);
+                    result = QString::fromUtf16 ((ushort*)path);
                 }
             }
             else
@@ -3258,8 +3241,12 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
 
 #else
 
-    return Q3FileDialog::getExistingDirectory (aDir, aParent, aName, aCaption,
-                                              aDirOnly, aResolveSymlinks);
+    QFileDialog::Options o;
+    if (aDirOnly)
+        o = QFileDialog::ShowDirsOnly;
+    if (!aResolveSymlinks)
+        o |= QFileDialog::DontResolveSymlinks;
+    return QFileDialog::getExistingDirectory (aParent, aCaption, aDir, o);
 
 #endif
 }
@@ -3268,7 +3255,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
  *  Reimplementation of QFileDialog::getOpenFileName() that removes some
  *  oddities and limitations.
  *
- *  On Win32, this funciton makes sure a file filter is applied automatically
+ *  On Win32, this function makes sure a file filter is applied automatically
  *  right after it is selected from the drop-down list, to conform to common
  *  experience in other applications. Note that currently, @a selectedFilter
  *  is always set to null on return.
@@ -3280,7 +3267,6 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
 QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
                                      const QString &aFilters,
                                      QWidget       *aParent,
-                                     const char    *aName,
                                      const QString &aCaption,
                                      QString       *aSelectedFilter,
                                      bool           aResolveSymlinks)
@@ -3342,7 +3328,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
             AssertCompile (sizeof (TCHAR) == sizeof (QChar));
             TCHAR buf [1024];
             if (initSel.length() > 0 && initSel.length() < sizeof (buf))
-                memcpy (buf, initSel.ucs2(), (initSel.length() + 1) * sizeof (TCHAR));
+                memcpy (buf, initSel.utf16(), (initSel.length() + 1) * sizeof (TCHAR));
             else
                 buf [0] = 0;
 
@@ -3351,11 +3337,11 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 
             ofn.lStructSize = sizeof (OPENFILENAME);
             ofn.hwndOwner = topParent ? topParent->winId() : 0;
-            ofn.lpstrFilter = (TCHAR *) winFilters.ucs2();
+            ofn.lpstrFilter = (TCHAR *) winFilters.utf16();
             ofn.lpstrFile = buf;
             ofn.nMaxFile = sizeof (buf) - 1;
-            ofn.lpstrInitialDir = (TCHAR *) workDir.ucs2();
-            ofn.lpstrTitle = (TCHAR *) title.ucs2();
+            ofn.lpstrInitialDir = (TCHAR *) workDir.utf16();
+            ofn.lpstrTitle = (TCHAR *) title.utf16();
             ofn.Flags = (OFN_NOCHANGEDIR | OFN_HIDEREADONLY |
                           OFN_EXPLORER | OFN_ENABLEHOOK |
                           OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST);
@@ -3363,7 +3349,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 
             if (GetOpenFileName (&ofn))
             {
-                result = QString::fromUcs2 ((ushort *) ofn.lpstrFile);
+                result = QString::fromUtf16 ((ushort *) ofn.lpstrFile);
             }
 
             // qt_win_eatMouseMove();
@@ -3400,9 +3386,11 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 
 #else
 
-    return Q3FileDialog::getOpenFileName (aStartWith, aFilters, aParent, aName,
-                                         aCaption, aSelectedFilter, aResolveSymlinks);
-
+    QFileDialog::Options o;
+    if (!aResolveSymlinks)
+        o |= QFileDialog::DontResolveSymlinks;
+    return QFileDialog::getOpenFileName (aParent, aCaption, aStartWith, 
+                                         aFilters, aSelectedFilter, o);
 #endif
 }
 
@@ -3418,11 +3406,11 @@ QString VBoxGlobal::getFirstExistingDir (const QString &aStartDir)
     QDir dir (aStartDir);
     while (!dir.exists() && !dir.isRoot())
     {
-        QFileInfo dirInfo (dir.absPath());
-        dir = dirInfo.dirPath (true);
+        QFileInfo dirInfo (dir.absolutePath());
+        dir = dirInfo.absolutePath();
     }
     if (dir.exists() && !dir.isRoot())
-        result = dir.absPath();
+        result = dir.absolutePath();
     return result;
 }
 
@@ -3512,7 +3500,7 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 
 #elif defined (Q_WS_X11)
 
-    Display *dpy = QPaintDevice::x11AppDisplay();
+    Display *dpy = QX11Info::display();
 
     if (aSwitchDesktop)
     {
@@ -3588,12 +3576,12 @@ QString VBoxGlobal::removeAccelMark (const QString &aText)
     QString result = aText;
 
     QRegExp accel ("\\(&[a-zA-Z]\\)");
-    int pos = accel.search (result);
+    int pos = accel.indexIn (result);
     if (pos >= 0)
         result.remove (pos, accel.cap().length());
     else
     {
-        pos = result.find ('&');
+        pos = result.indexOf ('&');
         if (pos >= 0)
             result.remove (pos, 1);
     }
@@ -3667,7 +3655,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
 
         void run()
         {
-            int rc = (int) ShellExecute (NULL, NULL, mURL.ucs2(), NULL, NULL, SW_SHOW);
+            int rc = (int) ShellExecute (NULL, NULL, mURL.utf16(), NULL, NULL, SW_SHOW);
             bool ok = rc > 32;
             QApplication::postEvent
                 (mObject,
@@ -3751,7 +3739,7 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
         /* Show the already opened registration dialog */
         mRegDlg->setWindowState (mRegDlg->windowState() & ~Qt::WindowMinimized);
         mRegDlg->raise();
-        mRegDlg->setActiveWindow();
+        mRegDlg->activateWindow();
     }
     else
     {
@@ -3966,7 +3954,6 @@ void VBoxGlobal::init()
         {"solaris",   ":/os_solaris.png"},
         {"l4",        ":/os_l4.png"},
     };
-    vm_os_type_icons.setAutoDelete (true); /* takes ownership of elements */
     for (uint n = 0; n < SIZEOF_ARRAY (kOSTypeIcons); n ++)
     {
         vm_os_type_icons.insert (kOSTypeIcons [n][0],
@@ -3994,7 +3981,6 @@ void VBoxGlobal::init()
         {KMachineState_Restoring, ":/state_restoring_16px.png"},
         {KMachineState_Discarding, ":/state_discarding_16px.png"},
     };
-    mStateIcons.setAutoDelete (true); // takes ownership of elements
     for (uint n = 0; n < SIZEOF_ARRAY (vmStateIcons); n ++)
     {
         mStateIcons.insert (vmStateIcons [n].state,
@@ -4006,7 +3992,6 @@ void VBoxGlobal::init()
     mOnlineSnapshotIcon = QPixmap (":/online_snapshot_16px.png");
 
     /* initialize state colors vector */
-    vm_state_color.setAutoDelete (true); /* takes ownership of elements */
     vm_state_color.insert (KMachineState_Null,           new QColor(Qt::red));
     vm_state_color.insert (KMachineState_PoweredOff,     new QColor(Qt::gray));
     vm_state_color.insert (KMachineState_Saved,          new QColor(Qt::yellow));

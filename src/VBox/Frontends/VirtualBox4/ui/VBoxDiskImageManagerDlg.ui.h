@@ -17,6 +17,7 @@
 #include <QMenuBar>
 #include <QMenuItem>
 #include <QDir>
+#include <QToolTip>
 /**
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -2014,8 +2015,7 @@ void VBoxDiskImageManagerDlg::addImage()
         AssertMsgFailed (("Root list should be equal to hdsView, cdsView or fdsView"));
     }
 
-    QString src = VBoxGlobal::getOpenFileName (dir, filter, this,
-                                               "AddDiskImageDialog", title);
+    QString src = VBoxGlobal::getOpenFileName (dir, filter, this, title);
     src =  QDir::convertSeparators (src);
 
     addImageToList (src, type);
