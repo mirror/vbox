@@ -326,7 +326,7 @@ typedef struct VGAState {
     R3PTRTYPE(char *)           pszLogoFile;
     /** Current logo command. */
     uint16_t                    LogoCommand;
-    /** Bitmap image to use. */
+    /** Bitmap image to use. (LOGO_IMAGE_DEFAULT or LOGO_IMAGE_EXTERNAL) */
     uint8_t                     BmpImage;
     uint8_t                     Padding8;       /**< Alignment padding. */
     /** Logo X. */
