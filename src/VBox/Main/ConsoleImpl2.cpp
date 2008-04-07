@@ -503,13 +503,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     BOOL fFadeIn;
     hrc = biosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                            H();
-    rc = CFGMR3InsertInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);                RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);                    RC_CHECK();
     BOOL fFadeOut;
     hrc = biosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                          H();
-    rc = CFGMR3InsertInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);                RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);                    RC_CHECK();
     ULONG logoDisplayTime;
     hrc = biosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);               H();
-    rc = CFGMR3InsertInteger(pCfg,  "LogoTime", logoDisplayTime);               RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "LogoTime", logoDisplayTime);                   RC_CHECK();
     Bstr logoImagePath;
     hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());       H();
     rc = CFGMR3InsertString(pCfg,   "LogoFile", logoImagePath ? Utf8Str(logoImagePath) : ""); RC_CHECK();
@@ -1419,7 +1419,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #ifdef RT_OS_SOLARIS
             case AudioDriverType_SolAudio:
             {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "solaudio");               RC_CHECK();            
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "solaudio");               RC_CHECK();
                 break;
             }
 #endif
