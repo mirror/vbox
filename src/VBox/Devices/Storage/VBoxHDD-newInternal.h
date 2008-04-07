@@ -20,6 +20,15 @@
 #include <VBox/pdm.h>
 #include <VBox/VBoxHDD-new.h>
 
+
+/** @name VBox HDD backend write flags
+ * @{
+ */
+/** Do not allocate a new block on this write. */
+#define VD_WRITE_NO_ALLOC   RT_BIT(1)
+/** @}*/
+
+
 /**
  * Image format backend interface used by VBox HDD Container implementation.
  */
@@ -34,6 +43,11 @@ typedef struct VBOXHDDBACKEND
      * The size of the structure.
      */
     uint32_t cbSize;
+
+    /**
+     * The capabilities of the backend.
+     */
+    uint64_t uBackendCaps;
 
     /**
      * Check if a file is valid for the backend.
@@ -143,8 +157,10 @@ typedef struct VBOXHDDBACKEND
      *                          be prefixed to perform a full block write.
      * @param   pcbPostRead     Pointer to the returned amount of data that must
      *                          be postfixed to perform a full block write.
+     * @param   fWrite          Flags which affect write behavior. Combination
+     *                          of the VD_WRITE_* flags.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvBackendData, uint64_t off, const void *pvBuf, size_t cbWrite, size_t *pcbWriteProcess, size_t *pcbPreRead, size_t *pcbPostRead));
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvBackendData, uint64_t off, const void *pvBuf, size_t cbWrite, size_t *pcbWriteProcess, size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite));
 
     /**
      * Flush data to disk.

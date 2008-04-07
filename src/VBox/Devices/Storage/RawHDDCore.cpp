@@ -465,7 +465,7 @@ out:
 /** @copydoc VBOXHDDBACKEND::pfnWrite */
 static int rawWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     size_t cbToWrite, size_t *pcbWriteProcess,
-                    size_t *pcbPreRead, size_t *pcbPostRead)
+                    size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite)
 {
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n", pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
@@ -989,6 +989,8 @@ VBOXHDDBACKEND g_RawBackend =
     "raw",
     /* cbSize */
     sizeof(VBOXHDDBACKEND),
+    /* uBackendCaps */
+    VD_CAP_CREATE_FIXED,
     /* pfnCheckIfValid */
     rawCheckIfValid,
     /* pfnOpen */

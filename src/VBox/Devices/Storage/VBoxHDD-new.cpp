@@ -108,6 +108,7 @@ struct VBOXHDD
 };
 
 
+extern VBOXHDDBACKEND g_RawBackend;
 extern VBOXHDDBACKEND g_VmdkBackend;
 extern VBOXHDDBACKEND g_VDIBackend;
 #ifndef VBOX_OSE
@@ -116,6 +117,7 @@ extern VBOXHDDBACKEND g_VhdBackend;
 
 static PCVBOXHDDBACKEND aBackends[] =
 {
+    &g_RawBackend,
     &g_VmdkBackend,
     &g_VDIBackend,
 #ifndef VBOX_OSE
@@ -440,8 +442,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
     rc = pImage->Backend->pfnWrite(pImage->pvBackendData,
                                    uOffset - cbPreRead, pvTmp,
                                    cbPreRead + cbThisWrite + cbPostRead,
-                                   NULL,
-                                   &cbPreRead, &cbPostRead);
+                                   NULL, &cbPreRead, &cbPostRead, 0);
     Assert(rc != VERR_VDI_BLOCK_FREE);
     Assert(cbPreRead == 0);
     Assert(cbPostRead == 0);
@@ -520,8 +521,7 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
     rc = pImage->Backend->pfnWrite(pImage->pvBackendData,
                                    uOffset - cbPreRead, pvTmp,
                                    cbPreRead + cbThisWrite + cbPostRead,
-                                   NULL,
-                                   &cbPreRead, &cbPostRead);
+                                   NULL, &cbPreRead, &cbPostRead, 0);
     Assert(rc != VERR_VDI_BLOCK_FREE);
     Assert(cbPreRead == 0);
     Assert(cbPostRead == 0);
@@ -550,7 +550,7 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
         cbThisWrite = cbWrite;
         rc = pImage->Backend->pfnWrite(pImage->pvBackendData, uOffset, pvBuf,
                                        cbThisWrite, &cbThisWrite, &cbPreRead,
-                                       &cbPostRead);
+                                       &cbPostRead, 0);
         if (rc == VERR_VDI_BLOCK_FREE)
         {
             void *pvTmp = RTMemTmpAlloc(cbPreRead + cbThisWrite + cbPostRead);
@@ -584,6 +584,162 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
         pvBuf = (char *)pvBuf + cbThisWrite;
     } while (cbWrite != 0 && VBOX_SUCCESS(rc));
 
+    return rc;
+}
+
+
+/**
+ * Lists all HDD backends and their capabilities in a caller-provided buffer.
+ *
+ * @returns VBox status code.
+ *          VERR_BUFFER_OVERFLOW if not enough space is passed.
+ * @param   cEntriesAlloc   Number of list entries available.
+ * @param   pEntries        Pointer to array for the entries.
+ * @param   pcEntriesUsed   Number of entries returned.
+ */
+VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
+                                unsigned *pcEntriesUsed)
+{
+    int rc = VINF_SUCCESS;
+    PRTDIR pPluginDir = NULL;
+    unsigned cEntries = 0;
+
+    LogFlowFunc(("cEntriesAlloc=%u pEntries=%#p pcEntriesUsed=%#p\n", cEntriesAlloc, pEntries, pcEntriesUsed));
+    do
+    {
+        /* Check arguments. */
+        AssertMsgBreak(cEntriesAlloc,
+                       ("cEntriesAlloc=%u\n", cEntriesAlloc),
+                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreak(VALID_PTR(pEntries),
+                       ("pEntries=%#p\n", pEntries),
+                       rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreak(VALID_PTR(pcEntriesUsed),
+                       ("pcEntriesUsed=%#p\n", pcEntriesUsed),
+                       rc = VERR_INVALID_PARAMETER);
+
+        /* First enumerate static backends. */
+        for (unsigned i = 0; aBackends[i] != NULL; i++)
+        {
+            char *pszName = RTStrDup(aBackends[i]->pszBackendName);
+            if (!pszName)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+            pEntries[cEntries].pszBackend = pszName;
+            pEntries[cEntries].uBackendCaps = aBackends[i]->uBackendCaps;
+            cEntries++;
+            if (cEntries >= cEntriesAlloc)
+            {
+                rc = VERR_BUFFER_OVERFLOW;
+                break;
+            }
+        }
+        if (VBOX_FAILURE(rc))
+            break;
+
+        /* Then enumerate plugin backends. */
+        char szPath[RTPATH_MAX];
+        rc = RTPathSharedLibs(szPath, sizeof(szPath));
+        if (VBOX_FAILURE(rc))
+            break;
+
+        /* To get all entries with VBoxHDD as prefix. */
+        char *pszPluginFilter;
+        rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath,
+                          VBOX_HDDFORMAT_PLUGIN_PREFIX);
+        if (VBOX_FAILURE(rc))
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        /* The plugins are in the same directory as the other shared libs. */
+        rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
+        if (VBOX_FAILURE(rc))
+            break;
+
+        PRTDIRENTRY pPluginDirEntry = NULL;
+        unsigned cbPluginDirEntry = sizeof(RTDIRENTRY);
+        pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(sizeof(RTDIRENTRY));
+        if (!pPluginDirEntry)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        while ((rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry)) != VERR_NO_MORE_FILES)
+        {
+            RTLDRMOD hPlugin = NIL_RTLDRMOD;
+            PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
+            PVBOXHDDBACKEND pBackend = NULL;
+
+            if (rc == VERR_BUFFER_OVERFLOW)
+            {
+                /* allocate new buffer. */
+                RTMemFree(pPluginDirEntry);
+                pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(cbPluginDirEntry);
+                /* Retry. */
+                rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry);
+                if (VBOX_FAILURE(rc))
+                    break;
+            }
+            else if (VBOX_FAILURE(rc))
+                break;
+
+            /* We got the new entry. */
+            if (pPluginDirEntry->enmType != RTDIRENTRYTYPE_FILE)
+                continue;
+
+            rc = RTLdrLoad(pPluginDirEntry->szName, &hPlugin);
+            if (VBOX_SUCCESS(rc))
+            {
+                rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
+                if (VBOX_FAILURE(rc) || !pfnHDDFormatLoad)
+                {
+                    LogFunc(("error resolving the entry point %s in plugin %s, rc=%Vrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
+                    if (VBOX_SUCCESS(rc))
+                        rc = VERR_SYMBOL_NOT_FOUND;
+                }
+
+                if (VBOX_SUCCESS(rc))
+                {
+                    /* Get the function table. */
+                    rc = pfnHDDFormatLoad(&pBackend);
+                    if (VBOX_SUCCESS(rc) && pBackend->cbSize == sizeof(VBOXHDDBACKEND))
+                    {
+                        char *pszName = RTStrDup(pBackend->pszBackendName);
+                        if (!pszName)
+                        {
+                            rc = VERR_NO_MEMORY;
+                            break;
+                        }
+                        pEntries[cEntries].pszBackend = pszName;
+                        pEntries[cEntries].uBackendCaps = pBackend->uBackendCaps;
+                        cEntries++;
+                        if (cEntries >= cEntriesAlloc)
+                        {
+                            rc = VERR_BUFFER_OVERFLOW;
+                            break;
+                        }
+                    }
+                }
+                else
+                    pBackend = NULL;
+
+                RTLdrClose(hPlugin);
+            }
+        }
+        RTStrFree(pszPluginFilter);
+        if (pPluginDirEntry)
+            RTMemFree(pPluginDirEntry);
+        if (pPluginDir)
+            RTDirClose(pPluginDir);
+    } while (0);
+
+    LogFlowFunc(("returns %Vrc *pcEntriesUsed=%u\n", rc, cEntries));
+    *pcEntriesUsed = cEntries;
     return rc;
 }
 
@@ -3028,7 +3184,7 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
         for (PVDIMAGE pImage = pDisk->pBase; pImage; pImage = pImage->pNext)
         {
             RTLogPrintf("Dumping VD image \"%s\" (Backend=%s)\n",
-	                pImage->Backend->pszBackendName, pImage->pszFilename);
+                        pImage->Backend->pszBackendName, pImage->pszFilename);
             pImage->Backend->pfnDump(pImage->pvBackendData);
         }
     } while (0);

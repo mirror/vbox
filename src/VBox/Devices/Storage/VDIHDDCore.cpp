@@ -961,7 +961,7 @@ out:
 /**@copydoc VBOXHDDBACKEND::pfnWrite */
 static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     size_t cbToWrite, size_t *pcbWriteProcess,
-                    size_t *pcbPreRead, size_t *pcbPostRead)
+                    size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite)
 {
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n", pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
@@ -1709,6 +1709,9 @@ VBOXHDDBACKEND g_VDIBackend =
     "VDI",
     /* cbSize */
     sizeof(VBOXHDDBACKEND),
+    /* uBackendCaps */
+      VD_CAP_UUID | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC
+    | VD_CAP_CREATE_SPLIT_2G | VD_CAP_DIFF,
     /* pfnCheckIfValid */
     vdiCheckIfValid,
     /* pfnOpen */
