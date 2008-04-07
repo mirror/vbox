@@ -174,6 +174,35 @@ typedef struct VBOXHDDRAW
 #define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO)
 /** @}*/
 
+
+/** @name VBox HDD container backend capability flags
+ * @{
+ */
+/** Supports UUIDs as expected by VirtualBox code. */
+#define VD_CAP_UUID                 RT_BIT(0)
+/** Supports creating fixed size images, allocating all space instantly. */
+#define VD_CAP_CREATE_FIXED         RT_BIT(1)
+/** Supports creating dynamically growing images, allocating space on demand. */
+#define VD_CAP_CREATE_DYNAMIC       RT_BIT(2)
+/** Supports creating images split in chunks of a bit less than 2GBytes. */
+#define VD_CAP_CREATE_SPLIT_2G      RT_BIT(3)
+/** Supports being used as differencing image format backend. */
+#define VD_CAP_DIFF                 RT_BIT(4)
+/** @}*/
+
+
+/**
+ * Data structure for returning a list of backend capabilities.
+ */
+typedef struct VDBACKENDINFO
+{
+    /** Name of the backend. */
+    char *pszBackend;
+    /** Capabilities of the backend (a combination of the VD_CAP_* flags). */
+    uint64_t uBackendCaps;
+} VDBACKENDINFO, *PVDBACKENDINFO;
+
+
 /**
  * Error message callback.
  *
@@ -195,6 +224,21 @@ typedef FNVDERROR *PFNVDERROR;
 struct VBOXHDD;
 typedef struct VBOXHDD VBOXHDD;
 typedef VBOXHDD *PVBOXHDD;
+
+
+/**
+ * Lists all HDD backends and their capabilities in a caller-provided buffer.
+ * Free all returned names with RTStrFree() when you no longer need them.
+ *
+ * @returns VBox status code.
+ *          VERR_BUFFER_OVERFLOW if not enough space is passed.
+ * @param   cEntriesAlloc   Number of list entries available.
+ * @param   pEntries        Pointer to array for the entries.
+ * @param   pcEntriesUsed   Number of entries returned.
+ */
+VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
+                                unsigned *pcEntriesUsed);
+
 
 /**
  * Allocates and initializes an empty HDD container.
