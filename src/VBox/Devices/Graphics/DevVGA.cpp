@@ -92,6 +92,7 @@
 
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxVideo.h>
+#include <VBox/bioslogo.h>
 
 #if defined(VBE_NEW_DYN_LIST) && defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
 # include "DevVGAModes.h"
@@ -107,7 +108,7 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /* "Press F12 to select boot device." bitmap. */
-static const uint8_t g_abLogoF12BootText[] = 
+static const uint8_t g_abLogoF12BootText[] =
 {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -5380,25 +5381,25 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Register I/O Port for the BIOS Logo.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, VBE_LOGO_PORT, 1, NULL, vbeIOPortWriteCMDLogo, vbeIOPortReadCMDLogo, NULL, NULL, "BIOS Logo");
+    rc = PDMDevHlpIOPortRegister(pDevIns, LOGO_IO_PORT, 1, NULL, vbeIOPortWriteCMDLogo, vbeIOPortReadCMDLogo, NULL, NULL, "BIOS Logo");
     if (VBOX_FAILURE(rc))
         return rc;
 
     /*
      * Construct the logo header.
      */
-    LOGOHDR LogoHdr = { LOGO_HDR_MAGIC, 0, 0, 0, 0, 0 };
+    LOGOHDR LogoHdr = { LOGO_HDR_MAGIC, 0, 0, 0, 0, 0, 0 };
 
-    rc = CFGMR3QueryU8(pCfgHandle, "FadeIn", &LogoHdr.u8FadeIn);
+    rc = CFGMR3QueryU8(pCfgHandle, "FadeIn", &LogoHdr.fu8FadeIn);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        LogoHdr.u8FadeIn = 1;
+        LogoHdr.fu8FadeIn = 1;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"FadeIn\" as integer failed"));
 
-    rc = CFGMR3QueryU8(pCfgHandle, "FadeOut", &LogoHdr.u8FadeOut);
+    rc = CFGMR3QueryU8(pCfgHandle, "FadeOut", &LogoHdr.fu8FadeOut);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        LogoHdr.u8FadeOut = 1;
+        LogoHdr.fu8FadeOut = 1;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"FadeOut\" as integer failed"));
@@ -5410,9 +5411,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"LogoTime\" as integer failed"));
 
-    rc = CFGMR3QueryU8(pCfgHandle, "ShowBootMenu", &LogoHdr.u8ShowBootMenu);
+    rc = CFGMR3QueryU8(pCfgHandle, "ShowBootMenu", &LogoHdr.fu8ShowBootMenu);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        LogoHdr.u8ShowBootMenu = 0;
+        LogoHdr.fu8ShowBootMenu = 0;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"ShowBootMenu\" as integer failed"));
