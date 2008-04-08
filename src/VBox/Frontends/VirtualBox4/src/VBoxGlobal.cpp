@@ -2470,7 +2470,7 @@ void VBoxGlobal::adoptLabelPixmap (QLabel *aLabel)
     aLabel->setPalette (pal);
 }
 
-extern const char *gVBoxLangSubDir = "/nls";
+extern const char *gVBoxLangSubDir = "/nls4";
 extern const char *gVBoxLangFileBase = "VirtualBox_";
 extern const char *gVBoxLangFileExt = ".qm";
 extern const char *gVBoxLangIDRegExp = "(([a-z]{2})(?:_([A-Z]{2}))?)|(C)";
