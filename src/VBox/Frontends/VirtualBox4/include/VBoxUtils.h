@@ -19,16 +19,9 @@
 #ifndef __VBoxUtils_h__
 #define __VBoxUtils_h__
 
-#include <qobject.h>
-#include <qevent.h>
-#include <q3listview.h>
-#include <qlabel.h>
-#include <qlayout.h>
-//Added by qt3to4:
-#include <QPixmap>
-#include <QResizeEvent>
+/* Qt includes */
 #include <QMouseEvent>
-#include <QKeyEvent>
+#include <Q3ListView>
 
 /**
  *  Simple ListView filter to disable unselecting all items by clicking in the
@@ -53,7 +46,7 @@ protected:
             e->type() == QEvent::MouseButtonRelease ||
             e->type() == QEvent::MouseButtonDblClick)
         {
-            QMouseEvent *me = (QMouseEvent *) e;
+            QMouseEvent *me = static_cast<QMouseEvent *> (e);
             if (!lv->itemAt (me->pos()))
                 return true;
         }
@@ -85,7 +78,7 @@ protected:
     {
         if (e->type() == QEvent::KeyPress || e->type() == QEvent::KeyRelease)
         {
-            QKeyEvent *ke = (QKeyEvent *) e;
+            QKeyEvent *ke = static_cast<QKeyEvent *> (e);
             if (ke->key() == mKey ||
                 (mKey == Qt::Key_Enter && ke->key() == Qt::Key_Return))
             {
@@ -120,8 +113,8 @@ protected:
     {
         if (e->type() == QEvent::KeyPress || e->type() == QEvent::KeyRelease)
         {
-            QKeyEvent *ke = (QKeyEvent *) e;
-            if (ke->state() & Qt::AltButton)
+            QKeyEvent *ke = static_cast<QKeyEvent *> (e);
+            if (ke->modifiers() & Qt::AltModifier)
                 return true;
         }
         return false;
@@ -155,7 +148,7 @@ private:
     {
         if (aObject == parent() && aEvent->type() == QEvent::Resize)
         {
-            QResizeEvent *ev = static_cast<QResizeEvent*> (aEvent);
+            QResizeEvent *ev = static_cast<QResizeEvent *> (aEvent);
             QSize oldSize = ev->oldSize();
             QSize newSize = ev->size();
             int maxWidth = newSize.width() > oldSize.width() ?
@@ -163,7 +156,7 @@ private:
             int maxHeight = newSize.height() > oldSize.height() ?
                 newSize.height() : oldSize.height();
             if (maxWidth > oldSize.width() || maxHeight > oldSize.height())
-                ((QWidget*)parent())->setMinimumSize (maxWidth, maxHeight);
+                qobject_cast<QWidget *> (parent())->setMinimumSize (maxWidth, maxHeight);
         }
         return QObject::eventFilter (aObject, aEvent);
     }
