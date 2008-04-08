@@ -241,7 +241,7 @@ static int svcInit (void)
     return rc;
 }
 
-static DECLCALLBACK(int) svcUnload (void)
+static DECLCALLBACK(int) svcUnload (void *)
 {
     vboxClipboardDestroy ();
     RTCritSectDelete (&critsect);
@@ -252,7 +252,7 @@ static DECLCALLBACK(int) svcUnload (void)
  * Disconnect the host side of the shared clipboard and send a "host disconnected" message
  * to the guest side.
  */
-static DECLCALLBACK(int) svcDisconnect (uint32_t u32ClientID, void *pvClient)
+static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvClient)
 {
     VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
 
@@ -267,7 +267,7 @@ static DECLCALLBACK(int) svcDisconnect (uint32_t u32ClientID, void *pvClient)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) svcConnect (uint32_t u32ClientID, void *pvClient)
+static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClient)
 {
     VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
 
@@ -278,7 +278,7 @@ static DECLCALLBACK(int) svcConnect (uint32_t u32ClientID, void *pvClient)
     {
         uint32_t u32ClientID = g_pClient->u32ClientID;
 
-        svcDisconnect(u32ClientID, g_pClient);
+        svcDisconnect(NULL, u32ClientID, g_pClient);
         /* And free the resources in the hgcm subsystem. */
         g_pHelpers->pfnDisconnectClient(g_pHelpers->pvInstance, u32ClientID);
     }
@@ -300,7 +300,8 @@ static DECLCALLBACK(int) svcConnect (uint32_t u32ClientID, void *pvClient)
     return rc;
 }
 
-static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle,
+static DECLCALLBACK(void) svcCall (void *,
+                                   VBOXHGCMCALLHANDLE callHandle,
                                    uint32_t u32ClientID,
                                    void *pvClient,
                                    uint32_t u32Function,
@@ -561,7 +562,8 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle,
 /*
  * We differentiate between a function handler for the guest and one for the host.
  */
-static DECLCALLBACK(int) svcHostCall (uint32_t u32Function,
+static DECLCALLBACK(int) svcHostCall (void *,
+                                      uint32_t u32Function,
                                       uint32_t cParms,
                                       VBOXHGCMSVCPARM paParms[])
 {
@@ -604,7 +606,7 @@ static DECLCALLBACK(int) svcHostCall (uint32_t u32Function,
     return rc;
 }
 
-static DECLCALLBACK(int) svcSaveState(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
     /* If there are any pending requests, they must be completed here. Since
      * the service is single threaded, there could be only requests
@@ -637,7 +639,7 @@ static DECLCALLBACK(int) svcSaveState(uint32_t u32ClientID, void *pvClient, PSSM
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) svcLoadState(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
     Log(("svcLoadState: u32ClientID = %d\n", u32ClientID));
 
@@ -703,7 +705,7 @@ static DECLCALLBACK(int) extCallback (uint32_t u32Function, uint32_t u32Format, 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) svcRegisterExtension(PFNHGCMSVCEXT pfnExtension, void *pvExtension)
+static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension, void *pvExtension)
 {
     LogFlowFunc(("pfnExtension = %p\n", pfnExtension));
     
@@ -767,6 +769,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
             ptable->pfnSaveState  = svcSaveState;
             ptable->pfnLoadState  = svcLoadState;
             ptable->pfnRegisterExtension  = svcRegisterExtension;
+            ptable->pvService     = NULL;
 
             /* Service specific initialization. */
             rc = svcInit ();

@@ -71,7 +71,7 @@
 PVBOXHGCMSVCHELPERS g_pHelpers;
 static PPDMLED      pStatusLed = NULL;
 
-static DECLCALLBACK(int) svcUnload (void)
+static DECLCALLBACK(int) svcUnload (void *)
 {
     int rc = VINF_SUCCESS;
 
@@ -80,7 +80,7 @@ static DECLCALLBACK(int) svcUnload (void)
     return rc;
 }
 
-static DECLCALLBACK(int) svcConnect (uint32_t u32ClientID, void *pvClient)
+static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClient)
 {
     int rc = VINF_SUCCESS;
 
@@ -92,7 +92,7 @@ static DECLCALLBACK(int) svcConnect (uint32_t u32ClientID, void *pvClient)
     return rc;
 }
 
-static DECLCALLBACK(int) svcDisconnect (uint32_t u32ClientID, void *pvClient)
+static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvClient)
 {
     int rc = VINF_SUCCESS;
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
@@ -109,7 +109,7 @@ static DECLCALLBACK(int) svcDisconnect (uint32_t u32ClientID, void *pvClient)
  *        This works as designed at the moment. A full state save would be difficult and not always possible
  *        as the contents of a shared folder might change in between save and restore.
  */
-static DECLCALLBACK(int) svcSaveState(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
 
@@ -166,7 +166,7 @@ static DECLCALLBACK(int) svcSaveState(uint32_t u32ClientID, void *pvClient, PSSM
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) svcLoadState(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
     uint32_t        nrMappings;
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
@@ -272,7 +272,7 @@ static DECLCALLBACK(int) svcLoadState(uint32_t u32ClientID, void *pvClient, PSSM
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
 
@@ -1067,7 +1067,7 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
 /*
  * We differentiate between a function handler for the guest and one for the host. The guest is not allowed to add or remove mappings for obvious security reasons.
  */
-static DECLCALLBACK(int) svcHostCall (uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
 
@@ -1221,7 +1221,7 @@ static DECLCALLBACK(int) svcHostCall (uint32_t u32Function, uint32_t cParms, VBO
     return rc;
 }
 
-extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable)
+extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (void *, VBOXHGCMSVCFNTABLE *ptable)
 {
     int rc = VINF_SUCCESS;
 
@@ -1253,6 +1253,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
             ptable->pfnHostCall   = svcHostCall;
             ptable->pfnSaveState  = svcSaveState;
             ptable->pfnLoadState  = svcLoadState;
+            ptable->pvService     = NULL;
         }
 
         /* Init handle table */
