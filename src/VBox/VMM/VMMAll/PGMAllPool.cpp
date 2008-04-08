@@ -1165,6 +1165,8 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     {
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
+        case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+        case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
             break;
 
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
@@ -1180,9 +1182,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
-        case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
-        case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
@@ -1246,6 +1246,8 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     {
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
+        case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+        case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
             break;
 
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
@@ -1261,9 +1263,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
-        case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
-        case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
