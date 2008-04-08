@@ -2357,6 +2357,8 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 #  else /* PAE */
     unsigned        iPDSrc;
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+    if (!pPDSrc)
+        return VINF_SUCCESS; /* not present */
 #  endif
     const GSTPDE    PdeSrc = pPDSrc->a[iPDSrc];
 # else
