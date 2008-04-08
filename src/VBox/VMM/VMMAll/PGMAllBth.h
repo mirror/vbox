@@ -271,7 +271,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  endif
             if (VBOX_SUCCESS(rc))
             {
-                unsigned iPTESrc = ((RTGCUINTPTR)pvFault >> PAGE_SHIFT) & GST_PT_MASK;
+                unsigned iPTESrc = ((RTGCUINTPTR)pvFault >> GST_PT_SHIFT) & GST_PT_MASK;
                 if (pPTSrc->a[iPTESrc].n.u1Present)
                     GCPhys = pPTSrc->a[iPTESrc].u & GST_PTE_PG_MASK;
             }
@@ -1673,7 +1673,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
                 int rc = PGM_GCPHYS_2_PTR(pVM, pPdeSrc->u & GST_PDE_PG_MASK, &pPTSrc);
                 if (VBOX_SUCCESS(rc))
                 {
-                    PGSTPTE         pPteSrc = &pPTSrc->a[(GCPtrPage >> PAGE_SHIFT) & GST_PT_MASK];
+                    PGSTPTE         pPteSrc = &pPTSrc->a[(GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK];
                     const GSTPTE    PteSrc = *pPteSrc;
                     if (pPteSrc->n.u1Present)
                         TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
@@ -1720,7 +1720,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
                 int rc = PGM_GCPHYS_2_PTR(pVM, pPdeSrc->u & GST_PDE_PG_MASK, &pPTSrc);
                 if (VBOX_SUCCESS(rc))
                 {
-                    PGSTPTE         pPteSrc = &pPTSrc->a[(GCPtrPage >> PAGE_SHIFT) & GST_PT_MASK];
+                    PGSTPTE         pPteSrc = &pPTSrc->a[(GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK];
                     const GSTPTE    PteSrc = *pPteSrc;
                     if (pPteSrc->n.u1Present)
                         TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
@@ -1777,7 +1777,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
         /*
          * Real page fault?
          */
-        PGSTPTE        pPteSrc = &pPTSrc->a[(GCPtrPage >> PAGE_SHIFT) & GST_PT_MASK];
+        PGSTPTE        pPteSrc = &pPTSrc->a[(GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK];
         const GSTPTE   PteSrc = *pPteSrc;
         if (    !PteSrc.n.u1Present
 #  if PGM_WITH_NX(PGM_GST_TYPE)
