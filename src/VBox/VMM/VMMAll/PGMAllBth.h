@@ -2733,6 +2733,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                  */
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
+#  elif PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
+                const unsigned iPdShw = iPD + iPDPTE * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
 #  else
                 const unsigned iPdShw = iPD; NOREF(iPdShw);
 #  endif
@@ -2816,6 +2818,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                  */
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
+#  elif PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
+                const unsigned iPdShw = iPD + iPDPTE * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
 #  else
                 const unsigned iPdShw = iPD; NOREF(iPdShw);
 #  endif
