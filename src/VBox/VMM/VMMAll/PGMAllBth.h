@@ -262,13 +262,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         else
         {
             PX86PT pPTSrc;
-#  ifdef IN_GC
-            rc = PGMGCDynMapGCPage(pVM, PdeSrc.u & GST_PDE_PG_MASK, (void **)&pPTSrc);
-#  else
-            pPTSrc = (PX86PT)MMPhysGCPhys2HCVirt(pVM, PdeSrc.u & GST_PDE_PG_MASK, sizeof(*pPTSrc));
-            if (pPTSrc == 0)
-                rc = VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-#  endif
+            rc = PGM_GCPHYS_2_PTR(pVM, PdeSrc.u & GST_PDE_PG_MASK, &pPTSrc);
             if (VBOX_SUCCESS(rc))
             {
                 unsigned iPTESrc = ((RTGCUINTPTR)pvFault >> GST_PT_SHIFT) & GST_PT_MASK;
