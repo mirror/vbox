@@ -84,7 +84,7 @@ static BOOTPClient *find_addr(PNATState pData, struct in_addr *paddr, const uint
 }
 
 static void dhcp_decode(const uint8_t *buf, int size,
-                        int *pmsg_type)
+                        int *pmsg_type, struct in_addr *req_ip)
 {
     const uint8_t *p, *p_end;
     int len, tag;
@@ -112,6 +112,10 @@ static void dhcp_decode(const uint8_t *buf, int size,
             dprintf("dhcp: tag=0x%02x len=%d\n", tag, len);
 
             switch(tag) {
+            case RFC2132_REQ_ADDR:
+                if (len >= 4)
+                    *req_ip = *(struct in_addr*)p;
+                break;
             case RFC2132_MSG_TYPE:
                 if (len >= 1)
                     *pmsg_type = p[0];
@@ -133,19 +137,23 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     struct in_addr dns_addr_dhcp;
     int dhcp_msg_type, val;
     uint8_t *q;
+    struct in_addr requested_ip; /* the requested IP in DHCPREQUEST */
+    int send_nak = 0;
+    uint32_t ipv4_addr;
 
     /* extract exact DHCP msg type */
-    dhcp_decode(bp->bp_vend, DHCP_OPT_LEN, &dhcp_msg_type);
+    requested_ip.s_addr = 0xffffffff;
+    dhcp_decode(bp->bp_vend, DHCP_OPT_LEN, &dhcp_msg_type, &requested_ip);
     dprintf("bootp packet op=%d msgtype=%d\n", bp->bp_op, dhcp_msg_type);
 
     if (dhcp_msg_type == 0)
         dhcp_msg_type = DHCPREQUEST; /* Force reply for old BOOTP clients */
 
     if (dhcp_msg_type == DHCPRELEASE) {
-        uint32_t addr = ntohl(bp->bp_ciaddr.s_addr);
+        ipv4_addr = ntohl(bp->bp_ciaddr.s_addr);
         release_addr(pData, &bp->bp_ciaddr);
         LogRel(("NAT: DHCP released IP address %u.%u.%u.%u\n",
-                addr >> 24, (addr >> 16) & 0xff, (addr >> 8) & 0xff, addr & 0xff));
+                ipv4_addr >> 24, (ipv4_addr >> 16) & 0xff, (ipv4_addr >> 8) & 0xff, ipv4_addr & 0xff));
         dprintf("released addr=%08x\n", ntohl(bp->bp_ciaddr.s_addr));
         /* This message is not to be answered in any way. */
         return;
@@ -189,13 +197,6 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     if (tftp_prefix && RTDirExists(tftp_prefix) && bootp_filename)
         RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
 
-    {
-        uint32_t addr = ntohl(daddr.sin_addr.s_addr);
-        LogRel(("NAT: DHCP offered IP address %u.%u.%u.%u\n",
-                addr >> 24, (addr >> 16) & 0xff, (addr >> 8) & 0xff, addr & 0xff));
-    }
-    dprintf("offered addr=%08x\n", ntohl(daddr.sin_addr.s_addr));
-
     saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
     saddr.sin_port = htons(BOOTP_SERVER);
 
@@ -221,7 +222,29 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     } else if (dhcp_msg_type == DHCPREQUEST) {
         *q++ = RFC2132_MSG_TYPE;
         *q++ = 1;
-        *q++ = DHCPACK;
+        if (   requested_ip.s_addr != 0xffffffff
+            && requested_ip.s_addr != daddr.sin_addr.s_addr)
+        {
+            /* network changed */
+            *q++ = DHCPNAK;
+            send_nak = 1;
+        }
+        else
+            *q++ = DHCPACK;
+    }
+
+    if (send_nak)
+    {
+        ipv4_addr = ntohl(requested_ip.s_addr);
+        LogRel(("NAT: Client requested IP address %u.%u.%u.%u -- sending NAK\n",
+                ipv4_addr >> 24, (ipv4_addr >> 16) & 0xff, (ipv4_addr >> 8) & 0xff, ipv4_addr & 0xff));
+    }
+    else
+    {
+        ipv4_addr = ntohl(daddr.sin_addr.s_addr);
+        LogRel(("NAT: DHCP offered IP address %u.%u.%u.%u\n",
+                ipv4_addr >> 24, (ipv4_addr >> 16) & 0xff, (ipv4_addr >> 8) & 0xff, ipv4_addr & 0xff));
+        dprintf("offered addr=%08x\n", ntohl(daddr.sin_addr.s_addr));
     }
 
     if (dhcp_msg_type == DHCPDISCOVER ||
@@ -230,7 +253,11 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         *q++ = 4;
         memcpy(q, &saddr.sin_addr, 4);
         q += 4;
+    }
 
+    if (!send_nak &&
+        (dhcp_msg_type == DHCPDISCOVER ||
+         dhcp_msg_type == DHCPREQUEST)) {
         *q++ = RFC1533_NETMASK;
         *q++ = 4;
         *q++ = 0xff;
