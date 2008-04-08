@@ -1223,14 +1223,15 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
     return rc;
 }
 
-extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (void *, VBOXHGCMSVCFNTABLE *ptable)
+extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable)
 {
     int rc = VINF_SUCCESS;
 
     Log(("VBoxHGCMSvcLoad: ptable = %p\n", ptable));
 
-    if (!ptable)
+    if (!VALID_PTR(ptable))
     {
+        LogRelFunc(("Bad value of ptable (%p) in shared folders service\n", ptable));
         rc = VERR_INVALID_PARAMETER;
     }
     else
@@ -1240,7 +1241,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (void *, VBOXHGCMSVCFNT
         if (    ptable->cbSize != sizeof (VBOXHGCMSVCFNTABLE)
             ||  ptable->u32Version != VBOX_HGCM_SVC_VERSION)
         {
-            rc = VERR_INVALID_PARAMETER;
+            LogRelFunc(("version mismatch loading shared folders service: ptable->cbSize = %d, should be %d, ptable->u32Version = 0x%08X, should be 0x%08X\n", ptable->cbSize, sizeof (VBOXHGCMSVCFNTABLE), ptable->u32Version, VBOX_HGCM_SVC_VERSION));
+            rc = VERR_VERSION_MISMATCH;
         }
         else
         {
