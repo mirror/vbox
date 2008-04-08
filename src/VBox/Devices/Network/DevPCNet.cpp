@@ -1360,6 +1360,20 @@ static void pcnetUpdateIrq(PCNetState *pData)
     STAM_PROFILE_ADV_STOP(&pData->StatInterrupt, a);
 }
 
+/**
+ * Enable/disable the private guest interface.
+ */
+static void pcnetEnablePrivateIf(PCNetState *pData)
+{
+    bool fPrivIfEnabled =       pData->pSharedMMIOHC
+                          && !!(pData->CTXSUFF(pSharedMMIO)->fFlags & PCNET_GUEST_FLAGS_ADMIT_GUEST);
+    if (fPrivIfEnabled != pData->fPrivIfEnabled)
+    {
+        pData->fPrivIfEnabled = fPrivIfEnabled;
+        LogRel(("PCNet#%d: %s private interface\n", PCNET_INST_NR, fPrivIfEnabled ? "Enabling" : "Disabling"));
+    }
+}
+
 #ifdef IN_RING3
 #ifdef PCNET_NO_POLLING
 static void pcnetUpdateRingHandlers(PCNetState *pData)
@@ -1475,13 +1489,8 @@ static void pcnetInit(PCNetState *pData)
         pData->GCTDRA    = PHYSADDR(pData, initblk.tdra);                    \
 } while (0)
 
-    bool fPrivIfEnabled =       pData->pSharedMMIOHC
-                          && !!(pData->pSharedMMIOHC->fFlags & PCNET_GUEST_FLAGS_ADMIT_GUEST);
-    if (fPrivIfEnabled != pData->fPrivIfEnabled)
-    {
-        pData->fPrivIfEnabled = fPrivIfEnabled;
-        LogRel(("PCNet#%d: %s private interface\n", PCNET_INST_NR, fPrivIfEnabled ? "Enabling" : "Disabling"));
-    }
+    pcnetEnablePrivateIf(pData);
+
     if (BCR_SSIZE32(pData))
     {
         struct INITBLK32 initblk;
@@ -1534,6 +1543,7 @@ static void pcnetStart(PCNetState *pData)
         pData->aCSR[0] |= 0x0010;    /* set TXON */
     if (!CSR_DRX(pData))
         pData->aCSR[0] |= 0x0020;    /* set RXON */
+    pcnetEnablePrivateIf(pData);
     pData->aCSR[0] &= ~0x0004;       /* clear STOP bit */
     pData->aCSR[0] |=  0x0002;       /* STRT */
 }
@@ -1548,6 +1558,7 @@ static void pcnetStop(PCNetState *pData)
     pData->aCSR[0] |=  0x0014;
     pData->aCSR[4] &= ~0x02c2;
     pData->aCSR[5] &= ~0x0011;
+    pcnetEnablePrivateIf(pData);
     pcnetPollTimer(pData);
 }
 
@@ -1560,6 +1571,7 @@ static DECLCALLBACK(bool) pcnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
     return true;
 }
 #endif
+
 
 /**
  * Poll Receive Descriptor Table Entry and cache the results in the appropriate registers.
@@ -4410,7 +4422,8 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     pData->pDevInsGC     = PDMDEVINS_2_GCPTR(pDevIns);
     pData->pXmitQueueGC  = PDMQueueGCPtr(pData->pXmitQueueHC);
     pData->pCanRxQueueGC = PDMQueueGCPtr(pData->pCanRxQueueHC);
-    pData->pSharedMMIOGC += offDelta;
+    if (pData->pSharedMMIOHC)
+        pData->pSharedMMIOGC += offDelta;
 #ifdef PCNET_NO_POLLING
     *(RTHCUINTPTR *)&pData->pfnEMInterpretInstructionGC += offDelta;
 #else
