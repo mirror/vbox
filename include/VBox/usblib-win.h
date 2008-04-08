@@ -113,6 +113,7 @@ typedef struct
     char            serial_hash[MAX_USB_SERIAL_STRING];
 
     uint8_t         fAttached;
+    uint8_t         fHiSpeed;
 } USBSUP_GETDEV, *PUSBSUP_GETDEV;
 
 typedef struct

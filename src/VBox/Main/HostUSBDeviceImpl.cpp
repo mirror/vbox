@@ -301,8 +301,13 @@ STDMETHODIMP HostUSBDevice::COMGETTER(PortVersion)(USHORT *aPortVersion)
 
     AutoReaderLock alock (this);
 
-    /** @todo implement this correctly or things just won't work right, see the vista defect. */
-    *aPortVersion = mUsb->bcdUSB >> 8;
+    /* Port version is 2 (EHCI) if and only if the device runs at high speed;
+     * if speed is unknown, fall back to the old and innacurate method.
+     */
+    if (mUsb->enmSpeed == USBDEVICESPEED_UNKNOWN)
+        *aPortVersion = mUsb->bcdUSB >> 8;
+    else
+        *aPortVersion = (mUsb->enmSpeed == USBDEVICESPEED_HIGH) ? 2 : 1;
 
     return S_OK;
 }
