@@ -1253,6 +1253,9 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
  */
 PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uErr)
 {
+# if PGM_WITH_NX(PGM_GST_TYPE)
+    bool fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+# endif
     LogFlow(("SyncPage: GCPtrPage=%VGv cPages=%d uErr=%#x\n", GCPtrPage, cPages, uErr));
 
 #if    PGM_GST_TYPE == PGM_TYPE_32BIT \
@@ -1302,8 +1305,8 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
         &&  PdeSrc.n.u1Present
         &&  (PdeSrc.n.u1User == PdeDst.n.u1User)
         &&  (PdeSrc.n.u1Write == PdeDst.n.u1Write || !PdeDst.n.u1Write)
-# if PGM_GST_TYPE == PGM_TYPE_PAE
-        &&  (PdeSrc.n.u1NoExecute == PdeDst.n.u1NoExecute)
+# if PGM_WITH_NX(PGM_GST_TYPE)
+        &&  (!fNoExecuteBitValid || PdeSrc.n.u1NoExecute == PdeDst.n.u1NoExecute)
 # endif
        )
     {
