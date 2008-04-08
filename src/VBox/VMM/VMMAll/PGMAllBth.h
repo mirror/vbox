@@ -1927,7 +1927,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     /*
      * Validate input a little bit.
      */
-    Assert(iPDSrc == (GCPtrPage >> GST_PD_SHIFT));
+    AssertMsg(iPDSrc == (GCPtrPage >> GST_PD_SHIFT), ("SyncPT: iPDSrc=%x GCPtrPage=%VGv\n", iPDSrc, GCPtrPage));
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
     PX86PD          pPDDst = pVM->pgm.s.CTXMID(p,32BitPD);
 # else
