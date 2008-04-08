@@ -244,6 +244,7 @@ static DECLCALLBACK(void) drvTAPNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
  */
 static DECLCALLBACK(void) drvTAPNotifyCanReceive(PPDMINETWORKCONNECTOR pInterface)
 {
+#ifdef ASYNC_NET
     PDRVTAP pData = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
 
     LogFlow(("drvTAPNotifyCanReceive:\n"));
@@ -261,6 +262,7 @@ static DECLCALLBACK(void) drvTAPNotifyCanReceive(PPDMINETWORKCONNECTOR pInterfac
     /* ensure we wake up only once */
     if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
         RTSemEventSignal(pData->EventOutOfSpace);
+#endif
 }
 
 
@@ -323,6 +325,9 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             rc = dlpi_recv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
             rc = RT_LIKELY(rc == DLPI_SUCCESS) ? VINF_SUCCESS : SolarisDLPIErr2VBoxErr(rc);
 #else
+            /** @note At least on Linux we will never receive more than one network packet
+             *        after poll() returned successfully. I don't know why but a second
+             *        RTFileRead() operation will return with VERR_TRY_AGAIN. */
             rc = RTFileRead(pData->FileDevice, achBuf, sizeof(achBuf), &cbRead);
 #endif
             if (VBOX_SUCCESS(rc))
@@ -352,13 +357,9 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                            && pThread->enmState == PDMTHREADSTATE_RUNNING)
                     {
                         LogFlow(("drvTAPAsyncIoThread: cbMax=%d cbRead=%d waiting...\n", cbMax, cbRead));
-#if 1
                         /* We get signalled by the network driver. 50ms is just for sanity */
                         ASMAtomicXchgU32(&pData->fOutOfSpace, true);
                         RTSemEventWait(pData->EventOutOfSpace, 50);
-#else
-                        RTThreadSleep(1);
-#endif
                         cbMax = pData->pPort->pfnCanReceive(pData->pPort);
                     }
                     ASMAtomicXchgU32(&pData->fOutOfSpace, false);
@@ -377,9 +378,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                          cbRead, u64Now, u64Now - pData->u64LastReceiveTS, u64Now - pData->u64LastTransferTS));
                 pData->u64LastReceiveTS = u64Now;
 #endif
-                Log2(("drvTAPAsyncIoThread: cbRead=%#x\n"
-                      "%.*Vhxd\n",
-                      cbRead, cbRead, achBuf));
+                Log2(("drvTAPAsyncIoThread: cbRead=%#x\n" "%.*Vhxd\n", cbRead, cbRead, achBuf));
                 STAM_COUNTER_INC(&pData->StatPktRecv);
                 STAM_COUNTER_ADD(&pData->StatPktRecvBytes, cbRead);
                 rc = pData->pPort->pfnReceive(pData->pPort, achBuf, cbRead);
