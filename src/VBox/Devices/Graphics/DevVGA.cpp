@@ -3630,6 +3630,21 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 pData->LogoCommand = LOGO_CMD_NOP;
                 break;
 
+            case LOGO_CMD_BUF_BLT:
+            {
+                if (pData->vram_size >= LOGO_MAX_SIZE * 2)
+                {
+                    uint32_t *pu32TmpDst = (uint32_t *)pData->vram_ptrHC;
+                    uint32_t *pu32TmpSrc = (uint32_t *)pData->vram_ptrHC + LOGO_MAX_SIZE / 4;
+                    for (i = 0; i < LOGO_MAX_WIDTH; i++)
+                    {
+                        for (j = 0; j < LOGO_MAX_HEIGHT; j++)
+                            *pu32TmpDst++ = *pu32TmpSrc++;
+                    }
+                }
+                break;
+            }
+
             case LOGO_CMD_SET_PAL:
             {
                 uint8_t    *pu8Pal;
@@ -3656,10 +3671,29 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 break;
             }
 
+            case LOGO_CMD_SET_DIRTY:
+            {
+                /* Set dirty flags */
+                uint32_t off = 0;
+                uint32_t size = LOGO_MAX_SIZE;
+                while (off <= size)
+                {
+                    vga_set_dirty(pData, off);
+                    off += PAGE_SIZE;
+                }
+                break;
+            }
+
             case LOGO_CMD_CLS:
             {
+                uint32_t *pu32TmpPtr;
+
+                if (pData->vram_size >= LOGO_MAX_SIZE * 2)
+                    pu32TmpPtr = (uint32_t *)pData->vram_ptrHC + LOGO_MAX_SIZE / 4;
+                else
+                    pu32TmpPtr = (uint32_t *)pData->vram_ptrHC;
+
                 /* Clear vram */
-                uint32_t *pu32TmpPtr = (uint32_t *)pData->vram_ptrHC;
                 for (i = 0; i < LOGO_MAX_WIDTH; i++)
                 {
                     for (j = 0; j < LOGO_MAX_HEIGHT; j++)
@@ -3674,7 +3708,7 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 uint8_t cbStep = u32 & 0xFF;
 
                 /*
-                 * Determin bytes per pixel in the destination buffer.
+                 * Determine bytes per pixel in the destination buffer.
                  */
                 if ((u32 & 0xFF00) == LOGO_CMD_SHOW_TEXT)
                 {
@@ -3692,9 +3726,14 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 uint8_t        *pu8TmpPtr;
                 size_t          cbPadBytes  = 0;
                 size_t          cbLineDst   = pData->pDrv->cbScanline;
-                uint8_t        *pu8Dst      = pData->vram_ptrHC;
+                uint8_t        *pu8Dst;
                 uint32_t        cyLeft      = cy;
                 uint16_t        i;
+
+                if (pData->vram_size >= LOGO_MAX_SIZE * 2)
+                    pu8Dst = (uint8_t *)pData->vram_ptrHC + LOGO_MAX_SIZE;
+                else
+                    pu8Dst = (uint8_t *)pData->vram_ptrHC;
 
                 pu8Dst += pData->xLogo * 4 + pData->yLogo * cbLineDst;
 
@@ -3815,13 +3854,6 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     pu8Dst -= cbLineDst;
                     pu8Src += cbPadBytes;
                 }
-
-                /*
-                 * Invalidate the area.
-                 */
-/** @todo cannot call this here. Just set the appropriate dirty bits. */
-                pData->pDrv->pfnUpdateRect(pData->pDrv, 0, 0, LOGO_MAX_WIDTH, LOGO_MAX_WIDTH);
-
                 pData->LogoCommand = LOGO_CMD_NOP;
                 break;
             }

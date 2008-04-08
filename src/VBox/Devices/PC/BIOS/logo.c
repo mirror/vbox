@@ -659,6 +659,9 @@ show_bmp:
         // Clear screen
         outw(LOGO_IO_PORT, LOGO_CMD_CLS);
 
+        // Set dirty bits
+        outw(LOGO_IO_PORT, LOGO_CMD_SET_DIRTY);
+
         if (is_fade_in)
         {
             for (i = 0; i <= LOGO_SHOW_STEPS; i++)
@@ -673,6 +676,12 @@ show_bmp:
 
                 if (uBootMenu == 2)
                     show_boot_text(i);
+
+                // Blit buffer
+                outw(LOGO_IO_PORT, LOGO_CMD_BUF_BLT);
+
+                // Set dirty bits
+                outw(LOGO_IO_PORT, LOGO_CMD_SET_DIRTY);
 
                 wait(16 / WAIT_MS, 0);
             }
@@ -689,6 +698,12 @@ show_bmp:
 
             if (uBootMenu == 2)
                 show_boot_text(LOGO_SHOW_STEPS);
+
+            // Blit buffer
+            outw(LOGO_IO_PORT, LOGO_CMD_BUF_BLT);
+
+            // Set dirty bits
+            outw(LOGO_IO_PORT, LOGO_CMD_SET_DIRTY);
         }
 
         // Wait (interval in milliseconds)
@@ -713,6 +728,12 @@ show_bmp:
 
                 if (uBootMenu == 2)
                     show_boot_text(i);
+
+                // Blit buffer
+                outw(LOGO_IO_PORT, LOGO_CMD_BUF_BLT);
+
+                // Set dirty bits
+                outw(LOGO_IO_PORT, LOGO_CMD_SET_DIRTY);
 
                 scode = wait(16 / WAIT_MS, 0);
                 if (scode == F12_SCAN_CODE)
