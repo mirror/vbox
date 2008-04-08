@@ -20,11 +20,11 @@
 #define __VBoxNetworkFramework_h__
 
 #include <HappyHttp.h>
-#include <qobject.h>
-#include <qthread.h>
-//Added by qt3to4:
-#include <QEvent>
+
+/* Qt includes */
+#include <QThread>
 #include <QDataStream>
+
 typedef happyhttp::Connection HConnect;
 
 /**

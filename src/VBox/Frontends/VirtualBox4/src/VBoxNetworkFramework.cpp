@@ -17,9 +17,9 @@
  */
 
 #include <VBoxNetworkFramework.h>
-#include <qapplication.h>
-//Added by qt3to4:
-#include <QEvent>
+
+/* Qt includes */
+#include <QApplication>
 
 /* These notifications are used to notify the GUI thread about different
  * downloading events: Downloading Started, Downloading in Progress,
@@ -47,7 +47,7 @@ class PostDataEvent : public QEvent
 public:
     PostDataEvent (const char *aData, ulong aSize)
         : QEvent ((QEvent::Type) PostDataEventType)
-        , mData (QByteArray().duplicate (aData, aSize)) {}
+        , mData (aData, aSize) {}
 
     QByteArray mData;
 };
@@ -104,7 +104,7 @@ bool VBoxNetworkFramework::event (QEvent *aEvent)
         case PostDataEventType:
         {
             PostDataEvent *e = static_cast<PostDataEvent*> (aEvent);
-            mDataStream.writeRawBytes (e->mData.data(), e->mData.size());
+            mDataStream.writeRawData (e->mData.data(), e->mData.size());
             emit netData (e->mData);
             return true;
         }
@@ -141,7 +141,7 @@ void VBoxNetworkFramework::postRequest (const QString &aHost,
         {
             try
             {
-                HConnect conn (mHost, 80);
+                HConnect conn (mHost.toAscii().constData(), 80);
                 conn.setcallbacks (onBegin, onData, onFinish, mProc);
                 const char *headers[] =
                 {
@@ -151,7 +151,7 @@ void VBoxNetworkFramework::postRequest (const QString &aHost,
                     0
                 };
 
-                conn.request ("POST", mUrl.ascii(), headers, 0, 0);
+                conn.request ("POST", mUrl.toAscii().constData(), headers, 0, 0);
                 while (conn.outstanding())
                     conn.pump();
             }
