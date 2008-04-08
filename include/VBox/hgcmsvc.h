@@ -52,9 +52,10 @@
  * 2.2->3.1 Because pfnHostCall is now synchronous, returns rc, and parameters were changed
  * 3.1->3.2 Because pfnRegisterExtension was added
  * 3.2->3.3 Because pfnDisconnectClient helper was added
+ * 3.3->4.1 Because the pvService entry and parameter was added
  */
-#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0003)
-#define VBOX_HGCM_SVC_VERSION_MINOR (0x0003)
+#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0004)
+#define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
 
@@ -143,32 +144,35 @@ typedef struct _VBOXHGCMSVCFNTABLE
 #endif
 
     /** Uninitialize service */
-    DECLR3CALLBACKMEMBER(int, pfnUnload, (void));
+    DECLR3CALLBACKMEMBER(int, pfnUnload, (void *pvService));
 
     /** Inform the service about a client connection. */
-    DECLR3CALLBACKMEMBER(int, pfnConnect, (uint32_t u32ClientID, void *pvClient));
+    DECLR3CALLBACKMEMBER(int, pfnConnect, (void *pvService, uint32_t u32ClientID, void *pvClient));
 
     /** Inform the service that the client wants to disconnect. */
-    DECLR3CALLBACKMEMBER(int, pfnDisconnect, (uint32_t u32ClientID, void *pvClient));
+    DECLR3CALLBACKMEMBER(int, pfnDisconnect, (void *pvService, uint32_t u32ClientID, void *pvClient));
 
     /** Service entry point.
      *  Return code is passed to pfnCallComplete callback.
      */
-    DECLR3CALLBACKMEMBER(void, pfnCall, (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
+    DECLR3CALLBACKMEMBER(void, pfnCall, (void *pvService, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
 
     /** Host Service entry point meant for privileged features invisible to the guest.
      *  Return code is passed to pfnCallComplete callback.
      */
-    DECLR3CALLBACKMEMBER(int, pfnHostCall, (uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
+    DECLR3CALLBACKMEMBER(int, pfnHostCall, (void *pvService, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
  
     /** Inform the service about a VM save operation. */
-    DECLR3CALLBACKMEMBER(int, pfnSaveState, (uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
+    DECLR3CALLBACKMEMBER(int, pfnSaveState, (void *pvService, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
 
     /** Inform the service about a VM load operation. */
-    DECLR3CALLBACKMEMBER(int, pfnLoadState, (uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
+    DECLR3CALLBACKMEMBER(int, pfnLoadState, (void *pvService, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
 
     /** Manage the service extension. */
-    DECLR3CALLBACKMEMBER(int, pfnRegisterExtension, (PFNHGCMSVCEXT pfnExtension, void *pvExtension));
+    DECLR3CALLBACKMEMBER(int, pfnRegisterExtension, (void *pvService, PFNHGCMSVCEXT pfnExtension, void *pvExtension));
+
+    /** User/instance data pointer for the service. */
+    void *pvService;
 
 } VBOXHGCMSVCFNTABLE;
 #pragma pack()

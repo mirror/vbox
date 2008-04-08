@@ -293,7 +293,7 @@ int HGCMService::loadServiceDLL (void)
 
                     if (m_fntable.pfnUnload)
                     {
-                        m_fntable.pfnUnload ();
+                        m_fntable.pfnUnload (m_fntable.pvService);
                     }
                 }
             }
@@ -491,7 +491,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 LogFlowFunc(("SVC_MSG_UNLOAD\n"));
                 if (pSvc->m_fntable.pfnUnload)
                 {
-                    pSvc->m_fntable.pfnUnload ();
+                    pSvc->m_fntable.pfnUnload (pSvc->m_fntable.pvService);
                 }
 
                 pSvc->unloadServiceDLL ();
@@ -508,7 +508,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
 
                 if (pClient)
                 {
-                    rc = pSvc->m_fntable.pfnConnect (pMsg->u32ClientId, HGCM_CLIENT_DATA(pSvc, pClient));
+                    rc = pSvc->m_fntable.pfnConnect (pSvc->m_fntable.pvService, pMsg->u32ClientId, HGCM_CLIENT_DATA(pSvc, pClient));
 
                     hgcmObjDereference (pClient);
                 }
@@ -528,7 +528,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
 
                 if (pClient)
                 {
-                    rc = pSvc->m_fntable.pfnDisconnect (pMsg->u32ClientId, HGCM_CLIENT_DATA(pSvc, pClient));
+                    rc = pSvc->m_fntable.pfnDisconnect (pSvc->m_fntable.pvService, pMsg->u32ClientId, HGCM_CLIENT_DATA(pSvc, pClient));
 
                     hgcmObjDereference (pClient);
                 }
@@ -549,7 +549,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
 
                 if (pClient)
                 {
-                    pSvc->m_fntable.pfnCall ((VBOXHGCMCALLHANDLE)pMsg, pMsg->u32ClientId, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->u32Function, pMsg->cParms, pMsg->paParms);
+                    pSvc->m_fntable.pfnCall (pSvc->m_fntable.pvService, (VBOXHGCMCALLHANDLE)pMsg, pMsg->u32ClientId, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->u32Function, pMsg->cParms, pMsg->paParms);
 
                     hgcmObjDereference (pClient);
                 }
@@ -565,7 +565,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
 
                 LogFlowFunc(("SVC_MSG_HOSTCALL u32Function = %d, cParms = %d, paParms = %p\n", pMsg->u32Function, pMsg->cParms, pMsg->paParms));
 
-                rc = pSvc->m_fntable.pfnHostCall (pMsg->u32Function, pMsg->cParms, pMsg->paParms);
+                rc = pSvc->m_fntable.pfnHostCall (pSvc->m_fntable.pvService, pMsg->u32Function, pMsg->cParms, pMsg->paParms);
             } break;
 
             case SVC_MSG_LOADSTATE:
@@ -580,7 +580,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 {
                     if (pSvc->m_fntable.pfnLoadState)
                     {
-                        rc = pSvc->m_fntable.pfnLoadState (pMsg->u32ClientId, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
+                        rc = pSvc->m_fntable.pfnLoadState (pSvc->m_fntable.pvService, pMsg->u32ClientId, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
                     }
 
                     hgcmObjDereference (pClient);
@@ -606,7 +606,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                     if (pSvc->m_fntable.pfnSaveState)
                     {
                         g_fSaveState = true;
-                        rc = pSvc->m_fntable.pfnSaveState (pMsg->u32ClientId, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
+                        rc = pSvc->m_fntable.pfnSaveState (pSvc->m_fntable.pvService, pMsg->u32ClientId, HGCM_CLIENT_DATA(pSvc, pClient), pMsg->pSSM);
                         g_fSaveState = false;
                     }
 
@@ -632,7 +632,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 {
                     if (pSvc->m_fntable.pfnRegisterExtension)
                     {
-                        rc = pSvc->m_fntable.pfnRegisterExtension (pMsg->pfnExtension, pMsg->pvExtension);
+                        rc = pSvc->m_fntable.pfnRegisterExtension (pSvc->m_fntable.pvService, pMsg->pfnExtension, pMsg->pvExtension);
                     }
                     else
                     {
@@ -660,7 +660,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 {
                     if (pSvc->m_fntable.pfnRegisterExtension)
                     {
-                        rc = pSvc->m_fntable.pfnRegisterExtension (NULL, NULL);
+                        rc = pSvc->m_fntable.pfnRegisterExtension (pSvc->m_fntable.pvService, NULL, NULL);
                     }
                     else
                     {
