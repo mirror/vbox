@@ -2657,7 +2657,7 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         if (pCtx->eflags.Bits.u1VM)
             Log(("HWV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
         else
-            Log(("HWR%d: %08X ESP=%08X IF=%d CR0=%x\n", cpl, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0));
+            Log(("HWR%d: %08X ESP=%08X IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
 #endif
 
         /*
