@@ -61,6 +61,7 @@
 
 #define LOGO_MAX_WIDTH       640
 #define LOGO_MAX_HEIGHT      480
+#define LOGO_MAX_SIZE        LOGO_MAX_WIDTH * LOGO_MAX_HEIGHT * 4
 
 
 /** @name The BIOS logo commands.
@@ -76,9 +77,11 @@
 #define LOGO_CMD_SET_PALSIZE 0x700
 #define LOGO_CMD_SET_DEFAULT 0x800
 #define LOGO_CMD_SET_PAL     0x900
-#define LOGO_CMD_SHOW_BMP    0xA00
-#define LOGO_CMD_SHOW_TEXT   0xB00
-#define LOGO_CMD_CLS         0xC00
+#define LOGO_CMD_SET_DIRTY   0xA00
+#define LOGO_CMD_SHOW_BMP    0xB00
+#define LOGO_CMD_SHOW_TEXT   0xC00
+#define LOGO_CMD_CLS         0xD00
+#define LOGO_CMD_BUF_BLT     0xE00
 /** @} */
 
 /**
