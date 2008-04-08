@@ -1062,6 +1062,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
     {
         g_pHelpers->pfnCallComplete (callHandle, rc);
     }
+
+    LogFlow(("\n", rc));        /* Add a new line to differentiate between calls more easily. */
 }
 
 /*
