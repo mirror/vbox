@@ -120,7 +120,7 @@ typedef struct DRVTAP
     /** Reader thread. */
     PPDMTHREAD              pThread;
     /** We are waiting for more receive buffers. */
-    uint32_t volatile       fOutOfSpace;
+    bool volatile           fMaybeOutOfSpace;
     /** Event semaphore for blocking on receive. */
     RTSEMEVENT              EventOutOfSpace;
 #endif
@@ -248,19 +248,13 @@ static DECLCALLBACK(void) drvTAPNotifyCanReceive(PPDMINETWORKCONNECTOR pInterfac
     PDRVTAP pData = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
 
     LogFlow(("drvTAPNotifyCanReceive:\n"));
-    /** @todo r=bird: With a bit unfavorable scheduling it's possible to get here
-     * before fOutOfSpace is set by the overflow code. This will mean that, unless
-     * more receive descriptors become available, the receive thread will be stuck
-     * until it times out and cause a hickup in the network traffic.
-     * There is a simple, but not perfect, workaround for this problem in DrvTAPOs2.cpp.
-     *
-     * A better solution would be to ditch the NotifyCanReceive callback and instead
-     * change the CanReceive to do all the work. This will reduce the amount of code
-     * duplication, and would permit pcnet to avoid queuing unnecessary ring-3 tasks.
+    /** @todo r=bird: A better solution would be to ditch the NotifyCanReceive callback
+     *                and instead change the CanReceive to do all the work. This will
+     *                reduce the amount of code duplication, and would permit pcnet to
+     *                avoid queuing unnecessary ring-3 tasks.
      */
 
-    /* ensure we wake up only once */
-    if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
+    if (pData->fMaybeOutOfSpace)
         RTSemEventSignal(pData->EventOutOfSpace);
 #endif
 }
@@ -347,6 +341,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                  *    of deadlocking because the guest could be waiting for a receive
                  *    overflow error to allocate more receive buffers
                  */
+                ASMAtomicXchgBool(&pData->fMaybeOutOfSpace, true);
                 size_t cbMax = pData->pPort->pfnCanReceive(pData->pPort);
                 if (cbMax == 0)
                 {
@@ -358,16 +353,15 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                     {
                         LogFlow(("drvTAPAsyncIoThread: cbMax=%d cbRead=%d waiting...\n", cbMax, cbRead));
                         /* We get signalled by the network driver. 50ms is just for sanity */
-                        ASMAtomicXchgU32(&pData->fOutOfSpace, true);
                         RTSemEventWait(pData->EventOutOfSpace, 50);
                         cbMax = pData->pPort->pfnCanReceive(pData->pPort);
                     }
-                    ASMAtomicXchgU32(&pData->fOutOfSpace, false);
                     STAM_PROFILE_STOP(&pData->StatRecvOverflows, b);
                     STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-                    if (pThread->enmState != PDMTHREADSTATE_RUNNING)
-                        break;
                 }
+                ASMAtomicXchgBool(&pData->fMaybeOutOfSpace, false);
+                if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+                    break;
 
                 /*
                  * Pass the data up.
@@ -444,7 +438,7 @@ static DECLCALLBACK(int) drvTapAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
     /* Ensure that it does not spin in the CanReceive loop.
        (May assert in IPRT if we're really unlucky.) */
-    if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
+    if (pData->fMaybeOutOfSpace)
         RTSemEventSignal(pData->EventOutOfSpace);
 
     int rc = RTFileWrite(pData->PipeWrite, "", 1, NULL);
