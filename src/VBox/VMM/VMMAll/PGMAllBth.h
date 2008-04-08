@@ -1637,7 +1637,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPdpeSrc->n.u1Present
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 /* NX, r/w, u/s bits in the PDPE are long mode only */
-        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) &&  pPdpeSrc->n.u1NoExecute)
+        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) && pPdpeSrc->n.u1NoExecute)
         ||  (fWriteFault && !pPdpeSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
         ||  (fUserLevelFault && !pPdpeSrc->n.u1User) 
 # endif
@@ -1686,7 +1686,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPdeSrc->n.u1Present
 # if PGM_WITH_NX(PGM_GST_TYPE)
-        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) &&  pPdeSrc->n.u1NoExecute)
+        ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) && pPdeSrc->n.u1NoExecute)
 # endif
         ||  (fWriteFault && !pPdeSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
         ||  (fUserLevelFault && !pPdeSrc->n.u1User) )
@@ -1776,7 +1776,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
         const GSTPTE   PteSrc = *pPteSrc;
         if (    !PteSrc.n.u1Present
 #  if PGM_WITH_NX(PGM_GST_TYPE)
-            ||  ((uErr & X86_TRAP_PF_ID) && !PteSrc.n.u1NoExecute)
+            ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) && PteSrc.n.u1NoExecute)
 #  endif
             ||  (fWriteFault && !PteSrc.n.u1Write && (fUserLevelFault || fWriteProtect))
             ||  (fUserLevelFault && !PteSrc.n.u1User)
