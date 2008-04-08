@@ -15,7 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define ASYNC_NET
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -28,11 +27,9 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/path.h>
-#ifdef ASYNC_NET
-# include <iprt/thread.h>
-# include <iprt/asm.h>
-# include <iprt/semaphore.h>
-#endif
+#include <iprt/thread.h>
+#include <iprt/asm.h>
+#include <iprt/semaphore.h>
 #ifdef RT_OS_SOLARIS
 # include <iprt/process.h>
 # include <iprt/env.h>
@@ -66,9 +63,7 @@
 # include <sys/fcntl.h>
 #endif
 #include <errno.h>
-#ifdef ASYNC_NET
-# include <unistd.h>
-#endif
+#include <unistd.h>
 
 #ifdef RT_OS_L4
 # include <l4/vboxserver/file.h>
@@ -112,7 +107,6 @@ typedef struct DRVTAP
     char                   *pszSetupApplication;
     /** TAP terminate application. */
     char                   *pszTerminateApplication;
-#ifdef ASYNC_NET
     /** The write end of the control pipe. */
     RTFILE                  PipeWrite;
     /** The read end of the control pipe. */
@@ -123,7 +117,6 @@ typedef struct DRVTAP
     bool volatile           fMaybeOutOfSpace;
     /** Event semaphore for blocking on receive. */
     RTSEMEVENT              EventOutOfSpace;
-#endif
 
 #ifdef VBOX_WITH_STATISTICS
     /** Number of sent packets. */
@@ -138,9 +131,8 @@ typedef struct DRVTAP
     STAMPROFILE             StatTransmit;
     /** Profiling packet receive runs. */
     STAMPROFILEADV          StatReceive;
-#ifdef ASYNC_NET
+    /** Profiling receive descriptor overflows. */
     STAMPROFILE             StatRecvOverflows;
-#endif
 #endif /* VBOX_WITH_STATISTICS */
 
 #ifdef LOG_ENABLED
@@ -244,23 +236,20 @@ static DECLCALLBACK(void) drvTAPNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
  */
 static DECLCALLBACK(void) drvTAPNotifyCanReceive(PPDMINETWORKCONNECTOR pInterface)
 {
-#ifdef ASYNC_NET
     PDRVTAP pData = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
 
     LogFlow(("drvTAPNotifyCanReceive:\n"));
-    /** @todo r=bird: A better solution would be to ditch the NotifyCanReceive callback
-     *                and instead change the CanReceive to do all the work. This will
-     *                reduce the amount of code duplication, and would permit pcnet to
-     *                avoid queuing unnecessary ring-3 tasks.
+    /** @todo r=bird: A better solution would be to ditch the NotifyCanReceive callback and
+     *                instead change the CanReceive to do all the work. That is, CanReceive
+     *                will not return until there are receive buffers available. This will
+     *                reduce the amount of code duplication, and would permit pcnet to avoid
+     *                queuing unnecessary ring-3 tasks.
      */
-
     if (pData->fMaybeOutOfSpace)
         RTSemEventSignal(pData->EventOutOfSpace);
-#endif
 }
 
 
-#ifdef ASYNC_NET
 /**
  * Asynchronous I/O thread for handling receive.
  *
@@ -321,7 +310,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 #else
             /** @note At least on Linux we will never receive more than one network packet
              *        after poll() returned successfully. I don't know why but a second
-             *        RTFileRead() operation will return with VERR_TRY_AGAIN. */
+             *        RTFileRead() operation will return with VERR_TRY_AGAIN in any case. */
             rc = RTFileRead(pData->FileDevice, achBuf, sizeof(achBuf), &cbRead);
 #endif
             if (VBOX_SUCCESS(rc))
@@ -446,69 +435,6 @@ static DECLCALLBACK(int) drvTapAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
     return VINF_SUCCESS;
 }
-
-#else /* !ASYNC_NET */
-
-/**
- * Poller callback.
- */
-static DECLCALLBACK(void) drvTAPPoller(PPDMDRVINS pDrvIns)
-{
-    /* check how much the device/driver can receive now. */
-    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
-    STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-
-    size_t  cbMax = pData->pPort->pfnCanReceive(pData->pPort);
-    while (cbMax > 0)
-    {
-        /* check for data to read */
-        struct pollfd aFDs[1];
-        aFDs[0].fd      = pData->FileDevice;
-        aFDs[0].events  = POLLIN | POLLPRI;
-        aFDs[0].revents = 0;
-        if (poll(&aFDs[0], 1, 0) > 0)
-        {
-            if (aFDs[0].revents & (POLLIN | POLLPRI))
-            {
-                /* data waiting, read it. */
-                char        achBuf[4096];
-                size_t      cbRead = 0;
-#ifdef VBOX_WITH_CROSSBOW
-                cbRead = sizeof(achBuf);
-                int rc = dlpi_recv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
-                rc = RT_LIKELY(rc == DLPI_SUCCESS) ? VINF_SUCCESS : SolarisDLPIErr2VBoxErr(rc);
-#else
-                int rc = RTFileRead(pData->FileDevice, achBuf, RT_MIN(sizeof(achBuf), cbMax), &cbRead);
-#endif
-                if (VBOX_SUCCESS(rc))
-                {
-                    STAM_COUNTER_INC(&pData->StatPktRecv);
-                    STAM_COUNTER_ADD(&pData->StatPktRecvBytes, cbRead);
-
-                    /* push it up to guy over us. */
-                    Log2(("drvTAPPoller: cbRead=%#x\n"
-                          "%.*Vhxd\n",
-                          cbRead, cbRead, achBuf));
-                    rc = pData->pPort->pfnReceive(pData->pPort, achBuf, cbRead);
-                    AssertRC(rc);
-                }
-                else
-                    AssertRC(rc);
-                if (VBOX_FAILURE(rc) || !cbRead)
-                    break;
-            }
-            else
-                break;
-        }
-        else
-            break;
-
-        cbMax = pData->pPort->pfnCanReceive(pData->pPort);
-    }
-
-    STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
-}
-#endif /* ASYNC_NET */
 
 
 #if defined(RT_OS_SOLARIS)
@@ -936,7 +862,6 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("drvTAPDestruct\n"));
     PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
 
-#ifdef ASYNC_NET
     /*
      * Terminate the control pipe.
      */
@@ -952,7 +877,6 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
         AssertRC(rc);
         pData->PipeRead = NIL_RTFILE;
     }
-#endif
 
 #ifdef RT_OS_SOLARIS
     /** @todo r=bird: This *does* need checking against ConsoleImpl2.cpp if used on non-solaris systems. */
@@ -1135,7 +1059,6 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     Log(("drvTAPContruct: %d (from fd)\n", pData->FileDevice));
     rc = VINF_SUCCESS;
 
-#ifdef ASYNC_NET
     /*
      * Create the control pipe.
      */
@@ -1158,13 +1081,6 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      */
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pThread, pData, drvTAPAsyncIoThread, drvTapAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "TAP");
     AssertRCReturn(rc, rc);
-#else
-    /*
-     * Register poller
-     */
-    rc = pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvTAPPoller);
-    AssertRCReturn(rc, rc);
-#endif
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -1176,9 +1092,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktRecvBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of received bytes.",        "/Drivers/TAP%d/Bytes/Received", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTransmit,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet transmit runs.",  "/Drivers/TAP%d/Transmit", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatReceive,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet receive runs.",   "/Drivers/TAP%d/Receive", pDrvIns->iInstance);
-# ifdef ASYNC_NET
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatRecvOverflows, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling packet receive overflows.", "/Drivers/TAP%d/RecvOverflows", pDrvIns->iInstance);
-# endif
 #endif /* VBOX_WITH_STATISTICS */
 
     return rc;
