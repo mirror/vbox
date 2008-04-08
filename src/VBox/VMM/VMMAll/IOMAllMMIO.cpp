@@ -1177,8 +1177,8 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
      * Should we defer the request right away?
      */
     if (uErrorCode & X86_TRAP_PF_RW
-        ? !pRange->CTXALLSUFF(pfnWriteCallback) && !pRange->pfnWriteCallbackR3
-        : !pRange->CTXALLSUFF(pfnReadCallback)  && !pRange->pfnReadCallbackR3)
+        ? !pRange->CTXALLSUFF(pfnWriteCallback) && pRange->pfnWriteCallbackR3
+        : !pRange->CTXALLSUFF(pfnReadCallback)  && pRange->pfnReadCallbackR3)
     {
 # ifdef VBOX_WITH_STATISTICS
         if (uErrorCode & X86_TRAP_PF_RW)
