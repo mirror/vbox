@@ -53,7 +53,10 @@ static void usbFilterFieldToString (PCUSBFILTER aFilter, USBFILTERIDX aIdx, BSTR
         Bstr ((const char *)str).cloneTo (aStr);
     }
     else if (USBFilterIsMethodString (matchingMethod))
-        Bstr (USBFilterGetString (aFilter, aIdx)).cloneTo (aStr);
+    {
+        const char *psz = USBFilterGetString (aFilter, aIdx);
+        Bstr (psz).cloneTo (aStr);
+    }
     else
         Bstr ().cloneTo (aStr);
 }
