@@ -111,8 +111,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     unsigned iPDPTE = ((RTGCUINTPTR)pvFault >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
     if (!pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present)
     {
-        /* lazily clear the page directory */
-        ASMMemZero32(pVM->pgm.s.CTXMID(ap,PaePDs)[iPDPTE], PAGE_SIZE);
         pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present = 1;
     }
 #  endif
@@ -2683,6 +2681,17 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
         if (pPDSrc == NULL)
         {
             /* PDPT not present */
+            if (pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present)
+            {
+                for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
+                {
+                    if (pPDEDst[iPD].n.u1Present)
+                    {
+                        pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPDPTE * X86_PG_PAE_ENTRIES + iPD);
+                        pPDEDst[iPD].u = 0;
+                    }
+                }
+            }
             pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present = 0;
             continue;
         }
