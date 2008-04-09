@@ -263,6 +263,8 @@ static DECLCALLBACK(int) drvTAPW32AsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD p
     RTThreadSleep(16);
     /* Wait for the async thread to quit; up to half a second */
     WaitForSingleObject(pData->hHaltAsyncEventSem, 500);
+
+    return VINF_SUCCESS;
 }
 
 /**
