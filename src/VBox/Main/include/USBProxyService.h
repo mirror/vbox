@@ -408,6 +408,9 @@ protected:
     virtual int interruptWait (void);
     virtual PUSBDEVICE getDevices (void);
     int addDeviceToChain (PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc);
+
+private:
+    RTSEMEVENT mNotifyEventSem;
 };
 #endif  /* RT_OS_SOLARIS */
 
