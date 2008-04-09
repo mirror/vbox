@@ -953,7 +953,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
 
                             /* Report the format name. */
                             RTPathStripExt(pPluginDirEntry->szName);
-                            AssertBreak(strlen(pPluginDirEntry->szName) <= VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH,
+                            AssertBreak(strlen(pPluginDirEntry->szName) > VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH,
                                         rc = VERR_INVALID_NAME);
 
                             char *pszFormat = NULL;
