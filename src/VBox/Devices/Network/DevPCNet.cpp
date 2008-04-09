@@ -4438,12 +4438,8 @@ static DECLCALLBACK(int) pcnetQueryStatusLed(PPDMILEDPORTS pInterface, unsigned 
  */
 static DECLCALLBACK(void) pcnetPowerOff(PPDMDEVINS pDevIns)
 {
-    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
-
     /* Poke thread waiting for buffer space. */
-    if (    pData->fMaybeOutOfSpace
-        &&  pData->hEventOutOfRxSpace != NIL_RTSEMEVENT)
-        RTSemEventSignal(pData->hEventOutOfRxSpace);
+    pcnetWakeupReceive(pDevIns);
 }
 
 
@@ -4452,12 +4448,8 @@ static DECLCALLBACK(void) pcnetPowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) pcnetSuspend(PPDMDEVINS pDevIns)
 {
-    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
-
     /* Poke thread waiting for buffer space. */
-    if (    pData->fMaybeOutOfSpace
-        &&  pData->hEventOutOfRxSpace != NIL_RTSEMEVENT)
-        RTSemEventSignal(pData->hEventOutOfRxSpace);
+    pcnetWakeupReceive(pDevIns);
 }
 
 
@@ -4526,6 +4518,7 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
         pData->hSendEventSem = NIL_RTSEMEVENT;
         RTSemEventSignal(pData->hEventOutOfRxSpace);
         RTSemEventDestroy(pData->hEventOutOfRxSpace);
+        pData->hEventOutOfRxSpace = NIL_RTSEMEVENT;
         PDMR3CritSectDelete(&pData->CritSect);
     }
 #ifdef PCNET_QUEUE_SEND_PACKETS
