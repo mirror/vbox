@@ -17,8 +17,6 @@
  */
 
 
-#define ASYNC_NETIO
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -31,10 +29,8 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
-#ifdef ASYNC_NETIO
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
-#endif
 
 #include <windows.h>
 #include <VBox/tapwin32.h>
@@ -67,16 +63,10 @@ typedef struct
 
     TAP_VERSION             tapVersion;
 
-#ifdef ASYNC_NETIO
     /** The thread handle. NIL_RTTHREAD if no thread. */
-    RTTHREAD                hThread;
+    PPDMTHREAD              pThread;
     /** The event semaphore the thread is waiting on. */
     HANDLE                  hHaltAsyncEventSem;
-    /** We are waiting for more receive buffers. */
-    uint32_t volatile       fOutOfSpace;
-    /** Event semaphore for blocking on receive. */
-    RTSEMEVENT              EventOutOfSpace;
-#endif
 
 #ifdef DEBUG
     DWORD                   dwLastReadTime;
@@ -96,9 +86,7 @@ typedef struct
     STAMPROFILEADV          StatTransmit;
     /** Profiling packet receive runs. */
     STAMPROFILEADV          StatReceive;
-# ifdef ASYNC_NETIO
     STAMPROFILE             StatRecvOverflows;
-# endif
 #endif /* VBOX_WITH_STATISTICS */
 } DRVTAP, *PDRVTAP;
 
@@ -190,112 +178,20 @@ static DECLCALLBACK(void) drvTAPW32NotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
 
 
 /**
- * More receive buffer has become available.
- *
- * This is called when the NIC frees up receive buffers.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @thread  EMT
- */
-static DECLCALLBACK(void) drvTAPW32NotifyCanReceive(PPDMINETWORKCONNECTOR pInterface)
-{
-    PDRVTAP pData = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
-
-    LogFlow(("drvTAPW32NotifyCanReceive:\n"));
-    if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
-        RTSemEventSignal(pData->EventOutOfSpace);
-}
-
-
-#ifndef ASYNC_NETIO
-/**
- * Poller callback.
- */
-static DECLCALLBACK(void) drvTAPW32Poller(PPDMDRVINS pDrvIns)
-{
-    DWORD rc = ERROR_SUCCESS;
-    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
-    STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-
-    /* check how much the device/driver can receive now. */
-    size_t  cbMax = pData->pPort->pfnCanReceive(pData->pPort);
-
-    while (cbMax)
-    {
-        if (cbMax > 0 && !pData->overlappedRead.hEvent)
-        {
-            BOOL  bRet;
-
-            cbMax = RT_MIN(cbMax, sizeof(pData->readBuffer));
-            memset(&pData->overlappedRead, 0, sizeof(pData->overlappedRead));
-            pData->overlappedRead.hEvent = pData->hEventRead;
-            bRet = ReadFile(pData->hFile, pData->readBuffer, cbMax, &pData->dwNumberOfBytesRead, &pData->overlappedRead);
-            if (bRet == FALSE)
-            {
-                rc = GetLastError();
-                AssertMsg(rc == ERROR_SUCCESS || rc == ERROR_IO_PENDING || rc == ERROR_MORE_DATA, ("ReadFileEx failed with rc=%d\n", rc));
-                if (rc != ERROR_IO_PENDING && rc != ERROR_MORE_DATA)
-                    break;
-            }
-        }
-        if (cbMax)
-        {
-            DWORD dwNumberOfBytesTransferred = 0;
-
-            if (GetOverlappedResult(pData->hFile, &pData->overlappedRead, &dwNumberOfBytesTransferred, FALSE) == TRUE)
-            {
-                /* push it to the driver. */
-                Log2(("drvTAPW32Poller%d: cbRead=%#x\n"
-                      "%.*Vhxd\n", pData->InstanceNr,
-                      dwNumberOfBytesTransferred, dwNumberOfBytesTransferred, pData->readBuffer));
-
-                STAM_COUNTER_INC(&pData->StatPktRecv);
-                STAM_COUNTER_ADD(&pData->StatPktRecvBytes, dwNumberOfBytesTransferred);
-
-#ifdef DEBUG
-                pData->dwLastWriteTime = timeGetTime();
-                Log(("drvTAPW32Receive %d bytes at %08x - delta %x\n", dwNumberOfBytesTransferred,
-                     pData->dwLastWriteTime, pData->dwLastWriteTime - pData->dwLastReadTime));
-#endif
-
-                rc = pData->pPort->pfnReceive(pData->pPort, pData->readBuffer, dwNumberOfBytesTransferred);
-                AssertRC(rc);
-
-                memset(&pData->overlappedRead, 0, sizeof(pData->overlappedRead));
-            }
-            else
-            {
-                rc = GetLastError();
-                Assert(rc == ERROR_IO_INCOMPLETE);
-
-                /* reset overlapped structure on aborted read operation */
-                if (rc != ERROR_IO_INCOMPLETE)
-                {
-                    memset(&pData->overlappedRead, 0, sizeof(pData->overlappedRead));
-                }
-                break;
-            }
-        }
-        cbMax = pData->pPort->pfnCanReceive(pData->pPort);
-    }
-    STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
-}
-#else /* !ASYNC_NETIO */
-/**
  * Async I/O thread for an interface.
  */
-static DECLCALLBACK(int) drvTAPW32AsyncIo(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVTAP pData = (PDRVTAP)pvUser;
     HANDLE  haWait[2];
     DWORD   rc = ERROR_SUCCESS, dwNumberOfBytesTransferred;
 
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
     Assert(pData);
     haWait[0] = pData->hEventRead;
     haWait[1] = pData->hHaltAsyncEventSem;
-
-    rc = RTSemEventCreate(&pData->EventOutOfSpace);
-    AssertRC(rc);
 
     while(1)
     {
@@ -325,32 +221,9 @@ static DECLCALLBACK(int) drvTAPW32AsyncIo(RTTHREAD ThreadSelf, void *pvUser)
         }
 
         /* Not very nice, but what else can we do? */
-        size_t cbMax = pData->pPort->pfnCanReceive(pData->pPort);
-        if (cbMax == 0)
-        {
-            STAM_PROFILE_START(&pData->StatRecvOverflows, b);
-            while (cbMax == 0)
-            {
-#if 1
-                ASMAtomicXchgU32(&pData->fOutOfSpace, true);
-                RTSemEventWait(pData->EventOutOfSpace, 50);
-#else
-                RTThreadSleep(16); /* @todo right value? */
-#endif
-                /* Check if the VM was terminated */
-                rc = WaitForSingleObject(haWait[1], 0);
-                if (rc == WAIT_OBJECT_0)
-                {
-                    STAM_PROFILE_STOP(&pData->StatRecvOverflows, b);
-                    goto exit_thread;
-                }
-
-                cbMax = pData->pPort->pfnCanReceive(pData->pPort);
-            }
-            ASMAtomicXchgU32(&pData->fOutOfSpace, false);
-            STAM_PROFILE_STOP(&pData->StatRecvOverflows, b);
-            Assert(cbMax >= dwNumberOfBytesTransferred);
-        }
+        rc = pData->pPort->pfnWaitReceiveAvail(pData->pPort, RT_INDEFINITE_WAIT);
+        if (RT_FAILURE(rc))
+            break;
 
         STAM_COUNTER_INC(&pData->StatPktRecv);
         STAM_COUNTER_ADD(&pData->StatPktRecvBytes, dwNumberOfBytesTransferred);
@@ -363,12 +236,10 @@ static DECLCALLBACK(int) drvTAPW32AsyncIo(RTTHREAD ThreadSelf, void *pvUser)
         AssertRC(rc);
     }
 
-exit_thread:
     SetEvent(pData->hHaltAsyncEventSem);
     Log(("drvTAPW32AsyncIo: exit thread!!\n"));
     return VINF_SUCCESS;
 }
-#endif /* !ASYNC_NETIO */
 
 /**
  * Queries an interface to the driver.
@@ -411,23 +282,16 @@ static DECLCALLBACK(void) drvTAPW32Destruct(PPDMDRVINS pDrvIns)
 
     LogFlow(("drvTAPW32Destruct\n"));
 
-#ifdef ASYNC_NETIO
     /** @todo this isn't a safe method to notify the async thread; it might be using the instance
      *        data after we've been destroyed; could wait for it to terminate, but that's not
      *        without risks either.
      */
     SetEvent(pData->hHaltAsyncEventSem);
 
-    /* Ensure that it does not spin in the CanReceive loop. Do it _after_ we set set the
-     * hHaltAsyncEventSem to ensure that we don't go into the loop again immediately. */
-    if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
-        RTSemEventSignal(pData->EventOutOfSpace);
-
     /* Yield or else our async thread will never acquire the event semaphore */
     RTThreadSleep(16);
     /* Wait for the async thread to quit; up to half a second */
     WaitForSingleObject(pData->hHaltAsyncEventSem, 500);
-#endif
 
     mediastatus.fConnect = FALSE;
     BOOL ret = DeviceIoControl(pData->hFile, TAP_IOCTL_SET_MEDIA_STATUS,
@@ -465,7 +329,6 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pData->INetworkConnector.pfnSend                = drvTAPW32Send;
     pData->INetworkConnector.pfnSetPromiscuousMode  = drvTAPW32SetPromiscuousMode;
     pData->INetworkConnector.pfnNotifyLinkChanged   = drvTAPW32NotifyLinkChanged;
-    pData->INetworkConnector.pfnNotifyCanReceive    = drvTAPW32NotifyCanReceive;
 
     /*
      * Validate the config.
@@ -559,21 +422,13 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pData->hEventRead  = CreateEvent(NULL, FALSE, FALSE, NULL);
     memset(&pData->overlappedRead, 0, sizeof(pData->overlappedRead));
 
-#ifdef ASYNC_NETIO
     pData->hHaltAsyncEventSem = CreateEvent(NULL, FALSE, FALSE, NULL);
 
     /* Create asynchronous thread */
-    rc = RTThreadCreate(&pData->hThread, drvTAPW32AsyncIo, (void *)pData, 128*1024, RTTHREADTYPE_IO, 0, "TAP");
-    AssertRC(rc);
+    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pThread, pData, drvTAPW32AsyncIoThread, drvTAPW32AsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "TAP");
+    AssertRCReturn(rc, rc);
 
     Assert(pData->hThread != NIL_RTTHREAD && pData->hHaltAsyncEventSem != NULL);
-#else
-    /*
-     * Register poller
-     */
-    rc = pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvTAPW32Poller);
-    AssertRC(rc);
-#endif
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -585,9 +440,7 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktRecvBytes, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Number of received bytes.",       "/Drivers/TAP%d/Bytes/Received", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTransmit,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.", "/Drivers/TAP%d/Transmit", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatReceive,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.",  "/Drivers/TAP%d/Receive", pDrvIns->iInstance);
-# ifdef ASYNC_NETIO
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatRecvOverflows,STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling packet receive overflows.", "/Drivers/TAP%d/RecvOverflows", pDrvIns->iInstance);
-# endif
 #endif
 
     return rc;

@@ -157,21 +157,6 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
 
 
 /**
- * More receive buffer has become available.
- *
- * This is called when the NIC frees up receive buffers.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @thread  EMT
- */
-static DECLCALLBACK(void) drvNATNotifyCanReceive(PPDMINETWORKCONNECTOR pInterface)
-{
-    LogFlow(("drvNATNotifyCanReceive:\n"));
-    /** @todo do something useful here. */
-}
-
-
-/**
  * Poller callback.
  */
 static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
@@ -214,7 +199,8 @@ int slirp_can_output(void *pvUser)
     if (!RTCritSectIsOwner(&pData->CritSect))
         return 0;
 
-    return pData->pPort->pfnCanReceive(pData->pPort);
+    int rc =  pData->pPort->pfnWaitReceiveAvail(pData->pPort, 0);
+    return RT_SUCCESS(rc);
 }
 
 
@@ -404,7 +390,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     pData->INetworkConnector.pfnSend               = drvNATSend;
     pData->INetworkConnector.pfnSetPromiscuousMode = drvNATSetPromiscuousMode;
     pData->INetworkConnector.pfnNotifyLinkChanged  = drvNATNotifyLinkChanged;
-    pData->INetworkConnector.pfnNotifyCanReceive   = drvNATNotifyCanReceive;
 
     /*
      * Get the configuration settings.

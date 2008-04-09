@@ -182,23 +182,6 @@ static DECLCALLBACK(void) drvNetSnifferNotifyLinkChanged(PPDMINETWORKCONNECTOR p
 
 
 /**
- * More receive buffer has become available.
- *
- * This is called when the NIC frees up receive buffers.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @thread  EMT
- */
-static DECLCALLBACK(void) drvNetSnifferNotifyCanReceive(PPDMINETWORKCONNECTOR pInterface)
-{
-    LogFlow(("drvNetSnifferNotifyCanReceive:\n"));
-    PDRVNETSNIFFER pData = PDMINETWORKCONNECTOR_2_DRVNETSNIFFER(pInterface);
-    if (pData->pConnector)
-        pData->pConnector->pfnNotifyCanReceive(pData->pConnector);
-}
-
-
-/**
  * Check how much data the device/driver can receive data now.
  * This must be called before the pfnRecieve() method is called.
  *
@@ -206,10 +189,10 @@ static DECLCALLBACK(void) drvNetSnifferNotifyCanReceive(PPDMINETWORKCONNECTOR pI
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
  * @thread  EMT
  */
-static DECLCALLBACK(size_t) drvNetSnifferCanReceive(PPDMINETWORKPORT pInterface)
+static DECLCALLBACK(int) drvNetSnifferWaitReceiveAvail(PPDMINETWORKPORT pInterface, unsigned cMillies)
 {
     PDRVNETSNIFFER pData = PDMINETWORKPORT_2_DRVNETSNIFFER(pInterface);
-    return pData->pPort->pfnCanReceive(pData->pPort);
+    return pData->pPort->pfnWaitReceiveAvail(pData->pPort, cMillies);
 }
 
 
@@ -334,10 +317,9 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pData->INetworkConnector.pfnSend                = drvNetSnifferSend;
     pData->INetworkConnector.pfnSetPromiscuousMode  = drvNetSnifferSetPromiscuousMode;
     pData->INetworkConnector.pfnNotifyLinkChanged   = drvNetSnifferNotifyLinkChanged;
-    pData->INetworkConnector.pfnNotifyCanReceive    = drvNetSnifferNotifyCanReceive;
     /* INetworkPort */
-    pData->INetworkPort.pfnCanReceive   = drvNetSnifferCanReceive;
-    pData->INetworkPort.pfnReceive      = drvNetSnifferReceive;
+    pData->INetworkPort.pfnWaitReceiveAvail         = drvNetSnifferWaitReceiveAvail;
+    pData->INetworkPort.pfnReceive                  = drvNetSnifferReceive;
 
     /*
      * Get the filename.

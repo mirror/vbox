@@ -113,7 +113,7 @@ struct PCNetState_st
 #endif
 
 #if HC_ARCH_BITS == 64
-    uint32_t                            Alignment;
+    uint32_t                            Alignment1;
 #endif
 
     /** Software Interrupt timer (address for host context) */
@@ -136,14 +136,14 @@ struct PCNetState_st
     uint16_t                            aBCR[BCR_MAX_RAP];
     uint16_t                            aMII[MII_MAX_REG];
     uint16_t                            u16CSR0LastSeenByGuest;
-    uint16_t                            Alignment0[HC_ARCH_BITS == 32 ? 2 : 4];
+    uint16_t                            Alignment2[HC_ARCH_BITS == 32 ? 2 : 4];
     /** Last time we polled the queues */
     uint64_t                            u64LastPoll;
 
     /** Size of current send frame */
     uint32_t                            cbSendFrame;
 #if HC_ARCH_BITS == 64
-    uint32_t                            Alignment2;
+    uint32_t                            Alignment3;
 #endif
     /** Buffer address of current send frame */
     R3PTRTYPE(uint8_t *)                pvSendFrame;
@@ -214,6 +214,11 @@ struct PCNetState_st
 
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
+    /** Event semaphore for blocking on receive. */
+    RTSEMEVENT                          hEventOutOfRxSpace;
+    /** We are waiting/about to start waiting for more receive buffers. */
+    bool volatile                       fMaybeOutOfSpace;
+    uint8_t                             Alignment5[HC_ARCH_BITS == 64 ? 7 : 3];
 
 #ifdef PCNET_NO_POLLING
     RTGCPHYS32                          TDRAPhysOld;
@@ -232,7 +237,7 @@ struct PCNetState_st
     GCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOGC;
 
 #if HC_ARCH_BITS == 64
-    uint32_t                            Alignment3;
+    uint32_t                            Alignment6;
 #endif
 
     /** True if host and guest admitted to use the private interface. */
@@ -277,6 +282,8 @@ struct PCNetState_st
     STAMPROFILEADV                      StatTmdStoreHC;
     STAMPROFILEADV                      StatRdtePollGC;
     STAMPROFILEADV                      StatRdtePollHC;
+    STAMPROFILE                         StatRxOverflow;
+    STAMCOUNTER                         StatRxOverflowWakeup;
     STAMCOUNTER                         aStatXmitFlush[16];
     STAMCOUNTER                         aStatXmitChainCounts[16];
     STAMCOUNTER                         StatXmitSkipCurrent;
@@ -294,9 +301,9 @@ struct PCNetState_st
     STAMCOUNTER                         StatRingWriteFailedR0;
     STAMCOUNTER                         StatRingWriteFailedGC;
 
-    STAMCOUNTER                         StatRingWriteOutsideRangeHC;
-    STAMCOUNTER                         StatRingWriteOutsideRangeR0;
-    STAMCOUNTER                         StatRingWriteOutsideRangeGC;
+    STAMCOUNTER                         StatRingWriteOutsideHC;
+    STAMCOUNTER                         StatRingWriteOutsideR0;
+    STAMCOUNTER                         StatRingWriteOutsideGC;
 # endif
 #endif /* VBOX_WITH_STATISTICS */
 };
@@ -1162,7 +1169,7 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         }
         else
         {
-            STAM_COUNTER_INC(&CTXALLSUFF(pData->StatRingWriteOutsideRange)); ;
+            STAM_COUNTER_INC(&CTXALLSUFF(pData->StatRingWriteOutside)); ;
             return VINF_SUCCESS;    /* outside of the ring range */
         }
     }
@@ -1563,14 +1570,20 @@ static void pcnetStop(PCNetState *pData)
 }
 
 #ifdef IN_RING3
-static DECLCALLBACK(bool) pcnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
+static DECLCALLBACK(void) pcnetWakeupReceive(PPDMDEVINS pDevIns)
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
-    if (pData->pDrv)
-        pData->pDrv->pfnNotifyCanReceive(pData->pDrv);
+    STAM_COUNTER_INC(&pData->StatRxOverflowWakeup);
+    if (pData->hEventOutOfRxSpace != NIL_RTSEMEVENT)
+        RTSemEventSignal(pData->hEventOutOfRxSpace);
+}
+
+static DECLCALLBACK(bool) pcnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
+{
+    pcnetWakeupReceive(pDevIns);
     return true;
 }
-#endif
+#endif /* IN_RING3 */
 
 
 /**
@@ -1614,14 +1627,16 @@ static void pcnetRdtePoll(PCNetState *pData, bool fSkipCurrent=false)
                 CSR_CRBA(pData) = rmd.rmd0.rbadr;              /* Receive Buffer Address */
                 CSR_CRBC(pData) = rmd.rmd1.bcnt;               /* Receive Byte Count */
                 CSR_CRST(pData) = ((uint32_t *)&rmd)[1] >> 16; /* Receive Status */
+                if (pData->fMaybeOutOfSpace)
+                {
 #ifdef IN_RING3
-                if (pData->pDrv)
-                    pData->pDrv->pfnNotifyCanReceive(pData->pDrv);
+                    pcnetWakeupReceive(PCNETSTATE_2_DEVINS(pData));
 #else
-                PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pCanRxQueue));
-                if (pItem)
-                    PDMQueueInsert(CTXSUFF(pData->pCanRxQueue), pItem);
+                    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(CTXSUFF(pData->pCanRxQueue));
+                    if (pItem)
+                        PDMQueueInsert(CTXSUFF(pData->pCanRxQueue), pItem);
 #endif
+                }
             }
             else
             {
@@ -4223,41 +4238,64 @@ static DECLCALLBACK(void *) pcnetQueryInterface(struct PDMIBASE *pInterface, PDM
  * Check if the device/driver can receive data now.
  * This must be called before the pfnRecieve() method is called.
  *
- * @returns Number of bytes the driver can receive.
+ * @returns VBox status code.
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @thread  EMT
  */
-static DECLCALLBACK(size_t) pcnetCanReceive(PPDMINETWORKPORT pInterface)
+static int pcnetCanReceive(PCNetState *pData)
 {
-    size_t cb = 0;
-    int    rc;
-    PCNetState *pData = INETWORKPORT_2_DATA(pInterface);
-
-    rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
+    int rc = PDMCritSectEnter(&pData->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
+
+    rc = VERR_NET_NO_BUFFER_SPACE;
 
     if (RT_LIKELY(!CSR_DRX(pData) && !CSR_STOP(pData) && !CSR_SPND(pData)))
     {
         if (HOST_IS_OWNER(CSR_CRST(pData)) && pData->GCRDRA)
             pcnetRdtePoll(pData);
 
-        if (HOST_IS_OWNER(CSR_CRST(pData)))
-        {
+        if (RT_UNLIKELY(HOST_IS_OWNER(CSR_CRST(pData))))
             /** @todo Notify the guest _now_. Will potentially increase the interrupt load */
             pData->aCSR[0] |= 0x1000; /* Set MISS flag */
-        }
         else
-        {
-            /* byte count stored in two's complement 12 bits wide */
-            Log(("#%d pcnetCanReceiveNoSync %d bytes\n", PCNET_INST_NR, 4096 - CSR_CRBC(pData)));
-            cb = 4096 - CSR_CRBC(pData);
-        }
+            rc = VINF_SUCCESS;
     }
 
     PDMCritSectLeave(&pData->CritSect);
-    return cb;
+    return rc;
 }
 
+/**
+ *
+ */
+static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, unsigned cMillies)
+{
+    PCNetState *pData = INETWORKPORT_2_DATA(pInterface);
+
+    int rc = pcnetCanReceive(pData);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+    if (RT_UNLIKELY(cMillies == 0))
+        return VERR_NET_NO_BUFFER_SPACE;
+
+    rc = VERR_INTERRUPTED;
+    ASMAtomicXchgBool(&pData->fMaybeOutOfSpace, true);
+    STAM_PROFILE_START(&pData->StatRxOverflow, a);
+    while (RT_LIKELY(PDMDevHlpVMState(pData->CTXSUFF(pDevIns)) == VMSTATE_RUNNING))
+    {
+        int rc2 = pcnetCanReceive(pData);
+        if (RT_SUCCESS(rc2))
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+        LogFlow(("pcnetWaitReceiveAvail: waiting cMillies=%u...\n", cMillies));
+        RTSemEventWait(pData->hEventOutOfRxSpace, cMillies);
+    }
+    STAM_PROFILE_STOP(&pData->StatRxOverflow, a);
+    ASMAtomicXchgBool(&pData->fMaybeOutOfSpace, false);
+
+    return rc;
+}
 
 /**
  * Receive data from the network.
@@ -4456,6 +4494,8 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
          */
         RTSemEventDestroy(pData->hSendEventSem);
         pData->hSendEventSem = NIL_RTSEMEVENT;
+        RTSemEventSignal(pData->hEventOutOfRxSpace);
+        RTSemEventDestroy(pData->hEventOutOfRxSpace);
         PDMR3CritSectDelete(&pData->CritSect);
     }
 #ifdef PCNET_QUEUE_SEND_PACKETS
@@ -4558,7 +4598,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* IBase */
     pData->IBase.pfnQueryInterface          = pcnetQueryInterface;
     /* INeworkPort */
-    pData->INetworkPort.pfnCanReceive       = pcnetCanReceive;
+    pData->INetworkPort.pfnWaitReceiveAvail = pcnetWaitReceiveAvail;
     pData->INetworkPort.pfnReceive          = pcnetReceive;
     /* INetworkConfig */
     pData->INetworkConfig.pfnGetMac         = pcnetGetMac;
@@ -4701,6 +4741,9 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (VBOX_FAILURE(rc))
         return rc;
 
+    rc = RTSemEventCreate(&pData->hEventOutOfRxSpace);
+    AssertRC(rc);
+
     /*
      * Create the transmit queue.
      */
@@ -4796,16 +4839,18 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMMIOWriteHC,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in HC",        "/Devices/PCNet%d/MMIO/WriteHC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatAPROMRead,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling APROM reads",              "/Devices/PCNet%d/IO/APROMRead", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatAPROMWrite,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling APROM writes",             "/Devices/PCNet%d/IO/APROMWrite", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatIOReadGC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNetIO reads in GC",      "/Devices/PCNet%d/IO/ReadGC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatIOReadHC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNetIO reads in HC",      "/Devices/PCNet%d/IO/ReadHC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatIOWriteGC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet IO writes in GC",    "/Devices/PCNet%d/IO/WriteGC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatIOWriteHC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet IO writes in HC",    "/Devices/PCNet%d/IO/WriteHC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTimer,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet Timer",              "/Devices/PCNet%d/Timer", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet receive",            "/Devices/PCNet%d/Receive", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatIOReadGC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in GC",           "/Devices/PCNet%d/IO/ReadGC", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatIOReadHC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in HC",           "/Devices/PCNet%d/IO/ReadHC", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatIOWriteGC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in GC",          "/Devices/PCNet%d/IO/WriteGC", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatIOWriteHC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in HC",          "/Devices/PCNet%d/IO/WriteHC", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTimer,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling Timer",                    "/Devices/PCNet%d/Timer", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive",                  "/Devices/PCNet%d/Receive", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRxOverflow,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling RX overflows",        "/Devices/PCNet%d/RxOverflow", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRxOverflowWakeup,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Nr of RX overflow wakeups",     "/Devices/PCNet%d/RxOverflowWakeup", iInstance);
 #endif
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/PCNet%d/ReceiveBytes", iInstance);
 #ifdef VBOX_WITH_STATISTICS
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmit,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet transmit in HC",     "/Devices/PCNet%d/Transmit/Total", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmit,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in HC",          "/Devices/PCNet%d/Transmit/Total", iInstance);
 #endif
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/PCNet%d/TransmitBytes", iInstance);
 #ifdef VBOX_WITH_STATISTICS
@@ -4828,8 +4873,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "",                                   "/Devices/PCNet%d/Xmit/Skipped", iInstance, i + 1);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet interrupt checks",   "/Devices/PCNet%d/UpdateIRQ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatPollTimer,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet poll timer",         "/Devices/PCNet%d/PollTimer", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling interrupt checks",         "/Devices/PCNet%d/UpdateIRQ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatPollTimer,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling poll timer",               "/Devices/PCNet%d/PollTimer", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMIIReads,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of MII reads",                "/Devices/PCNet%d/MIIReads", iInstance);
 # ifdef PCNET_NO_POLLING
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRCVRingWrite,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of receive ring writes",          "/Devices/PCNet%d/Ring/RCVWrites", iInstance);
@@ -4840,9 +4885,9 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedHC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCNet%d/Ring/HC/Failed", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedR0,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCNet%d/Ring/R0/Failed", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteFailedGC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCNet%d/Ring/GC/Failed", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeHC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Nr of monitored writes outside ring range", "/Devices/PCNet%d/Ring/HC/Outside", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeR0,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Nr of monitored writes outside ring range", "/Devices/PCNet%d/Ring/R0/Outside", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideRangeGC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Nr of monitored writes outside ring range", "/Devices/PCNet%d/Ring/GC/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideHC, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring","/Devices/PCNet%d/Ring/HC/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideR0, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring","/Devices/PCNet%d/Ring/R0/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatRingWriteOutsideGC, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring","/Devices/PCNet%d/Ring/GC/Outside", iInstance);
 # endif /* PCNET_NO_POLLING */
 #endif
 

@@ -113,10 +113,6 @@ typedef struct DRVTAP
     RTFILE                  PipeRead;
     /** Reader thread. */
     PPDMTHREAD              pThread;
-    /** We are waiting for more receive buffers. */
-    bool volatile           fMaybeOutOfSpace;
-    /** Event semaphore for blocking on receive. */
-    RTSEMEVENT              EventOutOfSpace;
 
 #ifdef VBOX_WITH_STATISTICS
     /** Number of sent packets. */
@@ -131,8 +127,6 @@ typedef struct DRVTAP
     STAMPROFILE             StatTransmit;
     /** Profiling packet receive runs. */
     STAMPROFILEADV          StatReceive;
-    /** Profiling receive descriptor overflows. */
-    STAMPROFILE             StatRecvOverflows;
 #endif /* VBOX_WITH_STATISTICS */
 
 #ifdef LOG_ENABLED
@@ -227,30 +221,6 @@ static DECLCALLBACK(void) drvTAPNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
 
 
 /**
- * More receive buffer has become available.
- *
- * This is called when the NIC frees up receive buffers.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @thread  EMT
- */
-static DECLCALLBACK(void) drvTAPNotifyCanReceive(PPDMINETWORKCONNECTOR pInterface)
-{
-    PDRVTAP pData = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
-
-    LogFlow(("drvTAPNotifyCanReceive:\n"));
-    /** @todo r=bird: A better solution would be to ditch the NotifyCanReceive callback and
-     *                instead change the CanReceive to do all the work. That is, CanReceive
-     *                will not return until there are receive buffers available. This will
-     *                reduce the amount of code duplication, and would permit pcnet to avoid
-     *                queuing unnecessary ring-3 tasks.
-     */
-    if (pData->fMaybeOutOfSpace)
-        RTSemEventSignal(pData->EventOutOfSpace);
-}
-
-
-/**
  * Asynchronous I/O thread for handling receive.
  *
  * @returns VINF_SUCCESS (ignored).
@@ -266,9 +236,6 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         return VINF_SUCCESS;
 
     STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-
-    int rc = RTSemEventCreate(&pData->EventOutOfSpace);
-    AssertRC(rc);
 
     /*
      * Polling loop.
@@ -287,7 +254,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         aFDs[1].revents = 0;
         STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
         errno=0;
-        rc = poll(&aFDs[0], ELEMENTS(aFDs), -1 /* infinite */);
+        int rc = poll(&aFDs[0], ELEMENTS(aFDs), -1 /* infinite */);
 
         /* this might have changed in the meantime */
         if (pThread->enmState != PDMTHREADSTATE_RUNNING)
@@ -330,26 +297,10 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                  *    of deadlocking because the guest could be waiting for a receive
                  *    overflow error to allocate more receive buffers
                  */
-                ASMAtomicXchgBool(&pData->fMaybeOutOfSpace, true);
-                size_t cbMax = pData->pPort->pfnCanReceive(pData->pPort);
-                if (cbMax == 0)
-                {
-                    /** @todo receive overflow handling needs serious improving! */
-                    STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
-                    STAM_PROFILE_START(&pData->StatRecvOverflows, b);
-                    while (   cbMax == 0
-                           && pThread->enmState == PDMTHREADSTATE_RUNNING)
-                    {
-                        LogFlow(("drvTAPAsyncIoThread: cbMax=%d cbRead=%d waiting...\n", cbMax, cbRead));
-                        /* We get signalled by the network driver. 50ms is just for sanity */
-                        RTSemEventWait(pData->EventOutOfSpace, 50);
-                        cbMax = pData->pPort->pfnCanReceive(pData->pPort);
-                    }
-                    STAM_PROFILE_STOP(&pData->StatRecvOverflows, b);
-                    STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-                }
-                ASMAtomicXchgBool(&pData->fMaybeOutOfSpace, false);
-                if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+                STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
+                int rc = pData->pPort->pfnWaitReceiveAvail(pData->pPort, RT_INDEFINITE_WAIT);
+                STAM_PROFILE_ADV_START(&pData->StatReceive, a);
+                if (RT_FAILURE(rc))
                     break;
 
                 /*
@@ -404,10 +355,6 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     }
 
 
-    rc = RTSemEventDestroy(pData->EventOutOfSpace);
-    AssertRC(rc);
-    pData->EventOutOfSpace = NIL_RTSEMEVENT;
-
     LogFlow(("drvTAPAsyncIoThread: returns %Vrc\n", VINF_SUCCESS));
     STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
     return VINF_SUCCESS;
@@ -424,11 +371,6 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 static DECLCALLBACK(int) drvTapAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
-
-    /* Ensure that it does not spin in the CanReceive loop.
-       (May assert in IPRT if we're really unlucky.) */
-    if (pData->fMaybeOutOfSpace)
-        RTSemEventSignal(pData->EventOutOfSpace);
 
     int rc = RTFileWrite(pData->PipeWrite, "", 1, NULL);
     AssertRC(rc);
@@ -955,7 +897,6 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     pData->INetworkConnector.pfnSend                = drvTAPSend;
     pData->INetworkConnector.pfnSetPromiscuousMode  = drvTAPSetPromiscuousMode;
     pData->INetworkConnector.pfnNotifyLinkChanged   = drvTAPNotifyLinkChanged;
-    pData->INetworkConnector.pfnNotifyCanReceive    = drvTAPNotifyCanReceive;
 
     /*
      * Validate the config.
@@ -1092,7 +1033,6 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktRecvBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of received bytes.",        "/Drivers/TAP%d/Bytes/Received", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTransmit,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet transmit runs.",  "/Drivers/TAP%d/Transmit", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatReceive,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet receive runs.",   "/Drivers/TAP%d/Receive", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatRecvOverflows, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling packet receive overflows.", "/Drivers/TAP%d/RecvOverflows", pDrvIns->iInstance);
 #endif /* VBOX_WITH_STATISTICS */
 
     return rc;

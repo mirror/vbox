@@ -2048,14 +2048,16 @@ typedef struct PDMINETWORKPORT *PPDMINETWORKPORT;
 typedef struct PDMINETWORKPORT
 {
     /**
-     * Check how much data the device/driver can receive data now.
-     * This must be called before the pfnRecieve() method is called.
+     * Wait until there is space for receiving data. We do not care how much space is available
+     * because pfnReceive() will re-check and notify the guest if necessary.
      *
-     * @returns Number of bytes the device can receive now.
+     * This function must be called before the pfnRecieve() method is called.
+     *
+     * @returns VBox status code. VINF_SUCCESS means there is at least one receive descriptor available.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @thread  EMT
+     * @param   cMillies        Number of milliseconds to wait. 0 means return immediately.
      */
-    DECLR3CALLBACKMEMBER(size_t, pfnCanReceive,(PPDMINETWORKPORT pInterface));
+    DECLR3CALLBACKMEMBER(int, pfnWaitReceiveAvail,(PPDMINETWORKPORT pInterface, unsigned cMillies));
 
     /**
      * Receive data from the network.
@@ -2125,16 +2127,6 @@ typedef struct PDMINETWORKCONNECTOR
      * @thread  EMT
      */
     DECLR3CALLBACKMEMBER(void, pfnNotifyLinkChanged,(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState));
-
-    /**
-     * More receive buffer has become available.
-     *
-     * This is called when the NIC frees up receive buffers.
-     *
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @thread  EMT
-     */
-    DECLR3CALLBACKMEMBER(void, pfnNotifyCanReceive,(PPDMINETWORKCONNECTOR pInterface));
 
 } PDMINETWORKCONNECTOR;
 
