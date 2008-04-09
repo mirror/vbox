@@ -2417,7 +2417,11 @@
      >
     <desc>
         The IBIOSSettings interface represents BIOS settings of the virtual
-        machine. Used in <link to="IMachine::BIOSSettings" />.
+        machine. This is used only in the <link to="IMachine::BIOSSettings" /> attribute.
+
+        <note>With the COM API, this is an interface like all the others. With the webservice,
+        this is mapped to a structure, so querying the attribute will not return an object,
+        but a complete structure.</note>
     </desc>
     <attribute name="logoFadeIn" type="boolean">
       <desc>Fade in flag for BIOS logo animation.</desc>
@@ -3838,6 +3842,15 @@
      uuid="550104cd-2dfd-4a6c-857d-f6f8e088e62c"
      wsmap="struct"
      >
+     <desc>
+        Contains information about the remote display (VRDP) capabilities and status.
+        This is used in the <link to="IConsole::remoteDisplayInfo" /> attribute.
+
+        <note>With the COM API, this is an interface like all the others. With the webservice,
+        this is mapped to a structure, so querying the attribute will not return an object,
+        but a complete structure.</note>
+     </desc>
+
     <attribute name="active" type="boolean" readonly="yes">
       <desc>
         Whether the remote display connection is active.
@@ -4914,17 +4927,15 @@
      name="ISystemProperties"
      extends="$unknown"
      uuid="12c2e31e-247f-4d51-82e5-5b9d4a6c7d5b"
-     wsmap="struct"
+     wsmap="managed"
      >
     <desc>
       The ISystemProperties interface represents global properties
       of the given VirtualBox installation.
 
       These properties define limits and default values for various
-      attributes and parameters.
-
-      Most of the properties are read-only, but some can be changed by
-      a user.
+      attributes and parameters. Most of the properties are read-only, but some can be
+      changed by a user.
     </desc>
 
     <attribute name="minGuestRAM" type="unsigned long" readonly="yes">
@@ -5119,6 +5130,12 @@
      uuid="da94f478-1f37-4726-b750-2235950dc2fe"
      wsmap="struct"
      >
+    <desc>
+        <note>With the COM API, this is an interface like all the others. With the webservice,
+        this is mapped to a structure, so querying the attribute will not return an object,
+        but a complete structure.</note>
+    </desc>
+
     <attribute name="id" type="wstring" readonly="yes">
       <desc>Guest OS identifier string.</desc>
     </attribute>
@@ -5722,6 +5739,11 @@
      uuid="c0ffe596-21c6-4797-8d8a-b47b66881e7a"
      wsmap="struct"
      >
+    <desc>
+        <note>With the COM API, this is an interface like all the others. With the webservice,
+        this is mapped to a structure, so querying the attribute will not return an object,
+        but a complete structure.</note>
+    </desc>
     <attribute name="hardDisk" type="IHardDisk" readonly="yes">
       <desc>Harddisk object this attachment is about.</desc>
     </attribute>
@@ -9273,7 +9295,7 @@
   <interface
      name="IAudioAdapter" extends="$unknown"
      uuid="921873db-5f3f-4b69-91f9-7be9e535a2cb"
-     wsmap="struct"
+     wsmap="managed"
      >
     <desc>
         The IAudioAdapter interface represents the virtual audio adapter of
@@ -9323,7 +9345,7 @@
   <interface
      name="IVRDPServer" extends="$unknown"
      uuid="ed9d31ae-867f-45fc-b727-6740084d1883"
-     wsmap="struct"
+     wsmap="managed"
      >
     <attribute name="enabled" type="boolean">
       <desc>VRDP server status.</desc>
@@ -9447,6 +9469,10 @@
       Note that permanent and transient shared folders of different machines
       are in different name spaces, so they don't overlap and don't need to
       have unique logical names.
+
+      <note>With the COM API, this is an interface like all the others. With the webservice,
+        this is mapped to a structure, so querying the attribute will not return an object,
+        but a complete structure.</note>
 
       <note>
         Global shared folders are not implemented in the current vesion of the
