@@ -1001,12 +1001,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     if (mUSBProxyService->isActive() && filter->data().mActive)
     {
         ComAssertRet (filter->id() == NULL, E_FAIL);
-#ifndef VBOX_WITH_USBFILTER
-        filter->id() =
-            mUSBProxyService->insertFilter (ComPtr <IUSBDeviceFilter> (aFilter));
-#else
         filter->id() = mUSBProxyService->insertFilter (&filter->data().mUSBFilter);
-#endif
     }
 
     /* save the global settings */
@@ -1094,12 +1089,7 @@ HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
             if (aFilter->data().mActive)
             {
                 ComAssertRet (aFilter->id() == NULL, E_FAIL);
-#ifndef VBOX_WITH_USBFILTER
-                aFilter->id() =
-                    mUSBProxyService->insertFilter (ComPtr <IUSBDeviceFilter> (aFilter));
-#else
                 aFilter->id() = mUSBProxyService->insertFilter (&aFilter->data().mUSBFilter);
-#endif
             }
             else
             {
@@ -1115,12 +1105,7 @@ HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
                 // update the filter in the proxy
                 ComAssertRet (aFilter->id() != NULL, E_FAIL);
                 mUSBProxyService->removeFilter (aFilter->id());
-#ifndef VBOX_WITH_USBFILTER
-                aFilter->id() =
-                    mUSBProxyService->insertFilter (ComPtr <IUSBDeviceFilter> (aFilter));
-#else
                 aFilter->id() = mUSBProxyService->insertFilter (&aFilter->data().mUSBFilter);
-#endif
             }
         }
 
@@ -1185,12 +1170,7 @@ HRESULT Host::loadSettings (const settings::Key &aGlobal)
         if (filterObj->data().mActive)
         {
             HostUSBDeviceFilter *flt = filterObj; /* resolve ambiguity */
-#ifndef VBOX_WITH_USBFILTER
-            flt->id() =
-                mUSBProxyService->insertFilter (ComPtr <IUSBDeviceFilter> (flt));
-#else
             flt->id() = mUSBProxyService->insertFilter (&filterObj->data().mUSBFilter);
-#endif
         }
     }
 
@@ -1223,35 +1203,6 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
 
         filter.setValue <Bstr> ("name", data.mName);
         filter.setValue <bool> ("active", !!data.mActive);
-
-#ifndef VBOX_WITH_USBFILTER
-
-        /* all are optional */
-        if (data.mVendorId.string())
-            filter.setValue <Bstr> ("vendorId", data.mVendorId.string());
-        if (data.mProductId.string())
-            filter.setValue <Bstr> ("productId", data.mProductId.string());
-        if (data.mRevision.string())
-            filter.setValue <Bstr> ("revision", data.mRevision.string());
-        if (data.mManufacturer.string())
-            filter.setValue <Bstr> ("manufacturer", data.mManufacturer.string());
-        if (data.mProduct.string())
-            filter.setValue <Bstr> ("product", data.mProduct.string());
-        if (data.mSerialNumber.string())
-            filter.setValue <Bstr> ("serialNumber", data.mSerialNumber.string());
-        if (data.mPort.string())
-            filter.setValue <Bstr> ("port", data.mPort.string());
-
-        /* action is mandatory */
-        if (data.mAction == USBDeviceFilterAction_Ignore)
-            filter.setStringValue ("action", "Ignore");
-        else
-        if (data.mAction == USBDeviceFilterAction_Hold)
-            filter.setStringValue ("action", "Hold");
-        else
-            AssertMsgFailed (("Invalid action: %d\n", data.mAction));
-
-#else  /* VBOX_WITH_USBFILTER */
 
         /* all are optional */
         Bstr str;
@@ -1292,8 +1243,6 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
             filter.setStringValue ("action", "Hold");
         else
             AssertMsgFailed (("Invalid action: %d\n", action));
-
-#endif /* VBOX_WITH_USBFILTER */
 
         ++ it;
     }
@@ -2087,12 +2036,8 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
         const HostUSBDeviceFilter::Data &data = (*it)->data();
         if (aDevice->isMatch (data))
         {
-#ifndef VBOX_WITH_USBFILTER
-            USBDeviceFilterAction_T action = data.mAction;
-#else
             USBDeviceFilterAction_T action = USBDeviceFilterAction_Null;
             (*it)->COMGETTER (Action) (&action);
-#endif
             if (action == USBDeviceFilterAction_Ignore)
             {
                 /* request to give the device back to the host*/

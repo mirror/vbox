@@ -402,11 +402,7 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
         ComAssertRet (service, E_FAIL);
 
         ComAssertRet (filter->id() == NULL, E_FAIL);
-#ifndef VBOX_WITH_USBFILTER
-        filter->id() = service->insertFilter (ComPtr <IUSBDeviceFilter> (aFilter));
-#else
         filter->id() = service->insertFilter (&filter->data().mUSBFilter);
-#endif
     }
 
     return S_OK;
@@ -599,27 +595,6 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
         filter.setValue <bool> ("active", !!data.mActive);
 
         /* all are optional */
-#ifndef VBOX_WITH_USBFILTER
-
-        if (data.mVendorId.string())
-            filter.setValue <Bstr> ("vendorId", data.mVendorId.string());
-        if (data.mProductId.string())
-            filter.setValue <Bstr> ("productId", data.mProductId.string());
-        if (data.mRevision.string())
-            filter.setValue <Bstr> ("revision", data.mRevision.string());
-        if (data.mManufacturer.string())
-            filter.setValue <Bstr> ("manufacturer", data.mManufacturer.string());
-        if (data.mProduct.string())
-            filter.setValue <Bstr> ("product", data.mProduct.string());
-        if (data.mSerialNumber.string())
-            filter.setValue <Bstr> ("serialNumber", data.mSerialNumber.string());
-        if (data.mPort.string())
-            filter.setValue <Bstr> ("port", data.mPort.string());
-        if (data.mRemote.string())
-            filter.setValue <Bstr> ("remote", data.mRemote.string());
-
-#else  /* VBOX_WITH_USBFILTER */
-
         Bstr str;
         (*it)->COMGETTER (VendorId) (str.asOutParam());
         if (!str.isNull())
@@ -651,8 +626,6 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
 
         if (data.mRemote.string())
             filter.setValue <Bstr> ("remote", data.mRemote.string());
-
-#endif /* VBOX_WITH_USBFILTER */
 
         if (data.mMaskedIfs)
             filter.setValue <ULONG> ("maskedInterfaces", data.mMaskedIfs);
@@ -827,12 +800,7 @@ bool USBController::rollback()
                     {
                         USBDeviceFilter *flt = *it; /* resolve ambiguity */
                         ComAssertRet (flt->id() == NULL, false);
-#ifndef VBOX_WITH_USBFILTER
-                        flt->id() = service->insertFilter
-                            (ComPtr <IUSBDeviceFilter> (flt));
-#else
                         flt->id() = service->insertFilter (&flt->data().mUSBFilter);
-#endif
                     }
                 }
                 ++ it;
@@ -1055,12 +1023,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
             if (aFilter->data().mActive)
             {
                 ComAssertRet (aFilter->id() == NULL, E_FAIL);
-#ifndef VBOX_WITH_USBFILTER
-                aFilter->id() = service->insertFilter
-                    (ComPtr <IUSBDeviceFilter> (aFilter));
-#else
                 aFilter->id() = service->insertFilter (&aFilter->data().mUSBFilter);
-#endif
             }
             else
             {
@@ -1076,12 +1039,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
                 /* update the filter in the proxy */
                 ComAssertRet (aFilter->id() != NULL, E_FAIL);
                 service->removeFilter (aFilter->id());
-#ifndef VBOX_WITH_USBFILTER
-                aFilter->id() = service->insertFilter
-                    (ComPtr <IUSBDeviceFilter> (aFilter));
-#else
                 aFilter->id() = service->insertFilter (&aFilter->data().mUSBFilter);
-#endif
             }
         }
     }
@@ -1152,57 +1110,43 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
     HRESULT rc = S_OK;
 
     /* query fields */
-#ifdef VBOX_WITH_USBFILTER
     USBFILTER dev;
     USBFilterInit (&dev, USBFILTERTYPE_CAPTURE);
-#endif
 
     USHORT vendorId = 0;
     rc = aUSBDevice->COMGETTER(VendorId) (&vendorId);
     ComAssertComRCRet (rc, false);
     ComAssertRet (vendorId, false);
-#ifdef VBOX_WITH_USBFILTER
     int vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_VENDOR_ID, vendorId, true); AssertRC(vrc);
-#endif
 
     USHORT productId = 0;
     rc = aUSBDevice->COMGETTER(ProductId) (&productId);
     ComAssertComRCRet (rc, false);
     ComAssertRet (productId, false);
-#ifdef VBOX_WITH_USBFILTER
     vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_PRODUCT_ID, productId, true); AssertRC(vrc);
-#endif
 
     USHORT revision;
     rc = aUSBDevice->COMGETTER(Revision) (&revision);
     ComAssertComRCRet (rc, false);
-#ifdef VBOX_WITH_USBFILTER
     vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_DEVICE, revision, true); AssertRC(vrc);
-#endif
 
     Bstr manufacturer;
     rc = aUSBDevice->COMGETTER(Manufacturer) (manufacturer.asOutParam());
     ComAssertComRCRet (rc, false);
-#ifdef VBOX_WITH_USBFILTER
     if (!manufacturer.isNull())
         USBFilterSetStringExact (&dev, USBFILTERIDX_MANUFACTURER_STR, Utf8Str(manufacturer), true);
-#endif
 
     Bstr product;
     rc = aUSBDevice->COMGETTER(Product) (product.asOutParam());
     ComAssertComRCRet (rc, false);
-#ifdef VBOX_WITH_USBFILTER
     if (!product.isNull())
         USBFilterSetStringExact (&dev, USBFILTERIDX_PRODUCT_STR, Utf8Str(product), true);
-#endif
 
     Bstr serialNumber;
     rc = aUSBDevice->COMGETTER(SerialNumber) (serialNumber.asOutParam());
     ComAssertComRCRet (rc, false);
-#ifdef VBOX_WITH_USBFILTER
     if (!serialNumber.isNull())
         USBFilterSetStringExact (&dev, USBFILTERIDX_SERIAL_NUMBER_STR, Utf8Str(serialNumber), true);
-#endif
 
     Bstr address;
     rc = aUSBDevice->COMGETTER(Address) (address.asOutParam());
@@ -1211,9 +1155,7 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
     USHORT port = 0;
     rc = aUSBDevice->COMGETTER(Port)(&port);
     ComAssertComRCRet (rc, false);
-#ifdef VBOX_WITH_USBFILTER
     USBFilterSetNumExact (&dev, USBFILTERIDX_PORT, port, true);
-#endif
 
     BOOL remote = FALSE;
     rc = aUSBDevice->COMGETTER(Remote)(&remote);
@@ -1230,36 +1172,12 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
         AutoLock filterLock (*it);
         const USBDeviceFilter::Data &aData = (*it)->data();
 
-
         if (!aData.mActive)
             continue;
         if (!aData.mRemote.isMatch (remote))
             continue;
-
-#ifndef VBOX_WITH_USBFILTER
-        if (!aData.mVendorId.isMatch (vendorId))
-            continue;
-        if (!aData.mProductId.isMatch (productId))
-            continue;
-        if (!aData.mRevision.isMatch (revision))
-            continue;
-
-# if !defined (RT_OS_WINDOWS)
-        /* these filters are 'temporarily' ignored on Win32 */
-        if (!aData.mManufacturer.isMatch (manufacturer))
-            continue;
-        if (!aData.mProduct.isMatch (product))
-            continue;
-        if (!aData.mSerialNumber.isMatch (serialNumber))
-            continue;
-        if (!aData.mPort.isMatch (port))
-            continue;
-# endif
-
-#else  /* VBOX_WITH_USBFILTER */
         if (!USBFilterMatch (&aData.mUSBFilter, &dev))
             continue;
-#endif /* VBOX_WITH_USBFILTER */
 
         match = true;
         *aMaskedIfs = aData.mMaskedIfs;
@@ -1303,12 +1221,7 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
             if (aInsertFilters)
             {
                 AssertReturn (flt->id() == NULL, E_FAIL);
-#ifndef VBOX_WITH_USBFILTER
-                flt->id() = service->insertFilter
-                    (ComPtr <IUSBDeviceFilter> (flt));
-#else
                 flt->id() = service->insertFilter (&flt->data().mUSBFilter);
-#endif
             }
             else
             {
