@@ -61,7 +61,7 @@
 
 #define LOGO_MAX_WIDTH       640
 #define LOGO_MAX_HEIGHT      480
-#define LOGO_MAX_SIZE        LOGO_MAX_WIDTH * LOGO_MAX_HEIGHT * 4
+#define LOGO_MAX_SIZE        ( LOGO_MAX_WIDTH * LOGO_MAX_HEIGHT * 4 )
 
 
 /** @name The BIOS logo commands.
