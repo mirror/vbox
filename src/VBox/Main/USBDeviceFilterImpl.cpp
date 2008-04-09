@@ -1,5 +1,5 @@
+/* $Id:$ */
 /** @file
- *
  * Implementation of VirtualBox COM components:
  * USBDeviceFilter and HostUSBDeviceFilter
  */
@@ -24,7 +24,7 @@
 
 #include <iprt/cpputils.h>
 
-#ifdef VBOX_WITH_USBFILTER
+
 ////////////////////////////////////////////////////////////////////////////////
 // Internal Helpers
 ////////////////////////////////////////////////////////////////////////////////
@@ -140,7 +140,6 @@ USBDeviceFilter::usbFilterFieldFromString (PUSBFILTER aFilter, USBFILTERIDX aIdx
 
     return S_OK;
 }
-#endif /* VBOX_WITH_USBFILTER */
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -200,17 +199,7 @@ HRESULT USBDeviceFilter::init (USBController *aParent,
     mData->mMaskedIfs = 0;
 
     /* initialize all filters to any match using null string */
-#ifndef VBOX_WITH_USBFILTER
-    mData->mVendorId = NULL;
-    mData->mProductId = NULL;
-    mData->mRevision = NULL;
-    mData->mManufacturer = NULL;
-    mData->mProduct = NULL;
-    mData->mSerialNumber = NULL;
-    mData->mPort = NULL;
-#else  /* VBOX_WITH_USBFILTER */
     USBFilterInit(&mData->mUSBFilter, USBFILTERTYPE_CAPTURE);
-#endif /* VBOX_WITH_USBFILTER */
     mData->mRemote = NULL;
 
     mInList = false;
@@ -278,17 +267,7 @@ HRESULT USBDeviceFilter::init (USBController *aParent, INPTR BSTR aName)
     mData->mMaskedIfs = 0;
 
     /* initialize all filters to any match using null string */
-#ifndef VBOX_WITH_USBFILTER
-    mData->mVendorId = NULL;
-    mData->mProductId = NULL;
-    mData->mRevision = NULL;
-    mData->mManufacturer = NULL;
-    mData->mProduct = NULL;
-    mData->mSerialNumber = NULL;
-    mData->mPort = NULL;
-#else  /* VBOX_WITH_USBFILTER */
     USBFilterInit (&mData->mUSBFilter, USBFILTERTYPE_CAPTURE);
-#endif /* VBOX_WITH_USBFILTER */
     mData->mRemote = NULL;
 
     mInList = false;
@@ -518,415 +497,72 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Active) (BOOL aActive)
 
 STDMETHODIMP USBDeviceFilter::COMGETTER(VendorId) (BSTR *aVendorId)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aVendorId)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mVendorId.string().cloneTo (aVendorId);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_VENDOR_ID, aVendorId);
-#endif
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(VendorId) (INPTR BSTR aVendorId)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent->parent());
-    CheckComRCReturnRC (adep.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mVendorId.string() != aVendorId)
-    {
-        Data::USHORTFilter flt = aVendorId;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Vendor ID filter string '%ls' is not valid (error at position %d)"),
-                aVendorId, flt.errorPosition() + 1);
-#if defined (RT_OS_WINDOWS)
-        // intervalic filters are temporarily disabled
-        if (!flt.first().isNull() && flt.first().isValid())
-            return setError (E_INVALIDARG,
-                tr ("'%ls': Intervalic filters are not currently available on this platform"),
-                aVendorId);
-#endif
-
-        mData.backup();
-        mData->mVendorId = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_VENDOR_ID, aVendorId, tr ("Vendor ID"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP USBDeviceFilter::COMGETTER(ProductId) (BSTR *aProductId)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aProductId)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mProductId.string().cloneTo (aProductId);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_PRODUCT_ID, aProductId);
-#endif
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(ProductId) (INPTR BSTR aProductId)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent->parent());
-    CheckComRCReturnRC (adep.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mProductId.string() != aProductId)
-    {
-        Data::USHORTFilter flt = aProductId;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Product ID filter string '%ls' is not valid (error at position %d)"),
-                aProductId, flt.errorPosition() + 1);
-#if defined (RT_OS_WINDOWS)
-        // intervalic filters are temporarily disabled
-        if (!flt.first().isNull() && flt.first().isValid())
-            return setError (E_INVALIDARG,
-                tr ("'%ls': Intervalic filters are not currently available on this platform"),
-                aProductId);
-#endif
-
-        mData.backup();
-        mData->mProductId = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_PRODUCT_ID, aProductId, tr ("Product ID"));
-#endif /* VBOX_WITH_USBFILTER */
  }
 
 STDMETHODIMP USBDeviceFilter::COMGETTER(Revision) (BSTR *aRevision)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aRevision)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mRevision.string().cloneTo (aRevision);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_DEVICE, aRevision);
-#endif
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(Revision) (INPTR BSTR aRevision)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent->parent());
-    CheckComRCReturnRC (adep.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mRevision.string() != aRevision)
-    {
-        Data::USHORTFilter flt = aRevision;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Revision filter string '%ls' is not valid (error at position %d)"),
-                aRevision, flt.errorPosition() + 1);
-#if defined (RT_OS_WINDOWS)
-        // intervalic filters are temporarily disabled
-        if (!flt.first().isNull() && flt.first().isValid())
-            return setError (E_INVALIDARG,
-                tr ("'%ls': Intervalic filters are not currently available on this platform"),
-                aRevision);
-#endif
-
-        mData.backup();
-        mData->mRevision = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_DEVICE, aRevision, tr ("Revision"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP USBDeviceFilter::COMGETTER(Manufacturer) (BSTR *aManufacturer)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aManufacturer)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mManufacturer.string().cloneTo (aManufacturer);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_MANUFACTURER_STR, aManufacturer);
-#endif
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(Manufacturer) (INPTR BSTR aManufacturer)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent->parent());
-    CheckComRCReturnRC (adep.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mManufacturer.string() != aManufacturer)
-    {
-        Data::BstrFilter flt = aManufacturer;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Manufacturer filter string '%ls' is not valid (error at position %d)"),
-                aManufacturer, flt.errorPosition() + 1);
-
-        mData.backup();
-        mData->mManufacturer = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_MANUFACTURER_STR, aManufacturer, tr ("Manufacturer"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP USBDeviceFilter::COMGETTER(Product) (BSTR *aProduct)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aProduct)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mProduct.string().cloneTo (aProduct);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_PRODUCT_STR, aProduct);
-#endif
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(Product) (INPTR BSTR aProduct)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent->parent());
-    CheckComRCReturnRC (adep.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mProduct.string() != aProduct)
-    {
-        Data::BstrFilter flt = aProduct;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Product filter string '%ls' is not valid (error at position %d)"),
-                aProduct, flt.errorPosition() + 1);
-
-        mData.backup();
-        mData->mProduct = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_PRODUCT_STR, aProduct, tr ("Product"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP USBDeviceFilter::COMGETTER(SerialNumber) (BSTR *aSerialNumber)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aSerialNumber)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mSerialNumber.string().cloneTo (aSerialNumber);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_SERIAL_NUMBER_STR, aSerialNumber);
-#endif
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(SerialNumber) (INPTR BSTR aSerialNumber)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent->parent());
-    CheckComRCReturnRC (adep.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mSerialNumber.string() != aSerialNumber)
-    {
-        Data::BstrFilter flt = aSerialNumber;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Serial number filter string '%ls' is not valid (error at position %d)"),
-                aSerialNumber, flt.errorPosition() + 1);
-
-        mData.backup();
-        mData->mSerialNumber = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_SERIAL_NUMBER_STR, aSerialNumber, tr ("Serial number"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP USBDeviceFilter::COMGETTER(Port) (BSTR *aPort)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aPort)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mPort.string().cloneTo (aPort);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_PORT, aPort);
-#endif
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(Port) (INPTR BSTR aPort)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep (mParent->parent());
-    CheckComRCReturnRC (adep.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mPort.string() != aPort)
-    {
-        Data::USHORTFilter flt = aPort;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Port number filter string '%ls' is not valid (error at position %d)"),
-                aPort, flt.errorPosition() + 1);
-#if defined (RT_OS_WINDOWS)
-        // intervalic filters are temporarily disabled
-        if (!flt.first().isNull() && flt.first().isValid())
-            return setError (E_INVALIDARG,
-                tr ("'%ls': Intervalic filters are not currently available on this platform"),
-                aPort);
-#endif
-
-        mData.backup();
-        mData->mPort = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_PORT, aPort, tr ("Port number"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP USBDeviceFilter::COMGETTER(Remote) (BSTR *aRemote)
@@ -1103,7 +739,6 @@ void USBDeviceFilter::unshare()
     unconst (mPeer).setNull();
 }
 
-#ifdef VBOX_WITH_USBFILTER
 /**
  *  Generic USB filter field getter.
  *
@@ -1169,7 +804,7 @@ HRESULT USBDeviceFilter::usbFilterFieldSetter (USBFILTERIDX aIdx, Bstr aStr, Utf
 
     return S_OK;
 }
-#endif /* VBOX_WITH_USBFILTER */
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // HostUSBDeviceFilter
@@ -1224,20 +859,7 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent,
     mData.allocate();
     mData->mName = aName;
     mData->mActive = aActive;
-#ifndef VBOX_WITH_USBFILTER
-    mData->mAction = aAction;
-
-    /* initialize all filters to any match using null string */
-    mData->mVendorId = NULL;
-    mData->mProductId = NULL;
-    mData->mRevision = NULL;
-    mData->mManufacturer = NULL;
-    mData->mProduct = NULL;
-    mData->mSerialNumber = NULL;
-    mData->mPort = NULL;
-#else  /* VBOX_WITH_USBFILTER */
     USBFilterInit (&mData->mUSBFilter, USBFILTERTYPE_IGNORE);
-#endif /* VBOX_WITH_USBFILTER */
     mData->mRemote = NULL;
     mData->mMaskedIfs = 0;
 
@@ -1249,10 +871,8 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent,
     HRESULT rc = S_OK;
     do
     {
-#ifndef VBOX_WITH_USBFILTER
         rc = COMSETTER(Action) (aAction);
         CheckComRCBreakRC (rc);
-#endif /* VBOX_WITH_USBFILTER */
         rc = COMSETTER(VendorId) (aVendorId);
         CheckComRCBreakRC (rc);
         rc = COMSETTER(ProductId) (aProductId);
@@ -1302,24 +922,8 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent, INPTR BSTR aName)
 
     mData->mName = aName;
     mData->mActive = FALSE;
-#ifndef VBOX_WITH_USBFILTER
-    mData->mAction = USBDeviceFilterAction_Ignore;
-#endif /* !VBOX_WITH_USBFILTER */
-
     mInList = false;
-
-#ifndef VBOX_WITH_USBFILTER
-    /* initialize all filters to any match using null string */
-    mData->mVendorId = NULL;
-    mData->mProductId = NULL;
-    mData->mRevision = NULL;
-    mData->mManufacturer = NULL;
-    mData->mProduct = NULL;
-    mData->mSerialNumber = NULL;
-    mData->mPort = NULL;
-#else  /* VBOX_WITH_USBFILTER */
     USBFilterInit (&mData->mUSBFilter, USBFILTERTYPE_IGNORE);
-#endif /* VBOX_WITH_USBFILTER */
     mData->mRemote = NULL;
     mData->mMaskedIfs = 0;
 
@@ -1429,380 +1033,72 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Active) (BOOL aActive)
 
 STDMETHODIMP HostUSBDeviceFilter::COMGETTER(VendorId) (BSTR *aVendorId)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aVendorId)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mVendorId.string().cloneTo (aVendorId);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_VENDOR_ID, aVendorId);
-#endif
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(VendorId) (INPTR BSTR aVendorId)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mVendorId.string() != aVendorId)
-    {
-        Data::USHORTFilter flt = aVendorId;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Vendor ID filter string '%ls' is not valid (error at position %d)"),
-                aVendorId, flt.errorPosition() + 1);
-#if defined (RT_OS_WINDOWS)
-        // intervalic filters are temporarily disabled
-        if (!flt.first().isNull() && flt.first().isValid())
-            return setError (E_INVALIDARG,
-                tr ("'%ls': Intervalic filters are not currently available on this platform"),
-                aVendorId);
-#endif
-
-        mData->mVendorId = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onUSBDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_VENDOR_ID, aVendorId, tr ("Vendor ID"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMGETTER(ProductId) (BSTR *aProductId)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aProductId)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mProductId.string().cloneTo (aProductId);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_PRODUCT_ID, aProductId);
-#endif
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(ProductId) (INPTR BSTR aProductId)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mProductId.string() != aProductId)
-    {
-        Data::USHORTFilter flt = aProductId;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Product ID filter string '%ls' is not valid (error at position %d)"),
-                aProductId, flt.errorPosition() + 1);
-#if defined (RT_OS_WINDOWS)
-        // intervalic filters are temporarily disabled
-        if (!flt.first().isNull() && flt.first().isValid())
-            return setError (E_INVALIDARG,
-                tr ("'%ls': Intervalic filters are not currently available on this platform"),
-                aProductId);
-#endif
-
-        mData->mProductId = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onUSBDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_PRODUCT_ID, aProductId, tr ("Product ID"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Revision) (BSTR *aRevision)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aRevision)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mRevision.string().cloneTo (aRevision);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_DEVICE, aRevision);
-#endif
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Revision) (INPTR BSTR aRevision)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mRevision.string() != aRevision)
-    {
-        Data::USHORTFilter flt = aRevision;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Revision filter string '%ls' is not valid (error at position %d)"),
-                aRevision, flt.errorPosition() + 1);
-#if defined (RT_OS_WINDOWS)
-        // intervalic filters are temporarily disabled
-        if (!flt.first().isNull() && flt.first().isValid())
-            return setError (E_INVALIDARG,
-                tr ("'%ls': Intervalic filters are not currently available on this platform"),
-                aRevision);
-#endif
-
-        mData->mRevision = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onUSBDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_DEVICE, aRevision, tr ("Revision"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Manufacturer) (BSTR *aManufacturer)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aManufacturer)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mManufacturer.string().cloneTo (aManufacturer);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_MANUFACTURER_STR, aManufacturer);
-#endif
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Manufacturer) (INPTR BSTR aManufacturer)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mManufacturer.string() != aManufacturer)
-    {
-        Data::BstrFilter flt = aManufacturer;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Manufacturer filter string '%ls' is not valid (error at position %d)"),
-                aManufacturer, flt.errorPosition() + 1);
-
-        mData->mManufacturer = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onUSBDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_MANUFACTURER_STR, aManufacturer, tr ("Manufacturer"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Product) (BSTR *aProduct)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aProduct)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mProduct.string().cloneTo (aProduct);
-
-    return S_OK;
-#else
     return usbFilterFieldGetter (USBFILTERIDX_PRODUCT_STR, aProduct);
-#endif
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Product) (INPTR BSTR aProduct)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mProduct.string() != aProduct)
-    {
-        Data::BstrFilter flt = aProduct;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Product filter string '%ls' is not valid (error at position %d)"),
-                aProduct, flt.errorPosition() + 1);
-
-        mData->mProduct = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onUSBDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_PRODUCT_STR, aProduct, tr ("Product"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMGETTER(SerialNumber) (BSTR *aSerialNumber)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aSerialNumber)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mSerialNumber.string().cloneTo (aSerialNumber);
-
-    return S_OK;
-#else   /* VBOX_WITH_USBFILTER */
     return usbFilterFieldGetter (USBFILTERIDX_SERIAL_NUMBER_STR, aSerialNumber);
-#endif  /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(SerialNumber) (INPTR BSTR aSerialNumber)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mSerialNumber.string() != aSerialNumber)
-    {
-        Data::BstrFilter flt = aSerialNumber;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Serial number filter string '%ls' is not valid (error at position %d)"),
-                aSerialNumber, flt.errorPosition() + 1);
-
-        mData->mSerialNumber = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onUSBDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_SERIAL_NUMBER_STR, aSerialNumber, tr ("Serial number"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Port) (BSTR *aPort)
 {
-#ifndef VBOX_WITH_USBFILTER
-    if (!aPort)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReaderLock alock (this);
-
-    mData->mPort.string().cloneTo (aPort);
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldGetter (USBFILTERIDX_PORT, aPort);
-#endif  /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Port) (INPTR BSTR aPort)
 {
-#ifndef VBOX_WITH_USBFILTER
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoLock alock (this);
-
-    if (mData->mPort.string() != aPort)
-    {
-        Data::USHORTFilter flt = aPort;
-        ComAssertRet (!flt.isNull(), E_FAIL);
-        if (!flt.isValid())
-            return setError (E_INVALIDARG,
-                tr ("Port number filter string '%ls' is not valid (error at position %d)"),
-                aPort, flt.errorPosition() + 1);
-#if defined (RT_OS_WINDOWS)
-        // intervalic filters are temporarily disabled
-        if (!flt.first().isNull() && flt.first().isValid())
-            return setError (E_INVALIDARG,
-                tr ("'%ls': Intervalic filters are not currently available on this platform"),
-                aPort);
-#endif
-
-        mData->mPort = flt;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onUSBDeviceFilterChange (this);
-    }
-
-    return S_OK;
-#else  /* VBOX_WITH_USBFILTER */
     return usbFilterFieldSetter (USBFILTERIDX_PORT, aPort, tr ("Port number"));
-#endif /* VBOX_WITH_USBFILTER */
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Remote) (BSTR *aRemote)
@@ -1861,16 +1157,12 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Action) (USBDeviceFilterAction_T *aA
 
     AutoReaderLock alock (this);
 
-#ifndef VBOX_WITH_USBFILTER
-    *aAction = mData->mAction;
-#else   /* VBOX_WITH_USBFILTER */
     switch (USBFilterGetFilterType (&mData->mUSBFilter))
     {
         case USBFILTERTYPE_IGNORE:   *aAction = USBDeviceFilterAction_Ignore; break;
         case USBFILTERTYPE_CAPTURE:  *aAction = USBDeviceFilterAction_Hold; break;
         default:                     *aAction = USBDeviceFilterAction_Null; break;
     }
-#endif  /* VBOX_WITH_USBFILTER */
 
     return S_OK;
 }
@@ -1882,18 +1174,6 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Action) (USBDeviceFilterAction_T aAc
 
     AutoLock alock (this);
 
-#ifndef VBOX_WITH_USBFILTER
-    if (mData->mAction != aAction)
-    {
-        mData->mAction = aAction;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        return mParent->onUSBDeviceFilterChange (this);
-    }
-
-#else   /* VBOX_WITH_USBFILTER */
     USBFILTERTYPE filterType;
     switch (aAction)
     {
@@ -1920,13 +1200,10 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Action) (USBDeviceFilterAction_T aAc
 
         return mParent->onUSBDeviceFilterChange (this);
     }
-#endif  /* VBOX_WITH_USBFILTER */
 
     return S_OK;
 }
 
-
-#ifdef VBOX_WITH_USBFILTER
 /**
  *  Generic USB filter field getter.
  *
@@ -1949,7 +1226,6 @@ HRESULT HostUSBDeviceFilter::usbFilterFieldGetter (USBFILTERIDX aIdx, BSTR *aStr
 
     return S_OK;
 }
-
 
 /**
  *  Generic USB filter field setter.
@@ -1989,5 +1265,4 @@ HRESULT HostUSBDeviceFilter::usbFilterFieldSetter (USBFILTERIDX aIdx, Bstr aStr,
 
     return S_OK;
 }
-#endif /* VBOX_WITH_USBFILTER */
 

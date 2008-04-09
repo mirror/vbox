@@ -23,9 +23,7 @@
 #include "Collection.h"
 
 #include "Matching.h"
-#ifdef VBOX_WITH_USBFILTER
-# include <VBox/usbfilter.h>
-#endif /* VBOX_WITH_USBFILTER */
+#include <VBox/usbfilter.h>
 
 class USBController;
 class Host;
@@ -43,81 +41,34 @@ public:
 
     struct Data
     {
-#ifndef VBOX_WITH_USBFILTER
-        struct ConvForRegexp
-        {
-            inline static Bstr toBstr (const USHORT &aValue)
-            {
-                return Bstr (Utf8StrFmt ("%04X", aValue));
-            }
-
-            inline static const Bstr &toBstr (const Bstr &aValue)
-            {
-                return aValue;
-            }
-        };
-
-        typedef matching::Matchable
-            <matching::TwoParsedFilters <matching::ParsedIntervalFilter <USHORT>,
-                                         matching::ParsedRegexpFilter <ConvForRegexp, true, 4, 4> > >
-            USHORTFilter;
-
-        typedef matching::Matchable
-            <matching::ParsedRegexpFilter <ConvForRegexp, false> > BstrFilter;
-#endif /* !VBOX_WITH_USBFILTER */
-
         typedef matching::Matchable <matching::ParsedBoolFilter> BOOLFilter;
 
         Data() : mActive (FALSE), mMaskedIfs (0), mId (NULL) {}
-#ifdef VBOX_WITH_USBFILTER
         Data (const Data &aThat) : mName (aThat.mName), mActive (aThat.mActive),
             mRemote (aThat.mRemote), mMaskedIfs (aThat.mMaskedIfs) , mId (aThat.mId)
         {
             USBFilterClone (&mUSBFilter, &aThat.mUSBFilter);
         }
-#endif /* VBOX_WITH_USBFILTER */
 
         bool operator== (const Data &that) const
         {
-#ifndef VBOX_WITH_USBFILTER
-            return this == &that ||
-                   (mName == that.mName &&
-                    mActive == that.mActive &&
-                    mVendorId.string() == that. mVendorId.string() &&
-                    mProductId.string() == that. mProductId.string() &&
-                    mRevision.string() == that. mRevision.string() &&
-                    mManufacturer.string() == that. mManufacturer.string() &&
-                    mProduct.string() == that. mProduct.string() &&
-                    mSerialNumber.string() == that. mSerialNumber.string() &&
-                    mPort.string() == that. mPort.string() &&
-                    mRemote.string() == that. mRemote.string() &&
-                    mMaskedIfs == that. mMaskedIfs);
-#else /* VBOX_WITH_USBFILTER */
             return this == &that
                 || (    mName == that.mName
                     &&  mActive == that.mActive
                     &&  mMaskedIfs == that.mMaskedIfs
                     &&  USBFilterIsIdentical (&mUSBFilter, &that.mUSBFilter));
-#endif /* VBOX_WITH_USBFILTER */
         }
 
+        /** The filter name. */
         Bstr mName;
+        /** Indicates whether the filter is active or not. */
         BOOL mActive;
-
-#ifndef VBOX_WITH_USBFILTER
-        USHORTFilter mVendorId;
-        USHORTFilter mProductId;
-        USHORTFilter mRevision;
-        BstrFilter mManufacturer;
-        BstrFilter mProduct;
-        BstrFilter mSerialNumber;
-        USHORTFilter mPort;
-#else /* VBOX_WITH_USBFILTER */
-        USBFILTER mUSBFilter;
-#endif /* VBOX_WITH_USBFILTER */
+        /** Remote or local matching criterion. */
         BOOLFilter mRemote;
+        /** The filter data blob. */
+        USBFILTER mUSBFilter;
 
-        /** Config value. */
+        /** Interface masking bit mask that should be applied to matching devices. */
         ULONG mMaskedIfs;
 
         /** Arbitrary ID field (not used by the class itself) */
@@ -201,16 +152,12 @@ public:
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"USBDeviceFilter"; }
 
-#ifdef VBOX_WITH_USBFILTER
     // tr() wants to belong to a class it seems, thus this one here.
     static HRESULT usbFilterFieldFromString (PUSBFILTER aFilter, USBFILTERIDX aIdx, INPTR BSTR aStr, const char *aName, Utf8Str &aErrStr);
-#endif
 
 private:
-#ifdef VBOX_WITH_USBFILTER
     HRESULT usbFilterFieldGetter (USBFILTERIDX aIdx, BSTR *aStr);
     HRESULT usbFilterFieldSetter (USBFILTERIDX aIdx, Bstr aStr, Utf8Str aName);
-#endif
 
     const ComObjPtr <USBController, ComWeakRef> mParent;
     const ComObjPtr <USBDeviceFilter> mPeer;
@@ -237,12 +184,7 @@ public:
 
     struct Data : public USBDeviceFilter::Data
     {
-#ifndef VBOX_WITH_USBFILTER
-        Data() : mAction (USBDeviceFilterAction_Ignore) {}
-        USBDeviceFilterAction_T mAction;
-#else  /* VBOX_WITH_USBFILTER */
         Data() {}
-#endif /* VBOX_WITH_USBFILTER */
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (HostUSBDeviceFilter)
@@ -317,10 +259,8 @@ public:
     static const wchar_t *getComponentName() { return L"HostUSBDeviceFilter"; }
 
 private:
-#ifdef VBOX_WITH_USBFILTER
     HRESULT usbFilterFieldGetter (USBFILTERIDX aIdx, BSTR *aStr);
     HRESULT usbFilterFieldSetter (USBFILTERIDX aIdx, Bstr aStr, Utf8Str aName);
-#endif
 
     const ComObjPtr <Host, ComWeakRef> mParent;
 

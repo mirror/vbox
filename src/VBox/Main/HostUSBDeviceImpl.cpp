@@ -855,79 +855,6 @@ bool HostUSBDevice::isMatch (const USBDeviceFilter::Data &aData)
     if (!aData.mActive)
         return false;
 
-#ifndef VBOX_WITH_USBFILTER
-    if (!aData.mVendorId.isMatch (mUsb->idVendor))
-    {
-        LogFlowThisFunc (("vendor not match %04X\n",
-                          mUsb->idVendor));
-        return false;
-    }
-    if (!aData.mProductId.isMatch (mUsb->idProduct))
-    {
-        LogFlowThisFunc (("product id not match %04X\n",
-                          mUsb->idProduct));
-        return false;
-    }
-    if (!aData.mRevision.isMatch (mUsb->bcdDevice))
-    {
-        LogFlowThisFunc (("rev not match %04X\n",
-                          mUsb->bcdDevice));
-        return false;
-    }
-
-#if !defined (RT_OS_WINDOWS)
-    // these filters are temporarily ignored on Win32
-    if (!aData.mManufacturer.isMatch (Bstr (mUsb->pszManufacturer)))
-        return false;
-    if (!aData.mProduct.isMatch (Bstr (mUsb->pszProduct)))
-        return false;
-    if (!aData.mSerialNumber.isMatch (Bstr (mUsb->pszSerialNumber)))
-        return false;
-    /// @todo (dmik) pusPort is yet absent
-//    if (!aData.mPort.isMatch (Bstr (mUsb->pusPort)))
-//        return false;
-#endif
-
-    // Host USB devices are local, so remote is always FALSE
-    if (!aData.mRemote.isMatch (FALSE))
-    {
-        LogFlowMember (("Host::HostUSBDevice: remote not match FALSE\n"));
-        return false;
-    }
-
-    /// @todo (dmik): bird, I assumed isMatch() is called only for devices
-    //  that are suitable for holding/capturing (also assuming that when the device
-    //  is just attached it first goes to our filter driver, and only after applying
-    //  filters goes back to the system when appropriate). So the below
-    //  doesn't look too correct; moreover, currently there is no determinable
-    //  "any match" state for intervalic filters, and it will be not so easy
-    //  to determine this state for an arbitrary regexp expression...
-    //  For now, I just check that the string filter is empty (which doesn't
-    //  actually reflect all possible "any match" filters).
-    //
-    // bird: This method was called for any device some weeks back, and it most certainly
-    // should be called for 'busy' devices still. However, we do *not* want 'busy' devices
-    // to match empty filters (because that will for instance capture all USB keyboards & mice).
-    // You assumption about a filter driver is not correct on linux. We're racing with
-    // everyone else in the system there - see your problem with usbfs access.
-    //
-    // The customer *requires* a way of matching all devices which the host isn't using,
-    // if that is now difficult or the below method opens holes in the matching, this *must*
-    // be addresses immediately.
-
-    /*
-     * If all the criteria is empty, devices which are used by the host will not match.
-     */
-    if (   mUsb->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE
-        && aData.mVendorId.string().isEmpty()
-        && aData.mProductId.string().isEmpty()
-        && aData.mRevision.string().isEmpty()
-        && aData.mManufacturer.string().isEmpty()
-        && aData.mProduct.string().isEmpty()
-        && aData.mSerialNumber.string().isEmpty())
-        return false;
-
-#else  /* VBOX_WITH_USBFILTER */
     if (!USBFilterMatchDevice (&aData.mUSBFilter, mUsb))
         return false;
 
@@ -936,7 +863,6 @@ bool HostUSBDevice::isMatch (const USBDeviceFilter::Data &aData)
     if (    mUsb->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE
         &&  !USBFilterHasAnySubstatialCriteria (&aData.mUSBFilter))
         return false;
-#endif /* VBOX_WITH_USBFILTER */
 
     LogFlowThisFunc (("returns true\n"));
     return true;
