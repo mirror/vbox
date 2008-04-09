@@ -52,16 +52,8 @@ __BEGIN_DECLS
  * @param   u64     The 64-bit variable which the timestamp shall be saved in.
  */
 #ifdef __GNUC__
-# if defined(RT_ARCH_X86)
-   /* This produces optimal assembler code for x86 but does not work for AMD64 ('A' means 'either rax or rdx') */
-#  define STAM_GET_TS(u64) __asm__ __volatile__ ("rdtsc\n\t" : "=A" (u64));
-# elif defined(RT_ARCH_AMD64)
-#  define STAM_GET_TS(u64) \
-    do { uint64_t low, high; \
-         __asm__ __volatile__ ("rdtsc\n\t" : "=a"(low), "=d"(high)); \
-         (u64) = ((high << 32) | low); \
-    } while (0)
-# endif
+# define STAM_GET_TS(u64)    \
+    __asm__ __volatile__ ("rdtsc\n\t" : "=a" ( ((uint32_t *)&(u64))[0] ), "=d" ( ((uint32_t *)&(u64))[1]))
 #elif _MSC_VER >= 1400
 # pragma intrinsic(__rdtsc)
 # define STAM_GET_TS(u64)    \
