@@ -4264,6 +4264,7 @@ static int pcnetCanReceive(PCNetState *pData)
     return rc;
 }
 
+
 /**
  *
  */
@@ -4296,6 +4297,7 @@ static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, unsi
 
     return rc;
 }
+
 
 /**
  * Receive data from the network.
@@ -4428,6 +4430,34 @@ static DECLCALLBACK(int) pcnetQueryStatusLed(PPDMILEDPORTS pInterface, unsigned 
         return VINF_SUCCESS;
     }
     return VERR_PDM_LUN_NOT_FOUND;
+}
+
+
+/**
+ * @copydoc FNPDMDEVPOWEROFF
+ */
+static DECLCALLBACK(void) pcnetPowerOff(PPDMDEVINS pDevIns)
+{
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
+
+    /* Poke thread waiting for buffer space. */
+    if (    pData->fMaybeOutOfSpace
+        &&  pData->hEventOutOfRxSpace != NIL_RTSEMEVENT)
+        RTSemEventSignal(pData->hEventOutOfRxSpace);
+}
+
+
+/**
+ * @copydoc FNPDMDEVSUSPEND
+ */
+static DECLCALLBACK(void) pcnetSuspend(PPDMDEVINS pDevIns)
+{
+    PCNetState *pData = PDMINS_2_DATA(pDevIns, PCNetState *);
+
+    /* Poke thread waiting for buffer space. */
+    if (    pData->fMaybeOutOfSpace
+        &&  pData->hEventOutOfRxSpace != NIL_RTSEMEVENT)
+        RTSemEventSignal(pData->hEventOutOfRxSpace);
 }
 
 
@@ -4939,7 +4969,7 @@ const PDMDEVREG g_DevicePCNet =
     /* pfnReset */
     pcnetReset,
     /* pfnSuspend */
-    NULL,
+    pcnetSuspend,
     /* pfnResume */
     NULL,
     /* pfnAttach */
@@ -4947,7 +4977,11 @@ const PDMDEVREG g_DevicePCNet =
     /* pfnDetach */
     NULL,
     /* pfnQueryInterface. */
-    NULL
+    NULL,
+    /* pfnInitComplete. */
+    NULL,
+    /* pfnPowerOff. */
+    pcnetPowerOff
 };
 
 #endif /* IN_RING3 */
