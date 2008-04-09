@@ -2970,7 +2970,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
 {
     unsigned    cErrors = 0;
 
-#if PGM_GST_TYPE == PGM_TYPE_32BIT
+#if    PGM_GST_TYPE == PGM_TYPE_32BIT \
+    || PGM_GST_TYPE == PGM_TYPE_PAE
+
     PPGM        pPGM = &pVM->pgm.s;
     RTHCPHYS    HCPhysShw;              /* page address derived from the shadow page tables. */
     RTGCPHYS    GCPhysGst;              /* page address derived from the guest page tables. */
@@ -2978,23 +2980,30 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
     int         rc;
 
     /*
-     * Check that the Guest CR3 and all it's mappings are correct.
+     * Check that the Guest CR3 and all its mappings are correct.
      */
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
     AssertMsgReturn(pPGM->GCPhysCR3 == (cr3 & GST_CR3_PAGE_MASK),
                     ("Invalid GCPhysCR3=%VGp cr3=%VGp\n", pPGM->GCPhysCR3, (RTGCPHYS)cr3),
                     false);
     rc = PGMShwGetPage(pVM, pPGM->pGuestPDGC, NULL, &HCPhysShw);
+# else
+    rc = PGMShwGetPage(pVM, pPGM->pGstPaePDPTGC, NULL, &HCPhysShw);
+# endif
     AssertRCReturn(rc, 1);
     HCPhys = NIL_RTHCPHYS;
     rc = pgmRamGCPhys2HCPhys(pPGM, cr3 & GST_CR3_PAGE_MASK, &HCPhys);
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%VHp HCPhyswShw=%VHp (cr3)\n", HCPhys, HCPhysShw), false);
-# ifdef IN_RING3
+# if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
     RTGCPHYS GCPhys;
     rc = PGMR3DbgHCPtr2GCPhys(pVM, pPGM->pGuestPDHC, &GCPhys);
     AssertRCReturn(rc, 1);
     AssertMsgReturn((cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%VGp cr3=%VGp\n", GCPhys, (RTGCPHYS)cr3), false);
 # endif
-    const X86PD *pPDSrc = CTXSUFF(pPGM->pGuestPD);
+
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
+    const GSTPD    *pPDSrc = CTXSUFF(pPGM->pGuestPD);
+# endif
 
     /*
      * Get and check the Shadow CR3.
@@ -3021,6 +3030,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
          iPDDst < cPDEs;
          iPDDst++, GCPtr += _4G / cPDEs)
     {
+# if PGM_GST_TYPE == PGM_TYPE_PAE
+        const PX86PDPAE pPDSrc = pPGM->CTXMID(ap,PaePDs)[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK];
+#endif
+
         const SHWPDE PdeDst = pPDDst->a[iPDDst];
         if (PdeDst.u & PGM_PDFLAGS_MAPPING)
         {
@@ -3061,7 +3074,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                 cErrors++;
             }
 
-            const X86PDE    PdeSrc = pPDSrc->a[iPDDst >> (GST_PD_SHIFT - SHW_PD_SHIFT)];
+            const GSTPDE PdeSrc = pPDSrc->a[(iPDDst >> (GST_PD_SHIFT - SHW_PD_SHIFT)) & GST_PD_MASK];
             if (!PdeSrc.n.u1Present)
             {
                 AssertMsgFailed(("Guest PDE at %VGv is not present! PdeDst=%#RX64 PdeSrc=%#RX64\n",
@@ -3080,6 +3093,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
             }
             else
             {
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
                 if (PdeSrc.u & X86_PDE4M_PG_HIGH_MASK)
                 {
                     AssertMsgFailed(("Guest PDE at %VGv is using PSE36 or similar! PdeSrc=%#RX64\n",
@@ -3087,6 +3101,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                     cErrors++;
                     continue;
                 }
+# endif
                 GCPhysGst = PdeSrc.u & GST_PDE_BIG_PG_MASK;
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 GCPhysGst |= GCPtr & RT_BIT(X86_PAGE_2M_SHIFT);
