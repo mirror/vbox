@@ -182,7 +182,7 @@ static DECLCALLBACK(void) drvTAPW32NotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
  */
 static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAP pData = (PDRVTAP)pvUser;
+    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
     HANDLE  haWait[2];
     DWORD   rc = ERROR_SUCCESS, dwNumberOfBytesTransferred;
 
@@ -251,6 +251,8 @@ static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
  */
 static DECLCALLBACK(int) drvTAPW32AsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
+    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
+
     /** @todo this isn't a safe method to notify the async thread; it might be using the instance
      *        data after we've been destroyed; could wait for it to terminate, but that's not
      *        without risks either.
