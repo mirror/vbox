@@ -61,10 +61,6 @@ typedef struct DRVTAPOS2
     int32_t                 iConnectedTo;
     /** Receiver thread. */
     PPDMTHREAD              pThread;
-    /** Event semaphore for blocking on receive. */
-    RTSEMEVENT              EventOutOfSpace;
-    /** We are checking or waiting for more receive buffers. */
-    bool volatile           fMaybeOutOfSpace;
     /** Set if the link is down.
      * When the link is down all incoming packets will be dropped. */
     bool volatile           fLinkDown;
@@ -86,7 +82,6 @@ typedef struct DRVTAPOS2
     STAMPROFILE             StatTransmit;
     /** Profiling packet receive runs. */
     STAMPROFILEADV          StatReceive;
-    STAMPROFILE             StatRecvOverflows;
 #endif /* VBOX_WITH_STATISTICS */
 
 #ifdef LOG_ENABLED
@@ -212,29 +207,6 @@ static DECLCALLBACK(void) drvTAPOs2NotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
 
 
 /**
- * More receive buffer has become available.
- *
- * This is called when the NIC frees up receive buffers.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @thread  EMT
- */
-static DECLCALLBACK(void) drvTAPOs2NotifyCanReceive(PPDMINETWORKCONNECTOR pInterface)
-{
-    PDRVTAPOS2 pThis = PDMINETWORKCONNECTOR_2_DRVTAPOS2(pInterface);
-
-    /* don't waste time signalling the semaphore unnecessary */
-    if (!pThis->fMaybeOutOfSpace)
-        LogFlow(("%s: NotifyCanReceive: fMaybeOutOfSpace=false\n", pThis->szName));
-    else
-    {
-        LogFlow(("%s: NotifyCanReceive: fMaybeOutOfSpace=true\n", pThis->szName));
-        RTSemEventSignal(pThis->EventOutOfSpace);
-    }
-}
-
-
-/**
  * Receiver thread.
  *
  * @returns VBox status code. Returning failure will naturally terminate the thread.
@@ -281,25 +253,9 @@ static DECLCALLBACK(int) drvTAPOs2ReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
             /*
              * Wait for the device to have some room.
              */
-            ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, true);
-            size_t cbMax = pThis->pPort->pfnCanReceive(pThis->pPort);
-            if (cbMax == 0)
-            {
-                STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-                STAM_PROFILE_START(&pThis->StatRecvOverflows, b);
-                while (   cbMax == 0
-                       && pThread->enmState == PDMTHREADSTATE_RUNNING)
-                {
-                    LogFlow(("%s: ReceiveThread: cbMax=%d cbRead=%d waiting...\n", pThis->szName, cbMax, cbRead));
-                    RTSemEventWait(pThis->EventOutOfSpace, 50);
-                    cbMax = pThis->pPort->pfnCanReceive(pThis->pPort);
-                }
-                STAM_PROFILE_STOP(&pThis->StatRecvOverflows, b);
-                STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
-            }
-            ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, false);
-            if (pThread->enmState != PDMTHREADSTATE_RUNNING)
-                break; /* just drop it, no big deal. */
+            rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
+            if (RT_FAILURE(rc))
+                break;
 
             /*
              * Pass the data up.
@@ -357,10 +313,6 @@ static DECLCALLBACK(int) drvTAPOs2WakeupReceiveThread(PPDMDRVINS pDrvIns, PPDMTH
                           &Data, cbData, &cbData);
     AssertMsg(orc == 0, ("%d\n", orc)); NOREF(orc);
 
-    /* wake it up if it's waiting for receive buffers. */
-    if (pThis->fMaybeOutOfSpace)
-        RTSemEventSignal(pThis->EventOutOfSpace);
-
     return VINF_SUCCESS;
 }
 
@@ -404,16 +356,6 @@ static DECLCALLBACK(void) drvTAPOs2Destruct(PPDMDRVINS pDrvIns)
     LogFlow(("%s: Destruct\n", pThis->szName));
 
     /* PDM will destroy the thread for us, it's suspended right now. */
-
-    /*
-     * Destroy the out-of-space event semaphore.
-     */
-    if (pThis->EventOutOfSpace != NIL_RTSEMEVENTMULTI)
-    {
-        int rc = RTSemEventDestroy(pThis->EventOutOfSpace);
-        AssertRC(rc);
-        pThis->EventOutOfSpace = NIL_RTSEMEVENTMULTI;
-    }
 
     /*
      * Disconnect from the lan if we made a connection and close it.
@@ -472,7 +414,6 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pThis->INetworkConnector.pfnSend                = drvTAPOs2Send;
     pThis->INetworkConnector.pfnSetPromiscuousMode  = drvTAPOs2SetPromiscuousMode;
     pThis->INetworkConnector.pfnNotifyLinkChanged   = drvTAPOs2NotifyLinkChanged;
-    pThis->INetworkConnector.pfnNotifyCanReceive    = drvTAPOs2NotifyCanReceive;
 
     /*
      * Validate the config.
@@ -589,12 +530,6 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         LogRel(("%s: iLan=%d iConnectedTo Mac=failed - orc=%d Parm={%ld,%ld}\n", 
                 pThis->szName, pThis->iLan, pThis->iConnectedTo, Parm[0], Parm[1]));
 
-    /*
-     * Create the out-of-space semaphore and the async receiver thread. 
-     */
-    rc = RTSemEventCreate(&pThis->EventOutOfSpace);
-    AssertRCReturn(rc, rc);
-
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvTAPOs2ReceiveThread, drvTAPOs2WakeupReceiveThread,
                                   0, RTTHREADTYPE_IO, pThis->szName);
     AssertRCReturn(rc, rc);
@@ -609,7 +544,6 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktRecvBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of received bytes.",        "/Drivers/TAP%d/Bytes/Received", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatTransmit,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet transmit runs.",  "/Drivers/TAP%d/Transmit", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReceive,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet receive runs.",   "/Drivers/TAP%d/Receive", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatRecvOverflows, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling packet receive overflows.", "/Drivers/TAP%d/RecvOverflows", pDrvIns->iInstance);
 #endif /* VBOX_WITH_STATISTICS */
 
     return rc;

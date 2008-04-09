@@ -77,12 +77,6 @@ typedef struct DRVINTNET
     RTTHREAD                Thread;
     /** Event semaphore the Thread waits on while the VM is suspended. */
     RTSEMEVENT              EventSuspended;
-    /** Indicates that we're in waiting for recieve space to become available. */
-    bool volatile           fOutOfSpace;
-    /** Event semaphore the Thread sleeps on while polling for more
-     * buffer space to become available.
-     * @todo We really need the network device to signal this! */
-    RTSEMEVENT              EventOutOfSpace;
     /** Set if the link is down.
      * When the link is down all incoming packets will be dropped. */
     bool volatile           fLinkDown;
@@ -94,8 +88,6 @@ typedef struct DRVINTNET
     STAMPROFILE             StatTransmit;
     /** Profiling packet receive runs. */
     STAMPROFILEADV          StatReceive;
-    /** Number of receive overflows. */
-    STAMPROFILE             StatRecvOverflows;
 #endif /* VBOX_WITH_STATISTICS */
 
 #ifdef LOG_ENABLED
@@ -314,26 +306,6 @@ static DECLCALLBACK(void) drvIntNetNotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
 
 
 /**
- * More receive buffer has become available.
- *
- * This is called when the NIC frees up receive buffers.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @remark  This function isn't called by pcnet nor yet.
- * @thread  EMT
- */
-static DECLCALLBACK(void) drvIntNetNotifyCanReceive(PPDMINETWORKCONNECTOR pInterface)
-{
-    PDRVINTNET pThis = PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface);
-    if (pThis->fOutOfSpace)
-    {
-        LogFlow(("drvIntNetNotifyCanReceive: signaling\n"));
-        RTSemEventSignal(pThis->EventOutOfSpace);
-    }
-}
-
-
-/**
  * Wait for space to become available up the driver/device chain.
  *
  * @returns VINF_SUCCESS if space is available.
@@ -346,40 +318,7 @@ static int drvIntNetAsyncIoWaitForSpace(PDRVINTNET pThis, size_t cbFrame)
 {
     LogFlow(("drvIntNetAsyncIoWaitForSpace: cbFrame=%zu\n", cbFrame));
     STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-    STAM_PROFILE_START(&pData->StatRecvOverflows, b);
-
-    ASMAtomicXchgSize(&pThis->fOutOfSpace, true);
-    int rc;
-    unsigned cYields = 0;
-    for (;;)
-    {
-        /* yield/sleep */
-        if (   !RTThreadYield()
-            || ++cYields % 100 == 0)
-        {
-            /** @todo we need a callback from the device which can wake us up here. */
-            rc = RTSemEventWait(pThis->EventOutOfSpace, 1);
-            if (    VBOX_FAILURE(rc)
-                &&  rc != VERR_TIMEOUT)
-                break;
-        }
-        if (pThis->enmState != ASYNCSTATE_RUNNING)
-        {
-            rc = VERR_STATE_CHANGED;
-            break;
-        }
-
-        /* retry */
-        size_t cbMax = pThis->pPort->pfnCanReceive(pThis->pPort);
-        if (cbMax >= cbFrame)
-        {
-            rc = VINF_SUCCESS;
-            break;
-        }
-    }
-    ASMAtomicXchgSize(&pThis->fOutOfSpace, false);
-
-    STAM_PROFILE_STOP(&pThis->StatRecvOverflows, b);
+    int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
     LogFlow(("drvIntNetAsyncIoWaitForSpace: returns %Vrc\n", rc));
     return rc;
@@ -430,7 +369,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
                  * Check if there is room for the frame and pass it up.
                  */
                 size_t cbFrame = pHdr->cbFrame;
-                size_t cbMax = pThis->pPort->pfnCanReceive(pThis->pPort);
+                size_t cbMax = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
                 if (cbMax >= cbFrame)
                 {
 #ifdef LOG_ENABLED
@@ -656,8 +595,6 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
      */
     ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_TERMINATE);
     ASMAtomicXchgSize(&pThis->fLinkDown, true);
-    RTSEMEVENT EventOutOfSpace = pThis->EventOutOfSpace;
-    pThis->EventOutOfSpace = NIL_RTSEMEVENT;
     RTSEMEVENT EventSuspended = pThis->EventSuspended;
     pThis->EventSuspended = NIL_RTSEMEVENT;
 
@@ -680,8 +617,6 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
      */
     if (pThis->Thread != NIL_RTTHREAD)
     {
-        if (EventOutOfSpace != NIL_RTSEMEVENT)
-            RTSemEventSignal(EventOutOfSpace);
         if (EventSuspended != NIL_RTSEMEVENT)
             RTSemEventSignal(EventSuspended);
         int rc = RTThreadWait(pThis->Thread, 5000, NULL);
@@ -692,8 +627,6 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
     /*
      * Destroy the semaphores.
      */
-    if (EventOutOfSpace != NIL_RTSEMEVENT)
-        RTSemEventDestroy(EventOutOfSpace);
     if (EventSuspended != NIL_RTSEMEVENT)
         RTSemEventDestroy(EventSuspended);
 }
@@ -720,7 +653,6 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pThis->hIf                          = INTNET_HANDLE_INVALID;
     pThis->Thread                       = NIL_RTTHREAD;
     pThis->EventSuspended               = NIL_RTSEMEVENT;
-    pThis->EventOutOfSpace              = NIL_RTSEMEVENT;
     pThis->enmState                     = ASYNCSTATE_SUSPENDED;
     pThis->fActivateEarly               = false;
     /* IBase */
@@ -729,7 +661,6 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pThis->INetworkConnector.pfnSend                = drvIntNetSend;
     pThis->INetworkConnector.pfnSetPromiscuousMode  = drvIntNetSetPromiscuousMode;
     pThis->INetworkConnector.pfnNotifyLinkChanged   = drvIntNetNotifyLinkChanged;
-    pThis->INetworkConnector.pfnNotifyCanReceive    = drvIntNetNotifyCanReceive;
 
     /*
      * Validate the config.
@@ -810,9 +741,6 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     rc = RTSemEventCreate(&pThis->EventSuspended);
     if (VBOX_FAILURE(rc))
         return rc;
-    rc = RTSemEventCreate(&pThis->EventOutOfSpace);
-    if (VBOX_FAILURE(rc))
-        return rc;
 
     /*
      * Create the interface.
@@ -870,8 +798,6 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
 #ifdef VBOX_WITH_STATISTICS
     RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/Receive",        pDrvIns->iInstance);
     pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->StatReceive,             STAMTYPE_PROFILE, szStatName,   STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.");
-    RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/RecvOverflows",  pDrvIns->iInstance);
-    pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->StatRecvOverflows,       STAMTYPE_PROFILE, szStatName,   STAMUNIT_TICKS_PER_OCCURENCE, "Profiling packet receive overflows.");
     RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/Transmit",       pDrvIns->iInstance);
     pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->StatTransmit,            STAMTYPE_PROFILE, szStatName,   STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.");
 #endif
