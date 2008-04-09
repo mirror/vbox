@@ -925,6 +925,7 @@ static int vmdkDescSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
                 pszTmp++;
             if (*pszTmp == '=')
             {
+                pszTmp++;
                 while (*pszTmp == ' ' || *pszTmp == '\t')
                     pszTmp++;
                 break;
