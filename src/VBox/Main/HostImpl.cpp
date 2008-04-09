@@ -1284,7 +1284,7 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
             filter.setValue <Bstr> ("port", str);
 
         /* action is mandatory */
-        ULONG action = USBDeviceFilterAction_Null;
+        USBDeviceFilterAction_T action = USBDeviceFilterAction_Null;
         (*it)->COMGETTER (Action) (&action);
         if (action == USBDeviceFilterAction_Ignore)
             filter.setStringValue ("action", "Ignore");
@@ -2090,7 +2090,7 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
 #ifndef VBOX_WITH_USBFILTER
             USBDeviceFilterAction_T action = data.mAction;
 #else
-            ULONG action = USBDeviceFilterAction_Null;
+            USBDeviceFilterAction_T action = USBDeviceFilterAction_Null;
             (*it)->COMGETTER (Action) (&action);
 #endif
             if (action == USBDeviceFilterAction_Ignore)
