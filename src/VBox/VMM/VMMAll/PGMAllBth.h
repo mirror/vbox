@@ -28,9 +28,9 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
 PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPD, PGSTPD pPDSrc, RTGCUINTPTR GCPtrPage);
 PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR Addr, unsigned fPage, unsigned uErr);
 PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage);
-PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal);
+PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
 #ifdef VBOX_STRICT
-PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr = 0, RTGCUINTPTR cb = ~(RTGCUINTPTR)0);
+PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr = 0, RTGCUINTPTR cb = ~(RTGCUINTPTR)0);
 #endif
 #ifdef PGMPOOL_WITH_USER_TRACKING
 DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pShwPage, RTHCPHYS HCPhys);
@@ -2586,7 +2586,7 @@ DECLINLINE(PGMPOOLKIND) PGM_BTH_NAME(CalcPageKind)(const GSTPDE *pPdeSrc, uint32
  * @param   cr4         Guest context CR4 register
  * @param   fGlobal     Including global page directories or not
  */
-PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal)
+PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal)
 {
     if (VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
         fGlobal = true; /* Change this CR3 reload to be a global one. */
@@ -2966,7 +2966,7 @@ __END_DECLS
  * @param   GCPtr       Where to start. Defaults to 0.
  * @param   cb          How much to check. Defaults to everything.
  */
-PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb)
+PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb)
 {
     unsigned    cErrors = 0;
 
@@ -2982,10 +2982,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
     /*
      * Check that the Guest CR3 and all its mappings are correct.
      */
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
     AssertMsgReturn(pPGM->GCPhysCR3 == (cr3 & GST_CR3_PAGE_MASK),
                     ("Invalid GCPhysCR3=%VGp cr3=%VGp\n", pPGM->GCPhysCR3, (RTGCPHYS)cr3),
                     false);
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
     rc = PGMShwGetPage(pVM, pPGM->pGuestPDGC, NULL, &HCPhysShw);
 # else
     rc = PGMShwGetPage(pVM, pPGM->pGstPaePDPTGC, NULL, &HCPhysShw);
