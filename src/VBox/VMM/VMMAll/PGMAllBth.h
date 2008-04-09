@@ -103,8 +103,21 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     const unsigned  iPDDst = (RTGCUINTPTR)pvFault >> SHW_PD_SHIFT;
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
     PX86PD          pPDDst = pVM->pgm.s.CTXMID(p,32BitPD);
-# else /* PAE */
+# elif PGM_SHW_TYPE == PGM_TYPE_PAE
     PX86PDPAE       pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0]; /* We treat this as a PD with 2048 entries. */
+
+#  if PGM_GST_TYPE == PGM_TYPE_PAE
+    /* Did we mark the PDPT as not present in SyncCR3? */
+    unsigned iPDPTE = ((RTGCUINTPTR)pvFault >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
+    if (!pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present)
+    {
+        /* lazily clear the page directory */
+        ASMMemZero32(pVM->pgm.s.CTXMID(ap,PaePDs)[iPDPTE], PAGE_SIZE);
+        pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present = 1;
+    }
+#  endif
+# else
+    AssertFailed();
 # endif
 
 # if PGM_WITH_PAGING(PGM_GST_TYPE)
@@ -2670,8 +2683,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
         if (pPDSrc == NULL)
         {
             /* PDPT not present */
-            /** @todo expensive */
-            ASMMemZero32(pVM->pgm.s.CTXMID(ap,PaePDs)[iPDPTE], PAGE_SIZE);
+            pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present = 0;
             continue;
         }
 #  else  /* PGM_GST_TYPE != PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_AMD64 */
