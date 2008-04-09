@@ -119,10 +119,10 @@ ifdef VBOX_MAIN_RELEASE_LOG
 VBoxSVC_DEFS += VBOX_MAIN_RELEASE_LOG LOG_ENABLED
 endif
 ifdef VBOX_WITH_USB
-VBoxSVC_DEFS += VBOX_WITH_USB
-ifdef VBOX_WITH_EHCI
+VBoxSVC_DEFS += VBOX_WITH_USB VBOX_WITH_USBFILTER
+ ifdef VBOX_WITH_EHCI
 VBoxSVC_DEFS += VBOX_WITH_EHCI
-endif
+ endif
 endif
 ifdef VBOX_WITH_ALSA
 VBoxSVC_DEFS += VBOX_WITH_ALSA
@@ -163,6 +163,10 @@ endif
 VBoxSVC_LIBS += \
 	$(LIB_DDU) \
 	$(LIB_SETTINGS)
+ifdef VBOX_WITH_USB
+ VBoxSVC_LIBS += \
+ 	$(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
+endif
 VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
@@ -233,18 +237,14 @@ VBoxSVC_SOURCES.linux   +=   linux/USBProxyServiceLinux.cpp
 VBoxSVC_SOURCES.os2     +=     os2/USBProxyServiceOs2.cpp
 VBoxSVC_SOURCES.solaris += solaris/USBProxyServiceSolaris.cpp
 VBoxSVC_SOURCES.win     +=   win32/USBProxyServiceWin32.cpp
- ifn1of (darwin, $(BUILD_TARGET))
-VBoxSVC_DEFS += VBOX_WITH_USBFILTER
-VBoxSVC_LIBS += $(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
- endif
 endif
 
-VBoxSVC_LDFLAGS.darwin = -framework IOKit
+VBoxSVC_LDFLAGS.darwin  = -framework IOKit
 ifeq ($(BUILD_TYPE),debug)
-VBoxSVC_LDFLAGS.linux += -rdynamic # for backtrace_symbols()
+VBoxSVC_LDFLAGS.linux  += -rdynamic # for backtrace_symbols()
 endif
 
-win32/VBoxSVC.rc_DEPS = $(PATH_TARGET)/VBoxSVC.rgs
+win32/VBoxSVC.rc_DEPS   = $(PATH_TARGET)/VBoxSVC.rgs
 
 
 #
