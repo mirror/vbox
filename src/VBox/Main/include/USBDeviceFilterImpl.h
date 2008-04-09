@@ -64,7 +64,7 @@ public:
 
         typedef matching::Matchable
             <matching::ParsedRegexpFilter <ConvForRegexp, false> > BstrFilter;
-#endif /* VBOX_WITH_USBFILTER */
+#endif /* !VBOX_WITH_USBFILTER */
 
         typedef matching::Matchable <matching::ParsedBoolFilter> BOOLFilter;
 
