@@ -229,23 +229,21 @@ VBoxSVC_SOURCES += \
 endif
 
 ifdef VBOX_WITH_USB
-VBoxSVC_SOURCES.darwin += darwin/USBProxyServiceDarwin.cpp
-VBoxSVC_SOURCES.linux += linux/USBProxyServiceLinux.cpp
-VBoxSVC_SOURCES.os2 += os2/USBProxyServiceOs2.cpp
+VBoxSVC_SOURCES.darwin  +=  darwin/USBProxyServiceDarwin.cpp
+VBoxSVC_SOURCES.linux   +=   linux/USBProxyServiceLinux.cpp
+VBoxSVC_SOURCES.os2     +=     os2/USBProxyServiceOs2.cpp
 VBoxSVC_SOURCES.solaris += solaris/USBProxyServiceSolaris.cpp
-VBoxSVC_SOURCES.win   += win32/USBProxyServiceWin32.cpp
+VBoxSVC_SOURCES.win     +=   win32/USBProxyServiceWin32.cpp
+ ifn1of (windows darwin, $(BUILD_TARGET))
+VBoxSVC_DEFS += VBOX_WITH_USBFILTER
+VBoxSVC_LIBS += $(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
+ endif
 endif
 
 VBoxSVC_LDFLAGS.darwin = -framework IOKit
 ifeq ($(BUILD_TYPE),debug)
 VBoxSVC_LDFLAGS.linux += -rdynamic # for backtrace_symbols()
 endif
-
-## Alternative USB filtering.
-#ifeq ($(filter-out darwin,$(BUILD_TARGET)),)
-#VBoxSVC_DEFS += VBOX_WITH_USBFILTER
-#VBoxSVC_LIBS += $(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
-#endif
 
 win32/VBoxSVC.rc_DEPS = $(PATH_TARGET)/VBoxSVC.rgs
 
