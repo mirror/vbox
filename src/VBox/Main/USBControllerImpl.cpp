@@ -480,13 +480,13 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  *  Loads settings from the given machine node.
  *  May be called once right after this object creation.
- * 
+ *
  *  @param aMachineNode <Machine> node.
- * 
- *  @note Locks this object for writing. 
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
 {
@@ -508,7 +508,7 @@ HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
      * in the settings file (for backwards compatibility reasons). This takes
      * place when a setting of a newly created object must default to A while
      * the same setting of an object loaded from the old settings file must
-     * default to B. */ 
+     * default to B. */
 
     /* USB Controller node (required) */
     Key controller = aMachineNode.key ("USBController");
@@ -556,11 +556,11 @@ HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
     return S_OK;
 }
 
-/** 
+/**
  *  Saves settings to the given machine node.
- * 
+ *
  *  @param aMachineNode <Machine> node.
- * 
+ *
  *  @note Locks this object for reading.
  */
 HRESULT USBController::saveSettings (settings::Key &aMachineNode)
@@ -1244,8 +1244,8 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
         if (!aData.mRevision.isMatch (revision))
             continue;
 
-#if !defined (RT_OS_WINDOWS)
-        /* these filters are temporarily ignored on Win32 */
+# if !defined (RT_OS_WINDOWS)
+        /* these filters are 'temporarily' ignored on Win32 */
         if (!aData.mManufacturer.isMatch (manufacturer))
             continue;
         if (!aData.mProduct.isMatch (product))
@@ -1254,7 +1254,7 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
             continue;
         if (!aData.mPort.isMatch (port))
             continue;
-#endif
+# endif
 
 #else  /* VBOX_WITH_USBFILTER */
         if (!USBFilterMatch (&aData.mUSBFilter, &dev))
