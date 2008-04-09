@@ -2670,7 +2670,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
         if (pPDSrc == NULL)
         {
             /* PDPT not present */
-            pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present = 0;
+            /** @todo expensive */
+            ASMMemZero32(pVM->pgm.s.CTXMID(ap,PaePDs)[iPDPTE], PAGE_SIZE);
             continue;
         }
 #  else  /* PGM_GST_TYPE != PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_AMD64 */
