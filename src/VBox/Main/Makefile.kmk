@@ -1,5 +1,4 @@
 # $Id$
-
 ## @file
 # Makefile for the VBox Main module.
 #
@@ -234,7 +233,7 @@ VBoxSVC_SOURCES.linux   +=   linux/USBProxyServiceLinux.cpp
 VBoxSVC_SOURCES.os2     +=     os2/USBProxyServiceOs2.cpp
 VBoxSVC_SOURCES.solaris += solaris/USBProxyServiceSolaris.cpp
 VBoxSVC_SOURCES.win     +=   win32/USBProxyServiceWin32.cpp
- ifn1of (win darwin, $(BUILD_TARGET))
+ ifn1of (darwin, $(BUILD_TARGET))
 VBoxSVC_DEFS += VBOX_WITH_USBFILTER
 VBoxSVC_LIBS += $(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
  endif
