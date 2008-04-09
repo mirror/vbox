@@ -62,13 +62,15 @@ TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     XP
 # Don't define BSD_SELECT because bsdselect() from kLIBC <= 0.6.3 has problems on SMP
 TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2_4.5\"    OSARCH=\"OS/2\"   XP_OS2 XP_PC OS2=4
 TEMPLATE_XPCOM_DEFS.solaris        = OSTYPE=\"Solaris10\"   OSARCH=\"Solaris\" XP_UNIX=1 XP_SOLARIS=1 HAVE_LIBDL=1 HAVE_SENDFILEV=1 SOLARIS=1 _REENTRANT
+ifdef VBOX_WITH_ORIGIN
+TEMPLATE_XPCOM_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/'
+endif
 TEMPLATE_XPCOM_LDFLAGS.x86         = -m32
 TEMPLATE_XPCOM_LDFLAGS.amd64       = -m64
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(VBOXR3NP_LDFLAGS.darwin) \
                                      -fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
                                      -framework CoreServices -framework CoreFoundation -framework Foundation -framework AppKit -framework Carbon
-TEMPLATE_XPCOM_LDFLAGS.solaris     += -lsendfile '-R$$(VBOX_ORIGIN)'
-ifeq ($(filter os2 win,$(BUILD_TARGET)),)
+ifn1of ($(BUILD_TARGET), os2 win)
  TEMPLATE_XPCOM_CXXFLAGS          += -fPIC
  TEMPLATE_XPCOM_CFLAGS            += -fPIC
  TEMPLATE_XPCOM_LDFLAGS           += -fPIC
@@ -102,6 +104,7 @@ TEMPLATE_XPCOM_LDFLAGS.l4          = $(L4_DIR)/lib/x86_586/crt0.o \
                                      -T$(L4_DIR)/lib/x86_586/main_rel.ld -nostdlib \
                                      # -Wl,--whole-archive,--no-allow-shlib-undefined
 TEMPLATE_XPCOM_LIBS.l4             = $(VBOX_GCC_LIBGCC)
+TEMPLATE_XPCOM_LIBS.solaris        = sendfile
 TEMPLATE_XPCOM_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst))) \
                                      $(PATH_VBox-xpcom-string)/idl_ts
 ifeq ($(BUILD_TARGET),os2)

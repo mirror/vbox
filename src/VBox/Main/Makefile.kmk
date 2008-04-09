@@ -264,10 +264,12 @@ VBoxSVCM_INCS           = \
 	$(PATH_CURRENT)
 VBoxSVCM_SOURCES        = \
 	linux/server_module.cpp
+ifdef VBOX_WITH_ORIGIN
+VBoxSVCM_LDFLAGS        = '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..'
+endif
 VBoxSVCM_LDFLAGS.darwin = \
 	-install_name @executable_path/components/VBoxSVCM.dylib \
 	-exported_symbols_list $(PATH_TARGET)/VBoxSVCM.def
-VBoxSVCM_LDFLAGS.solaris = '-R$$(VBOX_ORIGIN)/..'
 ifeq ($(BUILD_TARGET),darwin)
 VBoxSVCM_ORDERDEPS     += $(PATH_TARGET)/VBoxSVCM.def
 VBoxSVCM_CLEAN         += $(PATH_TARGET)/VBoxSVCM.def
@@ -331,10 +333,12 @@ VBoxC_INCS.win      = \
 	$(PATH_VBoxCOM) \
 	$(PATH_SUB_CURRENT)
 
+ifdef VBOX_WITH_ORIGIN
+VBoxC_LDFLAGS        = '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..'
+endif
 VBoxC_LDFLAGS.darwin = \
 	-install_name @executable_path/components/VBoxSVCM.dylib \
 	-exported_symbols_list $(PATH_TARGET)/VBoxC.def
-VBoxC_LDFLAGS.solaris = '-R$$(VBOX_ORIGIN)/..'
 ifdef VBOX_USE_VCC80
  VBoxC_LDFLAGS.win = /MANIFEST
 endif
@@ -418,7 +422,6 @@ VBoxSettings_INCS       = \
 VBoxSettings_SOURCES    = \
 	xml/Settings.cpp
 VBoxSettings_LDFLAGS.darwin = -install_name @executable_path/$(notdir $(LIB_SETTINGS)) -Wl,-x # no debug info please.
-VBoxSettings_LDFLAGS.solaris = '-R$$(VBOX_ORIGIN)'
 
 
 #
