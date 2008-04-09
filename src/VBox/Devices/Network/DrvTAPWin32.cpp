@@ -438,12 +438,11 @@ static DECLCALLBACK(int) drvTAPW32Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     memset(&pData->overlappedRead, 0, sizeof(pData->overlappedRead));
 
     pData->hHaltAsyncEventSem = CreateEvent(NULL, FALSE, FALSE, NULL);
+    Assert(pData->hHaltAsyncEventSem != NULL);
 
     /* Create asynchronous thread */
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pThread, pData, drvTAPW32AsyncIoThread, drvTAPW32AsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "TAP");
     AssertRCReturn(rc, rc);
-
-    Assert(pData->hThread != NIL_RTTHREAD && pData->hHaltAsyncEventSem != NULL);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
