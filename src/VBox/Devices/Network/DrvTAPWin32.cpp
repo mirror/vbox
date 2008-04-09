@@ -241,6 +241,28 @@ static DECLCALLBACK(int) drvTAPW32AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Unblock the send thread so it can respond to a state change.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The pcnet device instance.
+ * @param   pThread     The send thread.
+ */
+static DECLCALLBACK(int) drvTAPW32AsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    /** @todo this isn't a safe method to notify the async thread; it might be using the instance
+     *        data after we've been destroyed; could wait for it to terminate, but that's not
+     *        without risks either.
+     */
+    SetEvent(pData->hHaltAsyncEventSem);
+
+    /* Yield or else our async thread will never acquire the event semaphore */
+    RTThreadSleep(16);
+    /* Wait for the async thread to quit; up to half a second */
+    WaitForSingleObject(pData->hHaltAsyncEventSem, 500);
+}
+
 /**
  * Queries an interface to the driver.
  *
@@ -281,17 +303,6 @@ static DECLCALLBACK(void) drvTAPW32Destruct(PPDMDRVINS pDrvIns)
     DWORD dwLength;
 
     LogFlow(("drvTAPW32Destruct\n"));
-
-    /** @todo this isn't a safe method to notify the async thread; it might be using the instance
-     *        data after we've been destroyed; could wait for it to terminate, but that's not
-     *        without risks either.
-     */
-    SetEvent(pData->hHaltAsyncEventSem);
-
-    /* Yield or else our async thread will never acquire the event semaphore */
-    RTThreadSleep(16);
-    /* Wait for the async thread to quit; up to half a second */
-    WaitForSingleObject(pData->hHaltAsyncEventSem, 500);
 
     mediastatus.fConnect = FALSE;
     BOOL ret = DeviceIoControl(pData->hFile, TAP_IOCTL_SET_MEDIA_STATUS,
