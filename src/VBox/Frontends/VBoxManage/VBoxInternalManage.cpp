@@ -416,9 +416,9 @@ static int handleSetVDIUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
  */
 int CmdModUninstall(void)
 {
-    int rc = SUPUninstall();
+    int rc;
 
-    rc = SUPInstall();
+    rc = SUPUninstall();
     if (RT_SUCCESS(rc))
         return 0;
     if (rc == VERR_NOT_IMPLEMENTED)
@@ -433,7 +433,7 @@ int CmdModUninstall(void)
  */
 int CmdModInstall(void)
 {
-    int rc = SUPInstall(); /** @todo r=bird: this cannot be right. */
+    int rc;
 
     rc = SUPInstall();
     if (RT_SUCCESS(rc))
