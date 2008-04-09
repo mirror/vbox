@@ -48,6 +48,7 @@
 #define RT_C_IS_DIGIT(ch)   ( (ch) >= '0' && (ch) <= '9' )
 #define RT_C_IS_LOWER(ch)   ( (ch) >= 'a' && (ch) <= 'z' )
 #define RT_C_IS_GRAPH(ch)   ( RT_C_IS_PRINT(ch) && !RT_C_IS_BLANK(ch) )
+#define RT_C_IS_ODIGIT(ch)  ( (ch) >= '0' && (ch) <= '7' )
 #define RT_C_IS_PRINT(ch)   ( (ch) >= 32  && (ch) < 127 ) /**< @todo possibly incorrect */
 #define RT_C_IS_PUNCT(ch)   ( (ch) == ',' || (ch) == '.'  || (ch) == ':'  || (ch) == ';'  || (ch) == '!'  || (ch) == '?' ) /**< @todo possibly incorrect */
 #define RT_C_IS_SPACE(ch)   ( (ch) == ' ' || (ch) == '\t' || (ch) == '\n' || (ch) == '\r' || (ch) == '\f' || (ch) == '\v' )
