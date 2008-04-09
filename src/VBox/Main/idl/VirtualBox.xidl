@@ -3054,13 +3054,17 @@
         <desc>UUID of the hard disk to attach.</desc>
       </param>
       <param name="bus" type="StorageBus" dir="in">
-        <desc>Controller to attach the hard disk to.</desc>
+        <desc>Type of storage bus to use (IDE or SATA).</desc>
       </param>
       <param name="channel" type="long" dir="in">
-        <desc>Device slot to attach the hard disk to.</desc>
+        <desc>Channel to attach the hard disk to. For IDE controllers,
+        this can either be 0 or 1, for the primary or secondary controller,
+        respectively.</desc>
       </param>
       <param name="device" type="long" dir="in">
-        <desc>Device slot to attach the hard disk to.</desc>
+        <desc>Device slot in the given channel to attach the hard disk to.
+        For IDE devices, within each channel (0 or 1), this can again be
+        0 or 1, for master or slave, respectively.</desc>
       </param>
     </method>
 
