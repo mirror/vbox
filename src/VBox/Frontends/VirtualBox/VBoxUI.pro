@@ -261,7 +261,7 @@ IMAGES	= images/tpixel.png \
 	images/edit_description_16px.png \
 	images/edit_description_disabled_16px.png \
 	images/global_settings_16px.png \
-	images/global_settings_diasbled_16px.png \
+	images/global_settings_disabled_16px.png \
 	images/vrdp_16px.png \
 	images/vrdp_disabled_16px.png \
 	images/vdm_add_16px.png \
