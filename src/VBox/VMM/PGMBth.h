@@ -25,12 +25,12 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3);
 PGM_BTH_DECL(int, Relocate)(PVM pVM, RTGCUINTPTR offDelta);
 
 PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
-PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal);
+PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
 PGM_BTH_DECL(int, SyncPage)(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError);
 PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR Addr, unsigned fPage, unsigned uError);
 PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage);
 PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage);
-PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr = 0, RTGCUINTPTR cb = ~(RTGCUINTPTR)0);
+PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr = 0, RTGCUINTPTR cb = ~(RTGCUINTPTR)0);
 __END_DECLS
 
 

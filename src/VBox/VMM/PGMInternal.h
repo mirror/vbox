@@ -1816,32 +1816,32 @@ typedef struct PGMMODEDATA
     DECLR3CALLBACKMEMBER(int,       pfnR3BthRelocate,(PVM pVM, RTGCUINTPTR offDelta));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
-    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 #endif
 
     DECLGCCALLBACKMEMBER(int,       pfnGCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
+    DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
-    DECLGCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLGCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 #endif
 
     DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
-    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 #endif
     /** @} */
 } PGMMODEDATA, *PPGMMODEDATA;
@@ -2045,27 +2045,27 @@ typedef struct PGM
     DECLR3CALLBACKMEMBER(int,       pfnR3BthRelocate,(PVM pVM, RTGCUINTPTR offDelta));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 
     DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 
     DECLGCCALLBACKMEMBER(int,       pfnGCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncCR3,(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal));
+    DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLGCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLGCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 #if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64
     RTGCPTR                         alignment2; /**< structure size alignment. */
 #endif
