@@ -3635,7 +3635,7 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 if (pData->vram_size >= LOGO_MAX_SIZE * 2)
                 {
                     uint32_t *pu32TmpDst = (uint32_t *)pData->vram_ptrHC;
-                    uint32_t *pu32TmpSrc = (uint32_t *)pData->vram_ptrHC + LOGO_MAX_SIZE / 4;
+                    uint32_t *pu32TmpSrc = (uint32_t *)(pData->vram_ptrHC + LOGO_MAX_SIZE);
                     for (i = 0; i < LOGO_MAX_WIDTH; i++)
                     {
                         for (j = 0; j < LOGO_MAX_HEIGHT; j++)
@@ -3689,7 +3689,7 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 uint32_t *pu32TmpPtr;
 
                 if (pData->vram_size >= LOGO_MAX_SIZE * 2)
-                    pu32TmpPtr = (uint32_t *)pData->vram_ptrHC + LOGO_MAX_SIZE / 4;
+                    pu32TmpPtr = (uint32_t *)(pData->vram_ptrHC + LOGO_MAX_SIZE);
                 else
                     pu32TmpPtr = (uint32_t *)pData->vram_ptrHC;
 
@@ -3731,9 +3731,9 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 uint16_t        i;
 
                 if (pData->vram_size >= LOGO_MAX_SIZE * 2)
-                    pu8Dst = (uint8_t *)pData->vram_ptrHC + LOGO_MAX_SIZE;
+                    pu8Dst = pData->vram_ptrHC + LOGO_MAX_SIZE;
                 else
-                    pu8Dst = (uint8_t *)pData->vram_ptrHC;
+                    pu8Dst = pData->vram_ptrHC;
 
                 pu8Dst += pData->xLogo * 4 + pData->yLogo * cbLineDst;
 
