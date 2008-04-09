@@ -205,11 +205,6 @@ else # the gcc guys:
 	/usr/X11R6/include \
 	/usr/local/include
   endif
-  ifeq ($(BUILD_TARGET),solaris)
-   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += '-R$$(VBOX_ORIGIN):$$(VBOX_ORIGIN)/qtgcc/lib'
-   TEMPLATE_VBOXQT4GUIEXE_LIBS += \
-	rt socket nsl
-  endif
  endif
 
 endif

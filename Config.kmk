@@ -289,6 +289,11 @@ VBOX_X11_SEAMLESS_GUEST = 1
 VBOX_WITH_AHCI = 1
 # Enable the new async completion manager
 #VBOX_WITH_PDM_ASYNC_COMPLETION = 1
+# Enable use of the $ORIGIN rpath feature. This is the default on
+# Solaris, but not else where for various reasons (ld.so, dist builds).
+ifeq ($(BUILD_TARGET),solaris)
+ VBOX_WITH_ORIGIN = 1
+endif
 
 #
 # Skip stuff.
@@ -1027,9 +1032,15 @@ VBOX_PATH_X11_XORG_1_4  = $(VBOX_PATH_X11_ROOT)/1.4
 # Various other variables.
 #
 
-# Use $ORIGIN to avoid having to set LD_LIBRARY_PATH at runtime for Solaris.
-# (Similar to the -install_name @executable_path/... on darwin.)
+# Two helper variables for the VBOX_WITH_ORIGIN stuff:
+# 	VBOX_ORIGIN - Indirect expansion trick.
+# 	VBOX_GCC_RPATH_OPT - Different GCC/LD combinations needs different options.
 VBOX_ORIGIN = $$ORIGIN
+ifeq ($(BUILD_TARGET),solaris)
+ VBOX_GCC_RPATH_OPT = -R
+else
+ VBOX_GCC_RPATH_OPT = -Wl,-rpath,
+endif
 
 
 #
@@ -1903,12 +1914,14 @@ TEMPLATE_VBOXR3EXE_INCS               += \
  else ifeq ($(BUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG _REENTRANT # Avoid the GNU libiconv, for now at least.
-TEMPLATE_VBOXR3EXE_LDFLAGS            += '-R$$(VBOX_ORIGIN)'
 TEMPLATE_VBOXR3EXE_LIBS                = rt socket
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXR3EXE_CXXFLAGS.profile    = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.release)
 TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.krelease)
+ endif
+ ifdef VBOX_WITH_ORIGIN
+  TEMPLATE_VBOXR3EXE_LDFLAGS          += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
  endif
 endif
 
@@ -1929,9 +1942,6 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
   TEMPLATE_VBOXR3_LDFLAGS = $(TEMPLATE_VBOXR3EXE_LDFLAGS) -fPIC
  endif
 endif
-ifeq ($(BUILD_TARGET),solaris)
- TEMPLATE_VBOXR3_LDFLAGS += '-R$$(VBOX_ORIGIN)'
-endif
 
 #
 # Ring-3 testcase.
@@ -1941,7 +1951,9 @@ TEMPLATE_VBOXR3TSTEXE  = VBox Ring 3 Testcase Exe
 TEMPLATE_VBOXR3TSTEXE_EXTENDS = VBOXR3EXE
 TEMPLATE_VBOXR3TSTEXE_INST    = $(INST_TESTCASE)
 TEMPLATE_VBOXR3TSTEXE_LIBS    = $(LIB_RUNTIME) $(TEMPLATE_VBOXR3EXE_LIBS)
-TEMPLATE_VBOXR3TSTEXE_LDFLAGS.solaris = $(TEMPLATE_VBOXR3EXE_LDFLAGS.solaris) '-R$$(VBOX_ORIGIN)/..'
+ifdef VBOX_WITH_ORIGIN
+ TEMPLATE_VBOXR3TSTEXE_LDFLAGS= '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..' $(TEMPLATE_VBOXR3EXE_LDFLAGS)
+endif
 ifeq ($(BUILD_TARGET),win)
  ifdef VBOX_SIGNING_MODE
   TEMPLATE_VBOXR3TSTEXE_POST_CMDS =
@@ -1964,14 +1976,10 @@ TEMPLATE_VBOXCPPUNITEXE_LIBS = \
 #
 TEMPLATE_VBOXR3NPEXE                     = VBox Ring 3 Non-pedantic
 TEMPLATE_VBOXR3NPEXE_EXTENDS             = VBOXR3EXE
-ifneq ($(BUILD_TARGET),win)
- # (only gcc)
+ifneq ($(BUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NPEXE_TOOL                = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXR3NPEXE_CXXFLAGS            = $(filter-out -pedantic,$(TEMPLATE_VBOXR3EXE_CXXFLAGS))
  TEMPLATE_VBOXR3NPEXE_CFLAGS              = $(filter-out -pedantic -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3EXE_CFLAGS))
-endif
-ifeq ($(BUILD_TARGET),solaris)
- TEMPLATE_VBOXR3NPEXE_LDFLAGS             += '-R$$(VBOX_ORIGIN)'
 endif
 
 
@@ -2082,7 +2090,6 @@ TEMPLATE_VBOXNOCRTGAS_ASFLAGS.amd64 = -m64
 # Template for building executables that are part of the VBox Main component
 # (COM/XPCOM interface to VirtualBox).
 #
-
 TEMPLATE_VBOXMAINEXE         = VBox Main Executable
 TEMPLATE_VBOXMAINEXE_ASTOOL              = $(VBOX_ASTOOL)
 TEMPLATE_VBOXMAINEXE_ASFLAGS             = $(VBOX_ASFLAGS)
@@ -2159,10 +2166,12 @@ TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXMAINEXE_DEFS               += _REENTRANT
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt
-TEMPLATE_VBOXMAINEXE_LDFLAGS.solaris     = '-R$$(VBOX_ORIGIN)'
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_LIBS                =
+ endif
+ ifdef VBOX_WITH_ORIGIN
+TEMPLATE_VBOXMAINEXE_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
  endif
 
 endif # !win
@@ -2197,14 +2206,12 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
  endif
 endif
 TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin))
-TEMPLATE_VBOXMAINDLL_LDFLAGS.solaris = $(NO_SUCH_VARIABLE) # Must be set on individual targets.
 
 #
 # Template for building the Main static libraries.
 #
 # This differs from VBOXMAINDLL only that it zeroes out the _LIBS definition.
 #
-
 TEMPLATE_VBOXMAINLIB  = VBox Main Component (static library)
 TEMPLATE_VBOXMAINLIB_EXTENDS = VBOXMAINDLL
 TEMPLATE_VBOXMAINLIB_LIBS =
@@ -2212,7 +2219,6 @@ TEMPLATE_VBOXMAINLIB_LIBS =
 #
 # Template for building executables that use the VBox Main component.
 #
-
 TEMPLATE_VBOXMAINCLIENTEXE             = VBox Main Client (executable)
 TEMPLATE_VBOXMAINCLIENTEXE_EXTENDS     = VBOXMAINEXE
 ifeq ($(BUILD_TARGET),win)
@@ -2237,7 +2243,6 @@ endif
 #
 # This differs from VBOXMAINCLIENTEXE only in PIC handling and similar DLL stuff.
 #
-
 TEMPLATE_VBOXMAINCLIENTDLL              = VBox MAIN Client (shared library)
 TEMPLATE_VBOXMAINCLIENTDLL_EXTENDS      = VBOXMAINCLIENTEXE
 ifeq ($(filter-out solaris.x86 %.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
@@ -2254,7 +2259,6 @@ TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLAT
 #
 # Template for building Qt GUI executables.
 #
-
 TEMPLATE_VBOXQTGUIEXE = VBox Qt GUI Executable
 TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXQTGUIEXE_INCS = \
@@ -2361,13 +2365,19 @@ else # the gcc guys:
 	/usr/local/include
   endif
   ifeq ($(BUILD_TARGET),solaris)
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '-R$$(VBOX_ORIGIN):$$(VBOX_ORIGIN)/qtgcc/lib'
    TEMPLATE_VBOXQTGUIEXE_LIBS += \
 	rt socket nsl
   endif
  endif
+ ifdef VBOX_WITH_ORIGIN
+  ifeq ($(BUILD_TARGET),solaris)
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN):$$(VBOX_ORIGIN)/qtgcc/lib'
+  else
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
+  endif
+ endif
 
-endif
+endif # !win
 
 # Add COM/XPCOM stuff
 TEMPLATE_VBOXQTGUIEXE_LIBS            += \

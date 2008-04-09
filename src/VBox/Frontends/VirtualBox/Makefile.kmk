@@ -132,7 +132,7 @@ VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 
  # For testing iChat Theater stuff change
  # the sdk path
- ifdef VBOX_WITH_ICHAT_THEATER 
+ ifdef VBOX_WITH_ICHAT_THEATER
   VBOX_PATH_MACOSX_SDK = /Developer/SDKs/MacOSX10.5.sdk
  endif
 
