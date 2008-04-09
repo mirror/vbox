@@ -237,6 +237,9 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 {
     Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
     const unsigned off = GCPhysFault & PAGE_OFFSET_MASK;
+
+    LogFlow(("pgmPoolMonitorChainChanging: %VGv phys=%VGp kind=%d\n", pvAddress, GCPhysFault, pPage->enmKind));
+
     for (;;)
     {
         union
@@ -1716,6 +1719,8 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
     int rc = VINF_SUCCESS;
     PPGMPOOLUSER pUser = pPool->CTXSUFF(paUsers);
 
+    LogFlow(("pgmPoolTrackInsert iUser %d iUserTable %d\n", iUser, iUserTable));
+
     /*
      * Find free a user node.
      */
@@ -1803,6 +1808,7 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
 {
     PPGMPOOLUSER paUsers = pPool->CTXSUFF(paUsers);
 
+    LogFlow(("pgmPoolTrackAddUser iUser %d iUserTable %d\n", iUser, iUserTable));
 #  ifdef VBOX_STRICT
     /*
      * Check that the entry doesn't already exists.
@@ -1813,7 +1819,7 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
         do
         {
             Assert(i < pPool->cMaxUsers);
-            AssertMsg(paUsers[i].iUser != iUser || paUsers[i].iUserTable != iUserTable, ("%d %d\n", iUser, iUserTable));
+            AssertMsg(paUsers[i].iUser != iUser || paUsers[i].iUserTable != iUserTable, ("%x %x vs new %x %x\n", paUsers[i].iUser, paUsers[i].iUserTable, iUser, iUserTable));
             i = paUsers[i].iNext;
         } while (i != NIL_PGMPOOL_USER_INDEX);
     }
