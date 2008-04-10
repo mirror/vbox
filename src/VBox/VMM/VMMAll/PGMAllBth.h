@@ -3035,10 +3035,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         if (VBOX_SUCCESS(rc2))
         {
             AssertMsg(   pVM->pgm.s.apGstPaePDsHC[i]    == (R3R0PTRTYPE(PX86PDPAE))HCPtr
-                      && pVM->pgm.s.apGstPaePDsGC[i]    == (GCPTRTYPE(PX86PDPAE))GCPtr
                       && pVM->pgm.s.aGCPhysGstPaePDs[i] == GCPhys,
-                      ("idx %d apGstPaePDsHC %VHv vs %VHv apGstPaePDsGC %VGv vs %VGv aGCPhysGstPaePDs %VGp vs %VGp\n", 
-                       i, pVM->pgm.s.apGstPaePDsHC[i], HCPtr, pVM->pgm.s.apGstPaePDsGC[i], GCPtr, pVM->pgm.s.aGCPhysGstPaePDs[i], GCPhys));
+                      ("idx %d apGstPaePDsHC %VHv vs %VHv aGCPhysGstPaePDs %VGp vs %VGp\n", 
+                       i, pVM->pgm.s.apGstPaePDsHC[i], HCPtr, pVM->pgm.s.aGCPhysGstPaePDs[i], GCPhys));
         }
     }
 # endif
