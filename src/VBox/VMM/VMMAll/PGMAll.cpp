@@ -31,6 +31,7 @@
 #include <VBox/trpm.h>
 #include <VBox/rem.h>
 #include <VBox/em.h>
+#include <VBox/hwaccm.h>
 #include "PGMInternal.h"
 #include <VBox/vm.h>
 #include <iprt/assert.h>
@@ -915,9 +916,14 @@ PGMDECL(int) PGMFlushTLB(PVM pVM, uint32_t cr3, bool fGlobal)
      * When in real or protected mode there is no TLB flushing, but
      * we may still be called because of REM not caring/knowing this.
      * REM is simple and we wish to keep it that way.
+     *
+     * Note: We need to execute everything in hwaccm mode otherwise GCPhysCR3 can get out of sync.
+     *       (VT-x and switching between 32 bits paging & PAE hits this case)
      */
-    if (pVM->pgm.s.enmGuestMode <= PGMMODE_PROTECTED)
+    if (    pVM->pgm.s.enmGuestMode <= PGMMODE_PROTECTED
+        &&  !HWACCMIsEnabled(pVM))
         return VINF_SUCCESS;
+
     LogFlow(("PGMFlushTLB: cr3=%#x OldCr3=%#x fGlobal=%d\n", cr3, pVM->pgm.s.GCPhysCR3, fGlobal));
     STAM_PROFILE_START(&pVM->pgm.s.StatFlushTLB, a);
 
