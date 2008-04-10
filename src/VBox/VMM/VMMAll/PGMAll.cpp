@@ -905,27 +905,15 @@ PGMDECL(uint32_t) PGMGetInterAmd64CR3(PVM pVM)
  */
 PGMDECL(int) PGMFlushTLB(PVM pVM, uint32_t cr3, bool fGlobal)
 {
+    STAM_PROFILE_START(&pVM->pgm.s.StatFlushTLB, a);
+
     /*
      * Always flag the necessary updates; necessary for hardware acceleration
      */
     VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
     if (fGlobal)
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-
-    /*
-     * When in real or protected mode there is no TLB flushing, but
-     * we may still be called because of REM not caring/knowing this.
-     * REM is simple and we wish to keep it that way.
-     *
-     * Note: We need to execute everything in hwaccm mode otherwise GCPhysCR3 can get out of sync.
-     *       (VT-x and switching between 32 bits paging & PAE hits this case)
-     */
-    if (    pVM->pgm.s.enmGuestMode <= PGMMODE_PROTECTED
-        &&  !HWACCMIsEnabled(pVM))
-        return VINF_SUCCESS;
-
     LogFlow(("PGMFlushTLB: cr3=%#x OldCr3=%#x fGlobal=%d\n", cr3, pVM->pgm.s.GCPhysCR3, fGlobal));
-    STAM_PROFILE_START(&pVM->pgm.s.StatFlushTLB, a);
 
     /*
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
