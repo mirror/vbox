@@ -255,7 +255,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     }
     else
     {
-        dbgStatisticsAction = NULL;
+        dbgStatisticsAction = NULL;osstatus
         dbgCommandLineAction = NULL;
     }
 #endif
@@ -1159,6 +1159,19 @@ bool VBoxConsoleWnd::event (QEvent *e)
             }
             break;
         }
+#ifdef Q_WS_MAC
+        case QEvent::Paint:
+        {
+            if (mIsSeamless)
+            {
+                /* Clear the background */
+                HIRect viewRect;
+                HIViewGetBounds (mapToHIViewRef (this), &viewRect);
+                CGContextClearRect (mapToCGContextRef (this), viewRect);
+            }
+            break;
+        }
+#endif
         case StatusTipEvent::Type:
         {
             StatusTipEvent *ev = (StatusTipEvent*) e;
@@ -2105,7 +2118,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         QPalette palette(mErasePalette);
         palette.setColor (centralWidget()->backgroundRole(), Qt::black);
         centralWidget()->setPalette (palette);
-        centralWidget()->setAutoFillBackground (true);
+        centralWidget()->setAutoFillBackground (!aSeamless);
         console_style = console->frameStyle();
         console->setFrameStyle (QFrame::NoFrame);
         console->setMaximumSize (scrGeo.size());
@@ -2122,27 +2135,41 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         if (aSeamless)
         {
             OSStatus status;
-            WindowPtr WindowRef = reinterpret_cast<WindowPtr>(winId());
-            EventTypeSpec wNonCompositingEvent = { kEventClassWindow, kEventWindowGetRegion };
-            status = InstallWindowEventHandler (WindowRef, DarwinRegionHandler, GetEventTypeCount (wNonCompositingEvent), &wNonCompositingEvent, &mCurrRegion, &mDarwinRegionEventHandlerRef);
-            Assert (status == noErr);
-            status = ReshapeCustomWindow (WindowRef);
-            Assert (status == noErr);
+            HIViewRef viewRef = mapToHIViewRef (console->viewport());
+            Assert (VALID_PTR (viewRef));
+            WindowRef windowRef = mapToWindowRef (viewRef);
+            Assert (VALID_PTR (windowRef));
+            /* @todo=poetzsch: Currently this isn't necessary. I should
+             * investigate if we can/should use this. */
+            /*
+            EventTypeSpec wCompositingEvent = { kEventClassWindow, kEventWindowGetRegion };
+            status = InstallWindowEventHandler ((WindowPtr)winId(), DarwinRegionHandler, GetEventTypeCount (wCompositingEvent), &wCompositingEvent, &mCurrRegion, &mDarwinRegionEventHandlerRef);
+            AssertCarbonOSStatus (status);
+            HIViewRef contentView = 0;
+            status = HIViewFindByID(HIViewGetRoot(windowRef), kHIViewWindowContentID, &contentView);
+            AssertCarbonOSStatus (status);
+            EventTypeSpec drawEvent = { kEventClassControl, kEventControlDraw };
+            status = InstallControlEventHandler (contentView, DarwinRegionHandler, GetEventTypeCount (drawEvent), &drawEvent, &contentView, NULL);
+            AssertCarbonOSStatus (status);
+            */
             UInt32 features;
-            status = GetWindowFeatures (WindowRef, &features);
-            Assert (status == noErr);
+            status = GetWindowFeatures (windowRef, &features);
+            AssertCarbonOSStatus (status);
             if (( features & kWindowIsOpaque ) != 0)
             {
-                status = HIWindowChangeFeatures (WindowRef, 0, kWindowIsOpaque);
-                Assert(status == noErr);
+                status = HIWindowChangeFeatures (windowRef, 0, kWindowIsOpaque);
+                AssertCarbonOSStatus (status);
             }
-            status = SetWindowAlpha(WindowRef, 0.999);
-            Assert (status == noErr);
+            status = HIViewReshapeStructure (viewRef);
+            AssertCarbonOSStatus (status);
+            status = SetWindowAlpha(windowRef, 0.999);
+            AssertCarbonOSStatus (status);
             /* For now disable the shadow of the window. This feature cause errors
              * if a window in vbox looses focus, is reselected and than moved. */
             /** @todo Search for an option to enable this again. A shadow on every
              * window has a big coolness factor. */
-            ChangeWindowAttributes (WindowRef, kWindowNoShadowAttribute, 0);
+            status = ChangeWindowAttributes (windowRef, kWindowNoShadowAttribute, 0);
+            AssertCarbonOSStatus (status);
         }
 #else
 //        setMask (dtw->screenGeometry (this));
@@ -2172,20 +2199,20 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         console->setMinimumSize (prev_min_size);
 
 #ifdef Q_WS_MAC
-        if (!aSeamless)
-            SetSystemUIMode (kUIModeNormal, 0);
-
         if (aSeamless)
         {
             /* Undo all mac specific installations */
             OSStatus status;
-            WindowPtr WindowRef = reinterpret_cast<WindowPtr>(winId());
+            WindowRef windowRef = mapToWindowRef (this);
+            Assert (VALID_PTR (windowRef));
+            /* See above. 
             status = RemoveEventHandler (mDarwinRegionEventHandlerRef);
-            Assert (status == noErr);
-            status = ReshapeCustomWindow (WindowRef);
-            Assert (status == noErr);
-            status = SetWindowAlpha (WindowRef, 1);
-            Assert (status == noErr);
+            AssertCarbonOSStatus (status);
+            */
+            status = ReshapeCustomWindow (windowRef);
+            AssertCarbonOSStatus (status);
+            status = SetWindowAlpha (windowRef, 1.0);
+            AssertCarbonOSStatus (status);
         }
 #endif
 
@@ -2251,11 +2278,6 @@ void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
         QRect sRect = dtw->screenGeometry (this);
         QRect aRect (aTargetRect);
         mMaskShift.scale (aTargetRect.left(), aTargetRect.top(), Qt::IgnoreAspectRatio);
-#ifdef Q_WS_MAC
-        /* On mac os x this isn't necessary cause the screen starts
-         * by y=0 always regardless if there is the global menubar or not. */
-        aRect.setRect (aRect.left(), 0, aRect.width(), aRect.height() + aRect.top());
-#endif // Q_WS_MAC
         /* Set the clipping mask */
         mStrictedRegion = aRect;
         /* Set the shifting spacer */
@@ -2712,8 +2734,8 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
         /* If we are using the Quartz2D backend we have to trigger
          * an repaint only. All the magic clipping stuff is done
          * in the paint engine. */
-        repaint();
-//        qApp->processEvents();
+        HIViewReshapeStructure (mapToHIViewRef (console->viewport()));
+//        ReshapeCustomWindow (mapToWindowRef (this));
     }
     else
 # endif
@@ -2724,16 +2746,17 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
          * There *must* be a better solution. */
         if (!region.isEmpty())
             region |= QRect (0, 0, 1, 1);
-        /* Save the current region for later processing in the darwin event handler. */
-        mCurrRegion = region;
-        /* We repaint the screen before the ReshapeCustomWindow command. Unfortunately
-         * this command flushes a copy of the backbuffer to the screen after the new
-         * mask is set. This leads into a missplaced drawing of the content. Currently
-         * no alternative to this and also this is not 100% perfect. */
-        repaint();
-        qApp->processEvents();
-        /* Now force the reshaping of the window. This is definitly necessary. */
-        ReshapeCustomWindow (reinterpret_cast <WindowPtr> (winId()));
+//        /* Save the current region for later processing in the darwin event handler. */
+//        mCurrRegion = region;
+//        /* We repaint the screen before the ReshapeCustomWindow command. Unfortunately
+//         * this command flushes a copy of the backbuffer to the screen after the new
+//         * mask is set. This leads into a missplaced drawing of the content. Currently
+//         * no alternative to this and also this is not 100% perfect. */
+//        repaint();
+//        qApp->processEvents();
+//        /* Now force the reshaping of the window. This is definitly necessary. */
+//        ReshapeCustomWindow (reinterpret_cast <WindowPtr> (winId()));
+        QMainWindow::setMask (region);
     }
 #else
     QMainWindow::setMask (region);

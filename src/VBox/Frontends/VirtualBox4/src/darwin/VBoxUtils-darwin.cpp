@@ -250,6 +250,7 @@ void DarwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlay
     CGColorSpaceRelease (cs);
 }
 
+/* Currently not used! */
 OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
 {
     NOREF (aInHandlerCallRef);
@@ -269,6 +270,7 @@ OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
             /* if it is the opaque region code then set the region to Empty and return noErr to stop the propagation */
             if (code == kWindowOpaqueRgn)
             {
+                printf("test1\n");
                 GetEventParameter (aInEvent, kEventParamRgnHandle, typeQDRgnHandle, NULL, sizeof (rgn), NULL, &rgn);
                 SetEmptyRgn (rgn);
                 status = noErr;
@@ -276,6 +278,7 @@ OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
             /* if the content of the whole window is queried return a copy of our saved region. */
             else if (code == (kWindowStructureRgn))// || kWindowGlobalPortRgn || kWindowUpdateRgn))
             {
+                printf("test2\n");
                 GetEventParameter (aInEvent, kEventParamRgnHandle, typeQDRgnHandle, NULL, sizeof (rgn), NULL, &rgn);
                 QRegion *pRegion = static_cast <QRegion*> (aInUserData);
                 if (!pRegion->isNull() && pRegion)
@@ -284,6 +287,19 @@ OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
                     status = noErr;
                 }
             }
+            break;
+        }
+        case kEventControlDraw:
+        {
+            printf("test3\n");
+            CGContextRef ctx;
+            HIRect bounds;
+
+            GetEventParameter (aInEvent, kEventParamCGContextRef, typeCGContextRef, NULL, sizeof (ctx), NULL, &ctx);
+            HIViewGetBounds ((HIViewRef)aInUserData, &bounds);
+
+            CGContextClearRect (ctx, bounds);
+            status = noErr;
             break;
         }
     }

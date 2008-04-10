@@ -453,19 +453,6 @@ public:
 
 private:
 
-    inline CGRect QRectToCGRect (const QRect &aRect) const
-    {
-        return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height());
-    }
-
-    inline QRect mapYOrigin (const QRect &aRect, int aHeight) const
-    {
-        /* The cgcontext has a fliped y-coord relative to the
-         * qt coord system. So we need some mapping here */
-        return QRect (aRect.x(), aHeight - (aRect.y() + aRect.height()),
-                      aRect.width(), aRect.height());
-    }
-
     void clean();
 
     uchar *mDataAddress;
