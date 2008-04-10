@@ -2985,21 +2985,23 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
     AssertMsgReturn(pPGM->GCPhysCR3 == (cr3 & GST_CR3_PAGE_MASK),
                     ("Invalid GCPhysCR3=%VGp cr3=%VGp\n", pPGM->GCPhysCR3, (RTGCPHYS)cr3),
                     false);
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
+# ifndef IN_RING0
+#  if PGM_GST_TYPE == PGM_TYPE_32BIT
     rc = PGMShwGetPage(pVM, pPGM->pGuestPDGC, NULL, &HCPhysShw);
-# else
+#  else
     rc = PGMShwGetPage(pVM, pPGM->pGstPaePDPTGC, NULL, &HCPhysShw);
-# endif
+#  endif
     AssertRCReturn(rc, 1);
     HCPhys = NIL_RTHCPHYS;
     rc = pgmRamGCPhys2HCPhys(pPGM, cr3 & GST_CR3_PAGE_MASK, &HCPhys);
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%VHp HCPhyswShw=%VHp (cr3)\n", HCPhys, HCPhysShw), false);
-# if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
+#  if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
     RTGCPHYS GCPhys;
     rc = PGMR3DbgHCPtr2GCPhys(pVM, pPGM->pGuestPDHC, &GCPhys);
     AssertRCReturn(rc, 1);
     AssertMsgReturn((cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%VGp cr3=%VGp\n", GCPhys, (RTGCPHYS)cr3), false);
-# endif
+#  endif
+#endif /* !IN_RING0 */
 
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
     const GSTPD    *pPDSrc = CTXSUFF(pPGM->pGuestPD);
@@ -3019,6 +3021,27 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         cPDEs = RT_MIN(cb >> SHW_PD_SHIFT, 1);
 
 /** @todo call the other two PGMAssert*() functions. */
+
+# if PGM_GST_TYPE == PGM_TYPE_PAE
+    /*
+     * Check the 4 PDPTs too.
+     */
+    for (unsigned i = 0; i < 4; i++)
+    {
+        RTHCPTR  HCPtr;
+        RTHCPHYS HCPhys;
+        RTGCPHYS GCPhys = pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[i].u & X86_PDPE_PG_MASK;
+        int rc2 = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
+        if (VBOX_SUCCESS(rc2))
+        {
+            AssertMsg(   pVM->pgm.s.apGstPaePDsHC[i]    == (R3R0PTRTYPE(PX86PDPAE))HCPtr
+                      && pVM->pgm.s.apGstPaePDsGC[i]    == (GCPTRTYPE(PX86PDPAE))GCPtr
+                      && pVM->pgm.s.aGCPhysGstPaePDs[i] == GCPhys,
+                      ("idx %d apGstPaePDsHC %VHv vs %VHv apGstPaePDsGC %VGv vs %VGv aGCPhysGstPaePDs %VGp vs %VGp\n", 
+                       i, pVM->pgm.s.apGstPaePDsHC[i], HCPtr, pVM->pgm.s.apGstPaePDsGC[i], GCPtr, pVM->pgm.s.aGCPhysGstPaePDs[i], GCPhys));
+        }
+    }
+# endif
 
     /*
      * Iterate the shadow page directory.
