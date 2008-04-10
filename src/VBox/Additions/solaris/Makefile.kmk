@@ -64,11 +64,13 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions: \
 		$(PATH_BIN)/additions/vboxmouse_drv_14.so \
 		$(PATH_BIN)/additions/vboxmouse_drv_70.so \
 		$(PATH_BIN)/additions/vboxmouse_drv_71.so \
+		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxdevlink.sed \
 		$(PATH_SUB_CURRENT)/solaris/Makefile.kmk
 	$(call MSG_L1,Installing guest additions)
 	@# Clear out the existing package files if needed
 	$(QUIET)rm -rf $(SOLARISINSTDIR)
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)
+	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/etc
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
 		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
@@ -84,7 +86,6 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions: \
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf                    $(SOLARISINSTDIR)/solaris_xorg.conf
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf  $(SOLARISINSTDIR)/vboxguest.conf
 	$(QUIET)$(CP) -f $(PATH_BIN)/additions/vboxguest                                                    $(SOLARISINSTDIR)/vboxguest
-	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARISINSTDIR)/vboxguest,)
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxClient                                                $(SOLARISINSTDIR)/VBoxClient
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxService                                               $(SOLARISINSTDIR)/VBoxService
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_13.so
@@ -94,7 +95,8 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions: \
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_14.so                                       $(SOLARISINSTDIR)/vboxmouse_drv_14.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_70.so                                       $(SOLARISINSTDIR)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so                                       $(SOLARISINSTDIR)/vboxmouse_drv_71.so
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxdevlink.sed                  $(SOLARISINSTDIR)/etc/devlink.tab
 	$(call MSG_L1,Creating install package: $@)
-	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME) 1>/dev/null 2>/dev/null
+	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARISINSTDIR)/$(PKGFILENAME) $(PATH_BIN)/additions/$(PKGFILENAME)
 

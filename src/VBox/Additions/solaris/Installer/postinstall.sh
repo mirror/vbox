@@ -28,7 +28,7 @@ chmod 04755 $vboxadditions_path/VBoxService
 
 # create links
 echo "Creating links..."
-/usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
+#/usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient=$vboxadditions_path/VBoxClient s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxService=$vboxadditions_path/VBoxService s
 
@@ -80,7 +80,7 @@ else
     rm -f $vboxadditions_path/vboxmouse_drv_*
     rm -f $vboxadditions_path/vboxvideo_drv_*
     /usr/sbin/removef -f $PKGINST
-    
+
     # Some distros like Indiana have no xorg.conf, deal with this
     if ! (test -f '/etc/X11/xorg.conf' -o -f '/etc/X11/.xorg.conf'); then
         mv -f $vboxadditions_path/solaris_xorg.conf /etc/X11/.xorg.conf
@@ -90,7 +90,15 @@ else
     $vboxadditions_path/x11config.pl
 fi
 
+# Remove redundant files
+#/usr/sbin/removef $PKGINST $vboxadditions_path/etc/devlink.tab 1>/dev/null
+#/usr/sbin/removef $PKGINST $vboxadditions_path/etc 1>/dev/null
+#rm -rf $vboxadditions_path/etc
+#/usr/sbin/removef -f $PKGINST
+
 /usr/sbin/installf -f $PKGINST
+
+#/usr/sbin/devlinks
 
 # Setup our VBoxService SMF service
 echo "Configuring service..."
