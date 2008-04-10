@@ -357,7 +357,12 @@ void show_logo()
         for (i = 0; i <= LOGO_SHOW_STEPS; i++)
         {
             outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | i);
-            wait(16 / WAIT_MS, 0);
+            scode = wait(16 / WAIT_MS, 0);
+            if (scode == F12_SCAN_CODE)
+            {
+                f12_pressed = 1;
+                break;
+            }
         }
     }
     else
@@ -379,7 +384,10 @@ void show_logo()
             outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | i);
             scode = wait(16 / WAIT_MS, 0);
             if (scode == F12_SCAN_CODE)
+            {
                 f12_pressed = 1;
+                break;
+            }
         }
     }
 
@@ -526,4 +534,3 @@ void delay_boot(secs)
     // Restore PIT ticks
     wait_uninit();
 }
-
