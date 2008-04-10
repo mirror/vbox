@@ -31,6 +31,7 @@ echo "Creating links..."
 /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient=$vboxadditions_path/VBoxClient s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxService=$vboxadditions_path/VBoxService s
+/usr/sbin/installf -c none $PKGINST /usr/bin/VBoxRandR=$vboxadditions_path/VBoxRandR.sh s
 
 # Install Xorg components to the required places
 xorgversion_long=`/usr/bin/X11/Xorg -version 2>&1 | grep "X Window System Version"`
