@@ -23,8 +23,5 @@ echo "This script will unload the VirtualBox Guest kernel module..."
 # vboxguest.sh would've been installed, we just need to call it.
 /opt/VirtualBoxAdditions/vboxguest.sh stop
 
-# clean up link
-rm -f /dev/vboxguest
-
 echo "Done."
 

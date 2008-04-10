@@ -28,7 +28,7 @@ chmod 04755 $vboxadditions_path/VBoxService
 
 # create links
 echo "Creating links..."
-#/usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
+/usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient=$vboxadditions_path/VBoxClient s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxService=$vboxadditions_path/VBoxService s
 
@@ -91,20 +91,20 @@ else
 fi
 
 # Remove redundant files
-#/usr/sbin/removef $PKGINST $vboxadditions_path/etc/devlink.tab 1>/dev/null
-#/usr/sbin/removef $PKGINST $vboxadditions_path/etc 1>/dev/null
-#rm -rf $vboxadditions_path/etc
-#/usr/sbin/removef -f $PKGINST
+/usr/sbin/removef $PKGINST $vboxadditions_path/etc/devlink.tab 1>/dev/null
+/usr/sbin/removef $PKGINST $vboxadditions_path/etc 1>/dev/null
+rm -rf $vboxadditions_path/etc
+/usr/sbin/removef -f $PKGINST
 
 /usr/sbin/installf -f $PKGINST
-
-#/usr/sbin/devlinks
 
 # Setup our VBoxService SMF service
 echo "Configuring service..."
 
 /usr/sbin/svccfg import /var/svc/manifest/system/virtualbox/vboxservice.xml
 /usr/sbin/svcadm enable svc:/system/virtualbox/vboxservice
+
+/usr/sbin/devlinks
 
 echo "Done."
 if test $retval -eq 0; then
