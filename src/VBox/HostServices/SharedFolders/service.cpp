@@ -280,7 +280,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
 
-    uint8_t AsynchronousProcessing = 0;
+    bool fAsynchronousProcessing = false;
 
 #ifdef DEBUG
     uint32_t i;
@@ -658,6 +658,22 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 {
                     AssertMsgFailed(("Invalid handle!!!!\n"));
                     rc = VERR_INVALID_HANDLE;
+                }
+                else if (flags & SHFL_LOCK_WAIT)
+                {
+                    /* @todo This should be properly implemented by the shared folders service.
+                     *       The service thread must never block. If an operation requires
+                     *       blocking, it must be processed by another thread and when it is
+                     *       completed, the another thread must call
+                     *
+                     *           g_pHelpers->pfnCallComplete (callHandle, rc);
+                     */
+
+                    /* Operation is async. */
+                    fAsynchronousProcessing = true;
+
+                    /* Here the operation must be posted to another thread. At the moment it is not implemented. */
+                    rc = VERR_NOT_SUPPORTED;
                 }
                 else
                 {
@@ -1058,8 +1074,12 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
     LogFlow(("svcCall: rc = %Vrc\n", rc));
 
-    if (!AsynchronousProcessing)
+    if (   !fAsynchronousProcessing
+        || VBOX_FAILURE (rc))
     {
+        /* Complete the operation if it was unsuccessful or 
+         * it was processed synchronously.
+         */
         g_pHelpers->pfnCallComplete (callHandle, rc);
     }
 
