@@ -3033,6 +3033,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 # if PGM_GST_TYPE == PGM_TYPE_PAE
         uint32_t        iPDSrc;
         PGSTPD          pPDSrc = pgmGstGetPaePDPtr(pPGM, (RTGCUINTPTR)GCPtr, &iPDSrc);
+        if (!pPDSrc)
+            continue;
 #endif
 
         const SHWPDE PdeDst = pPDDst->a[iPDDst];
