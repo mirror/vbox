@@ -473,7 +473,6 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     pVM->pgm.s.pGstPaePDPTHC = 0;
     pVM->pgm.s.pGstPaePDPTGC = 0;
     /** PAE todo: pVM->pgm.s.apGstPaePDsHC? -> unmap?? */
-    Assert(pVM->pgm.s.fMappingsFixed);
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
 //#error not implemented
