@@ -742,7 +742,7 @@ DECLINLINE(int) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool 
     {
         uint16_t rda[4];
         PDMDevHlpPhysRead(pDevIns, addr+3, &ownbyte, 1);
-        if ((!ownbyte & 0x80) && fRetIfNotOwn)
+        if (!(ownbyte & 0x80) && fRetIfNotOwn)
             return false;
         PDMDevHlpPhysRead(pDevIns, addr, (void*)&rda[0], sizeof(rda));
         ((uint32_t *)rmd)[0] = (uint32_t)rda[0] | ((rda[1] & 0x00ff) << 16);
@@ -753,7 +753,7 @@ DECLINLINE(int) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool 
     else if (RT_LIKELY(BCR_SWSTYLE(pData) != 3))
     {
         PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
-        if ((!ownbyte & 0x80) && fRetIfNotOwn)
+        if (!(ownbyte & 0x80) && fRetIfNotOwn)
             return false;
         PDMDevHlpPhysRead(pDevIns, addr, (void*)rmd, 16);
     }
@@ -761,7 +761,7 @@ DECLINLINE(int) pcnetRmdLoad(PCNetState *pData, RMD *rmd, RTGCPHYS32 addr, bool 
     {
         uint32_t rda[4];
         PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
-        if ((!ownbyte & 0x80) && fRetIfNotOwn)
+        if (!(ownbyte & 0x80) && fRetIfNotOwn)
             return false;
         PDMDevHlpPhysRead(pDevIns, addr, (void*)&rda[0], sizeof(rda));
         ((uint32_t *)rmd)[0] = rda[2];
