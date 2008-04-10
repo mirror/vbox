@@ -196,6 +196,9 @@ protected:
 # undef PAGE_SIZE
 # undef PAGE_SHIFT
 # include <Carbon/Carbon.h>
+
+#define AssertCarbonOSStatus(a) AssertMsg ((a) == noErr, ("Carbon OSStatus: %d\n", static_cast<int> (a)))
+
 class QImage;
 class QPixmap;
 class VBoxFrameBuffer;
@@ -207,6 +210,32 @@ CGImageRef DarwinCreateDockBadge (const char *aSource);
 void DarwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage = NULL);
 void DarwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage);
 OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
+
+inline HIViewRef mapToHIViewRef (QWidget *aWidget)
+{
+    return HIViewRef(aWidget->winId());
+}
+
+inline WindowRef mapToWindowRef (HIViewRef aViewRef)
+{
+    return reinterpret_cast<WindowRef> (HIViewGetWindow(aViewRef)); 
+}
+
+inline WindowRef mapToWindowRef (QWidget *aWidget)
+{
+    return mapToWindowRef (mapToHIViewRef (aWidget));
+}
+
+inline CGContextRef mapToCGContextRef (QWidget *aWidget)
+{
+    return static_cast<CGContext *> (aWidget->macCGHandle());
+}
+
+inline HIRect mapToHIRect (const QRect &aRect)
+{
+    return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height());
+}
+
 #endif /* Q_WS_MAC */
 
 #endif // __VBoxUtils_h__

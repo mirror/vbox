@@ -713,6 +713,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
 #if defined (VBOX_GUI_USE_QUARTZ2D)
         case VBoxDefs::Quartz2DMode:
+            /* Indicate that we are doing all
+             * drawing stuff ourself */
+            pViewport->setAttribute (Qt::WA_PaintOnScreen);
             mFrameBuf = new VBoxQuartz2DFrameBuffer (this);
             break;
 #endif
