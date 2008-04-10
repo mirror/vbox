@@ -179,7 +179,7 @@ RTDECL(int) RTStrAPrintf(char **ppszBuffer, const char *pszFormat, ...)
 {
     va_list args;
     va_start(args, pszFormat);
-    size_t cbRet = RTStrAPrintfV(ppszBuffer, pszFormat, args);
+    int cbRet = RTStrAPrintfV(ppszBuffer, pszFormat, args);
     va_end(args);
     return cbRet;
 }
