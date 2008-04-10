@@ -345,6 +345,7 @@ typedef struct VGAState {
     uint16_t                    cbClrUsed;
     /** Palette size. */
     uint16_t                    cbPal;
+    uint8_t                     Padding9[2];       /**< Alignment padding. */
     /** Palette data. */
     uint32_t                    au32Palette[256];
 #endif /* VBOX */
