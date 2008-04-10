@@ -59,6 +59,10 @@
 #undef LOG_GROUP
 #include "Storage/DevAHCI.cpp"
 #endif
+#ifdef VBOX_WITH_E1000
+#undef LOG_GROUP
+#include "Network/DevE1000.cpp"
+#endif
 
 #include <stdio.h>
 

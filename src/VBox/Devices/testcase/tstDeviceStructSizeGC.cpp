@@ -69,6 +69,10 @@
 #undef LOG_GROUP
 #include "Storage/DevAHCI.cpp"
 #endif
+#ifdef VBOX_WITH_E1000
+#undef LOG_GROUP
+#include "Network/DevE1000.cpp"
+#endif
 
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
@@ -942,6 +946,78 @@ int main()
     GEN_CHECK_OFF(AHCI, lock);
     GEN_CHECK_OFF(AHCI, cPortsImpl);
 #endif /* VBOX_WITH_AHCI */
+
+#ifdef VBOX_WITH_E1000
+    GEN_CHECK_SIZE(E1KSTATE);
+    GEN_CHECK_OFF(E1KSTATE, szInstance[8]);
+    GEN_CHECK_OFF(E1KSTATE, fCableConnected);
+    GEN_CHECK_OFF(E1KSTATE, fR0Enabled);
+    GEN_CHECK_OFF(E1KSTATE, fGCEnabled);
+    GEN_CHECK_OFF(E1KSTATE, macAddress);
+    GEN_CHECK_OFF(E1KSTATE, IBase);
+    GEN_CHECK_OFF(E1KSTATE, pDrvBase);
+    GEN_CHECK_OFF(E1KSTATE, INetworkPort);
+    GEN_CHECK_OFF(E1KSTATE, pDrv);
+    GEN_CHECK_OFF(E1KSTATE, INetworkConfig);
+    GEN_CHECK_OFF(E1KSTATE, ILeds);
+    GEN_CHECK_OFF(E1KSTATE, pLedsConnector);
+#ifdef E1K_IRQ_THREAD
+    GEN_CHECK_OFF(E1KSTATE, pIrqThread);
+#endif
+    GEN_CHECK_OFF(E1KSTATE, pInstHC);
+    GEN_CHECK_OFF(E1KSTATE, pInstGC);
+    GEN_CHECK_OFF(E1KSTATE, cs);
+#ifndef E1K_GLOBAL_MUTEX
+    GEN_CHECK_OFF(E1KSTATE, csRx);
+#endif
+    GEN_CHECK_OFF(E1KSTATE, hTxSem);
+#ifdef E1K_IRQ_THREAD
+    GEN_CHECK_OFF(E1KSTATE, hIrqSem);
+    GEN_CHECK_OFF(E1KSTATE, iIntLevel);
+#endif
+    GEN_CHECK_OFF(E1KSTATE, auRegs[E1K_NUM_OF_32BIT_REGS]);
+    GEN_CHECK_OFF(E1KSTATE, fIntRaised);
+    GEN_CHECK_OFF(E1KSTATE, led);
+    GEN_CHECK_OFF(E1KSTATE, pTxQueueHC);
+    GEN_CHECK_OFF(E1KSTATE, pTxQueueGC);
+    GEN_CHECK_OFF(E1KSTATE, pRIDTimerHC);
+    GEN_CHECK_OFF(E1KSTATE, pRIDTimerGC);
+    GEN_CHECK_OFF(E1KSTATE, pRADTimerHC);
+    GEN_CHECK_OFF(E1KSTATE, pRADTimerGC);
+    GEN_CHECK_OFF(E1KSTATE, pIntTimerHC);
+    GEN_CHECK_OFF(E1KSTATE, pIntTimerGC);
+    GEN_CHECK_OFF(E1KSTATE, u32PktNo);
+    GEN_CHECK_OFF(E1KSTATE, pLUTimer);
+    GEN_CHECK_OFF(E1KSTATE, pciDevice);
+    GEN_CHECK_OFF(E1KSTATE, eeprom);
+    GEN_CHECK_OFF(E1KSTATE, phy);
+    GEN_CHECK_OFF(E1KSTATE, uSelectedReg);
+    GEN_CHECK_OFF(E1KSTATE, auMTA[128]);
+    GEN_CHECK_OFF(E1KSTATE, aRecAddr);
+    GEN_CHECK_OFF(E1KSTATE, auVFTA[128]);
+    GEN_CHECK_OFF(E1KSTATE, addrMMReg);
+    GEN_CHECK_OFF(E1KSTATE, addrIOPort);
+    GEN_CHECK_OFF(E1KSTATE, u64AckedAt);
+    GEN_CHECK_OFF(E1KSTATE, u16RxBSize);
+    GEN_CHECK_OFF(E1KSTATE, fLocked);
+    GEN_CHECK_OFF(E1KSTATE, fDelayInts);
+    GEN_CHECK_OFF(E1KSTATE, fIntMaskUsed);
+    GEN_CHECK_OFF(E1KSTATE, aTxPacket[E1K_MAX_TX_PKT_SIZE]);
+    GEN_CHECK_OFF(E1KSTATE, u16TxPktLen);
+    GEN_CHECK_OFF(E1KSTATE, pTIDTimerHC);
+    GEN_CHECK_OFF(E1KSTATE, pTIDTimerGC);
+    GEN_CHECK_OFF(E1KSTATE, pTADTimerHC);
+    GEN_CHECK_OFF(E1KSTATE, pTADTimerGC);
+    GEN_CHECK_OFF(E1KSTATE, fIPcsum);
+    GEN_CHECK_OFF(E1KSTATE, fTCPcsum);
+    GEN_CHECK_OFF(E1KSTATE, contextTSE);
+    GEN_CHECK_OFF(E1KSTATE, contextNormal);
+    GEN_CHECK_OFF(E1KSTATE, pTxThread);
+    GEN_CHECK_OFF(E1KSTATE, u32PayRemain);
+    GEN_CHECK_OFF(E1KSTATE, u8HdrRemain);
+    GEN_CHECK_OFF(E1KSTATE, u32SavedCsum);
+    GEN_CHECK_OFF(E1KSTATE, u16SavedFlags);
+#endif /* VBOX_WITH_E1000 */
 
     return (0);
 }
