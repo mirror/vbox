@@ -6,6 +6,6 @@ CATEGORY="application"
 VENDOR="innotek GmbH"
 EMAIL="info@innotek.de"
 BASEDIR="/"
-CLASSES="none"
+CLASSES=none sed
 DESC="VirtualBox Guest Additions for Solaris guests."
 

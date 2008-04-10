@@ -24,10 +24,11 @@ cd "$1"
 echo 'i pkginfo=./vboxguest.pkginfo' > prototype
 echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
+echo 'e sed /etc/devlink.tab ? ? ?' >> prototype
 find . -print | /usr/sfw/bin/ggrep -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh' | pkgproto >> prototype
 
-/usr/bin/awk 'NF == 6 { $5 = "root"; $6 = "bin" } { print }' prototype > prototype2
-/usr/bin/awk 'NF == 6 { $3 = "opt/VirtualBoxAdditions/"$3"="$3 } { print }' prototype2 > prototype
+/usr/bin/awk 'NF == 6 && $2 == "none" { $5 = "root"; $6 = "bin" } { print }' prototype > prototype2
+/usr/bin/awk 'NF == 6 && $2 == "none" { $3 = "opt/VirtualBoxAdditions/"$3"="$3 } { print }' prototype2 > prototype
 
 # install the kernel module to the right place (for now only 32-bit guests)
 /usr/bin/awk 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest" { $3 = "platform/i86pc/kernel/drv/vboxguest=vboxguest" } { print }' prototype > prototype2
