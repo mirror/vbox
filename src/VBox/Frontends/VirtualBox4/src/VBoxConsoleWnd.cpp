@@ -255,7 +255,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     }
     else
     {
-        dbgStatisticsAction = NULL;osstatus
+        dbgStatisticsAction = NULL;
         dbgCommandLineAction = NULL;
     }
 #endif
