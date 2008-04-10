@@ -324,21 +324,25 @@ typedef struct VGAState {
     R3PTRTYPE(uint8_t *)        pu8Logo;
     /** The name of the logo file. */
     R3PTRTYPE(char *)           pszLogoFile;
+    /** Bitmap image data. */
+    R3PTRTYPE(uint8_t *)        pu8Bitmap;
+    /** Clear screen flag. */
+    uint8_t                     fClearScreen;
+    uint8_t                     Padding8;       /**< Alignment padding. */
     /** Current logo command. */
     uint16_t                    LogoCommand;
-    /** Bitmap image to use. (LOGO_IMAGE_DEFAULT or LOGO_IMAGE_EXTERNAL) */
-    uint8_t                     BmpImage;
-    uint8_t                     Padding8;       /**< Alignment padding. */
-    /** Logo X. */
-    uint16_t                    xLogo;
-    /** Logo Y. */
-    uint16_t                    yLogo;
-    /** Logo width. */
-    uint16_t                    cxLogo;
-    /** Logo height. */
-    uint16_t                    cyLogo;
-    /** Logo depth. */
-    uint16_t                    cBitsLogo;
+    /** Bitmap width. */
+    uint16_t                    cbWidth;
+    /** Bitmap height. */
+    uint16_t                    cbHeight;
+    /** Bitmap planes. */
+    uint16_t                    cbPlanes;
+    /** Bitmap depth. */
+    uint16_t                    cbBitCount;
+    /** Bitmap compression. */
+    uint16_t                    Compression;
+    /** Bitmap colors used. */
+    uint16_t                    cbClrUsed;
     /** Palette size. */
     uint16_t                    cbPal;
     /** Palette data. */

@@ -44,44 +44,12 @@
 /** The BIOS logo fade in/fade out steps. */
 #define LOGO_SHOW_STEPS      64
 
-/** The BIOS boot menu text position, X. */
-#define LOGO_F12TEXT_X       340
-/** The BIOS boot menu text position, Y. */
-#define LOGO_F12TEXT_Y       455
-
-/** Width of the "Press F12 to select boot device." bitmap.
-    Anything that exceeds the limit of F12BootText below is filled with
-    background. */
-#define LOGO_F12TEXT_WIDTH   286
-/** Height of the boot device selection bitmap, see LOGO_F12TEXT_WIDTH. */
-#define LOGO_F12TEXT_HEIGHT  12
-
-#define LOGO_IMAGE_DEFAULT   0
-#define LOGO_IMAGE_EXTERNAL  1
-
-#define LOGO_MAX_WIDTH       640
-#define LOGO_MAX_HEIGHT      480
-#define LOGO_MAX_SIZE        ( LOGO_MAX_WIDTH * LOGO_MAX_HEIGHT * 4 )
-
-
 /** @name The BIOS logo commands.
  * @{
  */
 #define LOGO_CMD_NOP         0
 #define LOGO_CMD_SET_OFFSET  0x100
-#define LOGO_CMD_SET_X       0x200
-#define LOGO_CMD_SET_Y       0x300
-#define LOGO_CMD_SET_WIDTH   0x400
-#define LOGO_CMD_SET_HEIGHT  0x500
-#define LOGO_CMD_SET_DEPTH   0x600
-#define LOGO_CMD_SET_PALSIZE 0x700
-#define LOGO_CMD_SET_DEFAULT 0x800
-#define LOGO_CMD_SET_PAL     0x900
-#define LOGO_CMD_SET_DIRTY   0xA00
-#define LOGO_CMD_SHOW_BMP    0xB00
-#define LOGO_CMD_SHOW_TEXT   0xC00
-#define LOGO_CMD_CLS         0xD00
-#define LOGO_CMD_BUF_BLT     0xE00
+#define LOGO_CMD_SHOW_BMP    0x200
 /** @} */
 
 /**
