@@ -197,44 +197,80 @@ protected:
 # undef PAGE_SHIFT
 # include <Carbon/Carbon.h>
 
+/* Asserts if a != noErr and prints the error code */
 #define AssertCarbonOSStatus(a) AssertMsg ((a) == noErr, ("Carbon OSStatus: %d\n", static_cast<int> (a)))
 
 class QImage;
 class QPixmap;
 class VBoxFrameBuffer;
-CGImageRef DarwinQImageToCGImage (const QImage *aImage);
-CGImageRef DarwinQImageFromMimeSourceToCGImage (const char *aSource);
-CGImageRef DarwinQPixmapToCGImage (const QPixmap *aPixmap);
-CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource);
-CGImageRef DarwinCreateDockBadge (const char *aSource);
-void DarwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage = NULL);
-void DarwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage);
-OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 
-inline HIViewRef mapToHIViewRef (QWidget *aWidget)
+/* Converting stuff */
+CGImageRef darwinToCGImageRef (const QImage *aImage);
+CGImageRef darwinToCGImageRef (const QPixmap *aPixmap);
+CGImageRef darwinToCGImageRef (const char *aSource);
+
+/**
+ * Returns a reference to the HIView of the QWidget.
+ *
+ * @returns HIViewRef of the QWidget.
+ * @param   aWidget   Pointer to the QWidget
+ */
+inline HIViewRef darwinToHIViewRef (QWidget *aWidget)
 {
     return HIViewRef(aWidget->winId());
 }
 
-inline WindowRef mapToWindowRef (HIViewRef aViewRef)
+/**
+ * Returns a reference to the Window of the HIView.
+ *
+ * @returns WindowRef of the HIView.
+ * @param   aViewRef  Reference to the HIView
+ */
+inline WindowRef darwinToWindowRef (HIViewRef aViewRef)
 {
     return reinterpret_cast<WindowRef> (HIViewGetWindow(aViewRef)); 
 }
 
-inline WindowRef mapToWindowRef (QWidget *aWidget)
+/**
+ * Returns a reference to the Window of the QWidget.
+ *
+ * @returns WindowRef of the QWidget.
+ * @param   aWidget   Pointer to the QWidget
+ */
+inline WindowRef darwinToWindowRef (QWidget *aWidget)
 {
-    return mapToWindowRef (mapToHIViewRef (aWidget));
+    return ::darwinToWindowRef (::darwinToHIViewRef (aWidget));
 }
 
-inline CGContextRef mapToCGContextRef (QWidget *aWidget)
+/**
+ * Returns a reference to the CGContext of the QWidget.
+ *
+ * @returns CGContextRef of the QWidget.
+ * @param   aWidget      Pointer to the QWidget
+ */
+inline CGContextRef darwinToCGContextRef (QWidget *aWidget)
 {
     return static_cast<CGContext *> (aWidget->macCGHandle());
 }
 
-inline HIRect mapToHIRect (const QRect &aRect)
+/**
+ * Converts a QRect to a HIRect.
+ *
+ * @returns HIRect for the converted QRect.
+ * @param   aRect  the QRect to convert
+ */
+inline HIRect darwinToHIRect (const QRect &aRect)
 {
     return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height());
 }
+
+/* Special routines for the dock handling */
+CGImageRef darwinCreateDockBadge (const char *aSource);
+void darwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage = NULL);
+void darwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage);
+
+/* Experimental region handler for the seamless mode */
+OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 
 #endif /* Q_WS_MAC */
 

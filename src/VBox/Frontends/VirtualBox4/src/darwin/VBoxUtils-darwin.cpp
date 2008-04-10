@@ -26,6 +26,7 @@
 /* Qt includes */
 #include <QImage>
 #include <QPixmap>
+#include <QPainter>
 
 /**
  * Callback for deleting the QImage object when CGImageCreate is done
@@ -45,19 +46,18 @@ static void darwinDataProviderReleaseQImage (void *info, const void *, size_t)
  * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aPixmap     Pointer to the QPixmap instance to convert.
  */
-CGImageRef DarwinQImageToCGImage (const QImage *aImage)
+CGImageRef darwinToCGImageRef (const QImage *aImage)
 {
     QImage *imageCopy = new QImage (*aImage);
     /** @todo this code assumes 32-bit image input, the lazy bird convert image to 32-bit method is anything but optimal... */
-    if (imageCopy->depth() != 32)
-        *imageCopy = imageCopy->convertDepth (32);
+    if (imageCopy->format() != QImage::Format_ARGB32)
+        *imageCopy = imageCopy->convertToFormat (QImage::Format_ARGB32);
     Assert (!imageCopy->isNull());
 
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
     CGDataProviderRef dp = CGDataProviderCreateWithData (imageCopy, aImage->bits(), aImage->numBytes(), darwinDataProviderReleaseQImage);
 
-    CGBitmapInfo bmpInfo = imageCopy->hasAlphaBuffer() ? kCGImageAlphaFirst : kCGImageAlphaNoneSkipFirst;
-    bmpInfo |= kCGBitmapByteOrder32Host;
+    CGBitmapInfo bmpInfo = kCGImageAlphaFirst | kCGBitmapByteOrder32Host;
     CGImageRef ir = CGImageCreate (imageCopy->width(), imageCopy->height(), 8, 32, imageCopy->bytesPerLine(), cs,
                                    bmpInfo, dp, 0 /*decode */, 0 /* shouldInterpolate */,
                                    kCGRenderingIntentDefault);
@@ -69,29 +69,14 @@ CGImageRef DarwinQImageToCGImage (const QImage *aImage)
 }
 
 /**
- * Loads an image using Qt and converts it to a CGImage.
- *
- * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
- * @param   aSource     The source name.
- */
-CGImageRef DarwinQImageFromMimeSourceToCGImage (const char *aSource)
-{
-    QImage qim (QString(":/") + aSource);
-    Assert (!qim.isNull());
-    return DarwinQImageToCGImage (&qim);
-}
-
-/**
  * Converts a QPixmap to a CGImage.
  *
  * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aPixmap     Pointer to the QPixmap instance to convert.
  */
-CGImageRef DarwinQPixmapToCGImage (const QPixmap *aPixmap)
+CGImageRef darwinToCGImageRef (const QPixmap *aPixmap)
 {
-    QImage qimg = aPixmap->convertToImage();
-    Assert (!qimg.isNull());
-    return DarwinQImageToCGImage (&qimg);
+    return aPixmap->toMacCGImageRef();
 }
 
 /**
@@ -100,11 +85,11 @@ CGImageRef DarwinQPixmapToCGImage (const QPixmap *aPixmap)
  * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aSource     The source name.
  */
-CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource)
+CGImageRef darwinToCGImageRef (const char *aSource)
 {
     QPixmap qpm (QString(":/") + aSource);
     Assert (!qpm.isNull());
-    return DarwinQPixmapToCGImage (&qpm);
+    return ::darwinToCGImageRef (&qpm);
 }
 
 /**
@@ -116,28 +101,24 @@ CGImageRef DarwinQPixmapFromMimeSourceToCGImage (const char *aSource)
  * @returns CGImageRef for the new image. (Remember to release it when finished with it.)
  * @param   aSource     The source name.
  */
-CGImageRef DarwinCreateDockBadge (const char *aSource)
+CGImageRef darwinCreateDockBadge (const char *aSource)
 {
-    /* Create a transparent image in size 128x128.
-     * This is unnecessary complicated in qt3. */
-    QImage transImage (128, 128, 32);
+    /* Create a transparent image in size 128x128. */
+    QImage transImage (128, 128, QImage::Format_ARGB32);
     transImage.fill (qRgba (0, 0, 0, 0));
-    transImage.setAlphaBuffer (true);
-    QPixmap back (transImage);
-
     /* load the badge */
-    QPixmap badge (aSource);
+    QImage badge (aSource);
     Assert (!badge.isNull());
-
     /* resize it and copy it onto the background. */
     if (badge.width() < 32)
-        badge = badge.convertToImage().smoothScale (32, 32);
-    copyBlt (&back, (back.width() - badge.width()) / 2.0, (back.height() - badge.height()) / 2.0,
-             &badge, 0, 0,
-             badge.width(), badge.height());
-
+        badge = badge.scaled (32, 32, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    QPainter painter (&transImage);
+    painter.drawImage (QPoint ((transImage.width() - badge.width()) / 2.0, 
+                               (transImage.height() - badge.height()) / 2.0),
+                       badge);
+    painter.end();
     /* Convert it to a CGImage. */
-    return ::DarwinQPixmapToCGImage (&back);
+    return ::darwinToCGImageRef (&transImage);
 }
 
 /**
@@ -149,7 +130,7 @@ CGImageRef DarwinCreateDockBadge (const char *aSource)
  * @param   aOverlayImage   an optional icon overlay image to add at the bottom right of the icon
  * @param   aStateImage   an optional state overlay image to add at the center of the icon
  */
-void DarwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage /*= NULL*/)
+void darwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage /*= NULL*/)
 {
     Assert (aVMImage);
 
@@ -232,7 +213,7 @@ void DarwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGI
  * @param   aFrameBuffer    The guest frame buffer.
  * @param   aOverlayImage   an optional icon overlay image to add at the bottom right of the icon
  */
-void DarwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage)
+void darwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage)
 {
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
     Assert (cs);
@@ -243,7 +224,7 @@ void DarwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlay
                                    kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
                                    kCGRenderingIntentDefault);
     /* Update the dock preview icon */
-    ::DarwinUpdateDockPreview (ir, aOverlayImage);
+    ::darwinUpdateDockPreview (ir, aOverlayImage);
     /* Release the temp data and image */
     CGDataProviderRelease (dp);
     CGImageRelease (ir);
@@ -251,7 +232,7 @@ void DarwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlay
 }
 
 /* Currently not used! */
-OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
+OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
 {
     NOREF (aInHandlerCallRef);
 
@@ -281,7 +262,7 @@ OSStatus DarwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
                 printf("test2\n");
                 GetEventParameter (aInEvent, kEventParamRgnHandle, typeQDRgnHandle, NULL, sizeof (rgn), NULL, &rgn);
                 QRegion *pRegion = static_cast <QRegion*> (aInUserData);
-                if (!pRegion->isNull() && pRegion)
+                if (!pRegion->isEmpty() && pRegion)
                 {
                     CopyRgn (pRegion->handle(), rgn);
                     status = noErr;

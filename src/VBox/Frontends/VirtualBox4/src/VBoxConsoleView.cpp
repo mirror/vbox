@@ -638,7 +638,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
 #ifdef Q_WS_MAC
     /* Overlay logo for the dock icon */
-    mVirtualBoxLogo = ::DarwinQPixmapFromMimeSourceToCGImage ("VirtualBox_48px.png");
+    mVirtualBoxLogo = ::darwinToCGImageRef ("VirtualBox_48px.png");
 #endif
 
     VBoxViewport *pViewport = new VBoxViewport (this);
@@ -1443,7 +1443,7 @@ bool VBoxConsoleView::event (QEvent *e)
                  *  make it get out of the dock when the user wishes to show a VM.
                  */
                 topLevelWidget()->show();
-                topLevelWidget()->setActiveWindow();
+                topLevelWidget()->activateWindow();
                 return true;
             }
 #endif
@@ -2520,7 +2520,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
 #elif defined (Q_WS_MAC)
         if (aUniKey && aUniKey [0] && !aUniKey [1])
             processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
-                                                     QChar (aUniKey [0]).upper().unicode()),
+                                                     QChar (aUniKey [0]).toUpper().unicode()),
                                        mMainWnd->menuBar()->actions());
 
         /* Don't consider the hot key as pressed since the guest never saw
@@ -2631,9 +2631,9 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
          * (Note, aPos seems to be unreliable, it caused endless recursion here at one points...)
          * (Note, synergy and other remote clients might not like this cursor warping.)
          */
-        QRect rect = viewport()->visibleRect();
+        QRect rect = viewport()->visibleRegion().boundingRect();
         QPoint pw = viewport()->mapToGlobal (viewport()->pos());
-        rect.moveBy (pw.x(), pw.y());
+        rect.translate (pw.x(), pw.y());
 
         QRect dpRect = QApplication::desktop()->screenGeometry (viewport());
         if (rect.intersects (dpRect))
@@ -2917,11 +2917,11 @@ void VBoxConsoleView::paintEvent (QPaintEvent *pe)
                  * This saves some conversion time. */
                 CGImageRef ir =
                     static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
-                ::DarwinUpdateDockPreview (ir, mVirtualBoxLogo);
+                ::darwinUpdateDockPreview (ir, mVirtualBoxLogo);
             }
             else
 # endif
-                ::DarwinUpdateDockPreview (mFrameBuf, mVirtualBoxLogo);
+                ::darwinUpdateDockPreview (mFrameBuf, mVirtualBoxLogo);
         }
 #endif
         return;
@@ -2940,7 +2940,7 @@ void VBoxConsoleView::paintEvent (QPaintEvent *pe)
     viewport()->setAttribute (Qt::WA_PaintOnScreen, paintOnScreen);
 
 #ifdef Q_WS_MAC
-    ::DarwinUpdateDockPreview (DarwinQPixmapToCGImage (&mPausedShot),
+    ::darwinUpdateDockPreview (::darwinToCGImageRef (&mPausedShot),
                                mVirtualBoxLogo,
                                mMainWnd->dockImageState());
 #endif
@@ -3026,7 +3026,7 @@ void VBoxConsoleView::captureMouse (bool aCapture, bool aEmitSignal /* = true */
         mLastPos = QCursor::pos();
 #elif defined (Q_WS_MAC)
         /* move the mouse to the center of the visible area */
-        mLastPos = mapToGlobal (visibleRect().center());
+        mLastPos = mapToGlobal (visibleRegion().boundingRect().center());
         QCursor::setPos (mLastPos);
         /* grab all mouse events. */
         viewport()->grabMouse();
