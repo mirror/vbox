@@ -40,6 +40,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/log.h>
+#include <iprt/mp.h>
 
 #include <linux/sched.h>
 #ifdef CONFIG_DEVFS_FS
@@ -462,6 +463,75 @@ static void nmi_shutdown(void)
 # endif /* DO_DISABLE_NMI */
 #endif /* CONFIG_X86_LOCAL_APIC */
 
+
+/**
+ * Determine if the time stamp counters of the CPU cores are asynchronous.
+ */
+static uint64_t g_aTsc[8][8];
+
+static DECLCALLBACK(void) Worker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    int iSlot = *(int*)pvUser1; 
+    int iCpu  = *(int*)pvUser2;
+    g_aTsc[iSlot][iCpu] = ASMReadTSC();
+}
+
+/*
+ * When using the default/normal timer code it is essential that the time stamp counter
+ * (TSC) runs never backwards, that is, a read operation to the counter should return
+ * a bigger value than any previous read operation. This is guaranteed by the latest
+ * AMD CPUs and by newer Intel CPUs which never enter the C2 state (P4). In any other
+ * case we have to choose the asynchronous timer mode.
+ */
+static void VBoxDetermineAsyncTsc(void)
+{
+    uint64_t u64Diff, u64DiffMin, u64DiffMax, u64TscLast;
+    int iSlot, iCpu;
+    bool fBackwards = false;
+    int cCpu = RTMpGetOnlineCount();
+
+    printk(KERN_DEBUG DEVICE_NAME ": Found %u cores.\n", cCpu);
+    if (cCpu < 2)
+        return;
+
+    if (cCpu > RT_ELEMENTS(g_aTsc))
+        cCpu = RT_ELEMENTS(g_aTsc);
+
+    for (iSlot = 0; iSlot < RT_ELEMENTS(g_aTsc); iSlot++)
+    {
+        for (iCpu = 0; iCpu < cCpu; iCpu++)
+            RTMpOnSpecific(iCpu, Worker, &iSlot, &iCpu);
+    }
+
+    u64DiffMin = (uint64_t)~0;
+    u64TscLast = 0;
+    for (iSlot = 0; iSlot < RT_ELEMENTS(g_aTsc); iSlot++)
+    {
+        uint64_t u64Tsc0 = g_aTsc[iSlot][0];
+        u64DiffMax = 0;
+        if (u64Tsc0 <= u64TscLast)
+            fBackwards = true;
+        u64TscLast = u64Tsc0;
+        for (iCpu = 1; iCpu < cCpu; iCpu++)
+        {
+            uint64_t u64TscN = g_aTsc[iSlot][iCpu];
+            if (u64TscN <= u64TscLast)
+                fBackwards = true;
+            u64TscLast = u64TscN;
+            u64Diff = u64TscN > u64Tsc0 ? u64TscN - u64Tsc0 : u64Tsc0 - u64TscN;
+            if (u64DiffMax < u64Diff)
+                u64DiffMax = u64Diff;
+        }
+        if (u64DiffMin > u64DiffMax)
+            u64DiffMin = u64DiffMax;
+    }
+    /* Don't depend on 64-bit arithmetics in the printk code. We assume that the difference between both
+     * cores is smaller than 2^32. */
+    printk(KERN_DEBUG DEVICE_NAME ": fBackwards=%d u64DiffMin=%u.\n", fBackwards, (uint32_t)u64DiffMin);
+    if (fBackwards)
+        force_async_tsc = 1;
+}
+
 /**
  * Initialize module.
  *
@@ -588,6 +658,11 @@ nmi_activated:
     printk(KERN_DEBUG DEVICE_NAME ": Successfully done.\n");
 # endif /* >= 2.6.19 */
 #endif /* CONFIG_X86_LOCAL_APIC */
+
+    /*
+     * Check for synchronous/asynchronous TSC mode.
+     */
+    VBoxDetermineAsyncTsc();
 
 #ifdef CONFIG_VBOXDRV_AS_MISC
     rc = misc_register(&gMiscDevice);
