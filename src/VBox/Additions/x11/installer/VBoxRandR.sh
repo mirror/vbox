@@ -26,7 +26,7 @@
 
 if [ "$1" = "--test" ]
 then
-  version=`xrandr -v 2>&1 | sed -n 's/[^0-9]*version 1\.\([0-9]*\)/\1/p'`
+  version=`xrandr -v 2>&1 | sed -n 's/[^0-9]\+version 1\.\([0-9]\+\)/\1/p'`
   expr "$version" '>=' 2 2>&1 > /dev/null
   exit
 fi
