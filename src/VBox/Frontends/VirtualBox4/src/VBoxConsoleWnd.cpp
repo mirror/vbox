@@ -52,6 +52,8 @@
 #ifdef Q_WS_MAC
 #include "VBoxUtils.h"
 #include "VBoxIChatTheaterWrapper.h"
+/* Qt includes */
+#include <QPainter>
 #endif
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -588,10 +590,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     initSharedAVManager();
 # endif
     /* prepare the dock images */
-    dockImgStatePaused    = ::DarwinCreateDockBadge (":/state_paused_16px.png");
-    dockImgStateSaving    = ::DarwinCreateDockBadge (":/state_saving_16px.png");
-    dockImgStateRestoring = ::DarwinCreateDockBadge (":/state_restoring_16px.png");
-    dockImgBack100x75     = ::DarwinCreateDockBadge (":/dock_1.png");
+    dockImgStatePaused    = ::darwinCreateDockBadge (":/state_paused_16px.png");
+    dockImgStateSaving    = ::darwinCreateDockBadge (":/state_saving_16px.png");
+    dockImgStateRestoring = ::darwinCreateDockBadge (":/state_restoring_16px.png");
+    dockImgBack100x75     = ::darwinCreateDockBadge (":/dock_1.png");
     SetApplicationDockTileImage (dockImgOS);
 #endif
     mMaskShift.scale (0, 0, Qt::IgnoreAspectRatio);
@@ -808,19 +810,16 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
 #ifdef Q_WS_MAC
     QString osTypeId = cmachine.GetOSTypeId();
-    QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).convertToImage().smoothScale (100, 75);
+    QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).toImage().scaled (100, 75, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     QImage osImg = QImage (":/dock_1.png");
-#warning port me
-//    bitBlt (&osImg, 14, 22,
-//            &osImg100x75, 0, 0,
-//            100, 75, /* conversion_flags */ 0);
-//    QImage VBoxOverlay = QImage (":/VirtualBox_48px.png");
-//    bitBlt (&osImg, osImg.width() - VBoxOverlay.width(), osImg.height() - VBoxOverlay.height(),
-//            &VBoxOverlay, 0, 0,
-//            VBoxOverlay.width(), VBoxOverlay.height(), /* conversion_flags */ 0);
-//    if (dockImgOS)
-//        CGImageRelease (dockImgOS);
-    dockImgOS = ::DarwinQImageToCGImage (&osImg);
+    QImage VBoxOverlay = QImage (":/VirtualBox_48px.png");
+    QPainter painter (&osImg);
+    painter.drawImage (QPoint (14, 22), osImg100x75);
+    painter.drawImage (QPoint (osImg.width() - VBoxOverlay.width(), osImg.height() - VBoxOverlay.height()), VBoxOverlay);
+    painter.end();
+    if (dockImgOS)
+        CGImageRelease (dockImgOS);
+    dockImgOS = ::darwinToCGImageRef (&osImg);
     SetApplicationDockTileImage (dockImgOS);
 #endif
 
@@ -1166,8 +1165,8 @@ bool VBoxConsoleWnd::event (QEvent *e)
             {
                 /* Clear the background */
                 HIRect viewRect;
-                HIViewGetBounds (mapToHIViewRef (this), &viewRect);
-                CGContextClearRect (mapToCGContextRef (this), viewRect);
+                HIViewGetBounds (::darwinToHIViewRef (this), &viewRect);
+                CGContextClearRect (::darwinToCGContextRef (this), viewRect);
             }
             break;
         }
@@ -2135,9 +2134,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         if (aSeamless)
         {
             OSStatus status;
-            HIViewRef viewRef = mapToHIViewRef (console->viewport());
+            HIViewRef viewRef = ::darwinToHIViewRef (console->viewport());
             Assert (VALID_PTR (viewRef));
-            WindowRef windowRef = mapToWindowRef (viewRef);
+            WindowRef windowRef = ::darwinToWindowRef (viewRef);
             Assert (VALID_PTR (windowRef));
             /* @todo=poetzsch: Currently this isn't necessary. I should
              * investigate if we can/should use this. */
@@ -2203,7 +2202,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         {
             /* Undo all mac specific installations */
             OSStatus status;
-            WindowRef windowRef = mapToWindowRef (this);
+            WindowRef windowRef = ::darwinToWindowRef (this);
             Assert (VALID_PTR (windowRef));
             /* See above. 
             status = RemoveEventHandler (mDarwinRegionEventHandlerRef);
@@ -2734,7 +2733,7 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
         /* If we are using the Quartz2D backend we have to trigger
          * an repaint only. All the magic clipping stuff is done
          * in the paint engine. */
-        HIViewReshapeStructure (mapToHIViewRef (console->viewport()));
+        HIViewReshapeStructure (::darwinToHIViewRef (console->viewport()));
 //        ReshapeCustomWindow (mapToWindowRef (this));
     }
     else

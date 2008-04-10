@@ -157,13 +157,13 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
     QWidget* viewport = mView->viewport();
     Assert (VALID_PTR (viewport));
 
-    HIViewRef viewRef = mapToHIViewRef (viewport);
+    HIViewRef viewRef = ::darwinToHIViewRef (viewport);
     Assert (VALID_PTR (viewRef));
     /* Get the dimensions of this HIView */
     HIRect viewRect;
     HIViewGetBounds (viewRef, &viewRect);
     /* Get the context of this window from qt */
-    CGContextRef ctx = mapToCGContextRef (viewport);
+    CGContextRef ctx = ::darwinToCGContextRef (viewport);
     Assert (VALID_PTR (ctx));
     /* We handle the seamless mode as a special case. */
     if (qobject_cast <VBoxConsoleWnd *> (pMain)->isTrueSeamless())
@@ -216,7 +216,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
          * of the bounding box of the current paint event */
         QRect ir = aEvent->rect();
         QRect is = QRect (ir.x() + mView->contentsX(), ir.y() + mView->contentsY(), ir.width(), ir.height());
-        CGImageRef subImage = CGImageCreateWithImageInRect (mImage, mapToHIRect (is));
+        CGImageRef subImage = CGImageCreateWithImageInRect (mImage, ::darwinToHIRect (is));
         Assert (VALID_PTR (subImage));
         /* Ok, for more performance we set a clipping path of the
          * regions given by this paint event. */
@@ -226,7 +226,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
             CGContextBeginPath (ctx);
             /* Add all region rects to the current context as path components */
             for (int i = 0; i < a.size(); ++i)
-                CGContextAddRect (ctx, mapToHIRect (a[i]));
+                CGContextAddRect (ctx, ::darwinToHIRect (a[i]));
             /* Now convert the path to a clipping path. */
             CGContextClip (ctx);
         }
@@ -234,7 +234,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
         /* In any case clip the drawing to the view window */
         CGContextClipToRect (ctx, viewRect);
         /* At this point draw the real vm image */
-        HIRect destRect = mapToHIRect (ir);
+        HIRect destRect = ::darwinToHIRect (ir);
         HIViewDrawCGImage (ctx, &destRect, subImage);
     }
 }
