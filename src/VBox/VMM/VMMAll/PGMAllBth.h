@@ -2975,6 +2975,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 
     PPGM        pPGM = &pVM->pgm.s;
     RTGCPHYS    GCPhysGst;              /* page address derived from the guest page tables. */
+    RTHCPHYS    HCPhysShw;              /* page address derived from the shadow page tables. */
     RTHCPHYS    HCPhys;                 /* general usage. */
     int         rc;
 
@@ -2985,8 +2986,6 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                     ("Invalid GCPhysCR3=%VGp cr3=%VGp\n", pPGM->GCPhysCR3, (RTGCPHYS)cr3),
                     false);
 # ifndef IN_RING0
-    RTHCPHYS    HCPhysShw;              /* page address derived from the shadow page tables. */
-
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
     rc = PGMShwGetPage(pVM, pPGM->pGuestPDGC, NULL, &HCPhysShw);
 #  else
