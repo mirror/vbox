@@ -945,9 +945,11 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
 
     LogFlowFunc (("called\n"));
     rc = vboxClipboardReadDataFromClient(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    if ((rc != VINF_SUCCESS) || (g_ctx.pClient->data.cb == 0))
+    if ((RT_FAILURE(rc)) || (g_ctx.pClient->data.cb == 0))
     {
-        LogRel (("vboxClipboardConvertUtf16: vboxClipboardReadDataFromClient returned %Vrc, %d bytes of data\n", rc, g_ctx.pClient->data.cb));
+        /* If vboxClipboardReadDataFromClient fails then pClient may be invalid */
+        LogRelFunc (("vboxClipboardReadDataFromClient returned %Rrc%s\n", rc,
+                     RT_SUCCESS(rc) ? ", g_ctx.pClient->data.cb == 0" :  ""));
         vboxClipboardEmptyGuestBuffer();
         return false;
     }
@@ -1016,7 +1018,9 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
     rc = vboxClipboardReadDataFromClient(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
     if ((rc != VINF_SUCCESS) || (g_ctx.pClient->data.cb == 0))
     {
-        LogRel (("vboxClipboardConvertUtf8: vboxClipboardReadDataFromClient returned %Vrc, %d bytes of data\n", rc, g_ctx.pClient->data.cb));
+        /* If vboxClipboardReadDataFromClient fails then pClient may be invalid */
+        LogRelFunc (("vboxClipboardReadDataFromClient returned %Rrc%s\n", rc,
+                     RT_SUCCESS(rc) ? ", g_ctx.pClient->data.cb == 0" :  ""));
         vboxClipboardEmptyGuestBuffer();
         return false;
     }
@@ -1107,7 +1111,9 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
     rc = vboxClipboardReadDataFromClient(&g_ctx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
     if ((rc != VINF_SUCCESS) || (g_ctx.pClient->data.cb == 0))
     {
-        LogRel (("vboxClipboardConvertCText: vboxClipboardReadDataFromClient returned %Vrc, %d bytes of data\n", rc, g_ctx.pClient->data.cb));
+        /* If vboxClipboardReadDataFromClient fails then pClient may be invalid */
+        LogRelFunc (("vboxClipboardReadDataFromClient returned %Rrc%s\n", rc,
+                     RT_SUCCESS(rc) ? ", g_ctx.pClient->data.cb == 0" :  ""));
         vboxClipboardEmptyGuestBuffer();
         return false;
     }
