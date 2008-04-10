@@ -40,10 +40,10 @@ if1of ($(BUILD_TARGET),linux solaris) ## @todo X11
  ifndef VBOX_HEADLESS
   VBoxSharedClipboard_SOURCES += \
   	clipboard-helper.cpp \
-  	linux.cpp
+  	x11.cpp
  else
   VBoxSharedClipboard_SOURCES += \
-  	linux-stub.cpp
+  	x11-stub.cpp
  endif
 endif
 
