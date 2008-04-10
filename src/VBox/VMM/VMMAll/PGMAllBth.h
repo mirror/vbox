@@ -3056,7 +3056,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         uint32_t        iPDSrc;
         PGSTPD          pPDSrc = pgmGstGetPaePDPtr(pPGM, (RTGCUINTPTR)GCPtr, &iPDSrc);
         if (!pPDSrc)
+        {
+            AssertMsg(!pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK].n.u1Present, ("Guest PDTPR not present, shadow PDPTR %VX64\n", pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK].u));
             continue;
+        }
 #endif
 
         const SHWPDE PdeDst = pPDDst->a[iPDDst];
