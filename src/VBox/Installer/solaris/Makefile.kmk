@@ -139,7 +139,7 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	@# Clear out the existing package files if needed
 	$(QUIET)rm -rf $(SOLARISINSTDIR)
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/components
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/etc,)
+	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/etc
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/nls,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/qtgcc/lib,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/qtgcc/bin,)
