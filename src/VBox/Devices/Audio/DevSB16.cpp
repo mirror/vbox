@@ -387,7 +387,7 @@ static void dma_cmd (SB16State *s, uint8_t cmd, uint8_t d0, int dma_len)
     }
 
     s->block_size = dma_len + 1;
-    s->block_size <<= (s->fmt_bits == 16);
+    s->block_size <<= ((s->fmt_bits == 16) ? 1 : 0);
     if (!s->dma_auto) {
         /* It is clear that for DOOM and auto-init this value
            shouldn't take stereo into account, while Miles Sound Systems
@@ -420,7 +420,7 @@ static void dma_cmd (SB16State *s, uint8_t cmd, uint8_t d0, int dma_len)
 
     s->left_till_irq = s->block_size;
 
-    s->bytes_per_second = (s->freq << s->fmt_stereo) << (s->fmt_bits == 16);
+    s->bytes_per_second = (s->freq << s->fmt_stereo) << ((s->fmt_bits == 16) ? 1 : 0);
     s->highspeed = 0;
     s->align = (1 << (s->fmt_stereo + (s->fmt_bits == 16))) - 1;
     if (s->block_size & s->align) {
@@ -609,7 +609,7 @@ static void command (SB16State *s, uint8_t cmd)
 
         case 0x90:
         case 0x91:
-            dma_cmd8 (s, ((cmd & 1) == 0) | DMA8_HIGH, -1);
+            dma_cmd8 (s, (((cmd & 1) == 0) ? 1 : 0) | DMA8_HIGH, -1);
             break;
 
         case 0xd0:              /* halt DMA operation. 8bit */
@@ -852,7 +852,7 @@ static void complete (SB16State *s)
 
                 freq = s->freq > 0 ? s->freq : 11025;
                 samples = dsp_get_lohi (s) + 1;
-                bytes = samples << s->fmt_stereo << (s->fmt_bits == 16);
+                bytes = samples << s->fmt_stereo << ((s->fmt_bits == 16) ? 1 : 0);
 #ifndef VBOX
                 ticks = (bytes * ticks_per_sec) / freq;
                 if (ticks < ticks_per_sec / 1024) {
