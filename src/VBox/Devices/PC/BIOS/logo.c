@@ -1,11 +1,3 @@
-#define COMPRESS_NONE        0
-#define COMPRESS_RLE8        1
-#define COMPRESS_RLE4        2
-
-#define BMP_HEADER_OS21      12
-#define BMP_HEADER_OS22      64
-#define BMP_HEADER_WIN3      40
-
 #define WAIT_HZ              64
 #define WAIT_MS              16
 
@@ -17,101 +9,9 @@
 #define uint32_t   Bit32u
 #include <VBox/bioslogo.h>
 
-typedef struct
-{
-    Bit8u Blue;
-    Bit8u Green;
-    Bit8u Red;
-} RGBPAL;
-
-/* BMP File Format Bitmap Header. */
-typedef struct
-{
-    Bit16u      Type;           /* File Type Identifier       */
-    Bit32u      FileSize;       /* Size of File               */
-    Bit16u      Reserved1;      /* Reserved (should be 0)     */
-    Bit16u      Reserved2;      /* Reserved (should be 0)     */
-    Bit32u      Offset;         /* Offset to bitmap data      */
-} BMPINFO;
-
-/* OS/2 1.x Information Header Format. */
-typedef struct
-{
-    Bit32u      Size;           /* Size of Remianing Header   */
-    Bit16u      Width;          /* Width of Bitmap in Pixels  */
-    Bit16u      Height;         /* Height of Bitmap in Pixels */
-    Bit16u      Planes;         /* Number of Planes           */
-    Bit16u      BitCount;       /* Color Bits Per Pixel       */
-} OS2HDR;
-
-/* OS/2 2.0 Information Header Format. */
-typedef struct
-{
-    Bit32u      Size;           /* Size of Remianing Header   */
-    Bit32u      Width;          /* Width of Bitmap in Pixels        */
-    Bit32u      Height;         /* Height of Bitmap in Pixels       */
-    Bit16u      Planes;         /* Number of Planes                 */
-    Bit16u      BitCount;       /* Color Bits Per Pixel             */
-    Bit32u      Compression;    /* Compression Scheme (0=none)      */
-    Bit32u      SizeImage;      /* Size of bitmap in bytes          */
-    Bit32u      XPelsPerMeter;  /* Horz. Resolution in Pixels/Meter */
-    Bit32u      YPelsPerMeter;  /* Vert. Resolution in Pixels/Meter */
-    Bit32u      ClrUsed;        /* Number of Colors in Color Table  */
-    Bit32u      ClrImportant;   /* Number of Important Colors       */
-    Bit16u      Units;          /* Resolution Mesaurement Used      */
-    Bit16u      Reserved;       /* Reserved FIelds (always 0)       */
-    Bit16u      Recording;      /* Orientation of Bitmap            */
-    Bit16u      Rendering;      /* Halftone Algorithm Used on Image */
-    Bit32u      Size1;          /* Halftone Algorithm Data          */
-    Bit32u      Size2;          /* Halftone Algorithm Data          */
-    Bit32u      ColorEncoding;  /* Color Table Format (always 0)    */
-    Bit32u      Identifier;     /* Misc. Field for Application Use  */
-} OS22HDR;
-
-/* Windows 3.x Information Header Format. */
-typedef struct
-{
-    Bit32u      Size;           /* Size of Remianing Header   */
-    Bit32u      Width;          /* Width of Bitmap in Pixels        */
-    Bit32u      Height;         /* Height of Bitmap in Pixels       */
-    Bit16u      Planes;         /* Number of Planes                 */
-    Bit16u      BitCount;       /* Bits Per Pixel                   */
-    Bit32u      Compression;    /* Compression Scheme (0=none)      */
-    Bit32u      SizeImage;      /* Size of bitmap in bytes          */
-    Bit32u      XPelsPerMeter;  /* Horz. Resolution in Pixels/Meter */
-    Bit32u      YPelsPerMeter;  /* Vert. Resolution in Pixels/Meter */
-    Bit32u      ClrUsed;        /* Number of Colors in Color Table  */
-    Bit32u      ClrImportant;   /* Number of Important Colors       */
-} WINHDR;
-
-
-static unsigned char get_mode();
-static void          set_mode();
-static Bit8u         wait(ticks, stop_on_key);
-static void          write_pixel();
-static Bit8u         read_logo_byte();
-static Bit16u        read_logo_word();
-
-/**
- * Get current video mode (VGA).
- * @returns    Video mode.
- */
-unsigned char get_mode()
-  {
-  ASM_START
-    push bp
-    mov  bp, sp
-
-      push bx
-
-      mov  ax, #0x0F00
-      int  #0x10
-
-      pop  bx
-
-    pop  bp
-  ASM_END
-  }
+//static void        set_mode(mode);
+//static void        vesa_set_mode(mode);
+//static Bit8u       wait(ticks, stop_on_key);
 
 /**
  * Set video mode (VGA).
@@ -290,104 +190,18 @@ ASM_END
     return scan_code;
 }
 
-void vesa_set_bank(bank)
-  Bit16u bank;
-  {
-  ASM_START
-    push bp
-    mov  bp, sp
-
-      push bx
-      push dx
-
-      mov  ax, #0x4f05
-      xor  bx, bx
-      mov  dx, 4[bp]    ; bank
-      int  #0x10
-
-      pop  dx
-      pop  bx
-
-    pop  bp
-  ASM_END
-}
-
 Bit8u read_logo_byte(offset)
-  Bit16u offset;
+  Bit8u offset;
 {
-    if (offset)
-    {
-        outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
-        outw(LOGO_IO_PORT, offset);
-    }
-    else
-        outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
-
+    outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET | offset);
     return inb(LOGO_IO_PORT);
 }
 
 Bit16u read_logo_word(offset)
-  Bit16u offset;
+  Bit8u offset;
 {
-    if (offset)
-    {
-        outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
-        outw(LOGO_IO_PORT, offset);
-    }
-    else
-        outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
-
+    outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET | offset);
     return inw(LOGO_IO_PORT);
-}
-
-Bit16u set_logo_x(x)
-  Bit16u x;
-{
-    outw(LOGO_IO_PORT, LOGO_CMD_SET_X);
-    outw(LOGO_IO_PORT, x);
-}
-
-Bit16u set_logo_y(y)
-  Bit16u y;
-{
-    outw(LOGO_IO_PORT, LOGO_CMD_SET_Y);
-    outw(LOGO_IO_PORT, y);
-}
-
-Bit16u set_logo_width(w)
-  Bit16u w;
-{
-    outw(LOGO_IO_PORT, LOGO_CMD_SET_WIDTH);
-    outw(LOGO_IO_PORT, w);
-}
-
-Bit16u set_logo_height(h)
-  Bit16u h;
-{
-    outw(LOGO_IO_PORT, LOGO_CMD_SET_HEIGHT);
-    outw(LOGO_IO_PORT, h);
-}
-
-Bit16u set_logo_depth(d)
-  Bit16u d;
-{
-    outw(LOGO_IO_PORT, LOGO_CMD_SET_DEPTH);
-    outw(LOGO_IO_PORT, d);
-}
-
-Bit16u set_pal_size(s)
-  Bit16u s;
-{
-    outw(LOGO_IO_PORT, LOGO_CMD_SET_PALSIZE);
-    outw(LOGO_IO_PORT, s);
-}
-
-Bit16u set_pal_data(offset)
-  Bit16u offset;
-{
-    outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
-    outw(LOGO_IO_PORT, offset);
-    outw(LOGO_IO_PORT, LOGO_CMD_SET_PAL);
 }
 
 void clear_screen()
@@ -496,22 +310,11 @@ Bit8u get_boot_drive(scode)
     return 0x08;
 }
 
-show_boot_text(step)
-   Bit16u step;
-{
-    outw(LOGO_IO_PORT, LOGO_CMD_SHOW_TEXT | step);
-}
-
-
 void show_logo()
 {
     Bit16u ebda_seg=read_word(0x0040,0x000E);
 
     LOGOHDR     *logo_hdr;
-    BMPINFO     *bmp_info;
-    OS2HDR      *os2_head;
-    OS22HDR     *os22_head;
-    WINHDR      *win_head;
     Bit16u      logo_hdr_size, tmp, i;
     Bit32u      hdr_size;
 
@@ -546,218 +349,41 @@ void show_logo()
     if (!is_fade_in && !is_fade_out && !logo_time)
         goto done;
 
-show_bmp:
+    // Set video mode #0x142 640x480x32bpp
+    vesa_set_mode(0x142);
 
-    // Set offset of bitmap header
-    bmp_info = logo_hdr_size;
-    os2_head = os22_head = win_head = logo_hdr_size + sizeof(BMPINFO);
-
-    // Check bitmap ID
-    tmp = read_logo_word(&bmp_info->Type);
-    if (tmp != 0x4D42) // 'BM'
+    if (is_fade_in)
     {
-        goto error;
+        for (i = 0; i <= LOGO_SHOW_STEPS; i++)
+        {
+            outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | i);
+            wait(16 / WAIT_MS, 0);
+        }
     }
     else
+        outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | LOGO_SHOW_STEPS);
+
+    // Wait (interval in milliseconds)
+    if (!f12_pressed)
     {
-        Bit16u scr_width, scr_height, start_x, start_y;
-        Bit16u width, height, compr, clr_used;
-        Bit16u pad_bytes, depth, planes, palette_size, palette_data;
+        scode = wait(logo_time / WAIT_MS, 0);
+        if (scode == F12_SCAN_CODE)
+            f12_pressed = 1;
+    }
 
-        // Check the size of the information header that indicates
-        // the structure type
-        hdr_size = read_logo_word(&win_head->Size);
-        hdr_size |= read_logo_word(0) << 16;
-
-        if (hdr_size == BMP_HEADER_OS21) // OS2 1.x header
+    // Fade out (only if F12 was not pressed)
+    if (is_fade_out && !f12_pressed)
+    {
+        for (i = LOGO_SHOW_STEPS; i > 0 ; i--)
         {
-            width = read_logo_word(&os2_head->Width);
-            height = read_logo_word(&os2_head->Height);
-            planes = read_logo_word(&os2_head->Planes);
-            depth = read_logo_word(&os2_head->BitCount);
-            compr = COMPRESS_NONE;
-            clr_used = 0;
-        }
-        else
-        if (hdr_size == BMP_HEADER_OS22) // OS2 2.0 header
-        {
-            width = read_logo_word(&os22_head->Width);
-            height = read_logo_word(&os22_head->Height);
-            planes = read_logo_word(&os22_head->Planes);
-            depth = read_logo_word(&os22_head->BitCount);
-            compr = read_logo_word(&os22_head->Compression);
-            clr_used = read_logo_word(&os22_head->ClrUsed);
-        }
-        else
-        if (hdr_size == BMP_HEADER_WIN3) // Windows 3.x header
-        {
-            width = read_logo_word(&win_head->Width);
-            height = read_logo_word(&win_head->Height);
-            planes = read_logo_word(&win_head->Planes);
-            depth = read_logo_word(&win_head->BitCount);
-            compr = read_logo_word(&win_head->Compression);
-            clr_used = read_logo_word(&win_head->ClrUsed);
-        }
-        else
-            goto error;
-
-        // Test some bitmap fields
-        if (width > 640 || height > 480)
-            goto error;
-
-        if (planes != 1)
-            goto error;
-
-        if (depth != 4 && depth != 8 && depth != 24)
-            goto error;
-
-        if (clr_used > 256)
-            goto error;
-
-        // Bitmap processing
-        if (compr != COMPRESS_NONE)
-            goto error;
-
-        // Screen size
-        scr_width = 640;
-        scr_height = 480;
-
-        // Center of screen
-        start_x = (scr_width - width) / 2;
-        start_y = (scr_height - height) / 2;
-
-        // Read palette
-        if (hdr_size == BMP_HEADER_OS21)
-        {
-            palette_size = (Bit16u) (1 << (planes * depth));
-        }
-        else
-        if (hdr_size == BMP_HEADER_WIN3 || hdr_size == BMP_HEADER_OS22)
-        {
-            if (clr_used)
-                palette_size = clr_used;
-            else
-                palette_size = (Bit16u) (1 << (planes * depth));
-        }
-
-        set_pal_size(palette_size);
-
-        palette_data = logo_hdr_size + sizeof(BMPINFO) + hdr_size;
-        set_pal_data(palette_data);
-
-        // Set video mode #0x142 640x480x32bpp
-        vesa_set_mode(0x142);
-
-        // 0 bank
-        vesa_set_bank(0);
-
-        // Show bitmap
-        tmp = read_logo_word(&bmp_info->Offset);
-        outw(LOGO_IO_PORT, LOGO_CMD_SET_OFFSET);
-        outw(LOGO_IO_PORT, logo_hdr_size + tmp);
-
-        // Clear screen
-        outw(LOGO_IO_PORT, LOGO_CMD_CLS);
-
-        // Set dirty bits
-        outw(LOGO_IO_PORT, LOGO_CMD_SET_DIRTY);
-
-        if (is_fade_in)
-        {
-            for (i = 0; i <= LOGO_SHOW_STEPS; i++)
-            {
-                set_logo_x(start_x);
-                set_logo_y(scr_height - start_y);
-                set_logo_width(width);
-                set_logo_height(height);
-                set_logo_depth(depth);
-
-                outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | i);
-
-                if (uBootMenu == 2)
-                    show_boot_text(i);
-
-                // Blit buffer
-                outw(LOGO_IO_PORT, LOGO_CMD_BUF_BLT);
-
-                // Set dirty bits
-                outw(LOGO_IO_PORT, LOGO_CMD_SET_DIRTY);
-
-                wait(16 / WAIT_MS, 0);
-            }
-        }
-        else
-        {
-            set_logo_x(start_x);
-            set_logo_y(scr_height - start_y);
-            set_logo_width(width);
-            set_logo_height(height);
-            set_logo_depth(depth);
-
-            outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | LOGO_SHOW_STEPS);
-
-            if (uBootMenu == 2)
-                show_boot_text(LOGO_SHOW_STEPS);
-
-            // Blit buffer
-            outw(LOGO_IO_PORT, LOGO_CMD_BUF_BLT);
-
-            // Set dirty bits
-            outw(LOGO_IO_PORT, LOGO_CMD_SET_DIRTY);
-        }
-
-        // Wait (interval in milliseconds)
-        if (!f12_pressed)
-        {
-            scode = wait(logo_time / WAIT_MS, 0);
+            outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | i);
+            scode = wait(16 / WAIT_MS, 0);
             if (scode == F12_SCAN_CODE)
                 f12_pressed = 1;
         }
-
-        // Fade out (only if F12 was not pressed)
-        if (is_fade_out && !f12_pressed)
-        {
-            for (i = LOGO_SHOW_STEPS; i > 0 ; i--)
-            {
-                set_logo_x(start_x);
-                set_logo_y(scr_height - start_y);
-                set_logo_width(width);
-                set_logo_height(height);
-                set_logo_depth(depth);
-                outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | i);
-
-                if (uBootMenu == 2)
-                    show_boot_text(i);
-
-                // Blit buffer
-                outw(LOGO_IO_PORT, LOGO_CMD_BUF_BLT);
-
-                // Set dirty bits
-                outw(LOGO_IO_PORT, LOGO_CMD_SET_DIRTY);
-
-                scode = wait(16 / WAIT_MS, 0);
-                if (scode == F12_SCAN_CODE)
-                    f12_pressed = 1;
-            }
-        }
     }
 
-    goto done;
-
-error:
-    if (!is_logo_failed)
-    {
-        is_logo_failed = 1;
-
-        logo_hdr_size = 0;
-
-        // Switch to defaul logo
-        outw(LOGO_IO_PORT, LOGO_CMD_SET_DEFAULT);
-
-        goto show_bmp;
-    }
 done:
-
     // Clear forced boot drive setting.
     write_byte(ebda_seg,&EbdaData->uForceBootDevice, 0);
 
