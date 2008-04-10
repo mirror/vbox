@@ -1008,7 +1008,7 @@ static const uint32_t crctab[256] =
 	0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d,
 };
 
-DECLINLINE(int) padr_match(PCNetState *pData, const uint8_t *buf, int size)
+DECLINLINE(int) padr_match(PCNetState *pData, const uint8_t *buf, size_t size)
 {
     struct ether_header *hdr = (struct ether_header *)buf;
     int     result;
@@ -1035,7 +1035,7 @@ DECLINLINE(int) padr_match(PCNetState *pData, const uint8_t *buf, int size)
     return result;
 }
 
-DECLINLINE(int) padr_bcast(PCNetState *pData, const uint8_t *buf, int size)
+DECLINLINE(int) padr_bcast(PCNetState *pData, const uint8_t *buf, size_t size)
 {
     static uint8_t aBCAST[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
     struct ether_header *hdr = (struct ether_header *)buf;
@@ -1046,7 +1046,7 @@ DECLINLINE(int) padr_bcast(PCNetState *pData, const uint8_t *buf, int size)
    return result;
 }
 
-static int ladr_match(PCNetState *pData, const uint8_t *buf, int size)
+static int ladr_match(PCNetState *pData, const uint8_t *buf, size_t size)
 {
     struct ether_header *hdr = (struct ether_header *)buf;
     if (RT_UNLIKELY(hdr->ether_dhost[0] & 0x01) && ((uint64_t *)&pData->aCSR[8])[0] != 0LL)
@@ -1742,7 +1742,7 @@ static int pcnetTdtePoll(PCNetState *pData, TMD *tmd)
 /**
  * Write data into guest receive buffers.
  */
-static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, int size)
+static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, size_t size)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pData);
     int is_padr = 0, is_bcast = 0, is_ladr = 0;
