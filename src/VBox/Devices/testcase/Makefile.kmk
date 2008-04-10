@@ -47,7 +47,7 @@ endif
 ifdef VBOX_WITH_AHCI
 tstDeviceStructSizeGC_DEFS     += VBOX_WITH_AHCI
 endif
-ifdef VBOX_WITH_E1000
+ifdef VBOX_WITH_E1000_DISABLED
 tstDeviceStructSizeGC_DEFS     += VBOX_WITH_E1000
 endif
 tstDeviceStructSizeGC_SOURCES   = tstDeviceStructSizeGC.cpp
@@ -68,7 +68,7 @@ endif
 ifdef VBOX_WITH_AHCI
 tstDeviceStructSize_DEFS     += VBOX_WITH_AHCI
 endif
-ifdef VBOX_WITH_E1000
+ifdef VBOX_WITH_E1000_DISABLED
 tstDeviceStructSize_DEFS     += VBOX_WITH_E1000
 endif
 tstDeviceStructSize_INCS     = \
