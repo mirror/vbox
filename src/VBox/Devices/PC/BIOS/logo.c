@@ -312,27 +312,19 @@ Bit8u get_boot_drive(scode)
 
 void show_logo()
 {
-    Bit16u ebda_seg=read_word(0x0040,0x000E);
+    Bit16u      ebda_seg = read_word(0x0040,0x000E);
+    Bit8u       f12_pressed = 0;
+    Bit8u       scode;
+    Bit16u      tmp, i;
 
-    LOGOHDR     *logo_hdr;
-    Bit16u      logo_hdr_size, tmp, i;
-    Bit32u      hdr_size;
-
-    Bit8u       is_fade_in, is_fade_out, is_logo_failed, uBootMenu;
+    LOGOHDR    *logo_hdr = 0;
+    Bit8u       is_fade_in, is_fade_out, uBootMenu;
     Bit16u      logo_time;
 
-    Bit32u      offset;
-
-    Bit8u       scode, f12_pressed = 0;
-    Bit8u       c;
 
     // Set PIT to 1ms ticks
     wait_init();
 
-    is_logo_failed = 0;
-
-    logo_hdr = 0;
-    logo_hdr_size = sizeof(LOGOHDR);
 
     // Get main signature
     tmp = read_logo_word(&logo_hdr->u16Signature);
@@ -393,7 +385,7 @@ void show_logo()
 
 done:
     // Clear forced boot drive setting.
-    write_byte(ebda_seg,&EbdaData->uForceBootDevice, 0);
+    write_byte(ebda_seg, &EbdaData->uForceBootDevice, 0);
 
     // Don't restore previous video mode
     // The default text mode should be set up. (defect #1235)
