@@ -325,29 +325,28 @@ typedef struct VGAState {
     /** The name of the logo file. */
     R3PTRTYPE(char *)           pszLogoFile;
     /** Bitmap image data. */
-    R3PTRTYPE(uint8_t *)        pu8Bitmap;
-    /** Clear screen flag. */
-    uint8_t                     fClearScreen;
-    uint8_t                     Padding8;       /**< Alignment padding. */
+    R3PTRTYPE(uint8_t *)        pu8LogoBitmap;
     /** Current logo command. */
     uint16_t                    LogoCommand;
     /** Bitmap width. */
-    uint16_t                    cbWidth;
+    uint16_t                    cxLogo;
     /** Bitmap height. */
-    uint16_t                    cbHeight;
+    uint16_t                    cyLogo;
     /** Bitmap planes. */
-    uint16_t                    cbPlanes;
+    uint16_t                    cLogoPlanes;
     /** Bitmap depth. */
-    uint16_t                    cbBitCount;
+    uint16_t                    cLogoBits;
     /** Bitmap compression. */
-    uint16_t                    Compression;
+    uint16_t                    LogoCompression;
     /** Bitmap colors used. */
-    uint16_t                    cbClrUsed;
+    uint16_t                    cLogoUsedColors;
     /** Palette size. */
-    uint16_t                    cbPal;
-    uint8_t                     Padding9[6];       /**< Alignment padding. */
+    uint16_t                    cLogoPalEntries;
+    /** Clear screen flag. */
+    uint8_t                     fLogoClearScreen;
+    uint8_t                     Padding8[7];    /**< Alignment padding. */
     /** Palette data. */
-    uint32_t                    au32Palette[256];
+    uint32_t                    au32LogoPalette[256];
 #endif /* VBOX */
 } VGAState;
 #ifdef VBOX

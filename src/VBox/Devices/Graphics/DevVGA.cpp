@@ -186,15 +186,19 @@ typedef WINHDR *PWINHDR;
 
 #define BMP_ID               0x4D42
 
-/** BMP compressions. */
+/** @name BMP compressions.
+ * @{ */
 #define BMP_COMPRESS_NONE    0
 #define BMP_COMPRESS_RLE8    1
 #define BMP_COMPRESS_RLE4    2
+/** @} */
 
-/** BMP header sizes. */
+/** @name BMP header sizes.
+ * @{ */
 #define BMP_HEADER_OS21      12
 #define BMP_HEADER_OS22      64
 #define BMP_HEADER_WIN3      40
+/** @} */
 
 /** The BIOS boot menu text position, X. */
 #define LOGO_F12TEXT_X       340
@@ -2850,268 +2854,6 @@ static int vga_copy_screen_from(PVGASTATE s, uint8_t *buf, int x, int y, int wid
 /* -=-=-=-=-=- all contexts -=-=-=-=-=- */
 
 /**
- * Parse the logo bitmap data.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- */
-PDMBOTHCBDECL(int) vbeParseBitmap(PVGASTATE pData)
-{
-    uint16_t    i;
-    PBMPINFO    bmpInfo;
-    POS2HDR     os2Hdr;
-    POS22HDR    os22Hdr;
-    PWINHDR     winHdr;
-
-    /*
-     * Get bitmap header data
-     */
-    bmpInfo = (PBMPINFO)(pData->pu8Logo + sizeof(LOGOHDR));
-    winHdr = (PWINHDR)(pData->pu8Logo + sizeof(LOGOHDR) + sizeof(BMPINFO));
-
-    if (bmpInfo->Type == BMP_ID)
-    {
-        switch (winHdr->Size)
-        {
-            case BMP_HEADER_OS21:
-                os2Hdr = (POS2HDR)winHdr;
-                pData->cbWidth = os2Hdr->Width;
-                pData->cbHeight = os2Hdr->Height;
-                pData->cbPlanes = os2Hdr->Planes;
-                pData->cbBitCount = os2Hdr->BitCount;
-                pData->Compression = BMP_COMPRESS_NONE;
-                pData->cbClrUsed = 0;
-                break;
-
-            case BMP_HEADER_OS22:
-                os22Hdr = (POS22HDR)winHdr;
-                pData->cbWidth = os22Hdr->Width;
-                pData->cbHeight = os22Hdr->Height;
-                pData->cbPlanes = os22Hdr->Planes;
-                pData->cbBitCount = os22Hdr->BitCount;
-                pData->Compression = os22Hdr->Compression;
-                pData->cbClrUsed = os22Hdr->ClrUsed;
-                break;
-
-            case BMP_HEADER_WIN3:
-                pData->cbWidth = winHdr->Width;
-                pData->cbHeight = winHdr->Height;
-                pData->cbPlanes = winHdr->Planes;
-                pData->cbBitCount = winHdr->BitCount;
-                pData->Compression = winHdr->Compression;
-                pData->cbClrUsed = winHdr->ClrUsed;
-                break;
-
-            default:
-                AssertMsgFailed(("Unsupported bitmap header.\n"));
-                break;
-        }
-
-        if (pData->cbWidth > LOGO_MAX_WIDTH || pData->cbHeight > LOGO_MAX_HEIGHT)
-        {
-            AssertMsgFailed(("Bitmap %dx%d is too big.\n", pData->cbWidth, pData->cbHeight));
-            return VERR_INVALID_PARAMETER;
-        }
-
-        if (pData->cbPlanes != 1)
-        {
-            AssertMsgFailed(("Bitmap planes %d != 1.\n", pData->cbPlanes));
-            return VERR_INVALID_PARAMETER;
-        }
-
-        if (pData->cbBitCount != 4 && pData->cbBitCount != 8 && pData->cbBitCount != 24)
-        {
-            AssertMsgFailed(("Unsupported %d depth.\n", pData->cbBitCount));
-            return VERR_INVALID_PARAMETER;
-        }
-
-        if (pData->cbClrUsed > 256)
-        {
-            AssertMsgFailed(("Unsupported %d colors.\n", pData->cbClrUsed));
-            return VERR_INVALID_PARAMETER;
-        }
-
-        if (pData->Compression != BMP_COMPRESS_NONE)
-        {
-            AssertMsgFailed(("Unsupported %d compression.\n", pData->Compression));
-            return VERR_INVALID_PARAMETER;
-        }
-
-        /*
-         * Read bitmap palette
-         */
-        if (!pData->cbClrUsed)
-            pData->cbPal = 1 << (pData->cbPlanes * pData->cbBitCount);
-        else
-            pData->cbPal = pData->cbClrUsed;
-
-        if (pData->cbPal)
-        {
-            uint8_t *pu8Pal = (uint8_t *)(pData->pu8Logo + sizeof(LOGOHDR) + sizeof(BMPINFO) + winHdr->Size);
-
-            for (i = 0; i <= pData->cbPal; i++)
-            {
-                uint16_t j;
-                uint32_t u32Pal = 0;
-
-                for (j = 0; j < 3; j++)
-                {
-                    uint8_t b = *pu8Pal++;
-                    u32Pal <<= 8;
-                    u32Pal |= b;
-                }
-
-                pu8Pal++; /* skip unused byte */
-                pData->au32Palette[i] = u32Pal;
-            }
-        }
-
-        /*
-         * Bitmap data offset
-         */
-        pData->pu8Bitmap = (pData->pu8Logo + sizeof(LOGOHDR) + bmpInfo->Offset);
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Show logo bitmap data.
- *
- * @returns VBox status code.
- *
- * @param   cbDepth     Logo depth.
- * @param   xLogo       Logo X position.
- * @param   yLogo       Logo Y position.
- * @param   cbWidth     Logo width.
- * @param   cbHeight    Logo height.
- * @param   cbStep      Fade in/fade out step.
- * @param   pu32Palette Palette data.
- * @param   pu8Src      Source buffer.
- * @param   pu8Dst      Destination buffer.
- */
-void vbeShowBitmap(uint16_t cbDepth, uint16_t xLogo, uint16_t yLogo, uint16_t cbWidth, uint16_t cbHeight, uint8_t cbStep, uint32_t *pu32Palette, const uint8_t *pu8Src, uint8_t *pu8Dst)
-{
-    uint16_t        i;
-    size_t          cbPadBytes  = 0;
-    size_t          cbLineDst   = LOGO_MAX_WIDTH * 4;
-    uint16_t        cyLeft      = cbHeight;
-
-    pu8Dst += xLogo * 4 + yLogo * cbLineDst;
-
-    switch (cbDepth)
-    {
-        case 1:
-            pu8Dst += cbHeight * cbLineDst;
-            cbPadBytes = 0;
-            break;
-
-        case 4:
-            if (((cbWidth % 8) == 0) || ((cbWidth % 8) > 6))
-                cbPadBytes = 0;
-            else if ((cbWidth % 8) <= 2)
-                cbPadBytes = 3;
-            else if ((cbWidth % 8) <= 4)
-                cbPadBytes = 2;
-            else
-                cbPadBytes = 1;
-            break;
-
-        case 8:
-            cbPadBytes = ((cbWidth % 4) == 0) ? 0 : (4 - (cbWidth % 4));
-            break;
-
-        case 24:
-            cbPadBytes = cbWidth % 4;
-            break;
-    }
-
-    uint8_t j = 0, c = 0;
-
-    while (cyLeft-- > 0)
-    {
-        uint8_t *pu8TmpPtr = pu8Dst;
-
-        if (cbDepth != 1)
-            j = 0;
-
-        for (i = 0; i < cbWidth; i++)
-        {
-            uint8_t pix;
-
-            switch (cbDepth)
-            {
-                case 1:
-                {
-                    if (!j)
-                        c = *pu8Src++;
-
-                    pix = (c & 1) ? 0xFF : 0;
-                    c >>= 1;
-
-                    *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                    *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                    *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                    *pu8TmpPtr++;
-
-                    j = (j + 1) % 8;
-                    break;
-                }
-
-                case 4:
-                {
-                    if (!j)
-                        c = *pu8Src++;
-
-                    pix = (c >> 4) & 0xF;
-                    c <<= 4;
-
-                    uint32_t u32Pal = pu32Palette[pix];
-
-                    pix = (u32Pal >> 16) & 0xFF;
-                    *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                    pix = (u32Pal >> 8) & 0xFF;
-                    *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                    pix = u32Pal & 0xFF;
-                    *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                    *pu8TmpPtr++;
-
-                    j = (j + 1) % 2;
-                    break;
-                }
-
-                case 8:
-                {
-                    uint32_t u32Pal = pu32Palette[*pu8Src++];
-
-                    pix = (u32Pal >> 16) & 0xFF;
-                    *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                    pix = (u32Pal >> 8) & 0xFF;
-                    *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                    pix = u32Pal & 0xFF;
-                    *pu8TmpPtr++ = pix * cbStep / LOGO_SHOW_STEPS;
-                    *pu8TmpPtr++;
-                    break;
-                }
-
-                case 24:
-                    *pu8TmpPtr++ = *pu8Src++ * cbStep / LOGO_SHOW_STEPS;
-                    *pu8TmpPtr++ = *pu8Src++ * cbStep / LOGO_SHOW_STEPS;
-                    *pu8TmpPtr++ = *pu8Src++ * cbStep / LOGO_SHOW_STEPS;
-                    *pu8TmpPtr++;
-                    break;
-            }
-        }
-
-        pu8Dst -= cbLineDst;
-        pu8Src += cbPadBytes;
-    }
-}
-
-
-/**
  * Port I/O Handler for VGA OUT operations.
  *
  * @returns VBox status code.
@@ -3925,6 +3667,270 @@ PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 # endif /* VBE_NEW_DYN_LIST */
 
 
+/**
+ * Parse the logo bitmap data at init time.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pData       The VGA instance data.
+ */
+static int vbeParseBitmap(PVGASTATE pData)
+{
+    uint16_t    i;
+    PBMPINFO    bmpInfo;
+    POS2HDR     pOs2Hdr;
+    POS22HDR    pOs22Hdr;
+    PWINHDR     pWinHdr;
+
+    /*
+     * Get bitmap header data
+     */
+    bmpInfo = (PBMPINFO)(pData->pu8Logo + sizeof(LOGOHDR));
+    pWinHdr = (PWINHDR)(pData->pu8Logo + sizeof(LOGOHDR) + sizeof(BMPINFO));
+
+    if (bmpInfo->Type == BMP_ID)
+    {
+        switch (pWinHdr->Size)
+        {
+            case BMP_HEADER_OS21:
+                pOs2Hdr = (POS2HDR)pWinHdr;
+                pData->cxLogo = pOs2Hdr->Width;
+                pData->cyLogo = pOs2Hdr->Height;
+                pData->cLogoPlanes = pOs2Hdr->Planes;
+                pData->cLogoBits = pOs2Hdr->BitCount;
+                pData->LogoCompression = BMP_COMPRESS_NONE;
+                pData->cLogoUsedColors = 0;
+                break;
+
+            case BMP_HEADER_OS22:
+                pOs22Hdr = (POS22HDR)pWinHdr;
+                pData->cxLogo = pOs22Hdr->Width;
+                pData->cyLogo = pOs22Hdr->Height;
+                pData->cLogoPlanes = pOs22Hdr->Planes;
+                pData->cLogoBits = pOs22Hdr->BitCount;
+                pData->LogoCompression = pOs22Hdr->Compression;
+                pData->cLogoUsedColors = pOs22Hdr->ClrUsed;
+                break;
+
+            case BMP_HEADER_WIN3:
+                pData->cxLogo = pWinHdr->Width;
+                pData->cyLogo = pWinHdr->Height;
+                pData->cLogoPlanes = pWinHdr->Planes;
+                pData->cLogoBits = pWinHdr->BitCount;
+                pData->LogoCompression = pWinHdr->Compression;
+                pData->cLogoUsedColors = pWinHdr->ClrUsed;
+                break;
+
+            default:
+                AssertMsgFailed(("Unsupported bitmap header.\n"));
+                break;
+        }
+
+        if (pData->cxLogo > LOGO_MAX_WIDTH || pData->cyLogo > LOGO_MAX_HEIGHT)
+        {
+            AssertMsgFailed(("Bitmap %ux%u is too big.\n", pData->cxLogo, pData->cyLogo));
+            return VERR_INVALID_PARAMETER;
+        }
+
+        if (pData->cLogoPlanes != 1)
+        {
+            AssertMsgFailed(("Bitmap planes %u != 1.\n", pData->cLogoPlanes));
+            return VERR_INVALID_PARAMETER;
+        }
+
+        if (pData->cLogoBits != 4 && pData->cLogoBits != 8 && pData->cLogoBits != 24)
+        {
+            AssertMsgFailed(("Unsupported %u depth.\n", pData->cLogoBits));
+            return VERR_INVALID_PARAMETER;
+        }
+
+        if (pData->cLogoUsedColors > 256)
+        {
+            AssertMsgFailed(("Unsupported %u colors.\n", pData->cLogoUsedColors));
+            return VERR_INVALID_PARAMETER;
+        }
+
+        if (pData->LogoCompression != BMP_COMPRESS_NONE)
+        {
+            AssertMsgFailed(("Unsupported %u compression.\n", pData->LogoCompression));
+            return VERR_INVALID_PARAMETER;
+        }
+
+        /*
+         * Read bitmap palette
+         */
+        if (!pData->cLogoUsedColors)
+            pData->cLogoPalEntries = 1 << (pData->cLogoPlanes * pData->cLogoBits);
+        else
+            pData->cLogoPalEntries = pData->cLogoUsedColors;
+
+        if (pData->cLogoPalEntries)
+        {
+            const uint8_t *pu8Pal = pData->pu8Logo + sizeof(LOGOHDR) + sizeof(BMPINFO) + pWinHdr->Size; /* ASSUMES Size location (safe) */
+
+            for (i = 0; i <= pData->cLogoPalEntries; i++)
+            {
+                uint16_t j;
+                uint32_t u32Pal = 0;
+
+                for (j = 0; j < 3; j++)
+                {
+                    uint8_t b = *pu8Pal++;
+                    u32Pal <<= 8;
+                    u32Pal |= b;
+                }
+
+                pu8Pal++; /* skip unused byte */
+                pData->au32LogoPalette[i] = u32Pal;
+            }
+        }
+
+        /*
+         * Bitmap data offset
+         */
+        pData->pu8LogoBitmap = pData->pu8Logo + sizeof(LOGOHDR) + bmpInfo->Offset;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Show logo bitmap data.
+ *
+ * @returns VBox status code.
+ *
+ * @param   cbDepth     Logo depth.
+ * @param   xLogo       Logo X position.
+ * @param   yLogo       Logo Y position.
+ * @param   cxLogo      Logo width.
+ * @param   cyLogo      Logo height.
+ * @param   iStep       Fade in/fade out step.
+ * @param   pu32Palette Palette data.
+ * @param   pu8Src      Source buffer.
+ * @param   pu8Dst      Destination buffer.
+ */
+static void vbeShowBitmap(uint16_t cBits, uint16_t xLogo, uint16_t yLogo, uint16_t cxLogo, uint16_t cyLogo, uint8_t iStep,
+                          const uint32_t *pu32Palette, const uint8_t *pu8Src, uint8_t *pu8Dst)
+{
+    uint16_t        i;
+    size_t          cbPadBytes  = 0;
+    size_t          cbLineDst   = LOGO_MAX_WIDTH * 4;
+    uint16_t        cyLeft      = cyLogo;
+
+    pu8Dst += xLogo * 4 + yLogo * cbLineDst;
+
+    switch (cBits)
+    {
+        case 1:
+            pu8Dst += cyLogo * cbLineDst;
+            cbPadBytes = 0;
+            break;
+
+        case 4:
+            if (((cxLogo % 8) == 0) || ((cxLogo % 8) > 6))
+                cbPadBytes = 0;
+            else if ((cxLogo % 8) <= 2)
+                cbPadBytes = 3;
+            else if ((cxLogo % 8) <= 4)
+                cbPadBytes = 2;
+            else
+                cbPadBytes = 1;
+            break;
+
+        case 8:
+            cbPadBytes = ((cxLogo % 4) == 0) ? 0 : (4 - (cxLogo % 4));
+            break;
+
+        case 24:
+            cbPadBytes = cxLogo % 4;
+            break;
+    }
+
+    uint8_t j = 0, c = 0;
+
+    while (cyLeft-- > 0)
+    {
+        uint8_t *pu8TmpPtr = pu8Dst;
+
+        if (cBits != 1)
+            j = 0;
+
+        for (i = 0; i < cxLogo; i++)
+        {
+            uint8_t pix;
+
+            switch (cBits)
+            {
+                case 1:
+                {
+                    if (!j)
+                        c = *pu8Src++;
+
+                    pix = (c & 1) ? 0xFF : 0;
+                    c >>= 1;
+
+                    *pu8TmpPtr++ = pix * iStep / LOGO_SHOW_STEPS;
+                    *pu8TmpPtr++ = pix * iStep / LOGO_SHOW_STEPS;
+                    *pu8TmpPtr++ = pix * iStep / LOGO_SHOW_STEPS;
+                    *pu8TmpPtr++;
+
+                    j = (j + 1) % 8;
+                    break;
+                }
+
+                case 4:
+                {
+                    if (!j)
+                        c = *pu8Src++;
+
+                    pix = (c >> 4) & 0xF;
+                    c <<= 4;
+
+                    uint32_t u32Pal = pu32Palette[pix];
+
+                    pix = (u32Pal >> 16) & 0xFF;
+                    *pu8TmpPtr++ = pix * iStep / LOGO_SHOW_STEPS;
+                    pix = (u32Pal >> 8) & 0xFF;
+                    *pu8TmpPtr++ = pix * iStep / LOGO_SHOW_STEPS;
+                    pix = u32Pal & 0xFF;
+                    *pu8TmpPtr++ = pix * iStep / LOGO_SHOW_STEPS;
+                    *pu8TmpPtr++;
+
+                    j = (j + 1) % 2;
+                    break;
+                }
+
+                case 8:
+                {
+                    uint32_t u32Pal = pu32Palette[*pu8Src++];
+
+                    pix = (u32Pal >> 16) & 0xFF;
+                    *pu8TmpPtr++ = pix * iStep / LOGO_SHOW_STEPS;
+                    pix = (u32Pal >> 8) & 0xFF;
+                    *pu8TmpPtr++ = pix * iStep / LOGO_SHOW_STEPS;
+                    pix = u32Pal & 0xFF;
+                    *pu8TmpPtr++ = pix * iStep / LOGO_SHOW_STEPS;
+                    *pu8TmpPtr++;
+                    break;
+                }
+
+                case 24:
+                    *pu8TmpPtr++ = *pu8Src++ * iStep / LOGO_SHOW_STEPS;
+                    *pu8TmpPtr++ = *pu8Src++ * iStep / LOGO_SHOW_STEPS;
+                    *pu8TmpPtr++ = *pu8Src++ * iStep / LOGO_SHOW_STEPS;
+                    *pu8TmpPtr++;
+                    break;
+            }
+        }
+
+        pu8Dst -= cbLineDst;
+        pu8Src += cbPadBytes;
+    }
+}
+
+
+
 
 /**
  * Port I/O Handler for BIOS Logo OUT operations.
@@ -3950,72 +3956,65 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         /* Get the logo command */
         switch (u32 & 0xFF00)
         {
-            int  i, j;
             case LOGO_CMD_SET_OFFSET:
                 pData->offLogoData = u32 & 0xFF;
                 break;
 
             case LOGO_CMD_SHOW_BMP:
             {
-                uint8_t cbStep = u32 & 0xFF;
-
-                const uint8_t  *pu8Src = pData->pu8Bitmap;
+                uint8_t         iStep = u32 & 0xFF;
+                const uint8_t  *pu8Src = pData->pu8LogoBitmap;
                 uint8_t        *pu8Dst;
                 PLOGOHDR        pLogoHdr = (PLOGOHDR)pData->pu8Logo;
-                uint16_t        xLogo, yLogo;
                 uint32_t        offDirty = 0;
-
-                xLogo = (LOGO_MAX_WIDTH - pData->cbWidth) / 2;
-                yLogo = LOGO_MAX_HEIGHT - (LOGO_MAX_HEIGHT - pData->cbHeight) / 2;
+                uint16_t        xLogo = (LOGO_MAX_WIDTH - pData->cxLogo) / 2;
+                uint16_t        yLogo = LOGO_MAX_HEIGHT - (LOGO_MAX_HEIGHT - pData->cyLogo) / 2;
 
                 if (pData->vram_size >= LOGO_MAX_SIZE * 2)
-                    pu8Dst = (uint8_t *)pData->vram_ptrHC + LOGO_MAX_SIZE;
+                    pu8Dst = pData->vram_ptrHC + LOGO_MAX_SIZE;
                 else
-                    pu8Dst = (uint8_t *)pData->vram_ptrHC;
+                    pu8Dst = pData->vram_ptrHC;
 
-                /* Clear screen */
-                if (!pData->fClearScreen)
+                /* Clear screen - except on power on... */
+                if (!pData->fLogoClearScreen)
                 {
-                    uint32_t *pu32TmpPtr;
-                    pu32TmpPtr = (uint32_t *)pu8Dst;
+                    uint32_t *pu32TmpPtr = (uint32_t *)pu8Dst;
 
                     /* Clear vram */
-                    for (i = 0; i < LOGO_MAX_WIDTH; i++)
+                    for (int i = 0; i < LOGO_MAX_WIDTH; i++)
                     {
-                        for (j = 0; j < LOGO_MAX_HEIGHT; j++)
+                        for (int j = 0; j < LOGO_MAX_HEIGHT; j++)
                             *pu32TmpPtr++ = 0;
                     }
-                    pData->fClearScreen = true;
+                    pData->fLogoClearScreen = true;
                 }
 
-                /* Show bitmap */
-                vbeShowBitmap(pData->cbBitCount, xLogo, yLogo,
-                              pData->cbWidth, pData->cbHeight,
-                              cbStep, (uint32_t *)&pData->au32Palette[0],
+                /* Show the bitmap. */
+                vbeShowBitmap(pData->cLogoBits, xLogo, yLogo,
+                              pData->cxLogo, pData->cyLogo,
+                              iStep, &pData->au32LogoPalette[0],
                               pu8Src, pu8Dst);
 
-                /* Show 'Press F12...' text */
+                /* Show the 'Press F12...' text. */
                 if (pLogoHdr->fu8ShowBootMenu == 2)
-                {
                     vbeShowBitmap(1, LOGO_F12TEXT_X, LOGO_F12TEXT_Y,
                                   LOGO_F12TEXT_WIDTH, LOGO_F12TEXT_HEIGHT,
-                                  cbStep, (uint32_t *)&pData->au32Palette[0],
+                                  iStep, &pData->au32LogoPalette[0],
                                   &g_abLogoF12BootText[0], pu8Dst);
-                }
 
-                /* Blit offscreen buffer */
+                /* Blit the offscreen buffer. */
                 if (pData->vram_size >= LOGO_MAX_SIZE * 2)
                 {
                     uint32_t *pu32TmpDst = (uint32_t *)pData->vram_ptrHC;
-                    uint32_t *pu32TmpSrc = (uint32_t *)pData->vram_ptrHC + LOGO_MAX_SIZE / 4;
-                    for (i = 0; i < LOGO_MAX_WIDTH; i++)
+                    uint32_t *pu32TmpSrc = (uint32_t *)(pData->vram_ptrHC + LOGO_MAX_SIZE);
+                    for (int i = 0; i < LOGO_MAX_WIDTH; i++)
                     {
-                        for (j = 0; j < LOGO_MAX_HEIGHT; j++)
+                        for (int j = 0; j < LOGO_MAX_HEIGHT; j++)
                             *pu32TmpDst++ = *pu32TmpSrc++;
                     }
-                }             
+                }
 
-                /* Set dirty flags */
+                /* Set the dirty flags. */
                 while (offDirty <= LOGO_MAX_SIZE)
                 {
                     vga_set_dirty(pData, offDirty);
