@@ -105,7 +105,11 @@ int main()
  */
 RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase, uint64_t *pu64)
 {
-    const char *psz = pszValue;
+    const char   *psz = pszValue;
+    int           iShift;
+    int           rc;
+    uint64_t      u64;
+    unsigned char uch;
 
     /*
      * Positive/Negative stuff.
@@ -152,18 +156,19 @@ RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBas
      * Interpret the value.
      * Note: We only support ascii digits at this time... :-)
      */
-    int             iShift = g_auchShift[uBase];
+    iShift = g_auchShift[uBase];
     pszValue = psz; /* (Prefix and sign doesn't count in the digit counting.) */
-    int             rc = VINF_SUCCESS;
-    uint64_t        u64 = 0;
-    unsigned char   uch;
+    rc = VINF_SUCCESS;
+    u64 = 0;
     while ((uch = (unsigned char)*psz) != 0)
     {
         unsigned char chDigit = g_auchDigits[uch];
+        uint64_t u64Prev;
+
         if (chDigit >= uBase)
             break;
 
-        uint64_t u64Prev = u64;
+        u64Prev = u64;
         u64 *= uBase;
         u64 += chDigit;
         if (u64Prev > u64 || (u64Prev >> iShift))
@@ -533,7 +538,11 @@ RTDECL(uint8_t) RTStrToUInt8(const char *pszValue)
  */
 RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase, int64_t *pi64)
 {
-    const char *psz = pszValue;
+    const char   *psz = pszValue;
+    int           iShift;
+    int           rc;
+    int64_t       i64;
+    unsigned char uch;
 
     /*
      * Positive/Negative stuff.
@@ -580,18 +589,19 @@ RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase
      * Interpret the value.
      * Note: We only support ascii digits at this time... :-)
      */
-    int             iShift = g_auchShift[uBase]; /** @todo test this, it's probably not 100% right yet. */
+    iShift = g_auchShift[uBase]; /** @todo test this, it's probably not 100% right yet. */
     pszValue = psz; /* (Prefix and sign doesn't count in the digit counting.) */
-    int             rc = VINF_SUCCESS;
-    int64_t         i64 = 0;
-    unsigned char   uch;
+    rc = VINF_SUCCESS;
+    i64 = 0;
     while ((uch = (unsigned char)*psz) != 0)
     {
         unsigned char chDigit = g_auchDigits[uch];
+        int64_t i64Prev;
+
         if (chDigit >= uBase)
             break;
 
-        int64_t i64Prev = i64;
+        i64Prev = i64;
         i64 *= uBase;
         i64 += chDigit;
         if (i64Prev > i64 || (i64Prev >> iShift))
