@@ -291,92 +291,70 @@ static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                 if (rc == DDI_SUCCESS)
                 {
                     /*
-                     * Check vendor and device ID.
+                     * Map the register address space.
                      */
-                    uint16_t uVendorID = pci_config_get16(PciHandle, PCI_CONF_VENID);
-                    uint16_t uDeviceID = pci_config_get16(PciHandle, PCI_CONF_DEVID);
-                    if (   uVendorID == VMMDEV_VENDORID
-                        && uDeviceID == VMMDEV_DEVICEID)
+                    caddr_t baseAddr;
+                    ddi_device_acc_attr_t deviceAttr;
+                    deviceAttr.devacc_attr_version = DDI_DEVICE_ATTR_V0;
+                    deviceAttr.devacc_attr_endian_flags = DDI_NEVERSWAP_ACC;
+                    deviceAttr.devacc_attr_dataorder = DDI_STRICTORDER_ACC;
+                    deviceAttr.devacc_attr_access = DDI_DEFAULT_ACC;
+                    rc = ddi_regs_map_setup(pDip, 1, &baseAddr, 0, 0, &deviceAttr, &pState->PciIOHandle);
+                    if (rc == DDI_SUCCESS)
                     {
                         /*
-                         * Verify PCI class of the device (a bit paranoid).
+                         * Read size of the MMIO region.
                          */
-                        uint8_t uClass = pci_config_get8(PciHandle, PCI_CONF_BASCLASS);
-                        uint8_t uSubClass = pci_config_get8(PciHandle, PCI_CONF_SUBCLASS);
-                        if (   uClass == PCI_CLASS_PERIPH
-                            && uSubClass == PCI_PERIPH_OTHER)
+                        pState->uIOPortBase = (uintptr_t)baseAddr;
+                        rc = ddi_dev_regsize(pDip, 2, &pState->cbMMIO);
+                        if (rc == DDI_SUCCESS)
                         {
-                            /*
-                             * Map the register address space.
-                             */
-                            caddr_t baseAddr;
-                            ddi_device_acc_attr_t deviceAttr;
-                            deviceAttr.devacc_attr_version = DDI_DEVICE_ATTR_V0;
-                            deviceAttr.devacc_attr_endian_flags = DDI_NEVERSWAP_ACC;
-                            deviceAttr.devacc_attr_dataorder = DDI_STRICTORDER_ACC;
-                            deviceAttr.devacc_attr_access = DDI_DEFAULT_ACC;
-                            rc = ddi_regs_map_setup(pDip, 1, &baseAddr, 0, 0, &deviceAttr, &pState->PciIOHandle);
+                            rc = ddi_regs_map_setup(pDip, 2, &pState->pMMIOBase, 0, pState->cbMMIO, &deviceAttr,
+                                        &pState->PciMMIOHandle);
                             if (rc == DDI_SUCCESS)
                             {
                                 /*
-                                 * Read size of the MMIO region.
+                                 * Add IRQ of VMMDev.
                                  */
-                                pState->uIOPortBase = (uintptr_t)baseAddr;
-                                rc = ddi_dev_regsize(pDip, 2, &pState->cbMMIO);
+                                rc = VBoxGuestSolarisAddIRQ(pDip, pState);
                                 if (rc == DDI_SUCCESS)
                                 {
-                                    rc = ddi_regs_map_setup(pDip, 2, &pState->pMMIOBase, 0, pState->cbMMIO, &deviceAttr,
-                                                &pState->PciMMIOHandle);
-                                    if (rc == DDI_SUCCESS)
+                                    /*
+                                     * Call the common device extension initializer.
+                                     */
+                                    rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, pState->pMMIOBase,
+                                                pState->cbMMIO, VBOXOSTYPE_Solaris);
+                                    if (RT_SUCCESS(rc))
                                     {
-                                        /*
-                                         * Add IRQ of VMMDev.
-                                         */
-                                        rc = VBoxGuestSolarisAddIRQ(pDip, pState);
+                                        rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);
                                         if (rc == DDI_SUCCESS)
                                         {
-                                            /*
-                                             * Call the common device extension initializer.
-                                             */
-                                            rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, pState->pMMIOBase,
-                                                        pState->cbMMIO, VBOXOSTYPE_Solaris);
-                                            if (RT_SUCCESS(rc))
-                                            {
-                                                rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);
-                                                if (rc == DDI_SUCCESS)
-                                                {
-                                                    g_pDip = pDip;
-                                                    ddi_set_driver_private(pDip, pState);
-                                                    pci_config_teardown(&PciHandle);
-                                                    ddi_report_dev(pDip);
-                                                    return DDI_SUCCESS;
-                                                }
-
-                                                LogRel((DEVICE_NAME ":ddi_create_minor_node failed.\n"));
-                                            }
-                                            else
-                                                LogRel((DEVICE_NAME ":VBoxGuestInitDevExt failed.\n"));
-                                            VBoxGuestSolarisRemoveIRQ(pDip, pState);
+                                            g_pDip = pDip;
+                                            ddi_set_driver_private(pDip, pState);
+                                            pci_config_teardown(&PciHandle);
+                                            ddi_report_dev(pDip);
+                                            return DDI_SUCCESS;
                                         }
-                                        else
-                                            LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ failed.\n"));
-                                        ddi_regs_map_free(&pState->PciMMIOHandle);
+
+                                        LogRel((DEVICE_NAME ":ddi_create_minor_node failed.\n"));
                                     }
                                     else
-                                        LogRel((DEVICE_NAME ":ddi_regs_map_setup for MMIO region failed.\n"));
+                                        LogRel((DEVICE_NAME ":VBoxGuestInitDevExt failed.\n"));
+                                    VBoxGuestSolarisRemoveIRQ(pDip, pState);
                                 }
                                 else
-                                    LogRel((DEVICE_NAME ":ddi_dev_regsize for MMIO region failed.\n"));
-                                ddi_regs_map_free(&pState->PciIOHandle);
+                                    LogRel((DEVICE_NAME ":VBoxGuestSolarisAddIRQ failed.\n"));
+                                ddi_regs_map_free(&pState->PciMMIOHandle);
                             }
                             else
-                                LogRel((DEVICE_NAME ":ddi_regs_map_setup for IOport failed.\n"));
+                                LogRel((DEVICE_NAME ":ddi_regs_map_setup for MMIO region failed.\n"));
                         }
                         else
-                            LogRel((DEVICE_NAME ":PCI class/sub-class does not match.\n"));
+                            LogRel((DEVICE_NAME ":ddi_dev_regsize for MMIO region failed.\n"));
+                        ddi_regs_map_free(&pState->PciIOHandle);
                     }
                     else
-                        LogRel((DEVICE_NAME ":PCI vendorID, deviceID does not match.\n"));
+                        LogRel((DEVICE_NAME ":ddi_regs_map_setup for IOport failed.\n"));
                     pci_config_teardown(&PciHandle);
                 }
                 else

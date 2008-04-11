@@ -100,6 +100,6 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions: \
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so                                       $(SOLARISINSTDIR)/vboxmouse_drv_71.so
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxdevlink.sed                  $(SOLARISINSTDIR)/etc/devlink.tab
 	$(call MSG_L1,Creating install package: $@)
-	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME)
+	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME) 1>/dev/null 2>/dev/null
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARISINSTDIR)/$(PKGFILENAME) $(PATH_BIN)/additions/$(PKGFILENAME)
 

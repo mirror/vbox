@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # innotek VirtualBox
 # VirtualBox Guest Additions kernel module control script for Solaris.
 #
@@ -61,18 +61,18 @@ module_loaded()
 
 check_root()
 {
-    if test `id -u` -ne 0; then
+    if test `/usr/xpg4/bin/id -u` -ne 0; then
         abort "This program must be run with administrator privileges.  Aborting"
     fi
 }
 
-start()
+start_module()
 {
     if module_loaded; then
         info "vboxguest already loaded..."
     else
         /usr/sbin/add_drv -i'pci80ee,cafe' -m'* 0666 root sys' vboxguest
-        if ! module_loaded; then
+        if test ! module_loaded; then
             abort "Failed to load vboxguest."
         elif test -c "/devices/pci@0,0/pci80ee,cafe@4:vboxguest"; then
             info "Loaded vboxguest."
@@ -83,7 +83,7 @@ start()
     fi
 }
 
-stop()
+stop_module()
 {
     if module_loaded; then
         /usr/sbin/rem_drv vboxguest
@@ -93,15 +93,15 @@ stop()
     fi
 }
 
-restart()
+restart_module()
 {
-    stop
+    stop_module
     sync
-    start
+    start_module
     return 0
 }
 
-status()
+status_module()
 {
     if module_loaded; then
         info "vboxguest running."
@@ -120,16 +120,16 @@ fi
 
 case "$1" in
 start)
-    start
+    start_module
     ;;
 stop)
-    stop
+    stop_module
     ;;
 restart)
-    restart
+    restart_module
     ;;
 status)
-    status
+    status_module
     ;;
 *)
     echo "Usage: $0 {start|stop|restart|status}"
