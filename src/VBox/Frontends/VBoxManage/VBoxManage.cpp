@@ -336,6 +336,12 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-biospxedebug on|off]\n"
                  "                            [-boot<1-4> none|floppy|dvd|disk|net>]\n"
                  "                            [-hd<a|b|d> none|<uuid>|<filename>]\n"
+#ifdef VBOX_WITH_AHCI
+                 "                            [-sata on|off]\n"
+                 "                            [-sataportcount <1-30>]\n"
+                 "                            [-sataport<1-30> none|<uuid>|<filename>]\n"
+                 "                            [-sataideemulation hda|hdb|hdc|hdd <1-30>]\n"
+#endif
                  "                            [-dvd none|<uuid>|<filename>|host:<drive>]\n"
                  "                            [-dvdpassthrough on|off]\n"
                  "                            [-floppy disabled|empty|<uuid>|\n"
@@ -411,12 +417,6 @@ static void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("                            [-usb on|off]\n"
                  "                            [-usbehci on|off]\n"
                  "                            [-snapshotfolder default|<path>]\n");
-#ifdef VBOX_WITH_AHCI
-        RTPrintf("                            [-sata on|off]\n"
-                 "                            [-sataportcount <1-30>]\n"
-                 "                            [-sataport<1-30> none|<uuid>|<filename>]\n"
-                 "                            [-sataideemulation hda|hdb|hdc|hdd <1-30>]\n");
-#endif
         RTPrintf("\n");
     }
 
@@ -1073,7 +1073,27 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         else
             RTPrintf("Floppy:          %s\n", pszFloppy.raw());
     }
+	
+    /*
+     * SATA.
+     */
+    ComPtr<ISATAController> SATACtl;
+    rc = machine->COMGETTER(SATAController)(SATACtl.asOutParam());
+    if (SUCCEEDED(rc))
+    {
+        BOOL fEnabled;
+        rc = SATACtl->COMGETTER(Enabled)(&fEnabled);
+        if (FAILED(rc))
+            fEnabled = false;
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("sata=\"%s\"\n", fEnabled ? "on" : "off");
+        else
+            RTPrintf("SATA:          %s\n", fEnabled ? "enabled" : "disabled");
+    }
 
+    /*
+	 * Hard disks
+	 */
     ComPtr<IHardDisk> hardDisk;
     Bstr filePath;
     rc = machine->GetHardDisk(StorageBus_IDE, 0, 0, hardDisk.asOutParam());
@@ -2020,23 +2040,6 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         RTPrintf("<none>\n");
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("\n");
-
-    /*
-     * SATA.
-     */
-    ComPtr<ISATAController> SATACtl;
-    rc = machine->COMGETTER(SATAController)(SATACtl.asOutParam());
-    if (SUCCEEDED(rc))
-    {
-        BOOL fEnabled;
-        rc = SATACtl->COMGETTER(Enabled)(&fEnabled);
-        if (FAILED(rc))
-            fEnabled = false;
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("sata=\"%s\"\n", fEnabled ? "on" : "off");
-        else
-            RTPrintf("SATA:            %s\n", fEnabled ? "enabled" : "disabled");
-    }
 
     if (console)
     {
