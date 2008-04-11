@@ -95,31 +95,11 @@
      </widget>
     </item>
     <item>
-     <layout class="QHBoxLayout" >
-      <item>
-       <spacer>
-        <property name="orientation" >
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" >
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QPushButton" name="mBtnClose" >
-        <property name="text" >
-         <string>&amp;Close</string>
-        </property>
-        <property name="default" >
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <widget class="QDialogButtonBox" name="mButtonBox" >
+      <property name="standardButtons" >
+       <set>QDialogButtonBox::Close</set>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -128,5 +108,22 @@
  <resources>
   <include location="../VirtualBox.qrc" />
  </resources>
- <connections/>
+ <connections>
+  <connection>
+   <sender>mButtonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>VBoxVMInformationDlg</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>246</x>
+     <y>348</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>246</x>
+     <y>195</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
