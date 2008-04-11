@@ -428,20 +428,10 @@ done:
 
             clear_screen();
 
-            // Show menu
-            printf("\n"
-                   "VirtualBox temporary boot device selection\n"
-                   "\n"
-                   "Detected Hard disks:\n"
-                   "\n");
+            // Show menu. Note that some versions of bcc freak out if we split these strings.
+            printf("\nVirtualBox temporary boot device selection\n\nDetected Hard disks:\n\n");
             print_detected_harddisks();
-            printf("\n"
-                   "Other boot devices:\n"
-                   " f) Floppy\n"
-                   " c) CD-ROM\n"
-                   " l) LAN\n"
-                   "\n"
-                   " b) Continue booting\n");
+            printf("\nOther boot devices:\n f) Floppy\n c) CD-ROM\n l) LAN\n\n b) Continue booting\n");
 
 
 
