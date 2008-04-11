@@ -4337,9 +4337,10 @@ static void vmdkDump(void *pBackendData)
                     pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
                     pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
                     VMDK_BYTE2SECTOR(pImage->cbSize));
-        RTLogPrintf("Header: uuidCreation={%Vuuid}\n", pImage->ImageUuid);
-        RTLogPrintf("Header: uuidModification={%Vuuid}\n", pImage->ModificationUuid);
-        RTLogPrintf("Header: uuidParent={%Vuuid}\n", pImage->ParentUuid);
+        RTLogPrintf("Header: uuidCreation={%Vuuid}\n", &pImage->ImageUuid);
+        RTLogPrintf("Header: uuidModification={%Vuuid}\n", &pImage->ModificationUuid);
+        RTLogPrintf("Header: uuidParent={%Vuuid}\n", &pImage->ParentUuid);
+        RTLogPrintf("Header: uuidParentModification={%Vuuid}\n", &pImage->ParentModificationUuid);
     }
 }
 
