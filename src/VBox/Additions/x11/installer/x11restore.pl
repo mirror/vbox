@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Revision:$
+# $Revision$
 #
 # innotek VirtualBox
 # Start the Guest Additions X11 Client
@@ -51,7 +51,7 @@ foreach $cfg (@cfg_files)
                     # On Solaris just delete existing conf if backup is not found (Possible on distros like Indiana)
                     if ($os_type =~ 'SunOS')
                     {
-                        rename $cfg, $cfg.".delete_this";
+                        unlink $cfg
                     }
                     else
                     {
