@@ -2075,8 +2075,6 @@ VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, va_list
          */
 #ifdef LOG_ENABLED
         PRTLOGGERGC pLogger = pVM->vmm.s.pLoggerHC;
-if (rc == VINF_VMM_CALL_HOST && pVM->vmm.s.u64CallHostArg == 12345) _asm int 3;
-
         if (    pLogger
             &&  pLogger->offScratch > 0)
             RTLogFlushGC(NULL, pLogger);
