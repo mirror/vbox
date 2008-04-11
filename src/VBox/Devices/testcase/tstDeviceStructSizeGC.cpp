@@ -903,6 +903,7 @@ int main()
     GEN_CHECK_OFF(AHCIPort, IPort);
     GEN_CHECK_OFF(AHCIPort, IPortAsync);
     GEN_CHECK_OFF(AHCIPort, PCHSGeometry);
+    GEN_CHECK_OFF(AHCIPort, Led);
     GEN_CHECK_OFF(AHCIPort, cTotalSectors);
     GEN_CHECK_OFF(AHCIPort, cMultSectors);
     GEN_CHECK_OFF(AHCIPort, uATATransferMode);
@@ -918,6 +919,9 @@ int main()
     GEN_CHECK_OFF(AHCI, dev);
     GEN_CHECK_OFF(AHCI, pDevInsHC);
     GEN_CHECK_OFF(AHCI, pDevInsGC);
+    GEN_CHECK_OFF(AHCI, IBase);
+    GEN_CHECK_OFF(AHCI, ILeds);
+    GEN_CHECK_OFF(AHCI, pLedsConnector);
     GEN_CHECK_OFF(AHCI, MMIOBase);
     GEN_CHECK_OFF(AHCI, regHbaCap);
     GEN_CHECK_OFF(AHCI, regHbaCtrl);
