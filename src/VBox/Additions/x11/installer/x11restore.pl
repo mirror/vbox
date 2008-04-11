@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+# $Revision:$
 #
 # innotek VirtualBox
 # Start the Guest Additions X11 Client
