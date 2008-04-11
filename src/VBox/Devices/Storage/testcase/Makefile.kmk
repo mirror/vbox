@@ -42,14 +42,25 @@ ifdef VBOX_WITH_TESTCASES
  PROGRAMS += tstVDI
  ifeq ($(BUILD_TARGET),l4)
   tstVDI_TEMPLATE = VBOXLNXHOSTR3EXE
-  tstVDI_LIBS     = \
-         $(PATH_LIB)/VBoxDDULnxHostR3.a \
-	 $(PATH_LIB)/RuntimeLnxHostR3.a
  else
   tstVDI_TEMPLATE = VBOXR3TSTEXE
-  tstVDI_LIBS     = $(vditool_LIBS)
  endif
+ tstVDI_LIBS     = $(vditool_LIBS)
  tstVDI_SOURCES  = tstVDI.cpp
+endif
+
+#
+# Basic testcase for the VD code.
+#
+ifdef VBOX_WITH_TESTCASES
+ PROGRAMS += tstVD
+ ifeq ($(BUILD_TARGET),l4)
+  tstVD_TEMPLATE = VBOXLNXHOSTR3EXE
+ else
+  tstVD_TEMPLATE = VBOXR3TSTEXE
+ endif
+ tstVD_LIBS     = $(vditool_LIBS)
+ tstVD_SOURCES  = tstVD.cpp
 endif
 
 include	$(PATH_KBUILD)/subfooter.kmk
