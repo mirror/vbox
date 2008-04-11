@@ -4166,7 +4166,7 @@ static DECLCALLBACK(void) supdrvDetermineAsyncTscWorker(RTCPUID idCpu, void *pvU
  */
 bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores)
 {
-    static uint64_t s_aTsc[8][8];
+    static uint64_t s_aTsc[8][RTCPUSET_MAX_CPUS];
     uint64_t u64Diff, u64DiffMin, u64DiffMax, u64TscLast;
     int iSlot, iCpu, cCpus;
     bool fBackwards;
@@ -4179,12 +4179,11 @@ bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores)
     cCpus = RTCpuSetCount(&OnlineCpus);
     if (cCpus < 2)
         return false;
+    Assert(cCpus <= RT_ELEMENTS(s_aTsc[0]));
 
     /*
-     * Collect data from the first 8 online CPUs.
+     * Collect data from the online CPUs.
      */
-    if (cCpus > RT_ELEMENTS(s_aTsc))
-        cCpus = RT_ELEMENTS(s_aTsc);
     for (iSlot = 0; iSlot < RT_ELEMENTS(s_aTsc); iSlot++)
     {
         RTCPUID iCpuSet = 0;
