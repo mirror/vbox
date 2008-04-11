@@ -80,13 +80,14 @@ static DECLCALLBACK(size_t) strbufoutput(void *pvArg, const char *pachChars, siz
 
 RTDECL(size_t) RTStrPrintfExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cchBuffer, const char *pszFormat, va_list args)
 {
+    STRBUFARG Arg;
+
     if (!cchBuffer)
     {
         AssertMsgFailed(("Excellent idea! Format a string with no space for the output!\n"));
         return 0;
     }
 
-    STRBUFARG Arg;
     Arg.psz = pszBuffer;
     Arg.cch = cchBuffer - 1;
     return RTStrFormatV(strbufoutput, &Arg, pfnFormat, pvArg, pszFormat, args);
@@ -101,8 +102,9 @@ RTDECL(size_t) RTStrPrintfV(char *pszBuffer, size_t cchBuffer, const char *pszFo
 RTDECL(size_t) RTStrPrintfEx(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...)
 {
     va_list args;
+    size_t cbRet;
     va_start(args, pszFormat);
-    size_t cbRet = RTStrPrintfExV(pfnFormat, pvArg, pszBuffer, cchBuffer, pszFormat, args);
+    cbRet = RTStrPrintfExV(pfnFormat, pvArg, pszBuffer, cchBuffer, pszFormat, args);
     va_end(args);
     return cbRet;
 }
@@ -110,8 +112,9 @@ RTDECL(size_t) RTStrPrintfEx(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffe
 RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...)
 {
     va_list args;
+    size_t cbRet;
     va_start(args, pszFormat);
-    size_t cbRet = RTStrPrintfV(pszBuffer, cchBuffer, pszFormat, args);
+    cbRet = RTStrPrintfV(pszBuffer, cchBuffer, pszFormat, args);
     va_end(args);
     return cbRet;
 }

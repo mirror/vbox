@@ -181,6 +181,10 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
                            const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                            RTUINT fDestFlags, char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, va_list args)
 {
+    int        rc;
+    size_t     cb;
+    PRTLOGGER  pLogger;
+
     /*
      * Validate input.
      */
@@ -199,11 +203,12 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
     /*
      * Allocate a logger instance.
      */
-    int         rc;
-    size_t      cb = RT_OFFSETOF(RTLOGGER, afGroups[cGroups + 1]) + RTPATH_MAX;
-    PRTLOGGER   pLogger = (PRTLOGGER)RTMemAllocZ(cb);
+    cb = RT_OFFSETOF(RTLOGGER, afGroups[cGroups + 1]) + RTPATH_MAX;
+    pLogger = (PRTLOGGER)RTMemAllocZ(cb);
     if (pLogger)
     {
+        uint8_t *pu8Code;
+
         pLogger->u32Magic    = RTLOGGER_MAGIC;
         pLogger->papszGroups = papszGroups;
         pLogger->cMaxGroups  = cGroups;
@@ -219,7 +224,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
         /*
          * Emit wrapper code.
          */
-        uint8_t *pu8Code = (uint8_t *)RTMemExecAlloc(64);
+        pu8Code = (uint8_t *)RTMemExecAlloc(64);
         if (pu8Code)
         {
             pLogger->pfnLogger = *(PFNRTLOGGER*)&pu8Code;
@@ -510,6 +515,10 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGro
  */
 RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
 {
+    int            rc;
+    RTUINT         iGroup;
+    RTSEMFASTMUTEX MutexSem;
+
     /*
      * Validate input.
      */
@@ -519,12 +528,12 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
     /*
      * Acquire logger instance sem and disable all logging. (paranoia)
      */
-    int rc = rtlogLock(pLogger);
+    rc = rtlogLock(pLogger);
     if (RT_FAILURE(rc))
         return rc;
 
     pLogger->fFlags |= RTLOGFLAGS_DISABLED;
-    RTUINT iGroup = pLogger->cGroups;
+    iGroup = pLogger->cGroups;
     while (iGroup-- > 0)
         pLogger->afGroups[iGroup] = 0;
 
@@ -550,7 +559,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
     /*
      * Free the mutex and the instance memory.
      */
-    RTSEMFASTMUTEX MutexSem = pLogger->MutexSem;
+    MutexSem = pLogger->MutexSem;
     pLogger->MutexSem = NIL_RTSEMFASTMUTEX;
     if (MutexSem != NIL_RTSEMFASTMUTEX)
     {
@@ -759,6 +768,9 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger, PFNRTLOGGER pfn
  */
 RTDECL(int) RTLogCopyGroupsAndFlags(PRTLOGGER pDstLogger, PCRTLOGGER pSrcLogger, unsigned fFlagsOr, unsigned fFlagsAnd)
 {
+    int      rc;
+    unsigned cGroups;
+
     /*
      * Validate input.
      */
@@ -785,8 +797,8 @@ RTDECL(int) RTLogCopyGroupsAndFlags(PRTLOGGER pDstLogger, PCRTLOGGER pSrcLogger,
      */
     pDstLogger->fFlags = (pSrcLogger->fFlags & fFlagsAnd) | fFlagsOr;
 
-    int rc = VINF_SUCCESS;
-    unsigned cGroups = pSrcLogger->cGroups;
+    rc = VINF_SUCCESS;
+    cGroups = pSrcLogger->cGroups;
     if (cGroups < pDstLogger->cMaxGroups)
     {
         AssertMsgFailed(("cMaxGroups=%zd cGroups=%zd (min size %d)\n", pDstLogger->cMaxGroups,
@@ -882,13 +894,17 @@ RTDECL(void) RTLogFlushToLogger(PRTLOGGER pSrcLogger, PRTLOGGER pDstLogger)
  */
 static bool rtlogIsGroupMatching(const char *pszGrp, const char **ppachMask, unsigned cchMask)
 {
+    const char *pachMask;
+
     if (!pszGrp || !*pszGrp)
         return false;
-    const char *pachMask = *ppachMask;
+    pachMask = *ppachMask;
     for (;;)
     {
         if (RT_C_TO_LOWER(*pszGrp) != RT_C_TO_LOWER(*pachMask))
         {
+            const char *pszTmp;
+
             /*
              * Check for wildcard and do a minimal match if found.
              */
@@ -906,7 +922,7 @@ static bool rtlogIsGroupMatching(const char *pszGrp, const char **ppachMask, uns
                 break; /* we're good */
 
             /* do extremely minimal matching (fixme) */
-            const char *pszTmp = strchr(pszGrp, RT_C_TO_LOWER(*pachMask));
+            pszTmp = strchr(pszGrp, RT_C_TO_LOWER(*pachMask));
             if (!pszTmp)
                 pszTmp = strchr(pszGrp, RT_C_TO_UPPER(*pachMask));
             if (!pszTmp)
@@ -973,6 +989,10 @@ RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszVar)
          */
         bool    fEnabled = true;
         char    ch;
+        const char *pszStart;
+        unsigned i;
+        size_t cch;
+
         while ((ch = *pszVar) == '+' || ch == '-' || ch == ' ' || ch == '\t' || ch == '\n' || ch == ';')
         {
             if (ch == '+' || ch == '-' || ';')
@@ -985,7 +1005,7 @@ RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszVar)
         /*
          * Find end.
          */
-        const char *pszStart = pszVar;
+        pszStart = pszVar;
         while ((ch = *pszVar) != '\0' && ch != '+' && ch != '-' && ch != ' ' && ch != '\t')
             pszVar++;
 
@@ -993,8 +1013,7 @@ RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszVar)
          * Find the group (ascii case insensitive search).
          * Special group 'all'.
          */
-        unsigned    i;
-        size_t      cch = pszVar - pszStart;
+        cch = pszVar - pszStart;
         if (    cch >= 3
             &&  (pszStart[0] == 'a' || pszStart[0] == 'A')
             &&  (pszStart[1] == 'l' || pszStart[1] == 'L')
@@ -1099,9 +1118,9 @@ static unsigned rtlogGroupFlags(const char *psz)
             { "n",          RTLOGGRPFLAGS_NONAME },
             { "noname",     RTLOGGRPFLAGS_NONAME }
         };
-        psz++;
         unsigned    i;
         bool        fFound = false;
+        psz++;
         for (i = 0; i < ELEMENTS(aFlags) && !fFound; i++)
         {
             const char *psz1 = aFlags[i].pszFlag;
@@ -1171,12 +1190,6 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
      */
     while (*pszVar)
     {
-        /* skip blanks. */
-        while (RT_C_IS_SPACE(*pszVar))
-            pszVar++;
-        if (!*pszVar)
-            return rc;
-
         /* parse instruction. */
         static struct
         {
@@ -1214,6 +1227,14 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
         /* check no prefix. */
         bool fNo = false;
         char ch;
+        unsigned i;
+
+        /* skip blanks. */
+        while (RT_C_IS_SPACE(*pszVar))
+            pszVar++;
+        if (!*pszVar)
+            return rc;
+
         while ((ch = *pszVar) != '\0')
         {
             if (ch == 'n' && pszVar[1] == 'o')
@@ -1236,7 +1257,6 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
         }
 
         /* instruction. */
-        unsigned i;
         for (i = 0; i < ELEMENTS(aDest); i++)
         {
             if (!strncmp(pszVar, aDest[i].pszInstr, aDest[i].cchInstr))
@@ -1370,12 +1390,15 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
     RTNATIVETHREAD  Self = RTThreadNativeSelf();
     if (pLogger)
     {
+        int32_t i;
+        unsigned j;
+
         AssertReturn(pLogger->u32Magic == RTLOGGER_MAGIC, VERR_INVALID_MAGIC);
 
         /*
          * Iterate the table to see if there is already an entry for this thread.
          */
-        int32_t i = ELEMENTS(g_aPerThreadLoggers);
+        i = ELEMENTS(g_aPerThreadLoggers);
         while (i-- > 0)
             if (g_aPerThreadLoggers[i].NativeThread == Self)
             {
@@ -1394,7 +1417,6 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
             return VERR_BUFFER_OVERFLOW; /* horrible error code! */
         }
 
-        unsigned j;
         for (j = 0; j < 10; j++)
         {
             i = ELEMENTS(g_aPerThreadLoggers);
@@ -1623,6 +1645,8 @@ RTDECL(void) RTLogRelLoggerV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup
  */
 static void rtlogLogger(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args)
 {
+    int rc;
+
     /*
      * Validate and correct iGroup.
      */
@@ -1645,7 +1669,7 @@ static void rtlogLogger(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, con
     /*
      * Acquire logger instance sem.
      */
-    int rc = rtlogLock(pLogger);
+    rc = rtlogLock(pLogger);
     if (RT_FAILURE(rc))
         return;
 
@@ -1852,6 +1876,8 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
         for (;;)
         {
             size_t cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
+            char *psz;
+            const char *pszNewLine;
 
             /*
              * Pending prefix?
@@ -1884,7 +1910,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                  * Write the prefixes.
                  * psz is pointing to the current position.
                  */
-                char *psz = &pLogger->achScratch[pLogger->offScratch];
+                psz = &pLogger->achScratch[pLogger->offScratch];
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_TS)
                 {
 #if defined(IN_RING3) || defined(IN_GC)
@@ -2156,7 +2182,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 cb = cbChars;
 
             /* have newline? */
-            const char *pszNewLine = (const char *)memchr(pachChars, '\n', cb);
+            pszNewLine = (const char *)memchr(pachChars, '\n', cb);
             if (pszNewLine)
             {
                 if (pLogger->fFlags & RTLOGFLAGS_USECRLF)
