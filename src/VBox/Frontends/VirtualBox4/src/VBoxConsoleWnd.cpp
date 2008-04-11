@@ -2102,16 +2102,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             }
         }
 
-#ifdef Q_WS_MAC
-        if (!aSeamless)
-        {
-            /* Make the apple menu bar go away before setMaximumSize! */
-            OSStatus orc = SetSystemUIMode (kUIModeAllHidden, kUIOptionDisableAppleMenu);
-            if (orc)
-                LogRel (("Error: Failed to change UI mode (rc=%#x) when changing to fullscreen mode. (=> menu bar trouble)\n", orc));
-        }
-#endif
-
         /* Adjust colors and appearance. */
         mErasePalette = centralWidget()->palette();
         QPalette palette(mErasePalette);
@@ -2125,7 +2115,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         console->setVerticalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
 
         /* Going fullscreen */
-        setWindowState (windowState() ^ Qt::WindowFullScreen);
+        switchToFullscreen (aOn, aSeamless);
 #ifdef Q_WS_MAC /* setMask seems to not include the far border pixels. */
 //        QRect maskRect = dtw->screenGeometry (this);
 //        maskRect.setRight (maskRect.right() + 1);
@@ -2230,7 +2220,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         hidden_children.clear();
 
         /* Going normal || maximized */
-        setWindowState (windowState() ^ Qt::WindowFullScreen);
+        switchToFullscreen (aOn, aSeamless);
 
         qApp->processEvents();
         console->toggleFSMode();
@@ -2266,8 +2256,39 @@ CGImageRef VBoxConsoleWnd::dockImageState() const
 //
 // Private slots
 /////////////////////////////////////////////////////////////////////////////
+void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
+{
+#ifdef Q_WS_MAC
+    if (aSeamless)
+        if (aOn)
+        {
+            /* Save for later restoring */
+            mNormalGeometry = geometry();
+            mSavedFlags = windowFlags();
+            /* Remove the frame from the window */
+            setParent (0, Qt::Window | Qt::FramelessWindowHint | (windowFlags() & 0xffff0000));
+            /* Set it maximized */
+            setWindowState (windowState() ^ Qt::WindowMaximized);
+        }
+        else
+        {
+            /* Restore old values */
+            setParent (0, mSavedFlags);
+            setGeometry (mNormalGeometry);
+        }
+    else
+        /* Here we are going really fullscreen */
+        setWindowState (windowState() ^ Qt::WindowFullScreen);
+#else
+    NOREF (aOn);
+    NOREF (aSeamless);
+    setWindowState (windowState() ^ Qt::WindowFullScreen);
+#endif
+}
+
 void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
 {
+#ifndef Q_WS_MAC
     if (mIsSeamless)
     {
         /* It isn't guaranteed that the guest os set the video mode that
@@ -2289,6 +2310,9 @@ void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
         mShiftingSpacerBottom->changeSize (0, RT_ABS (sRect.bottom() - aRect.bottom()),
                                            QSizePolicy::Preferred, QSizePolicy::Fixed);
     }
+#else // !Q_WS_MAC
+    NOREF (aTargetRect);
+#endif // !Q_WS_MAC
 }
 
 void VBoxConsoleWnd::vmFullscreen (bool aOn)

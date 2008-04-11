@@ -188,6 +188,7 @@ private slots:
     void exitFullscreen();
     void exitSeamless();
 
+    void switchToFullscreen (bool aOn, bool aSeamless);
     void setViewInSeamlessMode (const QRect &aTargetRect);
 
 private:
@@ -337,7 +338,10 @@ private:
 #endif
 
 #ifdef Q_WS_MAC
-    // Dock images.
+    /* For seamless maximizing */
+    QRect mNormalGeometry;
+    Qt::WindowFlags mSavedFlags;
+    /* Dock images */
     CGImageRef dockImgStatePaused;
     CGImageRef dockImgStateSaving;
     CGImageRef dockImgStateRestoring;
