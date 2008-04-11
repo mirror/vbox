@@ -25,7 +25,7 @@
 #include "HostImpl.h"
 #include "USBControllerImpl.h"
 #include "SystemPropertiesImpl.h"
-#include "GuestOSTypeImpl.h"
+#include "Impl.h"
 
 #include "VirtualBoxXMLUtil.h"
 
@@ -4516,7 +4516,7 @@ HRESULT VirtualBox::registerGuestOSTypes()
         { SchemaDefs_OSTypeId_openbsd,   "OpenBSD",             VBOXOSTYPE_OpenBSD,    64,   4,  2 * _1K },
         { SchemaDefs_OSTypeId_netbsd,    "NetBSD",              VBOXOSTYPE_NetBSD,     64,   4,  2 * _1K },
         { SchemaDefs_OSTypeId_netware,   "Netware",             VBOXOSTYPE_Netware,   128,   4,  4 * _1K },
-        { SchemaDefs_OSTypeId_solaris,   "Solaris",             VBOXOSTYPE_Solaris,   128,   4,  8 * _1K },
+        { SchemaDefs_OSTypeId_solaris,   "Solaris",             VBOXOSTYPE_Solaris,   512,   4, 16 * _1K },
         { SchemaDefs_OSTypeId_l4,        "L4",                  VBOXOSTYPE_L4,         64,   4,  2 * _1K }
     };
 
