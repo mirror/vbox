@@ -25,7 +25,7 @@
 #include "HostImpl.h"
 #include "USBControllerImpl.h"
 #include "SystemPropertiesImpl.h"
-#include "Impl.h"
+#include "GuestOSTypeImpl.h"
 
 #include "VirtualBoxXMLUtil.h"
 
