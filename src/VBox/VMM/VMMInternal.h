@@ -75,7 +75,7 @@ typedef FNVMMSWITCHERGC *PFNVMMSWITCHERGC;
 typedef struct VMMR0LOGGER
 {
     /** Pointer to the VM handle. */
-    PVM                         pVM;
+    R0PTRTYPE(PVM)              pVM;
     /** Size of the allocated logger instance (Logger). */
     uint32_t                    cbLogger;
     /** Flag indicating whether we've create the logger Ring-0 instance yet. */
