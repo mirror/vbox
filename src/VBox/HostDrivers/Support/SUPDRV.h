@@ -772,6 +772,7 @@ int  VBOXCALL   supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RT
 void VBOXCALL   supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
 void VBOXCALL   supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS);
 void VBOXCALL   supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, unsigned iCpu);
+bool VBOXCALL   supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores);
 
 __END_DECLS
 
