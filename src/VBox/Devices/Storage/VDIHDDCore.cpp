@@ -687,9 +687,9 @@ static void vdiFreeImage(PVDIIMAGEDESC pImage, bool fDelete)
 {
     Assert(VALID_PTR(pImage));
 
-    vdiFlushImage(pImage);
     if (pImage->File != NIL_RTFILE)
     {
+        vdiFlushImage(pImage);
         RTFileClose(pImage->File);
         pImage->File = NIL_RTFILE;
     }
@@ -724,6 +724,10 @@ static int vdiCheckIfValid(const char *pszFilename)
         goto out;
     }
     pImage->pszFilename = pszFilename;
+    pImage->File = NIL_RTFILE;
+    pImage->paBlocks = NULL;
+    pImage->pfnError = NULL;
+    pImage->pvErrorUser = NULL;
 
     rc = vdiOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
     vdiFreeImage(pImage, false);
@@ -764,6 +768,7 @@ static int vdiOpen(const char *pszFilename, unsigned uOpenFlags,
         goto out;
     }
     pImage->pszFilename = pszFilename;
+    pImage->File = NIL_RTFILE;
     pImage->paBlocks = NULL;
     pImage->pfnError = pfnError;
     pImage->pvErrorUser = pvErrorUser;
@@ -818,6 +823,7 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
         goto out;
     }
     pImage->pszFilename = pszFilename;
+    pImage->File = NIL_RTFILE;
     pImage->paBlocks = NULL;
     pImage->pfnError = pfnError;
     pImage->pvErrorUser = pvErrorUser;
