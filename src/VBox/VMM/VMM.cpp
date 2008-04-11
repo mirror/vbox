@@ -1969,7 +1969,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
 
 
 /**
- * Executes guest code (Intel VMX and AMD SVM).
+ * Executes guest code (Intel VT-x and AMD-V).
  *
  * @param   pVM         VM handle.
  */
