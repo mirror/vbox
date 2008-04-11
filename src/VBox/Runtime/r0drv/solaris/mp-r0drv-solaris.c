@@ -230,6 +230,9 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     cpuset_t Set;
     RTMPARGS Args;
 
+    if (idCpu >= NCPU)
+        return VERR_CPU_NOT_FOUND;
+
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
@@ -237,7 +240,6 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     Args.cHits = 0;
 
     CPUSET_ZERO(Set);
-    AssertReturn(idCpu < NCPU, VERR_INVALID_PARAMETER);
     CPUSET_ADD(Set, idCpu);
 
     xc_call((uintptr_t)&Args, 0, 0, X_CALL_HIPRI, Set, rtmpOnSpecificSolarisWrapper);
