@@ -435,7 +435,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                                       0, MM_TAG_VMM, (void **)&pVM->vmm.s.pR0Logger);
                     if (VBOX_SUCCESS(rc))
                     {
-                        pVM->vmm.s.pR0Logger->pVM = pVM;
+                        pVM->vmm.s.pR0Logger->pVM = pVM->pVMR0;
                         //pVM->vmm.s.pR0Logger->fCreated = false;
                         pVM->vmm.s.pR0Logger->cbLogger = RT_OFFSETOF(RTLOGGER, afGroups[pLogger->cGroups]);
                     }
@@ -1996,7 +1996,10 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
         PVMMR0LOGGER pR0Logger = pVM->vmm.s.pR0Logger;
         if (    pR0Logger
             &&  pR0Logger->Logger.offScratch > 0)
+{
+            RTLogWriteStdOut(pR0Logger->Logger.achScratch, pR0Logger->Logger.offScratch);
             RTLogFlushToLogger(&pR0Logger->Logger, NULL);
+}
 #endif /* !LOG_ENABLED */
         if (rc != VINF_VMM_CALL_HOST)
         {
@@ -2075,6 +2078,8 @@ VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, va_list
          */
 #ifdef LOG_ENABLED
         PRTLOGGERGC pLogger = pVM->vmm.s.pLoggerHC;
+if (rc == VINF_VMM_CALL_HOST && pVM->vmm.s.u64CallHostArg == 12345) _asm int 3;
+
         if (    pLogger
             &&  pLogger->offScratch > 0)
             RTLogFlushGC(NULL, pLogger);
