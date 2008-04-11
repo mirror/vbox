@@ -266,11 +266,11 @@ RTDECL(int)   RTSemRWDestroy(RTSEMRW RWSem);
 /**
  * Request read access to a read/write semaphore, resume on interruption
  *
- * Read requests cannot be nested. A deadlock error will be returned
- * on such attempts.
- *
  * @returns iprt status code.
- *          Will not return VERR_INTERRUPTED.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INTERRUPT if the wait was interrupted.
+ * @retval  VERR_INVALID_HANDLE if RWSem is invalid.
+ *
  * @param   RWSem       The Read/Write semaphore to request read access to.
  * @param   cMillies    The number of milliseconds to wait.
  */
@@ -279,10 +279,11 @@ RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies);
 /**
  * Request read access to a read/write semaphore, return on interruption
  *
- * Read requests cannot be nested. A deadlock error will be returned
- * on such attempts.
- *
  * @returns iprt status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INTERRUPT if the wait was interrupted.
+ * @retval  VERR_INVALID_HANDLE if RWSem is invalid.
+ *
  * @param   RWSem       The Read/Write semaphore to request read access to.
  * @param   cMillies    The number of milliseconds to wait.
  */
@@ -300,11 +301,11 @@ RTDECL(int)   RTSemRWReleaseRead(RTSEMRW RWSem);
 /**
  * Request write access to a read/write semaphore, resume on interruption.
  *
- * Write requests cannot be nested. If called by the thread currently owning
- * the write lock the function returns an error code indicating deadlock.
- *
  * @returns iprt status code.
- *          Will not return VERR_INTERRUPTED.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_DEADLOCK if the caller owned the read lock.
+ * @retval  VERR_INVALID_HANDLE if RWSem is invalid.
+ *
  * @param   RWSem       The Read/Write semaphore to request write access to.
  * @param   cMillies    The number of milliseconds to wait.
  */
@@ -313,10 +314,12 @@ RTDECL(int)   RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies);
 /**
  * Request write access to a read/write semaphore, return on interruption.
  *
- * Write requests cannot be nested. If called by the thread currently owning
- * the write lock the function returns an error code indicating deadlock.
- *
  * @returns iprt status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INTERRUPT if the wait was interrupted.
+ * @retval  VERR_DEADLOCK if the caller owned the read lock.
+ * @retval  VERR_INVALID_HANDLE if RWSem is invalid.
+ *
  * @param   RWSem       The Read/Write semaphore to request write access to.
  * @param   cMillies    The number of milliseconds to wait.
  */

@@ -38,6 +38,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 
+#include "internal/magics.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -45,65 +47,53 @@
 /** Posix internal representation of a read-write semaphore. */
 struct RTSEMRWINTERNAL
 {
+    /** The usual magic. (RTSEMRW_MAGIC) */
+    uint32_t            u32Magic;
+    /* Alignment padding. */
+    uint32_t            u32Padding;
+    /** Number of write recursions. */
+    uint32_t            cWrites;
+    /** Number of read recursions by the writer. */
+    uint32_t            cWriterReads;
+    /** The write owner of the lock. */
+    volatile pthread_t  Writer;
     /** pthread rwlock. */
     pthread_rwlock_t    RWLock;
-    /** Variable to check if initialized.
-     * 0 is uninitialized, ~0 is inititialized. */
-    volatile unsigned   uCheck;
-    /** The write owner of the lock. */
-    volatile pthread_t  WROwner;
 };
 
 
-
-/**
- * Validate a read-write semaphore handle passed to one of the interface.
- *
- * @returns true if valid.
- * @returns false if invalid.
- * @param   pIntRWSem   Pointer to the read-write semaphore to validate.
- */
-inline bool rtsemRWValid(struct RTSEMRWINTERNAL *pIntRWSem)
-{
-    if ((uintptr_t)pIntRWSem < 0x10000)
-        return false;
-
-    if (pIntRWSem->uCheck != (unsigned)~0)
-        return false;
-
-    return true;
-}
-
-
-RTDECL(int)   RTSemRWCreate(PRTSEMRW pRWSem)
+RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
 {
     int rc;
 
     /*
      * Allocate handle.
      */
-    struct RTSEMRWINTERNAL *pIntRWSem = (struct RTSEMRWINTERNAL *)RTMemAlloc(sizeof(struct RTSEMRWINTERNAL));
-    if (pIntRWSem)
+    struct RTSEMRWINTERNAL *pThis = (struct RTSEMRWINTERNAL *)RTMemAlloc(sizeof(struct RTSEMRWINTERNAL));
+    if (pThis)
     {
         /*
          * Create the rwlock.
          */
-        pthread_rwlockattr_t    Attr;
+        pthread_rwlockattr_t Attr;
         rc = pthread_rwlockattr_init(&Attr);
         if (!rc)
         {
-            rc = pthread_rwlock_init(&pIntRWSem->RWLock, &Attr);
+            rc = pthread_rwlock_init(&pThis->RWLock, &Attr);
             if (!rc)
             {
-                pIntRWSem->uCheck = ~0;
-                pIntRWSem->WROwner = (pthread_t)-1;
-                *pRWSem = pIntRWSem;
+                pThis->u32Magic = RTSEMRW_MAGIC;
+                pThis->u32Padding = 0;
+                pThis->cWrites = 0;
+                pThis->cWriterReads = 0;
+                pThis->Writer = (pthread_t)-1;
+                *pRWSem = pThis;
                 return VINF_SUCCESS;
             }
         }
 
         rc = RTErrConvertFromErrno(rc);
-        RTMemFree(pIntRWSem);
+        RTMemFree(pThis);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -112,26 +102,30 @@ RTDECL(int)   RTSemRWCreate(PRTSEMRW pRWSem)
 }
 
 
-RTDECL(int)   RTSemRWDestroy(RTSEMRW RWSem)
+RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
 {
     /*
-     * Validate input.
+     * Validate input, nil handle is fine.
      */
-    if (!rtsemRWValid(RWSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
-    }
+    if (RWSem == NIL_RTSEMRW)
+        return VINF_SUCCESS;
+    struct RTSEMRWINTERNAL *pThis = RWSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
+                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
+                    VERR_INVALID_HANDLE);
+    Assert(pThis->Writer == (pthread_t)-1);
+    Assert(!pThis->cWrites);
+    Assert(!pThis->cWriterReads);
 
     /*
      * Try destroy it.
      */
-    struct RTSEMRWINTERNAL *pIntRWSem = RWSem;
-    int rc = pthread_rwlock_destroy(&pIntRWSem->RWLock);
+    int rc = pthread_rwlock_destroy(&pThis->RWLock);
     if (!rc)
     {
-        pIntRWSem->uCheck = 0;
-        RTMemFree(pIntRWSem);
+        pThis->u32Magic++;
+        RTMemFree(pThis);
         rc = VINF_SUCCESS;
     }
     else
@@ -144,25 +138,37 @@ RTDECL(int)   RTSemRWDestroy(RTSEMRW RWSem)
 }
 
 
-RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 {
     /*
      * Validate input.
      */
-    if (!rtsemRWValid(RWSem))
+    struct RTSEMRWINTERNAL *pThis = RWSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
+                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    /*
+     * Check if it's the writer (implement write+read recursion).
+     */
+    pthread_t Self = pthread_self();
+    pthread_t Writer;
+    ASMAtomicReadSize(&pThis->Writer, &Writer);
+    if (Writer == Self)
     {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
+        Assert(pThis->cWriterReads < INT32_MAX);
+        pThis->cWriterReads++;
+        return VINF_SUCCESS;
     }
 
     /*
      * Try lock it.
      */
-    struct RTSEMRWINTERNAL *pIntRWSem = RWSem;
     if (cMillies == RT_INDEFINITE_WAIT)
     {
         /* take rwlock */
-        int rc = pthread_rwlock_rdlock(&pIntRWSem->RWLock);
+        int rc = pthread_rwlock_rdlock(&pThis->RWLock);
         if (rc)
         {
             AssertMsgFailed(("Failed read lock read-write sem %p, rc=%d.\n", RWSem, rc));
@@ -174,6 +180,7 @@ RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 #ifdef RT_OS_DARWIN
         AssertMsgFailed(("Not implemented on Darwin yet because of incomplete pthreads API."));
         return VERR_NOT_IMPLEMENTED;
+
 #else /* !RT_OS_DARWIN */
         /*
          * Get current time and calc end of wait time.
@@ -192,7 +199,7 @@ RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
         }
 
         /* take rwlock */
-        int rc = pthread_rwlock_timedrdlock(&pIntRWSem->RWLock, &ts);
+        int rc = pthread_rwlock_timedrdlock(&pThis->RWLock, &ts);
         if (rc)
         {
             AssertMsg(rc == ETIMEDOUT, ("Failed read lock read-write sem %p, rc=%d.\n", RWSem, rc));
@@ -205,34 +212,42 @@ RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 }
 
 
-RTDECL(int)   RTSemRWRequestReadNoResume(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int) RTSemRWRequestReadNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
     /* EINTR isn't returned by the wait functions we're using. */
     return RTSemRWRequestRead(RWSem, cMillies);
 }
 
 
-RTDECL(int)   RTSemRWReleaseRead(RTSEMRW RWSem)
+RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
 {
     /*
      * Validate input.
      */
-    if (!rtsemRWValid(RWSem))
+    struct RTSEMRWINTERNAL *pThis = RWSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
+                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    /*
+     * Check if it's the writer.
+     */
+    pthread_t Self = pthread_self();
+    pthread_t Writer;
+    ASMAtomicReadSize(&pThis->Writer, &Writer);
+    if (Writer == Self)
     {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
+        AssertMsgReturn(pThis->cWriterReads > 0,
+                        ("pThis=%p\n", pThis), VERR_NOT_OWNER);
+        pThis->cWriterReads--;
+        return VINF_SUCCESS;
     }
 
     /*
      * Try unlock it.
      */
-    struct RTSEMRWINTERNAL *pIntRWSem = RWSem;
-    if (pIntRWSem->WROwner == pthread_self())
-    {
-        AssertMsgFailed(("Tried to read unlock when write owner - read-write sem %p.\n", RWSem));
-        return VERR_NOT_OWNER;
-    }
-    int rc = pthread_rwlock_unlock(&pIntRWSem->RWLock);
+    int rc = pthread_rwlock_unlock(&pThis->RWLock);
     if (rc)
     {
         AssertMsgFailed(("Failed read unlock read-write sem %p, rc=%d.\n", RWSem, rc));
@@ -243,25 +258,37 @@ RTDECL(int)   RTSemRWReleaseRead(RTSEMRW RWSem)
 }
 
 
-RTDECL(int)   RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 {
     /*
      * Validate input.
      */
-    if (!rtsemRWValid(RWSem))
+    struct RTSEMRWINTERNAL *pThis = RWSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
+                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    /*
+     * Recursion?
+     */
+    pthread_t Self = pthread_self();
+    pthread_t Writer;
+    ASMAtomicReadSize(&pThis->Writer, &Writer);
+    if (Writer == Self)
     {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
+        Assert(pThis->cWrites < INT32_MAX);
+        pThis->cWrites++;
+        return VINF_SUCCESS;
     }
 
     /*
      * Try lock it.
      */
-    struct RTSEMRWINTERNAL *pIntRWSem = RWSem;
     if (cMillies == RT_INDEFINITE_WAIT)
     {
         /* take rwlock */
-        int rc = pthread_rwlock_wrlock(&pIntRWSem->RWLock);
+        int rc = pthread_rwlock_wrlock(&pThis->RWLock);
         if (rc)
         {
             AssertMsgFailed(("Failed write lock read-write sem %p, rc=%d.\n", RWSem, rc));
@@ -291,7 +318,7 @@ RTDECL(int)   RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
         }
 
         /* take rwlock */
-        int rc = pthread_rwlock_timedwrlock(&pIntRWSem->RWLock, &ts);
+        int rc = pthread_rwlock_timedwrlock(&pThis->RWLock, &ts);
         if (rc)
         {
             AssertMsg(rc == ETIMEDOUT, ("Failed read lock read-write sem %p, rc=%d.\n", RWSem, rc));
@@ -300,55 +327,47 @@ RTDECL(int)   RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 #endif /* !RT_OS_DARWIN */
     }
 
-#ifdef RT_OS_SOLARIS
-    ASMAtomicXchgSize(&pIntRWSem->WROwner, pthread_self());
-#else
-    ASMAtomicXchgPtr((void * volatile *)&pIntRWSem->WROwner, (void *)pthread_self());
-#endif
-
+    ASMAtomicWriteSize(&pThis->Writer, Self);
+    pThis->cWrites = 1;
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)   RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
+RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
     /* EINTR isn't returned by the wait functions we're using. */
     return RTSemRWRequestWrite(RWSem, cMillies);
 }
 
 
-RTDECL(int)   RTSemRWReleaseWrite(RTSEMRW RWSem)
+RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
 {
     /*
      * Validate input.
      */
-    if (!rtsemRWValid(RWSem))
-    {
-        AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
-    }
+    struct RTSEMRWINTERNAL *pThis = RWSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMRW_MAGIC,
+                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
+                    VERR_INVALID_HANDLE);
+
+    /*
+     * Verify ownership and implement recursion.
+     */
+    pthread_t Self = pthread_self();
+    pthread_t Writer;
+    ASMAtomicReadSize(&pThis->Writer, &Writer);
+    AssertMsgReturn(Writer == Self, ("pThis=%p\n", pThis), VERR_NOT_OWNER);
+    pThis->cWrites--;
+    if (pThis->cWrites)
+        return VINF_SUCCESS;
+    AssertReturn(!pThis->cWriterReads, VERR_WRONG_ORDER);
 
     /*
      * Try unlock it.
      */
-    pthread_t                 Self = pthread_self();
-    struct RTSEMRWINTERNAL   *pIntRWSem = RWSem;
-    if (pIntRWSem->WROwner != Self)
-    {
-        AssertMsgFailed(("Not Write owner!\n"));
-        return VERR_NOT_OWNER;
-    }
-
-    /*
-     * Try unlock it.
-     */
-#ifdef RT_OS_SOLARIS
-    ASMAtomicXchgSize(&pIntRWSem->WROwner, (pthread_t)-1);
-#else
-    AssertMsg(sizeof(pthread_t) == sizeof(void *), ("pthread_t is not the size of a pointer but %d bytes\n", sizeof(pthread_t)));
-    ASMAtomicXchgPtr((void * volatile *)&pIntRWSem->WROwner, (void *)(pthread_t)-1);
-#endif
-    int rc = pthread_rwlock_unlock(&pIntRWSem->RWLock);
+    ASMAtomicWriteSize(&pThis->Writer, (pthread_t)-1);
+    int rc = pthread_rwlock_unlock(&pThis->RWLock);
     if (rc)
     {
         AssertMsgFailed(("Failed write unlock read-write sem %p, rc=%d.\n", RWSem, rc));
