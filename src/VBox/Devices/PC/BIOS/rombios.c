@@ -1893,7 +1893,7 @@ print_bios_banner()
   write_word(0x0040,0x0072, 0);
   if (warm_boot == 0x1234)
     return;
-#ifndef DEBUG
+#if !defined(DEBUG) || defined(DEBUG_sunlover)
   /* show graphical logo */
   show_logo();
 #else
