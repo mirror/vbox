@@ -40,6 +40,16 @@
 
 #include "internal/magics.h"
 
+/** @todo move this to r3/posix/something.h. */
+#ifdef RT_OS_SOLARIS
+# define ATOMIC_GET_PTHREAD_T(pvVar, pThread) ASMAtomicReadSize(pvVar, pThread)
+# define ATOMIC_SET_PTHREAD_T(pvVar, pThread) ASMAtomicReadSize(pvVar, pThread)
+#else
+AssertCompileSize(pthread_t, sizeof(void *));
+# define ATOMIC_GET_PTHREAD_T(pvVar, pThread) do { *(pThread) = (pthread_t)ASMAtomicReadPtr((void *volatile *)pvVar); } while (0)
+# define ATOMIC_SET_PTHREAD_T(pvVar, pThread) ASMAtomicWritePtr((void *volatile *)pvVar, (void *)pThread)
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -154,7 +164,7 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
      */
     pthread_t Self = pthread_self();
     pthread_t Writer;
-    ASMAtomicReadSize(&pThis->Writer, &Writer);
+    ATOMIC_GET_PTHREAD_T(&pThis->Writer, &Writer);
     if (Writer == Self)
     {
         Assert(pThis->cWriterReads < INT32_MAX);
@@ -235,7 +245,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
      */
     pthread_t Self = pthread_self();
     pthread_t Writer;
-    ASMAtomicReadSize(&pThis->Writer, &Writer);
+    ATOMIC_GET_PTHREAD_T(&pThis->Writer, &Writer);
     if (Writer == Self)
     {
         AssertMsgReturn(pThis->cWriterReads > 0,
@@ -274,7 +284,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
      */
     pthread_t Self = pthread_self();
     pthread_t Writer;
-    ASMAtomicReadSize(&pThis->Writer, &Writer);
+    ATOMIC_GET_PTHREAD_T(&pThis->Writer, &Writer);
     if (Writer == Self)
     {
         Assert(pThis->cWrites < INT32_MAX);
@@ -327,7 +337,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 #endif /* !RT_OS_DARWIN */
     }
 
-    ASMAtomicWriteSize(&pThis->Writer, Self);
+    ATOMIC_SET_PTHREAD_T(&pThis->Writer, Self);
     pThis->cWrites = 1;
     return VINF_SUCCESS;
 }
@@ -356,7 +366,7 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
      */
     pthread_t Self = pthread_self();
     pthread_t Writer;
-    ASMAtomicReadSize(&pThis->Writer, &Writer);
+    ATOMIC_GET_PTHREAD_T(&pThis->Writer, &Writer);
     AssertMsgReturn(Writer == Self, ("pThis=%p\n", pThis), VERR_NOT_OWNER);
     pThis->cWrites--;
     if (pThis->cWrites)
@@ -366,7 +376,7 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
     /*
      * Try unlock it.
      */
-    ASMAtomicWriteSize(&pThis->Writer, (pthread_t)-1);
+    ATOMIC_SET_PTHREAD_T(&pThis->Writer, (pthread_t)-1);
     int rc = pthread_rwlock_unlock(&pThis->RWLock);
     if (rc)
     {
