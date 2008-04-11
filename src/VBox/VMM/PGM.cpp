@@ -3435,7 +3435,7 @@ int pgmR3DumpHierarchyGC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, RTGCPH
  * @param   cr4         The CR4, PSE is currently used.
  * @param   PhysSearch  Address to search for.
  */
-PGMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCPHYS PhysSearch)
+PGMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHYS PhysSearch)
 {
     bool fLongMode = false;
     const unsigned cch = fLongMode ? 16 : 8; NOREF(cch);
@@ -3544,7 +3544,7 @@ PGMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCPHY
  * @param   cMaxDepth   Number of levels to dump.
  * @param   pHlp        Pointer to the output functions.
  */
-PGMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint32_t cr3, uint32_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp)
+PGMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp)
 {
     if (!pHlp)
         pHlp = DBGFR3InfoLogHlp();

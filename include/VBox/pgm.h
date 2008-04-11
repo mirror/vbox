@@ -324,9 +324,9 @@ PGMDECL(int)    PGMGstGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPH
 PGMDECL(bool)   PGMGstIsPagePresent(PVM pVM, RTGCPTR GCPtr);
 PGMDECL(int)    PGMGstSetPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
 PGMDECL(int)    PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-PGMDECL(int)    PGMFlushTLB(PVM pVM, uint32_t cr3, bool fGlobal);
-PGMDECL(int)    PGMSyncCR3(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal);
-PGMDECL(int)    PGMChangeMode(PVM pVM, uint32_t cr0, uint32_t cr4, uint64_t efer);
+PGMDECL(int)    PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal);
+PGMDECL(int)    PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
+PGMDECL(int)    PGMChangeMode(PVM pVM, uint64_t cr0, uint64_t cr4, uint64_t efer);
 PGMDECL(PGMMODE) PGMGetGuestMode(PVM pVM);
 PGMDECL(PGMMODE) PGMGetShadowMode(PVM pVM);
 PGMDECL(const char *) PGMGetModeName(PGMMODE enmMode);
@@ -404,7 +404,7 @@ DECLINLINE(bool) PGMPhysIsPageMappingLockValid(PVM pVM, PPGMPAGEMAPLOCK pLock)
 
 PGMDECL(int)    PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr);
 PGMDECL(int)    PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
-PGMDECL(int)    PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, unsigned fFlags, PRTHCPTR pHCPtr);
+PGMDECL(int)    PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, unsigned fFlags, PRTHCPTR pHCPtr);
 PGMDECL(void)   PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
 PGMDECL(void)   PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
 #ifndef IN_GC /* Only ring 0 & 3. */
@@ -421,7 +421,7 @@ PGMDECL(int)    PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvD
 #ifdef VBOX_STRICT
 PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM);
 PGMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM);
-PGMDECL(unsigned) PGMAssertCR3(PVM pVM, uint32_t cr3, uint32_t cr4);
+PGMDECL(unsigned) PGMAssertCR3(PVM pVM, uint64_t cr3, uint64_t cr4);
 #endif /* VBOX_STRICT */
 
 
@@ -503,7 +503,7 @@ PGMR3DECL(int)  PGMR3MappingsSize(PVM pVM, uint32_t *pcb);
 PGMR3DECL(int)  PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
 PGMR3DECL(int)  PGMR3MappingsUnfix(PVM pVM);
 PGMR3DECL(int)  PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages);
-PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint32_t cr3, bool fRawR0);
+PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0);
 PGMR3DECL(int)  PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
 PGMR3DECL(int)  PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                              PFNPGMR3PHYSHANDLER pfnHandlerR3, void *pvUserR3,
@@ -521,9 +521,9 @@ PGMDECL(int)    PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr
 PGMDECL(int)    PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr);
 PDMR3DECL(int)  PGMR3PoolGrow(PVM pVM);
 #ifdef ___VBox_dbgf_h /** @todo fix this! */
-PGMR3DECL(int)  PGMR3DumpHierarchyHC(PVM pVM, uint32_t cr3, uint32_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp);
+PGMR3DECL(int)  PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp);
 #endif
-PGMR3DECL(int)  PGMR3DumpHierarchyGC(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCPHYS PhysSearch);
+PGMR3DECL(int)  PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHYS PhysSearch);
 
 /** @todo r=bird: s/Byte/U8/ s/Word/U16/ s/Dword/U32/ to match other functions names and returned types. */
 PGMR3DECL(uint8_t) PGMR3PhysReadByte(PVM pVM, RTGCPHYS GCPhys);

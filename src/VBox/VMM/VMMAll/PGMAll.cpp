@@ -903,7 +903,7 @@ PGMDECL(uint32_t) PGMGetInterAmd64CR3(PVM pVM)
  * @param   cr3         The new cr3.
  * @param   fGlobal     Indicates whether this is a global flush or not.
  */
-PGMDECL(int) PGMFlushTLB(PVM pVM, uint32_t cr3, bool fGlobal)
+PGMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
 {
     STAM_PROFILE_START(&pVM->pgm.s.StatFlushTLB, a);
 
@@ -913,7 +913,7 @@ PGMDECL(int) PGMFlushTLB(PVM pVM, uint32_t cr3, bool fGlobal)
     VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
     if (fGlobal)
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-    LogFlow(("PGMFlushTLB: cr3=%#x OldCr3=%#x fGlobal=%d\n", cr3, pVM->pgm.s.GCPhysCR3, fGlobal));
+    LogFlow(("PGMFlushTLB: cr3=%VX64 OldCr3=%VX64 fGlobal=%d\n", cr3, pVM->pgm.s.GCPhysCR3, fGlobal));
 
     /*
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
@@ -977,7 +977,7 @@ PGMDECL(int) PGMFlushTLB(PVM pVM, uint32_t cr3, bool fGlobal)
  * @param   cr4         Guest context CR4 register
  * @param   fGlobal     Including global page directories or not
  */
-PGMDECL(int) PGMSyncCR3(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool fGlobal)
+PGMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal)
 {
     /*
      * We might be called when we shouldn't.
@@ -1049,7 +1049,7 @@ PGMDECL(int) PGMSyncCR3(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bool 
  * @param   cr4         The new cr4.
  * @param   efer        The new extended feature enable register.
  */
-PGMDECL(int) PGMChangeMode(PVM pVM, uint32_t cr0, uint32_t cr4, uint64_t efer)
+PGMDECL(int) PGMChangeMode(PVM pVM, uint64_t cr0, uint64_t cr4, uint64_t efer)
 {
     PGMMODE enmGuestMode;
 
@@ -1222,7 +1222,7 @@ PGMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
  * @param   cr3     The current guest CR3 register value.
  * @param   cr4     The current guest CR4 register value.
  */
-PGMDECL(unsigned) PGMAssertCR3(PVM pVM, uint32_t cr3, uint32_t cr4)
+PGMDECL(unsigned) PGMAssertCR3(PVM pVM, uint64_t cr3, uint64_t cr4)
 {
     STAM_PROFILE_START(&pVM->pgm.s.CTXMID(Stat,SyncCR3), a);
     unsigned cErrors = PGM_BTH_PFN(AssertCR3, pVM)(pVM, cr3, cr4, 0, ~(RTGCUINTPTR)0);
