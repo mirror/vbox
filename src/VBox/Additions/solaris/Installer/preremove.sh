@@ -23,5 +23,9 @@ echo "This script will unload the VirtualBox Guest kernel module..."
 # vboxguest.sh would've been installed, we just need to call it.
 /opt/VirtualBoxAdditions/vboxguest.sh stop
 
+# Try and restore xorg.conf!
+echo "Restoring Xorg..."
+/opt/VirtualBoxAdditions/x11restore.pl
+
 echo "Done."
 
