@@ -43,10 +43,12 @@
 # endif
 #endif
 
-#ifdef DEBUG
-# define LOG_ENABLED
+#ifdef RT_OS_LINUX
+# ifdef DEBUG
+#  define LOG_ENABLED
+# endif
+# include "VBoxGuestLog.h"
 #endif
-#include "VBoxGuestLog.h"
 
 #include <iprt/assert.h>
 #define ASSERTVBSF AssertRelease
