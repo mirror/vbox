@@ -328,7 +328,7 @@ public:
     uchar *address()
     {
         SDL_Surface *surf = mSurfVRAM ? mSurfVRAM : mScreen;
-        return surf ? (uchar *) (uintptr_t) mScreen->pixels : 0;
+        return surf ? (uchar *) (uintptr_t) surf->pixels : 0;
     }
 
     ulong bitsPerPixel()
