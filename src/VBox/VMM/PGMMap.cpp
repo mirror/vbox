@@ -948,7 +948,7 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, int
  * @param   cr3         Guest context CR3 register.
  * @param   fRawR0      Whether RawR0 is enabled or not.
  */
-PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint32_t cr3, bool fRawR0) /** @todo how many HasConflict constructs do we really need? */
+PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @todo how many HasConflict constructs do we really need? */
 {
     /*
      * Can skip this if mappings are safely fixed.

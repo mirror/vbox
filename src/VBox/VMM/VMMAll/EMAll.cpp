@@ -1651,6 +1651,7 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
     uint32_t oldval;
 /** @todo Clean up this mess. */
 
+/** @todo AMD64 */
     int rc = DISFetchReg32(pRegFrame, SrcRegGen, &val32);
     if (VBOX_SUCCESS(rc))
     {

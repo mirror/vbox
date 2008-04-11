@@ -660,7 +660,7 @@ static const REMPARMDESC g_aArgsPGMPhysGCPtr2HCPtrByGstCR3[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PRTHCPTR), NULL }
 };
@@ -698,14 +698,14 @@ static const REMPARMDESC g_aArgsPGMPhysWrite[] =
 static const REMPARMDESC g_aArgsPGMChangeMode[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL }
 };
 static const REMPARMDESC g_aArgsPGMFlushTLB[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }
 };
 static const REMPARMDESC g_aArgsPGMR3PhysReadUxx[] =
