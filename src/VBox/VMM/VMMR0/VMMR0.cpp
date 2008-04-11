@@ -1014,7 +1014,9 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
         ||  !VALID_PTR(pLogger)
         ||  pLogger->u32Magic != RTLOGGER_MAGIC)
     {
-        LogCom(("vmmR0LoggerFlush: pLogger=%p!\n", pLogger));
+#ifdef DEBUG
+        SUPR0Printf("vmmR0LoggerFlush: pLogger=%p!\n", pLogger);
+#endif
         return;
     }
 
@@ -1022,7 +1024,9 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     if (    !VALID_PTR(pVM)
         ||  pVM->pVMR0 != pVM)
     {
-        LogCom(("vmmR0LoggerFlush: pVM=%p! pLogger=%p\n", pVM, pLogger));
+#ifdef DEBUG
+        SUPR0Printf("vmmR0LoggerFlush: pVM=%p! pVMR0=%p! pLogger=%p\n", pVM, pVM->pVMR0, pLogger);
+#endif
         return;
     }
 
@@ -1035,11 +1039,12 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     if (!pVM->vmm.s.CallHostR0JmpBuf.rip)
 #endif
     {
-        LogCom(("vmmR0LoggerFlush: Jump buffer isn't armed!\n"));
+#ifdef DEBUG
+        SUPR0Printf("vmmR0LoggerFlush: Jump buffer isn't armed!\n");
+#endif
         pLogger->offScratch = 0;
         return;
     }
-
     VMMR0CallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
 }
 
