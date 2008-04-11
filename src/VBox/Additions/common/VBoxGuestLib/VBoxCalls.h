@@ -43,7 +43,7 @@
 # endif
 #endif
 
-#ifdef RT_OS_LINUX
+#ifndef RT_OS_SOLARIS
 # ifdef DEBUG
 #  define LOG_ENABLED
 # endif
