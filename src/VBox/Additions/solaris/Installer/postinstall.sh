@@ -83,7 +83,7 @@ else
     /usr/sbin/removef -f $PKGINST
 
     # Some distros like Indiana have no xorg.conf, deal with this
-    if ! (test -f '/etc/X11/xorg.conf' -o -f '/etc/X11/.xorg.conf'); then
+    if test ! -f '/etc/X11/xorg.conf' && test ! -f '/etc/X11/.xorg.conf'; then
         mv -f $vboxadditions_path/solaris_xorg.conf /etc/X11/.xorg.conf
     fi
 
