@@ -24,7 +24,9 @@
 /** @name VBox HDD backend write flags
  * @{
  */
-/** Do not allocate a new block on this write. */
+/** Do not allocate a new block on this write. This is just an advisory
+ * flag. The backend may still decide in some circumstances that it wants
+ * to ignore this flag (which may cause extra dynamic image expansion). */
 #define VD_WRITE_NO_ALLOC   RT_BIT(1)
 /** @}*/
 
