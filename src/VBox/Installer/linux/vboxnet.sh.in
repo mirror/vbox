@@ -179,6 +179,9 @@ start_network()
         # or two non-comment entries, possibly followed by a comment).
         if ((! expr match "$2" "#" > /dev/null) &&
             (test -z "$4" || expr match "$4" "#" > /dev/null)); then
+          # As the very first thing, try delete the interface. Might already
+          # exist with different configuration. Ignore errors.
+          VBoxTunctl -d $1 > /dev/null 2>&1
           case $user in
             +*)
                 group=`echo $2 | cut -c2-`
