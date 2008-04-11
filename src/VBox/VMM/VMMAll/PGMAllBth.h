@@ -94,6 +94,14 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  else /* PAE */
     unsigned        iPDSrc;
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, (RTGCUINTPTR)pvFault, &iPDSrc);
+
+    /* Quick check for a valid guest trap. */
+    if (!pPDSrc)
+    {
+        STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eGuestTrap; });
+        TRPMSetErrorCode(pVM, uErr);
+        return VINF_EM_RAW_GUEST_TRAP;
+    }
 #  endif
 # else
     PGSTPD          pPDSrc = NULL;
@@ -828,7 +836,12 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 #  else /* PAE */
     unsigned        iPDSrc;
     PX86PDPAE       pPDSrc      = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
-    GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
+    GSTPDE          PdeSrc;
+    
+    if (pPDSrc)
+        PdeSrc = pPDSrc->a[iPDSrc];
+    else
+        PdeSrc.u = 0;
 #  endif
 
     const uint32_t  cr4         = CPUMGetGuestCR4(pVM);
@@ -1667,8 +1680,8 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
             &&  pPdeSrc->n.u1Present)
         {
             /* Check the present bit as the shadow tables can cause different error codes by being out of sync.
-            * See the 2nd case below as well.
-            */
+             * See the 2nd case below as well.
+             */
             if (pPdeSrc->b.u1Size && (CPUMGetGuestCR4(pVM) & X86_CR4_PSE))
             {
                 TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
@@ -2463,6 +2476,12 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
 #  else /* PAE */
     unsigned        iPDSrc;
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+
+    if (pPDSrc)
+    {
+        Log(("PGMVerifyAccess: access violation for %VGv due to non-present PDPTR\n", GCPtrPage));
+        return VINF_EM_RAW_GUEST_TRAP;
+    }
 #  endif
 # else
     PGSTPD          pPDSrc = NULL;
@@ -2976,7 +2995,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
     PPGM        pPGM = &pVM->pgm.s;
     RTGCPHYS    GCPhysGst;              /* page address derived from the guest page tables. */
     RTHCPHYS    HCPhysShw;              /* page address derived from the shadow page tables. */
+# ifndef IN_RING0
     RTHCPHYS    HCPhys;                 /* general usage. */
+# endif
     int         rc;
 
     /*
