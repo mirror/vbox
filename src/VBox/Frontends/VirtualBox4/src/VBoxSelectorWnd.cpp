@@ -125,11 +125,7 @@ VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent,
     mDetailsText->document()->setDefaultStyleSheet ("a { text-decoration: none; }");
     /* make "transparent" */
     mDetailsText->setFrameShape (QFrame::NoFrame);
-    mDetailsText->setAutoFillBackground (true);
-//    mDetailsText->setBackgroundRole (QPalette::Window);
-    QPalette bgPal(mDetailsText->palette());
-    bgPal.setBrush(QPalette::Base, bgPal.brush(QPalette::Window));
-    mDetailsText->setPalette(bgPal);
+    mDetailsText->viewport()->setAutoFillBackground (false);
 
     connect (mDetailsText, SIGNAL (anchorClicked (const QUrl &)),
             this, SLOT (gotLinkClicked (const QUrl &)));
