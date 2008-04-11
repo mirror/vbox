@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>350</width>
-    <height>179</height>
+    <width>323</width>
+    <height>192</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -32,16 +32,7 @@
           </sizepolicy>
          </property>
          <property name="pixmap" >
-          <pixmap>:/os_unknown.png</pixmap>
-         </property>
-         <property name="scaledContents" >
-          <bool>false</bool>
-         </property>
-         <property name="alignment" >
-          <set>Qt::AlignTop</set>
-         </property>
-         <property name="wordWrap" >
-          <bool>false</bool>
+          <pixmap resource="../VirtualBox.qrc" >:/os_unknown.png</pixmap>
          </property>
         </widget>
        </item>
@@ -75,7 +66,7 @@
        <item>
         <layout class="QGridLayout" >
          <item row="0" column="0" >
-          <widget class="QLabel" name="mTxSave" >
+          <widget class="QLabel" name="mTxSave_2" >
            <property name="sizePolicy" >
             <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
              <horstretch>0</horstretch>
@@ -86,7 +77,7 @@
             <string/>
            </property>
            <property name="pixmap" >
-            <pixmap>:/state_saved_16px.png</pixmap>
+            <pixmap resource="../VirtualBox.qrc" >:/state_saved_16px.png</pixmap>
            </property>
           </widget>
          </item>
@@ -101,7 +92,7 @@
           </widget>
          </item>
          <item row="1" column="0" >
-          <widget class="QLabel" name="mTxShutDown" >
+          <widget class="QLabel" name="mTxShutDown_2" >
            <property name="sizePolicy" >
             <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
              <horstretch>0</horstretch>
@@ -112,7 +103,7 @@
             <string/>
            </property>
            <property name="pixmap" >
-            <pixmap>:/acpi_16px.png</pixmap>
+            <pixmap resource="../VirtualBox.qrc" >:/acpi_16px.png</pixmap>
            </property>
           </widget>
          </item>
@@ -127,7 +118,7 @@
           </widget>
          </item>
          <item row="2" column="0" >
-          <widget class="QLabel" name="mTxPowerOff" >
+          <widget class="QLabel" name="mTxPowerOff_2" >
            <property name="sizePolicy" >
             <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
              <horstretch>0</horstretch>
@@ -138,7 +129,7 @@
             <string/>
            </property>
            <property name="pixmap" >
-            <pixmap>:/poweroff_16px.png</pixmap>
+            <pixmap resource="../VirtualBox.qrc" >:/poweroff_16px.png</pixmap>
            </property>
           </widget>
          </item>
@@ -210,99 +201,66 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" >
-     <property name="spacing" >
-      <number>6</number>
+    <widget class="QDialogButtonBox" name="mButtonBox" >
+     <property name="standardButtons" >
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
      </property>
-     <property name="leftMargin" >
-      <number>0</number>
-     </property>
-     <property name="topMargin" >
-      <number>0</number>
-     </property>
-     <property name="rightMargin" >
-      <number>0</number>
-     </property>
-     <property name="bottomMargin" >
-      <number>0</number>
-     </property>
-     <item>
-      <widget class="QPushButton" name="mButtonHelp" >
-       <property name="text" >
-        <string>Help</string>
-       </property>
-       <property name="shortcut" >
-        <string>F1</string>
-       </property>
-       <property name="autoDefault" >
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer>
-       <property name="orientation" >
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeType" >
-        <enum>QSizePolicy::Expanding</enum>
-       </property>
-       <property name="sizeHint" >
-        <size>
-         <width>20</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="mButtonOk" >
-       <property name="text" >
-        <string>&amp;OK</string>
-       </property>
-       <property name="autoDefault" >
-        <bool>true</bool>
-       </property>
-       <property name="default" >
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="mButtonCancel" >
-       <property name="text" >
-        <string>Cancel</string>
-       </property>
-       <property name="autoDefault" >
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    </widget>
    </item>
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11" />
- <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
- <resources/>
+ <resources>
+  <include location="../VirtualBox.qrc" />
+ </resources>
  <connections>
-  <connection>
-   <sender>mButtonOk</sender>
-   <signal>clicked()</signal>
-   <receiver>VBoxCloseVMDlg</receiver>
-   <slot>accept()</slot>
-  </connection>
-  <connection>
-   <sender>mButtonCancel</sender>
-   <signal>clicked()</signal>
-   <receiver>VBoxCloseVMDlg</receiver>
-   <slot>reject()</slot>
-  </connection>
   <connection>
    <sender>mRbPowerOff</sender>
    <signal>toggled(bool)</signal>
    <receiver>mCbDiscardCurState</receiver>
    <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mButtonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>VBoxCloseVMDlg</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>161</x>
+     <y>171</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>161</x>
+     <y>95</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>mButtonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>VBoxCloseVMDlg</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>161</x>
+     <y>171</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>161</x>
+     <y>95</y>
+    </hint>
+   </hints>
   </connection>
  </connections>
 </ui>
