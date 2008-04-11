@@ -224,6 +224,7 @@ HRESULT Console::FinalConstruct()
 
     memset(mapFDLeds, 0, sizeof(mapFDLeds));
     memset(mapIDELeds, 0, sizeof(mapIDELeds));
+    memset(mapSATALeds, 0, sizeof(mapSATALeds));
     memset(mapNetworkLeds, 0, sizeof(mapNetworkLeds));
     memset(&mapUSBLed, 0, sizeof(mapUSBLed));
     memset(&mapSharedFolderLed, 0, sizeof(mapSharedFolderLed));
@@ -1870,6 +1871,8 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
             SumLed.u32 |= readAndClearLed(mapIDELeds[0]);
             SumLed.u32 |= readAndClearLed(mapIDELeds[1]);
             SumLed.u32 |= readAndClearLed(mapIDELeds[3]);
+            for (unsigned i = 0; i < ELEMENTS(mapSATALeds); i++)
+                SumLed.u32 |= readAndClearLed(mapSATALeds[i]);
             break;
         }
 
