@@ -292,7 +292,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
             {
-                const unsigned iShw = off / sizeof(X86PTPAE);
+                const unsigned iShw = off / sizeof(X86PTEPAE);
                 if (uShw.pPTPae->a[iShw].n.u1Present)
                 {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
