@@ -24,10 +24,19 @@
 # so that we can make any fiddly adjustments to the call which may be needed.
 #
 
-if [ "$1" = "--test" ]
-then
-  version=`xrandr -v 2>&1 | sed -n 's/[^0-9]*version 1\.\([0-9]*\)/\1/p'`
+randrbin=xrandr
+found=`which xrandr | grep "no xrandr"`
+if test ! -z "$found"; then
+    if test -f "/usr/X11/bin/xrandr"; then
+        randrbin=/usr/X11/bin/xrandr
+    else
+        exit 1
+    fi
+fi
+
+if test "$1" = "--test"; then
+  version=`$randrbin -v 2>&1 | sed -n 's/[^0-9]*version 1\.\([0-9]*\)/\1/p'`
   expr "$version" '>=' 2 2>&1 > /dev/null
   exit
 fi
-xrandr --output Virtual\ Output --preferred
+$randrbin --output Virtual\ Output --preferred
