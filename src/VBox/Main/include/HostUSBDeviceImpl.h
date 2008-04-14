@@ -30,6 +30,139 @@ class SessionMachine;
 class USBProxyService;
 
 /**
+ * The unified state machine of HostUSBDevice.
+ *
+ * This is a super set of USBDEVICESTATE / USBDeviceState_T that
+ * includes additional states for tracking state transitions.
+ *
+ * @remarks
+ *  The CapturingForVM and CapturingForProxy states has been merged
+ *  into Capturing with a destination state (AttachingToVM or HeldByProxy).
+ *
+ *  The DetachingFromVM state is a merge of DetachingFromVMToProxy and
+ *  DetachingFromVMToHost and uses the destination state (HeldByProxy
+ *  or ReleasingToHost) like Capturing.
+ *
+ *  The *AwaitingDetach and *AwaitingReattach substates (optionally used
+ *  in Capturing, AttachingToVM, DetachingFromVM and ReleasingToHost) are
+ *  implemented via a substate kHostUSBDeviceSubState.
+ */
+typedef enum
+{
+    /** The device is unsupported (HUB).
+     * Next Host: PhysDetached.
+     * Next VBox: No change permitted.
+     */
+    kHostUSBDeviceState_Unsupported = USBDEVICESTATE_UNSUPPORTED,
+    /** The device is used exclusivly by the host or is inaccessible for some other reason.
+     * Next Host: Capturable, Unused, PhysDetached.
+     *            Run filters.
+     * Next VBox: No change permitted.
+     */
+    kHostUSBDeviceState_UsedByHost = USBDEVICESTATE_USED_BY_HOST,
+    /** The device is used by the host but can be captured.
+     * Next Host: Unsupported, UsedByHost, Unused, PhysDetached.
+     *            Run filters if Unused (for wildcard filters).
+     * Next VBox: CapturingForVM, CapturingForProxy.
+     */
+    kHostUSBDeviceState_Capturable = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE,
+    /** The device is not used by the host and can be captured.
+     * Next Host: UsedByHost, Capturable, PhysDetached
+     *            Don't run any filters (done on state entry).
+     * Next VBox: CapturingForVM, CapturingForProxy.
+     */
+    kHostUSBDeviceState_Unused = USBDEVICESTATE_UNUSED,
+    /** The device is held captive by the proxy.
+     * Next Host: PhysDetached
+     * Next VBox: ReleasingHeld, AttachingToVM
+     */
+    kHostUSBDeviceState_HeldByProxy = USBDEVICESTATE_HELD_BY_PROXY,
+    /** The device is in use by a VM.
+     * Next Host: PhysDetachingFromVM
+     * Next VBox: DetachingFromVM
+     */
+    kHostUSBDeviceState_UsedByVM = USBDEVICESTATE_USED_BY_GUEST,
+    /** The device has been detach from both the host and VMs.
+     * This is the final state. */
+    kHostUSBDeviceState_PhysDetached = 9,
+
+
+    /** The start of the transitional states. */
+    kHostUSBDeviceState_FirstTransitional,
+
+    /** The device is being seized from the host, either for HeldByProxy or for AttachToVM.
+     *
+     * On some hosts we will need to re-enumerate the in which case the sub-state
+     * is employed to track this progress. On others, this is synchronous or faked, and
+     * will will then leave the device in this state and poke the service thread to do
+     * the completion state change.
+     *
+     * Next Host: PhysDetached.
+     * Next VBox: HeldByProxy or AttachingToVM on success,
+     *            previous state (Unused or Capturable) or UsedByHost on failure.
+     */
+    kHostUSBDeviceState_Capturing = kHostUSBDeviceState_FirstTransitional,
+
+    /** The device is being released back to the host, following VM or Proxy usage.
+     * Most hosts needs to re-enumerate the device and will therefore employ the
+     * sub-state as during capturing. On the others we'll just leave it to the usb
+     * service thread to advance the device state.
+     *
+     * Next Host: Unused, UsedByHost, Capturable.
+     *            No filters.
+     * Next VBox: PhysDetached (timeout), HeldByProxy (failure).
+     */
+    kHostUSBDeviceState_ReleasingToHost,
+
+    /** The device is being attached to a VM.
+     *
+     * This requires IPC to the VM and we will not advance the state until
+     * that completes.
+     *
+     * Next Host: PhysDetachingFromVM.
+     * Next VBox: UsedByGuest, HeldByProxy (failure).
+     */
+    kHostUSBDeviceState_AttachingToVM,
+
+    /** The device is being detached from a VM and will be returned to the proxy or host.
+     *
+     * This involves IPC and may or may not also require re-enumeration of the
+     * device. Which means that it might transition directly into the ReleasingToHost state
+     * because the client (VM) will do the actual re-enumeration.
+     *
+     * Next Host: PhysDetachingFromVM (?) or just PhysDetached.
+     * Next VBox: ReleasingToHost, HeldByProxy.
+     */
+    kHostUSBDeviceState_DetachingFromVM,
+
+    /** The device has been physically removed while a VM used it.
+     *
+     * This is the device state while VBoxSVC is doing IPC to the client (VM) telling it
+     * to detach it.
+     *
+     * Next Host: None.
+     * Next VBox: PhysDetached
+     */
+    kHostUSBDeviceState_PhysDetachingFromVM
+
+} HostUSBDeviceState;
+
+
+/**
+ * Sub-state for dealing with device re-enumeration.
+ */
+typedef enum
+{
+    /** Not in any sub-state. */
+    kHostUSBDeviceSubState_Default = 0,
+    /** Awaiting a logical device detach following a device re-enumeration. */
+    kHostUSBDeviceSubState_AwaitingDetach,
+    /** Awaiting a logical device re-attach following a device re-enumeration. */
+    kHostUSBDeviceSubState_AwaitingReAttach
+} HostUSBDeviceSubState;
+
+
+/**
  * Object class used to hold Host USB Device properties.
  */
 class ATL_NO_VTABLE HostUSBDevice :
