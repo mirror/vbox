@@ -409,7 +409,7 @@ PDMR3DECL(int) PGMR3PoolGrow(PVM pVM)
      */
     uint32_t cPages = pPool->cMaxPages - pPool->cCurPages;
     cPages = RT_MIN(PGMPOOL_CFG_MAX_GROW, cPages);
-    LogFlow(("PGMR3PoolGrow: Growing the by %d (%#x) pages.\n", cPages, cPages));
+    LogFlow(("PGMR3PoolGrow: Growing the pool by %d (%#x) pages.\n", cPages, cPages));
 
     for (unsigned i = pPool->cCurPages; cPages-- > 0; i++)
     {
