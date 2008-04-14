@@ -1890,8 +1890,7 @@ static void pcnetReceiveNoSync(PCNetState *pData, const uint8_t *buf, size_t siz
             }
             else
             {
-                LogRel(("PCNet#%d: Overflow by %ubytes\n",
-                         PCNET_INST_NR, size));
+                Log(("#%d: Overflow by %ubytes\n", PCNET_INST_NR, size));
                 rmd.rmd1.oflo = 1;
                 rmd.rmd1.buff = 1;
                 rmd.rmd1.err  = 1;
