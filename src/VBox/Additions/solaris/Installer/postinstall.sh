@@ -61,8 +61,8 @@ esac
 
 retval=0
 if test -z "$vboxmouse_src"; then
-    echo "Unknown version of the X Window System installed."
-    echo "Failed to install the VirtualBox X Window System drivers."
+    echo "*** Unknown version of the X Window System installed."
+    echo "*** Failed to install the VirtualBox X Window System drivers."
     
     # Exit as partially failed installation
     retval=2
@@ -91,6 +91,24 @@ else
     $vboxadditions_path/x11config.pl
 fi
 
+
+# Setup our VBoxClient
+echo "Configuring client..."
+vboxclient_src=$vboxadditions_path
+vboxclient_dest="/usr/dt/config/Xsession.d"
+if test -d "$vboxclient_dest"; then
+    /usr/sbin/installf -c none $PKGINST "$vboxclient_dest/1099.vboxclient" f
+    cp "$vboxclient_src/1099.vboxclient" "$vboxclient_dest/1099.vboxclient"
+elif test -d "/usr/share/gnome/autostart"; then
+    vboxclient_dest="/usr/share/gnome/autostart"
+    /usr/sbin/installf -c none $PKGINST "$vboxclient_dest/vboxclient.desktop" f
+    cp "$vboxclient_src/vboxclient.desktop" "$vboxclient_dest/vboxclient.desktop"
+else
+    echo "*** Failed to configure client!! Couldn't find autostart directory."
+    retval=2
+fi
+
+
 # Remove redundant files
 /usr/sbin/removef $PKGINST $vboxadditions_path/etc/devlink.tab 1>/dev/null
 /usr/sbin/removef $PKGINST $vboxadditions_path/etc 1>/dev/null
@@ -98,6 +116,7 @@ rm -rf $vboxadditions_path/etc
 /usr/sbin/removef -f $PKGINST
 
 /usr/sbin/installf -f $PKGINST
+
 
 # Setup our VBoxService SMF service
 echo "Configuring service..."

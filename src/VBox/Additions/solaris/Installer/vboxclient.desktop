@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Version=1.0
+Name=vboxclient
+Name[C]=vboxclient
+Comment[C]=VirtualBox Client
+Comment=VirtualBox Client
+Exec=/usr/bin/VBoxClient
+X-GNOME-Autostart-enabled=true
+
