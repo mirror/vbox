@@ -1279,12 +1279,20 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 #define PGMPOOL_IDX_PD          1
 /** The extended PAE page directory (2048 entries, works as root currently). */
 #define PGMPOOL_IDX_PAE_PD      2
+ /** PAE Page Directory Table 0. */
+#define PGMPOOL_IDX_PAE_PD_0    3
+ /** PAE Page Directory Table 1. */
+#define PGMPOOL_IDX_PAE_PD_1    4
+ /** PAE Page Directory Table 2. */
+#define PGMPOOL_IDX_PAE_PD_2    5
+ /** PAE Page Directory Table 3. */
+#define PGMPOOL_IDX_PAE_PD_4    6
 /** Page Directory Pointer Table (PAE root, not currently used). */
-#define PGMPOOL_IDX_PDPT        3
+#define PGMPOOL_IDX_PDPT        7
 /** Page Map Level-4 (64-bit root). */
-#define PGMPOOL_IDX_PML4        4
+#define PGMPOOL_IDX_PML4        8
 /** The first normal index. */
-#define PGMPOOL_IDX_FIRST       5
+#define PGMPOOL_IDX_FIRST       9
 /** The last valid index. (inclusive, 14 bits) */
 #define PGMPOOL_IDX_LAST        0x3fff
 /** @} */

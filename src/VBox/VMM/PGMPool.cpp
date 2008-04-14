@@ -231,19 +231,29 @@ int pgmR3PoolInit(PVM pVM)
     Assert(NIL_PGMPOOL_IDX == 0);
     pPool->aPages[NIL_PGMPOOL_IDX].enmKind = PGMPOOLKIND_INVALID;
 
-    /* The Shadow 32-bit PD. */
+    /* The Shadow 32-bit PD. (32 bits guest paging) */
     pPool->aPages[PGMPOOL_IDX_PD].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_PD].GCPhys    = NIL_RTGCPHYS;
     pPool->aPages[PGMPOOL_IDX_PD].pvPageHC  = pVM->pgm.s.pHC32BitPD;
     pPool->aPages[PGMPOOL_IDX_PD].enmKind   = PGMPOOLKIND_ROOT_32BIT_PD;
     pPool->aPages[PGMPOOL_IDX_PD].idx       = PGMPOOL_IDX_PD;
 
-    /* The Shadow PAE PDs. This is actually 4 pages! */
+    /* The Shadow PAE PDs. This is actually 4 pages! (32 bits guest paging)  */
     pPool->aPages[PGMPOOL_IDX_PAE_PD].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_PAE_PD].GCPhys    = NIL_RTGCPHYS;
     pPool->aPages[PGMPOOL_IDX_PAE_PD].pvPageHC  = pVM->pgm.s.apHCPaePDs[0];
     pPool->aPages[PGMPOOL_IDX_PAE_PD].enmKind   = PGMPOOLKIND_ROOT_PAE_PD;
     pPool->aPages[PGMPOOL_IDX_PAE_PD].idx       = PGMPOOL_IDX_PAE_PD;
+
+    /* The Shadow PAE PDs for PAE guest mode. */
+    for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
+    {
+        pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].Core.Key  = NIL_RTHCPHYS;
+        pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].GCPhys    = NIL_RTGCPHYS;
+        pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].pvPageHC  = pVM->pgm.s.apHCPaePDs[i];
+        pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].enmKind   = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
+        pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].idx       = PGMPOOL_IDX_PAE_PD_0 + i;
+    }
 
     /* The Shadow PDPT. */
     pPool->aPages[PGMPOOL_IDX_PDPT].Core.Key  = NIL_RTHCPHYS;
