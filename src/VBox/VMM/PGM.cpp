@@ -2910,6 +2910,13 @@ int pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
 
         //case PGMMODE_PAE_NX:
         case PGMMODE_PAE:
+            if (!HWACCMR3IsAllowed(pVM))
+            {
+                VMSetRuntimeError(pVM, true, "PAEmodeDependsHwaccm",
+                                  N_("The guest is trying to switch to the PAE mode which is currently supported by VirtualBox only in VT-x mode or AMD-V mode. Either enable hardware virtualization for this VM or choose another flavour of the guest kernel (install a desktop kernel instead of a server kernel)"));
+                /* we must return TRUE here otherwise the recompiler will assert */
+                return VINF_SUCCESS;
+            }
             GCPhysCR3 = CPUMGetGuestCR3(pVM) & X86_CR3_PAE_PAGE_MASK;
             rc = PGM_GST_NAME_PAE(Enter)(pVM, GCPhysCR3);
             switch (pVM->pgm.s.enmShadowMode)
