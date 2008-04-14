@@ -83,6 +83,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions: \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/preremove.sh                     $(SOLARISINSTDIR)/preremove.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.sh                     $(SOLARISINSTDIR)/vboxguest.sh
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml                  $(SOLARISINSTDIR)/vboxservice.xml
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxclient.desktop               $(SOLARISINSTDIR)/vboxclient.desktop
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient                    $(SOLARISINSTDIR)/1099.vboxclient
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl                         $(SOLARISINSTDIR)/x11config.pl
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11restore.pl                        $(SOLARISINSTDIR)/x11restore.pl

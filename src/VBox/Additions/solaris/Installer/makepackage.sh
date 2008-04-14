@@ -35,7 +35,7 @@ find . -print | /usr/sfw/bin/ggrep -v -E 'prototype|makepackage.sh|vboxguest.pkg
 /usr/bin/awk 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf" { $3 = "platform/i86pc/kernel/drv/vboxguest.conf=vboxguest.conf" } { print }' prototype2 > prototype
 
 # install the vboxclient daemon
-/usr/bin/awk 'NF == 6 && $3 == "opt/VirtualBoxAdditions/1099.vboxclient=1099.vboxclient" { $3 = "usr/dt/config/Xsession.d/1099.vboxclient=1099.vboxclient" } { print }' prototype > prototype2
+#/usr/bin/awk 'NF == 6 && $3 == "opt/VirtualBoxAdditions/1099.vboxclient=1099.vboxclient" { $3 = "usr/dt/config/Xsession.d/1099.vboxclient=1099.vboxclient" } { print }' prototype > prototype2
 
 #install the timesync daemon
 /usr/bin/awk 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxservice.xml=vboxservice.xml" { $3 = "/var/svc/manifest/system/virtualbox/vboxservice.xml=vboxservice.xml" } { print }' prototype2 > prototype
