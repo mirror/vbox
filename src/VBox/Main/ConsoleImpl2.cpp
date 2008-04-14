@@ -604,8 +604,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         if (enabled)
         {
-            ULONG nrPorts = 0;
-
             rc = CFGMR3InsertNode(pDevices, "ahci", &pDev);                             RC_CHECK();
             rc = CFGMR3InsertNode(pDev,     "0", &pSataInst);                           RC_CHECK();
             rc = CFGMR3InsertInteger(pSataInst, "Trusted",              1);             RC_CHECK();
@@ -615,33 +613,34 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pSataInst, "PCIFunctionNo",        0);             RC_CHECK();
             rc = CFGMR3InsertNode(pSataInst,    "Config", &pCfg);                       RC_CHECK();
 
-            hrc = sataController->COMGETTER(PortCount)(&nrPorts);                       H();
-            rc = CFGMR3InsertInteger(pCfg, "PortCount", nrPorts);                       RC_CHECK();
+            ULONG cPorts = 0;
+            hrc = sataController->COMGETTER(PortCount)(&cPorts);                        H();
+            rc = CFGMR3InsertInteger(pCfg, "PortCount", cPorts);                        RC_CHECK();
 
             /* Needed configuration values for the bios. */
             rc = CFGMR3InsertString(pBiosCfg, "SataHardDiskDevice", "ahci");            RC_CHECK();
 
             for (uint32_t i = 0; i < 4; i++)
             {
-                const char *g_apszConfig[] =
-                    { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
-                const char *g_apszBiosConfig[] =
-                    { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
-                LONG aPortNumber;
+                static const char *s_apszConfig[4] =
+                { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
+                static const char *s_apszBiosConfig[4] =
+                { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
 
-                hrc = sataController->GetIDEEmulationPort(i, &aPortNumber);             H();
-                rc = CFGMR3InsertInteger(pCfg, g_apszConfig[i], aPortNumber);           RC_CHECK();
-                rc = CFGMR3InsertInteger(pBiosCfg, g_apszBiosConfig[i], aPortNumber);   RC_CHECK();
+                LONG lPortNumber = -1;
+                hrc = sataController->GetIDEEmulationPort(i, &lPortNumber);             H();
+                rc = CFGMR3InsertInteger(pCfg, s_apszConfig[i], lPortNumber);           RC_CHECK();
+                rc = CFGMR3InsertInteger(pBiosCfg, s_apszBiosConfig[i], lPortNumber);   RC_CHECK();
             }
 
             /* Attach the status driver */
             rc = CFGMR3InsertNode(pSataInst,"LUN#999", &pLunL0);                              RC_CHECK();
             rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");            RC_CHECK();
             rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                                 RC_CHECK();
+            AssertRelease(cPorts <= RT_ELEMENTS(pConsole->mapSATALeds));
             rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapSATALeds[0]); RC_CHECK();
             rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                   RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "Last",     nrPorts-1);                           RC_CHECK();
-
+            rc = CFGMR3InsertInteger(pCfg,  "Last",     cPorts - 1);                          RC_CHECK();
         }
     }
 
