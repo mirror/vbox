@@ -4340,7 +4340,7 @@ static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKPORT pInterface, const void *p
  * @param   pMac            Where to store the MAC address.
  * @thread  EMT
  */
-static DECLCALLBACK(int) pcnetGetMac(PPDMINETWORKCONFIG pInterface, PPDMMAC *pMac)
+static DECLCALLBACK(int) pcnetGetMac(PPDMINETWORKCONFIG pInterface, PPDMMAC pMac)
 {
     PCNetState *pData = INETWORKCONFIG_2_DATA(pInterface);
     memcpy(pMac, pData->aPROM, sizeof(*pMac));
