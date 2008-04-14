@@ -249,6 +249,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
             PX86PTPAE   pPTPae;
             PX86PD      pPD;
             PX86PDPAE   pPDPae;
+            PX86PDPT    pPDPT;
         } uShw;
         uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pPage);
 
@@ -399,7 +400,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* paranoia / a bit assumptive. */
                 else if (   pCpu
                          && (off & 7)
-                         && (off & 7) + pgmPoolDisasWriteSize(pCpu) > 8)
+                         && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PTEPAE))
                 {
                     const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PTEPAE);
                     if (    iShw2 != iShw
@@ -423,6 +424,36 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     uShw.pPDPae->a[iShw].u = 0;
                 }
 #endif
+                break;
+            }
+
+            case PGMPOOLKIND_ROOT_PDPT:
+            {
+                const unsigned iShw = off / sizeof(X86PDPE);
+                if (iShw < X86_PG_PAE_PDPE_ENTRIES)          /* don't use ELEMENTS(uShw.pPDPT->a), because that's for long mode only */
+                {
+                    if (uShw.pPDPT->a[iShw].u & PGM_PDFLAGS_MAPPING)
+                    {
+                        Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
+                        VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                        LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
+                    }
+                    /* paranoia / a bit assumptive. */
+                    else if (   pCpu
+                            && (off & 7)
+                            && (off & 7) + pgmPoolDisasWriteSize(pCpu) > sizeof(X86PDPE))
+                    {
+                        const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PDPE);
+                        if (    iShw2 != iShw
+                            &&  iShw2 < X86_PG_PAE_PDPE_ENTRIES
+                            &&  uShw.pPDPae->a[iShw2].u & PGM_PDFLAGS_MAPPING)
+                        {
+                            Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
+                            VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                            LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
+                        }
+                    }
+                }
                 break;
             }
 
