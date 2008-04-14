@@ -316,10 +316,10 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                 }
-                /* paranoia / a bit assumptive. */
+                /* paranoia / a bit assumptive. (sizeof(X86PTE) - 1 = 3)*/
                 else if (   pCpu
-                         && (off & 4)
-                         && (off & 4) + pgmPoolDisasWriteSize(pCpu) > 4)
+                         && (off & 3)
+                         && (off & 3) + pgmPoolDisasWriteSize(pCpu) > 4)
                 {
                     const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PTE);
                     if (    iShw2 != iShw
@@ -348,42 +348,39 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_ROOT_PAE_PD:
             {
-                unsigned iShw = (off / sizeof(X86PTE)) * 2;   // ASSUMING 32-bit guest paging!
-                for (unsigned i = 0; i < 2; i++, iShw++)
+                unsigned iShw = off / sizeof(X86PTEPAE);   // ASSUMING PAE guest paging!
+                if ((uShw.pPDPae->a[iShw].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                 {
-                    if ((uShw.pPDPae->a[iShw].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
+                    Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
+                    VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                    LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
+                }
+                /* paranoia / a bit assumptive. (sizeof(X86PTEPAE) - 1 = 7)*/
+                else if (   pCpu
+                            && (off & 7)
+                            && (off & 7) + pgmPoolDisasWriteSize(pCpu) > 8)
+                {
+                    const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PTEPAE);
+                    if (    iShw2 < ELEMENTS(uShw.pPDPae->a)
+                        &&  (uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                     {
                         Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
                         VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
-                        LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
+                        LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                     }
-                    /* paranoia / a bit assumptive. */
-                    else if (   pCpu
-                             && (off & 4)
-                             && (off & 4) + pgmPoolDisasWriteSize(pCpu) > 4)
-                    {
-                        const unsigned iShw2 = iShw + 2;
-                        if (    iShw2 < ELEMENTS(uShw.pPDPae->a)
-                            &&  (uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
-                        {
-                            Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                            VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
-                            LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
-                        }
-                    }
-#if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
-                    if (    uShw.pPDPae->a[iShw].n.u1Present
-                        &&  !VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
-                    {
-                        LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
-# ifdef IN_GC           /* TLB load - we're pushing things a bit... */
-                        ASMProbeReadByte(pvAddress);
-# endif
-                        pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
-                        uShw.pPDPae->a[iShw].u = 0;
-                    }
-#endif
                 }
+#if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
+                if (    uShw.pPDPae->a[iShw].n.u1Present
+                    &&  !VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
+                {
+                    LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
+# ifdef IN_GC           /* TLB load - we're pushing things a bit... */
+                    ASMProbeReadByte(pvAddress);
+# endif
+                    pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
+                    uShw.pPDPae->a[iShw].u = 0;
+                }
+#endif
                 break;
             }
 
@@ -1190,12 +1187,12 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
+        case PGMPOOLKIND_ROOT_PDPT:
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
-        case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
@@ -1271,12 +1268,12 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
         case PGMPOOLKIND_ROOT_32BIT_PD:
         case PGMPOOLKIND_ROOT_PAE_PD:
+        case PGMPOOLKIND_ROOT_PDPT:
 #ifdef PGMPOOL_WITH_MIXED_PT_CR3
             break;
 #endif
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
-        case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_PML4:
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
