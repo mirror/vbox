@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * Implementation of IUSBController.
  */
 
@@ -21,11 +21,13 @@
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
 #include "HostImpl.h"
-#include "USBDeviceImpl.h"
-#include "HostUSBDeviceImpl.h"
+#ifdef VBOX_WITH_USB
+# include "USBDeviceImpl.h"
+# include "HostUSBDeviceImpl.h"
+# include "USBProxyService.h"
+#endif
 #include "Logging.h"
 
-#include "USBProxyService.h"
 
 #include <iprt/string.h>
 #include <iprt/cpputils.h>
@@ -74,7 +76,9 @@ HRESULT USBController::init (Machine *aParent)
     /* mPeer is left null */
 
     mData.allocate();
+#ifdef VBOX_WITH_USB
     mDeviceFilters.allocate();
+#endif
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -111,6 +115,7 @@ HRESULT USBController::init (Machine *aParent, USBController *aPeer)
     AutoLock thatlock (aPeer);
     mData.share (aPeer->mData);
 
+#ifdef VBOX_WITH_USB
     /* create copies of all filters */
     mDeviceFilters.allocate();
     DeviceFilterList::const_iterator it = aPeer->mDeviceFilters->begin();
@@ -122,6 +127,7 @@ HRESULT USBController::init (Machine *aParent, USBController *aPeer)
         mDeviceFilters->push_back (filter);
         ++ it;
     }
+#endif /* VBOX_WITH_USB */
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -151,6 +157,7 @@ HRESULT USBController::initCopy (Machine *aParent, USBController *aPeer)
     AutoLock thatlock (aPeer);
     mData.attachCopy (aPeer->mData);
 
+#ifdef VBOX_WITH_USB
     /* create private copies of all filters */
     mDeviceFilters.allocate();
     DeviceFilterList::const_iterator it = aPeer->mDeviceFilters->begin();
@@ -162,6 +169,7 @@ HRESULT USBController::initCopy (Machine *aParent, USBController *aPeer)
         mDeviceFilters->push_back (filter);
         ++ it;
     }
+#endif /* VBOX_WITH_USB */
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -186,7 +194,9 @@ void USBController::uninit()
     /* uninit all filters (including those still referenced by clients) */
     uninitDependentChildren();
 
+#ifdef VBOX_WITH_USB
     mDeviceFilters.free();
+#endif
     mData.free();
 
     unconst (mPeer).setNull();
@@ -292,11 +302,59 @@ STDMETHODIMP USBController::COMGETTER(USBStandard) (USHORT *aUSBStandard)
 
     /* not accessing data -- no need to lock */
 
-    /** Note: This is no longer correct */
+    /** @todo This is no longer correct */
     *aUSBStandard = 0x0101;
 
     return S_OK;
 }
+
+#ifndef VBOX_WITH_USB
+/**
+ * Fake class for build without USB.
+ * We need an empty collection & enum for deviceFilters, that's all.
+ */
+class ATL_NO_VTABLE USBDeviceFilter : public VirtualBoxBaseNEXT, public IUSBDeviceFilter
+{
+public:
+    DECLARE_NOT_AGGREGATABLE(USBDeviceFilter)
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+    BEGIN_COM_MAP(USBDeviceFilter)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IUSBDeviceFilter)
+    END_COM_MAP()
+
+    NS_DECL_ISUPPORTS
+
+    DECLARE_EMPTY_CTOR_DTOR (USBDeviceFilter)
+
+    // IUSBDeviceFilter properties
+    STDMETHOD(COMGETTER(Name)) (BSTR *aName);
+    STDMETHOD(COMSETTER(Name)) (INPTR BSTR aName);
+    STDMETHOD(COMGETTER(Active)) (BOOL *aActive);
+    STDMETHOD(COMSETTER(Active)) (BOOL aActive);
+    STDMETHOD(COMGETTER(VendorId)) (BSTR *aVendorId);
+    STDMETHOD(COMSETTER(VendorId)) (INPTR BSTR aVendorId);
+    STDMETHOD(COMGETTER(ProductId)) (BSTR *aProductId);
+    STDMETHOD(COMSETTER(ProductId)) (INPTR BSTR aProductId);
+    STDMETHOD(COMGETTER(Revision)) (BSTR *aRevision);
+    STDMETHOD(COMSETTER(Revision)) (INPTR BSTR aRevision);
+    STDMETHOD(COMGETTER(Manufacturer)) (BSTR *aManufacturer);
+    STDMETHOD(COMSETTER(Manufacturer)) (INPTR BSTR aManufacturer);
+    STDMETHOD(COMGETTER(Product)) (BSTR *aProduct);
+    STDMETHOD(COMSETTER(Product)) (INPTR BSTR aProduct);
+    STDMETHOD(COMGETTER(SerialNumber)) (BSTR *aSerialNumber);
+    STDMETHOD(COMSETTER(SerialNumber)) (INPTR BSTR aSerialNumber);
+    STDMETHOD(COMGETTER(Port)) (BSTR *aPort);
+    STDMETHOD(COMSETTER(Port)) (INPTR BSTR aPort);
+    STDMETHOD(COMGETTER(Remote)) (BSTR *aRemote);
+    STDMETHOD(COMSETTER(Remote)) (INPTR BSTR aRemote);
+    STDMETHOD(COMGETTER(MaskedInterfaces)) (ULONG *aMaskedIfs);
+    STDMETHOD(COMSETTER(MaskedInterfaces)) (ULONG aMaskedIfs);
+};
+COM_DECL_READONLY_ENUM_AND_COLLECTION (USBDeviceFilter);
+COM_IMPL_READONLY_ENUM_AND_COLLECTION (USBDeviceFilter);
+#endif /* !VBOX_WITH_USB */
+
 
 STDMETHODIMP USBController::COMGETTER(DeviceFilters) (IUSBDeviceFilterCollection **aDevicesFilters)
 {
@@ -310,7 +368,9 @@ STDMETHODIMP USBController::COMGETTER(DeviceFilters) (IUSBDeviceFilterCollection
 
     ComObjPtr <USBDeviceFilterCollection> collection;
     collection.createObject();
+#ifdef VBOX_WITH_USB
     collection->init (*mDeviceFilters.data());
+#endif
     collection.queryInterfaceTo (aDevicesFilters);
 
     return S_OK;
@@ -322,6 +382,7 @@ STDMETHODIMP USBController::COMGETTER(DeviceFilters) (IUSBDeviceFilterCollection
 STDMETHODIMP USBController::CreateDeviceFilter (INPTR BSTR aName,
                                                 IUSBDeviceFilter **aFilter)
 {
+#ifdef VBOX_WITH_USB
     if (!aFilter)
         return E_POINTER;
 
@@ -345,11 +406,15 @@ STDMETHODIMP USBController::CreateDeviceFilter (INPTR BSTR aName,
     AssertComRCReturnRC (rc);
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
                                                 IUSBDeviceFilter *aFilter)
 {
+#ifdef VBOX_WITH_USB
     if (!aFilter)
         return E_INVALIDARG;
 
@@ -406,11 +471,15 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
     }
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
                                                 IUSBDeviceFilter **aFilter)
 {
+#ifdef VBOX_WITH_USB
     if (!aFilter)
         return E_POINTER;
 
@@ -471,6 +540,9 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
     }
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 // public methods only for internal purposes
@@ -515,6 +587,7 @@ HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
     /* enabledEhci (optiona, defaults to false) */
     mData->mEnabledEhci = controller.value <bool> ("enabledEhci");
 
+#ifdef VBOX_WITH_USB
     HRESULT rc = S_OK;
 
     Key::List children = controller.keys ("DeviceFilter");
@@ -548,6 +621,7 @@ HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
         mDeviceFilters->push_back (filterObj);
         filterObj->mInList = true;
     }
+#endif /* VBOX_WITH_USB */
 
     return S_OK;
 }
@@ -572,10 +646,16 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
 
     /* first, delete the entry */
     Key controller = aMachineNode.findKey ("USBController");
+#ifdef VBOX_WITH_USB
     if (!controller.isNull())
         controller.zap();
     /* then, recreate it */
     controller = aMachineNode.createKey ("USBController");
+#else
+    /* don't zap it. */
+    if (!controller.isNull())
+        controller = aMachineNode.createKey ("USBController");
+#endif
 
     /* enabled */
     controller.setValue <bool> ("enabled", !!mData->mEnabled);
@@ -583,6 +663,7 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
     /* enabledEhci */
     controller.setValue <bool> ("enabledEhci", !!mData->mEnabledEhci);
 
+#ifdef VBOX_WITH_USB
     DeviceFilterList::const_iterator it = mDeviceFilters->begin();
     while (it != mDeviceFilters->end())
     {
@@ -632,6 +713,7 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
 
         ++ it;
     }
+#endif /* VBOX_WITH_USB */
 
     return S_OK;
 }
@@ -644,9 +726,14 @@ bool USBController::isModified()
 
     AutoReaderLock alock (this);
 
-    if (mData.isBackedUp() || mDeviceFilters.isBackedUp())
+    if (mData.isBackedUp()
+#ifdef VBOX_WITH_USB
+        || mDeviceFilters.isBackedUp()
+#endif
+        )
         return true;
 
+#ifdef VBOX_WITH_USB
     /* see whether any of filters has changed its data */
     for (DeviceFilterList::const_iterator
          it = mDeviceFilters->begin();
@@ -656,6 +743,7 @@ bool USBController::isModified()
         if ((*it)->isModified())
             return true;
     }
+#endif /* VBOX_WITH_USB */
 
     return false;
 }
@@ -671,6 +759,7 @@ bool USBController::isReallyModified()
     if (mData.hasActualChanges())
         return true;
 
+#ifdef VBOX_WITH_USB
     if (!mDeviceFilters.isBackedUp())
     {
         /* see whether any of filters has changed its data */
@@ -719,6 +808,7 @@ bool USBController::isReallyModified()
     }
 
     Assert (devices.size() == 0 && backDevices.size() == 0);
+#endif /* VBOX_WITH_USB */
 
     return false;
 }
@@ -745,6 +835,7 @@ bool USBController::rollback()
         mData.rollback();
     }
 
+#ifdef VBOX_WITH_USB
     if (mDeviceFilters.isBackedUp())
     {
         USBProxyService *service = mParent->virtualBox()->host()->usbProxyService();
@@ -826,6 +917,7 @@ bool USBController::rollback()
         }
         ++ it;
     }
+#endif /* VBOX_WITH_USB */
 
     return dataChanged;
 }
@@ -849,6 +941,7 @@ void USBController::commit()
         }
     }
 
+#ifdef VBOX_WITH_USB
     bool commitFilters = false;
 
     if (mDeviceFilters.isBackedUp())
@@ -921,6 +1014,7 @@ void USBController::commit()
             ++ it;
         }
     }
+#endif /* VBOX_WITH_USB */
 }
 
 /** @note Locks object for writing and that object for reading! */
@@ -942,6 +1036,7 @@ void USBController::copyFrom (USBController *aThat)
     /* this will back up current data */
     mData.assignCopy (aThat->mData);
 
+#ifdef VBOX_WITH_USB
     /* create private copies of all filters */
     mDeviceFilters.backup();
     mDeviceFilters->clear();
@@ -954,6 +1049,7 @@ void USBController::copyFrom (USBController *aThat)
         filter->initCopy (this, *it);
         mDeviceFilters->push_back (filter);
     }
+#endif /* VBOX_WITH_USB */
 
     if (mParent->isRegistered())
     {
@@ -985,6 +1081,8 @@ HRESULT USBController::onMachineRegistered (BOOL aRegistered)
 
     return S_OK;
 }
+
+#ifdef VBOX_WITH_USB
 
 /**
  *  Called by setter methods of all USB device filters.
@@ -1240,6 +1338,8 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
 
     return S_OK;
 }
+
+#endif /* VBOX_WITH_USB */
 
 // private methods
 /////////////////////////////////////////////////////////////////////////////

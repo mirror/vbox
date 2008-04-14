@@ -177,8 +177,6 @@ VBoxSVC_LIBS.solaris = \
 VBoxSVC_SOURCES = \
 	Logging.cpp \
 	Matching.cpp \
-	USBDeviceFilterImpl.cpp \
-	USBProxyService.cpp \
 	VirtualBoxBase.cpp \
 	VirtualBoxErrorInfoImpl.cpp \
 	VirtualBoxImpl.cpp \
@@ -195,7 +193,6 @@ VBoxSVC_SOURCES = \
 	HostImpl.cpp \
 	HostDVDDriveImpl.cpp \
 	HostFloppyDriveImpl.cpp \
-	HostUSBDeviceImpl.cpp \
 	GuestOSTypeImpl.cpp \
 	NetworkAdapterImpl.cpp \
 	SerialPortImpl.cpp \
@@ -232,6 +229,10 @@ VBoxSVC_SOURCES += \
 endif
 
 ifdef VBOX_WITH_USB
+VBoxSVC_SOURCES  += \
+	USBDeviceFilterImpl.cpp \
+	USBProxyService.cpp \
+	HostUSBDeviceImpl.cpp
 VBoxSVC_SOURCES.darwin  +=  darwin/USBProxyServiceDarwin.cpp
 VBoxSVC_SOURCES.linux   +=   linux/USBProxyServiceLinux.cpp
 VBoxSVC_SOURCES.os2     +=     os2/USBProxyServiceOs2.cpp

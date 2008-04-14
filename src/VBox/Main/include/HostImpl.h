@@ -1,8 +1,6 @@
 /* $Id$ */
-
 /** @file
- *
- * VirtualBox COM class implementation
+ * Implemenation of IHost.
  */
 
 /*
@@ -21,11 +19,16 @@
 #define ____H_HOSTIMPL
 
 #include "VirtualBoxBase.h"
-#include "HostUSBDeviceImpl.h"
-#include "USBDeviceFilterImpl.h"
+#ifdef VBOX_WITH_USB
+# include "HostUSBDeviceImpl.h"
+# include "USBDeviceFilterImpl.h"
+# include "USBProxyService.h"
+#else
+class USBProxyService;
+#endif
 
 #ifdef RT_OS_WINDOWS
-#include "win32/svchlp.h"
+# include "win32/svchlp.h"
 #endif
 
 class VirtualBox;
@@ -94,12 +97,12 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
-                                     BOOL aActiveChanged = FALSE);
-
     HRESULT loadSettings (const settings::Key &aGlobal);
     HRESULT saveSettings (settings::Key &aGlobal);
 
+#ifdef VBOX_WITH_USB
+    HRESULT onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
+                                     BOOL aActiveChanged = FALSE);
     HRESULT captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId);
     HRESULT detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BOOL aDone);
     HRESULT autoCaptureUSBDevices (SessionMachine *aMachine);
@@ -109,10 +112,13 @@ public:
     void onUSBDeviceDetached (HostUSBDevice *aDevice);
     void onUSBDeviceStateChanged (HostUSBDevice *aDevice);
 
-    HRESULT checkUSBProxyService();
-    
-    /* must be called from under this object's lock */ 
+    /* must be called from under this object's lock */
     USBProxyService *usbProxyService() { return mUSBProxyService; }
+#else  /* !VBOX_WITH_USB */
+    USBProxyService *usbProxyService() { return NULL; }
+#endif /* !VBOX_WITH_USB */
+
+    HRESULT checkUSBProxyService();
 
 #ifdef RT_OS_WINDOWS
     static int networkInterfaceHelperServer (SVCHlpClient *aClient,
@@ -133,6 +139,7 @@ private:
     bool validateDevice(const char *deviceNode, bool isCDROM);
 #endif
 
+#ifdef VBOX_WITH_USB
     /** specialization for IHostUSBDeviceFilter */
     ComObjPtr <HostUSBDeviceFilter> getDependentChild (IHostUSBDeviceFilter *aFilter)
     {
@@ -147,6 +154,7 @@ private:
 
     bool applyMachineUSBFilters (SessionMachine *aMachine,
                                  ComObjPtr <HostUSBDevice> &aDevice);
+#endif /* VBOX_WITH_USB */
 
 #ifdef RT_OS_WINDOWS
     static int createNetworkInterface (SVCHlpClient *aClient,
@@ -162,6 +170,7 @@ private:
 
     ComObjPtr <VirtualBox, ComWeakRef> mParent;
 
+#ifdef VBOX_WITH_USB
     typedef std::list <ComObjPtr <HostUSBDevice> > USBDeviceList;
     USBDeviceList mUSBDevices;
 
@@ -170,6 +179,7 @@ private:
 
     /** Pointer to the USBProxyService object. */
     USBProxyService *mUSBProxyService;
+#endif /* VBOX_WITH_USB */
 };
 
 #endif // ____H_HOSTIMPL

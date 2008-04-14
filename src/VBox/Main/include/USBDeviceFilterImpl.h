@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Declaration of VirtualBox COM components:
- * USBDeviceFilter and HostUSBDeviceFilter
+ * Declaration of USBDeviceFilter and HostUSBDeviceFilter.
  */
 
 /*

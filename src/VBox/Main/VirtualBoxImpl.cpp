@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VirtualBox COM class implementation
+ * Implmentation of IVirtualBox in VBoxSVC.
  */
 
 /*

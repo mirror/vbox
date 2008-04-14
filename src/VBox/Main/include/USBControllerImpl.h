@@ -21,7 +21,9 @@
 #define ____H_USBCONTROLLERIMPL
 
 #include "VirtualBoxBase.h"
-#include "USBDeviceFilterImpl.h"
+#ifdef VBOX_WITH_USB
+# include "USBDeviceFilterImpl.h"
+#endif
 
 #include <list>
 
@@ -112,6 +114,7 @@ public:
 
     HRESULT onMachineRegistered (BOOL aRegistered);
 
+#ifdef VBOX_WITH_USB
     HRESULT onDeviceFilterChange (USBDeviceFilter *aFilter,
                                   BOOL aActiveChanged = FALSE);
 
@@ -119,6 +122,7 @@ public:
     bool hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs);
 
     HRESULT notifyProxy (bool aInsertFilters);
+#endif /* VBOX_WITH_USB */
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
@@ -133,6 +137,7 @@ public:
 
 private:
 
+#ifdef VBOX_WITH_USB
     /** specialization for IUSBDeviceFilter */
     ComObjPtr <USBDeviceFilter> getDependentChild (IUSBDeviceFilter *aFilter)
     {
@@ -141,6 +146,7 @@ private:
         return child ? static_cast <USBDeviceFilter *> (child)
                      : NULL;
     }
+#endif /* VBOX_WITH_USB */
 
     void printList();
 
@@ -151,11 +157,13 @@ private:
     /** Data. */
     Backupable <Data> mData;
 
+#ifdef VBOX_WITH_USB
     // the following fields need special backup/rollback/commit handling,
     // so they cannot be a part of Data
 
     typedef std::list <ComObjPtr <USBDeviceFilter> > DeviceFilterList;
     Backupable <DeviceFilterList> mDeviceFilters;
+#endif /* VBOX_WITH_USB */
 };
 
 #endif //!____H_USBCONTROLLERIMPL

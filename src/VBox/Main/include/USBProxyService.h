@@ -19,8 +19,10 @@
 #ifndef ____H_USBPROXYSERVICE
 #define ____H_USBPROXYSERVICE
 
-#include "HostImpl.h"
+#include <VBox/usb.h>
+#include <VBox/usbfilter.h>
 #include "HostUSBDeviceImpl.h"
+class Host;
 
 /**
  * Base class for the USB Proxy service.
@@ -234,17 +236,15 @@ protected:
     RTTHREAD mThread;
     /** Flag which stop() sets to cause serviceThread to return. */
     bool volatile mTerminate;
+    /** VBox status code of the last failure.
+     * (Only used by start(), stop() and the child constructors.) */
+    int mLastError;
     /** List of smart HostUSBDevice pointers. */
     typedef std::list <ComObjPtr <HostUSBDevice> > HostUSBDeviceList;
     /** List of the known USB devices. */
     HostUSBDeviceList mDevices;
-    /** VBox status code of the last failure.
-     * (Only used by start(), stop() and the child constructors.) */
-    int mLastError;
 };
 
-
-#ifdef VBOX_WITH_USB
 
 # ifdef RT_OS_DARWIN
 #  include <VBox/param.h>
@@ -436,8 +436,6 @@ private:
     HANDLE hEventInterrupt;
 };
 # endif /* RT_OS_WINDOWS */
-
-#endif /* VBOX_WITH_USB */
 
 
 #endif /* !____H_USBPROXYSERVICE */
