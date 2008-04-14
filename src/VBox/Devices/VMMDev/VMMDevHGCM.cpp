@@ -715,10 +715,11 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
         /* Write back the request */
         PDMDevHlpPhysWrite(pVMMDevState->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbSize);
 
-        VMMDevNotifyGuest (pVMMDevState, VMMDEV_EVENT_HGCM);
-
         /* It it assumed that VMMDev saves state after the HGCM services. */
         vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
+
+        /* Now, when the command was removed from the internal list, notify the guest. */
+        VMMDevNotifyGuest (pVMMDevState, VMMDEV_EVENT_HGCM);
 
         if (pCmd->paLinPtrs)
         {
