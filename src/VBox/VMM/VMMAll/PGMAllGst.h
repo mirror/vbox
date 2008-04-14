@@ -413,7 +413,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
              * Map the 4 PDs too.
              */
             RTGCUINTPTR GCPtr = (RTGCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping + PAGE_SIZE;
-            for (unsigned i = 0; i < 4; i++, GCPtr += PAGE_SIZE)
+            for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++, GCPtr += PAGE_SIZE)
             {
                 if (pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[i].n.u1Present)
                 {
@@ -472,7 +472,12 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
     pVM->pgm.s.pGstPaePDPTHC = 0;
     pVM->pgm.s.pGstPaePDPTGC = 0;
-    /** PAE todo: pVM->pgm.s.apGstPaePDsHC? -> unmap?? */
+    for (unsigned i=0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
+    {
+        pVM->pgm.s.apGstPaePDsHC[i]    = 0;
+        pVM->pgm.s.apGstPaePDsGC[i]    = 0;        
+        pVM->pgm.s.aGCPhysGstPaePDs[i] = NIL_RTGCPHYS;
+    }
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
 //#error not implemented
@@ -541,10 +546,16 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     }
 
 #if PGM_GST_TYPE == PGM_TYPE_PAE
+    /* Monitor the PDPT page */
+# ifndef PGMPOOL_WITH_MIXED_PT_CR3
+    AssertFailed();
+# else
+    rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PDPT, GCPhysCR3);
+# endif
     /*
      * Do the 4 PDs.
      */
-    for (unsigned i = 0; i < 4; i++)
+    for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
     {
         if (CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].n.u1Present)
         {
@@ -564,14 +575,10 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                     pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = GCPhys;
             }
 # else  /* PGMPOOL_WITH_MIXED_PT_CR3 */
-            /** PAE todo */
-            AssertFailed();
-            rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool),
-                                             pVM->pgm.s.enmShadowMode == PGMMODE_PAE
-                                          || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX
-                                          ? PGMPOOL_IDX_PAE_PD
-                                          : PGMPOOL_IDX_PD,
-                                          GCPhys);
+            Assert(   pVM->pgm.s.enmShadowMode == PGMMODE_PAE 
+                   || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX);
+
+            rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PAE_PD, GCPhys);
 # endif /* PGMPOOL_WITH_MIXED_PT_CR3 */
             if (VBOX_FAILURE(rc))
             {
@@ -634,20 +641,23 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
     }
 
 # if PGM_GST_TYPE == PGM_TYPE_PAE
+    /* The PDPT page */
+# ifndef PGMPOOL_WITH_MIXED_PT_CR3
+    AssertFailed();
+# else
+    rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PDPT);
+    AssertRC(rc);
+# endif
+
     /* The 4 PDs. */
-    for (unsigned i = 0; i < 4; i++)
+    for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
         if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
         {
 # ifndef PGMPOOL_WITH_MIXED_PT_CR3
             int rc2 = PGMHandlerPhysicalDeregister(pVM, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]);
 # else /* PGMPOOL_WITH_MIXED_PT_CR3 */
-            /** PAE todo */
-            AssertFailed();
-            int rc2 = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool),
-                                                    pVM->pgm.s.enmShadowMode == PGMMODE_PAE
-                                                 || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX
-                                                 ? PGMPOOL_IDX_PAE_PD
-                                                 : PGMPOOL_IDX_PD);
+            Assert(pVM->pgm.s.enmShadowMode == PGMMODE_PAE || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX);
+            int rc2 = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PAE_PD);
 # endif /* PGMPOOL_WITH_MIXED_PT_CR3 */
             AssertRC(rc2);
             if (VBOX_FAILURE(rc2))
@@ -985,7 +995,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
          * Check if any of the PDs have changed.
          * We'll simply check all of them instead of figuring out which one/two to check.
          */
-        for (unsigned i = 0; i < 4; i++)
+        for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
         {
             if (    CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].n.u1Present
                 &&  (   CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].u & X86_PDPE_PG_MASK)
@@ -1051,7 +1061,7 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
          * Figure out which of the 4 PDs this is.
          */
         RTGCUINTPTR i;
-        for (i = 0; i < 4; i++)
+        for (i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
             if (CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].u == (GCPhysFault & X86_PTE_PAE_PG_MASK))
             {
                 PX86PDPAE           pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPT_SHIFT);
