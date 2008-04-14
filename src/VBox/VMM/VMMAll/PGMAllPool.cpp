@@ -782,7 +782,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
  */
 DECLINLINE(void) pgmPoolHashInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    Log3(("pgmPoolHashInsert %VGp\n", pPage->GCPhys));
+    Log3(("pgmPoolHashInsert: %VGp\n", pPage->GCPhys));
     Assert(pPage->GCPhys != NIL_RTGCPHYS); Assert(pPage->iNext == NIL_PGMPOOL_IDX);
     uint16_t iHash = PGMPOOL_HASH(pPage->GCPhys);
     pPage->iNext = pPool->aiHash[iHash];
@@ -798,7 +798,7 @@ DECLINLINE(void) pgmPoolHashInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 DECLINLINE(void) pgmPoolHashRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    Log3(("pgmPoolHashRemove %VGp\n", pPage->GCPhys));
+    Log3(("pgmPoolHashRemove: %VGp\n", pPage->GCPhys));
     uint16_t iHash = PGMPOOL_HASH(pPage->GCPhys);
     if (pPool->aiHash[iHash] == pPage->idx)
         pPool->aiHash[iHash] = pPage->iNext;
@@ -964,13 +964,13 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
      * Look up the GCPhys in the hash.
      */
     unsigned i = pPool->aiHash[PGMPOOL_HASH(GCPhys)];
-    Log3(("pgmPoolCacheAlloc %VGp kind %d iUser=%d iUserTable=%x SLOT=%d\n", GCPhys, enmKind, iUser, iUserTable, i));
+    Log3(("pgmPoolCacheAlloc: %VGp kind %d iUser=%d iUserTable=%x SLOT=%d\n", GCPhys, enmKind, iUser, iUserTable, i));
     if (i != NIL_PGMPOOL_IDX)
     {
         do
         {
             PPGMPOOLPAGE pPage = &pPool->aPages[i];
-            Log3(("pgmPoolCacheAlloc slot %d found page %VGp\n", i, pPage->GCPhys));
+            Log3(("pgmPoolCacheAlloc: slot %d found page %VGp\n", i, pPage->GCPhys));
             if (pPage->GCPhys == GCPhys)
             {
                 if ((PGMPOOLKIND)pPage->enmKind == enmKind)
@@ -1060,7 +1060,7 @@ static void pgmPoolCacheInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fCanBeCa
  */
 static void pgmPoolCacheFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    Log3(("pgmPoolCacheFlushPage %VGp\n", pPage->GCPhys));
+    Log3(("pgmPoolCacheFlushPage: %VGp\n", pPage->GCPhys));
 
     /*
      * Remove the page from the hash.
