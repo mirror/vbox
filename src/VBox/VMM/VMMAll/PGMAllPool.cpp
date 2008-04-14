@@ -387,6 +387,45 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 break;
             }
 
+            case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+            {
+                const unsigned iShw = off / sizeof(X86PTEPAE);
+                if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
+                {
+                    Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
+                    VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                    LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
+                }
+                /* paranoia / a bit assumptive. */
+                else if (   pCpu
+                         && (off & 7)
+                         && (off & 7) + pgmPoolDisasWriteSize(pCpu) > 8)
+                {
+                    const unsigned iShw2 = (off + pgmPoolDisasWriteSize(pCpu) - 1) / sizeof(X86PTEPAE);
+                    if (    iShw2 != iShw
+                        &&  iShw2 < ELEMENTS(uShw.pPDPae->a)
+                        &&  uShw.pPDPae->a[iShw2].u & PGM_PDFLAGS_MAPPING)
+                    {
+                        Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
+                        VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                        LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
+                    }
+                }
+#if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
+                if (    uShw.pPDPae->a[iShw].n.u1Present
+                    &&  !VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
+                {
+                    LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX32 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
+# ifdef IN_GC       /* TLB load - we're pushing things a bit... */
+                    ASMProbeReadByte(pvAddress);
+# endif
+                    pgmPoolFree(pPool->CTXSUFF(pVM), uShwpPDPae->a[iShw].u & X86_PDE_PG_MASK, pPage->idx, iShw);
+                    uShw.pPDPae->a[iShw].u = 0;
+                }
+#endif
+                break;
+            }
+
             default:
                 AssertFatalMsgFailed(("enmKind=%d\n", pPage->enmKind));
         }
