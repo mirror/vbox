@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VirtualBox COM class implementation
+ * Implementation of IMachine in VBoxSVC.
  */
 
 /*
@@ -41,7 +41,9 @@
 #include "GuestImpl.h"
 #include "SATAControllerImpl.h"
 
-#include "USBProxyService.h"
+#ifdef VBOX_WITH_USB
+# include "USBProxyService.h"
+#endif
 
 #include "VirtualBoxXMLUtil.h"
 
@@ -7527,7 +7529,11 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
+#ifdef VBOX_WITH_USB
     *aMatched = mUSBController->hasMatchingFilter (aUSBDevice, aMaskedIfs);
+#else
+    *aMatched = FALSE;
+#endif
 
     return S_OK;
 }
@@ -7542,8 +7548,12 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
+#ifdef VBOX_WITH_USB
     /* if cautureUSBDevice() fails, it must have set extended error info */
     return mParent->host()->captureUSBDevice (this, aId);
+#else
+    return E_FAIL;
+#endif
 }
 
 /**
@@ -7556,7 +7566,11 @@ STDMETHODIMP SessionMachine::DetachUSBDevice (INPTR GUIDPARAM aId, BOOL aDone)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
+#ifdef VBOX_WITH_USB
     return mParent->host()->detachUSBDevice (this, aId, aDone);
+#else
+    return E_FAIL;
+#endif
 }
 
 /**
@@ -7574,11 +7588,15 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
+#ifdef VBOX_WITH_USB
     HRESULT rc = mUSBController->notifyProxy (true /* aInsertFilters */);
     AssertComRC (rc);
     NOREF (rc);
 
     return mParent->host()->autoCaptureUSBDevices (this);
+#else
+    return S_OK;
+#endif
 }
 
 /**
@@ -7598,11 +7616,15 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
+#ifdef VBOX_WITH_USB
     HRESULT rc = mUSBController->notifyProxy (false /* aInsertFilters */);
     AssertComRC (rc);
     NOREF (rc);
 
     return mParent->host()->detachAllUSBDevices (this, aDone);
+#else
+    return S_OK;
+#endif
 }
 
 /**
@@ -8533,7 +8555,11 @@ bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDev
 
     AutoReaderLock alock (this);
 
+#ifdef VBOX_WITH_USB
     return mUSBController->hasMatchingFilter (aDevice, aMaskedIfs);
+#else
+    return false;
+#endif
 }
 
 /**

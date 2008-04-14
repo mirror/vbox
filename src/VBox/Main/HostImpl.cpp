@@ -1,5 +1,6 @@
+/* $Id$ */
 /** @file
- * VirtualBox COM class implementation
+ * VirtualBox COM class implementation: Host
  */
 
 /*
@@ -72,19 +73,21 @@ extern "C" char *getfullrawname(char *);
 #include "HostImpl.h"
 #include "HostDVDDriveImpl.h"
 #include "HostFloppyDriveImpl.h"
-#include "HostUSBDeviceImpl.h"
-#include "USBDeviceFilterImpl.h"
-#include "USBProxyService.h"
+#ifdef VBOX_WITH_USB
+# include "HostUSBDeviceImpl.h"
+# include "USBDeviceFilterImpl.h"
+# include "USBProxyService.h"
+#endif
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
 #include "Logging.h"
 
 #ifdef RT_OS_DARWIN
-#include "darwin/iokit.h"
+# include "darwin/iokit.h"
 #endif
 
 #ifdef RT_OS_WINDOWS
-#include "HostNetworkInterfaceImpl.h"
+# include "HostNetworkInterfaceImpl.h"
 #endif
 
 #include <VBox/usb.h>
@@ -144,7 +147,7 @@ HRESULT Host::init (VirtualBox *parent)
     mUSBProxyService = new USBProxyServiceOs2 (this);
 #elif defined (RT_OS_WINDOWS) && defined (VBOX_WITH_USB)
     mUSBProxyService = new USBProxyServiceWin32 (this);
-#else
+#elif defined (VBOX_WITH_USB)
     mUSBProxyService = new USBProxyService (this);
 #endif
     /** @todo handle !mUSBProxySerivce->isActive() and mUSBProxyService->getLastError()
@@ -165,18 +168,22 @@ void Host::uninit()
 
     AssertReturn (isReady(), (void) 0);
 
+#ifdef VBOX_WITH_USB
     /* wait for USB proxy service to terminate before we uninit all USB
      * devices */
     LogFlowThisFunc (("Stopping USB proxy service...\n"));
     delete mUSBProxyService;
-    LogFlowThisFunc (("Done stopping USB proxy service.\n"));
     mUSBProxyService = NULL;
+    LogFlowThisFunc (("Done stopping USB proxy service.\n"));
+#endif
 
     /* uninit all USB device filters still referenced by clients */
     uninitDependentChildren();
 
+#ifdef VBOX_WITH_USB
     mUSBDeviceFilters.clear();
     mUSBDevices.clear();
+#endif
 
     setReady (FALSE);
 }
@@ -1070,51 +1077,6 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- *  Called by setter methods of all USB device filters.
- */
-HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
-                                       BOOL aActiveChanged /* = FALSE */)
-{
-    AutoLock alock (this);
-    CHECK_READY();
-
-    if (aFilter->mInList)
-    {
-        if (aActiveChanged)
-        {
-            // insert/remove the filter from the proxy
-            if (aFilter->data().mActive)
-            {
-                ComAssertRet (aFilter->id() == NULL, E_FAIL);
-                aFilter->id() = mUSBProxyService->insertFilter (&aFilter->data().mUSBFilter);
-            }
-            else
-            {
-                ComAssertRet (aFilter->id() != NULL, E_FAIL);
-                mUSBProxyService->removeFilter (aFilter->id());
-                aFilter->id() = NULL;
-            }
-        }
-        else
-        {
-            if (aFilter->data().mActive)
-            {
-                // update the filter in the proxy
-                ComAssertRet (aFilter->id() != NULL, E_FAIL);
-                mUSBProxyService->removeFilter (aFilter->id());
-                aFilter->id() = mUSBProxyService->insertFilter (&aFilter->data().mUSBFilter);
-            }
-        }
-
-        // save the global settings... yeah, on every single filter property change
-        alock.unlock();
-        return mParent->saveSettings();
-    }
-
-    return S_OK;
-}
-
 HRESULT Host::loadSettings (const settings::Key &aGlobal)
 {
     using namespace settings;
@@ -1126,6 +1088,7 @@ HRESULT Host::loadSettings (const settings::Key &aGlobal)
 
     HRESULT rc = S_OK;
 
+#ifdef VBOX_WITH_USB
     Key::List filters = aGlobal.key ("USBDeviceFilters").keys ("DeviceFilter");
     for (Key::List::const_iterator it = filters.begin();
          it != filters.end(); ++ it)
@@ -1171,6 +1134,7 @@ HRESULT Host::loadSettings (const settings::Key &aGlobal)
             flt->id() = mUSBProxyService->insertFilter (&filterObj->data().mUSBFilter);
         }
     }
+#endif /* VBOX_WITH_USB */
 
     return rc;
 }
@@ -1184,6 +1148,7 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
 
     ComAssertRet (!aGlobal.isNull(), E_FAIL);
 
+#ifdef VBOX_WITH_USB
     /* first, delete the entry */
     Key filters = aGlobal.findKey ("USBDeviceFilters");
     if (!filters.isNull())
@@ -1244,9 +1209,58 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
 
         ++ it;
     }
+#endif /* VBOX_WITH_USB */
 
     return S_OK;
 }
+
+#ifdef VBOX_WITH_USB
+
+/**
+ *  Called by setter methods of all USB device filters.
+ */
+HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
+                                       BOOL aActiveChanged /* = FALSE */)
+{
+    AutoLock alock (this);
+    CHECK_READY();
+
+    if (aFilter->mInList)
+    {
+        if (aActiveChanged)
+        {
+            // insert/remove the filter from the proxy
+            if (aFilter->data().mActive)
+            {
+                ComAssertRet (aFilter->id() == NULL, E_FAIL);
+                aFilter->id() = mUSBProxyService->insertFilter (&aFilter->data().mUSBFilter);
+            }
+            else
+            {
+                ComAssertRet (aFilter->id() != NULL, E_FAIL);
+                mUSBProxyService->removeFilter (aFilter->id());
+                aFilter->id() = NULL;
+            }
+        }
+        else
+        {
+            if (aFilter->data().mActive)
+            {
+                // update the filter in the proxy
+                ComAssertRet (aFilter->id() != NULL, E_FAIL);
+                mUSBProxyService->removeFilter (aFilter->id());
+                aFilter->id() = mUSBProxyService->insertFilter (&aFilter->data().mUSBFilter);
+            }
+        }
+
+        // save the global settings... yeah, on every single filter property change
+        alock.unlock();
+        return mParent->saveSettings();
+    }
+
+    return S_OK;
+}
+
 
 /**
  *  Requests the USB proxy service to capture the given host USB device.
@@ -1501,6 +1515,8 @@ HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone)
 
     return S_OK;
 }
+
+#endif /* VBOX_HOST_USB */
 
 // private methods
 ////////////////////////////////////////////////////////////////////////////////
@@ -1984,6 +2000,8 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
 }
 #endif // RT_OS_LINUX || RT_OS_SOLARIS
 
+#ifdef VBOX_WITH_USB
+
 /**
  *  Applies all (golbal and VM) filters to the given USB device. The device
  *  must be either a newly attached device or a device released by a VM.
@@ -2259,6 +2277,7 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
         AssertFailed();
     }
 }
+#endif /* VBOX_WITH_USB */
 
 /**
  *  Checks for the presense and status of the USB Proxy Service.

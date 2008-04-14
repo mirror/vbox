@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * XPCOM server process start point
+ * XPCOM server process (VBoxSVC) start point.
  */
 
 /*
@@ -89,13 +89,15 @@
 #include <HostImpl.h>
 #include <HostDVDDriveImpl.h>
 #include <HostFloppyDriveImpl.h>
-#include <HostUSBDeviceImpl.h>
 #include <GuestOSTypeImpl.h>
 #include <NetworkAdapterImpl.h>
 #include <SerialPortImpl.h>
 #include <ParallelPortImpl.h>
 #include <USBControllerImpl.h>
-#include <USBDeviceImpl.h>
+#ifdef VBOX_WITH_USB
+# include <HostUSBDeviceImpl.h>
+# include <USBDeviceImpl.h>
+#endif
 #include <SATAControllerImpl.h>
 #include <AudioAdapterImpl.h>
 #include <SystemPropertiesImpl.h>
@@ -162,12 +164,14 @@ NS_DECL_CLASSINFO(USBController)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(USBController, IUSBController)
 NS_DECL_CLASSINFO(SATAController)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SATAController, ISATAController)
+#ifdef VBOX_WITH_USB
 NS_DECL_CLASSINFO(USBDeviceFilter)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(USBDeviceFilter, IUSBDeviceFilter)
 NS_DECL_CLASSINFO(HostUSBDevice)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(HostUSBDevice, IUSBDevice, IHostUSBDevice)
 NS_DECL_CLASSINFO(HostUSBDeviceFilter)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(HostUSBDeviceFilter, IUSBDeviceFilter, IHostUSBDeviceFilter)
+#endif
 NS_DECL_CLASSINFO(AudioAdapter)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(AudioAdapter, IAudioAdapter)
 NS_DECL_CLASSINFO(SystemProperties)
@@ -180,18 +184,22 @@ COM_IMPL_READONLY_ENUM_AND_COLLECTION(Machine)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(Snapshot)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HardDiskAttachment)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(GuestOSType)
-COM_IMPL_READONLY_ENUM_AND_COLLECTION(USBDeviceFilter)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostDVDDrive)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostFloppyDrive)
-COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostUSBDevice)
-COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostUSBDeviceFilter)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HardDisk)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(DVDImage)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(FloppyImage)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(SharedFolder)
+#ifdef VBOX_WITH_USB
+COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostUSBDevice)
+COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostUSBDeviceFilter)
+COM_IMPL_READONLY_ENUM_AND_COLLECTION(USBDeviceFilter)
+#endif
 
 COM_IMPL_READONLY_ENUM_AND_COLLECTION_AS(Progress, IProgress)
+#ifdef VBOX_WITH_USB
 COM_IMPL_READONLY_ENUM_AND_COLLECTION_AS(IfaceUSBDevice, IUSBDevice)
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 

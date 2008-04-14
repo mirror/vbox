@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VirtualBox USB Proxy Service (base) class.
  */
@@ -15,11 +16,16 @@
  */
 
 #include "USBProxyService.h"
+#include "HostUSBDeviceImpl.h"
 #include "Logging.h"
+#include "HostImpl.h"
 
 #include <VBox/err.h>
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
+#include <iprt/thread.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
 
 
 
@@ -29,7 +35,7 @@
  * Initialize data members.
  */
 USBProxyService::USBProxyService (Host *aHost)
-    : mHost (aHost), mThread (NIL_RTTHREAD), mTerminate (false), mDevices (), mLastError (VINF_SUCCESS)
+    : mHost (aHost), mThread (NIL_RTTHREAD), mTerminate (false), mLastError (VINF_SUCCESS), mDevices ()
 {
     LogFlowThisFunc (("aHost=%p\n", aHost));
 }

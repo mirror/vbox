@@ -1,7 +1,6 @@
-/* $Id:$ */
+/* $Id$ */
 /** @file
- * Implementation of VirtualBox COM components:
- * USBDeviceFilter and HostUSBDeviceFilter
+ * Implementation of VirtualBox COM components: USBDeviceFilter and HostUSBDeviceFilter
  */
 
 /*
