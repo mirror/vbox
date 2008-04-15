@@ -260,10 +260,10 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
          dhcp_msg_type == DHCPREQUEST)) {
         *q++ = RFC1533_NETMASK;
         *q++ = 4;
-        *q++ = 0xff;
-        *q++ = 0xff;
-        *q++ = 0xff;
-        *q++ = 0x00;
+        *q++ = (pData->netmask & 0xff000000) >> 24;
+        *q++ = (pData->netmask & 0x00ff0000) >> 16;
+        *q++ = (pData->netmask & 0x0000ff00) >>  8;
+        *q++ = (pData->netmask & 0x000000ff);
 
         *q++ = RFC1533_GATEWAY;
         *q++ = 4;

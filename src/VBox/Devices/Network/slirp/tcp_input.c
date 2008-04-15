@@ -623,8 +623,8 @@ findso:
 	   * If this is destined for the control address, then flag to
 	   * tcp_ctl once connected, otherwise connect
 	   */
-	  if ((so->so_faddr.s_addr&htonl(0xffffff00)) == special_addr.s_addr) {
-	    int lastbyte=ntohl(so->so_faddr.s_addr) & 0xff;
+	  if ((so->so_faddr.s_addr&htonl(pData->netmask)) == special_addr.s_addr) {
+	    int lastbyte=ntohl(so->so_faddr.s_addr) & ~pData->netmask;
 	    if (lastbyte!=CTL_ALIAS && lastbyte!=CTL_DNS) {
 #if 0
 	      if(lastbyte==CTL_CMD || lastbyte==CTL_EXEC) {

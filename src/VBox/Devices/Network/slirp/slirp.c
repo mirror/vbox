@@ -194,15 +194,18 @@ int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
     return get_dns_addr_domain(pData, false, pdns_addr, NULL);
 }
 
-int slirp_init(PNATState *ppData, const char *pszNetAddr, bool fPassDomain,
-               const char *pszTFTPPrefix, const char *pszBootFile,
-               void *pvUser)
+int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
+               bool fPassDomain, const char *pszTFTPPrefix,
+               const char *pszBootFile, void *pvUser)
 {
     int fNATfailed = 0;
     PNATState pData = malloc(sizeof(NATState));
     *ppData = pData;
     if (!pData)
         return VERR_NO_MEMORY;
+    if (u32Netmask & 0x1f)
+        /* CTL is x.x.x.15, bootp passes up to 16 IPs (15..31) */
+        return VERR_INVALID_PARAMETER;
     memset(pData, '\0', sizeof(NATState));
     pData->fPassDomain = fPassDomain;
     pData->pvUser = pvUser;
@@ -211,6 +214,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, bool fPassDomain,
 #endif
     tftp_prefix = pszTFTPPrefix;
     bootp_filename = pszBootFile;
+    pData->netmask = u32Netmask;
 
 #ifdef _WIN32
     {

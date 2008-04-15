@@ -390,9 +390,9 @@ int tcp_fconnect(PNATState pData, struct socket *so)
     setsockopt(s,SOL_SOCKET,SO_OOBINLINE,(char *)&opt,sizeof(opt ));
 
     addr.sin_family = AF_INET;
-    if ((so->so_faddr.s_addr & htonl(0xffffff00)) == special_addr.s_addr) {
+    if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
       /* It's an alias */
-      switch(ntohl(so->so_faddr.s_addr) & 0xff) {
+      switch(ntohl(so->so_faddr.s_addr) & ~pData->netmask) {
       case CTL_DNS:
         if (!get_dns_addr(pData, &dns_addr))
 	    addr.sin_addr = dns_addr;

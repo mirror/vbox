@@ -26,7 +26,7 @@ typedef struct NATState *PNATState;
 extern "C" {
 #endif
 
-int slirp_init(PNATState *, const char *, bool, const char *, const char *, void *);
+int slirp_init(PNATState *, const char *, uint32_t, bool, const char *, const char *, void *);
 void slirp_term(PNATState);
 void slirp_link_up(PNATState);
 void slirp_link_down(PNATState);

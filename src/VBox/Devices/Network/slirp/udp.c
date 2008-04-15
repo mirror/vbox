@@ -301,9 +301,9 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
     struct sockaddr_in saddr, daddr;
 
     saddr = *addr;
-    if ((so->so_faddr.s_addr & htonl(0xffffff00)) == special_addr.s_addr) {
+    if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
         saddr.sin_addr.s_addr = so->so_faddr.s_addr;
-        if ((so->so_faddr.s_addr & htonl(0x000000ff)) == htonl(0xff))
+        if ((so->so_faddr.s_addr & htonl(~pData->netmask)) == htonl(~pData->netmask))
             saddr.sin_addr.s_addr = alias_addr.s_addr;
     }
     /* Any UDP packet to the loopback address must be translated to be from
