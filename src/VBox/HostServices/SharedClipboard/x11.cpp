@@ -687,7 +687,7 @@ static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
     int cArgc = 0;
     char *pcArgv = 0;
     int rc = VINF_SUCCESS;
-    String szFallbackResources[] = { (char*)"*.width: 1", (char*)"*.height: 1", 0 };
+    static String szFallbackResources[] = { (char*)"*.width: 1", (char*)"*.height: 1", NULL };
     Display *pDisplay;
     LogRel (("vboxClipboardThread: starting clipboard thread\n"));
 
