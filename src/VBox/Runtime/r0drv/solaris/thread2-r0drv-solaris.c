@@ -49,22 +49,23 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 
 int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
-    int iPriority;    
+    int iPriority;
     switch (enmType)
     {
-        case RTTHREADTYPE_INFREQUENT_POLLER:    iPriority = 1;              break;
-        case RTTHREADTYPE_EMULATION:            iPriority = 25;             break;
-        case RTTHREADTYPE_DEFAULT:              iPriority = 53;             break;
-        case RTTHREADTYPE_MSG_PUMP:             iPriority = 75;             break;
-        case RTTHREADTYPE_IO:                   iPriority = 100;            break;
-        case RTTHREADTYPE_TIMER:                iPriority = 127;            break;
+        case RTTHREADTYPE_INFREQUENT_POLLER:    iPriority = 60;             break;
+        case RTTHREADTYPE_EMULATION:            iPriority = 66;             break;
+        case RTTHREADTYPE_DEFAULT:              iPriority = 72;             break;
+        case RTTHREADTYPE_MSG_PUMP:             iPriority = 78;             break;
+        case RTTHREADTYPE_IO:                   iPriority = 84;             break;
+        case RTTHREADTYPE_TIMER:                iPriority = 99;             break;
         default:
             AssertMsgFailed(("enmType=%d\n", enmType));
             return VERR_INVALID_PARAMETER;
     }
 
-    pri_t threadPrio = iPriority;
-    curthread->t_pri = threadPrio;
+    thread_lock(curthread);
+    THREAD_CHANGE_PRI(curthread, iPriority);
+    thread_unlock(curthread);
     return VINF_SUCCESS;
 }
 
