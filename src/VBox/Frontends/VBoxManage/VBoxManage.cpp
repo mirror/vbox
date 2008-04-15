@@ -325,6 +325,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-vram <vramsize>]\n"
                  "                            [-acpi on|off]\n"
                  "                            [-ioapic on|off]\n"
+                 "                            [-pae on|off]\n"
                  "                            [-hwvirtex on|off|default]\n"
                  "                            [-monitorcount <number>]\n"
                  "                            [-bioslogofadein on|off]\n"
@@ -918,6 +919,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         RTPrintf("ioapic=\"%s\"\n", ioapicEnabled ? "on" : "off");
     else
         RTPrintf("IOAPIC:          %s\n", ioapicEnabled ? "on" : "off");
+
+    BOOL PAEEnabled;
+    machine->COMGETTER(PAEEnabled)(&PAEEnabled);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("pae=\"%s\"\n", PAEEnabled ? "on" : "off");
+    else
+        RTPrintf("PAE: %s\n", PAEEnabled ? "on" : "off");
 
     LONG64 timeOffset;
     biosSettings->COMGETTER(TimeOffset)(&timeOffset);
@@ -3713,6 +3721,7 @@ static int handleModifyVM(int argc, char *argv[],
     ULONG vramSize = 0;
     char *acpi = NULL;
     char *hwvirtex = NULL;
+    char *pae = NULL;
     char *ioapic = NULL;
     int monitorcount = -1;
     char *bioslogofadein = NULL;
@@ -3848,6 +3857,15 @@ static int handleModifyVM(int argc, char *argv[],
             }
             i++;
             hwvirtex = argv[i];
+        }
+        else if (strcmp(argv[i], "-pae") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            pae = argv[i];
         }
         else if (strcmp(argv[i], "-monitorcount") == 0)
         {
@@ -4532,6 +4550,23 @@ static int handleModifyVM(int argc, char *argv[],
             else
             {
                 errorArgument("Invalid -hwvirtex argument '%s'", hwvirtex);
+                rc = E_FAIL;
+                break;
+            }
+        }
+        if (pae)
+        {
+            if (strcmp(pae, "on") == 0)
+            {
+                CHECK_ERROR(machine, COMSETTER(PAEEnabled)(true));
+            }
+            else if (strcmp(pae, "off") == 0)
+            {
+                CHECK_ERROR(machine, COMSETTER(PAEEnabled)(false));
+            }
+            else
+            {
+                errorArgument("Invalid -pae argument '%s'", ioapic);
                 rc = E_FAIL;
                 break;
             }

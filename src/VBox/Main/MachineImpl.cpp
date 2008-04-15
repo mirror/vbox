@@ -172,6 +172,7 @@ Machine::HWData::HWData()
     mVRAMSize = 8;
     mMonitorCount = 1;
     mHWVirtExEnabled = TSBool_False;
+    mPAEEnabled = false;
 
     /* default boot order: floppy - DVD - HDD */
     mBootOrder [0] = DeviceType_Floppy;
@@ -198,6 +199,7 @@ bool Machine::HWData::operator== (const HWData &that) const
         mVRAMSize != that.mVRAMSize ||
         mMonitorCount != that.mMonitorCount ||
         mHWVirtExEnabled != that.mHWVirtExEnabled ||
+        mPAEEnabled != that.mPAEEnabled ||
         mClipboardMode != that.mClipboardMode)
         return false;
 
@@ -1111,6 +1113,39 @@ STDMETHODIMP Machine::COMSETTER(HWVirtExEnabled)(TSBool_T enable)
 
     mHWData.backup();
     mHWData->mHWVirtExEnabled = enable;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(PAEEnabled)(BOOL *enabled)
+{
+    if (!enabled)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *enabled = mHWData->mPAEEnabled;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(PAEEnabled)(BOOL enable)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
+    /** @todo check validity! */
+
+    mHWData.backup();
+    mHWData->mPAEEnabled = enable;
 
     return S_OK;
 }
@@ -4244,6 +4279,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     {
         /* default value in case the node is not there */
         mHWData->mHWVirtExEnabled = TSBool_Default;
+        mHWData->mPAEEnabled      = false;
 
         Key cpuNode = aNode.findKey ("CPU");
         if (!cpuNode.isNull())
@@ -4259,6 +4295,8 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 else
                     mHWData->mHWVirtExEnabled = TSBool_Default;
             }
+            /* PAE (optional, default is false) */
+            mHWData->mPAEEnabled = cpuNode.value <BOOL> ("PAE");
         }
     }
 
@@ -5614,8 +5652,12 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
                 break;
             case TSBool_Default:
                 value = "default";
+                break;
         }
-        hwVirtExNode.setStringValue ("enabled", value);
+        cpuNode.setStringValue ("enabled", value);
+
+        /* PAE (optional, default is false) */
+        cpuNode.setValue <BOOL> ("PAE", mHWData->mPAEEnabled);
     }
 
     /* memory (required) */
