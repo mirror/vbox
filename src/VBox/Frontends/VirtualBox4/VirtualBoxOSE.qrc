@@ -1,0 +1,6 @@
+<!DOCTYPE RCC><RCC version="1.0">
+ <qresource prefix="/">
+    <file alias="about.png">images/about.png</file>
+    <file alias="about_tile.png">images/about_tile.png</file>
+ </qresource>
+ </RCC>

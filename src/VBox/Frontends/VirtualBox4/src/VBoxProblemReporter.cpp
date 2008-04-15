@@ -22,7 +22,11 @@
 #include "VBoxSelectorWnd.h"
 #include "VBoxConsoleWnd.h"
 
-#include "VBoxAboutDlg.h"
+#ifdef VBOX_OSE
+# include "VBoxAboutDlg.h"
+#else
+# include "VBoxAboutNonOSEDlg.h"
+#endif
 
 #include "QIHotKeyEdit.h"
 
@@ -41,7 +45,6 @@
 #if defined (Q_WS_WIN32)
 #include <Htmlhelp.h>
 #endif
-
 
 /**
  *  A QProgressDialog enhancement that allows to:
@@ -2075,7 +2078,11 @@ void VBoxProblemReporter::showHelpAboutDialog()
     QString COMVersion = vbox.GetVersion();
     AssertWrapperOk (vbox);
 
+#if VBOX_OSE
     VBoxAboutDlg (mainWindowShown(), COMVersion).exec();
+#else
+    VBoxAboutNonOSEDlg (mainWindowShown(), COMVersion).exec();
+#endif
 }
 
 void VBoxProblemReporter::showHelpHelpDialog()

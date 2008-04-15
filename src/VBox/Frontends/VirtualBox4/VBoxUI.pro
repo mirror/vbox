@@ -34,7 +34,6 @@ FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 	ui/VBoxGlobalSettingsDlg.ui \
 	ui/VBoxNewHDWzd.ui \
 	ui/VBoxSnapshotsWgt.ui \
-	ui/VBoxAboutDlg.ui \
 	ui/VBoxVMFirstRunWzd.ui \
 	ui/VBoxVMLogViewer.ui \
 	ui/VBoxRegistrationDlg.ui \
