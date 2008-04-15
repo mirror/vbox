@@ -175,6 +175,8 @@ else # the gcc guys:
 
  ifeq ($(BUILD_TARGET),linux)
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
+  TEMPLATE_VBOXQT4GUIEXE_LIBS += \
+    $(VBOX_XCURSOR_LIBS)
  else ifeq ($(BUILD_TARGET),darwin)
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(foreach mod, $(VBOX_MODULE_QT4), -framework $(mod)) \
   	-framework Carbon -framework QuickTime -bind_at_load
