@@ -42,7 +42,7 @@
 #define LOGO_IO_PORT         0x3b8
 
 /** The BIOS logo fade in/fade out steps. */
-#define LOGO_SHOW_STEPS      64
+#define LOGO_SHOW_STEPS      16
 
 /** @name The BIOS logo commands.
  * @{
