@@ -96,7 +96,7 @@ public:
     ComObjPtr <Snapshot> parent() const { return (Snapshot *) mParent; }
 
     /** Shortcut to #dependentChildrenLock() */
-    AutoLock::Handle &childrenLock() const { return dependentChildrenLock(); }
+    RWLockHandle *childrenLock() const { return dependentChildrenLock(); }
 
     /**
      *  Shortcut to #dependentChildren().

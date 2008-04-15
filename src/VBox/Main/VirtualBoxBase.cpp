@@ -42,7 +42,6 @@ VirtualBoxBaseNEXT_base::VirtualBoxBaseNEXT_base()
     mZeroCallersSem = NIL_RTSEMEVENT;
     mInitDoneSem = NIL_RTSEMEVENTMULTI;
     mInitDoneSemUsers = 0;
-    RTCritSectInit (&mStateLock);
     mObjectLock = NULL;
 }
 
@@ -50,7 +49,6 @@ VirtualBoxBaseNEXT_base::~VirtualBoxBaseNEXT_base()
 {
     if (mObjectLock)
         delete mObjectLock;
-    RTCritSectDelete (&mStateLock);
     Assert (mInitDoneSemUsers == 0);
     Assert (mInitDoneSem == NIL_RTSEMEVENTMULTI);
     if (mZeroCallersSem != NIL_RTSEMEVENT)
@@ -61,11 +59,11 @@ VirtualBoxBaseNEXT_base::~VirtualBoxBaseNEXT_base()
 }
 
 // AutoLock::Lockable interface
-AutoLock::Handle *VirtualBoxBaseNEXT_base::lockHandle() const
+RWLockHandle *VirtualBoxBaseNEXT_base::lockHandle() const
 {
     /* lasy initialization */
     if (!mObjectLock)
-        mObjectLock = new AutoLock::Handle;
+        mObjectLock = new RWLockHandle;
     return mObjectLock;
 }
 

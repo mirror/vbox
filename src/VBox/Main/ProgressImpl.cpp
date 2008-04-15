@@ -161,7 +161,8 @@ void ProgressBase::protectedUninit (AutoLock &alock)
 {
     LogFlowMember (("ProgressBase::protectedUninit()\n"));
 
-    Assert (alock.belongsTo (this) && alock.level() == 1);
+    Assert (alock.belongsTo (this) && alock.isLockedOnCurrentThread() &&
+            alock.writeLockLevel() == 1);
     Assert (isReady());
 
     /*
@@ -746,7 +747,7 @@ HRESULT Progress::advanceOperation (const BSTR aOperationDescription)
  *
  *  If the result code indicates a success (|SUCCEEDED (@a aResultCode)|)
  *  then the current operation is set to the last
- *  
+ *
  *  Note that this method may be called only once for the given Progress object.
  *  Subsequent calls will assert.
  *
@@ -843,7 +844,7 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode, const GUID &aIID,
     va_start (args, aText);
     Bstr text = Utf8StrFmtVA (aText, args);
     va_end (args);
-    
+
     return notifyCompleteBstr (aResultCode, aIID, aComponent, text);
 }
 
@@ -854,7 +855,7 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode, const GUID &aIID,
  *
  *  This method is preferred iy you have a ready (translated and formatted)
  *  Bstr string, because it omits an extra conversion Utf8Str -> Bstr.
- * 
+ *
  *  @param  aResultCode operation result (error) code, must not be S_OK
  *  @param  aIID        IID of the intrface that defines the error
  *  @param  aComponent  name of the component that generates the error

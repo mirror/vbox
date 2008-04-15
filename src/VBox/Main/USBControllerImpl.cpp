@@ -922,20 +922,30 @@ bool USBController::rollback()
     return dataChanged;
 }
 
-/** @note Locks objects for writing! */
+/**
+ *  @note Locks this object for writing, together with the peer object (also
+ *  for writing) if there is one.
+ */
 void USBController::commit()
 {
+    /* sanity */
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* sanity too */
+    AutoCaller peerCaller (mPeer);
+    AssertComRCReturnVoid (peerCaller.rc());
+
+    /* lock both for writing since we modify both (mPeer is "master" so locked
+     * first) */
+    AutoMultiWriteLock2 alock (mPeer, this);
 
     if (mData.isBackedUp())
     {
         mData.commit();
         if (mPeer)
         {
-            // attach new data to the peer and reshare it
+            /* attach new data to the peer and reshare it */
             AutoLock peerlock (mPeer);
             mPeer->mData.attach (mData);
         }
@@ -948,39 +958,39 @@ void USBController::commit()
     {
         mDeviceFilters.commit();
 
-        // apply changes to peer
+        /* apply changes to peer */
         if (mPeer)
         {
             AutoLock peerlock (mPeer);
-            // commit all changes to new filters (this will reshare data with
-            // peers for those who have peers)
+            /* commit all changes to new filters (this will reshare data with
+             * peers for those who have peers) */
             DeviceFilterList *newList = new DeviceFilterList();
             DeviceFilterList::const_iterator it = mDeviceFilters->begin();
             while (it != mDeviceFilters->end())
             {
                 (*it)->commit();
 
-                // look if this filter has a peer filter
+                /* look if this filter has a peer filter */
                 ComObjPtr <USBDeviceFilter> peer = (*it)->peer();
                 if (!peer)
                 {
-                    // no peer means the filter is a newly created one;
-                    // create a peer owning data this filter share it with
+                    /* no peer means the filter is a newly created one;
+                     * create a peer owning data this filter share it with */
                     peer.createObject();
                     peer->init (mPeer, *it, true /* aReshare */);
                 }
                 else
                 {
-                    // remove peer from the old list
+                    /* remove peer from the old list */
                     mPeer->mDeviceFilters->remove (peer);
                 }
-                // and add it to the new list
+                /* and add it to the new list */
                 newList->push_back (peer);
 
                 ++ it;
             }
 
-            // uninit old peer's filters that are left
+            /* uninit old peer's filters that are left */
             it = mPeer->mDeviceFilters->begin();
             while (it != mPeer->mDeviceFilters->end())
             {
@@ -988,20 +998,20 @@ void USBController::commit()
                 ++ it;
             }
 
-            // attach new list of filters to our peer
+            /* attach new list of filters to our peer */
             mPeer->mDeviceFilters.attach (newList);
         }
         else
         {
-            // we have no peer (our parent is the newly created machine);
-            // just commit changes to filters
+            /* we have no peer (our parent is the newly created machine);
+             * just commit changes to filters */
             commitFilters = true;
         }
     }
     else
     {
-        // the list of filters itself is not changed,
-        // just commit changes to filters themselves
+        /* the list of filters itself is not changed,
+         * just commit changes to filters themselves */
         commitFilters = true;
     }
 
@@ -1017,13 +1027,25 @@ void USBController::commit()
 #endif /* VBOX_WITH_USB */
 }
 
-/** @note Locks object for writing and that object for reading! */
+/**
+ *  @note Locks this object for writing, together with the peer object
+ *  represented by @a aThat (locked for reading).
+ */
 void USBController::copyFrom (USBController *aThat)
 {
+    AssertReturnVoid (aThat != NULL);
+
+    /* sanity */
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoMultiLock <2> alock (this->wlock(), aThat->rlock());
+    /* sanity too */
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnVoid (thatCaller.rc());
+
+    /* peer is not modified, lock it for reading (aThat is "master" so locked
+     * first) */
+    AutoMultiLock2 alock (aThat->rlock(), this->wlock());
 
     if (mParent->isRegistered())
     {

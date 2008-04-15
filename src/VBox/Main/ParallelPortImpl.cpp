@@ -162,9 +162,9 @@ void ParallelPort::uninit()
 /**
  *  Loads settings from the given port node.
  *  May be called once right after this object creation.
- * 
+ *
  *  @param aPortNode <Port> node.
- * 
+ *
  *  @note Locks this object for writing.
  */
 HRESULT ParallelPort::loadSettings (const settings::Key &aPortNode)
@@ -187,7 +187,7 @@ HRESULT ParallelPort::loadSettings (const settings::Key &aPortNode)
      * in the settings file (for backwards compatibility reasons). This takes
      * place when a setting of a newly created object must default to A while
      * the same setting of an object loaded from the old settings file must
-     * default to B. */ 
+     * default to B. */
 
     /* enabled (required) */
     mData->mEnabled = aPortNode.value <bool> ("enabled");
@@ -205,14 +205,14 @@ HRESULT ParallelPort::loadSettings (const settings::Key &aPortNode)
     return S_OK;
 }
 
-/** 
+/**
  *  Saves settings to the given port node.
- * 
+ *
  *  Note that the given Port node is comletely empty on input.
  *
  *  @param aPortNode <Port> node.
- * 
- *  @note Locks this object for reading. 
+ *
+ *  @note Locks this object for reading.
  */
 HRESULT ParallelPort::saveSettings (settings::Key &aPortNode)
 {
@@ -271,11 +271,12 @@ void ParallelPort::commit()
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (mPeer);
-    AssertComRCReturnVoid (thatCaller.rc());
+    AutoCaller peerCaller (mPeer);
+    AssertComRCReturnVoid (peerCaller.rc());
 
-    /* lock both for writing since we modify both */
-    AutoMultiLock <2> alock (this->wlock(), AutoLock::maybeWlock (mPeer));
+    /* lock both for writing since we modify both (mPeer is "master" so locked
+     * first) */
+    AutoMultiWriteLock2 alock (mPeer, this);
 
     if (mData.isBackedUp())
     {
@@ -301,11 +302,12 @@ void ParallelPort::copyFrom (ParallelPort *aThat)
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (mPeer);
+    AutoCaller thatCaller (aThat);
     AssertComRCReturnVoid (thatCaller.rc());
 
-    /* peer is not modified, lock it for reading */
-    AutoMultiLock <2> alock (this->wlock(), aThat->rlock());
+    /* peer is not modified, lock it for reading (aThat is "master" so locked
+     * first) */
+    AutoMultiLock2 alock (aThat->rlock(), this->wlock());
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);
@@ -503,7 +505,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
     return S_OK;
 }
 
-/** 
+/**
  *  Validates COMSETTER(Path) arguments.
  */
 HRESULT ParallelPort::checkSetPath (const BSTR aPath)

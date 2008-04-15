@@ -116,7 +116,7 @@ public:
     ComObjPtr <HardDisk> parent() const { return static_cast <HardDisk *> (mParent); }
 
     /** Shortcut to #dependentChildrenLock() */
-    AutoLock::Handle &childrenLock() const { return dependentChildrenLock(); }
+    RWLockHandle *childrenLock() const { return dependentChildrenLock(); }
 
     /**
      *  Shortcut to #dependentChildren().

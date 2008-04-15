@@ -195,7 +195,7 @@ STDMETHODIMP HardDisk::COMGETTER(Id) (GUIDPARAMOUT aId)
     if (!aId)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mId.cloneTo (aId);
@@ -207,7 +207,7 @@ STDMETHODIMP HardDisk::COMGETTER(StorageType) (HardDiskStorageType_T *aStorageTy
     if (!aStorageType)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aStorageType = mStorageType;
@@ -219,7 +219,7 @@ STDMETHODIMP HardDisk::COMGETTER(Location) (BSTR *aLocation)
     if (!aLocation)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     toString (false /* aShort */).cloneTo (aLocation);
@@ -231,7 +231,7 @@ STDMETHODIMP HardDisk::COMGETTER(Type) (HardDiskType_T *aType)
     if (!aType)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aType = mType;
@@ -273,7 +273,7 @@ STDMETHODIMP HardDisk::COMGETTER(Parent) (IHardDisk **aParent)
     if (!aParent)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mParent.queryInterfaceTo (aParent);
@@ -285,10 +285,10 @@ STDMETHODIMP HardDisk::COMGETTER(Children) (IHardDiskCollection **aChildren)
     if (!aChildren)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoReaderLock lock(this);
     CHECK_READY();
 
-    AutoLock chLock (childrenLock());
+    AutoReaderLock chLock (childrenLock());
 
     ComObjPtr <HardDiskCollection> collection;
     collection.createObject();
@@ -302,7 +302,7 @@ STDMETHODIMP HardDisk::COMGETTER(Root) (IHardDisk **aRoot)
     if (!aRoot)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoReaderLock lock(this);
     CHECK_READY();
 
     root().queryInterfaceTo (aRoot);
@@ -367,7 +367,7 @@ STDMETHODIMP HardDisk::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
     if (!aLastAccessError)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mLastAccessError.cloneTo (aLastAccessError);
@@ -379,7 +379,7 @@ STDMETHODIMP HardDisk::COMGETTER(MachineId) (GUIDPARAMOUT aMachineId)
     if (!aMachineId)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mMachineId.cloneTo (aMachineId);
@@ -391,7 +391,7 @@ STDMETHODIMP HardDisk::COMGETTER(SnapshotId) (GUIDPARAMOUT aSnapshotId)
     if (!aSnapshotId)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mSnapshotId.cloneTo (aSnapshotId);
@@ -599,7 +599,7 @@ HRESULT HardDisk::getBaseAccessible (Bstr &aAccessError,
                                      bool aCheckBusy /* = false */,
                                      bool aCheckReaders /* = false */)
 {
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     aAccessError.setNull();
@@ -635,7 +635,7 @@ HRESULT HardDisk::getBaseAccessible (Bstr &aAccessError,
  */
 bool HardDisk::sameAs (HardDisk *that)
 {
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     if (!isReady())
         return false;
 
@@ -743,19 +743,19 @@ void HardDisk::releaseReaderOnAncestors()
  */
 bool HardDisk::hasForeignChildren()
 {
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     AssertReturn (isReady(), false);
 
     AssertReturn (!mMachineId.isEmpty(), false);
 
     /* check all children */
-    AutoLock chLock (childrenLock());
+    AutoReaderLock chLock (childrenLock());
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
          ++ it)
     {
         ComObjPtr <HardDisk> child = *it;
-        AutoLock childLock (child);
+        AutoReaderLock childLock (child);
         if (child->mMachineId != mMachineId)
             return true;
     }
@@ -778,7 +778,7 @@ HRESULT HardDisk::setBusyWithChildren()
     if (mReaders > 0 || mBusy)
         return setError (E_FAIL, errMsg, toString().raw());
 
-    AutoLock chLock (childrenLock());
+    AutoReaderLock chLock (childrenLock());
 
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
@@ -813,7 +813,7 @@ void HardDisk::clearBusyWithChildren()
 
     AssertReturn (mBusy == true, (void) 0);
 
-    AutoLock chLock (childrenLock());
+    AutoReaderLock chLock (childrenLock());
 
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
@@ -830,9 +830,12 @@ void HardDisk::clearBusyWithChildren()
 
 /**
  *  Checks that this hard disk and all its direct children are accessible.
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT HardDisk::getAccessibleWithChildren (Bstr &aAccessError)
 {
+    /* getAccessible() needs a write lock */
     AutoLock alock (this);
     AssertReturn (isReady(), E_FAIL);
 
@@ -840,7 +843,7 @@ HRESULT HardDisk::getAccessibleWithChildren (Bstr &aAccessError)
     if (FAILED (rc) || !aAccessError.isNull())
         return rc;
 
-    AutoLock chLock (childrenLock());
+    AutoReaderLock chLock (childrenLock());
 
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
@@ -868,7 +871,7 @@ HRESULT HardDisk::getAccessibleWithChildren (Bstr &aAccessError)
  */
 HRESULT HardDisk::checkConsistency()
 {
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     AssertReturn (isReady(), E_FAIL);
 
     if (isDifferencing())
@@ -885,7 +888,7 @@ HRESULT HardDisk::checkConsistency()
 
     HRESULT rc = S_OK;
 
-    AutoLock chLock (childrenLock());
+    AutoReaderLock chLock (childrenLock());
 
     if (mParent.isNull() && mType == HardDiskType_Normal &&
         children().size() != 0)
@@ -1021,7 +1024,7 @@ void HardDisk::updatePaths (const char *aOldPath, const char *aNewPath)
     updatePath (aOldPath, aNewPath);
 
     /* update paths of all children */
-    AutoLock chLock (childrenLock());
+    AutoReaderLock chLock (childrenLock());
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
          ++ it)
@@ -1261,7 +1264,7 @@ HRESULT HardDisk::loadSettings (const settings::Key &aHDNode)
  *                      <DiffHardDisk> node otherwise.
  *
  *  @note
- *      Must be called from under the object's lock
+ *      Must be called from under the object's read lock
  */
 HRESULT HardDisk::saveSettings (settings::Key &aHDNode)
 {
@@ -1292,13 +1295,13 @@ HRESULT HardDisk::saveSettings (settings::Key &aHDNode)
     }
 
     /* save all children */
-    AutoLock chLock (childrenLock());
+    AutoReaderLock chLock (childrenLock());
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
          ++ it)
     {
         ComObjPtr <HardDisk> child = *it;
-        AutoLock childLock (child);
+        AutoReaderLock childLock (child);
 
         Key hdNode = aHDNode.appendKey ("DiffHardDisk");
 
@@ -1505,7 +1508,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mDescription.cloneTo (aDescription);
@@ -1538,7 +1541,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(Size) (ULONG64 *aSize)
     if (!aSize)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     /* only a non-differencing image knows the logical size */
@@ -1554,7 +1557,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     if (!aActualSize)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aActualSize = mActualSize;
@@ -1569,7 +1572,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(FilePath) (BSTR *aFilePath)
     if (!aFilePath)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mFilePathFull.cloneTo (aFilePath);
@@ -1611,7 +1614,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(Created) (BOOL *aCreated)
     if (!aCreated)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aCreated = mState >= Created;
@@ -1707,9 +1710,12 @@ HRESULT HVirtualDiskImage::trySetRegistered (BOOL aRegistered)
  *  @param aAccessError on output, a null string indicates the hard disk is
  *                      accessible, otherwise contains a message describing
  *                      the reason of inaccessibility.
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
 {
+    /* queryInformation() needs a write lock */
     AutoLock alock (this);
     CHECK_READY();
 
@@ -1766,7 +1772,7 @@ HRESULT HVirtualDiskImage::saveSettings (settings::Key &aHDNode,
 {
     AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     /* filePath (required) */
@@ -1821,10 +1827,12 @@ void HVirtualDiskImage::updatePath (const char *aOldPath, const char *aNewPath)
  *  Otherwise, returns the image file name only.
  *
  *  @param aShort       if true, a short representation is returned
+ *
+ *  @note Locks this object for reading.
  */
 Bstr HVirtualDiskImage::toString (bool aShort /* = false */)
 {
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
 
     if (!aShort)
         return mFilePathFull;
@@ -2118,7 +2126,7 @@ HRESULT HVirtualDiskImage::mergeImageToParent (Progress *aProgress)
     {
         HRESULT rc = S_OK;
 
-        AutoLock chLock (childrenLock());
+        AutoReaderLock chLock (childrenLock());
 
         for (HardDiskList::const_iterator it = children().begin();
              it != children().end(); ++ it)
@@ -2387,7 +2395,7 @@ HRESULT HVirtualDiskImage::setFilePath (const BSTR aFilePath)
  *
  *  @param aAccessError not used when NULL, otherwise see #getAccessible()
  *
- *  @note Must be called from under the object's lock, only after
+ *  @note Must be called from under the object's write lock, only after
  *        CHECK_BUSY_AND_READERS() succeeds.
  */
 HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
@@ -2955,7 +2963,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mDescription.cloneTo (aDescription);
@@ -2984,7 +2992,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Size) (ULONG64 *aSize)
     if (!aSize)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aSize = mSize;
@@ -2996,7 +3004,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     if (!aActualSize)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aActualSize = mActualSize;
@@ -3011,7 +3019,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Server) (BSTR *aServer)
     if (!aServer)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mServer.cloneTo (aServer);
@@ -3043,7 +3051,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Port) (USHORT *aPort)
     if (!aPort)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aPort = mPort;
@@ -3072,7 +3080,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Target) (BSTR *aTarget)
     if (!aTarget)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mTarget.cloneTo (aTarget);
@@ -3104,7 +3112,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Lun) (ULONG64 *aLun)
     if (!aLun)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aLun = mLun;
@@ -3133,7 +3141,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(UserName) (BSTR *aUserName)
     if (!aUserName)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mUserName.cloneTo (aUserName);
@@ -3162,7 +3170,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Password) (BSTR *aPassword)
     if (!aPassword)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mPassword.cloneTo (aPassword);
@@ -3213,9 +3221,12 @@ HRESULT HISCSIHardDisk::trySetRegistered (BOOL aRegistered)
 
 /**
  *  Checks accessibility of this iSCSI hard disk.
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT HISCSIHardDisk::getAccessible (Bstr &aAccessError)
 {
+   /* queryInformation() needs a write lock */
     AutoLock alock (this);
     CHECK_READY();
 
@@ -3239,7 +3250,7 @@ HRESULT HISCSIHardDisk::saveSettings (settings::Key &aHDNode,
 {
     AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     /* server (required) */
@@ -3266,10 +3277,12 @@ HRESULT HISCSIHardDisk::saveSettings (settings::Key &aHDNode,
  *  Otherwise, returns the image file name only.
  *
  *  @param aShort       if true, a short representation is returned
+ *
+ *  @note Locks this object for reading.
  */
 Bstr HISCSIHardDisk::toString (bool aShort /* = false */)
 {
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
 
     Bstr str;
     if (!aShort)
@@ -3345,11 +3358,17 @@ HISCSIHardDisk::createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
  *  Helper to query information about the iSCSI hard disk.
  *
  *  @param aAccessError see #getAccessible()
- *  @note
- *      Must be called from under the object's lock!
+ *
+ *  @note Must be called from under the object's write lock, only after
+ *        CHECK_BUSY_AND_READERS() succeeds.
  */
 HRESULT HISCSIHardDisk::queryInformation (Bstr &aAccessError)
 {
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+
+    /* create a lock object to completely release it later */
+    AutoLock alock (this);
+
     /// @todo (dmik) query info about this iSCSI disk,
     //  set mSize and mActualSize,
     //  or set aAccessError in case of failure
@@ -3571,7 +3590,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mDescription.cloneTo (aDescription);
@@ -3608,7 +3627,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(Size) (ULONG64 *aSize)
     if (!aSize)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
 /// @todo (r=dmik) will need this if we add support for differencing VMDKs
@@ -3626,7 +3645,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     if (!aActualSize)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aActualSize = mActualSize;
@@ -3641,7 +3660,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(FilePath) (BSTR *aFilePath)
     if (!aFilePath)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mFilePathFull.cloneTo (aFilePath);
@@ -3683,7 +3702,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(Created) (BOOL *aCreated)
     if (!aCreated)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aCreated = mState >= Created;
@@ -3791,9 +3810,12 @@ HRESULT HVMDKImage::trySetRegistered (BOOL aRegistered)
  *  @param aAccessError on output, a null string indicates the hard disk is
  *                      accessible, otherwise contains a message describing
  *                      the reason of inaccessibility.
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT HVMDKImage::getAccessible (Bstr &aAccessError)
 {
+   /* queryInformation() needs a write lock */
     AutoLock alock (this);
     CHECK_READY();
 
@@ -3850,7 +3872,7 @@ HRESULT HVMDKImage::saveSettings (settings::Key &aHDNode,
 {
     AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     /* filePath (required) */
@@ -3905,10 +3927,12 @@ void HVMDKImage::updatePath (const char *aOldPath, const char *aNewPath)
  *  Otherwise, returns the image file name only.
  *
  *  @param aShort       if true, a short representation is returned
+ *
+ *  @note Locks this object for reading.
  */
 Bstr HVMDKImage::toString (bool aShort /* = false */)
 {
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
 
     if (!aShort)
         return mFilePathFull;
@@ -4481,7 +4505,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mDescription.cloneTo (aDescription);
@@ -4503,7 +4527,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Size) (ULONG64 *aSize)
     if (!aSize)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aSize = mSize;
@@ -4515,7 +4539,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     if (!aActualSize)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aActualSize = mActualSize;
@@ -4530,7 +4554,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Location) (BSTR *aLocation)
     if (!aLocation)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mLocationFull.cloneTo (aLocation);
@@ -4576,7 +4600,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Created) (BOOL *aCreated)
     if (!aCreated)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aCreated = mState >= Created;
@@ -4588,7 +4612,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Format) (BSTR *aFormat)
     if (!aFormat)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mFormat.cloneTo (aFormat);
@@ -4664,9 +4688,12 @@ HRESULT HCustomHardDisk::trySetRegistered (BOOL aRegistered)
  *  @param aAccessError on output, a null string indicates the hard disk is
  *                      accessible, otherwise contains a message describing
  *                      the reason of inaccessibility.
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT HCustomHardDisk::getAccessible (Bstr &aAccessError)
 {
+   /* queryInformation() needs a write lock */
     AutoLock alock (this);
     CHECK_READY();
 
@@ -4723,7 +4750,7 @@ HRESULT HCustomHardDisk::saveSettings (settings::Key &aHDNode,
 {
     AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     /* location (required) */
@@ -4742,10 +4769,12 @@ HRESULT HCustomHardDisk::saveSettings (settings::Key &aHDNode,
  *  Otherwise, returns the image file name only.
  *
  *  @param aShort       if true, a short representation is returned
+ *
+ *  @note Locks this object for reading.
  */
 Bstr HCustomHardDisk::toString (bool aShort /* = false */)
 {
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
 
     /// @todo currently, we assume that location is always a file path for
     /// all custom hard disks. This is not generally correct, and needs to be
@@ -5269,7 +5298,7 @@ STDMETHODIMP HVHDImage::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mDescription.cloneTo (aDescription);
@@ -5306,7 +5335,7 @@ STDMETHODIMP HVHDImage::COMGETTER(Size) (ULONG64 *aSize)
     if (!aSize)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
 /// @todo will need this if we add suppord for differencing VMDKs
@@ -5324,7 +5353,7 @@ STDMETHODIMP HVHDImage::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     if (!aActualSize)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aActualSize = mActualSize;
@@ -5339,7 +5368,7 @@ STDMETHODIMP HVHDImage::COMGETTER(FilePath) (BSTR *aFilePath)
     if (!aFilePath)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     mFilePathFull.cloneTo (aFilePath);
@@ -5381,7 +5410,7 @@ STDMETHODIMP HVHDImage::COMGETTER(Created) (BOOL *aCreated)
     if (!aCreated)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     *aCreated = mState >= Created;
@@ -5489,9 +5518,12 @@ HRESULT HVHDImage::trySetRegistered (BOOL aRegistered)
  *  @param aAccessError on output, a null string indicates the hard disk is
  *                      accessible, otherwise contains a message describing
  *                      the reason of inaccessibility.
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT HVHDImage::getAccessible (Bstr &aAccessError)
 {
+    /* queryInformation() needs a write lock */
     AutoLock alock (this);
     CHECK_READY();
 
@@ -5547,7 +5579,7 @@ HRESULT HVHDImage::saveSettings (settings::Key &aHDNode, settings::Key &aStorage
 {
     AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
     CHECK_READY();
 
     /* filePath (required) */
@@ -5602,10 +5634,12 @@ void HVHDImage::updatePath (const char *aOldPath, const char *aNewPath)
  *  Otherwise, returns the image file name only.
  *
  *  @param aShort       if true, a short representation is returned
+ *
+ *  @note Locks this object for reading.
  */
 Bstr HVHDImage::toString (bool aShort /* = false */)
 {
-    AutoLock alock (this);
+    AutoReaderLock alock (this);
 
     if (!aShort)
         return mFilePathFull;

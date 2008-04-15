@@ -2490,9 +2490,9 @@ STDMETHODIMP Console::UnregisterCallback (IConsoleCallback *aCallback)
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Called by IInternalSessionControl::OnDVDDriveChange().
+ * Called by IInternalSessionControl::OnDVDDriveChange().
  *
- *  @note Locks this object for reading.
+ * @note Locks this object for writing.
  */
 HRESULT Console::onDVDDriveChange()
 {
@@ -2501,7 +2501,8 @@ HRESULT Console::onDVDDriveChange()
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    /* doDriveChange() needs a write lock */
+    AutoLock alock (this);
 
     /* Ignore callbacks when there's no VM around */
     if (!mpVM)
@@ -2586,9 +2587,9 @@ HRESULT Console::onDVDDriveChange()
 
 
 /**
- *  Called by IInternalSessionControl::OnFloppyDriveChange().
+ * Called by IInternalSessionControl::OnFloppyDriveChange().
  *
- *  @note Locks this object for reading.
+ * @note Locks this object for writing.
  */
 HRESULT Console::onFloppyDriveChange()
 {
@@ -2597,7 +2598,8 @@ HRESULT Console::onFloppyDriveChange()
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    /* doDriveChange() needs a write lock */
+    AutoLock alock (this);
 
     /* Ignore callbacks when there's no VM around */
     if (!mpVM)
@@ -2703,7 +2705,7 @@ HRESULT Console::onFloppyDriveChange()
  *                          mounting / capturing the specified media / drive fails.
  * @param   fPassthrough    Enables using passthrough mode of the host DVD drive if applicable.
  *
- * @note Locks this object for reading.
+ * @note Locks this object for writing.
  */
 HRESULT Console::doDriveChange (const char *pszDevice, unsigned uInstance, unsigned uLun, DriveState_T eState,
                                 DriveState_T *peState, const char *pszPath, bool fPassthrough)
@@ -2716,7 +2718,8 @@ HRESULT Console::doDriveChange (const char *pszDevice, unsigned uInstance, unsig
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    /* We will need to release the write lock before calling EMT */
+    AutoLock alock (this);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -2783,7 +2786,7 @@ HRESULT Console::doDriveChange (const char *pszDevice, unsigned uInstance, unsig
  * @param   fPassthrough    Enables using passthrough mode of the host DVD drive if applicable.
  *
  * @thread  EMT
- * @note Locks the Console object for writing
+ * @note Locks the Console object for writing.
  */
 DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, unsigned uInstance, unsigned uLun,
                                         DriveState_T eState, DriveState_T *peState,
@@ -2804,9 +2807,9 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
     AssertComRCReturn (autoCaller.rc(), VERR_ACCESS_DENIED);
 
     /*
-     *  Locking the object before doing VMR3* calls is quite safe here,
-     *  since we're on EMT. Write lock is necessary because we're indirectly
-     *  modify the meDVDState/meFloppyState members (pointed to by peState).
+     * Locking the object before doing VMR3* calls is quite safe here, since
+     * we're on EMT. Write lock is necessary because we indirectly modify the
+     * meDVDState/meFloppyState members (pointed to by peState).
      */
     AutoLock alock (pThis);
 
