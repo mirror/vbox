@@ -832,7 +832,7 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
  * Try to get the backend name which can use this image.
  *
  * @returns VBox status code.
- *          VINF_SUCCESS if a plugin was found. 
+ *          VINF_SUCCESS if a plugin was found.
  *                       ppszFormat contains the string which can be used as backend name.
  *          VERR_NOT_SUPPORTED if no backend was found.
  * @param   pszFilename     Name of the image file for which the backend is queried.
@@ -1189,11 +1189,11 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
 
     if (VBOX_FAILURE(rc))
     {
-        if (pImage->hPlugin != NIL_RTLDRMOD)
-            RTLdrClose(pImage->hPlugin);
-
         if (pImage)
         {
+            if (pImage->hPlugin != NIL_RTLDRMOD)
+                RTLdrClose(pImage->hPlugin);
+
             if (pImage->pszFilename)
                 RTStrFree(pImage->pszFilename);
             RTMemFree(pImage);
@@ -1272,8 +1272,8 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                        rc = VERR_INVALID_PARAMETER);
         /* The LCHS geometry fields may be 0 to leave it to later autodetection. */
         AssertMsgBreak(   VALID_PTR(pLCHSGeometry)
-                       && pLCHSGeometry->cCylinders <= 16383
-                       && pLCHSGeometry->cHeads <= 16
+                       && pLCHSGeometry->cCylinders <= 1024
+                       && pLCHSGeometry->cHeads <= 255
                        && pLCHSGeometry->cSectors <= 63,
                        ("pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pLCHSGeometry,
                         pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads,
@@ -1389,11 +1389,11 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
 
     if (VBOX_FAILURE(rc))
     {
-        if (pImage->hPlugin != NIL_RTLDRMOD)
-            RTLdrClose(pImage->hPlugin);
-
         if (pImage)
         {
+            if (pImage->hPlugin != NIL_RTLDRMOD)
+                RTLdrClose(pImage->hPlugin);
+
             if (pImage->pszFilename)
                 RTStrFree(pImage->pszFilename);
             RTMemFree(pImage);
@@ -1820,14 +1820,14 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         AssertMsgBreak(VALID_PTR(pDiskFrom), ("pDiskFrom=%#p\n", pDiskFrom),
                        rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDiskFrom->u32Signature == VBOXHDDDISK_SIGNATURE,
-                  ("u32Signature=%08x\n", pDiskFrom->u32Signature)); 
+                  ("u32Signature=%08x\n", pDiskFrom->u32Signature));
 
         PVDIMAGE pImageFrom = vdGetImageByNumber(pDiskFrom, nImage);
         AssertBreak(VALID_PTR(pImageFrom), rc = VERR_VDI_IMAGE_NOT_FOUND);
         AssertMsgBreak(VALID_PTR(pDiskTo), ("pDiskTo=%#p\n", pDiskTo),
                        rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDiskTo->u32Signature == VBOXHDDDISK_SIGNATURE,
-                  ("u32Signature=%08x\n", pDiskTo->u32Signature)); 
+                  ("u32Signature=%08x\n", pDiskTo->u32Signature));
 
         /* If the containers are equal and the backend is the same, rename the image. */
         if (   (pDiskFrom == pDiskTo)
@@ -1898,7 +1898,7 @@ movefail:
             rc = VERR_VDI_VALUE_NOT_FOUND;
             break;
         }
-        
+
         if (cbSize == 0)
             cbSize = cbSizeFrom;
 
@@ -1906,11 +1906,11 @@ movefail:
         rc = VDGetImageFlags(pDiskFrom, nImage, &uImageFlagsFrom);
         if (VBOX_FAILURE(rc))
             break;
-     
+
         /* @todo Get this from the source image. */
         PDMMEDIAGEOMETRY PCHSGeometryFrom = {0, 0, 0};
         PDMMEDIAGEOMETRY LCHSGeometryFrom = {0, 0, 0};
-        
+
         unsigned uOpenFlagsFrom;
         rc = VDGetOpenFlags(pDiskFrom, nImage, &uOpenFlagsFrom);
         if (VBOX_FAILURE(rc))
@@ -1945,7 +1945,7 @@ movefail:
         /* Copy the data. */
         uint64_t uOffset = 0;
         uint64_t cbRemaining = cbSize;
-        
+
         do
         {
             size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
@@ -2010,7 +2010,7 @@ movefail:
 
         if (pImageTo->pszFilename)
             RTStrFree(pImageTo->pszFilename);
-        
+
         RTMemFree(pImageTo);
     }
 
