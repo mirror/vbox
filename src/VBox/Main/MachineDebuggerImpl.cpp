@@ -509,31 +509,6 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExEnabled)(BOOL *enabled)
 }
 
 /**
- * Returns the current PAE flag.
- *
- * @returns COM status code
- * @param   enabled address of result variable
- */
-STDMETHODIMP MachineDebugger::COMGETTER(PAEEnabled)(BOOL *enabled)
-{
-    if (!enabled)
-        return E_POINTER;
-
-    AutoLock lock(this);
-    CHECK_READY();
-
-    Console::SafeVMPtrQuiet pVM (mParent);
-    if (pVM.isOk())
-    {
-        uint64_t cr4 = CPUMGetGuestCR4(pVM.raw());
-        *enabled = !!(cr4 & X86_CR4_PAE);
-    }
-    else
-        *enabled = false;
-    return S_OK;
-}
-
-/**
  * Returns the current virtual time rate.
  *
  * @returns COM status code.

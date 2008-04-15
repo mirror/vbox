@@ -271,11 +271,6 @@ Connection::Connection( const char* host, int port ) :
     m_Port( port ),
     m_Sock(-1)
 {
-#ifdef RT_OS_WINDOWS
-    WSADATA wsaData;
-
-    int ret = WSAStartup(MAKEWORD(1,1), &wsaData);
-#endif
 }
 
 
