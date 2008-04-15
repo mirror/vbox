@@ -176,6 +176,7 @@ VBoxSVC_LIBS.solaris = \
 
 VBoxSVC_SOURCES = \
 	Logging.cpp \
+	AutoLock.cpp \
 	Matching.cpp \
 	VirtualBoxBase.cpp \
 	VirtualBoxErrorInfoImpl.cpp \
@@ -349,6 +350,7 @@ VBoxC_LIBS += \
 
 VBoxC_SOURCES = \
 	Logging.cpp \
+	AutoLock.cpp \
 	VBoxDll.cpp \
 	Version.cpp \
 	USBDeviceImpl.cpp \

@@ -320,13 +320,13 @@ STDMETHODIMP SATAController::SetIDEEmulationPort(LONG DevicePosition, LONG aPort
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  *  Loads settings from the given machine node.
  *  May be called once right after this object creation.
- * 
+ *
  *  @param aMachineNode <Machine> node.
- * 
- *  @note Locks this object for writing. 
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT SATAController::loadSettings (const settings::Key &aMachineNode)
 {
@@ -357,11 +357,11 @@ HRESULT SATAController::loadSettings (const settings::Key &aMachineNode)
     return S_OK;
 }
 
-/** 
+/**
  *  Saves settings to the given machine node.
- * 
+ *
  *  @param aMachineNode <Machine> node.
- * 
+ *
  *  @note Locks this object for reading.
  */
 HRESULT SATAController::saveSettings (settings::Key &aMachineNode)
@@ -450,13 +450,23 @@ bool SATAController::rollback()
     return dataChanged;
 }
 
-/** @note Locks objects for writing! */
+/**
+ *  @note Locks this object for writing, together with the peer object (also
+ *  for writing) if there is one.
+ */
 void SATAController::commit()
 {
+    /* sanity */
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* sanity too */
+    AutoCaller peerCaller (mPeer);
+    AssertComRCReturnVoid (peerCaller.rc());
+
+    /* lock both for writing since we modify both (mPeer is "master" so locked
+     * first) */
+    AutoMultiWriteLock2 alock (mPeer, this);
 
     if (mData.isBackedUp())
     {
@@ -470,13 +480,25 @@ void SATAController::commit()
     }
 }
 
-/** @note Locks object for writing and that object for reading! */
+/**
+ *  @note Locks this object for writing, together with the peer object
+ *  represented by @a aThat (locked for reading).
+ */
 void SATAController::copyFrom (SATAController *aThat)
 {
+    AssertReturnVoid (aThat != NULL);
+
+    /* sanity */
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoMultiLock <2> alock (this->wlock(), aThat->rlock());
+    /* sanity too */
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnVoid (thatCaller.rc());
+
+    /* peer is not modified, lock it for reading (aThat is "master" so locked
+     * first) */
+    AutoMultiLock2 alock (aThat->rlock(), this->wlock());
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);

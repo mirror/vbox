@@ -307,11 +307,12 @@ void SerialPort::commit()
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (mPeer);
-    AssertComRCReturnVoid (thatCaller.rc());
+    AutoCaller peerCaller (mPeer);
+    AssertComRCReturnVoid (peerCaller.rc());
 
-    /* lock both for writing since we modify both */
-    AutoMultiLock <2> alock (this->wlock(), AutoLock::maybeWlock (mPeer));
+    /* lock both for writing since we modify both (mPeer is "master" so locked
+     * first) */
+    AutoMultiWriteLock2 alock (mPeer, this);
 
     if (mData.isBackedUp())
     {
@@ -337,11 +338,12 @@ void SerialPort::copyFrom (SerialPort *aThat)
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (mPeer);
+    AutoCaller thatCaller (aThat);
     AssertComRCReturnVoid (thatCaller.rc());
 
-    /* peer is not modified, lock it for reading */
-    AutoMultiLock <2> alock (this->wlock(), aThat->rlock());
+    /* peer is not modified, lock it for reading (aThat is "master" so locked
+     * first) */
+    AutoMultiLock2 alock (aThat->rlock(), this->wlock());
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);

@@ -122,8 +122,8 @@ Machine::Data::Data()
     RTTimeNow (&mLastStateChange);
 
     mMachineStateDeps = 0;
-    mZeroMachineStateDepsSem = NIL_RTSEMEVENT;
-    mWaitingStateDeps = FALSE;
+    mMachineStateDepsSem = NIL_RTSEMEVENTMULTI;
+    mMachineStateChangePending = 0;
 
     mCurrentStateModified = TRUE;
     mHandleCfgFile = NIL_RTFILE;
@@ -134,10 +134,10 @@ Machine::Data::Data()
 
 Machine::Data::~Data()
 {
-    if (mZeroMachineStateDepsSem != NIL_RTSEMEVENT)
+    if (mMachineStateDepsSem != NIL_RTSEMEVENTMULTI)
     {
-        RTSemEventDestroy (mZeroMachineStateDepsSem);
-        mZeroMachineStateDepsSem = NIL_RTSEMEVENT;
+        RTSemEventMultiDestroy (mMachineStateDepsSem);
+        mMachineStateDepsSem = NIL_RTSEMEVENTMULTI;
     }
 }
 
@@ -611,29 +611,27 @@ void Machine::uninit()
     LogFlowThisFunc (("initFailed()=%d\n", autoUninitSpan.initFailed()));
     LogFlowThisFunc (("mRegistered=%d\n", mData->mRegistered));
 
-    /*
-     *  Enter this object's lock because there may be a SessionMachine instance
-     *  somewhere around, that shares our data and lock but doesn't use our
-     *  addCaller()/removeCaller(), and it may be also accessing the same
-     *  data members. mParent lock is necessary as well because of
-     *  SessionMachine::uninit(), etc.
+    /* Enter this object lock because there may be a SessionMachine instance
+     * somewhere around, that shares our data and lock but doesn't use our
+     * addCaller()/removeCaller(), and it may be also accessing the same data
+     * members. mParent lock is necessary as well because of
+     * SessionMachine::uninit(), etc.
      */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     if (!mData->mSession.mMachine.isNull())
     {
-        /*
-         *  Theoretically, this can only happen if the VirtualBox server has
-         *  been terminated while there were clients running that owned open
-         *  direct sessions. Since in this case we are definitely called by
-         *  VirtualBox::uninit(), we may be sure that SessionMachine::uninit()
-         *  won't happen on the client watcher thread (because it does
-         *  VirtualBox::addCaller() for the duration of the
-         *  SessionMachine::checkForDeath() call, so that VirtualBox::uninit()
-         *  cannot happen until the VirtualBox caller is released). This is
-         *  important, because SessionMachine::uninit() cannot correctly operate
-         *  after we return from this method (it expects the Machine instance
-         *  is still valid). We'll call it ourselves below.
+        /* Theoretically, this can only happen if the VirtualBox server has been
+         * terminated while there were clients running that owned open direct
+         * sessions. Since in this case we are definitely called by
+         * VirtualBox::uninit(), we may be sure that SessionMachine::uninit()
+         * won't happen on the client watcher thread (because it does
+         * VirtualBox::addCaller() for the duration of the
+         * SessionMachine::checkForDeath() call, so that VirtualBox::uninit()
+         * cannot happen until the VirtualBox caller is released). This is
+         * important, because SessionMachine::uninit() cannot correctly operate
+         * after we return from this method (it expects the Machine instance is
+         * still valid). We'll call it ourselves below.
          */
         LogWarningThisFunc (("Session machine is not NULL (%p), "
                              "the direct session is still open!\n",
@@ -1671,7 +1669,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
     CheckComRCReturnRC (autoCaller.rc());
 
     /* VirtualBox::getHardDisk() need read lock */
-    AutoMultiLock <2> alock (mParent->rlock(), this->wlock());
+    AutoMultiLock2 alock (mParent->rlock(), this->wlock());
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -2184,7 +2182,7 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
 
     /* VirtualBox::onExtraDataCanChange() and saveSettings() need mParent
      * lock (saveSettings() needs a write one) */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     if (mType == IsSnapshotMachine)
     {
@@ -2295,7 +2293,7 @@ STDMETHODIMP Machine::SaveSettings()
     CheckComRCReturnRC (autoCaller.rc());
 
     /* saveSettings() needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -2316,7 +2314,7 @@ STDMETHODIMP Machine::SaveSettingsWithBackup (BSTR *aBakFileName)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* saveSettings() needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -2529,7 +2527,7 @@ STDMETHODIMP Machine::RemoveSharedFolder (INPTR BSTR aName)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -2918,7 +2916,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* We need VirtualBox lock because of Progress::notifyComplete() */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     if (!mData->mRegistered)
         return setError (E_UNEXPECTED,
@@ -3427,7 +3425,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
     AutoLock alock (this);
 
     /* wait for state dependants to drop to zero */
-    checkStateDependencies (alock);
+    ensureNoStateDependencies (alock);
 
     ComAssertRet (mData->mRegistered != aRegistered, E_FAIL);
 
@@ -3509,22 +3507,23 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
 }
 
 /**
- *  Increases the number of objects dependent on the machine state or on the
- *  registered state.  Guarantees that these two states will not change at
- *  least until #releaseStateDependency() is called.
+ * Increases the number of objects dependent on the machine state or on the
+ * registered state. Guarantees that these two states will not change at least
+ * until #releaseStateDependency() is called.
  *
- *  Depending on the @a aDepType value, additional state checks may be
- *  made. These checks will set extended error info on failure. See
- *  #checkStateDependency() for more info.
+ * Depending on the @a aDepType value, additional state checks may be made.
+ * These checks will set extended error info on failure. See
+ * #checkStateDependency() for more info.
  *
- *  If this method returns a failure, the dependency is not added and the
- *  caller is not allowed to rely on any particular machine state or
- *  registration state value and may return the failed result code to the
- *  upper level.
+ * If this method returns a failure, the dependency is not added and the caller
+ * is not allowed to rely on any particular machine state or registration state
+ * value and may return the failed result code to the upper level.
  *
- *  @param aDepType     Dependency type to add.
- *  @param aState       Current machine state (NULL if not interested).
- *  @param aRegistered  Current registered state (NULL if not interested).
+ * @param aDepType      Dependency type to add.
+ * @param aState        Current machine state (NULL if not interested).
+ * @param aRegistered   Current registered state (NULL if not interested).
+ *
+ * @note Locks this object for reading.
  */
 HRESULT Machine::addStateDependency (StateDependency aDepType /* = AnyStateDep */,
                                      MachineState_T *aState /* = NULL */,
@@ -3533,56 +3532,67 @@ HRESULT Machine::addStateDependency (StateDependency aDepType /* = AnyStateDep *
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
-
-    if (mData->mWaitingStateDeps && mData->mMachineStateDeps == 0)
-    {
-        /* checkStateDependencies() is at the point after RTSemEventWait() but
-         * before entering the lock. Report an error. It would be better to
-         * leave the lock now and re-schedule ourselves, but we don't have a
-         * framework that can guarantee such a behavior in 100% cases. */
-
-        AssertFailed(); /* <-- this is just to see how often it can happen */
-
-        return setError (E_ACCESSDENIED,
-            tr ("The machine is busy: state transition is in progress. "
-                "Retry the operation (state is %d)"),
-            mData->mMachineState);
-    }
+    AutoReaderLock alock (this);
 
     HRESULT rc = checkStateDependency (aDepType);
     CheckComRCReturnRC (rc);
+
+    {
+        AutoLock stateLock (stateLockHandle());
+
+        if (mData->mMachineStateChangePending != 0)
+        {
+            /* ensureNoStateDependencies() is waiting for state dependencies to
+             * drop to zero so don't add more. It may make sense to wait a bit
+             * and retry before reporting an error (since the pending state
+             * transition should be really quick) but let's just assert for
+             * now to see if it ever happens on practice. */
+
+            AssertFailed();
+
+            return setError (E_ACCESSDENIED,
+                tr ("Machine state change is in progress. "
+                    "Please retry the operation later."));
+        }
+
+        ++ mData->mMachineStateDeps;
+        Assert (mData->mMachineStateDeps != 0 /* overflow */);
+    }
 
     if (aState)
         *aState = mData->mMachineState;
     if (aRegistered)
         *aRegistered = mData->mRegistered;
 
-    ++ mData->mMachineStateDeps;
-
     return S_OK;
 }
 
 /**
- *  Decreases the number of objects dependent on the machine state.
- *  Must always complete the #addStateDependency() call after the state
- *  dependency no more necessary.
+ * Decreases the number of objects dependent on the machine state.
+ * Must always complete the #addStateDependency() call after the state
+ * dependency is no more necessary.
  */
 void Machine::releaseStateDependency()
 {
+    /* stateLockHandle() is the same handle that is used by AutoCaller
+     * so lock it in advance to avoid two mutex requests in a raw */
+    AutoLock stateLock (stateLockHandle());
+
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoLock alock (this);
-
-    AssertReturnVoid (mData->mMachineStateDeps > 0);
+    AssertReturnVoid (mData->mMachineStateDeps != 0
+                      /* releaseStateDependency() w/o addStateDependency()? */);
     -- mData->mMachineStateDeps;
 
-    if (mData->mMachineStateDeps == 0 &&
-        mData->mZeroMachineStateDepsSem != NIL_RTSEMEVENT)
+    if (mData->mMachineStateDeps == 0)
     {
-        /* inform checkStateDependencies() that there are no more deps */
-        RTSemEventSignal (mData->mZeroMachineStateDepsSem);
+        /* inform ensureNoStateDependencies() that there are no more deps */
+        if (mData->mMachineStateChangePending != 0)
+        {
+            Assert (mData->mMachineStateDepsSem != NIL_RTSEMEVENTMULTI);
+            RTSemEventMultiSignal (mData->mMachineStateDepsSem);
+        }
     }
 }
 
@@ -3610,16 +3620,15 @@ void Machine::releaseStateDependency()
  *
  *  @param aDepType     Dependency type to check.
  *
- *  @note External classes should use #addStateDependency() and
+ *  @note Non Machine based classes should use #addStateDependency() and
  *  #releaseStateDependency() methods or the smart AutoStateDependency
  *  template.
  *
- *  @note This method must be called from under this object's lock.
+ *  @note This method must be called from under this object's read or write
+ *        lock.
  */
 HRESULT Machine::checkStateDependency (StateDependency aDepType)
 {
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
-
     switch (aDepType)
     {
         case AnyStateDep:
@@ -3858,40 +3867,47 @@ void Machine::uninitDataAndChildObjects()
     mSSData.free();
 }
 
-
 /**
- *  Chhecks that there are no state dependants. If necessary, waits for the
- *  number of dependants to drop to zero. Must be called from under
- *  this object's lock.
+ * Makes sure that there are no machine state dependants. If necessary, waits
+ * for the number of dependants to drop to zero. Must be called from under this
+ * object's write lock which will be released while waiting.
  *
- *  @param aLock    This object's lock.
+ * @param aLock This object's write lock.
  *
- *  @note This method may leave the object lock during its execution!
+ * @warning To be used only in methods that change the machine state!
  */
-void Machine::checkStateDependencies (AutoLock &aLock)
+void Machine::ensureNoStateDependencies (AutoLock &aLock)
 {
-    AssertReturnVoid (isLockedOnCurrentThread());
     AssertReturnVoid (aLock.belongsTo (this));
+    AssertReturnVoid (aLock.isLockedOnCurrentThread());
+
+    AutoLock stateLock (stateLockHandle());
 
     /* Wait for all state dependants if necessary */
-    if (mData->mMachineStateDeps > 0)
+    if (mData->mMachineStateDeps != 0)
     {
-        /* lazy creation */
-        if (mData->mZeroMachineStateDepsSem == NIL_RTSEMEVENT)
-            RTSemEventCreate (&mData->mZeroMachineStateDepsSem);
+        /* lazy semaphore creation */
+        if (mData->mMachineStateDepsSem == NIL_RTSEMEVENTMULTI)
+            RTSemEventMultiCreate (&mData->mMachineStateDepsSem);
 
         LogFlowThisFunc (("Waiting for state deps (%d) to drop to zero...\n",
                           mData->mMachineStateDeps));
 
-        mData->mWaitingStateDeps = TRUE;
+        ++ mData->mMachineStateChangePending;
 
+        /* reset the semaphore before waiting, the last dependant will signal
+         * it */
+        RTSemEventMultiReset (mData->mMachineStateDepsSem);
+
+        stateLock.leave();
         aLock.leave();
 
-        RTSemEventWait (mData->mZeroMachineStateDepsSem, RT_INDEFINITE_WAIT);
+        RTSemEventMultiWait (mData->mMachineStateDepsSem, RT_INDEFINITE_WAIT);
 
         aLock.enter();
+        stateLock.enter();
 
-        mData->mWaitingStateDeps = FALSE;
+        -- mData->mMachineStateChangePending;
     }
 }
 
@@ -3911,10 +3927,7 @@ HRESULT Machine::setMachineState (MachineState_T aMachineState)
     AutoLock alock (this);
 
     /* wait for state dependants to drop to zero */
-	/// @todo it may be potentially unsafe to leave the lock here as
-    //  the below method does. Needs some thinking. The easiest solution may
-    //  be to provide a separate mutex for mMachineState and mRegistered.
-    checkStateDependencies (alock);
+    ensureNoStateDependencies (alock);
 
     if (mData->mMachineState != aMachineState)
     {
@@ -6431,7 +6444,7 @@ HRESULT Machine::createSnapshotDiffs (const Guid *aSnapshotId,
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* accessing mParent methods below needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     HRESULT rc = S_OK;
 
@@ -6618,7 +6631,7 @@ HRESULT Machine::deleteSnapshotDiffs (const ComObjPtr <Snapshot> &aSnapshot)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* accessing mParent methods below needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     /* short cut: check whether attachments are all the same */
     if (mHDData->mHDAttachments == aSnapshot->data().mMachine->mHDData->mHDAttachments)
@@ -7321,10 +7334,9 @@ void SessionMachine::uninit (Uninit::Reason aReason)
 
     if (autoUninitSpan.initFailed())
     {
-        /*
-         *  We've been called by init() because it's failed. It's not really
-         *  necessary (nor it's safe) to perform the regular uninit sequence
-         *  below, the following is enough.
+        /* We've been called by init() because it's failed. It's not really
+         * necessary (nor it's safe) to perform the regular uninit sequense
+         * below, the following is enough.
          */
         LogFlowThisFunc (("Initialization failed.\n"));
 #if defined(RT_OS_WINDOWS)
@@ -7350,12 +7362,10 @@ void SessionMachine::uninit (Uninit::Reason aReason)
         return;
     }
 
-    /*
-     *  We need to lock this object in uninit() because the lock is shared
-     *  with mPeer (as well as data we modify below).
-     *  mParent->addProcessToReap() and others need mParent lock.
-     */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    /* We need to lock this object in uninit() because the lock is shared
+     * with mPeer (as well as data we modify below). mParent->addProcessToReap()
+     * and others need mParent lock. */
+    AutoMultiWriteLock2 alock (mParent, this);
 
     MachineState_T lastState = mData->mMachineState;
 
@@ -7518,7 +7528,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
  *  Overrides VirtualBoxBase::lockHandle() in order to share the lock handle
  *  with the primary Machine instance (mPeer).
  */
-AutoLock::Handle *SessionMachine::lockHandle() const
+RWLockHandle *SessionMachine::lockHandle() const
 {
     AssertReturn (!mPeer.isNull(), NULL);
     return mPeer->lockHandle();
@@ -7700,7 +7710,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
     ComAssertRet (!control.isNull(), E_INVALIDARG);
 
     /* Progress::init() needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     if (control.equalsTo (mData->mSession.mDirectControl))
     {
@@ -7765,7 +7775,7 @@ STDMETHODIMP SessionMachine::BeginSavingState (IProgress *aProgress, BSTR *aStat
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* mParent->addProgress() needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     AssertReturn (mData->mMachineState == MachineState_Paused &&
                   mSnapshotData.mLastState == MachineState_Null &&
@@ -7813,7 +7823,7 @@ STDMETHODIMP SessionMachine::EndSavingState (BOOL aSuccess)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* endSavingState() need mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     AssertReturn (mData->mMachineState == MachineState_Saving &&
                   mSnapshotData.mLastState != MachineState_Null &&
@@ -7887,7 +7897,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* Progress::init() needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     AssertReturn ((mData->mMachineState < MachineState_Running ||
                    mData->mMachineState == MachineState_Paused) &&
@@ -8047,7 +8057,7 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot (BOOL aSuccess)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* Lock mParent because of endTakingSnapshot() */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     AssertReturn (!aSuccess ||
                   (mData->mMachineState == MachineState_Saving &&
@@ -8084,7 +8094,7 @@ STDMETHODIMP SessionMachine::DiscardSnapshot (
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* Progress::init() needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     ComAssertRet (mData->mMachineState < MachineState_Running, E_FAIL);
 
@@ -8169,7 +8179,7 @@ STDMETHODIMP SessionMachine::DiscardCurrentState (
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* Progress::init() needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     ComAssertRet (mData->mMachineState < MachineState_Running, E_FAIL);
 
@@ -8233,7 +8243,7 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* Progress::init() needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     ComAssertRet (mData->mMachineState < MachineState_Running, E_FAIL);
 
@@ -8686,7 +8696,7 @@ HRESULT SessionMachine::endSavingState (BOOL aSuccess)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* mParent->removeProgress() and saveSettings() need mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     HRESULT rc = S_OK;
 
@@ -8733,7 +8743,7 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* Progress object uninitialization needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     HRESULT rc = S_OK;
 
@@ -8833,7 +8843,7 @@ void SessionMachine::takeSnapshotHandler (TakeSnapshotTask &aTask)
     }
 
     /* endTakingSnapshot() needs mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     HRESULT rc = S_OK;
 
@@ -8929,14 +8939,14 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
         return;
     }
 
+    /* Progress::notifyComplete() et al., saveSettings() need mParent lock.
+     * Also safely lock the snapshot stuff in the direction parent->child */
+    AutoMultiWriteLock4 alock (mParent->lockHandle(), this->lockHandle(),
+                               aTask.snapshot->lockHandle(),
+                               aTask.snapshot->childrenLock());
+
     ComObjPtr <SnapshotMachine> sm = aTask.snapshot->data().mMachine;
-
-    /* Progress::notifyComplete() et al., saveSettings() need mParent lock */
-    AutoMultiLock <3> alock (mParent->wlock(), this->wlock(), sm->rlock());
-
-    /* Safe locking in the direction parent->child */
-    AutoLock snapshotLock (aTask.snapshot);
-    AutoLock snapshotChildrenLock (aTask.snapshot->childrenLock());
+    /* no need to lock the snapshot machine since it is const by definiton */
 
     HRESULT rc = S_OK;
 
@@ -9059,15 +9069,11 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                         tr ("Merging changes to normal hard disk '%ls' to children"),
                         hdRootString.raw())));
 
-                    snapshotChildrenLock.unlock();
-                    snapshotLock.unlock();
                     alock.leave();
 
                     rc = hd->asVDI()->mergeImageToChildren (aTask.progress);
 
                     alock.enter();
-                    snapshotLock.lock();
-                    snapshotChildrenLock.lock();
 
                     // debug code
                     // if (it != sm->mHDData->mHDAttachments.begin())
@@ -9129,15 +9135,11 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
 
                     /* merge the child to this basic image */
 
-                    snapshotChildrenLock.unlock();
-                    snapshotLock.unlock();
                     alock.leave();
 
                     rc = child->asVDI()->mergeImageToParent (aTask.progress);
 
                     alock.enter();
-                    snapshotLock.lock();
-                    snapshotChildrenLock.lock();
 
                     if (SUCCEEDED (rc))
                         rc = mParent->unregisterDiffHardDisk (child);
@@ -9324,7 +9326,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
     }
 
     /* Progress::notifyComplete() et al., saveSettings() need mParent lock */
-    AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
+    AutoMultiWriteLock2 alock (mParent, this);
 
     /*
      *  discard all current changes to mUserData (name, OSType etc.)
@@ -9402,13 +9404,13 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
             mHDData->mHDAttachments =
                 curSnapshot->data().mMachine->mHDData->mHDAttachments;
 
-            snapshotLock.unlock();
+            snapshotLock.leave();
             alock.leave();
             rc = createSnapshotDiffs (NULL, mUserData->mSnapshotFolderFull,
                                       aTask.progress,
                                       false /* aOnline */);
             alock.enter();
-            snapshotLock.lock();
+            snapshotLock.enter();
 
             if (FAILED (rc))
             {
@@ -9443,12 +9445,12 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
                     Bstr (tr ("Restoring the execution state")));
 
                 /* copy the state file */
-                snapshotLock.unlock();
+                snapshotLock.leave();
                 alock.leave();
                 int vrc = RTFileCopyEx (snapStateFilePath, stateFilePath,
                                         0, progressCallback, aTask.progress);
                 alock.enter();
-                snapshotLock.lock();
+                snapshotLock.enter();
 
                 if (VBOX_SUCCESS (vrc))
                 {
@@ -9821,7 +9823,7 @@ void SnapshotMachine::FinalRelease()
  *  @param aStateFilePath   file where the execution state will be later saved
  *                          (or NULL for the offline snapshot)
  *
- *  @note Locks aSessionMachine object for reading.
+ *  @note The aSessionMachine must be locked for writing.
  */
 HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
                                INPTR GUIDPARAM aSnapshotId,
@@ -9836,9 +9838,9 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
     AutoInitSpan autoInitSpan (this);
     AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mSnapshotId = aSnapshotId;
+    AssertReturn (aSessionMachine->isLockedOnCurrentThread(), E_FAIL);
 
-    AutoReaderLock alock (aSessionMachine);
+    mSnapshotId = aSnapshotId;
 
     /* memorize the primary Machine instance (i.e. not SessionMachine!) */
     unconst (mPeer) = aSessionMachine->mPeer;
@@ -9935,7 +9937,7 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
  *  @param aStateFilePath   file where the execution state is saved
  *                          (or NULL for the offline snapshot)
  *
- *  @note Locks aMachine object for reading.
+ *  @note Doesn't lock anything.
  */
 HRESULT SnapshotMachine::init (Machine *aMachine,
                                const settings::Key &aHWNode,
@@ -9953,9 +9955,9 @@ HRESULT SnapshotMachine::init (Machine *aMachine,
     AutoInitSpan autoInitSpan (this);
     AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mSnapshotId = aSnapshotId;
+    /* Don't need to lock aMachine when VirtualBox is starting up */
 
-    AutoReaderLock alock (aMachine);
+    mSnapshotId = aSnapshotId;
 
     /* memorize the primary Machine instance */
     unconst (mPeer) = aMachine;
@@ -10070,7 +10072,7 @@ void SnapshotMachine::uninit()
  *  Overrides VirtualBoxBase::lockHandle() in order to share the lock handle
  *  with the primary Machine instance (mPeer).
  */
-AutoLock::Handle *SnapshotMachine::lockHandle() const
+RWLockHandle *SnapshotMachine::lockHandle() const
 {
     AssertReturn (!mPeer.isNull(), NULL);
     return mPeer->lockHandle();

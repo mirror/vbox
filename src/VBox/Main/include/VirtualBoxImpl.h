@@ -466,7 +466,7 @@ private:
     const RTTHREAD mAsyncEventThread;
     EventQueue * const mAsyncEventQ;
     /** Lock for calling EventQueue->post() */
-    AutoLock::Handle mAsyncEventQLock;
+    RWLockHandle mAsyncEventQLock;
 
     static Bstr sVersion;
     static Bstr sSettingsFormatVersion;

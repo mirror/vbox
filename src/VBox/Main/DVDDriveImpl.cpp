@@ -350,13 +350,13 @@ STDMETHODIMP DVDDrive::GetHostDrive(IHostDVDDrive **aHostDrive)
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  *  Loads settings from the given machine node.
  *  May be called once right after this object creation.
- * 
+ *
  *  @param aMachineNode <Machine> node.
- * 
- *  @note Locks this object for writing. 
+ *
+ *  @note Locks this object for writing.
  */
 HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
 {
@@ -378,7 +378,7 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
      * in the settings file (for backwards compatibility reasons). This takes
      * place when a setting of a newly created object must default to A while
      * the same setting of an object loaded from the old settings file must
-     * default to B. */ 
+     * default to B. */
 
     HRESULT rc = S_OK;
 
@@ -434,12 +434,12 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
     return S_OK;
 }
 
-/** 
+/**
  *  Saves settings to the given machine node.
- * 
+ *
  *  @param aMachineNode <Machine> node.
- * 
- *  @note Locks this object for reading. 
+ *
+ *  @note Locks this object for reading.
  */
 HRESULT DVDDrive::saveSettings (settings::Key &aMachineNode)
 {
@@ -496,7 +496,7 @@ HRESULT DVDDrive::saveSettings (settings::Key &aMachineNode)
     return S_OK;
 }
 
-/** 
+/**
  *  @note Locks this object for writing.
  */
 bool DVDDrive::rollback()
@@ -520,7 +520,7 @@ bool DVDDrive::rollback()
     return changed;
 }
 
-/** 
+/**
  *  @note Locks this object for writing, together with the peer object (also
  *  for writing) if there is one.
  */
@@ -531,11 +531,12 @@ void DVDDrive::commit()
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (mPeer);
-    AssertComRCReturnVoid (thatCaller.rc());
+    AutoCaller peerCaller (mPeer);
+    AssertComRCReturnVoid (peerCaller.rc());
 
-    /* lock both for writing since we modify both */
-    AutoMultiLock <2> alock (this->wlock(), AutoLock::maybeWlock (mPeer));
+    /* lock both for writing since we modify both (mPeer is "master" so locked
+     * first) */
+    AutoMultiWriteLock2 alock (mPeer, this);
 
     if (mData.isBackedUp())
     {
@@ -548,7 +549,7 @@ void DVDDrive::commit()
     }
 }
 
-/** 
+/**
  *  @note Locks this object for writing, together with the peer object
  *  represented by @a aThat (locked for reading).
  */
@@ -561,11 +562,12 @@ void DVDDrive::copyFrom (DVDDrive *aThat)
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (mPeer);
+    AutoCaller thatCaller (aThat);
     AssertComRCReturnVoid (thatCaller.rc());
 
-    /* peer is not modified, lock it for reading */
-    AutoMultiLock <2> alock (this->wlock(), aThat->rlock());
+    /* peer is not modified, lock it for reading (aThat is "master" so locked
+     * first) */
+    AutoMultiLock2 alock (aThat->rlock(), this->wlock());
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);

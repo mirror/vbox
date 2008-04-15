@@ -30,9 +30,7 @@
 #include "AutoLock.h"
 
 using namespace com;
-using util::AutoLock;
-using util::AutoReaderLock;
-using util::AutoMultiLock;
+using namespace util;
 
 #include <iprt/cdefs.h>
 #include <iprt/critsect.h>
@@ -437,7 +435,7 @@ class ATL_NO_VTABLE VirtualBoxBaseNEXT_base
 #else
     : public CComObjectRootEx
 #endif
-    , public AutoLock::Lockable
+    , public Lockable
 {
 public:
 
@@ -451,7 +449,7 @@ protected:
 public:
 
     // AutoLock::Lockable interface
-    virtual AutoLock::Handle *lockHandle() const;
+    virtual RWLockHandle *lockHandle() const;
 
     /**
      *  Virtual unintialization method.
@@ -862,6 +860,14 @@ protected:
         bool mUninitDone : 1;
     };
 
+    /**
+     * Returns a lock handle used to protect the primary state fields (used by
+     * #addCaller(), AutoInitSpan, AutoUninitSpan, etc.). Only intended to be
+     * used for similar purposes in subclasses. WARNING: NO any other locks may
+     * be requested while holding this lock!
+     */
+    WriteLockHandle *stateLockHandle() { return &mStateLock; }
+
 private:
 
     void setState (State aState)
@@ -885,10 +891,10 @@ private:
     unsigned mInitDoneSemUsers;
 
     /** Protects access to state related data members */
-    RTCRITSECT mStateLock;
+    WriteLockHandle mStateLock;
 
     /** User-level object lock for subclasses */
-    mutable AutoLock::Handle *mObjectLock;
+    mutable RWLockHandle *mObjectLock;
 };
 
 /**
@@ -1618,14 +1624,10 @@ public:
 
     VirtualBoxBaseWithChildren()
         : mUninitDoneSem (NIL_RTSEMEVENT), mChildrenLeft (0)
-    {
-        RTCritSectInit (&mMapLock);
-    }
+    {}
 
     virtual ~VirtualBoxBaseWithChildren()
-    {
-        RTCritSectDelete (&mMapLock);
-    }
+    {}
 
     /**
      *  Adds the given child to the map of dependent children.
@@ -1679,7 +1681,8 @@ private:
     typedef std::map <IUnknown *, VirtualBoxBase *> DependentChildren;
     DependentChildren mDependentChildren;
 
-    RTCRITSECT mMapLock;
+    WriteLockHandle mMapLock;
+
     RTSEMEVENT mUninitDoneSem;
     unsigned mChildrenLeft;
 };
@@ -1824,7 +1827,7 @@ private:
     size_t mChildrenLeft;
 
     /* Protects all the fields above */
-    AutoLock::Handle mMapLock;
+    RWLockHandle mMapLock;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1906,7 +1909,7 @@ protected:
      *      AutoLock alock (dependentChildrenLock());
      *  </code>
      */
-    AutoLock::Handle &dependentChildrenLock() const { return mMapLock; }
+    RWLockHandle *dependentChildrenLock() const { return &mMapLock; }
 
     /**
      *  Returns the read-only list of all dependent children.
@@ -1974,7 +1977,7 @@ private:
     DependentChildren mDependentChildren;
 
     bool mInUninit;
-    mutable AutoLock::Handle mMapLock;
+    mutable RWLockHandle mMapLock;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2062,7 +2065,7 @@ protected:
      *      AutoLock alock (dependentChildrenLock());
      * </code>
      */
-    AutoLock::Handle &dependentChildrenLock() const { return mMapLock; }
+    RWLockHandle *dependentChildrenLock() const { return &mMapLock; }
 
     /**
      * Returns the read-only list of all dependent children.
@@ -2096,7 +2099,7 @@ private:
     bool mInUninit;
 
     /* Protects the two fields above */
-    mutable AutoLock::Handle mMapLock;
+    mutable RWLockHandle mMapLock;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

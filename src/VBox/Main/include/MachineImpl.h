@@ -146,9 +146,10 @@ public:
         MachineState_T mMachineState;
         RTTIMESPEC mLastStateChange;
 
+        /* Note: These are guarded by VirtualBoxBase::stateLockHandle() */
         uint32_t mMachineStateDeps;
-        RTSEMEVENT mZeroMachineStateDepsSem;
-        BOOL mWaitingStateDeps;
+        RTSEMEVENTMULTI mMachineStateDepsSem;
+        uint32_t mMachineStateChangePending;
 
         BOOL mCurrentStateModified;
 
@@ -614,7 +615,7 @@ protected:
     HRESULT initDataAndChildObjects();
     void uninitDataAndChildObjects();
 
-    void checkStateDependencies (AutoLock &aLock);
+    void ensureNoStateDependencies (AutoLock &aLock);
 
     virtual HRESULT setMachineState (MachineState_T aMachineState);
 
@@ -774,8 +775,8 @@ public:
     HRESULT init (Machine *aMachine);
     void uninit() { uninit (Uninit::Unexpected); }
 
-    // AutoLock::Lockable interface
-    AutoLock::Handle *lockHandle() const;
+    // util::Lockable interface
+    RWLockHandle *lockHandle() const;
 
     // IInternalMachineControl methods
     STDMETHOD(UpdateState)(MachineState_T machineState);
@@ -933,8 +934,8 @@ public:
                   INPTR GUIDPARAM aSnapshotId, INPTR BSTR aStateFilePath);
     void uninit();
 
-    // AutoLock::Lockable interface
-    AutoLock::Handle *lockHandle() const;
+    // util::Lockable interface
+    RWLockHandle *lockHandle() const;
 
     // public methods only for internal purposes
 
