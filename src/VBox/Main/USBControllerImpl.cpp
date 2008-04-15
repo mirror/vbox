@@ -653,7 +653,7 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
     controller = aMachineNode.createKey ("USBController");
 #else
     /* don't zap it. */
-    if (!controller.isNull())
+    if (controller.isNull())
         controller = aMachineNode.createKey ("USBController");
 #endif
 
