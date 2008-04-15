@@ -4296,7 +4296,11 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                     mHWData->mHWVirtExEnabled = TSBool_Default;
             }
             /* PAE (optional, default is false) */
-            mHWData->mPAEEnabled = cpuNode.value <BOOL> ("PAE");
+            Key PAENode = cpuNode.findKey ("PAE");
+            if (!PAENode.isNull())
+            {
+                mHWData->mPAEEnabled = PAENode.value <bool> ("enabled");
+            }
         }
     }
 
@@ -5654,10 +5658,11 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
                 value = "default";
                 break;
         }
-        cpuNode.setStringValue ("enabled", value);
+        hwVirtExNode.setStringValue ("enabled", value);
 
         /* PAE (optional, default is false) */
-        cpuNode.setValue <BOOL> ("PAE", mHWData->mPAEEnabled);
+        Key PAENode = cpuNode.createKey ("PAE");
+        PAENode.setValue <bool> ("enabled", mHWData->mPAEEnabled);
     }
 
     /* memory (required) */

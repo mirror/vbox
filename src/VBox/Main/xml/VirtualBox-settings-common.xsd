@@ -406,10 +406,14 @@
   <xsd:attribute name="enabled" type="TTriStateBoolType" default="default"/>
 </xsd:complexType>
 
+<xsd:complexType name="TPAEType">
+  <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+</xsd:complexType>
+
 <xsd:complexType name="TCPU">
   <xsd:sequence>
     <xsd:element name="HardwareVirtEx" type="THWVirtExType" minOccurs="0"/>
-    <xsd:element name="PAE" type="xsd:boolean" default="false"/>
+    <xsd:element name="PAE" type="TPAEType" minOccurs="0"/>
   </xsd:sequence>
 </xsd:complexType>
 
