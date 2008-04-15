@@ -42,8 +42,6 @@
 #include "Input/DevPS2.cpp"
 #undef LOG_GROUP
 #include "Network/DevPCNet.cpp"
-//#undef LOG_GROUP
-//#include "Network/ne2000.c"
 #undef LOG_GROUP
 #include "PC/DevACPI.cpp"
 #undef LOG_GROUP

@@ -45,7 +45,6 @@ extern const PDMDEVREG g_DeviceE1000;
 #ifdef VBOX_WITH_INIP
 extern const PDMDEVREG g_DeviceINIP;
 #endif
-extern const PDMDEVREG g_DeviceNE2000;
 extern const PDMDEVREG g_DeviceICHAC97;
 extern const PDMDEVREG g_DeviceSB16;
 extern const PDMDEVREG g_DeviceAudioSniffer;

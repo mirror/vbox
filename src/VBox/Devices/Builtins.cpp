@@ -96,11 +96,6 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (VBOX_FAILURE(rc))
         return rc;
 #endif
-#if 0
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceNE2000);
-    if (VBOX_FAILURE(rc))
-        return rc;
-#endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceICHAC97);
     if (VBOX_FAILURE(rc))
         return rc;
