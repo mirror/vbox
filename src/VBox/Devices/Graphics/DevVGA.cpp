@@ -5633,12 +5633,16 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     rc = CFGMR3QueryU16(pCfgHandle, "LogoTime", &LogoHdr.u16LogoMillies);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        LogoHdr.u16LogoMillies = 1;
+        LogoHdr.u16LogoMillies = 0;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"LogoTime\" as integer failed"));
+
     /* Delay the logo a little bit */
-    LogoHdr.u16LogoMillies = RT_MAX(LogoHdr.u16LogoMillies, LOGO_DELAY_TIME);
+    if (LogoHdr.fu8FadeIn && LogoHdr.fu8FadeOut && !LogoHdr.u16LogoMillies)
+    {
+        LogoHdr.u16LogoMillies = RT_MAX(LogoHdr.u16LogoMillies, LOGO_DELAY_TIME);
+    }
 
     rc = CFGMR3QueryU8(pCfgHandle, "ShowBootMenu", &LogoHdr.fu8ShowBootMenu);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
