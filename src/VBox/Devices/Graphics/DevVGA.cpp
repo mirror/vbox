@@ -201,7 +201,7 @@ typedef WINHDR *PWINHDR;
 /** @} */
 
 /** The BIOS boot menu text position, X. */
-#define LOGO_F12TEXT_X       350
+#define LOGO_F12TEXT_X       304
 /** The BIOS boot menu text position, Y. */
 #define LOGO_F12TEXT_Y       464
 
