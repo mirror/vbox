@@ -1288,7 +1288,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     /*
      * Assert preconditions.
      */
-    STAM_COUNTER_INC(&pVM->pgm.s.StatGCSyncPagePD[(GCPtrPage >> X86_PD_SHIFT) & GST_PD_MASK]);
+    STAM_COUNTER_INC(&pVM->pgm.s.StatGCSyncPagePD[(GCPtrPage >> GST_PD_SHIFT) & GST_PD_MASK]);
     Assert(PdeSrc.n.u1Present);
     Assert(cPages);
 
@@ -2677,7 +2677,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
     {
         pMapping      = pVM->pgm.s.CTXALLSUFF(pMappings);
-        iPdNoMapping  = (pMapping) ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;     /** PAE todo */
+        iPdNoMapping  = (pMapping) ? pMapping->GCPtr >> SHW_PD_SHIFT : ~0U;
     }
     else
     {
@@ -2741,7 +2741,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                         iPD += cPTs - 1;
                         pPDEDst += cPTs + (PGM_SHW_TYPE != PGM_TYPE_32BIT) * cPTs;
                         pMapping = pMapping->CTXALLSUFF(pNext);
-                        iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
+                        iPdNoMapping = pMapping ? pMapping->GCPtr >> SHW_PD_SHIFT : ~0U;
                         continue;
                     }
 #   ifdef IN_RING3
@@ -2753,9 +2753,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                      * Update iPdNoMapping and pMapping.
                      */
                     pMapping = pVM->pgm.s.pMappingsR3;
-                    while (pMapping && pMapping->GCPtr < (iPD << X86_PD_SHIFT))
+                    while (pMapping && pMapping->GCPtr < (iPD << SHW_PD_SHIFT))
                         pMapping = pMapping->pNextR3;
-                    iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
+                    iPdNoMapping = pMapping ? pMapping->GCPtr >> SHW_PD_SHIFT : ~0U;
 #   else
                     LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
                     return VINF_PGM_SYNC_CR3;
@@ -2883,7 +2883,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 {
                     /* It's fixed, just skip the mapping. */
                     pMapping = pMapping->CTXALLSUFF(pNext);
-                    iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
+                    iPdNoMapping = pMapping ? pMapping->GCPtr >> SHW_PD_SHIFT : ~0U;
                 }
                 else
                 {
@@ -2907,9 +2907,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                              * Update iPdNoMapping and pMapping.
                              */
                             pMapping = pVM->pgm.s.CTXALLSUFF(pMappings);
-                            while (pMapping && pMapping->GCPtr < (iPD << X86_PD_SHIFT))
+                            while (pMapping && pMapping->GCPtr < (iPD << SHW_PD_SHIFT))
                                 pMapping = pMapping->CTXALLSUFF(pNext);
-                            iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
+                            iPdNoMapping = pMapping ? pMapping->GCPtr >> SHW_PD_SHIFT : ~0U;
                             break;
 #   else
                             LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
@@ -2921,7 +2921,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     {
                         pMapping = pMapping->CTXALLSUFF(pNext);
                         if (pMapping)
-                            iPdNoMapping = pMapping->GCPtr >> X86_PD_SHIFT;
+                            iPdNoMapping = pMapping->GCPtr >> SHW_PD_SHIFT;
                     }
                 }
 
