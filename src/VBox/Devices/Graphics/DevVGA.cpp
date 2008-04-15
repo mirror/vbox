@@ -212,6 +212,9 @@ typedef WINHDR *PWINHDR;
 /** Height of the boot device selection bitmap, see LOGO_F12TEXT_WIDTH. */
 #define LOGO_F12TEXT_HEIGHT  12
 
+/** The BIOS logo delay time (msec). */
+#define LOGO_DELAY_TIME      1000
+
 #define LOGO_MAX_WIDTH       640
 #define LOGO_MAX_HEIGHT      480
 #define LOGO_MAX_SIZE        LOGO_MAX_WIDTH * LOGO_MAX_HEIGHT * 4
@@ -5634,6 +5637,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"LogoTime\" as integer failed"));
+    /* Delay the logo a little bit */
+    LogoHdr.u16LogoMillies = RT_MAX(LogoHdr.u16LogoMillies, LOGO_DELAY_TIME);
 
     rc = CFGMR3QueryU8(pCfgHandle, "ShowBootMenu", &LogoHdr.fu8ShowBootMenu);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
