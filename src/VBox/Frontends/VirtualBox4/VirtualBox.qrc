@@ -242,8 +242,6 @@
     <file alias="vdm_remove_disabled_22px.png">images/vdm_remove_disabled_22px.png</file>
     <file alias="meditation_32px.png">images/meditation_32px.png</file>
     <file alias="welcome.png">images/welcome.png</file>
-    <file alias="about.png">images/about.png</file>
-    <file alias="about_tile.png">images/about_tile.png</file>
     <file alias="dock_1.png">images/dock_1.png</file>
     <file alias="VirtualBox_48px.png">images/VirtualBox_48px.png</file>
  </qresource>

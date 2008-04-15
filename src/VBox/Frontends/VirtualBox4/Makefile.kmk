@@ -454,8 +454,7 @@ VirtualBox_QT_MOCUIHDRS = \
 # generation rules defined somewhere below!
 VirtualBox_GENSRCS = \
 	$(foreach moc,$(notdir $(basename $(VirtualBox_QT_MOCHDRS))), $(PATH_VirtualBox)/moc/moc_$(moc).cpp) \
-	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS3))), $(PATH_VirtualBox)/ui/$(ui).cpp $(PATH_VirtualBox)/moc/moc_$(ui).cpp) \
-	$(PATH_VirtualBox)/ui/vbox_image_collection.cpp
+	$(foreach ui,$(notdir $(basename $(VirtualBox_QT_UISRCS3))), $(PATH_VirtualBox)/ui/$(ui).cpp $(PATH_VirtualBox)/moc/moc_$(ui).cpp)
 
 # All generated headers. Note: this list MUST be in sync with Qt source
 # generation rules defined somewhere below!
@@ -711,12 +710,25 @@ tstDarwinKeyboard4_LIBS = \
 	$(LIB_RUNTIME)
 endif
 
+# grep the images out of the resource file for dependency tracking
+VirtualBox_QT_RC += $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBox.qrc)
+VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/qrc_application.cpp
 
+# We have different about dialogs in OSE and PUEL. Therefor two independent
+# resource files exists.
+ifdef VBOX_OSE
+VirtualBox_QT_RC_OSE += $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBoxOSE.qrc)
+VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/qrc_application_ose.cpp
+VirtualBox_QT_UISRCS += ui/VBoxAboutDlg.ui
+else
+VirtualBox_QT_RC_NON_OSE += $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBoxNonOSE.qrc)
+VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/qrc_application_non_ose.cpp
+VirtualBox_SOURCES += src/VBoxAboutNonOSEDlg.cpp
+endif
 
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
 include $(PATH_KBUILD)/footer.kmk
-
 
 
 #
@@ -916,14 +928,18 @@ endef
 
 $(foreach src,$(VirtualBox_SOURCES),$(eval $(def_wrapper_deps)))
 
-# grep the images out of the resource file for dependency tracking
-VirtualBox_QT_IMAGES = $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBox.qrc)
-
-$(PATH_VirtualBox)/ui/vbox_image_collection.cpp: VirtualBox.qrc $(VirtualBox_QT_IMAGES)
+# rules for resources file creation
+$(PATH_VirtualBox)/ui/qrc_application.cpp: VirtualBox.qrc $(VirtualBox_QT_RC)
 	$(call MSG_TOOL,rcc,VirtualBox,$<,$@)
 	$(QUIET)$(VBOX_RCC4) -o $@  $<
 
-VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/vbox_image_collection.cpp
+$(PATH_VirtualBox)/ui/qrc_application_ose.cpp: VirtualBoxOSE.qrc $(VirtualBox_QT_RC_OSE)
+	$(call MSG_TOOL,rcc,VirtualBox,$<,$@)
+	$(QUIET)$(VBOX_RCC4) -name "OSE" -o $@  $<
+
+$(PATH_VirtualBox)/ui/qrc_application_non_ose.cpp: VirtualBoxNonOSE.qrc $(VirtualBox_QT_RC_NON_OSE)
+	$(call MSG_TOOL,rcc,VirtualBox,$<,$@)
+	$(QUIET)$(VBOX_RCC4) -name "NonOSE" -o $@  $<
 
 #
 # Hand made dependencies go here.
