@@ -135,7 +135,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 
       /* Send the packet */
       addr.sin_family = AF_INET;
-      if ((so->so_faddr.s_addr & htonl(~pData->netmask)) == special_addr.s_addr) {
+      if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
 	/* It's an alias */
 	switch(ntohl(so->so_faddr.s_addr) & ~pData->netmask) {
 	case CTL_DNS:
