@@ -4293,7 +4293,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     if (rc != VINF_SUCCESS)
         return rc;
 
-    if (pData->fHaveDirtyBits && pData->GCPhysVRAM && pData->GCPhysVRAM != NIL_RTGCPHYS)
+    if (pData->fHaveDirtyBits && pData->GCPhysVRAM && pData->GCPhysVRAM != NIL_RTGCPHYS32)
     {
         PPDMDEVINS pDevIns = pData->pDevInsHC;
         PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pData->GCPhysVRAM);
@@ -4326,7 +4326,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
     int rc = vga_update_display(pData);
 
     /* The dirty bits array has been just cleared, reset handlers as well. */
-    if (pData->GCPhysVRAM && pData->GCPhysVRAM != NIL_RTGCPHYS)
+    if (pData->GCPhysVRAM && pData->GCPhysVRAM != NIL_RTGCPHYS32)
     {
         PPDMDEVINS pDevIns = pData->pDevInsHC;
         PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pData->GCPhysVRAM);
@@ -4937,7 +4937,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     if (    (   pData->fGCEnabled
              || pData->fR0Enabled)
         &&  pData->GCPhysVRAM
-        &&  pData->GCPhysVRAM != NIL_RTGCPHYS)
+        &&  pData->GCPhysVRAM != NIL_RTGCPHYS32)
     {
         int rc = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pData->GCPhysVRAM);
         AssertRC(rc);
