@@ -405,6 +405,16 @@ static int cpumR3CpuIdInit(PVM pVM)
             break;
     }
 
+    /* Check if PAE was explicitely enabled by the user. */
+    PCFGMNODE pNode = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "CPUM/CPUID");
+    if (pNode)
+    {
+        bool fEnable;
+        int rc = CFGMR3QueryBool(pNode, "EnablePAE", &fEnable);
+        if (VBOX_SUCCESS(rc) && fEnable)
+            CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
+    }
+
     /*
      * Log the cpuid and we're good.
      */

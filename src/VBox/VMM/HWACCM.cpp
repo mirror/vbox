@@ -404,9 +404,6 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 pVM->fHWACCMEnabled = true;
                 pVM->hwaccm.s.vmx.fEnabled = true;
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-#if 0 /* not yet */
-                CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
-#endif
                 LogRel(("HWACCM: VMX enabled!\n"));
             }
             else
