@@ -265,6 +265,13 @@ ifdef VBOX_WITH_ICHAT_THEATER
 	 src/darwin/VBoxIChatTheaterWrapper.m
 endif
 
+ifndef VBOX_OSE
+VirtualBox_QT_IMAGES += images/about_sun.png
+VirtualBox_SOURCES += src/VBoxAboutNonOSEDlg.cpp
+else
+VirtualBox_QT_UISRCS += ui/VBoxAboutDlg.ui
+endif
+
 ifneq ($(BUILD_TARGET),win)
 src/HappyHttp.cpp_CXXFLAGS += -fexceptions
 src/VBoxDownloaderWgt.cpp_CXXFLAGS += -fexceptions
