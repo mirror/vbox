@@ -23,7 +23,7 @@ ifneq ($(BUILD_PLATFORM),solaris)
 $(error "The Solaris guest additions installer can only be built on Solaris!")
 endif
 
-PKGFILENAME    := VBoxSolarisAdditions
+PKGFILENAME    := VBoxSolarisAdditions.pkg
 PKGINFO_ARCH    = $(shell uname -p)
 VBOX_PATH_SOLARIS_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/Installer
 VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installer
@@ -42,7 +42,7 @@ OTHER_CLEAN += $(PACKING)
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
-$(PATH_BIN)/additions/VBoxSolarisAdditions: \
+$(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 		$(VBOX_VERSION_STAMP) \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/makepackage.sh \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/postinstall.sh \
