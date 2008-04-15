@@ -4414,7 +4414,7 @@ static int handleModifyVM(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             }
             i++;
-            hdds[n+3] = argv[i];
+            hdds[n-1+4] = argv[i];
         }
         else if (strcmp(argv[i], "-sataideemulation") == 0)
         {
@@ -4443,7 +4443,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
 
-            sataBootDevices[bootDevicePos] = n;
+            sataBootDevices[bootDevicePos] = n-1;
         }
         else
         {
