@@ -1436,7 +1436,7 @@ void VBoxConsoleWnd::languageChange()
 #ifdef VBOX_OSE
     caption_prefix = tr ("VirtualBox OSE");
 #else
-    caption_prefix = tr ("innotek VirtualBox");
+    caption_prefix = tr ("Sun xVM VirtualBox");
 #endif
 
     /*

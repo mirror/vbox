@@ -1119,7 +1119,7 @@ void VBoxSelectorWnd::languageChange()
 #ifdef VBOX_OSE
     setWindowTitle (tr ("VirtualBox OSE"));
 #else
-    setWindowTitle (tr ("innotek VirtualBox"));
+    setWindowTitle (tr ("Sun xVM VirtualBox"));
 #endif
 
     vmTabWidget->setTabText (vmTabWidget->indexOf (vmDetailsView), tr ("&Details"));
