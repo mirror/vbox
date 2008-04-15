@@ -1030,7 +1030,12 @@ int main (int argc, char **argv)
         rc = gIpcServ->AddName (VBOXSVC_IPC_NAME);
         if (NS_FAILED (rc))
         {
-            printf ("ERROR: Failed to register VirtualBoxServer! (rc=%08X)\n", rc);
+            LogFlowFunc (("Failed to register the server name (rc=%08X)!\n"
+                          "Is another server already running?\n", rc));
+
+            printf ("ERROR: Failed to register the server name \"%s\" (rc=%08X)!\n"
+                    "Is another server already running?\n",
+                    VBOXSVC_IPC_NAME, rc);
             NS_RELEASE (gIpcServ);
             break;
         }
