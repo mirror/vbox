@@ -2910,10 +2910,18 @@ int pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
 
         //case PGMMODE_PAE_NX:
         case PGMMODE_PAE:
-            if (!HWACCMIsEnabled(pVM))
+        {
+            uint32_t u32Dummy, u32ExtFeatures;
+
+            CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32ExtFeatures);
+            if (!(u32ExtFeatures & X86_CPUID_FEATURE_EDX_PAE))
             {
-                VMSetRuntimeError(pVM, true, "PAEmodeDependsHwaccm",
-                                  N_("The guest is trying to switch to the PAE mode which is currently supported by VirtualBox only in VT-x mode or AMD-V mode. Either enable hardware virtualization for this VM or choose another flavour of the guest kernel (install a desktop kernel instead of a server kernel)"));
+                /* Pause first, then inform Main. */
+                rc = VMR3SuspendNoSave(pVM);
+                AssertRC(rc);
+
+                VMSetRuntimeError(pVM, true, "PAEmode",
+                                  N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. Experimental PAE support can be enabled using the -pae option with VBoxManage."));
                 /* we must return TRUE here otherwise the recompiler will assert */
                 return VINF_SUCCESS;
             }
@@ -2932,6 +2940,7 @@ int pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 default: AssertFailed(); break;
             }
             break;
+        }
 
         //case PGMMODE_AMD64_NX:
         case PGMMODE_AMD64:
