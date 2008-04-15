@@ -172,7 +172,7 @@ ifdef VBOX_WITH_ADDITIONS_ISO.solaris.x86
   VBOX_PATH_ADDITIONS.solaris.x86 = $(VBOX_PATH_ADDITIONS)
  endif
  GUESTADDITIONS_FILESPEC.solaris.x86 = \
- 	VBoxSolarisAdditions=$(VBOX_PATH_ADDITIONS.solaris.x86)/VBoxSolarisAdditions
+ 	VBoxSolarisAdditions.pkg=$(VBOX_PATH_ADDITIONS.solaris.x86)/VBoxSolarisAdditions.pkg
 endif
 
 #
