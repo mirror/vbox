@@ -35,8 +35,8 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void              pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, int iOldPDE);
-static void              pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, int iNewPDE);
+static void              pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, unsigned iOldPDE);
+static void              pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
 static int               pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cPages, PX86PT pPTDefault, PX86PTPAE pPTPaeDefault);
 static void              pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPhys, unsigned cPages, PX86PT pPTDefault, PX86PTPAE pPTPaeDefault);
 
@@ -690,7 +690,7 @@ static void pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPh
  * @param   pMap        Pointer to the mapping in question.
  * @param   iOldPDE     The index of the 32-bit PDE corresponding to the base of the mapping.
  */
-static void pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, int iOldPDE)
+static void pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, unsigned iOldPDE)
 {
     unsigned i = pMap->cPTs;
     iOldPDE += i;
@@ -707,13 +707,16 @@ static void pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, int iOldPDE)
         /*
          * PAE.
          */
-        const int iPD = iOldPDE / 256;
-        int iPDE = iOldPDE * 2 % 512;
+        const unsigned iPD = iOldPDE / 256;
+        unsigned iPDE = iOldPDE * 2 % 512;
         pPGM->apInterPaePDs[iPD]->a[iPDE].u = 0;
         pPGM->apHCPaePDs[iPD]->a[iPDE].u    = 0;
         iPDE++;
         pPGM->apInterPaePDs[iPD]->a[iPDE].u = 0;
         pPGM->apHCPaePDs[iPD]->a[iPDE].u    = 0;
+
+        /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
+        pPGM->pHCPaePDPT->a[iPD].u &= ~PGM_PLXFLAGS_MAPPING;
     }
 }
 
@@ -725,7 +728,7 @@ static void pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, int iOldPDE)
  * @param   pMap        Pointer to the mapping in question.
  * @param   iNewPDE     The index of the 32-bit PDE corresponding to the base of the mapping.
  */
-static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, int iNewPDE)
+static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 {
     PPGM pPGM = &pVM->pgm.s;
 
@@ -733,7 +736,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, int iNewPDE)
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
-    Assert(PGMGetGuestMode(pVM) <= PGMMODE_32_BIT);
+    Assert(PGMGetGuestMode(pVM) <= PGMMODE_PAE);
 
     /*
      * Init the page tables and insert them into the page directories.
@@ -758,8 +761,8 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, int iNewPDE)
         /*
          * PAE.
          */
-        const int iPD = iNewPDE / 256;
-        int iPDE = iNewPDE * 2 % 512;
+        const unsigned iPD = iNewPDE / 256;
+        unsigned iPDE = iNewPDE * 2 % 512;
         if (pPGM->apHCPaePDs[iPD]->a[iPDE].n.u1Present)
             pgmPoolFree(pVM, pPGM->apHCPaePDs[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2);
         X86PDEPAE PdePae0;
@@ -774,6 +777,9 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, int iNewPDE)
         PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae1;
         pPGM->apHCPaePDs[iPD]->a[iPDE]    = PdePae1;
+
+        /* Set the PGM_PDFLAGS_MAPPING flag in the page directory pointer entry. (legacy PAE guest mode) */
+        pPGM->pHCPaePDPT->a[iPD].u |= PGM_PLXFLAGS_MAPPING;
     }
 }
 
