@@ -440,7 +440,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             /*
              * Initialize slirp.
              */
-            rc = slirp_init(&pData->pNATState, &szNetAddr[0], fPassDomain, pData->pszTFTPPrefix, pData->pszBootFile, pData);
+            rc = slirp_init(&pData->pNATState, &szNetAddr[0], 0xffffff00, fPassDomain, pData->pszTFTPPrefix, pData->pszBootFile, pData);
             if (VBOX_SUCCESS(rc))
             {
                 int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pData, pCfgHandle);

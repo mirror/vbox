@@ -496,12 +496,15 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 	DEBUG_ARG("m = %lx", (long)m);
 
         addr.sin_family = AF_INET;
-	if ((so->so_faddr.s_addr & htonl(0xffffff00)) == special_addr.s_addr) {
+	if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
 	  /* It's an alias */
-	  switch(ntohl(so->so_faddr.s_addr) & 0xff) {
+          uint32_t last_byte = ntohl(so->so_faddr.s_addr) & ~pData->netmask;
+	  switch(last_byte) {
+#if 0
+          /* handle this case at 'default:' */
           case CTL_BROADCAST:
             addr.sin_addr.s_addr = INADDR_BROADCAST;
-#if 0
+# if 0
             /* Send the packet to host to fully emulate broadcast */
             /** @todo r=klaus: on Linux host this causes the host to receive
              * the packet twice for some reason. And I cannot find any place
@@ -512,8 +515,9 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
             host_addr.sin_addr = our_addr;
             sendto(so->s, m->m_data, m->m_len, 0,
                   (struct sockaddr *)&host_addr, sizeof (struct sockaddr));
-#endif
+# endif
             break;
+#endif
 	  case CTL_DNS:
             if (!get_dns_addr(pData, &dns_addr))
                 addr.sin_addr = dns_addr;
@@ -522,7 +526,10 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 	    break;
 	  case CTL_ALIAS:
 	  default:
-	    addr.sin_addr = loopback_addr;
+            if (last_byte == ~pData->netmask)
+              addr.sin_addr.s_addr = INADDR_BROADCAST;
+            else
+	      addr.sin_addr = loopback_addr;
 	    break;
 	  }
 	} else

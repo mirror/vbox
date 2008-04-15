@@ -83,6 +83,7 @@ typedef struct NATState
     struct in_addr special_addr;
     struct in_addr dns_addr;
     struct in_addr loopback_addr;
+    uint32_t netmask;
     uint8_t client_ethaddr[6];
     struct ex_list *exec_list;
     char slirp_hostname[33];
