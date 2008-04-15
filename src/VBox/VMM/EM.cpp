@@ -2415,7 +2415,6 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
          */
 #ifdef VBOX_STRICT
         Assert(REMR3QueryPendingInterrupt(pVM) == REM_NO_PENDING_IRQ);
-        Assert(!(pCtx->cr4 & X86_CR4_PAE));
         Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) == 3 || (pCtx->ss & X86_SEL_RPL) == 0);
         AssertMsg(   (pCtx->eflags.u32 & X86_EFL_IF)
                   || PATMShouldUseRawMode(pVM, (RTGCPTR)pCtx->eip),
@@ -2777,8 +2776,11 @@ inline EMSTATE emR3Reschedule(PVM pVM, PCPUMCTX pCtx)
 
     if (pCtx->cr4 & X86_CR4_PAE)
     {
-        //Log2(("raw mode refused: PAE\n"));
-        return EMSTATE_REM;
+        uint32_t u32Dummy, u32Features;
+
+        CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+        if (!(u32Features & X86_CPUID_FEATURE_EDX_PAE))
+            return EMSTATE_REM;
     }
 
     unsigned uSS = pCtx->ss;

@@ -2911,10 +2911,10 @@ int pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
         //case PGMMODE_PAE_NX:
         case PGMMODE_PAE:
         {
-            uint32_t u32Dummy, u32ExtFeatures;
+            uint32_t u32Dummy, u32Features;
 
-            CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32ExtFeatures);
-            if (!(u32ExtFeatures & X86_CPUID_FEATURE_EDX_PAE))
+            CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+            if (!(u32Features & X86_CPUID_FEATURE_EDX_PAE))
             {
                 /* Pause first, then inform Main. */
                 rc = VMR3SuspendNoSave(pVM);
