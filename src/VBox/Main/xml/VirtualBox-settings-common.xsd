@@ -409,7 +409,6 @@
 <xsd:complexType name="TCPU">
   <xsd:sequence>
     <xsd:element name="HardwareVirtEx" type="THWVirtExType" minOccurs="0"/>
-    <xsd:element name="PAE" type="xsd:boolean" default="false"/>
   </xsd:sequence>
 </xsd:complexType>
 
