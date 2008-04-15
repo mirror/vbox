@@ -1203,9 +1203,11 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
 
     if (env->cr[4] & CR4_PAE_MASK)
     {
-        STAM_COUNTER_INC(&gStatRefusePAE);
-        //Log2(("raw mode refused: PAE\n"));
-        return false;
+        if (!(env->cpuid_features & X86_CPUID_FEATURE_EDX_PAE))
+        {
+            STAM_COUNTER_INC(&gStatRefusePAE);
+            return false;
+        }
     }
 
     if (((fFlags >> HF_CPL_SHIFT) & 3) == 3)
