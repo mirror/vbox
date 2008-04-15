@@ -34,12 +34,70 @@
 #ifdef RT_OS_WINDOWS
 # include <VBox/usblib-win.h>
 #endif
+#ifdef RT_OS_DARWIN
+# include <VBox/usblib-darwin.h>
+#endif
 /** @todo merge the usblib-win.h interface into the darwin and linux ports where suitable. */
 
 /** @defgroup grp_USBLib    USBLib - USB Support Library
  * This module implements the basic low-level OS interfaces and common USB code.
  * @{
  */
+
+#ifndef RT_OS_WINDOWS
+#ifdef IN_RING3
+/**
+ * Initializes the USBLib component.
+ *
+ * The USBLib keeps a per process connection to the kernel driver
+ * and all USBLib users within a process will share the same
+ * connection. USBLib does reference counting to make sure that
+ * the connection remains open until all users has called USBLibTerm().
+ *
+ * @returns VBox status code.
+ *
+ * @remark  The users within the process are responsible for not calling
+ *          this function at the same time (because I'm lazy).
+ */
+int USBLibInit(void);
+
+/**
+ * Terminates the USBLib component.
+ *
+ * Must match successfull USBLibInit calls.
+ *
+ * @returns VBox status code.
+ */
+int USBLibTerm(void);
+
+/**
+ * Adds a filter.
+ *
+ * This function will validate and transfer the specified filter
+ * to the kernel driver and make it start using it. The kernel
+ * driver will return a filter id that this function passes on
+ * to its caller.
+ *
+ * The kernel driver will associate the added filter with the
+ * calling process and automatically remove all filters when
+ * the process terminates the connection to it or dies.
+ *
+ * @returns Filter id for passing to USBLibRemoveFilter on success.
+ * @returns NULL on failure.
+ *
+ * @param   pFilter     The filter to add.
+ */
+void *USBLibAddFilter(PCUSBFILTER pFilter);
+
+/**
+ * Removes a filter.
+ *
+ * @param   pvId        The ID returned by USBLibAddFilter.
+ */
+void USBLibRemoveFilter(void *pvId);
+
+#endif /* IN_RING3 */
+#endif /* !RT_OS_WINDOWS */
 
 /** @} */
 #endif
