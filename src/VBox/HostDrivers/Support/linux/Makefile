@@ -272,5 +272,6 @@ install_rpm: $(MODULE)
 endif # eq($(MAKECMDGOALS),clean)
 
 clean:
-	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
+	for f in . linux r0drv r0drv/linux VBox common/string common/log generic math/gcc; \
+	    do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
 	rm -rf .vboxdrv* .tmp_ver* vboxdrv.* Module.symvers Modules.symvers
