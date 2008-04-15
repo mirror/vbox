@@ -153,7 +153,7 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.cHits = 0;
 
     CPUSET_ALL(Set);
-    xc_call((uintptr_t)&Args, 0, 0, X_CALL_HIPRI, Set, rtmpOnAllSolarisWrapper);
+    xc_call((uintptr_t)&Args, 0, 0, X_CALL_LOPRI, Set, rtmpOnAllSolarisWrapper);
 
     return VINF_SUCCESS;
 }
@@ -190,11 +190,11 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
-    Args.idCpu = RTMpCpuId();
+    Args.idCpu = RTMpCpuId(); /** @todo should disable pre-emption before doing this.... */
     Args.cHits = 0;
 
     CPUSET_ALL_BUT(Set, Args.idCpu);
-    xc_call((uintptr_t)&Args, 0, 0, X_CALL_HIPRI, Set, rtmpOnOthersSolarisWrapper);
+    xc_call((uintptr_t)&Args, 0, 0, X_CALL_LOPRI, Set, rtmpOnOthersSolarisWrapper);
 
     return VINF_SUCCESS;
 }
@@ -242,7 +242,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     CPUSET_ZERO(Set);
     CPUSET_ADD(Set, idCpu);
 
-    xc_call((uintptr_t)&Args, 0, 0, X_CALL_HIPRI, Set, rtmpOnSpecificSolarisWrapper);
+    xc_call((uintptr_t)&Args, 0, 0, X_CALL_LOPRI, Set, rtmpOnSpecificSolarisWrapper);
     Assert(ASMAtomicUoReadU32(&Args.cHits) <= 1);
 
     return ASMAtomicUoReadU32(&Args.cHits) == 1
