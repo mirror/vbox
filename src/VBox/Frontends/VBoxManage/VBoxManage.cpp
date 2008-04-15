@@ -341,7 +341,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-sata on|off]\n"
                  "                            [-sataportcount <1-30>]\n"
                  "                            [-sataport<1-30> none|<uuid>|<filename>]\n"
-                 "                            [-sataideemulation hda|hdb|hdc|hdd <1-30>]\n"
+                 "                            [-sataideemulation<1-4> <1-30>]\n"
 #endif
                  "                            [-dvd none|<uuid>|<filename>|host:<drive>]\n"
                  "                            [-dvdpassthrough on|off]\n"
@@ -4416,29 +4416,22 @@ static int handleModifyVM(int argc, char *argv[],
             i++;
             hdds[n-1+4] = argv[i];
         }
-        else if (strcmp(argv[i], "-sataideemulation") == 0)
+        else if (strncmp(argv[i], "-sataideemulation", 17) == 0)
         {
             unsigned bootDevicePos = 0;
             unsigned n;
 
-            if (argc <= i + 2)
+            bootDevicePos = parseNum(&argv[i][17], 4, "SATA");
+            if (!bootDevicePos)
+                return 1;
+            bootDevicePos--;
+
+            if (argc <= i + 1)
             {
                 return errorArgument("Missing arguments to '%s'", argv[i]);
             }
             i++;
 
-            if (strcmp(argv[i], "hda") == 0)
-                bootDevicePos = 0;
-            else if (strcmp(argv[i], "hdb") == 0)
-                bootDevicePos = 1;
-            else if (strcmp(argv[i], "hdc") == 0)
-                bootDevicePos = 2;
-            else if (strcmp(argv[i], "hdd") == 0)
-                bootDevicePos = 3;
-            else
-                return errorArgument("Invalid argument to '%s'", argv[i-1]);
-
-            i++;
             n = parseNum(argv[i], 30, "SATA");
             if (!n)
                 return 1;
