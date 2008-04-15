@@ -29,6 +29,7 @@ include $(PATH_SUB_CURRENT)/VBoxControl/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxHook/Makefile.kmk
 ifndef VBOX_OSE
 include $(PATH_SUB_CURRENT)/Network/Makefile.kmk
+include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
 endif
 ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
 include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk

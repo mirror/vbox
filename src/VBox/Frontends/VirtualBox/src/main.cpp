@@ -167,6 +167,10 @@ int main (int argc, char **argv)
          * load and slows down the load process that happens on the main GUI
          * thread to several seconds). */
         PlaySound (NULL, NULL, 0);
+
+    /* Initialize windows sockets for the process */
+    WSADATA wsaData;
+    int ret = WSAStartup(MAKEWORD(1,1), &wsaData);
 #endif
 
 #ifndef RT_OS_DARWIN
