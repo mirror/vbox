@@ -429,6 +429,10 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_ROOT_PDPT:
             {
+                /* Hopefully this doesn't happen very often:
+                 * - touching unused parts of the page
+                 * - messing with the bits of pd pointers without changing the physical address
+                 */
                 const unsigned iShw = off / sizeof(X86PDPE);
                 if (iShw < X86_PG_PAE_PDPE_ENTRIES)          /* don't use ELEMENTS(uShw.pPDPT->a), because that's for long mode only */
                 {
