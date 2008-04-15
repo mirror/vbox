@@ -1983,6 +1983,7 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent)
     Header.numGTEsPerGT = RT_H2LE_U32(pExtent->cGTEntries);
     if (pExtent->pRGD)
     {
+        Assert(pExtent->uSectorRGD);
         Header.rgdOffset = RT_H2LE_U64(pExtent->uSectorRGD);
         Header.gdOffset = RT_H2LE_U64(pExtent->uSectorGD);
     }
@@ -2775,7 +2776,8 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
             memcpy(pszBasename, pszTmp, cbTmp);
             RTStrFree(pszTmp);
             pExtent->pszBasename = pszBasename;
-            cbExtent = RT_MIN(cbRemaining, VMDK_2G_SPLIT_SIZE);
+            if (uImageFlags & VD_VMDK_IMAGE_FLAGS_SPLIT_2G)
+                cbExtent = RT_MIN(cbRemaining, VMDK_2G_SPLIT_SIZE);
         }
         char *pszBasedirectory = RTStrDup(pImage->pszFilename);
         RTPathStripFilename(pszBasedirectory);
@@ -2797,6 +2799,48 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
             rc = RTFileSetSize(pExtent->File, cbExtent);
             if (VBOX_FAILURE(rc))
                 return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not set size of new file '%s'"), pExtent->pszFullname);
+
+            /* Fill image with zeroes. We do this for every fixed-size image since on some systems
+             * (for example Windows Vista), it takes ages to write a block near the end of a sparse
+             * file and the guest could complain about an ATA timeout. */
+
+            /** @todo Starting with Linux 2.6.23, there is an fallocate() system call.
+             *        Currently supported file systems are ext4 and ocfs2. */
+
+            /* Allocate a temporary zero-filled buffer. Use a bigger block size to optimize writing */
+            const size_t cbBuf = 128 * _1K;
+            void *pvBuf = RTMemTmpAllocZ(cbBuf);
+            if (!pvBuf)
+                return VERR_NO_MEMORY;
+
+            uint64_t uOff = 0;
+            /* Write data to all image blocks. */
+            while (uOff < cbExtent)
+            {
+                unsigned cbChunk = (unsigned)RT_MIN(cbExtent, cbBuf);
+
+                rc = RTFileWriteAt(pExtent->File, uOff, pvBuf, cbChunk, NULL);
+                if (VBOX_FAILURE(rc))
+                {
+                    RTMemFree(pvBuf);
+                    return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: writing block failed for '%s'"), pImage->pszFilename);
+                }
+
+                uOff += cbChunk;
+
+                if (pfnProgress)
+                {
+                    rc = pfnProgress(NULL /* WARNING! pVM=NULL  */,
+                                     uPercentStart + uOff * uPercentSpan / cbExtent,
+                                     pvUser);
+                    if (VBOX_FAILURE(rc))
+                    {
+                        RTMemFree(pvBuf);
+                        return rc;
+                    }
+                }
+            }
+            RTMemTmpFree(pvBuf);
         }
 
         /* Place descriptor file information (where integrated). */
@@ -2833,8 +2877,9 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
         if (enmType == VD_IMAGE_TYPE_NORMAL)
         {
             rc = vmdkCreateGrainDirectory(pExtent,
-                                            pExtent->uDescriptorSector
-                                          + pExtent->cDescriptorSectors,
+                                          RT_MAX(  pExtent->uDescriptorSector
+                                                 + pExtent->cDescriptorSectors,
+                                                 1),
                                           true);
             if (VBOX_FAILURE(rc))
                 return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new grain directory in '%s'"), pExtent->pszFullname);
@@ -3269,7 +3314,8 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
     if (uGDIndex >= pExtent->cGDEntries)
         return VERR_OUT_OF_RANGE;
     uGTSector = pExtent->pGD[uGDIndex];
-    uRGTSector = pExtent->pRGD[uGDIndex];
+    if (pExtent->pRGD)
+        uRGTSector = pExtent->pRGD[uGDIndex];
     if (!uGTSector)
     {
         /* There is no grain table referenced by this grain directory
