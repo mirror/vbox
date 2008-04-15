@@ -2483,7 +2483,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="4f6b4977-95fd-40b1-8391-fc165c040635"
+     uuid="f95c0793-7737-49a1-85d9-6da81097173b"
      wsmap="managed"
      >
     <desc>
@@ -2703,6 +2703,14 @@
         the host CPU's hardware virtualization extensions such as Intel VT-x
         and AMD-V. Note that in case such extensions are not available,
         they will not be used.
+      </desc>
+    </attribute>
+
+    <attribute name="PAEEnabled" type="boolean" default="false">
+      <desc>
+        This setting determines whether VirtualBox will expose the Physical Address
+        Extension (PAE) feature of the host CPU to the guest. Note that in case PAE 
+        is not available, it will not be reported.
       </desc>
     </attribute>
 
@@ -8555,6 +8563,13 @@
       <desc>
         Flag indicating whether the VM is currently making use of CPU hardware
         virtualization extensions
+      </desc>
+    </attribute>
+    
+    <attribute name="PAEEnabled" type="boolean" readonly="yes">
+      <desc>
+        Flag indicating whether the VM is currently making use of the Physical
+        Address Extension CPU feature.
       </desc>
     </attribute>
 

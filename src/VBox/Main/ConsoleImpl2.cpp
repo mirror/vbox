@@ -167,6 +167,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
 #endif
 
+    /* Physical Address Extension (PAE) */
+    BOOL fEnablePAE = false;
+    hrc = pMachine->COMGETTER(PAEEnabled)(&fEnablePAE);                             H();
+    rc = CFGMR3InsertInteger(pRoot, "EnablePAE", fEnablePAE);                       RC_CHECK();
+
     BOOL fIOAPIC;
     hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                          H();
 
