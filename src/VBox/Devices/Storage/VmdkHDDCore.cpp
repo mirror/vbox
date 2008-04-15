@@ -3727,12 +3727,6 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         goto out;
     }
 
-    /** @todo implement suppressing of zero data writes (a bit tricky in this
-     * case, as VMDK has no marker for zero blocks). We somehow need to get the
-     * information whether the information in this area is all zeroes as of the
-     * parent image. Then (based on the assumption that parent images are
-     * immutable) the write can be ignored. */
-
     /* Handle the write according to the current extent type. */
     switch (pExtent->enmType)
     {
@@ -3751,9 +3745,15 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                 if (cbToWrite == VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain))
                 {
                     /* Full block write to a previously unallocated block.
-                     * Allocate GT and find out where to store the grain. */
-                    rc = vmdkAllocGrain(pImage->pGTCache, pExtent,
-                                        uSectorExtentRel, pvBuf, cbToWrite);
+                     * Check if the caller wants to avoid this. */
+                    if (!(fWrite & VD_WRITE_NO_ALLOC))
+                    {
+                        /* Allocate GT and find out where to store the grain. */
+                        rc = vmdkAllocGrain(pImage->pGTCache, pExtent,
+                                            uSectorExtentRel, pvBuf, cbToWrite);
+                    }
+                    else
+                        rc = VERR_VDI_BLOCK_FREE;
                     *pcbPreRead = 0;
                     *pcbPostRead = 0;
                 }
