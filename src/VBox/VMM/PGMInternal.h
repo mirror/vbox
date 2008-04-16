@@ -2577,9 +2577,10 @@ PGMGCDECL(int)  pgmGCGuestPDWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXC
 PGMDECL(int)    pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 int             pgmR3ChangeMode(PVM pVM, PGMMODE enmGuestMode);
 
-int             pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, int iPDOld);
+int             pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTGCPTR GCPtrOldMapping);
+int             pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping);
 PPGMMAPPING     pgmGetMapping(PVM pVM, RTGCPTR GCPtr);
-void            pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, int iPDOld, int iPDNew);
+void            pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping, RTGCPTR GCPtrNewMapping);
 DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 void            pgmR3HandlerPhysicalUpdateAll(PVM pVM);
@@ -3584,7 +3585,13 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
 DECLINLINE(bool) pgmMapAreMappingsEnabled(PPGM pPGM)
 {
+#ifdef IN_RING0
+    /* There are no mappings in VT-x and AMD-V mode. */
+    Assert(pPGM->fDisableMappings);
+    return false;
+#else
     return !pPGM->fDisableMappings;
+#endif
 }
 
 /** @} */

@@ -1012,11 +1012,11 @@ PDMR3DECL(bool) PGMR3PhysMMIO2IsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhy
     /*
      * Validate input
      */
-    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
-    AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
-    AssertReturn(GCPhys != NIL_RTGCPHYS, VERR_INVALID_PARAMETER);
-    AssertReturn(GCPhys != 0, VERR_INVALID_PARAMETER);
-    AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    VM_ASSERT_EMT_RETURN(pVM, false);
+    AssertPtrReturn(pDevIns, false);
+    AssertReturn(GCPhys != NIL_RTGCPHYS, false);
+    AssertReturn(GCPhys != 0, false);
+    AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), false);
 
     /*
      * Search the list.

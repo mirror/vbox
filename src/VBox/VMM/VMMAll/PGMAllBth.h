@@ -58,6 +58,10 @@ __END_DECLS
 #error "Invalid combination; AMD64 guest implies AMD64 shadow and vice versa"
 #endif
 
+#ifdef IN_RING0 /* no mappings in VT-x and AMD-V mode */
+#define PGM_WITHOUT_MAPPINGS
+#endif
+
 /**
  * #PF Handler for raw-mode guest execution.
  *
@@ -213,7 +217,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                  */
                 if (!pVM->pgm.s.fMappingsFixed)
                 {
-                    unsigned iPT = pMapping->cPTs;
+                    unsigned iPT = pMapping->cb >> GST_PD_SHIFT;
                     while (iPT-- > 0)
                         if (pPDSrc->a[iPDSrc + iPT].n.u1Present)
                         {
@@ -1959,7 +1963,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     PSHWPDE         pPdeDst = &pPDDst->a[iPDDst];
     SHWPDE          PdeDst = *pPdeDst;
 
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
+# ifndef PGM_WITHOUT_MAPPINGS
     /*
      * Check for conflicts.
      * GC: In case of a conflict we'll go to Ring-3 and do a full SyncCR3.
@@ -1975,7 +1979,11 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
 #  else
         PPGMMAPPING pMapping = pgmGetMapping(pVM, (RTGCPTR)GCPtrPage);
         Assert(pMapping);
-        int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPDSrc);
+#   if PGM_GST_TYPE == PGM_TYPE_32BIT
+        int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, GCPtrPage & (GST_PD_MASK << GST_PD_SHIFT));
+#   elif PGM_GST_TYPE == PGM_TYPE_PAE
+        int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, GCPtrPage & (GST_PD_MASK << GST_PD_SHIFT));
+#   endif
         if (VBOX_FAILURE(rc))
         {
             STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncPT), a);
@@ -1984,10 +1992,9 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
         PdeDst = *pPdeDst;
 #  endif
     }
-# elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    /* PAE and AMD64 modes are hardware accelerated only, so there are no mappings. */
+# else  /* PGM_WITHOUT_MAPPINGS */
     Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
-# endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
+# endif /* !PGM_WITHOUT_MAPPINGS */
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
     /*
@@ -2677,7 +2684,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
     {
         pMapping      = pVM->pgm.s.CTXALLSUFF(pMappings);
-        iPdNoMapping  = (pMapping) ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;     /** PAE todo */
+        iPdNoMapping  = (pMapping) ? (pMapping->GCPtr >> GST_PD_SHIFT) : ~0U;
     }
     else
     {
@@ -2728,24 +2735,35 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             if (    PdeSrc.n.u1Present
                 &&  (PdeSrc.n.u1User || fRawR0Enabled))
             {
-#  if PGM_GST_TYPE == PGM_TYPE_32BIT
+#  if    (PGM_GST_TYPE == PGM_TYPE_32BIT \
+      ||  PGM_GST_TYPE == PGM_TYPE_PAE)  \
+      && !defined(PGM_WITHOUT_MAPPINGS)
+
                 /*
                  * Check for conflicts with GC mappings.
                  */
+#   if PGM_GST_TYPE == PGM_TYPE_PAE
+                if (iPD + iPDPTE * X86_PG_PAE_ENTRIES == iPdNoMapping)
+#   else
                 if (iPD == iPdNoMapping)
+#   endif
                 {
                     if (pVM->pgm.s.fMappingsFixed)
                     {
                         /* It's fixed, just skip the mapping. */
-                        const unsigned cPTs = pMapping->cPTs;
+                        const unsigned cPTs = pMapping->cb >> SHW_PD_SHIFT;
                         iPD += cPTs - 1;
-                        pPDEDst += cPTs + (PGM_SHW_TYPE != PGM_TYPE_32BIT) * cPTs;
+                        pPDEDst += cPTs + cPTs;
                         pMapping = pMapping->CTXALLSUFF(pNext);
-                        iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
+                        iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                         continue;
                     }
 #   ifdef IN_RING3
-                    int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD);
+#    if PGM_GST_TYPE == PGM_TYPE_32BIT
+                    int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD << GST_PD_SHIFT);
+#    elif PGM_GST_TYPE == PGM_TYPE_PAE
+                    int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, iPDPTE << GST_PDPT_SHIFT + iPD << GST_PD_SHIFT);
+#    endif
                     if (VBOX_FAILURE(rc))
                         return rc;
 
@@ -2753,18 +2771,17 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                      * Update iPdNoMapping and pMapping.
                      */
                     pMapping = pVM->pgm.s.pMappingsR3;
-                    while (pMapping && pMapping->GCPtr < (iPD << X86_PD_SHIFT))
+                    while (pMapping && pMapping->GCPtr < (iPD << GST_PD_SHIFT))
                         pMapping = pMapping->pNextR3;
-                    iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
+                    iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
 #   else
                     LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
                     return VINF_PGM_SYNC_CR3;
 #   endif
                 }
-#  else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
-                /* PAE and AMD64 modes are hardware accelerated only, so there are no mappings. */
-                Assert(iPD != iPdNoMapping);
-#  endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
+#  else  /* PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE && PGM_WITHOUT_MAPPINGS */
+                Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
+#  endif /* (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) && !PGM_WITHOUT_MAPPINGS */
                 /*
                  * Sync page directory entry.
                  *
@@ -2852,7 +2869,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     pPDEDst++;
                 }
             }
+#   if PGM_GST_TYPE == PGM_TYPE_PAE
+            else if (iPD + iPDPTE * X86_PG_PAE_ENTRIES != iPdNoMapping)
+#   else
             else if (iPD != iPdNoMapping)
+#   endif
             {
                 /*
                  * Check if there is any page directory to mark not present here.
@@ -2876,14 +2897,16 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             }
             else
             {
-#  if PGM_GST_TYPE == PGM_TYPE_32BIT
+#  if    (PGM_GST_TYPE == PGM_TYPE_32BIT \
+      ||  PGM_GST_TYPE == PGM_TYPE_PAE)  \
+      && !defined(PGM_WITHOUT_MAPPINGS)
+
                 Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-                const unsigned cPTs = pMapping->cPTs;
                 if (pVM->pgm.s.fMappingsFixed)
                 {
                     /* It's fixed, just skip the mapping. */
                     pMapping = pMapping->CTXALLSUFF(pNext);
-                    iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
+                    iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                 }
                 else
                 {
@@ -2892,14 +2915,18 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                      * and advance to the next mapping.
                      */
                     iPdNoMapping = ~0U;
-                    unsigned iPT = cPTs;
+                    unsigned iPT = pMapping->cb >> GST_PD_SHIFT;
                     while (iPT-- > 1)
                     {
                         if (    pPDSrc->a[iPD + iPT].n.u1Present
                             &&  (pPDSrc->a[iPD + iPT].n.u1User || fRawR0Enabled))
                         {
 #   ifdef IN_RING3
-                            int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD);
+#    if PGM_GST_TYPE == PGM_TYPE_32BIT
+                            int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD << GST_PD_SHIFT);
+#    elif PGM_GST_TYPE == PGM_TYPE_PAE
+                            int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, iPDPTE << GST_PDPT_SHIFT + iPD << GST_PD_SHIFT);
+#    endif
                             if (VBOX_FAILURE(rc))
                                 return rc;
 
@@ -2907,9 +2934,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                              * Update iPdNoMapping and pMapping.
                              */
                             pMapping = pVM->pgm.s.CTXALLSUFF(pMappings);
-                            while (pMapping && pMapping->GCPtr < (iPD << X86_PD_SHIFT))
+                            while (pMapping && pMapping->GCPtr < (iPD << GST_PD_SHIFT))
                                 pMapping = pMapping->CTXALLSUFF(pNext);
-                            iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
+                            iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                             break;
 #   else
                             LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
@@ -2921,17 +2948,17 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     {
                         pMapping = pMapping->CTXALLSUFF(pNext);
                         if (pMapping)
-                            iPdNoMapping = pMapping->GCPtr >> X86_PD_SHIFT;
+                            iPdNoMapping = pMapping->GCPtr >> GST_PD_SHIFT;
                     }
                 }
 
                 /* advance. */
+                const unsigned cPTs = pMapping->cb >> SHW_PD_SHIFT;
                 iPD += cPTs - 1;
-                pPDEDst += cPTs + (PGM_SHW_TYPE != PGM_TYPE_32BIT) * cPTs;
-#  else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
-                /* PAE and AMD64 modes are hardware accelerated only, so there are no mappings. */
-                AssertFailed();
-#  endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
+                pPDEDst += cPTs + cPTs;
+#  else  /* PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE && PGM_WITHOUT_MAPPINGS */
+                Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
+#  endif /* (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) && !PGM_WITHOUT_MAPPINGS */
             }
 
         } /* for iPD */
