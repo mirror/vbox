@@ -20,7 +20,6 @@
 
 #include <iprt/err.h>
 #include <iprt/file.h>
-#include <iprt/lock.h>
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -74,10 +73,6 @@ public:
     struct
     {
         xmlExternalEntityLoader defaultEntityLoader;
-
-        /** Used to provide some thread safety missing in libxml2 (see e.g.
-         *  XmlTreeBackend::read()) */
-        RTLockMtx lock;
     }
     xml;
 }
@@ -386,9 +381,7 @@ File::File (Mode aMode, const char *aFileName)
     m->opened = true;
 }
 
-#if 0
-/// @todo disabled until made thread-safe by using handle duplicates
-File::File (Mode aMode, RTFILE aHandle, const char *aFileName)
+File::File (Mode aMode, RTFILE aHandle, const char *aFileName /* = NULL */ )
     : m (new Data())
 {
     if (aHandle == NIL_RTFILE)
@@ -406,7 +399,6 @@ File::File (Mode aMode, RTFILE aHandle, const char *aFileName)
 
     setPos (0);
 }
-#endif
 
 File::~File()
 {
@@ -910,14 +902,13 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
      * libxml2 code. */
     m->trappedErr.reset();
 
-    /* We use the global lock for the whole duration of this method to serialize
-     * access to thread-unsafe xmlGetExternalEntityLoader() and some other
-     * calls. It means that only one thread is able to parse an XML stream at a
-     * time but another choice would be to patch libxml2/libxslt which is
-     * unwanted now for several reasons. Search for "thread-safe" to find all
-     * unsafe cases. */
-    RTLock alock (gGlobal.xml.lock);
-
+    /* Set up the external entity resolver. Note that we do it in a
+     * thread-unsafe fashion because this stuff is not thread-safe in libxml2.
+     * Making it thread-safe would require a) guarding this method with a
+     * mutex and b) requiring our API caller not to use libxml2 on some other
+     * thread (which is not practically possible). So, our API is not
+     * thread-safe for now (note that there are more thread-unsafe assumptions
+     * below like xsltGenericError which is also a libxslt limitation).*/
     xmlExternalEntityLoader oldEntityLoader = xmlGetExternalEntityLoader();
     sThat = this;
     xmlSetExternalEntityLoader (ExternalEntityLoader);
