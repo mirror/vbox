@@ -20,6 +20,7 @@
 
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/lock.h>
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -73,6 +74,10 @@ public:
     struct
     {
         xmlExternalEntityLoader defaultEntityLoader;
+
+        /** Used to provide some thread safety missing in libxml2 (see e.g.
+         *  XmlTreeBackend::read()) */
+        RTLockMtx lock;
     }
     xml;
 }
@@ -346,7 +351,6 @@ struct File::Data
     Data()
         : fileName (NULL), handle (NIL_RTFILE), opened (false) {}
 
-    Mode mode;
     char *fileName;
     RTFILE handle;
     bool opened : 1;
@@ -355,8 +359,6 @@ struct File::Data
 File::File (Mode aMode, const char *aFileName)
     : m (new Data())
 {
-    m->mode = aMode;
-
     m->fileName = RTStrDup (aFileName);
     if (m->fileName == NULL)
         throw ENoMemory();
@@ -364,13 +366,13 @@ File::File (Mode aMode, const char *aFileName)
     unsigned flags = 0;
     switch (aMode)
     {
-        case Read:
+        case Mode_Read:
             flags = RTFILE_O_READ;
             break;
-        case Write:
+        case Mode_Write:
             flags = RTFILE_O_WRITE | RTFILE_O_CREATE;
             break;
-        case ReadWrite:
+        case Mode_ReadWrite:
             flags = RTFILE_O_READ | RTFILE_O_WRITE;
     }
 
@@ -381,13 +383,12 @@ File::File (Mode aMode, const char *aFileName)
     m->opened = true;
 }
 
-File::File (Mode aMode, RTFILE aHandle, const char *aFileName /* = NULL */ )
+File::File (RTFILE aHandle, const char *aFileName /* = NULL */)
     : m (new Data())
 {
     if (aHandle == NIL_RTFILE)
         throw EInvalidArg (RT_SRC_POS);
 
-    m->mode = aMode;
     m->handle = aHandle;
 
     if (aFileName)
@@ -902,13 +903,14 @@ void XmlTreeBackend::rawRead (Input &aInput, const char *aSchema /* = NULL */,
      * libxml2 code. */
     m->trappedErr.reset();
 
-    /* Set up the external entity resolver. Note that we do it in a
-     * thread-unsafe fashion because this stuff is not thread-safe in libxml2.
-     * Making it thread-safe would require a) guarding this method with a
-     * mutex and b) requiring our API caller not to use libxml2 on some other
-     * thread (which is not practically possible). So, our API is not
-     * thread-safe for now (note that there are more thread-unsafe assumptions
-     * below like xsltGenericError which is also a libxslt limitation).*/
+    /* We use the global lock for the whole duration of this method to serialize
+     * access to thread-unsafe xmlGetExternalEntityLoader() and some other
+     * calls. It means that only one thread is able to parse an XML stream at a
+     * time but another choice would be to patch libxml2/libxslt which is
+     * unwanted now for several reasons. Search for "thread-safe" to find all
+     * unsafe cases. */
+    RTLock alock (gGlobal.xml.lock);
+
     xmlExternalEntityLoader oldEntityLoader = xmlGetExternalEntityLoader();
     sThat = this;
     xmlSetExternalEntityLoader (ExternalEntityLoader);
