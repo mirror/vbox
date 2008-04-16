@@ -2751,9 +2751,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     if (pVM->pgm.s.fMappingsFixed)
                     {
                         /* It's fixed, just skip the mapping. */
-                        const unsigned cPTs = pMapping->cb >> SHW_PD_SHIFT;
+                        const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
                         iPD += cPTs - 1;
-                        pPDEDst += cPTs;
+                        pPDEDst += cPTs + (PGM_GST_TYPE != PGM_SHW_TYPE) * cPTs;    /* Only applies to the pae shadow and 32 bits guest case */
                         pMapping = pMapping->CTXALLSUFF(pNext);
                         iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                         continue;
@@ -2901,7 +2901,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
       ||  PGM_GST_TYPE == PGM_TYPE_PAE)  \
       && !defined(PGM_WITHOUT_MAPPINGS)
 
-                const unsigned cPTs = pMapping->cb >> SHW_PD_SHIFT; /* needed below to skip the mapping */
+                const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
 
                 Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
                 if (pVM->pgm.s.fMappingsFixed)
@@ -2917,7 +2917,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                      * and advance to the next mapping.
                      */
                     iPdNoMapping = ~0U;
-                    unsigned iPT = pMapping->cb >> GST_PD_SHIFT;
+                    unsigned iPT = cPTs;
                     while (iPT-- > 1)
                     {
                         if (    pPDSrc->a[iPD + iPT].n.u1Present
@@ -2956,7 +2956,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 
                 /* advance. */
                 iPD += cPTs - 1;
-                pPDEDst += cPTs;
+                pPDEDst += cPTs + (PGM_GST_TYPE != PGM_SHW_TYPE) * cPTs;    /* Only applies to the pae shadow and 32 bits guest case */
+#   if PGM_GST_TYPE != PGM_SHW_TYPE
+                AssertCompile(PGM_GST_TYPE == PGM_TYPE_32BIT && PGM_SHW_TYPE == PGM_TYPE_PAE);
+#   endif
 #  else  /* PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE && PGM_WITHOUT_MAPPINGS */
                 Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
 #  endif /* (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) && !PGM_WITHOUT_MAPPINGS */
