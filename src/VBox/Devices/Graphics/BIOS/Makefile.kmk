@@ -109,11 +109,11 @@ VgaDefBiosLogo_SOURCES   = $(PATH_TARGET)/VgaDefBiosLogo.c
 # Rule for making the bios logo.
 #
 ifdef VBOX_OSE
-LOGO_FILE=innotek_logo.bmp
+VBOX_LOGO_FILE := innotek_logo.bmp
 else
-LOGO_FILE=sun_logo.bmp
+VBOX_LOGO_FILE := sun_logo.bmp
 endif
-$(PATH_TARGET)/VgaDefBiosLogo.c: $(PATH_SUB_CURRENT)/$(LOGO_FILE) $(VBOX_BIN2C)
+$(PATH_TARGET)/VgaDefBiosLogo.c: $(PATH_SUB_CURRENT)/$(VBOX_LOGO_FILE ) $(VBOX_BIN2C)
 	$(call MSG_TOOL,bin2c,VgaBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) VgaDefBiosLogo $< $@
 
