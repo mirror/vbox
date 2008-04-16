@@ -17,7 +17,7 @@
 
 [Version]
 Signature="$WINDOWS NT$"
-Provider=%innotek%
+Provider=%Sun%
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
 Class=Display
 
@@ -31,13 +31,13 @@ vrdpdd.Display   = 11  ; system32
 ;
 
 [Manufacturer]
-%innotek%=vrdpdd.Mfg,NT.5.1
+%Sun%=vrdpdd.Mfg,NT.5.1
 
 [vrdpdd.Mfg]
 ; Empty
 
 [vrdpdd.Mfg.NT.5.1]
-%DevDesc% = vrdpdd, innotek_vrdpdd
+%DevDesc% = vrdpdd, sun_vrdpdd
 
 ;
 ; General installation section
@@ -129,12 +129,12 @@ REG_EXPAND_SZ  = 0x00020000
 REG_BINARY     = 0x00000001
 REG_DWORD      = 0x00010001
 SERVICEROOT    = "System\CurrentControlSet\Services"
-DevDesc      = "innotek VirtualBox Mirror Driver"
+DevDesc        = "Sun xVM VirtualBox Mirror Driver"
 
 ;
 ; Localizable Strings
 ;
 
-DiskId       = "innotek Mirror Driver Installation DISK (VIDEO)"
+DiskId       = "Sun xVM Mirror Driver Installation DISK (VIDEO)"
 GraphAdap    = "Graphics Adapter"
-innotek      = "innotek"
+Sun          = "Sun Microsystems, Inc."

@@ -13,6 +13,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #include <windows.h>
+#include <VBox/version.h>
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
@@ -29,13 +30,13 @@ BEGIN
    BEGIN
       BLOCK "040904b0"
       BEGIN
-         VALUE "CompanyName",      "innotek GmbH\0"
+         VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
          VALUE "FileDescription",  "VirtualBox OpenGL ICD\0"
          VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-         VALUE "InternalName",     "VBoxOGL.dll\0"
-         VALUE "LegalCopyright",   "(C) 2004-2007 innotek GmbH\0"
+         VALUE "InternalName",     "VBoxOGL\0"
+         VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VBoxOGL.dll\0"
-         VALUE "ProductName",      "VirtualBox Guest Tools\0"
+         VALUE "ProductName",      "xVM VirtualBox Guest Additions\0"
          VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
       END
    END
