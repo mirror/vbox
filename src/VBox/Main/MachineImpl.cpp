@@ -5705,7 +5705,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
 
         /* PAE (optional, default is false) */
         Key PAENode = cpuNode.createKey ("PAE");
-        PAENode.setValue <bool> ("enabled", mHWData->mPAEEnabled);
+        PAENode.setValue <bool> ("enabled", !!mHWData->mPAEEnabled);
     }
 
     /* memory (required) */
