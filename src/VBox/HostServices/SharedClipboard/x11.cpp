@@ -44,6 +44,7 @@
 #include <X11/Intrinsic.h>
 #include <X11/Shell.h>
 #include <X11/Xproto.h>
+#include <X11/StringDefs.h>
 
 /** The different clipboard formats which we support. */
 enum g_eClipboardFormats
@@ -687,7 +688,7 @@ static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
     int cArgc = 0;
     char *pcArgv = 0;
     int rc = VINF_SUCCESS;
-    static String szFallbackResources[] = { (char*)"*.width: 1", (char*)"*.height: 1", NULL };
+    // static String szFallbackResources[] = { (char*)"*.width: 1", (char*)"*.height: 1", NULL };
     Display *pDisplay;
     LogRel (("vboxClipboardThread: starting clipboard thread\n"));
 
@@ -698,15 +699,15 @@ static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
        can't get an X11 display. */
     XtToolkitInitialize();
     g_ctx.appContext = XtCreateApplicationContext();
-    XtAppSetFallbackResources(g_ctx.appContext, szFallbackResources);
+    // XtAppSetFallbackResources(g_ctx.appContext, szFallbackResources);
     pDisplay = XtOpenDisplay(g_ctx.appContext, 0, 0, "VBoxClipboard", 0, 0, &cArgc, &pcArgv);
     if (pDisplay == 0)
     {
         LogRel(("vboxClipboardThread: failed to connect to the host clipboard - the window system may not be running.\n"));
         return VERR_NOT_SUPPORTED;
     }
-    g_ctx.widget = XtAppCreateShell(0, "VBoxClipboard", applicationShellWidgetClass, pDisplay,
-                                    0, 0);
+    g_ctx.widget = XtVaAppCreateShell(0, "VBoxClipboard", applicationShellWidgetClass, pDisplay,
+                                      XtNwidth, 1, XtNheight, 1, NULL);
     if (g_ctx.widget == 0)
     {
         LogRel(("vboxClipboardThread: failed to construct the X11 window for the clipboard manager.\n"));
