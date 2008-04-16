@@ -1700,7 +1700,7 @@ check_gcc
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
 [ $WITH_X11 -eq 1    ] && check_x
 [ $WITH_X11 -eq 1    ] && check_xcursor
-[ $WITH_QT -eq 1     ] && check_qt3
+[ $WITH_QT -eq 1 ] && [ "$OS" != "darwin" ] && check_qt3
 [ $WITH_QT -eq 1     ] && check_qt4
 
 # Linux-specific
