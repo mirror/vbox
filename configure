@@ -34,6 +34,7 @@ TARGET_CPU=""
 WITH_XPCOM=1
 WITH_LIBIDL=1
 WITH_QT=1
+WITH_QT4=1
 WITH_SDL=1
 WITH_SDL_TTF=1
 WITH_X11=1
@@ -1232,7 +1233,9 @@ EOF
       if test_execute; then
 #        cnf_append "SDK_VBOX_LIBQT4_INCS" "$INCQT4"
 #        cnf_append "SDK_VBOX_LIBQT4_LIBS" "`strip_l "$LIBQT4"`"
-        if [ "$OS" != "darwin" ]; then
+        if [ "$OS" = "darwin" ]; then
+          cnf_append "VBOX_WITH_QT4GUI" "1"
+        else
           test_header "Qt4 devtools"
           for q in $QT4DIR; do
             if which_wrapper "$q/bin/moc" > /dev/null; then
@@ -1567,6 +1570,7 @@ for option in $*; do
       ;;
     --disable-qt)
       WITH_QT=0
+      WITH_QT4=0
       ;;
     --disable-alsa)
       WITH_ALSA=0
@@ -1595,6 +1599,7 @@ for option in $*; do
       WITH_SDL_TTF=0
       WITH_X11=0
       WITH_QT=0
+      WITH_QT4=0
       ;;
     --ose)
       OSE=2
@@ -1690,9 +1695,17 @@ if [ -n "$HEADLESS" ]; then
   cnf_append "VBOX_HEADLESS" "1"
 fi
 
+if [ "$OS" = "darwin" ]; then
+  WITH_QT=
+  WITH_QT4=1
+  BUILD_LIBXSLT=1
+  BUILD_LIBXML2=1
+fi
+
 # emit disable directives corresponding to any --disable-xxx options.
 [ $WITH_XPCOM -eq 0 ]   && cnf_append "VBOX_WITH_MAIN" ""
-[ $WITH_QT -eq 0 ]      && cnf_append "VBOX_WITH_QTGUI" ""
+[ $WITH_QT -eq 0    ]   && cnf_append "VBOX_WITH_QTGUI" ""
+[ $WITH_QT4 -eq 0   ]   && cnf_append "VBOX_WITH_QT4GUI" ""
 [ $WITH_SDL_TTF -eq 0 ] && cnf_append "VBOX_WITH_SECURELABEL" ""
 
 # the tools
@@ -1707,11 +1720,7 @@ check_gcc
 
 # the libraries
 [ "$OS" != "darwin"  ] && check_pthread
-# build libxml2 on Darwin in every case
-[ "$OS" != "darwin"  ] || BUILD_LIBXML2=1
 [ $WITH_XPCOM  -eq 1 ] && check_libxml2
-# build libxslt on Darwin in every case
-[ "$OS" != "darwin"  ] || BUILD_LIBXSLT=1
 [ $WITH_XPCOM  -eq 1 ] && check_libxslt
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
 # build openssl on Darwin in every case
@@ -1723,8 +1732,8 @@ check_gcc
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
 [ $WITH_X11 -eq 1    ] && check_x
 [ $WITH_X11 -eq 1    ] && check_xcursor
-[ $WITH_QT -eq 1 ] && [ "$OS" != "darwin" ] && check_qt3
-[ $WITH_QT -eq 1     ] && check_qt4
+[ $WITH_QT -eq 1     ] && check_qt3
+[ $WITH_QT4 -eq 1    ] && check_qt4
 
 # Linux-specific
 if [ "$OS" = "linux" ]; then
