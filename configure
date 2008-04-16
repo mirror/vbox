@@ -908,12 +908,29 @@ EOF
 check_sdl()
 {
   test_header SDL
-  if which_wrapper sdl-config > /dev/null; then
-    FLGSDL=`sdl-config --cflags`
-    INCSDL=`strip_I "$FLGSDL"`
-    LIBSDL=`sdl-config --libs`
-    LIBSDLMAIN="-lSDLmain"
-    [ "$OS" = "linux" -o "$OS" = "darwin" -o "$OS" = "solaris" ] && LIBSDLMAIN=""
+  if [ "$OS" = "darwin" ]; then
+    if [ -d "/System/Library/Frameworks/SDL.framework/SDL" ]; then
+      PATH_SDK_LIBSDL="/System/Library/Framework/SDL.frameworks"
+    elif [ -d "/Library/Frameworks/SDL.framework/SDL" ]; then
+      PATH_SDK_LIBSDL="/Library/Frameworks/SDL.framework"
+    fi
+    if [ -n "$PATH_SDK_LIBSDL" ]; then
+      foundsdl=1
+      INCSDL="$PATH_SDK_LIBSDL/Headers"
+      FLDSDL="-framework SDL"
+    fi
+  else
+    if which_wrapper sdl-config > /dev/null; then
+      FLGSDL=`sdl-config --cflags`
+      INCSDL=`strip_I "$FLGSDL"`
+      LIBSDL=`sdl-config --libs`
+      LIBSDLMAIN="-lSDLmain"
+      FLDSDL=
+      foundsdl=1
+    fi
+  fi
+  [ "$OS" = "linux" -o "$OS" = "darwin" -o "$OS" = "solaris" ] && LIBSDLMAIN=""
+  if [ -n "$foundsdl" ]; then
     cat > .tmp_src.cc << EOF
 #include <cstdio>
 #include <SDL.h>
@@ -932,12 +949,13 @@ extern "C" int main(int argc, char** argv)
 }
 EOF
     [ -n "$INCSDL" ] && I_INCSDL=`prefix_I "$INCSDL"`
-    if test_compile "$LIBSDL $LIBSDLMAIN $I_INCSDL" SDL SDL; then
+    if test_compile "$LIBSDL $LIBSDLMAIN $I_INCSDL $FLDSDL" SDL SDL; then
       if test_execute; then
         cnf_append "LIB_SDK_LIBSDL_SDL"     "`strip_l "$LIBSDL"`"
         cnf_append "SDK_LIBSDL_LIBPATH"     "`strip_L "$LIBSDL"`"
         cnf_append "LIB_SDK_LIBSDL_SDLMAIN" "`strip_l "$LIBSDLMAIN"`"
-        [ -n "$INCSDL" ] && cnf_append "SDK_LIBSDL_INCS" "$INCSDL"
+        [ -n "$INCSDL" ] && cnf_append "SDK_LIBSDL_INCS"    "$INCSDL"
+        [ -n "$FLDSDL" ] && cnf_append "SDK_LIBSDL_LDFLAGS" "$FLDSDL"
       fi
     fi
   else
@@ -973,8 +991,8 @@ extern "C" int main(void)
 #endif
 }
 EOF
-  if test_compile "-lSDL_ttf $I_INCSDL" SDL_ttf SDL_ttf; then
-    test_execute
+  if test_compile "-lSDL_ttf1 $I_INCSDL" SDL_ttf SDL_ttf nofatal; then
+    test_execute nofatal
   fi
 }
 
