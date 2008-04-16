@@ -2630,10 +2630,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     PGM_GST_NAME(HandlerVirtualUpdate)(pVM, cr4);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3Handlers), h);
 
-#ifdef IN_RING3
-_asm int 3;
-#endif
-
 #ifdef PGMPOOL_WITH_MONITORING
     /*
      * When monitoring shadowed pages, we reset the modification counters on CR3 sync.
