@@ -819,11 +819,11 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
      * (Guessing that it is frequent for a shadow PDE to not be present, do this first.)
      */
     const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;
-#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
+# if PGM_SHW_TYPE == PGM_TYPE_32BIT
     PX86PDE     pPdeDst = &pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst];
-#  else
+# else
     PX86PDEPAE  pPdeDst = &pVM->pgm.s.CTXMID(ap,PaePDs[0])->a[iPDDst];
-#  endif
+# endif
     const SHWPDE PdeDst = *pPdeDst;
     if (!PdeDst.n.u1Present)
     {
@@ -834,11 +834,11 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     /*
      * Get the guest PD entry and calc big page.
      */
-#  if PGM_GST_TYPE == PGM_TYPE_32BIT
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
     PX86PD          pPDSrc      = CTXSUFF(pVM->pgm.s.pGuestPD);
     const unsigned  iPDSrc      = GCPtrPage >> GST_PD_SHIFT;
     GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
-#  else /* PAE */
+# else /* PAE */
     unsigned        iPDSrc;
     PX86PDPAE       pPDSrc      = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
     GSTPDE          PdeSrc;
@@ -847,18 +847,18 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         PdeSrc = pPDSrc->a[iPDSrc];
     else
         PdeSrc.u = 0;
-#  endif
+# endif
 
     const uint32_t  cr4         = CPUMGetGuestCR4(pVM);
     const bool      fIsBigPage  = PdeSrc.b.u1Size && (cr4 & X86_CR4_PSE);
 
-#  ifdef IN_RING3
+# ifdef IN_RING3
     /*
      * If a CR3 Sync is pending we may ignore the invalidate page operation
      * depending on the kind of sync and if it's a global page or not.
      * This doesn't make sense in GC/R0 so we'll skip it entirely there.
      */
-#   ifdef PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
+#  ifdef PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
     if (    VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3)
         || (   VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL)
             && fIsBigPage
@@ -866,14 +866,14 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             && (cr4 & X86_CR4_PGE)
            )
        )
-#   else
+#  else
     if (VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL) )
-#   endif
+#  endif
     {
         STAM_COUNTER_INC(&pVM->pgm.s.StatHCInvalidatePageSkipped);
         return VINF_SUCCESS;
     }
-#  endif /* IN_RING3 */
+# endif /* IN_RING3 */
 
 
     /*
@@ -904,7 +904,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDOutOfSync));
             PGM_INVL_GUEST_TLBS();
         }
-#  ifdef PGM_SYNC_ACCESSED_BIT
+# ifdef PGM_SYNC_ACCESSED_BIT
         else if (!PdeSrc.n.u1Accessed)
         {
             /*
@@ -915,7 +915,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
             PGM_INVL_GUEST_TLBS();
         }
-#  endif
+# endif
         else if (!fIsBigPage)
         {
             /*
@@ -923,28 +923,28 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
              */
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
             RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE_PG_MASK;
-#  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+# if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
             GCPhys |= (iPDDst & 1) * (PAGE_SIZE/2);
-#  endif
+# endif
             if (pShwPage->GCPhys == GCPhys)
             {
-#  if 0 /* likely cause of a major performance regression; must be SyncPageWorkerTrackDeref then */
+# if 0 /* likely cause of a major performance regression; must be SyncPageWorkerTrackDeref then */
                 const unsigned iPTEDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                 PSHWPT pPT = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
                 if (pPT->a[iPTEDst].n.u1Present)
                 {
-#   ifdef PGMPOOL_WITH_USER_TRACKING
+#  ifdef PGMPOOL_WITH_USER_TRACKING
                     /* This is very unlikely with caching/monitoring enabled. */
                     PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVM, pShwPage, pPT->a[iPTEDst].u & SHW_PTE_PG_MASK);
-#   endif
+#  endif
                     pPT->a[iPTEDst].u = 0;
                 }
-#  else /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */
+# else /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */
                 rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
                 if (VBOX_SUCCESS(rc))
                     rc = VINF_SUCCESS;
-#  endif
+# endif
                 STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePage4KBPages));
                 PGM_INVL_PG(GCPtrPage);
             }
@@ -969,24 +969,24 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             /* Before freeing the page, check if anything really changed. */
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
             RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE_BIG_PG_MASK;
-#  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+# if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
-#  endif
+# endif
             if (    pShwPage->GCPhys == GCPhys
                 &&  pShwPage->enmKind == BTH_PGMPOOLKIND_PT_FOR_BIG)
             {
                 /* ASSUMES a the given bits are identical for 4M and normal PDEs */
                 /** @todo PAT */
-#  ifdef PGM_SYNC_DIRTY_BIT
+# ifdef PGM_SYNC_DIRTY_BIT
                 if (        (PdeSrc.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD))
                         ==  (PdeDst.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD))
                     &&  (   PdeSrc.b.u1Dirty /** @todo rainy day: What about read-only 4M pages? not very common, but still... */
                          || (PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY)))
-#  else
+# else
                 if (    (PdeSrc.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD))
                     ==  (PdeDst.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD)))
-#  endif
+# endif
                 {
                     LogFlow(("Skipping flush for big page containing %VGv (PD=%X)-> nothing has changed!\n", GCPtrPage, iPDSrc));
                     STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePage4MBPagesSkip));
