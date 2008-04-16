@@ -334,7 +334,7 @@ include $(PATH_KBUILD)/footer.kmk
 #
 ifndef VBOX_RECOMPILER_OP_GCC
  ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),darwin.x86)
-  VBOX_RECOMPILER_OP_GCC ?= i386-elf-gcc-3.4.3 # (port install i386-gcc-elf)
+  VBOX_RECOMPILER_OP_GCC ?= $(notdir $(firstword $(which i386-elf-gcc-3.4 i386-elf-gcc-3.4.6 i386-elf-gcc-3.4.3 i386-elf-gcc) i386-elf-gcc)) # (port install i386-gcc-elf)
   VBOX_RECOMPILER_OP_GCC_OK := yes
   VBOX_RECOMPILER_OP_GCC_INCS ?= $(abspath $(dir $(shell LC_ALL=C $(VBOX_RECOMPILER_OP_GCC) -print-libgcc-file-name)))/include
  endif
