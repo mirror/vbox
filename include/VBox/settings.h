@@ -81,6 +81,11 @@
  * Making deep copies or detaching the existing shallow copy from its original
  * is not yet supported.
  *
+ * Note that the Settings File API is not thread-safe. It means that if you
+ * want to use the same instance of a class from the settings namespace on more
+ * than one thread at a time, you will have to provide necessary access
+ * serialization yourself.
+ *
  * Due to some (not propely studied) libxml2 limitations, the Settings File
  * API is not thread-safe. Therefore, the API caller must provide
  * serialization for threads using this API simultaneously. Note though that
@@ -1170,7 +1175,11 @@ protected:
  * The File class is a stream implementation that reads from and writes to
  * regular files.
  *
- * The File class uses IPRT File API for file operations.
+ * The File class uses IPRT File API for file operations. Note that IPRT File
+ * API is not thread-safe. This means that if you pass the same RTFILE handle to
+ * different File instances that may be simultaneously used on different
+ * threads, you should care about serialization; otherwise you will get garbage
+ * when reading from or writing to such File instances.
  */
 class VBOXSETTINGS_CLASS File : public Input, public Output
 {
@@ -1179,7 +1188,7 @@ public:
     /**
      * Possible file access modes.
      */
-    enum Mode { Read, Write, ReadWrite };
+    enum Mode { Mode_Read, Mode_Write, Mode_ReadWrite };
 
     /**
      * Opens a file with the given name in the given mode. If @a aMode is Read
@@ -1192,10 +1201,8 @@ public:
     File (Mode aMode, const char *aFileName);
 
     /**
-     * Uses the given file handle to perform file operations. The given file
-     * handle must be already open and the @a aMode argument must match the
-     * actual mode of the file handle (otherwise unexpected errors will
-     * occur).
+     * Uses the given file handle to perform file operations. This file
+     * handle must be already open in necessary mode (read, or write, or mixed).
      *
      * The read/write position of the given handle will be reset to the
      * beginning of the file on success.
@@ -1203,11 +1210,15 @@ public:
      * Note that the given file handle will not be automatically closed upon
      * this object destruction.
      *
+     * @note It you pass the same RTFILE handle to more than one File instance,
+     *       please make sure you have provided serialization in case if these
+     *       instasnces are to be simultaneously used by different threads.
+     *       Otherwise you may get garbage when reading or writing.
+     *
      * @param aHandle   Open file handle.
-     * @param aMode     File mode of the open file handle.
      * @param aFileName File name (for reference).
      */
-    File (Mode aMode, RTFILE aHandle, const char *aFileName = NULL);
+    File (RTFILE aHandle, const char *aFileName = NULL);
 
     /**
      * Destrroys the File object. If the object was created from a file name
@@ -1281,6 +1292,20 @@ class XmlKeyBackend;
 
 /**
  * The XmlTreeBackend class uses XML markup to store settings trees.
+ *
+ * @note libxml2 and libxslt libraries used by the XmlTreeBackend are not
+ * fully reentrant. To "fix" this, the XmlTreeBackend backend serializes access
+ * to such non-reentrant parts using a global mutex so that only one thread can
+ * use non-reentrant code at a time. Currently, this relates to the #rawRead()
+ * method (and to #read() as a consequence). This menas that only one thread can
+ * parse an XML stream at a time; other threads trying to parse same or
+ * different streams using different XmlTreeBackend and Input instances
+ * will have to wait.
+ *
+ * Keep in mind that the above reentrancy fix does not imply thread-safety: it
+ * is still the caller's responsibility to provide serialization if the same
+ * XmlTreeBackend instnace (as well as instances of other classes from the
+ * settings namespace) needs to be used by more than one thread.
  */
 class VBOXSETTINGS_CLASS XmlTreeBackend : public TreeBackend
 {

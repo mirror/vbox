@@ -2012,6 +2012,7 @@ STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
+    /* serialize file access (prevent writes) */
     AutoReaderLock alock (this);
 
     /* start with nothing found */
@@ -2030,9 +2031,9 @@ STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR
     {
         using namespace settings;
 
-        /* load the config file */
-        File file (File::ReadWrite, mData->mHandleCfgFile,
-                   Utf8Str (mData->mConfigFileFull));
+        /* load the settings file (we don't reuse the existing handle but
+         * request a new one to allow for concurrent multithreaded reads) */
+        File file (File::Mode_Read, Utf8Str (mData->mConfigFileFull));
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_Again (tree, file);
@@ -2116,6 +2117,7 @@ STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
+    /* serialize file access (prevent writes) */
     AutoReaderLock alock (this);
 
     /* start with nothing found */
@@ -2132,9 +2134,9 @@ STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
     {
         using namespace settings;
 
-        /* load the config file */
-        File file (File::ReadWrite, mData->mHandleCfgFile,
-                   Utf8Str (mData->mConfigFileFull));
+        /* load the settings file (we don't reuse the existing handle but
+         * request a new one to allow for concurrent multithreaded reads) */
+        File file (File::Mode_Read, Utf8Str (mData->mConfigFileFull));
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_Again (tree, file);
@@ -2181,7 +2183,9 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* VirtualBox::onExtraDataCanChange() and saveSettings() need mParent
-     * lock (saveSettings() needs a write one) */
+     * lock (saveSettings() needs a write one). This object's write lock is
+     * also necessary to serialize file access (prevent concurrent reads and
+     * writes). */
     AutoMultiWriteLock2 alock (mParent, this);
 
     if (mType == IsSnapshotMachine)
@@ -2205,9 +2209,8 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
     {
         using namespace settings;
 
-        /* load the config file */
-        File file (File::ReadWrite, mData->mHandleCfgFile,
-                   Utf8Str (mData->mConfigFileFull));
+        /* load the settings file */
+        File file (mData->mHandleCfgFile, Utf8Str (mData->mConfigFileFull));
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
@@ -4004,8 +4007,8 @@ HRESULT Machine::loadSettings (bool aRegistered)
     {
         using namespace settings;
 
-        File file (File::Read, mData->mHandleCfgFile,
-                   Utf8Str (mData->mConfigFileFull));
+        /* no concurrent file access is possible in init() so open by handle */
+        File file (mData->mHandleCfgFile, Utf8Str (mData->mConfigFileFull));
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_FirstTime (tree, file,
@@ -5140,8 +5143,8 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
     {
         using namespace settings;
 
-        File file (File::ReadWrite, mData->mHandleCfgFile,
-                   Utf8Str (mData->mConfigFileFull));
+        /* this object is locked for writing to prevent concurrent reads and writes */
+        File file (mData->mHandleCfgFile, Utf8Str (mData->mConfigFileFull));
         XmlTreeBackend tree;
 
         /* The newly created settings file is incomplete therefore we turn off
@@ -5336,6 +5339,8 @@ HRESULT Machine::saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags)
 
     AssertReturn (mType == IsMachine || mType == IsSessionMachine, E_FAIL);
 
+    /* This object's write lock is also necessary to serialize file access
+     * (prevent concurrent reads and writes) */
     AutoLock alock (this);
 
     AssertReturn (isConfigLocked(), E_FAIL);
@@ -5346,9 +5351,8 @@ HRESULT Machine::saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags)
     {
         using namespace settings;
 
-        /* load the config file */
-        File file (File::ReadWrite, mData->mHandleCfgFile,
-                   Utf8Str (mData->mConfigFileFull));
+        /* load the settings file */
+        File file (mData->mHandleCfgFile, Utf8Str (mData->mConfigFileFull));
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
@@ -5913,6 +5917,8 @@ HRESULT Machine::saveStateSettings (int aFlags)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
+    /* This object's write lock is also necessary to serialize file access
+     * (prevent concurrent reads and writes) */
     AutoLock alock (this);
 
     AssertReturn (isConfigLocked(), E_FAIL);
@@ -5923,9 +5929,8 @@ HRESULT Machine::saveStateSettings (int aFlags)
     {
         using namespace settings;
 
-        /* load the config file */
-        File file (File::ReadWrite, mData->mHandleCfgFile,
-                   Utf8Str (mData->mConfigFileFull));
+        /* load the settings file */
+        File file (mData->mHandleCfgFile, Utf8Str (mData->mConfigFileFull));
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);

@@ -205,7 +205,8 @@ HRESULT VirtualBox::init()
         {
             using namespace settings;
 
-            File file (File::ReadWrite, mData.mCfgFile.mHandle, vboxConfigFile);
+            /* no concurrent file access is possible in init() so open by handle */
+            File file (mData.mCfgFile.mHandle, vboxConfigFile);
             XmlTreeBackend tree;
 
             rc = VirtualBox::loadSettingsTree_FirstTime (tree, file,
@@ -1700,16 +1701,16 @@ GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 
     HRESULT rc = S_OK;
 
-    /* serialize config file access */
+    /* serialize file access (prevent writes) */
     AutoReaderLock alock (this);
 
     try
     {
         using namespace settings;
 
-        /* load the config file */
-        File file (File::ReadWrite, mData.mCfgFile.mHandle,
-                   Utf8Str (mData.mCfgFile.mName));
+        /* load the settings file (we don't reuse the existing handle but
+         * request a new one to allow for concurrent multithreaded reads) */
+        File file (File::Mode_Read, Utf8Str (mData.mCfgFile.mName));
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_Again (tree, file);
@@ -1798,16 +1799,16 @@ STDMETHODIMP VirtualBox::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
 
     HRESULT rc = S_OK;
 
-    /* serialize file access */
+    /* serialize file access (prevent writes) */
     AutoReaderLock alock (this);
 
     try
     {
         using namespace settings;
 
-        /* load the config file */
-        File file (File::ReadWrite, mData.mCfgFile.mHandle,
-                   Utf8Str (mData.mCfgFile.mName));
+        /* load the settings file (we don't reuse the existing handle but
+         * request a new one to allow for concurrent multithreaded reads) */
+        File file (File::Mode_Read, Utf8Str (mData.mCfgFile.mName));
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_Again (tree, file);
@@ -1858,16 +1859,15 @@ STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
     bool changed = false;
     HRESULT rc = S_OK;
 
-    /* serialize file access */
+    /* serialize file access (prevent concurrent reads and writes) */
     AutoLock alock (this);
 
     try
     {
         using namespace settings;
 
-        /* load the config file */
-        File file (File::ReadWrite, mData.mCfgFile.mHandle,
-                   Utf8Str (mData.mCfgFile.mName));
+        /* load the settings file */
+        File file (mData.mCfgFile.mHandle, Utf8Str (mData.mCfgFile.mName));
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
@@ -3703,7 +3703,7 @@ HRESULT VirtualBox::loadHardDisks (const settings::Key &aNode)
 /**
  *  Helper function to write out the configuration tree.
  *
- *  @note Locks objects for reading!
+ *  @note Locks this object for writing and child objects for reading/writing!
  */
 HRESULT VirtualBox::saveSettings()
 {
@@ -3714,14 +3714,15 @@ HRESULT VirtualBox::saveSettings()
 
     HRESULT rc = S_OK;
 
-    AutoReaderLock alock (this);
+    /* serialize file access (prevent concurrent reads and writes) */
+    AutoLock alock (this);
 
     try
     {
         using namespace settings;
 
-        File file (File::ReadWrite, mData.mCfgFile.mHandle,
-                   Utf8Str (mData.mCfgFile.mName));
+        /* load the settings file */
+        File file (mData.mCfgFile.mHandle, Utf8Str (mData.mCfgFile.mName));
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
