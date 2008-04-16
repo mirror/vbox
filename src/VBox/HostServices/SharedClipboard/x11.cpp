@@ -786,9 +786,7 @@ void vboxClipboardDestroy (void)
 {
     LogRel(("vboxClipboardDestroy: shutting down host clipboard\n"));
     int rc, rcThread;
-#ifdef RT_STRICT
     unsigned count = 0;
-#endif
     XEvent ev;
 
     /* Set the termination flag. */
@@ -802,9 +800,9 @@ void vboxClipboardDestroy (void)
     do
     {
         rc = RTThreadWait(g_ctx.thread, 1000, &rcThread);
-        Assert(RT_SUCCESS(rc) || (++count != 5));
-    } while (RT_FAILURE(rc));    
-    AssertRC(rc);
+        ++count;
+        Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
+    } while ((VERR_TIMEOUT == rc) && (count < 300));
     AssertRC(rcThread);
     XtCloseDisplay(XtDisplay(g_ctx.widget));
     LogFlowFunc(("returning.\n"));
