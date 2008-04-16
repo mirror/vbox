@@ -1288,7 +1288,7 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
  /** PAE Page Directory Table 2. */
 #define PGMPOOL_IDX_PAE_PD_2    5
  /** PAE Page Directory Table 3. */
-#define PGMPOOL_IDX_PAE_PD_4    6
+#define PGMPOOL_IDX_PAE_PD_3    6
 /** Page Directory Pointer Table (PAE root, not currently used). */
 #define PGMPOOL_IDX_PDPT        7
 /** Page Map Level-4 (64-bit root). */

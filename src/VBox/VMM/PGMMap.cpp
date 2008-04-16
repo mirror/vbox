@@ -1009,7 +1009,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
             /*
              * Ask for the mapping.
              */
-            RTGCPTR GCPtrNewMapping = iPDPTE << X86_PDPT_SHIFT + iPDNew << X86_PD_PAE_SHIFT;
+            RTGCPTR GCPtrNewMapping = (iPDPTE << X86_PDPT_SHIFT) + (iPDNew << X86_PD_PAE_SHIFT);
 
             if (pMapping->pfnRelocate(pVM, GCPtrOldMapping, GCPtrNewMapping, PGMRELOCATECALL_SUGGEST, pMapping->pvUser))
             {

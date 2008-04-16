@@ -2753,7 +2753,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                         /* It's fixed, just skip the mapping. */
                         const unsigned cPTs = pMapping->cb >> SHW_PD_SHIFT;
                         iPD += cPTs - 1;
-                        pPDEDst += cPTs + cPTs;
+                        pPDEDst += cPTs;
                         pMapping = pMapping->CTXALLSUFF(pNext);
                         iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                         continue;
