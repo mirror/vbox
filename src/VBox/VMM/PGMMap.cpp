@@ -786,14 +786,17 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 /**
  * Relocates a mapping to a new address.
  *
- * @param   pVM         VM handle.
- * @param   pMapping    The mapping to relocate.
- * @param   iPDOld      Old page directory index.
- * @param   iPDNew      New page directory index.
+ * @param   pVM                 VM handle.
+ * @param   pMapping            The mapping to relocate.
+ * @param   GCPtrOldMapping     The address of the start of the old mapping.
+ * @param   GCPtrNewMapping     The address of the start of the new mapping.
  */
-void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, int iPDOld, int iPDNew)
+void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping, RTGCPTR GCPtrNewMapping)
 {
-    Log(("PGM: Relocating %s from %#x to %#x\n", pMapping->pszDesc, iPDOld << X86_PD_SHIFT, iPDNew << X86_PD_SHIFT));
+    int iPDOld = GCPtrOldMapping >> X86_PD_SHIFT;
+    int iPDNew = GCPtrNewMapping >> X86_PD_SHIFT;
+
+    Log(("PGM: Relocating %s from %VGv to %VGv\n", pMapping->pszDesc, GCPtrOldMapping, GCPtrNewMapping));
     Assert(((unsigned)iPDOld << X86_PD_SHIFT) == pMapping->GCPtr);
 
     /*
@@ -886,12 +889,12 @@ void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, int iPDOld, int iPDNew)
  * the Guest OS page tables. (32 bits version)
  *
  * @returns VBox status code.
- * @param   pVM         VM Handle.
- * @param   pMapping    The mapping which conflicts.
- * @param   pPDSrc      The page directory of the guest OS.
- * @param   iPDOld      The index to the start of the current mapping.
+ * @param   pVM                 VM Handle.
+ * @param   pMapping            The mapping which conflicts.
+ * @param   pPDSrc              The page directory of the guest OS.
+ * @param   GCPtrOldMapping     The address of the start of the current mapping.
  */
-int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, int iPDOld)
+int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTGCPTR GCPtrOldMapping)
 {
     STAM_PROFILE_START(&pVM->pgm.s.StatHCResolveConflict, a);
 
@@ -929,21 +932,97 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, int
         /** @todo AMD64 should check the PAE directories and skip the 32bit stuff. */
 
         /*
-         * Ask the mapping.
+         * Ask for the mapping.
          */
-        if (pMapping->pfnRelocate(pVM, iPDOld << X86_PD_SHIFT, iPDNew << X86_PD_SHIFT, PGMRELOCATECALL_SUGGEST, pMapping->pvUser))
+        RTGCPTR GCPtrNewMapping = iPDNew << X86_PD_SHIFT;
+
+        if (pMapping->pfnRelocate(pVM, GCPtrOldMapping, GCPtrNewMapping, PGMRELOCATECALL_SUGGEST, pMapping->pvUser))
         {
-            pgmR3MapRelocate(pVM, pMapping, iPDOld, iPDNew);
+            pgmR3MapRelocate(pVM, pMapping, GCPtrOldMapping, GCPtrNewMapping);
             STAM_PROFILE_STOP(&pVM->pgm.s.StatHCResolveConflict, a);
             return VINF_SUCCESS;
         }
     }
 
     STAM_PROFILE_STOP(&pVM->pgm.s.StatHCResolveConflict, a);
-    AssertMsgFailed(("Failed to relocate page table mapping '%s' from %#x! (cPTs=%d)\n", pMapping->pszDesc, iPDOld << X86_PD_SHIFT, cPTs));
+    AssertMsgFailed(("Failed to relocate page table mapping '%s' from %#x! (cPTs=%d)\n", pMapping->pszDesc, GCPtrOldMapping, cPTs));
     return VERR_PGM_NO_HYPERVISOR_ADDRESS;
 }
 
+/**
+ * Resolves a conflict between a page table based GC mapping and
+ * the Guest OS page tables. (PAE bits version)
+ *
+ * @returns VBox status code.
+ * @param   pVM                 VM Handle.
+ * @param   pMapping            The mapping which conflicts.
+ * @param   GCPtrOldMapping     The address of the start of the current mapping.
+ */
+int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping)
+{
+    STAM_PROFILE_START(&pVM->pgm.s.StatHCResolveConflict, a);
+
+    for (unsigned iPDPTE = X86_PG_PAE_PDPE_ENTRIES - 1; iPDPTE >= 0; iPDPTE--)
+    {
+        unsigned  iPDSrc;
+        PX86PDPAE pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, iPDPTE << X86_PDPT_SHIFT, &iPDSrc);
+
+        /*
+         * Scan for free page directory entries.
+         *
+         * Note that we do not support mappings at the very end of the
+         * address space since that will break our GCPtrEnd assumptions.
+         */
+        const unsigned  cPTs = pMapping->cb >> X86_PD_PAE_SHIFT;
+        unsigned        iPDNew = ELEMENTS(pPDSrc->a) - cPTs; /* (+ 1 - 1) */
+
+        while (iPDNew-- > 0)
+        {
+            /* Ugly assumption that mappings start on a 4 MB boundary. */
+            if (iPDNew & 1)
+                continue;
+
+            if (pPDSrc)
+            {
+                if (pPDSrc->a[iPDNew].n.u1Present)
+                    continue;
+                if (cPTs > 1)
+                {
+                    bool fOk = true;
+                    for (unsigned i = 1; fOk && i < cPTs; i++)
+                        if (pPDSrc->a[iPDNew + i].n.u1Present)
+                            fOk = false;
+                    if (!fOk)
+                        continue;
+                }
+            }
+            /*
+             * Check that it's not conflicting with an intermediate page table mapping.
+             */
+            bool        fOk = true;
+            unsigned    i   = cPTs;
+            while (fOk && i-- > 0)
+                fOk = !pVM->pgm.s.apInterPaePDs[iPDPTE]->a[iPDNew + i].n.u1Present;
+            if (!fOk)
+                continue;
+
+            /*
+             * Ask for the mapping.
+             */
+            RTGCPTR GCPtrNewMapping = iPDPTE << X86_PDPT_SHIFT + iPDNew << X86_PD_PAE_SHIFT;
+
+            if (pMapping->pfnRelocate(pVM, GCPtrOldMapping, GCPtrNewMapping, PGMRELOCATECALL_SUGGEST, pMapping->pvUser))
+            {
+                pgmR3MapRelocate(pVM, pMapping, GCPtrOldMapping, GCPtrNewMapping);
+                STAM_PROFILE_STOP(&pVM->pgm.s.StatHCResolveConflict, a);
+                return VINF_SUCCESS;
+            }
+        }
+    }
+    STAM_PROFILE_STOP(&pVM->pgm.s.StatHCResolveConflict, a);
+    AssertMsgFailed(("Failed to relocate page table mapping '%s' from %#x! (cPTs=%d)\n", pMapping->pszDesc, GCPtrOldMapping, pMapping->cb >> X86_PD_PAE_SHIFT));
+    return VERR_PGM_NO_HYPERVISOR_ADDRESS;
+}
 
 /**
  * Checks guest PD for conflicts with VMM GC mappings.
@@ -962,41 +1041,65 @@ PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
     if (pVM->pgm.s.fMappingsFixed)
         return false;
 
-    Assert(PGMGetGuestMode(pVM) <= PGMMODE_32_BIT);
-
-    /*
-     * Resolve the page directory.
-     */
-    PX86PD pPD = pVM->pgm.s.pGuestPDHC; /** @todo Fix PAE! */
-    Assert(pPD);
-    Assert(pPD == (PX86PD)MMPhysGCPhys2HCVirt(pVM, cr3 & X86_CR3_PAGE_MASK, sizeof(*pPD)));
+    Assert(PGMGetGuestMode(pVM) <= PGMMODE_PAE);
 
     /*
      * Iterate mappings.
      */
-    for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
+    if (PGMGetGuestMode(pVM) == PGMMODE_32_BIT)
     {
-        unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
-        unsigned iPT = pCur->cPTs;
-        while (iPT-- > 0)
-            if (    pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */
-                &&  (fRawR0 || pPD->a[iPDE + iPT].n.u1User))
-            {
-                STAM_COUNTER_INC(&pVM->pgm.s.StatHCDetectedConflicts);
-                #if 1
-                Log(("PGMR3HasMappingConflicts: Conflict was detected at %VGv for mapping %s\n"
-                     "                          iPDE=%#x iPT=%#x PDE=%VGp.\n",
-                     (iPT + iPDE) << X86_PD_SHIFT, pCur->pszDesc,
-                     iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
-                #else
-                AssertMsgFailed(("PGMR3HasMappingConflicts: Conflict was detected at %VGv for mapping %s\n"
-                                 "                          iPDE=%#x iPT=%#x PDE=%VGp.\n",
-                                 (iPT + iPDE) << X86_PD_SHIFT, pCur->pszDesc,
-                                 iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
-                #endif
-                return true;
-            }
+        /*
+         * Resolve the page directory.
+         */
+        PX86PD pPD = pVM->pgm.s.pGuestPDHC;
+        Assert(pPD);
+        Assert(pPD == (PX86PD)MMPhysGCPhys2HCVirt(pVM, cr3 & X86_CR3_PAGE_MASK, sizeof(*pPD)));
+
+        for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
+        {
+            unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
+            unsigned iPT = pCur->cPTs;
+            while (iPT-- > 0)
+                if (    pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */
+                    &&  (fRawR0 || pPD->a[iPDE + iPT].n.u1User))
+                {
+                    STAM_COUNTER_INC(&pVM->pgm.s.StatHCDetectedConflicts);
+                    Log(("PGMR3HasMappingConflicts: Conflict was detected at %VGv for mapping %s (32 bits)\n"
+                        "                          iPDE=%#x iPT=%#x PDE=%VGp.\n",
+                        (iPT + iPDE) << X86_PD_SHIFT, pCur->pszDesc,
+                        iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
+                    return true;
+                }
+        }
     }
+    else
+    if (PGMGetGuestMode(pVM) == PGMMODE_PAE)
+    {
+        for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
+        {
+            X86PDEPAE Pde;
+            RTGCPTR   GCPtr = pCur->GCPtr;
+
+            unsigned  iPT = pCur->cb >> X86_PD_PAE_SHIFT;
+            while (iPT-- > 0)
+            {
+                Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
+
+                if (   Pde.n.u1Present
+                    && (fRawR0 || Pde.n.u1User))
+                {
+                    STAM_COUNTER_INC(&pVM->pgm.s.StatHCDetectedConflicts);
+                    Log(("PGMR3HasMappingConflicts: Conflict was detected at %VGv for mapping %s (PAE)\n"
+                        "                          PDE=%VGp.\n",
+                        GCPtr, pCur->pszDesc, Pde.u));
+                    return true;
+                }
+                GCPtr += (1 << X86_PD_PAE_SHIFT);
+            }
+        }
+    }
+    else
+        AssertFailed();
 
     return false;
 }
