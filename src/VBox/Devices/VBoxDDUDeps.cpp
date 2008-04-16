@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 knut st. osmundsen <bird-src-spam@anduin.net>
+ * Copyright (C) 2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
