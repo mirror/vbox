@@ -205,7 +205,12 @@ HRESULT VirtualBox::init()
         {
             using namespace settings;
 
+#if 0
+            /// @todo disabled until made thread-safe by using handle duplicates
             File file (File::ReadWrite, mData.mCfgFile.mHandle, vboxConfigFile);
+#else
+            File file (File::Read, vboxConfigFile);
+#endif
             XmlTreeBackend tree;
 
             rc = VirtualBox::loadSettingsTree_FirstTime (tree, file,
@@ -1708,8 +1713,13 @@ GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
         using namespace settings;
 
         /* load the config file */
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::ReadWrite, mData.mCfgFile.mHandle,
                    Utf8Str (mData.mCfgFile.mName));
+#else
+        File file (File::Read, Utf8Str (mData.mCfgFile.mName));
+#endif
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_Again (tree, file);
@@ -1806,8 +1816,13 @@ STDMETHODIMP VirtualBox::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
         using namespace settings;
 
         /* load the config file */
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::ReadWrite, mData.mCfgFile.mHandle,
                    Utf8Str (mData.mCfgFile.mName));
+#else
+        File file (File::Read, Utf8Str (mData.mCfgFile.mName));
+#endif
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_Again (tree, file);
@@ -1866,8 +1881,13 @@ STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
         using namespace settings;
 
         /* load the config file */
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::ReadWrite, mData.mCfgFile.mHandle,
                    Utf8Str (mData.mCfgFile.mName));
+#else
+        File file (File::ReadWrite, Utf8Str (mData.mCfgFile.mName));
+#endif
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
@@ -3720,8 +3740,13 @@ HRESULT VirtualBox::saveSettings()
     {
         using namespace settings;
 
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::ReadWrite, mData.mCfgFile.mHandle,
                    Utf8Str (mData.mCfgFile.mName));
+#else
+        File file (File::ReadWrite, Utf8Str (mData.mCfgFile.mName));
+#endif
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
