@@ -1179,16 +1179,41 @@ EOF
 check_qt4()
 {
   test_header Qt4
-  if which_wrapper pkg-config > /dev/null; then
-    qt4_ver=`pkg-config QtGui --modversion 2>> $LOG`
-    if [ $? -ne 0 ]; then
-      log_failure "not found"
-#      fail
+  if [ "$OS" = "darwin" ]; then
+    if [ -f "/System/Library/Frameworks/QtCore.framework/QtCore" ]; then
+      PATH_SDK_QT4="/System/Library/Framework/QtCore.framework"
+    elif [ -f "/Library/Frameworks/QtCore.framework/QtCore" ]; then
+      PATH_SDK_QT4="/Library/Frameworks/QtCore.framework"
+    fi
+    if [ -n "$PATH_SDK_QT4" ]; then
+      foundqt4=1
+      INCQT4="$PATH_SDK_QT4/Headers"
+      LIBQT4=
+      FLDQT4="-framework QtCore"
     else
-      FLGQT4=`pkg-config QtGui --cflags`
-      INCQT4=`strip_I "$FLGQT4"`
-      LIBQT4=`pkg-config QtGui --libs`
-      cat > .tmp_src.cc << EOF
+      log_failure "Qt4 framework not found"
+      fail
+    fi
+  else
+    if which_wrapper pkg-config > /dev/null; then
+      qt4_ver=`pkg-config QtGui --modversion 2>> $LOG`
+      if [ $? -ne 0 ]; then
+        log_failure "not found"
+  #      fail
+      else
+        FLGQT4=`pkg-config QtGui --cflags`
+        INCQT4=`strip_I "$FLGQT4"`
+        LIBQT4=`pkg-config QtGui --libs`
+        foundqt4=1
+      fi
+    else
+      log_failure "pkg-config not found"
+# not yet
+#     fail
+    fi
+  fi
+  if [ -n "$foundqt4" ]; then
+    cat > .tmp_src.cc << EOF
 #include <cstdio>
 #include <Qt/qglobal.h>
 extern "C" int main(void)
@@ -1202,11 +1227,12 @@ extern "C" int main(void)
 #endif
 }
 EOF
-      [ -n "$INCQT4" ] && I_INCQT4=`prefix_I "$INCQT4"`
-      if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4" qt4 qt4 nofatal; then
-        if test_execute; then
-#          cnf_append "SDK_VBOX_LIBQT4_INCS" "$INCQT4"
-#          cnf_append "SDK_VBOX_LIBQT4_LIBS" "`strip_l "$LIBQT4"`"
+    [ -n "$INCQT4" ] && I_INCQT4=`prefix_I "$INCQT4"`
+    if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLDQT4" qt4 qt4 nofatal; then
+      if test_execute; then
+#        cnf_append "SDK_VBOX_LIBQT4_INCS" "$INCQT4"
+#        cnf_append "SDK_VBOX_LIBQT4_LIBS" "`strip_l "$LIBQT4"`"
+        if [ "$OS" != "darwin" ]; then
           test_header "Qt4 devtools"
           for q in $QT4DIR; do
             if which_wrapper "$q/bin/moc" > /dev/null; then
@@ -1227,7 +1253,7 @@ EOF
                     else
                       log_success "found version $uic3_ver"
                       cnf_append "VBOX_UIC3" "$r/uic3"
-		      return
+                      return
                     fi
                   fi
                 done
@@ -1237,14 +1263,11 @@ EOF
             fi
           done
         fi
-        log_failure "not found"
-        fail
       fi
+    else
+      log_failure "not found"
+      fail
     fi
-  else
-    log_failure "pkg-config not found"
-#    not yet
-#    fail
   fi
 }
 
