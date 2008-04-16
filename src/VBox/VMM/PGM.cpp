@@ -1585,12 +1585,17 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     pVM->pgm.s.GCPtrCR3Mapping += offDelta;
     /** @todo move this into shadow and guest specific relocation functions. */
     AssertMsg(pVM->pgm.s.pGC32BitPD, ("Init order, no relocation before paging is initialized!\n"));
-    pVM->pgm.s.pGC32BitPD += offDelta;
-    pVM->pgm.s.pGuestPDGC += offDelta;
+    pVM->pgm.s.pGC32BitPD    += offDelta;
+    pVM->pgm.s.pGuestPDGC    += offDelta;
+    AssertCompile(ELEMENTS(pVM->pgm.s.apGCPaePDs) == ELEMENTS(pVM->pgm.s.apGstPaePDsGC));
     for (unsigned i = 0; i < ELEMENTS(pVM->pgm.s.apGCPaePDs); i++)
-        pVM->pgm.s.apGCPaePDs[i] += offDelta;
-    pVM->pgm.s.pGCPaePDPT += offDelta;
-    pVM->pgm.s.pGCPaePML4 += offDelta;
+    {
+        pVM->pgm.s.apGCPaePDs[i]    += offDelta;
+        pVM->pgm.s.apGstPaePDsGC[i] += offDelta;
+    }
+    pVM->pgm.s.pGstPaePDPTGC += offDelta;
+    pVM->pgm.s.pGCPaePDPT    += offDelta;
+    pVM->pgm.s.pGCPaePML4    += offDelta;
 
     pgmR3ModeDataInit(pVM, true /* resolve GC/R0 symbols */);
     pgmR3ModeDataSwitch(pVM, pVM->pgm.s.enmShadowMode, pVM->pgm.s.enmGuestMode);
