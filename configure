@@ -88,6 +88,14 @@ if (cd `dirname $0`; pwd)|grep -q "$INVALID_CHARS"; then
   exit 1
 fi
 
+# darwin /bin/sh has a builtin echo that doesn't grok -n. gotta love it.
+if [ "`uname`" = "Darwin" ]; then
+  ECHO_N="/bin/echo -n"
+else 
+  ECHO_N="echo -n"
+fi
+
+
 cleanup()
 {
   rm -f .tmp_src.cc .tmp_src.c .tmp_out .test_execute.log
@@ -104,7 +112,7 @@ fail()
 
 log_success()
 {
-  if [ -n "$1" ]; then echo -n "$1, "; fi
+  if [ -n "$1" ]; then $ECHO_N "$1, "; fi
   echo "OK."
   echo "$1" >> $LOG
   echo >> $LOG
@@ -183,7 +191,7 @@ check_avail()
 test_header()
 {
   echo "***** Checking $1 *****" >> $LOG
-  echo -n "Checking for $1: "
+  $ECHO_N "Checking for $1: "
 }
 
 # Compile a test
