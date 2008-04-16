@@ -37,6 +37,7 @@ WITH_QT=1
 WITH_SDL=1
 WITH_SDL_TTF=1
 WITH_X11=1
+WITH_ALSA=1
 WITH_PULSE=1
 WITH_KMODS=1
 CC="gcc"
@@ -1446,7 +1447,8 @@ Configuration:
   --nofatal                don't abort on errors
   --disable-xpcom          disable XPCOM and related stuff
   --disable-sdl-ttf        disable SDL_ttf detection
-  --disable-pulse          disable PulseAudio detection
+  --disable-alsa           disable the ALSA sound backend
+  --disable-pulse          disable the PulseAudio backend
   --disable-kmods          don't build Linux kernel modules (host and guest)
   --build-libxml2          build libxml2 from sources
   --build-libxslt          build libxslt from sources (not OSE!)
@@ -1520,6 +1522,9 @@ for option in $*; do
       ;;
     --disable-qt)
       WITH_QT=0
+      ;;
+    --disable-alsa)
+      WITH_ALSA=0
       ;;
     --disable-pulse)
       WITH_PULSE=0
@@ -1686,7 +1691,11 @@ if [ "$OS" = "linux" ]; then
     cnf_append "VBOX_WITH_VBOXDRV" ""
     cnf_append "VBOX_WITH_LINUX_ADDITIONS_32BIT_R0" ""
   fi
-  check_alsa
+  if [ $WITH_ALSA -eq 1 ]; then
+    check_alsa
+  else
+    cnf_append "VBOX_WITH_ALSA" ""
+  fi
   if [ $WITH_PULSE -eq 1 ]; then
     check_pulse
   else
