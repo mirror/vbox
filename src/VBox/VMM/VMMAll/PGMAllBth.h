@@ -40,26 +40,26 @@ __END_DECLS
 
 /* Filter out some illegal combinations of guest and shadow paging, so we can remove redundant checks inside functions. */
 #if      PGM_GST_TYPE == PGM_TYPE_PAE && PGM_SHW_TYPE != PGM_TYPE_PAE
-#error "Invalid combination; PAE guest implies PAE shadow"
+# error "Invalid combination; PAE guest implies PAE shadow"
 #endif
 
 #if     (PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) \
     && !(PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE)
-#error "Invalid combination; real or protected mode without paging implies 32 bits or PAE shadow paging."
+# error "Invalid combination; real or protected mode without paging implies 32 bits or PAE shadow paging."
 #endif
 
 #if     (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) \
     && !(PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE)
-#error "Invalid combination; 32 bits guest paging or PAE implies 32 bits or PAE shadow paging."
+# error "Invalid combination; 32 bits guest paging or PAE implies 32 bits or PAE shadow paging."
 #endif
 
 #if    (PGM_GST_TYPE == PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_AMD64)
     || (PGM_SHW_TYPE == PGM_TYPE_AMD64 && PGM_GST_TYPE != PGM_TYPE_AMD64)
-#error "Invalid combination; AMD64 guest implies AMD64 shadow and vice versa"
+# error "Invalid combination; AMD64 guest implies AMD64 shadow and vice versa"
 #endif
 
 #ifdef IN_RING0 /* no mappings in VT-x and AMD-V mode */
-#define PGM_WITHOUT_MAPPINGS
+# define PGM_WITHOUT_MAPPINGS
 #endif
 
 /**
@@ -841,7 +841,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     unsigned        iPDSrc;
     PX86PDPAE       pPDSrc      = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
     GSTPDE          PdeSrc;
-    
+
     if (pPDSrc)
         PdeSrc = pPDSrc->a[iPDSrc];
     else
@@ -1670,7 +1670,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 /* NX, r/w, u/s bits in the PDPE are long mode only */
         ||  (fNoExecuteBitValid && (uErr & X86_TRAP_PF_ID) && pPdpeSrc->n.u1NoExecute)
         ||  (fWriteFault && !pPdpeSrc->n.u1Write && (fUserLevelFault || fWriteProtect))
-        ||  (fUserLevelFault && !pPdpeSrc->n.u1User) 
+        ||  (fUserLevelFault && !pPdpeSrc->n.u1User)
 # endif
        )
     {
@@ -1994,7 +1994,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     }
 # else  /* PGM_WITHOUT_MAPPINGS */
     Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
-# endif /* !PGM_WITHOUT_MAPPINGS */
+# endif /* PGM_WITHOUT_MAPPINGS */
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
     /*
@@ -2735,8 +2735,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             if (    PdeSrc.n.u1Present
                 &&  (PdeSrc.n.u1User || fRawR0Enabled))
             {
-#  if    (PGM_GST_TYPE == PGM_TYPE_32BIT \
-      ||  PGM_GST_TYPE == PGM_TYPE_PAE)  \
+#  if    (   PGM_GST_TYPE == PGM_TYPE_32BIT \
+          || PGM_GST_TYPE == PGM_TYPE_PAE) \
       && !defined(PGM_WITHOUT_MAPPINGS)
 
                 /*
@@ -2779,9 +2779,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     return VINF_PGM_SYNC_CR3;
 #   endif
                 }
-#  else  /* PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE && PGM_WITHOUT_MAPPINGS */
+#  else  /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
                 Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
-#  endif /* (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) && !PGM_WITHOUT_MAPPINGS */
+#  endif /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
                 /*
                  * Sync page directory entry.
                  *
@@ -2897,8 +2897,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             }
             else
             {
-#  if    (PGM_GST_TYPE == PGM_TYPE_32BIT \
-      ||  PGM_GST_TYPE == PGM_TYPE_PAE)  \
+#  if    (   PGM_GST_TYPE == PGM_TYPE_32BIT \
+          || PGM_GST_TYPE == PGM_TYPE_PAE)  \
       && !defined(PGM_WITHOUT_MAPPINGS)
 
                 const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
@@ -2960,9 +2960,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #   if PGM_GST_TYPE != PGM_SHW_TYPE
                 AssertCompile(PGM_GST_TYPE == PGM_TYPE_32BIT && PGM_SHW_TYPE == PGM_TYPE_PAE);
 #   endif
-#  else  /* PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE && PGM_WITHOUT_MAPPINGS */
+#  else  /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
                 Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
-#  endif /* (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) && !PGM_WITHOUT_MAPPINGS */
+#  endif /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
             }
 
         } /* for iPD */
@@ -3088,7 +3088,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         {
             AssertMsg(   pVM->pgm.s.apGstPaePDsHC[i]    == (R3R0PTRTYPE(PX86PDPAE))HCPtr
                       && pVM->pgm.s.aGCPhysGstPaePDs[i] == GCPhys,
-                      ("idx %d apGstPaePDsHC %VHv vs %VHv aGCPhysGstPaePDs %VGp vs %VGp\n", 
+                      ("idx %d apGstPaePDsHC %VHv vs %VHv aGCPhysGstPaePDs %VGp vs %VGp\n",
                        i, pVM->pgm.s.apGstPaePDsHC[i], HCPtr, pVM->pgm.s.aGCPhysGstPaePDs[i], GCPhys));
         }
     }
