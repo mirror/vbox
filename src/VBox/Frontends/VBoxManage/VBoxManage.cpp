@@ -215,7 +215,7 @@ static void showLogo(void)
     {
         RTPrintf("VirtualBox Command Line Management Interface Version "
                  VBOX_VERSION_STRING  "\n"
-                 "(C) 2005-2008 innotek GmbH\n"
+                 "(C) 2005-2008 Sun Microsystems, Inc.\n"
                  "All rights reserved.\n"
                  "\n");
         fShown = true;
@@ -1081,7 +1081,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         else
             RTPrintf("Floppy:          %s\n", pszFloppy.raw());
     }
-	
+
     /*
      * SATA.
      */
