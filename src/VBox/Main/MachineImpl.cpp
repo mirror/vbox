@@ -2031,8 +2031,13 @@ STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR
         using namespace settings;
 
         /* load the config file */
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::ReadWrite, mData->mHandleCfgFile,
                    Utf8Str (mData->mConfigFileFull));
+#else
+        File file (File::Read, Utf8Str (mData->mConfigFileFull));
+#endif
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_Again (tree, file);
@@ -2133,8 +2138,13 @@ STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
         using namespace settings;
 
         /* load the config file */
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::ReadWrite, mData->mHandleCfgFile,
                    Utf8Str (mData->mConfigFileFull));
+#else
+        File file (File::Read, Utf8Str (mData->mConfigFileFull));
+#endif
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_Again (tree, file);
@@ -2206,8 +2216,13 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
         using namespace settings;
 
         /* load the config file */
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::ReadWrite, mData->mHandleCfgFile,
                    Utf8Str (mData->mConfigFileFull));
+#else
+        File file (File::ReadWrite, Utf8Str (mData->mConfigFileFull));
+#endif
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
@@ -4004,8 +4019,13 @@ HRESULT Machine::loadSettings (bool aRegistered)
     {
         using namespace settings;
 
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::Read, mData->mHandleCfgFile,
                    Utf8Str (mData->mConfigFileFull));
+#else
+        File file (File::Read, Utf8Str (mData->mConfigFileFull));
+#endif
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_FirstTime (tree, file,
@@ -5140,8 +5160,13 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
     {
         using namespace settings;
 
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::ReadWrite, mData->mHandleCfgFile,
                    Utf8Str (mData->mConfigFileFull));
+#else
+        File file (File::ReadWrite, Utf8Str (mData->mConfigFileFull));
+#endif
         XmlTreeBackend tree;
 
         /* The newly created settings file is incomplete therefore we turn off
@@ -5347,8 +5372,13 @@ HRESULT Machine::saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags)
         using namespace settings;
 
         /* load the config file */
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::ReadWrite, mData->mHandleCfgFile,
                    Utf8Str (mData->mConfigFileFull));
+#else
+        File file (File::ReadWrite, Utf8Str (mData->mConfigFileFull));
+#endif
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
@@ -5924,8 +5954,13 @@ HRESULT Machine::saveStateSettings (int aFlags)
         using namespace settings;
 
         /* load the config file */
+#if 0
+        /// @todo disabled until made thread-safe by using handle duplicates
         File file (File::ReadWrite, mData->mHandleCfgFile,
                    Utf8Str (mData->mConfigFileFull));
+#else
+        File file (File::ReadWrite, Utf8Str (mData->mConfigFileFull));
+#endif
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
