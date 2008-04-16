@@ -102,6 +102,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     /* Quick check for a valid guest trap. */
     if (!pPDSrc)
     {
+        LogFlow(("Trap0eHandler: guest PDPTR not present -> VINF_EM_RAW_GUEST_TRAP\n"));
         STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eGuestTrap; });
         TRPMSetErrorCode(pVM, uErr);
         return VINF_EM_RAW_GUEST_TRAP;
@@ -2729,7 +2730,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
             Assert(&pVM->pgm.s.CTXMID(p,32BitPD)->a[iPD] == pPDEDst);
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-            Assert(&pVM->pgm.s.CTXMID(ap,PaePDs)[iPD * 2 / 512]->a[iPD * 2 % 512] == pPDEDst);
+            AssertMsg(&pVM->pgm.s.CTXMID(ap,PaePDs)[iPD * 2 / 512]->a[iPD * 2 % 512] == pPDEDst, ("%p vs %p\n", &pVM->pgm.s.CTXMID(ap,PaePDs)[iPD * 2 / 512]->a[iPD * 2 % 512], pPDEDst));
 #  endif
             register GSTPDE PdeSrc = pPDSrc->a[iPD];
             if (    PdeSrc.n.u1Present
