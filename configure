@@ -1491,6 +1491,32 @@ setup_wine()
 
 
 #
+# Determins the darwin version.
+# @todo This should really check the Xcode/SDK version.
+#
+check_darwinversion()
+{
+  test_header "Darwin version"
+  darwin_ver=`uname -r`
+  case "$darwin_ver" in
+    9\.*)
+      darwin_ver="10.5"
+      cnf_append "VBOX_TARGET_MAC_OS_X_VERSION_10_5" "1"
+      ;;
+    8\.*)
+      darwin_ver="10.5"
+      ;;
+    *)
+      echo "  failed to determin darwin version. (uname -r: $darwin_ver)"
+      fail
+      darwin_ver="unknown"
+      ;;
+  esac
+  log_success "found version $darwin_ver"
+}
+
+
+#
 # Show help
 #
 show_help()
@@ -1771,6 +1797,11 @@ if [ "$OS" = "linux" ]; then
 fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
+
+# Darwin-specific
+if [ "$OS" = "darwin" ]; then
+  check_darwinversion
+fi
 
 # success!
 echo
