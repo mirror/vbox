@@ -294,6 +294,8 @@ VBOX_WITH_AHCI = 1
 ifeq ($(BUILD_TARGET),solaris)
  VBOX_WITH_ORIGIN = 1
 endif
+# Temporary switch for enabling / disabling the new USB code on Darwin.
+#VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
 
 #
 # Skip stuff.
