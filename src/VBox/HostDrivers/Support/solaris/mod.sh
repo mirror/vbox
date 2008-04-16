@@ -57,4 +57,7 @@ $SUDO /usr/sbin/modload $VBOXDRV_DIR/vboxdrv
 echo "* dmesg:"
 dmesg | tail -20
 $SUDO chmod a+rw /devices/pseudo/vboxdrv*
+if test ! -h /dev/vboxdrv; then
+    ln -s "/devices/pseudo/vboxdrv@0:vboxdrv" /dev/vboxdrv
+fi
 
