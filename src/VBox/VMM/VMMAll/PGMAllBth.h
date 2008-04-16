@@ -2762,7 +2762,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #    if PGM_GST_TYPE == PGM_TYPE_32BIT
                     int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD << GST_PD_SHIFT);
 #    elif PGM_GST_TYPE == PGM_TYPE_PAE
-                    int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, iPDPTE << GST_PDPT_SHIFT + iPD << GST_PD_SHIFT);
+                    int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, (iPDPTE << GST_PDPT_SHIFT) + (iPD << GST_PD_SHIFT));
 #    endif
                     if (VBOX_FAILURE(rc))
                         return rc;
@@ -2927,7 +2927,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #    if PGM_GST_TYPE == PGM_TYPE_32BIT
                             int rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, iPD << GST_PD_SHIFT);
 #    elif PGM_GST_TYPE == PGM_TYPE_PAE
-                            int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, iPDPTE << GST_PDPT_SHIFT + iPD << GST_PD_SHIFT);
+                            int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, (iPDPTE << GST_PDPT_SHIFT) + (iPD << GST_PD_SHIFT));
 #    endif
                             if (VBOX_FAILURE(rc))
                                 return rc;
