@@ -1196,14 +1196,14 @@ check_qt4()
     fi
   else
     if which_wrapper pkg-config > /dev/null; then
-      qt4_ver=`pkg-config QtGui --modversion 2>> $LOG`
+      qt4_ver=`pkg-config QtCore --modversion 2>> $LOG`
       if [ $? -ne 0 ]; then
         log_failure "not found"
   #      fail
       else
-        FLGQT4=`pkg-config QtGui --cflags`
+        FLGQT4=`pkg-config QtCore --cflags`
         INCQT4=`strip_I "$FLGQT4"`
-        LIBQT4=`pkg-config QtGui --libs`
+        LIBQT4=`pkg-config QtCore --libs`
         foundqt4=1
       fi
     else
@@ -1215,7 +1215,7 @@ check_qt4()
   if [ -n "$foundqt4" ]; then
     cat > .tmp_src.cc << EOF
 #include <cstdio>
-#include <Qt/qglobal.h>
+#include <QtGlobal>
 extern "C" int main(void)
 {
   printf("found version %s", QT_VERSION_STR);
