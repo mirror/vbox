@@ -41,26 +41,27 @@ VBoxVideo.sys
 VBoxDisp.dll
 
 [VBoxVideo.Services]
-AddService=vboxvideo, 0x00000002, vboxvideo_Service_Inst, vboxvideo_EventLog_Inst
+AddService=VBoxVideo, 0x00000002, VBoxVideo_Service_Inst, VBoxVideo_EventLog_Inst
 
-[vboxvideo_Service_Inst]
-ServiceType=1                   ; SERVICE_KERNEL_DRIVER
-StartType=1                     ; SERVICE_SYSTEM_START
-ErrorControl=0                  ; SERVICE_ERROR_IGNORE
-LoadOrderGroup=Video
-ServiceBinary=%12%\VBoxVideo.sys
+[VBoxVideo_Service_Inst]
+DisplayName    = %VBoxVideo.SvcDesc%
+ServiceType    = 1                   ; SERVICE_KERNEL_DRIVER
+StartType      = 1                   ; SERVICE_SYSTEM_START
+ErrorControl   = 0                   ; SERVICE_ERROR_IGNORE
+LoadOrderGroup = Video
+ServiceBinary  = %12%\VBoxVideo.sys
 
-[vboxvideo_EventLog_Inst]
-AddReg = vboxvideo_EventLog_AddReg
+[VBoxVideo_EventLog_Inst]
+AddReg = VBoxVideo_EventLog_AddReg
 
-[vboxvideo_EventLog_AddReg]
+[VBoxVideo_EventLog_AddReg]
 HKR,,EventMessageFile,0x00020000,"%SystemRoot%\System32\IoLogMsg.dll;%SystemRoot%\System32\drivers\VBoxVideo.sys"
 HKR,,TypesSupported,0x00010001,7
 
 [VBoxVideo.SoftwareSettings]
-AddReg = vboxvideo_SoftwareDeviceSettings
+AddReg = VBoxVideo_SoftwareDeviceSettings
 
-[vboxvideo_SoftwareDeviceSettings]
+[VBoxVideo_SoftwareDeviceSettings]
 HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDisp
 ; Set 'Full' hardware acceleration up. On W2003 the level is by default None=5, leading to software mouse cursor
 HKR,, Acceleration.Level, %REG_DWORD%, 0
@@ -83,6 +84,7 @@ REG_EXPAND_SZ = 0x00020000
 REG_BINARY = 0x00000001
 REG_DWORD = 0x00010001
 
-Provider = "innotek GmbH"
-VBoxVideo.Disk = "VirtualBox Video Driver Disk"
-VBoxVideo.SvcDesc = "VirtualBox Graphics Adapter"
+Provider = "Sun Microsystems, Inc."
+VBoxVideo.DeviceDesc = "xVM VirtualBox Graphics Adapter"
+VBoxVideo.Disk = "xVM VirtualBox Video Driver Disk"
+VBoxVideo.SvcDesc = "xVM VirtualBox Graphics Adapter"
