@@ -1704,8 +1704,11 @@ if [ -n "$HEADLESS" ]; then
 fi
 
 if [ "$OS" = "darwin" ]; then
-  WITH_QT=
-  WITH_QT4=1
+  ## @todo Can't require qt4 without a working --disable-qt.
+  #WITH_QT=
+  #WITH_QT4=1
+  WITH_QT=0
+  WITH_QT4=0
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
 fi
