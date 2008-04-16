@@ -3959,7 +3959,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
     strcpy(szPrevTitle, szTitle);
 
 
-    strcpy(szTitle, "innotek VirtualBox - ");
+    strcpy(szTitle, "Sun xVM VirtualBox - ");
 
     Bstr name;
     gMachine->COMGETTER(Name)(name.asOutParam());
@@ -4080,7 +4080,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
 #ifdef VBOX_WIN32_UI
     setUITitle(szTitle);
 #else
-    SDL_WM_SetCaption(szTitle, "innotek VirtualBox");
+    SDL_WM_SetCaption(szTitle, "Sun xVM VirtualBox");
 #endif
 }
 
