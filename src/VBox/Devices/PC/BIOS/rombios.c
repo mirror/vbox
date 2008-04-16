@@ -1956,7 +1956,7 @@ print_boot_device(cdboot, drive)
 
   if(cdboot)i=2;                    // CD-Rom
 #ifdef VBOX
-  if(lanboot)i=3;                   // LAN
+  else if(lanboot)i=3;              // LAN
 #endif /* VBOX */
   else if((drive&0x0080)==0x00)i=0; // Floppy
   else if((drive&0x0080)==0x80)i=1; // Hard drive
