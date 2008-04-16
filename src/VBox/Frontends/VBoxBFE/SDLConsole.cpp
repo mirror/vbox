@@ -1261,7 +1261,7 @@ void SDLConsole::updateTitlebar()
     char pszTitle[1024];
 
     RTStrPrintf(pszTitle, sizeof(pszTitle),
-                "innotek VirtualBox%s%s",
+                "Sun xVM VirtualBox%s%s",
                 g_uProgressPercent == ~0U && machineState == VMSTATE_SUSPENDED ? " - [Paused]" : "",
                 mfInputGrab                                                    ? " - [Input captured]": "");
 
@@ -1293,7 +1293,7 @@ void SDLConsole::updateTitlebar()
     }
 #endif /* DEBUG */
 
-    SDL_WM_SetCaption(pszTitle, "innotek VirtualBox");
+    SDL_WM_SetCaption(pszTitle, "Sun vXM VirtualBox");
 }
 
 /**
@@ -1304,8 +1304,8 @@ void SDLConsole::updateTitlebarProgress(const char *pszStr, int iPercent)
 {
     char szTitle[256];
     AssertMsg(iPercent >= 0 && iPercent <= 100, ("%d\n", iPercent));
-    RTStrPrintf(szTitle, sizeof(szTitle), "innotek VirtualBox - %s %d%%...", pszStr, iPercent);
-    SDL_WM_SetCaption(szTitle, "innotek VirtualBox");
+    RTStrPrintf(szTitle, sizeof(szTitle), "Sun xVM VirtualBox - %s %d%%...", pszStr, iPercent);
+    SDL_WM_SetCaption(szTitle, "Sun xVM VirtualBox");
 }
 
 /**
