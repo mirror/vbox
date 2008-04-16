@@ -107,7 +107,14 @@ void *pgmGCPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
         case PGMPOOL_IDX_PD:
             return pVM->pgm.s.pGC32BitPD;
         case PGMPOOL_IDX_PAE_PD:
+        case PGMPOOL_IDX_PAE_PD_0:
             return pVM->pgm.s.apGCPaePDs[0];
+        case PGMPOOL_IDX_PAE_PD_1:
+            return pVM->pgm.s.apGCPaePDs[1];
+        case PGMPOOL_IDX_PAE_PD_2:
+            return pVM->pgm.s.apGCPaePDs[2];
+        case PGMPOOL_IDX_PAE_PD_3:
+            return pVM->pgm.s.apGCPaePDs[3];
         case PGMPOOL_IDX_PDPT:
             return pVM->pgm.s.pGCPaePDPT;
         case PGMPOOL_IDX_PML4:
