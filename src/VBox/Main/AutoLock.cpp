@@ -56,7 +56,8 @@ void RWLockHandle::lockWrite()
 
     if (mWriteLockThread != RTThreadSelf())
     {
-        if (mReadLockCount != 0 || mWriteLockThread != NIL_RTTHREAD)
+        if (mReadLockCount != 0 || mWriteLockThread != NIL_RTTHREAD ||
+            mWriteLockPending != 0 /* respect other pending writers */)
         {
             /* wait until all read locks or another write lock is released */
             ++ mWriteLockPending;
@@ -67,7 +68,9 @@ void RWLockHandle::lockWrite()
             -- mWriteLockPending;
         }
 
+        Assert (mWriteLockLevel == 0);
         Assert (mWriteLockThread == NIL_RTTHREAD);
+
         mWriteLockThread = RTThreadSelf();
     }
 
