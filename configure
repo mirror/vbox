@@ -909,15 +909,18 @@ check_sdl()
 {
   test_header SDL
   if [ "$OS" = "darwin" ]; then
-    if [ -d "/System/Library/Frameworks/SDL.framework/SDL" ]; then
+    if [ -f "/System/Library/Frameworks/SDL.framework/SDL" ]; then
       PATH_SDK_LIBSDL="/System/Library/Framework/SDL.frameworks"
-    elif [ -d "/Library/Frameworks/SDL.framework/SDL" ]; then
+    elif [ -f "/Library/Frameworks/SDL.framework/SDL" ]; then
       PATH_SDK_LIBSDL="/Library/Frameworks/SDL.framework"
     fi
     if [ -n "$PATH_SDK_LIBSDL" ]; then
       foundsdl=1
       INCSDL="$PATH_SDK_LIBSDL/Headers"
       FLDSDL="-framework SDL"
+    else
+      log_failure "SDL framework not found"
+      fail
     fi
   else
     if which_wrapper sdl-config > /dev/null; then
