@@ -910,7 +910,7 @@ check_sdl()
   test_header SDL
   if [ "$OS" = "darwin" ]; then
     if [ -f "/System/Library/Frameworks/SDL.framework/SDL" ]; then
-      PATH_SDK_LIBSDL="/System/Library/Framework/SDL.frameworks"
+      PATH_SDK_LIBSDL="/System/Library/Framework/SDL.framework"
     elif [ -f "/Library/Frameworks/SDL.framework/SDL" ]; then
       PATH_SDK_LIBSDL="/Library/Frameworks/SDL.framework"
     fi
@@ -938,6 +938,7 @@ check_sdl()
 #include <cstdio>
 #include <SDL.h>
 #include <SDL_main.h>
+#undef main
 extern "C" int main(int argc, char** argv)
 {
   printf("found version %d.%d.%d",
