@@ -125,6 +125,7 @@ void Session::uninit (bool aFinalRelease)
         return;
     }
 
+    /* close() needs write lock */
     AutoLock alock (this);
 
     if (mState != SessionState_Closed)
@@ -457,7 +458,8 @@ STDMETHODIMP Session::Uninitialize()
 
     if (autoCaller.state() == Ready)
     {
-        AutoReaderLock alock (this);
+        /* close() needs write lock */
+        AutoLock alock (this);
 
         LogFlowThisFunc (("mState=%d, mType=%d\n", mState, mType));
 
