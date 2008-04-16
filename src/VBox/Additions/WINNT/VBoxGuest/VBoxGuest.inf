@@ -16,7 +16,7 @@
 Signature="$WINDOWS NT$"
 Class=System
 ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider=%INNOTEK%
+Provider=%SUN%
 LayoutFile=layout.inf
 DriverVer=08/21/2006,5.00.2072
 ;cat CatalogFile=VBoxGuest.cat
@@ -39,7 +39,7 @@ VBox_CoInstaller_CopyFiles = 11 ; system32
 VBoxService_CopyFiles = 11 ; system32
 
 [Manufacturer]
-%INNOTEK_MFG% = VBoxGuest
+%SUN_MFG% = VBoxGuest
 
 [VBoxGuest]
 %VBoxGuest.DeviceDesc%=VBoxGuest_Install,PCI\VEN_80ee&DEV_cafe
@@ -80,14 +80,9 @@ vbcoinst.dll
 HKR,,CoInstallers32,0x00010000,"vbcoinst.dll,VBoxCoInstaller"
 
 [Strings]
-INNOTEK_MFG = "innotek GmbH"
-INNOTEK = "innotek GmbH"
-VBoxGuest.DeviceDesc = "VirtualBox Device"
-VBoxGuest_svcdesc = "VirtualBox Guest Driver"
-VBoxService_svcdesc = "VirtualBox Guest Service"
-
-;cat VBoxGuest.MediaDesc   = "VirtualBox Guest Mouse Driver Installation Media"
-;cat VBoxControl.MediaDesc = "VirtualBox Guest Mouse Driver Installation Media"
-;cat VBoxService.MediaDesc = "VirtualBox Guest Mouse Driver Installation Media"
-;cat vbcoinst.MediaDesc    = "VirtualBox Guest Mouse Driver Installation Media"
+SUN_MFG = "Sun Microsystems, Inc."
+SUN = "Sun Microsystems, Inc."
+VBoxGuest.DeviceDesc = "xVM VirtualBox Device"
+VBoxGuest_svcdesc = "xVM VirtualBox Guest Driver"
+VBoxService_svcdesc = "xVM VirtualBox Guest Service"
 
