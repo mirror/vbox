@@ -862,7 +862,7 @@ void VBoxVMSettingsDlg::init()
 QString VBoxVMSettingsDlg::pagePath (QWidget *aPage)
 {
     QListViewItem *li = listView->
-        findItem (QString::number (widgetStack->id (aPage)), 1);
+        findItem (QString().sprintf ("%02d", widgetStack->id (aPage)), 1);
     return ::path (li);
 }
 
