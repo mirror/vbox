@@ -387,8 +387,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     statusBar();
 
-    /* application icon */
-    setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
+#ifndef Q_WS_WIN
+    /* Application icon. On Win32, it's built-in to the executable. */
+    setIcon (QPixmap::fromMimeSource ("VirtualBox_48px.png"));
+#endif
 
     /* actions */
 

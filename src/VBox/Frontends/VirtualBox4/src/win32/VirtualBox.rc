@@ -15,4 +15,4 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-IDI_ICON1               ICON    DISCARDABLE     "images\ico40x01.ico"
+IDI_ICON1               ICON    DISCARDABLE     "images\VirtualBox_win.ico"
