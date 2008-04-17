@@ -208,12 +208,16 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
         CookieReq.Hdr.rc = VERR_INTERNAL_ERROR;
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRVIOC_VERSION;
-        CookieReq.u.In.u32MinVersion = SUPDRVIOC_VERSION & 0xffff0000;
+        const uint32_t MinVersion = (SUPDRVIOC_VERSION & 0xffff0000) == 0x00070000
+                                  ? 0x00070001 /* need new exports */
+                                  : SUPDRVIOC_VERSION & 0xffff0000;
+        CookieReq.u.In.u32MinVersion = MinVersion;
         rc = suplibOsIOCtl(SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
         if (    RT_SUCCESS(rc)
             &&  RT_SUCCESS(CookieReq.Hdr.rc))
         {
-            if ((CookieReq.u.Out.u32SessionVersion & 0xffff0000) == (SUPDRVIOC_VERSION & 0xffff0000))
+            if (    (CookieReq.u.Out.u32SessionVersion & 0xffff0000) == (SUPDRVIOC_VERSION & 0xffff0000)
+                &&  CookieReq.u.Out.u32SessionVersion >= MinVersion)
             {
                 /*
                  * Query the functions.
@@ -278,8 +282,8 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
             }
             else
             {
-                LogRel(("Support driver version mismatch: SessionVersion=%#x DriverVersion=%#x ClientVersion=%#x\n",
-                        CookieReq.u.Out.u32SessionVersion, CookieReq.u.Out.u32DriverVersion, SUPDRVIOC_VERSION));
+                LogRel(("Support driver version mismatch: SessionVersion=%#x DriverVersion=%#x ClientVersion=%#x MinVersion=%#x\n",
+                        CookieReq.u.Out.u32SessionVersion, CookieReq.u.Out.u32DriverVersion, SUPDRVIOC_VERSION, MinVersion));
                 rc = VERR_VM_DRIVER_VERSION_MISMATCH;
             }
         }
