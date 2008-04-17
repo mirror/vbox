@@ -1626,6 +1626,9 @@ for option in $*; do
       WITH_QT=0
       WITH_QT4=0
       ;;
+    --disable-qt4)
+      WITH_QT4=0
+      ;;
     --disable-alsa)
       WITH_ALSA=0
       ;;
@@ -1750,11 +1753,11 @@ if [ -n "$HEADLESS" ]; then
 fi
 
 if [ "$OS" = "darwin" ]; then
-  ## @todo Can't require qt4 without a working --disable-qt.
-  #WITH_QT=
-  #WITH_QT4=1
+  # On Darwin we want to build against Qt4 only. WITH_QT4 is enabled by
+  # default so disable Qt3. --disable-qt disables both Qt3 and Qt4 GUI now,
+  # --disable-qt4 disables only the Qt4 GUI (which is not appropriate for
+  # Darwin as we disable the Qt3 here anyway.
   WITH_QT=0
-  WITH_QT4=0
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
 fi
