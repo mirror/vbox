@@ -261,7 +261,9 @@ not contain any SATA controller.</string>
     <function returnType="QString">checkValidity()</function>
     <function access="private" returnType="HDListItem*">createItem( HDSlotUniquizer *, const CMachine &amp; )</function>
     <function access="private" returnType="bool">event( QEvent * )</function>
+    <function access="private">showEvent( QShowEvent * )</function>
     <function access="private" returnType="bool">eventFilter( QObject * , QEvent * )</function>
+    <function access="private">adjustList()</function>
 </functions>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

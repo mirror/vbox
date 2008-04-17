@@ -25,6 +25,9 @@
 ** place of a destructor.
 *****************************************************************************/
 
+/** SATA Ports count */
+static const ULONG SATAPortsCount = 30;
+
 class HDSlotItem;
 
 /** Combines the string and the numeric representation of the hard disk slot. */
@@ -59,7 +62,7 @@ public:
         makeSATAList();
     }
 
-    QValueList <HDSlot> list (HDSlotItem *aForSubscriber);
+    QValueList<HDSlot> list (HDSlotItem *aForSubscriber, bool aFilter = true);
 
     int totalCount() { return mIDEList.size() + mSATAList.size(); }
 
@@ -134,8 +137,8 @@ private:
     }
 
     int mSataPortsCount;
-    QValueList <HDSlot> mIDEList;
-    QValueList <HDSlot> mSATAList;
+    QValueList<HDSlot> mIDEList;
+    QValueList<HDSlot> mSATAList;
     QPtrVector<HDSlotItem> mSubscribersList;
 };
 
@@ -162,11 +165,18 @@ public:
         qApp->installEventFilter (this);
         connect (mUniq, SIGNAL (listChanged()), this, SLOT (refresh()));
         connect (this, SIGNAL (activated (int)), mUniq, SIGNAL (listChanged()));
+        connect (this, SIGNAL (textChanged()), mUniq, SIGNAL (listChanged()));
     }
 
    ~HDSlotItem()
     {
         mUniq->unsubscribe (this);
+    }
+
+    void setText (const QString &aText)
+    {
+        QComboBox::setCurrentText (aText);
+        emit textChanged();
     }
 
     KStorageBus currentBus() const
@@ -200,7 +210,7 @@ private slots:
 
         bool setCurrent = false;
 
-        for (QValueList <HDSlot>::const_iterator it = mHDSlots.begin();
+        for (QValueList<HDSlot>::const_iterator it = mHDSlots.begin();
              it != mHDSlots.end(); ++ it)
         {
             insertItem ((*it).str);
@@ -211,6 +221,10 @@ private slots:
         if (setCurrent)
             setCurrentText (current);
     }
+
+signals:
+
+    void textChanged();
 
 private:
 
@@ -227,7 +241,7 @@ private:
 
     HDSlotUniquizer *mUniq;
 
-    QValueList <HDSlot> mHDSlots;
+    QValueList<HDSlot> mHDSlots;
 };
 
 /**
@@ -236,12 +250,25 @@ private:
  */
 class HDVdiItem : public VBoxMediaComboBox
 {
+    Q_OBJECT
+
 public:
 
-    HDVdiItem (QWidget *aParent, int aType)
-        : VBoxMediaComboBox (aParent, "VBoxMediaComboBox", aType)
+    HDVdiItem (QWidget *aParent, int aType, QListViewItem *aItem)
+        : VBoxMediaComboBox (aParent, "HDVdiItem", aType)
+        , mItem (aItem)
     {
         qApp->installEventFilter (this);
+        connect (&vboxGlobal(),
+                 SIGNAL (mediaRemoved (VBoxDefs::DiskType, const QUuid &)),
+                 this, SLOT (repaintHandler()));
+    }
+
+private slots:
+
+    void repaintHandler()
+    {
+        mItem->repaint();
     }
 
 private:
@@ -256,11 +283,16 @@ private:
 
         return VBoxMediaComboBox::eventFilter (aObject, aEvent);
     }
+
+    QListViewItem *mItem;
 };
 
-QValueList <HDSlot> HDSlotUniquizer::list (HDSlotItem *aSubscriber)
+QValueList<HDSlot> HDSlotUniquizer::list (HDSlotItem *aSubscriber, bool aFilter)
 {
-    QValueList <HDSlot> list = mIDEList + mSATAList;
+    QValueList<HDSlot> list = mIDEList + mSATAList;
+
+    if (!aFilter)
+        return list;
 
     /* Compose exclude list */
     QStringList excludeList;
@@ -269,7 +301,7 @@ QValueList <HDSlot> HDSlotUniquizer::list (HDSlotItem *aSubscriber)
             excludeList << mSubscribersList [i]->currentText();
 
     /* Filter the list */
-    QValueList <HDSlot>::Iterator it = list.begin();
+    QValueList<HDSlot>::Iterator it = list.begin();
     while (it != list.end())
     {
         if (excludeList.contains ((*it).str))
@@ -331,17 +363,17 @@ public:
 
     KStorageBus bus() const
     {
-        return static_cast <HDSlotItem *> (mVector [0])->currentBus();
+        return static_cast<HDSlotItem*> (mVector [0])->currentBus();
     }
 
     LONG channel() const
     {
-        return static_cast <HDSlotItem *> (mVector [0])->currentChannel();
+        return static_cast<HDSlotItem*> (mVector [0])->currentChannel();
     }
 
     LONG device() const
     {
-        return static_cast <HDSlotItem *> (mVector [0])->currentDevice();
+        return static_cast<HDSlotItem*> (mVector [0])->currentDevice();
     }
 
     QString text (int aColumn) const
@@ -375,7 +407,7 @@ public:
             .toFullString (aHda.GetBus(), aHda.GetChannel(), aHda.GetDevice());
 
         if (mVector [0]->listBox()->findItem (device, Qt::ExactMatch))
-            mVector [0]->setCurrentText (device);
+            static_cast<HDSlotItem*> (mVector [0])->setText (device);
 
         static_cast<VBoxMediaComboBox*> (mVector [1])->
             setCurrentItem (aHda.GetHardDisk().GetId());
@@ -397,7 +429,8 @@ private:
                           mWidget, SIGNAL (hddListChanged()));
         mVector.insert (0, cbslot);
 
-        VBoxMediaComboBox *cbvdi = new HDVdiItem (listView()->viewport(), VBoxDefs::HD);
+        VBoxMediaComboBox *cbvdi = new HDVdiItem (listView()->viewport(),
+                                                  VBoxDefs::HD, this);
         QObject::connect (cbvdi, SIGNAL (activated (int)),
                           mWidget, SIGNAL (hddListChanged()));
         mVector.insert (1, cbvdi);
@@ -542,11 +575,15 @@ void VBoxHardDiskSettings::putBackToMachine()
     /* Sort&Attach all listed Hard Disks */
     mLvHD->setSortColumn (0);
     mLvHD->sort();
+    LONG maxSATAPort = -1;
     HDListItem *item = mLvHD->firstChild() &&
         mLvHD->firstChild()->rtti() == HDListItem::HDListItemType ?
         static_cast<HDListItem*> (mLvHD->firstChild()) : 0;
     while (item)
     {
+        if (item->bus() == KStorageBus_SATA)
+            maxSATAPort = maxSATAPort < item->device() ?
+                          item->device() : maxSATAPort;
         mMachine.AttachHardDisk (item->getId(),
             item->bus(), item->channel(), item->device());
         if (!mMachine.isOk())
@@ -554,6 +591,8 @@ void VBoxHardDiskSettings::putBackToMachine()
                 item->bus(), item->channel(), item->device());
         item = item->nextSibling();
     }
+
+    mMachine.GetSATAController().SetPortCount (maxSATAPort + 1);
 }
 
 QString VBoxHardDiskSettings::checkValidity()
@@ -698,11 +737,10 @@ void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
         }
     }
 
-    int newSATAPorts = aOn && !mMachine.isNull() ?
-                       mMachine.GetSATAController().GetPortCount() : 0;
-    if (mSlotUniquizer->getSATAPortsCount() != newSATAPorts)
+    int newSATAPortsCount = aOn && !mMachine.isNull() ? SATAPortsCount : 0;
+    if (mSlotUniquizer->getSATAPortsCount() != newSATAPortsCount)
     {
-        mSlotUniquizer->setSATAPortsCount (newSATAPorts);
+        mSlotUniquizer->setSATAPortsCount (newSATAPortsCount);
         onAfterCurrentChanged (mLvHD->currentItem());
     }
 }
@@ -776,6 +814,12 @@ bool VBoxHardDiskSettings::event (QEvent *aEvent)
     }
 
     return QWidget::event (aEvent);
+}
+
+void VBoxHardDiskSettings::showEvent (QShowEvent *aEvent)
+{
+    QWidget::showEvent (aEvent);
+    adjustList();
 }
 
 bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
@@ -858,6 +902,24 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
     }
 
     return QWidget::eventFilter (aObject, aEvent);
+}
+
+void VBoxHardDiskSettings::adjustList()
+{
+    /* Search through the slots list for maximum element width */
+    int minLength = 0;
+    QFontMetrics fm = mLvHD->fontMetrics();
+    QValueList<HDSlot> list = mSlotUniquizer->list (0, false);
+    for (uint i = 0; i < list.size(); ++ i)
+    {
+        int length = fm.width (list [i].str);
+        minLength = minLength < length ? length : minLength;
+    }
+    minLength = minLength > mLvHD->viewport()->width() * 0.4 ?
+                (int) (mLvHD->viewport()->width() * 0.4) : minLength;
+
+    mLvHD->setColumnWidth (0, minLength + 10 /* little spacing */);
+    mLvHD->setColumnWidth (1, mLvHD->viewport()->width() - mLvHD->columnWidth (0));
 }
 
 #include "VBoxHardDiskSettings.ui.moc"
