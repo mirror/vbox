@@ -153,6 +153,8 @@ static unsigned pgmPoolDisasWriteSize(PDISCPUSTATE pDis)
  */
 int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
+    LogFlow(("pgmPoolMonitorChainFlush: Flush page %VGp type=%d\n", pPage->GCPhys, pPage->enmKind));
+
     /*
      * Find the list head.
      */
@@ -716,24 +718,10 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE
         pRegFrame->eip += pCpu->opsize;
     else if (rc == VERR_EM_INTERPRETER)
     {
-#  ifdef IN_GC
-        if (PATMIsPatchGCAddr(pVM, (RTGCPTR)(RTGCUINTPTR)pCpu->opaddr))
-        {
-            /* We're not able to handle this in ring-3, so fix the interpreter! */
-            /** @note Should be fine. There's no need to flush the whole thing. */
-#ifndef DEBUG_sandervl
-            AssertMsgFailed(("pgmPoolAccessHandlerPTWorker: Interpretation failed for patch code %04x:%RGv - opcode=%d\n",
-                             pRegFrame->cs, (RTGCPTR)pRegFrame->eip, pCpu->pCurInstr->opcode));
-#endif
-            STAM_COUNTER_INC(&pPool->StatMonitorGCIntrFailPatch1);
-            rc = pgmPoolMonitorChainFlush(pPool, pPage);
-        }
-        else
-#  endif
-        {
-            rc = VINF_EM_RAW_EMULATE_INSTR;
-            STAM_COUNTER_INC(&pPool->CTXMID(StatMonitor,EmulateInstr));
-        }
+        LogFlow(("pgmPoolAccessHandlerPTWorker: Interpretation failed for patch code %04x:%RGv - opcode=%d\n",
+                  pRegFrame->cs, (RTGCPTR)pRegFrame->eip, pCpu->pCurInstr->opcode));
+        rc = VINF_EM_RAW_EMULATE_INSTR;
+        STAM_COUNTER_INC(&pPool->CTXMID(StatMonitor,EmulateInstr));
     }
 
     /*
