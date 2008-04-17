@@ -1,0 +1,251 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>VBoxHardDiskSettings</class>
+<widget class="QWidget">
+    <property name="name">
+        <cstring>VBoxHardDiskSettings</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>481</width>
+            <height>371</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>VBoxHardDiskSettings</string>
+    </property>
+    <vbox>
+        <property name="name">
+            <cstring>unnamed</cstring>
+        </property>
+        <property name="margin">
+            <number>0</number>
+        </property>
+        <widget class="QGroupBox">
+            <property name="name">
+                <cstring>mGbHD</cstring>
+            </property>
+            <property name="title">
+                <string>&amp;Hard Disks</string>
+            </property>
+            <vbox>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QCheckBox">
+                    <property name="name">
+                        <cstring>mCbSATA</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;Enable SATA Controller</string>
+                    </property>
+                    <property name="accel">
+                        <string>Alt+E</string>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Flag whether the SATA controller is present in the
+guest system. If disabled, the virtual guest hardware will
+not contain any SATA controller.</string>
+                    </property>
+                </widget>
+                <widget class="QGroupBox">
+                    <property name="name">
+                        <cstring>mGbHDList</cstring>
+                    </property>
+                    <property name="title">
+                        <string>Hard Disks &amp;Attachments</string>
+                    </property>
+                    <hbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QListView">
+                            <column>
+                                <property name="text">
+                                    <string>Slot</string>
+                                </property>
+                                <property name="clickable">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="resizable">
+                                    <bool>true</bool>
+                                </property>
+                            </column>
+                            <column>
+                                <property name="text">
+                                    <string>Hard Disk</string>
+                                </property>
+                                <property name="clickable">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="resizable">
+                                    <bool>true</bool>
+                                </property>
+                            </column>
+                            <property name="name">
+                                <cstring>mLvHD</cstring>
+                            </property>
+                            <property name="allColumnsShowFocus">
+                                <bool>true</bool>
+                            </property>
+                            <property name="resizeMode">
+                                <enum>AllColumns</enum>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Hard Disks Attachments list displays all the assigned hard disk attachments used for this VM. Use mouse double-click or F2/Space key on the selected item to popup selection-list and choose the desired value.</string>
+                            </property>
+                        </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout1</cstring>
+                            </property>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <property name="spacing">
+                                    <number>0</number>
+                                </property>
+                                <widget class="QToolButton">
+                                    <property name="name">
+                                        <cstring>mBtnAdd</cstring>
+                                    </property>
+                                    <property name="focusPolicy">
+                                        <enum>TabFocus</enum>
+                                    </property>
+                                    <property name="text">
+                                        <string></string>
+                                    </property>
+                                    <property name="accel">
+                                        <string>Ins</string>
+                                    </property>
+                                    <property name="autoRaise">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="toolTip" stdset="0">
+                                        <string>Add (Ins)</string>
+                                    </property>
+                                    <property name="whatsThis" stdset="0">
+                                        <string>Add new hard disk attachment into attachments list.</string>
+                                    </property>
+                                </widget>
+                                <widget class="QToolButton">
+                                    <property name="name">
+                                        <cstring>mBtnDel</cstring>
+                                    </property>
+                                    <property name="focusPolicy">
+                                        <enum>TabFocus</enum>
+                                    </property>
+                                    <property name="text">
+                                        <string></string>
+                                    </property>
+                                    <property name="accel">
+                                        <string>Del</string>
+                                    </property>
+                                    <property name="autoRaise">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="toolTip" stdset="0">
+                                        <string>Remove (Del)</string>
+                                    </property>
+                                    <property name="whatsThis" stdset="0">
+                                        <string>Remove selected hard disk attachment from attachments list.</string>
+                                    </property>
+                                </widget>
+                                <widget class="QToolButton">
+                                    <property name="name">
+                                        <cstring>mBtnOpn</cstring>
+                                    </property>
+                                    <property name="focusPolicy">
+                                        <enum>TabFocus</enum>
+                                    </property>
+                                    <property name="text">
+                                        <string></string>
+                                    </property>
+                                    <property name="accel">
+                                        <string>Ctrl+Space</string>
+                                    </property>
+                                    <property name="autoRaise">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="toolTip" stdset="0">
+                                        <string>Select (Ctrl+Space)</string>
+                                    </property>
+                                    <property name="whatsThis" stdset="0">
+                                        <string>Invokes the Virtual Disk Manager to select a VDI image to attach.</string>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>mSpHD</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>10</width>
+                                            <height>0</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </vbox>
+                        </widget>
+                    </hbox>
+                </widget>
+            </vbox>
+        </widget>
+    </vbox>
+</widget>
+<includes>
+    <include location="local" impldecl="in declaration">COMDefs.h</include>
+    <include location="global" impldecl="in implementation">qptrvector.h</include>
+    <include location="global" impldecl="in implementation">qcombobox.h</include>
+    <include location="global" impldecl="in implementation">qlistbox.h</include>
+    <include location="global" impldecl="in implementation">qobjectlist.h</include>
+    <include location="global" impldecl="in implementation">qaction.h</include>
+    <include location="global" impldecl="in implementation">qpopupmenu.h</include>
+    <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
+    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
+    <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
+    <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
+    <include location="local" impldecl="in implementation">VBoxHardDiskSettings.ui.h</include>
+</includes>
+<forwards>
+    <forward>class HDSlotUniquizer</forward>
+    <forward>class HDListItem</forward>
+</forwards>
+<variables>
+    <variable access="private">QListViewItem *mPrevItem;</variable>
+    <variable access="private">HDSlotUniquizer *mSlotUniquizer;</variable>
+    <variable access="private">CMachine mMachine;</variable>
+</variables>
+<signals>
+    <signal>afterCurrentChanged()</signal>
+    <signal>hddListChanged()</signal>
+</signals>
+<slots>
+    <slot>addHDItem()</slot>
+    <slot>delHDItem()</slot>
+    <slot>showVDM()</slot>
+    <slot>moveFocus( QListViewItem *, const QPoint &amp;, int )</slot>
+    <slot>onCurrentChanged( QListViewItem * )</slot>
+    <slot>onToggleSATAController( bool aOn )</slot>
+    <slot>onAfterCurrentChanged( QListViewItem * )</slot>
+    <slot>onContextMenuRequested( QListViewItem *, const QPoint &amp;, int )</slot>
+</slots>
+<functions>
+    <function access="private">init()</function>
+    <function>getFromMachine( const CMachine &amp; )</function>
+    <function>putBackToMachine()</function>
+    <function returnType="QString">checkValidity()</function>
+    <function access="private" returnType="HDListItem*">createItem( HDSlotUniquizer *, const CMachine &amp; )</function>
+    <function access="private" returnType="bool">event( QEvent * )</function>
+    <function access="private" returnType="bool">eventFilter( QObject * , QEvent * )</function>
+</functions>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>
