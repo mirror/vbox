@@ -26,6 +26,7 @@
 #include <VBox/mm.h>
 #include "CPUMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/pgm.h>
 #include <VBox/err.h>
 #include <VBox/dis.h>
 #include <VBox/log.h>
@@ -1030,7 +1031,12 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         {
             if (!(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_PAE))
             {
-                AssertMsgFailed(("ERROR: Can't turn on PAE when the host doesn't support it!!\n"));
+                LogRel(("WARNING: Can't turn on PAE when the host doesn't support it!!\n"));
+                return;
+            }
+            if (PGMGetShadowMode(pVM) <= PGMMODE_32_BIT)
+            {
+                LogRel(("WARNING: Can't turn on PAE when the host is in 32 bits paging mode!!\n"));
                 return;
             }
 
