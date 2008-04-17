@@ -1517,6 +1517,26 @@ check_darwinversion()
 
 
 #
+# Checks that i386-elf-gcc-3.4.6, i386-elf-gcc-3.4.3, i386-elf-gcc-3.4 or i386-elf-gcc 
+# is around to prevent confusion when the build fails in src/recompiler. 
+# Note. Keep the which order in sync with the $(which ) in src/recompiler/Makefile.kmk.
+#
+check_i386elfgcc()
+{
+  test_header "i386-elf-gcc"
+  i386_elf_gcc=`which_wrapper i386-elf-gcc-3.4.6`
+  test -z "$i386_elf_gcc" && i386_elf_gcc=`which_wrapper i386-elf-gcc-3.4.3`
+  test -z "$i386_elf_gcc" && i386_elf_gcc=`which_wrapper i386-elf-gcc-3.4`
+  test -z "$i386_elf_gcc" && i386_elf_gcc=`which_wrapper i386-elf-gcc`
+  if test -z "$i386_elf_gcc"; then
+    echo "  failed to find i386-elf-gcc"
+    fail
+  fi
+  log_success "found $i386_elf_gcc"
+}
+
+
+#
 # Show help
 #
 show_help()
@@ -1801,6 +1821,7 @@ fi
 # Darwin-specific
 if [ "$OS" = "darwin" ]; then
   check_darwinversion
+  check_i386elfgcc
 fi
 
 # success!
