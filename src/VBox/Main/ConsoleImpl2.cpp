@@ -87,7 +87,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     AssertComRCReturn (autoCaller.rc(), VERR_ACCESS_DENIED);
 
     /* lock the console because we widely use internal fields and methods */
-    AutoLock alock (pConsole);
+    AutoWriteLock alock (pConsole);
 
     ComPtr <IMachine> pMachine = pConsole->machine();
 

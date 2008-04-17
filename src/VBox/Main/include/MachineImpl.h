@@ -590,7 +590,7 @@ public:
                              ComObjPtr <SharedFolder> &aSharedFolder,
                              bool aSetError = false)
     {
-        AutoLock alock (this);
+        AutoWriteLock alock (this);
         return findSharedFolder (aName, aSharedFolder, aSetError);
     }
 
@@ -615,7 +615,7 @@ protected:
     HRESULT initDataAndChildObjects();
     void uninitDataAndChildObjects();
 
-    void ensureNoStateDependencies (AutoLock &aLock);
+    void ensureNoStateDependencies (AutoWriteLock &aLock);
 
     virtual HRESULT setMachineState (MachineState_T aMachineState);
 

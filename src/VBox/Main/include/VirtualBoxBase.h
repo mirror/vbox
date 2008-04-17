@@ -448,7 +448,7 @@ protected:
 
 public:
 
-    // AutoLock::Lockable interface
+    // util::Lockable interface
     virtual RWLockHandle *lockHandle() const;
 
     /**
@@ -1663,7 +1663,7 @@ public:
         //  there is a separate mutex for state transition, so calling the
         //  child's uninit() from under the children map lock should not produce
         //  dead-locks any more).
-        Assert (!child->isLockedOnCurrentThread());
+        Assert (!child->isWriteLockOnCurrentThread());
         removeDependentChild (ComPtr <IUnknown> (child));
     }
 
@@ -1797,7 +1797,7 @@ public:
     void removeDependentChild (C *aChild)
     {
         AssertReturnVoid (aChild);
-        Assert (!aChild->isLockedOnCurrentThread());
+        Assert (!aChild->isWriteLockOnCurrentThread());
         doRemoveDependentChild (ComPtr <IUnknown> (aChild));
     }
 
@@ -1874,7 +1874,7 @@ public:
     {
         AssertReturn (child, (void) 0);
 
-        AutoLock alock (mMapLock);
+        AutoWriteLock alock (mMapLock);
         if (mInUninit)
             return;
 
@@ -1893,7 +1893,7 @@ public:
     {
         AssertReturn (child, (void) 0);
 
-        AutoLock alock (mMapLock);
+        AutoWriteLock alock (mMapLock);
         if (mInUninit)
             return;
 
@@ -1904,9 +1904,9 @@ protected:
 
     /**
      *  Returns an internal lock handle to lock the list of children
-     *  returned by #dependentChildren() using AutoLock:
+     *  returned by #dependentChildren() using AutoWriteLock:
      *  <code>
-     *      AutoLock alock (dependentChildrenLock());
+     *      AutoWriteLock alock (dependentChildrenLock());
      *  </code>
      */
     RWLockHandle *dependentChildrenLock() const { return &mMapLock; }
@@ -1915,7 +1915,7 @@ protected:
      *  Returns the read-only list of all dependent children.
      *  @note
      *      Access the returned list (iterate, get size etc.) only after
-     *      doing |AutoLock alock (dependentChildrenLock());|!
+     *      doing |AutoWriteLock alock (dependentChildrenLock());|!
      */
     const DependentChildren &dependentChildren() const { return mDependentChildren; }
 
@@ -1931,8 +1931,8 @@ protected:
      */
     void uninitDependentChildren()
     {
-        AutoLock alock (this);
-        AutoLock mapLock (mMapLock);
+        AutoWriteLock alock (this);
+        AutoWriteLock mapLock (mMapLock);
 
         if (mDependentChildren.size())
         {
@@ -1968,7 +1968,7 @@ protected:
      */
     void removeDependentChildren()
     {
-        AutoLock alock (mMapLock);
+        AutoWriteLock alock (mMapLock);
         mDependentChildren.clear();
     }
 
@@ -2028,7 +2028,7 @@ public:
     {
         AssertReturnVoid (aChild);
 
-        AutoLock alock (mMapLock);
+        AutoWriteLock alock (mMapLock);
         if (mInUninit)
             return;
 
@@ -2048,7 +2048,7 @@ public:
     {
         AssertReturnVoid (aChild);
 
-        AutoLock alock (mMapLock);
+        AutoWriteLock alock (mMapLock);
         if (mInUninit)
             return;
 
@@ -2059,10 +2059,10 @@ protected:
 
     /**
      * Returns an internal lock handle used to lock the list of children
-     * returned by #dependentChildren(). This lock is to be used by AutoLock as
-     * follows:
+     * returned by #dependentChildren(). This lock is to be used by
+     * AutoWriteLock as follows:
      * <code>
-     *      AutoLock alock (dependentChildrenLock());
+     *      AutoWriteLock alock (dependentChildrenLock());
      * </code>
      */
     RWLockHandle *dependentChildrenLock() const { return &mMapLock; }
@@ -2071,7 +2071,7 @@ protected:
      * Returns the read-only list of all dependent children.
      *
      * @note Access the returned list (iterate, get size etc.) only after doing
-     *       AutoLock alock (dependentChildrenLock())!
+     *       AutoWriteLock alock (dependentChildrenLock())!
      */
     const DependentChildren &dependentChildren() const { return mDependentChildren; }
 
@@ -2086,9 +2086,9 @@ protected:
     void removeDependentChildren()
     {
         /// @todo why?..
-        AssertReturnVoid (isLockedOnCurrentThread());
+        AssertReturnVoid (isWriteLockOnCurrentThread());
 
-        AutoLock alock (mMapLock);
+        AutoWriteLock alock (mMapLock);
         mDependentChildren.clear();
     }
 

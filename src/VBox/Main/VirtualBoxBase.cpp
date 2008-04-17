@@ -20,10 +20,10 @@
 #if !defined (VBOX_WITH_XPCOM)
 #include <windows.h>
 #include <dbghelp.h>
-#else // !defined (VBOX_WITH_XPCOM)
+#else /* !defined (VBOX_WITH_XPCOM) */
 #include <nsIServiceManager.h>
 #include <nsIExceptionService.h>
-#endif // !defined (VBOX_WITH_XPCOM)
+#endif /* !defined (VBOX_WITH_XPCOM) */
 
 #include "VirtualBoxBase.h"
 #include "VirtualBoxErrorInfoImpl.h"
@@ -58,7 +58,7 @@ VirtualBoxBaseNEXT_base::~VirtualBoxBaseNEXT_base()
     mState = NotReady;
 }
 
-// AutoLock::Lockable interface
+// util::Lockable interface
 RWLockHandle *VirtualBoxBaseNEXT_base::lockHandle() const
 {
     /* lasy initialization */
@@ -126,7 +126,7 @@ RWLockHandle *VirtualBoxBaseNEXT_base::lockHandle() const
 HRESULT VirtualBoxBaseNEXT_base::addCaller (State *aState /* = NULL */,
                                             bool aLimited /* = false */)
 {
-    AutoLock stateLock (mStateLock);
+    AutoWriteLock stateLock (mStateLock);
 
     HRESULT rc = E_UNEXPECTED;
 
@@ -203,7 +203,7 @@ HRESULT VirtualBoxBaseNEXT_base::addCaller (State *aState /* = NULL */,
  */
 void VirtualBoxBaseNEXT_base::releaseCaller()
 {
-    AutoLock stateLock (mStateLock);
+    AutoWriteLock stateLock (mStateLock);
 
     if (mState == Ready || mState == Limited)
     {
@@ -261,7 +261,7 @@ AutoInitSpan (VirtualBoxBaseNEXT_base *aObj,  Status aStatus /* = Failed */)
 {
     Assert (aObj);
 
-    AutoLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock (mObj->mStateLock);
 
     Assert (mObj->mState != InInit && mObj->mState != InUninit &&
             mObj->mState != InitFailed);
@@ -284,7 +284,7 @@ VirtualBoxBaseNEXT_base::AutoInitSpan::~AutoInitSpan()
     if (!mOk)
         return;
 
-    AutoLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock (mObj->mStateLock);
 
     Assert (mObj->mState == InInit);
 
@@ -334,7 +334,7 @@ AutoReadySpan (VirtualBoxBaseNEXT_base *aObj)
 {
     Assert (aObj);
 
-    AutoLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock (mObj->mStateLock);
 
     Assert (mObj->mState != InInit && mObj->mState != InUninit &&
             mObj->mState != InitFailed);
@@ -357,7 +357,7 @@ VirtualBoxBaseNEXT_base::AutoReadySpan::~AutoReadySpan()
     if (!mOk)
         return;
 
-    AutoLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock (mObj->mStateLock);
 
     Assert (mObj->mState == InInit);
 
@@ -396,7 +396,7 @@ VirtualBoxBaseNEXT_base::AutoUninitSpan::AutoUninitSpan (VirtualBoxBaseNEXT_base
 {
     Assert (aObj);
 
-    AutoLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock (mObj->mStateLock);
 
     Assert (mObj->mState != InInit);
 
@@ -447,7 +447,7 @@ VirtualBoxBaseNEXT_base::AutoUninitSpan::~AutoUninitSpan()
     if (mUninitDone)
         return;
 
-    AutoLock stateLock (mObj->mStateLock);
+    AutoWriteLock stateLock (mObj->mStateLock);
 
     Assert (mObj->mState == InUninit);
 
@@ -480,95 +480,18 @@ VirtualBoxBaseNEXT_base::AutoUninitSpan::~AutoUninitSpan()
 const char *VirtualBoxBase::translate (const char *context, const char *sourceText,
                                        const char *comment)
 {
-//    Log(("VirtualBoxBase::translate:\n"
-//         "  context={%s}\n"
-//         "  sourceT={%s}\n"
-//         "  comment={%s}\n",
-//         context, sourceText, comment));
+#if 0
+    Log(("VirtualBoxBase::translate:\n"
+         "  context={%s}\n"
+         "  sourceT={%s}\n"
+         "  comment={%s}\n",
+         context, sourceText, comment));
+#endif
 
     /// @todo (dmik) incorporate Qt translation file parsing and lookup
 
     return sourceText;
 }
-
-/// @todo (dmik)
-//      Using StackWalk() is not necessary here once we have ASMReturnAddress().
-//      Delete later.
-
-#if defined(DEBUG) && 0
-
-//static
-void VirtualBoxBase::AutoLock::CritSectEnter (RTCRITSECT *aLock)
-{
-    AssertReturn (aLock, (void) 0);
-
-#if (defined(RT_OS_LINUX) || defined(RT_OS_OS2)) && defined(__GNUC__)
-
-    RTCritSectEnterDebug (aLock,
-                          "AutoLock::lock()/enter() return address >>>", 0,
-                          (RTUINTPTR) __builtin_return_address (1));
-
-#elif defined(RT_OS_WINDOWS)
-
-    STACKFRAME sf;
-    memset (&sf, 0, sizeof(sf));
-    {
-        __asm eip:
-        __asm mov eax, eip
-        __asm lea ebx, sf
-        __asm mov [ebx]sf.AddrPC.Offset, eax
-        __asm mov [ebx]sf.AddrStack.Offset, esp
-        __asm mov [ebx]sf.AddrFrame.Offset, ebp
-    }
-    sf.AddrPC.Mode         = AddrModeFlat;
-    sf.AddrStack.Mode      = AddrModeFlat;
-    sf.AddrFrame.Mode      = AddrModeFlat;
-
-    HANDLE process = GetCurrentProcess();
-    HANDLE thread = GetCurrentThread();
-
-    // get our stack frame
-    BOOL ok = StackWalk (IMAGE_FILE_MACHINE_I386, process, thread,
-                         &sf, NULL, NULL,
-                         SymFunctionTableAccess,
-                         SymGetModuleBase,
-                         NULL);
-    // sanity check of the returned stack frame
-    ok = ok & (sf.AddrFrame.Offset != 0);
-    if (ok)
-    {
-        // get the stack frame of our caller which is either
-        // lock() or enter()
-        ok = StackWalk (IMAGE_FILE_MACHINE_I386, process, thread,
-                        &sf, NULL, NULL,
-                        SymFunctionTableAccess,
-                        SymGetModuleBase,
-                        NULL);
-        // sanity check of the returned stack frame
-        ok = ok & (sf.AddrFrame.Offset != 0);
-    }
-
-    if (ok)
-    {
-        // the return address here should be the code where lock() or enter()
-        // has been called from (to be more precise, where it will return)
-        RTCritSectEnterDebug (aLock,
-                              "AutoLock::lock()/enter() return address >>>", 0,
-                              (RTUINTPTR) sf.AddrReturn.Offset);
-    }
-    else
-    {
-        RTCritSectEnter (aLock);
-    }
-
-#else
-
-    RTCritSectEnter (aLock);
-
-#endif // defined(RT_OS_LINUX)...
-}
-
-#endif // defined(DEBUG)
 
 // VirtualBoxSupportTranslationBase methods
 ////////////////////////////////////////////////////////////////////////////////
@@ -826,8 +749,8 @@ void VirtualBoxBaseWithChildren::uninitDependentChildren()
 
     LogFlowThisFuncEnter();
 
-    AutoLock alock (this);
-    AutoLock mapLock (mMapLock);
+    AutoWriteLock alock (this);
+    AutoWriteLock mapLock (mMapLock);
 
     LogFlowThisFunc (("count=%d...\n", mDependentChildren.size()));
 
@@ -898,7 +821,7 @@ VirtualBoxBase *VirtualBoxBaseWithChildren::getDependentChild (
 {
     AssertReturn (!!unk, NULL);
 
-    AutoLock alock (mMapLock);
+    AutoWriteLock alock (mMapLock);
     if (mUninitDoneSem != NIL_RTSEMEVENT)
         return NULL;
 
@@ -914,7 +837,7 @@ void VirtualBoxBaseWithChildren::addDependentChild (
 {
     AssertReturn (!!unk && child, (void) 0);
 
-    AutoLock alock (mMapLock);
+    AutoWriteLock alock (mMapLock);
 
     if (mUninitDoneSem != NIL_RTSEMEVENT)
     {
@@ -937,7 +860,7 @@ void VirtualBoxBaseWithChildren::removeDependentChild (const ComPtr <IUnknown> &
 
     AssertReturn (!!unk, (void) 0);
 
-    AutoLock alock (mMapLock);
+    AutoWriteLock alock (mMapLock);
 
     if (mUninitDoneSem != NIL_RTSEMEVENT)
     {
@@ -974,7 +897,7 @@ void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
 {
     LogFlowThisFuncEnter();
 
-    AutoLock mapLock (mMapLock);
+    AutoWriteLock mapLock (mMapLock);
 
     LogFlowThisFunc (("count=%u...\n", mDependentChildren.size()));
 
@@ -1044,7 +967,7 @@ VirtualBoxBaseWithChildrenNEXT::getDependentChild (const ComPtr <IUnknown> &aUnk
 {
     AssertReturn (!!aUnk, NULL);
 
-    AutoLock alock (mMapLock);
+    AutoWriteLock alock (mMapLock);
 
     /* return NULL if uninitDependentChildren() is in action */
     if (mUninitDoneSem != NIL_RTSEMEVENT)
@@ -1061,7 +984,7 @@ void VirtualBoxBaseWithChildrenNEXT::doAddDependentChild (
 {
     AssertReturnVoid (aUnk && aChild);
 
-    AutoLock alock (mMapLock);
+    AutoWriteLock alock (mMapLock);
 
     if (mUninitDoneSem != NIL_RTSEMEVENT)
     {
@@ -1081,7 +1004,7 @@ void VirtualBoxBaseWithChildrenNEXT::doRemoveDependentChild (IUnknown *aUnk)
 {
     AssertReturnVoid (aUnk);
 
-    AutoLock alock (mMapLock);
+    AutoWriteLock alock (mMapLock);
 
     if (mUninitDoneSem != NIL_RTSEMEVENT)
     {
@@ -1119,7 +1042,7 @@ void VirtualBoxBaseWithChildrenNEXT::doRemoveDependentChild (IUnknown *aUnk)
 template <class C>
 void VirtualBoxBaseWithTypedChildrenNEXT <C>::uninitDependentChildren()
 {
-    AutoLock mapLock (mMapLock);
+    AutoWriteLock mapLock (mMapLock);
 
     if (mDependentChildren.size())
     {

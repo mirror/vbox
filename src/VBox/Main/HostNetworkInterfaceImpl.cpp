@@ -42,7 +42,7 @@ HRESULT HostNetworkInterface::init (Bstr interfaceName, Guid guid)
     ComAssertRet (interfaceName, E_INVALIDARG);
     ComAssertRet (!guid.isEmpty(), E_INVALIDARG);
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     mInterfaceName = interfaceName;
     mGuid = guid;
     setReady(true);
@@ -62,7 +62,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Name) (BSTR *interfaceName)
 {
     if (!interfaceName)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     mInterfaceName.cloneTo(interfaceName);
     return S_OK;
@@ -78,7 +78,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (GUIDPARAMOUT guid)
 {
     if (!guid)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     mGuid.cloneTo(guid);
     return S_OK;

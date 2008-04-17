@@ -598,7 +598,7 @@ void Machine::uninit()
 {
     LogFlowThisFuncEnter();
 
-    Assert (!isLockedOnCurrentThread());
+    Assert (!isWriteLockOnCurrentThread());
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan (this);
@@ -702,7 +702,7 @@ STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = S_OK;
 
@@ -733,7 +733,7 @@ STDMETHODIMP Machine::COMGETTER(AccessError) (IVirtualBoxErrorInfo **aAccessErro
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     if (mData->mAccessible || !mData->mAccessError.isBasicAvailable())
     {
@@ -766,7 +766,7 @@ STDMETHODIMP Machine::COMGETTER(Name) (BSTR *aName)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mUserData->mName.cloneTo (aName);
 
@@ -785,7 +785,7 @@ STDMETHODIMP Machine::COMSETTER(Name) (INPTR BSTR aName)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -804,7 +804,7 @@ STDMETHODIMP Machine::COMGETTER(Description) (BSTR *aDescription)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mUserData->mDescription.cloneTo (aDescription);
 
@@ -816,7 +816,7 @@ STDMETHODIMP Machine::COMSETTER(Description) (INPTR BSTR aDescription)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -835,7 +835,7 @@ STDMETHODIMP Machine::COMGETTER(Id) (GUIDPARAMOUT aId)
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mUuid.cloneTo (aId);
 
@@ -850,7 +850,7 @@ STDMETHODIMP Machine::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mUserData->mOSTypeId.cloneTo (aOSTypeId);
 
@@ -871,7 +871,7 @@ STDMETHODIMP Machine::COMSETTER(OSTypeId) (INPTR BSTR aOSTypeId)
                                           guestOSType.asOutParam());
     CheckComRCReturnRC (rc);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -890,7 +890,7 @@ STDMETHODIMP Machine::COMGETTER(MemorySize) (ULONG *memorySize)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *memorySize = mHWData->mMemorySize;
 
@@ -909,7 +909,7 @@ STDMETHODIMP Machine::COMSETTER(MemorySize) (ULONG memorySize)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -928,7 +928,7 @@ STDMETHODIMP Machine::COMGETTER(VRAMSize) (ULONG *memorySize)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *memorySize = mHWData->mVRAMSize;
 
@@ -947,7 +947,7 @@ STDMETHODIMP Machine::COMSETTER(VRAMSize) (ULONG memorySize)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -967,7 +967,7 @@ STDMETHODIMP Machine::COMGETTER(MemoryBalloonSize) (ULONG *memoryBalloonSize)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *memoryBalloonSize = mHWData->mMemoryBalloonSize;
 
@@ -986,7 +986,7 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize) (ULONG memoryBalloonSize)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -1006,7 +1006,7 @@ STDMETHODIMP Machine::COMGETTER(StatisticsUpdateInterval) (ULONG *statisticsUpda
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *statisticsUpdateInterval = mHWData->mStatisticsUpdateInterval;
 
@@ -1019,7 +1019,7 @@ STDMETHODIMP Machine::COMSETTER(StatisticsUpdateInterval) (ULONG statisticsUpdat
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -1039,7 +1039,7 @@ STDMETHODIMP Machine::COMGETTER(MonitorCount) (ULONG *monitorCount)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *monitorCount = mHWData->mMonitorCount;
 
@@ -1057,7 +1057,7 @@ STDMETHODIMP Machine::COMSETTER(MonitorCount) (ULONG monitorCount)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -1090,7 +1090,7 @@ STDMETHODIMP Machine::COMGETTER(HWVirtExEnabled)(TSBool_T *enabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *enabled = mHWData->mHWVirtExEnabled;
 
@@ -1102,7 +1102,7 @@ STDMETHODIMP Machine::COMSETTER(HWVirtExEnabled)(TSBool_T enable)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -1123,7 +1123,7 @@ STDMETHODIMP Machine::COMGETTER(PAEEnabled)(BOOL *enabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *enabled = mHWData->mPAEEnabled;
 
@@ -1135,7 +1135,7 @@ STDMETHODIMP Machine::COMSETTER(PAEEnabled)(BOOL enable)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -1156,7 +1156,7 @@ STDMETHODIMP Machine::COMGETTER(SnapshotFolder) (BSTR *aSnapshotFolder)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mUserData->mSnapshotFolderFull.cloneTo (aSnapshotFolder);
 
@@ -1176,7 +1176,7 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (INPTR BSTR aSnapshotFolder)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -1224,7 +1224,7 @@ STDMETHODIMP Machine::COMGETTER(HardDiskAttachments) (IHardDiskAttachmentCollect
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     ComObjPtr <HardDiskAttachmentCollection> collection;
     collection.createObject();
@@ -1243,7 +1243,7 @@ STDMETHODIMP Machine::COMGETTER(VRDPServer)(IVRDPServer **vrdpServer)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Assert (!!mVRDPServer);
     mVRDPServer.queryInterfaceTo (vrdpServer);
@@ -1262,7 +1262,7 @@ STDMETHODIMP Machine::COMGETTER(DVDDrive) (IDVDDrive **dvdDrive)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Assert (!!mDVDDrive);
     mDVDDrive.queryInterfaceTo (dvdDrive);
@@ -1277,7 +1277,7 @@ STDMETHODIMP Machine::COMGETTER(FloppyDrive) (IFloppyDrive **floppyDrive)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Assert (!!mFloppyDrive);
     mFloppyDrive.queryInterfaceTo (floppyDrive);
@@ -1292,7 +1292,7 @@ STDMETHODIMP Machine::COMGETTER(AudioAdapter)(IAudioAdapter **audioAdapter)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mAudioAdapter.queryInterfaceTo (audioAdapter);
     return S_OK;
@@ -1310,7 +1310,7 @@ STDMETHODIMP Machine::COMGETTER(USBController) (IUSBController **aUSBController)
     MultiResult rc = mParent->host()->checkUSBProxyService();
     CheckComRCReturnRC (rc);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     return rc = mUSBController.queryInterfaceTo (aUSBController);
 #else
@@ -1330,7 +1330,7 @@ STDMETHODIMP Machine::COMGETTER(SATAController) (ISATAController **aSATAControll
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     return mSATAController.queryInterfaceTo (aSATAController);
 #else
@@ -1349,7 +1349,7 @@ STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *aFilePath)
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mConfigFileFull.cloneTo (aFilePath);
     return S_OK;
@@ -1364,7 +1364,7 @@ COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mSettingsFileVersion.cloneTo (aSettingsFileVersion);
     return S_OK;
@@ -1378,7 +1378,7 @@ STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *aModified)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -1407,7 +1407,7 @@ STDMETHODIMP Machine::COMGETTER(SessionState) (SessionState_T *aSessionState)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aSessionState = mData->mSession.mState;
 
@@ -1422,7 +1422,7 @@ STDMETHODIMP Machine::COMGETTER(SessionType) (BSTR *aSessionType)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mSession.mType.cloneTo (aSessionType);
 
@@ -1437,7 +1437,7 @@ STDMETHODIMP Machine::COMGETTER(SessionPid) (ULONG *aSessionPid)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aSessionPid = mData->mSession.mPid;
 
@@ -1452,7 +1452,7 @@ STDMETHODIMP Machine::COMGETTER(State) (MachineState_T *machineState)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *machineState = mData->mMachineState;
 
@@ -1467,7 +1467,7 @@ STDMETHODIMP Machine::COMGETTER(LastStateChange) (LONG64 *aLastStateChange)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aLastStateChange = RTTimeSpecGetMilli (&mData->mLastStateChange);
 
@@ -1482,7 +1482,7 @@ STDMETHODIMP Machine::COMGETTER(StateFilePath) (BSTR *aStateFilePath)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mSSData->mStateFilePath.cloneTo (aStateFilePath);
 
@@ -1497,7 +1497,7 @@ STDMETHODIMP Machine::COMGETTER(LogFolder) (BSTR *aLogFolder)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Utf8Str logFolder;
     getLogFolder (logFolder);
@@ -1515,7 +1515,7 @@ STDMETHODIMP Machine::COMGETTER(CurrentSnapshot) (ISnapshot **aCurrentSnapshot)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mCurrentSnapshot.queryInterfaceTo (aCurrentSnapshot);
 
@@ -1530,7 +1530,7 @@ STDMETHODIMP Machine::COMGETTER(SnapshotCount) (ULONG *aSnapshotCount)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aSnapshotCount = !mData->mFirstSnapshot ? 0 :
                       mData->mFirstSnapshot->descendantCount() + 1 /* self */;
@@ -1546,7 +1546,7 @@ STDMETHODIMP Machine::COMGETTER(CurrentStateModified) (BOOL *aCurrentStateModifi
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     /*
      *  Note: for machines with no snapshots, we always return FALSE
@@ -1569,7 +1569,7 @@ Machine::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     ComObjPtr <SharedFolderCollection> coll;
     coll.createObject();
@@ -1588,7 +1588,7 @@ Machine::COMGETTER(ClipboardMode) (ClipboardMode_T *aClipboardMode)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aClipboardMode = mHWData->mClipboardMode;
 
@@ -1601,7 +1601,7 @@ Machine::COMSETTER(ClipboardMode) (ClipboardMode_T aClipboardMode)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -1629,7 +1629,7 @@ STDMETHODIMP Machine::SetBootOrder (ULONG aPosition, DeviceType_T aDevice)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -1650,7 +1650,7 @@ STDMETHODIMP Machine::GetBootOrder (ULONG aPosition, DeviceType_T *aDevice)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aDevice = mHWData->mBootOrder [aPosition - 1];
 
@@ -1692,7 +1692,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
         if (hda->bus() == aBus && hda->channel() == aChannel && hda->device() == aDevice)
         {
             ComObjPtr <HardDisk> hd = hda->hardDisk();
-            AutoLock hdLock (hd);
+            AutoWriteLock hdLock (hd);
             return setError (E_FAIL,
                 tr ("Hard disk '%ls' is already attached to device slot %d on "
                     "channel %d of bus %d"),
@@ -1711,7 +1711,7 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
     rc = attachment->init (hd, aBus, aChannel, aDevice, false /* aDirty */);
     CheckComRCReturnRC (rc);
 
-    AutoLock hdLock (hd);
+    AutoWriteLock hdLock (hd);
 
     if (hd->isDifferencing())
         return setError (E_FAIL,
@@ -1838,7 +1838,7 @@ STDMETHODIMP Machine::GetHardDisk (StorageBus_T aBus, LONG aChannel,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aHardDisk = NULL;
 
@@ -1866,7 +1866,7 @@ STDMETHODIMP Machine::DetachHardDisk (StorageBus_T aBus, LONG aChannel, LONG aDe
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -1884,7 +1884,7 @@ STDMETHODIMP Machine::DetachHardDisk (StorageBus_T aBus, LONG aChannel, LONG aDe
         if (hda->bus() == aBus && hda->channel() == aChannel && hda->device() == aDevice)
         {
             ComObjPtr <HardDisk> hd = hda->hardDisk();
-            AutoLock hdLock (hd);
+            AutoWriteLock hdLock (hd);
 
             ComAssertRet (hd->children().size() == 0 &&
                           hd->machineId() == mData->mUuid, E_FAIL);
@@ -1960,7 +1960,7 @@ STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mSerialPorts [slot].queryInterfaceTo (port);
 
@@ -1977,7 +1977,7 @@ STDMETHODIMP Machine::GetParallelPort (ULONG slot, IParallelPort **port)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mParallelPorts [slot].queryInterfaceTo (port);
 
@@ -1994,7 +1994,7 @@ STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mNetworkAdapters [slot].queryInterfaceTo (adapter);
 
@@ -2013,7 +2013,7 @@ STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR
     CheckComRCReturnRC (autoCaller.rc());
 
     /* serialize file access (prevent writes) */
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     /* start with nothing found */
     *aNextKey = NULL;
@@ -2118,7 +2118,7 @@ STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* serialize file access (prevent writes) */
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     /* start with nothing found */
     *aValue = NULL;
@@ -2347,7 +2347,7 @@ STDMETHODIMP Machine::DiscardSettings()
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -2366,7 +2366,7 @@ STDMETHODIMP Machine::DeleteSettings()
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -2441,7 +2441,7 @@ STDMETHODIMP Machine::GetSnapshot (INPTR GUIDPARAM aId, ISnapshot **aSnapshot)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Guid id = aId;
     ComObjPtr <Snapshot> snapshot;
@@ -2462,7 +2462,7 @@ STDMETHODIMP Machine::FindSnapshot (INPTR BSTR aName, ISnapshot **aSnapshot)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     ComObjPtr <Snapshot> snapshot;
 
@@ -2489,7 +2489,7 @@ Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -2530,7 +2530,7 @@ STDMETHODIMP Machine::RemoveSharedFolder (INPTR BSTR aName)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
@@ -2562,7 +2562,7 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
 
         if (mData->mSession.mState != SessionState_Open)
             return setError (E_FAIL,
@@ -2590,7 +2590,7 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
 
         if (mData->mSession.mState != SessionState_Open)
             return setError (E_FAIL,
@@ -2628,7 +2628,7 @@ ComObjPtr <SessionMachine> Machine::sessionMachine()
     if (autoCaller.state() != Ready)
         return sm;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     sm = mData->mSession.mMachine;
     Assert (!sm.isNull() ||
@@ -2651,7 +2651,7 @@ HRESULT Machine::saveRegistryEntry (settings::Key &aEntryNode)
     AutoLimitedCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     /* UUID */
     aEntryNode.setValue <Guid> ("uuid", mData->mUuid);
@@ -2677,7 +2677,7 @@ int Machine::calculateFullPath (const char *aPath, Utf8Str &aResult)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     AssertReturn (!mData->mConfigFileFull.isNull(), VERR_GENERAL_FAILURE);
 
@@ -2709,7 +2709,7 @@ void Machine::calculateRelativePath (const char *aPath, Utf8Str &aResult)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), (void) 0);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     AssertReturnVoid (!mData->mConfigFileFull.isNull());
 
@@ -2736,7 +2736,7 @@ void Machine::getLogFolder (Utf8Str &aLogFolder)
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Utf8Str settingsDir;
     if (isInOwnDir (&settingsDir))
@@ -2771,7 +2771,7 @@ bool Machine::isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage)
     if (autoCaller.state() == Limited)
         return false;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Machine *m = this;
 
@@ -2784,7 +2784,7 @@ bool Machine::isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage)
         const ComObjPtr <DVDDrive> &dvd = m->mDVDDrive;
         AssertReturn (!dvd.isNull(), false);
 
-        AutoReaderLock dvdLock (dvd);
+        AutoReadLock dvdLock (dvd);
 
         /* loop over the backed up (permanent) and current (temporary) DVD data */
         DVDDrive::Data *d [2];
@@ -2847,7 +2847,7 @@ bool Machine::isFloppyImageUsed (const Guid &aId, ResourceUsage_T aUsage)
     if (autoCaller.state() == Limited)
         return false;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Machine *m = this;
 
@@ -2860,7 +2860,7 @@ bool Machine::isFloppyImageUsed (const Guid &aId, ResourceUsage_T aUsage)
         const ComObjPtr <FloppyDrive> &floppy = m->mFloppyDrive;
         AssertReturn (!floppy.isNull(), false);
 
-        AutoReaderLock floppyLock (floppy);
+        AutoReadLock floppyLock (floppy);
 
         /* loop over the backed up (permanent) and current (temporary) Floppy data */
         FloppyDrive::Data *d [2];
@@ -3113,7 +3113,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (!mData->mRegistered)
         return setError (E_UNEXPECTED,
@@ -3333,7 +3333,7 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (!mData->mRegistered)
         return setError (E_UNEXPECTED,
@@ -3420,12 +3420,12 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
  */
 HRESULT Machine::trySetRegistered (BOOL aRegistered)
 {
-    AssertReturn (mParent->isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (mParent->isWriteLockOnCurrentThread(), E_FAIL);
 
     AutoLimitedCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* wait for state dependants to drop to zero */
     ensureNoStateDependencies (alock);
@@ -3535,13 +3535,13 @@ HRESULT Machine::addStateDependency (StateDependency aDepType /* = AnyStateDep *
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     HRESULT rc = checkStateDependency (aDepType);
     CheckComRCReturnRC (rc);
 
     {
-        AutoLock stateLock (stateLockHandle());
+        AutoWriteLock stateLock (stateLockHandle());
 
         if (mData->mMachineStateChangePending != 0)
         {
@@ -3579,7 +3579,7 @@ void Machine::releaseStateDependency()
 {
     /* stateLockHandle() is the same handle that is used by AutoCaller
      * so lock it in advance to avoid two mutex requests in a raw */
-    AutoLock stateLock (stateLockHandle());
+    AutoWriteLock stateLock (stateLockHandle());
 
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -3879,12 +3879,12 @@ void Machine::uninitDataAndChildObjects()
  *
  * @warning To be used only in methods that change the machine state!
  */
-void Machine::ensureNoStateDependencies (AutoLock &aLock)
+void Machine::ensureNoStateDependencies (AutoWriteLock &aLock)
 {
     AssertReturnVoid (aLock.belongsTo (this));
-    AssertReturnVoid (aLock.isLockedOnCurrentThread());
+    AssertReturnVoid (aLock.isWriteLockOnCurrentThread());
 
-    AutoLock stateLock (stateLockHandle());
+    AutoWriteLock stateLock (stateLockHandle());
 
     /* Wait for all state dependants if necessary */
     if (mData->mMachineStateDeps != 0)
@@ -3927,7 +3927,7 @@ HRESULT Machine::setMachineState (MachineState_T aMachineState)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* wait for state dependants to drop to zero */
     ensureNoStateDependencies (alock);
@@ -3968,7 +3968,7 @@ HRESULT Machine::findSharedFolder (const BSTR aName,
         !found && it != mHWData->mSharedFolders.end();
         ++ it)
     {
-        AutoLock alock (*it);
+        AutoWriteLock alock (*it);
         found = (*it)->name() == aName;
         if (found)
             aSharedFolder = *it;
@@ -4568,7 +4568,7 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
         rc = mParent->getHardDisk (uuid, hd);
         CheckComRCReturnRC (rc);
 
-        AutoLock hdLock (hd);
+        AutoWriteLock hdLock (hd);
 
         if (!hd->machineId().isEmpty())
         {
@@ -4861,8 +4861,8 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
      * registered (see prepareSaveSettings() for details) but we don't
      * currently differentiate it in callers of saveSettings() so we don't
      * make difference here too.  */
-    AssertReturn (mParent->isLockedOnCurrentThread(), E_FAIL);
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (mParent->isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -5097,8 +5097,8 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
      * registered (see prepareSaveSettings() for details) but we don't
      * currently differentiate it in callers of saveSettings() so we don't
      * make difference here too.  */
-    AssertReturn (mParent->isLockedOnCurrentThread(), E_FAIL);
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (mParent->isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     /// @todo (dmik) I guess we should lock all our child objects here
     //  (such as mVRDPServer etc.) to ensure they are not changed
@@ -5341,7 +5341,7 @@ HRESULT Machine::saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags)
 
     /* This object's write lock is also necessary to serialize file access
      * (prevent concurrent reads and writes) */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     AssertReturn (isConfigLocked(), E_FAIL);
 
@@ -5404,7 +5404,7 @@ HRESULT Machine::saveSnapshotSettingsWorker (settings::Key &aMachineNode,
 
     AssertReturn (!aMachineNode.isNull(), E_FAIL);
 
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     int op = aOpFlags & SaveSS_OpMask;
     AssertReturn (
@@ -5622,7 +5622,7 @@ HRESULT Machine::saveSnapshot (settings::Key &aNode, Snapshot *aSnapshot, bool a
 
     /* save children */
     {
-        AutoLock listLock (aSnapshot->childrenLock());
+        AutoWriteLock listLock (aSnapshot->childrenLock ());
 
         if (aSnapshot->children().size())
         {
@@ -5919,7 +5919,7 @@ HRESULT Machine::saveStateSettings (int aFlags)
 
     /* This object's write lock is also necessary to serialize file access
      * (prevent concurrent reads and writes) */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     AssertReturn (isConfigLocked(), E_FAIL);
 
@@ -5995,7 +5995,7 @@ HRESULT Machine::wipeOutImmutableDiffs()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     AssertReturn (mData->mMachineState == MachineState_PoweredOff ||
                   mData->mMachineState == MachineState_Aborted, E_FAIL);
@@ -6005,7 +6005,7 @@ HRESULT Machine::wipeOutImmutableDiffs()
          ++ it)
     {
         ComObjPtr <HardDisk> hd = (*it)->hardDisk();
-        AutoLock hdLock (hd);
+        AutoWriteLock hdLock (hd);
 
         if(hd->isParentImmutable())
         {
@@ -6030,7 +6030,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* no attac/detach operations -- nothing to do */
     if (!mHDData.isBackedUp())
@@ -6063,7 +6063,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
         {
             ComObjPtr <HardDiskAttachment> hda = *it;
             ComObjPtr <HardDisk> hd = hda->hardDisk();
-            AutoLock hdLock (hd);
+            AutoWriteLock hdLock (hd);
 
             if (!hda->isDirty())
             {
@@ -6232,7 +6232,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
 
                     while (snap)
                     {
-                        AutoLock snapLock (snap);
+                        AutoWriteLock snapLock (snap);
 
                         const HDData::HDAttachmentList &snapAtts =
                             snap->data().mMachine->mHDData->mHDAttachments;
@@ -6278,7 +6278,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
 
                 /* create a new diff for the hard disk being indirectly attached */
 
-                AutoLock baseHdLock (baseHd);
+                AutoWriteLock baseHdLock (baseHd);
                 baseHd->addReader();
 
                 ComObjPtr <HVirtualDiskImage> vdi;
@@ -6327,7 +6327,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
         {
             ComObjPtr <HardDiskAttachment> hda = *it;
             ComObjPtr <HardDisk> hd = hda->hardDisk();
-            AutoLock hdLock (hd);
+            AutoWriteLock hdLock (hd);
 
             if (hd->isDifferencing())
             {
@@ -6370,7 +6370,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
     {
         ComObjPtr <HardDiskAttachment> hda = *it;
         ComObjPtr <HardDisk> hd = hda->hardDisk();
-        AutoLock hdLock (hd);
+        AutoWriteLock hdLock (hd);
 
         if (hda->isDirty())
         {
@@ -6462,7 +6462,7 @@ HRESULT Machine::createSnapshotDiffs (const Guid *aSnapshotId,
         {
             ComObjPtr <HardDiskAttachment> hda = *it;
             ComObjPtr <HardDisk> hd = hda->hardDisk();
-            AutoLock hdLock (hd);
+            AutoWriteLock hdLock (hd);
 
             ComAssertMsgBreak (hd->type() == HardDiskType_Normal,
                                ("Invalid hard disk type %d\n", hd->type()),
@@ -6497,10 +6497,10 @@ HRESULT Machine::createSnapshotDiffs (const Guid *aSnapshotId,
     {
         ComObjPtr <HardDiskAttachment> hda = *it;
         ComObjPtr <HardDisk> hd = hda->hardDisk();
-        AutoLock hdLock (hd);
+        AutoWriteLock hdLock (hd);
 
         ComObjPtr <HardDisk> parent = hd->parent();
-        AutoLock parentHdLock (parent);
+        AutoWriteLock parentHdLock (parent);
 
         ComObjPtr <HardDisk> newHd;
 
@@ -6608,7 +6608,7 @@ HRESULT Machine::createSnapshotDiffs (const Guid *aSnapshotId,
              ++ it)
         {
             ComObjPtr <HardDisk> hd = (*it)->hardDisk();
-            AutoLock hdLock (hd);
+            AutoWriteLock hdLock (hd);
             Assert (hd->children().size() == 0);
             Assert (hd->isDifferencing());
             // unregisterDiffHardDisk() is supposed to delete and uninit
@@ -6650,10 +6650,10 @@ HRESULT Machine::deleteSnapshotDiffs (const ComObjPtr <Snapshot> &aSnapshot)
     {
         ComObjPtr <HardDiskAttachment> hda = *it;
         ComObjPtr <HardDisk> hd = hda->hardDisk();
-        AutoLock hdLock (hd);
+        AutoWriteLock hdLock (hd);
 
         ComObjPtr <HardDisk> parent = hd->parent();
-        AutoLock parentHdLock (parent);
+        AutoWriteLock parentHdLock (parent);
 
         if (!parent || parent->snapshotId() != aSnapshot->data().mId)
             continue;
@@ -6765,7 +6765,7 @@ bool Machine::isModified()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
         if (mNetworkAdapters [slot] && mNetworkAdapters [slot]->isModified())
@@ -6807,7 +6807,7 @@ bool Machine::isReallyModified (bool aIgnoreUserData /* = false */)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
         if (mNetworkAdapters [slot] && mNetworkAdapters [slot]->isReallyModified())
@@ -6849,7 +6849,7 @@ void Machine::rollback (bool aNotify)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), (void) 0);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* check for changes in own data */
 
@@ -6987,7 +6987,7 @@ HRESULT Machine::commit()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = S_OK;
 
@@ -7192,7 +7192,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
 
     AssertReturn (aMachine, E_INVALIDARG);
 
-    AssertReturn (aMachine->lockHandle()->isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (aMachine->lockHandle()->isWriteLockOnCurrentThread(), E_FAIL);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
@@ -7526,7 +7526,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     LogFlowThisFuncLeave();
 }
 
-// AutoLock::Lockable interface
+// util::Lockable interface
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -7558,7 +7558,7 @@ STDMETHODIMP SessionMachine::GetIPCId (BSTR *id)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     mIPCSemName.cloneTo (id);
@@ -7862,7 +7862,7 @@ STDMETHODIMP SessionMachine::AdoptSavedState (INPTR BSTR aSavedStateFile)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     AssertReturn (mData->mMachineState == MachineState_PoweredOff ||
                   mData->mMachineState == MachineState_Aborted,
@@ -7931,7 +7931,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
          ++ it)
     {
         ComObjPtr <HardDisk> hd = (*it)->hardDisk();
-        AutoLock hdLock (hd);
+        AutoWriteLock hdLock (hd);
         if (hd->type() == HardDiskType_Writethrough)
             return setError (E_FAIL,
                 tr ("Cannot take a snapshot when there is a Writethrough hard "
@@ -8107,10 +8107,10 @@ STDMETHODIMP SessionMachine::DiscardSnapshot (
     HRESULT rc = findSnapshot (id, snapshot, true /* aSetError */);
     CheckComRCReturnRC (rc);
 
-    AutoLock snapshotLock (snapshot);
+    AutoWriteLock snapshotLock (snapshot);
     if (snapshot == mData->mFirstSnapshot)
     {
-        AutoLock chLock (mData->mFirstSnapshot->childrenLock());
+        AutoWriteLock chLock (mData->mFirstSnapshot->childrenLock ());
         size_t childrenCount = mData->mFirstSnapshot->children().size();
         if (childrenCount > 1)
             return setError (E_FAIL,
@@ -8355,7 +8355,7 @@ bool SessionMachine::checkForDeath()
             return true;
         }
 
-        AutoLock alock (this);
+        AutoWriteLock alock (this);
 
         /*
          *  Determine the reason of death: if the session state is Closing here,
@@ -8429,7 +8429,7 @@ HRESULT SessionMachine::onDVDDriveChange()
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         directControl = mData->mSession.mDirectControl;
     }
 
@@ -8452,7 +8452,7 @@ HRESULT SessionMachine::onFloppyDriveChange()
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         directControl = mData->mSession.mDirectControl;
     }
 
@@ -8475,7 +8475,7 @@ HRESULT SessionMachine::onNetworkAdapterChange(INetworkAdapter *networkAdapter)
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         directControl = mData->mSession.mDirectControl;
     }
 
@@ -8498,7 +8498,7 @@ HRESULT SessionMachine::onSerialPortChange(ISerialPort *serialPort)
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         directControl = mData->mSession.mDirectControl;
     }
 
@@ -8521,7 +8521,7 @@ HRESULT SessionMachine::onParallelPortChange(IParallelPort *parallelPort)
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         directControl = mData->mSession.mDirectControl;
     }
 
@@ -8544,7 +8544,7 @@ HRESULT SessionMachine::onVRDPServerChange()
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         directControl = mData->mSession.mDirectControl;
     }
 
@@ -8567,7 +8567,7 @@ HRESULT SessionMachine::onUSBControllerChange()
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         directControl = mData->mSession.mDirectControl;
     }
 
@@ -8590,7 +8590,7 @@ HRESULT SessionMachine::onSharedFolderChange()
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         directControl = mData->mSession.mDirectControl;
     }
 
@@ -8615,7 +8615,7 @@ bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDev
     if (!autoCaller.isOk())
         return false;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
 #ifdef VBOX_WITH_USB
     return mUSBController->hasMatchingFilter (aDevice, aMaskedIfs);
@@ -8641,7 +8641,7 @@ HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         directControl = mData->mSession.mDirectControl;
     }
 
@@ -8669,7 +8669,7 @@ HRESULT SessionMachine::onUSBDeviceDetach (INPTR GUIDPARAM aId,
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         directControl = mData->mSession.mDirectControl;
     }
 
@@ -8972,7 +8972,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
             ComObjPtr <HardDisk> hd = hda->hardDisk();
             ComObjPtr <HardDisk> parent = hd->parent();
 
-            AutoLock hdLock (hd);
+            AutoWriteLock hdLock (hd);
 
             if (hd->hasForeignChildren())
             {
@@ -8985,7 +8985,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
 
             if (hd->type() == HardDiskType_Normal)
             {
-                AutoLock hdChildrenLock (hd->childrenLock());
+                AutoWriteLock hdChildrenLock (hd->childrenLock ());
                 size_t childrenCount = hd->children().size();
                 if (childrenCount > 1)
                 {
@@ -9040,7 +9040,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
             ComObjPtr <HardDisk> hd = hda->hardDisk();
             ComObjPtr <HardDisk> parent = hd->parent();
 
-            AutoLock hdLock (hd);
+            AutoWriteLock hdLock (hd);
 
             Bstr hdRootString = hd->root()->toString (true /* aShort */);
 
@@ -9104,7 +9104,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
 
                 ComObjPtr <HardDisk> child;
                 {
-                    AutoLock hdChildrenLock (hd->childrenLock());
+                    AutoWriteLock hdChildrenLock (hd->childrenLock ());
                     if (hd->children().size())
                         child = hd->children().front();
                 }
@@ -9124,7 +9124,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                 }
                 else
                 {
-                    AutoLock childLock (child);
+                    AutoWriteLock childLock (child);
 
                     aTask.progress->advanceOperation (Bstr (Utf8StrFmt (
                         tr ("Preserving changes to normal hard disk '%ls'"),
@@ -9394,7 +9394,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
 
         {
             ComObjPtr <Snapshot> curSnapshot = mData->mCurrentSnapshot;
-            AutoLock snapshotLock (curSnapshot);
+            AutoWriteLock snapshotLock (curSnapshot);
 
             /* remember the timestamp of the snapshot we're restoring from */
             snapshotTimeStamp = curSnapshot->data().mTimeStamp;
@@ -9591,7 +9591,7 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     MachineState_T oldMachineState = mData->mMachineState;
 
@@ -9620,7 +9620,7 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
              ++ it)
         {
             ComObjPtr <HardDisk> hd = (*it)->hardDisk();
-            AutoLock hdLock (hd);
+            AutoWriteLock hdLock (hd);
             hd->setBusy();
             hd->addReaderOnAncestors();
         }
@@ -9640,7 +9640,7 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
              ++ it)
         {
             ComObjPtr <HardDisk> hd = (*it)->hardDisk();
-            AutoLock hdLock (hd);
+            AutoWriteLock hdLock (hd);
             hd->releaseReaderOnAncestors();
             hd->clearBusy();
         }
@@ -9761,7 +9761,7 @@ HRESULT SessionMachine::updateMachineStateOnClient()
 
     ComPtr <IInternalSessionControl> directControl;
     {
-        AutoReaderLock alock (this);
+        AutoReadLock alock (this);
         AssertReturn (!!mData, E_FAIL);
         directControl = mData->mSession.mDirectControl;
 
@@ -9843,7 +9843,7 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
     AutoInitSpan autoInitSpan (this);
     AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    AssertReturn (aSessionMachine->isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (aSessionMachine->isWriteLockOnCurrentThread(), E_FAIL);
 
     mSnapshotId = aSnapshotId;
 
@@ -10070,7 +10070,7 @@ void SnapshotMachine::uninit()
     LogFlowThisFuncLeave();
 }
 
-// AutoLock::Lockable interface
+// util::Lockable interface
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -10094,7 +10094,7 @@ RWLockHandle *SnapshotMachine::lockHandle() const
  */
 HRESULT SnapshotMachine::onSnapshotChange (Snapshot *aSnapshot)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mPeer->saveSnapshotSettings (aSnapshot, SaveSS_UpdateAttrsOp);
 

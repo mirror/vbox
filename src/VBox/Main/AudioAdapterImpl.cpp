@@ -91,7 +91,7 @@ HRESULT AudioAdapter::init (Machine *aParent, AudioAdapter *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC (thatCaller.rc());
 
-    AutoReaderLock thatLock (aThat);
+    AutoReadLock thatLock (aThat);
     mData.share (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -123,7 +123,7 @@ HRESULT AudioAdapter::initCopy (Machine *aParent, AudioAdapter *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC (thatCaller.rc());
 
-    AutoReaderLock thatLock (aThat);
+    AutoReadLock thatLock (aThat);
     mData.attachCopy (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -162,7 +162,7 @@ STDMETHODIMP AudioAdapter::COMGETTER(Enabled)(BOOL *aEnabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aEnabled = mData->mEnabled;
 
@@ -178,7 +178,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(Enabled)(BOOL aEnabled)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mEnabled != aEnabled)
     {
@@ -197,7 +197,7 @@ STDMETHODIMP AudioAdapter::COMGETTER(AudioDriver)(AudioDriverType_T *aAudioDrive
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aAudioDriver = mData->mAudioDriver;
 
@@ -213,7 +213,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = S_OK;
 
@@ -275,7 +275,7 @@ STDMETHODIMP AudioAdapter::COMGETTER(AudioController)(AudioControllerType_T *aAu
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aAudioController = mData->mAudioController;
 
@@ -291,7 +291,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioController)(AudioControllerType_T aAud
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = S_OK;
 
@@ -343,7 +343,7 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -437,7 +437,7 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Key node = aMachineNode.createKey ("AudioAdapter");
 
@@ -542,7 +542,7 @@ bool AudioAdapter::rollback()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     bool changed = false;
 

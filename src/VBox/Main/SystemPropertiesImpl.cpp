@@ -59,7 +59,7 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
 
     ComAssertRet (aParent, E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mParent = aParent;
@@ -83,7 +83,7 @@ void SystemProperties::uninit()
 {
     LogFlowMember (("SystemProperties::uninit()\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), (void) 0);
 
     setReady (false);
@@ -97,7 +97,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestRAM)(ULONG *minRAM)
 {
     if (!minRAM)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *minRAM = SchemaDefs::MinGuestRAM;
@@ -109,7 +109,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestRAM)(ULONG *maxRAM)
 {
     if (!maxRAM)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *maxRAM = SchemaDefs::MaxGuestRAM;
@@ -121,7 +121,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestVRAM)(ULONG *minVRAM)
 {
     if (!minVRAM)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *minVRAM = SchemaDefs::MinGuestVRAM;
@@ -133,7 +133,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestVRAM)(ULONG *maxVRAM)
 {
     if (!maxVRAM)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *maxVRAM = SchemaDefs::MaxGuestVRAM;
@@ -145,7 +145,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestMonitors)(ULONG *maxMonitors)
 {
     if (!maxMonitors)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *maxMonitors = SchemaDefs::MaxGuestMonitors;
@@ -157,7 +157,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(ULONG64 *maxVDISize)
 {
     if (!maxVDISize)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     /** The BIOS supports currently 32 bit LBA numbers (implementing the full
@@ -178,7 +178,7 @@ STDMETHODIMP SystemProperties::COMGETTER(NetworkAdapterCount)(ULONG *count)
 {
     if (!count)
         return E_POINTER;
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *count = SchemaDefs::NetworkAdapterCount;
@@ -190,7 +190,7 @@ STDMETHODIMP SystemProperties::COMGETTER(SerialPortCount)(ULONG *count)
 {
     if (!count)
         return E_POINTER;
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *count = SchemaDefs::SerialPortCount;
@@ -202,7 +202,7 @@ STDMETHODIMP SystemProperties::COMGETTER(ParallelPortCount)(ULONG *count)
 {
     if (!count)
         return E_POINTER;
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *count = SchemaDefs::ParallelPortCount;
@@ -214,7 +214,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPositio
 {
     if (!aMaxBootPosition)
         return E_POINTER;
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aMaxBootPosition = SchemaDefs::MaxBootPosition;
@@ -227,7 +227,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultVDIFolder) (BSTR *aDefaultVDIFol
     if (!aDefaultVDIFolder)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mDefaultVDIFolderFull.cloneTo (aDefaultVDIFolder);
@@ -237,7 +237,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultVDIFolder) (BSTR *aDefaultVDIFol
 
 STDMETHODIMP SystemProperties::COMSETTER(DefaultVDIFolder) (INPTR BSTR aDefaultVDIFolder)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = setDefaultVDIFolder (aDefaultVDIFolder);
@@ -253,7 +253,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMa
     if (!aDefaultMachineFolder)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mDefaultMachineFolderFull.cloneTo (aDefaultMachineFolder);
@@ -263,7 +263,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMa
 
 STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder) (INPTR BSTR aDefaultMachineFolder)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = setDefaultMachineFolder (aDefaultMachineFolder);
@@ -279,7 +279,7 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemot
     if (!aRemoteDisplayAuthLibrary)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mRemoteDisplayAuthLibrary.cloneTo (aRemoteDisplayAuthLibrary);
@@ -289,7 +289,7 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemot
 
 STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary) (INPTR BSTR aRemoteDisplayAuthLibrary)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = setRemoteDisplayAuthLibrary (aRemoteDisplayAuthLibrary);
@@ -305,7 +305,7 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServi
     if (!aWebServiceAuthLibrary)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mWebServiceAuthLibrary.cloneTo (aWebServiceAuthLibrary);
@@ -315,7 +315,7 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServi
 
 STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary) (INPTR BSTR aWebServiceAuthLibrary)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = setWebServiceAuthLibrary (aWebServiceAuthLibrary);
@@ -331,7 +331,7 @@ STDMETHODIMP SystemProperties::COMGETTER(HWVirtExEnabled) (BOOL *enabled)
     if (!enabled)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *enabled = mHWVirtExEnabled;
@@ -341,7 +341,7 @@ STDMETHODIMP SystemProperties::COMGETTER(HWVirtExEnabled) (BOOL *enabled)
 
 STDMETHODIMP SystemProperties::COMSETTER(HWVirtExEnabled) (BOOL enabled)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mHWVirtExEnabled = enabled;
@@ -355,7 +355,7 @@ STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
     if (!count)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *count = mLogHistoryCount;
@@ -365,7 +365,7 @@ STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
 
 STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount) (ULONG count)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mLogHistoryCount = count;
@@ -381,7 +381,7 @@ HRESULT SystemProperties::loadSettings (const settings::Key &aGlobal)
 {
     using namespace settings;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     AssertReturn (!aGlobal.isNull(), E_FAIL);
@@ -420,7 +420,7 @@ HRESULT SystemProperties::saveSettings (settings::Key &aGlobal)
 {
     using namespace settings;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     ComAssertRet (!aGlobal.isNull(), E_FAIL);

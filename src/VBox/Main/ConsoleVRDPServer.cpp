@@ -632,19 +632,19 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
         {
             com::Bstr bstr;
             server->mConsole->getVRDPServer ()->COMGETTER(NetAddress) (bstr.asOutParam());
-            
+
             /* The server expects UTF8. */
             com::Utf8Str address = bstr;
 
             size_t cbAddress = address.length () + 1;
-            
+
             if (cbAddress >= 0x10000)
             {
                 /* More than 64K seems to be an  invalid address. */
                 rc = VERR_TOO_MUCH_DATA;
                 break;
             }
-            
+
             if ((size_t)cbBuffer >= cbAddress)
             {
                 if (cbAddress > 0)
@@ -973,7 +973,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput (void *pvCallback, int t
                 server->m_InputSynch.fClientCapsLock   = (pInputSynch->uLockStatus & VRDP_INPUT_SYNCH_CAPITAL) != 0;
                 server->m_InputSynch.fClientScrollLock = (pInputSynch->uLockStatus & VRDP_INPUT_SYNCH_SCROLL) != 0;
 
-                /* The client initiated synchronization. Always make the guest to reflect the client state. 
+                /* The client initiated synchronization. Always make the guest to reflect the client state.
                  * Than means, when the guest changes the state itself, it is forced to return to the client
                  * state.
                  */
@@ -1036,11 +1036,11 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
     m_InputSynch.fGuestNumLock    = false;
     m_InputSynch.fGuestCapsLock   = false;
     m_InputSynch.fGuestScrollLock = false;
-    
+
     m_InputSynch.fClientNumLock    = false;
     m_InputSynch.fClientCapsLock   = false;
     m_InputSynch.fClientScrollLock = false;
-    
+
     memset (maFramebuffers, 0, sizeof (maFramebuffers));
 
     mConsoleCallback = new VRDPConsoleCallback(this);
@@ -2017,7 +2017,7 @@ HRESULT RemoteDisplayInfo::init (Console *aParent)
 
     ComAssertRet (aParent, E_INVALIDARG);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mParent = aParent;
@@ -2034,7 +2034,7 @@ void RemoteDisplayInfo::uninit()
 {
     LogFlowMember (("RemoteDisplayInfo::uninit()\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), (void) 0);
 
     mParent.setNull();
@@ -2051,7 +2051,7 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoLock alock (this);                                            \
+        AutoWriteLock alock (this);                                            \
         CHECK_READY();                                                    \
                                                                           \
         uint32_t value;                                                   \
@@ -2071,7 +2071,7 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoLock alock (this);                                            \
+        AutoWriteLock alock (this);                                            \
         CHECK_READY();                                                    \
                                                                           \
         _aType value;                                                     \
@@ -2091,7 +2091,7 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoLock alock (this);                                            \
+        AutoWriteLock alock (this);                                            \
         CHECK_READY();                                                    \
                                                                           \
         uint32_t cbOut = 0;                                               \

@@ -126,7 +126,7 @@ void Session::uninit (bool aFinalRelease)
     }
 
     /* close() needs write lock */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mState != SessionState_Closed)
     {
@@ -151,7 +151,7 @@ STDMETHODIMP Session::COMGETTER(State) (SessionState_T *aState)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aState = mState;
 
@@ -166,7 +166,7 @@ STDMETHODIMP Session::COMGETTER(Type) (SessionType_T *aType)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     CHECK_OPEN();
 
@@ -182,7 +182,7 @@ STDMETHODIMP Session::COMGETTER(Machine) (IMachine **aMachine)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     CHECK_OPEN();
 
@@ -205,7 +205,7 @@ STDMETHODIMP Session::COMGETTER(Console) (IConsole **aConsole)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     CHECK_OPEN();
 
@@ -231,7 +231,7 @@ STDMETHODIMP Session::Close()
     CheckComRCReturnRC (autoCaller.rc());
 
     /* close() needs write lock */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     CHECK_OPEN();
 
@@ -248,7 +248,7 @@ STDMETHODIMP Session::GetPID (ULONG *aPid)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aPid = (ULONG) RTProcSelf();
     AssertCompile (sizeof (*aPid) == sizeof (RTPROCESS));
@@ -263,7 +263,7 @@ STDMETHODIMP Session::GetRemoteConsole (IConsole **aConsole)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     AssertReturn (mState == SessionState_Open, E_FAIL);
 
@@ -283,7 +283,7 @@ STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     AssertReturn (mState == SessionState_Closed, E_FAIL);
 
@@ -354,7 +354,7 @@ STDMETHODIMP Session::AssignRemoteMachine (IMachine *aMachine, IConsole *aConsol
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     AssertReturn (mState == SessionState_Closed ||
                   mState == SessionState_Spawning, E_FAIL);
@@ -431,7 +431,7 @@ STDMETHODIMP Session::UpdateMachineState (MachineState_T aMachineState)
         return S_OK;
     }
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     if (mState == SessionState_Closing)
     {
@@ -459,7 +459,7 @@ STDMETHODIMP Session::Uninitialize()
     if (autoCaller.state() == Ready)
     {
         /* close() needs write lock */
-        AutoLock alock (this);
+        AutoWriteLock alock (this);
 
         LogFlowThisFunc (("mState=%d, mType=%d\n", mState, mType));
 
@@ -501,7 +501,7 @@ STDMETHODIMP Session::OnDVDDriveChange()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -515,7 +515,7 @@ STDMETHODIMP Session::OnFloppyDriveChange()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -529,7 +529,7 @@ STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -543,7 +543,7 @@ STDMETHODIMP Session::OnSerialPortChange(ISerialPort *serialPort)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -557,7 +557,7 @@ STDMETHODIMP Session::OnParallelPortChange(IParallelPort *parallelPort)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -571,7 +571,7 @@ STDMETHODIMP Session::OnVRDPServerChange()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -585,7 +585,7 @@ STDMETHODIMP Session::OnUSBControllerChange()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -599,7 +599,7 @@ STDMETHODIMP Session::OnSharedFolderChange (BOOL aGlobal)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -615,7 +615,7 @@ STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice,
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -630,7 +630,7 @@ STDMETHODIMP Session::OnUSBDeviceDetach (INPTR GUIDPARAM aId,
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -642,7 +642,7 @@ STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (mState == SessionState_Open &&
                   mType == SessionType_Direct, E_FAIL);
 
@@ -670,7 +670,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     LogFlowThisFunc (("mState=%d, mType=%d\n", mState, mType));
 

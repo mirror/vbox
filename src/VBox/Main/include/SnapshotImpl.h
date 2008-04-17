@@ -88,7 +88,7 @@ public:
 
     // public methods only for internal purposes
 
-    /** Do |AutoLock alock (this);| before acceessing the returned data! */
+    /** Do |AutoWriteLock alock (this);| before acceessing the returned data! */
     const Data &data() const { return mData; }
 
     const Bstr &stateFilePath() const;
@@ -100,7 +100,7 @@ public:
 
     /**
      *  Shortcut to #dependentChildren().
-     *  Do |AutoLock alock (childrenLock());| before acceessing the returned list!
+     *  Do |AutoWriteLock alock (childrenLock());| before acceessing the returned list!
      */
     const SnapshotList &children() const { return dependentChildren(); }
 

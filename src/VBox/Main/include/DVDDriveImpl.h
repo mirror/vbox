@@ -94,8 +94,8 @@ public:
     HRESULT loadSettings (const settings::Key &aMachineNode);
     HRESULT saveSettings (settings::Key &aMachineNode);
 
-    bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
-    bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }
+    bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
+    bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }
     bool rollback();
     void commit();
     void copyFrom (DVDDrive *aThat);

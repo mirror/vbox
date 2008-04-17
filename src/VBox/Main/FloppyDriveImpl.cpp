@@ -96,7 +96,7 @@ HRESULT FloppyDrive::init (Machine *aParent, FloppyDrive *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC (thatCaller.rc());
 
-    AutoReaderLock thatLock (aThat);
+    AutoReadLock thatLock (aThat);
     mData.share (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -128,7 +128,7 @@ HRESULT FloppyDrive::initCopy (Machine *aParent, FloppyDrive *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC (thatCaller.rc());
 
-    AutoReaderLock thatLock (aThat);
+    AutoReadLock thatLock (aThat);
     mData.attachCopy (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -167,7 +167,7 @@ STDMETHODIMP FloppyDrive::COMGETTER(Enabled) (BOOL *aEnabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aEnabled = mData->mEnabled;
 
@@ -185,7 +185,7 @@ STDMETHODIMP FloppyDrive::COMSETTER(Enabled) (BOOL aEnabled)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mEnabled != aEnabled)
     {
@@ -209,7 +209,7 @@ STDMETHODIMP FloppyDrive::COMGETTER(State) (DriveState_T *aDriveState)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aDriveState = mData->mDriveState;
 
@@ -231,7 +231,7 @@ STDMETHODIMP FloppyDrive::MountImage (INPTR GUIDPARAM aImageId)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = E_FAIL;
 
@@ -275,7 +275,7 @@ STDMETHODIMP FloppyDrive::CaptureHostDrive (IHostFloppyDrive *aHostFloppyDrive)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mDriveState != DriveState_HostDriveCaptured ||
         !mData->mHostDrive.equalsTo (aHostFloppyDrive))
@@ -305,7 +305,7 @@ STDMETHODIMP FloppyDrive::Unmount()
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mDriveState != DriveState_NotMounted)
     {
@@ -332,7 +332,7 @@ STDMETHODIMP FloppyDrive::GetImage (IFloppyImage **aFloppyImage)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mFloppyImage.queryInterfaceTo (aFloppyImage);
 
@@ -347,7 +347,7 @@ STDMETHODIMP FloppyDrive::GetHostDrive (IHostFloppyDrive **aHostDrive)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mHostDrive.queryInterfaceTo (aHostDrive);
 
@@ -374,7 +374,7 @@ HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -457,7 +457,7 @@ HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Key node = aMachineNode.createKey ("FloppyDrive");
 
@@ -512,7 +512,7 @@ bool FloppyDrive::rollback()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     bool changed = false;
 
@@ -588,7 +588,7 @@ void FloppyDrive::copyFrom (FloppyDrive *aThat)
  */
 HRESULT FloppyDrive::unmount()
 {
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     if (mData->mFloppyImage)
         mData->mFloppyImage.setNull();

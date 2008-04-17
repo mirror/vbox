@@ -52,7 +52,7 @@ protected:
                   IUnknown *aInitiator,
                   const BSTR aDescription, GUIDPARAMOUT aId = NULL);
     HRESULT protectedInit();
-    void protectedUninit (AutoLock &alock);
+    void protectedUninit (AutoWriteLock &alock);
 
 public:
 
@@ -75,9 +75,9 @@ public:
 
     // public methods only for internal purposes
 
-    Guid id() { AutoLock alock (this); return mId; }
-    BOOL completed() { AutoLock alock (this); return mCompleted; }
-    HRESULT resultCode() { AutoLock alock (this); return mResultCode; }
+    Guid id() { AutoWriteLock alock (this); return mId; }
+    BOOL completed() { AutoWriteLock alock (this); return mCompleted; }
+    HRESULT resultCode() { AutoWriteLock alock (this); return mResultCode; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Progress"; }
@@ -258,7 +258,7 @@ public:
                   IProgress *aProgress1, IProgress *aProgress2,
                   GUIDPARAMOUT aId = NULL)
     {
-        AutoLock lock (this);
+        AutoWriteLock alock (this);
         ComAssertRet (!isReady(), E_UNEXPECTED);
 
         mProgresses.resize (2);
@@ -282,7 +282,7 @@ public:
                   InputIterator aFirstProgress, InputIterator aLastProgress,
                   GUIDPARAMOUT aId = NULL)
     {
-        AutoLock lock (this);
+        AutoWriteLock alock (this);
         ComAssertRet (!isReady(), E_UNEXPECTED);
 
         mProgresses = ProgressVector (aFirstProgress, aLastProgress);

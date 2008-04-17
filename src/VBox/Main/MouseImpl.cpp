@@ -75,7 +75,7 @@ HRESULT Mouse::init (Console *parent)
 
     ComAssertRet (parent, E_INVALIDARG);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mParent = parent;
@@ -99,7 +99,7 @@ void Mouse::uninit()
 {
     LogFlow(("Mouse::uninit(): isReady=%d\n", isReady()));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), (void) 0);
 
     if (mpDrv)
@@ -124,7 +124,7 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
     if (!absoluteSupported)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -151,7 +151,7 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *needsHostCursor)
     if (!needsHostCursor)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -180,7 +180,7 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *needsHostCursor)
  */
 STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -233,7 +233,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
 STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
                                           LONG buttonState)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -339,7 +339,7 @@ DECLCALLBACK(void) Mouse::drvDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("Mouse::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
     if (pData->pMouse)
     {
-        AutoLock mouseLock (pData->pMouse);
+        AutoWriteLock mouseLock (pData->pMouse);
         pData->pMouse->mpDrv = NULL;
     }
 }

@@ -71,7 +71,7 @@ HRESULT HardDiskAttachment::init (HardDisk *aHD, StorageBus_T aBus, LONG aChanne
                 aHD->toString().raw(), aDevice);
     }
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mDirty = aDirty;
 
@@ -92,7 +92,7 @@ STDMETHODIMP HardDiskAttachment::COMGETTER(HardDisk) (IHardDisk **aHardDisk)
     if (!aHardDisk)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     ComAssertRet (!!mHardDisk, E_FAIL);
@@ -106,7 +106,7 @@ STDMETHODIMP HardDiskAttachment::COMGETTER(Bus) (StorageBus_T *aBus)
     if (!aBus)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aBus = mBus;
@@ -118,7 +118,7 @@ STDMETHODIMP HardDiskAttachment::COMGETTER(Channel) (LONG *aChannel)
     if (!aChannel)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aChannel = mChannel;
@@ -130,7 +130,7 @@ STDMETHODIMP HardDiskAttachment::COMGETTER(Device) (LONG *aDevice)
     if (!aDevice)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aDevice = mDevice;

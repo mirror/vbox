@@ -115,7 +115,7 @@ STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     // redirect the call to IMachine if no additions are installed
     if (mData.mAdditionsVersion.isNull())
@@ -134,7 +134,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsActive) (BOOL *aAdditionsActive)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aAdditionsActive = mData.mAdditionsActive;
 
@@ -149,7 +149,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData.mAdditionsVersion.cloneTo (aAdditionsVersion);
 
@@ -164,7 +164,7 @@ STDMETHODIMP Guest::COMGETTER(SupportsSeamless) (BOOL *aSupportsSeamless)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aSupportsSeamless = mData.mSupportsSeamless;
 
@@ -179,7 +179,7 @@ STDMETHODIMP Guest::COMGETTER(SupportsGraphics) (BOOL *aSupportsGraphics)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aSupportsGraphics = mData.mSupportsGraphics;
 
@@ -194,7 +194,7 @@ STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aMemoryBalloonSize = mMemoryBalloonSize;
 
@@ -206,7 +206,7 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT ret = mParent->machine()->COMSETTER(MemoryBalloonSize)(aMemoryBalloonSize);
     if (ret == S_OK)
@@ -229,7 +229,7 @@ STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval) (ULONG *aUpdateInterval)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aUpdateInterval = mStatUpdateInterval;
 
@@ -241,7 +241,7 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT ret = mParent->machine()->COMSETTER(StatisticsUpdateInterval)(aUpdateInterval);
     if (ret == S_OK)
@@ -325,7 +325,7 @@ void Guest::setAdditionsVersion (Bstr aVersion)
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.mAdditionsVersion = aVersion;
     /* this implies that Additions are active */
@@ -337,7 +337,7 @@ void Guest::setSupportsSeamless (BOOL aSupportsSeamless)
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.mSupportsSeamless = aSupportsSeamless;
 }
@@ -347,7 +347,7 @@ void Guest::setSupportsGraphics (BOOL aSupportsGraphics)
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.mSupportsGraphics = aSupportsGraphics;
 }

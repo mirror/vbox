@@ -96,7 +96,7 @@ HRESULT DVDDrive::init (Machine *aParent, DVDDrive *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC (thatCaller.rc());
 
-    AutoReaderLock thatLock (aThat);
+    AutoReadLock thatLock (aThat);
     mData.share (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -128,7 +128,7 @@ HRESULT DVDDrive::initCopy (Machine *aParent, DVDDrive *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC (thatCaller.rc());
 
-    AutoReaderLock thatLock (aThat);
+    AutoReadLock thatLock (aThat);
     mData.attachCopy (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -167,7 +167,7 @@ STDMETHODIMP DVDDrive::COMGETTER(State) (DriveState_T *aDriveState)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aDriveState = mData->mDriveState;
 
@@ -182,7 +182,7 @@ STDMETHODIMP DVDDrive::COMGETTER(Passthrough) (BOOL *aPassthrough)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aPassthrough = mData->mPassthrough;
 
@@ -198,7 +198,7 @@ STDMETHODIMP DVDDrive::COMSETTER(Passthrough) (BOOL aPassthrough)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mPassthrough != aPassthrough)
     {
@@ -224,7 +224,7 @@ STDMETHODIMP DVDDrive::MountImage (INPTR GUIDPARAM aImageId)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = E_FAIL;
 
@@ -268,7 +268,7 @@ STDMETHODIMP DVDDrive::CaptureHostDrive (IHostDVDDrive *aHostDVDDrive)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mDriveState != DriveState_HostDriveCaptured ||
         !mData->mHostDrive.equalsTo (aHostDVDDrive))
@@ -298,7 +298,7 @@ STDMETHODIMP DVDDrive::Unmount()
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mDriveState != DriveState_NotMounted)
     {
@@ -325,7 +325,7 @@ STDMETHODIMP DVDDrive::GetImage (IDVDImage **aDVDImage)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mDVDImage.queryInterfaceTo (aDVDImage);
 
@@ -340,7 +340,7 @@ STDMETHODIMP DVDDrive::GetHostDrive(IHostDVDDrive **aHostDrive)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mHostDrive.queryInterfaceTo (aHostDrive);
 
@@ -367,7 +367,7 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -450,7 +450,7 @@ HRESULT DVDDrive::saveSettings (settings::Key &aMachineNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Key node = aMachineNode.createKey ("DVDDrive");
 
@@ -505,7 +505,7 @@ bool DVDDrive::rollback()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     bool changed = false;
 
@@ -584,7 +584,7 @@ void DVDDrive::copyFrom (DVDDrive *aThat)
  */
 HRESULT DVDDrive::unmount()
 {
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     if (mData->mDVDImage)
         mData->mDVDImage.setNull();
