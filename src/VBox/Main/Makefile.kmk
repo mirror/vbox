@@ -48,6 +48,11 @@ ifneq ($(BUILD_TARGET),win)
  endif
  VBOX_MAIN_DEFS += VBOX_WITH_UNIXY_TAP_NETWORKING
 endif
+## @todo later when RTSemRWIsWriteOwner and RTSemRWGetWriteRecursion are done
+#ifeq ($(filter-out linux darwin freebsd solaris,$(BUILD_TARGET)),)
+# VBOX_MAIN_DEFS += VBOX_MAIN_USE_SEMRW
+#endif
+
 ## @todo eliminate or expand VBOX_MAIN_DEFS.
 
 #PROGRAMS        += tstCFGLdr

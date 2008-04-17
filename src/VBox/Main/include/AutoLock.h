@@ -24,10 +24,15 @@
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
 
+#include <iprt/err.h>
 #include <iprt/assert.h>
 
 #if defined(DEBUG)
 # include <iprt/asm.h> // for ASMReturnAddress
+#endif
+
+#ifdef VBOX_MAIN_USE_SEMRW
+# include <iprt/semaphore.h>
 #endif
 
 namespace util
@@ -171,6 +176,12 @@ private:
 
     uint32_t writeLockLevel() const;
 
+#ifdef VBOX_MAIN_USE_SEMRW
+
+    RTSEMRW mSemRW;
+
+#else /* VBOX_MAIN_USE_SEMRW */
+
     mutable RTCRITSECT mCritSect;
     RTSEMEVENT mGoWriteSem;
     RTSEMEVENTMULTI mGoReadSem;
@@ -180,6 +191,8 @@ private:
     uint32_t mReadLockCount;
     uint32_t mWriteLockLevel;
     uint32_t mWriteLockPending;
+
+#endif /* VBOX_MAIN_USE_SEMRW */
 };
 
 /**
