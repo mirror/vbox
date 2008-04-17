@@ -1054,6 +1054,16 @@ bool VBoxProblemReporter::confirmHardDiskUnregister (QWidget *parent,
         tr ("Unregister", "hard disk"));
 }
 
+int VBoxProblemReporter::confirmSATASlotsRemoving (QWidget *aParent)
+{
+    return messageOkCancel (aParent, Question,
+        tr ("<p>Currently you have SATA devices attached in Hard Disk "
+            "attachments list. If you really want to disable SATA Controller, "
+            "SATA attachments will be removed.</p><p>Are you really want to "
+            "disable the SATA Controller?</p>"),
+        0 /* aAutoConfirmId */);
+}
+
 void VBoxProblemReporter::cannotCreateHardDiskImage (
     QWidget *parent, const CVirtualBox &vbox, const QString &src,
     const CVirtualDiskImage &vdi, const CProgress &progress)

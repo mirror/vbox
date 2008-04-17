@@ -190,7 +190,8 @@ endif
 VirtualBox_QT_MOCUIHDRS = \
 	ui/VBoxVMSettingsDlg.ui.h \
 	ui/VBoxVMLogViewer.ui.h \
-	ui/VBoxSharedFoldersSettings.ui.h
+	ui/VBoxSharedFoldersSettings.ui.h \
+	ui/VBoxHardDiskSettings.ui.h
 
 
 # All generated sources. Note: this list MUST be in sync with Qt source
