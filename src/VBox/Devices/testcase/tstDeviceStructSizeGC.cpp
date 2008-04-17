@@ -1024,7 +1024,6 @@ int main()
     GEN_CHECK_OFF(E1KSTATE, u32SavedCsum);
     GEN_CHECK_OFF(E1KSTATE, eeprom);
     GEN_CHECK_OFF(E1KSTATE, phy);
-    GEN_CHECK_OFF(E1KSTATE, uStatInt);
 #endif /* VBOX_WITH_E1000 */
 
     return (0);
