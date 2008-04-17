@@ -1116,6 +1116,42 @@ PGMDECL(PGMMODE) PGMGetShadowMode(PVM pVM)
     return pVM->pgm.s.enmShadowMode;
 }
 
+/**
+ * Gets the current host paging mode.
+ *
+ * @returns The current paging mode.
+ * @param   pVM             The VM handle.
+ */
+PGMDECL(PGMMODE) PGMGetHostMode(PVM pVM)
+{
+    switch (pVM->pgm.s.enmHostMode)
+    {
+        case SUPPAGINGMODE_32_BIT:
+        case SUPPAGINGMODE_32_BIT_GLOBAL:
+            return PGMMODE_32_BIT;
+
+        case SUPPAGINGMODE_PAE:
+        case SUPPAGINGMODE_PAE_GLOBAL:
+            return PGMMODE_PAE;
+
+        case SUPPAGINGMODE_PAE_NX:
+        case SUPPAGINGMODE_PAE_GLOBAL_NX:
+            return PGMMODE_PAE_NX;
+
+        case SUPPAGINGMODE_AMD64:
+        case SUPPAGINGMODE_AMD64_GLOBAL:
+            return PGMMODE_AMD64;
+
+        case SUPPAGINGMODE_AMD64_NX:
+        case SUPPAGINGMODE_AMD64_GLOBAL_NX:
+            return PGMMODE_AMD64_NX;
+
+        default: AssertMsgFailed(("enmHostMode=%d\n", pVM->pgm.s.enmHostMode)); break;
+    }
+
+    return PGMMODE_INVALID;
+}
+
 
 /**
  * Get mode name.
