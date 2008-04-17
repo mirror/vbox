@@ -40,7 +40,18 @@ else
   OPTS="-t"
 fi
 
-trap "sudo chown -R `whoami` $DIR; exit 1" INT
+# Make sure VBoxUSB is unloaded as it might be using symbols from us.
+LOADED=`kextstat -b org.virtualbox.kext.VBoxUSB -l`
+if test -n "$LOADED"; then
+    echo "load.sh: Unloading org.virtualbox.kext.VBoxUSB..."
+    sudo kextunload -v 6 -b org.virtualbox.kext.VBoxUSB
+    LOADED=`kextstat -b org.virtualbox.kext.VBoxUSB -l`
+    if test -n "$LOADED"; then
+        echo "load.sh: failed to unload org.virtualbox.kext.VBoxUSB, see above..."
+        exit 1;
+    fi
+    echo "load.sh: Successfully unloaded org.virtualbox.kext.VBoxUSB"
+fi
 
 # Try unload any existing instance first.
 LOADED=`kextstat -b $BUNDLE -l`
@@ -56,6 +67,7 @@ if test -n "$LOADED"; then
 fi
 
 set -e
+trap "sudo chown -R `whoami` $DIR; exit 1" INT
 # On smbfs, this might succeed just fine but make no actual changes,
 # so we might have to temporarily copy the driver to a local directory.
 sudo chown -R root:wheel "$DIR"
