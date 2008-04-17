@@ -839,12 +839,18 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                             pCur->idProduct, pCur->idVendor, u64SessionId, u32LocationId);
                 pCur->pszAddress = RTStrDup(szAddress);
                 AssertBreak(pCur->pszAddress,);
+                uint8_t bSpeed;
+                AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDevicePropertySpeed),  &bSpeed),);
+                Assert(bSpeed <= 2);
+                pCur->enmSpeed = bSpeed == 2 ? USBDEVICESPEED_HIGH
+                               : bSpeed == 1 ? USBDEVICESPEED_FULL
+                               : bSpeed == 0 ? USBDEVICESPEED_LOW
+                                             : USBDEVICESPEED_UNKNOWN;
 
                 /*
                  * Optional.
                  * There are some nameless device in the iMac, apply names to them.
                  */
-                /** @todo Device Speed -> enmSpeed; (2 == high speed). */
                 darwinDictGetString(PropsRef, CFSTR("USB Vendor Name"),     (char **)&pCur->pszManufacturer);
                 if (    !pCur->pszManufacturer
                     &&  pCur->idVendor == kIOUSBVendorIDAppleComputer)
