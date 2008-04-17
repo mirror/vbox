@@ -434,7 +434,7 @@ void WINAPI VBoxServiceStart(void)
     ndata.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     ndata.uCallbackMessage = WM_USER;
     ndata.hIcon            = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
-    sprintf(ndata.szTip, "innotek VirtualBox Guest Additions %d.%d.%dr%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
+    sprintf(ndata.szTip, "Sun xVM VirtualBox Guest Additions %d.%d.%dr%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
 
     dprintf(("VBoxService: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
 
