@@ -1034,7 +1034,8 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
                 LogRel(("WARNING: Can't turn on PAE when the host doesn't support it!!\n"));
                 return;
             }
-            if (PGMGetShadowMode(pVM) <= PGMMODE_32_BIT)
+            /* Remove this restriction once the 32->PAE switcher works properly. */
+            if (PGMGetHostMode(pVM) <= PGMMODE_32_BIT)
             {
                 LogRel(("WARNING: Can't turn on PAE when the host is in 32 bits paging mode!!\n"));
                 return;

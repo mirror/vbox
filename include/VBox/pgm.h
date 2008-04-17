@@ -329,6 +329,7 @@ PGMDECL(int)    PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 PGMDECL(int)    PGMChangeMode(PVM pVM, uint64_t cr0, uint64_t cr4, uint64_t efer);
 PGMDECL(PGMMODE) PGMGetGuestMode(PVM pVM);
 PGMDECL(PGMMODE) PGMGetShadowMode(PVM pVM);
+PGMDECL(PGMMODE) PGMGetHostMode(PVM pVM);
 PGMDECL(const char *) PGMGetModeName(PGMMODE enmMode);
 PGMDECL(int)    PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                              R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,

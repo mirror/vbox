@@ -2683,9 +2683,10 @@ if (getenv("VBOX_32BIT"))
             {
                 case SUPPAGINGMODE_32_BIT:
                 case SUPPAGINGMODE_32_BIT_GLOBAL:
+                    AssertFailed(); /* this switcher is not well tested!! */
                     enmShadowMode = PGMMODE_PAE;
                     enmSwitcher = VMMSWITCHER_32_TO_PAE;
-                    break;
+                    return PGMMODE_INVALID;
 
                 case SUPPAGINGMODE_PAE:
                 case SUPPAGINGMODE_PAE_NX:
