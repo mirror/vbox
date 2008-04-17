@@ -389,6 +389,9 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
+
+    LogFlow(("MapCR3: %VGp\n", GCPhysCR3));
+
     /*
      * Map the page CR3 points at.
      */
@@ -406,8 +409,10 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             pVM->pgm.s.pGuestPDGC = (GCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
-            pVM->pgm.s.pGstPaePDPTHC = (R3R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
-            pVM->pgm.s.pGstPaePDPTGC = (GCPTRTYPE(PX86PDPT))pVM->pgm.s.GCPtrCR3Mapping;
+            unsigned offset = GCPhysCR3 & GST_CR3_PAGE_MASK & PAGE_OFFSET_MASK;
+            pVM->pgm.s.pGstPaePDPTHC = (R3R0PTRTYPE(PX86PDPT)) HCPtrGuestCR3;
+            pVM->pgm.s.pGstPaePDPTGC = (GCPTRTYPE(PX86PDPT))   ((GCPTRTYPE(uint8_t *))pVM->pgm.s.GCPtrCR3Mapping + offset);
+            Log(("Cached mapping %VGv\n", pVM->pgm.s.pGstPaePDPTGC));
 
             /*
              * Map the 4 PDs too.
@@ -444,6 +449,8 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             rc = VERR_NOT_IMPLEMENTED;
 #endif
         }
+        else
+            AssertMsgFailed(("rc=%Vrc GCPhysGuestPD=%VGp\n", rc, GCPhysCR3));
     }
     else
         AssertMsgFailed(("rc=%Vrc GCPhysGuestPD=%VGp\n", rc, GCPhysCR3));
@@ -464,6 +471,8 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
  */
 PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
 {
+    LogFlow(("UnmapCR3\n"));
+
     int rc = VINF_SUCCESS;
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
     pVM->pgm.s.pGuestPDHC = 0;
