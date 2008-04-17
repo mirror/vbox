@@ -22,7 +22,7 @@ BEGIN
          VALUE "InternalName",     "VRdpvd\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VRdpvd.sys\0"
-         VALUE "ProductName",	   "xVM VirtualBox Guest Additions\0"
+         VALUE "ProductName",	   "VirtualBox Guest Additions\0"
          VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "\0"
       END
    END

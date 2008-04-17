@@ -36,7 +36,7 @@ BEGIN
          VALUE "InternalName",     "VBoxOGL\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VBoxOGL.dll\0"
-         VALUE "ProductName",      "xVM VirtualBox Guest Additions\0"
+         VALUE "ProductName",      "VirtualBox Guest Additions\0"
          VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
       END
    END

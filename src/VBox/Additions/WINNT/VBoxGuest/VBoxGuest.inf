@@ -82,7 +82,7 @@ HKR,,CoInstallers32,0x00010000,"vbcoinst.dll,VBoxCoInstaller"
 [Strings]
 SUN_MFG = "Sun Microsystems, Inc."
 SUN = "Sun Microsystems, Inc."
-VBoxGuest.DeviceDesc = "xVM VirtualBox Device"
-VBoxGuest_svcdesc = "xVM VirtualBox Guest Driver"
-VBoxService_svcdesc = "xVM VirtualBox Guest Service"
+VBoxGuest.DeviceDesc = "VirtualBox Device"
+VBoxGuest_svcdesc = "VirtualBox Guest Driver"
+VBoxService_svcdesc = "VirtualBox Guest Service"
 
