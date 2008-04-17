@@ -137,9 +137,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     idle_timer = new QTimer (this);
 
+#ifndef Q_WS_WIN
     /* default application icon (will change to the VM-specific icon in
-     * openView()) */
-    setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
+     * openView()). On Win32, it's built-in to the executable. */
+    setIcon (QPixmap::fromMimeSource ("VirtualBox_48px.png"));
+#endif
 
     /* ensure status bar is created */
     new QIStatusBar (this, "statusBar");

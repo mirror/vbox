@@ -554,7 +554,11 @@ public:
         , mLicenseText (0), mAgreeButton (0), mDisagreeButton (0)
     {
         setWindowTitle ("VirtualBox License");
-        setWindowIcon (QIcon (":/ico40x01.png"));
+
+#ifndef Q_WS_WIN
+       /* Application icon. On Win32, it's built-in to the executable. */
+        setWindowIcon (QIcon (":/VirtualBox_48px.png"));
+#endif
 
         mLicenseText = new QTextBrowser (this);
         mAgreeButton = new QPushButton (tr ("I &Agree"), this);

@@ -132,11 +132,12 @@ IMAGES	= images/tpixel.png \
 	images/hostkey_captured_pressed_16px.png \
 	images/hostkey_disabled_16px.png \
 	images/machine_16px.png \
-	images/ico16x01.png \
-	images/ico20x01.png \
-	images/ico32x01.png \
-	images/ico40x01.png \
-	images/ico64x01.png \
+	images/VirtualBox_16px.png \
+	images/VirtualBox_20px.png \
+	images/VirtualBox_32px.png \
+	images/VirtualBox_40px.png \
+	images/VirtualBox_48px.png \
+	images/VirtualBox_64px.png \
 	images/help_16px.png \
 	images/about_16px.png \
 	images/site_16px.png \
@@ -284,8 +285,7 @@ IMAGES	= images/tpixel.png \
 	images/welcome.png \
 	images/about.png \
 	images/about_tile.png \
-	images/dock_1.png \
-	images/VirtualBox_48px.png
+	images/dock_1.png
 
 TRANSLATIONS = \
 	nls/VirtualBox_tr.ts \
