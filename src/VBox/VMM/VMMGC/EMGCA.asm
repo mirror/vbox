@@ -166,6 +166,105 @@ GLOBALNAME EMGCEmulateCmpXchg_Error
 ENDPROC     EMGCEmulateCmpXchg
 
 ;;
+; Emulate LOCK CMPXCHG8B instruction, CDECL calling conv.
+; EMGCDECL(uint32_t) EMGCEmulateLockCmpXchg8b(RTGCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX, uint32_t *pEflags);
+;
+; @returns eax=0 if data written, other code - invalid access, #PF was generated.
+; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
+; @param    [esp + 08h]    Param 2 - Address of the eax register
+; @param    [esp + 0ch]    Param 3 - Address of the edx register
+; @param    [esp + 10h]    Param 4 - EBX
+; @param    [esp + 14h]    Param 5 - ECX
+; @param    [esp + 18h]    Param 6 - Pointer to eflags (out)
+; @uses     eax, ecx, edx
+;
+align 16
+BEGINPROC   EMGCEmulateLockCmpXchg8b
+    push    ebp
+    push    ebx
+    mov     ebp, [esp + 04h + 8]        ; ebp = first parameter
+    mov     eax, [esp + 08h + 8]        ; &EAX
+    mov     eax, dword [eax]
+    mov     edx, [esp + 0ch + 8]        ; &EDX
+    mov     edx, dword [edx]
+    mov     ebx, [esp + 10h + 8]        ; EBX
+    mov     ecx, [esp + 14h + 8]        ; ECX
+
+    lock cmpxchg8b qword [ebp]          ; do CMPXCHG8B
+    mov     dword [esp + 08h + 8], eax
+    mov     dword [esp + 0ch + 8], edx
+
+    ; collect flags and return.
+    pushf
+    pop     eax
+
+    mov     edx, [esp + 18h + 8]            ; eflags pointer
+    mov     dword [edx], eax
+
+    pop     ebx
+    pop     ebp
+    mov     eax, VINF_SUCCESS
+    retn
+
+; Read error - we will be here after our page fault handler.
+GLOBALNAME EMGCEmulateLockCmpXchg8b_Error
+    pop     ebx
+    pop     ebp
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+
+ENDPROC     EMGCEmulateLockCmpXchg8b
+
+;;
+; Emulate CMPXCHG8B instruction, CDECL calling conv.
+; EMGCDECL(uint32_t) EMGCEmulateCmpXchg8b(RTGCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX, uint32_t *pEflags);
+;
+; @returns eax=0 if data written, other code - invalid access, #PF was generated.
+; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
+; @param    [esp + 08h]    Param 2 - Address of the eax register
+; @param    [esp + 0ch]    Param 3 - Address of the edx register
+; @param    [esp + 10h]    Param 4 - EBX
+; @param    [esp + 14h]    Param 5 - ECX
+; @param    [esp + 18h]    Param 6 - Pointer to eflags (out)
+; @uses     eax, ecx, edx
+;
+align 16
+BEGINPROC   EMGCEmulateCmpXchg8b
+    push    ebp
+    push    ebx
+    mov     ebp, [esp + 04h + 8]        ; ebp = first parameter
+    mov     eax, [esp + 08h + 8]        ; &EAX
+    mov     eax, dword [eax]
+    mov     edx, [esp + 0ch + 8]        ; &EDX
+    mov     edx, dword [edx]
+    mov     ebx, [esp + 10h + 8]        ; EBX
+    mov     ecx, [esp + 14h + 8]        ; ECX
+
+    cmpxchg8b qword [ebp]               ; do CMPXCHG8B
+    mov     dword [esp + 08h + 8], eax
+    mov     dword [esp + 0ch + 8], edx
+
+    ; collect flags and return.
+    pushf
+    pop     eax
+
+    mov     edx, [esp + 18h + 8]            ; eflags pointer
+    mov     dword [edx], eax
+
+    pop     ebx
+    pop     ebp
+    mov     eax, VINF_SUCCESS
+    retn
+
+; Read error - we will be here after our page fault handler.
+GLOBALNAME EMGCEmulateCmpXchg8b_Error
+    pop     ebx
+    pop     ebp
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+ENDPROC     EMGCEmulateCmpXchg8b
+
+;;
 ; Emulate LOCK XADD instruction, CDECL calling conv.
 ; EMGCDECL(uint32_t) EMGCEmulateLockXAdd(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
 ;
