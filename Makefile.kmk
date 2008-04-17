@@ -550,7 +550,7 @@ additions-build-solaris.x86:
 ifeq ($(BUILD_TARGET),solaris)
 	+ $(KMK) BUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD)
 else
-	ssh vbox@192.168.27.4 " pfexec /sbin/umount /mnt/vbox; pfexec /sbin/mount /mnt/vbox; cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD) "
+	ssh vbox@192.168.27.4 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk BUILD_TARGET_ARCH=x86 $(VBOX_ADDITIONS_BUILD) "
 endif
 
 additions-build-os2.x86:
