@@ -192,8 +192,6 @@ struct PCNetState_st
     bool                                fLinkUp;
     /** If set the link is temporarily down because of a saved state load. */
     bool                                fLinkTempDown;
-    /** True if we signal the guest that RX packets are missing. */
-    bool                                fSignalRxMiss;
 
     /** Number of times we've reported the link down. */
     RTUINT                              cLinkDownReported;
@@ -220,7 +218,9 @@ struct PCNetState_st
     RTSEMEVENT                          hEventOutOfRxSpace;
     /** We are waiting/about to start waiting for more receive buffers. */
     bool volatile                       fMaybeOutOfSpace;
-    uint8_t                             Alignment5[HC_ARCH_BITS == 64 ? 7 : 3];
+    /** True if we signal the guest that RX packets are missing. */
+    bool                                fSignalRxMiss;
+    uint8_t                             Alignment5[HC_ARCH_BITS == 64 ? 6 : 2];
 
 #ifdef PCNET_NO_POLLING
     RTGCPHYS32                          TDRAPhysOld;
