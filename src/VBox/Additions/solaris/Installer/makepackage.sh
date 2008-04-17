@@ -1,8 +1,6 @@
 #!/bin/sh
-#
-# innotek VirtualBox Solaris Guest Additions package creation script.
-# Usage:
-#       makespackage.sh $(PATH_TARGET)/install packagename
+# innotek VirtualBox
+# VirtualBox Solaris Guest Additions package creation script.
 #
 # Copyright (C) 2008 innotek GmbH
 #
@@ -14,6 +12,10 @@
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
+
+#
+# Usage:
+#       makespackage.sh $(PATH_TARGET)/install packagename
 
 if [ -z "$2" ]; then
     echo "Usage: $0 installdir packagename"
@@ -42,6 +44,6 @@ find . -print | /usr/sfw/bin/ggrep -v -E 'prototype|makepackage.sh|vboxguest.pkg
 
 rm prototype2
 pkgmk -o -r .
-pkgtrans -s -o /var/spool/pkg `pwd`/$2 INNOvboxguest
-rm -rf /var/spool/pkg/INNOvboxguest
+pkgtrans -s -o /var/spool/pkg `pwd`/$2 SUNWvboxguest
+rm -rf /var/spool/pkg/SUNWvboxguest
 
