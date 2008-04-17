@@ -610,7 +610,8 @@ QString VBoxHardDiskSettings::checkValidity()
         QString id = item->getId().toString();
         if (idList.contains (id))
         {
-            result = tr ("%1 uses disk image already assigned to %2")
+            result = tr ("<i>%1</i> uses the hard disk that is already "
+                         "attached to <i>%2</i>")
                 .arg (item->text (0)).arg (slList [idList.findIndex (id)]);
             break;
         }
@@ -706,7 +707,7 @@ void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
         /* If list contains at least one SATA port */
         if (sataItem)
         {
-            int rc = vboxProblem().confirmSATASlotsRemoving (this);
+            int rc = vboxProblem().confirmDetachSATASlots (this);
             if (rc != QIMessageBox::Ok)
             {
                 /* Switch check-box back to "on" */

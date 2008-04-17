@@ -60,9 +60,12 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
                         <string>Alt+E</string>
                     </property>
                     <property name="whatsThis" stdset="0">
-                        <string>Flag whether the SATA controller is present in the
-guest system. If disabled, the virtual guest hardware will
-not contain any SATA controller.</string>
+                        <string>
+                          &lt;qt&gt;When checked, enables the virtual SATA
+                          controller of this machine. Note that you cannot
+                          attach hard disks to SATA ports when the virtual SATA
+                          controller is disabled.&lt;/qt&gt;
+                        </string>
                     </property>
                 </widget>
                 <widget class="QGroupBox">
@@ -109,7 +112,15 @@ not contain any SATA controller.</string>
                                 <enum>AllColumns</enum>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                <string>Hard Disks Attachments list displays all the assigned hard disk attachments used for this VM. Use mouse double-click or F2/Space key on the selected item to popup selection-list and choose the desired value.</string>
+                                <string>
+                                  &lt;qt&gt;Lists all hard disks attached to
+                                  this machine. Use a mouse double-click or the
+                                  &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt;
+                                  key on the highlighted item to activate the
+                                  drop-down list and choose the desired value.
+                                  Use buttons to the right to add or remove hard
+                                  disk attachments.&lt;/qt&gt;
+                                </string>
                             </property>
                         </widget>
                         <widget class="QLayoutWidget">
@@ -143,7 +154,10 @@ not contain any SATA controller.</string>
                                         <string>Add (Ins)</string>
                                     </property>
                                     <property name="whatsThis" stdset="0">
-                                        <string>Add new hard disk attachment into attachments list.</string>
+                                        <string>
+                                          &lt;qt&gt; Adds a new hard disk
+                                          attachment.&lt;/qt&gt;
+                                        </string>
                                     </property>
                                 </widget>
                                 <widget class="QToolButton">
@@ -166,7 +180,10 @@ not contain any SATA controller.</string>
                                         <string>Remove (Del)</string>
                                     </property>
                                     <property name="whatsThis" stdset="0">
-                                        <string>Remove selected hard disk attachment from attachments list.</string>
+                                        <string>
+                                          &lt;qt&gt;Removes the highlighted hard
+                                          disk attachment.&lt;/qt&gt;
+                                        </string>
                                     </property>
                                 </widget>
                                 <widget class="QToolButton">
@@ -189,7 +206,12 @@ not contain any SATA controller.</string>
                                         <string>Select (Ctrl+Space)</string>
                                     </property>
                                     <property name="whatsThis" stdset="0">
-                                        <string>Invokes the Virtual Disk Manager to select a VDI image to attach.</string>
+                                        <string>
+                                          &lt;qt&gt; Invokes the Virtual Disk
+                                          Manager to select a hard disk to
+                                          attach to the currently highlighted
+                                          slot.&lt;/qt&gt;
+                                        </string>
                                     </property>
                                 </widget>
                                 <spacer>
