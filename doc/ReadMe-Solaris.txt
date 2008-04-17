@@ -1,6 +1,6 @@
 
-VirtualBox for OpenSolaris
---------------------------
+Sun xVM VirtualBox for OpenSolaris
+----------------------------------
 
 Installing:
 -----------
@@ -38,5 +38,5 @@ To remove VirtualBox from your system perform the following steps:
 1. Login as root using the "su" command.
 
 2. Run the command:
-        pkgrm INNOvbox
+        pkgrm SUNWvbox
 
