@@ -449,6 +449,7 @@ CPUMDECL(int)       CPUMSetGuestSS(PVM pVM, uint16_t ss);
 CPUMDECL(void)      CPUMSetGuestEFER(PVM pVM, uint64_t val);
 CPUMDECL(void)      CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 CPUMDECL(void)      CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
+CPUMDECL(bool)      CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 CPUMDECL(void)      CPUMSetGuestCtx(PVM pVM, const PCPUMCTX pCtx);
 /** @} */
 
