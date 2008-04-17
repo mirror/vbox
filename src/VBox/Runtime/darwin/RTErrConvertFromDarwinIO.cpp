@@ -44,6 +44,7 @@ RTDECL(int) RTErrConvertFromDarwinIO(int iNativeCode)
     switch (iNativeCode)
     {
         case kIOReturnNoDevice:     return VERR_IO_BAD_UNIT;
+        case kIOReturnUnsupported:  return VERR_NOT_SUPPORTED;
     }
 
     /* unknown error. */
