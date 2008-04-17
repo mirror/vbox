@@ -92,7 +92,7 @@
                 <string> General </string>
             </property>
             <property name="text">
-                <string>0</string>
+                <string>00</string>
             </property>
             <property name="text">
                 <string>#general</string>
@@ -112,7 +112,7 @@
                 <string> Hard Disks </string>
             </property>
             <property name="text">
-                <string>1</string>
+                <string>01</string>
             </property>
             <property name="text">
                 <string>#hdds</string>
@@ -132,7 +132,7 @@
                 <string> CD/DVD-ROM </string>
             </property>
             <property name="text">
-                <string>2</string>
+                <string>02</string>
             </property>
             <property name="text">
                 <string>#dvd</string>
@@ -152,7 +152,7 @@
                 <string> Floppy </string>
             </property>
             <property name="text">
-                <string>3</string>
+                <string>03</string>
             </property>
             <property name="text">
                 <string>#floppy</string>
@@ -172,7 +172,7 @@
                 <string> Audio </string>
             </property>
             <property name="text">
-                <string>4</string>
+                <string>04</string>
             </property>
             <property name="text">
                 <string>#audio</string>
@@ -192,7 +192,7 @@
                 <string> Network </string>
             </property>
             <property name="text">
-                <string>5</string>
+                <string>05</string>
             </property>
             <property name="text">
                 <string>#network</string>
@@ -212,7 +212,7 @@
                 <string> USB </string>
             </property>
             <property name="text">
-                <string>8</string>
+                <string>08</string>
             </property>
             <property name="text">
                 <string>#usb</string>
@@ -252,7 +252,7 @@
                 <string> Shared Folders </string>
             </property>
             <property name="text">
-                <string>9</string>
+                <string>09</string>
             </property>
             <property name="text">
                 <string>#sfolders</string>
@@ -272,7 +272,7 @@
                 <string> Serial Ports </string>
             </property>
             <property name="text">
-                <string>6</string>
+                <string>06</string>
             </property>
             <property name="text">
                 <string>#serialPorts</string>
@@ -292,7 +292,7 @@
                 <string> Parallel Ports </string>
             </property>
             <property name="text">
-                <string>7</string>
+                <string>07</string>
             </property>
             <property name="text">
                 <string>#parallelPorts</string>
