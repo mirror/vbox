@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 2008 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,6 +27,19 @@
 
 class HDSlotItem;
 
+/** Combines the string and the numeric representation of the hard disk slot. */
+struct HDSlot
+{
+    HDSlot() : bus (KStorageBus_Null), channel (0), device (0) {}
+    HDSlot (const QString &aStr, KStorageBus aBus, LONG aChannel, LONG aDevice)
+        : str (aStr), bus (aBus), channel (aChannel), device (aDevice) {}
+
+    QString str;
+    KStorageBus bus;
+    LONG channel;
+    LONG device;
+};
+
 /**
  *  QObject class reimplementation to use for making selected IDE & SATA
  *  slots unique.
@@ -46,7 +59,7 @@ public:
         makeSATAList();
     }
 
-    QStringList list (HDSlotItem *aForSubscriber);
+    QValueList <HDSlot> list (HDSlotItem *aForSubscriber);
 
     int totalCount() { return mIDEList.size() + mSATAList.size(); }
 
@@ -94,44 +107,35 @@ private:
 
     void makeIDEList()
     {
-        QString device ("%1 %2 %3");
-
         mIDEList.clear();
 
         /* IDE Primary Master */
-        mIDEList << device.arg (vboxGlobal().toString (KStorageBus_IDE))
-                          .arg (vboxGlobal().toString (KStorageBus_IDE, 0))
-                          .arg (vboxGlobal().toString (KStorageBus_IDE, 0, 0));
-
+        mIDEList << HDSlot (vboxGlobal().toFullString (KStorageBus_IDE, 0, 0),
+                            KStorageBus_IDE, 0, 0);
         /* IDE Primary Slave */
-        mIDEList << device.arg (vboxGlobal().toString (KStorageBus_IDE))
-                          .arg (vboxGlobal().toString (KStorageBus_IDE, 0))
-                          .arg (vboxGlobal().toString (KStorageBus_IDE, 0, 1));
-
+        mIDEList << HDSlot (vboxGlobal().toFullString (KStorageBus_IDE, 0, 1),
+                            KStorageBus_IDE, 0, 1);
         /* IDE Secondary Slave */
-        mIDEList << device.arg (vboxGlobal().toString (KStorageBus_IDE))
-                          .arg (vboxGlobal().toString (KStorageBus_IDE, 1))
-                          .arg (vboxGlobal().toString (KStorageBus_IDE, 1, 1));
+        mIDEList << HDSlot (vboxGlobal().toFullString (KStorageBus_IDE, 1, 1),
+                            KStorageBus_IDE, 1, 1);
 
         emit listChanged();
     }
 
     void makeSATAList()
     {
-        QString device ("%1 %2");
-
         mSATAList.clear();
 
         for (int i = 0; i < mSataPortsCount; ++ i)
-            mSATAList << device.arg (vboxGlobal().toString (KStorageBus_SATA))
-                               .arg (vboxGlobal().toString (KStorageBus_SATA, 0, i));
+            mSATAList << HDSlot (vboxGlobal().toFullString (KStorageBus_SATA, 0, i),
+                                 KStorageBus_SATA, 0, i);
 
         emit listChanged();
     }
 
     int mSataPortsCount;
-    QStringList mIDEList;
-    QStringList mSATAList;
+    QValueList <HDSlot> mIDEList;
+    QValueList <HDSlot> mSATAList;
     QPtrVector<HDSlotItem> mSubscribersList;
 };
 
@@ -165,16 +169,47 @@ public:
         mUniq->unsubscribe (this);
     }
 
+    KStorageBus currentBus() const
+    {
+        AssertReturn (currentItem() >= 0 && (size_t) currentItem() < mHDSlots.size(),
+                      KStorageBus_Null);
+        return mHDSlots [currentItem()].bus;
+    }
+
+    LONG currentChannel() const
+    {
+        AssertReturn (currentItem() >= 0 && (size_t) currentItem() < mHDSlots.size(),
+                      0);
+        return mHDSlots [currentItem()].channel;
+    }
+
+    LONG currentDevice() const
+    {
+        AssertReturn (currentItem() >= 0 && (size_t) currentItem() < mHDSlots.size(),
+                      0);
+        return mHDSlots [currentItem()].device;
+    }
+
 private slots:
 
     void refresh()
     {
-        QString currentItem = currentText();
-        QStringList newList (mUniq->list (this));
+        QString current = currentText();
+        mHDSlots = mUniq->list (this);
         clear();
-        insertStringList (newList);
-        if (newList.contains (currentItem))
-            setCurrentText (currentItem);
+
+        bool setCurrent = false;
+
+        for (QValueList <HDSlot>::const_iterator it = mHDSlots.begin();
+             it != mHDSlots.end(); ++ it)
+        {
+            insertItem ((*it).str);
+            if (!setCurrent)
+                setCurrent = (*it).str == current;
+        }
+
+        if (setCurrent)
+            setCurrentText (current);
     }
 
 private:
@@ -191,6 +226,8 @@ private:
     }
 
     HDSlotUniquizer *mUniq;
+
+    QValueList <HDSlot> mHDSlots;
 };
 
 /**
@@ -221,9 +258,9 @@ private:
     }
 };
 
-QStringList HDSlotUniquizer::list (HDSlotItem *aSubscriber)
+QValueList <HDSlot> HDSlotUniquizer::list (HDSlotItem *aSubscriber)
 {
-    QStringList list = mIDEList + mSATAList;
+    QValueList <HDSlot> list = mIDEList + mSATAList;
 
     /* Compose exclude list */
     QStringList excludeList;
@@ -232,10 +269,10 @@ QStringList HDSlotUniquizer::list (HDSlotItem *aSubscriber)
             excludeList << mSubscribersList [i]->currentText();
 
     /* Filter the list */
-    QStringList::Iterator it = list.begin();
+    QValueList <HDSlot>::Iterator it = list.begin();
     while (it != list.end())
     {
-        if (excludeList.contains (*it))
+        if (excludeList.contains ((*it).str))
             it = list.remove (it);
         else
             ++ it;
@@ -292,33 +329,19 @@ public:
         return static_cast<VBoxMediaComboBox*> (mVector [1])->getId();
     }
 
-    KStorageBus getBus() const
+    KStorageBus bus() const
     {
-        QStringList list = QStringList::split (' ', text (0));
-        return vboxGlobal().toStorageBusType (list [0]);
+        return static_cast <HDSlotItem *> (mVector [0])->currentBus();
     }
 
-    LONG getChannel() const
+    LONG channel() const
     {
-        QStringList list = QStringList::split (' ', text (0));
-        return vboxGlobal().toStorageChannelType (getBus(), list [1]);
+        return static_cast <HDSlotItem *> (mVector [0])->currentChannel();
     }
 
-    LONG getDevice() const
+    LONG device() const
     {
-        QStringList list = QStringList::split (' ', text (0));
-        switch (getBus())
-        {
-            case KStorageBus_IDE:
-            {
-                return vboxGlobal()
-                    .toStorageDeviceType (KStorageBus_IDE, list [2]);
-            }
-            default:
-            {
-                return list [2].toLong();
-            }
-        }
+        return static_cast <HDSlotItem *> (mVector [0])->currentDevice();
     }
 
     QString text (int aColumn) const
@@ -348,36 +371,15 @@ public:
 
     void setAttachment (const CHardDiskAttachment &aHda)
     {
-        QString device;
-        switch (aHda.GetBus())
-        {
-            case KStorageBus_IDE:
-            {
-                device = QString ("%1 %2 %3")
-                    .arg (vboxGlobal().toString (KStorageBus_IDE))
-                    .arg (vboxGlobal().toString (KStorageBus_IDE,
-                                                 aHda.GetChannel()))
-                    .arg (vboxGlobal().toString (KStorageBus_IDE,
-                                                 aHda.GetChannel(),
-                                                 aHda.GetDevice()));
-                break;
-            }
-            case KStorageBus_SATA:
-            {
-                device = QString ("%1 %2")
-                    .arg (vboxGlobal().toString (KStorageBus_SATA))
-                    .arg (vboxGlobal().toString (KStorageBus_SATA,
-                                                 0, aHda.GetDevice()));
-                break;
-            }
-            default:
-                break;
-        }
+        QString device = vboxGlobal()
+            .toFullString (aHda.GetBus(), aHda.GetChannel(), aHda.GetDevice());
 
         if (mVector [0]->listBox()->findItem (device, Qt::ExactMatch))
             mVector [0]->setCurrentText (device);
+
         static_cast<VBoxMediaComboBox*> (mVector [1])->
             setCurrentItem (aHda.GetHardDisk().GetId());
+
         mVector [0]->setHidden (true);
         mVector [1]->setHidden (true);
     }
@@ -546,10 +548,10 @@ void VBoxHardDiskSettings::putBackToMachine()
     while (item)
     {
         mMachine.AttachHardDisk (item->getId(),
-            item->getBus(), item->getChannel(), item->getDevice());
+            item->bus(), item->channel(), item->device());
         if (!mMachine.isOk())
             vboxProblem().cannotAttachHardDisk (this, mMachine, item->getId(),
-                item->getBus(), item->getChannel(), item->getDevice());
+                item->bus(), item->channel(), item->device());
         item = item->nextSibling();
     }
 }
@@ -657,7 +659,7 @@ void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
         HDListItem *sataItem = firstItem;
         while (sataItem)
         {
-            if (sataItem->getBus() == KStorageBus_SATA)
+            if (sataItem->bus() == KStorageBus_SATA)
                 break;
             sataItem = sataItem->nextSibling();
         }
@@ -683,7 +685,7 @@ void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
                 {
                     HDListItem *curIt = it;
                     it = it->nextSibling();
-                    if (curIt->getBus() == KStorageBus_SATA)
+                    if (curIt->bus() == KStorageBus_SATA)
                     {
                         if (curIt == mLvHD->currentItem())
                             mPrevItem = 0;
