@@ -518,13 +518,11 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     Assert(!pVM->pgm.s.fMappingsFixed);
     int rc = VINF_SUCCESS;
 
-#if PGM_GST_TYPE == PGM_TYPE_32BIT \
- || PGM_GST_TYPE == PGM_TYPE_PAE \
- || PGM_GST_TYPE == PGM_TYPE_AMD64
-
     /*
      * Register/Modify write phys handler for guest's CR3 if it changed.
      */
+#if PGM_GST_TYPE == PGM_TYPE_32BIT
+
     if (pVM->pgm.s.GCPhysGstCR3Monitored != GCPhysCR3)
     {
 # ifndef PGMPOOL_WITH_MIXED_PT_CR3
@@ -554,13 +552,25 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         pVM->pgm.s.GCPhysGstCR3Monitored = GCPhysCR3;
     }
 
-#if PGM_GST_TYPE == PGM_TYPE_PAE
+#elif PGM_GST_TYPE == PGM_TYPE_PAE
     /* Monitor the PDPT page */
+    /*
+     * Register/Modify write phys handler for guest's CR3 if it changed.
+     */
 # ifndef PGMPOOL_WITH_MIXED_PT_CR3
     AssertFailed();
-# else
-    rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PDPT, GCPhysCR3);
 # endif
+    if (pVM->pgm.s.GCPhysGstCR3Monitored != GCPhysCR3)
+    {
+        rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PDPT, GCPhysCR3);
+        if (VBOX_FAILURE(rc))
+        {
+            AssertMsgFailed(("PGMHandlerPhysicalModify/PGMR3HandlerPhysicalRegister failed, rc=%Rrc GCPhysGstCR3Monitored=%RGp GCPhysCR3=%RGp\n",
+                             rc, pVM->pgm.s.GCPhysGstCR3Monitored, GCPhysCR3));
+            return rc;
+        }
+        pVM->pgm.s.GCPhysGstCR3Monitored = GCPhysCR3;
+    }
     /*
      * Do the 4 PDs.
      */
@@ -569,26 +579,13 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         if (CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].n.u1Present)
         {
             RTGCPHYS GCPhys = CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].u & X86_PDPE_PG_MASK;
-# ifndef PGMPOOL_WITH_MIXED_PT_CR3
             if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != GCPhys)
             {
-                if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
-                    rc = PGMHandlerPhysicalModify(pVM, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i], GCPhys, GCPhys + PAGE_SIZE - 1);
-                else
-                    rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhys + PAGE_SIZE - 1,
-                                                      pVM->pgm.s.pfnR3GstPAEWriteHandlerCR3, 0,
-                                                      pVM->pgm.s.pfnR0GstPAEWriteHandlerCR3, 0,
-                                                      pVM->pgm.s.pfnGCGstPAEWriteHandlerCR3, 0,
-                                                      pVM->pgm.s.pszR3GstPAEWriteHandlerCR3);
-                if (VBOX_SUCCESS(rc))
-                    pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = GCPhys;
-            }
-# else  /* PGMPOOL_WITH_MIXED_PT_CR3 */
-            Assert(   pVM->pgm.s.enmShadowMode == PGMMODE_PAE 
-                   || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX);
+                Assert(pVM->pgm.s.enmShadowMode == PGMMODE_PAE || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX);
 
-            rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i, GCPhys);
-# endif /* PGMPOOL_WITH_MIXED_PT_CR3 */
+                rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i, GCPhys);
+            }
+
             if (VBOX_FAILURE(rc))
             {
                 AssertMsgFailed(("PGMHandlerPhysicalModify/PGMR3HandlerPhysicalRegister failed, rc=%Rrc GCPhysGstCR3Monitored=%RGp GCPhysCR3=%RGp\n",
@@ -599,13 +596,14 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         }
         else if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
         {
-            rc = PGMHandlerPhysicalDeregister(pVM, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]);
+            rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i);
             AssertRC(rc);
             pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
         }
     }
-#endif /* PGM_GST_TYPE == PGM_TYPE_PAE */
 
+#elif PGM_GST_TYPE == PGM_TYPE_AMD64
+    AssertFailed();
 #else
     /* prot/real mode stub */
 
@@ -623,16 +621,13 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
-#if PGM_GST_TYPE == PGM_TYPE_32BIT \
- || PGM_GST_TYPE == PGM_TYPE_PAE \
- || PGM_GST_TYPE == PGM_TYPE_AMD64
-
     /*
      * Deregister the access handlers.
      *
      * PGMSyncCR3 will reinstall it if required and PGMSyncCR3 will be executed
      * before we enter GC again.
      */
+#if PGM_GST_TYPE == PGM_TYPE_32BIT
     if (pVM->pgm.s.GCPhysGstCR3Monitored != NIL_RTGCPHYS)
     {
 # ifndef PGMPOOL_WITH_MIXED_PT_CR3
@@ -649,32 +644,33 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
         pVM->pgm.s.GCPhysGstCR3Monitored = NIL_RTGCPHYS;
     }
 
-# if PGM_GST_TYPE == PGM_TYPE_PAE
+#elif PGM_GST_TYPE == PGM_TYPE_PAE
     /* The PDPT page */
 # ifndef PGMPOOL_WITH_MIXED_PT_CR3
     AssertFailed();
-# else
-    rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PDPT);
-    AssertRC(rc);
 # endif
+
+    if (pVM->pgm.s.GCPhysGstCR3Monitored != NIL_RTGCPHYS)
+    {
+        rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PDPT);
+        AssertRC(rc);
+    }
 
     /* The 4 PDs. */
     for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
+    {
         if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
         {
-# ifndef PGMPOOL_WITH_MIXED_PT_CR3
-            int rc2 = PGMHandlerPhysicalDeregister(pVM, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]);
-# else /* PGMPOOL_WITH_MIXED_PT_CR3 */
             Assert(pVM->pgm.s.enmShadowMode == PGMMODE_PAE || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX);
             int rc2 = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i);
-# endif /* PGMPOOL_WITH_MIXED_PT_CR3 */
             AssertRC(rc2);
             if (VBOX_FAILURE(rc2))
                 rc = rc2;
             pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
         }
-# endif
-
+    }
+#elif PGM_GST_TYPE == PGM_TYPE_AMD64
+    AssertFailed();
 #else
     /* prot/real mode stub */
 #endif
