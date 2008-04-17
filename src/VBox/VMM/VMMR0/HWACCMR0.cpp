@@ -314,7 +314,7 @@ HWACCMR0DECL(int) HWACCMR0Init()
 
 /**
  * Checks the error code array filled in for each cpu in the system.
- * 
+ *
  * @returns VBox status code.
  * @param   paRc        Error code array
  * @param   cErrorCodes Array size
@@ -352,7 +352,7 @@ HWACCMR0DECL(int) HWACCMR0Term()
 
     memset(aRc, 0, sizeof(aRc));
     int rc = RTMpOnAll(HWACCMR0DisableCPU, aRc, NULL);
-    AssertRC(rc);
+    Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
 
     /* Free the per-cpu pages used for VT-x and AMD-V */
     for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
@@ -371,7 +371,7 @@ HWACCMR0DECL(int) HWACCMR0Term()
 /**
  * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
  * is to be called on the target cpus.
- * 
+ *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     The 1st user argument.
  * @param   pvUser2     The 2nd user argument.
@@ -385,6 +385,7 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
 #ifdef LOG_ENABLED
     SUPR0Printf("HWACCMR0InitCPU cpu %d\n", idCpu);
 #endif
+    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
 
     if (u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX)
     {
@@ -499,7 +500,7 @@ HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
 /**
  * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
  * is to be called on the target cpus.
- * 
+ *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     The 1st user argument.
  * @param   pvUser2     The 2nd user argument.
@@ -512,6 +513,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
     RTHCPHYS pPageCpuPhys;
 
     Assert(pVM);
+    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
 
     /* Should never happen */
@@ -545,7 +547,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
 /**
  * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
  * is to be called on the target cpus.
- * 
+ *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     The 1st user argument.
  * @param   pvUser2     The 2nd user argument.
@@ -556,6 +558,7 @@ static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void 
     RTHCPHYS pPageCpuPhys;
     int     *paRc = (int *)pvUser1;
 
+    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
 
     if (!HWACCMR0Globals.aCpuInfo[idCpu].pMemObj)
