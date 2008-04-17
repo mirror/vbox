@@ -37,7 +37,7 @@ vrdpdd.Display   = 11  ; system32
 ; Empty
 
 [vrdpdd.Mfg.NT.5.1]
-%DevDesc% = vrdpdd, sun_vrdpdd
+%DevDesc% = vrdpdd, Sun_vrdpdd
 
 ;
 ; General installation section
@@ -135,6 +135,6 @@ DevDesc        = "Sun xVM VirtualBox Mirror Driver"
 ; Localizable Strings
 ;
 
-DiskId       = "Sun xVM Mirror Driver Installation DISK (VIDEO)"
+DiskId       = "VirtualBox Mirror Driver Installation DISK (VIDEO)"
 GraphAdap    = "Graphics Adapter"
 Sun          = "Sun Microsystems, Inc."
