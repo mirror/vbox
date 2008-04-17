@@ -2712,14 +2712,16 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             {
                 for (unsigned iPD = 0; iPD < ELEMENTS(pPDSrc->a); iPD++)
                 {
-                    if (pPDEDst[iPD].n.u1Present)
+                    if (   pPDEDst[iPD].n.u1Present 
+                        && !(pPDEDst[iPD].u & PGM_PDFLAGS_MAPPING))
                     {
                         pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPDPTE * X86_PG_PAE_ENTRIES + iPD);
                         pPDEDst[iPD].u = 0;
                     }
                 }
             }
-            pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present = 0;
+            if (!(pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].u & PGM_PLXFLAGS_MAPPING))
+                pVM->pgm.s.CTXMID(p,PaePDPT)->a[iPDPTE].n.u1Present = 0;
             continue;
         }
 #  else  /* PGM_GST_TYPE != PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_AMD64 */
