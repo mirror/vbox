@@ -1353,7 +1353,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
             RTGCPTR pParam1;
             uint32_t eflags;
 
-            AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
+            AssertReturn(pCpu->param1.size == 8, VERR_EM_INTERPRETER);
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
