@@ -1244,6 +1244,15 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 {
     OP_PARAMVAL param1, param2;
 
+#ifdef LOG_ENABLED
+    char *pszInstr;
+
+    if (pCpu->prefix & PREFIX_LOCK)
+        pszInstr = "Lock CmpXchg";
+    else
+        pszInstr = "CmpXchg";
+#endif
+
     /* Source to make DISQueryParamVal read the register value - ugly hack */
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
     if(VBOX_FAILURE(rc))
@@ -1288,7 +1297,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("CmpXchg %VGv=%08x eax=%08x %08x\n", pParam1, valpar1, pRegFrame->eax, valpar));
+            LogFlow(("%s %VGv=%08x eax=%08x %08x\n", pszInstr, pParam1, valpar1, pRegFrame->eax, valpar));
 
             MMGCRamRegisterTrapHandler(pVM);
             if (pCpu->prefix & PREFIX_LOCK)
@@ -1299,17 +1308,88 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 
             if (VBOX_FAILURE(rc))
             {
-                Log(("CmpXchg %VGv=%08x eax=%08x %08x -> emulation failed due to page fault!\n", pParam1, valpar1, pRegFrame->eax, valpar));
+                Log(("%s %VGv=%08x eax=%08x %08x -> emulation failed due to page fault!\n", pszInstr, pParam1, valpar1, pRegFrame->eax, valpar));
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("CmpXchg %VGv=%08x eax=%08x %08x ZF=%d\n", pParam1, valpar1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
+            LogFlow(("%s %VGv=%08x eax=%08x %08x ZF=%d\n", pszInstr, pParam1, valpar1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
                                   | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
 
             *pcbSize = param2.size;
+            return VINF_SUCCESS;
+        }
+    }
+    return VERR_EM_INTERPRETER;
+}
+
+/*
+ * [LOCK] CMPXCHG8B emulation.
+ */
+static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    OP_PARAMVAL param1;
+
+#ifdef LOG_ENABLED
+    char *pszInstr;
+
+    if (pCpu->prefix & PREFIX_LOCK)
+        pszInstr = "Lock CmpXchg8b";
+    else
+        pszInstr = "CmpXchg8b";
+#endif
+
+    /* Source to make DISQueryParamVal read the register value - ugly hack */
+    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    if(VBOX_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+    if (TRPMHasTrap(pVM))
+    {
+        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        {
+            RTGCPTR pParam1;
+            uint32_t eflags;
+
+            AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
+            switch(param1.type)
+            {
+            case PARMTYPE_ADDRESS:
+                pParam1 = (RTGCPTR)param1.val.val32;
+                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+
+                /* Safety check (in theory it could cross a page boundary and fault there though) */
+                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                break;
+
+            default:
+                return VERR_EM_INTERPRETER;
+            }
+
+            LogFlow(("%s %VGv=%08x eax=%08x\n", pszInstr, pParam1, pRegFrame->eax));
+
+            MMGCRamRegisterTrapHandler(pVM);
+            if (pCpu->prefix & PREFIX_LOCK)
+                rc = EMGCEmulateLockCmpXchg8b(pParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx, &eflags);
+            else
+                rc = EMGCEmulateCmpXchg8b(pParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx, &eflags);
+            MMGCRamDeregisterTrapHandler(pVM);
+
+            if (VBOX_FAILURE(rc))
+            {
+                Log(("%s %VGv=%08x eax=%08x -> emulation failed due to page fault!\n", pszInstr, pParam1, pRegFrame->eax));
+                return VERR_EM_INTERPRETER;
+            }
+
+            LogFlow(("%s %VGv=%08x eax=%08x ZF=%d\n", pszInstr, pParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
+
+            /* Update guest's eflags and finish. */
+            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
+                                  | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
+
+            *pcbSize = 8;
             return VINF_SUCCESS;
         }
     }
@@ -2067,6 +2147,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 #ifdef IN_GC
         INTERPRET_CASE(OP_STI,Sti);
         INTERPRET_CASE(OP_CMPXCHG, CmpXchg);
+        INTERPRET_CASE(OP_CMPXCHG8B, CmpXchg8b);
         INTERPRET_CASE(OP_XADD, XAdd);
 #endif
         INTERPRET_CASE(OP_HLT,Hlt);
@@ -2074,6 +2155,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 #ifdef VBOX_WITH_STATISTICS
 #ifndef IN_GC
         INTERPRET_STAT_CASE(OP_CMPXCHG,CmpXchg);
+        INTERPRET_STAT_CASE(OP_CMPXCHG8B, CmpXchg8b);
         INTERPRET_STAT_CASE(OP_XADD, XAdd);
 #endif
         INTERPRET_STAT_CASE(OP_MOVNTPS,MovNTPS);

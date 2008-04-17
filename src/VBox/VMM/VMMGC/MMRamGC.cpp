@@ -44,6 +44,10 @@ DECLASM(void) EMGCEmulateLockCmpXchg_EndProc(void);
 DECLASM(void) EMGCEmulateLockCmpXchg_Error(void);
 DECLASM(void) EMGCEmulateCmpXchg_EndProc(void);
 DECLASM(void) EMGCEmulateCmpXchg_Error(void);
+DECLASM(void) EMGCEmulateLockCmpXchg8b_EndProc(void);
+DECLASM(void) EMGCEmulateLockCmpXchg8b_Error(void);
+DECLASM(void) EMGCEmulateCmpXchg8b_EndProc(void);
+DECLASM(void) EMGCEmulateCmpXchg8b_Error(void);
 DECLASM(void) EMGCEmulateLockXAdd_EndProc(void);
 DECLASM(void) EMGCEmulateLockXAdd_Error(void);
 DECLASM(void) EMGCEmulateXAdd_EndProc(void);
@@ -183,6 +187,26 @@ DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
         &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateCmpXchg_EndProc)
     {
         pRegFrame->eip = (uintptr_t)&EMGCEmulateCmpXchg_Error;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Page fault inside EMGCEmulateLockCmpXchg8b()? Resume at _Error.
+     */
+    if (    (uintptr_t)&EMGCEmulateLockCmpXchg8b < (uintptr_t)pRegFrame->eip
+        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateLockCmpXchg8b_EndProc)
+    {
+        pRegFrame->eip = (uintptr_t)&EMGCEmulateLockCmpXchg8b_Error;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Page fault inside EMGCEmulateCmpXchg8b()? Resume at _Error.
+     */
+    if (    (uintptr_t)&EMGCEmulateCmpXchg8b < (uintptr_t)pRegFrame->eip
+        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateCmpXchg8b_EndProc)
+    {
+        pRegFrame->eip = (uintptr_t)&EMGCEmulateCmpXchg8b_Error;
         return VINF_SUCCESS;
     }
 
