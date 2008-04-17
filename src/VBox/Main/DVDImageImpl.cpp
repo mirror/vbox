@@ -167,7 +167,7 @@ STDMETHODIMP DVDImage::COMGETTER(FilePath) (BSTR *aFilePath)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mImageFileFull.cloneTo (aFilePath);
 
@@ -182,7 +182,7 @@ STDMETHODIMP DVDImage::COMGETTER(Accessible) (BOOL *aAccessible)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = S_OK;
 
@@ -217,7 +217,7 @@ STDMETHODIMP DVDImage::COMGETTER(Size) (ULONG64 *aSize)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     RTFILE file;
     int vrc = RTFileOpen (&file, Utf8Str (mImageFileFull),
@@ -269,7 +269,7 @@ void DVDImage::updatePath (const char *aNewFullPath, const char *aNewPath)
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     unconst (mImageFileFull) = aNewFullPath;
     unconst (mImageFile) = aNewPath;

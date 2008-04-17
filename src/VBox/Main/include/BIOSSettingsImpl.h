@@ -122,9 +122,9 @@ public:
 
     const Backupable <Data> &data() const { return mData; }
 
-    bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
-    bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }
-    void rollback() { AutoLock alock (this); mData.rollback(); }
+    bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
+    bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }
+    void rollback() { AutoWriteLock alock (this); mData.rollback(); }
     void commit();
     void copyFrom (BIOSSettings *aThat);
 

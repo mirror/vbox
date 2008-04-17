@@ -48,7 +48,7 @@ OUSBDevice::~OUSBDevice()
  */
 HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
 {
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     AssertReturn (!isReady(), E_UNEXPECTED);
 
     HRESULT hrc = aUSBDevice->COMGETTER(VendorId)(&mVendorId);
@@ -108,7 +108,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Id)(GUIDPARAMOUT aId)
     if (!aId)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mId.cloneTo(aId);
@@ -127,7 +127,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(VendorId)(USHORT *aVendorId)
     if (!aVendorId)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aVendorId = mVendorId;
@@ -146,7 +146,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(ProductId)(USHORT *aProductId)
     if (!aProductId)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aProductId = mProductId;
@@ -165,7 +165,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Revision)(USHORT *aRevision)
     if (!aRevision)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aRevision = mRevision;
@@ -183,7 +183,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Manufacturer)(BSTR *aManufacturer)
     if (!aManufacturer)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mManufacturer.cloneTo(aManufacturer);
@@ -202,7 +202,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Product)(BSTR *aProduct)
     if (!aProduct)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mProduct.cloneTo(aProduct);
@@ -221,7 +221,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(SerialNumber)(BSTR *aSerialNumber)
     if (!aSerialNumber)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mSerialNumber.cloneTo(aSerialNumber);
@@ -240,7 +240,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Address)(BSTR *aAddress)
     if (!aAddress)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mAddress.cloneTo(aAddress);
@@ -252,7 +252,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Port)(USHORT *aPort)
     if (!aPort)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aPort = mPort;
@@ -264,7 +264,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Version)(USHORT *aVersion)
     if (!aVersion)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aVersion = mVersion;
@@ -276,7 +276,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(PortVersion)(USHORT *aPortVersion)
     if (!aPortVersion)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aPortVersion = mPortVersion;
@@ -288,7 +288,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Remote)(BOOL *aRemote)
     if (!aRemote)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aRemote = mRemote;

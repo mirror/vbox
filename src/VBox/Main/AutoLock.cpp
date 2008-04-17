@@ -1,6 +1,6 @@
 /** @file
  *
- * AutoLock: smart critical section wrapper
+ * AutoWriteLock/AutoReadLock: smart R/W semaphore wrappers
  */
 
 /*
@@ -42,7 +42,7 @@ RWLockHandle::~RWLockHandle()
     RTCritSectDelete (&mCritSect);
 }
 
-bool RWLockHandle::isLockedOnCurrentThread() const
+bool RWLockHandle::isWriteLockOnCurrentThread() const
 {
     RTCritSectEnter (&mCritSect);
     bool locked = mWriteLockThread == RTThreadSelf();

@@ -69,7 +69,7 @@ HRESULT MachineDebugger::init(Console *parent)
 
     ComAssertRet (parent, E_INVALIDARG);
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mParent = parent;
@@ -93,7 +93,7 @@ void MachineDebugger::uninit()
 {
     LogFlow(("MachineDebugger::uninit(): isReady=%d\n", isReady()));
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), (void) 0);
 
     setReady (false);
@@ -109,7 +109,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(Singlestep)(BOOL *enabled)
 {
     if (!enabled)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
     return E_NOTIMPL;
@@ -123,7 +123,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(Singlestep)(BOOL *enabled)
  */
 STDMETHODIMP MachineDebugger::COMSETTER(Singlestep)(BOOL enable)
 {
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
     return E_NOTIMPL;
@@ -196,7 +196,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(RecompileUser)(BOOL *enabled)
 {
     if (!enabled)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
@@ -216,7 +216,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser)(BOOL enable)
 {
     LogFlowThisFunc (("enable=%d\n", enable));
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (!fFlushMode)
@@ -263,7 +263,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(RecompileSupervisor)(BOOL *enabled)
 {
     if (!enabled)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
@@ -283,7 +283,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor)(BOOL enable)
 {
     LogFlowThisFunc (("enable=%d\n", enable));
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (!fFlushMode)
@@ -330,7 +330,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(PATMEnabled)(BOOL *enabled)
 {
     if (!enabled)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
@@ -348,7 +348,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(PATMEnabled)(BOOL *enabled)
  */
 STDMETHODIMP MachineDebugger::COMSETTER(PATMEnabled)(BOOL enable)
 {
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     LogFlowThisFunc (("enable=%d\n", enable));
 
@@ -382,7 +382,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(CSAMEnabled)(BOOL *enabled)
 {
     if (!enabled)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
@@ -400,7 +400,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(CSAMEnabled)(BOOL *enabled)
  */
 STDMETHODIMP MachineDebugger::COMSETTER(CSAMEnabled)(BOOL enable)
 {
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     LogFlowThisFunc (("enable=%d\n", enable));
 
@@ -442,7 +442,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(LogEnabled)(BOOL *aEnabled)
 {
     if (!aEnabled)
         return E_POINTER;
-    AutoLock alock(this);
+    AutoWriteLock alock(this);
     CHECK_READY();
     PRTLOGGER pLogInstance = RTLogDefaultInstance();
     *aEnabled = pLogInstance && !(pLogInstance->fFlags & RTLOGFLAGS_DISABLED);
@@ -457,7 +457,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(LogEnabled)(BOOL *aEnabled)
  */
 STDMETHODIMP MachineDebugger::COMSETTER(LogEnabled)(BOOL aEnabled)
 {
-    AutoLock alock(this);
+    AutoWriteLock alock(this);
 
     CHECK_READY();
     LogFlowThisFunc (("aEnabled=%d\n", aEnabled));
@@ -497,7 +497,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExEnabled)(BOOL *enabled)
     if (!enabled)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     Console::SafeVMPtrQuiet pVM (mParent);
@@ -519,7 +519,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(PAEEnabled)(BOOL *enabled)
     if (!enabled)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     Console::SafeVMPtrQuiet pVM (mParent);
@@ -544,7 +544,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(VirtualTimeRate)(ULONG *pct)
     if (!pct)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     Console::SafeVMPtrQuiet pVM (mParent);
@@ -566,7 +566,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate)(ULONG pct)
     if (pct < 2 || pct > 20000)
         return E_INVALIDARG;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (!fFlushMode)
@@ -607,7 +607,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(VM)(ULONG64 *vm)
     if (!vm)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     Console::SafeVMPtr pVM (mParent);

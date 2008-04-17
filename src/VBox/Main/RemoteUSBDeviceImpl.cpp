@@ -51,7 +51,7 @@ HRESULT RemoteUSBDevice::init (uint32_t u32ClientId, VRDPUSBDEVICEDESC *pDevDesc
 {
     LogFlowMember (("RemoteUSBDevice::init()\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mId.create();
@@ -92,7 +92,7 @@ void RemoteUSBDevice::uninit()
 {
     LogFlowMember (("RemoteUSBDevice::uninit()\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), (void) 0);
 
     setReady (false);
@@ -106,7 +106,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Id) (GUIDPARAMOUT aId)
     if (!aId)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mId.cloneTo (aId);
@@ -118,7 +118,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(VendorId) (USHORT *aVendorId)
     if (!aVendorId)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aVendorId = mVendorId;
@@ -130,7 +130,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(ProductId) (USHORT *aProductId)
     if (!aProductId)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aProductId = mProductId;
@@ -142,7 +142,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Revision) (USHORT *aRevision)
     if (!aRevision)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aRevision = mRevision;
@@ -154,7 +154,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Manufacturer) (BSTR *aManufacturer)
     if (!aManufacturer)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mManufacturer.cloneTo (aManufacturer);
@@ -166,7 +166,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Product) (BSTR *aProduct)
     if (!aProduct)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mProduct.cloneTo (aProduct);
@@ -178,7 +178,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(SerialNumber) (BSTR *aSerialNumber)
     if (!aSerialNumber)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mSerialNumber.cloneTo (aSerialNumber);
@@ -190,7 +190,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Address) (BSTR *aAddress)
     if (!aAddress)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mAddress.cloneTo (aAddress);
@@ -202,7 +202,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Port) (USHORT *aPort)
     if (!aPort)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aPort = mPort;
@@ -214,7 +214,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Version) (USHORT *aVersion)
     if (!aVersion)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aVersion = mVersion;
@@ -226,7 +226,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(PortVersion) (USHORT *aPortVersion)
     if (!aPortVersion)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aPortVersion = mPortVersion;
@@ -238,7 +238,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Remote) (BOOL *aRemote)
     if (!aRemote)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     /* RemoteUSBDevice is always remote. */
@@ -254,7 +254,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(State) (USBDeviceState_T *aState)
     if (!aState)
         return E_POINTER;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aState = mState;

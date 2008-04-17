@@ -104,7 +104,7 @@ HRESULT SATAController::init (Machine *aParent, SATAController *aPeer)
     unconst (mParent) = aParent;
     unconst (mPeer) = aPeer;
 
-    AutoLock thatlock (aPeer);
+    AutoWriteLock thatlock (aPeer);
     mData.share (aPeer->mData);
 
     /* Confirm a successful initialization */
@@ -132,7 +132,7 @@ HRESULT SATAController::initCopy (Machine *aParent, SATAController *aPeer)
     unconst (mParent) = aParent;
     /* mPeer is left null */
 
-    AutoLock thatlock (aPeer);
+    AutoWriteLock thatlock (aPeer);
     mData.attachCopy (aPeer->mData);
 
     /* Confirm a successful initialization */
@@ -176,7 +176,7 @@ STDMETHODIMP SATAController::COMGETTER(Enabled) (BOOL *aEnabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aEnabled = mData->mEnabled;
 
@@ -195,7 +195,7 @@ STDMETHODIMP SATAController::COMSETTER(Enabled) (BOOL aEnabled)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mEnabled != aEnabled)
     {
@@ -219,7 +219,7 @@ STDMETHODIMP SATAController::COMGETTER(PortCount) (ULONG *aPortCount)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aPortCount = mData->mPortCount;
 
@@ -238,7 +238,7 @@ STDMETHODIMP SATAController::COMSETTER(PortCount) (ULONG aPortCount)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mPortCount != aPortCount)
     {
@@ -294,7 +294,7 @@ STDMETHODIMP SATAController::SetIDEEmulationPort(LONG DevicePosition, LONG aPort
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     switch (DevicePosition)
     {
@@ -337,7 +337,7 @@ HRESULT SATAController::loadSettings (const settings::Key &aMachineNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* SATA Controller node (required) */
     Key controller = aMachineNode.key ("SATAController");
@@ -373,7 +373,7 @@ HRESULT SATAController::saveSettings (settings::Key &aMachineNode)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     /* first, delete the entry */
     Key controller = aMachineNode.findKey ("SATAController");
@@ -403,7 +403,7 @@ bool SATAController::isModified()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     if (mData.isBackedUp())
         return true;
@@ -417,7 +417,7 @@ bool SATAController::isReallyModified()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     if (mData.hasActualChanges())
         return true;
@@ -435,7 +435,7 @@ bool SATAController::rollback()
     Machine::AutoAnyStateDependency adep (mParent);
     AssertComRCReturn (adep.rc(), false);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     bool dataChanged = false;
 
@@ -474,7 +474,7 @@ void SATAController::commit()
         if (mPeer)
         {
             // attach new data to the peer and reshare it
-            AutoLock peerlock (mPeer);
+            AutoWriteLock peerlock (mPeer);
             mPeer->mData.attach (mData);
         }
     }

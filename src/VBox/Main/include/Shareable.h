@@ -91,19 +91,20 @@ protected:
  *  </ul>
  *
  *  This template class is NOT thread-safe. If you need thread safefy, you can
- *  specify AutoLock::Lockable as the second argument to the template. In this
- *  case, you can explicitly lock instances of the template (using the AutoLock
- *  and AutoReaderLock classes) before accessing any of its members, as follows:
+ *  specify util::Lockable as the second argument to the template. In this
+ *  case, you can explicitly lock instances of the template (using the
+ *  AutoWriteLock and AutoReadLock classes) before accessing any of its
+ *  members, as follows:
  *  <code>
  *      struct Data { ... };
- *      Shareable <Data, AutoLock::Lockable> mData;
+ *      Shareable <Data, util::Lockable> mData;
  *      ...
  *      {
  *          // acquire the lock until the end of the block
- *          AutoLock lock (mData);
+ *          AutoWriteLock alock (mData);
  *          // share with another instance (thatData defined somewhere else)
  *          {
- *              AutoReaderLock thatLock (thatData);
+ *              AutoReadLock thatLock (thatData);
  *              mData = thatData;
  *          }
  *          // access managed data (through #operator->())
@@ -116,23 +117,23 @@ protected:
  *  all other Shareable instances referring it (so locking it through one
  *  Shareable instance will prevent another one sharing the same data from
  *  accessing it). This can be done in a similar way by deriving the data
- *  structure to manage from AutoLock::Lockable and using the #data() method to
+ *  structure to manage from util::Lockable and using the #data() method to
  *  lock it before accessing:
  *  <code>
- *      struct Data : public AutoLock::Lockable { ... };
- *      Shareable <Data, AutoLock::Lockable> mData;
+ *      struct Data : public util::Lockable { ... };
+ *      Shareable <Data, util::Lockable> mData;
  *      ...
  *      {
  *          // read-only data access
- *          AutoReaderLock lock (mData); // protect Shareable members (read-only)
- *          AutoReaderLock dataLock (mData.data()); // protect Data members (read-only)
+ *          AutoReadLock lock (mData); // protect Shareable members (read-only)
+ *          AutoReadLock dataLock (mData.data()); // protect Data members (read-only)
  *          if (mData->mSomeVield) ...
  *      }
  *      ...
  *      {
  *          // data modification
- *          AutoReaderLock lock (mData); // protect Shareable members (still read-only)
- *          AutoLock dataLock (mData.data()); // protect Data members (exclusive)
+ *          AutoReadLock lock (mData); // protect Shareable members (still read-only)
+ *          AutoWriteLock dataLock (mData.data()); // protect Data members (exclusive)
  *          mData->mSomeVield = someValue;
  *      }
  *  </code>
@@ -283,7 +284,7 @@ WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP_TPL (Shareable, <class D>, <D>)
  *  All thread safety remarks mentioned in the descrition of the Shareable
  *  template are appliable to this class as well. In particular, all new methods
  *  of this template are not implicitly thread-safe, so if you add thread
- *  safety using the AutoLock::Lockable class, don't forget to lock the
+ *  safety using the util::Lockable class, don't forget to lock the
  *  Backupable instance before doing #backup(), #commit() or #rollback().
  *
  *  The managed data structure (passed as the first argument to the template)

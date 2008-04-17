@@ -96,7 +96,7 @@ HRESULT ParallelPort::init (Machine *aParent, ParallelPort *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC (thatCaller.rc());
 
-    AutoReaderLock thatLock (aThat);
+    AutoReadLock thatLock (aThat);
     mData.share (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -128,7 +128,7 @@ HRESULT ParallelPort::initCopy (Machine *aParent, ParallelPort *aThat)
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC (thatCaller.rc());
 
-    AutoReaderLock thatLock (aThat);
+    AutoReadLock thatLock (aThat);
     mData.attachCopy (aThat->mData);
 
     /* Confirm a successful initialization */
@@ -176,7 +176,7 @@ HRESULT ParallelPort::loadSettings (const settings::Key &aPortNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -223,7 +223,7 @@ HRESULT ParallelPort::saveSettings (settings::Key &aPortNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     aPortNode.setValue <bool> ("enabled", !!mData->mEnabled);
     aPortNode.setValue <ULONG> ("IOBase", mData->mIOBase, 16);
@@ -245,7 +245,7 @@ bool ParallelPort::rollback()
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     bool changed = false;
 
@@ -324,7 +324,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Enabled) (BOOL *aEnabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aEnabled = mData->mEnabled;
 
@@ -342,7 +342,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Enabled) (BOOL aEnabled)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mEnabled != aEnabled)
     {
@@ -373,7 +373,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Slot) (ULONG *aSlot)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aSlot = mData->mSlot;
 
@@ -388,7 +388,7 @@ STDMETHODIMP ParallelPort::COMGETTER(IRQ) (ULONG *aIRQ)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aIRQ = mData->mIRQ;
 
@@ -412,7 +412,7 @@ STDMETHODIMP ParallelPort::COMSETTER(IRQ)(ULONG aIRQ)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
@@ -443,7 +443,7 @@ STDMETHODIMP ParallelPort::COMGETTER(IOBase) (ULONG *aIOBase)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aIOBase = mData->mIOBase;
 
@@ -467,7 +467,7 @@ STDMETHODIMP ParallelPort::COMSETTER(IOBase)(ULONG aIOBase)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
@@ -498,7 +498,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mPath.cloneTo (aPath);
 
@@ -510,7 +510,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
  */
 HRESULT ParallelPort::checkSetPath (const BSTR aPath)
 {
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     if (mData->mEnabled &&
         (aPath == NULL || *aPath == '\0'))
@@ -531,7 +531,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Path) (INPTR BSTR aPath)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     if (mData->mPath != aPath)
     {

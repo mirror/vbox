@@ -85,7 +85,7 @@ HRESULT BIOSSettings::init (Machine *aParent, BIOSSettings *that)
     mParent = aParent;
     mPeer = that;
 
-    AutoLock thatlock (that);
+    AutoWriteLock thatlock (that);
     mData.share (that->mData);
 
     autoInitSpan.setSucceeded();
@@ -113,7 +113,7 @@ HRESULT BIOSSettings::initCopy (Machine *aParent, BIOSSettings *that)
     mParent = aParent;
     // mPeer is left null
 
-    AutoLock thatlock (that);
+    AutoWriteLock thatlock (that);
     mData.attachCopy (that->mData);
 
     autoInitSpan.setSucceeded();
@@ -154,7 +154,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoFadeIn)(BOOL *enabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *enabled = mData->mLogoFadeIn;
 
@@ -170,7 +170,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeIn)(BOOL enable)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.backup();
     mData->mLogoFadeIn = enable;
@@ -186,7 +186,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoFadeOut)(BOOL *enabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *enabled = mData->mLogoFadeOut;
 
@@ -202,7 +202,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeOut)(BOOL enable)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.backup();
     mData->mLogoFadeOut = enable;
@@ -218,7 +218,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoDisplayTime)(ULONG *displayTime)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *displayTime = mData->mLogoDisplayTime;
 
@@ -234,7 +234,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoDisplayTime)(ULONG displayTime)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.backup();
     mData->mLogoDisplayTime = displayTime;
@@ -250,7 +250,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoImagePath)(BSTR *imagePath)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     mData->mLogoImagePath.cloneTo(imagePath);
     return S_OK;
@@ -269,7 +269,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoImagePath)(INPTR BSTR imagePath)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.backup();
     mData->mLogoImagePath = imagePath;
@@ -285,7 +285,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(BootMenuMode)(BIOSBootMenuMode_T *bootMenuM
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *bootMenuMode = mData->mBootMenuMode;
     return S_OK;
@@ -300,7 +300,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(BootMenuMode)(BIOSBootMenuMode_T bootMenuMo
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.backup();
     mData->mBootMenuMode = bootMenuMode;
@@ -316,7 +316,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(ACPIEnabled)(BOOL *enabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *enabled = mData->mACPIEnabled;
 
@@ -332,7 +332,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(ACPIEnabled)(BOOL enable)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.backup();
     mData->mACPIEnabled = enable;
@@ -348,7 +348,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(IOAPICEnabled)(BOOL *enabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *enabled = mData->mIOAPICEnabled;
 
@@ -364,7 +364,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(IOAPICEnabled)(BOOL enable)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.backup();
     mData->mIOAPICEnabled = enable;
@@ -380,7 +380,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(PXEDebugEnabled)(BOOL *enabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *enabled = mData->mPXEDebugEnabled;
 
@@ -396,7 +396,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(PXEDebugEnabled)(BOOL enable)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.backup();
     mData->mPXEDebugEnabled = enable;
@@ -412,7 +412,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(IDEControllerType)(IDEControllerType_T *aCo
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *aControllerType = mData->mIDEControllerType;
 
@@ -428,7 +428,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(IDEControllerType)(IDEControllerType_T aCon
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* make sure the value is allowed */
     switch (aControllerType)
@@ -457,7 +457,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(TimeOffset)(LONG64 *offset)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     *offset = mData->mTimeOffset;
 
@@ -473,7 +473,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(TimeOffset)(LONG64 offset)
     Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     mData.backup();
     mData->mTimeOffset = offset;
@@ -505,7 +505,7 @@ HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -619,7 +619,7 @@ HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Key biosNode = aMachineNode.createKey ("BIOS");
 
@@ -704,14 +704,14 @@ HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
 
 void BIOSSettings::commit()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     if (mData.isBackedUp())
     {
         mData.commit();
         if (mPeer)
         {
             // attach new data to the peer and reshare it
-            AutoLock peerlock (mPeer);
+            AutoWriteLock peerlock (mPeer);
             mPeer->mData.attach (mData);
         }
     }
@@ -719,7 +719,7 @@ void BIOSSettings::commit()
 
 void BIOSSettings::copyFrom (BIOSSettings *aThat)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     // this will back up current data
     mData.assignCopy (aThat->mData);

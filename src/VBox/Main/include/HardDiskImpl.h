@@ -65,7 +65,7 @@ protected:
 
     // protected initializer/uninitializer for internal purposes only
     HRESULT protectedInit (VirtualBox *aVirtualBox, HardDisk *aParent);
-    void protectedUninit (AutoLock &alock);
+    void protectedUninit (AutoWriteLock &alock);
 
 public:
 
@@ -107,7 +107,7 @@ public:
     }
     bool isParentImmutable() const
     {
-        AutoLock parentLock (mParent);
+        AutoWriteLock parentLock (mParent);
         return !mParent.isNull() && mParent->type() == HardDiskType_Immutable;
     }
 
@@ -120,7 +120,7 @@ public:
 
     /**
      *  Shortcut to #dependentChildren().
-     *  Do |AutoLock alock (childrenLock());| before acceessing the returned list!
+     *  Do |AutoWriteLock alock (childrenLock());| before acceessing the returned list!
      */
     const HardDiskList &children() const { return dependentChildren(); }
 
@@ -168,8 +168,8 @@ public:
     void updatePaths (const char *aOldPath, const char *aNewPath);
 
     /* the following must be called from under the lock */
-    bool isBusy() { isLockedOnCurrentThread(); return mBusy; }
-    unsigned readers() { isLockedOnCurrentThread(); return mReaders; }
+    bool isBusy() { isWriteLockOnCurrentThread(); return mBusy; }
+    unsigned readers() { isWriteLockOnCurrentThread(); return mReaders; }
     const Bstr &lastAccessError() const { return mLastAccessError; }
 
     static HRESULT openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,

@@ -81,7 +81,7 @@ HRESULT Keyboard::init (Console *parent)
 
     ComAssertRet (parent, E_INVALIDARG);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mParent = parent;
@@ -98,7 +98,7 @@ void Keyboard::uninit()
 {
     LogFlow(("Keyboard::uninit(): isReady=%d\n", isReady()));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), (void) 0);
 
     if (mpDrv)
@@ -118,7 +118,7 @@ void Keyboard::uninit()
  */
 STDMETHODIMP Keyboard::PutScancode(LONG scancode)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -150,7 +150,7 @@ STDMETHODIMP Keyboard::PutScancodes(LONG *scancodes,
     if (!scancodes)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -235,7 +235,7 @@ DECLCALLBACK(void) Keyboard::drvDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("Keyboard::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
     if (pData->pKeyboard)
     {
-        AutoLock kbdLock (pData->pKeyboard);
+        AutoWriteLock kbdLock (pData->pKeyboard);
         pData->pKeyboard->mpDrv = NULL;
         pData->pKeyboard->mpVMMDev = NULL;
     }

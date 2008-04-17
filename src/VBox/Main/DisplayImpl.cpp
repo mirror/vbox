@@ -111,7 +111,7 @@ HRESULT Display::init (Console *parent)
 
     ComAssertRet (parent, E_INVALIDARG);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mParent = parent;
@@ -166,7 +166,7 @@ void Display::uninit()
 {
     LogFlowFunc (("isReady=%d\n", isReady()));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), (void) 0);
 
     ULONG ul;
@@ -1245,7 +1245,7 @@ STDMETHODIMP Display::COMGETTER(Width) (ULONG *width)
     if (!width)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -1265,7 +1265,7 @@ STDMETHODIMP Display::COMGETTER(Height) (ULONG *height)
     if (!height)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -1285,7 +1285,7 @@ STDMETHODIMP Display::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
     if (!bitsPerPixel)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -1305,7 +1305,7 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
 {
     LogFlowFunc (("\n"));
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     /*
@@ -1325,7 +1325,7 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
     if (pVM.isOk())
     {
         /* Must leave the lock here because the changeFramebuffer will also obtain it. */
-        lock.leave ();
+        alock.leave ();
 
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
@@ -1337,7 +1337,7 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
 
-        lock.enter ();
+        alock.enter ();
 
         ComAssertRCRet (vrc, E_FAIL);
     }
@@ -1356,7 +1356,7 @@ STDMETHODIMP Display::LockFramebuffer (BYTE **address)
     if (!address)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     /* only allowed for internal framebuffers */
@@ -1376,7 +1376,7 @@ STDMETHODIMP Display::LockFramebuffer (BYTE **address)
 
 STDMETHODIMP Display::UnlockFramebuffer()
 {
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mFramebufferOpened)
@@ -1399,14 +1399,14 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
     if (!frameBuf)
         return E_POINTER;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
     {
         /* Must leave the lock here because the changeFramebuffer will also obtain it. */
-        lock.leave ();
+        alock.leave ();
 
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
@@ -1417,7 +1417,7 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
 
-        lock.enter ();
+        alock.enter ();
 
         ComAssertRCRet (vrc, E_FAIL);
     }
@@ -1438,14 +1438,14 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer *aFramebuffe
     if (!aFramebuffer)
         return E_POINTER;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
     {
         /* Must leave the lock here because the changeFramebuffer will also obtain it. */
-        lock.leave ();
+        alock.leave ();
 
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
@@ -1456,7 +1456,7 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer *aFramebuffe
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
 
-        lock.enter ();
+        alock.enter ();
 
         ComAssertRCRet (vrc, E_FAIL);
     }
@@ -1477,7 +1477,7 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId, IFramebuffer **aFramebuff
     if (!aFramebuffer)
         return E_POINTER;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     /* @todo this should be actually done on EMT. */
@@ -1496,7 +1496,7 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId, IFramebuffer **aFramebuff
 
 STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel, ULONG aDisplay)
 {
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -1533,7 +1533,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsP
 //        return setError(E_FAIL, tr("Not enough VRAM for the selected video mode"));
 
     /* Have to leave the lock because the pfnRequestDisplayChange will call EMT.  */
-    lock.leave ();
+    alock.leave ();
     if (mParent->getVMMDev())
         mParent->getVMMDev()->getVMMDevPort()->
             pfnRequestDisplayChange (mParent->getVMMDev()->getVMMDevPort(),
@@ -1543,11 +1543,11 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsP
 
 STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
 {
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     /* Have to leave the lock because the pfnRequestSeamlessChange will call EMT.  */
-    lock.leave ();
+    alock.leave ();
     if (mParent->getVMMDev())
         mParent->getVMMDev()->getVMMDevPort()->
             pfnRequestSeamlessChange (mParent->getVMMDev()->getVMMDevPort(),
@@ -1572,7 +1572,7 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     if (!width || !height)
         return E_INVALIDARG;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -1642,7 +1642,7 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
     if (!width || !height)
         return E_INVALIDARG;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -1699,7 +1699,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 {
     LogFlowFuncEnter();
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
@@ -1737,7 +1737,7 @@ STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
 {
     LogFlowFunc (("\n"));
 
-    /// @todo (dmik) can we AutoLock alock (this); here?
+    /// @todo (dmik) can we AutoWriteLock alock (this); here?
     //  do it when we switch this class to VirtualBoxBase_NEXT.
     //  This will require general code review and may add some details.
     //  In particular, we may want to check whether EMT is really waiting for
@@ -1770,7 +1770,7 @@ STDMETHODIMP Display::UpdateCompleted()
 {
     LogFlowFunc (("\n"));
 
-    /// @todo (dmik) can we AutoLock alock (this); here?
+    /// @todo (dmik) can we AutoWriteLock alock (this); here?
     //  do it when we switch this class to VirtualBoxBase_NEXT.
     //  Tthis will require general code review and may add some details.
     //  In particular, we may want to check whether EMT is really waiting for
@@ -1904,7 +1904,7 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
 
     /// @todo (r=dmik) AutoCaller
 
-    AutoLock alock (that);
+    AutoWriteLock alock (that);
 
     DISPLAYFBINFO *pDisplayFBInfo = &that->maFramebuffers[uScreenId];
     pDisplayFBInfo->pFramebuffer = aFB;
@@ -2387,7 +2387,7 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
     LogFlowFunc (("iInstance=%d\n", pDrvIns->iInstance));
     if (pData->pDisplay)
     {
-        AutoLock displayLock (pData->pDisplay);
+        AutoWriteLock displayLock (pData->pDisplay);
         pData->pDisplay->mpDrv = NULL;
         pData->pDisplay->mpVMMDev = NULL;
         pData->pDisplay->mLastAddress = NULL;

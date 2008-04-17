@@ -162,7 +162,7 @@ HRESULT HardDisk::protectedInit (VirtualBox *aVirtualBox, HardDisk *aParent)
  *  Using mParent and mVirtualBox members after this method returns
  *  is forbidden.
  */
-void HardDisk::protectedUninit (AutoLock &alock)
+void HardDisk::protectedUninit (AutoWriteLock &alock)
 {
     LogFlowThisFunc (("\n"));
 
@@ -195,7 +195,7 @@ STDMETHODIMP HardDisk::COMGETTER(Id) (GUIDPARAMOUT aId)
     if (!aId)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mId.cloneTo (aId);
@@ -207,7 +207,7 @@ STDMETHODIMP HardDisk::COMGETTER(StorageType) (HardDiskStorageType_T *aStorageTy
     if (!aStorageType)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aStorageType = mStorageType;
@@ -219,7 +219,7 @@ STDMETHODIMP HardDisk::COMGETTER(Location) (BSTR *aLocation)
     if (!aLocation)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     toString (false /* aShort */).cloneTo (aLocation);
@@ -231,7 +231,7 @@ STDMETHODIMP HardDisk::COMGETTER(Type) (HardDiskType_T *aType)
     if (!aType)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aType = mType;
@@ -240,7 +240,7 @@ STDMETHODIMP HardDisk::COMGETTER(Type) (HardDiskType_T *aType)
 
 STDMETHODIMP HardDisk::COMSETTER(Type) (HardDiskType_T aType)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mRegistered)
@@ -273,7 +273,7 @@ STDMETHODIMP HardDisk::COMGETTER(Parent) (IHardDisk **aParent)
     if (!aParent)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mParent.queryInterfaceTo (aParent);
@@ -285,10 +285,10 @@ STDMETHODIMP HardDisk::COMGETTER(Children) (IHardDiskCollection **aChildren)
     if (!aChildren)
         return E_POINTER;
 
-    AutoReaderLock lock(this);
+    AutoReadLock lock(this);
     CHECK_READY();
 
-    AutoReaderLock chLock (childrenLock());
+    AutoReadLock chLock (childrenLock());
 
     ComObjPtr <HardDiskCollection> collection;
     collection.createObject();
@@ -302,7 +302,7 @@ STDMETHODIMP HardDisk::COMGETTER(Root) (IHardDisk **aRoot)
     if (!aRoot)
         return E_POINTER;
 
-    AutoReaderLock lock(this);
+    AutoReadLock lock(this);
     CHECK_READY();
 
     root().queryInterfaceTo (aRoot);
@@ -314,7 +314,7 @@ STDMETHODIMP HardDisk::COMGETTER(Accessible) (BOOL *aAccessible)
     if (!aAccessible)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = getAccessible (mLastAccessError);
@@ -330,7 +330,7 @@ STDMETHODIMP HardDisk::COMGETTER(AllAccessible) (BOOL *aAllAccessible)
     if (!aAllAccessible)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mParent)
@@ -341,7 +341,7 @@ STDMETHODIMP HardDisk::COMGETTER(AllAccessible) (BOOL *aAllAccessible)
         ComObjPtr <HardDisk> parent = (HardDisk *) mParent;
         while (parent)
         {
-            AutoLock parentLock (parent);
+            AutoWriteLock parentLock (parent);
             HRESULT rc = parent->getAccessible (mLastAccessError);
             if (FAILED (rc))
                 break;
@@ -367,7 +367,7 @@ STDMETHODIMP HardDisk::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
     if (!aLastAccessError)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mLastAccessError.cloneTo (aLastAccessError);
@@ -379,7 +379,7 @@ STDMETHODIMP HardDisk::COMGETTER(MachineId) (GUIDPARAMOUT aMachineId)
     if (!aMachineId)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mMachineId.cloneTo (aMachineId);
@@ -391,7 +391,7 @@ STDMETHODIMP HardDisk::COMGETTER(SnapshotId) (GUIDPARAMOUT aSnapshotId)
     if (!aSnapshotId)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mSnapshotId.cloneTo (aSnapshotId);
@@ -407,7 +407,7 @@ STDMETHODIMP HardDisk::CloneToImage (INPTR BSTR aFilePath,
     if (!aImage || !aProgress)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     CHECK_BUSY();
 
@@ -438,7 +438,7 @@ STDMETHODIMP HardDisk::CloneToImage (INPTR BSTR aFilePath,
         Utf8Str fp = aFilePath;
         if (!RTPathHavePath (fp))
         {
-            AutoReaderLock propsLock (mVirtualBox->systemProperties());
+            AutoReadLock propsLock (mVirtualBox->systemProperties());
             path = Utf8StrFmt ("%ls%c%s",
                 mVirtualBox->systemProperties()->defaultVDIFolder().raw(),
                 RTPATH_DELIMITER,
@@ -528,7 +528,7 @@ ComObjPtr <HardDisk> HardDisk::root() const
  */
 HRESULT HardDisk::trySetRegistered (BOOL aRegistered)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (aRegistered)
@@ -599,7 +599,7 @@ HRESULT HardDisk::getBaseAccessible (Bstr &aAccessError,
                                      bool aCheckBusy /* = false */,
                                      bool aCheckReaders /* = false */)
 {
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     aAccessError.setNull();
@@ -635,7 +635,7 @@ HRESULT HardDisk::getBaseAccessible (Bstr &aAccessError,
  */
 bool HardDisk::sameAs (HardDisk *that)
 {
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     if (!isReady())
         return false;
 
@@ -654,7 +654,7 @@ bool HardDisk::sameAs (HardDisk *that)
  */
 void HardDisk::setBusy()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturnVoid (isReady());
 
     AssertMsgReturnVoid (mBusy == false, ("%ls", toString().raw()));
@@ -668,7 +668,7 @@ void HardDisk::setBusy()
  */
 void HardDisk::clearBusy()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturnVoid (isReady());
 
     AssertMsgReturnVoid (mBusy == true, ("%ls", toString().raw()));
@@ -683,7 +683,7 @@ void HardDisk::clearBusy()
  */
 void HardDisk::addReader()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturnVoid (isReady());
 
     AssertMsgReturnVoid (mBusy == false, ("%ls", toString().raw()));
@@ -696,7 +696,7 @@ void HardDisk::addReader()
  */
 void HardDisk::releaseReader()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturnVoid (isReady());
 
     AssertMsgReturnVoid (mBusy == false, ("%ls", toString().raw()));
@@ -710,12 +710,12 @@ void HardDisk::releaseReader()
  */
 void HardDisk::addReaderOnAncestors()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturnVoid (isReady());
 
     if (mParent)
     {
-        AutoLock alock (mParent);
+        AutoWriteLock alock (mParent);
         mParent->addReader();
         mParent->addReaderOnAncestors();
     }
@@ -726,12 +726,12 @@ void HardDisk::addReaderOnAncestors()
  */
 void HardDisk::releaseReaderOnAncestors()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturnVoid (isReady());
 
     if (mParent)
     {
-        AutoLock alock (mParent);
+        AutoWriteLock alock (mParent);
         mParent->releaseReaderOnAncestors();
         mParent->releaseReader();
     }
@@ -743,19 +743,19 @@ void HardDisk::releaseReaderOnAncestors()
  */
 bool HardDisk::hasForeignChildren()
 {
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (isReady(), false);
 
     AssertReturn (!mMachineId.isEmpty(), false);
 
     /* check all children */
-    AutoReaderLock chLock (childrenLock());
+    AutoReadLock chLock (childrenLock());
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
          ++ it)
     {
         ComObjPtr <HardDisk> child = *it;
-        AutoReaderLock childLock (child);
+        AutoReadLock childLock (child);
         if (child->mMachineId != mMachineId)
             return true;
     }
@@ -770,7 +770,7 @@ bool HardDisk::hasForeignChildren()
  */
 HRESULT HardDisk::setBusyWithChildren()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), E_FAIL);
 
     const char *errMsg = tr ("Hard disk '%ls' is being used by another task");
@@ -778,14 +778,14 @@ HRESULT HardDisk::setBusyWithChildren()
     if (mReaders > 0 || mBusy)
         return setError (E_FAIL, errMsg, toString().raw());
 
-    AutoReaderLock chLock (childrenLock());
+    AutoReadLock chLock (childrenLock());
 
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
          ++ it)
     {
         ComObjPtr <HardDisk> child = *it;
-        AutoLock childLock (child);
+        AutoWriteLock childLock (child);
         if (child->mReaders > 0 || child->mBusy)
         {
             /* reset the busy flag of all previous children */
@@ -808,19 +808,19 @@ HRESULT HardDisk::setBusyWithChildren()
  */
 void HardDisk::clearBusyWithChildren()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), (void) 0);
 
     AssertReturn (mBusy == true, (void) 0);
 
-    AutoReaderLock chLock (childrenLock());
+    AutoReadLock chLock (childrenLock());
 
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
          ++ it)
     {
         ComObjPtr <HardDisk> child = *it;
-        AutoLock childLock (child);
+        AutoWriteLock childLock (child);
         Assert (child->mBusy == true);
         child->mBusy = false;
     }
@@ -836,14 +836,14 @@ void HardDisk::clearBusyWithChildren()
 HRESULT HardDisk::getAccessibleWithChildren (Bstr &aAccessError)
 {
     /* getAccessible() needs a write lock */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), E_FAIL);
 
     HRESULT rc = getAccessible (aAccessError);
     if (FAILED (rc) || !aAccessError.isNull())
         return rc;
 
-    AutoReaderLock chLock (childrenLock());
+    AutoReadLock chLock (childrenLock());
 
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
@@ -871,7 +871,7 @@ HRESULT HardDisk::getAccessibleWithChildren (Bstr &aAccessError)
  */
 HRESULT HardDisk::checkConsistency()
 {
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     AssertReturn (isReady(), E_FAIL);
 
     if (isDifferencing())
@@ -888,7 +888,7 @@ HRESULT HardDisk::checkConsistency()
 
     HRESULT rc = S_OK;
 
-    AutoReaderLock chLock (childrenLock());
+    AutoReadLock chLock (childrenLock());
 
     if (mParent.isNull() && mType == HardDiskType_Normal &&
         children().size() != 0)
@@ -940,7 +940,7 @@ HRESULT HardDisk::createDiffHardDisk (const Bstr &aFolder, const Guid &aMachineI
     AssertReturn (!aFolder.isEmpty() && !aMachineId.isEmpty(),
                   E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     ComAssertRet (isBusy() == false, E_FAIL);
@@ -1018,13 +1018,13 @@ void HardDisk::updatePaths (const char *aOldPath, const char *aNewPath)
     AssertReturnVoid (aOldPath);
     AssertReturnVoid (aNewPath);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturnVoid (isReady());
 
     updatePath (aOldPath, aNewPath);
 
     /* update paths of all children */
-    AutoReaderLock chLock (childrenLock());
+    AutoReadLock chLock (childrenLock());
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
          ++ it)
@@ -1295,13 +1295,13 @@ HRESULT HardDisk::saveSettings (settings::Key &aHDNode)
     }
 
     /* save all children */
-    AutoReaderLock chLock (childrenLock());
+    AutoReadLock chLock (childrenLock());
     for (HardDiskList::const_iterator it = children().begin();
          it != children().end();
          ++ it)
     {
         ComObjPtr <HardDisk> child = *it;
-        AutoReaderLock childLock (child);
+        AutoReadLock childLock (child);
 
         Key hdNode = aHDNode.appendKey ("DiffHardDisk");
 
@@ -1368,7 +1368,7 @@ HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 
     AssertReturn (!aHDNode.isNull() && !aVDINode.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mStorageType = HardDiskStorageType_VirtualDiskImage;
@@ -1427,7 +1427,7 @@ HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
     LogFlowThisFunc (("aFilePath='%ls', aRegistered=%d\n",
                       aFilePath, aRegistered));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mStorageType = HardDiskStorageType_VirtualDiskImage;
@@ -1493,7 +1493,7 @@ void HVirtualDiskImage::uninit()
 {
     LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     if (!isReady())
         return;
 
@@ -1508,7 +1508,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mDescription.cloneTo (aDescription);
@@ -1517,7 +1517,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP HVirtualDiskImage::COMSETTER(Description) (INPTR BSTR aDescription)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -1541,7 +1541,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(Size) (ULONG64 *aSize)
     if (!aSize)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     /* only a non-differencing image knows the logical size */
@@ -1557,7 +1557,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     if (!aActualSize)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aActualSize = mActualSize;
@@ -1572,7 +1572,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(FilePath) (BSTR *aFilePath)
     if (!aFilePath)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mFilePathFull.cloneTo (aFilePath);
@@ -1581,7 +1581,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(FilePath) (BSTR *aFilePath)
 
 STDMETHODIMP HVirtualDiskImage::COMSETTER(FilePath) (INPTR BSTR aFilePath)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mState != NotCreated)
@@ -1598,7 +1598,7 @@ STDMETHODIMP HVirtualDiskImage::COMSETTER(FilePath) (INPTR BSTR aFilePath)
         Utf8Str fp = aFilePath;
         if (!RTPathHavePath (fp))
         {
-            AutoReaderLock propsLock (mVirtualBox->systemProperties());
+            AutoReadLock propsLock (mVirtualBox->systemProperties());
             path = Utf8StrFmt ("%ls%c%s",
                                mVirtualBox->systemProperties()->defaultVDIFolder().raw(),
                                RTPATH_DELIMITER,
@@ -1614,7 +1614,7 @@ STDMETHODIMP HVirtualDiskImage::COMGETTER(Created) (BOOL *aCreated)
     if (!aCreated)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aCreated = mState >= Created;
@@ -1629,7 +1629,7 @@ STDMETHODIMP HVirtualDiskImage::CreateDynamicImage (ULONG64 aSize, IProgress **a
     if (!aProgress)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     return createImage (aSize, TRUE /* aDynamic */, aProgress);
@@ -1640,7 +1640,7 @@ STDMETHODIMP HVirtualDiskImage::CreateFixedImage (ULONG64 aSize, IProgress **aPr
     if (!aProgress)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     return createImage (aSize, FALSE /* aDynamic */, aProgress);
@@ -1648,7 +1648,7 @@ STDMETHODIMP HVirtualDiskImage::CreateFixedImage (ULONG64 aSize, IProgress **aPr
 
 STDMETHODIMP HVirtualDiskImage::DeleteImage()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     CHECK_BUSY_AND_READERS();
 
@@ -1681,7 +1681,7 @@ STDMETHODIMP HVirtualDiskImage::DeleteImage()
  */
 HRESULT HVirtualDiskImage::trySetRegistered (BOOL aRegistered)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (aRegistered)
@@ -1716,7 +1716,7 @@ HRESULT HVirtualDiskImage::trySetRegistered (BOOL aRegistered)
 HRESULT HVirtualDiskImage::getAccessible (Bstr &aAccessError)
 {
     /* queryInformation() needs a write lock */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mStateCheckSem != NIL_RTSEMEVENTMULTI)
@@ -1772,7 +1772,7 @@ HRESULT HVirtualDiskImage::saveSettings (settings::Key &aHDNode,
 {
     AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     /* filePath (required) */
@@ -1797,7 +1797,7 @@ void HVirtualDiskImage::updatePath (const char *aOldPath, const char *aNewPath)
     AssertReturnVoid (aOldPath);
     AssertReturnVoid (aNewPath);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturnVoid (isReady());
 
     size_t oldPathLen = strlen (aOldPath);
@@ -1832,7 +1832,7 @@ void HVirtualDiskImage::updatePath (const char *aOldPath, const char *aNewPath)
  */
 Bstr HVirtualDiskImage::toString (bool aShort /* = false */)
 {
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     if (!aShort)
         return mFilePathFull;
@@ -1867,7 +1867,7 @@ HVirtualDiskImage::cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
     AssertReturn (!aTargetPath.isNull(), E_FAIL);
     AssertReturn (aProgress, E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), E_FAIL);
 
     AssertReturn (isBusy() == false, E_FAIL);
@@ -1923,7 +1923,7 @@ HVirtualDiskImage::createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
     AssertReturn (!aId.isEmpty(), E_FAIL);
     AssertReturn (!aTargetPath.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), E_FAIL);
 
     AssertReturn (isBusy() == false, E_FAIL);
@@ -1978,7 +1978,7 @@ HVirtualDiskImage::cloneDiffImage (const Bstr &aFolder, const Guid &aMachineId,
     AssertReturn (!aFolder.isEmpty() && !aMachineId.isEmpty(),
                   E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     AssertReturn (!mParent.isNull(), E_FAIL);
@@ -2093,11 +2093,11 @@ HRESULT HVirtualDiskImage::mergeImageToParent (Progress *aProgress)
 {
     LogFlowThisFunc (("mFilePathFull='%ls'\n", mFilePathFull.raw()));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     AssertReturn (!mParent.isNull(), E_FAIL);
-    AutoLock parentLock (mParent);
+    AutoWriteLock parentLock (mParent);
 
     ComAssertRet (isBusy() == true, E_FAIL);
     ComAssertRet (mParent->isBusy() == true, E_FAIL);
@@ -2126,13 +2126,13 @@ HRESULT HVirtualDiskImage::mergeImageToParent (Progress *aProgress)
     {
         HRESULT rc = S_OK;
 
-        AutoReaderLock chLock (childrenLock());
+        AutoReadLock chLock (childrenLock());
 
         for (HardDiskList::const_iterator it = children().begin();
              it != children().end(); ++ it)
         {
             ComObjPtr <HVirtualDiskImage> child = (*it)->asVDI();
-            AutoLock childLock (child);
+            AutoWriteLock childLock (child);
 
             /* reparent the child */
             child->mParent = mParent;
@@ -2207,7 +2207,7 @@ HRESULT HVirtualDiskImage::mergeImageToChildren (Progress *aProgress)
 {
     LogFlowThisFunc (("mFilePathFull='%ls'\n", mFilePathFull.raw()));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     /* this must be a diff image */
@@ -2222,7 +2222,7 @@ HRESULT HVirtualDiskImage::mergeImageToChildren (Progress *aProgress)
     {
         HRESULT rc = S_OK;
 
-        AutoLock chLock (childrenLock());
+        AutoWriteLock chLock (childrenLock ());
 
         /* iterate over a copy since we will modify the list */
         HardDiskList list = children();
@@ -2232,7 +2232,7 @@ HRESULT HVirtualDiskImage::mergeImageToChildren (Progress *aProgress)
         {
             ComObjPtr <HardDisk> hd = *it;
             ComObjPtr <HVirtualDiskImage> child = hd->asVDI();
-            AutoLock childLock (child);
+            AutoWriteLock childLock (child);
 
             ComAssertRet (child->isBusy() == true, E_FAIL);
             ComAssertBreak (child->mState >= Created, rc = E_FAIL);
@@ -2306,7 +2306,7 @@ HRESULT HVirtualDiskImage::mergeImageToChildren (Progress *aProgress)
  */
 HRESULT HVirtualDiskImage::wipeOutImage()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     AssertReturn (isDifferencing(), E_FAIL);
@@ -2341,7 +2341,7 @@ HRESULT HVirtualDiskImage::wipeOutImage()
 
 HRESULT HVirtualDiskImage::deleteImage (bool aIgnoreErrors /* = false */)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     AssertReturn (!mRegistered, E_FAIL);
@@ -2400,10 +2400,10 @@ HRESULT HVirtualDiskImage::setFilePath (const BSTR aFilePath)
  */
 HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
 {
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     /* create a lock object to completely release it later */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     AssertReturn (mStateCheckWaiters == 0, E_FAIL);
 
@@ -2460,7 +2460,7 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
         if (mParent)
         {
             /* check parent UUID */
-            AutoLock parentLock (mParent);
+            AutoWriteLock parentLock (mParent);
             if (mParent->id() != parentId)
             {
                 errMsg = Utf8StrFmt (
@@ -2576,7 +2576,7 @@ HRESULT HVirtualDiskImage::queryInformation (Bstr *aAccessError)
 HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
                                         IProgress **aProgress)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     CHECK_BUSY_AND_READERS();
 
@@ -2715,7 +2715,7 @@ DECLCALLBACK(int) HVirtualDiskImage::VDITaskThread (RTTHREAD thread, void *pvUse
     {
         Assert (!task->vdi->id().isEmpty());
         /// @todo (dmik) check locks
-        AutoLock sourceLock (task->source);
+        AutoWriteLock sourceLock (task->source);
         rc = task->source->cloneToImage (task->vdi->id(),
                                          Utf8Str (task->vdi->filePathFull()),
                                          task->progress, deleteTarget);
@@ -2753,7 +2753,7 @@ DECLCALLBACK(int) HVirtualDiskImage::VDITaskThread (RTTHREAD thread, void *pvUse
 
     LogFlowFunc (("rc=%08X\n", rc));
 
-    AutoLock alock (task->vdi);
+    AutoWriteLock alock (task->vdi);
 
     /* clear busy set in in HardDisk::CloneToImage() or
      * in HVirtualDiskImage::createImage() */
@@ -2846,7 +2846,7 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox,
 
     AssertReturn (!aHDNode.isNull() && !aISCSINode.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mStorageType = HardDiskStorageType_ISCSIHardDisk;
@@ -2910,7 +2910,7 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox)
 {
     LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mStorageType = HardDiskStorageType_ISCSIHardDisk;
@@ -2948,7 +2948,7 @@ void HISCSIHardDisk::uninit()
 {
     LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     if (!isReady())
         return;
 
@@ -2963,7 +2963,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mDescription.cloneTo (aDescription);
@@ -2972,7 +2972,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP HISCSIHardDisk::COMSETTER(Description) (INPTR BSTR aDescription)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -2992,7 +2992,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Size) (ULONG64 *aSize)
     if (!aSize)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aSize = mSize;
@@ -3004,7 +3004,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     if (!aActualSize)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aActualSize = mActualSize;
@@ -3019,7 +3019,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Server) (BSTR *aServer)
     if (!aServer)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mServer.cloneTo (aServer);
@@ -3031,7 +3031,7 @@ STDMETHODIMP HISCSIHardDisk::COMSETTER(Server) (INPTR BSTR aServer)
     if (!aServer || !*aServer)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -3051,7 +3051,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Port) (USHORT *aPort)
     if (!aPort)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aPort = mPort;
@@ -3060,7 +3060,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Port) (USHORT *aPort)
 
 STDMETHODIMP HISCSIHardDisk::COMSETTER(Port) (USHORT aPort)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -3080,7 +3080,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Target) (BSTR *aTarget)
     if (!aTarget)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mTarget.cloneTo (aTarget);
@@ -3092,7 +3092,7 @@ STDMETHODIMP HISCSIHardDisk::COMSETTER(Target) (INPTR BSTR aTarget)
     if (!aTarget || !*aTarget)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -3112,7 +3112,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Lun) (ULONG64 *aLun)
     if (!aLun)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aLun = mLun;
@@ -3121,7 +3121,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Lun) (ULONG64 *aLun)
 
 STDMETHODIMP HISCSIHardDisk::COMSETTER(Lun) (ULONG64 aLun)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -3141,7 +3141,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(UserName) (BSTR *aUserName)
     if (!aUserName)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mUserName.cloneTo (aUserName);
@@ -3150,7 +3150,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(UserName) (BSTR *aUserName)
 
 STDMETHODIMP HISCSIHardDisk::COMSETTER(UserName) (INPTR BSTR aUserName)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -3170,7 +3170,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Password) (BSTR *aPassword)
     if (!aPassword)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mPassword.cloneTo (aPassword);
@@ -3179,7 +3179,7 @@ STDMETHODIMP HISCSIHardDisk::COMGETTER(Password) (BSTR *aPassword)
 
 STDMETHODIMP HISCSIHardDisk::COMSETTER(Password) (INPTR BSTR aPassword)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -3203,7 +3203,7 @@ STDMETHODIMP HISCSIHardDisk::COMSETTER(Password) (INPTR BSTR aPassword)
  */
 HRESULT HISCSIHardDisk::trySetRegistered (BOOL aRegistered)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (aRegistered)
@@ -3227,7 +3227,7 @@ HRESULT HISCSIHardDisk::trySetRegistered (BOOL aRegistered)
 HRESULT HISCSIHardDisk::getAccessible (Bstr &aAccessError)
 {
    /* queryInformation() needs a write lock */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     /* check the basic accessibility */
@@ -3250,7 +3250,7 @@ HRESULT HISCSIHardDisk::saveSettings (settings::Key &aHDNode,
 {
     AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     /* server (required) */
@@ -3282,7 +3282,7 @@ HRESULT HISCSIHardDisk::saveSettings (settings::Key &aHDNode,
  */
 Bstr HISCSIHardDisk::toString (bool aShort /* = false */)
 {
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     Bstr str;
     if (!aShort)
@@ -3364,10 +3364,10 @@ HISCSIHardDisk::createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
  */
 HRESULT HISCSIHardDisk::queryInformation (Bstr &aAccessError)
 {
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     /* create a lock object to completely release it later */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     /// @todo (dmik) query info about this iSCSI disk,
     //  set mSize and mActualSize,
@@ -3437,7 +3437,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 
     AssertReturn (!aHDNode.isNull() && !aVMDKNode.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mStorageType = HardDiskStorageType_VMDKImage;
@@ -3506,7 +3506,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 
     AssertReturn (aParent == NULL, E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mStorageType = HardDiskStorageType_VMDKImage;
@@ -3575,7 +3575,7 @@ void HVMDKImage::uninit()
 {
     LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     if (!isReady())
         return;
 
@@ -3590,7 +3590,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mDescription.cloneTo (aDescription);
@@ -3599,7 +3599,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP HVMDKImage::COMSETTER(Description) (INPTR BSTR aDescription)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -3627,7 +3627,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(Size) (ULONG64 *aSize)
     if (!aSize)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
 /// @todo (r=dmik) will need this if we add support for differencing VMDKs
@@ -3645,7 +3645,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     if (!aActualSize)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aActualSize = mActualSize;
@@ -3660,7 +3660,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(FilePath) (BSTR *aFilePath)
     if (!aFilePath)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mFilePathFull.cloneTo (aFilePath);
@@ -3669,7 +3669,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(FilePath) (BSTR *aFilePath)
 
 STDMETHODIMP HVMDKImage::COMSETTER(FilePath) (INPTR BSTR aFilePath)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mState != NotCreated)
@@ -3686,7 +3686,7 @@ STDMETHODIMP HVMDKImage::COMSETTER(FilePath) (INPTR BSTR aFilePath)
         Utf8Str fp = aFilePath;
         if (!RTPathHavePath (fp))
         {
-            AutoReaderLock propsLock (mVirtualBox->systemProperties());
+            AutoReadLock propsLock (mVirtualBox->systemProperties());
             path = Utf8StrFmt ("%ls%c%s",
                                mVirtualBox->systemProperties()->defaultVDIFolder().raw(),
                                RTPATH_DELIMITER,
@@ -3702,7 +3702,7 @@ STDMETHODIMP HVMDKImage::COMGETTER(Created) (BOOL *aCreated)
     if (!aCreated)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aCreated = mState >= Created;
@@ -3717,7 +3717,7 @@ STDMETHODIMP HVMDKImage::CreateDynamicImage (ULONG64 aSize, IProgress **aProgres
     if (!aProgress)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     return createImage (aSize, TRUE /* aDynamic */, aProgress);
@@ -3728,7 +3728,7 @@ STDMETHODIMP HVMDKImage::CreateFixedImage (ULONG64 aSize, IProgress **aProgress)
     if (!aProgress)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     return createImage (aSize, FALSE /* aDynamic */, aProgress);
@@ -3736,7 +3736,7 @@ STDMETHODIMP HVMDKImage::CreateFixedImage (ULONG64 aSize, IProgress **aProgress)
 
 STDMETHODIMP HVMDKImage::DeleteImage()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     CHECK_BUSY_AND_READERS();
 
@@ -3779,7 +3779,7 @@ STDMETHODIMP HVMDKImage::DeleteImage()
  */
 HRESULT HVMDKImage::trySetRegistered (BOOL aRegistered)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (aRegistered)
@@ -3816,7 +3816,7 @@ HRESULT HVMDKImage::trySetRegistered (BOOL aRegistered)
 HRESULT HVMDKImage::getAccessible (Bstr &aAccessError)
 {
    /* queryInformation() needs a write lock */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mStateCheckSem != NIL_RTSEMEVENTMULTI)
@@ -3872,7 +3872,7 @@ HRESULT HVMDKImage::saveSettings (settings::Key &aHDNode,
 {
     AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     /* filePath (required) */
@@ -3897,7 +3897,7 @@ void HVMDKImage::updatePath (const char *aOldPath, const char *aNewPath)
     AssertReturnVoid (aOldPath);
     AssertReturnVoid (aNewPath);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturnVoid (isReady());
 
     size_t oldPathLen = strlen (aOldPath);
@@ -3932,7 +3932,7 @@ void HVMDKImage::updatePath (const char *aOldPath, const char *aNewPath)
  */
 Bstr HVMDKImage::toString (bool aShort /* = false */)
 {
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     if (!aShort)
         return mFilePathFull;
@@ -4031,10 +4031,10 @@ HRESULT HVMDKImage::setFilePath (const BSTR aFilePath)
  */
 HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
 {
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     /* create a lock object to completely release it later */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     AssertReturn (mStateCheckWaiters == 0, E_FAIL);
 
@@ -4104,7 +4104,7 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
         if (mParent)
         {
             /* check parent UUID */
-            AutoLock parentLock (mParent);
+            AutoWriteLock parentLock (mParent);
             if (mParent->id() != parentId)
             {
                 errMsg = Utf8StrFmt (
@@ -4313,7 +4313,7 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 
     AssertReturn (!aHDNode.isNull() && !aCustomNode.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mStorageType = HardDiskStorageType_CustomHardDisk;
@@ -4400,7 +4400,7 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 
     AssertReturn (aParent == NULL, E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mStorageType = HardDiskStorageType_CustomHardDisk;
@@ -4490,7 +4490,7 @@ void HCustomHardDisk::uninit()
 {
     LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     if (!isReady())
         return;
 
@@ -4505,7 +4505,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mDescription.cloneTo (aDescription);
@@ -4514,7 +4514,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP HCustomHardDisk::COMSETTER(Description) (INPTR BSTR aDescription)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -4527,7 +4527,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Size) (ULONG64 *aSize)
     if (!aSize)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aSize = mSize;
@@ -4539,7 +4539,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     if (!aActualSize)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aActualSize = mActualSize;
@@ -4554,7 +4554,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Location) (BSTR *aLocation)
     if (!aLocation)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mLocationFull.cloneTo (aLocation);
@@ -4563,7 +4563,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Location) (BSTR *aLocation)
 
 STDMETHODIMP HCustomHardDisk::COMSETTER(Location) (INPTR BSTR aLocation)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mState != NotCreated)
@@ -4584,7 +4584,7 @@ STDMETHODIMP HCustomHardDisk::COMSETTER(Location) (INPTR BSTR aLocation)
         Utf8Str fp = aLocation;
         if (!RTPathHavePath (fp))
         {
-            AutoReaderLock propsLock (mVirtualBox->systemProperties());
+            AutoReadLock propsLock (mVirtualBox->systemProperties());
             path = Utf8StrFmt ("%ls%c%s",
                                mVirtualBox->systemProperties()->defaultVDIFolder().raw(),
                                RTPATH_DELIMITER,
@@ -4600,7 +4600,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Created) (BOOL *aCreated)
     if (!aCreated)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aCreated = mState >= Created;
@@ -4612,7 +4612,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Format) (BSTR *aFormat)
     if (!aFormat)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mFormat.cloneTo (aFormat);
@@ -4627,7 +4627,7 @@ STDMETHODIMP HCustomHardDisk::CreateDynamicImage (ULONG64 aSize, IProgress **aPr
     if (!aProgress)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     return createImage (aSize, TRUE /* aDynamic */, aProgress);
@@ -4638,7 +4638,7 @@ STDMETHODIMP HCustomHardDisk::CreateFixedImage (ULONG64 aSize, IProgress **aProg
     if (!aProgress)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     return createImage (aSize, FALSE /* aDynamic */, aProgress);
@@ -4646,7 +4646,7 @@ STDMETHODIMP HCustomHardDisk::CreateFixedImage (ULONG64 aSize, IProgress **aProg
 
 STDMETHODIMP HCustomHardDisk::DeleteImage()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     CHECK_BUSY_AND_READERS();
 
@@ -4664,7 +4664,7 @@ STDMETHODIMP HCustomHardDisk::DeleteImage()
  */
 HRESULT HCustomHardDisk::trySetRegistered (BOOL aRegistered)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (aRegistered)
@@ -4694,7 +4694,7 @@ HRESULT HCustomHardDisk::trySetRegistered (BOOL aRegistered)
 HRESULT HCustomHardDisk::getAccessible (Bstr &aAccessError)
 {
    /* queryInformation() needs a write lock */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mStateCheckSem != NIL_RTSEMEVENTMULTI)
@@ -4750,7 +4750,7 @@ HRESULT HCustomHardDisk::saveSettings (settings::Key &aHDNode,
 {
     AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     /* location (required) */
@@ -4774,7 +4774,7 @@ HRESULT HCustomHardDisk::saveSettings (settings::Key &aHDNode,
  */
 Bstr HCustomHardDisk::toString (bool aShort /* = false */)
 {
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     /// @todo currently, we assume that location is always a file path for
     /// all custom hard disks. This is not generally correct, and needs to be
@@ -4874,10 +4874,10 @@ HRESULT HCustomHardDisk::setLocation (const BSTR aLocation)
  */
 HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
 {
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     /* create a lock object to completely release it later */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     AssertReturn (mStateCheckWaiters == 0, E_FAIL);
 
@@ -4942,7 +4942,7 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
         if (mParent)
         {
             /* check parent UUID */
-            AutoLock parentLock (mParent);
+            AutoWriteLock parentLock (mParent);
             if (mParent->id() != parentId)
             {
                 errMsg = Utf8StrFmt (
@@ -5144,7 +5144,7 @@ HRESULT HVHDImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 
     AssertReturn (!aHDNode.isNull() && !aVHDNode.isNull(), E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mStorageType = HardDiskStorageType_VHDImage;
@@ -5214,7 +5214,7 @@ HRESULT HVHDImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 
     AssertReturn (aParent == NULL, E_FAIL);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mStorageType = HardDiskStorageType_VHDImage;
@@ -5283,7 +5283,7 @@ void HVHDImage::uninit()
 {
     LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     if (!isReady())
         return;
 
@@ -5298,7 +5298,7 @@ STDMETHODIMP HVHDImage::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mDescription.cloneTo (aDescription);
@@ -5307,7 +5307,7 @@ STDMETHODIMP HVHDImage::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP HVHDImage::COMSETTER(Description) (INPTR BSTR aDescription)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     CHECK_BUSY_AND_READERS();
@@ -5335,7 +5335,7 @@ STDMETHODIMP HVHDImage::COMGETTER(Size) (ULONG64 *aSize)
     if (!aSize)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
 /// @todo will need this if we add suppord for differencing VMDKs
@@ -5353,7 +5353,7 @@ STDMETHODIMP HVHDImage::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     if (!aActualSize)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aActualSize = mActualSize;
@@ -5368,7 +5368,7 @@ STDMETHODIMP HVHDImage::COMGETTER(FilePath) (BSTR *aFilePath)
     if (!aFilePath)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     mFilePathFull.cloneTo (aFilePath);
@@ -5377,7 +5377,7 @@ STDMETHODIMP HVHDImage::COMGETTER(FilePath) (BSTR *aFilePath)
 
 STDMETHODIMP HVHDImage::COMSETTER(FilePath) (INPTR BSTR aFilePath)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mState != NotCreated)
@@ -5394,7 +5394,7 @@ STDMETHODIMP HVHDImage::COMSETTER(FilePath) (INPTR BSTR aFilePath)
         Utf8Str fp = aFilePath;
         if (!RTPathHavePath (fp))
         {
-            AutoReaderLock propsLock (mVirtualBox->systemProperties());
+            AutoReadLock propsLock (mVirtualBox->systemProperties());
             path = Utf8StrFmt ("%ls%c%s",
                                mVirtualBox->systemProperties()->defaultVDIFolder().raw(),
                                RTPATH_DELIMITER,
@@ -5410,7 +5410,7 @@ STDMETHODIMP HVHDImage::COMGETTER(Created) (BOOL *aCreated)
     if (!aCreated)
         return E_POINTER;
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     *aCreated = mState >= Created;
@@ -5425,7 +5425,7 @@ STDMETHODIMP HVHDImage::CreateDynamicImage (ULONG64 aSize, IProgress **aProgress
     if (!aProgress)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     return createImage (aSize, TRUE /* aDynamic */, aProgress);
@@ -5436,7 +5436,7 @@ STDMETHODIMP HVHDImage::CreateFixedImage (ULONG64 aSize, IProgress **aProgress)
     if (!aProgress)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     return createImage (aSize, FALSE /* aDynamic */, aProgress);
@@ -5444,7 +5444,7 @@ STDMETHODIMP HVHDImage::CreateFixedImage (ULONG64 aSize, IProgress **aProgress)
 
 STDMETHODIMP HVHDImage::DeleteImage()
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     CHECK_BUSY_AND_READERS();
 
@@ -5487,7 +5487,7 @@ STDMETHODIMP HVHDImage::DeleteImage()
  */
 HRESULT HVHDImage::trySetRegistered (BOOL aRegistered)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (aRegistered)
@@ -5524,7 +5524,7 @@ HRESULT HVHDImage::trySetRegistered (BOOL aRegistered)
 HRESULT HVHDImage::getAccessible (Bstr &aAccessError)
 {
     /* queryInformation() needs a write lock */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mStateCheckSem != NIL_RTSEMEVENTMULTI)
@@ -5579,7 +5579,7 @@ HRESULT HVHDImage::saveSettings (settings::Key &aHDNode, settings::Key &aStorage
 {
     AssertReturn (!aHDNode.isNull() && !aStorageNode.isNull(), E_FAIL);
 
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
     CHECK_READY();
 
     /* filePath (required) */
@@ -5604,7 +5604,7 @@ void HVHDImage::updatePath (const char *aOldPath, const char *aNewPath)
     AssertReturnVoid (aOldPath);
     AssertReturnVoid (aNewPath);
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     AssertReturnVoid (isReady());
 
     size_t oldPathLen = strlen (aOldPath);
@@ -5639,7 +5639,7 @@ void HVHDImage::updatePath (const char *aOldPath, const char *aNewPath)
  */
 Bstr HVHDImage::toString (bool aShort /* = false */)
 {
-    AutoReaderLock alock (this);
+    AutoReadLock alock (this);
 
     if (!aShort)
         return mFilePathFull;
@@ -5738,10 +5738,10 @@ HRESULT HVHDImage::setFilePath (const BSTR aFilePath)
  */
 HRESULT HVHDImage::queryInformation (Bstr *aAccessError)
 {
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     /* create a lock object to completely release it later */
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     AssertReturn (mStateCheckWaiters == 0, E_FAIL);
 
@@ -5811,7 +5811,7 @@ HRESULT HVHDImage::queryInformation (Bstr *aAccessError)
         if (mParent)
         {
             /* check parent UUID */
-            AutoLock parentLock (mParent);
+            AutoWriteLock parentLock (mParent);
             if (mParent->id() != parentId)
             {
                 errMsg = Utf8StrFmt (

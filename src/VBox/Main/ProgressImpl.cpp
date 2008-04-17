@@ -157,11 +157,11 @@ HRESULT ProgressBase::protectedInit()
  *  @note
  *  Using mParent member after this method returns is forbidden.
  */
-void ProgressBase::protectedUninit (AutoLock &alock)
+void ProgressBase::protectedUninit (AutoWriteLock &alock)
 {
     LogFlowMember (("ProgressBase::protectedUninit()\n"));
 
-    Assert (alock.belongsTo (this) && alock.isLockedOnCurrentThread() &&
+    Assert (alock.belongsTo (this) && alock.isWriteLockOnCurrentThread() &&
             alock.writeLockLevel() == 1);
     Assert (isReady());
 
@@ -193,7 +193,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Id) (GUIDPARAMOUT aId)
     if (!aId)
         return E_POINTER;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     ComAssertRet (!mId.isEmpty(), E_FAIL);
@@ -207,7 +207,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Description) (BSTR *aDescription)
     if (!aDescription)
         return E_POINTER;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     ComAssertRet (!mDescription.isNull(), E_FAIL);
@@ -221,7 +221,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Initiator) (IUnknown **aInitiator)
     if (!aInitiator)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
 #if !defined (VBOX_COM_INPROC)
@@ -245,7 +245,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Cancelable) (BOOL *aCancelable)
     if (!aCancelable)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aCancelable = mCancelable;
@@ -257,7 +257,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Percent) (LONG *aPercent)
     if (!aPercent)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mCompleted && SUCCEEDED (mResultCode))
@@ -277,7 +277,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Completed) (BOOL *aCompleted)
     if (!aCompleted)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aCompleted = mCompleted;
@@ -289,7 +289,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Canceled) (BOOL *aCanceled)
     if (!aCanceled)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aCanceled = mCanceled;
@@ -301,7 +301,7 @@ STDMETHODIMP ProgressBase::COMGETTER(ResultCode) (HRESULT *aResultCode)
     if (!aResultCode)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (!mCompleted)
@@ -317,7 +317,7 @@ STDMETHODIMP ProgressBase::COMGETTER(ErrorInfo) (IVirtualBoxErrorInfo **aErrorIn
     if (!aErrorInfo)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (!mCompleted)
@@ -333,7 +333,7 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationCount) (ULONG *aOperationCount)
     if (!aOperationCount)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aOperationCount = mOperationCount;
@@ -345,7 +345,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Operation) (ULONG *aOperation)
     if (!aOperation)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     *aOperation = mOperation;
@@ -357,7 +357,7 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationDescription) (BSTR *aOperationDesc
     if (!aOperationDescription)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     mOperationDescription.cloneTo (aOperationDescription);
@@ -369,7 +369,7 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationPercent) (LONG *aOperationPercent)
     if (!aOperationPercent)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mCompleted && SUCCEEDED (mResultCode))
@@ -428,7 +428,7 @@ HRESULT Progress::init (
     ComAssertRet (aOperationDescription, E_INVALIDARG);
     ComAssertRet (aOperationCount >= 1, E_INVALIDARG);
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     HRESULT rc = S_OK;
@@ -469,7 +469,7 @@ HRESULT Progress::init (BOOL aCancelable, ULONG aOperationCount,
 {
     LogFlowMember(("Progress::init(): <undescriptioned>\n"));
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     HRESULT rc = S_OK;
@@ -509,7 +509,7 @@ void Progress::uninit()
 {
     LogFlowMember (("Progress::uninit()\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     LogFlowMember (("Progress::uninit(): isReady=%d\n", isReady()));
 
@@ -546,7 +546,7 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
 {
     LogFlowMember(("Progress::WaitForCompletion: BEGIN: timeout=%d\n", aTimeout));
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     // if we're already completed, take a shortcut
@@ -563,11 +563,11 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
         while (!mCompleted && (forever || timeLeft > 0))
         {
             mWaitersCount ++;
-            lock.unlock();
+            alock.unlock();
             int vrc = RTSemEventMultiWait (mCompletedSem,
                                            forever ? RT_INDEFINITE_WAIT
                                                    : (unsigned) timeLeft);
-            lock.lock();
+            alock.lock();
             mWaitersCount --;
 
             // the progress might have been uninitialized
@@ -610,7 +610,7 @@ STDMETHODIMP Progress::WaitForOperationCompletion (ULONG aOperation, LONG aTimeo
     LogFlowMember(("Progress::WaitForOperationCompletion: BEGIN: "
                    "operation=%d, timeout=%d\n", aOperation, aTimeout));
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (aOperation >= mOperationCount)
@@ -633,11 +633,11 @@ STDMETHODIMP Progress::WaitForOperationCompletion (ULONG aOperation, LONG aTimeo
                (forever || timeLeft > 0))
         {
             mWaitersCount ++;
-            lock.unlock();
+            alock.unlock();
             int vrc = RTSemEventMultiWait (mCompletedSem,
                                            forever ? RT_INDEFINITE_WAIT
                                                    : (unsigned) timeLeft);
-            lock.lock();
+            alock.lock();
             mWaitersCount --;
 
             // the progress might have been uninitialized
@@ -670,7 +670,7 @@ STDMETHODIMP Progress::WaitForOperationCompletion (ULONG aOperation, LONG aTimeo
 
 STDMETHODIMP Progress::Cancel()
 {
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (!mCancelable)
@@ -696,7 +696,7 @@ STDMETHODIMP Progress::Cancel()
  */
 HRESULT Progress::notifyProgress (LONG aPercent)
 {
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), E_UNEXPECTED);
 
     AssertReturn (!mCompleted && !mCanceled, E_FAIL);
@@ -720,7 +720,7 @@ HRESULT Progress::advanceOperation (const BSTR aOperationDescription)
 {
     AssertReturn (aOperationDescription, E_INVALIDARG);
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), E_UNEXPECTED);
 
     AssertReturn (!mCompleted && !mCanceled, E_FAIL);
@@ -755,7 +755,7 @@ HRESULT Progress::advanceOperation (const BSTR aOperationDescription)
  */
 HRESULT Progress::notifyComplete (HRESULT aResultCode)
 {
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), E_FAIL);
 
     AssertReturn (mCompleted == FALSE, E_FAIL);
@@ -864,7 +864,7 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode, const GUID &aIID,
 HRESULT Progress::notifyCompleteBstr (HRESULT aResultCode, const GUID &aIID,
                                       const Bstr &aComponent, const Bstr &aText)
 {
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     AssertReturn (isReady(), E_UNEXPECTED);
 
     mCompleted = TRUE;
@@ -1005,7 +1005,7 @@ void CombinedProgress::uninit()
 {
     LogFlowMember (("CombinedProgress::uninit()\n"));
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
 
     LogFlowMember (("CombinedProgress::uninit(): isReady=%d\n", isReady()));
 
@@ -1026,7 +1026,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Percent) (LONG *aPercent)
     if (!aPercent)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (mCompleted && SUCCEEDED (mResultCode))
@@ -1050,7 +1050,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Completed) (BOOL *aCompleted)
     if (!aCompleted)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = checkProgress();
@@ -1065,7 +1065,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Canceled) (BOOL *aCanceled)
     if (!aCanceled)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = checkProgress();
@@ -1080,7 +1080,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(ResultCode) (HRESULT *aResultCode)
     if (!aResultCode)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = checkProgress();
@@ -1095,7 +1095,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(ErrorInfo) (IVirtualBoxErrorInfo **aErr
     if (!aErrorInfo)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = checkProgress();
@@ -1110,7 +1110,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Operation) (ULONG *aOperation)
     if (!aOperation)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = checkProgress();
@@ -1125,7 +1125,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(OperationDescription) (BSTR *aOperation
     if (!aOperationDescription)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = checkProgress();
@@ -1140,7 +1140,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(OperationPercent) (LONG *aOperationPerc
     if (!aOperationPercent)
         return E_POINTER;
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = checkProgress();
@@ -1165,7 +1165,7 @@ STDMETHODIMP CombinedProgress::WaitForCompletion (LONG aTimeout)
     LogFlowMember (("CombinedProgress::WaitForCompletion: BEGIN: timeout=%d\n",
                     aTimeout));
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     // if we're already completed, take a shortcut
@@ -1181,10 +1181,10 @@ STDMETHODIMP CombinedProgress::WaitForCompletion (LONG aTimeout)
 
         while (!mCompleted && (forever || timeLeft > 0))
         {
-            lock.unlock();
+            alock.unlock();
             rc = mProgresses.back()->WaitForCompletion (
                 forever ? -1 : (LONG) timeLeft);
-            lock.lock();
+            alock.lock();
 
             // the progress might have been uninitialized
             if (!isReady())
@@ -1224,7 +1224,7 @@ STDMETHODIMP CombinedProgress::WaitForOperationCompletion (ULONG aOperation, LON
     LogFlowMember(("CombinedProgress::WaitForOperationCompletion: BEGIN: "
                    "operation=%d, timeout=%d\n", aOperation, aTimeout));
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (aOperation >= mOperationCount)
@@ -1274,11 +1274,11 @@ STDMETHODIMP CombinedProgress::WaitForOperationCompletion (ULONG aOperation, LON
         while (!mCompleted && aOperation >= mOperation &&
                (forever || timeLeft > 0))
         {
-            lock.unlock();
+            alock.unlock();
             // wait for the appropriate progress operation completion
             rc = mProgresses [progress]-> WaitForOperationCompletion (
                 operation, forever ? -1 : (LONG) timeLeft);
-            lock.lock();
+            alock.lock();
 
             // the progress might have been uninitialized
             if (!isReady())
@@ -1308,7 +1308,7 @@ STDMETHODIMP CombinedProgress::WaitForOperationCompletion (ULONG aOperation, LON
 
 STDMETHODIMP CombinedProgress::Cancel()
 {
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (!mCancelable)

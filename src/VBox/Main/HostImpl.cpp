@@ -134,7 +134,7 @@ HRESULT Host::init (VirtualBox *parent)
 
     ComAssertRet (parent, E_INVALIDARG);
 
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
 
     mParent = parent;
@@ -201,7 +201,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
 {
     if (!drives)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     std::list <ComObjPtr <HostDVDDrive> > list;
 
@@ -350,7 +350,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
 {
     if (!drives)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     std::list <ComObjPtr <HostFloppyDrive> > list;
@@ -503,7 +503,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 {
     if (!networkInterfaces)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     std::list <ComObjPtr <HostNetworkInterface> > list;
@@ -578,7 +578,7 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
     if (!aUSBDevices)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     MultiResult rc = checkUSBProxyService();
@@ -604,7 +604,7 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (IHostUSBDeviceFilterCollection *
     if (!aUSBDeviceFilters)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     MultiResult rc = checkUSBProxyService();
@@ -634,7 +634,7 @@ STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *count)
 {
     if (!count)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     *count = RTSystemProcessorGetCount();
     return S_OK;
@@ -650,7 +650,7 @@ STDMETHODIMP Host::COMGETTER(ProcessorSpeed)(ULONG *speed)
 {
     if (!speed)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo Add a runtime function for this which uses GIP. */
     return S_OK;
@@ -665,7 +665,7 @@ STDMETHODIMP Host::COMGETTER(ProcessorDescription)(BSTR *description)
 {
     if (!description)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
     return S_OK;
@@ -682,7 +682,7 @@ STDMETHODIMP Host::COMGETTER(MemorySize)(ULONG *size)
 {
     if (!size)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
     return S_OK;
@@ -698,7 +698,7 @@ STDMETHODIMP Host::COMGETTER(MemoryAvailable)(ULONG *available)
 {
     if (!available)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
     return S_OK;
@@ -714,7 +714,7 @@ STDMETHODIMP Host::COMGETTER(OperatingSystem)(BSTR *os)
 {
     if (!os)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
     return S_OK;
@@ -730,7 +730,7 @@ STDMETHODIMP Host::COMGETTER(OSVersion)(BSTR *version)
 {
     if (!version)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
     return S_OK;
@@ -746,7 +746,7 @@ STDMETHODIMP Host::COMGETTER(UTCTime)(LONG64 *aUTCTime)
 {
     if (!aUTCTime)
         return E_POINTER;
-    AutoLock lock(this);
+    AutoWriteLock alock (this);
     CHECK_READY();
     RTTIMESPEC now;
     *aUTCTime = RTTimeSpecGetMilli(RTTimeNow(&now));
@@ -828,7 +828,7 @@ Host::CreateHostNetworkInterface (INPTR BSTR aName,
     if (!aProgress)
         return E_POINTER;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = S_OK;
@@ -892,7 +892,7 @@ Host::RemoveHostNetworkInterface (INPTR GUIDPARAM aId,
     if (!aProgress)
         return E_POINTER;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     HRESULT rc = S_OK;
@@ -955,7 +955,7 @@ STDMETHODIMP Host::CreateUSBDeviceFilter (INPTR BSTR aName, IHostUSBDeviceFilter
     if (!aName || *aName == 0)
         return E_INVALIDARG;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     ComObjPtr <HostUSBDeviceFilter> filter;
@@ -979,7 +979,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     if (!aFilter)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     MultiResult rc = checkUSBProxyService();
@@ -1026,7 +1026,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     if (!aFilter)
         return E_POINTER;
 
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     MultiResult rc = checkUSBProxyService();
@@ -1081,7 +1081,7 @@ HRESULT Host::loadSettings (const settings::Key &aGlobal)
 {
     using namespace settings;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     AssertReturn (!aGlobal.isNull(), E_FAIL);
@@ -1143,7 +1143,7 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
 {
     using namespace settings;
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     ComAssertRet (!aGlobal.isNull(), E_FAIL);
@@ -1159,7 +1159,7 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
     USBDeviceFilterList::const_iterator it = mUSBDeviceFilters.begin();
     while (it != mUSBDeviceFilters.end())
     {
-        AutoLock filterLock (*it);
+        AutoWriteLock filterLock (*it);
         const HostUSBDeviceFilter::Data &data = (*it)->data();
 
         Key filter = filters.appendKey ("DeviceFilter");
@@ -1222,7 +1222,7 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
 HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
                                        BOOL aActiveChanged /* = FALSE */)
 {
-    AutoLock alock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     if (aFilter->mInList)
@@ -1276,7 +1276,7 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
 {
     ComAssertRet (aMachine, E_INVALIDARG);
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     Guid id (aId);
@@ -1295,7 +1295,7 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
             tr ("USB device with UUID {%Vuuid} is not currently attached to the host"),
             id.raw());
 
-    AutoLock devLock (device);
+    AutoWriteLock devLock (device);
 
     if (device->isStatePending())
         return setError (E_INVALIDARG,
@@ -1318,7 +1318,7 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
     if (device->state() == USBDeviceState_Captured)
     {
         /* Machine::name() requires a read lock */
-        AutoReaderLock machLock (device->machine());
+        AutoReadLock machLock (device->machine());
 
         return setError (E_INVALIDARG,
             tr ("USB device '%s' with UUID {%Vuuid} is already captured by the virtual "
@@ -1356,7 +1356,7 @@ HRESULT Host::detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BO
 {
     LogFlowThisFunc (("aMachine=%p, aId={%Vuuid}\n", aMachine, Guid (aId).raw()));
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     ComObjPtr <HostUSBDevice> device;
@@ -1370,7 +1370,7 @@ HRESULT Host::detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BO
 
     ComAssertRet (!!device, E_FAIL);
 
-    AutoLock devLock (device);
+    AutoWriteLock devLock (device);
 
     LogFlowThisFunc (("id={%Vuuid} state=%d isStatePending=%RTbool pendingState=%d aDone=%RTbool\n",
                       device->id().raw(), device->state(), device->isStatePending(),
@@ -1438,7 +1438,7 @@ HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine)
 {
     LogFlowThisFunc (("aMachine=%p\n", aMachine));
 
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     for (USBDeviceList::iterator it = mUSBDevices.begin();
@@ -1447,7 +1447,7 @@ HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine)
     {
         ComObjPtr <HostUSBDevice> device = *it;
 
-        AutoLock devLock (device);
+        AutoWriteLock devLock (device);
 
         /* skip pending devices */
         if (device->isStatePending())
@@ -1477,7 +1477,7 @@ HRESULT Host::autoCaptureUSBDevices (SessionMachine *aMachine)
  */
 HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone)
 {
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     USBDeviceList::iterator it = mUSBDevices.begin();
@@ -1485,7 +1485,7 @@ HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone)
     {
         ComObjPtr <HostUSBDevice> device = *it;
 
-        AutoLock devLock (device);
+        AutoWriteLock devLock (device);
 
         if (device->machine() == aMachine)
         {
@@ -2022,9 +2022,9 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
     LogFlowThisFunc (("\n"));
 
     /// @todo must check for read lock, it's enough here
-    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
-    AssertReturn (aDevice->isLockedOnCurrentThread(), E_FAIL);
+    AssertReturn (aDevice->isWriteLockOnCurrentThread(), E_FAIL);
 
     AssertReturn (aDevice->state() != USBDeviceState_Captured, E_FAIL);
 
@@ -2048,7 +2048,7 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
     USBDeviceFilterList::const_iterator it = mUSBDeviceFilters.begin();
     for (; it != mUSBDeviceFilters.end(); ++ it)
     {
-        AutoLock filterLock (*it);
+        AutoWriteLock filterLock (*it);
         const HostUSBDeviceFilter::Data &data = (*it)->data();
         if (aDevice->isMatch (data))
         {
@@ -2118,9 +2118,9 @@ bool Host::applyMachineUSBFilters (SessionMachine *aMachine,
     AssertReturn (aMachine, false);
 
     /// @todo must check for read lock, it's enough here
-    AssertReturn (isLockedOnCurrentThread(), false);
+    AssertReturn (isWriteLockOnCurrentThread(), false);
 
-    AssertReturn (aDevice->isLockedOnCurrentThread(), false);
+    AssertReturn (aDevice->isWriteLockOnCurrentThread(), false);
 
     AssertReturn (aDevice->state() != USBDeviceState_NotSupported, false);
     AssertReturn (aDevice->state() != USBDeviceState_Unavailable, false);
@@ -2151,8 +2151,8 @@ void Host::onUSBDeviceAttached (HostUSBDevice *aDevice)
 
     AssertReturnVoid (aDevice);
 
-    AssertReturnVoid (isLockedOnCurrentThread());
-    AssertReturnVoid (aDevice->isLockedOnCurrentThread());
+    AssertReturnVoid (isWriteLockOnCurrentThread());
+    AssertReturnVoid (aDevice->isWriteLockOnCurrentThread());
 
     LogFlowThisFunc (("id={%Vuuid} state=%d isStatePending=%RTbool pendingState=%d\n",
                       aDevice->id().raw(), aDevice->state(), aDevice->isStatePending(),
@@ -2181,8 +2181,8 @@ void Host::onUSBDeviceDetached (HostUSBDevice *aDevice)
 
     AssertReturnVoid (aDevice);
 
-    AssertReturnVoid (isLockedOnCurrentThread());
-    AssertReturnVoid (aDevice->isLockedOnCurrentThread());
+    AssertReturnVoid (isWriteLockOnCurrentThread());
+    AssertReturnVoid (aDevice->isWriteLockOnCurrentThread());
 
     LogFlowThisFunc (("id={%Vuuid} state=%d isStatePending=%RTbool pendingState=%d\n",
                       aDevice->id().raw(), aDevice->state(), aDevice->isStatePending(),
@@ -2225,8 +2225,8 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
 
     AssertReturnVoid (aDevice);
 
-    AssertReturnVoid (isLockedOnCurrentThread());
-    AssertReturnVoid (aDevice->isLockedOnCurrentThread());
+    AssertReturnVoid (isWriteLockOnCurrentThread());
+    AssertReturnVoid (aDevice->isWriteLockOnCurrentThread());
 
     LogFlowThisFunc (("id={%Vuuid} state=%d isStatePending=%RTbool pendingState=%d\n",
                       aDevice->id().raw(), aDevice->state(), aDevice->isStatePending(),
@@ -2293,7 +2293,7 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
 HRESULT Host::checkUSBProxyService()
 {
 #ifdef VBOX_WITH_USB
-    AutoLock lock (this);
+    AutoWriteLock alock (this);
     CHECK_READY();
 
     AssertReturn (mUSBProxyService, E_FAIL);
