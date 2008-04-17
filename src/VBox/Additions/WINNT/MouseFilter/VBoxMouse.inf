@@ -54,8 +54,8 @@ ServiceBinary  = %12%\VBoxMouse.sys
 
 
 [Strings]
-VBoxMouse.SvcDesc       = "xVM VirtualBox Guest Mouse Service"
-VBoxMouse.MediaDesc     = "xVM VirtualBox Guest Mouse Driver Installation Media"
+VBoxMouse.SvcDesc       = "VirtualBox Guest Mouse Service"
+VBoxMouse.MediaDesc     = "VirtualBox Guest Mouse Driver Installation Media"
 
 
 ; Useful constants
