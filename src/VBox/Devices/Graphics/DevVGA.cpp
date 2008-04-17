@@ -213,7 +213,7 @@ typedef WINHDR *PWINHDR;
 #define LOGO_F12TEXT_HEIGHT  12
 
 /** The BIOS logo delay time (msec). */
-#define LOGO_DELAY_TIME      1000
+#define LOGO_DELAY_TIME      2000
 
 #define LOGO_MAX_WIDTH       640
 #define LOGO_MAX_HEIGHT      480
