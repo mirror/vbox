@@ -583,39 +583,9 @@ void VBoxVMSettingsDlg::init()
 
     /* HDD Images page */
 
-    QWhatsThis::add (static_cast <QWidget *> (grbHDA->child ("qt_groupbox_checkbox")),
-                     tr ("When checked, attaches the specified virtual hard disk to the "
-                         "Master slot of the Primary IDE controller."));
-    QWhatsThis::add (static_cast <QWidget *> (grbHDB->child ("qt_groupbox_checkbox")),
-                     tr ("When checked, attaches the specified virtual hard disk to the "
-                         "Slave slot of the Primary IDE controller."));
-    QWhatsThis::add (static_cast <QWidget *> (grbHDD->child ("qt_groupbox_checkbox")),
-                     tr ("When checked, attaches the specified virtual hard disk to the "
-                         "Slave slot of the Secondary IDE controller."));
-    cbHDA = new VBoxMediaComboBox (grbHDA, "cbHDA", VBoxDefs::HD);
-    cbHDB = new VBoxMediaComboBox (grbHDB, "cbHDB", VBoxDefs::HD);
-    cbHDD = new VBoxMediaComboBox (grbHDD, "cbHDD", VBoxDefs::HD);
-    hdaLayout->insertWidget (0, cbHDA);
-    hdbLayout->insertWidget (0, cbHDB);
-    hddLayout->insertWidget (0, cbHDD);
-    /* sometimes the weirdness of Qt just kills... */
-    setTabOrder (static_cast <QWidget *> (grbHDA->child ("qt_groupbox_checkbox")),
-                 cbHDA);
-    setTabOrder (static_cast <QWidget *> (grbHDB->child ("qt_groupbox_checkbox")),
-                 cbHDB);
-    setTabOrder (static_cast <QWidget *> (grbHDD->child ("qt_groupbox_checkbox")),
-                 cbHDD);
-
-    QWhatsThis::add (cbHDB, tr ("Displays the virtual hard disk to attach to this IDE slot "
-                                "and allows to quickly select a different hard disk."));
-    QWhatsThis::add (cbHDD, tr ("Displays the virtual hard disk to attach to this IDE slot "
-                                "and allows to quickly select a different hard disk."));
-    QWhatsThis::add (cbHDA, tr ("Displays the virtual hard disk to attach to this IDE slot "
-                                "and allows to quickly select a different hard disk."));
-    QWhatsThis::add (cbHDB, tr ("Displays the virtual hard disk to attach to this IDE slot "
-                                "and allows to quickly select a different hard disk."));
-    QWhatsThis::add (cbHDD, tr ("Displays the virtual hard disk to attach to this IDE slot "
-                                "and allows to quickly select a different hard disk."));
+    QVBoxLayout *hdPageLayout = new QVBoxLayout (pageHDD, 0, 10);
+    mHDSettings = new VBoxHardDiskSettings (pageHDD);
+    hdPageLayout->addWidget (mHDSettings);
 
     wvalHDD = new QIWidgetValidator (pagePath (pageHDD), pageHDD, this);
     connect (wvalHDD, SIGNAL (validityChanged (const QIWidgetValidator *)),
@@ -623,23 +593,8 @@ void VBoxVMSettingsDlg::init()
     connect (wvalHDD, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate (QIWidgetValidator *)));
 
-    connect (grbHDA, SIGNAL (toggled (bool)), this, SLOT (hdaMediaChanged()));
-    connect (grbHDB, SIGNAL (toggled (bool)), this, SLOT (hdbMediaChanged()));
-    connect (grbHDD, SIGNAL (toggled (bool)), this, SLOT (hddMediaChanged()));
-    connect (cbHDA, SIGNAL (activated (int)), this, SLOT (hdaMediaChanged()));
-    connect (cbHDB, SIGNAL (activated (int)), this, SLOT (hdbMediaChanged()));
-    connect (cbHDD, SIGNAL (activated (int)), this, SLOT (hddMediaChanged()));
-    connect (tbHDA, SIGNAL (clicked()), this, SLOT (showImageManagerHDA()));
-    connect (tbHDB, SIGNAL (clicked()), this, SLOT (showImageManagerHDB()));
-    connect (tbHDD, SIGNAL (clicked()), this, SLOT (showImageManagerHDD()));
-
-    /* setup iconsets -- qdesigner is not capable... */
-    tbHDA->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                            "select_file_dis_16px.png"));
-    tbHDB->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                            "select_file_dis_16px.png"));
-    tbHDD->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                            "select_file_dis_16px.png"));
+    connect (mHDSettings, SIGNAL (hddListChanged()), wvalHDD, SLOT (revalidate()));
+    connect (mHDSettings, SIGNAL (hddListChanged()), this, SLOT (resetFirstRunFlag()));
 
     /* CD/DVD-ROM Drive Page */
 
@@ -977,9 +932,6 @@ void VBoxVMSettingsDlg::showEvent (QShowEvent *e)
 void VBoxVMSettingsDlg::updateShortcuts()
 {
     /* setup necessary combobox item */
-    cbHDA->setCurrentItem (uuidHDA);
-    cbHDB->setCurrentItem (uuidHDB);
-    cbHDD->setCurrentItem (uuidHDD);
     cbISODVD->setCurrentItem (uuidISODVD);
     cbISOFloppy->setCurrentItem (uuidISOFloppy);
     /* check if the enumeration process has been started yet */
@@ -987,9 +939,6 @@ void VBoxVMSettingsDlg::updateShortcuts()
         vboxGlobal().startEnumeratingMedia();
     else
     {
-        cbHDA->refresh();
-        cbHDB->refresh();
-        cbHDD->refresh();
         cbISODVD->refresh();
         cbISOFloppy->refresh();
     }
@@ -1194,36 +1143,6 @@ void VBoxVMSettingsDlg::resetFirstRunFlag()
 }
 
 
-void VBoxVMSettingsDlg::hdaMediaChanged()
-{
-    resetFirstRunFlag();
-    uuidHDA = grbHDA->isChecked() ? cbHDA->getId() : QUuid();
-    txHDA->setText (getHdInfo (grbHDA, uuidHDA));
-    /* revailidate */
-    wvalHDD->revalidate();
-}
-
-
-void VBoxVMSettingsDlg::hdbMediaChanged()
-{
-    resetFirstRunFlag();
-    uuidHDB = grbHDB->isChecked() ? cbHDB->getId() : QUuid();
-    txHDB->setText (getHdInfo (grbHDB, uuidHDB));
-    /* revailidate */
-    wvalHDD->revalidate();
-}
-
-
-void VBoxVMSettingsDlg::hddMediaChanged()
-{
-    resetFirstRunFlag();
-    uuidHDD = grbHDD->isChecked() ? cbHDD->getId() : QUuid();
-    txHDD->setText (getHdInfo (grbHDD, uuidHDD));
-    /* revailidate */
-    wvalHDD->revalidate();
-}
-
-
 void VBoxVMSettingsDlg::cdMediaChanged()
 {
     resetFirstRunFlag();
@@ -1422,72 +1341,10 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
     if (pg == pageHDD)
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        valid = true;
-
-        QValueList <QUuid> uuids;
-
-        if (valid && grbHDA->isChecked())
-        {
-            if (uuidHDA.isNull())
-            {
-                valid = false;
-                warningText = tr ("Primary Master hard disk is not selected");
-            }
-            else uuids << uuidHDA;
-        }
-
-        if (valid && grbHDB->isChecked())
-        {
-            if (uuidHDB.isNull())
-            {
-                valid = false;
-                warningText = tr ("Primary Slave hard disk is not selected");
-            }
-            else
-            {
-                bool found = uuids.findIndex (uuidHDB) >= 0;
-                if (found)
-                {
-                    CHardDisk hd = vbox.GetHardDisk (uuidHDB);
-                    valid = hd.GetType() == KHardDiskType_Immutable;
-                }
-                if (valid)
-                    uuids << uuidHDB;
-                else
-                    warningText = tr ("Primary Slave hard disk is already attached "
-                                      "to a different slot");
-            }
-        }
-
-        if (valid && grbHDD->isChecked())
-        {
-            if (uuidHDD.isNull())
-            {
-                valid = false;
-                warningText = tr ("Secondary Slave hard disk is not selected");
-            }
-            else
-            {
-                bool found = uuids.findIndex (uuidHDD) >= 0;
-                if (found)
-                {
-                    CHardDisk hd = vbox.GetHardDisk (uuidHDD);
-                    valid = hd.GetType() == KHardDiskType_Immutable;
-                }
-                if (valid)
-                    uuids << uuidHDB;
-                else
-                    warningText = tr ("Secondary Slave hard disk is already attached "
-                                      "to a different slot");
-            }
-        }
-
-        cbHDA->setEnabled (grbHDA->isChecked());
-        cbHDB->setEnabled (grbHDB->isChecked());
-        cbHDD->setEnabled (grbHDD->isChecked());
-        tbHDA->setEnabled (grbHDA->isChecked());
-        tbHDB->setEnabled (grbHDB->isChecked());
-        tbHDD->setEnabled (grbHDD->isChecked());
+        QString validity = mHDSettings->checkValidity();
+        valid = validity == QString::null;
+        if (!valid)
+            warningText = validity;
     }
     else if (pg == pageDVD)
     {
@@ -1702,55 +1559,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
 
     /* hard disk images */
     {
-        struct
-        {
-            KStorageBus bus;
-            LONG channel;
-            LONG dev;
-            struct {
-                QGroupBox *grb;
-                QComboBox *cbb;
-                QLabel *tx;
-                QUuid *uuid;
-            } data;
-        }
-        diskSet[] =
-        {
-            { KStorageBus_IDE, 0, 0, {grbHDA, cbHDA, txHDA, &uuidHDA} },
-            { KStorageBus_IDE, 0, 1, {grbHDB, cbHDB, txHDB, &uuidHDB} },
-            { KStorageBus_IDE, 1, 1, {grbHDD, cbHDD, txHDD, &uuidHDD} },
-        };
-
-        grbHDA->setChecked (false);
-        grbHDB->setChecked (false);
-        grbHDD->setChecked (false);
-
-        CHardDiskAttachmentEnumerator en =
-            machine.GetHardDiskAttachments().Enumerate();
-        while (en.HasMore())
-        {
-            CHardDiskAttachment hda = en.GetNext();
-            for (uint i = 0; i < SIZEOF_ARRAY (diskSet); i++)
-            {
-                if (diskSet [i].bus == hda.GetBus() &&
-                    diskSet [i].channel == hda.GetChannel() &&
-                    diskSet [i].dev == hda.GetDevice())
-                {
-                    CHardDisk hd = hda.GetHardDisk();
-                    CHardDisk root = hd.GetRoot();
-                    QString src = root.GetLocation();
-                    if (hd.GetStorageType() == KHardDiskStorageType_VirtualDiskImage)
-                    {
-                        QFileInfo fi (src);
-                        src = fi.fileName() + " (" +
-                              QDir::convertSeparators (fi.dirPath (true)) + ")";
-                    }
-                    diskSet [i].data.grb->setChecked (true);
-                    diskSet [i].data.tx->setText (vboxGlobal().details (hd));
-                    *(diskSet [i].data.uuid) = QUuid (root.GetId());
-                }
-            }
-        }
+        mHDSettings->getFromMachine (machine);
     }
 
     /* floppy image */
@@ -2009,9 +1818,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     }
 
     /* request for media shortcuts update */
-    cbHDA->setBelongsTo (machine.GetId());
-    cbHDB->setBelongsTo (machine.GetId());
-    cbHDD->setBelongsTo (machine.GetId());
     updateShortcuts();
 
     /* revalidate pages with custom validation */
@@ -2087,58 +1893,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 
     /* hard disk images */
     {
-        struct
-        {
-            KStorageBus bus;
-            LONG channel;
-            LONG dev;
-            struct {
-                QGroupBox *grb;
-                QUuid *uuid;
-            } data;
-        }
-        diskSet[] =
-        {
-            { KStorageBus_IDE, 0, 0, {grbHDA, &uuidHDA} },
-            { KStorageBus_IDE, 0, 1, {grbHDB, &uuidHDB} },
-            { KStorageBus_IDE, 1, 1, {grbHDD, &uuidHDD} }
-        };
-
-        /*
-         *  first, detach all disks (to ensure we can reattach them to different
-         *  controllers / devices, when appropriate)
-         */
-        CHardDiskAttachmentEnumerator en =
-            cmachine.GetHardDiskAttachments().Enumerate();
-        while (en.HasMore())
-        {
-            CHardDiskAttachment hda = en.GetNext();
-            for (uint i = 0; i < SIZEOF_ARRAY (diskSet); i++)
-            {
-                if (diskSet [i].bus == hda.GetBus() &&
-                    diskSet [i].channel == hda.GetChannel() &&
-                    diskSet [i].dev == hda.GetDevice())
-                {
-                    cmachine.DetachHardDisk (diskSet [i].bus, diskSet [i].channel, diskSet [i].dev);
-                    if (!cmachine.isOk())
-                        vboxProblem().cannotDetachHardDisk (
-                            this, cmachine, diskSet [i].bus, diskSet [i].channel, diskSet [i].dev);
-                }
-            }
-        }
-
-        /* now, attach new disks */
-        for (uint i = 0; i < SIZEOF_ARRAY (diskSet); i++)
-        {
-            QUuid *newId = diskSet [i].data.uuid;
-            if (diskSet [i].data.grb->isChecked() && !(*newId).isNull())
-            {
-                cmachine.AttachHardDisk (*newId, diskSet [i].bus, diskSet [i].channel, diskSet [i].dev);
-                if (!cmachine.isOk())
-                    vboxProblem().cannotAttachHardDisk (
-                        this, cmachine, *newId, diskSet [i].bus, diskSet [i].channel, diskSet [i].dev);
-            }
-        }
+        mHDSettings->putBackToMachine();
     }
 
     /* floppy image */
@@ -2308,9 +2063,6 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 }
 
 
-void VBoxVMSettingsDlg::showImageManagerHDA() { showVDImageManager (&uuidHDA, cbHDA); }
-void VBoxVMSettingsDlg::showImageManagerHDB() { showVDImageManager (&uuidHDB, cbHDB); }
-void VBoxVMSettingsDlg::showImageManagerHDD() { showVDImageManager (&uuidHDD, cbHDD); }
 void VBoxVMSettingsDlg::showImageManagerISODVD() { showVDImageManager (&uuidISODVD, cbISODVD); }
 void VBoxVMSettingsDlg::showImageManagerISOFloppy() { showVDImageManager(&uuidISOFloppy, cbISOFloppy); }
 

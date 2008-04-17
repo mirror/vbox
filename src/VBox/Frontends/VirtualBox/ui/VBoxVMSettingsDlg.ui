@@ -1399,205 +1399,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                 <attribute name="id">
                     <number>1</number>
                 </attribute>
-                <vbox>
-                    <property name="name">
-                        <cstring>unnamed</cstring>
-                    </property>
-                    <property name="margin">
-                        <number>0</number>
-                    </property>
-                    <property name="spacing">
-                        <number>10</number>
-                    </property>
-                    <widget class="QGroupBox">
-                        <property name="name">
-                            <cstring>grbHDA</cstring>
-                        </property>
-                        <property name="title">
-                            <string>&amp;Primary Master</string>
-                        </property>
-                        <property name="checkable">
-                            <bool>true</bool>
-                        </property>
-                        <vbox>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <widget class="QLayoutWidget">
-                                <property name="name">
-                                    <cstring>hdaLayout</cstring>
-                                </property>
-                                <hbox>
-                                    <property name="name">
-                                        <cstring>unnamed</cstring>
-                                    </property>
-                                    <widget class="QToolButton">
-                                        <property name="name">
-                                            <cstring>tbHDA</cstring>
-                                        </property>
-                                        <property name="focusPolicy">
-                                            <enum>TabFocus</enum>
-                                        </property>
-                                        <property name="text">
-                                            <string>Select</string>
-                                        </property>
-                                        <property name="iconSet">
-                                            <iconset></iconset>
-                                        </property>
-                                        <property name="textLabel">
-                                            <string>Select</string>
-                                        </property>
-                                        <property name="autoRaise">
-                                            <bool>true</bool>
-                                        </property>
-                                        <property name="whatsThis" stdset="0">
-                                            <string>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</string>
-                                        </property>
-                                    </widget>
-                                </hbox>
-                            </widget>
-                            <widget class="QLabel">
-                                <property name="name">
-                                    <cstring>txHDA</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>&lt;not selected&gt;</string>
-                                </property>
-                            </widget>
-                        </vbox>
-                    </widget>
-                    <widget class="QGroupBox">
-                        <property name="name">
-                            <cstring>grbHDB</cstring>
-                        </property>
-                        <property name="title">
-                            <string>P&amp;rimary Slave</string>
-                        </property>
-                        <property name="checkable">
-                            <bool>true</bool>
-                        </property>
-                        <vbox>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <widget class="QLayoutWidget">
-                                <property name="name">
-                                    <cstring>hdbLayout</cstring>
-                                </property>
-                                <hbox>
-                                    <property name="name">
-                                        <cstring>unnamed</cstring>
-                                    </property>
-                                    <widget class="QToolButton">
-                                        <property name="name">
-                                            <cstring>tbHDB</cstring>
-                                        </property>
-                                        <property name="focusPolicy">
-                                            <enum>TabFocus</enum>
-                                        </property>
-                                        <property name="text">
-                                            <string>Select</string>
-                                        </property>
-                                        <property name="iconSet">
-                                            <iconset></iconset>
-                                        </property>
-                                        <property name="textLabel">
-                                            <string>Select</string>
-                                        </property>
-                                        <property name="autoRaise">
-                                            <bool>true</bool>
-                                        </property>
-                                        <property name="whatsThis" stdset="0">
-                                            <string>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</string>
-                                        </property>
-                                    </widget>
-                                </hbox>
-                            </widget>
-                            <widget class="QLabel">
-                                <property name="name">
-                                    <cstring>txHDB</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>&lt;not selected&gt;</string>
-                                </property>
-                            </widget>
-                        </vbox>
-                    </widget>
-                    <widget class="QGroupBox">
-                        <property name="name">
-                            <cstring>grbHDD</cstring>
-                        </property>
-                        <property name="title">
-                            <string>&amp;Secondary (IDE 1) Slave</string>
-                        </property>
-                        <property name="checkable">
-                            <bool>true</bool>
-                        </property>
-                        <vbox>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <widget class="QLayoutWidget">
-                                <property name="name">
-                                    <cstring>hddLayout</cstring>
-                                </property>
-                                <hbox>
-                                    <property name="name">
-                                        <cstring>unnamed</cstring>
-                                    </property>
-                                    <widget class="QToolButton">
-                                        <property name="name">
-                                            <cstring>tbHDD</cstring>
-                                        </property>
-                                        <property name="focusPolicy">
-                                            <enum>TabFocus</enum>
-                                        </property>
-                                        <property name="text">
-                                            <string>Select</string>
-                                        </property>
-                                        <property name="iconSet">
-                                            <iconset></iconset>
-                                        </property>
-                                        <property name="textLabel">
-                                            <string>Select</string>
-                                        </property>
-                                        <property name="autoRaise">
-                                            <bool>true</bool>
-                                        </property>
-                                        <property name="whatsThis" stdset="0">
-                                            <string>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</string>
-                                        </property>
-                                    </widget>
-                                </hbox>
-                            </widget>
-                            <widget class="QLabel">
-                                <property name="name">
-                                    <cstring>txHDD</cstring>
-                                </property>
-                                <property name="text">
-                                    <string>&lt;not selected&gt;</string>
-                                </property>
-                            </widget>
-                        </vbox>
-                    </widget>
-                    <spacer>
-                        <property name="name">
-                            <cstring>spacer3</cstring>
-                        </property>
-                        <property name="orientation">
-                            <enum>Vertical</enum>
-                        </property>
-                        <property name="sizeType">
-                            <enum>Expanding</enum>
-                        </property>
-                        <property name="sizeHint">
-                            <size>
-                                <width>20</width>
-                                <height>0</height>
-                            </size>
-                        </property>
-                    </spacer>
-                </vbox>
             </widget>
             <widget class="QWidget">
                 <property name="name">
@@ -3158,12 +2959,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <tabstop>leSnapshotFolder</tabstop>
     <tabstop>tbSelectSavedStateFolder</tabstop>
     <tabstop>tbResetSavedStateFolder</tabstop>
-    <tabstop>grbHDA</tabstop>
-    <tabstop>tbHDA</tabstop>
-    <tabstop>grbHDB</tabstop>
-    <tabstop>tbHDB</tabstop>
-    <tabstop>grbHDD</tabstop>
-    <tabstop>tbHDD</tabstop>
     <tabstop>bgDVD</tabstop>
     <tabstop>rbHostDVD</tabstop>
     <tabstop>cbHostDVD</tabstop>
@@ -3221,12 +3016,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
     <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
     <include location="local" impldecl="in implementation">QIRichLabel.h</include>
+    <include location="local" impldecl="in implementation">VBoxHardDiskSettings.h</include>
 </includes>
 <forwards>
     <forward>class VBoxMediaComboBox</forward>
     <forward>class VBoxDiskImageManagerDlg</forward>
     <forward>class VBoxUSBMenu</forward>
     <forward>class VBoxSharedFoldersSettings</forward>
+    <forward>class VBoxHardDiskSettings</forward>
     <forward>class QIRichLabel</forward>
     <forward>class BootItemsList</forward>
 </forwards>
@@ -3240,9 +3037,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <variable access="private">QIWidgetValidator *wvalDVD;</variable>
     <variable access="private">QIWidgetValidator *wvalFloppy;</variable>
     <variable access="private">QIWidgetValidator *wvalVRDP;</variable>
-    <variable access="private">QUuid uuidHDA;</variable>
-    <variable access="private">QUuid uuidHDB;</variable>
-    <variable access="private">QUuid uuidHDD;</variable>
     <variable access="private">QUuid uuidISODVD;</variable>
     <variable access="private">QUuid uuidISOFloppy;</variable>
     <variable access="private">QValueVector &lt; CHostDVDDrive &gt; hostDVDs;</variable>
@@ -3253,10 +3047,8 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <variable access="private">QWidgetStack *wstUSBFilters;</variable>
     <variable access="private">bool mUSBFilterListModified;</variable>
     <variable access="private">VBoxSharedFoldersSettings *mSharedFolders;</variable>
+    <variable access="private">VBoxHardDiskSettings *mHDSettings;</variable>
     <variable access="private">QString warningString;</variable>
-    <variable access="private">VBoxMediaComboBox *cbHDA;</variable>
-    <variable access="private">VBoxMediaComboBox *cbHDB;</variable>
-    <variable access="private">VBoxMediaComboBox *cbHDD;</variable>
     <variable access="private">VBoxMediaComboBox *cbISODVD;</variable>
     <variable access="private">VBoxMediaComboBox *cbISOFloppy;</variable>
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
@@ -3272,9 +3064,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <slot>enableOk( const QIWidgetValidator * wval )</slot>
     <slot>revalidate( QIWidgetValidator * wval )</slot>
     <slot>updateWhatsThis( bool gotFocus = false )</slot>
-    <slot>showImageManagerHDA()</slot>
-    <slot>showImageManagerHDB()</slot>
-    <slot>showImageManagerHDD()</slot>
     <slot>showImageManagerISODVD()</slot>
     <slot>showImageManagerISOFloppy()</slot>
     <slot>showVDImageManager( QUuid *id, VBoxMediaComboBox *le, QLabel *tx = NULL )</slot>
@@ -3299,9 +3088,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <slot>tbRemoveUSBFilter_clicked()</slot>
     <slot>tbUSBFilterUp_clicked()</slot>
     <slot>tbUSBFilterDown_clicked()</slot>
-    <slot>hdaMediaChanged()</slot>
-    <slot>hdbMediaChanged()</slot>
-    <slot>hddMediaChanged()</slot>
     <slot>cdMediaChanged()</slot>
     <slot>fdMediaChanged()</slot>
     <slot>networkPageUpdate( QWidget* )</slot>

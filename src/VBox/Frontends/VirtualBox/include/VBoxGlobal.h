@@ -214,13 +214,24 @@ public:
         return sessionStates [s];
     }
 
+    KStorageBus toStorageBusType (const QString &s) const
+    {
+        QStringVector::const_iterator it =
+            qFind (storageBuses.begin(), storageBuses.end(), s);
+        AssertMsg (it != storageBuses.end(), ("No value for {%s}", s.latin1()));
+        return KStorageBus (it - storageBuses.begin());
+    }
+
     QString toString (KStorageBus t) const
     {
         AssertMsg (!storageBuses [t].isNull(), ("No text for %d", t));
         return storageBuses [t];
     }
 
+    LONG toStorageChannelType (KStorageBus t, const QString &c) const;
     QString toString (KStorageBus t, LONG c) const;
+
+    LONG toStorageDeviceType (KStorageBus t, const QString &c) const;
     QString toString (KStorageBus t, LONG c, LONG d) const;
 
     QString toString (KHardDiskType t) const

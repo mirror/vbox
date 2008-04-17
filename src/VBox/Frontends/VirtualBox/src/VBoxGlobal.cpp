@@ -737,7 +737,7 @@ VBoxGlobal::VBoxGlobal()
     , sessionStates (KSessionState_COUNT)
     , deviceTypes (KDeviceType_COUNT)
     , storageBuses (KStorageBus_COUNT)
-    , storageBusDevices (3)
+    , storageBusDevices (4)
     , storageBusChannels (3)
     , diskTypes (KHardDiskType_COUNT)
     , diskStorageTypes (KHardDiskStorageType_COUNT)
@@ -959,9 +959,31 @@ QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aId) const
     return QString::null;
 }
 
+LONG VBoxGlobal::toStorageDeviceType (KStorageBus t, const QString &c) const
+{
+    LONG device;
+    switch (t)
+    {
+        case KStorageBus_IDE:
+        {
+            QStringVector::const_iterator it =
+                qFind (storageBusDevices.begin(), storageBusDevices.end(), c);
+            AssertMsg (it != storageBusDevices.end(), ("No value for {%s}", c.latin1()));
+            device = (LONG) (it - storageBusDevices.begin());
+            break;
+        }
+        default:
+        {
+            device = 0;
+            break;
+        }
+    }
+    return device;
+}
+
 QString VBoxGlobal::toString (KStorageBus t, LONG c, LONG d) const
 {
-    Assert (storageBusDevices.count() == 3);
+    Assert (storageBusDevices.count() == 4);
     QString dev;
 
     NOREF(c);
@@ -975,10 +997,37 @@ QString VBoxGlobal::toString (KStorageBus t, LONG c, LONG d) const
                 break;
             }
         }
+        case KStorageBus_SATA:
+        {
+            dev = storageBusDevices [3].arg (d);
+            break;
+        }
         default:
             dev = storageBusDevices [2].arg (d);
     }
     return dev;
+}
+
+LONG VBoxGlobal::toStorageChannelType (KStorageBus t, const QString &c) const
+{
+    LONG channel;
+    switch (t)
+    {
+        case KStorageBus_IDE:
+        {
+            QStringVector::const_iterator it =
+                qFind (storageBusChannels.begin(), storageBusChannels.end(), c);
+            AssertMsg (it != storageBusChannels.end(), ("No value for {%s}", c.latin1()));
+            channel = (LONG) (it - storageBusChannels.begin());
+            break;
+        }
+        default:
+        {
+            channel = 0;
+            break;
+        }
+    }
+    return channel;
 }
 
 QString VBoxGlobal::toString (KStorageBus t, LONG c) const
@@ -2302,10 +2351,11 @@ void VBoxGlobal::languageChange()
     storageBusChannels [2] =
         tr ("Channel&nbsp;%1", "StorageBusChannel");
 
-    Assert (storageBusDevices.count() == 3);
+    Assert (storageBusDevices.count() == 4);
     storageBusDevices [0] = tr ("Master", "StorageBusDevice");
     storageBusDevices [1] = tr ("Slave", "StorageBusDevice");
     storageBusDevices [2] = tr ("Device&nbsp;%1", "StorageBusDevice");
+    storageBusDevices [3] = tr ("Port %1", "StorageBusDevice");
 
     diskTypes [KHardDiskType_Normal] =
         tr ("Normal", "DiskType");
