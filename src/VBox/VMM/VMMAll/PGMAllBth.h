@@ -102,7 +102,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     /* Quick check for a valid guest trap. */
     if (!pPDSrc)
     {
-        LogFlow(("Trap0eHandler: guest PDPTR not present -> VINF_EM_RAW_GUEST_TRAP\n"));
+        LogFlow(("Trap0eHandler: guest PDPTR not present CR3=%VGp\n", (uint64_t)(CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK)));
         STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eGuestTrap; });
         TRPMSetErrorCode(pVM, uErr);
         return VINF_EM_RAW_GUEST_TRAP;
@@ -964,7 +964,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         else
         {
             /*
-             * 4MB - page.
+             * 2/4MB - page.
              */
             /* Before freeing the page, check if anything really changed. */
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
@@ -988,7 +988,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
                     ==  (PdeDst.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD)))
 # endif
                 {
-                    LogFlow(("Skipping flush for big page containing %VGv (PD=%X)-> nothing has changed!\n", GCPtrPage, iPDSrc));
+                    LogFlow(("Skipping flush for big page containing %VGv (PD=%X .u=%VX64)-> nothing has changed!\n", GCPtrPage, iPDSrc, PdeSrc.u));
                     STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePage4MBPagesSkip));
                     return VINF_SUCCESS;
                 }
