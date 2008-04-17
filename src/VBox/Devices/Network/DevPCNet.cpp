@@ -87,7 +87,7 @@
 #define PCNET_IOPORT_SIZE               0x20
 #define PCNET_PNPMMIO_SIZE              0x20
 
-#define PCNET_SAVEDSTATE_VERSION        9
+#define PCNET_SAVEDSTATE_VERSION        10
 
 #define BCR_MAX_RAP                     50
 #define MII_MAX_REG                     32
@@ -192,6 +192,8 @@ struct PCNetState_st
     bool                                fLinkUp;
     /** If set the link is temporarily down because of a saved state load. */
     bool                                fLinkTempDown;
+    /** True if we signal the guest that RX packets are missing. */
+    bool                                fSignalRxMiss;
 
     /** Number of times we've reported the link down. */
     RTUINT                              cLinkDownReported;
@@ -1517,6 +1519,26 @@ static void pcnetInit(PCNetState *pData)
 
 #undef PCNET_INIT
 
+    size_t cbRxBuffers = 0;
+    for (int i = CSR_RCVRL(pData); i >= 1; i--)
+    {
+        RMD        rmd;
+        RTGCPHYS32 addr = pcnetRdraAddr(pData, i);
+        /* At this time it is not guaranteed that the buffers are already initialized. */
+        if (pcnetRmdLoad(pData, &rmd, PHYSADDR(pData, addr), false))
+            cbRxBuffers += 4096-rmd.rmd1.bcnt;
+    }
+    
+    /*
+     * Heuristics: The Solaris pcn driver allocates too few RX buffers (128 buffers of a
+     * size of 128 bytes are 16KB in summary) leading to frequent RX buffer overflows. In
+     * that case we don't signal RX overflows through the CSR0_MISS flag as the driver
+     * re-initializes the device on every miss. Other guests use at least 32 buffers of
+     * usually 1536 bytes and should therefore not run into condition. If they are still
+     * short in RX buffers we notify this condition.
+     */
+    pData->fSignalRxMiss = (cbRxBuffers == 0 || cbRxBuffers >= 32*_1K);
+
     if (pData->pDrv)
         pData->pDrv->pfnSetPromiscuousMode(pData->pDrv, CSR_PROM(pData));
 
@@ -1531,9 +1553,10 @@ static void pcnetInit(PCNetState *pData)
     CSR_CRST(pData) = CSR_CRBC(pData) = CSR_NRST(pData) = CSR_NRBC(pData) = 0;
     CSR_CXST(pData) = CSR_CXBC(pData) = CSR_NXST(pData) = CSR_NXBC(pData) = 0;
 
-    LogRel(("PCNet#%d: Init: ss32=%d GCRDRA=%#010x[%d] GCTDRA=%#010x[%d]\n",
+    LogRel(("PCNet#%d: Init: ss32=%d GCRDRA=%#010x[%d] GCTDRA=%#010x[%d]%s\n",
             PCNET_INST_NR, BCR_SSIZE32(pData),
-            pData->GCRDRA, CSR_RCVRL(pData), pData->GCTDRA, CSR_XMTRL(pData)));
+            pData->GCRDRA, CSR_RCVRL(pData), pData->GCTDRA, CSR_XMTRL(pData),
+            !pData->fSignalRxMiss ? " (CSR0_MISS disabled)" : ""));
 
     pData->aCSR[0] |=  0x0101;       /* Initialization done */
     pData->aCSR[0] &= ~0x0004;       /* clear STOP bit */
@@ -4079,7 +4102,8 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3PutU32(pSSMHandle, pData->u32RAP);
     SSMR3PutS32(pSSMHandle, pData->iISR);
     SSMR3PutU32(pSSMHandle, pData->u32Lnkst);
-    SSMR3PutBool(pSSMHandle, pData->fPrivIfEnabled);
+    SSMR3PutBool(pSSMHandle, pData->fPrivIfEnabled);              /* >= If version 0.9 */
+    SSMR3PutBool(pSSMHandle, pData->fSignalRxMiss);               /* >= If version 0.10 */
     SSMR3PutGCPhys32(pSSMHandle, pData->GCRDRA);
     SSMR3PutGCPhys32(pSSMHandle, pData->GCTDRA);
     SSMR3PutMem(pSSMHandle, pData->aPROM, sizeof(pData->aPROM));
@@ -4089,7 +4113,7 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3PutU16(pSSMHandle, pData->u16CSR0LastSeenByGuest);
     SSMR3PutU64(pSSMHandle, pData->u64LastPoll);
     SSMR3PutMem(pSSMHandle, &pData->MacConfigured, sizeof(pData->MacConfigured));
-    SSMR3PutBool(pSSMHandle, pData->fAm79C973);
+    SSMR3PutBool(pSSMHandle, pData->fAm79C973);                   /* >= If version 0.8 */
     SSMR3PutU32(pSSMHandle, pData->u32LinkSpeed);
 #ifdef PCNET_NO_POLLING
     return VINF_SUCCESS;
@@ -4149,6 +4173,11 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
         SSMR3GetBool(pSSMHandle, &pData->fPrivIfEnabled);
         if (pData->fPrivIfEnabled)
             LogRel(("PCNet#%d: Enabling private interface\n", PCNET_INST_NR));
+    }
+    if (   SSM_VERSION_MAJOR(u32Version) >  0
+        || SSM_VERSION_MINOR(u32Version) >= 10)
+    {
+        SSMR3GetBool(pSSMHandle, &pData->fSignalRxMiss);
     }
     SSMR3GetGCPhys32(pSSMHandle, &pData->GCRDRA);
     SSMR3GetGCPhys32(pSSMHandle, &pData->GCTDRA);
@@ -4253,8 +4282,11 @@ static int pcnetCanReceive(PCNetState *pData)
             pcnetRdtePoll(pData);
 
         if (RT_UNLIKELY(HOST_IS_OWNER(CSR_CRST(pData))))
+        {
             /** @todo Notify the guest _now_. Will potentially increase the interrupt load */
-            pData->aCSR[0] |= 0x1000; /* Set MISS flag */
+            if (pData->fSignalRxMiss)
+                pData->aCSR[0] |= 0x1000; /* Set MISS flag */
+        }
         else
             rc = VINF_SUCCESS;
     }
