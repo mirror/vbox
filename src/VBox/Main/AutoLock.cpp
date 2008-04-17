@@ -24,34 +24,69 @@ namespace util
 
 RWLockHandle::RWLockHandle()
 {
-    RTCritSectInit (&mCritSect);
-    RTSemEventCreate (&mGoWriteSem);
-    RTSemEventMultiCreate (&mGoReadSem);
+#ifdef VBOX_MAIN_USE_SEMRW
+
+    int vrc = RTSemRWCreate (&mSemRW);
+    AssertRC (vrc);
+
+#else /* VBOX_MAIN_USE_SEMRW */
+
+    int vrc = RTCritSectInit (&mCritSect);
+    AssertRC (vrc);
+    vrc = RTSemEventCreate (&mGoWriteSem);
+    AssertRC (vrc);
+    vrc = RTSemEventMultiCreate (&mGoReadSem);
+    AssertRC (vrc);
 
     mWriteLockThread = NIL_RTTHREAD;
 
     mReadLockCount = 0;
     mWriteLockLevel = 0;
     mWriteLockPending = 0;
+
+#endif /* VBOX_MAIN_USE_SEMRW */
 }
 
 RWLockHandle::~RWLockHandle()
 {
+#ifdef VBOX_MAIN_USE_SEMRW
+
+    RTSemRWDestroy (mSemRW);
+
+#else /* VBOX_MAIN_USE_SEMRW */
+
     RTSemEventMultiDestroy (mGoReadSem);
     RTSemEventDestroy (mGoWriteSem);
     RTCritSectDelete (&mCritSect);
+
+#endif /* VBOX_MAIN_USE_SEMRW */
 }
 
 bool RWLockHandle::isWriteLockOnCurrentThread() const
 {
+#ifdef VBOX_MAIN_USE_SEMRW
+
+    return RTSemRWIsWriteOwner (mSemRW);
+
+#else /* VBOX_MAIN_USE_SEMRW */
+
     RTCritSectEnter (&mCritSect);
     bool locked = mWriteLockThread == RTThreadSelf();
     RTCritSectLeave (&mCritSect);
     return locked;
+
+#endif /* VBOX_MAIN_USE_SEMRW */
 }
 
 void RWLockHandle::lockWrite()
 {
+#ifdef VBOX_MAIN_USE_SEMRW
+
+    int vrc = RTSemRWRequestWrite (mSemRW, RT_INDEFINITE_WAIT);
+    AssertRC (vrc);
+
+#else /* VBOX_MAIN_USE_SEMRW */
+
     RTCritSectEnter (&mCritSect);
 
     if (mWriteLockThread != RTThreadSelf())
@@ -78,10 +113,19 @@ void RWLockHandle::lockWrite()
     Assert (mWriteLockLevel != 0 /* overflow */);
 
     RTCritSectLeave (&mCritSect);
+
+#endif /* VBOX_MAIN_USE_SEMRW */
 }
 
 void RWLockHandle::unlockWrite()
 {
+#ifdef VBOX_MAIN_USE_SEMRW
+
+    int vrc = RTSemRWReleaseWrite (mSemRW);
+    AssertRC (vrc);
+
+#else /* VBOX_MAIN_USE_SEMRW */
+
     RTCritSectEnter (&mCritSect);
 
     Assert (mWriteLockLevel != 0 /* unlockWrite() w/o preceding lockWrite()? */);
@@ -102,10 +146,19 @@ void RWLockHandle::unlockWrite()
     }
 
     RTCritSectLeave (&mCritSect);
+
+#endif /* VBOX_MAIN_USE_SEMRW */
 }
 
 void RWLockHandle::lockRead()
 {
+#ifdef VBOX_MAIN_USE_SEMRW
+
+    int vrc = RTSemRWRequestRead (mSemRW, RT_INDEFINITE_WAIT);
+    AssertRC (vrc);
+
+#else /* VBOX_MAIN_USE_SEMRW */
+
     RTCritSectEnter (&mCritSect);
 
     ++ mReadLockCount;
@@ -145,10 +198,19 @@ void RWLockHandle::lockRead()
     /* wait until the write lock is released */
     if (isWriteLock)
         RTSemEventMultiWait (mGoReadSem, RT_INDEFINITE_WAIT);
+
+#endif /* VBOX_MAIN_USE_SEMRW */
 }
 
 void RWLockHandle::unlockRead()
 {
+#ifdef VBOX_MAIN_USE_SEMRW
+
+    int vrc = RTSemRWReleaseRead (mSemRW);
+    AssertRC (vrc);
+
+#else /* VBOX_MAIN_USE_SEMRW */
+
     RTCritSectEnter (&mCritSect);
 
     Assert (mReadLockCount != 0 /* unlockRead() w/o preceding lockRead()? */);
@@ -176,13 +238,23 @@ void RWLockHandle::unlockRead()
     }
 
     RTCritSectLeave (&mCritSect);
+
+#endif /* VBOX_MAIN_USE_SEMRW */
 }
 
 uint32_t RWLockHandle::writeLockLevel() const
 {
+#ifdef VBOX_MAIN_USE_SEMRW
+
+    return RTSemRWGetWriteRecursion (mSemRW);
+
+#else /* VBOX_MAIN_USE_SEMRW */
+
     Assert (mWriteLockLevel != 0);
 
     return mWriteLockLevel;
+
+#endif /* VBOX_MAIN_USE_SEMRW */
 }
 
 } /* namespace util */
