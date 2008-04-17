@@ -3006,6 +3006,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         }
 
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:   /* treat it like a 4 MB page */
+        case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         {
             STAM_PROFILE_START(&pPool->StatTrackDerefGCPhys, g);
@@ -3019,6 +3020,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
+        case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
