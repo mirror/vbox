@@ -1078,6 +1078,7 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
     }
+    pVM->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
 }
 
 /**
@@ -1141,6 +1142,7 @@ CPUMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
     }
+    pVM->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
 }
 
 

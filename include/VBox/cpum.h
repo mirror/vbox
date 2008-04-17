@@ -721,6 +721,7 @@ CPUMDECL(int) CPUMRestoreHostFPUState(PVM pVM);
 #define CPUM_CHANGED_TR                 RT_BIT(8)
 #define CPUM_CHANGED_SYSENTER_MSR       RT_BIT(9)
 #define CPUM_CHANGED_HIDDEN_SEL_REGS    RT_BIT(10)
+#define CPUM_CHANGED_CPUID              RT_BIT(11)
 /** @} */
 
 /**
