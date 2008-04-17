@@ -26,7 +26,6 @@
 #include <VBox/mm.h>
 #include "CPUMInternal.h"
 #include <VBox/vm.h>
-#include <VBox/pgm.h>
 #include <VBox/err.h>
 #include <VBox/dis.h>
 #include <VBox/log.h>
@@ -1034,12 +1033,6 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
                 LogRel(("WARNING: Can't turn on PAE when the host doesn't support it!!\n"));
                 return;
             }
-            /* Remove this restriction once the 32->PAE switcher works properly. */
-            if (PGMGetHostMode(pVM) <= PGMMODE_32_BIT)
-            {
-                LogRel(("WARNING: Can't turn on PAE when the host is in 32 bits paging mode!!\n"));
-                return;
-            }
 
             if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 pVM->cpum.s.aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_PAE;
@@ -1074,6 +1067,31 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
     }
+}
+
+/**
+ * Queries a CPUID feature bit.
+ *
+ * @returns boolean for feature presence
+ * @param   pVM             The VM Handle.
+ * @param   enmFeature      The feature to query.
+ */
+CPUMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
+{
+    switch (enmFeature)
+    {
+        case CPUMCPUIDFEATURE_PAE:
+        {
+            if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
+                return !!(pVM->cpum.s.aGuestCpuIdStd[1].edx & X86_CPUID_FEATURE_EDX_PAE);
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("enmFeature=%d\n", enmFeature));
+            break;
+    }
+    return false;
 }
 
 /**
