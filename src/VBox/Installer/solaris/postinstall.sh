@@ -13,7 +13,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-echo "innotek VirtualBox - postinstall script"
+echo "Sun xVM VirtualBox - postinstall script"
 sync
 
 currentzone=`zonename`

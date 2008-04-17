@@ -13,7 +13,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-echo "innotek VirtualBox - preremove script"
+echo "Sun xVM VirtualBox - preremove script"
 echo "This script will unload the VirtualBox kernel module..."
 
 # vboxdrv.sh would've been installed, we just need to call it.
