@@ -2063,6 +2063,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
     if (    (pCpu->prefix & (PREFIX_REPNE | PREFIX_REP))
         ||  (   (pCpu->prefix & PREFIX_LOCK)
              && pCpu->pCurInstr->opcode != OP_CMPXCHG
+             && pCpu->pCurInstr->opcode != OP_CMPXCHG8B
              && pCpu->pCurInstr->opcode != OP_XADD
              && pCpu->pCurInstr->opcode != OP_OR
              && pCpu->pCurInstr->opcode != OP_BTR
