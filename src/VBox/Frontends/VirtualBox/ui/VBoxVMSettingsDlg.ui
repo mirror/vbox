@@ -2174,7 +2174,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                             </property>
 		                    <widget class="QCheckBox">
         		                <property name="name">
-                	                <cstring>cbEnableUSBController</cstring>
+                	                <cstring>cbEnableUSBEhci</cstring>
                                 </property>
                                 <property name="text">
                                     <string>Enable USB &amp;2.0 Controller</string>
