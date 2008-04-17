@@ -925,7 +925,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("pae=\"%s\"\n", PAEEnabled ? "on" : "off");
     else
-        RTPrintf("PAE: %s\n", PAEEnabled ? "on" : "off");
+        RTPrintf("PAE:             %s\n", PAEEnabled ? "on" : "off");
 
     LONG64 timeOffset;
     biosSettings->COMGETTER(TimeOffset)(&timeOffset);
