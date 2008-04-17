@@ -1656,7 +1656,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
     fFlags = CPUMGetAndClearChangedFlagsREM(pVM);
     if (fFlags & (  CPUM_CHANGED_CR4  | CPUM_CHANGED_CR3  | CPUM_CHANGED_CR0
                   | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_LDTR | CPUM_CHANGED_TR
-                  | CPUM_CHANGED_FPU_REM | CPUM_CHANGED_SYSENTER_MSR))
+                  | CPUM_CHANGED_FPU_REM | CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_CPUID))
     {
         if (fFlags & CPUM_CHANGED_FPU_REM)
             save_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->fpu); /* 'save' is an excellent name. */
@@ -1739,6 +1739,17 @@ REMR3DECL(int) REMR3State(PVM pVM)
 
             /** @note do_interrupt will fault if the busy flag is still set.... */
             pVM->rem.s.Env.tr.flags &= ~DESC_TSS_BUSY_MASK;
+        }
+
+        if (fFlags & CPUM_CHANGED_CPUID)
+        {
+            uint32_t u32Dummy;
+
+            /*
+            * Get the CPUID features.
+            */
+            CPUMGetGuestCpuId(pVM,          1, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext_features, &pVM->rem.s.Env.cpuid_features);
+            CPUMGetGuestCpuId(pVM, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext2_features);
         }
     }
 
