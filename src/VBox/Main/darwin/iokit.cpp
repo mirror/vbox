@@ -637,7 +637,7 @@ static bool darwinIsMassStorageInterfaceInUse(io_object_t MSDObj, io_name_t pszN
 
 /**
  * Worker function for DarwinGetUSBDevices() that tries to figure out
- * what state the device is in.
+ * what state the device is in and set enmState.
  *
  * This is mostly a matter of distinguishing between devices that nobody
  * uses, devices that can be seized and devices that cannot be grabbed.
@@ -656,7 +656,9 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
     if (krc != KERN_SUCCESS)
         return;
 
+    bool fHaveOwner = false;
     RTPROCESS Owner = NIL_RTPROCESS;
+    bool fHaveClient = false;
     RTPROCESS Client = NIL_RTPROCESS;
     bool fUserClientOnly = true;
     bool fConfigured = false;
@@ -725,8 +727,8 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
             krc = IORegistryEntryCreateCFProperties(Interface, &PropsRef, kCFAllocatorDefault, kNilOptions);
             if (krc == KERN_SUCCESS)
             {
-                darwinDictGetProccess(PropsRef, CFSTR(VBOXUSB_OWNER_KEY), &Owner);
-                darwinDictGetProccess(PropsRef, CFSTR(VBOXUSB_CLIENT_KEY), &Client);
+                fHaveOwner = darwinDictGetProccess(PropsRef, CFSTR(VBOXUSB_OWNER_KEY), &Owner);
+                fHaveClient = darwinDictGetProccess(PropsRef, CFSTR(VBOXUSB_CLIENT_KEY), &Client);
                 CFRelease(PropsRef);
             }
         }
@@ -738,11 +740,10 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
     /*
      * Calc the status.
      */
-    if (    Owner != NIL_RTPROCESS
-        &&  !Owner)
+    if (fHaveOwner)
     {
         if (Owner == RTProcSelf())
-            pCur->enmState = Client == NIL_RTPROCESS || !Client
+            pCur->enmState = !fHaveClient || Client == NIL_RTPROCESS || !Client
                            ? USBDEVICESTATE_HELD_BY_PROXY
                            : USBDEVICESTATE_USED_BY_GUEST;
         else
