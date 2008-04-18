@@ -6,30 +6,26 @@
  */
 
 /*
- * Copyright (C) 2008 innotek GmbH
+ * Copyright (C) 2007-2008 innotek GmbH
  *
- * This library is part of VirtualBox Open Source Edition (OSE), as
- * available from http://www.virtualbox.org. This library is free software;
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
  * you can redistribute it and/or modify it under the terms of the GNU
- * Lesser General Public License as published by the Free Software
- * Foundation, in version 2.1 as it comes in the "COPYING.LIB" file of the
- * VirtualBox OSE distribution.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
 #ifndef ___VBox_keyboard_tables_h
 # error This file must be included from within keyboard-layouts.h
 #endif /* ___VBox_keyboard_tables_h */
 
-/* This file contains a list of the keyboard layouts in 
+/* This file contains a list of the keyboard layouts in
    keyboard-layouts.h, along with the name of the layout, for the
    library to run through when it is trying to guess the current
    layout. */
- 
+
  {"U.S. English", &main_key_us},
  {"U.S. English, International (with dead keys)", &main_key_us_intl},
  {"U.S. English, Dvorak", &main_key_us_dvorak},
