@@ -111,6 +111,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
 #ifdef VBOX_SECURELABEL
     mLabelFont      = NULL;
     mLabelHeight    = 0;
+    mLabelOffs      = 0;
 #endif
     mWMIcon         = NULL;
 
@@ -980,11 +981,12 @@ int VBoxSDLFB::getYOffset()
  * @param font      file path fo the TrueType font file
  * @param pointsize font size in points
  */
-int VBoxSDLFB::initSecureLabel(uint32_t height, char *font, uint32_t pointsize)
+int VBoxSDLFB::initSecureLabel(uint32_t height, char *font, uint32_t pointsize, uint32_t labeloffs)
 {
     LogFlow(("VBoxSDLFB:initSecureLabel: new offset: %d pixels, new font: %s, new pointsize: %d\n",
               height, font, pointsize));
     mLabelHeight = height;
+    mLabelOffs = labeloffs;
     Assert(font);
     pTTF_Init();
     mLabelFont = pTTF_OpenFont(font, pointsize);
@@ -1061,6 +1063,7 @@ void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
                                  ? pTTF_RenderUTF8_Blended(mLabelFont, mSecureLabelText.raw(), clrFg)
                                  : pTTF_RenderUTF8_Solid(mLabelFont, mSecureLabelText.raw(), clrFg);
         rect.x = 10;
+        rect.y = mLabelOffs;
         SDL_BlitSurface(sText, NULL, mScreen, &rect);
         SDL_FreeSurface(sText);
     }
