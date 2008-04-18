@@ -24,23 +24,23 @@ if test -z "$2"; then
 fi
 
 MY_PKGNAME=SUNWvboxguest
-MY_GREP=/usr/sfw/bin/ggrep
+MY_GGREP=/usr/sfw/bin/ggrep
 MY_AWK=/usr/bin/awk
 
 # check for GNU grep we use which might not ship with all Solaris
-if test ! -f "$MY_GREP" || test ! -h "$MY_GREP"; then
-    echo "## GNU grep not found in $MY_GREP."
+if test ! -f "$MY_GGREP" || test ! -h "$MY_GGREP"; then
+    echo "## GNU grep not found in $MY_GGREP."
     exit 1
 fi
 
-# prepare file list.
+# prepare file list
 cd "$1"
 echo 'i pkginfo=./vboxguest.pkginfo' > prototype
 echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
 echo 'i space=./vboxguest.space' >> prototype
 echo 'e sed /etc/devlink.tab ? ? ?' >> prototype
-find . -print | /usr/sfw/bin/ggrep -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space' | pkgproto >> prototype
+find . -print | $MY_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space' | pkgproto >> prototype
 
 # don't grok for the sed class files
 $MY_AWK 'NF == 6 && $2 == "none" { $5 = "root"; $6 = "bin" } { print }' prototype > prototype2
@@ -56,7 +56,7 @@ $MY_AWK 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxservice.xml=vboxservice.x
 rm prototype2
 
 # explicitly set timestamp to shutup warning
-VBOXPKG_TIMESTAMP=vbox`date '+%Y%m%d%H%M%S'`
+VBOXPKG_TIMESTAMP=vboxguest`date '+%Y%m%d%H%M%S'`
 
 # create the package instance
 pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
@@ -64,7 +64,7 @@ if test $? -ne 0; then
     exit 1
 fi
 
-# translate into package datastream (errors are sent to stderr)
+# translate into package datastream
 pkgtrans -s -o /var/spool/pkg `pwd`/$2 "$MY_PKGNAME"
 if test $? -ne 0; then
     exit 1
