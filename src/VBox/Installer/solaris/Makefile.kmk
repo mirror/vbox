@@ -224,6 +224,6 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_CURRENT)/vbox.space                                                   $(SOLARISINSTDIR)/vbox.space
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/doc/ReadMe-Solaris.txt                                          $(SOLARISINSTDIR)/ReadMe.txt
 	$(call MSG_L1,Creating install package: $(PKGFILENAME).tar.gz)
-	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME) $(BUILD_TARGET_ARCH) 1>/dev/null 2>/dev/null
+	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME) $(BUILD_TARGET_ARCH)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARISINSTDIR)/$(PKGFILENAME).tar.gz $(PATH_BIN)
 
