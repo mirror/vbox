@@ -2962,7 +2962,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No se puede correr VirtualBox en modo &lt;i&gt;Selector de VM (Máquina Virt.)&lt;/i&gt; debido a las restricciones locales.&lt;/p&gt;&lt;p&gt;La aplicación se cerrará ahora.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No se puede ejecutar VirtualBox en modo &lt;i&gt;Selector de VM (Máquina Virt.)&lt;/i&gt; debido a las restricciones locales.&lt;/p&gt;&lt;p&gt;La aplicación se cerrará ahora.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
@@ -3101,7 +3101,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ud. no conectó un disco duro a la nueva máquina virtual. La máquina no podrá arrancar (&quot;bootear&quot;) a menos que Ud. conecte un disco duro con un sistema operativo huésped o algún otro medio arrancable (&quot;booteable&quot;). Estp lo puede hacer desde el díalogo de configuración o desde el Asistente de Primera Corrida de VirtualBox.&lt;/p&gt;&lt;p&gt;¿Desea continuar?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ud. no conectó un disco duro a la nueva máquina virtual. La máquina no podrá arrancar (&quot;bootear&quot;) a menos que Ud. conecte un disco duro con un sistema operativo huésped o algún otro medio arrancable (&quot;booteable&quot;). Estp lo puede hacer desde el díalogo de configuración o desde el Asistente de Primera Ejecución de VirtualBox.&lt;/p&gt;&lt;p&gt;¿Desea continuar?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -4018,7 +4018,7 @@ cualquier valor.&lt;/qt&gt;</translation>
     <name>VBoxVMFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
-        <translation>Asistente de Primera Corrida</translation>
+        <translation>Asistente de Primera Ejecución</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
@@ -5075,7 +5075,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&amp;Remember Media Mounted at Runtime</source>
-        <translation>&amp;Recordar los Medios Montados en Tiempo de Corrida</translation>
+        <translation>&amp;Recordar los Medios Montados en Tiempo de Ejecución</translation>
     </message>
     <message>
         <source>Alt+R</source>
@@ -5083,7 +5083,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Si se selecciona, cualquier cambio en el Montaje de los medios de CD/DVD y disquet durante la ejecución de la máquina serán salvados en el archivo de configuración. Esto preservará la configuración de los medios entre las corridas.</translation>
+        <translation>Si se selecciona, cualquier cambio en el Montaje de los medios de CD/DVD y disquet durante la ejecución de la máquina serán salvados en el archivo de configuración. Esto preservará la configuración de los medios entre las ejecuciones de las máquinas virtuales.</translation>
     </message>
     <message>
         <source>O&amp;ther</source>
