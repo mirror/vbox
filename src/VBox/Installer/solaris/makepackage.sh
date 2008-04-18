@@ -29,13 +29,13 @@ MY_AWK=/usr/bin/awk
 MY_GTAR=/usr/sfw/bin/gtar
 
 # check for GNU grep we use which might not ship with all Solaris
-if test ! -f "$MY_GGREP" || test ! -h "$MY_GGREP"; then
+if test ! -f "$MY_GGREP" && test ! -h "$MY_GGREP"; then
     echo "## GNU grep not found in $MY_GGREP."
     exit 1
 fi
 
 # check for GNU tar we use which might not ship with all Solaris
-if test ! -f "$MY_GTAR" || test ! -h "$MY_GTAR"; then
+if test ! -f "$MY_GTAR" && test ! -h "$MY_GTAR"; then
     echo "## GNU tar not found in $MY_GTAR."
     exit 1
 fi
