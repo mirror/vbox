@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -218,7 +218,7 @@ public:
     VBoxVMDescriptionPage (VBoxSelectorWnd *);
     ~VBoxVMDescriptionPage() {}
 
-    void setMachineItem (VBoxVMListBoxItem *aItem);
+    void setMachineItem (VBoxVMItem *aItem);
 
     void languageChange();
     void updateState();
@@ -229,7 +229,7 @@ private slots:
 
 private:
 
-    VBoxVMListBoxItem *mItem;
+    VBoxVMItem *mItem;
 
     VBoxSelectorWnd *mParent;
     QToolButton *mBtnEdit;
@@ -297,7 +297,7 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent)
  * The machine list @a aItem is used to access cached machine data w/o making
  * unnecessary RPC calls.
  */
-void VBoxVMDescriptionPage::setMachineItem (VBoxVMListBoxItem *aItem)
+void VBoxVMDescriptionPage::setMachineItem (VBoxVMItem *aItem)
 {
     mItem = aItem;
 
@@ -454,31 +454,38 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     setCentralWidget (new QWidget (this));
     QHBoxLayout *centralLayout =
         new QHBoxLayout (centralWidget());
-    centralLayout->setSpacing (9);
-    VBoxGlobal::setLayoutMargin (centralLayout, 5);
 
     /* left vertical box */
     QVBoxLayout *leftVLayout = new QVBoxLayout ();
-    leftVLayout->setSpacing (5);
     /* right vertical box */
     QVBoxLayout *rightVLayout = new QVBoxLayout ();
-    rightVLayout->setSpacing (5);
-    centralLayout->addLayout (leftVLayout, 3);
-    centralLayout->addLayout (rightVLayout, 3);
+    centralLayout->addLayout (leftVLayout, 1);
+    centralLayout->addLayout (rightVLayout, 2);
 
     /* VM list toolbar */
     VBoxToolBar *vmTools = new VBoxToolBar (this);
-#if defined (Q_WS_MAC) && (QT_VERSION >= 0x040300)
+#if MAC_LEOPARD_STYLE
     /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
     setUnifiedTitleAndToolBarOnMac (true);
     addToolBar (vmTools);
-#else
+    /* No spacing/margin on the mac */
+    VBoxGlobal::setLayoutMargin (centralLayout, 0);
+    leftVLayout->setSpacing (0);
+    rightVLayout->setSpacing (0);
+#else /* MAC_LEOPARD_STYLE */
     leftVLayout->addWidget(vmTools);
-#endif
+    centralLayout->setSpacing (9);
+    VBoxGlobal::setLayoutMargin (centralLayout, 5);
+    leftVLayout->setSpacing (5);
+    rightVLayout->setSpacing (5);
+#endif /* MAC_LEOPARD_STYLE */
 
-    /* VM list box */
-    vmListBox = new VBoxVMListBox ();
-    leftVLayout->addWidget (vmListBox);
+    /* VM list view */
+    mVMListView = new VBoxVMListView();
+    mVMModel = new VBoxVMModel();
+    mVMListView->setModel (mVMModel);
+
+    leftVLayout->addWidget (mVMListView);
 
     /* VM tab widget containing details and snapshots tabs */
     vmTabWidget = new QTabWidget ();
@@ -613,14 +620,14 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
         }
     }
 
+    /* Reset to the first item */
+    mVMListView->selectItemByRow (0);
     /* restore the position of vm selector */
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
         QString prevVMId = vbox.GetExtraData (VBoxDefs::GUI_LastVMSelected);
 
-        VBoxVMListBoxItem *item = vmListBox->item (QUuid (prevVMId));
-        if (item)
-            vmListBox->setSelected (item, true);
+        mVMListView->selectItemById (QUuid (prevVMId));
     }
 
 #warning port me
@@ -652,12 +659,12 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect (helpResetMessagesAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (resetSuppressedMessages()));
 
-    connect (vmListBox, SIGNAL (currentChanged(Q3ListBoxItem *)),
-             this, SLOT (vmListBoxCurrentChanged()));
-    connect (vmListBox, SIGNAL (selected (Q3ListBoxItem *)),
+    connect (mVMListView, SIGNAL (currentChanged()),
+             this, SLOT (vmListViewCurrentChanged()));
+    connect (mVMListView, SIGNAL (activated ()),
              this, SLOT (vmStart()));
-    connect (vmListBox, SIGNAL (contextMenuRequested (Q3ListBoxItem *, const QPoint &)),
-             this, SLOT (showContextMenu (Q3ListBoxItem *, const QPoint &)));
+    connect (mVMListView, SIGNAL (contextMenuRequested (VBoxVMItem *, const QPoint &)),
+             this, SLOT (showContextMenu (VBoxVMItem *, const QPoint &)));
 
     connect (vmDetailsView, SIGNAL (linkClicked (const QString &)),
             this, SLOT (vmSettings (const QString &)));
@@ -681,7 +688,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
              this, SLOT (snapshotChanged (const VBoxSnapshotEvent &)));
 
     /* bring the VM list to the focus */
-    vmListBox->setFocus();
+    mVMListView->setFocus();
 }
 
 VBoxSelectorWnd::~VBoxSelectorWnd()
@@ -701,9 +708,9 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
     }
     /* save vm selector position */
     {
-        Q3ListBoxItem *item = vmListBox->selectedItem();
+        VBoxVMItem *item = mVMListView->selectedItem();
         QString curVMId = item ?
-            QString (static_cast<VBoxVMListBoxItem*> (item)->id()) :
+            QString (item->id()) :
             QString::null;
         vbox.SetExtraData (VBoxDefs::GUI_LastVMSelected, curVMId);
     }
@@ -754,22 +761,13 @@ void VBoxSelectorWnd::vmNew()
         CMachine m = wzd.machine();
 
         /* wait until the list is updated by OnMachineRegistered() */
-        VBoxVMListBoxItem *item = 0;
-        while (!item)
+        QModelIndex index;
+        while (!index.isValid())
         {
             qApp->processEvents();
-            item = vmListBox->item (m.GetId());
+            index = mVMModel->indexById (m.GetId());
         }
-        /*
-         *  we must use setSelected() instead of setCurrentItem() below because
-         *  setCurrentItem() does nothing after the first item has been added
-         *  to the list (since it is already the current one), but we still
-         *  need currentChanged() to be emitted to sync things (QListBox doesn't
-         *  emit currentChanged() when the current item index changes from -1
-         *  to 0, i.e. when the first item is being added -- seems to be a Qt
-         *  bug).
-         */
-        vmListBox->setSelected (item, true);
+        mVMListView->setCurrentIndex (index);
     }
 }
 
@@ -790,7 +788,7 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
         return;
     }
 
-    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+    VBoxVMItem *item = mVMListView->selectedItem();
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
@@ -817,7 +815,7 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
             if (m.isOk())
             {
                 if (oldName.compare (m.GetName()))
-                    vmListBox->sort();
+                    mVMModel->sort();
             }
             else
             {
@@ -830,14 +828,14 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
         }
     }
 
-    vmListBox->setFocus();
+    mVMListView->setFocus();
 
     session.Close();
 }
 
 void VBoxSelectorWnd::vmDelete()
 {
-    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+    VBoxVMItem *item = mVMListView->selectedItem();
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
@@ -883,7 +881,10 @@ void VBoxSelectorWnd::vmDelete()
                 /* delete machine settings */
                 machine.DeleteSettings();
                 /* remove the item shortly: cmachine it refers to is no longer valid! */
-                vmListBox->removeItem (vmListBox->index (item));
+#warning "port me: check this"
+                int row = mVMModel->rowById (item->id());
+                mVMModel->removeItem (item);
+                mVMListView->ensureSomeRowSelected (row);
             }
             if (!vbox.isOk() || !machine.isOk())
                 vboxProblem().cannotDeleteMachine (vbox, machine);
@@ -893,12 +894,12 @@ void VBoxSelectorWnd::vmDelete()
 
 void VBoxSelectorWnd::vmStart()
 {
-    /* we always get here when vmListBox emits the selected() signal,
+    /* we always get here when mVMListView emits the activated() signal,
      * so we must explicitly check if the action is enabled or not. */
     if (!vmStartAction->isEnabled())
         return;
 
-    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+    VBoxVMItem *item = mVMListView->selectedItem();
 
     AssertMsg (item, ("Item must be always selected here"));
 
@@ -970,7 +971,7 @@ void VBoxSelectorWnd::vmStart()
 
 void VBoxSelectorWnd::vmDiscard()
 {
-    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+    VBoxVMItem *item = mVMListView->selectedItem();
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
@@ -1004,7 +1005,7 @@ void VBoxSelectorWnd::vmDiscard()
 
 void VBoxSelectorWnd::vmPause (bool aPause)
 {
-    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+    VBoxVMItem *item = mVMListView->selectedItem();
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
@@ -1035,7 +1036,7 @@ void VBoxSelectorWnd::vmPause (bool aPause)
 
 void VBoxSelectorWnd::vmRefresh()
 {
-    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+    VBoxVMItem *item = mVMListView->selectedItem();
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
@@ -1047,28 +1048,31 @@ void VBoxSelectorWnd::vmRefresh()
 
 void VBoxSelectorWnd::vmShowLogs()
 {
-    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+    VBoxVMItem *item = mVMListView->selectedItem();
     CMachine machine = item->machine();
     VBoxVMLogViewer::createLogViewer (machine);
 }
 
 void VBoxSelectorWnd::refreshVMList()
 {
-    vmListBox->refresh();
-    vmListBoxCurrentChanged();
+    mVMModel->refresh();
+    vmListViewCurrentChanged();
 }
 
 void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
                                                        bool aSnapshots,
                                                        bool aDescription)
 {
-    vmListBox->refresh (aID);
-    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
-    if (item && item->id() == aID)
-        vmListBoxCurrentChanged (aDetails, aSnapshots, aDescription);
+    VBoxVMItem *item = mVMModel->itemById (aID);
+    if (item)
+    {
+        mVMModel->refreshItem (item);
+        if (item && item->id() == aID)
+            vmListViewCurrentChanged (aDetails, aSnapshots, aDescription);
+    }
 }
 
-void VBoxSelectorWnd::showContextMenu (Q3ListBoxItem *aItem, const QPoint &aPoint)
+void VBoxSelectorWnd::showContextMenu (VBoxVMItem *aItem, const QPoint &aPoint)
 {
     if (aItem)
         mVMCtxtMenu->exec (aPoint);
@@ -1130,10 +1134,10 @@ void VBoxSelectorWnd::languageChange()
 
     vmTabWidget->setTabText (vmTabWidget->indexOf (vmDetailsView), tr ("&Details"));
     /* note: Snapshots and Details tabs are changed dynamically by
-     * vmListBoxCurrentChanged() */
+     * vmListViewCurrentChanged() */
 
     /* ensure the details and screenshot view are updated */
-    vmListBoxCurrentChanged();
+    vmListViewCurrentChanged();
 
     fileDiskMgrAction->setText (tr ("Virtual &Disk Manager..."));
     fileDiskMgrAction->setShortcut (tr ("Ctrl+D"));
@@ -1177,7 +1181,7 @@ void VBoxSelectorWnd::languageChange()
     vmDeleteAction->setText (tr ("&Delete"));
     vmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
 
-    /* Note: vmStartAction text is set up in vmListBoxCurrentChanged() */
+    /* Note: vmStartAction text is set up in vmListViewCurrentChanged() */
 
     vmDiscardAction->setText (tr ("D&iscard"));
     vmDiscardAction->setStatusTip (
@@ -1224,18 +1228,11 @@ void VBoxSelectorWnd::languageChange()
 // Private slots
 /////////////////////////////////////////////////////////////////////////////
 
-void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
+void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
                                                bool aRefreshSnapshots,
                                                bool aRefreshDescription)
 {
-    if (!vmListBox->selectedItem() && vmListBox->currentItem() >= 0)
-    {
-        /* selected always follows current */
-        vmListBox->setSelected (vmListBox->currentItem(), true);
-    }
-
-    vmListBox->ensureCurrentVisible();
-    VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
+    VBoxVMItem *item = mVMListView->selectedItem();
 
     if (item && item->accessible())
     {
@@ -1394,13 +1391,13 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
 void VBoxSelectorWnd::mediaEnumStarted()
 {
     /* refresh the current details to pick up hard disk sizes */
-    vmListBoxCurrentChanged (true /* aRefreshDetails */);
+    vmListViewCurrentChanged (true /* aRefreshDetails */);
 }
 
 void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
 {
     /* refresh the current details to pick up hard disk sizes */
-    vmListBoxCurrentChanged (true /* aRefreshDetails */);
+    vmListViewCurrentChanged (true /* aRefreshDetails */);
 
     /* we warn about inaccessible media only once (after media emumeration
      * started from main() at startup), to avoid annoying the user */
@@ -1464,17 +1461,27 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
         CMachine m = vbox.GetMachine (e.id);
         if (!m.isNull())
         {
-            new VBoxVMListBoxItem (vmListBox, m);
-            vmListBox->sort();
+            mVMModel->addItem (new VBoxVMItem (m));
+            mVMModel->sort();
+            /* Make sure the description, ... pages are properly updated.
+             * Actualy we haven't call the next method, but unfortunately Qt
+             * seems buggy if the new item is on the same position as the
+             * previous one. So go on the safe side and call this by our self. */
+            vmListViewCurrentChanged();
         }
         /* m.isNull() is ok (theoretically, the machine could have been
          * already deregistered by some other client at this point) */
     }
     else
     {
-        VBoxVMListBoxItem *item = vmListBox->item (e.id);
+        VBoxVMItem *item = mVMModel->itemById (e.id);
         if (item)
-            vmListBox->removeItem (vmListBox->index (item));
+        {
+            int row = mVMModel->rowById (item->id());
+            mVMModel->removeItem (item);
+            mVMListView->ensureSomeRowSelected (row);
+        }
+
         /* item = 0 is ok (if we originated this event then the item
          * has been already removed) */
     }

@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxVMListBox, VBoxVMListBoxItem class declarations
+ * VBoxVMItem, VBoxVMModel, VBoxVMListView, VBoxVMItemPainter class declarations
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,134 +23,50 @@
 #ifndef __VBoxVMListBox_h__
 #define __VBoxVMListBox_h__
 
-#include "COMDefs.h"
-
-#include "VBoxSelectorWnd.h"
 #include "VBoxGlobal.h"
+#include "VBoxDefs.h"
 
-#include <q3listbox.h>
-#include <qfont.h>
-#include <qdatetime.h>
-//Added by qt3to4:
-#include <QFocusEvent>
+/* Qt includes */
+#include <QAbstractListModel>
+#include <QListView>
+#include <QItemDelegate>
 
-struct QUuid;
-class QColorGroup;
-
-class VBoxVMListBoxTip;
-class VBoxVMListBoxItem;
-
-/**
- *
- *  The VBoxVMListBox class is a visual representation of the list of
- *  existing VMs in the VBox GUI.
- *
- *  Every item in the list box is an instance of the VBoxVMListBoxItem
- *  class.
- */
-class VBoxVMListBox : public Q3ListBox
-{
-    Q_OBJECT
-
-public:
-
-    VBoxVMListBox (QWidget *aParent = 0, const char *aName = NULL,
-                   Qt::WFlags aFlags = 0);
-
-    virtual ~VBoxVMListBox();
-
-    QFont nameFont() const { return mNameFont; }
-
-    QFont shotFont() const { return mShotFont; }
-
-    QFont stateFont (KSessionState aS) const
-    {
-        return aS == KSessionState_Closed ? font() : mStateBusyFont;
-    }
-
-    int margin() const { return mMargin; }
-
-    void refresh();
-    void refresh (const QUuid &aID);
-
-    VBoxVMListBoxItem *item (const QUuid &aID);
-
-    const QColorGroup &activeColorGroup() const;
-
-protected:
-
-    virtual void focusInEvent (QFocusEvent *aE);
-    virtual void focusOutEvent (QFocusEvent *aE);
-
-private:
-
-    CVirtualBox mVBox;
-    QFont mNameFont;
-    QFont mShotFont;
-    QFont mStateBusyFont;
-    int mMargin;
-
-    VBoxVMListBoxTip *mToolTip;
-    bool mGaveFocusToPopup;
-};
-
-/**
- *
- *  The VBoxVMListBoxItem class is a visual representation of the virtual
- *  machine in the VBoxVMListBox widget.
- *
- *  It holds a CMachine instance (passed to the constructor) to
- *  get an access to various VM data.
- */
-class VBoxVMListBoxItem : public Q3ListBoxItem
+class VBoxVMItem
 {
 public:
-
-    VBoxVMListBoxItem (VBoxVMListBox *aLB, const CMachine &aM);
-    virtual ~VBoxVMListBoxItem();
-
-    QString text() const { return mName; }
-
-    VBoxVMListBox *vmListBox() const
-    {
-        return static_cast <VBoxVMListBox *> (listBox());
-    }
+    VBoxVMItem (const CMachine &aM);
+    virtual ~VBoxVMItem();
 
     CMachine machine() const { return mMachine; }
-    void setMachine (const CMachine &aM);
 
-    void recache();
+    QString name() const { return mName; }
+    QIcon osIcon() const { return mAccessible ? vboxGlobal().vmGuestOSTypeIcon (mOSTypeId) :QPixmap (":/os_unknown.png"); }
+    QUuid id() const { return mId; }
+    
+    QString sessionStateName() const { return mAccessible ? vboxGlobal().toString (mState) : QObject::tr ("Inaccessible"); }
+    QIcon sessionStateIcon() const { return mAccessible ? vboxGlobal().toIcon (mState) : QPixmap (":/state_aborted_16px.png"); }
+
+    QString snapshotName() const { return mSnapshotName; }
+    ULONG snapshotCount() const { return mSnapshotCount; }
 
     QString toolTipText() const;
 
-    int height (const Q3ListBox *) const;
-    int width (const Q3ListBox *) const;
-
-    QUuid id() const { return mId; }
     bool accessible() const { return mAccessible; }
     const CVirtualBoxErrorInfo &accessError() const { return mAccessError; }
-    QString name() const { return mName; }
     KMachineState state() const { return mState; }
     KSessionState sessionState() const { return mSessionState; }
-    ULONG snapshotCount() const { return mSnapshotCount; }
 
-    /// @todo see comments in #switchTo() in VBoxVMListBox.cpp
-#if 0
-    bool canSwitchTo() const { return mWinId != (WId) ~0; }
-#endif
+    bool recache();
+
     bool canSwitchTo() const;
     bool switchTo();
 
-protected:
-
-    void paint (QPainter *aP);
-
 private:
 
+    /* Private member vars */
     CMachine mMachine;
 
-    /* cached machine data (to minimize server requests) */
-
+    /* Cached machine data (to minimize server requests) */
     QUuid mId;
     QString mSettingsFile;
 
@@ -166,10 +82,128 @@ private:
     ULONG mSnapshotCount;
 
     ULONG mPid;
-    /// @todo see comments in #switchTo() in VBoxVMListBox.cpp
-#if 0
-    WId mWinId;
-#endif
+};
+
+/* Make the pointer of this class public to the QVariant framework */
+Q_DECLARE_METATYPE(VBoxVMItem *);
+
+class VBoxVMModel: public QAbstractListModel
+{
+    Q_OBJECT;
+
+public:
+    enum { SnapShotDisplayRole = Qt::UserRole,
+           SnapShotFontRole,
+           SessionStateDisplayRole,
+           SessionStateDecorationRole,
+           SessionStateFontRole,
+           VBoxVMItemPtrRole };
+
+    VBoxVMModel(QObject *aParent = 0)
+        :QAbstractListModel (aParent) { refresh(); }
+
+    void addItem (VBoxVMItem *aItem);
+    void removeItem (VBoxVMItem *aItem);
+    void refreshItem (VBoxVMItem *aItem);
+
+    void itemChanged (VBoxVMItem *aItem);
+
+    void refresh();
+
+    VBoxVMItem *itemById (const QUuid &aId) const;
+    QModelIndex indexById (const QUuid &aId) const;
+
+    int rowById (const QUuid &aId) const;;
+
+    void sort (Qt::SortOrder aOrder = Qt::AscendingOrder) { sort (0, aOrder); }
+
+    /* The following are necessary model implementations */
+    void sort (int aColumn, Qt::SortOrder aOrder = Qt::AscendingOrder);
+
+    int rowCount (const QModelIndex &aParent = QModelIndex()) const;
+
+    QVariant data (const QModelIndex &aIndex, int aRole) const;
+    QVariant headerData (int aSection, Qt::Orientation aOrientation,
+                         int aRole = Qt::DisplayRole) const;
+
+    bool removeRows (int aRow, int aCount, const QModelIndex &aParent = QModelIndex());
+
+private:
+    static bool VBoxVMItemNameCompareLessThan (VBoxVMItem* aItem1, VBoxVMItem* aItem2);
+    static bool VBoxVMItemNameCompareGreaterThan (VBoxVMItem* aItem1, VBoxVMItem* aItem2);
+
+    /* Private member vars */
+    QList<VBoxVMItem *> mVMItemList;
+};
+
+class VBoxVMListView: public QListView
+{
+    Q_OBJECT;
+
+public:
+    VBoxVMListView (QWidget *aParent = 0);
+
+    void selectItemByRow (int row);
+    void selectItemById (const QUuid &aID);
+    void ensureSomeRowSelected (int aRowHint);
+    VBoxVMItem * selectedItem() const;
+
+    void ensureCurrentVisible();
+
+signals:
+    void currentChanged();
+    void activated();
+    void contextMenuRequested (VBoxVMItem *aItem, const QPoint &aPoint);
+
+protected slots:
+    void selectionChanged (const QItemSelection &aSelected, const QItemSelection &aDeselected);
+    void currentChanged (const QModelIndex &aCurrent, const QModelIndex &aPrevious);
+    void dataChanged (const QModelIndex &aTopLeft, const QModelIndex &aBottomRight);
+    void focusChanged (QWidget *aOld, QWidget *aNow);
+
+protected:
+    void mousePressEvent (QMouseEvent *aEvent);
+    bool selectCurrent();
+}; 
+
+class VBoxVMItemPainter: public QItemDelegate
+{
+public:
+    VBoxVMItemPainter (QObject *aParent = 0)
+      : QItemDelegate (aParent), mMargin (8), mSpacing (mMargin * 3 / 2) {}
+
+    QSize sizeHint (const QStyleOptionViewItem &aOption,
+                    const QModelIndex &aIndex) const;
+
+    void paint (QPainter *aPainter, const QStyleOptionViewItem &aOption,
+                const QModelIndex &aIndex) const;
+
+protected:
+    void drawBackground (QPainter *aPainter, const QStyleOptionViewItem &aOption, 
+                         const QModelIndex &aIndex) const;
+
+private:
+    inline QFontMetrics fontMetric (const QModelIndex &aIndex, int aRole) const { return QFontMetrics (aIndex.data (aRole).value<QFont>()); }
+    inline QIcon::Mode iconMode (QStyle::State aState) const
+    {
+        if (!(aState & QStyle::State_Enabled)) 
+            return QIcon::Disabled;
+        if (aState & QStyle::State_Selected) 
+            return QIcon::Selected;
+        return QIcon::Normal;
+    }
+    inline QIcon::State iconState (QStyle::State aState) const { return aState & QStyle::State_Open ? QIcon::On : QIcon::Off; }
+
+    QRect rect (const QStyleOptionViewItem &aOption,
+                const QModelIndex &aIndex, int aRole) const;
+
+    void calcLayout (const QModelIndex &aIndex,
+                     QRect *aOSType, QRect *aVMName, QRect *aShot,
+                     QRect *aStateIcon, QRect *aState) const;
+
+    /* Private member vars */
+    int mMargin;
+    int mSpacing;
 };
 
 #endif // __VBoxVMListItem_h__
