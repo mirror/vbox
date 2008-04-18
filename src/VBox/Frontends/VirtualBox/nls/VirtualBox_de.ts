@@ -298,13 +298,24 @@
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation>VirtualBox - Über</translation>
+        <translation type="obsolete">VirtualBox - Über</translation>
     </message>
     <message>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;VirtualBox graphische Oberfläche Version %1&lt;br&gt;
+        <translation type="obsolete">&lt;qt&gt;VirtualBox graphische Oberfläche Version %1&lt;br&gt;
 %2&lt;/qt&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxAboutNonOSEDlg</name>
+    <message>
+        <source>VirtualBox - About</source>
+        <translation>VirtualBox - Über</translation>
+    </message>
+    <message>
+        <source>VirtualBox Graphical User Interface Version %1</source>
+        <translation>VirtualBox Grafische Benutzeroberfläche Version %1</translation>
     </message>
 </context>
 <context>
@@ -466,7 +477,7 @@
     </message>
     <message>
         <source>innotek VirtualBox</source>
-        <translation>innotek VirtualBox</translation>
+        <translation type="obsolete">innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
@@ -893,6 +904,10 @@
     <message>
         <source>Show Session Information Dialog</source>
         <translation>Zeigt einen Dialog mit Session-Informationen</translation>
+    </message>
+    <message>
+        <source>Sun xVM VirtualBox</source>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -1506,12 +1521,12 @@
     <message>
         <source>Primary</source>
         <comment>DiskControllerType</comment>
-        <translation>Primärer</translation>
+        <translation type="obsolete">Primärer</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>DiskControllerType</comment>
-        <translation>Sekundärer</translation>
+        <translation type="obsolete">Sekundärer</translation>
     </message>
     <message>
         <source>Normal</source>
@@ -1571,17 +1586,17 @@
     <message>
         <source>Master</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Master</translation>
+        <translation type="obsolete">Master</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Slave</translation>
+        <translation type="obsolete">Slave</translation>
     </message>
     <message>
         <source>Device&amp;nbsp;%1</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Gerät&amp;nbsp;%1</translation>
+        <translation type="obsolete">Gerät&amp;nbsp;%1</translation>
     </message>
     <message>
         <source>Null Audio Driver</source>
@@ -1834,6 +1849,86 @@
     <message>
         <source>PIIX4</source>
         <comment>IDEControllerType</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (PAE/NX)</comment>
+        <translation>Aktiviert</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (PAE/NX)</comment>
+        <translation>Deaktiviert</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>DeviceType</comment>
+        <translation>USB</translation>
+    </message>
+    <message>
+        <source>Shared Folder</source>
+        <comment>DeviceType</comment>
+        <translation>Gemeinsame Ordner</translation>
+    </message>
+    <message>
+        <source>IDE</source>
+        <comment>StorageBus</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>SATA</source>
+        <comment>StorageBus</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Primary</source>
+        <comment>StorageBusChannel</comment>
+        <translation>Primärer</translation>
+    </message>
+    <message>
+        <source>Secondary</source>
+        <comment>StorageBusChannel</comment>
+        <translation>Sekundärer</translation>
+    </message>
+    <message>
+        <source>Master</source>
+        <comment>StorageBusDevice</comment>
+        <translation>Master</translation>
+    </message>
+    <message>
+        <source>Slave</source>
+        <comment>StorageBusDevice</comment>
+        <translation>Slave</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>StorageBusDevice</comment>
+        <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>Solaris Audio</source>
+        <comment>AudioDriverType</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>PCnet-PCI II (Am79C970A)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>PCnet-FAST III (Am79C973)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Intel PRO/1000 MT Desktop (82540EM)</source>
+        <comment>NetworkAdapterType</comment>
         <translation></translation>
     </message>
 </context>
@@ -2162,6 +2257,121 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation>Zeigt, ob virtuelle Maschinen einen speziellen Modus der CPU für die Virtualisierung (Intel VT-x bzw. AMD-V) per Voreinstellung nutzen sollen oder nicht.</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxHardDiskSettings</name>
+    <message>
+        <source>Slot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk</source>
+        <translation type="unfinished">Platte</translation>
+    </message>
+    <message>
+        <source>VBoxHardDiskSettings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hard Disks</source>
+        <translation type="unfinished">&amp;Festplatten</translation>
+    </message>
+    <message>
+        <source>&amp;Enable SATA Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+E</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+                          &lt;qt&gt;When checked, enables the virtual SATA
+                          controller of this machine. Note that you cannot
+                          attach hard disks to SATA ports when the virtual SATA
+                          controller is disabled.&lt;/qt&gt;
+                        </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disks &amp;Attachments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+                                  &lt;qt&gt;Lists all hard disks attached to
+                                  this machine. Use a mouse double-click or the
+                                  &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt;
+                                  key on the highlighted item to activate the
+                                  drop-down list and choose the desired value.
+                                  Use buttons to the right to add or remove hard
+                                  disk attachments.&lt;/qt&gt;
+                                </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ins</source>
+        <translation type="unfinished">Ins</translation>
+    </message>
+    <message>
+        <source>Add (Ins)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+                                          &lt;qt&gt; Adds a new hard disk
+                                          attachment.&lt;/qt&gt;
+                                        </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Del</source>
+        <translation type="unfinished">Del</translation>
+    </message>
+    <message>
+        <source>Remove (Del)</source>
+        <translation type="unfinished">Löschen (Entf)</translation>
+    </message>
+    <message>
+        <source>
+                                          &lt;qt&gt;Removes the highlighted hard
+                                          disk attachment.&lt;/qt&gt;
+                                        </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Space</source>
+        <translation type="unfinished">Ctrl+Space</translation>
+    </message>
+    <message>
+        <source>Select (Ctrl+Space)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+                                          &lt;qt&gt; Invokes the Virtual Disk
+                                          Manager to select a hard disk to
+                                          attach to the currently highlighted
+                                          slot.&lt;/qt&gt;
+                                        </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtual Disk Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">Löschen</translation>
     </message>
 </context>
 <context>
@@ -2520,11 +2730,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die globalen Einstellungen konnten nicht geladen werden.&lt;/p&gt;&lt;p&gt;Die Anwendung wird nun geschlossen.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Die globalen Einstellungen konnten nicht geladen werden.&lt;/p&gt;&lt;p&gt;Die Anwendung wird nun geschlossen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
-        <translation>&lt;p&gt;Die globalen Einstellungen für die Nutzeroberfläche konnten nicht gesichert werden.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Die globalen Einstellungen für die Nutzeroberfläche konnten nicht gesichert werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
@@ -2548,11 +2758,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Die Einstellungen für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht gesichert werden.</translation>
+        <translation type="obsolete">Die Einstellungen für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht gesichert werden.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Die Einstellungen für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht geladen werden.</translation>
+        <translation type="obsolete">Die Einstellungen für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht geladen werden.</translation>
     </message>
     <message>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2636,11 +2846,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation>Das Plattenabbild mit der UUID %1 konnte nicht an den Slot %2 des Controllers %3 der Maschine &lt;b&gt;%4&lt;/b&gt; angeschlossen werden.</translation>
+        <translation type="obsolete">Das Plattenabbild mit der UUID %1 konnte nicht an den Slot %2 des Controllers %3 der Maschine &lt;b&gt;%4&lt;/b&gt; angeschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Ein Plattenabbild konnte nicht von Slot %1 des Controllers %2 der Maschine &lt;b&gt;%3&lt;/b&gt; getrennt werden.</translation>
+        <translation type="obsolete">Ein Plattenabbild konnte nicht von Slot %1 des Controllers %2 der Maschine &lt;b&gt;%3&lt;/b&gt; getrennt werden.</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -2968,6 +3178,66 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <comment>no hard disk attached</comment>
         <translation>Zurück</translation>
     </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <comment>hard disk</comment>
+        <translation>Deaktivieren</translation>
+    </message>
+    <message>
+        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation>&amp;Speichern</translation>
+    </message>
+    <message>
+        <source>&amp;Backup</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation>Sicherheits&amp;kopie</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation>Abbrechen</translation>
+    </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
@@ -3051,7 +3321,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>innotek VirtualBox</source>
-        <translation>innotek VirtualBox</translation>
+        <translation type="obsolete">innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Details</source>
@@ -3277,6 +3547,38 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Open VirtualBox registration form</source>
         <translation>Öffnet das Formular zum Registrieren von VirtualBox</translation>
+    </message>
+    <message>
+        <source>Sun xVM VirtualBox</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>R&amp;esume</source>
+        <translation>&amp;Fortfahren</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Fortfahren</translation>
+    </message>
+    <message>
+        <source>Ctrl+P</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Resume the execution of the virtual machine</source>
+        <translation>Fährt mit der Ausführung der virtuellen Maschine fort</translation>
+    </message>
+    <message>
+        <source>&amp;Pause</source>
+        <translation>&amp;Pause</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation>Suspendiert die Ausführung der virtuellen Maschine</translation>
     </message>
 </context>
 <context>
@@ -4170,6 +4472,14 @@ value.&lt;/qt&gt;</source>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation>Zeigt den Namen des internen Netzwerks für den ausgewählten Adapter.</translation>
     </message>
+    <message>
+        <source>Adapter &amp;Type</source>
+        <translation>Adapter-&amp;Typ</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
+        <translation>Wählt den Typ des virtuellen Netzwerkadapters. Ausgehend von dieser Einstellung emuliert VirtualBox verschiedene Netzwerkkarten.</translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMParallelPortSettings</name>
@@ -4312,20 +4622,12 @@ value.&lt;/qt&gt;</source>
         <translation>Allgemein</translation>
     </message>
     <message>
-        <source>0</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>#general</source>
         <translation></translation>
     </message>
     <message>
         <source> Hard Disks </source>
         <translation>Festplatten</translation>
-    </message>
-    <message>
-        <source>1</source>
-        <translation></translation>
     </message>
     <message>
         <source>#hdds</source>
@@ -4336,20 +4638,12 @@ value.&lt;/qt&gt;</source>
         <translation>Diskette</translation>
     </message>
     <message>
-        <source>2</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>#floppy</source>
         <translation></translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
         <translation>CD/DVD-ROM</translation>
-    </message>
-    <message>
-        <source>3</source>
-        <translation></translation>
     </message>
     <message>
         <source>#dvd</source>
@@ -4360,20 +4654,12 @@ value.&lt;/qt&gt;</source>
         <translation>Audio</translation>
     </message>
     <message>
-        <source>4</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>#audio</source>
         <translation></translation>
     </message>
     <message>
         <source> Network </source>
         <translation>Netzwerk</translation>
-    </message>
-    <message>
-        <source>5</source>
-        <translation></translation>
     </message>
     <message>
         <source>#network</source>
@@ -4384,10 +4670,6 @@ value.&lt;/qt&gt;</source>
         <translation>USB</translation>
     </message>
     <message>
-        <source>6</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>#usb</source>
         <translation></translation>
     </message>
@@ -4396,20 +4678,12 @@ value.&lt;/qt&gt;</source>
         <translation>Fernsteuerung</translation>
     </message>
     <message>
-        <source>7</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>#vrdp</source>
         <translation></translation>
     </message>
     <message>
         <source> Shared Folders </source>
         <translation>Gemeinsame Ordner</translation>
-    </message>
-    <message>
-        <source>8</source>
-        <translation></translation>
     </message>
     <message>
         <source>#sfolders</source>
@@ -4505,19 +4779,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Primary Master</source>
-        <translation>&amp;Primärer Master</translation>
+        <translation type="obsolete">&amp;Primärer Master</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
-        <translation>&lt;nicht ausgewählt&gt;</translation>
+        <translation type="obsolete">&lt;nicht ausgewählt&gt;</translation>
     </message>
     <message>
         <source>P&amp;rimary Slave</source>
-        <translation>P&amp;rimärer Slave</translation>
+        <translation type="obsolete">P&amp;rimärer Slave</translation>
     </message>
     <message>
         <source>&amp;Secondary (IDE 1) Slave</source>
-        <translation>&amp;Sekundärer Slave</translation>
+        <translation type="obsolete">&amp;Sekundärer Slave</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
@@ -4673,19 +4947,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation>Schließt die angegebene virtuelle Festplatte an den Master-Slot des primären IDE-Controllers an.</translation>
+        <translation type="obsolete">Schließt die angegebene virtuelle Festplatte an den Master-Slot des primären IDE-Controllers an.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
-        <translation>Schließt die angegebene virtuelle Festplatte an den Slave-Slot des primären IDE-Controllers an.</translation>
+        <translation type="obsolete">Schließt die angegebene virtuelle Festplatte an den Slave-Slot des primären IDE-Controllers an.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation>Schließt die angegebene virtuelle Festplatte an den Slave-Slot des sekundären IDE-Controllers an.</translation>
+        <translation type="obsolete">Schließt die angegebene virtuelle Festplatte an den Slave-Slot des sekundären IDE-Controllers an.</translation>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
-        <translation>Zeigt die virtuellen Festplatten, die an diesen IDE-Slot angeschlossen werden können und erlaubt die schnelle Auswahl von anderen Platten.</translation>
+        <translation type="obsolete">Zeigt die virtuellen Festplatten, die an diesen IDE-Slot angeschlossen werden können und erlaubt die schnelle Auswahl von anderen Platten.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
@@ -4771,7 +5045,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation>Ruft den Manager für virtuelle Medien auf um eine neue virtuelle Festplatte zu erzeugen oder um ein bereits vorhandenes Abbild auszuwählen.</translation>
+        <translation type="obsolete">Ruft den Manager für virtuelle Medien auf um eine neue virtuelle Festplatte zu erzeugen oder um ein bereits vorhandenes Abbild auszuwählen.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
@@ -4852,10 +5126,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&lt;p&gt;Möchten Sie das ausgewählte Hostinterface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;löschen?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie:&lt;/b&gt; Dieses Interface wird möglicherweise von virtuellen Netzwerk-Adaptern anderer VMs benutzt. Nachdem es gelöscht wurde, funktionieren diese Adapter nichts mehr, bis deren Einstellungen entsprechend angepasst wurden.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>9</source>
-        <translation></translation>
-    </message>
-    <message>
         <source> Serial Ports </source>
         <translation>Serielle Schnittstellen</translation>
     </message>
@@ -4913,23 +5183,23 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Primary Master hard disk is not selected</source>
-        <translation>Primäre Masterplatte nicht ausgewählt</translation>
+        <translation type="obsolete">Primäre Masterplatte nicht ausgewählt</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected</source>
-        <translation>Primäre Slaveplatte nicht ausgewählt</translation>
+        <translation type="obsolete">Primäre Slaveplatte nicht ausgewählt</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot</source>
-        <translation>Primäre Masterplatte ist bereits an einen anderen Slot gebunden</translation>
+        <translation type="obsolete">Primäre Masterplatte ist bereits an einen anderen Slot gebunden</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected</source>
-        <translation>Sekundäre Slaveplatte nicht ausgewählt</translation>
+        <translation type="obsolete">Sekundäre Slaveplatte nicht ausgewählt</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot</source>
-        <translation>Sekundäre Slaveplatte ist bereits bereits an einen anderen Slot gebunden</translation>
+        <translation type="obsolete">Sekundäre Slaveplatte ist bereits bereits an einen anderen Slot gebunden</translation>
     </message>
     <message>
         <source>CD/DVD image file is not selected</source>
@@ -4986,11 +5256,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&lt;qt&gt;Selects the type of the emulated audio hardware.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Wählt den Typ der emulierten Audio-Hardware.&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Wählt den Typ der emulierten Audio-Hardware.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Enable USB E&amp;HCI Controller</source>
-        <translation>E&amp;HCI-Controller aktivieren</translation>
+        <translation type="obsolete">E&amp;HCI-Controller aktivieren</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
@@ -5008,6 +5278,69 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>00</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>01</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>02</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>03</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>04</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>05</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>08</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>09</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>06</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>07</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation>PA&amp;E/NX aktivieren</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;When
+                                                          checked, the Physical
+                                                          Address Extension
+                                                          (PAE) feature of the
+                                                          host CPU will be
+                                                          exposed to the virtual
+                                                          machine.&lt;/qt&gt;
+                                                        </source>
+        <translation>&lt;qt&gt;Bei Aktivierung dieser Einstellung aktiviert VirtualBox den CPU-Modus Physical Address Extension (PAE).&lt;/qt/&gt;</translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
+        <translation>Wählt den Typ der virtuellen Soundkarte. Ausgehend von dieser Einstellung emuliert VirtualBox unterschiedliche Audiokarten.</translation>
+    </message>
+    <message>
+        <source>Enable USB &amp;2.0 Controller</source>
+        <translation>Aktiviert den USB&amp;2.0-Controller</translation>
     </message>
 </context>
 </TS>
