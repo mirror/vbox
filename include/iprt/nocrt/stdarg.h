@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime / No-CRT - stdarg.h (-> iprt/stdarg.h).
+ * Incredibly Portable Runtime / No-CRT - stdarg.h (-> iprt/stdarg.h).
  */
 
 /*

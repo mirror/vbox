@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime / No-CRT - fenv.h, X86.
+ * Incredibly Portable Runtime / No-CRT - fenv.h, X86.
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime / No-CRT - string.h.
+ * Incredibly Portable Runtime / No-CRT - string.h.
  */
 
 /*

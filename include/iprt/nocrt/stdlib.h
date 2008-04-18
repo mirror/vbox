@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime / No-CRT - Our minimal stdlib.h.
+ * Incredibly Portable Runtime / No-CRT - Our minimal stdlib.h.
  */
 
 /*

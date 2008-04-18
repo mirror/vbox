@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime / No-CRT - Our own setjmp header.
+ * Incredibly Portable Runtime / No-CRT - Our own setjmp header.
  */
 
 /*
