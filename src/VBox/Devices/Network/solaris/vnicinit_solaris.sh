@@ -37,15 +37,14 @@ if [ -z "$2" ]; then
     fi
 
     # To use a specific physical NIC, replace $phys_nic with the name of the NIC.
-    vnic_id=`/usr/lib/vna $phys_nic $mac`
+    vnic_name=`/usr/lib/vna $phys_nic $mac`
     if [ $? != 0 ]; then
         exit 1
     fi
-    vnic_name=vnic${vnic_id}
 else
     vnic_name=$2
-    vnic_id=${vnic_name##*[a-z]}
 fi
+vnic_id=${vnic_name##*[a-z]}
 
 if [ ${vnic_id} -lt 10 ]; then
     host_ip="192.168.1.10${vnic_id}"
