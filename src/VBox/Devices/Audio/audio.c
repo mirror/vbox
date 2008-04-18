@@ -225,7 +225,7 @@ int audio_bug (const char *funcname, int cond)
         if (!shown) {
             shown = 1;
             AUD_log (NULL, "Save all your work and restart without audio\n");
-            AUD_log (NULL, "Please send a bug report to innotek\n");
+            AUD_log (NULL, "Please send a bug, see www.virtualbox.org\n");
             AUD_log (NULL, "I am sorry\n");
         }
         AUD_log (NULL, "Context:\n");

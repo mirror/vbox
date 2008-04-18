@@ -61,7 +61,7 @@ _vbebios_copyright:
 .byte        0x00
 
 _vbebios_vendor_name:
-.ascii       "innotek GmbH"
+.ascii       "Sun Microsystems, Inc."
 .byte        0x00
 
 _vbebios_product_name:
@@ -69,13 +69,13 @@ _vbebios_product_name:
 .byte        0x00
 
 _vbebios_product_revision:
-.ascii       "innotek VirtualBox Version "
+.ascii       "Sun xVM VirtualBox Version "
 .ascii       VBOX_VERSION_STRING
 .byte        0x00
 
 _vbebios_info_string:
 //.ascii      "Bochs VBE Display Adapter enabled"
-.ascii       "innotek VirtualBox VBE Display Adapter enabled"
+.ascii       "VirtualBox VBE Display Adapter enabled"
 .byte	0x0a,0x0d
 .byte	0x0a,0x0d
 .byte	0x00
@@ -87,7 +87,7 @@ _no_vbebios_info_string:
 .byte 0x00
 
 msg_vbe_init:
-.ascii       "innotek VirtualBox Version "
+.ascii       "VirtualBox Version "
 .ascii       VBOX_VERSION_STRING
 .ascii       " VBE Display Adapter"
 .byte	0x0a,0x0d, 0x00

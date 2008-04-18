@@ -351,7 +351,7 @@ int main(int argc, char **argv)
     putenv((char*)"VBOX_LOG_FLAGS=");
 
     RTR3Init();
-    RTPrintf("vditool    Copyright (c) 2004-2008 innotek GmbH.\n\n");
+    RTPrintf("vditool    Copyright (c) 2008 Sun Microsystems, Inc.\n\n");
 
     /*
      * Do cmd line parsing.
