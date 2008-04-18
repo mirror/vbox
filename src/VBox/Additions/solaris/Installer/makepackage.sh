@@ -28,7 +28,7 @@ MY_GGREP=/usr/sfw/bin/ggrep
 MY_AWK=/usr/bin/awk
 
 # check for GNU grep we use which might not ship with all Solaris
-if test ! -f "$MY_GGREP" || test ! -h "$MY_GGREP"; then
+if test ! -f "$MY_GGREP" && test ! -h "$MY_GGREP"; then
     echo "## GNU grep not found in $MY_GGREP."
     exit 1
 fi
