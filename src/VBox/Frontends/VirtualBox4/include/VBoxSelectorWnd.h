@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,18 +30,20 @@
 /* Qt includes */
 #include <QMainWindow>
 
-class VBoxVMListBox;
 class VBoxSnapshotsWgt;
 class VBoxVMDetailsView;
 class VBoxVMDescriptionPage;
 class VBoxVMLogViewer;
+class VBoxVMListView;
+class VBoxVMModel;
+class VBoxVMItem;
 
 class QTabWidget;
-class Q3ListBoxItem;
+class QListView;
 class QEvent;
 class QUuid;
 
-class VBoxSelectorWnd : public QMainWindow
+class VBoxSelectorWnd: public QMainWindow
 {
     Q_OBJECT
 
@@ -75,7 +77,7 @@ public slots:
                                           bool aSnapshots,
                                           bool aDescription);
 
-    void showContextMenu (Q3ListBoxItem *, const QPoint &);
+    void showContextMenu (VBoxVMItem *aItem, const QPoint &aPoint);
 
 protected:
 
@@ -90,9 +92,9 @@ private:
 
 private slots:
 
-    void vmListBoxCurrentChanged (bool aRefreshDetails = true,
-                                  bool aRefreshSnapshots = true,
-                                  bool aRefreshDescription = true);
+    void vmListViewCurrentChanged (bool aRefreshDetails = true,
+                                   bool aRefreshSnapshots = true,
+                                   bool aRefreshDescription = true);
 
     void mediaEnumStarted();
     void mediaEnumFinished (const VBoxMediaList &);
@@ -132,8 +134,11 @@ private:
     QAction *helpAboutAction;
     QAction *helpResetMessagesAction;
 
-    /* widgets */
-    VBoxVMListBox *vmListBox;
+    /* The vm list view/model */
+    VBoxVMListView *mVMListView;
+    VBoxVMModel *mVMModel;
+
+    /* The right information widgets */
     QTabWidget *vmTabWidget;
     VBoxVMDetailsView *vmDetailsView;
     VBoxSnapshotsWgt *vmSnapshotsWgt;
