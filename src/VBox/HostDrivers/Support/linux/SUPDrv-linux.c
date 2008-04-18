@@ -1493,7 +1493,7 @@ unsigned __gxx_personality_v0 = 0xcccccccc;
 module_init(VBoxDrvLinuxInit);
 module_exit(VBoxDrvLinuxUnload);
 
-MODULE_AUTHOR("innotek GmbH");
+MODULE_AUTHOR("Sun Microsystems, Inc.");
 MODULE_DESCRIPTION("VirtualBox Support Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
