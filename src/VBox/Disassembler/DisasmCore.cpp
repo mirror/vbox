@@ -264,7 +264,7 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
         if (opcode <= OP_LOCK)
         {
             pCpu->lastprefix = opcode;
-            switch(opcode)
+            switch (opcode)
             {
             case OP_INVALID:
                 AssertMsgFailed(("Invalid opcode!!\n"));
@@ -286,7 +286,7 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
             // address size override prefix byte
             case OP_ADRSIZE:
                 pCpu->prefix |= PREFIX_ADDRSIZE;
-                if(pCpu->mode == CPUMODE_16BIT)
+                if (pCpu->mode == CPUMODE_16BIT)
                      pCpu->addrmode = CPUMODE_32BIT;
                 else pCpu->addrmode = CPUMODE_16BIT;
                 iByte        += sizeof(uint8_t);
@@ -295,7 +295,7 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
             // operand size override prefix byte
             case OP_OPSIZE:
                 pCpu->prefix |= PREFIX_OPSIZE;
-                if(pCpu->mode == CPUMODE_16BIT)
+                if (pCpu->mode == CPUMODE_16BIT)
                      pCpu->opmode = CPUMODE_32BIT;
                 else pCpu->opmode = CPUMODE_16BIT;
 
@@ -377,15 +377,20 @@ unsigned ParseInstruction(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, PDISCPUSTATE pC
     pCpu->param2.param = pOp->param2;
     pCpu->param3.param = pOp->param3;
 
-    if(pOp->idxParse1 != IDX_ParseNop) {
+    if (pOp->idxParse1 != IDX_ParseNop) 
+    {
         size += pCpu->pfnDisasmFnTable[pOp->idxParse1](lpszCodeBlock, pOp, &pCpu->param1, pCpu);
         if (fFiltered == false) pCpu->param1.size = DISGetParamSize(pCpu, &pCpu->param1);
     }
-    if(pOp->idxParse2 != IDX_ParseNop) {
+
+    if (pOp->idxParse2 != IDX_ParseNop) 
+    {
         size += pCpu->pfnDisasmFnTable[pOp->idxParse2](lpszCodeBlock+size, pOp, &pCpu->param2, pCpu);
         if (fFiltered == false) pCpu->param2.size = DISGetParamSize(pCpu, &pCpu->param2);
     }
-    if(pOp->idxParse3 != IDX_ParseNop) {
+
+    if (pOp->idxParse3 != IDX_ParseNop) 
+    {
         size += pCpu->pfnDisasmFnTable[pOp->idxParse3](lpszCodeBlock+size, pOp, &pCpu->param3, pCpu);
         if (fFiltered == false) pCpu->param3.size = DISGetParamSize(pCpu, &pCpu->param3);
     }
@@ -405,7 +410,7 @@ unsigned ParseEscFP(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     pCpu->ModRM = DISReadByte(pCpu, lpszCodeBlock);
 
     index = pCpu->opcode - 0xD8;
-    if(pCpu->ModRM <= 0xBF)
+    if (pCpu->ModRM <= 0xBF)
     {
         fpop            = &(g_paMapX86_FP_Low[index])[MODRM_REG(pCpu->ModRM)];
         pCpu->pCurInstr = (PCOPCODE)fpop;
@@ -429,17 +434,14 @@ unsigned ParseEscFP(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
         }
 
         // Little hack to make sure the ModRM byte is included in the returned size
-        if(fpop->idxParse1 != IDX_ParseModRM && fpop->idxParse2 != IDX_ParseModRM)
-        {
+        if (fpop->idxParse1 != IDX_ParseModRM && fpop->idxParse2 != IDX_ParseModRM)
             size = sizeof(uint8_t); //ModRM byte
-        }
 
-        if(fpop->idxParse1 != IDX_ParseNop) {
+        if (fpop->idxParse1 != IDX_ParseNop)
             size += pCpu->pfnDisasmFnTable[fpop->idxParse1](lpszCodeBlock+size, (PCOPCODE)fpop, pParam, pCpu);
-        }
-        if(fpop->idxParse2 != IDX_ParseNop) {
+
+        if (fpop->idxParse2 != IDX_ParseNop)
             size += pCpu->pfnDisasmFnTable[fpop->idxParse2](lpszCodeBlock+size, (PCOPCODE)fpop, pParam, pCpu);
-        }
     }
     else
     {
@@ -489,29 +491,29 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
     base  = SIB_BASE(pCpu->SIB);
     index = SIB_INDEX(pCpu->SIB);
 
-    if(szSIBIndexReg[index])
+    if (szSIBIndexReg[index])
     {
          pParam->flags |= USE_INDEX;
          pParam->index.reg_gen = index;
 
-         if(scale != 0)
+         if (scale != 0)
          {
              pParam->flags |= USE_SCALE;
              pParam->scale  = (1<<scale);
          }
 
-         if(base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
+         if (base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
              disasmAddStringF(szTemp, sizeof(szTemp), "%s%s", szSIBIndexReg[index], szSIBScale[scale]);
          else
              disasmAddStringF(szTemp, sizeof(szTemp), "%s+%s%s", szSIBBaseReg[base], szSIBIndexReg[index], szSIBScale[scale]);
     }
     else
     {
-         if(base != 5 || MODRM_MOD(pCpu->ModRM) != 0)
+         if (base != 5 || MODRM_MOD(pCpu->ModRM) != 0)
              disasmAddStringF(szTemp, sizeof(szTemp), "%s", szSIBBaseReg[base]);
     }
 
-    if(base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
+    if (base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
     {
         // [scaled index] + disp32
         disasmAddString(pParam->szParam, &szTemp[0]);
@@ -539,7 +541,7 @@ unsigned ParseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
     lpszCodeBlock += size;
 
     base = SIB_BASE(pCpu->SIB);
-    if(base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
+    if (base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
     {//additional 32 bits displacement
         pCpu->disp = DISReadDWord(pCpu, lpszCodeBlock);
         size += sizeof(int32_t);
@@ -556,7 +558,7 @@ unsigned ParseSIB_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER 
     lpszCodeBlock += size;
 
     base = SIB_BASE(pCpu->SIB);
-    if(base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
+    if (base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
     {//additional 32 bits displacement
         size += sizeof(int32_t);
     }
@@ -574,7 +576,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
     int mod   = MODRM_MOD(pCpu->ModRM);
     int vtype = OP_PARM_VTYPE(pParam->param);
 
-    switch(vtype)
+    switch (vtype)
     {
     case OP_PARM_G: //general purpose register
         disasmModRMReg(pCpu, pOp, reg, pParam, 0);
@@ -583,7 +585,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
     default:
         if (IS_OP_PARM_RARE(vtype))
         {
-            switch(vtype)
+            switch (vtype)
             {
             case OP_PARM_C: //control register
                 disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "CR%d", reg);
@@ -635,18 +637,18 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
 
     //TODO: bound
 
-    if(pCpu->addrmode == CPUMODE_32BIT)
+    if (pCpu->addrmode == CPUMODE_32BIT)
     {//32 bits addressing mode
-        switch(mod)
+        switch (mod)
         {
         case 0: //effective address
             disasmGetPtrString(pCpu, pOp, pParam);
             disasmAddChar(pParam->szParam, '[');
-            if(rm == 4) {//SIB byte follows ModRM
+            if (rm == 4) {//SIB byte follows ModRM
                 UseSIB(lpszCodeBlock, pOp, pParam, pCpu);
             }
             else
-            if(rm == 5) {//32 bits displacement
+            if (rm == 5) {//32 bits displacement
                 pParam->flags |= USE_DISPLACEMENT32;
                 pParam->disp32 = pCpu->disp;
                 disasmPrintDisp32(pParam);
@@ -661,7 +663,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
         case 1: //effective address + 8 bits displacement
             disasmGetPtrString(pCpu, pOp, pParam);
             disasmAddChar(pParam->szParam, '[');
-            if(rm == 4) {//SIB byte follows ModRM
+            if (rm == 4) {//SIB byte follows ModRM
                 UseSIB(lpszCodeBlock, pOp, pParam, pCpu);
             }
             else
@@ -672,9 +674,9 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             pParam->disp8 = pCpu->disp;
             pParam->flags |= USE_DISPLACEMENT8;
 
-            if(pParam->disp8 != 0)
+            if (pParam->disp8 != 0)
             {
-                if(pParam->disp8 > 0)
+                if (pParam->disp8 > 0)
                     disasmAddChar(pParam->szParam, '+');
                 disasmPrintDisp8(pParam);
             }
@@ -684,7 +686,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
         case 2: //effective address + 32 bits displacement
             disasmGetPtrString(pCpu, pOp, pParam);
             disasmAddChar(pParam->szParam, '[');
-            if(rm == 4) {//SIB byte follows ModRM
+            if (rm == 4) {//SIB byte follows ModRM
                 UseSIB(lpszCodeBlock, pOp, pParam, pCpu);
             }
             else
@@ -695,7 +697,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             pParam->disp32 = pCpu->disp;
             pParam->flags |= USE_DISPLACEMENT32;
 
-            if(pParam->disp32 != 0)
+            if (pParam->disp32 != 0)
             {
                 disasmAddChar(pParam->szParam, '+');
                 disasmPrintDisp32(pParam);
@@ -710,12 +712,12 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
     }
     else
     {//16 bits addressing mode
-        switch(mod)
+        switch (mod)
         {
         case 0: //effective address
             disasmGetPtrString(pCpu, pOp, pParam);
             disasmAddChar(pParam->szParam, '[');
-            if(rm == 6)
+            if (rm == 6)
             {//16 bits displacement
                 pParam->disp16 = pCpu->disp;
                 pParam->flags |= USE_DISPLACEMENT16;
@@ -736,9 +738,9 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             pParam->disp8 = pCpu->disp;
             pParam->flags |= USE_BASE | USE_DISPLACEMENT8;
 
-            if(pParam->disp8 != 0)
+            if (pParam->disp8 != 0)
             {
-                if(pParam->disp8 > 0)
+                if (pParam->disp8 > 0)
                     disasmAddChar(pParam->szParam, '+');
                 disasmPrintDisp8(pParam);
             }
@@ -752,7 +754,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             pParam->disp16 = pCpu->disp;
             pParam->flags |= USE_BASE | USE_DISPLACEMENT16;
 
-            if(pParam->disp16 != 0)
+            if (pParam->disp16 != 0)
             {
                 disasmAddChar(pParam->szParam, '+');
                 disasmPrintDisp16(pParam);
@@ -778,26 +780,26 @@ unsigned QueryModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     rm  = MODRM_RM(pCpu->ModRM);
     mod = MODRM_MOD(pCpu->ModRM);
 
-    if(!pSibInc)
+    if (!pSibInc)
     {
         pSibInc = &sibinc;
     }
 
     *pSibInc = 0;
 
-    if(pCpu->addrmode == CPUMODE_32BIT)
+    if (pCpu->addrmode == CPUMODE_32BIT)
     {//32 bits addressing mode
-        if(mod != 3 && rm == 4)
+        if (mod != 3 && rm == 4)
         {//SIB byte follows ModRM
             *pSibInc = ParseSIB(lpszCodeBlock, pOp, pParam, pCpu);
             lpszCodeBlock += *pSibInc;
             size += *pSibInc;
         }
 
-        switch(mod)
+        switch (mod)
         {
         case 0: //effective address
-            if(rm == 5) {//32 bits displacement
+            if (rm == 5) {//32 bits displacement
                 pCpu->disp = DISReadDWord(pCpu, lpszCodeBlock);
                 size += sizeof(int32_t);
             }
@@ -820,10 +822,10 @@ unsigned QueryModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     }
     else
     {//16 bits addressing mode
-        switch(mod)
+        switch (mod)
         {
         case 0: //effective address
-            if(rm == 6) {
+            if (rm == 6) {
                 pCpu->disp = DISReadWord(pCpu, lpszCodeBlock);
                 size += sizeof(uint16_t);
             }
@@ -856,26 +858,26 @@ unsigned QueryModRM_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETE
     rm  = MODRM_RM(pCpu->ModRM);
     mod = MODRM_MOD(pCpu->ModRM);
 
-    if(!pSibInc)
+    if (!pSibInc)
     {
         pSibInc = &sibinc;
     }
 
     *pSibInc = 0;
 
-    if(pCpu->addrmode == CPUMODE_32BIT)
+    if (pCpu->addrmode == CPUMODE_32BIT)
     {//32 bits addressing mode
-        if(mod != 3 && rm == 4)
+        if (mod != 3 && rm == 4)
         {//SIB byte follows ModRM
             *pSibInc = ParseSIB_SizeOnly(lpszCodeBlock, pOp, pParam, pCpu);
             lpszCodeBlock += *pSibInc;
             size += *pSibInc;
         }
 
-        switch(mod)
+        switch (mod)
         {
         case 0: //effective address
-            if(rm == 5) {//32 bits displacement
+            if (rm == 5) {//32 bits displacement
                 size += sizeof(int32_t);
             }
             //else register address
@@ -895,10 +897,10 @@ unsigned QueryModRM_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETE
     }
     else
     {//16 bits addressing mode
-        switch(mod)
+        switch (mod)
         {
         case 0: //effective address
-            if(rm == 6) {
+            if (rm == 6) {
                 size += sizeof(uint16_t);
             }
             break;
@@ -985,7 +987,7 @@ unsigned ParseImmByte_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAME
 //*****************************************************************************
 unsigned ParseImmByteSX(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    if(pCpu->opmode == CPUMODE_32BIT)
+    if (pCpu->opmode == CPUMODE_32BIT)
     {
         pParam->parval = (uint32_t)(int8_t)DISReadByte(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32_SX8;
@@ -1058,7 +1060,7 @@ unsigned ParseImmQword_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAM
 //*****************************************************************************
 unsigned ParseImmV(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    if(pCpu->opmode == CPUMODE_32BIT)
+    if (pCpu->opmode == CPUMODE_32BIT)
     {
         pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32;
@@ -1079,7 +1081,7 @@ unsigned ParseImmV(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 //*****************************************************************************
 unsigned ParseImmV_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    if(pCpu->opmode == CPUMODE_32BIT)
+    if (pCpu->opmode == CPUMODE_32BIT)
     {
         return sizeof(uint32_t);
     }
@@ -1111,7 +1113,7 @@ unsigned ParseImmBRel_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAME
 //*****************************************************************************
 unsigned ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    if(pCpu->opmode == CPUMODE_32BIT)
+    if (pCpu->opmode == CPUMODE_32BIT)
     {
         pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE32_REL;
@@ -1133,7 +1135,7 @@ unsigned ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
 //*****************************************************************************
 unsigned ParseImmVRel_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    if(pCpu->opmode == CPUMODE_32BIT)
+    if (pCpu->opmode == CPUMODE_32BIT)
     {
         return sizeof(int32_t);
     }
@@ -1147,9 +1149,9 @@ unsigned ParseImmVRel_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAME
 unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
     disasmGetPtrString(pCpu, pOp, pParam);
-    if(pCpu->addrmode == CPUMODE_32BIT)
+    if (pCpu->addrmode == CPUMODE_32BIT)
     {
-        if(OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
+        if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
         {// far 16:32 pointer
             pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
             *((uint32_t*)&pParam->parval+1) = DISReadWord(pCpu, lpszCodeBlock+sizeof(uint32_t));
@@ -1173,7 +1175,7 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
     }
     else
     {
-        if(OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
+        if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
         {// far 16:16 pointer
             pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_IMMEDIATE_ADDR_16_16;
@@ -1199,9 +1201,9 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
 //*****************************************************************************
 unsigned ParseImmAddr_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    if(pCpu->addrmode == CPUMODE_32BIT)
+    if (pCpu->addrmode == CPUMODE_32BIT)
     {
-        if(OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
+        if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
         {// far 16:32 pointer
             return sizeof(uint32_t) + sizeof(uint16_t);
         }
@@ -1212,7 +1214,7 @@ unsigned ParseImmAddr_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAME
     }
     else
     {
-        if(OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
+        if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
         {// far 16:16 pointer
             return sizeof(uint32_t);
         }
@@ -1230,17 +1232,17 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
      * Sets up flags for stored in OPC fixed registers.
      */
 
-    if(pParam->param == OP_PARM_NONE)
+    if (pParam->param == OP_PARM_NONE)
     {
         /* No parameter at all. */
         return 0;
     }
 
-    if(pParam->param < OP_PARM_REG_SEG_START)
+    if (pParam->param < OP_PARM_REG_SEG_START)
     {
         /* 32-bit EAX..EDI registers. */
 
-        if(pCpu->opmode == CPUMODE_32BIT)
+        if (pCpu->opmode == CPUMODE_32BIT)
         {
             /* Use 32-bit registers. */
             pParam->base.reg_gen32 = pParam->param - OP_PARM_REG_GEN32_START;
@@ -1257,7 +1259,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         }
     }
     else
-    if(pParam->param < OP_PARM_REG_GEN16_START)
+    if (pParam->param < OP_PARM_REG_GEN16_START)
     {
         /* Segment ES..GS registers. */
         pParam->base.reg_seg = pParam->param - OP_PARM_REG_SEG_START;
@@ -1265,7 +1267,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         pParam->size   = 2;
     }
     else
-    if(pParam->param < OP_PARM_REG_GEN8_START)
+    if (pParam->param < OP_PARM_REG_GEN8_START)
     {
         /* 16-bit AX..DI registers. */
         pParam->base.reg_gen16 = pParam->param - OP_PARM_REG_GEN16_START;
@@ -1273,7 +1275,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         pParam->size   = 2;
     }
     else
-    if(pParam->param < OP_PARM_REG_FP_START)
+    if (pParam->param < OP_PARM_REG_FP_START)
     {
         /* 8-bit AL..DL, AH..DH registers. */
         pParam->base.reg_gen8 = pParam->param - OP_PARM_REG_GEN8_START;
@@ -1281,7 +1283,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         pParam->size   = 1;
     }
     else
-    if(pParam->param <= OP_PARM_REGFP_7)
+    if (pParam->param <= OP_PARM_REGFP_7)
     {
         /* FPU registers. */
         pParam->base.reg_fp = pParam->param - OP_PARM_REG_FP_START;
@@ -1300,7 +1302,7 @@ unsigned ParseXv(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), (pCpu->addrmode == CPUMODE_32BIT) ? "DS:ESI" : "DS:SI");
 
     pParam->flags |= USE_POINTER_DS_BASED;
-    if(pCpu->addrmode == CPUMODE_32BIT)
+    if (pCpu->addrmode == CPUMODE_32BIT)
     {
         pParam->base.reg_gen32 = USE_REG_ESI;
         pParam->flags |= USE_REG_GEN32;
@@ -1319,7 +1321,7 @@ unsigned ParseXb(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), (pCpu->addrmode == CPUMODE_32BIT) ? "DS:ESI" : "DS:SI");
 
     pParam->flags |= USE_POINTER_DS_BASED;
-    if(pCpu->addrmode == CPUMODE_32BIT)
+    if (pCpu->addrmode == CPUMODE_32BIT)
     {
         pParam->base.reg_gen32 = USE_REG_ESI;
         pParam->flags |= USE_REG_GEN32;
@@ -1339,7 +1341,7 @@ unsigned ParseYv(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), (pCpu->addrmode == CPUMODE_32BIT) ? "ES:EDI" : "ES:DI");
 
     pParam->flags |= USE_POINTER_ES_BASED;
-    if(pCpu->addrmode == CPUMODE_32BIT)
+    if (pCpu->addrmode == CPUMODE_32BIT)
     {
         pParam->base.reg_gen32 = USE_REG_EDI;
         pParam->flags |= USE_REG_GEN32;
@@ -1358,7 +1360,7 @@ unsigned ParseYb(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
     disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), (pCpu->addrmode == CPUMODE_32BIT) ? "ES:EDI" : "ES:DI");
 
     pParam->flags |= USE_POINTER_ES_BASED;
-    if(pCpu->addrmode == CPUMODE_32BIT)
+    if (pCpu->addrmode == CPUMODE_32BIT)
     {
         pParam->base.reg_gen32 = USE_REG_EDI;
         pParam->flags |= USE_REG_GEN32;
@@ -1385,7 +1387,7 @@ unsigned ParseTwoByteEsc(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pP
     /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
     if (pCpu->lastprefix)
     {
-        switch(pCpu->lastprefix)
+        switch (pCpu->lastprefix)
         {
         case OP_OPSIZE: /* 0x66 */
             if (g_aTwoByteMapX86_PF66[pCpu->opcode].opcode != OP_INVALID)
@@ -1455,7 +1457,7 @@ unsigned ParseImmGrpl(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
 
     pOp = (PCOPCODE)&g_aMapX86_Group1[idx+reg];
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1471,7 +1473,7 @@ unsigned ParseShiftGrp2(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPa
     int idx;
     unsigned size = 0, modrm, reg;
 
-    switch(pCpu->opcode)
+    switch (pCpu->opcode)
     {
     case 0xC0:
     case 0xC1:
@@ -1496,7 +1498,7 @@ unsigned ParseShiftGrp2(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPa
     pOp = (PCOPCODE)&g_aMapX86_Group2[idx+reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1518,7 +1520,7 @@ unsigned ParseGrp3(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     pOp = (PCOPCODE)&g_aMapX86_Group3[idx+reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1539,7 +1541,7 @@ unsigned ParseGrp4(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     pOp = (PCOPCODE)&g_aMapX86_Group4[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1560,7 +1562,7 @@ unsigned ParseGrp5(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     pOp = (PCOPCODE)&g_aMapX86_Group5[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1593,7 +1595,7 @@ unsigned Parse3DNow(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     pOp = (PCOPCODE)&g_aTwoByteMapX86_3DNow[opcode];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
 #ifdef DEBUG_Sander /* bird, 2005-06-28: Alex is getting this during full installation of win2ksp4. */
         AssertMsgFailed(("Oops!\n")); //shouldn't happen!
@@ -1618,7 +1620,7 @@ unsigned ParseGrp6(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     pOp = (PCOPCODE)&g_aMapX86_Group6[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1651,7 +1653,7 @@ unsigned ParseGrp7(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
         pOp = (PCOPCODE)&g_aMapX86_Group7_mem[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1672,7 +1674,7 @@ unsigned ParseGrp8(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     pOp = (PCOPCODE)&g_aMapX86_Group8[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1693,7 +1695,7 @@ unsigned ParseGrp9(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     pOp = (PCOPCODE)&g_aMapX86_Group9[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1714,7 +1716,7 @@ unsigned ParseGrp10(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     pOp = (PCOPCODE)&g_aMapX86_Group10[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1732,7 +1734,7 @@ unsigned ParseGrp12(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     modrm = DISReadByte(pCpu, lpszCodeBlock);
     reg   = MODRM_REG(modrm);
 
-    if(pCpu->prefix & PREFIX_OPSIZE)
+    if (pCpu->prefix & PREFIX_OPSIZE)
     {
         reg += 8;   //2nd table
     }
@@ -1740,7 +1742,7 @@ unsigned ParseGrp12(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     pOp = (PCOPCODE)&g_aMapX86_Group12[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1757,7 +1759,7 @@ unsigned ParseGrp13(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 
     modrm = DISReadByte(pCpu, lpszCodeBlock);
     reg   = MODRM_REG(modrm);
-    if(pCpu->prefix & PREFIX_OPSIZE)
+    if (pCpu->prefix & PREFIX_OPSIZE)
     {
         reg += 8;   //2nd table
     }
@@ -1765,7 +1767,7 @@ unsigned ParseGrp13(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     pOp = (PCOPCODE)&g_aMapX86_Group13[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1782,7 +1784,7 @@ unsigned ParseGrp14(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 
     modrm = DISReadByte(pCpu, lpszCodeBlock);
     reg   = MODRM_REG(modrm);
-    if(pCpu->prefix & PREFIX_OPSIZE)
+    if (pCpu->prefix & PREFIX_OPSIZE)
     {
         reg += 8;   //2nd table
     }
@@ -1790,7 +1792,7 @@ unsigned ParseGrp14(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     pOp = (PCOPCODE)&g_aMapX86_Group14[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1816,7 +1818,7 @@ unsigned ParseGrp15(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
         pOp = (PCOPCODE)&g_aMapX86_Group15_mem[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1837,7 +1839,7 @@ unsigned ParseGrp16(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     pOp = (PCOPCODE)&g_aMapX86_Group16[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
-    if(pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
+    if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
         size = sizeof(uint8_t); //ModRM byte
     }
@@ -1864,12 +1866,12 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
         subtype = OP_PARM_d;
     }
     else
-    if(subtype == OP_PARM_v || subtype == OP_PARM_NONE)
+    if (subtype == OP_PARM_v || subtype == OP_PARM_NONE)
     {
         subtype = (pCpu->opmode == CPUMODE_32BIT) ? OP_PARM_d : OP_PARM_w;
     }
 
-    switch(subtype)
+    switch (subtype)
     {
     case OP_PARM_b:
         disasmAddString(pParam->szParam, szModRMReg8[idx]);
@@ -1909,7 +1911,7 @@ void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pP
     disasmAddString(pParam->szParam, szModRMReg1616[idx]);
     pParam->flags |= USE_REG_GEN16;
     pParam->base.reg_gen16 = BaseModRMReg16[idx];
-    if(idx < 4)
+    if (idx < 4)
     {
         pParam->flags |= USE_INDEX;
         pParam->index.reg_gen = IndexModRMReg16[idx];
@@ -1924,7 +1926,7 @@ void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPa
     AssertMsg(idx < (int)ELEMENTS(szModRMSegReg), ("idx=%d\n", idx));
 #endif
 #ifdef IN_RING3
-    if(idx >= (int)ELEMENTS(szModRMSegReg))
+    if (idx >= (int)ELEMENTS(szModRMSegReg))
     {
         Log(("disasmModRMSReg %d failed!!\n", idx));
         DIS_THROW(ExceptionInvalidParameter);
@@ -1966,12 +1968,12 @@ void disasmGetPtrString(PDISCPUSTATE pCpu, PCOPCODE pOp, POP_PARAMETER pParam)
 {
     int subtype = OP_PARM_VSUBTYPE(pParam->param);
 
-    if(subtype == OP_PARM_v)
+    if (subtype == OP_PARM_v)
     {
         subtype = (pCpu->opmode == CPUMODE_32BIT) ? OP_PARM_d : OP_PARM_w;
     }
 
-    switch(subtype)
+    switch (subtype)
     {
     case OP_PARM_a: //two words or dwords depending on operand size (bound only)
         break;
@@ -2014,13 +2016,13 @@ void disasmGetPtrString(PDISCPUSTATE pCpu, PCOPCODE pOp, POP_PARAMETER pParam)
 //*****************************************************************************
 uint8_t DISReadByte(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
 {
-    if(pCpu->pfnReadBytes)
+    if (pCpu->pfnReadBytes)
     {
          uint8_t temp = 0;
          int     rc;
 
          rc = pCpu->pfnReadBytes(pAddress, &temp, sizeof(temp), pCpu);
-         if(VBOX_FAILURE(rc))
+         if (VBOX_FAILURE(rc))
          {
              Log(("DISReadByte failed!!\n"));
              DIS_THROW(ExceptionMemRead);
@@ -2038,13 +2040,13 @@ uint8_t DISReadByte(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
 //*****************************************************************************
 uint16_t DISReadWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
 {
-    if(pCpu->pfnReadBytes)
+    if (pCpu->pfnReadBytes)
     {
          uint16_t temp = 0;
          int     rc;
 
          rc = pCpu->pfnReadBytes(pAddress, (uint8_t*)&temp, sizeof(temp), pCpu);
-         if(VBOX_FAILURE(rc))
+         if (VBOX_FAILURE(rc))
          {
              Log(("DISReadWord failed!!\n"));
              DIS_THROW(ExceptionMemRead);
@@ -2062,13 +2064,13 @@ uint16_t DISReadWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
 //*****************************************************************************
 uint32_t DISReadDWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
 {
-    if(pCpu->pfnReadBytes)
+    if (pCpu->pfnReadBytes)
     {
          uint32_t temp = 0;
          int     rc;
 
          rc = pCpu->pfnReadBytes(pAddress, (uint8_t*)&temp, sizeof(temp), pCpu);
-         if(VBOX_FAILURE(rc))
+         if (VBOX_FAILURE(rc))
          {
              Log(("DISReadDWord failed!!\n"));
              DIS_THROW(ExceptionMemRead);
@@ -2086,13 +2088,13 @@ uint32_t DISReadDWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
 //*****************************************************************************
 uint64_t DISReadQWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
 {
-    if(pCpu->pfnReadBytes)
+    if (pCpu->pfnReadBytes)
     {
          uint64_t temp = 0;
          int     rc;
 
          rc = pCpu->pfnReadBytes(pAddress, (uint8_t*)&temp, sizeof(temp), pCpu);
-         if(VBOX_FAILURE(rc))
+         if (VBOX_FAILURE(rc))
          {
              Log(("DISReadQWord %x failed!!\n", pAddress));
              DIS_THROW(ExceptionMemRead);

@@ -123,39 +123,40 @@ typedef enum
 /** Parameter usage flags.
  * @{
  */
-#define USE_BASE                        RT_BIT(0)
-#define USE_INDEX                       RT_BIT(1)
-#define USE_SCALE                       RT_BIT(2)
-#define USE_REG_GEN8                    RT_BIT(3)
-#define USE_REG_GEN16                   RT_BIT(4)
-#define USE_REG_GEN32                   RT_BIT(5)
-#define USE_REG_FP                      RT_BIT(6)
-#define USE_REG_MMX                     RT_BIT(7)
-#define USE_REG_XMM                     RT_BIT(8)
-#define USE_REG_CR                      RT_BIT(9)
-#define USE_REG_DBG                     RT_BIT(10)
-#define USE_REG_SEG                     RT_BIT(11)
-#define USE_REG_TEST                    RT_BIT(12)
-#define USE_DISPLACEMENT8               RT_BIT(13)
-#define USE_DISPLACEMENT16              RT_BIT(14)
-#define USE_DISPLACEMENT32              RT_BIT(15)
-#define USE_IMMEDIATE8                  RT_BIT(16)
-#define USE_IMMEDIATE8_REL              RT_BIT(17)
-#define USE_IMMEDIATE16                 RT_BIT(18)
-#define USE_IMMEDIATE16_REL             RT_BIT(19)
-#define USE_IMMEDIATE32                 RT_BIT(20)
-#define USE_IMMEDIATE32_REL             RT_BIT(21)
-#define USE_IMMEDIATE64                 RT_BIT(22)
-#define USE_IMMEDIATE_ADDR_0_32         RT_BIT(23)
-#define USE_IMMEDIATE_ADDR_16_32        RT_BIT(24)
-#define USE_IMMEDIATE_ADDR_0_16         RT_BIT(25)
-#define USE_IMMEDIATE_ADDR_16_16        RT_BIT(26)
+#define USE_BASE                        RT_BIT_64(0)
+#define USE_INDEX                       RT_BIT_64(1)
+#define USE_SCALE                       RT_BIT_64(2)
+#define USE_REG_GEN8                    RT_BIT_64(3)
+#define USE_REG_GEN16                   RT_BIT_64(4)
+#define USE_REG_GEN32                   RT_BIT_64(5)
+#define USE_REG_GEN64                   RT_BIT_64(6)
+#define USE_REG_FP                      RT_BIT_64(7)
+#define USE_REG_MMX                     RT_BIT_64(8)
+#define USE_REG_XMM                     RT_BIT_64(9)
+#define USE_REG_CR                      RT_BIT_64(10)
+#define USE_REG_DBG                     RT_BIT_64(11)
+#define USE_REG_SEG                     RT_BIT_64(12)
+#define USE_REG_TEST                    RT_BIT_64(13)
+#define USE_DISPLACEMENT8               RT_BIT_64(14)
+#define USE_DISPLACEMENT16              RT_BIT_64(15)
+#define USE_DISPLACEMENT32              RT_BIT_64(16)
+#define USE_IMMEDIATE8                  RT_BIT_64(17)
+#define USE_IMMEDIATE8_REL              RT_BIT_64(18)
+#define USE_IMMEDIATE16                 RT_BIT_64(19)
+#define USE_IMMEDIATE16_REL             RT_BIT_64(20)
+#define USE_IMMEDIATE32                 RT_BIT_64(21)
+#define USE_IMMEDIATE32_REL             RT_BIT_64(22)
+#define USE_IMMEDIATE64                 RT_BIT_64(23)
+#define USE_IMMEDIATE_ADDR_0_32         RT_BIT_64(24)
+#define USE_IMMEDIATE_ADDR_16_32        RT_BIT_64(25)
+#define USE_IMMEDIATE_ADDR_0_16         RT_BIT_64(26)
+#define USE_IMMEDIATE_ADDR_16_16        RT_BIT_64(27)
 /** DS:ESI */
-#define USE_POINTER_DS_BASED            RT_BIT(27)
+#define USE_POINTER_DS_BASED            RT_BIT_64(28)
 /** ES:EDI */
-#define USE_POINTER_ES_BASED            RT_BIT(28)
-#define USE_IMMEDIATE16_SX8             RT_BIT(29)
-#define USE_IMMEDIATE32_SX8             RT_BIT(30)
+#define USE_POINTER_ES_BASED            RT_BIT_64(29)
+#define USE_IMMEDIATE16_SX8             RT_BIT_64(30)
+#define USE_IMMEDIATE32_SX8             RT_BIT_64(31)
 
 #define USE_IMMEDIATE                   (USE_IMMEDIATE8|USE_IMMEDIATE16|USE_IMMEDIATE32|USE_IMMEDIATE64|USE_IMMEDIATE8_REL|USE_IMMEDIATE16_REL|USE_IMMEDIATE32_REL|USE_IMMEDIATE_ADDR_0_32|USE_IMMEDIATE_ADDR_16_32|USE_IMMEDIATE_ADDR_0_16|USE_IMMEDIATE_ADDR_16_16|USE_IMMEDIATE16_SX8|USE_IMMEDIATE32_SX8)
 
@@ -290,8 +291,8 @@ typedef enum
 typedef struct
 {
     uint32_t        type;
-    uint32_t        flags;
     uint32_t        size;
+    uint64_t        flags;
 
     union
     {
@@ -330,15 +331,16 @@ typedef struct _OP_PARAMETER
 
     int32_t         disp8, disp16, disp32;
 
-    uint32_t        flags;
-
     uint32_t        size;
+
+    uint64_t        flags;
 
     union
     {
         uint32_t    reg_gen8;
         uint32_t    reg_gen16;
         uint32_t    reg_gen32;
+        uint64_t    reg_gen64;
         /** ST(0) - ST(7) */
         uint32_t    reg_fp;
         /** MMX0 - MMX7 */
@@ -350,7 +352,7 @@ typedef struct _OP_PARAMETER
         /** TR0-TR7 (?) */
         uint32_t    reg_test;
         /** CR0-CR4 */
-        uint32_t    reg_ctrl;
+        uint64_t    reg_ctrl;
         /** DR0-DR7 */
         uint32_t    reg_dbg;
     } base;
@@ -567,7 +569,7 @@ DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
  *
  */
 DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype);
-DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, uint32_t **ppReg, size_t *pcbSize);
+DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, void **ppReg, size_t *pcbSize);
 
 DISDECL(int) DISFetchReg8(PCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
 DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, unsigned reg16, uint16_t *pVal);
