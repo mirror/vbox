@@ -49,7 +49,7 @@ __BEGIN_DECLS
 /** Image info, not handled anyhow.
  *  Must be less than 64 bytes in length, including the trailing 0.
  */
-#define VDI_IMAGE_FILE_INFO   "<<< innotek VirtualBox Disk Image >>>\n"
+#define VDI_IMAGE_FILE_INFO   "<<< Sun xVM VirtualBox Disk Image >>>\n"
 
 /** Current image major version. */
 #define VDI_IMAGE_VERSION_MAJOR    (0x0001)
