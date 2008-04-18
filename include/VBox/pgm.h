@@ -38,9 +38,6 @@ __BEGIN_DECLS
  * @{
  */
 
-/* remove after fixing the switcher */
-#define PGM_WITH_BROKEN_32PAE_SWITCHER
-
 /** Chunk size for dynamically allocated physical memory. */
 #define PGM_DYNAMIC_CHUNK_SIZE          (1*1024*1024)
 /** Shift GC physical address by 20 bits to get the offset into the pvHCChunkHC array. */
