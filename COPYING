@@ -1,23 +1,24 @@
 The majority of code in VirtualBox Open Source Edition (OSE) is
-copyrighted by innotek GmbH. This code is combined with third-party code
-that was originally released under the Apache License 2.0, the OpenSSL
-license, the Mozilla Public License (MPL) and the Slirp license, all of
-which the Free Software Foundation considers to be incompatible with the
-GPL, as well as the X11, zlib, liblzf and LGPL licenses. As a special
-exception to the terms and conditions of the GPL listed below, innotek
-gives you explicit permission to combine its GPL code contained in
-VirtualBox OSE with third-party code under the aforementioned licenses.
-You may copy and distribute such a combination provided that you adhere
-to the terms and conditions of all of the GPL and the licenses of the
+copyrighted by Sun Microsystems, Inc. This code is combined with
+third-party code that was originally released under the Apache
+License 2.0, the OpenSSL license, the Mozilla Public License (MPL)
+and the Slirp license, all of which the Free Software Foundation
+considers to be incompatible with the GPL, as well as the X11, zlib,
+liblzf and LGPL licenses. As a special exception to the terms and
+conditions of the GPL listed below, Sun gives you explicit
+permission to combine its GPL code contained in VirtualBox OSE with
+third-party code under the aforementioned licenses. You may copy
+and distribute such a combination provided that you adhere to the
+terms and conditions of all of the GPL and the licenses of the
 third-party code; in particular, you must include the source code of
 the entire combination insofar as the GPL requires distribution of
 source code.
 
 Note that whoever creates or distributes a derived work based on
-VirtualBox OSE is not obligated to grant this special exception for such
-a version. The GPL allows for releasing a modified version without the
-above exception; innotek also allows you to release a modified version
-which carries forward this exception.
+VirtualBox OSE is not obligated to grant this special exception for
+such a version. The GPL allows for releasing a modified version
+without the above exception; Sun also allows you to release a modified
+version which carries forward this exception.
 
 ---
 
