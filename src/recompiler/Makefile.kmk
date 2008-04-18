@@ -87,7 +87,7 @@ ifeq ($(BUILD_TARGET_ARCH),amd64)
 endif
 dyngen_CFLAGS        += -Wno-missing-prototypes -Wno-missing-declarations
 dyngen_INCS          := \
-	InnoTek \
+	Sun \
 	target-i386 \
 	fpu \
 	$(PATH_SUB_CURRENT)
@@ -101,8 +101,8 @@ $(REM_MOD)_DEFS             = IN_REM_R3 REM_INCLUDE_CPU_H
 #$(REM_MOD)_DEFS          += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
 
 $(REM_MOD)_INCS             = \
-	InnoTek \
-	InnoTek/crt\
+	Sun \
+	Sun/crt\
 	target-i386 \
 	fpu \
 	$(PATH_$(REM_MOD)) \
@@ -120,7 +120,7 @@ $(REM_MOD)_SOURCES          = \
 	target-i386/helper2.c \
 	target-i386/translate.c
 $(REM_MOD)_SOURCES.debug = \
-	InnoTek/testmath.c
+	Sun/testmath.c
 ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
  $(REM_MOD)_SOURCES        += target-i386/op.c
  FILE_OP_OBJ                = $(PATH_$(REM_MOD)_target-i386/op.c)/op.o
@@ -146,7 +146,7 @@ ifdef REM_USE_NOCRT
 
  # This doesn't fit in IPRT because it requires GAS and is LGPL.
  $(REM_MOD)_SOURCES        += \
-	InnoTek/e_powl-$(BUILD_TARGET_ARCH).S
+	Sun/e_powl-$(BUILD_TARGET_ARCH).S
 
  ifeq ($(REM_MOD),VBoxREM)
   $(REM_MOD)_LIBS           = \
@@ -257,7 +257,7 @@ testmath_CFLAGS         = -Wall -g
 testmath_CFLAGS.release = -O3
 testmath_LDFLAGS        = -g
 testmath_DEFS           = MATHTEST_STANDALONE
-testmath_SOURCES        = InnoTek/testmath.c
+testmath_SOURCES        = Sun/testmath.c
 #testmath_SOURCES        += $(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
 
 
@@ -297,7 +297,7 @@ VBoxREMImp_LDFLAGS.darwin   = -install_name @executable_path/VBoxREM.dylib
 #VBoxREMImp_LDFLAGS.darwin   = -install_name VBoxREM.dylib
 VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
-$(PATH_TARGET)/VBoxREMImp.c: VBoxREM.def InnoTek/deftoimp.sed Makefile.kmk | $(call DIRDEP,$(PATH_TARGET))
+$(PATH_TARGET)/VBoxREMImp.c: VBoxREM.def Sun/deftoimp.sed Makefile.kmk | $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
 	$(QUIET)$(APPEND) $@.tmp '#ifdef VBOX_HAVE_VISIBILITY_HIDDEN'
@@ -306,7 +306,7 @@ $(PATH_TARGET)/VBoxREMImp.c: VBoxREM.def InnoTek/deftoimp.sed Makefile.kmk | $(c
 	$(QUIET)$(APPEND) $@.tmp '# define EXPORT'
 	$(QUIET)$(APPEND) $@.tmp '#endif'
 	$(QUIET)$(APPEND) $@.tmp ''
-	$(QUIET)$(SED) -f InnoTek/deftoimp.sed VBoxREM.def >> $@.tmp
+	$(QUIET)$(SED) -f Sun/deftoimp.sed VBoxREM.def >> $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
 
 $(VBoxREMImp_SOURCES.os2): VBoxREM.def $(MAKEFILE) | $(call DIRDEP,$(PATH_TARGET))
@@ -390,10 +390,10 @@ endif
 # The rule.
 $(PATH_$(REM_MOD))/op.S: \
 		target-i386/op.c \
-		InnoTek/staged-op-elf-$(BUILD_TARGET_ARCH).S \
-		InnoTek/op-validate.sed \
-		InnoTek/op-darwin.sed \
-		InnoTek/op-undefined.lst \
+		Sun/staged-op-elf-$(BUILD_TARGET_ARCH).S \
+		Sun/op-validate.sed \
+		Sun/op-darwin.sed \
+		Sun/op-undefined.lst \
 		Makefile.kmk \
 		$(comp-cmds COMPILE_OP_CMDS,COMPILE_OP_CMDS_PREV,FORCE) \
 		| $(call DIRDEP,$(PATH_$(REM_MOD)))
@@ -410,15 +410,15 @@ else ifeq ($(VBOX_RECOMPILER_OP_GCC_OK),dunno) # (permit 3.x.x and 4.1.x+ for no
 		$(addsuffix $(SP)\$(NL)$(TAB)$(TAB)  ,$(COMPILE_OP_CMDS)) -o $@.tmp; \
 	else \
 		$(ECHO_EXT) "Using staged op.S [gcc v$${major_ver}.$${minor_ver}.$${bugfix_ver}]" && \
-		$(CP_EXT) -f InnoTek/staged-op-elf-$(BUILD_TARGET_ARCH).S $@.tmp; \
+		$(CP_EXT) -f Sun/staged-op-elf-$(BUILD_TARGET_ARCH).S $@.tmp; \
 	fi
 else
-	$(CP) InnoTek/staged-op-elf-$(BUILD_TARGET_ARCH).S $@.tmp
+	$(CP) Sun/staged-op-elf-$(BUILD_TARGET_ARCH).S $@.tmp
 endif
-	$(SED) -f InnoTek/op-validate.sed $@.tmp
+	$(SED) -f Sun/op-validate.sed $@.tmp
 ifeq ($(BUILD_TARGET),darwin)
-	$(SED) -f InnoTek/op-darwin.sed $@.tmp > $@.tmp2
-	$(SED) -e 's/^\(.*\)$$/#define \1 _\1/' InnoTek/op-undefined.lst > $@.tmp
+	$(SED) -f Sun/op-darwin.sed $@.tmp > $@.tmp2
+	$(SED) -e 's/^\(.*\)$$/#define \1 _\1/' Sun/op-undefined.lst > $@.tmp
 	$(CAT_EXT) $@.tmp2 >> $@.tmp
 endif
 	$(MV) -f $@.tmp $@
