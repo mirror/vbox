@@ -5,20 +5,22 @@
  *
  */
 
+/* This code is originally from the Wine project. */
+
 /*
- * Copyright (C) 2008 innotek GmbH
- *
- * This library is part of VirtualBox Open Source Edition (OSE), as
- * available from http://www.virtualbox.org. This library is free software;
- * you can redistribute it and/or modify it under the terms of the GNU
- * Lesser General Public License as published by the Free Software
- * Foundation, in version 2.1 as it comes in the "COPYING.LIB" file of the
- * VirtualBox OSE distribution.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
 #ifndef ___VBox_keyboard_tables_h
@@ -35,7 +37,7 @@
    these tables simply contain the X keysym values truncated to the
    least significant byte.  In fact, there is no need to do any
    additional translation of the values (the original code translated
-   them to whatever character set was deemed appropriate, rather 
+   them to whatever character set was deemed appropriate, rather
    inconsistently) as long as we use the same algorithm for creating
    the tables and doing the lookups.
 
