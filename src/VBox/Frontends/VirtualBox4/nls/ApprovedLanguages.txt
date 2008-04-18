@@ -10,7 +10,7 @@ ja
 pl
 ko
 pt_BR
-pt_PT
+pt
 sv
 hu
 sr
