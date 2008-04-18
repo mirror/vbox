@@ -575,7 +575,7 @@ void VBoxHardDiskSettings::putBackToMachine()
     /* Sort&Attach all listed Hard Disks */
     mLvHD->setSortColumn (0);
     mLvHD->sort();
-    LONG maxSATAPort = -1;
+    LONG maxSATAPort = 1;
     HDListItem *item = mLvHD->firstChild() &&
         mLvHD->firstChild()->rtti() == HDListItem::HDListItemType ?
         static_cast<HDListItem*> (mLvHD->firstChild()) : 0;
@@ -592,7 +592,7 @@ void VBoxHardDiskSettings::putBackToMachine()
         item = item->nextSibling();
     }
 
-    mMachine.GetSATAController().SetPortCount (maxSATAPort + 1);
+    mMachine.GetSATAController().SetPortCount (maxSATAPort);
 }
 
 QString VBoxHardDiskSettings::checkValidity()
