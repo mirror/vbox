@@ -122,7 +122,7 @@ public:
     uint32_t getGuestXRes() { return mGuestXRes; }
     uint32_t getGuestYRes() { return mGuestYRes; }
 #ifdef VBOX_SECURELABEL
-    int  initSecureLabel(uint32_t height, char *font, uint32_t pointsize);
+    int  initSecureLabel(uint32_t height, char *font, uint32_t pointsize, uint32_t labeloffs);
     void setSecureLabelText(const char *text);
     void setSecureLabelColor(uint32_t colorFG, uint32_t colorBG);
     void paintSecureLabel(int x, int y, int w, int h, bool fForce);
@@ -177,6 +177,8 @@ private:
     TTF_Font *mLabelFont;
     /** secure label height in pixels */
     uint32_t mLabelHeight;
+    /** secure label offset from the top of the secure label */
+    uint32_t mLabelOffs;
 #endif
 #ifdef RT_OS_WINDOWS
     long refcnt;

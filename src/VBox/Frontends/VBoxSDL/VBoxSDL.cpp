@@ -658,6 +658,7 @@ static void show_usage()
              "  -securelabel             Display a secure VM label at the top of the screen\n"
              "  -seclabelfnt             TrueType (.ttf) font file for secure session label\n"
              "  -seclabelsiz             Font point size for secure session label (default 12)\n"
+             "  -seclabelofs             Font offset within the secure label (default 0)\n"
              "  -seclabelfgcol <rgb>     Secure label text color RGB value in 6 digit hexadecimal (eg: FFFF00)\n"
              "  -seclabelbgcol <rgb>     Secure label background color RGB value in 6 digit hexadecimal (eg: FF0000)\n"
 #endif
@@ -1003,6 +1004,7 @@ int main(int argc, char *argv[])
 #ifdef VBOX_SECURELABEL
     BOOL fSecureLabel = false;
     uint32_t secureLabelPointSize = 12;
+    uint32_t secureLabelFontOffs = 0;
     char *secureLabelFontFile = NULL;
     uint32_t secureLabelColorFG = 0x0000FF00;
     uint32_t secureLabelColorBG = 0x00FFFF00;
@@ -1417,6 +1419,16 @@ int main(int argc, char *argv[])
                 break;
             }
             secureLabelPointSize = atoi(argv[curArg]);
+        }
+        else if (strcmp(argv[curArg], "-seclabelofs") == 0)
+        {
+            if (++curArg >= argc)
+            {
+                RTPrintf("Error: missing font pixel offset for secure label!\n");
+                rc = E_FAIL;
+                break;
+            }
+            secureLabelFontOffs = atoi(argv[curArg]);
         }
         else if (strcmp(argv[curArg], "-seclabelfgcol") == 0)
         {
@@ -1879,7 +1891,7 @@ int main(int argc, char *argv[])
         if (VBOX_SUCCESS(rcVBox))
             rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Quit", (void**)&pTTF_Quit);
         if (VBOX_SUCCESS(rcVBox))
-            rcVBox = gpFrameBuffer->initSecureLabel(SECURE_LABEL_HEIGHT, secureLabelFontFile, secureLabelPointSize);
+            rcVBox = gpFrameBuffer->initSecureLabel(SECURE_LABEL_HEIGHT, secureLabelFontFile, secureLabelPointSize, secureLabelFontOffs);
         if (VBOX_FAILURE(rcVBox))
         {
             RTPrintf("Error: could not initialize secure labeling: rc = %Vrc\n", rcVBox);
