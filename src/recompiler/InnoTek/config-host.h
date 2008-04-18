@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Innotek Host Config - Maintained by hand
+ * Sun host config - maintained by hand
  */
 
 /*

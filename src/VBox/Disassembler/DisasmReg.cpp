@@ -704,7 +704,7 @@ DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAM
                 return VINF_SUCCESS;
             }
         }
-        else 
+        else
         if (pParam->flags & USE_REG_GEN16)
         {
             uint16_t *pu16Reg;
@@ -715,7 +715,7 @@ DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAM
                 return VINF_SUCCESS;
             }
         }
-        else 
+        else
         if (pParam->flags & USE_REG_GEN32)
         {
             uint32_t *pu32Reg;
@@ -726,7 +726,7 @@ DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAM
                 return VINF_SUCCESS;
             }
         }
-        else 
+        else
         if (pParam->flags & USE_REG_GEN64)
         {
             uint64_t *pu64Reg;

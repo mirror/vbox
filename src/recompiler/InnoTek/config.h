@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Innotek Config - Maintained by hand
+ * Sun config - Maintained by hand
  */
 
 /*
