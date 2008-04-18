@@ -1500,7 +1500,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                        RC_CHECK();
             rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");      RC_CHECK();
             rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed);RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed[0]);RC_CHECK();
             rc = CFGMR3InsertInteger(pCfg,  "First",    0);                             RC_CHECK();
             rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                             RC_CHECK();
 
@@ -1527,7 +1527,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                        RC_CHECK();
                 rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");      RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed);RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed[1]);RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg,  "First",    0);                             RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                             RC_CHECK();
             }
