@@ -94,6 +94,7 @@ EXPORTS
     RTMpOnSpecific
     RTMpIsCpuOnline
     RTMpGetCount
+    RTMpCpuIdToSetIndex
     RTLogDefaultInstance
     RTLogRelDefaultInstance
     RTLogSetDefaultInstanceThread
