@@ -72,7 +72,7 @@ do { \
 #define str(s) #s
 
 MODULE_DESCRIPTION("VirtualBox Guest Additions for Linux Module");
-MODULE_AUTHOR("innotek GmbH");
+MODULE_AUTHOR("Sun Microsystems, Inc.");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")");

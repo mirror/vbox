@@ -189,7 +189,7 @@ static MODULESETUPPROTO(vboxSetup);
 static XF86ModuleVersionInfo vboxVersionRec =
 {
     VBOX_DRIVER_NAME,
-    "innotek GmbH",
+    "Sun Microsystems, Inc.",
     MODINFOSTRING1,
     MODINFOSTRING2,
     XF86_VERSION_CURRENT,

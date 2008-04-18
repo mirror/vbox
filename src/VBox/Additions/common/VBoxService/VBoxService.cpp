@@ -102,7 +102,7 @@ static int VBoxServiceUsage(void)
         RTPrintf("%s", g_aServices[j].pDesc->pszOptions);
     }
     RTPrintf("\n"
-             " Copyright (C) 2007-2008 innotek GmbH\n");
+             " Copyright (C) 2008 Sun Microsystems, Inc.\n");
 
     return 1;
 }
