@@ -1541,6 +1541,9 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     machine.GetHWVirtExEnabled() == KTSBool_True ?  chbVTX->setChecked (true) :
                                                     chbVTX->setNoChange();
 
+    /* PAE/NX */
+    chbPAE->setChecked (machine.GetPAEEnabled());
+
     /* Saved state folder */
     leSnapshotFolder->setText (machine.GetSnapshotFolder());
 
@@ -1865,6 +1868,9 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     cmachine.SetHWVirtExEnabled (
         chbVTX->state() == QButton::Off ? KTSBool_False :
         chbVTX->state() == QButton::On ? KTSBool_True : KTSBool_Default);
+
+    /* PAE/NX */
+    cmachine.SetPAEEnabled (chbPAE->isChecked());
 
     /* Saved state folder */
     if (leSnapshotFolder->isModified())
