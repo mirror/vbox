@@ -2581,6 +2581,6 @@ void OPPROTO op_emms(void)
 #ifdef VBOX
 /* Instantiate the structure signatures. */
 # define REM_STRUCT_OP 1
-# include "../InnoTek/structs.h"
+# include "../Sun/structs.h"
 #endif
 

@@ -211,7 +211,7 @@ static const DBGCCMD    g_aCmds[] =
 
 /* Instantiate the structure signatures. */
 #define REM_STRUCT_OP 0
-#include "InnoTek/structs.h"
+#include "Sun/structs.h"
 
 
 
