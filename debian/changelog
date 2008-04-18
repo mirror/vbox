@@ -2,7 +2,7 @@ virtualbox-ose (1.5.51~svn-1) unstable; urgency=low
 
   * rebuild Debian package
 
- -- innotek GmbH <info@virtualbox.org>  Thu, 23 Oct 2007 21:54:00 +0200
+ -- Sun Microsystems, Inc. <info@virtualbox.org>  Thu, 23 Oct 2007 21:54:00 +0200
 
 virtualbox-ose (1.5.0+svn+OSE-1) unstable; urgency=low
 
