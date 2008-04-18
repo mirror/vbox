@@ -4,12 +4,12 @@
 
    Copyright (C) Matthew Chapman 1999-2005
    Copyright (C) Peter Astrand <peter@cendio.se> 2003
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -393,7 +393,7 @@ xkeymap_read(char *mapname)
 		scancode = strtol(p, &line_rest, 16);
 
 		/* flags */
-		/* FIXME: Should allow case-insensitive flag names. 
+		/* FIXME: Should allow case-insensitive flag names.
 		   Fix by using lex+yacc... */
 		modifiers = 0;
 		if (strstr(line_rest, "altgr"))
@@ -425,7 +425,7 @@ xkeymap_read(char *mapname)
 
 		if (strstr(line_rest, "addupper"))
 		{
-			/* Automatically add uppercase key, with same modifiers 
+			/* Automatically add uppercase key, with same modifiers
 			   plus shift */
 			for (p = keyname; *p; p++)
 				*p = toupper((int) *p);
@@ -537,10 +537,10 @@ handle_special_keys(uint32 keysym, unsigned int state, uint32 ev_time, BOOL pres
 			/* Send Break sequence E0 46 E0 C6 */
 			if (pressed)
 			{
-				/* innotek code begin */
+				/* VirtualBox code begin */
 				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, KBD_FLAG_EXT, 0x46, 0);
 				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, KBD_FLAG_EXT | KBD_FLAG_UP, 0x46, 0);
-				/* innotek code end */
+				/* VirtualBox code end */
 			}
 			/* No release sequence */
 			return True;
@@ -577,12 +577,12 @@ handle_special_keys(uint32 keysym, unsigned int state, uint32 ev_time, BOOL pres
 			/* Send Break sequence E1 1D 45 E1 9D C5 */
 			if (pressed)
 			{
-				/* innotek code begin */
+				/* VirtualBox code begin */
 				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, KBD_FLAG_EXT2, 0x1d, 0);
 				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, RDP_KEYPRESS,  0x45, 0);
 				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, KBD_FLAG_EXT2 | KBD_FLAG_UP, 0x1d, 0);
 				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, KBD_FLAG_UP,  0x45, 0);
-				/* innotek code end */
+				/* VirtualBox code end */
 			}
 			/* No release sequence */
 			return True;

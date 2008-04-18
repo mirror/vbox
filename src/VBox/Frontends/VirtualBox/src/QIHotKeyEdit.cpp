@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * innotek Qt extensions: QIHotKeyEdit class implementation
+ * VirtualBox Qt extensions: QIHotKeyEdit class implementation
  */
 
 /*

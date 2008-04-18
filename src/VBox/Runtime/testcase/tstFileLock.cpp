@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - File Locks.
+ * Incredibly Portable Runtime Testcase - File Locks.
  */
 
 /*

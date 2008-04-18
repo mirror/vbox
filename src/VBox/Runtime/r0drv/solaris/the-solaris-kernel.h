@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Include all necessary headers for the Solaris kernel.
+ * Incredibly Portable Runtime - Include all necessary headers for the Solaris kernel.
  */
 
 /*

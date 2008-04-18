@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - RTFs Queries..
+ * Incredibly Portable Runtime Testcase - RTFs Queries..
  */
 
 /*

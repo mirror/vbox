@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Memory Allocation, C++ electric fence.
+ * Incredibly Portable Runtime - Memory Allocation, C++ electric fence.
  */
 
 /*

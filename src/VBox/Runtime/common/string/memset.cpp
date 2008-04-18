@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - CRT Strings, memset().
+ * Incredibly Portable Runtime - CRT Strings, memset().
  */
 
 /*

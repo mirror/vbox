@@ -1,6 +1,6 @@
 /* $Id $ */
 /** @file
- * innotek Portable Runtime - Convert Darwin COM returns codes to iprt status codes.
+ * Incredibly Portable Runtime - Convert Darwin COM returns codes to iprt status codes.
  */
 
 /*

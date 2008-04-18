@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Loader Internals.
+ * Incredibly Portable Runtime - Loader Internals.
  */
 
 /*

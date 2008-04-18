@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Binary Image Loader, Executable and Linker Format (ELF).
+ * Incredibly Portable Runtime - Binary Image Loader, Executable and Linker Format (ELF).
  */
 
 /*

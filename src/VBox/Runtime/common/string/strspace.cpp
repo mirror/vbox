@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Unique String Spaces.
+ * Incredibly Portable Runtime - Unique String Spaces.
  */
 
 /*

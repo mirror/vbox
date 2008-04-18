@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Binary Image Loader, kLdr Interface.
+ * Incredibly Portable Runtime - Binary Image Loader, kLdr Interface.
  */
 
 /*

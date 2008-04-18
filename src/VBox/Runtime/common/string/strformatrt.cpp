@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - IPRT String Formatter Extensions.
+ * Incredibly Portable Runtime - IPRT String Formatter Extensions.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Log To StdOut, Generic.
+ * Incredibly Portable Runtime - Log To StdOut, Generic.
  */
 
 /*

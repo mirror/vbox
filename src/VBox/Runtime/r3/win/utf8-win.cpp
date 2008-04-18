@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - UTF8 helpers.
+ * Incredibly Portable Runtime - UTF8 helpers.
  */
 
 /*

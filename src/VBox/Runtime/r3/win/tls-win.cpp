@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Thread Local Storage (TLS), Win32.
+ * Incredibly Portable Runtime - Thread Local Storage (TLS), Win32.
  */
 
 /*

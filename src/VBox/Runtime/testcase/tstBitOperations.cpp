@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Inlined Bit Operations.
+ * Incredibly Portable Runtime Testcase - Inlined Bit Operations.
  */
 
 /*

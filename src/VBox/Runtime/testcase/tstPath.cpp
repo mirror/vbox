@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Test various path functions.
+ * Incredibly Portable Runtime Testcase - Test various path functions.
  */
 
 /*

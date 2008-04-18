@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - File I/O, native implementation for the Windows host platform.
+ * Incredibly Portable Runtime - File I/O, native implementation for the Windows host platform.
  */
 
 /*

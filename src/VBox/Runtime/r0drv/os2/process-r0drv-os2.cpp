@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Process Management, Ring-0 Driver, OS/2.
+ * Incredibly Portable Runtime - Process Management, Ring-0 Driver, OS/2.
  */
 
 /*

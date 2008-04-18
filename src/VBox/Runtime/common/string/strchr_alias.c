@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - No-CRT strchr() alias for gcc.
+ * Incredibly Portable Runtime - No-CRT strchr() alias for gcc.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Environment, Posix.
+ * Incredibly Portable Runtime - Environment, Posix.
  */
 
 /*

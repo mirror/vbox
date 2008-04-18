@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - RTProcWait.
+ * Incredibly Portable Runtime Testcase - RTProcWait.
  */
 
 /*

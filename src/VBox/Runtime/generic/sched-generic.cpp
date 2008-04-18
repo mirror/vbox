@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Scheduling, generic stubs.
+ * Incredibly Portable Runtime - Scheduling, generic stubs.
  */
 
 /*

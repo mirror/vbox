@@ -1,6 +1,6 @@
 /* $Id $ */
 /** @file
- * innotek Portable Runtime Testcase - Simple Heap.
+ * Incredibly Portable Runtime Testcase - Simple Heap.
  */
 
 /*

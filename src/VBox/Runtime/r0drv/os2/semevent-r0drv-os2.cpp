@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Single Release Event Semaphores, Ring-0 Driver, OS/2.
+ * Incredibly Portable Runtime - Single Release Event Semaphores, Ring-0 Driver, OS/2.
  */
 
 /*

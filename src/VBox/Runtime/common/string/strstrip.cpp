@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - String Stripping and Trimming.
+ * Incredibly Portable Runtime - String Stripping and Trimming.
  */
 
 /*

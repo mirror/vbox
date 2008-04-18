@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Initialization & Termination.
+ * Incredibly Portable Runtime - Initialization & Termination.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Binary Image Loader, Win32 native.
+ * Incredibly Portable Runtime - Binary Image Loader, Win32 native.
  */
 
 /*

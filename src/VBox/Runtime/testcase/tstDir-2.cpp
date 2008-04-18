@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Directory listing & filtering .
+ * Incredibly Portable Runtime Testcase - Directory listing & filtering .
  */
 
 /*

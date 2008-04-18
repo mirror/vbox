@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Generic Non-Interruptable Wait and Request Functions.
+ * Incredibly Portable Runtime - Generic Non-Interruptable Wait and Request Functions.
  */
 
 /*

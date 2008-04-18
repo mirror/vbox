@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Timers.
+ * Incredibly Portable Runtime Testcase - Timers.
  */
 
 /*

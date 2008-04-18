@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Testcase for the No-CRT assembly bits.
+ * Incredibly Portable Runtime Testcase - Testcase for the No-CRT assembly bits.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Time, Darwin.
+ * Incredibly Portable Runtime - Time, Darwin.
  */
 
 /*

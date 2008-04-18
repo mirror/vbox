@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - TCP/IP.
+ * Incredibly Portable Runtime - TCP/IP.
  */
 
 /*

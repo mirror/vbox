@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Semaphores, OS/2.
+ * Incredibly Portable Runtime - Semaphores, OS/2.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Revision$ */
 /** @file
- * innotek Portable Runtime - Ring-0 Memory Objects, Linux.
+ * Incredibly Portable Runtime - Ring-0 Memory Objects, Linux.
  */
 
 /*

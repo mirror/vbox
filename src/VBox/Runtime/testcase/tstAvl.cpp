@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Avl trees.
+ * Incredibly Portable Runtime Testcase - Avl trees.
  */
 
 /*

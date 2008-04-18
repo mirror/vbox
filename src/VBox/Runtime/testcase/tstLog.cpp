@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Log Formatting.
+ * Incredibly Portable Runtime Testcase - Log Formatting.
  */
 
 /*

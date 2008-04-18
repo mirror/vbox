@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Scheduling, OS/2
+ * Incredibly Portable Runtime - Scheduling, OS/2
  */
 
 /*

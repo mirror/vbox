@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Assertion Workers.
+ * Incredibly Portable Runtime - Assertion Workers.
  */
 
 /*

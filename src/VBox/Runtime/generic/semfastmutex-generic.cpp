@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Fast Mutex, Generic.
+ * Incredibly Portable Runtime - Fast Mutex, Generic.
  */
 
 /*

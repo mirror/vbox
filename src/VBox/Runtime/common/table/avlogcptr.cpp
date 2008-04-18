@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - AVL tree, RTGCPTR, unique keys, offset pointers.
+ * Incredibly Portable Runtime - AVL tree, RTGCPTR, unique keys, offset pointers.
  */
 
 /*

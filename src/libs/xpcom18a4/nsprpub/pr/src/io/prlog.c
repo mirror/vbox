@@ -119,7 +119,7 @@ static PRLock *_pr_logLock;
 #endif
 
 /*
-** Use the innotek Portable Runtime logging facility when
+** Use the Incredibly Portable Runtime logging facility when
 ** NSPR_LOG_FILE is set to "WinDebug". The default IPRT log instance
 ** and the "default" log group will be used for logging.
 */
@@ -219,7 +219,7 @@ PRIntn strcasecmp(const char *a, const char *b)
     const unsigned char *ua = (const unsigned char *)a;
     const unsigned char *ub = (const unsigned char *)b;
 
-    if( ((const char *)0 == a) || (const char *)0 == b ) 
+    if( ((const char *)0 == a) || (const char *)0 == b )
         return (PRIntn)(a-b);
 
     while( (uc[*ua] == uc[*ub]) && ('\0' != *a) )
@@ -505,7 +505,7 @@ PR_IMPLEMENT(void) PR_LogPrint(const char *fmt, ...)
     me = PR_GetCurrentThread();
     nb = PR_snprintf(line, sizeof(line)-1, "%ld[%p]: ",
 #if defined(_PR_DCETHREADS)
-             /* The problem is that for _PR_DCETHREADS, pthread_t is not a 
+             /* The problem is that for _PR_DCETHREADS, pthread_t is not a
               * pointer, but a structure; so you can't easily print it...
               */
                      me ? &(me->id): 0L, me);
@@ -521,7 +521,7 @@ PR_IMPLEMENT(void) PR_LogPrint(const char *fmt, ...)
         line[nb++] = '\n';
 #else
         line[nb++] = '\015';
-#endif 
+#endif
         line[nb] = '\0';
     } else {
 #ifdef XP_MAC

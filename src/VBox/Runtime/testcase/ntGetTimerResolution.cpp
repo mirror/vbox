@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Win32 (NT) testcase for getting the timer resolution.
+ * Incredibly Portable Runtime - Win32 (NT) testcase for getting the timer resolution.
  */
 
 /*

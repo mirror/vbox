@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Memory Allocation, Ring-0 Driver, Linux.
+ * Incredibly Portable Runtime - Memory Allocation, Ring-0 Driver, Linux.
  */
 
 /*

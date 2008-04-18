@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * innotek Qt extensions: QIApplication class declaration
+ * VirtualBox Qt extensions: QIApplication class declaration
  */
 
 /*

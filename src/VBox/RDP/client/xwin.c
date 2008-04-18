@@ -122,9 +122,9 @@ static BOOL g_compatible_arch;
    binary format. If so, we can avoid an expensive translation.
    Note that this can be true when g_compatible_arch is false,
    e.g.:
-   
+
      RDP(LE) <-> host(BE) <-> X-Server(LE)
-     
+
    ('host' is the machine running rdesktop; the host simply memcpy's
     so its endianess doesn't matter)
  */
@@ -2128,7 +2128,7 @@ xwin_process_events(void)
 				/* we only register for this event when grab_keyboard */
 				g_mouse_in_wnd = False;
 				XUngrabKeyboard(g_display, CurrentTime);
-				/* innotek code begin */
+				/* VirtualBox code begin */
 				if (g_fullscreen)
 				{
 					/* If mouse pointer is outside the fullscreen client window,
@@ -2137,7 +2137,7 @@ xwin_process_events(void)
 					 */
 					XUngrabPointer(g_display, CurrentTime);
 				}
-				/* innotek code end */
+				/* VirtualBox code end */
 				break;
 
 			case Expose:

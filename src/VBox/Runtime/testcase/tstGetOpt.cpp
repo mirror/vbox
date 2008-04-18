@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - RTGetOpt
+ * Incredibly Portable Runtime Testcase - RTGetOpt
  */
 
 /*

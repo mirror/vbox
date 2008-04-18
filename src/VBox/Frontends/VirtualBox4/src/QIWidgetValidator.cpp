@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * innotek Qt extensions: QIWidgetValidator class implementation
+ * VirtualBox Qt extensions: QIWidgetValidator class implementation
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime, MZ header.
+ * Incredibly Portable Runtime, MZ header.
  */
 
 /*

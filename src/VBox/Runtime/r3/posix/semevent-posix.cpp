@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Event Semaphore, POSIX.
+ * Incredibly Portable Runtime - Event Semaphore, POSIX.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Random Numbers and Byte Streams, Generic Stubs.
+ * Incredibly Portable Runtime - Random Numbers and Byte Streams, Generic Stubs.
  */
 
 /*

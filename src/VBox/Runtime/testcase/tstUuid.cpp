@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - UUID.
+ * Incredibly Portable Runtime Testcase - UUID.
  */
 
 /*

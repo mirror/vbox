@@ -62,8 +62,7 @@ int main(int argc, char *argv[])
     };
 
     printf("VirtualBox DirectFB GUI built %s %s\n"
-           "(C) 2008      Sun Microsystems, Inc.\n"
-           "(C) 2004-2007 innotek GmbH\n"
+           "(C) 2004-2008 Sun Microsystems, Inc.\n"
            "(C) 2004-2005 secunet Security Networks AG\n", __DATE__, __TIME__);
 
     RTUuidClear((PRTUUID)&uuid);

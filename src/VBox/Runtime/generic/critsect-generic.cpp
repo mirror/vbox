@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Critical Section, Generic.
+ * Incredibly Portable Runtime - Critical Section, Generic.
  */
 
 /*

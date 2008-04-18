@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Time Relative to Program Start.
+ * Incredibly Portable Runtime - Time Relative to Program Start.
  */
 
 /*

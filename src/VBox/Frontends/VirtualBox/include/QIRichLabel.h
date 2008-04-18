@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * innotek Qt extensions: QIRichLabel class declaration
+ * VirtualBox Qt extensions: QIRichLabel class declaration
  */
 
 /*

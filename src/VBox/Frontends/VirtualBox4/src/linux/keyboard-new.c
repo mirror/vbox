@@ -260,11 +260,11 @@ int X11DRV_InitKeyboard(Display *display)
                 scan = nonchar_key_scan[keysym & 0xff];
 		/* set extended bit when necessary */
             } else if ((keysym >> 8) == 0x1008FF) { /* XFree86 vendor keys */
-/* innotek FIX - multimedia/internet keys */
+/* VirtualBox FIX - multimedia/internet keys */
                 scan = xfree86_vendor_key_scan[keysym & 0xff];
             } else if (keysym == 0x20) {                 /* Spacebar */
 		scan = 0x39;
-/* innotek FIX - AltGr support */
+/* VirtualBox FIX - AltGr support */
             } else if (keysym == 0xFE03) {               /* ISO level3 shift, aka AltGr */
 		scan = 0x138;
 	    } else {

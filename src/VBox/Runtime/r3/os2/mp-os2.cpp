@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Multiprocessor, OS/2.
+ * Incredibly Portable Runtime - Multiprocessor, OS/2.
  */
 
 /*

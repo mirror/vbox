@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Multiprocessor, Generic RTMpIsCpuOnline.
+ * Incredibly Portable Runtime - Multiprocessor, Generic RTMpIsCpuOnline.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - UTF-8 and UTF-16 string conversions.
+ * Incredibly Portable Runtime Testcase - UTF-8 and UTF-16 string conversions.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - RTPath Internal header.
+ * Incredibly Portable Runtime - RTPath Internal header.
  */
 
 /*

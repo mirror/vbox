@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Testcase for parts of RTLdr*, manual inspection.
+ * Incredibly Portable Runtime - Testcase for parts of RTLdr*, manual inspection.
  */
 
 /*

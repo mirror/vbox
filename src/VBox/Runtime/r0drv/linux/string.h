@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - wrapper for the linux kernel asm/string.h.
+ * Incredibly Portable Runtime - wrapper for the linux kernel asm/string.h.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - strpbrk().
+ * Incredibly Portable Runtime - strpbrk().
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - VBoxRT.dll/so dependencies.
+ * Incredibly Portable Runtime - VBoxRT.dll/so dependencies.
  */
 
 /*

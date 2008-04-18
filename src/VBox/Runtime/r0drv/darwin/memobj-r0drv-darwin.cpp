@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Ring-0 Memory Objects, Darwin.
+ * Incredibly Portable Runtime - Ring-0 Memory Objects, Darwin.
  */
 
 /*

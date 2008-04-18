@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Include all necessary headers for the Linux kernel.
+ * Incredibly Portable Runtime - Include all necessary headers for the Linux kernel.
  */
 
 /*

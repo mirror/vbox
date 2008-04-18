@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Assertion Workers, Ring-0 Drivers, FreeBSD.
+ * Incredibly Portable Runtime - Assertion Workers, Ring-0 Drivers, FreeBSD.
  */
 
 /*

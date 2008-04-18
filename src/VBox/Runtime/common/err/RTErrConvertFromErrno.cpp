@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Convert errno to iprt status codes.
+ * Incredibly Portable Runtime - Convert errno to iprt status codes.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Memory Allocation, Win32.
+ * Incredibly Portable Runtime - Memory Allocation, Win32.
  */
 
 /*

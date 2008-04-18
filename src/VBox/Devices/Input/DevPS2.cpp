@@ -164,7 +164,7 @@ __END_DECLS
 #define AUX_ACK			0xFA	/* Command byte ACK. */
 #ifdef VBOX
 #define AUX_NACK			0xFE	/* Command byte NACK. */
-#endif 
+#endif
 
 #define MOUSE_STATUS_REMOTE     0x40
 #define MOUSE_STATUS_ENABLED    0x20
@@ -510,7 +510,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         /* ignore that - I don't know what is its use */
         break;
 #ifdef VBOX /* Make OS/2 happy. */
-    /* The 8042 RAM is readble using commands 0x20 thru 0x3f, and writable 
+    /* The 8042 RAM is readble using commands 0x20 thru 0x3f, and writable
        by 0x60 thru 0x7f. Now days only the firs byte, the mode, is used.
        We'll ignore the writes (0x61..7f) and return 0 for all the reads
        just to make some OS/2 debug stuff a bit happier. */
@@ -521,7 +521,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         kbd_queue(s, 0, 0);
         Log(("kbd: reading non-standard RAM addr %#x\n", val & 0x1f));
         break;
-#endif 
+#endif
     default:
         Log(("kbd: unsupported keyboard cmd=0x%02x\n", val));
         break;
@@ -916,21 +916,21 @@ static void kbd_write_mouse(KBDState *s, int val)
             break;
         default:
 #ifdef VBOX
-            /* NACK all commands we don't know. 
+            /* NACK all commands we don't know.
 
-               The usecase for this is the OS/2 mouse driver which will try 
-               read 0xE2 in order to figure out if it's a trackpoint device 
+               The usecase for this is the OS/2 mouse driver which will try
+               read 0xE2 in order to figure out if it's a trackpoint device
                or not. If it doesn't get a NACK (or ACK) on the command it'll
-               do several hundred thousand status reads before giving up. This 
+               do several hundred thousand status reads before giving up. This
                is slows down the OS/2 boot up considerably. (It also seems that
                the code is somehow vulnerable while polling like this and that
                mouse or keyboard input at this point might screw things up badly.)
 
                From http://www.win.tue.nl/~aeb/linux/kbd/scancodes-13.html:
 
-               Every command or data byte sent to the mouse (except for the 
-               resend command fe) is ACKed with fa. If the command or data 
-               is invalid, it is NACKed with fe. If the next byte is again 
+               Every command or data byte sent to the mouse (except for the
+               resend command fe) is ACKed with fa. If the command or data
+               is invalid, it is NACKed with fe. If the next byte is again
                invalid, the reply is ERROR: fc. */
             /** @todo send error if we NACKed the previous command? */
             kbd_queue(s, AUX_NACK, 1);
@@ -1272,7 +1272,7 @@ void kbd_init(void)
 #endif /* IN_RING3 */
 
 
-#ifdef VBOX /* innotek code start */
+#ifdef VBOX /* VirtualBox code start */
 
 /* -=-=-=-=-=- wrappers -=-=-=-=-=- */
 

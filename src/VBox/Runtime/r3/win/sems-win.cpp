@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Semaphores, implementation for Windows host platform.
+ * Incredibly Portable Runtime - Semaphores, implementation for Windows host platform.
  */
 
 /*

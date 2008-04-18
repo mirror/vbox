@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Ring-0 Memory Objects, FreeBSD.
+ * Incredibly Portable Runtime - Ring-0 Memory Objects, FreeBSD.
  */
 
 /*
@@ -63,7 +63,7 @@ typedef struct RTR0MEMOBJFREEBSD
 } RTR0MEMOBJFREEBSD, *PRTR0MEMOBJFREEBSD;
 
 
-MALLOC_DEFINE(M_IPRTMOBJ, "iprtmobj", "innotek Portable Runtime - R0MemObj");
+MALLOC_DEFINE(M_IPRTMOBJ, "iprtmobj", "Incredibly Portable Runtime - R0MemObj");
 
 /*******************************************************************************
 *   Internal Functions                                                         *

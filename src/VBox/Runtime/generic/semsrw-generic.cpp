@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Read-Write Semaphore, Generic.
+ * Incredibly Portable Runtime - Read-Write Semaphore, Generic.
  *
  * This is a generic implementation for OSes which don't have
  * native RW semaphores.

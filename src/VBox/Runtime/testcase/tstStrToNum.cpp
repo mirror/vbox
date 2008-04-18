@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - String To Number Conversion.
+ * Incredibly Portable Runtime Testcase - String To Number Conversion.
  */
 
 /*

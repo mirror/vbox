@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime UUID (unique identifiers) handling (win32 host).
+ * Incredibly Portable Runtime UUID (unique identifiers) handling (win32 host).
  */
 
 /*

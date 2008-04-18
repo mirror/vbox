@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - RTLdr test object.
+ * Incredibly Portable Runtime - RTLdr test object.
  *
  * We use precompiled versions of this object for testing all the loaders.
  *

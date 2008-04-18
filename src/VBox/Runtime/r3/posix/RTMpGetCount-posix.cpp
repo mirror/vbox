@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - RTMpGetCount, POSIX.
+ * Incredibly Portable Runtime - RTMpGetCount, POSIX.
  */
 
 /*

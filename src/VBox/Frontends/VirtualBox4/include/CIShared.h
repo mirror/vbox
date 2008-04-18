@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * Common innotek classes: CIShared class declaration
+ * Common VirtualBox classes: CIShared class declaration
  */
 
 /*

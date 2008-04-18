@@ -89,7 +89,7 @@
 static const char DefaultMachineConfig[] =
 {
     "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" RTFILE_LINEFEED
-    "<!-- innotek VirtualBox Machine Configuration -->" RTFILE_LINEFEED
+    "<!-- Sun xVM VirtualBox Machine Configuration -->" RTFILE_LINEFEED
     "<VirtualBox xmlns=\"" VBOX_XML_NAMESPACE "\" "
         "version=\"" VBOX_XML_VERSION_FULL "\">" RTFILE_LINEFEED
     "</VirtualBox>" RTFILE_LINEFEED

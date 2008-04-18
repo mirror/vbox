@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Critical Sections.
+ * Incredibly Portable Runtime Testcase - Critical Sections.
  */
 
 /*

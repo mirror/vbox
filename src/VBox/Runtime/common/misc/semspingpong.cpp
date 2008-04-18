@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Thread Ping-Pong Construct.
+ * Incredibly Portable Runtime - Thread Ping-Pong Construct.
  */
 
 /*

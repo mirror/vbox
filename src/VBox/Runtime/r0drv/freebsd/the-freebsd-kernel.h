@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Ring-0 Driver, The FreeBSD Kernel Headers.
+ * Incredibly Portable Runtime - Ring-0 Driver, The FreeBSD Kernel Headers.
  */
 
 /*

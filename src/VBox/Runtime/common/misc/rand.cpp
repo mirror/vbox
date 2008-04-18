@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Random Number
+ * Incredibly Portable Runtime - Random Number
  */
 
 /*
