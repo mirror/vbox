@@ -30,6 +30,7 @@
 #include <QAbstractListModel>
 #include <QListView>
 #include <QItemDelegate>
+#include <QDateTime>
 
 class VBoxVMItem
 {
