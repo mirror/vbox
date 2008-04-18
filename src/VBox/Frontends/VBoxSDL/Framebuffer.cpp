@@ -57,6 +57,7 @@ extern "C"
 DECLSPEC int (SDLCALL *pTTF_Init)(void);
 DECLSPEC TTF_Font* (SDLCALL *pTTF_OpenFont)(const char *file, int ptsize);
 DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Solid)(TTF_Font *font, const char *text, SDL_Color fg);
+DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Blended)(TTF_Font *font, const char *text, SDL_Color fg);
 DECLSPEC void (SDLCALL *pTTF_CloseFont)(TTF_Font *font);
 DECLSPEC void (SDLCALL *pTTF_Quit)(void);
 }
@@ -1056,7 +1057,9 @@ void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
         SDL_Color clrFg = {(mSecureLabelColorFG & 0x00FF0000) >> 16,
                            (mSecureLabelColorFG & 0x0000FF00) >> 8,
                            mSecureLabelColorFG & 0x000000FF, 0};
-        SDL_Surface *sText = pTTF_RenderUTF8_Solid(mLabelFont, mSecureLabelText.raw(), clrFg);
+        SDL_Surface *sText = (pTTF_RenderUTF8_Blended != NULL)
+                                 ? pTTF_RenderUTF8_Blended(mLabelFont, mSecureLabelText.raw(), clrFg)
+                                 : pTTF_RenderUTF8_Solid(mLabelFont, mSecureLabelText.raw(), clrFg);
         rect.x = 10;
         SDL_BlitSurface(sText, NULL, mScreen, &rect);
         SDL_FreeSurface(sText);

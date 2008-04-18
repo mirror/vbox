@@ -1867,6 +1867,14 @@ int main(int argc, char *argv[])
         if (VBOX_SUCCESS(rcVBox))
             rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_RenderUTF8_Solid", (void**)&pTTF_RenderUTF8_Solid);
         if (VBOX_SUCCESS(rcVBox))
+        {
+            /* silently ignore errors here */
+            rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_RenderUTF8_Blended", (void**)&pTTF_RenderUTF8_Blended);
+            if (VBOX_FAILURE(rcVBox))
+                pTTF_RenderUTF8_Blended = NULL;
+            rcVBox = VINF_SUCCESS;
+        }
+        if (VBOX_SUCCESS(rcVBox))
             rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_CloseFont", (void**)&pTTF_CloseFont);
         if (VBOX_SUCCESS(rcVBox))
             rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Quit", (void**)&pTTF_Quit);
