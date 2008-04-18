@@ -161,6 +161,27 @@ typedef enum
 
 /** @} */
 
+/** index in {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"}
+ * @{
+ */
+#define USE_REG_RAX                     0
+#define USE_REG_RCX                     1
+#define USE_REG_RDX                     2
+#define USE_REG_RBX                     3
+#define USE_REG_RSP                     4
+#define USE_REG_RBP                     5
+#define USE_REG_RSI                     6
+#define USE_REG_RDI                     7
+#define USE_REG_R8                      8
+#define USE_REG_R9                      9
+#define USE_REG_R10                     10
+#define USE_REG_R11                     11
+#define USE_REG_R12                     12
+#define USE_REG_R13                     13
+#define USE_REG_R14                     14
+#define USE_REG_R15                     15
+/** @} */
+
 /** index in {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"}
  * @{
  */
@@ -548,15 +569,21 @@ DISDECL(uint8_t) DISQuerySegPrefixByte(PDISCPUSTATE pCpu);
 DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, POP_PARAMVAL pParamVal, PARAM_TYPE parmtype);
 DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, uint32_t **ppReg, size_t *pcbSize);
 
-DISDECL(int) DISFetchReg8(PCPUMCTXCORE pCtx, uint32_t reg8, uint8_t *pVal);
-DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, uint32_t reg16, uint16_t *pVal);
-DISDECL(int) DISFetchReg32(PCPUMCTXCORE pCtx, uint32_t reg32, uint32_t *pVal);
-DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL *pVal);
-DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL *pVal, PCPUMSELREGHID *ppSelHidReg);
-DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, uint32_t reg8, uint8_t val8);
-DISDECL(int) DISWriteReg16(PCPUMCTXCORE pRegFrame, uint32_t reg32, uint16_t val16);
-DISDECL(int) DISWriteReg32(PCPUMCTXCORE pRegFrame, uint32_t reg32, uint32_t val32);
-DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, uint32_t sel, RTSEL val);
+DISDECL(int) DISFetchReg8(PCPUMCTXCORE pCtx, unsigned reg8, uint8_t *pVal);
+DISDECL(int) DISFetchReg16(PCPUMCTXCORE pCtx, unsigned reg16, uint16_t *pVal);
+DISDECL(int) DISFetchReg32(PCPUMCTXCORE pCtx, unsigned reg32, uint32_t *pVal);
+DISDECL(int) DISFetchReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t *pVal);
+DISDECL(int) DISFetchRegSeg(PCPUMCTXCORE pCtx, unsigned sel, RTSEL *pVal);
+DISDECL(int) DISFetchRegSegEx(PCPUMCTXCORE pCtx, unsigned sel, RTSEL *pVal, PCPUMSELREGHID *ppSelHidReg);
+DISDECL(int) DISWriteReg8(PCPUMCTXCORE pRegFrame, unsigned reg8, uint8_t val8);
+DISDECL(int) DISWriteReg16(PCPUMCTXCORE pRegFrame, unsigned reg32, uint16_t val16);
+DISDECL(int) DISWriteReg32(PCPUMCTXCORE pRegFrame, unsigned reg32, uint32_t val32);
+DISDECL(int) DISWriteReg64(PCPUMCTXCORE pRegFrame, unsigned reg64, uint64_t val64);
+DISDECL(int) DISWriteRegSeg(PCPUMCTXCORE pCtx, unsigned sel, RTSEL val);
+DISDECL(int) DISPtrReg8(PCPUMCTXCORE pCtx, unsigned reg8, uint8_t **ppReg);
+DISDECL(int) DISPtrReg16(PCPUMCTXCORE pCtx, unsigned reg16, uint16_t **ppReg);
+DISDECL(int) DISPtrReg32(PCPUMCTXCORE pCtx, unsigned reg32, uint32_t **ppReg);
+DISDECL(int) DISPtrReg64(PCPUMCTXCORE pCtx, unsigned reg64, uint64_t **ppReg);
 
 __END_DECLS
 

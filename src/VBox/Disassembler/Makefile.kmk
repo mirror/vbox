@@ -30,19 +30,19 @@ else
 DisasmR3_CXXFLAGS      += -fexceptions
  endif
 endif
-DisasmR3_SOURCES        = Disasm.cpp DisasmCore.cpp DisasmTables.cpp
+DisasmR3_SOURCES        = Disasm.cpp DisasmCore.cpp DisasmReg.cpp DisasmTables.cpp
 DisasmR3_DEFS           = IN_DIS_R3
 
 DisasmCoreR3_TEMPLATE   = VBOXR3
-DisasmCoreR3_SOURCES    = DisasmCore.cpp DisasmTables.cpp
+DisasmCoreR3_SOURCES    = DisasmCore.cpp DisasmReg.cpp DisasmTables.cpp
 DisasmCoreR3_DEFS       = IN_DIS_R3 DIS_CORE_ONLY
 
 DisasmGC_TEMPLATE       = VBOXGC
-DisasmGC_SOURCES        = DisasmCore.cpp DisasmTables.cpp
+DisasmGC_SOURCES        = DisasmCore.cpp DisasmReg.cpp DisasmTables.cpp
 DisasmGC_DEFS           = IN_DIS_GC IN_RT_GC DIS_CORE_ONLY
 
 DisasmR0_TEMPLATE       = VBOXR0
-DisasmR0_SOURCES        = DisasmCore.cpp DisasmTables.cpp
+DisasmR0_SOURCES        = DisasmCore.cpp DisasmReg.cpp DisasmTables.cpp
 DisasmR0_DEFS           = IN_DIS_R0 IN_RT_R0 DIS_CORE_ONLY
 
 tstDisasm_TEMPLATE      = VBOXR3TSTEXE
