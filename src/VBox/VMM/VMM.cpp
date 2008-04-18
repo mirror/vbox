@@ -1001,7 +1001,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
                 Assert(offSrc - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0 || offSrc - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1);
                 uint32_t offTrg = *u.pu32++;
                 Assert(offTrg - pSwitcher->offIDCode0 < pSwitcher->cbIDCode0 || offTrg - pSwitcher->offIDCode1 < pSwitcher->cbIDCode1);
-                *uSrc.pu32 = (uint32_t)((u32IDCode + offTrg) - (uSrc.u + 4));
+                *uSrc.pu32 = (uint32_t)((u32IDCode + offTrg) - ((uintptr_t)pu8CodeR0 + offSrc + 4));
                 break;
             }
 
