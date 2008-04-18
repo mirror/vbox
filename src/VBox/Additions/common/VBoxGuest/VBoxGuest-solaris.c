@@ -724,20 +724,20 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
     VBGLBIGREQ ReqWrap;
     if (IOCPARM_LEN(Cmd) != sizeof(ReqWrap))
     {
-        Log((DEVICE_NAME ": VBoxGuestSolarisIOCtl: bad request %#x size=%d expected=%d\n", Cmd, IOCPARM_LEN(Cmd), sizeof(ReqWrap)));
+        LogRel((DEVICE_NAME ": VBoxGuestSolarisIOCtl: bad request %#x size=%d expected=%d\n", Cmd, IOCPARM_LEN(Cmd), sizeof(ReqWrap)));
         return ENOTTY;
     }
 
     int rc = ddi_copyin((void *)pArg, &ReqWrap, sizeof(ReqWrap), Mode);
     if (RT_UNLIKELY(rc))
     {
-        Log((DEVICE_NAME ": VBoxGuestSolarisIOCtl: ddi_copyin failed to read header pArg=%p Cmd=%d. rc=%d.\n", pArg, Cmd, rc));
+        LogRel((DEVICE_NAME ": VBoxGuestSolarisIOCtl: ddi_copyin failed to read header pArg=%p Cmd=%d. rc=%d.\n", pArg, Cmd, rc));
         return EINVAL;
     }
 
     if (ReqWrap.u32Magic != VBGLBIGREQ_MAGIC)
     {
-        Log((DEVICE_NAME ": VBoxGuestSolarisIOCtl: bad magic %#x; pArg=%p Cmd=%d.\n", ReqWrap.u32Magic, pArg, Cmd));
+        LogRel((DEVICE_NAME ": VBoxGuestSolarisIOCtl: bad magic %#x; pArg=%p Cmd=%d.\n", ReqWrap.u32Magic, pArg, Cmd));
         return EINVAL;
     }
     if (RT_UNLIKELY(   ReqWrap.cbData == 0
@@ -753,7 +753,7 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
     void *pvBuf = RTMemTmpAlloc(ReqWrap.cbData);
     if (RT_UNLIKELY(!pvBuf))
     {
-        Log((DEVICE_NAME ":VBoxGuestSolarisIOCtl: RTMemTmpAlloc failed to alloc %d bytes.\n", ReqWrap.cbData));
+        LogRel((DEVICE_NAME ":VBoxGuestSolarisIOCtl: RTMemTmpAlloc failed to alloc %d bytes.\n", ReqWrap.cbData));
         return ENOMEM;
     }
 
@@ -761,14 +761,14 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
     if (RT_UNLIKELY(rc))
     {
         RTMemTmpFree(pvBuf);
-        Log((DEVICE_NAME ":VBoxGuestSolarisIOCtl: ddi_copyin failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
+        LogRel((DEVICE_NAME ":VBoxGuestSolarisIOCtl: ddi_copyin failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
         return EFAULT;
     }
     if (RT_UNLIKELY(   ReqWrap.cbData != 0
                     && !VALID_PTR(pvBuf)))
     {
         RTMemTmpFree(pvBuf);
-        Log((DEVICE_NAME ":VBoxGuestSolarisIOCtl: pvBuf invalid pointer %p\n", pvBuf));
+        LogRel((DEVICE_NAME ":VBoxGuestSolarisIOCtl: pvBuf invalid pointer %p\n", pvBuf));
         return EINVAL;
     }
     Log((DEVICE_NAME ":VBoxGuestSolarisIOCtl: pSession=%p pid=%d.\n", pSession, (int)RTProcSelf()));
@@ -783,7 +783,7 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
         rc = 0;
         if (RT_UNLIKELY(cbDataReturned > ReqWrap.cbData))
         {
-            Log((DEVICE_NAME ":VBoxGuestSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, ReqWrap.cbData));
+            LogRel((DEVICE_NAME ":VBoxGuestSolarisIOCtl: too much output data %d expected %d\n", cbDataReturned, ReqWrap.cbData));
             cbDataReturned = ReqWrap.cbData;
         }
         if (cbDataReturned > 0)
@@ -791,7 +791,7 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
             rc = ddi_copyout(pvBuf, (void *)(uintptr_t)ReqWrap.pvDataR3, cbDataReturned, Mode);
             if (RT_UNLIKELY(rc))
             {
-                Log((DEVICE_NAME ":VBoxGuestSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
+                LogRel((DEVICE_NAME ":VBoxGuestSolarisIOCtl: ddi_copyout failed; pvBuf=%p pArg=%p Cmd=%d. rc=%d\n", pvBuf, pArg, Cmd, rc));
                 rc = EFAULT;
             }
         }
