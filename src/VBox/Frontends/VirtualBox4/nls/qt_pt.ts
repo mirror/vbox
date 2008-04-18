@@ -3,7 +3,7 @@
     <name>QAccel</name>
     <message>
         <source>Space</source>
-        <translation>Barra de espaço</translation>
+        <translation>Espaço</translation>
     </message>
     <message>
         <source>Esc</source>
@@ -39,7 +39,7 @@
     </message>
     <message>
         <source>Pause</source>
-        <translation>Pause</translation>
+        <translation>Pausa</translation>
     </message>
     <message>
         <source>Print</source>
@@ -51,11 +51,11 @@
     </message>
     <message>
         <source>Home</source>
-        <translation>Home</translation>
+        <translation>Pessoal</translation>
     </message>
     <message>
         <source>End</source>
-        <translation>End</translation>
+        <translation>Fim</translation>
     </message>
     <message>
         <source>Left</source>
@@ -95,7 +95,7 @@
     </message>
     <message>
         <source>Ctrl</source>
-        <translation>Control</translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Alt</source>
@@ -143,7 +143,7 @@
     </message>
     <message>
         <source>Volume Mute</source>
-        <translation>Mudo</translation>
+        <translation>Silenciar</translation>
     </message>
     <message>
         <source>Volume Up</source>
@@ -171,23 +171,23 @@
     </message>
     <message>
         <source>Media Play</source>
-        <translation>Reproduzir ficheiro multimédia</translation>
+        <translation>Reprodução Multimédia</translation>
     </message>
     <message>
         <source>Media Stop</source>
-        <translation>Parar reprodução ficheiro multimédia</translation>
+        <translation>Parar reprodução multimédia</translation>
     </message>
     <message>
         <source>Media Previous</source>
-        <translation>Ficheiro Anterior</translation>
+        <translation>Multimédia Anterior</translation>
     </message>
     <message>
         <source>Media Next</source>
-        <translation>Próximo Ficheiro</translation>
+        <translation>Próxima Multimédia</translation>
     </message>
     <message>
         <source>Media Record</source>
-        <translation>Gravar Ficheiro</translation>
+        <translation>Gravar Multimédia</translation>
     </message>
     <message>
         <source>Favorites</source>
@@ -207,11 +207,11 @@
     </message>
     <message>
         <source>Launch Mail</source>
-        <translation>Abrir EMail</translation>
+        <translation>Abrir Correio</translation>
     </message>
     <message>
         <source>Launch Media</source>
-        <translation>Abrir Ficheiro</translation>
+        <translation>Abrir Multimédia</translation>
     </message>
     <message>
         <source>Launch (0)</source>
@@ -291,11 +291,11 @@
     </message>
     <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
-        <translation>O executável &apos;%1&apos; requer o Qt %2, mas foi encontrado o Qt %3.</translation>
+        <translation>O executável &apos;%1&apos; requer o Qt %2, encontrado o Qt %3.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>Erro: Biblioteca de Qt Incompatível</translation>
+        <translation>Erro de Biblioteca Qt Incompatível</translation>
     </message>
 </context>
 <context>
@@ -329,7 +329,7 @@
     </message>
     <message>
         <source>&amp;Green:</source>
-        <translation>Verde(&amp;G):</translation>
+        <translation>V&amp;erde:</translation>
     </message>
     <message>
         <source>Bl&amp;ue:</source>
@@ -345,11 +345,11 @@
     </message>
     <message>
         <source>&amp;Custom colors</source>
-        <translation>Cores &amp;customizadas</translation>
+        <translation>Cores &amp;personalizadas</translation>
     </message>
     <message>
         <source>&amp;Define Custom Colors &gt;&gt;</source>
-        <translation>&amp;Definir Cores Customizadas &gt;&gt;</translation>
+        <translation>&amp;Definir Cores Personalizadas &gt;&gt;</translation>
     </message>
     <message>
         <source>OK</source>
@@ -361,7 +361,7 @@
     </message>
     <message>
         <source>&amp;Add to Custom Colors</source>
-        <translation>&amp;Adicionar às Cores Customizadas</translation>
+        <translation>&amp;Adicionar às Cores Personalizadas</translation>
     </message>
     <message>
         <source>Select color</source>
@@ -395,14 +395,14 @@
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>O que é isso?</translation>
+        <translation>O que é isto?</translation>
     </message>
 </context>
 <context>
     <name>QErrorMessage</name>
     <message>
         <source>&amp;Show this message again</source>
-        <translation>Exibir novamente esta men&amp;sagem</translation>
+        <translation>Mo&amp;strar esta mensagem novamente</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -410,7 +410,7 @@
     </message>
     <message>
         <source>Debug Message:</source>
-        <translation>Mensagem de Debug:</translation>
+        <translation>Mensagem de Depuração:</translation>
     </message>
     <message>
         <source>Warning:</source>
@@ -441,7 +441,7 @@
     </message>
     <message>
         <source>All Files (*)</source>
-        <translation>Todos os Ficheiros(*)</translation>
+        <translation>Todos os Ficheiros (*)</translation>
     </message>
     <message>
         <source>Name</source>
@@ -469,11 +469,11 @@
     </message>
     <message>
         <source>Look &amp;in:</source>
-        <translation>Procurar em (&amp;i):</translation>
+        <translation>Procurar &amp;em:</translation>
     </message>
     <message>
         <source>File &amp;name:</source>
-        <translation type="unfinished">&amp;Nome do ficheiro:</translation>
+        <translation>&amp;Nome do ficheiro:</translation>
     </message>
     <message>
         <source>File &amp;type:</source>
@@ -485,11 +485,11 @@
     </message>
     <message>
         <source>One directory up</source>
-        <translation>Uma pasta acima</translation>
+        <translation>Um directório acima</translation>
     </message>
     <message>
         <source>Create New Folder</source>
-        <translation>Criar Nova Pasta</translation>
+        <translation>Criar Novo Directório</translation>
     </message>
     <message>
         <source>List View</source>
@@ -505,11 +505,11 @@
     </message>
     <message>
         <source>Preview File Contents</source>
-        <translation>Pré-Visualizar Conteúdo de Ficheiros</translation>
+        <translation>Pré-visualizar Conteúdo de Ficheiros</translation>
     </message>
     <message>
         <source>Read-write</source>
-        <translation>Leitura/Escrita</translation>
+        <translation>Leitura-escrita</translation>
     </message>
     <message>
         <source>Read-only</source>
@@ -525,15 +525,15 @@
     </message>
     <message>
         <source>Symlink to File</source>
-        <translation>Link simbólico para Ficheiro</translation>
+        <translation>Ligação simbólica para Ficheiro</translation>
     </message>
     <message>
         <source>Symlink to Directory</source>
-        <translation>Link simbólico para Pasta</translation>
+        <translation>Ligação simbólica para Directório</translation>
     </message>
     <message>
         <source>Symlink to Special</source>
-        <translation>Link simbólico para Ficheiro Especial</translation>
+        <translation>Ligação simbólica para Ficheiro Especial</translation>
     </message>
     <message>
         <source>File</source>
@@ -541,7 +541,7 @@
     </message>
     <message>
         <source>Dir</source>
-        <translation>Pasta</translation>
+        <translation>Directório</translation>
     </message>
     <message>
         <source>Special</source>
@@ -553,15 +553,15 @@
     </message>
     <message>
         <source>Save As</source>
-        <translation>Salvar Como</translation>
+        <translation>Gravar Como</translation>
     </message>
     <message>
         <source>&amp;Open</source>
-        <translation>Abrir(&amp;O)</translation>
+        <translation>&amp;Abrir</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Salvar</translation>
+        <translation>&amp;Gravar</translation>
     </message>
     <message>
         <source>&amp;Rename</source>
@@ -569,7 +569,7 @@
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>Apagar(&amp;D)</translation>
+        <translation>Apa&amp;gar</translation>
     </message>
     <message>
         <source>R&amp;eload</source>
@@ -581,7 +581,7 @@
     </message>
     <message>
         <source>Sort by &amp;Size</source>
-        <translation>Organizar por Tamanho(&amp;S)</translation>
+        <translation>Organizar por &amp;Tamanho</translation>
     </message>
     <message>
         <source>Sort by &amp;Date</source>
@@ -589,11 +589,11 @@
     </message>
     <message>
         <source>&amp;Unsorted</source>
-        <translation>Não Organizar(&amp;U)</translation>
+        <translation>D&amp;esordenar</translation>
     </message>
     <message>
         <source>Sort</source>
-        <translation>Organizar</translation>
+        <translation>Ordenar</translation>
     </message>
     <message>
         <source>Show &amp;hidden files</source>
@@ -605,11 +605,11 @@
     </message>
     <message>
         <source>the directory</source>
-        <translation>a pasta</translation>
+        <translation>o directório</translation>
     </message>
     <message>
         <source>the symlink</source>
-        <translation>o link simbólico</translation>
+        <translation>a ligação simbólica</translation>
     </message>
     <message>
         <source>Delete %1</source>
@@ -617,11 +617,11 @@
     </message>
     <message>
         <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Você tem certeza de que deseja apagar %1 &quot;%2&quot;?&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Tem certeza que deseja apagar %1 &quot;%2&quot;?&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation>Sim(&amp;Y)</translation>
+        <translation>&amp;Sim</translation>
     </message>
     <message>
         <source>&amp;No</source>
@@ -641,15 +641,15 @@
     </message>
     <message>
         <source>Find Directory</source>
-        <translation>Encontrar Pasta</translation>
+        <translation>Procurar Directório</translation>
     </message>
     <message>
         <source>Directories</source>
-        <translation>Pasta</translation>
+        <translation>Directórios</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation>Salvar</translation>
+        <translation>Gravar</translation>
     </message>
     <message>
         <source>Error</source>
@@ -661,11 +661,11 @@ File not found.
 Check path and filename.</source>
         <translation>%1
 Ficheiro não encontrado.
-Verifique o caminho e nome do ficheiro.</translation>
+Verifique a localização e o nome do ficheiro.</translation>
     </message>
     <message>
         <source>All Files (*.*)</source>
-        <translation>Todos os Ficheiros(*.*)</translation>
+        <translation>Todos os Ficheiros (*.*)</translation>
     </message>
     <message>
         <source>Open </source>
@@ -673,11 +673,11 @@ Verifique o caminho e nome do ficheiro.</translation>
     </message>
     <message>
         <source>Select a Directory</source>
-        <translation>Selecionar uma Pasta</translation>
+        <translation>Selecionar um Directório</translation>
     </message>
     <message>
         <source>Directory:</source>
-        <translation>Pasta:</translation>
+        <translation>Directório:</translation>
     </message>
 </context>
 <context>
@@ -871,15 +871,15 @@ Verifique o caminho e nome do ficheiro.</translation>
     <name>QFontDialog</name>
     <message>
         <source>&amp;Font</source>
-        <translation>&amp;Fonte</translation>
+        <translation>&amp;Tipo de Letra</translation>
     </message>
     <message>
         <source>Font st&amp;yle</source>
-        <translation>Estilo de Letra(&amp;y)</translation>
+        <translation>&amp;Estilo do tipo de letra</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>Tamanho (&amp;s)</translation>
+        <translation>&amp;Tamanho</translation>
     </message>
     <message>
         <source>Effects</source>
@@ -887,7 +887,7 @@ Verifique o caminho e nome do ficheiro.</translation>
     </message>
     <message>
         <source>Stri&amp;keout</source>
-        <translation>Riscado (&amp;k)</translation>
+        <translation>Ri&amp;scado</translation>
     </message>
     <message>
         <source>&amp;Underline</source>
@@ -923,30 +923,30 @@ Verifique o caminho e nome do ficheiro.</translation>
     </message>
     <message>
         <source>Select Font</source>
-        <translation>Seleccionar Fonte</translation>
+        <translation>Seleccionar Tipo de Letra</translation>
     </message>
 </context>
 <context>
     <name>QFtp</name>
     <message>
         <source>Host %1 found</source>
-        <translation>Máquina %1 encontrada</translation>
+        <translation>Endereço %1 encontrado</translation>
     </message>
     <message>
         <source>Host found</source>
-        <translation>Máquina encontrada</translation>
+        <translation>Endereço encontrado</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>Conectado à máquina %1</translation>
+        <translation>Conectado no endereço %1</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation>Conectado à máquina</translation>
+        <translation>Conectado no endereço</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation>Conexão com %1 fechada</translation>
+        <translation>Conexão a %1 fechada</translation>
     </message>
     <message>
         <source>Connection closed</source>
@@ -954,11 +954,11 @@ Verifique o caminho e nome do ficheiro.</translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation>Máquina %1 não encontrada</translation>
+        <translation>Endereço %1 não encontrado</translation>
     </message>
     <message>
         <source>Connection refused to host %1</source>
-        <translation>Conexão para %1 recusada</translation>
+        <translation>Conexão recusada no endereço %1</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -967,60 +967,60 @@ Verifique o caminho e nome do ficheiro.</translation>
     <message>
         <source>Connecting to host failed:
 %1</source>
-        <translation>Erro ao conectar à máquina:
+        <translation>Conexão no endereço falhada:
 %1</translation>
     </message>
     <message>
         <source>Login failed:
 %1</source>
-        <translation>Login falhou:
+        <translation>Autenticação falhada:
 %1</translation>
     </message>
     <message>
         <source>Listing directory failed:
 %1</source>
-        <translation>Falha ao listar pasta:
+        <translation>Listagem de directório falhada:
 %1</translation>
     </message>
     <message>
         <source>Changing directory failed:
 %1</source>
-        <translation>Falha ao mudar de pasta:
+        <translation>Mudança de directório falhada:
 %1</translation>
     </message>
     <message>
         <source>Downloading file failed:
 %1</source>
-        <translation>Falha ao baixar ficheiro:
+        <translation>Transferência de ficheiro falhada:
 %1</translation>
     </message>
     <message>
         <source>Uploading file failed:
 %1</source>
-        <translation>Falha ao enviar ficheiro:
+        <translation>Envio de ficheiro falhado:
 %1</translation>
     </message>
     <message>
         <source>Removing file failed:
 %1</source>
-        <translation>Erro ao apagar ficheiro:
+        <translation>Remoção de ficheiro falhada:
 %1</translation>
     </message>
     <message>
         <source>Creating directory failed:
 %1</source>
-        <translation>Erro ao criar a pasta:
+        <translation>Criação de directório falhada:
 %1</translation>
     </message>
     <message>
         <source>Removing directory failed:
 %1</source>
-        <translation>Erro ao apagar a pasta:
+        <translation>Remoção de directório falhada:
 %1</translation>
     </message>
     <message>
         <source>Not connected</source>
-        <translation>Não conectado</translation>
+        <translation>Desconectado</translation>
     </message>
     <message>
         <source>Connection refused for data connection</source>
@@ -1050,7 +1050,7 @@ Verifique o caminho e nome do ficheiro.</translation>
     </message>
     <message>
         <source>HTTP request failed</source>
-        <translation>Pedido HTTP falhou</translation>
+        <translation>Pedido HTTP falhado</translation>
     </message>
     <message>
         <source>Host %1 found</source>
@@ -1062,11 +1062,11 @@ Verifique o caminho e nome do ficheiro.</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>Conectado a %1</translation>
+        <translation>Conectado no endereço %1</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation>Conectado ao servidor</translation>
+        <translation>Conectado no endereço</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
@@ -1082,7 +1082,7 @@ Verifique o caminho e nome do ficheiro.</translation>
     </message>
     <message>
         <source>Request aborted</source>
-        <translation>Pedido cancelado</translation>
+        <translation>Pedido abortado</translation>
     </message>
     <message>
         <source>No server set to connect to</source>
@@ -1116,7 +1116,7 @@ Verifique o caminho e nome do ficheiro.</translation>
     <name>QLineEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation>Desfazer (&amp;U)</translation>
+        <translation>&amp;Desfazer</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
@@ -1124,7 +1124,7 @@ Verifique o caminho e nome do ficheiro.</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>Recor&amp;tar</translation>
+        <translation>Cor&amp;tar</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
@@ -1132,7 +1132,7 @@ Verifique o caminho e nome do ficheiro.</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation>Colar (&amp;P)</translation>
+        <translation>Co&amp;lar</translation>
     </message>
     <message>
         <source>Clear</source>
@@ -1170,19 +1170,19 @@ para
     <message>
         <source>Could not read directory
 %1</source>
-        <translation>Não foi possível ler pasta
+        <translation>Não foi possível ler o directório
 %1</translation>
     </message>
     <message>
         <source>Could not create directory
 %1</source>
-        <translation>Não foi possível criar pasta
+        <translation>Não foi possível criar o directório
 %1</translation>
     </message>
     <message>
         <source>Could not remove file or directory
 %1</source>
-        <translation>Não foi possível remover o ficheiro ou pasta
+        <translation>Não foi possível remover o ficheiro ou directório
 %1</translation>
     </message>
 </context>
@@ -1194,14 +1194,14 @@ para
     </message>
     <message>
         <source>Customize...</source>
-        <translation>Customizar...</translation>
+        <translation>Personalizar...</translation>
     </message>
 </context>
 <context>
     <name>QMenuBar</name>
     <message>
         <source>About</source>
-        <translation>Sobre</translation>
+        <translation>Acerca</translation>
     </message>
     <message>
         <source>Config</source>
@@ -1217,11 +1217,11 @@ para
     </message>
     <message>
         <source>Setting</source>
-        <translation>Valor</translation>
+        <translation>Definição</translation>
     </message>
     <message>
         <source>Setup</source>
-        <translation>Definições</translation>
+        <translation>Configuração</translation>
     </message>
     <message>
         <source>Quit</source>
@@ -1244,7 +1244,7 @@ para
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation>Sim (&amp;Y)</translation>
+        <translation>&amp;Sim</translation>
     </message>
     <message>
         <source>&amp;No</source>
@@ -1256,7 +1256,7 @@ para
     </message>
     <message>
         <source>&amp;Retry</source>
-        <translation>Tenta&amp;r Novamente</translation>
+        <translation>Tentar &amp;Novamente</translation>
     </message>
     <message>
         <source>&amp;Ignore</source>
@@ -1264,7 +1264,7 @@ para
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;&lt;p&gt;Qt is a C++ toolkit for multiplatform GUI &amp;amp; application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants.&lt;br&gt;Qt is also available for embedded devices.&lt;/p&gt;&lt;p&gt;Qt is a Trolltech product. See &lt;tt&gt;http://www.trolltech.com/qt/&lt;/tt&gt; for more information.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Sobre o Qt&lt;/h3&gt;&lt;p&gt;Este programa utiliza a versão %1 do Qt.&lt;/p&gt;&lt;p&gt;O Qt é um toolkit C++ multi-plataforma para desenvolvimento de GUIs e aplicações.&lt;/p&gt;&lt;p&gt;O Qt permite portabilidade com o mesmo código-fonte entre MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, e todas as principais variantes comerciais de Unix.&lt;br&gt;O Qt também está disponível para dispositivos embebidos.&lt;/p&gt;&lt;p&gt;O Qt é um produto da Trolltech. Aceda a &lt;tt&gt;http://www.trolltech.com/qt/&lt;/tt&gt; para mais informações.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Acerca do Qt&lt;/h3&gt;&lt;p&gt;Este programa usa a versão %1 do Qt.&lt;/p&gt;&lt;p&gt;O Qt é um conjunto de ferramentas C++ de multi-plataforma para desenvolvimento de GUIs e aplicações.&lt;/p&gt;&lt;p&gt;O Qt forncece portabilidade com o mesmo código-fonte entre MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, e todas as principais variantes comerciais de Unix.&lt;br&gt;O Qt também está disponível para dispositivos embebidos.&lt;/p&gt;&lt;p&gt;O Qt é um produto da Trolltech. Veja &lt;tt&gt;http://www.trolltech.com/qt/&lt;/tt&gt; para mais informações.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1278,11 +1278,11 @@ para
     <name>QPrintDialog</name>
     <message>
         <source>locally connected</source>
-        <translation>localmente conectado</translation>
+        <translation>conectado localmente</translation>
     </message>
     <message>
         <source>Aliases: %1</source>
-        <translation>Apelidos: %1</translation>
+        <translation>Alcunhas: %1</translation>
     </message>
     <message>
         <source>unknown</source>
@@ -1302,7 +1302,7 @@ para
     </message>
     <message>
         <source>Printer settings</source>
-        <translation>Opções de Impressão</translation>
+        <translation>Definições de Impressão</translation>
     </message>
     <message>
         <source>Print in color if available</source>
@@ -1314,7 +1314,7 @@ para
     </message>
     <message>
         <source>Print destination</source>
-        <translation>Destino para impressão</translation>
+        <translation>Destino de impressão</translation>
     </message>
     <message>
         <source>Print to printer:</source>
@@ -1334,11 +1334,11 @@ para
     </message>
     <message>
         <source>Print to file:</source>
-        <translation>Imprimir para arquivo:</translation>
+        <translation>Imprimir para ficheiro:</translation>
     </message>
     <message>
         <source>Browse...</source>
-        <translation>Localizar...</translation>
+        <translation>Procurar...</translation>
     </message>
     <message>
         <source>Options</source>
@@ -1362,11 +1362,11 @@ para
     </message>
     <message>
         <source>Print first page first</source>
-        <translation>Imprimir primeira página antes</translation>
+        <translation>Imprimir primeira página primeiro</translation>
     </message>
     <message>
         <source>Print last page first</source>
-        <translation>Imprimir primeira página ao final</translation>
+        <translation>Imprimir última página primeiro</translation>
     </message>
     <message>
         <source>Number of copies:</source>
@@ -1374,7 +1374,7 @@ para
     </message>
     <message>
         <source>Paper format</source>
-        <translation>Tamanho do papel</translation>
+        <translation>Formato do papel</translation>
     </message>
     <message>
         <source>Portrait</source>
@@ -1506,7 +1506,7 @@ para
     </message>
     <message>
         <source>Setup Printer</source>
-        <translation>Configurar Impressora</translation>
+        <translation>Definir Impressora</translation>
     </message>
     <message>
         <source>PostScript Files (*.ps);;All Files (*)</source>
@@ -1528,15 +1528,15 @@ para
     </message>
     <message>
         <source>disabled feature used</source>
-        <translation>utilizado recurso desactivado</translation>
+        <translation>opção usada desactivada</translation>
     </message>
     <message>
         <source>bad char class syntax</source>
-        <translation>caracter inválido na sintaxe de classe</translation>
+        <translation>sintaxe de classe de caracteres inválida</translation>
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation>sintaxe de lookahead inválida</translation>
+        <translation>sintaxe lookahead inválida</translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
@@ -1548,7 +1548,7 @@ para
     </message>
     <message>
         <source>missing left delim</source>
-        <translation>falta delimitador esquerdo</translation>
+        <translation>delimitador esquerdo em falta</translation>
     </message>
     <message>
         <source>unexpected end</source>
@@ -1587,7 +1587,7 @@ para
     </message>
     <message>
         <source>Save edits?</source>
-        <translation>Salvar alterações?</translation>
+        <translation>Gravar alterações?</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -1599,7 +1599,7 @@ para
     </message>
     <message>
         <source>Cancel your edits?</source>
-        <translation>Cancelar as alterações?</translation>
+        <translation>Cancelar as suas alterações?</translation>
     </message>
 </context>
 <context>
@@ -1618,7 +1618,7 @@ para
     </message>
     <message>
         <source>Defaults</source>
-        <translation>Padrões</translation>
+        <translation>Predefnições</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -1629,7 +1629,7 @@ para
     <name>QTextEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation>Desfazer (&amp;U)</translation>
+        <translation>&amp;Desfazer</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
@@ -1637,7 +1637,7 @@ para
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>Recor&amp;tar</translation>
+        <translation>Cor&amp;tar</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
@@ -1645,7 +1645,7 @@ para
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation>Colar (&amp;P)</translation>
+        <translation>Co&amp;lar</translation>
     </message>
     <message>
         <source>Clear</source>
@@ -1702,23 +1702,23 @@ para
     </message>
     <message>
         <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation>O protocolo `%1&apos; não suporta a listagem de pastas</translation>
+        <translation>O protocolo `%1&apos; não suporta a listagem de directórios</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation>O protocolo `%1&apos; não suporta a criação de novas pastas</translation>
+        <translation>O protocolo `%1&apos; não suporta a criação de novos directórios</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation>O protocolo `%1&apos; não suporta a remoção de ficheirous ou pastas</translation>
+        <translation>O protocolo `%1&apos; não suporta a remoção de ficheirous ou directórios</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation>O protocolo `%1&apos; não suporta renomear ficheiros ou pastas</translation>
+        <translation>O protocolo `%1&apos; não suporta renomear ficheiros ou directórios</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support getting files</source>
-        <translation>O protocolo `%1&apos; não suporta baixar ficheiros</translation>
+        <translation>O protocolo `%1&apos; não suporta a obtenção de ficheiros</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support putting files</source>
@@ -1726,7 +1726,7 @@ para
     </message>
     <message>
         <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation>O protocolo `%1&apos; não suporta copiar ou mover ficheiros ou pastas</translation>
+        <translation>O protocolo `%1&apos; não suporta copiar ou mover ficheiros ou directórios</translation>
     </message>
     <message>
         <source>(unknown)</source>
@@ -1745,7 +1745,7 @@ para
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>Tamanho (&amp;S)</translation>
+        <translation>&amp;Tamanho</translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
@@ -1781,14 +1781,14 @@ para
     </message>
     <message>
         <source>Default</source>
-        <translation>Padrão</translation>
+        <translation>Predefinido</translation>
     </message>
 </context>
 <context>
     <name>QWhatsThisButton</name>
     <message>
         <source>What&apos;s this?</source>
-        <translation>O que é isso?</translation>
+        <translation>O que é isto?</translation>
     </message>
 </context>
 <context>
@@ -1799,11 +1799,11 @@ para
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; Anterior (&amp;B)</translation>
+        <translation>&lt; An&amp;terior</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>Próximo (&amp;N) &gt;</translation>
+        <translation>&amp;Próximo &gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
@@ -1811,7 +1811,7 @@ para
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>Ajuda (&amp;H)</translation>
+        <translation>&amp;Ajuda</translation>
     </message>
 </context>
 <context>
@@ -1826,7 +1826,7 @@ para
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>Tamanho (&amp;S)</translation>
+        <translation>&amp;Tamanho</translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
@@ -1838,11 +1838,11 @@ para
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>Fechar (&amp;C)</translation>
+        <translation>Fe&amp;char</translation>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation>Ficar Acima das Ou&amp;tras Janelas</translation>
+        <translation>Ficar no T&amp;opo</translation>
     </message>
     <message>
         <source>Sh&amp;ade</source>
@@ -1866,7 +1866,7 @@ para
     </message>
     <message>
         <source>&amp;Unshade</source>
-        <translation>Desenrolar (&amp;U)</translation>
+        <translation>&amp;Desenrolar</translation>
     </message>
 </context>
 <context>
@@ -1881,23 +1881,23 @@ para
     </message>
     <message>
         <source>unexpected end of file</source>
-        <translation>fim de arquivo inesperado</translation>
+        <translation>fim de ficheiro inesperado</translation>
     </message>
     <message>
         <source>more than one document type definition</source>
-        <translation>mais de uma definição de tipo de documento</translation>
+        <translation>mais de uma definição do tipo de documento</translation>
     </message>
     <message>
         <source>error occurred while parsing element</source>
-        <translation>erro ao interpretar elemento</translation>
+        <translation>ocorreu um erro ao analisar o elemento</translation>
     </message>
     <message>
         <source>tag mismatch</source>
-        <translation>tag não inválida</translation>
+        <translation>marca não correspondente</translation>
     </message>
     <message>
         <source>error occurred while parsing content</source>
-        <translation>erro ao interpretar conteúdo</translation>
+        <translation>ocorreu um erro ao analisar o conteúdo</translation>
     </message>
     <message>
         <source>unexpected character</source>
@@ -1925,35 +1925,35 @@ para
     </message>
     <message>
         <source>error occurred while parsing document type definition</source>
-        <translation>erro ao interpretar definição do tipo de documento</translation>
+        <translation>ocorreu um erro ao analisar a definição do tipo de documento</translation>
     </message>
     <message>
         <source>letter is expected</source>
-        <translation>letra esperada</translation>
+        <translation>a letra era esperada</translation>
     </message>
     <message>
         <source>error occurred while parsing comment</source>
-        <translation>erro ao interpretar comentário</translation>
+        <translation>ocorreu um erro ao analisar o comentário</translation>
     </message>
     <message>
         <source>error occurred while parsing reference</source>
-        <translation>erro ao interpretar referência</translation>
+        <translation>ocorreu um erro ao analisar a referência</translation>
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
-        <translation>referência interna geral não permitida em DTD</translation>
+        <translation>entidade geral interna não permitida em DTD</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in attribute value</source>
-        <translation>referência externa geral interpretada não é permitida em valor de atributo</translation>
+        <translation>referência de entidade geral interna analisada externamente não permitida em valor de atributo</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in DTD</source>
-        <translation>referência externa geral interpretada não é permitida em DTD</translation>
+        <translation>referência de entidade geral interna analisada externamente não permitida em DTD</translation>
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
-        <translation>referência de entidade não interpretada em contexto errado</translation>
+        <translation>referência de entidade não analisada em contexto errado</translation>
     </message>
     <message>
         <source>recursive entities</source>
@@ -1961,7 +1961,7 @@ para
     </message>
     <message>
         <source>error in the text declaration of an external entity</source>
-        <translation>erro na declaração de entidade externa</translation>
+        <translation>erro na declaração de texto de uma entidade externa</translation>
     </message>
 </context>
 <context>
@@ -1976,7 +1976,7 @@ para
     </message>
     <message>
         <source>Cut</source>
-        <translation>Recortar</translation>
+        <translation>Cortar</translation>
     </message>
     <message>
         <source>Copy</source>

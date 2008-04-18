@@ -304,7 +304,7 @@ TRANSLATIONS = \
 	nls/VirtualBox_sr.ts \
 	nls/VirtualBox_ko.ts \
 	nls/VirtualBox_sv.ts \
-	nls/VirtualBox_pt_PT.ts \
+	nls/VirtualBox_pt.ts \
 	nls/VirtualBox_pt_BR.ts \
 	nls/VirtualBox_ja.ts \
 	nls/VirtualBox_pl.ts \
