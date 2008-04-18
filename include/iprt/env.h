@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Process Environment Strings.
+ * Incredibly Portable Runtime - Process Environment Strings.
  */
 
 /*
@@ -47,9 +47,9 @@ __BEGIN_DECLS
 
 /**
  * Creates an empty environment block.
- * 
+ *
  * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- * 
+ *
  * @param   pEnv        Where to store the handle of the new environment block.
  */
 RTDECL(int) RTEnvCreate(PRTENV pEnv);
@@ -77,13 +77,13 @@ RTDECL(int) RTEnvDestroy(RTENV Env);
 
 /**
  * Get the execve/spawnve/main envp.
- * 
+ *
  * All returned strings are in the current process' codepage.
  * This array is only valid until the next RTEnv call.
- * 
+ *
  * @returns Pointer to the raw array of environment variables.
  * @returns NULL if Env is NULL or invalid.
- * 
+ *
  * @param   Env     Environment block handle.
  */
 RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env);
@@ -91,20 +91,20 @@ RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env);
 
 /**
  * Checks if an environment variable exists in the default environment block.
- * 
+ *
  * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- * 
+ *
  * @param   pszVar      The environment variable name.
- * @remark  WARNING! The current implementation does not perform the appropriate 
+ * @remark  WARNING! The current implementation does not perform the appropriate
  *          codeset conversion. We'll figure this out when it becomes necessary.
  */
 RTDECL(bool) RTEnvExist(const char *pszVar);
 
 /**
  * Checks if an environment variable exists in a specific environment block.
- * 
+ *
  * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- * 
+ *
  * @param   Env         The environment handle.
  * @param   pszVar      The environment variable name.
  */
@@ -112,24 +112,24 @@ RTDECL(bool) RTEnvExistEx(RTENV Env, const char *pszVar);
 
 /**
  * Gets an environment variable from the default environment block. (getenv).
- * 
- * The caller is responsible for ensuring that nobody changes the environment 
+ *
+ * The caller is responsible for ensuring that nobody changes the environment
  * while it's using the returned string pointer!
- * 
+ *
  * @returns Pointer to read only string on success, NULL if the variable wasn't found.
- * 
+ *
  * @param   pszVar      The environment variable name.
- * 
- * @remark  WARNING! The current implementation does not perform the appropriate 
+ *
+ * @remark  WARNING! The current implementation does not perform the appropriate
  *          codeset conversion. We'll figure this out when it becomes necessary.
  */
 RTDECL(const char *) RTEnvGet(const char *pszVar);
 
 /**
  * Gets an environment variable in a specific environment block.
- * 
+ *
  * @returns IPRT status code.
- * 
+ *
  * @param   Env         The environment handle.
  * @param   pszVar      The environment variable name.
  * @param   pszValue    Where to put the buffer.
@@ -140,47 +140,47 @@ RTDECL(int) RTEnvGetEx(RTENV Env, const char *pszVar, char *pszValue, size_t cbV
 
 /**
  * Puts an variable=value string into the environment (putenv).
- * 
+ *
  * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- * 
- * @param   pszVarEqualValue    The variable '=' value string. If the value and '=' is 
+ *
+ * @param   pszVarEqualValue    The variable '=' value string. If the value and '=' is
  *                              omitted, the variable is removed from the environment.
- * 
+ *
  * @remark Don't assume the value is copied.
- * @remark  WARNING! The current implementation does not perform the appropriate 
+ * @remark  WARNING! The current implementation does not perform the appropriate
  *          codeset conversion. We'll figure this out when it becomes necessary.
  */
 RTDECL(int) RTEnvPut(const char *pszVarEqualValue);
 
 /**
  * Puts a copy of the passed in 'variable=value' string into the environment block.
- * 
+ *
  * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- * 
+ *
  * @param   Env                 Handle of the environment block.
- * @param   pszVarEqualValue    The variable '=' value string. If the value and '=' is 
+ * @param   pszVarEqualValue    The variable '=' value string. If the value and '=' is
  *                              omitted, the variable is removed from the environment.
  */
 RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue);
 
 /**
  * Sets an environment variable (setenv(,,1)).
- * 
+ *
  * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- * 
+ *
  * @param   pszVar      The environment variable name.
  * @param   pszValue    The environment variable value.
- * 
- * @remark  WARNING! The current implementation does not perform the appropriate 
+ *
+ * @remark  WARNING! The current implementation does not perform the appropriate
  *          codeset conversion. We'll figure this out when it becomes necessary.
  */
 RTDECL(int) RTEnvSet(const char *pszVar, const char *pszValue);
 
 /**
  * Sets an environment variable (setenv(,,1)).
- * 
+ *
  * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- * 
+ *
  * @param   Env         The environment handle.
  * @param   pszVar      The environment variable name.
  * @param   pszValue    The environment variable value.
@@ -189,23 +189,23 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue);
 
 /**
  * Removes an environment variable from the default environment block.
- * 
+ *
  * @returns IPRT status code.
  * @returns VINF_ENV_VAR_NOT_FOUND if the variable was not found.
- * 
+ *
  * @param   pszVar      The environment variable name.
- * 
- * @remark  WARNING! The current implementation does not perform the appropriate 
+ *
+ * @remark  WARNING! The current implementation does not perform the appropriate
  *          codeset conversion. We'll figure this out when it becomes necessary.
  */
 RTDECL(int) RTEnvUnset(const char *pszVar);
 
 /**
  * Removes an environment variable from the specified environment block.
- * 
+ *
  * @returns IPRT status code.
  * @returns VINF_ENV_VAR_NOT_FOUND if the variable was not found.
- * 
+ *
  * @param   Env         The environment handle.
  * @param   pszVar      The environment variable name.
  */

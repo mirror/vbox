@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Threads.
+ * Incredibly Portable Runtime - Threads.
  */
 
 /*

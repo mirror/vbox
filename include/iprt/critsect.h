@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Critical Sections.
+ * Incredibly Portable Runtime - Critical Sections.
  */
 
 /*

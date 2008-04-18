@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Process Management.
+ * Incredibly Portable Runtime - Process Management.
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Common C and C++ definitions.
+ * Incredibly Portable Runtime - Common C and C++ definitions.
  */
 
 /*
@@ -31,7 +31,7 @@
 #define ___iprt_cdefs_h
 
 
-/** @defgroup grp_rt_cdefs  innotek Portable Runtime Common Definitions and Macros
+/** @defgroup grp_rt_cdefs  Incredibly Portable Runtime Common Definitions and Macros
  * @{
  */
 

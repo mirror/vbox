@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - CRC32.
+ * Incredibly Portable Runtime - CRC32.
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - C++ Utilities (useful templates, defines and such).
+ * Incredibly Portable Runtime - C++ Utilities (useful templates, defines and such).
  */
 
 /*

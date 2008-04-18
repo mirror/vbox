@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Memory Objects (Ring-0).
+ * Incredibly Portable Runtime - Memory Objects (Ring-0).
  */
 
 /*

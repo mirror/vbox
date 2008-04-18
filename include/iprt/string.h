@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - String Manipluation.
+ * Incredibly Portable Runtime - String Manipluation.
  */
 
 /*

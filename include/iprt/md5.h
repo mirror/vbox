@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Message-Digest algorithm 5.
+ * Incredibly Portable Runtime - Message-Digest algorithm 5.
  */
 
 /*

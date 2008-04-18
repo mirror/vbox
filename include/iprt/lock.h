@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - RTLock Classes for Scope-based Locking.
+ * Incredibly Portable Runtime - RTLock Classes for Scope-based Locking.
  */
 
 /*

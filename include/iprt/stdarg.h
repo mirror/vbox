@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - stdarg.h wrapper.
+ * Incredibly Portable Runtime - stdarg.h wrapper.
  */
 
 /*

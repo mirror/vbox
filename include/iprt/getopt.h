@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Command Line Parsing.
+ * Incredibly Portable Runtime - Command Line Parsing.
  */
 
 /*

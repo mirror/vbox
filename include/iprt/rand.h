@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Random Numbers and Byte Streams.
+ * Incredibly Portable Runtime - Random Numbers and Byte Streams.
  */
 
 /*

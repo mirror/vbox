@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - A Simple Heap.
+ * Incredibly Portable Runtime - A Simple Heap.
  */
 
 /*

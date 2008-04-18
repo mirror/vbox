@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Spinlocks.
+ * Incredibly Portable Runtime - Spinlocks.
  */
 
 /*

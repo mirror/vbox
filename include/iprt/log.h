@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Logging.
+ * Incredibly Portable Runtime - Logging.
  */
 
 /*
@@ -42,7 +42,7 @@ __BEGIN_DECLS
  */
 
 /**
- * innotek Portable Runtime Logging Groups.
+ * Incredibly Portable Runtime Logging Groups.
  * (Remember to update RT_LOGGROUP_NAMES!)
  *
  * @remark It should be pretty obvious, but just to have
@@ -70,7 +70,7 @@ typedef enum RTLOGGROUP
 } RTLOGGROUP;
 
 /** @def RT_LOGGROUP_NAMES
- * innotek Portable Runtime Logging group names.
+ * Incredibly Portable Runtime Logging group names.
  *
  * Must correspond 100% to RTLOGGROUP!
  * Don't forget commas!

@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Directory Manipulation.
+ * Incredibly Portable Runtime - Directory Manipulation.
  */
 
 /*

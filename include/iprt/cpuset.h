@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - CPU Set.
+ * Incredibly Portable Runtime - CPU Set.
  */
 
 /*

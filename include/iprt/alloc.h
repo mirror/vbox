@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Memory Allocation.
+ * Incredibly Portable Runtime - Memory Allocation.
  */
 
 /*

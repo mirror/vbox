@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Timer.
+ * Incredibly Portable Runtime - Timer.
  */
 
 /*
@@ -123,7 +123,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
 #define RTTIMER_FLAGS_CPU_ALL        ( RTTIMER_FLAGS_CPU_MASK | RTTIMER_FLAGS_CPU_SPECIFIC )
 /** CPU mask. */
 #define RTTIMER_FLAGS_CPU_MASK       0xff
-/** Convert a CPU number (0-based) to RTTimerCreateEx flags. 
+/** Convert a CPU number (0-based) to RTTimerCreateEx flags.
  * This will automatically OR in the RTTIMER_FLAG_CPU_SPECIFIC flag. */
 #define RTTIMER_FLAGS_CPU(iCpu)      ( (iCpu) | RTTIMER_FLAG_CPU_SPECIFIC )
 /** Macro that validates the flags. */
