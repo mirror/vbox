@@ -1063,24 +1063,22 @@
                                             <property name="title">
                                                 <string>Extended Features</string>
                                             </property>
-                                            <vbox>
+                                            <grid>
                                                 <property name="name">
                                                     <cstring>unnamed</cstring>
                                                 </property>
-                                                <widget class="QCheckBox">
+                                                <widget class="QCheckBox" row="0" column="1">
                                                     <property name="name">
-                                                        <cstring>chbEnableACPI</cstring>
+                                                        <cstring>chbPAE</cstring>
                                                     </property>
                                                     <property name="text">
-                                                        <string>Enable A&amp;CPI</string>
+                                                        <string>Enable PA&amp;E/NX</string>
                                                     </property>
                                                     <property name="whatsThis" stdset="0">
-                                                        <string>&lt;qt&gt;When checked, the virtual machine will support
-the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't disable
-this feature after having installed a Windows guest operating system!&lt;/qt&gt;</string>
+                                                        <string>This setting determines whether VirtualBox will expose the Physical Address Extension (PAE) feature of the host CPU to the guest.</string>
                                                     </property>
                                                 </widget>
-                                                <widget class="QCheckBox">
+                                                <widget class="QCheckBox" row="1" column="0">
                                                     <property name="name">
                                                         <cstring>chbEnableIOAPIC</cstring>
                                                     </property>
@@ -1093,7 +1091,20 @@ the Input Output APIC (IO APIC), which may slightly decrease the VM performance.
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</string>
                                                     </property>
                                                 </widget>
-                                                <widget class="QCheckBox">
+                                                <widget class="QCheckBox" row="0" column="0">
+                                                    <property name="name">
+                                                        <cstring>chbEnableACPI</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>Enable A&amp;CPI</string>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>&lt;qt&gt;When checked, the virtual machine will support
+the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't disable
+this feature after having installed a Windows guest operating system!&lt;/qt&gt;</string>
+                                                    </property>
+                                                </widget>
+                                                <widget class="QCheckBox" row="2" column="0">
                                                     <property name="name">
                                                         <cstring>chbVTX</cstring>
                                                     </property>
@@ -1107,7 +1118,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                                         <string>When checked, the virtual machine will try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</string>
                                                     </property>
                                                 </widget>
-                                            </vbox>
+                                            </grid>
                                         </widget>
                                     </hbox>
                                 </widget>
