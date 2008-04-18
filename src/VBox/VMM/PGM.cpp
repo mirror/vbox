@@ -1579,22 +1579,6 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("PGMR3Relocate\n"));
 
-#ifdef PGM_WITH_BROKEN_32PAE_SWITCHER
-    if (!CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
-    {
-        bool fEnable = false;
-        int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "EnablePAE", &fEnable);
-        if (    VBOX_SUCCESS(rc) 
-            &&  fEnable
-            &&  (PGMGetHostMode(pVM) >= PGMMODE_PAE || HWACCMIsEnabled(pVM))
-           )
-        {
-            CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
-            LogRel(("PGMR3Relocate: turned on PAE\n"));
-        }
-    }
-#endif
-
     /*
      * Paging stuff.
      */
