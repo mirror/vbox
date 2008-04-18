@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime / No-CRT - math.h, AMD inlined functions.
+ * Incredibly Portable Runtime / No-CRT - math.h, AMD inlined functions.
  */
 
 /*

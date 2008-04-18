@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime / No-CRT - compiler specifics.
+ * Incredibly Portable Runtime / No-CRT - compiler specifics.
  */
 
 /*
