@@ -32,6 +32,8 @@ extern "C"
 extern DECLSPEC int (SDLCALL *pTTF_Init)(void);
 extern DECLSPEC TTF_Font* (SDLCALL *pTTF_OpenFont)(const char *file, int ptsize);
 extern DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Solid)(TTF_Font *font, const char *text, SDL_Color fg);
+extern DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Shaded)(TTF_Font *font, const char *text, SDL_Color fg, SDL_Color bg);
+extern DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Blended)(TTF_Font *font, const char *text, SDL_Color fg);
 extern DECLSPEC void (SDLCALL *pTTF_CloseFont)(TTF_Font *font);
 extern DECLSPEC void (SDLCALL *pTTF_Quit)(void);
 }
