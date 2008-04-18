@@ -1855,7 +1855,7 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
     {
         case DeviceType_Floppy:
         {
-            for (unsigned i = 0; i < ELEMENTS(mapFDLeds); i++)
+            for (unsigned i = 0; i < RT_ELEMENTS(mapFDLeds); i++)
                 SumLed.u32 |= readAndClearLed(mapFDLeds[i]);
             break;
         }
@@ -1871,21 +1871,22 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
             SumLed.u32 |= readAndClearLed(mapIDELeds[0]);
             SumLed.u32 |= readAndClearLed(mapIDELeds[1]);
             SumLed.u32 |= readAndClearLed(mapIDELeds[3]);
-            for (unsigned i = 0; i < ELEMENTS(mapSATALeds); i++)
+            for (unsigned i = 0; i < RT_ELEMENTS(mapSATALeds); i++)
                 SumLed.u32 |= readAndClearLed(mapSATALeds[i]);
             break;
         }
 
         case DeviceType_Network:
         {
-            for (unsigned i = 0; i < ELEMENTS(mapNetworkLeds); i++)
+            for (unsigned i = 0; i < RT_ELEMENTS(mapNetworkLeds); i++)
                 SumLed.u32 |= readAndClearLed(mapNetworkLeds[i]);
             break;
         }
 
         case DeviceType_USB:
         {
-            SumLed.u32 |= readAndClearLed(mapUSBLed);
+            for (unsigned i = 0; i < RT_ELEMENTS(mapUSBLed); i++)
+                SumLed.u32 |= readAndClearLed(mapUSBLed[i]);
             break;
         }
 
