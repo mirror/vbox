@@ -63,7 +63,7 @@ retval=0
 if test -z "$vboxmouse_src"; then
     echo "*** Unknown version of the X Window System installed."
     echo "*** Failed to install the VirtualBox X Window System drivers."
-    
+
     # Exit as partially failed installation
     retval=2
 else

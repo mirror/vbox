@@ -23,6 +23,10 @@ ifneq ($(BUILD_PLATFORM),solaris)
 $(error "The Solaris guest additions installer can only be built on Solaris!")
 endif
 
+ifeq ($(BUILD_PLATFORM),solaris)
+ include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
+endif
+
 PKGFILENAME    := VBoxSolarisAdditions.pkg
 PKGINFO_ARCH    = $(shell uname -p)
 VBOX_PATH_SOLARIS_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/Installer
@@ -83,6 +87,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/preremove.sh                     $(SOLARISINSTDIR)/preremove.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.sh                     $(SOLARISINSTDIR)/vboxguest.sh
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml                  $(SOLARISINSTDIR)/vboxservice.xml
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.space                  $(SOLARISINSTDIR)/vboxguest.space
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop                   $(SOLARISINSTDIR)/vboxclient.desktop
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient                    $(SOLARISINSTDIR)/1099.vboxclient
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl                         $(SOLARISINSTDIR)/x11config.pl
@@ -103,6 +108,6 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so                                       $(SOLARISINSTDIR)/vboxmouse_drv_71.so
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxdevlink.sed                  $(SOLARISINSTDIR)/etc/devlink.tab
 	$(call MSG_L1,Creating install package: $@)
-	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME) 1>/dev/null 2>/dev/null
+	$(QUIET)$(SOLARISINSTDIR)/makepackage.sh $(SOLARISINSTDIR) $(PKGFILENAME)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARISINSTDIR)/$(PKGFILENAME) $(PATH_BIN)/additions/$(PKGFILENAME)
 
