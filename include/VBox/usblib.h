@@ -34,6 +34,9 @@
 #ifdef RT_OS_WINDOWS
 # include <VBox/usblib-win.h>
 #endif
+#ifdef RT_OS_SOLARIS
+# include <VBox/usblib-solaris.h>
+#endif
 #ifdef RT_OS_DARWIN
 # include <VBox/usblib-darwin.h>
 #endif
