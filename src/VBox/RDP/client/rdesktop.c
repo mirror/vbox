@@ -132,7 +132,7 @@ usage(char *program)
 {
 	fprintf(stderr, "rdesktop: A Remote Desktop Protocol client.\n");
 	fprintf(stderr, "Version " VERSION ". Copyright (C) 1999-2005 Matt Chapman.\n");
-        fprintf(stderr, "Modified for VirtualBox by innotek GmbH.\n");
+        fprintf(stderr, "Modified for VirtualBox by Sun Microsystems, Inc.\n");
 	fprintf(stderr, "See http://www.rdesktop.org/ for more information.\n\n");
 
 	fprintf(stderr, "Usage: %s [options] server[:port]\n", program);

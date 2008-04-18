@@ -422,7 +422,7 @@ int main (int argc, char **argv)
 
     LogFlow (("VBoxHeadless STARTED.\n"));
     RTPrintf ("VirtualBox Headless Interface %s\n"
-              "(C) 2005-2008 innotek GmbH\n"
+              "(C) 2008 Sun Microsystems, Inc.\n"
               "All rights reserved\n\n",
               VBOX_VERSION_STRING);
 
