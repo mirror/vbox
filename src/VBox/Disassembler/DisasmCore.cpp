@@ -1082,13 +1082,8 @@ unsigned ParseImmV(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 unsigned ParseImmV_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
     if (pCpu->opmode == CPUMODE_32BIT)
-    {
         return sizeof(uint32_t);
-    }
-    else
-    {
-        return sizeof(uint16_t);
-    }
+    return sizeof(uint16_t);
 }
 //*****************************************************************************
 // Relative displacement for branches (rel. to next instruction)
@@ -1136,13 +1131,8 @@ unsigned ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
 unsigned ParseImmVRel_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
     if (pCpu->opmode == CPUMODE_32BIT)
-    {
         return sizeof(int32_t);
-    }
-    else
-    {
-        return sizeof(uint16_t);
-    }
+    return sizeof(uint16_t);
 }
 //*****************************************************************************
 //*****************************************************************************
@@ -1499,9 +1489,7 @@ unsigned ParseShiftGrp2(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPa
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1521,9 +1509,7 @@ unsigned ParseGrp3(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1542,9 +1528,7 @@ unsigned ParseGrp4(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1563,9 +1547,7 @@ unsigned ParseGrp5(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1621,9 +1603,7 @@ unsigned ParseGrp6(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1641,22 +1621,16 @@ unsigned ParseGrp7(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     rm    = MODRM_RM(modrm);
 
     if (mod == 3 && rm == 0)
-    {
         pOp = (PCOPCODE)&g_aMapX86_Group7_mod11_rm000[reg];
-    }
     else
     if (mod == 3 && rm == 1)
-    {
         pOp = (PCOPCODE)&g_aMapX86_Group7_mod11_rm001[reg];
-    }
     else
         pOp = (PCOPCODE)&g_aMapX86_Group7_mem[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1675,9 +1649,7 @@ unsigned ParseGrp8(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1696,9 +1668,7 @@ unsigned ParseGrp9(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1717,9 +1687,7 @@ unsigned ParseGrp10(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1735,20 +1703,15 @@ unsigned ParseGrp12(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     reg   = MODRM_REG(modrm);
 
     if (pCpu->prefix & PREFIX_OPSIZE)
-    {
         reg += 8;   //2nd table
-    }
 
     pOp = (PCOPCODE)&g_aMapX86_Group12[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
-
     return size;
 }
 //*****************************************************************************
@@ -1760,17 +1723,13 @@ unsigned ParseGrp13(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     modrm = DISReadByte(pCpu, lpszCodeBlock);
     reg   = MODRM_REG(modrm);
     if (pCpu->prefix & PREFIX_OPSIZE)
-    {
         reg += 8;   //2nd table
-    }
 
     pOp = (PCOPCODE)&g_aMapX86_Group13[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1785,17 +1744,13 @@ unsigned ParseGrp14(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     modrm = DISReadByte(pCpu, lpszCodeBlock);
     reg   = MODRM_REG(modrm);
     if (pCpu->prefix & PREFIX_OPSIZE)
-    {
         reg += 8;   //2nd table
-    }
 
     pOp = (PCOPCODE)&g_aMapX86_Group14[reg];
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1819,12 +1774,9 @@ unsigned ParseGrp15(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
-
     return size;
 }
 //*****************************************************************************
@@ -1840,12 +1792,9 @@ unsigned ParseGrp16(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
-
     return size;
 }
 //*****************************************************************************
@@ -1862,14 +1811,10 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
     type    = OP_PARM_VTYPE(pParam->param);
     subtype = OP_PARM_VSUBTYPE(pParam->param);
     if (fRegAddr)
-    {
         subtype = OP_PARM_d;
-    }
     else
     if (subtype == OP_PARM_v || subtype == OP_PARM_NONE)
-    {
         subtype = (pCpu->opmode == CPUMODE_32BIT) ? OP_PARM_d : OP_PARM_w;
-    }
 
     switch (subtype)
     {
