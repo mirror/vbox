@@ -109,6 +109,8 @@ VBoxDbg_SOURCES    = \
 	VBoxDbgConsole.cpp \
 	VBoxDbgStats.cpp
 
+VBoxDbg_LDFLAGS.darwin = -install_name @executable_path/VBoxDbg.dylib
+
 VBoxDbg_LIBS = \
 	$(LIB_VMM)
 
