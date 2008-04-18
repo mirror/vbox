@@ -1011,7 +1011,7 @@ int main()
     GEN_CHECK_OFF(E1KSTATE, fDelayInts);
     GEN_CHECK_OFF(E1KSTATE, fIntMaskUsed);
     GEN_CHECK_OFF(E1KSTATE, fMaybeOutOfSpace);
-    GEN_CHECK_OFF(E1KSTATE, hEventOutOfRxSpace);
+    GEN_CHECK_OFF(E1KSTATE, hEventMoreRxDescAvail);
     GEN_CHECK_OFF(E1KSTATE, contextTSE);
     GEN_CHECK_OFF(E1KSTATE, contextNormal);
     GEN_CHECK_OFF(E1KSTATE, aTxPacket[E1K_MAX_TX_PKT_SIZE]);
