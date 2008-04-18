@@ -1,7 +1,7 @@
 [Desktop Entry]
 Encoding=UTF-8
 Version=1.0
-Name=innotek VirtualBox
+Name=Sun xVM VirtualBox
 GenericName=Virtual Machine
 Type=Application
 Exec=VirtualBox

@@ -1,5 +1,5 @@
 #!/bin/sh
-# innotek VirtualBox
+# Sun xVM VirtualBox
 # VirtualBox kernel module control script for Solaris.
 #
 # Copyright (C) 2007-2008 Sun Microsystems, Inc.

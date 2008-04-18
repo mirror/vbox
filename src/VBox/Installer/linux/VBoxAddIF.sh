@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# innotek VirtualBox
+# Sun xVM VirtualBox
 # Permanent host interface creation script for Linux systems.
 
 #
@@ -38,7 +38,7 @@ appadd="VBoxAddIF"
 appdel="VBoxDeleteIF"
 
 echo "VirtualBox host networking interface creation utility, version _VERSION_"
-echo "(C) 2005-2007 innotek GmbH"
+echo "(C) 2005-2007 Sun Microsystems, Inc."
 echo "All rights reserved."
 
 # Print out the correct usage instructions for the utility
