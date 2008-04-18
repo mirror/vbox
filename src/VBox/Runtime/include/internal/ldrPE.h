@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Windows NT PE Structures and Constants.
+ * Incredibly Portable Runtime - Windows NT PE Structures and Constants.
  */
 
 /*

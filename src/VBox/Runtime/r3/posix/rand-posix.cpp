@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Random Numbers and Byte Streams, POSIX.
+ * Incredibly Portable Runtime - Random Numbers and Byte Streams, POSIX.
  */
 
 /*

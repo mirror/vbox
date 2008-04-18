@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Event Semaphore, Linux (2.6.x+).
+ * Incredibly Portable Runtime - Event Semaphore, Linux (2.6.x+).
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Multiprocessor, Ring-0 Driver, Generic Stubs.
+ * Incredibly Portable Runtime - Multiprocessor, Ring-0 Driver, Generic Stubs.
  */
 
 /*

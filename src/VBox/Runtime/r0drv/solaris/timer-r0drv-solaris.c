@@ -1,6 +1,6 @@
 /** $Id$ */
 /** @file
- * innotek Portable Runtime - Timer, Ring-0 Driver, Solaris.
+ * Incredibly Portable Runtime - Timer, Ring-0 Driver, Solaris.
  */
 
 /*

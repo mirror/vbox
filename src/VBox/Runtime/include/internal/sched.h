@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Internal RTSched header.
+ * Incredibly Portable Runtime - Internal RTSched header.
  */
 
 /*

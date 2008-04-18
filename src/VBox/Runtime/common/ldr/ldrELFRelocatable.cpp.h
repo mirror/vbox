@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Binary Image Loader, Template for ELF Relocatable Images.
+ * Incredibly Portable Runtime - Binary Image Loader, Template for ELF Relocatable Images.
  */
 
 /*

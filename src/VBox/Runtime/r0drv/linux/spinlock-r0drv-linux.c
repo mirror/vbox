@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Spinlocks, Ring-0 Driver, Linux.
+ * Incredibly Portable Runtime - Spinlocks, Ring-0 Driver, Linux.
  */
 
 /*

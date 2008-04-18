@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Init Ring-3.
+ * Incredibly Portable Runtime - Init Ring-3.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Internal Header Defining The Magic Numbers.
+ * Incredibly Portable Runtime - Internal Header Defining The Magic Numbers.
  */
 
 /*

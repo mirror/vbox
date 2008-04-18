@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Error Messages.
+ * Incredibly Portable Runtime Testcase - Error Messages.
  */
 
 /*

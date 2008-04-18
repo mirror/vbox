@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Threads, common routines.
+ * Incredibly Portable Runtime - Threads, common routines.
  */
 
 /*

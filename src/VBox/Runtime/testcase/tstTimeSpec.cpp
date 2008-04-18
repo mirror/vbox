@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - RTTimeSpec and PRTTIME tests.
+ * Incredibly Portable Runtime - RTTimeSpec and PRTTIME tests.
  */
 
 /*

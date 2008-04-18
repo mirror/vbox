@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - RTDirSetTimes, generic implementation.
+ * Incredibly Portable Runtime - RTDirSetTimes, generic implementation.
  */
 
 /*

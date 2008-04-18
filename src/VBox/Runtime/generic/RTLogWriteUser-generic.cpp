@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Log User Specific Output, Generic Dummy.
+ * Incredibly Portable Runtime - Log User Specific Output, Generic Dummy.
  */
 
 /*

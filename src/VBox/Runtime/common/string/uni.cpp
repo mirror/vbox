@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Unicode.
+ * Incredibly Portable Runtime - Unicode.
  */
 
 /*

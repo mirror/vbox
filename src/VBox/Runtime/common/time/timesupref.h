@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Time using SUPLib, the C Code Template.
+ * Incredibly Portable Runtime - Time using SUPLib, the C Code Template.
  */
 
 /*

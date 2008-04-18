@@ -2891,7 +2891,7 @@ static int vga_copy_screen_from(PVGASTATE s, uint8_t *buf, int x, int y, int wid
 
 
 
-#ifdef VBOX /* innotek code start */
+#ifdef VBOX /* VirtualBox code start */
 
 
 /* -=-=-=-=-=- all contexts -=-=-=-=-=- */

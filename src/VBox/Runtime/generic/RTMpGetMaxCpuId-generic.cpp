@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Multiprocessor, Generic RTMpGetMaxCpuId.
+ * Incredibly Portable Runtime - Multiprocessor, Generic RTMpGetMaxCpuId.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Process, Ring-0 Driver, Darwin.
+ * Incredibly Portable Runtime - Process, Ring-0 Driver, Darwin.
  */
 
 /*

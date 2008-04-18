@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Fast Mutex Semaphores, Ring-0 Driver, Solaris.
+ * Incredibly Portable Runtime - Fast Mutex Semaphores, Ring-0 Driver, Solaris.
  */
 
 /*

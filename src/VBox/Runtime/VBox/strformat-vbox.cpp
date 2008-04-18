@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - VBox String Formatter extensions.
+ * Incredibly Portable Runtime - VBox String Formatter extensions.
  */
 
 /*

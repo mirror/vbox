@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Directory manipulation, POSIX.
+ * Incredibly Portable Runtime - Directory manipulation, POSIX.
  */
 
 /*

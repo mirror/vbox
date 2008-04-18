@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - RTDirQueryInfo, generic implementation.
+ * Incredibly Portable Runtime - RTDirQueryInfo, generic implementation.
  */
 
 /*

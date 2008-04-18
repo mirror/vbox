@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - RTFileMove, Generic.
+ * Incredibly Portable Runtime - RTFileMove, Generic.
  */
 
 /*

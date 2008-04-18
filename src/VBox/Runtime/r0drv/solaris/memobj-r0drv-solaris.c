@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Ring-0 Memory Objects, Solaris.
+ * Incredibly Portable Runtime - Ring-0 Memory Objects, Solaris.
  */
 
 /*

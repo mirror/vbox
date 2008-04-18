@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - String Formatter.
+ * Incredibly Portable Runtime - String Formatter.
  */
 
 /*
@@ -787,7 +787,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                     }
 
                     /*
-                     * innotek Portable Runtime Extensions.
+                     * Incredibly Portable Runtime Extensions.
                      */
                     case 'R':
                     {

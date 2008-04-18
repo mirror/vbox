@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Thread Local Storage (TSL), Generic Implementation.
+ * Incredibly Portable Runtime - Thread Local Storage (TSL), Generic Implementation.
  */
 
 /*

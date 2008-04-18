@@ -79,7 +79,7 @@
 static const char DefaultGlobalConfig [] =
 {
     "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" RTFILE_LINEFEED
-    "<!-- innotek VirtualBox Global Configuration -->" RTFILE_LINEFEED
+    "<!-- Sun xVM VirtualBox Global Configuration -->" RTFILE_LINEFEED
     "<VirtualBox xmlns=\"" VBOX_XML_NAMESPACE "\" "
         "version=\"" VBOX_XML_VERSION_FULL "\">" RTFILE_LINEFEED
     "  <Global>"RTFILE_LINEFEED

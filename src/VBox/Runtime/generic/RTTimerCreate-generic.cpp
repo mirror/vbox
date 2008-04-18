@@ -1,6 +1,6 @@
 /** $Id$ */
 /** @file
- * innotek Portable Runtime - Timers, Generic RTTimerCreate() Implementation.
+ * Incredibly Portable Runtime - Timers, Generic RTTimerCreate() Implementation.
  */
 
 /*

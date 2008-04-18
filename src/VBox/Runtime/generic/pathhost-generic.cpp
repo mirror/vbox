@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Path Convertions, generic.
+ * Incredibly Portable Runtime - Path Convertions, generic.
  */
 
 /*

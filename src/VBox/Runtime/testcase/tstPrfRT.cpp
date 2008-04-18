@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime testcase - profile some of the important functions.
+ * Incredibly Portable Runtime testcase - profile some of the important functions.
  */
 
 /*

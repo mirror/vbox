@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - inline assembly.
+ * Incredibly Portable Runtime Testcase - inline assembly.
  */
 
 /*

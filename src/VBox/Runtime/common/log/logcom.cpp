@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Logging to Serial Port.
+ * Incredibly Portable Runtime - Logging to Serial Port.
  */
 
 /*

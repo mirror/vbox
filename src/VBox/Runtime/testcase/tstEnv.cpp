@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Environment.
+ * Incredibly Portable Runtime Testcase - Environment.
  */
 
 /*

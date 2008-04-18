@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - file IoCtl.
+ * Incredibly Portable Runtime Testcase - file IoCtl.
  */
 
 /*

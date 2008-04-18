@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Spinlock, generic implementation.
+ * Incredibly Portable Runtime - Spinlock, generic implementation.
  */
 
 /*

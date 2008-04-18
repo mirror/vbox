@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - UUID, Generic.
+ * Incredibly Portable Runtime - UUID, Generic.
  */
 
 /*

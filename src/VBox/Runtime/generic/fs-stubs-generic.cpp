@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - File System, Generic Stubs.
+ * Incredibly Portable Runtime - File System, Generic Stubs.
  */
 
 /*

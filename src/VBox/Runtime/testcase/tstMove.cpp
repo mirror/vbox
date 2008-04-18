@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - RTFileMove & RTDirMove test program.
+ * Incredibly Portable Runtime - RTFileMove & RTDirMove test program.
  */
 
 /*

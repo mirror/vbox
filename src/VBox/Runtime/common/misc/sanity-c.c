@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Setup Sanity Checks, C.
+ * Incredibly Portable Runtime - Setup Sanity Checks, C.
  */
 
 /*

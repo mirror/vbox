@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Log To Debugger, Ring-0 Driver, Solaris.
+ * Incredibly Portable Runtime - Log To Debugger, Ring-0 Driver, Solaris.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Assertions, generic RTAssertDoBreakpoint.
+ * Incredibly Portable Runtime - Assertions, generic RTAssertDoBreakpoint.
  */
 
 /*

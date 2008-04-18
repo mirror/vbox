@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Memory Allocation, Ring-0 Driver, FreeBSD.
+ * Incredibly Portable Runtime - Memory Allocation, Ring-0 Driver, FreeBSD.
  */
 
 /*
@@ -45,8 +45,8 @@
 *******************************************************************************/
 /* These two statements will define two globals and add initializers
    and destructors that will be called at load/unload time (I think). */
-MALLOC_DEFINE(M_IPRTHEAP, "iprtheap", "innotek Portable Runtime - heap");
-MALLOC_DEFINE(M_IPRTCONT, "iprtcont", "innotek Portable Runtime - contiguous");
+MALLOC_DEFINE(M_IPRTHEAP, "iprtheap", "Incredibly Portable Runtime - heap");
+MALLOC_DEFINE(M_IPRTCONT, "iprtcont", "Incredibly Portable Runtime - contiguous");
 
 
 PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)

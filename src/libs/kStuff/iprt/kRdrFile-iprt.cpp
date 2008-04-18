@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - kRdr Backend.
+ * Incredibly Portable Runtime - kRdr Backend.
  */
 
 /*

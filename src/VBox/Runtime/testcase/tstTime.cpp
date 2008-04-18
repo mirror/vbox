@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Simple RTTime tests.
+ * Incredibly Portable Runtime Testcase - Simple RTTime tests.
  */
 
 /*

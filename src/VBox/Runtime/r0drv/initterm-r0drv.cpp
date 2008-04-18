@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Initialization & Termination, R0 Driver, Common.
+ * Incredibly Portable Runtime - Initialization & Termination, R0 Driver, Common.
  */
 
 /*

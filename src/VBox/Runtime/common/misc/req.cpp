@@ -1,6 +1,6 @@
 /* $Id: VMReq.cpp 17451 2007-01-15 14:08:28Z bird $ */
 /** @file
- * innotek Portable Runtime - Request packets
+ * Incredibly Portable Runtime - Request packets
  */
 
 /*

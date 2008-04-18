@@ -1,6 +1,6 @@
 ; $Id$%ifndef IN_GUEST
 ;; @file
-; innotek Portable Runtime - Time using SUPLib, the Assembly Implementation.
+; Incredibly Portable Runtime - Time using SUPLib, the Assembly Implementation.
 ;
 
 ;

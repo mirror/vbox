@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Status code messages.
+ * Incredibly Portable Runtime - Status code messages.
  */
 
 /*

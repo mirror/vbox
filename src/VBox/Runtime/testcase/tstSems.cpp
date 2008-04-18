@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - Simple Semaphore Smoke Test.
+ * Incredibly Portable Runtime Testcase - Simple Semaphore Smoke Test.
  */
 
 /*

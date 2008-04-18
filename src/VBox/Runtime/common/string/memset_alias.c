@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - No-CRT memset() alias for gcc.
+ * Incredibly Portable Runtime - No-CRT memset() alias for gcc.
  */
 
 /*

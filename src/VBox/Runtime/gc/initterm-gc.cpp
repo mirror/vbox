@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Init Guest Context.
+ * Incredibly Portable Runtime - Init Guest Context.
  */
 
 /*

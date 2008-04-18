@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - CRC64.
+ * Incredibly Portable Runtime - CRC64.
  *
  * The method to compute the CRC64 is referred to as CRC-64-ISO:
  *     http://en.wikipedia.org/wiki/Cyclic_redundancy_check

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - String Manipulation.
+ * Incredibly Portable Runtime - String Manipulation.
  */
 
 /*

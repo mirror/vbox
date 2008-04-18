@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * innotek Qt extensions: QIStateIndicator class declaration
+ * VirtualBox Qt extensions: QIStateIndicator class declaration
  */
 
 /*

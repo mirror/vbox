@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime Testcase - SMP TSC testcase.
+ * Incredibly Portable Runtime Testcase - SMP TSC testcase.
  */
 
 /*

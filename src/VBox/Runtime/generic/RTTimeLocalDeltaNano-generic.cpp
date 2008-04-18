@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Time, generic RTTimeLocalDeltaNano.
+ * Incredibly Portable Runtime - Time, generic RTTimeLocalDeltaNano.
  */
 
 /*

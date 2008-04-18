@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - CRT Strings, strcpy().
+ * Incredibly Portable Runtime - CRT Strings, strcpy().
  */
 
 /*

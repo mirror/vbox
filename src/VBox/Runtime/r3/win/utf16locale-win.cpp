@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - UTF-16 Locale Specific Manipulation, Win32.
+ * Incredibly Portable Runtime - UTF-16 Locale Specific Manipulation, Win32.
  */
 
 /*

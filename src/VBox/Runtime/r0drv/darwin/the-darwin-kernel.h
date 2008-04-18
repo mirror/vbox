@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Include all necessary headers for the Darwing kernel.
+ * Incredibly Portable Runtime - Include all necessary headers for the Darwing kernel.
  */
 
 /*
