@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Include Everything.
+ * Incredibly Portable Runtime - Include Everything.
  */
 
 /*

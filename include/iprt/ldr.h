@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Loader.
+ * Incredibly Portable Runtime - Loader.
  */
 
 /*
@@ -86,7 +86,7 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, PRTLDRMOD phLdrMod);
 
 /**
  * Opens a binary image file using kLdr.
- * 
+ *
  * @returns iprt status code.
  * @param   pszFilename     Image filename.
  * @param   phLdrMod        Where to store the handle to the loaded module.

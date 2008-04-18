@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Parameter Definitions.
+ * Incredibly Portable Runtime - Parameter Definitions.
  */
 
 /*

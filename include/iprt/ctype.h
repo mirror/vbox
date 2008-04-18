@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - ctype.h wrapper and C locale variants.
+ * Incredibly Portable Runtime - ctype.h wrapper and C locale variants.
  */
 
 /*

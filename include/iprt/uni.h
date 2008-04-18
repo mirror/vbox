@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Unicode Code Points.
+ * Incredibly Portable Runtime - Unicode Code Points.
  */
 
 /*

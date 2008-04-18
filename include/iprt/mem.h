@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Memory Management and Manipulation.
+ * Incredibly Portable Runtime - Memory Management and Manipulation.
  */
 
 /*

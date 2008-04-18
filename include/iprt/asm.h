@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Assembly Functions.
+ * Incredibly Portable Runtime - Assembly Functions.
  */
 
 /*

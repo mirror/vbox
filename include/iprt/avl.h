@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - AVL Trees.
+ * Incredibly Portable Runtime - AVL Trees.
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Universal Unique Identifiers (UUID).
+ * Incredibly Portable Runtime - Universal Unique Identifiers (UUID).
  */
 
 /*

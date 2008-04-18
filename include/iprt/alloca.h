@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - alloca().
+ * Incredibly Portable Runtime - alloca().
  */
 
 /*

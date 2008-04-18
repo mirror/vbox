@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Assertions.
+ * Incredibly Portable Runtime - Assertions.
  */
 
 /*

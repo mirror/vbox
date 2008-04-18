@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Status Codes.
+ * Incredibly Portable Runtime - Status Codes.
  */
 
 /*

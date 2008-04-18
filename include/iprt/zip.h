@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Compression.
+ * Incredibly Portable Runtime - Compression.
  */
 
 /*

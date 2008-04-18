@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Request packets
+ * Incredibly Portable Runtime - Request packets
  */
 
 /*

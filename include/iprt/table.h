@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Abstract Table/Trees.
+ * Incredibly Portable Runtime - Abstract Table/Trees.
  */
 
 /*

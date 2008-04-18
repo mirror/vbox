@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - System.
+ * Incredibly Portable Runtime - System.
  */
 
 /*

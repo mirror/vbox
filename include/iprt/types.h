@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Types.
+ * Incredibly Portable Runtime - Types.
  */
 
 /*
@@ -109,7 +109,7 @@
 
 
 
-/** @defgroup grp_rt_types  innotek Portable Runtime Base Types
+/** @defgroup grp_rt_types  Incredibly Portable Runtime Base Types
  * @{
  */
 

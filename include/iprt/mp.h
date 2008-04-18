@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Multiprocessor.
+ * Incredibly Portable Runtime - Multiprocessor.
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - Semaphore.
+ * Incredibly Portable Runtime - Semaphore.
  */
 
 /*

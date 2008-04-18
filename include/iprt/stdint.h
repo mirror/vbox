@@ -1,5 +1,5 @@
 /** @file
- * innotek Portable Runtime - stdint.h wrapper (for backlevel compilers like MSC).
+ * Incredibly Portable Runtime - stdint.h wrapper (for backlevel compilers like MSC).
  */
 
 /*
