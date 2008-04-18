@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
     if (!fDaemonize)
         printf("VirtualBox timesync daemon.\n"
-               "(C) 2005-2008 innotek GmbH\n"
+               "(C) 2008 Sun Microsystems, Inc.\n"
                "\nSync interval: %d seconds.\n", secInterval);
 
     if (fDaemonize)

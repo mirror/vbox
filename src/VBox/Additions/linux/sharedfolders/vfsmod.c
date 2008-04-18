@@ -46,7 +46,7 @@
 #define str(s) #s
 
 MODULE_DESCRIPTION ("Host file system access VFS for VirtualBox");
-MODULE_AUTHOR ("innotek GmbH");
+MODULE_AUTHOR ("Sun Microsystems, Inc.");
 MODULE_LICENSE ("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")");
