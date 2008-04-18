@@ -13,7 +13,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-echo "innotek VirtualBox Guest Additions - postinstall script"
+echo "Sun xVM VirtualBox Guest Additions - postinstall script"
 echo "This script will setup and load the VirtualBox Guest kernel module..."
 
 sync
