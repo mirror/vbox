@@ -191,7 +191,7 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
             return rc;
 
         /*
-         * Get PT entry and check presentness.
+         * Get PT entry and check presence.
          */
         const GSTPTE Pte = pPT->a[(GCPtr >> GST_PT_SHIFT) & GST_PT_MASK];
         if (!Pte.n.u1Present)

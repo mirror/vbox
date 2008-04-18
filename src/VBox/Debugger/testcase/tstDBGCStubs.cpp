@@ -22,12 +22,12 @@
 #include <VBox/err.h>
 #include <VBox/cpum.h>
 
-CPUMDECL(uint32_t) CPUMGetGuestCR3(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestCR3(PVM pVM)
 {
     return 0;
 }
 
-CPUMDECL(uint32_t) CPUMGetGuestCR4(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestCR4(PVM pVM)
 {
     return 0;
 }
