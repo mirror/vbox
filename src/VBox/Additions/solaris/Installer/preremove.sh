@@ -13,7 +13,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-echo "innotek VirtualBox Guest Additions - preremove script"
+echo "Sun xVM VirtualBox Guest Additions - preremove script"
 echo "This script will unload the VirtualBox Guest kernel module..."
 
 # stop and unregister VBoxService daemon
