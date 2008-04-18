@@ -455,7 +455,7 @@ CPUMDECL(int) CPUMSetGuestLDTR(PVM pVM, uint16_t ldtr)
  * @param   pVM     Pointer to the shared VM structure.
  * @param   cr0     The new CR0 value.
  */
-CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint32_t cr0)
+CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint64_t cr0)
 {
 #ifdef IN_GC
     /*
@@ -521,20 +521,20 @@ CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint32_t cr0)
     return VINF_SUCCESS;
 }
 
-CPUMDECL(int) CPUMSetGuestCR2(PVM pVM, uint32_t cr2)
+CPUMDECL(int) CPUMSetGuestCR2(PVM pVM, uint64_t cr2)
 {
     pVM->cpum.s.Guest.cr2 = cr2;
     return VINF_SUCCESS;
 }
 
-CPUMDECL(int) CPUMSetGuestCR3(PVM pVM, uint32_t cr3)
+CPUMDECL(int) CPUMSetGuestCR3(PVM pVM, uint64_t cr3)
 {
     pVM->cpum.s.Guest.cr3 = cr3;
     pVM->cpum.s.fChanged |= CPUM_CHANGED_CR3;
     return VINF_SUCCESS;
 }
 
-CPUMDECL(int) CPUMSetGuestCR4(PVM pVM, uint32_t cr4)
+CPUMDECL(int) CPUMSetGuestCR4(PVM pVM, uint64_t cr4)
 {
     if (    (cr4                   & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE))
         !=  (pVM->cpum.s.Guest.cr4 & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE)))
@@ -694,22 +694,22 @@ CPUMDECL(RTSEL) CPUMGetGuestLDTR(PVM pVM)
     return pVM->cpum.s.Guest.ldtr;
 }
 
-CPUMDECL(uint32_t) CPUMGetGuestCR0(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestCR0(PVM pVM)
 {
     return pVM->cpum.s.Guest.cr0;
 }
 
-CPUMDECL(uint32_t) CPUMGetGuestCR2(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestCR2(PVM pVM)
 {
     return pVM->cpum.s.Guest.cr2;
 }
 
-CPUMDECL(uint32_t) CPUMGetGuestCR3(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestCR3(PVM pVM)
 {
     return pVM->cpum.s.Guest.cr3;
 }
 
-CPUMDECL(uint32_t) CPUMGetGuestCR4(PVM pVM)
+CPUMDECL(uint64_t) CPUMGetGuestCR4(PVM pVM)
 {
     return pVM->cpum.s.Guest.cr4;
 }
@@ -775,7 +775,7 @@ CPUMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM)
 }
 
 //@todo: crx should be an array
-CPUMDECL(int) CPUMGetGuestCRx(PVM pVM, uint32_t iReg, uint32_t *pValue)
+CPUMDECL(int) CPUMGetGuestCRx(PVM pVM, unsigned iReg, uint64_t *pValue)
 {
     switch (iReg)
     {

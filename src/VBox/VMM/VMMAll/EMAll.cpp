@@ -1651,14 +1651,15 @@ static int emInterpretCpuId(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
  */
 EMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
 {
-    uint32_t val32;
+    uint64_t val64;
 
-    int rc = CPUMGetGuestCRx(pVM, SrcRegCrx, &val32);
+    int rc = CPUMGetGuestCRx(pVM, SrcRegCrx, &val64);
     AssertMsgRCReturn(rc, ("CPUMGetGuestCRx %d failed\n", SrcRegCrx), VERR_EM_INTERPRETER);
-    rc = DISWriteReg32(pRegFrame, DestRegGen, val32);
+    /** @todo AMD64 */
+    rc = DISWriteReg32(pRegFrame, DestRegGen, val64);
     if(VBOX_SUCCESS(rc))
     {
-        LogFlow(("MOV_CR: gen32=%d CR=%d val=%08x\n", DestRegGen, SrcRegCrx, val32));
+        LogFlow(("MOV_CR: gen32=%d CR=%d val=%VX64\n", DestRegGen, SrcRegCrx, val64));
         return VINF_SUCCESS;
     }
     return VERR_EM_INTERPRETER;
