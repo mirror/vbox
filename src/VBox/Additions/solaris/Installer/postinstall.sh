@@ -103,7 +103,7 @@ vboxclient_dest="/usr/dt/config/Xsession.d"
 if test -d "$vboxclient_dest"; then
     /usr/sbin/installf -c none $PKGINST "$vboxclient_dest/1099.vboxclient" f
     cp "$vboxclient_src/1099.vboxclient" "$vboxclient_dest/1099.vboxclient"
-    chmod a+rw "$vboxclient_dest/1099.vboxclient"
+    chmod a+rwx "$vboxclient_dest/1099.vboxclient"
 elif test -d "/usr/share/gnome/autostart"; then
     vboxclient_dest="/usr/share/gnome/autostart"
     /usr/sbin/installf -c none $PKGINST "$vboxclient_dest/vboxclient.desktop" f
