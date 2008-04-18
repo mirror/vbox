@@ -41,17 +41,18 @@ int main()
     RTOPTIONUNION Val;
 #define CHECK(expr)  do { if (!(expr)) { RTPrintf("tstGetOpt: error line %d (i=%d): %s\n", __LINE__, i, #expr); cErrors++; } } while (0)
 
-#define CHECK_GETOPT(expr, chRet, iNext) \
+#define CHECK_GETOPT(expr, chRet, iInc) \
     do { \
+        const int iPrev = i; \
         CHECK((expr) == (chRet)); \
-        CHECK(i == (iNext)); \
-        i = (iNext); \
+        CHECK(i == (iInc) + iPrev); \
+        i = (iInc) + iPrev; \
     } while (0)
 
     /*
      * Simple.
      */
-    static const RTOPTIONDEF s_aOpts2[] = 
+    static const RTOPTIONDEF s_aOpts2[] =
     {
         { "--optwithstring",    's', RTGETOPT_REQ_STRING },
         { "--optwithint",       'i', RTGETOPT_REQ_INT32 },
@@ -60,12 +61,20 @@ int main()
         { "--quiet",            384, RTGETOPT_REQ_NOTHING },
     };
 
-    char *argv2[] = 
+    char *argv2[] =
     {
         "-s",               "string1",
         "--optwithstring",  "string2",
         "-i",               "-42",
+        "-i:-42",
+        "-i=-42",
+        "-i:",              "-42",
+        "-i=",              "-42",
         "--optwithint",     "42",
+        "--optwithint:42",
+        "--optwithint=42",
+        "--optwithint:",    "42",
+        "--optwithint=",    "42",
         "-v",
         "--verbose",
         "-q",
@@ -79,21 +88,42 @@ int main()
     i = 0;
     CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 's', 2);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string1"));
-    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 's', 4);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 's', 2);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string2"));
-    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 6);
+
+    /* -i */
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 2);
     CHECK(Val.i32 == -42);
-    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 8);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 1);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 1);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 2);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 2);
+    CHECK(Val.i32 == -42);
+
+    /* --optwithint */
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 2);
     CHECK(Val.i32 == 42);
-    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'v', 9);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 1);
+    CHECK(Val.i32 == 42);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 1);
+    CHECK(Val.i32 == 42);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 2);
+    CHECK(Val.i32 == 42);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'i', 2);
+    CHECK(Val.i32 == 42);
+
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'v', 1);
     CHECK(Val.pDef == &s_aOpts2[2]);
-    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'v', 10);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'v', 1);
     CHECK(Val.pDef == &s_aOpts2[2]);
-    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'q', 11);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 'q', 1);
     CHECK(Val.pDef == &s_aOpts2[3]);
-    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 384, 12);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 384, 1);
     CHECK(Val.pDef == &s_aOpts2[4]);
-    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 0, 12);
+    CHECK_GETOPT(RTGetOpt(argc2, argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), &i, &Val), 0, 0);
     CHECK(Val.pDef == NULL);
     CHECK(argc2 == i);
 

@@ -37,20 +37,44 @@ __BEGIN_DECLS
  * @{
  */
 
-/** @name RTOPTIONDEF::f
+/** @name RTOPTIONDEF::fFlags
+ *
+ * @remarks When neither of the RTGETOPT_FLAG_HEX, RTGETOPT_FLAG_OCT and RTGETOPT_FLAG_DEC
+ *          flags are specified with a integer value format, RTGetOpt will default to
+ *          decimal but recognize the 0x prefix when present. RTGetOpt will not look for
+ *          for the octal prefix (0).
  * @{ */
-
-/** Requires no extra argument. 
+/** Requires no extra argument.
  * (Can be assumed to be 0 for ever.) */
 #define RTGETOPT_REQ_NOTHING                    0
 /** A value is required or error will be returned. */
 #define RTGETOPT_REQ_STRING                     1
+/** The value must be a valid signed 8-bit integer or an error will be returned. */
+#define RTGETOPT_REQ_INT8                       2
+/** The value must be a valid unsigned 8-bit integer or an error will be returned. */
+#define RTGETOPT_REQ_UINT8                      3
+/** The value must be a valid signed 16-bit integer or an error will be returned. */
+#define RTGETOPT_REQ_INT16                      4
+/** The value must be a valid unsigned 16-bit integer or an error will be returned. */
+#define RTGETOPT_REQ_UINT16                     5
 /** The value must be a valid signed 32-bit integer or an error will be returned. */
-#define RTGETOPT_REQ_INT32                      2
-/** The value must be a valid signed 32-bit integer or an error will be returned. */
-#define RTGETOPT_REQ_UINT32                     3
+#define RTGETOPT_REQ_INT32                      6
+/** The value must be a valid unsigned 32-bit integer or an error will be returned. */
+#define RTGETOPT_REQ_UINT32                     7
+/** The value must be a valid signed 64-bit integer or an error will be returned. */
+#define RTGETOPT_REQ_INT64                      8
+/** The value must be a valid unsigned 64-bit integer or an error will be returned. */
+#define RTGETOPT_REQ_UINT64                     9
 /** The mask of the valid required types. */
-#define RTGETOPT_REQ_MASK                       3
+#define RTGETOPT_REQ_MASK                       15
+/** Treat the value as hexadecimal - only applicable with the RTGETOPT_REQ_*INT*. */
+#define RTGETOPT_FLAG_HEX                       RT_BIT(16)
+/** Treat the value as octal - only applicable with the RTGETOPT_REQ_*INT*. */
+#define RTGETOPT_FLAG_OCT                       RT_BIT(17)
+/** Treat the value as decimal - only applicable with the RTGETOPT_REQ_*INT*. */
+#define RTGETOPT_FLAG_DEC                       RT_BIT(18)
+/** Mask of valid bits - for validation. */
+#define RTGETOPT_VALID_MASK                     ( RTGETOPT_REQ_MASK | RTGETOPT_FLAG_HEX | RTGETOPT_FLAG_OCT | RTGETOPT_FLAG_DEC )
 /** @} */
 
 /**
@@ -61,8 +85,8 @@ typedef struct RTOPTIONDEF
     /** The long option.
      * This is optional */
     const char     *pszLong;
-    /** The short option character. 
-     * This doesn't have to be a character, it may also be a \#define or enum value if 
+    /** The short option character.
+     * This doesn't have to be a character, it may also be a \#define or enum value if
      * there isn't any short version of this option. */
     int             iShort;
     /** The flags (RTGETOPT_*). */
@@ -75,8 +99,13 @@ typedef const RTOPTIONDEF *PCRTOPTIONDEF;
 
 /**
  * Option argument union.
- * 
+ *
  * What ends up here depends on argument format in the option definition.
+ *
+ * @remarks Integers will bet put in the \a i and \a u members and sign/zero extended
+ *          according to the signedness indicated by the \a fFlags. So, you can choose
+ *          use which ever of the integer members for accessing the value regardless
+ *          of restrictions indicated in the \a fFlags.
  */
 typedef union RTOPTIONUNION
 {
@@ -85,13 +114,36 @@ typedef union RTOPTIONUNION
     PCRTOPTIONDEF   pDef;
     /** A RTGETOPT_ARG_FORMAT_STRING option argument. */
     const char     *psz;
-    /** A RTGETOPT_ARG_FORMAT_INT32 option argument. */
+
+#if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)
+# error "PORTME: big-endian systems will need to fix the layout here to get the next two fields working right"
+#endif
+
+    /** A RTGETOPT_ARG_FORMAT_INT8 option argument. */
+    int8_t          i8;
+    /** A RTGETOPT_ARG_FORMAT_UINT8 option argument . */
+    uint8_t         u8;
+    /** A RTGETOPT_ARG_FORMAT_INT16 option argument. */
+    int16_t         i16;
+    /** A RTGETOPT_ARG_FORMAT_UINT16 option argument . */
+    uint16_t        u16;
+    /** A RTGETOPT_ARG_FORMAT_INT16 option argument. */
     int32_t         i32;
     /** A RTGETOPT_ARG_FORMAT_UINT32 option argument . */
     uint32_t        u32;
+    /** A RTGETOPT_ARG_FORMAT_INT64 option argument. */
+    int64_t         i64;
+    /** A RTGETOPT_ARG_FORMAT_UINT64 option argument. */
+    uint64_t        u64;
+    /** A signed integer value. */
+    int64_t         i;
+    /** An unsigned integer value. */
+    uint64_t        u;
 } RTOPTIONUNION;
 /** Pointer to an option argument union. */
 typedef RTOPTIONUNION *PRTOPTIONUNION;
+/** Pointer to a const option argument union. */
+typedef RTOPTIONUNION const *PCRTOPTIONUNION;
 
 
 /**
@@ -99,7 +151,7 @@ typedef RTOPTIONUNION *PRTOPTIONUNION;
  * argument formats, if desired.
  *
  * This is to be called in a loop until it returns 0 (meaning that all options
- * were parsed) or a negative value (meaning that an error occured). The passed in 
+ * were parsed) or a negative value (meaning that an error occured). The passed in
  * argument vector is sorted into options and non-option arguments, such that when
  * returning 0 the *piThis is the index of the first non-option argument.
  *
@@ -114,7 +166,7 @@ typedef RTOPTIONUNION *PRTOPTIONUNION;
  * @code
  * int main(int argc, char *argv[])
  * {
- *      static const RTOPTIONDEF g_aOptions[] = 
+ *      static const RTOPTIONDEF g_aOptions[] =
  *      {
  *          { "--optwithstring",    's', RTGETOPT_REQ_STRING },
  *          { "--optwithint",       'i', RTGETOPT_REQ_INT32 },
@@ -144,12 +196,12 @@ typedef RTOPTIONUNION *PRTOPTIONUNION;
  *                  break;
  *          }
  *      }
- *     
+ *
  *      while (i < argc)
  *      {
  *          //do stuff to argv[i].
  *      }
- * 
+ *
  *      return 0;
  * }
  * @endcode
@@ -163,7 +215,7 @@ typedef RTOPTIONUNION *PRTOPTIONUNION;
  * @param pValueUnion   union with value; in the event of an error, psz member points to erroneous parameter; otherwise, for options
  *                      that require an argument, this contains the value of that argument, depending on the type that is required.
  */
-RTDECL(int) RTGetOpt(int argc, char *argv[], PCRTOPTIONDEF paOptions, size_t cOptions, int *piThis, PRTOPTIONUNION pValueUnion);
+RTDECL(int) RTGetOpt(int argc, char **argv, PCRTOPTIONDEF paOptions, size_t cOptions, int *piThis, PRTOPTIONUNION pValueUnion);
 
 /** @} */
 
