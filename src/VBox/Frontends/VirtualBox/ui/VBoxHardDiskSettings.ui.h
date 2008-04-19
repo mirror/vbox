@@ -799,7 +799,7 @@ void VBoxHardDiskSettings::onAfterCurrentChanged (QListViewItem *aItem)
     mPrevItem = aItem;
 }
 
-void VBoxHardDiskSettings::onContextMenuRequested (QListViewItem *aItem,
+void VBoxHardDiskSettings::onContextMenuRequested (QListViewItem * /*aItem*/,
                                                    const QPoint &aPoint, int)
 {
     mContextMenu->exec (aPoint);
