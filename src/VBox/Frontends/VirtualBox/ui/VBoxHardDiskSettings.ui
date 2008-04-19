@@ -60,9 +60,6 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
                     <property name="text">
                         <string>&amp;Enable SATA Controller</string>
                     </property>
-                    <property name="accel">
-                        <string>Alt+E</string>
-                    </property>
                     <property name="whatsThis" stdset="0">
                         <string>
                           &lt;qt&gt;When checked, enables the virtual SATA
