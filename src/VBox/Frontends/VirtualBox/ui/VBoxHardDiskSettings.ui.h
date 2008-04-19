@@ -567,7 +567,19 @@ void VBoxHardDiskSettings::getFromMachine (const CMachine &aMachine)
 {
     mMachine = aMachine;
 
-    mCbSATA->setChecked (mMachine.GetSATAController().GetEnabled());
+    {
+        CSATAController ctl = mMachine.GetSATAController();
+        if (ctl.isNull())
+        {
+            /* hide the SATA check box if the SATA controller is not available
+             * (i.e. in VirtualBox OSE) */
+            mCbSATA->setHidden (true);
+        }
+        else
+        {
+            mCbSATA->setChecked (ctl.GetEnabled());
+        }
+    }
 
     CHardDiskAttachmentEnumerator en =
         mMachine.GetHardDiskAttachments().Enumerate();
@@ -586,7 +598,11 @@ void VBoxHardDiskSettings::getFromMachine (const CMachine &aMachine)
 
 void VBoxHardDiskSettings::putBackToMachine()
 {
-    mMachine.GetSATAController().SetEnabled (mCbSATA->isChecked());
+    CSATAController ctl = mMachine.GetSATAController();
+    if (!ctl.isNull())
+    {
+        ctl.SetEnabled (mCbSATA->isChecked());
+    }
 
     /* Detach all attached Hard Disks */
     CHardDiskAttachmentEnumerator en =
@@ -620,7 +636,10 @@ void VBoxHardDiskSettings::putBackToMachine()
         item = item->nextSibling();
     }
 
-    mMachine.GetSATAController().SetPortCount (maxSATAPort);
+    if (!ctl.isNull())
+    {
+        mMachine.GetSATAController().SetPortCount (maxSATAPort);
+    }
 }
 
 QString VBoxHardDiskSettings::checkValidity()
