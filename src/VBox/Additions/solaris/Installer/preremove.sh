@@ -1,5 +1,5 @@
 #!/bin/sh
-# innotek VirtualBox
+# Sun xVM VirtualBox
 # VirtualBox pre-remove script for Solaris Guest Additions.
 #
 # Copyright (C) 2008 Sun Microsystems, Inc.

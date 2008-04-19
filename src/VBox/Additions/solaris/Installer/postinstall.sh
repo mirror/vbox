@@ -1,5 +1,5 @@
 #!/bin/sh
-# innotek VirtualBox
+# Sun xVM VirtualBox
 # VirtualBox postinstall script for Solaris.
 #
 # Copyright (C) 2008 Sun Microsystems, Inc.

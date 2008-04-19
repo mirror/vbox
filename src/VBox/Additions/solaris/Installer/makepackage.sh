@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-# innotek VirtualBox
+# Sun xVM VirtualBox
 # VirtualBox Solaris Guest Additions package creation script.
 #
 # Copyright (C) 2008 Sun Microsystems, Inc.
