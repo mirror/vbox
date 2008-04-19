@@ -353,6 +353,7 @@ static RTGCPTR emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE
 }
 
 #if defined(VBOX_STRICT) || defined(LOG_ENABLED)
+# ifdef IN_GC
 /** 
  * Get the mnemonic for the disassembled instruction.
  *  
@@ -373,6 +374,7 @@ static const char *emGetMnemonic(PDISCPUSTATE pCpu)
             return "???";
     }
 }
+# endif
 #endif
 
 /**
@@ -1249,7 +1251,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     OP_PARAMVAL param1, param2;
 
 #ifdef LOG_ENABLED
-    char *pszInstr;
+    const char *pszInstr;
 
     if (pCpu->prefix & PREFIX_LOCK)
         pszInstr = "Lock CmpXchg";
@@ -1337,7 +1339,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
     OP_PARAMVAL param1;
 
 #ifdef LOG_ENABLED
-    char *pszInstr;
+    const char *pszInstr;
 
     if (pCpu->prefix & PREFIX_LOCK)
         pszInstr = "Lock CmpXchg8b";

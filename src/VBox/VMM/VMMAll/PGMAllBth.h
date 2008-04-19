@@ -1286,13 +1286,14 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
  */
 PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uErr)
 {
-# if PGM_WITH_NX(PGM_GST_TYPE)
-    bool fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
-# endif
     LogFlow(("SyncPage: GCPtrPage=%VGv cPages=%d uErr=%#x\n", GCPtrPage, cPages, uErr));
 
 #if    PGM_GST_TYPE == PGM_TYPE_32BIT \
     || PGM_GST_TYPE == PGM_TYPE_PAE
+
+# if PGM_WITH_NX(PGM_GST_TYPE)
+    bool fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+# endif
 
     /*
      * Assert preconditions.
@@ -2665,8 +2666,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
      */
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
     PX86PDE     pPDEDst = &pVM->pgm.s.CTXMID(p,32BitPD)->a[0];
-#  else
+#  else /* PGM_SHW_TYPE == PGM_TYPE_PAE */
+#   if PGM_GST_TYPE == PGM_TYPE_32BIT
     PX86PDEPAE  pPDEDst = &pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[0];
+#   endif
 #  endif
 
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
