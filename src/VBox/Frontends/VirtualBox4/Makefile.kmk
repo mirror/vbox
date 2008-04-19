@@ -257,9 +257,6 @@ endif
 #
 # filter ported UI content
 #
-VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxAboutDlg.ui,$(VirtualBox_QT_UISRCS3))
-VirtualBox_QT_UISRCS4 += ui/VBoxAboutDlg.ui
-
 VirtualBox_QT_UISRCS3 := $(filter-out ui/VBoxCloseVMDlg.ui,$(VirtualBox_QT_UISRCS3))
 VirtualBox_QT_UISRCS4 += ui/VBoxCloseVMDlg.ui
 
@@ -437,8 +434,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMInformationDlg.h \
 	include/VBoxTakeSnapshotDlg.h \
 	include/VBoxSnapshotsWgt.h \
-	include/VBoxVMLogViewer.h \
-	include/VBoxAboutNonOSEDlg.h
+	include/VBoxVMLogViewer.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -724,12 +720,15 @@ VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/qrc_application.cpp
 ifdef VBOX_OSE
 VirtualBox_QT_RC_OSE += $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBoxOSE.qrc)
 VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/qrc_application_ose.cpp
-VirtualBox_QT_UISRCS += ui/VBoxAboutDlg.ui
 else
 VirtualBox_QT_RC_NON_OSE += $(shell $(SED) '/images/!d;{s/^.*\(images\/.*\)<.*$$/\1/}' VirtualBoxNonOSE.qrc)
 VirtualBox_GENSRCS += $(PATH_VirtualBox)/ui/qrc_application_non_ose.cpp
 VirtualBox_SOURCES += src/VBoxAboutNonOSEDlg.cpp
+VirtualBox_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
 endif
+
+# non-OSE version is always necessary for lupdate/lrelease
+VirtualBox_QT_UISRCS4 += ui/VBoxAboutDlg.ui
 
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
