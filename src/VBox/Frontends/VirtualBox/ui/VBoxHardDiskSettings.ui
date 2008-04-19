@@ -122,14 +122,15 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
                                   &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt;
                                   key on the highlighted item to activate the
                                   drop-down list and choose the desired value.
-                                  Use buttons to the right to add or remove hard
-                                  disk attachments.&lt;/qt&gt;
+                                  Use the context menu or buttons to the right
+                                  to add or remove hard disk
+                                  attachments.&lt;/qt&gt;
                                 </string>
                             </property>
                         </widget>
                         <widget class="QLayoutWidget">
                             <property name="name">
-                                <cstring>layout1</cstring>
+                                <cstring>mToolBarLayout</cstring>
                             </property>
                             <vbox>
                                 <property name="name">
@@ -138,86 +139,6 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
                                 <property name="spacing">
                                     <number>0</number>
                                 </property>
-                                <widget class="QToolButton">
-                                    <property name="name">
-                                        <cstring>mBtnAdd</cstring>
-                                    </property>
-                                    <property name="focusPolicy">
-                                        <enum>TabFocus</enum>
-                                    </property>
-                                    <property name="text">
-                                        <string></string>
-                                    </property>
-                                    <property name="accel">
-                                        <string>Ins</string>
-                                    </property>
-                                    <property name="autoRaise">
-                                        <bool>true</bool>
-                                    </property>
-                                    <property name="toolTip" stdset="0">
-                                        <string>Add (Ins)</string>
-                                    </property>
-                                    <property name="whatsThis" stdset="0">
-                                        <string>
-                                          &lt;qt&gt; Adds a new hard disk
-                                          attachment.&lt;/qt&gt;
-                                        </string>
-                                    </property>
-                                </widget>
-                                <widget class="QToolButton">
-                                    <property name="name">
-                                        <cstring>mBtnDel</cstring>
-                                    </property>
-                                    <property name="focusPolicy">
-                                        <enum>TabFocus</enum>
-                                    </property>
-                                    <property name="text">
-                                        <string></string>
-                                    </property>
-                                    <property name="accel">
-                                        <string>Del</string>
-                                    </property>
-                                    <property name="autoRaise">
-                                        <bool>true</bool>
-                                    </property>
-                                    <property name="toolTip" stdset="0">
-                                        <string>Remove (Del)</string>
-                                    </property>
-                                    <property name="whatsThis" stdset="0">
-                                        <string>
-                                          &lt;qt&gt;Removes the highlighted hard
-                                          disk attachment.&lt;/qt&gt;
-                                        </string>
-                                    </property>
-                                </widget>
-                                <widget class="QToolButton">
-                                    <property name="name">
-                                        <cstring>mBtnOpn</cstring>
-                                    </property>
-                                    <property name="focusPolicy">
-                                        <enum>TabFocus</enum>
-                                    </property>
-                                    <property name="text">
-                                        <string></string>
-                                    </property>
-                                    <property name="accel">
-                                        <string>Ctrl+Space</string>
-                                    </property>
-                                    <property name="autoRaise">
-                                        <bool>true</bool>
-                                    </property>
-                                    <property name="toolTip" stdset="0">
-                                        <string>Select (Ctrl+Space)</string>
-                                    </property>
-                                    <property name="whatsThis" stdset="0">
-                                        <string>
-                                          &lt;qt&gt; Invokes the Virtual Disk
-                                          Manager to select a hard disk to
-                                          attach to the currently highlighted
-                                          slot.&lt;/qt&gt;
-                                        </string>
-                                    </property>
-                                </widget>
                                 <spacer>
                                     <property name="name">
                                         <cstring>mSpHD</cstring>
@@ -243,14 +164,99 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
         </widget>
     </vbox>
 </widget>
+<toolbars>
+</toolbars>
+<actions>
+    <action>
+        <property name="name">
+            <cstring>mAddAttachmentAct</cstring>
+        </property>
+        <property name="text">
+            <string>Add Attachment</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Add Attachment</string>
+        </property>
+        <property name="accel">
+            <string>Ins</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt; Adds a new hard disk attachment.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>mRemoveAttachmentAct</cstring>
+        </property>
+        <property name="text">
+            <string>Remove Attachment</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Remove Attachment</string>
+        </property>
+        <property name="accel">
+            <string>Delete</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>mSelectHardDiskAct</cstring>
+        </property>
+        <property name="text">
+            <string>Select Hard Disk</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Select Hard Disk</string>
+        </property>
+        <property name="accel">
+            <string>Ctrl+Space</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt; Invokes the Virtual Disk Manager to select a hard disk
+              to attach to the currently highlighted slot.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+</actions>
+<connections>
+    <connection>
+        <sender>mAddAttachmentAct</sender>
+        <signal>activated()</signal>
+        <receiver>VBoxHardDiskSettings</receiver>
+        <slot>addHDItem()</slot>
+    </connection>
+    <connection>
+        <sender>mRemoveAttachmentAct</sender>
+        <signal>activated()</signal>
+        <receiver>VBoxHardDiskSettings</receiver>
+        <slot>delHDItem()</slot>
+    </connection>
+    <connection>
+        <sender>mSelectHardDiskAct</sender>
+        <signal>activated()</signal>
+        <receiver>VBoxHardDiskSettings</receiver>
+        <slot>showVDM()</slot>
+    </connection>
+</connections>
 <includes>
-    <include location="local" impldecl="in declaration">COMDefs.h</include>
+    <include location="global" impldecl="in declaration">qaction.h</include>
+    <include location="global" impldecl="in declaration">qpopupmenu.h</include>
     <include location="global" impldecl="in implementation">qptrvector.h</include>
     <include location="global" impldecl="in implementation">qcombobox.h</include>
     <include location="global" impldecl="in implementation">qlistbox.h</include>
     <include location="global" impldecl="in implementation">qobjectlist.h</include>
     <include location="global" impldecl="in implementation">qaction.h</include>
     <include location="global" impldecl="in implementation">qpopupmenu.h</include>
+    <include location="local" impldecl="in declaration">COMDefs.h</include>
+    <include location="local" impldecl="in implementation">VBoxToolBar.h</include>
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
     <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
     <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
@@ -265,6 +271,7 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
     <variable access="private">QListViewItem *mPrevItem;</variable>
     <variable access="private">HDSlotUniquizer *mSlotUniquizer;</variable>
     <variable access="private">CMachine mMachine;</variable>
+    <variable access="private">QPopupMenu *mContextMenu;</variable>
 </variables>
 <signals>
     <signal>afterCurrentChanged()</signal>
