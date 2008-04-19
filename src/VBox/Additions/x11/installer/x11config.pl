@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# innotek VirtualBox
+# Sun xVM VirtualBox
 #
 # Guest Additions X11 config update script
 #

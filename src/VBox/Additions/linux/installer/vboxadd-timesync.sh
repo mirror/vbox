@@ -1,8 +1,7 @@
 #!/bin/sh
 #
-#  innotek VirtualBox
-#
-#  Linux Additions timesync daemon init script
+# Sun xVM VirtualBox
+# Linux Additions timesync daemon init script
 #
 # Copyright (C) 2006-2007 Sun Microsystems, Inc.
 #

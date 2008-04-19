@@ -1,5 +1,5 @@
 #!/bin/bash
-# innotek VirtualBox
+# Sun xVM VirtualBox
 # VirtualBox VNIC setup script for Solaris hosts with Crossbow.
 #
 # Copyright (C) 2007 Sun Microsystems, Inc.

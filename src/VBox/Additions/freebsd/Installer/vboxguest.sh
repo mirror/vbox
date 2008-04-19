@@ -1,5 +1,5 @@
 #!/bin/bash
-# innotek VirtualBox
+# Sun xVM VirtualBox
 # VirtualBox Guest Additions kernel module control script for FreeBSD.
 #
 # Copyright (C) 2008 Sun Microsystems, Inc.
