@@ -61,6 +61,11 @@
  * Copy of LogIt that works even when logging is completely disabled (e.g. in
  * release builds) and doesn't interefere with the default release logger
  * instance (which is already in use by the VM process).
+ *
+ * @warning Logging using MyLog* is intended only as a temporary mean to debug
+ *          release builds (e.g. in case if the error is not reproducible with
+ *          the debug builds)! Any MyLog* usage must be removed from the sources
+ *          after the error has been fixed.
  */
 #define MyLogIt(pvInst, fFlags, iGroup, fmtargs) \
     do \
@@ -75,7 +80,12 @@
     } while (0)
 
 /** @def MyLog
- * Equivalent to LogFlow but uses MyLogIt instead of LogIt
+ * Equivalent to LogFlow but uses MyLogIt instead of LogIt.
+ *
+ * @warning Logging using MyLog* is intended only as a temporary mean to debug
+ *          release builds (e.g. in case if the error is not reproducible with
+ *          the debug builds)! Any MyLog* usage must be removed from the sources
+ *          after the error has been fixed.
  */
 #define MyLog(a)            MyLogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, a)
 
