@@ -22,7 +22,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>innotek</source>
+        <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Jan Kalab &lt;pitel@nomi.cz&gt;, Jan Lipovsky, Ondrej Karlik</translation>
     </message>
@@ -3490,7 +3490,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;prosíme vyplňte registrační formulář a dejte nám vědět že používáte VirtualBox a, volitelně, budete informováni o novinkách a aktualizacích VirtualBoxu.&lt;/p&gt;&lt;p&gt;Vložte vaše celé jméno pomocí latisnké abecedy a váš e-mail do políčka níže. Vězte že innotek použije tyto informace pouze získávání statistik o používání produktu a pro odesílání novinek o Virtualboxu. Innotek nikdy nepředá vaše data třetím stranám. Detailní informace o tom, jak používáme vaše osobní data můlžete nalézt v sekci &lt;b&gt;Privacy Policy&lt;/b&gt; manuálu VirtualBoxu, nebo na webové stránce &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; VirtualBoxu.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;prosíme vyplňte registrační formulář a dejte nám vědět že používáte VirtualBox a, volitelně, budete informováni o novinkách a aktualizacích VirtualBoxu.&lt;/p&gt;&lt;p&gt;Vložte vaše celé jméno pomocí latisnké abecedy a váš e-mail do políčka níže. Vězte že innotek použije tyto informace pouze získávání statistik o používání produktu a pro odesílání novinek o Virtualboxu. Innotek nikdy nepředá vaše data třetím stranám. Detailní informace o tom, jak používáme vaše osobní data můlžete nalézt v sekci &lt;b&gt;Privacy Policy&lt;/b&gt; manuálu VirtualBoxu, nebo na webové stránce &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; VirtualBoxu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -3514,7 +3514,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation>Zaškrtněte pokud si nepřejete přijímat maily od innoteku na výše uvedenou e-mailovou adresu.</translation>
+        <translation type="obsolete">Zaškrtněte pokud si nepřejete přijímat maily od innoteku na výše uvedenou e-mailovou adresu.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
@@ -3534,6 +3534,14 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

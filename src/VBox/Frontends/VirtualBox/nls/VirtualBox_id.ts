@@ -22,7 +22,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>innotek</source>
+        <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
         <translation>David Yacobus &lt;david_yacobus@yahoo.com&gt;</translation>
     </message>
@@ -3385,7 +3385,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Mohon isi formulir registrasi ini agar kami dapat mengetahui bahwa anda menggunakan VirtualBox dans ecara opsional, untuk menjaga anda tetap terinformasikan mengenai berita dan update VirtualBox.&lt;/p&gt;&lt;p&gt;Masukkan nama lengkap anda menggunakan karakter latin dan alamat e-mail anda pada field di bawah. Mohon perhatikan bahwa innotek akan menggunakan informasi ini hanya untuk mengumpulkan statistik penggunaan produkdan mengirimi anda newsletter VirtualBox. Secara umum, innotek tidak akan pernah memberikan data anda pada pihak ketiga. Keterangan lebih lengkap mengenai bagaimana kami menggunakan data pribadi anda dapat ditemukan pada bagian &lt;b&gt;Privacy Policy&lt;/b&gt; dalam manual VirtualBox atau pada halaman &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; dalam website VirtualBox.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Mohon isi formulir registrasi ini agar kami dapat mengetahui bahwa anda menggunakan VirtualBox dans ecara opsional, untuk menjaga anda tetap terinformasikan mengenai berita dan update VirtualBox.&lt;/p&gt;&lt;p&gt;Masukkan nama lengkap anda menggunakan karakter latin dan alamat e-mail anda pada field di bawah. Mohon perhatikan bahwa innotek akan menggunakan informasi ini hanya untuk mengumpulkan statistik penggunaan produkdan mengirimi anda newsletter VirtualBox. Secara umum, innotek tidak akan pernah memberikan data anda pada pihak ketiga. Keterangan lebih lengkap mengenai bagaimana kami menggunakan data pribadi anda dapat ditemukan pada bagian &lt;b&gt;Privacy Policy&lt;/b&gt; dalam manual VirtualBox atau pada halaman &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; dalam website VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -3409,7 +3409,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation>Cek kotak ini bila anda tidak ingin menerima e-mail dari innotek pada alamat e-mail yang disebutkan diatas.</translation>
+        <translation type="obsolete">Cek kotak ini bila anda tidak ingin menerima e-mail dari innotek pada alamat e-mail yang disebutkan diatas.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
@@ -3429,6 +3429,14 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
