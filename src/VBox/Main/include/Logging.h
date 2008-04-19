@@ -57,4 +57,26 @@
 #define LogFlowMember(m)     \
     do { LogFlow (("{%p} ", this)); LogFlow (m); } while (0)
 
+/** @def MyLogIt
+ * Copy of LogIt that works even when logging is completely disabled (e.g. in
+ * release builds) and doesn't interefere with the default release logger
+ * instance (which is already in use by the VM process).
+ */
+#define MyLogIt(pvInst, fFlags, iGroup, fmtargs) \
+    do \
+    { \
+        register PRTLOGGER LogIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogDefaultInstance(); \
+        if (LogIt_pLogger) \
+        { \
+            register unsigned LogIt_fFlags = LogIt_pLogger->afGroups[(unsigned)(iGroup) < LogIt_pLogger->cGroups ? (unsigned)(iGroup) : 0]; \
+            if ((LogIt_fFlags & ((fFlags) | RTLOGGRPFLAGS_ENABLED)) == ((fFlags) | RTLOGGRPFLAGS_ENABLED)) \
+                LogIt_pLogger->pfnLogger fmtargs; \
+        } \
+    } while (0)
+
+/** @def MyLog
+ * Equivalent to LogFlow but uses MyLogIt instead of LogIt
+ */
+#define MyLog(a)            MyLogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, a)
+
 #endif // ____H_LOGGING
