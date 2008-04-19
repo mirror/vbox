@@ -308,6 +308,18 @@
     </message>
 </context>
 <context>
+    <name>VBoxAboutNonOSEDlg</name>
+    <message>
+        <source>VirtualBox - About</source>
+        <translation type="unfinished">VirtualBox - O</translation>
+    </message>
+    <message>
+        <source>VirtualBox Graphical User Interface
+Version %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
@@ -375,6 +387,14 @@
     <message>
         <source>&amp;Make Permanent</source>
         <translation>Udělat &amp;trvale</translation>
+    </message>
+    <message>
+        <source>&amp;Read-only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -469,10 +489,6 @@
     </message>
     <message>
         <source>VirtualBox OSE</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>innotek VirtualBox</source>
         <translation></translation>
     </message>
     <message>
@@ -964,10 +980,6 @@
         <translation>&amp;Obsah...</translation>
     </message>
     <message>
-        <source>F1</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Show the online help contents</source>
         <translation>Zobrazí obsah online nápovědy</translation>
     </message>
@@ -978,6 +990,18 @@
     <message>
         <source>Open VirtualBox registration form</source>
         <translation>Otevře registrační formulář VirtualBoxu</translation>
+    </message>
+    <message>
+        <source>Sun xVM VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Session Information Dialog</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1439,7 +1463,7 @@
     <message>
         <source>Adapter</source>
         <comment>details report (audio)</comment>
-        <translation>Ovladač</translation>
+        <translation type="obsolete">Ovladač</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -1608,12 +1632,12 @@
     <message>
         <source>Primary</source>
         <comment>DiskControllerType</comment>
-        <translation>Primární</translation>
+        <translation type="obsolete">Primární</translation>
     </message>
     <message>
         <source>Secondary</source>
         <comment>DiskControllerType</comment>
-        <translation>Sekundární</translation>
+        <translation type="obsolete">Sekundární</translation>
     </message>
     <message>
         <source>Normal</source>
@@ -1671,19 +1695,9 @@
         <translation>Držet</translation>
     </message>
     <message>
-        <source>Master</source>
-        <comment>DiskControllerDevice</comment>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Slave</source>
-        <comment>DiskControllerDevice</comment>
-        <translation></translation>
-    </message>
-    <message>
         <source>Device&amp;nbsp;%1</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Zařízení&amp;nbsp;%1</translation>
+        <translation type="obsolete">Zařízení&amp;nbsp;%1</translation>
     </message>
     <message>
         <source>Null Audio Driver</source>
@@ -1873,6 +1887,156 @@
         <comment>DiskStorageType</comment>
         <translation>Vlastní pevný disk</translation>
     </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation type="unfinished">Povoleno</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (PAE/NX)</comment>
+        <translation type="unfinished">Povoleno</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (PAE/NX)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folder</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SATA</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Primary</source>
+        <comment>StorageBusChannel</comment>
+        <translation type="unfinished">Primární</translation>
+    </message>
+    <message>
+        <source>Secondary</source>
+        <comment>StorageBusChannel</comment>
+        <translation type="unfinished">Sekundární</translation>
+    </message>
+    <message>
+        <source>Master</source>
+        <comment>StorageBusDevice</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Slave</source>
+        <comment>StorageBusDevice</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>StorageBusDevice</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VHD Image</source>
+        <comment>DiskStorageType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Solaris Audio</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PulseAudio</source>
+        <comment>AudioDriverType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ICH AC97</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SoundBlaster 16</source>
+        <comment>AudioControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-PCI II (Am79C970A)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCnet-FAST III (Am79C973)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Intel PRO/1000 MT Desktop (82540EM)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PIIX3</source>
+        <comment>IDEControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PIIX4</source>
+        <comment>IDEControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -1985,7 +2149,7 @@
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation>Přidat prázdný (Ins)</translation>
+        <translation type="obsolete">Přidat prázdný (Ins)</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
@@ -1993,7 +2157,7 @@
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation>Přidat z (Alt+Ins)</translation>
+        <translation type="obsolete">Přidat z (Alt+Ins)</translation>
     </message>
     <message>
         <source>Del</source>
@@ -2001,11 +2165,11 @@
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation>Odstranit (Del)</translation>
+        <translation type="obsolete">Odstranit (Del)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation>Odstraní vybraný USB filtr.</translation>
+        <translation type="obsolete">Odstraní vybraný USB filtr.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
@@ -2013,11 +2177,11 @@
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation>Posunout nahoru (Ctrl+Nahoru)</translation>
+        <translation type="obsolete">Posunout nahoru (Ctrl+Nahoru)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation>Posune vybraný USB filtr nahoru.</translation>
+        <translation type="obsolete">Posune vybraný USB filtr nahoru.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
@@ -2025,11 +2189,11 @@
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>Posunout dolů (Ctrl+Dolů)</translation>
+        <translation type="obsolete">Posunout dolů (Ctrl+Dolů)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation>Posune vybraný USB filtr dolů.</translation>
+        <translation type="obsolete">Posune vybraný USB filtr dolů.</translation>
     </message>
     <message>
         <source>Help</source>
@@ -2166,15 +2330,15 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation>Vypíše všechny globální USB filtry. Zatrhávátko vlevo určuje, zda je filtr povolen či nikoliv.</translation>
+        <translation type="obsolete">Vypíše všechny globální USB filtry. Zatrhávátko vlevo určuje, zda je filtr povolen či nikoliv.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Přidá nový USB filtr se všemi políčky prázdnými. Takový filtr pokryje jakékoliv připojené USB zařízení.</translation>
+        <translation type="obsolete">Přidá nový USB filtr se všemi políčky prázdnými. Takový filtr pokryje jakékoliv připojené USB zařízení.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Přidá nový USB filtr se všemi políčky nastavenými na hodnoty vybraného USB zařízení připojeného k hostitelskému PC.</translation>
+        <translation type="obsolete">Přidá nový USB filtr se všemi políčky nastavenými na hodnoty vybraného USB zařízení připojeného k hostitelskému PC.</translation>
     </message>
     <message>
         <source>V&amp;RDP Authentication Library</source>
@@ -2203,6 +2367,199 @@ na výchozí jazyk systému.&lt;/qt&gt;
     <message>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation>Určuje, zda se virtuální počítač bude standardně snažit využít virtualizační rozšíření hostitelova CPU jako Intel VT-x a AMD-V nebo ne.</translation>
+    </message>
+    <message>
+        <source>
+                                              &lt;qt&gt;Lists all global USB
+                                              filters. The checkbox to the left
+                                              defines whether the particular
+                                              filter is enabled or not. Use the
+                                              context menu or buttons to the
+                                              right to add or remove USB
+                                              filters.&lt;/qt&gt;
+                                            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Empty Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Empty Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Adds a new USB filter with all fields initially set to
+              empty strings. Note that such a filter will match any attached USB
+              device.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Filter From Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A&amp;dd Filter From Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
+              values of the selected USB device attached to the host
+              PC.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Filter Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move Filter Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Filter Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>M&amp;ove Filter Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxHardDiskSettings</name>
+    <message>
+        <source>Slot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk</source>
+        <translation type="unfinished">Pevný disk</translation>
+    </message>
+    <message>
+        <source>VBoxHardDiskSettings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hard Disks</source>
+        <translation type="unfinished">&amp;Pevné disky</translation>
+    </message>
+    <message>
+        <source>&amp;Enable SATA Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+                          &lt;qt&gt;When checked, enables the virtual SATA
+                          controller of this machine. Note that you cannot
+                          attach hard disks to SATA ports when the virtual SATA
+                          controller is disabled.&lt;/qt&gt;
+                        </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disks &amp;Attachments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+                                  &lt;qt&gt;Lists all hard disks attached to
+                                  this machine. Use a mouse double-click or the
+                                  &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt;
+                                  key on the highlighted item to activate the
+                                  drop-down list and choose the desired value.
+                                  Use the context menu or buttons to the right
+                                  to add or remove hard disk
+                                  attachments.&lt;/qt&gt;
+                                </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ins</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">Smazat</translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Select Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Space</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
+              to attach to the currently highlighted slot.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2295,7 +2652,7 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified) as the Guest OS claims disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte typ virtuálního pevného disku, který chete vytvořit.&lt;/p&gt;
+        <translation type="obsolete">&lt;p&gt;Vyberte typ virtuálního pevného disku, který chete vytvořit.&lt;/p&gt;
 &lt;p&gt;&lt;b&gt;Dynamicky zvětšující obraz&lt;/b&gt; na začátku obsadí velmi málo
 místa na vašem fyzickém disku. Bude se dynamicky zvětšovat (až do
 dané velikosti) tak, jak bude hostovaný OS zabírat místo na disku&lt;/p&gt;
@@ -2377,6 +2734,16 @@ jako velikost virtuálního pevného disku.&lt;/p&gt;</translation>
     <message>
         <source>Select a file for the new hard disk image file</source>
         <translation>Vyberte soubor pro nový obraz pevného disku</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
+of space on your physical hard disk. It will grow dynamically (up to
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
+the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
+time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2590,11 +2957,11 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se načíst nastavení globálního GUI.&lt;/p&gt;&lt;p&gt;Aplikace bude ukončena.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nepodařilo se načíst nastavení globálního GUI.&lt;/p&gt;&lt;p&gt;Aplikace bude ukončena.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se uložit nastavení globálního GUI.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nepodařilo se uložit nastavení globálního GUI.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
@@ -2618,11 +2985,11 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se uložit nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Nepodařilo se uložit nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se načíst nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Nepodařilo se načíst nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2694,7 +3061,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Chcete smazat obraz pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Ne&lt;/b&gt;, bude virtuální pevný disk odhlášen a odstraněn ze seznamu, ale obraz bude ponechán na vašem fyzickém disku.&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Ano&lt;/b&gt;, bude obraz po odhlášení trvale smazán. Tuto operaci nelze vrátit.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Chcete smazat obraz pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Ne&lt;/b&gt;, bude virtuální pevný disk odhlášen a odstraněn ze seznamu, ale obraz bude ponechán na vašem fyzickém disku.&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Ano&lt;/b&gt;, bude obraz po odhlášení trvale smazán. Tuto operaci nelze vrátit.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2710,11 +3077,11 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation>Nepodařilo se připojit obraz pevného disku s UUID %1 ke slotu zařízení %2 ovladače %3 počítače &lt;b&gt;%4&lt;/b&gt;.</translation>
+        <translation type="obsolete">Nepodařilo se připojit obraz pevného disku s UUID %1 ke slotu zařízení %2 ovladače %3 počítače &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepodařilo se odpojit obraz pevného disku ze slotu zařízení %1 ovladače %2 počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation type="obsolete">Nepodařilo se odpojit obraz pevného disku ze slotu zařízení %1 ovladače %2 počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -2798,7 +3165,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt; pro otevření okna Správce virtuálních disků a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt; pro otevření okna Správce virtuálních disků a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -2962,6 +3329,158 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nepodařilo se zaregistrovat produkt VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>machine</comment>
+        <translation type="unfinished">Smazat</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation type="unfinished">Zrušit</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>detach image</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished">Smazat</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished">Vypnout</translation>
+    </message>
+    <message>
+        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="unfinished">&amp;Uložit</translation>
+    </message>
+    <message>
+        <source>&amp;Backup</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="unfinished">Zrušit</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
@@ -3013,6 +3532,10 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <source>Could not locate the registration form on the server (response: %1).</source>
         <translation>Nelze najít registrační dormulář na serveru (odpověd: %1).</translation>
     </message>
+    <message>
+        <source>Could not perform connection handshake.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
@@ -3037,10 +3560,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     <name>VBoxSelectorWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>innotek VirtualBox</source>
         <translation></translation>
     </message>
     <message>
@@ -3268,6 +3787,38 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <source>Open VirtualBox registration form</source>
         <translation>Otevřít registrační formulář VirtualBoxu</translation>
     </message>
+    <message>
+        <source>Sun xVM VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>R&amp;esume</source>
+        <translation type="unfinished">Ob&amp;novit</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+P</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resume the execution of the virtual machine</source>
+        <translation type="unfinished">Obnoví chod virtuálního počítače</translation>
+    </message>
+    <message>
+        <source>&amp;Pause</source>
+        <translation type="unfinished">&amp;Pauza</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation type="unfinished">Pozastaví chod virtuálního počítače</translation>
+    </message>
 </context>
 <context>
     <name>VBoxSharedFoldersSettings</name>
@@ -3339,7 +3890,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Jméno:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Cesta:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;Jméno:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Cesta:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
@@ -3360,11 +3911,11 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message>
         <source>Space</source>
-        <translation>Mezerník</translation>
+        <translation type="obsolete">Mezerník</translation>
     </message>
     <message>
         <source>Edit the selected shared folder (Space)</source>
-        <translation>Upraví vybraný sdílený adresář (Mezerník)</translation>
+        <translation type="obsolete">Upraví vybraný sdílený adresář (Mezerník)</translation>
     </message>
     <message>
         <source>Del</source>
@@ -3373,6 +3924,26 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     <message>
         <source>Remove the selected shared folder (Del)</source>
         <translation>Odstraní vybraný sdílený adresář (Del)</translation>
+    </message>
+    <message>
+        <source>Access</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Space</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit the selected shared folder (Ctrl+Space)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Full</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read-only</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3482,7 +4053,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message>
         <source>Space</source>
-        <translation>Místo</translation>
+        <translation type="obsolete">Místo</translation>
     </message>
     <message>
         <source>Current State (changed)</source>
@@ -3575,6 +4146,10 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>Zobrazí detaily vybraného snímku</translation>
+    </message>
+    <message>
+        <source>Ctrl+Space</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3917,6 +4492,125 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
+    <name>VBoxVMInformationDlg</name>
+    <message>
+        <source>Session Information Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="unfinished">&amp;Zavřít</translation>
+    </message>
+    <message>
+        <source>%1 - Session Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="unfinished">&amp;Detaily</translation>
+    </message>
+    <message>
+        <source>&amp;Runtime</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DMA Transfers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PIO Transfers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Data Read</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Data Written</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Data Transmitted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Data Received</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <translation type="unfinished">Povoleno</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Runtime Attributes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen Resolution</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE Hard Disk Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Adapter Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter 2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter 3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter 4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not attached</source>
+        <translation type="unfinished">Nepřipojeno</translation>
+    </message>
+    <message>
+        <source>Hard Disks Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Primary Master</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Primary Slave</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secondary Master</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secondary Slave</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxVMListBox</name>
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
@@ -4086,6 +4780,69 @@ hodnotu.&lt;/qt&gt;</translation>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>Ukazuje MAC adresu karty. Obsahuj 12 znaků vybraných z {0-9,A-F}. Pozor, druhý znak musí být sudá číslice.</translation>
     </message>
+    <message>
+        <source>&amp;Network Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter &amp;Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the name of the internal network selected for this adapter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMParallelPortSettings</name>
+    <message>
+        <source>VBoxVMParallelPortSettings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Parallel Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, enables the given parallel port of the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port &amp;Number</source>
+        <translation type="unfinished">Čí&amp;slo portu</translation>
+    </message>
+    <message>
+        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;IRQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port &amp;Path</source>
+        <translation type="unfinished">Cesta &amp;portu</translation>
+    </message>
+    <message>
+        <source>Displays the host parallel device name.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSerialPortSettings</name>
@@ -4181,20 +4938,12 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation> Základní </translation>
     </message>
     <message>
-        <source>0</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>#general</source>
         <translation></translation>
     </message>
     <message>
         <source> Hard Disks </source>
         <translation> Pevné disky </translation>
-    </message>
-    <message>
-        <source>1</source>
-        <translation></translation>
     </message>
     <message>
         <source>#hdds</source>
@@ -4205,20 +4954,12 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation> Disketa </translation>
     </message>
     <message>
-        <source>2</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>#floppy</source>
         <translation></translation>
     </message>
     <message>
         <source> CD/DVD-ROM </source>
         <translation> CD/DVD-ROM </translation>
-    </message>
-    <message>
-        <source>3</source>
-        <translation></translation>
     </message>
     <message>
         <source>#dvd</source>
@@ -4229,10 +4970,6 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation> Zvuk </translation>
     </message>
     <message>
-        <source>4</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>#audio</source>
         <translation></translation>
     </message>
@@ -4241,19 +4978,11 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation> Síť </translation>
     </message>
     <message>
-        <source>5</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>#network</source>
         <translation></translation>
     </message>
     <message>
         <source> USB </source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>6</source>
         <translation></translation>
     </message>
     <message>
@@ -4265,20 +4994,12 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation> Vzdálená plocha </translation>
     </message>
     <message>
-        <source>7</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>#vrdp</source>
         <translation></translation>
     </message>
     <message>
         <source> Shared Folders </source>
         <translation> Sdílené adresáře </translation>
-    </message>
-    <message>
-        <source>8</source>
-        <translation></translation>
     </message>
     <message>
         <source>#sfolders</source>
@@ -4374,19 +5095,19 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Primary Master</source>
-        <translation>&amp;Primární master</translation>
+        <translation type="obsolete">&amp;Primární master</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
-        <translation>&lt;nevybráno&gt;</translation>
+        <translation type="obsolete">&lt;nevybráno&gt;</translation>
     </message>
     <message>
         <source>P&amp;rimary Slave</source>
-        <translation>&amp;Primární slave</translation>
+        <translation type="obsolete">&amp;Primární slave</translation>
     </message>
     <message>
         <source>&amp;Secondary (IDE 1) Slave</source>
-        <translation>&amp;Sekundární (IDE 1) slave</translation>
+        <translation type="obsolete">&amp;Sekundární (IDE 1) slave</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
@@ -4450,7 +5171,7 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation>Přidat prázdný (Ins)</translation>
+        <translation type="obsolete">Přidat prázdný (Ins)</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
@@ -4458,7 +5179,7 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation>Přidat z (Alt+Ins)</translation>
+        <translation type="obsolete">Přidat z (Alt+Ins)</translation>
     </message>
     <message>
         <source>Del</source>
@@ -4466,11 +5187,11 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation>Odstranit (Del)</translation>
+        <translation type="obsolete">Odstranit (Del)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation>Odstraní vybraný USB filtr.</translation>
+        <translation type="obsolete">Odstraní vybraný USB filtr.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
@@ -4478,11 +5199,11 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation>Posunout nahoru (Ctrl+Nahoru)</translation>
+        <translation type="obsolete">Posunout nahoru (Ctrl+Nahoru)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation>Posune vybraný USB filtr nahoru.</translation>
+        <translation type="obsolete">Posune vybraný USB filtr nahoru.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
@@ -4490,11 +5211,11 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>Posunout dolů (Ctrl+Dolů)</translation>
+        <translation type="obsolete">Posunout dolů (Ctrl+Dolů)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation>Posune vybraný USB filtr dolů.</translation>
+        <translation type="obsolete">Posune vybraný USB filtr dolů.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
@@ -4558,19 +5279,19 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation>Je-li zatrženo, připojí určený virtuální pevný disk na master slot primárního IDE ovladače.</translation>
+        <translation type="obsolete">Je-li zatrženo, připojí určený virtuální pevný disk na master slot primárního IDE ovladače.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
-        <translation>Je-li zatrženo, připojí určený virtuální pevný disk na slave slot primárního IDE ovladače.</translation>
+        <translation type="obsolete">Je-li zatrženo, připojí určený virtuální pevný disk na slave slot primárního IDE ovladače.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation>Je-li zatrženo, připojí určený virtuální pevný disk na slave slot sekundárního IDE ovladače.</translation>
+        <translation type="obsolete">Je-li zatrženo, připojí určený virtuální pevný disk na slave slot sekundárního IDE ovladače.</translation>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
-        <translation>Ukazuje virtuální pevný disk pro připojení k tomuto IDE slotu a umožňuje rychle vybrat jiný pevný disk.</translation>
+        <translation type="obsolete">Ukazuje virtuální pevný disk pro připojení k tomuto IDE slotu a umožňuje rychle vybrat jiný pevný disk.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
@@ -4700,7 +5421,7 @@ tuto možnost po nainstalování hostovaného operačního systému Windows!&lt;
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation>Vyvolá Správce virtuálních disků pro vytvoření nového nebo výběr existujícího pevného disku pro připojení.</translation>
+        <translation type="obsolete">Vyvolá Správce virtuálních disků pro vytvoření nového nebo výběr existujícího pevného disku pro připojení.</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
@@ -4730,15 +5451,15 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation>Vypíše všechny USB filtry tohoto počítače. Zatrhávátko vlevo určuje ,zda je filtr povolen či nikoliv.</translation>
+        <translation type="obsolete">Vypíše všechny USB filtry tohoto počítače. Zatrhávátko vlevo určuje ,zda je filtr povolen či nikoliv.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Přidá nový USB filtr se všemi políčky prázdnými. Takový filtr zabere jakékoliv připojené USB zařízení.</translation>
+        <translation type="obsolete">Přidá nový USB filtr se všemi políčky prázdnými. Takový filtr zabere jakékoliv připojené USB zařízení.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Přidá nový USB filtr se všemi políčky nastavenými na hodnoty vybraného USB zařízení připojeného k hostitelskému PC.</translation>
+        <translation type="obsolete">Přidá nový USB filtr se všemi políčky nastavenými na hodnoty vybraného USB zařízení připojeného k hostitelskému PC.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -4780,10 +5501,6 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Chcete odstranit vybrané hostitelské síťové rozhraní &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka:&lt;/b&gt; Toto rozhraní může být používáno jednou nebo více síťovými kartami tohoto nebo jiného virtuálního počítače. Po jeho odstranění nebudou tyto karty fungovat, dokud neopravíte jejich nastavení vybráním jiného rozhraní nebo jiného typu připojení karty.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>9</source>
-        <translation></translation>
     </message>
     <message>
         <source> Serial Ports </source>
@@ -4843,23 +5560,23 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     </message>
     <message>
         <source>Primary Master hard disk is not selected</source>
-        <translation>Není vybrán primární master pevný disk</translation>
+        <translation type="obsolete">Není vybrán primární master pevný disk</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected</source>
-        <translation>Není vybrán primární slave pevný disk</translation>
+        <translation type="obsolete">Není vybrán primární slave pevný disk</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot</source>
-        <translation>Primární slave pevný disk je již připojen k jinému slotu</translation>
+        <translation type="obsolete">Primární slave pevný disk je již připojen k jinému slotu</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected</source>
-        <translation>Není vybrán sekundární slave pevný disk</translation>
+        <translation type="obsolete">Není vybrán sekundární slave pevný disk</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot</source>
-        <translation>Sekundární slave pevný disk je již připojen k jinému slotu</translation>
+        <translation type="obsolete">Sekundární slave pevný disk je již připojen k jinému slotu</translation>
     </message>
     <message>
         <source>CD/DVD image file is not selected</source>
@@ -4889,6 +5606,195 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation></translation>
+    </message>
+    <message>
+        <source>00</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>01</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>02</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>03</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>04</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>05</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>08</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>10</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>09</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>06</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Parallel Ports </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>07</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>#parallelPorts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;When
+                                                          checked, the Physical
+                                                          Address Extension
+                                                          (PAE) feature of the
+                                                          host CPU will be
+                                                          exposed to the virtual
+                                                          machine.&lt;/qt&gt;
+                                                        </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;IDE Controller Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio &amp;Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable USB &amp;2.0 Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+                                              &lt;qt&gt;Lists all USB filters of
+                                              this machine. The checkbox to the
+                                              left defines whether the
+                                              particular filter is enabled or
+                                              not. Use the context menu or
+                                              buttons to the right to add or
+                                              remove USB filters.&lt;/qt&gt;
+                                            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Empty Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Empty Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Adds a new USB filter with all fields initially set to
+              empty strings. Note that such a filter will match any attached USB
+              device.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Filter From Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A&amp;dd Filter From Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
+              values of the selected USB device attached to the host
+              PC.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Filter Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move Filter Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Filter Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>M&amp;ove Filter Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal network name is not set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port path is not specified </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>parallel ports</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

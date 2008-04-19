@@ -298,12 +298,12 @@
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation type="obsolete">VirtualBox - Über</translation>
+        <translation type="unfinished">VirtualBox - Über</translation>
     </message>
     <message>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;VirtualBox graphische Oberfläche Version %1&lt;br&gt;
+        <translation type="unfinished">&lt;qt&gt;VirtualBox graphische Oberfläche Version %1&lt;br&gt;
 %2&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -315,7 +315,12 @@
     </message>
     <message>
         <source>VirtualBox Graphical User Interface Version %1</source>
-        <translation>VirtualBox Grafische Benutzeroberfläche Version %1</translation>
+        <translation type="obsolete">VirtualBox Grafische Benutzeroberfläche Version %1</translation>
+    </message>
+    <message>
+        <source>VirtualBox Graphical User Interface
+Version %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2043,7 +2048,7 @@
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation>Leerer Filter (Einf)</translation>
+        <translation type="obsolete">Leerer Filter (Einf)</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
@@ -2051,7 +2056,7 @@
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation>Hinzufügen von (Alt+Einf)</translation>
+        <translation type="obsolete">Hinzufügen von (Alt+Einf)</translation>
     </message>
     <message>
         <source>Del</source>
@@ -2059,11 +2064,11 @@
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation>Löschen (Entf)</translation>
+        <translation type="obsolete">Löschen (Entf)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation>Löscht den ausgewählten USB-Filter.</translation>
+        <translation type="obsolete">Löscht den ausgewählten USB-Filter.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
@@ -2071,11 +2076,11 @@
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation>Auf</translation>
+        <translation type="obsolete">Auf</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation>Bewegt den ausgewählten USB-Filter aufwärts.</translation>
+        <translation type="obsolete">Bewegt den ausgewählten USB-Filter aufwärts.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
@@ -2083,11 +2088,11 @@
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>Ab (Strg+Ab)</translation>
+        <translation type="obsolete">Ab (Strg+Ab)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation>Bewegt den ausgewählten USB-Filter abwärts.</translation>
+        <translation type="obsolete">Bewegt den ausgewählten USB-Filter abwärts.</translation>
     </message>
     <message>
         <source>Help</source>
@@ -2220,15 +2225,15 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation>Zeigt alle globalen USB-Filter. Die Checkbox auf der linken Seite steuert, ob der jeweilige Filter aktiv ist oder nicht.</translation>
+        <translation type="obsolete">Zeigt alle globalen USB-Filter. Die Checkbox auf der linken Seite steuert, ob der jeweilige Filter aktiv ist oder nicht.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Erstellt einen neuen USB-Filter, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
+        <translation type="obsolete">Erstellt einen neuen USB-Filter, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Fügt einen neuen USB-Filter hinzu, wobei alle Felder mit Werten des ausgewählten USB-Gerätes belegt werden.</translation>
+        <translation type="obsolete">Fügt einen neuen USB-Filter hinzu, wobei alle Felder mit Werten des ausgewählten USB-Gerätes belegt werden.</translation>
     </message>
     <message>
         <source>V&amp;RDP Authentication Library</source>
@@ -2258,6 +2263,91 @@ to the system default language.&lt;/qt&gt;
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation>Zeigt, ob virtuelle Maschinen einen speziellen Modus der CPU für die Virtualisierung (Intel VT-x bzw. AMD-V) per Voreinstellung nutzen sollen oder nicht.</translation>
     </message>
+    <message>
+        <source>
+                                              &lt;qt&gt;Lists all global USB
+                                              filters. The checkbox to the left
+                                              defines whether the particular
+                                              filter is enabled or not. Use the
+                                              context menu or buttons to the
+                                              right to add or remove USB
+                                              filters.&lt;/qt&gt;
+                                            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Empty Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Empty Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Adds a new USB filter with all fields initially set to
+              empty strings. Note that such a filter will match any attached USB
+              device.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Filter From Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A&amp;dd Filter From Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
+              values of the selected USB device attached to the host
+              PC.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Filter Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move Filter Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Filter Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>M&amp;ove Filter Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxHardDiskSettings</name>
@@ -2282,10 +2372,6 @@ to the system default language.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+E</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>
                           &lt;qt&gt;When checked, enables the virtual SATA
                           controller of this machine. Note that you cannot
@@ -2299,79 +2385,84 @@ to the system default language.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>
-                                  &lt;qt&gt;Lists all hard disks attached to
-                                  this machine. Use a mouse double-click or the
-                                  &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt;
-                                  key on the highlighted item to activate the
-                                  drop-down list and choose the desired value.
-                                  Use buttons to the right to add or remove hard
-                                  disk attachments.&lt;/qt&gt;
-                                </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Ins</source>
         <translation type="unfinished">Ins</translation>
     </message>
     <message>
-        <source>Add (Ins)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>
-                                          &lt;qt&gt; Adds a new hard disk
-                                          attachment.&lt;/qt&gt;
-                                        </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Del</source>
-        <translation type="unfinished">Del</translation>
+        <translation type="obsolete">Del</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation type="unfinished">Löschen (Entf)</translation>
-    </message>
-    <message>
-        <source>
-                                          &lt;qt&gt;Removes the highlighted hard
-                                          disk attachment.&lt;/qt&gt;
-                                        </source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Löschen (Entf)</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>
         <translation type="unfinished">Ctrl+Space</translation>
     </message>
     <message>
-        <source>Select (Ctrl+Space)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>
-                                          &lt;qt&gt; Invokes the Virtual Disk
-                                          Manager to select a hard disk to
-                                          attach to the currently highlighted
-                                          slot.&lt;/qt&gt;
-                                        </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Virtual Disk Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete Attachment</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete</source>
         <translation type="unfinished">Löschen</translation>
+    </message>
+    <message>
+        <source>
+                                  &lt;qt&gt;Lists all hard disks attached to
+                                  this machine. Use a mouse double-click or the
+                                  &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt;
+                                  key on the highlighted item to activate the
+                                  drop-down list and choose the desired value.
+                                  Use the context menu or buttons to the right
+                                  to add or remove hard disk
+                                  attachments.&lt;/qt&gt;
+                                </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove Attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Select Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
+              to attach to the currently highlighted slot.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4191,7 +4282,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation>Alt+S</translation>
+        <translation type="obsolete">Alt+S</translation>
     </message>
     <message>
         <source>%1 - Session Information</source>
@@ -4855,7 +4946,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
-        <translation>Leerer Filter (Einf)</translation>
+        <translation type="obsolete">Leerer Filter (Einf)</translation>
     </message>
     <message>
         <source>Alt+Ins</source>
@@ -4863,7 +4954,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
-        <translation>Hinzufügen aus (Alt+Einf)</translation>
+        <translation type="obsolete">Hinzufügen aus (Alt+Einf)</translation>
     </message>
     <message>
         <source>Del</source>
@@ -4871,11 +4962,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Remove (Del)</source>
-        <translation>Löschen (Entf)</translation>
+        <translation type="obsolete">Löschen (Entf)</translation>
     </message>
     <message>
         <source>Removes the selected USB filter.</source>
-        <translation>Ausgewählten USB-Filter löschen.</translation>
+        <translation type="obsolete">Ausgewählten USB-Filter löschen.</translation>
     </message>
     <message>
         <source>Ctrl+Up</source>
@@ -4883,11 +4974,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
-        <translation>Aufwärts (Strg+Auf)</translation>
+        <translation type="obsolete">Aufwärts (Strg+Auf)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter up.</source>
-        <translation>Ausgewählten USB-Filter aufwärts bewegen.</translation>
+        <translation type="obsolete">Ausgewählten USB-Filter aufwärts bewegen.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
@@ -4895,11 +4986,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
-        <translation>Runter (Strg+Ab)</translation>
+        <translation type="obsolete">Runter (Strg+Ab)</translation>
     </message>
     <message>
         <source>Moves the selected USB filter down.</source>
-        <translation>Ausgewählter USB-Filter abwärts.</translation>
+        <translation type="obsolete">Ausgewählter USB-Filter abwärts.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
@@ -5074,15 +5165,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation>Zeigt alle USB-Filter dieser Maschine. Die Checkbox auf der linken Seite legt fest, ob ein bestimmter Filter aktiviert ist oder nicht.</translation>
+        <translation type="obsolete">Zeigt alle USB-Filter dieser Maschine. Die Checkbox auf der linken Seite legt fest, ob ein bestimmter Filter aktiviert ist oder nicht.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Erstellt einen neuen USB-Filter, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
+        <translation type="obsolete">Erstellt einen neuen USB-Filter, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Fügt einen neuen USB-Filter hinzu, wobei alle Felder mit Werten des ausgewählten USB-Gerätes belegt werden.</translation>
+        <translation type="obsolete">Fügt einen neuen USB-Filter hinzu, wobei alle Felder mit Werten des ausgewählten USB-Gerätes belegt werden.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -5341,6 +5432,91 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Enable USB &amp;2.0 Controller</source>
         <translation>Aktiviert den USB&amp;2.0-Controller</translation>
+    </message>
+    <message>
+        <source>
+                                              &lt;qt&gt;Lists all USB filters of
+                                              this machine. The checkbox to the
+                                              left defines whether the
+                                              particular filter is enabled or
+                                              not. Use the context menu or
+                                              buttons to the right to add or
+                                              remove USB filters.&lt;/qt&gt;
+                                            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Empty Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Empty Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Adds a new USB filter with all fields initially set to
+              empty strings. Note that such a filter will match any attached USB
+              device.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Filter From Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A&amp;dd Filter From Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
+              values of the selected USB device attached to the host
+              PC.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Filter Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move Filter Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Filter Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>M&amp;ove Filter Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+              &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
+            </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
