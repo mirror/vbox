@@ -114,7 +114,7 @@ public:
             "(empty if native country name is empty)");
 
         QString translatorsName = tratra (aTranslator,
-            "@@@", "innotek", "Comma-separated list of translators");
+            "@@@", "Sun Microsystems, Inc.", "Comma-separated list of translators");
 
         QString itemName = nativeLanguage;
         QString langName = englishLanguage;
