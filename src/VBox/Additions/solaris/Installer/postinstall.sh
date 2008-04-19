@@ -27,11 +27,9 @@ vboxadditions_path="/opt/VirtualBoxAdditions"
 $vboxadditions_path/vboxguest.sh restart silentunload
 
 # suid permissions for timesync
-echo "Setting permissions..."
 chmod 04755 $vboxadditions_path/VBoxService
 
 # create links
-echo "Creating links..."
 /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient=$vboxadditions_path/VBoxClient s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxService=$vboxadditions_path/VBoxService s
@@ -71,13 +69,13 @@ if test -z "$vboxmouse_src"; then
     # Exit as partially failed installation
     retval=2
 else
+    echo "Configuring Xorg..."
     vboxmouse_dest="/usr/lib/X11/modules/input/vboxmouse_drv.so"
     vboxvideo_dest="/usr/lib/X11/modules/input/vboxvideo_drv.so"
     /usr/sbin/installf -c none $PKGINST "$vboxmouse_dest" f
     /usr/sbin/installf -c none $PKGINST "$vboxvideo_dest" f
     cp "$vboxmouse_src" "$vboxmouse_dest"
     cp "$vboxvideo_src" "$vboxvideo_dest"
-    echo "Installed VirtualBox mouse and video drivers for Xorg $xorgversion"
 
     # Removing redudant files
     /usr/sbin/removef $PKGINST $vboxadditions_path/vboxmouse_drv_* 1>/dev/null 2>/dev/null
@@ -91,7 +89,6 @@ else
         mv -f $vboxadditions_path/solaris_xorg.conf /etc/X11/.xorg.conf
     fi
 
-    echo "Configuring Xorg..."
     $vboxadditions_path/x11config.pl
 fi
 
