@@ -707,17 +707,47 @@ void VBoxVMSettingsDlg::init()
     wstUSBFilters->addWidget (settings, 0);
     lvUSBFilters_currentChanged (NULL);
 
-    /* setup iconsets -- qdesigner is not capable... */
-    tbAddUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_new_16px.png",
-                                                     "usb_new_disabled_16px.png"));
-    tbAddUSBFilterFrom->setIconSet (VBoxGlobal::iconSet ("usb_add_16px.png",
-                                                         "usb_add_disabled_16px.png"));
-    tbRemoveUSBFilter->setIconSet (VBoxGlobal::iconSet ("usb_remove_16px.png",
-                                                        "usb_remove_disabled_16px.png"));
-    tbUSBFilterUp->setIconSet (VBoxGlobal::iconSet ("usb_moveup_16px.png",
-                                                    "usb_moveup_disabled_16px.png"));
-    tbUSBFilterDown->setIconSet (VBoxGlobal::iconSet ("usb_movedown_16px.png",
-                                                      "usb_movedown_disabled_16px.png"));
+    /* toolbar */
+    {
+        VBoxToolBar *toolBar = new VBoxToolBar (0, grbUSBFilters, "USBToolBar");
+
+        mAddUSBFilterAct->addTo (toolBar);
+        mAddUSBFilterFromAct->addTo (toolBar);
+        mRemoveUSBFilterAct->addTo (toolBar);
+        mUSBFilterUpAct->addTo (toolBar);
+        mUSBFilterDownAct->addTo (toolBar);
+
+        toolBar->setUsesTextLabel (false);
+        toolBar->setUsesBigPixmaps (false);
+        toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
+        toolBar->setOrientation (Qt::Vertical);
+    #ifdef Q_WS_MAC
+        toolBar->setMacStyle();
+    #endif
+        mUSBToolBarLayout->insertWidget (0, toolBar);
+    }
+
+    /* context menu */
+    mUSBContextMenu = new QPopupMenu (this);
+    mAddUSBFilterAct->addTo (mUSBContextMenu);
+    mAddUSBFilterFromAct->addTo (mUSBContextMenu);
+    mRemoveUSBFilterAct->addTo (mUSBContextMenu);
+    mUSBFilterUpAct->addTo (mUSBContextMenu);
+    mUSBFilterDownAct->addTo (mUSBContextMenu);
+
+    /* icons */
+    mAddUSBFilterAct->setIconSet (VBoxGlobal::iconSet ("usb_new_16px.png",
+                                                       "usb_new_disabled_16px.png"));
+    mAddUSBFilterFromAct->setIconSet (VBoxGlobal::iconSet ("usb_add_16px.png",
+                                                           "usb_add_disabled_16px.png"));
+    mRemoveUSBFilterAct->setIconSet (VBoxGlobal::iconSet ("usb_remove_16px.png",
+                                                          "usb_remove_disabled_16px.png"));
+    mUSBFilterUpAct->setIconSet (VBoxGlobal::iconSet ("usb_moveup_16px.png",
+                                                      "usb_moveup_disabled_16px.png"));
+    mUSBFilterDownAct->setIconSet (VBoxGlobal::iconSet ("usb_movedown_16px.png",
+                                                        "usb_movedown_disabled_16px.png"));
+
+    /* create menu of existing usb-devices */
     usbDevicesMenu = new VBoxUSBMenu (this);
     connect (usbDevicesMenu, SIGNAL(activated(int)), this, SLOT(menuAddUSBFilterFrom_activated(int)));
     mUSBFilterListModified = false;
@@ -2378,10 +2408,10 @@ void VBoxVMSettingsDlg::lvUSBFilters_currentChanged (QListViewItem *item)
     if (item && lvUSBFilters->selectedItem() != item)
         lvUSBFilters->setSelected (item, true);
 
-    tbRemoveUSBFilter->setEnabled (!!item);
+    mRemoveUSBFilterAct->setEnabled (!!item);
 
-    tbUSBFilterUp->setEnabled (!!item && item->itemAbove());
-    tbUSBFilterDown->setEnabled (!!item && item->itemBelow());
+    mUSBFilterUpAct->setEnabled (!!item && item->itemAbove());
+    mUSBFilterDownAct->setEnabled (!!item && item->itemBelow());
 
     if (item)
     {
@@ -2395,6 +2425,12 @@ void VBoxVMSettingsDlg::lvUSBFilters_currentChanged (QListViewItem *item)
     }
 }
 
+void VBoxVMSettingsDlg::lvUSBFilters_contextMenuRequested (QListViewItem *,
+                                                           const QPoint &aPoint, int)
+{
+    mUSBContextMenu->exec (aPoint);
+}
+
 void VBoxVMSettingsDlg::lvUSBFilters_setCurrentText (const QString &aText)
 {
     QListViewItem *item = lvUSBFilters->currentItem();
@@ -2403,7 +2439,7 @@ void VBoxVMSettingsDlg::lvUSBFilters_setCurrentText (const QString &aText)
     item->setText (lvUSBFilters_Name, aText);
 }
 
-void VBoxVMSettingsDlg::tbAddUSBFilter_clicked()
+void VBoxVMSettingsDlg::addUSBFilterAct_activated()
 {
     /* search for the max available filter index */
     int maxFilterIndex = 0;
@@ -2430,9 +2466,17 @@ void VBoxVMSettingsDlg::tbAddUSBFilter_clicked()
     mUSBFilterListModified = true;
 }
 
-void VBoxVMSettingsDlg::tbAddUSBFilterFrom_clicked()
+void VBoxVMSettingsDlg::addUSBFilterFromAct_activated()
 {
-    usbDevicesMenu->exec (QCursor::pos());
+    QPoint pos = QCursor::pos();
+    QRect rect = frameGeometry();
+    if (!rect.contains (pos))
+    {
+        pos = lvUSBFilters->parentWidget()->mapToGlobal (lvUSBFilters->pos());
+        pos += QPoint (5, 5);
+    }
+
+    usbDevicesMenu->exec (pos);
 }
 
 void VBoxVMSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
@@ -2467,7 +2511,7 @@ void VBoxVMSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
     mUSBFilterListModified = true;
 }
 
-void VBoxVMSettingsDlg::tbRemoveUSBFilter_clicked()
+void VBoxVMSettingsDlg::removeUSBFilterAct_activated()
 {
     QListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
@@ -2484,7 +2528,7 @@ void VBoxVMSettingsDlg::tbRemoveUSBFilter_clicked()
     mUSBFilterListModified = true;
 }
 
-void VBoxVMSettingsDlg::tbUSBFilterUp_clicked()
+void VBoxVMSettingsDlg::USBFilterUpAct_activated()
 {
     QListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
@@ -2505,7 +2549,7 @@ void VBoxVMSettingsDlg::tbUSBFilterUp_clicked()
     mUSBFilterListModified = true;
 }
 
-void VBoxVMSettingsDlg::tbUSBFilterDown_clicked()
+void VBoxVMSettingsDlg::USBFilterDownAct_activated()
 {
     QListViewItem *item = lvUSBFilters->currentItem();
     Assert (item);
