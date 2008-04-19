@@ -95,7 +95,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p>&lt;p>Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b>Privacy Policy&lt;/b> section of the VirtualBox Manual or on the &lt;ahref=http://www.virtualbox.org/wiki/PrivacyPolicy>Privacy Policy&lt;/a> page of the VirtualBox web-site.&lt;/p></string>
+              <string>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</string>
              </property>
              <property name="wordWrap" >
               <bool>true</bool>
@@ -157,7 +157,7 @@
              <item row="2" column="0" colspan="2" >
               <widget class="QCheckBox" name="mCbUse" >
                <property name="whatsThis" >
-                <string>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</string>
+                <string>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</string>
                </property>
                <property name="text" >
                 <string>&amp;Please do not use this information to contact me</string>
