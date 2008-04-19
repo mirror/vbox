@@ -515,26 +515,50 @@ void VBoxHardDiskSettings::init()
 {
     mPrevItem = 0;
 
-    mBtnAdd->setIconSet (VBoxGlobal::iconSet ("vdm_add_16px.png",
-                                              "vdm_add_disabled_16px.png"));
-    mBtnDel->setIconSet (VBoxGlobal::iconSet ("vdm_remove_16px.png",
-                                              "vdm_remove_disabled_16px.png"));
-    mBtnOpn->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                              "select_file_dis_16px.png"));
+    /* toolbar */
 
-    mSlotUniquizer = new HDSlotUniquizer (this);
+    VBoxToolBar *toolBar = new VBoxToolBar (0, mGbHDList, "snapshotToolBar");
 
+    mAddAttachmentAct->addTo (toolBar);
+    mRemoveAttachmentAct->addTo (toolBar);
+    mSelectHardDiskAct->addTo (toolBar);
+
+    toolBar->setUsesTextLabel (false);
+    toolBar->setUsesBigPixmaps (false);
+    toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
+    toolBar->setOrientation (Qt::Vertical);
+#ifdef Q_WS_MAC
+    toolBar->setMacStyle();
+#endif
+    mToolBarLayout->insertWidget (0, toolBar);
+
+    /* context menu */
+    mContextMenu = new QPopupMenu (this);
+    mAddAttachmentAct->addTo (mContextMenu);
+    mRemoveAttachmentAct->addTo (mContextMenu);
+    mSelectHardDiskAct->addTo (mContextMenu);
+
+    /* icons */
+    mAddAttachmentAct->setIconSet
+        (VBoxGlobal::iconSet ("vdm_add_16px.png", "vdm_add_disabled_16px.png"));
+    mRemoveAttachmentAct->setIconSet
+        (VBoxGlobal::iconSet ("vdm_remove_16px.png", "vdm_remove_disabled_16px.png"));
+    mSelectHardDiskAct->setIconSet
+        (VBoxGlobal::iconSet ("select_file_16px.png", "select_file_dis_16px.png"));
+
+    /* connections */
     connect (mCbSATA, SIGNAL (toggled (bool)),
              this, SLOT (onToggleSATAController (bool)));
-    connect (mBtnAdd, SIGNAL (clicked()), this, SLOT (addHDItem()));
-    connect (mBtnDel, SIGNAL (clicked()), this, SLOT (delHDItem()));
-    connect (mBtnOpn, SIGNAL (clicked()), this, SLOT (showVDM()));
     connect (mLvHD, SIGNAL (pressed (QListViewItem*, const QPoint&, int)),
              this, SLOT (moveFocus (QListViewItem*, const QPoint&, int)));
     connect (mLvHD, SIGNAL (currentChanged (QListViewItem*)),
              this, SLOT (onCurrentChanged (QListViewItem*)));
     connect (mLvHD, SIGNAL (contextMenuRequested (QListViewItem*, const QPoint&, int)),
              this, SLOT (onContextMenuRequested (QListViewItem*, const QPoint&, int)));
+
+    /* rest */
+
+    mSlotUniquizer = new HDSlotUniquizer (this);
 
     qApp->installEventFilter (this);
 }
@@ -753,9 +777,9 @@ void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
 void VBoxHardDiskSettings::onAfterCurrentChanged (QListViewItem *aItem)
 {
     /* Process postponed onCurrentChanged event */
-    mBtnAdd->setEnabled (mLvHD->childCount() < mSlotUniquizer->totalCount());
-    mBtnDel->setEnabled (aItem);
-    mBtnOpn->setEnabled (aItem);
+    mAddAttachmentAct->setEnabled (mLvHD->childCount() < mSlotUniquizer->totalCount());
+    mRemoveAttachmentAct->setEnabled (aItem != NULL);
+    mSelectHardDiskAct->setEnabled (aItem != NULL);
 
     if (aItem == mPrevItem)
         return;
@@ -775,24 +799,10 @@ void VBoxHardDiskSettings::onAfterCurrentChanged (QListViewItem *aItem)
     mPrevItem = aItem;
 }
 
-void VBoxHardDiskSettings::onContextMenuRequested (QListViewItem*,
+void VBoxHardDiskSettings::onContextMenuRequested (QListViewItem *aItem,
                                                    const QPoint &aPoint, int)
 {
-    QAction opnAction (tr ("Open Virtual Disk Manager"), QKeySequence (tr ("Ctrl+Space")), this);
-    QAction delAction (tr ("Delete Attachment"), QKeySequence (tr ("Delete")), this);
-    delAction.setIconSet (VBoxGlobal::iconSet ("vdm_remove_16px.png",
-                                               "vdm_remove_disabled_16px.png"));
-    opnAction.setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
-                                               "select_file_dis_16px.png"));
-    QPopupMenu menu (this);
-    opnAction.addTo (&menu);
-    delAction.addTo (&menu);
-    int id = menu.exec (aPoint);
-    int index = id == -1 ? id : menu.indexOf (id);
-    if (index == 0)
-        showVDM();
-    else if (index == 1)
-        delHDItem();
+    mContextMenu->exec (aPoint);
 }
 
 HDListItem* VBoxHardDiskSettings::createItem (HDSlotUniquizer *aUniq,
