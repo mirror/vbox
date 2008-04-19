@@ -239,7 +239,7 @@ RTR3DECL(int) RTTlsAllocEx(PRTTLS piTls, PFNRTTLSDTOR pfnDestructor)
     if (iTls != -1)
     {
         if (    !pfnDestructor
-            ||  __libc_TLSDestructor(iTls, (void (*)(void *, int, unsigned))pfnDestructor, fFlags) != -1)
+            ||  __libc_TLSDestructor(iTls, (void (*)(void *, int, unsigned))pfnDestructor, 0) != -1)
         {
             *piTls = iTls;
             return VINF_SUCCESS;

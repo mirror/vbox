@@ -95,7 +95,7 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 }
 
 
-RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet);
+RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
     union
     {
