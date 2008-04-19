@@ -250,14 +250,17 @@ extern int testmath(void)
     CHECKL(lrintl(make_lrd_cw(0x8000000000000000ULL,0x400e,0x0e7f)), 32768L);
     CHECKL(lrintl(make_lrd_cw(0x8000000000000000ULL,0x400e,0x0e7f)), 32768L);
 #if !defined(RT_ARCH_AMD64)
-    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x027f)), (long)-2147483648L);
-    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x027f)), (long)-2147483648L);
-    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x067f)), (long)-2147483648L);
-    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x067f)), (long)-2147483648L);
-    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x0a7f)), (long)-2147483648L);
-    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x0a7f)), (long)-2147483648L);
-    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x0e7f)), (long)-2147483648L);
-    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x0e7f)), (long)-2147483648L);
+    /* c90 says that the constant is 2147483648 (which is not representable as a signed 32-bit
+     * value).  To that constant you've then applied the negation operation. c90 doesn't have
+     * negative constants, only positive ones that have been negated.  */
+    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x027f)), (long)(-2147483647L - 1));
+    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x027f)), (long)(-2147483647L - 1));
+    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x067f)), (long)(-2147483647L - 1));
+    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x067f)), (long)(-2147483647L - 1));
+    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x0a7f)), (long)(-2147483647L - 1));
+    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x0a7f)), (long)(-2147483647L - 1));
+    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x0e7f)), (long)(-2147483647L - 1));
+    CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x0e7f)), (long)(-2147483647L - 1));
 #endif
     set_cw(0x27f);
 
