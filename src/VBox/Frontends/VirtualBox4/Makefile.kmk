@@ -437,7 +437,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMInformationDlg.h \
 	include/VBoxTakeSnapshotDlg.h \
 	include/VBoxSnapshotsWgt.h \
-	include/VBoxVMLogViewer.h
+	include/VBoxVMLogViewer.h \
+	include/VBoxAboutNonOSEDlg.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
