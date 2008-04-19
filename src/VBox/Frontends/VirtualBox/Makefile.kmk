@@ -179,8 +179,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxConsoleView.h \
 	include/VBoxProblemReporter.h \
 	include/VBoxDownloaderWgt.h \
-	include/VBoxNetworkFramework.h \
-	include/VBoxAboutNonOSEDlg.h
+	include/VBoxNetworkFramework.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -274,9 +273,10 @@ endif
 ifndef VBOX_OSE
 VirtualBox_QT_IMAGES += images/about_sun.png
 VirtualBox_SOURCES += src/VBoxAboutNonOSEDlg.cpp
-else
-VirtualBox_QT_UISRCS += ui/VBoxAboutDlg.ui
+VirtualBox_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
 endif
+# non-OSE version is always necessary for lupdate/lrelease
+VirtualBox_QT_UISRCS += ui/VBoxAboutDlg.ui
 
 ifneq ($(BUILD_TARGET),win)
 src/HappyHttp.cpp_CXXFLAGS += -fexceptions
