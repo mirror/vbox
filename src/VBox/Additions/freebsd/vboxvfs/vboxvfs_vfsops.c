@@ -70,8 +70,7 @@ static struct vfsops vboxvfs_vfsops = {
 VFS_SET(vboxvfs_vfsops, vboxvfs, VFCF_NETWORK);
 MODULE_DEPEND(vboxvfs, vboxguest, 1, 1, 1);
 
-static int
-vboxvfs_cmount(struct mntarg *ma, void * data, int flags, struct thread *td)
+static int vboxvfs_cmount(struct mntarg *ma, void * data, int flags, struct thread *td)
 {
     struct vboxvfs_mount_info args;
     int rc = 0;
@@ -212,12 +211,7 @@ static int vboxvfs_root(struct mount *mp, int flags, struct vnode **vpp, struct 
     return rc;
 }
 
-static int vboxvfs_quotactl(mp, cmd, uid, arg, td)
-	struct mount *mp;
-	int cmd;
-	uid_t uid;
-	void *arg;
-	struct thread *td;
+static int vboxvfs_quotactl(struct mount *mp, int cmd, uid_t uid, void *arg, struct thread *td)
 {
     return EOPNOTSUPP;
 }
@@ -229,24 +223,24 @@ int vboxvfs_init(struct vfsconf *vfsp)
     /* Initialize the R0 guest library. */
     rc = vboxInit();
     if (VBOX_FAILURE(rc))
-    	return ENXIO;
+        return ENXIO;
 
     /* Connect to the host service. */
     rc = vboxConnect(&g_vboxSFClient);
     if (VBOX_FAILURE(rc))
     {
-    	printf("Failed to get connection to host! rc=%d\n", rc);
-    	vboxUninit();
-    	return ENXIO;
+        printf("Failed to get connection to host! rc=%d\n", rc);
+        vboxUninit();
+        return ENXIO;
     }
 
     rc = vboxCallSetUtf8 (&g_vboxSFClient);
     if (VBOX_FAILURE (rc))
     {
         printf("vboxCallSetUtf8 failed, rc=%d\n", rc);
-    	vboxDisconnect(&g_vboxSFClient);
-    	vboxUninit();
-    	return EPROTO;
+        vboxDisconnect(&g_vboxSFClient);
+        vboxUninit();
+        return EPROTO;
     }
 
     printf("Successfully loaded shared folder module\n");
