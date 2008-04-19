@@ -5,7 +5,7 @@
 :folding=explicit:collapseFolds=1:
 
      Copyright (C) 2006-2007 Sun Microsystems, Inc.
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -13,7 +13,7 @@
      Foundation, in version 2 as it comes in the "COPYING" file of the
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-    
+
      Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
      Clara, CA 95054 USA or visit http://www.sun.com if you need
      additional information or have any questions.
@@ -656,12 +656,20 @@
                                             <cstring>lvUSBFilters</cstring>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</string>
+                                            <string>
+                                              &lt;qt&gt;Lists all global USB
+                                              filters. The checkbox to the left
+                                              defines whether the particular
+                                              filter is enabled or not. Use the
+                                              context menu or buttons to the
+                                              right to add or remove USB
+                                              filters.&lt;/qt&gt;
+                                            </string>
                                         </property>
                                     </widget>
                                     <widget class="QLayoutWidget">
                                         <property name="name">
-                                            <cstring>layout147</cstring>
+                                            <cstring>mUSBToolBarLayout</cstring>
                                         </property>
                                         <vbox>
                                             <property name="name">
@@ -670,136 +678,6 @@
                                             <property name="spacing">
                                                 <number>0</number>
                                             </property>
-                                            <widget class="QToolButton">
-                                                <property name="name">
-                                                    <cstring>tbAddUSBFilter</cstring>
-                                                </property>
-                                                <property name="focusPolicy">
-                                                    <enum>TabFocus</enum>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="accel">
-                                                    <string>Ins</string>
-                                                </property>
-                                                <property name="iconSet">
-                                                    <iconset></iconset>
-                                                </property>
-                                                <property name="textLabel">
-                                                    <string>Add Empty (Ins)</string>
-                                                </property>
-                                                <property name="autoRaise">
-                                                    <bool>true</bool>
-                                                </property>
-                                                <property name="whatsThis" stdset="0">
-                                                    <string>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</string>
-                                                </property>
-                                            </widget>
-                                            <widget class="QToolButton">
-                                                <property name="name">
-                                                    <cstring>tbAddUSBFilterFrom</cstring>
-                                                </property>
-                                                <property name="focusPolicy">
-                                                    <enum>TabFocus</enum>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="accel">
-                                                    <string>Alt+Ins</string>
-                                                </property>
-                                                <property name="iconSet">
-                                                    <iconset></iconset>
-                                                </property>
-                                                <property name="textLabel">
-                                                    <string>Add From (Alt+Ins)</string>
-                                                </property>
-                                                <property name="autoRaise">
-                                                    <bool>true</bool>
-                                                </property>
-                                                <property name="whatsThis" stdset="0">
-                                                    <string>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</string>
-                                                </property>
-                                            </widget>
-                                            <widget class="QToolButton">
-                                                <property name="name">
-                                                    <cstring>tbRemoveUSBFilter</cstring>
-                                                </property>
-                                                <property name="focusPolicy">
-                                                    <enum>TabFocus</enum>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="accel">
-                                                    <string>Del</string>
-                                                </property>
-                                                <property name="iconSet">
-                                                    <iconset></iconset>
-                                                </property>
-                                                <property name="textLabel">
-                                                    <string>Remove (Del)</string>
-                                                </property>
-                                                <property name="autoRaise">
-                                                    <bool>true</bool>
-                                                </property>
-                                                <property name="whatsThis" stdset="0">
-                                                    <string>Removes the selected USB filter.</string>
-                                                </property>
-                                            </widget>
-                                            <widget class="QToolButton">
-                                                <property name="name">
-                                                    <cstring>tbUSBFilterUp</cstring>
-                                                </property>
-                                                <property name="focusPolicy">
-                                                    <enum>TabFocus</enum>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="accel">
-                                                    <string>Ctrl+Up</string>
-                                                </property>
-                                                <property name="iconSet">
-                                                    <iconset></iconset>
-                                                </property>
-                                                <property name="textLabel">
-                                                    <string>Move Up (Ctrl+Up)</string>
-                                                </property>
-                                                <property name="autoRaise">
-                                                    <bool>true</bool>
-                                                </property>
-                                                <property name="whatsThis" stdset="0">
-                                                    <string>Moves the selected USB filter up.</string>
-                                                </property>
-                                            </widget>
-                                            <widget class="QToolButton">
-                                                <property name="name">
-                                                    <cstring>tbUSBFilterDown</cstring>
-                                                </property>
-                                                <property name="focusPolicy">
-                                                    <enum>TabFocus</enum>
-                                                </property>
-                                                <property name="text">
-                                                    <string></string>
-                                                </property>
-                                                <property name="accel">
-                                                    <string>Ctrl+Down</string>
-                                                </property>
-                                                <property name="iconSet">
-                                                    <iconset></iconset>
-                                                </property>
-                                                <property name="textLabel">
-                                                    <string>Move Down (Ctrl+Down)</string>
-                                                </property>
-                                                <property name="autoRaise">
-                                                    <bool>true</bool>
-                                                </property>
-                                                <property name="whatsThis" stdset="0">
-                                                    <string>Moves the selected USB filter down.</string>
-                                                </property>
-                                            </widget>
                                             <spacer>
                                                 <property name="name">
                                                     <cstring>spacer106</cstring>
@@ -1162,6 +1040,108 @@ to the system default language.&lt;/qt&gt;
         </widget>
     </grid>
 </widget>
+<toolbars>
+</toolbars>
+<actions>
+    <action>
+        <property name="name">
+            <cstring>mAddUSBFilterAct</cstring>
+        </property>
+        <property name="text">
+            <string>Add Empty Filter</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Add Empty Filter</string>
+        </property>
+        <property name="accel">
+            <string>Ins</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt;Adds a new USB filter with all fields initially set to
+              empty strings. Note that such a filter will match any attached USB
+              device.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>mAddUSBFilterFromAct</cstring>
+        </property>
+        <property name="text">
+            <string>Add Filter From Device</string>
+        </property>
+        <property name="menuText">
+            <string>A&amp;dd Filter From Device</string>
+        </property>
+        <property name="accel">
+            <string>Alt+Ins</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>&lt;qt&gt;Adds a new USB filter with all fields set to the
+              values of the selected USB device attached to the host
+              PC.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>mRemoveUSBFilterAct</cstring>
+        </property>
+        <property name="text">
+            <string>Remove Filter</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Remove Filter</string>
+        </property>
+        <property name="accel">
+            <string>Del</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>mUSBFilterUpAct</cstring>
+        </property>
+        <property name="text">
+            <string>Move Filter Up</string>
+        </property>
+        <property name="menuText">
+            <string>&amp;Move Filter Up</string>
+        </property>
+        <property name="accel">
+            <string>Ctrl+Up</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+    <action>
+        <property name="name">
+            <cstring>mUSBFilterDownAct</cstring>
+        </property>
+        <property name="text">
+            <string>Move Filter Down</string>
+        </property>
+        <property name="menuText">
+            <string>M&amp;ove Filter Down</string>
+        </property>
+        <property name="accel">
+            <string>Ctrl+Down</string>
+        </property>
+        <property name="whatsThis" stdset="0">
+            <string>
+              &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
+            </string>
+        </property>
+    </action>
+</actions>
 <connections>
     <connection>
         <sender>buttonOk</sender>
@@ -1224,34 +1204,40 @@ to the system default language.&lt;/qt&gt;
         <slot>lvUSBFilters_currentChanged(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>tbAddUSBFilter</sender>
-        <signal>clicked()</signal>
+        <sender>lvUSBFilters</sender>
+        <signal>contextMenuRequested(QListViewItem*, const QPoint&amp;, int)</signal>
         <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbAddUSBFilter_clicked()</slot>
+        <slot>lvUSBFilters_contextMenuRequested(QListViewItem*, const QPoint&amp;, int)</slot>
     </connection>
     <connection>
-        <sender>tbAddUSBFilterFrom</sender>
-        <signal>clicked()</signal>
+        <sender>mAddUSBFilterAct</sender>
+        <signal>activated()</signal>
         <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbAddUSBFilterFrom_clicked()</slot>
+        <slot>addUSBFilterAct_activated()</slot>
     </connection>
     <connection>
-        <sender>tbRemoveUSBFilter</sender>
-        <signal>clicked()</signal>
+        <sender>mAddUSBFilterFromAct</sender>
+        <signal>activated()</signal>
         <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbRemoveUSBFilter_clicked()</slot>
+        <slot>addUSBFilterFromAct_activated()</slot>
     </connection>
     <connection>
-        <sender>tbUSBFilterUp</sender>
-        <signal>clicked()</signal>
+        <sender>mRemoveUSBFilterAct</sender>
+        <signal>activated()</signal>
         <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbUSBFilterUp_clicked()</slot>
+        <slot>removeUSBFilterAct_activated()</slot>
     </connection>
     <connection>
-        <sender>tbUSBFilterDown</sender>
-        <signal>clicked()</signal>
+        <sender>mUSBFilterUpAct</sender>
+        <signal>activated()</signal>
         <receiver>VBoxGlobalSettingsDlg</receiver>
-        <slot>tbUSBFilterDown_clicked()</slot>
+        <slot>USBFilterUpAct_activated()</slot>
+    </connection>
+    <connection>
+        <sender>mUSBFilterDownAct</sender>
+        <signal>activated()</signal>
+        <receiver>VBoxGlobalSettingsDlg</receiver>
+        <slot>USBFilterDownAct_activated()</slot>
     </connection>
     <connection>
         <sender>lvLanguages</sender>
@@ -1280,17 +1266,14 @@ to the system default language.&lt;/qt&gt;
     <tabstop>tbResetVRDPLib</tabstop>
     <tabstop>chbVTX</tabstop>
     <tabstop>lvUSBFilters</tabstop>
-    <tabstop>tbAddUSBFilter</tabstop>
-    <tabstop>tbAddUSBFilterFrom</tabstop>
-    <tabstop>tbRemoveUSBFilter</tabstop>
-    <tabstop>tbUSBFilterUp</tabstop>
-    <tabstop>tbUSBFilterDown</tabstop>
     <tabstop>lvLanguages</tabstop>
     <tabstop>buttonHelp</tabstop>
     <tabstop>buttonOk</tabstop>
     <tabstop>buttonCancel</tabstop>
 </tabstops>
 <includes>
+    <include location="global" impldecl="in declaration">qaction.h</include>
+    <include location="global" impldecl="in declaration">qpopupmenu.h</include>
     <include location="global" impldecl="in implementation">qvalidator.h</include>
     <include location="global" impldecl="in implementation">qmessagebox.h</include>
     <include location="global" impldecl="in implementation">qfont.h</include>
@@ -1304,6 +1287,7 @@ to the system default language.&lt;/qt&gt;
     <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
     <include location="local" impldecl="in declaration">QIHotKeyEdit.h</include>
     <include location="local" impldecl="in declaration">VBoxGlobalSettings.h</include>
+    <include location="local" impldecl="in implementation">VBoxToolBar.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
     <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
@@ -1328,6 +1312,7 @@ to the system default language.&lt;/qt&gt;
     <variable access="private">VBoxUSBMenu *usbDevicesMenu;</variable>
     <variable access="private">bool mLanguageChanged;</variable>
     <variable access="private">QIRichLabel *whatsThisLabel;</variable>
+    <variable access="private">QPopupMenu *mUSBContextMenu;</variable>
 </variables>
 <slots>
     <slot>listView_currentChanged( QListViewItem * item )</slot>
@@ -1339,12 +1324,13 @@ to the system default language.&lt;/qt&gt;
     <slot>addUSBFilter( const CUSBDeviceFilter &amp;, bool )</slot>
     <slot>lvUSBFilters_currentChanged( QListViewItem * )</slot>
     <slot>lvUSBFilters_setCurrentText( const QString &amp; )</slot>
-    <slot>tbAddUSBFilter_clicked()</slot>
-    <slot>tbAddUSBFilterFrom_clicked()</slot>
+    <slot>lvUSBFilters_contextMenuRequested( QListViewItem*, const QPoint&amp;, int )</slot>
+    <slot>addUSBFilterAct_activated()</slot>
+    <slot>addUSBFilterFromAct_activated()</slot>
     <slot>menuAddUSBFilterFrom_activated( int )</slot>
-    <slot>tbRemoveUSBFilter_clicked()</slot>
-    <slot>tbUSBFilterUp_clicked()</slot>
-    <slot>tbUSBFilterDown_clicked()</slot>
+    <slot>removeUSBFilterAct_activated()</slot>
+    <slot>USBFilterUpAct_activated()</slot>
+    <slot>USBFilterDownAct_activated()</slot>
     <slot>lvLanguages_currentChanged( QListViewItem* )</slot>
 </slots>
 <functions>
