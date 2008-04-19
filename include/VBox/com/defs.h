@@ -31,11 +31,25 @@
 #ifndef ___VBox_com_defs_h
 #define ___VBox_com_defs_h
 
-/*
- * Include iprt/types.h now to make sure iprt get to stdint.h first,
- * otherwise a system/xpcom header might beat us and we'll be without
- * the macros that are optional in C++.
- */
+#if defined (RT_OS_OS2)
+
+/* Make sure OS/2 Toolkit headers are pulled in to have BOOL/ULONG/etc. typedefs
+ * already defined in order to be able to redefine them using #define. It's
+ * also important to do it before iprt/cdefs.h, otherwise we'll lose RT_MAX in
+ * all code that uses COM Glue. */
+#define INCL_BASE
+#define INCL_PM
+#include <os2.h>
+
+/* OS/2 Toolkit defines TRUE and FALSE */
+#undef FALSE
+#undef TRUE
+
+#endif /* defined (RT_OS_OS2) */
+
+/* Include iprt/types.h (which also includes iprt/types.h) now to make sure iprt
+ * get to stdint.h first, otherwise a system/xpcom header might beat us and
+ * we'll be without the macros that are optional in C++. */
 #include <iprt/types.h>
 
 #if !defined (VBOX_WITH_XPCOM)
@@ -47,7 +61,7 @@
 
 #include <objbase.h>
 #ifndef VBOX_COM_NO_ATL
-#include <atlbase.h>
+# include <atlbase.h>
 #endif
 
 #define NS_DECL_ISUPPORTS
@@ -162,21 +176,6 @@
 
 // XPCOM
 /////////////////////////////////////////////////////////////////////////////
-
-#if defined (RT_OS_OS2)
-
-/* Make sure OS/2 Toolkit headers are pulled in to have
- * BOOL/ULONG/etc. typedefs already defined in order to be able to redefine
- * them using #define. */
-#define INCL_BASE
-#define INCL_PM
-#include <os2.h>
-
-/* OS/2 Toolkit defines TRUE and FALSE */
-#undef FALSE
-#undef TRUE
-
-#endif /* defined (RT_OS_OS2) */
 
 #if defined (RT_OS_DARWIN)
   /* CFBase.h defines these*/
