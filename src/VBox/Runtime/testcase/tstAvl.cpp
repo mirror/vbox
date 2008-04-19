@@ -463,7 +463,7 @@ int avlogcphys(unsigned cMax)
         pNode = RTAvloGCPhysRemove(pTree, Key);
         if (!pNode)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear root remove i=%d Key=%d\n", i, Key);
+            printf("\ntstAvl: FAILURE - oGCPhys - linear root remove i=%d Key=%d\n", i, (unsigned)Key);
             return 1;
         }
         memset(pNode, 0xcc, sizeof(*pNode));
@@ -473,7 +473,7 @@ int avlogcphys(unsigned cMax)
         pNode = RTAvloGCPhysRemove(pTree, Key);
         if (pNode)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear root negative remove i=%d Key=%d\n", i, Key);
+            printf("\ntstAvl: FAILURE - oGCPhys - linear root negative remove i=%d Key=%d\n", i, (unsigned)Key);
             return 1;
         }
     }
@@ -523,7 +523,7 @@ int avlogcphys(unsigned cMax)
             }
             if (pNode->Key - (unsigned long)i >= 8 * 4)
             {
-                printf("\ntstAvl: FAILURE - oGCPhys - sparse remove i=%d j=%d Key=%d\n", i, j, pNode->Key);
+                printf("\ntstAvl: FAILURE - oGCPhys - sparse remove i=%d j=%d Key=%d\n", i, j, (unsigned)pNode->Key);
                 return 1;
             }
             memset(pNode, 0xdd, sizeof(*pNode));
@@ -607,7 +607,7 @@ int avlogcphysRand(unsigned cMax, unsigned cMax2)
         }
         if (pNode->Key != Key)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - random remove i=%d Key=%#x pNode->Key=%#x\n", i, Key, pNode->Key);
+            printf("\ntstAvl: FAILURE - oGCPhys - random remove i=%d Key=%#x pNode->Key=%#x\n", i, Key, (unsigned)pNode->Key);
             return 1;
         }
         TrackerRemove(pTracker, Key, Key);
@@ -629,9 +629,9 @@ int avlogcphysRand(unsigned cMax, unsigned cMax2)
 
 int avlrogcphys(void)
 {
-    RTGCPHYS            i;
-    RTGCPHYS            j;
-    RTGCPHYS            k;
+    unsigned            i;
+    unsigned            j;
+    unsigned            k;
     PAVLROGCPHYSTREE    pTree = (PAVLROGCPHYSTREE)calloc(sizeof(*pTree), 1);
 
     AssertCompileSize(AVLOGCPHYSNODECORE, 24);
@@ -648,7 +648,7 @@ int avlrogcphys(void)
         pNode->KeyLast = i + 3;
         if (!RTAvlroGCPhysInsert(pTree, pNode))
         {
-            printf("tstAvl: FAILURE - roGCPhys - linear insert i=%d\n", i);
+            printf("tstAvl: FAILURE - roGCPhys - linear insert i=%d\n", (unsigned)i);
             return 1;
         }
 
@@ -680,7 +680,7 @@ int avlrogcphys(void)
         }
         if (pNode->Key > i || pNode->KeyLast < i)
         {
-            printf("tstAvl: FAILURE - roGCPhys - linear get i=%d Key=%d KeyLast=%d\n", i, pNode->Key, pNode->KeyLast);
+            printf("tstAvl: FAILURE - roGCPhys - linear get i=%d Key=%d KeyLast=%d\n", i, (unsigned)pNode->Key, (unsigned)pNode->KeyLast);
             return 1;
         }
 
@@ -771,12 +771,12 @@ int avlrogcphys(void)
             PAVLROGCPHYSNODECORE pNode = RTAvlroGCPhysGet(pTree, KeyBase);
             if (!pNode)
             {
-                printf("tstAvl: FAILURE - roGCPhys - sparse get i=%d j=%d KeyBase=%d\n", i, j, KeyBase);
+                printf("tstAvl: FAILURE - roGCPhys - sparse get i=%d j=%d KeyBase=%d\n", i, j, (unsigned)KeyBase);
                 return 1;
             }
             if (pNode->Key > KeyBase || pNode->KeyLast < KeyBase)
             {
-                printf("tstAvl: FAILURE - roGCPhys - sparse get i=%d j=%d KeyBase=%d pNode->Key=%d\n", i, j, KeyBase, pNode->Key);
+                printf("tstAvl: FAILURE - roGCPhys - sparse get i=%d j=%d KeyBase=%d pNode->Key=%d\n", i, j, (unsigned)KeyBase, (unsigned)pNode->Key);
                 return 1;
             }
             for (k = KeyBase; k < KeyBase + 4; k++)
@@ -819,7 +819,7 @@ int avlrogcphys(void)
             RTGCPHYS Key = KeyBase + ((i / 19) % 4);
             if (RTAvlroGCPhysRangeRemove(pTree, Key) != pNode)
             {
-                printf("tstAvl: FAILURE - roGCPhys - sparse remove i=%d j=%d Key=%d\n", i, j, Key);
+                printf("tstAvl: FAILURE - roGCPhys - sparse remove i=%d j=%d Key=%d\n", i, j, (unsigned)Key);
                 return 1;
             }
             memset(pNode, 0xdd, sizeof(*pNode));
