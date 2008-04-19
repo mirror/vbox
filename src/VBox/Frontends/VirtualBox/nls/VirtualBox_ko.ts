@@ -22,7 +22,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>innotek</source>
+        <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Park Shinjo</translation>
     </message>
@@ -3544,7 +3544,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;이 등록 양식을 사용하셔서 여러분이 어떻게 VirtualBox를 사용하는지 알려 주십시오. 선택적으로 VirtualBox 새 소식이나 업데이트 알림을 받을 수도 있습니다.&lt;/p&gt;&lt;p&gt;영문자로 된 전체 이름과 전자 우편 주소를 아래 항목에 입력해 주십시오. innotek에서는 이 정보를 제품 사용 통계와 VirtualBox 새 소식 알림을 보내는 데만 사용할 것입니다. 이 정보는 제 3자와 공유되지 않습니다. 개인 정보를 사용하는 곳에 대한 자세한 정보는 VirtualBox 사용자 설명서의 &lt;b&gt;개인 정보 정책&lt;/b&gt; 섹션이나 VirtualBox 웹 사이트의 &lt;a href=&quot;http://www.virtualbox.org/wiki/PrivacyPolicy&quot;&gt;개인 정보 정책&lt;/a&gt; 항목에서 찾아 보실 수 있습니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;이 등록 양식을 사용하셔서 여러분이 어떻게 VirtualBox를 사용하는지 알려 주십시오. 선택적으로 VirtualBox 새 소식이나 업데이트 알림을 받을 수도 있습니다.&lt;/p&gt;&lt;p&gt;영문자로 된 전체 이름과 전자 우편 주소를 아래 항목에 입력해 주십시오. innotek에서는 이 정보를 제품 사용 통계와 VirtualBox 새 소식 알림을 보내는 데만 사용할 것입니다. 이 정보는 제 3자와 공유되지 않습니다. 개인 정보를 사용하는 곳에 대한 자세한 정보는 VirtualBox 사용자 설명서의 &lt;b&gt;개인 정보 정책&lt;/b&gt; 섹션이나 VirtualBox 웹 사이트의 &lt;a href=&quot;http://www.virtualbox.org/wiki/PrivacyPolicy&quot;&gt;개인 정보 정책&lt;/a&gt; 항목에서 찾아 보실 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -3568,7 +3568,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation>innotek에서 위에 지정한 전자 우편 주소로 전자 우편을 보내지 않게 하고 싶으면 선택하십시오.</translation>
+        <translation type="obsolete">innotek에서 위에 지정한 전자 우편 주소로 전자 우편을 보내지 않게 하고 싶으면 선택하십시오.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
@@ -3588,6 +3588,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

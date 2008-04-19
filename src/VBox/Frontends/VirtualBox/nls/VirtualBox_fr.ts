@@ -22,7 +22,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>innotek</source>
+        <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Jean-Jacques Sarton</translation>
     </message>
@@ -3670,7 +3670,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Veuillez bien remplir le formulaire d&apos;inscription qui nous informeras que vous utilisez VirtualBox et qui nous permettra de vous informer occasionnellement des nouveautés et des mises à jour.&lt;/p&gt;Entrez votre nom complet en utilisant des caractères latins et votre adresse courriel dans les champs ci dessous. Notez que Innotek n&apos;utilise ces données que pour effectuer des statistiques et pour l&apos;envoi de bulletins d&apos;information. Innotek ne communiquera jamais ces informations à des tiers. Des informations détaillées sur l&apos;utilisation de vos données personelles se trouvent sous la section &lt;b&gt;Privacy Policy&lt;/b&gt; du manuel d&apos;utilisation ainsi que sur la page  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site web VirtualBox.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Veuillez bien remplir le formulaire d&apos;inscription qui nous informeras que vous utilisez VirtualBox et qui nous permettra de vous informer occasionnellement des nouveautés et des mises à jour.&lt;/p&gt;Entrez votre nom complet en utilisant des caractères latins et votre adresse courriel dans les champs ci dessous. Notez que Innotek n&apos;utilise ces données que pour effectuer des statistiques et pour l&apos;envoi de bulletins d&apos;information. Innotek ne communiquera jamais ces informations à des tiers. Des informations détaillées sur l&apos;utilisation de vos données personelles se trouvent sous la section &lt;b&gt;Privacy Policy&lt;/b&gt; du manuel d&apos;utilisation ainsi que sur la page  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site web VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -3694,7 +3694,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation>Cocher cette case si vous ne désirez pas recevoir de courriel, à l&apos;adresse spécifiée, de la part d&apos;Innotek.</translation>
+        <translation type="obsolete">Cocher cette case si vous ne désirez pas recevoir de courriel, à l&apos;adresse spécifiée, de la part d&apos;Innotek.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
@@ -3714,6 +3714,14 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
