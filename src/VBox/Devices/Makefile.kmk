@@ -283,9 +283,6 @@ DevicesR3_SOURCES      += \
 	Network/lwip/src/netif/etharp.c \
 	Network/lwip/vbox/sys_arch.c \
 	Network/DevINIP.cpp
-ifneq ($(BUILD_TARGET),win)
-Network/lwip/src/api/sockets.c_CFLAGS = -Wno-address
-endif
 DevicesR3_DEFS	       += VBOX_WITH_INIP
 endif
 
