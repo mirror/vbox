@@ -313,7 +313,7 @@ void VBoxRegistrationDlg::postRequest (const QString &aHost,
 }
 
 
-/* Post the handshake request into the innotek register site. */
+/* Post the handshake request into the register site. */
 void VBoxRegistrationDlg::registration()
 {
     /* Disable control elements */
