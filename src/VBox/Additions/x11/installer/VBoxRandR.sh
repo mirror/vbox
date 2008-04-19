@@ -2,6 +2,7 @@
 #
 # @file
 #
+# Sun xVM VirtualBox
 # X11 guest additions: dynamic display changes
 #
 # Copyright (C) 2008 Sun Microsystems, Inc.

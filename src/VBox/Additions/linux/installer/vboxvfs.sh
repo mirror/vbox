@@ -1,5 +1,5 @@
 #! /bin/sh
-# innotek VirtualBox
+# Sun xVM VirtualBox
 # Linux Additions VFS kernel module init script
 #
 # Copyright (C) 2006-2007 Sun Microsystems, Inc.
