@@ -3362,10 +3362,6 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation>&lt;p&gt;Falha ao registar o produto VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3511,6 +3507,10 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

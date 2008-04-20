@@ -50,7 +50,7 @@
     <name>BootItemsTable</name>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Legt die Bootreihenfolge fest. Mittels der Checkboxen auf der linken Seite können Geräte aktiviert bzw. deaktiviert werden. Durch Auf- bzw. Abbewegen der Einträge wird die Bootreihenfolge geändert.</translation>
+        <translation>Legt die Bootreihenfolge fest. Mittels der Checkboxen auf der linken Seite können Geräte aktiviert bzw. deaktiviert werden. Durch Auf- bzw. Abwärtsbewegen der Einträge wird die Bootreihenfolge geändert.</translation>
     </message>
 </context>
 <context>
@@ -476,10 +476,6 @@ Version %1</translation>
     <message>
         <source>VirtualBox OSE</source>
         <translation>VirtualBox OSE</translation>
-    </message>
-    <message>
-        <source>innotek VirtualBox</source>
-        <translation type="obsolete">innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
@@ -1521,16 +1517,6 @@ Version %1</translation>
         <translation>Netzwerk</translation>
     </message>
     <message>
-        <source>Primary</source>
-        <comment>DiskControllerType</comment>
-        <translation type="obsolete">Primärer</translation>
-    </message>
-    <message>
-        <source>Secondary</source>
-        <comment>DiskControllerType</comment>
-        <translation type="obsolete">Sekundärer</translation>
-    </message>
-    <message>
         <source>Normal</source>
         <comment>DiskType</comment>
         <translation>Normal</translation>
@@ -1584,21 +1570,6 @@ Version %1</translation>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
         <translation>Halten</translation>
-    </message>
-    <message>
-        <source>Master</source>
-        <comment>DiskControllerDevice</comment>
-        <translation type="obsolete">Master</translation>
-    </message>
-    <message>
-        <source>Slave</source>
-        <comment>DiskControllerDevice</comment>
-        <translation type="obsolete">Slave</translation>
-    </message>
-    <message>
-        <source>Device&amp;nbsp;%1</source>
-        <comment>DiskControllerDevice</comment>
-        <translation type="obsolete">Gerät&amp;nbsp;%1</translation>
     </message>
     <message>
         <source>Null Audio Driver</source>
@@ -2044,52 +2015,20 @@ Version %1</translation>
         <translation>Ins</translation>
     </message>
     <message>
-        <source>Add Empty (Ins)</source>
-        <translation type="obsolete">Leerer Filter (Einf)</translation>
-    </message>
-    <message>
         <source>Alt+Ins</source>
         <translation>Alt+Ins</translation>
-    </message>
-    <message>
-        <source>Add From (Alt+Ins)</source>
-        <translation type="obsolete">Hinzufügen von (Alt+Einf)</translation>
     </message>
     <message>
         <source>Del</source>
         <translation>Del</translation>
     </message>
     <message>
-        <source>Remove (Del)</source>
-        <translation type="obsolete">Löschen (Entf)</translation>
-    </message>
-    <message>
-        <source>Removes the selected USB filter.</source>
-        <translation type="obsolete">Löscht den ausgewählten USB-Filter.</translation>
-    </message>
-    <message>
         <source>Ctrl+Up</source>
         <translation>Ctrl+Up</translation>
     </message>
     <message>
-        <source>Move Up (Ctrl+Up)</source>
-        <translation type="obsolete">Auf</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter up.</source>
-        <translation type="obsolete">Bewegt den ausgewählten USB-Filter aufwärts.</translation>
-    </message>
-    <message>
         <source>Ctrl+Down</source>
         <translation>Ctrl+Down</translation>
-    </message>
-    <message>
-        <source>Move Down (Ctrl+Down)</source>
-        <translation type="obsolete">Ab (Strg+Ab)</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter down.</source>
-        <translation type="obsolete">Bewegt den ausgewählten USB-Filter abwärts.</translation>
     </message>
     <message>
         <source>Help</source>
@@ -2121,7 +2060,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation>Alle Änderungen verwerden und Dialog schließen.</translation>
+        <translation>Alle Änderungen verwerfen und Dialog schließen.</translation>
     </message>
     <message>
         <source>VirtualBox Preferences</source>
@@ -2221,18 +2160,6 @@ to the system default language.&lt;/qt&gt;
         <translation>Ist diese Funktion eingeschaltet, wird die Tastatur jedes Mal automatisch gefangen, wenn das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
     </message>
     <message>
-        <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="obsolete">Zeigt alle globalen USB-Filter. Die Checkbox auf der linken Seite steuert, ob der jeweilige Filter aktiv ist oder nicht.</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="obsolete">Erstellt einen neuen USB-Filter, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="obsolete">Fügt einen neuen USB-Filter hinzu, wobei alle Felder mit Werten des ausgewählten USB-Gerätes belegt werden.</translation>
-    </message>
-    <message>
         <source>V&amp;RDP Authentication Library</source>
         <translation>V&amp;RDP-Authentikationsbibliothek</translation>
     </message>
@@ -2270,15 +2197,15 @@ to the system default language.&lt;/qt&gt;
                                               right to add or remove USB
                                               filters.&lt;/qt&gt;
                                             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Zeigt alle globalen USB-Filter. Die Checkbox auf der linken Seite steuert, ob der jeweilige Filter aktiv ist oder nicht. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite um USB-Filter hinzuzufügen oder zu löschen.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Leeren Filter hinzufügen</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Leeren Filter hinzufügen</translation>
     </message>
     <message>
         <source>
@@ -2286,87 +2213,87 @@ to the system default language.&lt;/qt&gt;
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Fügt einen neuen USB-Filter hinzu, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf angeschlossene USB-Geräte passt.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Filter von einem Gerät hinzufügen</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Filter von einem Gerät &amp;hinzufügen</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Fügt einen neuen USB-Filter hinzu und initialisiert alle Felder mit den Werten des ausgewählten Gerätes, das an den PC angeschlossen ist.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Filter entfernen</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Filter &amp;entfernen</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Entfernt den ausgewählten USB-Filter.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewege Filter nach oben</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewege Filter nach &amp;oben</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>Bewegt den ausgewählten USB-Filter nach oben.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewege Filter nach unten</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewege Filter nach &amp;unten</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Bewegt den ausgewählten USB-Filter nach unten.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
         <source>Slot</source>
-        <translation type="unfinished"></translation>
+        <translation>Slot</translation>
     </message>
     <message>
         <source>Hard Disk</source>
-        <translation type="unfinished">Platte</translation>
+        <translation>Platte</translation>
     </message>
     <message>
         <source>VBoxHardDiskSettings</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="unfinished">&amp;Festplatten</translation>
+        <translation>&amp;Festplatten</translation>
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;SATA-Controller aktivieren</translation>
     </message>
     <message>
         <source>
@@ -2375,35 +2302,27 @@ to the system default language.&lt;/qt&gt;
                           attach hard disks to SATA ports when the virtual SATA
                           controller is disabled.&lt;/qt&gt;
                         </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Aktiviert den virtuellen SATA-Controller dieser Maschine. Festplatten können nur an SATA-Ports angeschlossen werden, wenn der virtuelle SATA-Controller aktiviert ist.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Hard Disks &amp;Attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>Festplatten&amp;anschlüsse</translation>
     </message>
     <message>
         <source>Ins</source>
         <translation>Ins</translation>
     </message>
     <message>
-        <source>Del</source>
-        <translation type="obsolete">Del</translation>
-    </message>
-    <message>
-        <source>Remove (Del)</source>
-        <translation type="obsolete">Löschen (Entf)</translation>
-    </message>
-    <message>
         <source>Ctrl+Space</source>
-        <translation type="unfinished">Ctrl+Space</translation>
+        <translation>Ctrl+Space</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; benutzt die Festplatte, die bereits an &lt;i&gt;%2&lt;/i&gt; angeschlossen ist</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Löschen</translation>
+        <translation>Löschen</translation>
     </message>
     <message>
         <source>
@@ -2416,50 +2335,50 @@ to the system default language.&lt;/qt&gt;
                                   to add or remove hard disk
                                   attachments.&lt;/qt&gt;
                                 </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Zeigt alle an diese Maschine angeschlossenen Festplatten. Mittels Doppelklick oder Betätigen von &lt;tt&gt;F2&lt;/tt&gt; bzw. &lt;tt&gt;Leertaste&lt;/tt&gt; auf dem ausgewählten Eintrag aktivieren Sie eine Drop-Down-Liste und können den Anschlusstyp wählen. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite um Festplatten hinzuzufügen oder zu entfernen.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Anschluss hinzufügen</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Anschluss &amp;hinzufügen</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;/qt&gt;Fügt einen neuen Festplattenanschluss hinzu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Anschluss entfernen</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Anschluss &amp;entfernen</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Entfernt den ausgewählten Festplattenanschluss.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Festplatte auswählen</translation>
     </message>
     <message>
         <source>&amp;Select Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Festplatte &amp;auswählen</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Ruft den Manager für virtuelle Platten auf, um eine Festplatte an den ausgewählten Slot anzuschließen.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -2817,14 +2736,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;Das COM-Objekt für VirtualBox konnte nicht erzeugt werden.&lt;/p&gt;&lt;p&gt;Die Anwendung wird nun beendet.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Die globalen Einstellungen konnten nicht geladen werden.&lt;/p&gt;&lt;p&gt;Die Anwendung wird nun geschlossen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Die globalen Einstellungen für die Nutzeroberfläche konnten nicht gesichert werden.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>Failed to set global VirtualBox properties.</source>
         <translation>Die globalen Eigenschaften konnten nicht definiert werden.</translation>
     </message>
@@ -2843,14 +2754,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Die Einstellungen für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht übernommen werden.</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Die Einstellungen für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht gesichert werden.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Die Einstellungen für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht geladen werden.</translation>
     </message>
     <message>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2931,14 +2834,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
         <translation>Das virtuelle Plattenabbild &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht erstellt werden.</translation>
-    </message>
-    <message>
-        <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">Das Plattenabbild mit der UUID %1 konnte nicht an den Slot %2 des Controllers %3 der Maschine &lt;b&gt;%4&lt;/b&gt; angeschlossen werden.</translation>
-    </message>
-    <message>
-        <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Ein Plattenabbild konnte nicht von Slot %1 des Controllers %2 der Maschine &lt;b&gt;%3&lt;/b&gt; getrennt werden.</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -3259,7 +3154,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation>Forfahren</translation>
+        <translation>Fortfahren</translation>
     </message>
     <message>
         <source>Go Back</source>
@@ -3267,32 +3162,28 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Zurück</translation>
     </message>
     <message>
-        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die globalen Einstellungen für VirtualBox konnten nicht als &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; abgespeichert werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die globale GUI-Konfiguration konnte von &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; nicht geladen werden.&lt;/p&gt;&lt;p&gt;Die Anwendung wird nun beendet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die globale GUI-Konfiguration konnte nicht in der Datei &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; gespeichert werden.&lt;/p&gt;&lt;p&gt;Die Anwendung wird nun beendet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Einstellungen der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht nach &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; abgespeichert werden.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Einstellungen der virtuellen Maschine &lt;b&gt;%1&lt;/b&gt; konnten nicht von der Datei &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; geladen werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;An den SATA-Controller sind Festplatten angeschlossen. Wenn Sie den virtuellen SATA-Controller deaktivieren, wird die Bindung an alle diese Platten automatisch aufgehoben.&lt;/p&gt;&lt;p&gt;Möchten Sie den SATA-Controller wirklich deaktivieren?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Disable</source>
@@ -3301,15 +3192,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Festplatte mit der UUID %1 konnte nicht an den Slot %2 / Kanal %3 / Bus %4 der Machine &lt;b&gt;%5&lt;/b&gt; angeschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Festplatte konnte nicht von Slot %1 / Kanal %2 / Bus %3 der Maschine &lt;b&gt;%4&lt;/b&gt; entfernt werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die folgenden VirtualBox-Einstellungen wurden automatisch in das neue Format mit der Version &lt;b&gt;%1&lt;/b&gt; umgewandelt.&lt;/p&gt;&lt;p&gt;Das Resultat wurde noch nicht auf der Festplatte gespeichert. Bitte betätigen Sie:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Speichern&lt;/b&gt; um alle automatisch konvertierten Dateien nun abzuspeichern (ältere Versionen von VirtualBox können diese Einstellungen nicht verwenden!),&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sicherheitskopie&lt;/b&gt; um Sicherheitskopien dieser Dateien im alten Format zu erstellen bevor sie im neuen Format gespeichert werden, oder&lt;/li&gt;&lt;li&gt;&lt;b&gt;Abbrechen&lt;/b&gt; um die automatisch konvertierten Einstellungen jetzt nicht zu speichern.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Falls Sie &lt;b&gt;Abbrechen&lt;/b&gt; wählen, werden die Einstellungen implizit im neuen Format gespeichert, sobald Sie eine Änderung an den Einstellungen einer Maschine vornehmen. Sicherheitskopien werden in diesem Fall nicht erstellt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save</source>
@@ -3326,16 +3217,16 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>Abbrechen</translation>
     </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation>Datei &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; konnte nicht nach &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; kopiert werden (%3).</translation>
+    </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
         <translation>VirtualBox registrieren</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Bitte füllen Sie dieses Formular aus, damit wir wissen, dass Sie VirtualBox benutzen. Außerdem möchten wir Sie gern über Updates sowie über Neuigkeiten rund um VirtualBox informieren.&lt;p&gt;&lt;p&gt;Bitte tragen Sie Ihren vollen Namen sowie Ihre EMail-Adresse in die jeweiligen Felder ein. innotek wird diese Daten nur benutzen, um Nutzerstatistiken von VirtualBox zu erstellen und um Ihnen optional Informationen zu VirtualBox zu senden. Insbesondere wird innotek Ihre persönlichen Daten niemals an Dritte weitergeben. Detaillierte Informationen über die Nutzung Ihrer persönlichen Daten können Sie im Abschnitt &lt;b&gt;Privacy Policy&lt;/b&gt; des Handbuchs oder unter &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; auf der VirtualBox-Webseite nachlesen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -3356,10 +3247,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&amp;Please do not use this information to contact me</source>
         <translation>&amp;Bitte nutzen Sie diese Daten nicht, um mich zu kontaktieren</translation>
-    </message>
-    <message>
-        <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation type="obsolete">Aktivieren Sie dieses Kästchen, wenn Sie E-mail von innotek an die oben genannte Adresse erhalten möchten.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
@@ -3387,7 +3274,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation>Aktivieren Sie dieses Kästchen, wenn Sie E-mail von Sun Microsystems an die oben genannte Adresse erhalten möchten.</translation>
+        <translation>Aktivieren Sie dieses Kästchen, wenn Sie E-Mail von Sun Microsystems an die oben genannte Adresse erhalten möchten.</translation>
     </message>
 </context>
 <context>
@@ -3414,10 +3301,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>VirtualBox OSE</source>
         <translation>VirtualBox OSE</translation>
-    </message>
-    <message>
-        <source>innotek VirtualBox</source>
-        <translation type="obsolete">innotek VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Details</source>
@@ -3806,7 +3689,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Details of %1 (%2)</source>
-        <translation>Deteils von %1 (%2)</translation>
+        <translation>Details von %1 (%2)</translation>
     </message>
 </context>
 <context>
@@ -3879,7 +3762,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>Der aktuelle Zustand ist identisch mit dem gespeicherten Zustand des aktuellen Sicherungspuntes</translation>
+        <translation>Der aktuelle Zustand ist identisch mit dem gespeicherten Zustand des aktuellen Sicherungspunktes</translation>
     </message>
     <message>
         <source> (current, </source>
@@ -4188,7 +4071,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wählen Sie den Typ des Mediums, das Sie für die Installtion verwenden möchten.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Wählen Sie den Typ des Mediums, das Sie für die Installation verwenden möchten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Type</source>
@@ -4284,10 +4167,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>&amp;Close</source>
         <translation>&amp;Schließen</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation type="obsolete">Alt+S</translation>
     </message>
     <message>
         <source>%1 - Session Information</source>
@@ -4874,22 +4753,6 @@ value.&lt;/qt&gt;</source>
         <translation>&amp;Beschreibung</translation>
     </message>
     <message>
-        <source>&amp;Primary Master</source>
-        <translation type="obsolete">&amp;Primärer Master</translation>
-    </message>
-    <message>
-        <source>&lt;not selected&gt;</source>
-        <translation type="obsolete">&lt;nicht ausgewählt&gt;</translation>
-    </message>
-    <message>
-        <source>P&amp;rimary Slave</source>
-        <translation type="obsolete">P&amp;rimärer Slave</translation>
-    </message>
-    <message>
-        <source>&amp;Secondary (IDE 1) Slave</source>
-        <translation type="obsolete">&amp;Sekundärer Slave</translation>
-    </message>
-    <message>
         <source>&amp;Mount Floppy Drive</source>
         <translation>&amp;Diskettenlaufwerk einbinden</translation>
     </message>
@@ -4950,52 +4813,20 @@ value.&lt;/qt&gt;</source>
         <translation>Ins</translation>
     </message>
     <message>
-        <source>Add Empty (Ins)</source>
-        <translation type="obsolete">Leerer Filter (Einf)</translation>
-    </message>
-    <message>
         <source>Alt+Ins</source>
         <translation>Alt+Ins</translation>
-    </message>
-    <message>
-        <source>Add From (Alt+Ins)</source>
-        <translation type="obsolete">Hinzufügen aus (Alt+Einf)</translation>
     </message>
     <message>
         <source>Del</source>
         <translation>Del</translation>
     </message>
     <message>
-        <source>Remove (Del)</source>
-        <translation type="obsolete">Löschen (Entf)</translation>
-    </message>
-    <message>
-        <source>Removes the selected USB filter.</source>
-        <translation type="obsolete">Ausgewählten USB-Filter löschen.</translation>
-    </message>
-    <message>
         <source>Ctrl+Up</source>
         <translation>Ctrl+Up</translation>
     </message>
     <message>
-        <source>Move Up (Ctrl+Up)</source>
-        <translation type="obsolete">Aufwärts (Strg+Auf)</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter up.</source>
-        <translation type="obsolete">Ausgewählten USB-Filter aufwärts bewegen.</translation>
-    </message>
-    <message>
         <source>Ctrl+Down</source>
         <translation>Ctrl+Down</translation>
-    </message>
-    <message>
-        <source>Move Down (Ctrl+Down)</source>
-        <translation type="obsolete">Runter (Strg+Ab)</translation>
-    </message>
-    <message>
-        <source>Moves the selected USB filter down.</source>
-        <translation type="obsolete">Ausgewählter USB-Filter abwärts.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
@@ -5040,22 +4871,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Cancels changes and closes the dialog.</source>
         <translation>Alle Änderungen verwerfen und Dialog schließen.</translation>
-    </message>
-    <message>
-        <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation type="obsolete">Schließt die angegebene virtuelle Festplatte an den Master-Slot des primären IDE-Controllers an.</translation>
-    </message>
-    <message>
-        <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
-        <translation type="obsolete">Schließt die angegebene virtuelle Festplatte an den Slave-Slot des primären IDE-Controllers an.</translation>
-    </message>
-    <message>
-        <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation type="obsolete">Schließt die angegebene virtuelle Festplatte an den Slave-Slot des sekundären IDE-Controllers an.</translation>
-    </message>
-    <message>
-        <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
-        <translation type="obsolete">Zeigt die virtuellen Festplatten, die an diesen IDE-Slot angeschlossen werden können und erlaubt die schnelle Auswahl von anderen Platten.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
@@ -5140,10 +4955,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
         <translation>Zeigt die Beschreibung für diese virtuelle Maschine. Das Beschreibungsfeld kann für Kommentare über die Konfiguration des installierten Gastsystems verwendet werden.</translation>
     </message>
     <message>
-        <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="obsolete">Ruft den Manager für virtuelle Medien auf um eine neue virtuelle Festplatte zu erzeugen oder um ein bereits vorhandenes Abbild auszuwählen.</translation>
-    </message>
-    <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
         <translation>Zeigt die Diskettenabbilder, die an die virtuelle Maschine gebunden werden können.</translation>
     </message>
@@ -5167,18 +4978,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
         <translation>Aktiviert den virtuellen USB-Controller für diese Maschine.</translation>
-    </message>
-    <message>
-        <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
-        <translation type="obsolete">Zeigt alle USB-Filter dieser Maschine. Die Checkbox auf der linken Seite legt fest, ob ein bestimmter Filter aktiviert ist oder nicht.</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="obsolete">Erstellt einen neuen USB-Filter, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf alle angeschlossenen USB-Geräte passt.</translation>
-    </message>
-    <message>
-        <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="obsolete">Fügt einen neuen USB-Filter hinzu, wobei alle Felder mit Werten des ausgewählten USB-Gerätes belegt werden.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -5278,26 +5077,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&lt;qt&gt;Zeigt die VRDP-Server-Portnummer. Sie können &lt;tt&gt;0&lt;/tt&gt; (Null) einstellen, um den voreingestellen Port zu verwenden.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Primary Master hard disk is not selected</source>
-        <translation type="obsolete">Primäre Masterplatte nicht ausgewählt</translation>
-    </message>
-    <message>
-        <source>Primary Slave hard disk is not selected</source>
-        <translation type="obsolete">Primäre Slaveplatte nicht ausgewählt</translation>
-    </message>
-    <message>
-        <source>Primary Slave hard disk is already attached to a different slot</source>
-        <translation type="obsolete">Primäre Masterplatte ist bereits an einen anderen Slot gebunden</translation>
-    </message>
-    <message>
-        <source>Secondary Slave hard disk is not selected</source>
-        <translation type="obsolete">Sekundäre Slaveplatte nicht ausgewählt</translation>
-    </message>
-    <message>
-        <source>Secondary Slave hard disk is already attached to a different slot</source>
-        <translation type="obsolete">Sekundäre Slaveplatte ist bereits bereits an einen anderen Slot gebunden</translation>
-    </message>
-    <message>
         <source>CD/DVD image file is not selected</source>
         <translation>CD/DVD-Abbild ist nicht ausgewählt</translation>
     </message>
@@ -5349,14 +5128,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Audio &amp;Controller</source>
         <translation>Audio-&amp;Controller</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Selects the type of the emulated audio hardware.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Wählt den Typ der emulierten Audio-Hardware.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>Enable USB E&amp;HCI Controller</source>
-        <translation type="obsolete">E&amp;HCI-Controller aktivieren</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
@@ -5428,7 +5199,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                                           exposed to the virtual
                                                           machine.&lt;/qt&gt;
                                                         </source>
-        <translation>&lt;qt&gt;Bei Aktivierung dieser Einstellung aktiviert VirtualBox den CPU-Modus Physical Address Extension (PAE).&lt;/qt/&gt;</translation>
+        <translation>&lt;qt&gt;Aktiviert den CPU-Modus Physical Address Extension (PAE) für den Gast, falls der Host diesen Modus ebenfalls beherrscht.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
@@ -5448,7 +5219,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                               buttons to the right to add or
                                               remove USB filters.&lt;/qt&gt;
                                             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Zeigt alle globalen USB-Filter. Die Checkbox auf der linken Seite steuert, ob der jeweilige Filter aktiv ist oder nicht. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite um USB-Filter hinzuzufügen oder zu löschen.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
@@ -5464,7 +5235,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Fügt einen neuen USB-Filter hinzu, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf angeschlossene USB-Geräte passt.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
@@ -5479,7 +5250,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Fügt einen neuen USB-Filter hinzu und initialisiert alle Felder mit den Werten des ausgewählten Gerätes, das an den PC angeschlossen ist.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Filter</source>
@@ -5493,35 +5264,35 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Löscht den ausgewählten USB-Filter.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation>Filter nach oben</translation>
+        <translation>Bewege Filter nach oben</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished">Filter nach oben</translation>
+        <translation>Bewege Filter nach &amp;oben</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Bewegt den ausgewählten USB-Filter nach oben.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation>Filter nach unten</translation>
+        <translation>Bewege Filter nach unten</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished">Filter nach unten</translation>
+        <translation>Bewege Filter nach &amp;unten</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation></translation>
+        <translation>&lt;qt&gt;Bewegt den ausgewählten USB-Filter nach unten.&lt;/qt&gt;</translation>
     </message>
 </context>
 </TS>
