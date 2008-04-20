@@ -504,8 +504,8 @@ cannotCopyFile (const QString &aSrc, const QString &aDst, int aVRC)
         err.truncate (err.length() - 1);
 
     message (mainWindowShown(), VBoxProblemReporter::Error,
-        tr ("Failed to copy file <b><nobr>%1<nobr></b> to "
-             "<b><nobr>%2<nobr></b> (%3).")
+        tr ("Failed to copy file <b><nobr>%1</nobr></b> to "
+             "<b><nobr>%2</nobr></b> (%3).")
              .arg (aSrc, aDst, err));
 }
 
