@@ -40,14 +40,14 @@ BEGIN
   BEGIN
     BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
     BEGIN
-    VALUE "CompanyName",     "innotek GmbH\0"
-    VALUE "FileDescription", "innotek VirtualBox Interface\0"
+    VALUE "CompanyName",     "Sun Microsystems, Inc.\0"
+    VALUE "FileDescription", "Sun xVM VirtualBox Interface\0"
     VALUE "FileVersion",     "1.0.000\0"
     VALUE "InternalName",    "VBOXC\0"
     VALUE "LegalCopyright",  "\0"
     VALUE "LegalTrademarks", "\0"
     VALUE "OriginalFilename","VBOXC.DLL\0"
-    VALUE "ProductName",     "innotek VirtualBox\0"
+    VALUE "ProductName",     "Sun xVM VirtualBox\0"
     VALUE "ProductVersion",  "1.0.000\0"
 
     VALUE "OLESelfRegister", ""

@@ -3,7 +3,7 @@
  *  :tabSize=2:indentSize=2:noTabs=true:
  *  :folding=explicit:collapseFolds=1:
  *
- *  innotek VirtualBox Settings Schema Version 1.0-os2
+ *  Sun xVM VirtualBox Settings Schema Version 1.0-os2
  *
      Copyright (C) 2004-2008 Sun Microsystems, Inc.
     
@@ -30,8 +30,8 @@
 
 <xsd:annotation>
   <xsd:documentation xml:lang="en">
-    innotek VirtualBox Settings Schema (os2).
-    Copyright (c) 2004-2008 innotek GmbH.
+    Sun xVM VirtualBox Settings Schema (os2).
+    Copyright (c) 2004-2008 Sun Microsystems, Inc.
   </xsd:documentation>
 </xsd:annotation>
 
