@@ -2739,6 +2739,10 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Double-click to add a new attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxLicenseViewer</name>
