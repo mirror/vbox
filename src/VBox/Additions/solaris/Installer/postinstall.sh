@@ -130,7 +130,7 @@ echo "Configuring service..."
 
 echo "Done."
 if test $retval -eq 0; then
-    echo "Please restart X Window System for activating the X11 guest additions."
+    echo "Please re-login to activate the X11 guest additions."
 fi
 exit $retval
 
