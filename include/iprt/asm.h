@@ -933,9 +933,9 @@ DECLINLINE(RTCCUINTREG) ASMGetCR0(void)
 
 # elif RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
-    __asm__ ("movq  %%cr0, %0\t\n" : "=r" (uCR0));
+    __asm__ __volatile__("movq  %%cr0, %0\t\n" : "=r" (uCR0));
 #  else
-    __asm__ ("movl  %%cr0, %0\t\n" : "=r" (uCR0));
+    __asm__ __volatile__("movl  %%cr0, %0\t\n" : "=r" (uCR0));
 #  endif
 # else
     __asm
@@ -1003,9 +1003,9 @@ DECLINLINE(RTCCUINTREG) ASMGetCR2(void)
 
 # elif RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
-    __asm__ ("movq  %%cr2, %0\t\n" : "=r" (uCR2));
+    __asm__ __volatile__("movq  %%cr2, %0\t\n" : "=r" (uCR2));
 #  else
-    __asm__ ("movl  %%cr2, %0\t\n" : "=r" (uCR2));
+    __asm__ __volatile__("movl  %%cr2, %0\t\n" : "=r" (uCR2));
 #  endif
 # else
     __asm
@@ -1070,9 +1070,9 @@ DECLINLINE(RTCCUINTREG) ASMGetCR3(void)
 
 # elif RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
-    __asm__ ("movq  %%cr3, %0\t\n" : "=r" (uCR3));
+    __asm__ __volatile__("movq  %%cr3, %0\t\n" : "=r" (uCR3));
 #  else
-    __asm__ ("movl  %%cr3, %0\t\n" : "=r" (uCR3));
+    __asm__ __volatile__("movl  %%cr3, %0\t\n" : "=r" (uCR3));
 #  endif
 # else
     __asm
@@ -1179,9 +1179,9 @@ DECLINLINE(RTCCUINTREG) ASMGetCR4(void)
 
 # elif RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
-    __asm__ ("movq  %%cr4, %0\t\n" : "=r" (uCR4));
+    __asm__ __volatile__("movq  %%cr4, %0\t\n" : "=r" (uCR4));
 #  else
-    __asm__ ("movl  %%cr4, %0\t\n" : "=r" (uCR4));
+    __asm__ __volatile__("movl  %%cr4, %0\t\n" : "=r" (uCR4));
 #  endif
 # else
     __asm
@@ -1258,7 +1258,7 @@ DECLINLINE(RTCCUINTREG) ASMGetCR8(void)
     uCR8 = __readcr8();
 
 #  elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ ("movq  %%cr8, %0\t\n" : "=r" (uCR8));
+    __asm__ __volatile__("movq  %%cr8, %0\t\n" : "=r" (uCR8));
 #  else
     __asm
     {
@@ -1504,9 +1504,9 @@ DECLINLINE(RTCCUINTREG) ASMGetDR7(void)
     RTCCUINTREG uDR7;
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
-    __asm__ ("movq   %%dr7, %0\n\t" : "=r" (uDR7));
+    __asm__ __volatile__("movq   %%dr7, %0\n\t" : "=r" (uDR7));
 #  else
-    __asm__ ("movl   %%dr7, %0\n\t" : "=r" (uDR7));
+    __asm__ __volatile__("movl   %%dr7, %0\n\t" : "=r" (uDR7));
 #  endif
 # else
     __asm
@@ -1538,9 +1538,9 @@ DECLINLINE(RTCCUINTREG) ASMGetDR6(void)
     RTCCUINTREG uDR6;
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
-    __asm__ ("movq   %%dr6, %0\n\t" : "=r" (uDR6));
+    __asm__ __volatile__("movq   %%dr6, %0\n\t" : "=r" (uDR6));
 #  else
-    __asm__ ("movl   %%dr6, %0\n\t" : "=r" (uDR6));
+    __asm__ __volatile__("movl   %%dr6, %0\n\t" : "=r" (uDR6));
 #  endif
 # else
     __asm
@@ -1573,12 +1573,12 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
 # if RT_INLINE_ASM_GNU_STYLE
     RTCCUINTREG uNewValue =  0xffff0ff0;  /* 31-16 and 4-11 are 1's, 12 and 63-31 are zero. */
 #  ifdef RT_ARCH_AMD64
-    __asm__ ("movq   %%dr6, %0\n\t"
+    __asm__ __volatile__("movq   %%dr6, %0\n\t"
              "movq   %1, %%dr6\n\t"
              : "=r" (uDR6)
              : "r" (uNewValue));
 #  else
-    __asm__ ("movl   %%dr6, %0\n\t"
+    __asm__ __volatile__("movl   %%dr6, %0\n\t"
              "movl   %1, %%dr6\n\t"
              : "=r" (uDR6)
              : "r" (uNewValue));
