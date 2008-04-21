@@ -28,6 +28,7 @@ $vboxadditions_path/vboxguest.sh restart silentunload
 
 # suid permissions for timesync
 chmod 04755 $vboxadditions_path/VBoxService
+chmod a+x $vboxadditions_path/VBoxClient
 
 # create links
 /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
