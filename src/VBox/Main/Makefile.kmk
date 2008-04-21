@@ -175,10 +175,6 @@ endif
 VBoxSVC_LIBS += \
 	$(LIB_DDU) \
 	$(LIB_SETTINGS)
-ifdef VBOX_WITH_USB
- VBoxSVC_LIBS += \
- 	$(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
-endif
 VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)

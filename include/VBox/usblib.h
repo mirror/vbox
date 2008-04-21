@@ -46,6 +46,7 @@
 #endif
 /** @todo merge the usblib-win.h interface into the darwin and linux ports where suitable. */
 
+__BEGIN_DECLS
 /** @defgroup grp_USBLib    USBLib - USB Support Library
  * This module implements the basic low-level OS interfaces and common USB code.
  * @{
@@ -66,7 +67,7 @@
  * @remark  The users within the process are responsible for not calling
  *          this function at the same time (because I'm lazy).
  */
-int USBLibInit(void);
+USBLIB_DECL(int) USBLibInit(void);
 
 /**
  * Terminates the USBLib component.
@@ -75,7 +76,7 @@ int USBLibInit(void);
  *
  * @returns VBox status code.
  */
-int USBLibTerm(void);
+USBLIB_DECL(int) USBLibTerm(void);
 
 /**
  * Adds a filter.
@@ -94,18 +95,20 @@ int USBLibTerm(void);
  *
  * @param   pFilter     The filter to add.
  */
-void *USBLibAddFilter(PCUSBFILTER pFilter);
+USBLIB_DECL(void *) USBLibAddFilter(PCUSBFILTER pFilter);
 
 /**
  * Removes a filter.
  *
  * @param   pvId        The ID returned by USBLibAddFilter.
  */
-void USBLibRemoveFilter(void *pvId);
+USBLIB_DECL(void) USBLibRemoveFilter(void *pvId);
 
 #endif /* IN_RING3 */
 #endif /* !RT_OS_WINDOWS */
 
 /** @} */
+__END_DECLS
+
 #endif
 
