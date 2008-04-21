@@ -1817,6 +1817,31 @@ CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag)
 }
 
 /**
+ * Unmonitors a code page
+ *
+ * @returns VBox status code
+ * @param   pVM         The VM to operate on.
+ * @param   pPageAddrGC The page to monitor
+ * @param   enmTag      Monitor tag
+ */
+CSAMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag)
+{
+    pPageAddrGC &= PAGE_BASE_GC_MASK;
+
+    Log(("CSAMR3UnmonitorPage %VGv %d\n", pPageAddrGC, enmTag));
+
+    Assert(enmTag == CSAM_TAG_REM);
+
+#ifdef VBOX_STRICT
+    PCSAMPAGEREC pPageRec;
+
+    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)pPageAddrGC);
+    Assert(pPageRec && pPageRec->page.enmTag == enmTag);
+#endif
+    return CSAMR3RemovePage(pVM, pPageAddrGC);
+}
+
+/**
  * Removes a page record from our lookup tree
  *
  * @returns VBox status code
