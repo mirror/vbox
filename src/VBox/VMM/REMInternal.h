@@ -48,7 +48,8 @@
 
 /** @def REM_MONITOR_CODE_PAGES
  * Enable to monitor code pages that have been translated by the recompiler. */
-#define REM_MONITOR_CODE_PAGES
+/** Currently broken and interferes with CSAM monitoring (see #2784) */
+////#define REM_MONITOR_CODE_PAGES
 
 typedef enum REMHANDLERNOTIFICATIONKIND
 {
