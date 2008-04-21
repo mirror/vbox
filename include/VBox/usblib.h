@@ -34,7 +34,6 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/usb.h>
-#include <VBox/usbfilter.h>
 
 #ifdef RT_OS_WINDOWS
 # include <VBox/usblib-win.h>
