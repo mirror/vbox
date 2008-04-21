@@ -44,7 +44,7 @@ public:
     QIcon osIcon() const { return mAccessible ? vboxGlobal().vmGuestOSTypeIcon (mOSTypeId) :QPixmap (":/os_unknown.png"); }
     QUuid id() const { return mId; }
     
-    QString sessionStateName() const { return mAccessible ? vboxGlobal().toString (mState) : QObject::tr ("Inaccessible"); }
+    QString sessionStateName() const;
     QIcon sessionStateIcon() const { return mAccessible ? vboxGlobal().toIcon (mState) : QPixmap (":/state_aborted_16px.png"); }
 
     QString snapshotName() const { return mSnapshotName; }
