@@ -677,17 +677,17 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
     if(VBOX_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     const char *pszInstr;
 
     if (pCpu->pCurInstr->opcode == OP_XOR)
         pszInstr = "Xor";
-    else
-    if (pCpu->pCurInstr->opcode == OP_OR)
+    else if (pCpu->pCurInstr->opcode == OP_OR)
         pszInstr = "Or";
-    else
-    if (pCpu->pCurInstr->opcode == OP_AND)
+    else if (pCpu->pCurInstr->opcode == OP_AND)
         pszInstr = "And";
+    else
+        pszInstr = "OrXorAnd??";
 #endif
 
 #ifdef IN_GC
@@ -849,17 +849,17 @@ static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
     if(VBOX_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     const char *pszInstr;
 
     if (pCpu->pCurInstr->opcode == OP_SUB)
         pszInstr = "Sub";
-    else
-    if (pCpu->pCurInstr->opcode == OP_ADD)
+    else if (pCpu->pCurInstr->opcode == OP_ADD)
         pszInstr = "Add";
-    else
-    if (pCpu->pCurInstr->opcode == OP_ADC)
+    else if (pCpu->pCurInstr->opcode == OP_ADC)
         pszInstr = "Adc";
+    else
+        pszInstr = "AddSub??";
 #endif
 
 #ifdef IN_GC
@@ -973,12 +973,12 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 
     if (pCpu->pCurInstr->opcode == OP_BTR)
         pszInstr = "Btr";
-    else
-    if (pCpu->pCurInstr->opcode == OP_BTS)
+    else if (pCpu->pCurInstr->opcode == OP_BTS)
         pszInstr = "Bts";
-    else
-    if (pCpu->pCurInstr->opcode == OP_BTC)
+    else if (pCpu->pCurInstr->opcode == OP_BTC)
         pszInstr = "Btc";
+    else
+        pszInstr = "Bit??";
 #endif
 
 #ifdef IN_GC
