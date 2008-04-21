@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Random Numbers and Byte Streams, POSIX.
+ * IPRT - Random Numbers and Byte Streams, POSIX.
  */
 
 /*

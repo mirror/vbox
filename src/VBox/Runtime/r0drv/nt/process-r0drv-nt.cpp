@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Process, Ring-0 Driver, NT.
+ * IPRT - Process, Ring-0 Driver, NT.
  */
 
 /*

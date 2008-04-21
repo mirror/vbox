@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Log To Debugger, Ring-0 Driver, Solaris.
+ * IPRT - Log To Debugger, Ring-0 Driver, Solaris.
  */
 
 /*

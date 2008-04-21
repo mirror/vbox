@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Init Guest Context.
+ * IPRT - Init Guest Context.
  */
 
 /*

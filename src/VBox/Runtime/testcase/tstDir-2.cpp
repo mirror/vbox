@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - Directory listing & filtering .
+ * IPRT Testcase - Directory listing & filtering .
  */
 
 /*

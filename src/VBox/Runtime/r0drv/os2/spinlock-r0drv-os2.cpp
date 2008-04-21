@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Spinlocks, Ring-0 Driver, OS/2.
+ * IPRT - Spinlocks, Ring-0 Driver, OS/2.
  */
 
 /*

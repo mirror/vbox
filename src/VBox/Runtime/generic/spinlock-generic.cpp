@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Spinlock, generic implementation.
+ * IPRT - Spinlock, generic implementation.
  */
 
 /*

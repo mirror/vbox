@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Assertions, generic RTAssertDoBreakpoint.
+ * IPRT - Assertions, generic RTAssertDoBreakpoint.
  */
 
 /*

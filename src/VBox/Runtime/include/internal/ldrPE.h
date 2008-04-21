@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Windows NT PE Structures and Constants.
+ * IPRT - Windows NT PE Structures and Constants.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - UTF-8 and UTF-16 string conversions.
+ * IPRT Testcase - UTF-8 and UTF-16 string conversions.
  */
 
 /*

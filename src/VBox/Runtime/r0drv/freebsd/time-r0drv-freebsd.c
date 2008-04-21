@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Time, Ring-0 Driver, FreeBSD.
+ * IPRT - Time, Ring-0 Driver, FreeBSD.
  */
 
 /*

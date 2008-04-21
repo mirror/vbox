@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Memory Objects (Ring-0).
+ * IPRT - Memory Objects (Ring-0).
  */
 
 /*

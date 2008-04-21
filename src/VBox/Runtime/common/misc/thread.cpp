@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Threads, common routines.
+ * IPRT - Threads, common routines.
  */
 
 /*

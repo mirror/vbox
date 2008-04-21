@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - AVL Trees.
+ * IPRT - AVL Trees.
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - C++ Utilities (useful templates, defines and such).
+ * IPRT - C++ Utilities (useful templates, defines and such).
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Memory Allocation, Ring-0 Driver, OS/2.
+ * IPRT - Memory Allocation, Ring-0 Driver, OS/2.
  */
 
 /*

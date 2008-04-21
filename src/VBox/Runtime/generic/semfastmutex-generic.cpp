@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Fast Mutex, Generic.
+ * IPRT - Fast Mutex, Generic.
  */
 
 /*

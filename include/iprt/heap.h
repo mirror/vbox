@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - A Simple Heap.
+ * IPRT - A Simple Heap.
  */
 
 /*

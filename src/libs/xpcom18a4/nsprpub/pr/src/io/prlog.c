@@ -119,7 +119,7 @@ static PRLock *_pr_logLock;
 #endif
 
 /*
-** Use the Incredibly Portable Runtime logging facility when
+** Use the IPRT logging facility when
 ** NSPR_LOG_FILE is set to "WinDebug". The default IPRT log instance
 ** and the "default" log group will be used for logging.
 */

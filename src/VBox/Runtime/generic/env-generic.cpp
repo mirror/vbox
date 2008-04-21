@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Environment, Generic.
+ * IPRT - Environment, Generic.
  */
 
 /*

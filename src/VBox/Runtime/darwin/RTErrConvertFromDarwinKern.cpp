@@ -1,6 +1,6 @@
 /* $Id $ */
 /** @file
- * Incredibly Portable Runtime - Convert Darwin Mach returns codes to iprt status codes.
+ * IPRT - Convert Darwin Mach returns codes to iprt status codes.
  */
 
 /*

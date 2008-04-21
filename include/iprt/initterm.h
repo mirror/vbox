@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Runtime Init/Term.
+ * IPRT - Runtime Init/Term.
  */
 
 /*
@@ -35,7 +35,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_rt    Incredibly Portable Runtime APIs
+/** @defgroup grp_rt    IPRT APIs
  * @{
  */
 

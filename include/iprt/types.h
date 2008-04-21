@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Types.
+ * IPRT - Types.
  */
 
 /*
@@ -109,7 +109,7 @@
 
 
 
-/** @defgroup grp_rt_types  Incredibly Portable Runtime Base Types
+/** @defgroup grp_rt_types  IPRT Base Types
  * @{
  */
 

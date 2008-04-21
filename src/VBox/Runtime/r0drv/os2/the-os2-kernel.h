@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Ring-0 Driver, The OS/2 Kernel Headers.
+ * IPRT - Ring-0 Driver, The OS/2 Kernel Headers.
  */
 
 /*

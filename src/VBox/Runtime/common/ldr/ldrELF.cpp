@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Binary Image Loader, Executable and Linker Format (ELF).
+ * IPRT - Binary Image Loader, Executable and Linker Format (ELF).
  */
 
 /*

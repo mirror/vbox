@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Memory Allocation, C++ electric fence.
+ * IPRT - Memory Allocation, C++ electric fence.
  */
 
 /*

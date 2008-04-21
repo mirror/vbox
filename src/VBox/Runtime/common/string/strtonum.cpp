@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - String To Number Convertion.
+ * IPRT - String To Number Convertion.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - RTDirQueryInfo, generic implementation.
+ * IPRT - RTDirQueryInfo, generic implementation.
  */
 
 /*

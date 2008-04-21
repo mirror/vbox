@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Path Convertions, generic.
+ * IPRT - Path Convertions, generic.
  */
 
 /*

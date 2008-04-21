@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Time, Darwin.
+ * IPRT - Time, Darwin.
  */
 
 /*

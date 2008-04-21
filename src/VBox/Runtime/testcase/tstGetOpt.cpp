@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - RTGetOpt
+ * IPRT Testcase - RTGetOpt
  */
 
 /*

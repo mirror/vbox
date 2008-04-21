@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - AVL tree, void *, unique keys.
+ * IPRT - AVL tree, void *, unique keys.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Read-Write Semaphore, POSIX.
+ * IPRT - Read-Write Semaphore, POSIX.
  */
 
 /*

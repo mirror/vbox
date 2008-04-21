@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Fast Mutex Semaphores, Ring-0 Driver, OS/2.
+ * IPRT - Fast Mutex Semaphores, Ring-0 Driver, OS/2.
  */
 
 /*

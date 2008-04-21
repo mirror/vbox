@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Init Ring-3.
+ * IPRT - Init Ring-3.
  */
 
 /*

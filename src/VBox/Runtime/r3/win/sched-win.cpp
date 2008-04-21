@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Scheduling, Win32.
+ * IPRT - Scheduling, Win32.
  */
 
 /*

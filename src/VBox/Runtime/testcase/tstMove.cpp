@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - RTFileMove & RTDirMove test program.
+ * IPRT - RTFileMove & RTDirMove test program.
  */
 
 /*

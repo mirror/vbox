@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Multiprocessor, Generic RTMpIsCpuOnline.
+ * IPRT - Multiprocessor, Generic RTMpIsCpuOnline.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - RTTimeNow, POSIX.
+ * IPRT - RTTimeNow, POSIX.
  */
 
 /*

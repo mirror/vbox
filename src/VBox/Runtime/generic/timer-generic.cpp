@@ -1,6 +1,6 @@
 /** $Id$ */
 /** @file
- * Incredibly Portable Runtime - Timers, Generic.
+ * IPRT - Timers, Generic.
  */
 
 /*

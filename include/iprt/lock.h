@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - RTLock Classes for Scope-based Locking.
+ * IPRT - RTLock Classes for Scope-based Locking.
  */
 
 /*

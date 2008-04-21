@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Threads, Win32.
+ * IPRT - Threads, Win32.
  */
 
 /*

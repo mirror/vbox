@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - I/O Stream.
+ * IPRT - I/O Stream.
  */
 
 /*
@@ -611,7 +611,7 @@ static DECLCALLBACK(size_t) rtstrmOutput(void *pvArg, const char *pachChars, siz
  *
  * @returns Number of bytes printed.
  * @param   pStream         The stream to print to.
- * @param   pszFormat       Incredibly Portable Runtime format string.
+ * @param   pszFormat       IPRT format string.
  * @param   args            Arguments specified by pszFormat.
  */
 RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list args)
@@ -648,7 +648,7 @@ RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list ar
  *
  * @returns Number of bytes printed.
  * @param   pStream         The stream to print to.
- * @param   pszFormat       Incredibly Portable Runtime format string.
+ * @param   pszFormat       IPRT format string.
  * @param   ...             Arguments specified by pszFormat.
  */
 RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...)
@@ -665,7 +665,7 @@ RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...)
  * Prints a formatted string to the standard output stream (g_pStdOut).
  *
  * @returns Number of bytes printed.
- * @param   pszFormat       Incredibly Portable Runtime format string.
+ * @param   pszFormat       IPRT format string.
  * @param   args            Arguments specified by pszFormat.
  */
 RTR3DECL(int) RTPrintfV(const char *pszFormat, va_list args)
@@ -678,7 +678,7 @@ RTR3DECL(int) RTPrintfV(const char *pszFormat, va_list args)
  * Prints a formatted string to the standard output stream (g_pStdOut).
  *
  * @returns Number of bytes printed.
- * @param   pszFormat       Incredibly Portable Runtime format string.
+ * @param   pszFormat       IPRT format string.
  * @param   ...             Arguments specified by pszFormat.
  */
 RTR3DECL(int) RTPrintf(const char *pszFormat, ...)

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Initialization & Termination.
+ * IPRT - Initialization & Termination.
  */
 
 /*

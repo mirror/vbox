@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - Native Loader.
+ * IPRT Testcase - Native Loader.
  */
 
 /*

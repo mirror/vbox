@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - IPRT String Formatter Extensions, Dynamic Types.
+ * IPRT - IPRT String Formatter Extensions, Dynamic Types.
  */
 
 /*

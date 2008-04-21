@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime / No-CRT - Our own limits header.
+ * IPRT / No-CRT - Our own limits header.
  */
 
 /*

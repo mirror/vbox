@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - UUID, Generic.
+ * IPRT - UUID, Generic.
  */
 
 /*

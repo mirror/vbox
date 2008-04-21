@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Event Semaphore, Linux (2.6.x+).
+ * IPRT - Event Semaphore, Linux (2.6.x+).
  */
 
 /*

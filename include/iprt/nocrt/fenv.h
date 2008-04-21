@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime / No-CRT - fenv.h wrapper.
+ * IPRT / No-CRT - fenv.h wrapper.
  */
 
 /*

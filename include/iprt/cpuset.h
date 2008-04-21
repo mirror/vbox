@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - CPU Set.
+ * IPRT - CPU Set.
  */
 
 /*

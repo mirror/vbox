@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Multiprocessor, Generic RTMpCpuIdToSetIndex.
+ * IPRT - Multiprocessor, Generic RTMpCpuIdToSetIndex.
  */
 
 /*

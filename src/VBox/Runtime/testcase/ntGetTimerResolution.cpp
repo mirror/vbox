@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Win32 (NT) testcase for getting the timer resolution.
+ * IPRT - Win32 (NT) testcase for getting the timer resolution.
  */
 
 /*

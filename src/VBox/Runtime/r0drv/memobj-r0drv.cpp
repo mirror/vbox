@@ -1,6 +1,6 @@
 /* $Revision$ */
 /** @file
- * Incredibly Portable Runtime - Ring-0 Memory Objects, Common Code.
+ * IPRT - Ring-0 Memory Objects, Common Code.
  */
 
 /*

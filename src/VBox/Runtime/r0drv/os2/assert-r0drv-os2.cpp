@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Assertion Workers, Ring-0 Drivers, OS/2.
+ * IPRT - Assertion Workers, Ring-0 Drivers, OS/2.
  */
 
 /*

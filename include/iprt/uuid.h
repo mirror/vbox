@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Universal Unique Identifiers (UUID).
+ * IPRT - Universal Unique Identifiers (UUID).
  */
 
 /*

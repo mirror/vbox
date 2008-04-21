@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - String Formatters.
+ * IPRT - String Formatters.
  */
 
 /*

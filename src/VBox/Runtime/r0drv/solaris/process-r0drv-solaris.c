@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Process Management, Ring-0 Driver, Solaris.
+ * IPRT - Process Management, Ring-0 Driver, Solaris.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Semaphores, Ring-0 Driver, Solaris.
+ * IPRT - Semaphores, Ring-0 Driver, Solaris.
  */
 
 /*

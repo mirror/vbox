@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Threads, Ring-0 Driver, Darwin.
+ * IPRT - Threads, Ring-0 Driver, Darwin.
  */
 
 /*

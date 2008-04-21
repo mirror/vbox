@@ -1,6 +1,6 @@
 /* $Id $ */
 /** @file
- * Incredibly Portable Runtime Testcase - Simple Heap.
+ * IPRT Testcase - Simple Heap.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - CRT Strings, strlen().
+ * IPRT - CRT Strings, strlen().
  */
 
 /*

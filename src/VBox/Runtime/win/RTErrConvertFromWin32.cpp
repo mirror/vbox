@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Convert win32 error codes to iprt status codes.
+ * IPRT - Convert win32 error codes to iprt status codes.
  */
 
 /*

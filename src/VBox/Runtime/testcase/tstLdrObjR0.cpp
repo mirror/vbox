@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - RTLdr test object.
+ * IPRT - RTLdr test object.
  *
  * We use precompiled versions of this object for testing all the loaders.
  *

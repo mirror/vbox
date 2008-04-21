@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Status Codes.
+ * IPRT - Status Codes.
  */
 
 /*

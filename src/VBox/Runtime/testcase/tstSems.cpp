@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - Simple Semaphore Smoke Test.
+ * IPRT Testcase - Simple Semaphore Smoke Test.
  */
 
 /*

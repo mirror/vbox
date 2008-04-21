@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - Testcase for the No-CRT assembly bits.
+ * IPRT Testcase - Testcase for the No-CRT assembly bits.
  */
 
 /*

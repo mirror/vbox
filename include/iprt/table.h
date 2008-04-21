@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Abstract Table/Trees.
+ * IPRT - Abstract Table/Trees.
  */
 
 /*

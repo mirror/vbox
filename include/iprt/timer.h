@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Timer.
+ * IPRT - Timer.
  */
 
 /*

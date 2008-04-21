@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime / No-CRT - math.h.
+ * IPRT / No-CRT - math.h.
  */
 
 /*

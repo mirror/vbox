@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Internal RTFile header.
+ * IPRT - Internal RTFile header.
  */
 
 /*

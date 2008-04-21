@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Testcase for parts of RTLdr*, manual inspection.
+ * IPRT - Testcase for parts of RTLdr*, manual inspection.
  */
 
 /*

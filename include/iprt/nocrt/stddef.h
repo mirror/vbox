@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime / No-CRT - stddef.h (-> iprt/types.h).
+ * IPRT / No-CRT - stddef.h (-> iprt/types.h).
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Critical Section, Generic.
+ * IPRT - Critical Section, Generic.
  */
 
 /*

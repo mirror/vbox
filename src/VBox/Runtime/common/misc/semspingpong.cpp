@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Thread Ping-Pong Construct.
+ * IPRT - Thread Ping-Pong Construct.
  */
 
 /*

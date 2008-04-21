@@ -1,6 +1,6 @@
 /** $Id$ */
 /** @file
- * Incredibly Portable Runtime - Timer, Ring-0 Driver, Solaris.
+ * IPRT - Timer, Ring-0 Driver, Solaris.
  */
 
 /*

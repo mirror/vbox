@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Threads (Part 1), Ring-0 Driver, OS/2.
+ * IPRT - Threads (Part 1), Ring-0 Driver, OS/2.
  */
 
 /*

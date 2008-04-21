@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - Avl trees.
+ * IPRT Testcase - Avl trees.
  */
 
 /*

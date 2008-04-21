@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - RTDirSetTimes, generic implementation.
+ * IPRT - RTDirSetTimes, generic implementation.
  */
 
 /*

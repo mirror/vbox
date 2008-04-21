@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Unicode Code Points.
+ * IPRT - Unicode Code Points.
  */
 
 /*

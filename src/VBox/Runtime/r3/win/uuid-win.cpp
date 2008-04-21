@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime UUID (unique identifiers) handling (win32 host).
+ * IPRT UUID (unique identifiers) handling (win32 host).
  */
 
 /*

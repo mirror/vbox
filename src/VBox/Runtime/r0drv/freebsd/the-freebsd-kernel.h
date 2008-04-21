@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Ring-0 Driver, The FreeBSD Kernel Headers.
+ * IPRT - Ring-0 Driver, The FreeBSD Kernel Headers.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - String formatting.
+ * IPRT Testcase - String formatting.
  */
 
 /*

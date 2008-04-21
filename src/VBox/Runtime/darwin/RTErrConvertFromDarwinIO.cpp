@@ -1,6 +1,6 @@
 /* $Id $ */
 /** @file
- * Incredibly Portable Runtime - Convert Darwin IOKit returns codes to iprt status codes.
+ * IPRT - Convert Darwin IOKit returns codes to iprt status codes.
  */
 
 /*
