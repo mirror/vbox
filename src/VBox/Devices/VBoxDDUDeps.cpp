@@ -42,8 +42,8 @@ PFNRT g_apfnVBoxDDUDeps[] =
 # ifdef RT_OS_OS2
     (PFNRT)UsbOpen,
 # endif
-# if (defined(RT_OS_DARWIN) && defined(VBOX_WITH_NEW_USB_CODE_ON_DARWIN))
-  /** @todo || defined(RT_OS_SOLARIS) */
+# if (defined(RT_OS_DARWIN) && defined(VBOX_WITH_NEW_USB_CODE_ON_DARWIN)) \
+  || defined(RT_OS_SOLARIS)
     (PFNRT)USBLibInit,
 # endif
 #endif /* VBOX_WITH_USB */
