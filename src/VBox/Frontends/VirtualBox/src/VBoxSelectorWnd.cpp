@@ -392,7 +392,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     statusBar();
 
 #if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
-    /* The aplication icon. On Win32, it's built-in to the executable. On Mac
+    /* The application icon. On Win32, it's built-in to the executable. On Mac
      * OS X the icon referenced in info.plist is used. */
     setIcon (QPixmap::fromMimeSource ("VirtualBox_48px.png"));
 #endif
