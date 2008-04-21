@@ -1,5 +1,5 @@
 ;; @file
-; innotek Portable Runtime - crt0/dll0 replacement stub for OS/2 R0/GC modules.
+; IPRT - crt0/dll0 replacement stub for OS/2 R0/GC modules.
 ;
 
 ;

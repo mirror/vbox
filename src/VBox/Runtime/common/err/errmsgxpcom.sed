@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# innotek Portable Runtime - SED script for converting XPCOM errors
+# IPRT - SED script for converting XPCOM errors
 #
 
 #

@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; innotek Portable Runtime - No-CRT mempcpy - AMD64 & X86.
+; IPRT - No-CRT mempcpy - AMD64 & X86.
 ;
 
 ;

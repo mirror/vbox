@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; innotek Portable Runtime - No-CRT ldexpl - AMD64 & X86.
+; IPRT - No-CRT ldexpl - AMD64 & X86.
 ;
 
 ;

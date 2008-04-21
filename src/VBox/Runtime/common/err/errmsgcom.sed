@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# innotek Portable Runtime - SED script for converting COM errors
+# IPRT - SED script for converting COM errors
 #
 
 # Copyright (C) 2006-2007 Sun Microsystems, Inc.

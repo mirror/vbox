@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; innotek Portable Runtime - Assembly Functions, ASMMultU64ByU32DivByU32.
+; IPRT - Assembly Functions, ASMMultU64ByU32DivByU32.
 ;
 
 ;

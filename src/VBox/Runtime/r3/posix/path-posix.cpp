@@ -111,7 +111,6 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, unsigned cchRealP
  *
  * @returns Number of bytes in the clean path.
  * @param   pszPath     The path to cleanup.
- * @remark  Borrowed from innotek libc.
  */
 static int fsCleanPath(char *pszPath)
 {
