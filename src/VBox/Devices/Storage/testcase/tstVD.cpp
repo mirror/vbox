@@ -44,6 +44,42 @@ static void tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
 }
 
 
+static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
+                             uint64_t cbSize, VDIMAGETYPE enmType,
+                             unsigned uFlags, bool fDelete)
+{
+    int rc;
+    PVBOXHDD pVD = NULL;
+    PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
+    PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
+
+#define CHECK(str) \
+    do \
+    { \
+        RTPrintf("%s rc=%Vrc\n", str, rc); \
+        if (VBOX_FAILURE(rc)) \
+        { \
+            VDCloseAll(pVD); \
+            return rc; \
+        } \
+    } while (0)
+
+    rc = VDCreate(tstVDError, NULL, &pVD);
+    CHECK("VDCreate()");
+
+    rc = VDCreateBase(pVD, pszBackend, pszFilename, enmType, cbSize,
+                      uFlags, "Test image", &PCHS, &LCHS, VD_OPEN_FLAGS_NORMAL,
+                      NULL, NULL);
+    CHECK("VDCreateBase()");
+
+    VDDumpImages(pVD);
+
+    VDClose(pVD, fDelete);
+#undef CHECK
+    return 0;
+}
+
+
 static int tstVDOpenCreateWriteMerge(const char *pszBackend,
                                      const char *pszBaseFilename,
                                      const char *pszDiffFilename)
@@ -150,10 +186,61 @@ int main()
     /*
      * Clean up potential leftovers from previous unsuccessful runs.
      */
+    RTFileDelete("tmpVDCreate.vdi");
+    RTFileDelete("tmpVDCreate.vmdk");
     RTFileDelete("tmpVDBase.vdi");
     RTFileDelete("tmpVDDiff.vdi");
     RTFileDelete("tmpVDBase.vmdk");
     RTFileDelete("tmpVDDiff.vmdk");
+
+    rc = tstVDCreateDelete("VDI", "tmpVDCreate.vdi", 2 * _4G,
+                           VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
+                           true);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: dynamic VDI create test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVDCreateDelete("VDI", "tmpVDCreate.vdi", 2 * _4G,
+                           VD_IMAGE_TYPE_FIXED, VD_IMAGE_FLAGS_NONE,
+                           true);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: fixed VDI create test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
+                           VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
+                           true);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: dynamic VMDK create test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
+                           VD_IMAGE_TYPE_NORMAL, VD_VMDK_IMAGE_FLAGS_SPLIT_2G,
+                           true);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: dynamic split VMDK create test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
+                           VD_IMAGE_TYPE_FIXED, VD_IMAGE_FLAGS_NONE,
+                           true);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: fixed VMDK create test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
+                           VD_IMAGE_TYPE_FIXED, VD_VMDK_IMAGE_FLAGS_SPLIT_2G,
+                           true);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: fixed split VMDK create test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
 
     rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi");
     if (VBOX_FAILURE(rc))
@@ -183,6 +270,8 @@ int main()
     /*
      * Clean up any leftovers.
      */
+    RTFileDelete("tmpVDCreate.vdi");
+    RTFileDelete("tmpVDCreate.vmdk");
     RTFileDelete("tmpVDBase.vdi");
     RTFileDelete("tmpVDDiff.vdi");
     RTFileDelete("tmpVDBase.vmdk");
