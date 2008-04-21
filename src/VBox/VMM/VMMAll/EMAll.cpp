@@ -353,7 +353,6 @@ static RTGCPTR emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE
 }
 
 #if defined(VBOX_STRICT) || defined(LOG_ENABLED)
-# ifdef IN_GC
 /** 
  * Get the mnemonic for the disassembled instruction.
  *  
@@ -374,7 +373,6 @@ static const char *emGetMnemonic(PDISCPUSTATE pCpu)
             return "???";
     }
 }
-# endif
 #endif
 
 /**
@@ -461,9 +459,9 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
                 switch(param1.size)
                 {
                 case 1: //special case for AH etc
-                        rc = DISWriteReg8(pRegFrame, pCpu->param1.base.reg_gen8, (uint8_t)valpar2); break;
-                case 2: rc = DISWriteReg16(pRegFrame, pCpu->param1.base.reg_gen32, (uint16_t)valpar2); break;
-                case 4: rc = DISWriteReg32(pRegFrame, pCpu->param1.base.reg_gen32, valpar2); break;
+                        rc = DISWriteReg8(pRegFrame, pCpu->param1.base.reg_gen, (uint8_t)valpar2); break;
+                case 2: rc = DISWriteReg16(pRegFrame, pCpu->param1.base.reg_gen, (uint16_t)valpar2); break;
+                case 4: rc = DISWriteReg32(pRegFrame, pCpu->param1.base.reg_gen, valpar2); break;
                 default: AssertFailedReturn(VERR_EM_INTERPRETER);
                 }
                 if (VBOX_FAILURE(rc))
@@ -486,9 +484,9 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
                 switch(param2.size)
                 {
                 case 1: //special case for AH etc
-                        rc = DISWriteReg8(pRegFrame, pCpu->param2.base.reg_gen8, (uint8_t)valpar1); break;
-                case 2: rc = DISWriteReg16(pRegFrame, pCpu->param2.base.reg_gen32, (uint16_t)valpar1); break;
-                case 4: rc = DISWriteReg32(pRegFrame, pCpu->param2.base.reg_gen32, valpar1); break;
+                        rc = DISWriteReg8(pRegFrame, pCpu->param2.base.reg_gen, (uint8_t)valpar1); break;
+                case 2: rc = DISWriteReg16(pRegFrame, pCpu->param2.base.reg_gen, (uint16_t)valpar1); break;
+                case 4: rc = DISWriteReg32(pRegFrame, pCpu->param2.base.reg_gen, valpar1); break;
                 default: AssertFailedReturn(VERR_EM_INTERPRETER);
                 }
                 if (VBOX_FAILURE(rc))
@@ -625,7 +623,7 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 AssertCompile(USE_REG_ESP == USE_REG_SP);
                 if (    (pCpu->param1.flags & USE_BASE)
                     &&  (pCpu->param1.flags & (USE_REG_GEN16|USE_REG_GEN32))
-                    &&  pCpu->param1.base.reg_gen32 == USE_REG_ESP
+                    &&  pCpu->param1.base.reg_gen == USE_REG_ESP
                    )
                    pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + param1.size);
 
@@ -1220,9 +1218,9 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             case PARMTYPE_REGISTER:
                 switch(param1.size)
                 {
-                case 1: rc = DISWriteReg8(pRegFrame, pCpu->param1.base.reg_gen8, (uint8_t)val32); break;
-                case 2: rc = DISWriteReg16(pRegFrame, pCpu->param1.base.reg_gen16, (uint16_t)val32); break;
-                case 4: rc = DISWriteReg32(pRegFrame, pCpu->param1.base.reg_gen32, val32); break;
+                case 1: rc = DISWriteReg8(pRegFrame, pCpu->param1.base.reg_gen, (uint8_t)val32); break;
+                case 2: rc = DISWriteReg16(pRegFrame, pCpu->param1.base.reg_gen, (uint16_t)val32); break;
+                case 4: rc = DISWriteReg32(pRegFrame, pCpu->param1.base.reg_gen, val32); break;
                 default:
                     return VERR_EM_INTERPRETER;
                 }
@@ -1251,7 +1249,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     OP_PARAMVAL param1, param2;
 
 #ifdef LOG_ENABLED
-    const char *pszInstr;
+    char *pszInstr;
 
     if (pCpu->prefix & PREFIX_LOCK)
         pszInstr = "Lock CmpXchg";
@@ -1339,7 +1337,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
     OP_PARAMVAL param1;
 
 #ifdef LOG_ENABLED
-    const char *pszInstr;
+    char *pszInstr;
 
     if (pCpu->prefix & PREFIX_LOCK)
         pszInstr = "Lock CmpXchg8b";
@@ -1813,9 +1811,9 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
 static int emInterpretMovCRx(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     if (pCpu->param1.flags == USE_REG_GEN32 && pCpu->param2.flags == USE_REG_CR)
-        return EMInterpretCRxRead(pVM, pRegFrame, pCpu->param1.base.reg_gen32, pCpu->param2.base.reg_ctrl);
+        return EMInterpretCRxRead(pVM, pRegFrame, pCpu->param1.base.reg_gen, pCpu->param2.base.reg_ctrl);
     if (pCpu->param1.flags == USE_REG_CR && pCpu->param2.flags == USE_REG_GEN32)
-        return EMInterpretCRxWrite(pVM, pRegFrame, pCpu->param1.base.reg_ctrl, pCpu->param2.base.reg_gen32);
+        return EMInterpretCRxWrite(pVM, pRegFrame, pCpu->param1.base.reg_ctrl, pCpu->param2.base.reg_gen);
     AssertMsgFailedReturn(("Unexpected control register move\n"), VERR_EM_INTERPRETER);
     return VERR_EM_INTERPRETER;
 }
@@ -1877,12 +1875,12 @@ static int emInterpretMovDRx(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 
     if(pCpu->param1.flags == USE_REG_GEN32 && pCpu->param2.flags == USE_REG_DBG)
     {
-        rc = EMInterpretDRxRead(pVM, pRegFrame, pCpu->param1.base.reg_gen32, pCpu->param2.base.reg_dbg);
+        rc = EMInterpretDRxRead(pVM, pRegFrame, pCpu->param1.base.reg_gen, pCpu->param2.base.reg_dbg);
     }
     else
     if(pCpu->param1.flags == USE_REG_DBG && pCpu->param2.flags == USE_REG_GEN32)
     {
-        rc = EMInterpretDRxWrite(pVM, pRegFrame, pCpu->param1.base.reg_dbg, pCpu->param2.base.reg_gen32);
+        rc = EMInterpretDRxWrite(pVM, pRegFrame, pCpu->param1.base.reg_dbg, pCpu->param2.base.reg_gen);
     }
     else
         AssertMsgFailed(("Unexpected debug register move\n"));

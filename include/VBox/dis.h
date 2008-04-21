@@ -341,10 +341,7 @@ typedef struct _OP_PARAMETER
 
     union
     {
-        uint32_t    reg_gen8;
-        uint32_t    reg_gen16;
-        uint32_t    reg_gen32;
-        uint32_t    reg_gen64;
+        uint32_t    reg_gen;
         /** ST(0) - ST(7) */
         uint32_t    reg_fp;
         /** MMX0 - MMX7 */

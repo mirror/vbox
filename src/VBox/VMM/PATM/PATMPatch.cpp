@@ -1165,7 +1165,7 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
         Assert(pCpu->param2.flags & USE_REG_GEN32);
 
         dbgreg = pCpu->param1.base.reg_dbg;
-        reg    = pCpu->param2.base.reg_gen32;
+        reg    = pCpu->param2.base.reg_gen;
     }
     else
     {
@@ -1174,7 +1174,7 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
         Assert(pCpu->param2.flags & USE_REG_DBG);
 
         pPB[0] = 0x8B;      // mov GPR, disp32
-        reg    = pCpu->param1.base.reg_gen32;
+        reg    = pCpu->param1.base.reg_gen;
         dbgreg = pCpu->param2.base.reg_dbg;
     }
 
@@ -1241,7 +1241,7 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
         // mov CRx, GPR
         pPB[0] = 0x89;      //mov disp32, GPR
         ctrlreg = pCpu->param1.base.reg_ctrl;
-        reg     = pCpu->param2.base.reg_gen32;
+        reg     = pCpu->param2.base.reg_gen;
         Assert(pCpu->param1.flags & USE_REG_CR);
         Assert(pCpu->param2.flags & USE_REG_GEN32);
     }
@@ -1252,7 +1252,7 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
         Assert(pCpu->param2.flags & USE_REG_CR);
 
         pPB[0]  = 0x8B;      // mov GPR, disp32
-        reg     = pCpu->param1.base.reg_gen32;
+        reg     = pCpu->param1.base.reg_gen;
         ctrlreg = pCpu->param2.base.reg_ctrl;
     }
 
@@ -1318,7 +1318,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR
     offset = 0;
     if (pCpu->prefix & PREFIX_OPSIZE)
         pPB[offset++] = 0x66; /* size override -> 16 bits pop */
-    pPB[offset++] = 0x58 + pCpu->param1.base.reg_gen32;
+    pPB[offset++] = 0x58 + pCpu->param1.base.reg_gen;
     PATCHGEN_EPILOG(pPatch, offset);
 
 
@@ -1361,7 +1361,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR p
 
         pPB[offset++] = 0x8B;              // mov       destreg, CPUMCTX.tr/ldtr
         /* Modify REG part according to destination of original instruction */
-        pPB[offset++] = MAKE_MODRM(0, pCpu->param1.base.reg_gen32, 5);
+        pPB[offset++] = MAKE_MODRM(0, pCpu->param1.base.reg_gen, 5);
         if (pCpu->pCurInstr->opcode == OP_STR)
         {
             *(RTGCPTR *)&pPB[offset] = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);

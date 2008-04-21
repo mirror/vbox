@@ -562,7 +562,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PPGMPOOLPAGE pPage, PDISCPUSTATE pCpu, R
             return true;
     }
     if (    (pCpu->param1.flags & USE_REG_GEN32)
-        &&  (pCpu->param1.base.reg_gen32 == USE_REG_ESP))
+        &&  (pCpu->param1.base.reg_gen == USE_REG_ESP))
     {
         Log4(("pgmPoolMonitorIsReused: ESP\n"));
         return true;
