@@ -5,7 +5,9 @@
  *
  */
 
-/* This code is originally from the Wine project. */
+/* This file was originally generated from the X.org file
+   /etc/X11/xkb/rules/xorg.xml, in an attempt to support all
+   keyboard layouts known to X.org. */
 
 /*
  * This library is free software; you can redistribute it and/or
@@ -24,7 +26,7 @@
  */
 
 #ifndef ___VBox_keyboard_tables_h
-# error This file must be included from within keyboard-layouts.h
+# error This file must be included from within keyboard-tables.h
 #endif /* ___VBox_keyboard_tables_h */
 
 /* This file contains a list of the keyboard layouts in 
