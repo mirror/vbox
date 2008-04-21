@@ -43,51 +43,51 @@ struct vboxvfs_mount_info {
 #include <sys/vnode.h>
 
 struct vboxvfsmount {
-	uid_t			uid;
-	gid_t 			gid;
-	mode_t 			file_mode;
-	mode_t 			dir_mode;
-	struct mount * 		mp;
-	struct ucred *		owner;
-	u_int			flags;
-	long			nextino;
-	int			caseopt;
-	int			didrele;
+    uid_t           uid;
+    gid_t           gid;
+    mode_t          file_mode;
+    mode_t          dir_mode;
+    struct mount   *mp;
+    struct ucred   *owner;
+    u_int           flags;
+    long            nextino;
+    int             caseopt;
+    int             didrele;
 };
 
 /* structs - stolen from the linux shared module code */
 struct sf_glob_info {
-        VBSFMAP map;
-/*        struct nls_table *nls;*/
-        int ttl;
-        int uid;
-        int gid;
-	struct vnode *vnode_root;
+    VBSFMAP map;
+/*    struct nls_table *nls;*/
+    int ttl;
+    int uid;
+    int gid;
+    struct vnode *vnode_root;
 };
 
 struct sf_inode_info {
-        SHFLSTRING *path;
-        int force_restat;
+    SHFLSTRING *path;
+    int force_restat;
 };
 
 #if 0
 struct sf_dir_info {
-        struct list_head info_list;
+    struct list_head info_list;
 };
 #endif
 
 struct sf_dir_buf {
-        size_t nb_entries;
-        size_t free_bytes;
-        size_t used_bytes;
-        void *buf;
+    size_t nb_entries;
+    size_t free_bytes;
+    size_t used_bytes;
+    void *buf;
 #if 0
-        struct list_head head;
+   struct list_head head;
 #endif
 };
 
 struct sf_reg_info {
-        SHFLHANDLE handle;
+    SHFLHANDLE handle;
 };
 
 #endif	/* KERNEL */
