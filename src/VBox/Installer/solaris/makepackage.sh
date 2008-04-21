@@ -24,23 +24,27 @@ set -e
 
 if [ -z "$3" ]; then
     echo "Usage: $0 installdir packagename x86|amd64"
+    echo "-- packagename must not have any extension (e.g. VirtualBox-SunOS-amd64-r28899)"
     exit 1
 fi
 
-MY_PKGNAME=SUNWvbox
-MY_GGREP=/usr/sfw/bin/ggrep
-MY_AWK=/usr/bin/awk
-MY_GTAR=/usr/sfw/bin/gtar
+VBOX_PKGFILE=$2.pkg
+VBOX_ARCHIVE=$2.tar.gz
+VBOX_PKGNAME=SUNWvbox
+
+VBOX_GGREP=/usr/sfw/bin/ggrep
+VBOX_AWK=/usr/bin/awk
+VBOX_GTAR=/usr/sfw/bin/gtar
 
 # check for GNU grep we use which might not ship with all Solaris
-if test ! -f "$MY_GGREP" && test ! -h "$MY_GGREP"; then
-    echo "## GNU grep not found in $MY_GGREP."
+if test ! -f "$VBOX_GGREP" && test ! -h "$VBOX_GGREP"; then
+    echo "## GNU grep not found in $VBOX_GGREP."
     exit 1
 fi
 
 # check for GNU tar we use which might not ship with all Solaris
-if test ! -f "$MY_GTAR" && test ! -h "$MY_GTAR"; then
-    echo "## GNU tar not found in $MY_GTAR."
+if test ! -f "$VBOX_GTAR" && test ! -h "$VBOX_GTAR"; then
+    echo "## GNU tar not found in $VBOX_GTAR."
     exit 1
 fi
 
@@ -52,20 +56,20 @@ echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
 echo 'i space=./vbox.space' >> prototype
 echo 'e sed /etc/devlink.tab ? ? ?' >> prototype
-find . -print | $MY_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space' | pkgproto >> prototype
+find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space' | pkgproto >> prototype
 
 # don't grok for the sed class files
-$MY_AWK 'NF == 6 && $2 == "none" { $5 = "root"; $6 = "bin" } { print }' prototype > prototype2
-$MY_AWK 'NF == 6 && $2 == "none" { $3 = "opt/VirtualBox/"$3"="$3 } { print }' prototype2 > prototype
+$VBOX_AWK 'NF == 6 && $2 == "none" { $5 = "root"; $6 = "bin" } { print }' prototype > prototype2
+$VBOX_AWK 'NF == 6 && $2 == "none" { $3 = "opt/VirtualBox/"$3"="$3 } { print }' prototype2 > prototype
 
 # install the kernel module to the right place.
 if test "$3" = "x86"; then
-    $MY_AWK 'NF == 6 && $3 == "opt/VirtualBox/vboxdrv=vboxdrv" { $3 = "platform/i86pc/kernel/drv/vboxdrv=vboxdrv" } { print }' prototype > prototype2
+    $VBOX_AWK 'NF == 6 && $3 == "opt/VirtualBox/vboxdrv=vboxdrv" { $3 = "platform/i86pc/kernel/drv/vboxdrv=vboxdrv" } { print }' prototype > prototype2
 else
-    $MY_AWK 'NF == 6 && $3 == "opt/VirtualBox/vboxdrv=vboxdrv" { $3 = "platform/i86pc/kernel/drv/amd64/vboxdrv=vboxdrv" } { print }' prototype > prototype2
+    $VBOX_AWK 'NF == 6 && $3 == "opt/VirtualBox/vboxdrv=vboxdrv" { $3 = "platform/i86pc/kernel/drv/amd64/vboxdrv=vboxdrv" } { print }' prototype > prototype2
 fi
 
-$MY_AWK 'NF == 6 && $3 == "opt/VirtualBox/vboxdrv.conf=vboxdrv.conf" { $3 = "platform/i86pc/kernel/drv/vboxdrv.conf=vboxdrv.conf" } { print }' prototype2 > prototype
+$VBOX_AWK 'NF == 6 && $3 == "opt/VirtualBox/vboxdrv.conf=vboxdrv.conf" { $3 = "platform/i86pc/kernel/drv/vboxdrv.conf=vboxdrv.conf" } { print }' prototype2 > prototype
 
 rm prototype2
 
@@ -79,16 +83,16 @@ if test $? -ne 0; then
 fi
 
 # translate into package datastream
-pkgtrans -s -o /var/spool/pkg `pwd`/$2 "$MY_PKGNAME"
+pkgtrans -s -o /var/spool/pkg "`pwd`/$VBOX_PKGFILE" "$VBOX_PKGNAME"
 if test $? -ne 0; then
     exit 1
 fi
 
-$MY_GTAR zcvf $2.tar.gz $2 autoresponse ReadMe.txt
+$VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" autoresponse ReadMe.txt
 
 if test  $? -eq 0; then
     echo "## Packaging and transfer completed successfully!"
 fi
-rm -rf "/var/spool/pkg/$MY_PKGNAME"
+rm -rf "/var/spool/pkg/$VBOX_PKGNAME"
 exit $?
 
