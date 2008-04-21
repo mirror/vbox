@@ -36,6 +36,7 @@ PKGINFO_ARCH    = $(shell uname -p)
 VBOX_PATH_SOLARIS_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/Installer
 VBOX_PATH_X11_ADDITION_INSTALLER := $(PATH_ROOT)/src/VBox/Additions/x11/installer
 SOLARISINSTDIR := $(PATH_TARGET)/install
+SOLARISTEMPDIR := $(PATH_TARGET)/tempinstall
 
 ifeq ($(BUILD_TYPE),debug)
  BIN_COPY         := $(CP) -f
@@ -79,8 +80,10 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(call MSG_L1,Installing guest additions)
 	@# Clear out the existing package files if needed
 	$(QUIET)rm -rf $(SOLARISINSTDIR)
+	$(QUIET)rm -rf $(SOLARISTEMPDIR)
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/etc
+	$(QUIET)$(MKDIR) -p $(SOLARISTEMPDIR)
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
 		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
@@ -101,11 +104,12 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf  $(SOLARISINSTDIR)/vboxguest.conf
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/additions/vboxguest                                          $(SOLARISINSTDIR)/vboxguest
 	@#$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARISINSTDIR)/vboxguest,)
-	$(INSTALL) -m 0755 $(PATH_BIN)/additions/VBoxClient                                                 $(SOLARISINSTDIR)/VBoxClient
-	truss strip $(SOLARISINSTDIR)/VBoxClient
-	$(INSTALL) -m 0755 $(PATH_BIN)/additions/VBoxService                                                $(SOLARISINSTDIR)/VBoxService
-	truss strip $(SOLARISINSTDIR)/VBoxService
-	$(QUIET)$(if $(VBOX_DO_STRIP),/usr/sfw/bin/gstrip $(SOLARISINSTDIR)/VBoxService,)
+	$(INSTALL) -m 0755 $(PATH_BIN)/additions/VBoxClient                                                 $(SOLARISTEMPDIR)/VBoxClient
+	$(QUIET)strip $(SOLARISTEMPDIR)/VBoxClient
+	$(QUIET)$(MV) -f $(SOLARISTEMPDIR)/VBoxClient                                                       $(SOLARISINSTDIR)/VBoxClient
+	$(INSTALL) -m 0755 $(PATH_BIN)/additions/VBoxService                                                $(SOLARISTEMPDIR)/VBoxService
+	$(QUIET)strip $(SOLARISTEMPDIR)/VBoxService
+	$(QUIET)$(MV) -f $(SOLARISTEMPDIR)/VBoxService                                                      $(SOLARISINSTDIR)/VBoxService
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_13.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_14.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_70.so
