@@ -531,7 +531,7 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
         disasmAddString(pParam->szParam, szTemp);
 
         pParam->flags |= USE_BASE | USE_REG_GEN32;
-        pParam->base.reg_gen32 = base;
+        pParam->base.reg_gen = base;
     }
     return;   /* Already fetched everything in ParseSIB; no size returned */
 }
@@ -1239,14 +1239,14 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         if (pCpu->opmode == CPUMODE_32BIT)
         {
             /* Use 32-bit registers. */
-            pParam->base.reg_gen32 = pParam->param - OP_PARM_REG_GEN32_START;
+            pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
             pParam->flags |= USE_REG_GEN32;
             pParam->size   = 4;
         }
         else
         {
             /* Use 16-bit registers. */
-            pParam->base.reg_gen16 = pParam->param - OP_PARM_REG_GEN32_START;
+            pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
             pParam->flags |= USE_REG_GEN16;
             pParam->size   = 2;
             pParam->param = pParam->param - OP_PARM_REG_GEN32_START + OP_PARM_REG_GEN16_START;
@@ -1264,7 +1264,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
     if (pParam->param < OP_PARM_REG_GEN8_START)
     {
         /* 16-bit AX..DI registers. */
-        pParam->base.reg_gen16 = pParam->param - OP_PARM_REG_GEN16_START;
+        pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN16_START;
         pParam->flags |= USE_REG_GEN16;
         pParam->size   = 2;
     }
@@ -1272,7 +1272,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
     if (pParam->param < OP_PARM_REG_FP_START)
     {
         /* 8-bit AL..DL, AH..DH registers. */
-        pParam->base.reg_gen8 = pParam->param - OP_PARM_REG_GEN8_START;
+        pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN8_START;
         pParam->flags |= USE_REG_GEN8;
         pParam->size   = 1;
     }
@@ -1298,12 +1298,12 @@ unsigned ParseXv(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
     pParam->flags |= USE_POINTER_DS_BASED;
     if (pCpu->addrmode == CPUMODE_32BIT)
     {
-        pParam->base.reg_gen32 = USE_REG_ESI;
+        pParam->base.reg_gen = USE_REG_ESI;
         pParam->flags |= USE_REG_GEN32;
     }
     else
     {
-        pParam->base.reg_gen16 = USE_REG_SI;
+        pParam->base.reg_gen = USE_REG_SI;
         pParam->flags |= USE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
@@ -1317,12 +1317,12 @@ unsigned ParseXb(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
     pParam->flags |= USE_POINTER_DS_BASED;
     if (pCpu->addrmode == CPUMODE_32BIT)
     {
-        pParam->base.reg_gen32 = USE_REG_ESI;
+        pParam->base.reg_gen = USE_REG_ESI;
         pParam->flags |= USE_REG_GEN32;
     }
     else
     {
-        pParam->base.reg_gen16 = USE_REG_SI;
+        pParam->base.reg_gen = USE_REG_SI;
         pParam->flags |= USE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
@@ -1337,12 +1337,12 @@ unsigned ParseYv(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
     pParam->flags |= USE_POINTER_ES_BASED;
     if (pCpu->addrmode == CPUMODE_32BIT)
     {
-        pParam->base.reg_gen32 = USE_REG_EDI;
+        pParam->base.reg_gen = USE_REG_EDI;
         pParam->flags |= USE_REG_GEN32;
     }
     else
     {
-        pParam->base.reg_gen16 = USE_REG_DI;
+        pParam->base.reg_gen = USE_REG_DI;
         pParam->flags |= USE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
@@ -1356,12 +1356,12 @@ unsigned ParseYb(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
     pParam->flags |= USE_POINTER_ES_BASED;
     if (pCpu->addrmode == CPUMODE_32BIT)
     {
-        pParam->base.reg_gen32 = USE_REG_EDI;
+        pParam->base.reg_gen = USE_REG_EDI;
         pParam->flags |= USE_REG_GEN32;
     }
     else
     {
-        pParam->base.reg_gen16 = USE_REG_DI;
+        pParam->base.reg_gen = USE_REG_DI;
         pParam->flags |= USE_REG_GEN16;
     }
     return 0;   //no additional opcode bytes
@@ -1825,19 +1825,19 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
     case OP_PARM_b:
         disasmAddString(pParam->szParam, szModRMReg8[idx]);
         pParam->flags |= USE_REG_GEN8;
-        pParam->base.reg_gen8 = idx;
+        pParam->base.reg_gen = idx;
         break;
 
     case OP_PARM_w:
         disasmAddString(pParam->szParam, szModRMReg16[idx]);
         pParam->flags |= USE_REG_GEN16;
-        pParam->base.reg_gen16 = idx;
+        pParam->base.reg_gen = idx;
         break;
 
     case OP_PARM_d:
         disasmAddString(pParam->szParam, szModRMReg32[idx]);
         pParam->flags |= USE_REG_GEN32;
-        pParam->base.reg_gen32 = idx;
+        pParam->base.reg_gen = idx;
         break;
 
     default:
@@ -1859,7 +1859,7 @@ void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pP
 {
     disasmAddString(pParam->szParam, szModRMReg1616[idx]);
     pParam->flags |= USE_REG_GEN16;
-    pParam->base.reg_gen16 = BaseModRMReg16[idx];
+    pParam->base.reg_gen = BaseModRMReg16[idx];
     if (idx < 4)
     {
         pParam->flags |= USE_INDEX;
