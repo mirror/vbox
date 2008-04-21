@@ -753,7 +753,10 @@ void VBoxHardDiskSettings::showVDM()
 void VBoxHardDiskSettings::moveFocus (QListViewItem *aItem, const QPoint&, int aCol)
 {
     if (aItem && aItem->rtti() == HDListItem::HDListItemType)
+    {
         static_cast<HDListItem*> (aItem)->moveFocusToColumn (aCol);
+        onAfterCurrentChanged (aItem);
+    }
 }
 
 void VBoxHardDiskSettings::onCurrentChanged (QListViewItem *aItem)
@@ -824,29 +827,30 @@ void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
 void VBoxHardDiskSettings::onAfterCurrentChanged (QListViewItem *aItem)
 {
     /* Process postponed onCurrentChanged event */
-    mAddAttachmentAct->setEnabled (mLvHD->childCount() <=
-                                   mSlotUniquizer->totalCount());
-    mRemoveAttachmentAct->setEnabled (aItem &&
-                                      aItem->rtti() == HDListItem::HDListItemType);
-    mSelectHardDiskAct->setEnabled (aItem &&
-                                    aItem->rtti() == HDListItem::HDListItemType);
-
-    if (aItem == mPrevItem)
-        return;
-
-    if (aItem && aItem->rtti() == HDListItem::HDListItemType &&
-        static_cast<HDListItem*> (aItem)->focusColumn() == -1)
+    if (aItem != mPrevItem)
     {
-        int prevFocusColumn = 0;
+        if (aItem && aItem->rtti() == HDListItem::HDListItemType &&
+            static_cast<HDListItem*> (aItem)->focusColumn() == -1)
+        {
+            int prevFocusColumn = 0;
+            if (mPrevItem && mPrevItem->rtti() == HDListItem::HDListItemType)
+                prevFocusColumn = static_cast<HDListItem*> (mPrevItem)->focusColumn();
+            static_cast<HDListItem*> (aItem)->moveFocusToColumn (prevFocusColumn);
+        }
+
         if (mPrevItem && mPrevItem->rtti() == HDListItem::HDListItemType)
-            prevFocusColumn = static_cast<HDListItem*> (mPrevItem)->focusColumn();
-        static_cast<HDListItem*> (aItem)->moveFocusToColumn (prevFocusColumn);
+            static_cast<HDListItem*> (mPrevItem)->moveFocusToColumn (-1);
+
+        mPrevItem = aItem;
     }
 
-    if (mPrevItem && mPrevItem->rtti() == HDListItem::HDListItemType)
-        static_cast<HDListItem*> (mPrevItem)->moveFocusToColumn (-1);
-
-    mPrevItem = aItem;
+    mAddAttachmentAct->setEnabled (mLvHD->childCount() <=
+        mSlotUniquizer->totalCount());
+    mRemoveAttachmentAct->setEnabled (aItem &&
+        aItem->rtti() == HDListItem::HDListItemType);
+    mSelectHardDiskAct->setEnabled (aItem &&
+        aItem->rtti() == HDListItem::HDListItemType &&
+        static_cast<HDListItem*> (aItem)->focusColumn() == 1);
 }
 
 void VBoxHardDiskSettings::onContextMenuRequested (QListViewItem * /*aItem*/,
@@ -959,14 +963,20 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
             {
                 if (item && item->focusColumn() != -1 &&
                     item->focusColumn() > 0)
+                {
                     item->moveFocusToColumn (item->focusColumn() - 1);
+                    onAfterCurrentChanged (item);
+                }
             } else
             /* Process cursor-right as "move focus right" action */
             if (e->key() == Qt::Key_Right && !e->state())
             {
                 if (item && item->focusColumn() != -1 &&
                     item->focusColumn() < mLvHD->columns() - 1)
+                {
                     item->moveFocusToColumn (item->focusColumn() + 1);
+                    onAfterCurrentChanged (item);
+                }
             } else
             /* Process F2/Space as "open combo-box" actions */
             if (!e->state() &&
