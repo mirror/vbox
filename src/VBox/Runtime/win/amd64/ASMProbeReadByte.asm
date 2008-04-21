@@ -1,5 +1,5 @@
 ;; @file
-; innotek Portable Runtime - ASMProbeReadByte().
+; IPRT - ASMProbeReadByte().
 ;
 
 ;

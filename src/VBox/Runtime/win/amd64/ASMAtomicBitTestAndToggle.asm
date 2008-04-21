@@ -1,5 +1,5 @@
 ;; @file
-; innotek Portable Runtime - ASMAtomicBitTestAndToggle().
+; IPRT - ASMAtomicBitTestAndToggle().
 ;
 
 ;

@@ -1,5 +1,5 @@
 ;; @file
-; innotek Portable Runtime - ASMGetDR1().
+; IPRT - ASMGetDR1().
 ;
 
 ;
