@@ -363,7 +363,7 @@ void show_logo()
     // Wait (interval in milliseconds)
     if (!f12_pressed)
     {
-        scode = wait(logo_time / WAIT_MS, 0);
+        scode = wait(logo_time / WAIT_MS, 1);
         if (scode == F12_SCAN_CODE)
             f12_pressed = 1;
     }
