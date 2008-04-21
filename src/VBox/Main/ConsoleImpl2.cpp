@@ -771,7 +771,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 STR_FREE();
 
                 // @todo currently there is no Initiator name config.
-                rc = CFGMR3InsertString(pCfg,   "InitiatorName", "iqn.2006-02.de.innotek.initiator"); RC_CHECK();
+                rc = CFGMR3InsertString(pCfg,   "InitiatorName", "iqn.2008-04.com.sun.virtualbox.initiator"); RC_CHECK();
 
                 ULONG64 lun;
                 hrc = iSCSIDisk->COMGETTER(Lun)(&lun);                                      H();
