@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - VBoxRT.dll/so dependencies.
+ * IPRT - VBoxRT.dll/so dependencies.
  */
 
 /*

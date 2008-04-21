@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - alloca().
+ * IPRT - alloca().
  */
 
 /*

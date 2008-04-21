@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - TCP/IP.
+ * IPRT - TCP/IP.
  */
 
 /*

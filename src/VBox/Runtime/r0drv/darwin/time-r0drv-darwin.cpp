@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Time, Ring-0 Driver, Darwin.
+ * IPRT - Time, Ring-0 Driver, Darwin.
  */
 
 /*

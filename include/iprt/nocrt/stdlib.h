@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime / No-CRT - Our minimal stdlib.h.
+ * IPRT / No-CRT - Our minimal stdlib.h.
  */
 
 /*

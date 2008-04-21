@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - strpbrk().
+ * IPRT - strpbrk().
  */
 
 /*

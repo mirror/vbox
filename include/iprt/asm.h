@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Assembly Functions.
+ * IPRT - Assembly Functions.
  */
 
 /*

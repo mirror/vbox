@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime / No-CRT - string.h.
+ * IPRT / No-CRT - string.h.
  */
 
 /*

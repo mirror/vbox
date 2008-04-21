@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Ring-0 Memory Objects, NT.
+ * IPRT - Ring-0 Memory Objects, NT.
  */
 
 /*

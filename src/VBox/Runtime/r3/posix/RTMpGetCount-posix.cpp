@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - RTMpGetCount, POSIX.
+ * IPRT - RTMpGetCount, POSIX.
  */
 
 /*

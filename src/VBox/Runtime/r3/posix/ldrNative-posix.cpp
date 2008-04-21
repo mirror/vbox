@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Binary Image Loader, POSIX native.
+ * IPRT - Binary Image Loader, POSIX native.
  */
 
 /*

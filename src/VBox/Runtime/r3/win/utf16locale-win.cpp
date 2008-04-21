@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - UTF-16 Locale Specific Manipulation, Win32.
+ * IPRT - UTF-16 Locale Specific Manipulation, Win32.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - File I/O, native implementation for the Windows host platform.
+ * IPRT - File I/O, native implementation for the Windows host platform.
  */
 
 /*

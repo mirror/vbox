@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Convert errno to iprt status codes.
+ * IPRT - Convert errno to iprt status codes.
  */
 
 /*

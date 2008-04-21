@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - Error Messages.
+ * IPRT Testcase - Error Messages.
  */
 
 /*

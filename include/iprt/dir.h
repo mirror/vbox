@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Directory Manipulation.
+ * IPRT - Directory Manipulation.
  */
 
 /*

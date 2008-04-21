@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Command Line Parsing
+ * IPRT - Command Line Parsing
  */
 
 /*

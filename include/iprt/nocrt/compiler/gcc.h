@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime / No-CRT - GCC specifics.
+ * IPRT / No-CRT - GCC specifics.
  *
  * A quick hack for freebsd where there are no separate location 
  * for compiler specific headers like on linux, mingw, os2, ++. 

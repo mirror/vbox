@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Critical Sections.
+ * IPRT - Critical Sections.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Scheduling, generic stubs.
+ * IPRT - Scheduling, generic stubs.
  */
 
 /*

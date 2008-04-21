@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime testcase - profile some of the important functions.
+ * IPRT testcase - profile some of the important functions.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - kRdr Backend.
+ * IPRT - kRdr Backend.
  */
 
 /*

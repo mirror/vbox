@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - UTF8 helpers.
+ * IPRT - UTF8 helpers.
  */
 
 /*

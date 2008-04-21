@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Status code messages.
+ * IPRT - Status code messages.
  */
 
 /*

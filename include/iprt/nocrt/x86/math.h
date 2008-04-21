@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime / No-CRT - math.h, x86 inlined functions.
+ * IPRT / No-CRT - math.h, x86 inlined functions.
  */
 
 /*

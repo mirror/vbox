@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Thread Local Storage (TLS), POSIX.
+ * IPRT - Thread Local Storage (TLS), POSIX.
  */
 
 /*

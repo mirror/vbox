@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - Timers.
+ * IPRT Testcase - Timers.
  */
 
 /*

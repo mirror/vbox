@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Thread Local Storage (TSL), Generic Implementation.
+ * IPRT - Thread Local Storage (TSL), Generic Implementation.
  */
 
 /*

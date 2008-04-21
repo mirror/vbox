@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Memory Allocation.
+ * IPRT - Memory Allocation.
  */
 
 /*

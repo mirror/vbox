@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - ctype.h wrapper and C locale variants.
+ * IPRT - ctype.h wrapper and C locale variants.
  */
 
 /*

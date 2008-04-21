@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - No-CRT strchr() alias for gcc.
+ * IPRT - No-CRT strchr() alias for gcc.
  */
 
 /*

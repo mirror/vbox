@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - RTTimeSpec and PRTTIME tests.
+ * IPRT - RTTimeSpec and PRTTIME tests.
  */
 
 /*

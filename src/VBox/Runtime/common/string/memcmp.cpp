@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - CRT Strings, memcmp().
+ * IPRT - CRT Strings, memcmp().
  */
 
 /*

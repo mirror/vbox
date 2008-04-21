@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - Critical Sections.
+ * IPRT Testcase - Critical Sections.
  */
 
 /*

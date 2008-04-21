@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - String Formatter.
+ * IPRT - String Formatter.
  */
 
 /*
@@ -787,7 +787,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                     }
 
                     /*
-                     * Incredibly Portable Runtime Extensions.
+                     * IPRT Extensions.
                      */
                     case 'R':
                     {

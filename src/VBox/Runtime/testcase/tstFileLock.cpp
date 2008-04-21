@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - File Locks.
+ * IPRT Testcase - File Locks.
  */
 
 /*

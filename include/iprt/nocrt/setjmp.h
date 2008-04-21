@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime / No-CRT - Our own setjmp header.
+ * IPRT / No-CRT - Our own setjmp header.
  */
 
 /*

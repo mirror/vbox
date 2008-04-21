@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Semaphores, Ring-0 Driver, Darwin.
+ * IPRT - Semaphores, Ring-0 Driver, Darwin.
  */
 
 /*

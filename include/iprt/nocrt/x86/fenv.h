@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime / No-CRT - fenv.h, X86.
+ * IPRT / No-CRT - fenv.h, X86.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - No-CRT memset() alias for gcc.
+ * IPRT - No-CRT memset() alias for gcc.
  */
 
 /*

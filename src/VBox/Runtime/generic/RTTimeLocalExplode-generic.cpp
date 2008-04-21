@@ -1,6 +1,6 @@
 /* $Id: $ */
 /** @file
- * Incredibly Portable Runtime - Time, generic RTTimeLocalExplode.
+ * IPRT - Time, generic RTTimeLocalExplode.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - RTFs Queries..
+ * IPRT Testcase - RTFs Queries..
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Convert OS/2 error codes to iprt status codes.
+ * IPRT - Convert OS/2 error codes to iprt status codes.
  */
 
 /*

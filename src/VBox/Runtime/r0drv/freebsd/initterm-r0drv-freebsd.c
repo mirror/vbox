@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Initialization & Termination, Ring-0 Driver, FreeBSD.
+ * IPRT - Initialization & Termination, Ring-0 Driver, FreeBSD.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Binary Image Loader, Template for ELF Relocatable Images.
+ * IPRT - Binary Image Loader, Template for ELF Relocatable Images.
  */
 
 /*

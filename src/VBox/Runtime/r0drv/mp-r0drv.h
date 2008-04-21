@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Multiprocessor, Ring-0 Driver, Internal Header.
+ * IPRT - Multiprocessor, Ring-0 Driver, Internal Header.
  */
 
 /*

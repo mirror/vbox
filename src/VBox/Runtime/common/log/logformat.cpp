@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Log Formatter.
+ * IPRT - Log Formatter.
  */
 
 /*

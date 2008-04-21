@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - RTFileCopy, generic implementation.
+ * IPRT - RTFileCopy, generic implementation.
  */
 
 /*

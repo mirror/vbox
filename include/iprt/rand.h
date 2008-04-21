@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Random Numbers and Byte Streams.
+ * IPRT - Random Numbers and Byte Streams.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - String Stripping and Trimming.
+ * IPRT - String Stripping and Trimming.
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - String Manipluation.
+ * IPRT - String Manipluation.
  */
 
 /*

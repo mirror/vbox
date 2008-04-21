@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Convert NT status codes to iprt status codes.
+ * IPRT - Convert NT status codes to iprt status codes.
  */
 
 /*

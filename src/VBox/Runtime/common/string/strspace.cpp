@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Unique String Spaces.
+ * IPRT - Unique String Spaces.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - SMP TSC testcase.
+ * IPRT Testcase - SMP TSC testcase.
  */
 
 /*

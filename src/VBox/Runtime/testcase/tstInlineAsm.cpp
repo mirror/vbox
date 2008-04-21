@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - inline assembly.
+ * IPRT Testcase - inline assembly.
  */
 
 /*

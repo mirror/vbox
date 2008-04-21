@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Assertion Workers, Ring-0 Drivers, FreeBSD.
+ * IPRT - Assertion Workers, Ring-0 Drivers, FreeBSD.
  */
 
 /*

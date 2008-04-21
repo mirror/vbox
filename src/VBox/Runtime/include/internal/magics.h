@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Internal Header Defining The Magic Numbers.
+ * IPRT - Internal Header Defining The Magic Numbers.
  */
 
 /*

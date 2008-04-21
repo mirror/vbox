@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - String To Number Conversion.
+ * IPRT Testcase - String To Number Conversion.
  */
 
 /*

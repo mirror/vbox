@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Log User Specific Output, Generic Dummy.
+ * IPRT - Log User Specific Output, Generic Dummy.
  */
 
 /*

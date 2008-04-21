@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - stdarg.h wrapper.
+ * IPRT - stdarg.h wrapper.
  */
 
 /*

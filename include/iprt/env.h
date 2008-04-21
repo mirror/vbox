@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Process Environment Strings.
+ * IPRT - Process Environment Strings.
  */
 
 /*

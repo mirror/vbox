@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Time using SUPLib, the C Code Template.
+ * IPRT - Time using SUPLib, the C Code Template.
  */
 
 /*

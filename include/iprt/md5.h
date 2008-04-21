@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Message-Digest algorithm 5.
+ * IPRT - Message-Digest algorithm 5.
  */
 
 /*

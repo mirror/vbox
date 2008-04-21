@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Parameter Definitions.
+ * IPRT - Parameter Definitions.
  */
 
 /*

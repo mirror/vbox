@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Time Relative to Program Start.
+ * IPRT - Time Relative to Program Start.
  */
 
 /*

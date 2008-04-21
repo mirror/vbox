@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Semaphores, OS/2.
+ * IPRT - Semaphores, OS/2.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Time using RTTimeSystem*.
+ * IPRT - Time using RTTimeSystem*.
  */
 
 /*

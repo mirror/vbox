@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - AVL tree, RTGCPTR, range, unique keys, overlapping ranges, offset pointers.
+ * IPRT - AVL tree, RTGCPTR, range, unique keys, overlapping ranges, offset pointers.
  */
 
 /*

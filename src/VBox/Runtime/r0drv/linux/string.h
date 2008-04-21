@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - wrapper for the linux kernel asm/string.h.
+ * IPRT - wrapper for the linux kernel asm/string.h.
  */
 
 /*

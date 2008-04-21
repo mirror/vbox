@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - CRC64.
+ * IPRT - CRC64.
  */
 
 /*

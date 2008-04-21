@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Request packets
+ * IPRT - Request packets
  */
 
 /*

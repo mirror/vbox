@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Include all necessary headers for the Solaris kernel.
+ * IPRT - Include all necessary headers for the Solaris kernel.
  */
 
 /*

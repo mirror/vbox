@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Initialization & Termination, R0 Driver, NT.
+ * IPRT - Initialization & Termination, R0 Driver, NT.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Memory Allocation, POSIX.
+ * IPRT - Memory Allocation, POSIX.
  */
 
 /*

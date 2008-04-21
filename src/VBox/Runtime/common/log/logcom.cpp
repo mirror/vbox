@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Logging to Serial Port.
+ * IPRT - Logging to Serial Port.
  */
 
 /*

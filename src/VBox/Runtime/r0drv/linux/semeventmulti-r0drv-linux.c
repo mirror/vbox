@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Multiple Release Event Semaphores, Ring-0 Driver, Linux.
+ * IPRT - Multiple Release Event Semaphores, Ring-0 Driver, Linux.
  */
 
 /*

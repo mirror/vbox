@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Include all necessary headers for the NT kernel.
+ * IPRT - Include all necessary headers for the NT kernel.
  */
 
 /*

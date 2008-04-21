@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - File I/O.
+ * IPRT - File I/O.
  */
 
 /*

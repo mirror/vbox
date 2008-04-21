@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Generic Non-Interruptable Wait and Request Functions.
+ * IPRT - Generic Non-Interruptable Wait and Request Functions.
  */
 
 /*

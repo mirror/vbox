@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - Test various path functions.
+ * IPRT Testcase - Test various path functions.
  */
 
 /*

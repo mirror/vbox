@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Semaphores, implementation for Windows host platform.
+ * IPRT - Semaphores, implementation for Windows host platform.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - AVL tree, RTGCPHYS, range, unique keys, offset pointers.
+ * IPRT - AVL tree, RTGCPHYS, range, unique keys, offset pointers.
  */
 
 /*

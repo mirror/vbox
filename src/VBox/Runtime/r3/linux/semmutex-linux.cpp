@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Mutex Semaphore, Linux  (2.6.x+).
+ * IPRT - Mutex Semaphore, Linux  (2.6.x+).
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Memory Allocation, Win32.
+ * IPRT - Memory Allocation, Win32.
  */
 
 /*

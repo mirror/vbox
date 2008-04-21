@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - VBox String Formatter extensions.
+ * IPRT - VBox String Formatter extensions.
  */
 
 /*

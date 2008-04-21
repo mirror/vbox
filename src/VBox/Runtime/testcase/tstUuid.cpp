@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - UUID.
+ * IPRT Testcase - UUID.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Setup Sanity Checks, C.
+ * IPRT - Setup Sanity Checks, C.
  */
 
 /*

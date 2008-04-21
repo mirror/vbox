@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime Testcase - file IoCtl.
+ * IPRT Testcase - file IoCtl.
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * Incredibly Portable Runtime - Memory Management and Manipulation.
+ * IPRT - Memory Management and Manipulation.
  */
 
 /*

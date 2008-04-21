@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - CRC32.
+ * IPRT - CRC32.
  */
 
 /*

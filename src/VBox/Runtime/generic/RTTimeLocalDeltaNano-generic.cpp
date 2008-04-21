@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Incredibly Portable Runtime - Time, generic RTTimeLocalDeltaNano.
+ * IPRT - Time, generic RTTimeLocalDeltaNano.
  */
 
 /*
