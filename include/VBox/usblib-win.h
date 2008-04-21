@@ -143,9 +143,9 @@ typedef struct
 
 typedef struct
 {
-    USHORT          usVendorId;
-    USHORT          usProductId;
-    USHORT          usRevision;
+    uint16_t        usVendorId;
+    uint16_t        usProductId;
+    uint16_t        usRevision;
 } USBSUP_CAPTURE, *PUSBSUP_CAPTURE;
 
 typedef USBSUP_CAPTURE      USBSUP_RELEASE;
@@ -301,7 +301,7 @@ VBOXDDU_DECL(bool) usbLibHasPendingDeviceChanges();
  * @param usProductId       Product id
  * @param usRevision        Revision
  */
-VBOXDDU_DECL(int) usbLibCaptureDevice(USHORT usVendorId, USHORT usProductId, USHORT usRevision);
+VBOXDDU_DECL(int) usbLibCaptureDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
 
 /**
  * Release specified USB device to the host.
@@ -311,7 +311,7 @@ VBOXDDU_DECL(int) usbLibCaptureDevice(USHORT usVendorId, USHORT usProductId, USH
  * @param usProductId       Product id
  * @param usRevision        Revision
  */
-VBOXDDU_DECL(int) usbLibReleaseDevice(USHORT usVendorId, USHORT usProductId, USHORT usRevision);
+VBOXDDU_DECL(int) usbLibReleaseDevice(uint16_t usVendorId, uint16_t usProductId, uint16_t usRevision);
 
 
 /** @} */
