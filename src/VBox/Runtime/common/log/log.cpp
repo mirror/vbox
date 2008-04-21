@@ -1377,6 +1377,20 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
 }
 
 
+#ifndef IN_GC
+/**
+ * Sets the default logger instance.
+ *
+ * @returns iprt status code.
+ * @param   pLogger     The new default release logger instance.
+ */
+RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger)
+{
+    return (PRTLOGGER)ASMAtomicXchgPtr((void * volatile *)&g_pLogger, pLogger);
+}
+#endif /* !IN_GC */
+
+
 #ifdef IN_RING0
 /**
  * Changes the default logger instance for the current thread.
