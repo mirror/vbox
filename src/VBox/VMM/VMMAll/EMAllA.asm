@@ -814,7 +814,7 @@ ENDPROC     EMEmulateBtc
 ; Emulate BTS instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateBts(uint32_t *pu32Param1, uint32_t u32Param2);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
 ; @param    [esp + 08h]    Param 2 - Second parameter.
 ; @uses     eax, ecx, edx
@@ -839,3 +839,243 @@ BEGINPROC   EMEmulateBts
     pop     MY_RET_REG
     retn
 ENDPROC     EMEmulateBts
+
+
+%if 0
+;;
+; Emulate LOCK CMPXCHG instruction, CDECL calling conv.
+; EMDECL(uint32_t) EMEmulateLockCmpXchg32(RTHCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize);
+;
+; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to first parameter
+; @param    [esp + 08h]  gcc:rsi  msc:rdx   Param 2 - pointer to second parameter (eax)
+; @param    [esp + 0ch]  gcc:rdx  msc:r8    Param 3 - third parameter
+; @param    [esp + 10h]  gcc:rcx  msc:r9    Param 4 - Size of parameters, only 1/2/4 is valid
+; @uses     eax, ecx, edx
+;
+align 16
+BEGINPROC   EMEmulateLockCmpXchg32
+    push    ebx
+    mov     ecx, [esp + 04h + 4]        ; ecx = first parameter
+    mov     ebx, [esp + 08h + 4]        ; ebx = 2nd parameter (eax)
+    mov     edx, [esp + 0ch + 4]        ; edx = third parameter
+    mov     eax, [esp + 10h + 4]        ; eax = size of parameters
+
+    cmp     al, 4
+    je short .do_dword                  ; 4 bytes variant
+    cmp     al, 2
+    je short .do_word                   ; 2 byte variant
+    cmp     al, 1
+    je short .do_byte                   ; 1 bytes variant
+    int3
+
+.do_dword:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+
+    lock cmpxchg dword [ecx], edx            ; do 4 bytes CMPXCHG
+    mov     dword [ebx], eax
+    jmp     short .done
+
+.do_word:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+
+    lock cmpxchg word [ecx], dx              ; do 2 bytes CMPXCHG
+    mov     word [ebx], ax
+    jmp     short .done
+
+.do_byte:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+
+    lock cmpxchg byte [ecx], dl              ; do 1 bytes CMPXCHG
+    mov     byte [ebx], al
+
+.done:
+    ; collect flags and return.
+    pushf
+    pop     eax
+
+    mov     edx, [esp + 14h + 4]            ; eflags pointer
+    mov     dword [edx], eax
+
+    pop     ebx
+    mov     eax, VINF_SUCCESS
+    retn
+
+; Read error - we will be here after our page fault handler.
+GLOBALNAME EMEmulateLockCmpXchg32_Error
+    pop     ebx
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+
+ENDPROC     EMEmulateLockCmpXchg32
+
+;;
+; Emulate CMPXCHG instruction, CDECL calling conv.
+; EMDECL(uint32_t) EMEmulateCmpXchg32(RTHCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize);
+;
+; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to first parameter
+; @param    [esp + 08h]  gcc:rsi  msc:rdx   Param 2 - pointer to second parameter (eax)
+; @param    [esp + 0ch]  gcc:rdx  msc:r8    Param 3 - third parameter
+; @param    [esp + 10h]  gcc:rcx  msc:r9    Param 4 - Size of parameters, only 1/2/4 is valid.
+; @uses     eax, ecx, edx
+;
+align 16
+BEGINPROC   EMEmulateCmpXchg32
+    push    ebx
+    mov     ecx, [esp + 04h + 4]        ; ecx = first parameter
+    mov     ebx, [esp + 08h + 4]        ; ebx = 2nd parameter (eax)
+    mov     edx, [esp + 0ch + 4]        ; edx = third parameter
+    mov     eax, [esp + 10h + 4]        ; eax = size of parameters
+
+    cmp     al, 4
+    je short .do_dword                  ; 4 bytes variant
+    cmp     al, 2
+    je short .do_word                   ; 2 byte variant
+    cmp     al, 1
+    je short .do_byte                   ; 1 bytes variant
+    int3
+
+.do_dword:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+
+    cmpxchg dword [ecx], edx            ; do 4 bytes CMPXCHG
+    mov     dword [ebx], eax
+    jmp     short .done
+
+.do_word:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+
+    cmpxchg word [ecx], dx              ; do 2 bytes CMPXCHG
+    mov     word [ebx], ax
+    jmp     short .done
+
+.do_byte:
+    ; load 2nd parameter's value
+    mov     eax, dword [ebx]
+
+    cmpxchg byte [ecx], dl              ; do 1 bytes CMPXCHG
+    mov     byte [ebx], al
+
+.done:
+    ; collect flags and return.
+    pushf
+    pop     eax
+
+    mov     edx, [esp + 14h + 4]        ; eflags pointer
+    mov     dword [edx], eax
+
+    pop     ebx
+    mov     eax, VINF_SUCCESS
+    retn
+
+; Read error - we will be here after our page fault handler.
+GLOBALNAME EMEmulateCmpXchg32_Error
+    pop     ebx
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+ENDPROC     EMEmulateCmpXchg32
+
+;;
+; Emulate LOCK CMPXCHG8B instruction, CDECL calling conv.
+; EMDECL(uint32_t) EMEmulateLockCmpXchg8b(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
+;
+; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
+; @param    [esp + 08h]    Param 2 - Address of the eax register
+; @param    [esp + 0ch]    Param 3 - Address of the edx register
+; @param    [esp + 10h]    Param 4 - EBX
+; @param    [esp + 14h]    Param 5 - ECX
+; @uses     eax, ecx, edx
+;
+align 16
+BEGINPROC   EMEmulateLockCmpXchg8b32
+    push    ebp
+    push    ebx
+    mov     ebp, [esp + 04h + 8]        ; ebp = first parameter
+    mov     eax, [esp + 08h + 8]        ; &EAX
+    mov     eax, dword [eax]
+    mov     edx, [esp + 0ch + 8]        ; &EDX
+    mov     edx, dword [edx]
+    mov     ebx, [esp + 10h + 8]        ; EBX
+    mov     ecx, [esp + 14h + 8]        ; ECX
+
+    lock cmpxchg8b qword [ebp]          ; do CMPXCHG8B
+    mov     dword [esp + 08h + 8], eax
+    mov     dword [esp + 0ch + 8], edx
+
+    ; collect flags and return.
+    pushf
+    pop     eax
+
+    mov     edx, [esp + 18h + 8]            ; eflags pointer
+    mov     dword [edx], eax
+
+    pop     ebx
+    pop     ebp
+    mov     eax, VINF_SUCCESS
+    retn
+
+; Read error - we will be here after our page fault handler.
+GLOBALNAME EMEmulateLockCmpXchg8b32_Error
+    pop     ebx
+    pop     ebp
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+
+ENDPROC     EMEmulateLockCmpXchg8b32
+
+;;
+; Emulate CMPXCHG8B instruction, CDECL calling conv.
+; EMDECL(uint32_t) EMEmulateCmpXchg8b32(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
+;
+; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
+; @param    [esp + 08h]    Param 2 - Address of the eax register
+; @param    [esp + 0ch]    Param 3 - Address of the edx register
+; @param    [esp + 10h]    Param 4 - EBX
+; @param    [esp + 14h]    Param 5 - ECX
+; @uses     eax, ecx, edx
+;
+align 16
+BEGINPROC   EMEmulateCmpXchg8b32
+    push    ebp
+    push    ebx
+    mov     ebp, [esp + 04h + 8]        ; ebp = first parameter
+    mov     eax, [esp + 08h + 8]        ; &EAX
+    mov     eax, dword [eax]
+    mov     edx, [esp + 0ch + 8]        ; &EDX
+    mov     edx, dword [edx]
+    mov     ebx, [esp + 10h + 8]        ; EBX
+    mov     ecx, [esp + 14h + 8]        ; ECX
+
+    cmpxchg8b qword [ebp]               ; do CMPXCHG8B
+    mov     dword [esp + 08h + 8], eax
+    mov     dword [esp + 0ch + 8], edx
+
+    ; collect flags and return.
+    pushf
+    pop     eax
+
+    mov     edx, [esp + 18h + 8]            ; eflags pointer
+    mov     dword [edx], eax
+
+    pop     ebx
+    pop     ebp
+    mov     eax, VINF_SUCCESS
+    retn
+
+; Read error - we will be here after our page fault handler.
+GLOBALNAME EMEmulateCmpXchg8b32_Error
+    pop     ebx
+    pop     ebp
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+ENDPROC     EMEmulateCmpXchg8b32
+
+%endif
