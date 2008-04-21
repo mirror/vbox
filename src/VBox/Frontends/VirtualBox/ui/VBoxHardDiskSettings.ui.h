@@ -317,6 +317,21 @@ QValueList<HDSlot> HDSlotUniquizer::list (HDSlotItem *aSubscriber, bool aFilter)
     return list;
 }
 
+class HDSpaceItem : public QListViewItem
+{
+public:
+
+    enum { HDSpaceItemType = 1011 };
+
+    HDSpaceItem (QListView *aParent)
+        : QListViewItem (aParent)
+    {
+        setSelectable (false);
+    }
+
+    int rtti() const { return HDSpaceItemType; }
+};
+
 class HDListItem : public QListViewItem
 {
 public:
@@ -347,6 +362,11 @@ public:
     }
 
     int rtti() const { return HDListItemType; }
+
+    QString toolTip()
+    {
+        return QToolTip::textFor (mVector [1]);
+    }
 
     HDListItem* nextSibling() const
     {
@@ -558,6 +578,8 @@ void VBoxHardDiskSettings::init()
 
     /* rest */
 
+    new HDSpaceItem (mLvHD);
+
     mSlotUniquizer = new HDSlotUniquizer (this);
 
     qApp->installEventFilter (this);
@@ -697,6 +719,12 @@ void VBoxHardDiskSettings::delHDItem()
         {
             delete item;
             mPrevItem = 0;
+
+            if (mLvHD->currentItem() &&
+                mLvHD->currentItem()->rtti() == HDSpaceItem::HDSpaceItemType &&
+                mLvHD->currentItem()->itemAbove() &&
+                mLvHD->currentItem()->itemAbove()->rtti() == HDListItem::HDListItemType)
+                mLvHD->setCurrentItem (mLvHD->currentItem()->itemAbove());
         }
     }
 
@@ -796,9 +824,12 @@ void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
 void VBoxHardDiskSettings::onAfterCurrentChanged (QListViewItem *aItem)
 {
     /* Process postponed onCurrentChanged event */
-    mAddAttachmentAct->setEnabled (mLvHD->childCount() < mSlotUniquizer->totalCount());
-    mRemoveAttachmentAct->setEnabled (aItem != NULL);
-    mSelectHardDiskAct->setEnabled (aItem != NULL);
+    mAddAttachmentAct->setEnabled (mLvHD->childCount() <=
+                                   mSlotUniquizer->totalCount());
+    mRemoveAttachmentAct->setEnabled (aItem &&
+                                      aItem->rtti() == HDListItem::HDListItemType);
+    mSelectHardDiskAct->setEnabled (aItem &&
+                                    aItem->rtti() == HDListItem::HDListItemType);
 
     if (aItem == mPrevItem)
         return;
@@ -827,8 +858,14 @@ void VBoxHardDiskSettings::onContextMenuRequested (QListViewItem * /*aItem*/,
 HDListItem* VBoxHardDiskSettings::createItem (HDSlotUniquizer *aUniq,
                                               const CMachine &aMachine)
 {
-    return mLvHD->lastItem() ?
-        new HDListItem (this, mLvHD, mLvHD->lastItem(), aUniq, aMachine) :
+    QListViewItem *item = mLvHD->lastItem();
+    Assert (item->rtti() == HDSpaceItem::HDSpaceItemType);
+    HDListItem *last = item->itemAbove() &&
+        item->itemAbove()->rtti() == HDListItem::HDListItemType ?
+        static_cast<HDListItem*> (item->itemAbove()) : 0;
+
+    return last ?
+        new HDListItem (this, mLvHD, last, aUniq, aMachine) :
         new HDListItem (this, mLvHD, aUniq, aMachine);
 }
 
@@ -872,11 +909,39 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
             if (aObject != mLvHD->viewport())
                 break;
 
-            HDListItem *item = mLvHD->currentItem() &&
-                mLvHD->currentItem()->rtti() == HDListItem::HDListItemType ?
-                static_cast<HDListItem*> (mLvHD->currentItem()) : 0;
+            QMouseEvent *e = static_cast<QMouseEvent*> (aEvent);
+            QListViewItem *clickedItem = mLvHD->itemAt (QPoint (e->x(), e->y()));
+            HDListItem *item = clickedItem &&
+                clickedItem->rtti() == HDListItem::HDListItemType ?
+                static_cast<HDListItem*> (clickedItem) : 0;
+
             if (item)
                 item->showEditor();
+            else if (mAddAttachmentAct->isEnabled())
+                addHDItem();
+            break;
+        }
+        /* Process mouse-move as "make tool-tip" action */
+        case QEvent::MouseMove:
+        {
+            if (aObject != mLvHD->viewport())
+                break;
+
+            QMouseEvent *e = static_cast<QMouseEvent*> (aEvent);
+            QListViewItem *hoveredItem = mLvHD->itemAt (QPoint (e->x(), e->y()));
+            HDListItem *item = hoveredItem &&
+                hoveredItem->rtti() == HDListItem::HDListItemType ?
+                static_cast<HDListItem*> (hoveredItem) : 0;
+
+            QString oldTip = QToolTip::textFor (mLvHD->viewport());
+            QString newTip = item ? item->toolTip() :
+                             tr ("Double-click to add new attachment");
+
+            if (newTip != oldTip)
+            {
+                QToolTip::remove (mLvHD->viewport());
+                QToolTip::add (mLvHD->viewport(), newTip);
+            }
             break;
         }
         case QEvent::KeyPress:
