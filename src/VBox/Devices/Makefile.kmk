@@ -664,7 +664,9 @@ ifdef VBOX_WITH_USB
  endif
 
  Drivers_DEFS.darwin  += VUSB_HAVE_USBPROXY_DEVICE
- #Drivers_DEFS.darwin  += VBOX_WITH_USBFILTER
+ ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
+  Drivers_DEFS.darwin += VBOX_WITH_NEW_USB_CODE_ON_DARWIN
+ endif
  Drivers_SOURCES.darwin += \
 	USB/USBProxyDevice.cpp \
 	USB/darwin/USBProxyDevice-darwin.cpp
