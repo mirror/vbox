@@ -273,6 +273,16 @@ CSAMR3DECL(int) CSAMR3DoPendingAction(PVM pVM);
 CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag);
 
 /**
+ * Unmonitors a code page
+ *
+ * @returns VBox status code
+ * @param   pVM         The VM to operate on.
+ * @param   pPageAddrGC The page to monitor
+ * @param   enmTag      Monitor tag
+ */
+CSAMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag);
+
+/**
  * Analyse interrupt and trap gates
  *
  * @returns VBox status code.
