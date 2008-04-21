@@ -35,10 +35,6 @@ VBoxManage_SOURCES     = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp \
 	VBoxManageSVN.cpp
-ifndef VBOX_OSE
- VBoxManage_SOURCES   += \
-	VBoxInternalManageVmdk.cpp
-endif
 VBoxManage_LIBS       += $(LIB_DDU)
 
 # VBoxManageSVN.cpp uses VBOX_SVN_REV.
