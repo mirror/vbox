@@ -22,7 +22,7 @@
 
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
-#include "VBoxVMListBox.h"
+#include "VBoxVMListView.h"
 #include "VBoxConsoleWnd.h"
 #include "VBoxToolBar.h"
 

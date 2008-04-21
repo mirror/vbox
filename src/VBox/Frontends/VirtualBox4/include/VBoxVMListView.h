@@ -20,8 +20,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxVMListBox_h__
-#define __VBoxVMListBox_h__
+#ifndef __VBoxVMListView_h__
+#define __VBoxVMListView_h__
 
 #include "VBoxGlobal.h"
 #include "VBoxDefs.h"
@@ -207,4 +207,4 @@ private:
     int mSpacing;
 };
 
-#endif // __VBoxVMListItem_h__
+#endif /* __VBoxVMListView_h__ */
