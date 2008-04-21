@@ -2380,6 +2380,10 @@ to the system default language.&lt;/qt&gt;
             </source>
         <translation>&lt;qt&gt;Ruft den Manager für virtuelle Platten auf, um eine Festplatte an den ausgewählten Slot anzuschließen.&lt;/qt&gt;</translation>
     </message>
+    <message>
+        <source>Double-click to add a new attachment</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxLicenseViewer</name>
