@@ -19,7 +19,7 @@ After extracting the contents of the tar.gz file perform the following steps:
 1. Login as root using the "su" command.
 
 2. Run the command:
-        pkgadd -d VirtualBox-opensolaris-amd64-1.5.51-r28040-beta1
+        pkgadd -d VirtualBox-SunOS-amd64-1.5.51-r28040.pkg
 
 3. The installer would then ask you to "Select package(s) you wish to process"
         For this type "1" or "all".
