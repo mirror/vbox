@@ -31,7 +31,7 @@
 [Strings]
 ; Note; there are hardcoded checks for these strings!!
    DeviceDescription = "VirtualBox TAP Adapter"
-   Provider = "innotek GmbH"
+   Provider = "Sun Microsystems, Inc."
 
 ;----------------------------------------------------------------
 ;                      Manufacturer + Product Section (Done)

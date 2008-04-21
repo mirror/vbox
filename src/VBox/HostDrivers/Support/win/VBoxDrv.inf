@@ -31,7 +31,7 @@
 Signature="$Windows NT$"
 Class=System
 ClassGuid={ce4a90b5-1d8c-435d-b349-232ce55cb17f}
-Provider=%INNOTEK%
+Provider=%SUN%
 DriverVer=08/21/2006,8.1.0.0
 DriverPackageType=KernelService
 ;cat CatalogFile=VBoxDrv.cat
@@ -46,8 +46,8 @@ CopyFiles=VBoxDrv.CopyFiles
 AddService=VBoxDrv,0x00000002,VBoxDrv_Service
 
 [Manufacturer]
-;x86 %INNOTEK%=INNOTEK
-;amd64 %INNOTEK%=INNOTEK, NTamd64
+;x86 %SUN%=SUN
+;amd64 %SUN%=SUN, NTamd64
 
 [SourceDisksFiles]
 VBoxDrv.sys=1
@@ -67,7 +67,7 @@ ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
 ServiceBinary  = %12%\VBoxDrv.sys
 
 [Strings]
-INNOTEK = "innotek GmbH"
+SUN = "Sun Microsystems, Inc."
 VBoxDrv.SVCDESC = "VirtualBox Service"
 VBoxDrv.DRVDESC = "VirtualBox Driver"
 DISK_NAME = "VirtualBox Driver Installation Disk"
