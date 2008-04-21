@@ -1,5 +1,5 @@
 ;; @file
-; innotek Portable Runtime - ASMAtomicReadU64().
+; IPRT - ASMAtomicReadU64().
 ;
 
 ;

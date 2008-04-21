@@ -1,5 +1,5 @@
 ;; @file
-; innotek Portable Runtime - ASMAtomicXchgU8().
+; IPRT - ASMAtomicXchgU8().
 ;
 
 ;
