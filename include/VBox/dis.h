@@ -344,7 +344,7 @@ typedef struct _OP_PARAMETER
         uint32_t    reg_gen8;
         uint32_t    reg_gen16;
         uint32_t    reg_gen32;
-        uint64_t    reg_gen64;
+        uint32_t    reg_gen64;
         /** ST(0) - ST(7) */
         uint32_t    reg_fp;
         /** MMX0 - MMX7 */
@@ -356,7 +356,7 @@ typedef struct _OP_PARAMETER
         /** TR0-TR7 (?) */
         uint32_t    reg_test;
         /** CR0-CR4 */
-        uint64_t    reg_ctrl;
+        uint32_t    reg_ctrl;
         /** DR0-DR7 */
         uint32_t    reg_dbg;
     } base;
