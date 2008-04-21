@@ -101,10 +101,10 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf  $(SOLARISINSTDIR)/vboxguest.conf
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/additions/vboxguest                                          $(SOLARISINSTDIR)/vboxguest
 	@#$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARISINSTDIR)/vboxguest,)
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxClient                                                $(SOLARISINSTDIR)/VBoxClient
-	$(QUIET)chmod 0755 $(SOLARISINSTDIR)/VBoxClient
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxService                                               $(SOLARISINSTDIR)/VBoxService
-	$(QUIET)chmod 0755 $(SOLARISINSTDIR)/VBoxService
+	$(INSTALL) -m 0755 $(PATH_BIN)/additions/VBoxClient                                                 $(SOLARISINSTDIR)/VBoxClient
+	truss strip $(SOLARISINSTDIR)/VBoxClient
+	$(INSTALL) -m 0755 $(PATH_BIN)/additions/VBoxService                                                $(SOLARISINSTDIR)/VBoxService
+	truss strip $(SOLARISINSTDIR)/VBoxService
 	$(QUIET)$(if $(VBOX_DO_STRIP),/usr/sfw/bin/gstrip $(SOLARISINSTDIR)/VBoxService,)
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_13.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so                                       $(SOLARISINSTDIR)/vboxvideo_drv_14.so
