@@ -711,11 +711,7 @@ void VBoxVMSettingsDlg::init()
     {
         VBoxToolBar *toolBar = new VBoxToolBar (0, grbUSBFilters, "USBToolBar");
 
-        mAddUSBFilterAct->addTo (toolBar);
-        mAddUSBFilterFromAct->addTo (toolBar);
-        mRemoveUSBFilterAct->addTo (toolBar);
-        mUSBFilterUpAct->addTo (toolBar);
-        mUSBFilterDownAct->addTo (toolBar);
+        mUSBActionGroup->addTo (toolBar);
 
         toolBar->setUsesTextLabel (false);
         toolBar->setUsesBigPixmaps (false);
@@ -729,11 +725,7 @@ void VBoxVMSettingsDlg::init()
 
     /* context menu */
     mUSBContextMenu = new QPopupMenu (this);
-    mAddUSBFilterAct->addTo (mUSBContextMenu);
-    mAddUSBFilterFromAct->addTo (mUSBContextMenu);
-    mRemoveUSBFilterAct->addTo (mUSBContextMenu);
-    mUSBFilterUpAct->addTo (mUSBContextMenu);
-    mUSBFilterDownAct->addTo (mUSBContextMenu);
+    mUSBActionGroup->addTo (mUSBContextMenu);
 
     /* icons */
     mAddUSBFilterAct->setIconSet (VBoxGlobal::iconSet ("usb_new_16px.png",
@@ -1313,6 +1305,8 @@ void VBoxVMSettingsDlg::listView_currentChanged (QListViewItem *item)
     Assert (id >= 0);
     titleLabel->setText (::path (item));
     widgetStack->raiseWidget (id);
+
+    mUSBActionGroup->setEnabled (widgetStack->widget (id) == pageUSB);
 }
 
 
