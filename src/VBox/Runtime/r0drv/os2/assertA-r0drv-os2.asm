@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; innotek Portable Runtime - DevHelp_GetDOSVar, Ring-0 Driver, OS/2.
+; IPRT - DevHelp_GetDOSVar, Ring-0 Driver, OS/2.
 ;
 
 ;

@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; innotek Portable Runtime - No-CRT memset - AMD64 & X86.
+; IPRT - No-CRT memset - AMD64 & X86.
 ;
 
 ;

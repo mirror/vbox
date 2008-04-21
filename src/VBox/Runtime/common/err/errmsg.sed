@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# innotek Portable Runtime - SED script for converting */err.h.
+# IPRT - SED script for converting */err.h.
 #
 
 # Copyright (C) 2006-2007 Sun Microsystems, Inc.

@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; innotek Portable Runtime - No-CRT setjmp & longjmp - AMD64 & X86.
+; IPRT - No-CRT setjmp & longjmp - AMD64 & X86.
 ;
 
 ;
