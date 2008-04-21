@@ -5,7 +5,8 @@
  *
  */
 
-/* This code is originally from the Wine project. */
+/* This code is originally from the Wine project. It was split off from
+   keyboard-new.c.  (See the copyrights in that file). */
 
 /*
  * This library is free software; you can redistribute it and/or
