@@ -275,7 +275,7 @@ VirtualBox_QT_IMAGES += images/about_sun.png
 VirtualBox_SOURCES += src/VBoxAboutNonOSEDlg.cpp
 VirtualBox_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
 endif
-# non-OSE version is always necessary for lupdate/lrelease
+# OSE version is always necessary for lupdate/lrelease
 VirtualBox_QT_UISRCS += ui/VBoxAboutDlg.ui
 
 ifneq ($(BUILD_TARGET),win)

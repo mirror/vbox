@@ -727,7 +727,7 @@ VirtualBox_SOURCES += src/VBoxAboutNonOSEDlg.cpp
 VirtualBox_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
 endif
 
-# non-OSE version is always necessary for lupdate/lrelease
+# OSE version is always necessary for lupdate/lrelease
 VirtualBox_QT_UISRCS4 += ui/VBoxAboutDlg.ui
 
 # Commit the magic.
