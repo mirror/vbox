@@ -70,6 +70,9 @@ ifdef VBOX_WITH_USB
  ifdef VBOX_WITH_EHCI
   VBoxDDU_DEFS          += VBOX_WITH_EHCI
  endif
+ ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
+  VBoxDDU_DEFS.darwin   += VBOX_WITH_NEW_USB_CODE_ON_DARWIN
+ endif
 else
  VBoxDDU_SDKS.win        = WINPSDK
 endif
@@ -101,6 +104,12 @@ ifeq ($(BUILD_TARGET),l4)
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
 VBoxDDU_LDFLAGS.darwin   = -install_name @executable_path/VBoxDDU.dylib
+ifdef VBOX_WITH_USB
+ ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
+ VBoxDDU_LDFLAGS.darwin += -framework IOKit
+ endif
+endif
+
 VBoxDDU_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDDU_LDFLAGS.l4       = -Wl,--no-undefined
 
