@@ -20,7 +20,7 @@
  * additional information or have any questions.
  */
 
-#include "VBoxVMListBox.h"
+#include "VBoxVMListView.h"
 #include "VBoxProblemReporter.h"
 
 /* Qt includes */
@@ -594,7 +594,7 @@ bool VBoxVMModel::VBoxVMItemNameCompareGreaterThan (VBoxVMItem* aItem1, VBoxVMIt
     return aItem2->name().toLower() < aItem1->name().toLower();
 }
 
-/* VBoxVMListBox class */
+/* VBoxVMListView class */
 
 VBoxVMListView::VBoxVMListView (QWidget *aParent /* = 0 */)
     :QListView (aParent)

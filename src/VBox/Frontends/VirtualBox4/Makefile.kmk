@@ -415,7 +415,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxGlobalSettings.h \
 	include/VBoxUtils.h \
 	include/VBoxGlobal.h \
-	include/VBoxVMListBox.h \
+	include/VBoxVMListView.h \
 	include/VBoxMediaComboBox.h \
 	include/VBoxSelectorWnd.h \
 	include/VBoxConsoleWnd.h \
@@ -497,7 +497,7 @@ VirtualBox_SOURCES = \
 	src/VBoxConsoleView.cpp \
 	src/VBoxConsoleWnd.cpp \
 	src/VBoxDownloaderWgt.cpp \
-	src/VBoxVMListBox.cpp \
+	src/VBoxVMListView.cpp \
 	src/VBoxFrameBuffer.cpp \
 	src/HappyHttp.cpp \
 	src/VBoxNetworkFramework.cpp \
