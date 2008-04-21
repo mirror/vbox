@@ -168,7 +168,6 @@ struct VBoxDefs
     static const char* GUI_RegistrationData;
     static const char* GUI_LastVMSelected;
     static const char* GUI_InfoDlgState;
-    static const char* GUI_LastSizeHint;
 };
 
 #define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)

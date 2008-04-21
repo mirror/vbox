@@ -1074,11 +1074,6 @@ bool VBoxConsoleView::event (QEvent *e)
                 if (mMainWnd->isTrueFullscreen() || mMainWnd->isTrueSeamless())
                     updateGeometry();
 
-                /* Remember the new size for sending an initial size hint
-                   on next power up. */
-                if (mConsole.GetGuest().GetSupportsGraphics())
-                    mLastSizeHint = QSize(re->width(), re->height());
-
                 /* make sure that all posted signals are processed */
                 qApp->processEvents();
 
@@ -2855,26 +2850,10 @@ void VBoxConsoleView::onStateChange (KMachineState state)
                     dsp.InvalidateAndUpdate();
                 }
             }
-            else if (mLastState == KMachineState_Starting)
-            {
-                /* Suggest an initial size. */
-                sendInitialSizeHint ();
-            }
             /* reuse the focus event handler to capture input */
             if (hasFocus())
                 focusEvent (true /* aHasFocus */);
             break;
-        }
-        case KMachineState_Stopping:
-        {
-            if (mLastSizeHint.isValid())
-            {
-                CMachine cmachine = mConsole.GetMachine();
-                QString str = QString ("%1,%2")
-                                      .arg (mLastSizeHint.width())
-                                      .arg (mLastSizeHint.height());
-                cmachine.SetExtraData (VBoxDefs::GUI_LastSizeHint, str);
-            }
         }
         default:
             break;
@@ -3555,27 +3534,6 @@ void VBoxConsoleView::setDesktopGeometry(int minWidth, int minHeight)
     mDesktopGeometry = QRect(0, 0, width, height);
 }
 
-
-/**
- * We send an initial size hint to the VM on startup, based on the last
- * resize event in the last session (if any).
- */
-void VBoxConsoleView::sendInitialSizeHint(void)
-{
-    CMachine cmachine = mConsole.GetMachine();
-    QString str = cmachine.GetExtraData (VBoxDefs::GUI_LastSizeHint);
-    int w = 0, h = 0;
-    bool ok = true;
-    w = str.section (',', 0, 0).toInt (&ok);
-    if (ok)
-        h = str.section (',', 1, 1).toInt (&ok);
-    QRect screen = QApplication::desktop()->screenGeometry (this);
-    if (ok && w <= screen.width() && h <= screen.height())
-    {
-        LogFlowFunc (("Will suggest %d x %d\n", w, h));
-        mConsole.GetDisplay().SetVideoModeHint (w, h, 0, 0);
-    }
-}
 
 /**
  *  Sets the the minimum size restriction depending on the auto-resize feature

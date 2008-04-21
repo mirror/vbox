@@ -168,7 +168,6 @@ struct VBoxDefs
     static const char* GUI_RegistrationData;
     static const char* GUI_LastVMSelected;
     static const char* GUI_InfoDlgState;
-    static const char* GUI_LastSizeHint;
 };
 
 #endif // __VBoxDefs_h__
