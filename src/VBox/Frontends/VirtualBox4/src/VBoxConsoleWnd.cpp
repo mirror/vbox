@@ -56,6 +56,7 @@
 #ifdef Q_WS_MAC
 #include "VBoxUtils.h"
 #include "VBoxIChatTheaterWrapper.h"
+//#include <Carbon/Carbon.h>
 /* Qt includes */
 #include <QPainter>
 #endif
@@ -144,9 +145,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     idle_timer = new QTimer (this);
 
-#ifndef Q_WS_WIN
-    /* default application icon (will change to the VM-specific icon in
-     * openView()). On Win32, it's built-in to the executable. */
+#if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
+    /* The default application icon (will change to the VM-specific icon in
+     * openView()). On Win32, it's built-in to the executable. On Mac OS X the
+     * icon referenced in info.plist is used. */
     setWindowIcon (QIcon (":/VirtualBox_48px.png"));
 #endif
 
@@ -593,6 +595,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
 #ifdef Q_WS_MAC
 # ifdef VBOX_WITH_ICHAT_THEATER
+//    int setAttr[] = { kHIWindowBitDoesNotShowBadgeInDock, 0 };
+//    HIWindowChangeAttributes (window, setAttr, NULL);
     initSharedAVManager();
 # endif
     /* prepare the dock images */
@@ -2764,6 +2768,7 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
          * an repaint only. All the magic clipping stuff is done
          * in the paint engine. */
         HIViewReshapeStructure (::darwinToHIViewRef (console->viewport()));
+//        HIWindowInvalidateShadow (::darwinToWindowRef (console->viewport()));
 //        ReshapeCustomWindow (mapToWindowRef (this));
     }
     else
@@ -2786,6 +2791,7 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 //        /* Now force the reshaping of the window. This is definitly necessary. */
 //        ReshapeCustomWindow (reinterpret_cast <WindowPtr> (winId()));
         QMainWindow::setMask (region);
+//        HIWindowInvalidateShadow (::darwinToWindowRef (console->viewport()));
     }
 #else
     QMainWindow::setMask (region);
