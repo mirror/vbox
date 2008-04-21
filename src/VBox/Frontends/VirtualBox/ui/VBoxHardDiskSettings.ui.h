@@ -935,7 +935,7 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
 
             QString oldTip = QToolTip::textFor (mLvHD->viewport());
             QString newTip = item ? item->toolTip() :
-                             tr ("Double-click to add new attachment");
+                             tr ("Double-click to add a new attachment");
 
             if (newTip != oldTip)
             {
