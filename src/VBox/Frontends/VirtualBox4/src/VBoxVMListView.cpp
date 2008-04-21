@@ -149,6 +149,11 @@ VBoxVMItem::~VBoxVMItem()
 // public members
 ////////////////////////////////////////////////////////////////////////////////
 
+QString VBoxVMItem::sessionStateName() const 
+{ 
+    return mAccessible ? vboxGlobal().toString (mState) : VBoxVMListView::tr ("Inaccessible"); 
+}
+
 QString VBoxVMItem::toolTipText() const
 {
     QString dateTime = (mLastStateChange.date() == QDate::currentDate()) ?
@@ -162,7 +167,7 @@ QString VBoxVMItem::toolTipText() const
         toolTip = QString ("<b>%1</b>").arg (mName);
         if (!mSnapshotName.isNull())
             toolTip += QString (" (%1)").arg (mSnapshotName);
-        toolTip = QString (QObject::tr (
+        toolTip = QString (VBoxVMListView::tr (
             "<nobr>%1<br></nobr>"
             "<nobr>%2 since %3</nobr><br>"
             "<nobr>Session %4</nobr>",
@@ -174,7 +179,7 @@ QString VBoxVMItem::toolTipText() const
     }
     else
     {
-        toolTip = QString (QObject::tr (
+        toolTip = QString (VBoxVMListView::tr (
             "<nobr><b>%1</b><br></nobr>"
             "<nobr>Inaccessible since %2</nobr>",
             "Inaccessible VM tooltip (name, last state change)"))
@@ -530,6 +535,15 @@ QVariant VBoxVMModel::data(const QModelIndex &aIndex, int aRole) const
                 v = f;
                 break;
             }
+        case Qt::AccessibleTextRole:
+            {
+                VBoxVMItem *item = mVMItemList.at (aIndex.row());
+                v = QString (VBoxVMListView::tr ("%1 (%2)\n %3", "Accessible string of the list view item")
+                             .arg (item->name())
+                             .arg (item->snapshotName())
+                             .arg (item->sessionStateName()));
+                break;
+            }
         case SnapShotDisplayRole:
             {
                 v = mVMItemList.at (aIndex.row())->snapshotName();
@@ -575,7 +589,7 @@ QVariant VBoxVMModel::headerData(int aSection, Qt::Orientation aOrientation,
         return QVariant();
 
     if (aOrientation == Qt::Horizontal)
-        return QString (tr ("VM"));
+        return QString (VBoxVMListView::tr ("VM", "Horizontal header description"));
     else
         return QString ("%1").arg (aSection);
 }

@@ -4008,7 +4008,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
 </context>
 <context>
-    <name>VBoxVMListBox</name>
+    <name>VBoxVMListView</name>
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
