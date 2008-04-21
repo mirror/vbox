@@ -352,7 +352,7 @@ static RTGCPTR emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE
     return SELMToFlat(pVM, pRegFrame->eflags, sel, pSelHidReg, pvAddr);
 }
 
-#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
+#if defined(IN_GC) && (defined(VBOX_STRICT) || defined(LOG_ENABLED))
 /** 
  * Get the mnemonic for the disassembled instruction.
  *  
@@ -1249,7 +1249,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     OP_PARAMVAL param1, param2;
 
 #ifdef LOG_ENABLED
-    char *pszInstr;
+    const char *pszInstr;
 
     if (pCpu->prefix & PREFIX_LOCK)
         pszInstr = "Lock CmpXchg";
@@ -1337,7 +1337,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
     OP_PARAMVAL param1;
 
 #ifdef LOG_ENABLED
-    char *pszInstr;
+    const char *pszInstr;
 
     if (pCpu->prefix & PREFIX_LOCK)
         pszInstr = "Lock CmpXchg8b";
