@@ -2221,6 +2221,12 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         pExtent = &pImage->pExtents[0];
         pExtent->File = File;
         pImage->File = NIL_RTFILE;
+        pExtent->pszFullname = RTStrDup(pImage->pszFilename);
+        if (!pExtent->pszFullname)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
         rc = vmdkReadMetaSparseExtent(pImage, pExtent);
         if (VBOX_FAILURE(rc))
             goto out;
@@ -2785,13 +2791,13 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
         }
         char *pszBasedirectory = RTStrDup(pImage->pszFilename);
         RTPathStripFilename(pszBasedirectory);
-        char *pszFN;
-        rc = RTStrAPrintf(&pszFN, "%s%c%s", pszBasedirectory, RTPATH_SLASH,
-                          pExtent->pszBasename);
+        char *pszFullname;
+        rc = RTStrAPrintf(&pszFullname, "%s%c%s", pszBasedirectory,
+                          RTPATH_SLASH, pExtent->pszBasename);
         RTStrFree(pszBasedirectory);
         if (VBOX_FAILURE(rc))
             return rc;
-        pExtent->pszFullname = pszFN;
+        pExtent->pszFullname = pszFullname;
 
         /* Create file for extent. */
         rc = vmdkFileOpen(pImage, &pExtent->File, pExtent->pszFullname,
