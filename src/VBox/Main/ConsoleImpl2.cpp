@@ -1539,12 +1539,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
             {
                 /*
-                 * Enable the 2.0 -> 1.1 device morphing of proxied devies to keep windows quiet.
+                 * Global USB options, currently unused as we'll apply the 2.0 -> 1.1 morphing
+                 * on a per device level now.
                  */
                 rc = CFGMR3InsertNode(pRoot, "USB", &pCfg);                                RC_CHECK();
                 rc = CFGMR3InsertNode(pCfg, "USBProxy", &pCfg);                            RC_CHECK();
                 rc = CFGMR3InsertNode(pCfg, "GlobalConfig", &pCfg);                        RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg, "Force11Device", true);                     RC_CHECK();
+                // This globally enables the 2.0 -> 1.1 device morphing of proxied devies to keep windows quiet.
+                //rc = CFGMR3InsertInteger(pCfg, "Force11Device", true);                     RC_CHECK();
                 // The following breaks stuff, but it makes MSDs work in vista. (I include it here so
                 // that it's documented somewhere.) Users needing it can use:
                 //      VBoxManage setextradata "myvm" "VBoxInternal/USB/USBProxy/GlobalConfig/Force11PacketSize" 1
