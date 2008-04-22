@@ -288,7 +288,7 @@ RTDECL(int) RTStrToUInt32Ex(const char *pszValue, char **ppszNext, unsigned uBas
 {
     uint64_t u64;
     int rc = RTStrToUInt64Ex(pszValue, ppszNext, uBase, &u64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         if (u64 & ~0xffffffffULL)
             rc = VWRN_NUMBER_TOO_BIG;
@@ -321,7 +321,7 @@ RTDECL(int) RTStrToUInt32Full(const char *pszValue, unsigned uBase, uint32_t *pu
 {
     uint64_t u64;
     int rc = RTStrToUInt64Full(pszValue, uBase, &u64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         if (u64 & ~0xffffffffULL)
             rc = VWRN_NUMBER_TOO_BIG;
@@ -372,7 +372,7 @@ RTDECL(int) RTStrToUInt16Ex(const char *pszValue, char **ppszNext, unsigned uBas
 {
     uint64_t u64;
     int rc = RTStrToUInt64Ex(pszValue, ppszNext, uBase, &u64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         if (u64 & ~0xffffULL)
             rc = VWRN_NUMBER_TOO_BIG;
@@ -405,7 +405,7 @@ RTDECL(int) RTStrToUInt16Full(const char *pszValue, unsigned uBase, uint16_t *pu
 {
     uint64_t u64;
     int rc = RTStrToUInt64Full(pszValue, uBase, &u64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         if (u64 & ~0xffffULL)
             rc = VWRN_NUMBER_TOO_BIG;
@@ -456,7 +456,7 @@ RTDECL(int) RTStrToUInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase
 {
     uint64_t u64;
     int rc = RTStrToUInt64Ex(pszValue, ppszNext, uBase, &u64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         if (u64 & ~0xffULL)
             rc = VWRN_NUMBER_TOO_BIG;
@@ -489,7 +489,7 @@ RTDECL(int) RTStrToUInt8Full(const char *pszValue, unsigned uBase, uint8_t *pu8)
 {
     uint64_t u64;
     int rc = RTStrToUInt64Full(pszValue, uBase, &u64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         if (u64 & ~0xffULL)
             rc = VWRN_NUMBER_TOO_BIG;
@@ -715,7 +715,7 @@ RTDECL(int) RTStrToInt32Ex(const char *pszValue, char **ppszNext, unsigned uBase
 {
     int64_t i64;
     int rc = RTStrToInt64Ex(pszValue, ppszNext, uBase, &i64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         int32_t i32 = (int32_t)i64;
         if (i64 != (int64_t)i32)
@@ -748,7 +748,7 @@ RTDECL(int) RTStrToInt32Full(const char *pszValue, unsigned uBase, int32_t *pi32
 {
     int64_t i64;
     int rc = RTStrToInt64Full(pszValue, uBase, &i64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         int32_t i32 = (int32_t)i64;
         if (i64 != (int64_t)i32)
@@ -799,7 +799,7 @@ RTDECL(int) RTStrToInt16Ex(const char *pszValue, char **ppszNext, unsigned uBase
 {
     int64_t i64;
     int rc = RTStrToInt64Ex(pszValue, ppszNext, uBase, &i64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         int16_t i16 = (int16_t)i64;
         if (i64 != (int64_t)i16)
@@ -832,7 +832,7 @@ RTDECL(int) RTStrToInt16Full(const char *pszValue, unsigned uBase, int16_t *pi16
 {
     int64_t i64;
     int rc = RTStrToInt64Full(pszValue, uBase, &i64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         int16_t i16 = (int16_t)i64;
         if (i64 != (int64_t)i16)
@@ -883,7 +883,7 @@ RTDECL(int) RTStrToInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase,
 {
     int64_t i64;
     int rc = RTStrToInt64Ex(pszValue, ppszNext, uBase, &i64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         int8_t i8 = (int8_t)i64;
         if (i64 != (int64_t)i8)
@@ -916,7 +916,7 @@ RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBase, int8_t *pi8)
 {
     int64_t i64;
     int rc = RTStrToInt64Full(pszValue, uBase, &i64);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         int8_t i8 = (int8_t)i64;
         if (i64 != (int64_t)i8)
