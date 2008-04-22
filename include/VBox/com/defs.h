@@ -177,11 +177,12 @@
 // XPCOM
 /////////////////////////////////////////////////////////////////////////////
 
-#if defined (RT_OS_DARWIN)
-  /* CFBase.h defines these*/
+#if defined (RT_OS_DARWIN) || (defined (QT_VERSION) && (QT_VERSION >= 0x040000))
+  /* CFBase.h defines these & 
+   * qglobal.h from Qt4 defines these */
 # undef FALSE
 # undef TRUE
-#endif  /* RT_OS_DARWIN */
+#endif  /* RT_OS_DARWIN || QT_VERSION */
 
 #include <nsID.h>
 
