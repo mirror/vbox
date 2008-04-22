@@ -108,7 +108,7 @@ signals:
     void keyboardStateChanged (int state);
     void mouseStateChanged (int state);
     void machineStateChanged (KMachineState state);
-    void additionsStateChanged (const QString &, bool, bool);
+    void additionsStateChanged (const QString &, bool, bool, bool);
     void mediaChanged (VBoxDefs::DiskType aType);
     void networkStateChange();
     void usbStateChange();

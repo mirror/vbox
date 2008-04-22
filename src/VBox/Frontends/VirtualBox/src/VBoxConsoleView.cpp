@@ -234,19 +234,23 @@ public:
     GuestAdditionsEvent (const QString &aOsTypeId,
                          const QString &aAddVersion,
                          bool aAddActive,
-                         bool aSupportsSeamless) :
+                         bool aSupportsSeamless,
+                         bool aSupportsGraphics) :
         QEvent ((QEvent::Type) VBoxDefs::AdditionsStateChangeEventType),
         mOsTypeId (aOsTypeId), mAddVersion (aAddVersion),
-        mAddActive (aAddActive), mSupportsSeamless (aSupportsSeamless) {}
+        mAddActive (aAddActive), mSupportsSeamless (aSupportsSeamless),
+        mSupportsGraphics (aSupportsGraphics) {}
     const QString &osTypeId() const { return mOsTypeId; }
     const QString &additionVersion() const { return mAddVersion; }
     bool additionActive() const { return mAddActive; }
     bool supportsSeamless() const { return mSupportsSeamless; }
+    bool supportsGraphics() const { return mSupportsGraphics; }
 private:
     QString mOsTypeId;
     QString mAddVersion;
     bool mAddActive;
     bool mSupportsSeamless;
+    bool mSupportsGraphics;
 };
 
 /** DVD/FD change event */
@@ -437,7 +441,8 @@ public:
                                      guest.GetOSTypeId(),
                                      guest.GetAdditionsVersion(),
                                      guest.GetAdditionsActive(),
-                                     guest.GetSupportsSeamless()));
+                                     guest.GetSupportsSeamless(),
+                                     guest.GetSupportsGraphics()));
         return S_OK;
     }
 
@@ -1179,7 +1184,8 @@ bool VBoxConsoleView::event (QEvent *e)
 
                 emit additionsStateChanged (ge->additionVersion(),
                                             ge->additionActive(),
-                                            ge->supportsSeamless());
+                                            ge->supportsSeamless(),
+                                            ge->supportsGraphics());
                 return true;
             }
 

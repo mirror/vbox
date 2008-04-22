@@ -124,6 +124,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     , mIsFullscreen (false)
     , mIsSeamless (false)
     , mIsSeamlessSupported (false)
+    , mIsGraphicsSupported (false)
     , was_max (false)
     , console_style (0)
     , mIsOpenViewFinished (false)
@@ -807,8 +808,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              hostkey_state, SLOT (setState (int)));
     connect (console, SIGNAL (machineStateChanged (KMachineState)),
              this, SLOT (updateMachineState (KMachineState)));
-    connect (console, SIGNAL (additionsStateChanged (const QString&, bool, bool)),
-             this, SLOT (updateAdditionsState (const QString &, bool, bool)));
+    connect (console, SIGNAL (additionsStateChanged (const QString&, bool, bool, bool)),
+             this, SLOT (updateAdditionsState (const QString &, bool, bool, bool)));
     connect (console, SIGNAL (mediaChanged (VBoxDefs::DiskType)),
              this, SLOT (updateMediaState (VBoxDefs::DiskType)));
     connect (console, SIGNAL (usbStateChange()),
@@ -951,7 +952,9 @@ void VBoxConsoleWnd::finalizeOpenView()
 
     /* If seamless mode should be enabled then check if it is enabled
      * currently and re-enable it if seamless is supported */
-    if (vmSeamlessAction->isChecked() && mIsSeamlessSupported)
+    if (   vmSeamlessAction->isChecked()
+        && mIsSeamlessSupported
+        && mIsGraphicsSupported)
         toggleFullscreenMode (true, true);
     mIsOpenViewFinished = true;
     LogFlowFuncLeave();
@@ -1071,7 +1074,7 @@ void VBoxConsoleWnd::onExitFullscreen()
     }
 #endif
 
-    vmSeamlessAction->setEnabled (mIsSeamlessSupported);
+    vmSeamlessAction->setEnabled (mIsSeamlessSupported && mIsGraphicsSupported);
     vmFullscreenAction->setEnabled (true);
 
     console->setIgnoreMainwndResize (false);
@@ -2052,7 +2055,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     {
         mIsFullscreen = aOn;
         vmAdjustWindowAction->setEnabled (!aOn);
-        vmSeamlessAction->setEnabled (!aOn && mIsSeamlessSupported);
+        vmSeamlessAction->setEnabled (!aOn && mIsSeamlessSupported && mIsGraphicsSupported);
     }
 
     bool wasHidden = isHidden();
@@ -2340,7 +2343,7 @@ void VBoxConsoleWnd::vmFullscreen (bool aOn)
 void VBoxConsoleWnd::vmSeamless (bool aOn)
 {
     /* check if it is possible to enter/leave seamless mode */
-    if (mIsSeamlessSupported || !aOn)
+    if (mIsSeamlessSupported && mIsGraphicsSupported || !aOn)
     {
         bool ok = toggleFullscreenMode (aOn, true /* aSeamless */);
         if (!ok)
@@ -3271,16 +3274,22 @@ void VBoxConsoleWnd::updateMouseState (int state)
 
 void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
                                            bool aActive,
-                                           bool aSeamlessSupported)
+                                           bool aSeamlessSupported,
+                                           bool aGraphicsSupported)
 {
-    vmAutoresizeGuestAction->setEnabled (aActive);
-    if (mIsSeamlessSupported != aSeamlessSupported)
+    vmAutoresizeGuestAction->setEnabled (aActive && aGraphicsSupported);
+    if (   (mIsSeamlessSupported != aSeamlessSupported)
+        || (mIsGraphicsSupported != aGraphicsSupported))
     {
-        vmSeamlessAction->setEnabled (aSeamlessSupported);
+        vmSeamlessAction->setEnabled (aSeamlessSupported && aGraphicsSupported);
         mIsSeamlessSupported = aSeamlessSupported;
+        mIsGraphicsSupported = aGraphicsSupported;
         /* If seamless mode should be enabled then check if it is enabled
          * currently and re-enable it if open-view procedure is finished */
-        if (vmSeamlessAction->isChecked() && mIsOpenViewFinished && aSeamlessSupported)
+        if (   vmSeamlessAction->isChecked()
+            && mIsOpenViewFinished
+            && aSeamlessSupported
+            && aGraphicsSupported)
             toggleFullscreenMode (true, true);
     }
 
