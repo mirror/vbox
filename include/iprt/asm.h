@@ -39,32 +39,6 @@
  * Otherwise defined as 0.
  */
 
-/** @note
- *
- * Some remarks about __volatile__: Without this keyword gcc is allowed to reorder
- * or even optimize assembler instructions away. For instance, in the following code
- * the second rdmsr instruction is optimized away because gcc treats that instruction
- * as deterministic:
- *
- *   @code
- *   static inline uint64_t rdmsr_low(idx)
- *   {
- *     uint32_t low;
- *     __asm__ ("rdmsr" : "=a"(low) : "c"(idx) : "edx");
- *   }
- *   ...
- *   uint32_t msr1 = rdmsr(1);
- *   foo(msr1);
- *   msr1 = rdmsr(1);
- *   bar(msr1);
- *   @endcode
- *
- * The input parameter of rdmsr_low is the same for both calls and therefore gcc will
- * use the result of the first call as input parameter for bar() as well. For rdmsr this
- * is not acceptable as this instruction is _not_ deterministic. This applies to reading
- * machine status information in general.
- */
-
 #ifdef _MSC_VER
 # if _MSC_VER >= 1400
 #  define RT_INLINE_ASM_USES_INTRIN 1
@@ -139,6 +113,29 @@
  *
  *          ASMAtomicSomething operations are all ordered, while ASMAtomicUoSomething
  *          are unordered (note the Uo).
+ *
+ * @remarks Some remarks about __volatile__: Without this keyword gcc is allowed to reorder
+ *          or even optimize assembler instructions away. For instance, in the following code
+ *          the second rdmsr instruction is optimized away because gcc treats that instruction
+ *          as deterministic:
+ *
+ *            @code
+ *            static inline uint64_t rdmsr_low(int idx)
+ *            {
+ *              uint32_t low;
+ *              __asm__ ("rdmsr" : "=a"(low) : "c"(idx) : "edx");
+ *            }
+ *            ...
+ *            uint32_t msr1 = rdmsr_low(1);
+ *            foo(msr1);
+ *            msr1 = rdmsr_low(1);
+ *            bar(msr1);
+ *            @endcode
+ *
+ *          The input parameter of rdmsr_low is the same for both calls and therefore gcc will
+ *          use the result of the first call as input parameter for bar() as well. For rdmsr this
+ *          is not acceptable as this instruction is _not_ deterministic. This applies to reading
+ *          machine status information in general.
  *
  * @{
  */
@@ -1387,10 +1384,10 @@ DECLINLINE(uint64_t) ASMRdMsr(uint32_t uRegister)
 {
     RTUINT64U u;
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("rdmsr\n\t"
-             : "=a" (u.s.Lo),
-               "=d" (u.s.Hi)
-             : "c" (uRegister));
+    __asm__ __volatile__("rdmsr\n\t"
+                         : "=a" (u.s.Lo),
+                           "=d" (u.s.Hi)
+                         : "c" (uRegister));
 
 # elif RT_INLINE_ASM_USES_INTRIN
     u.u = __readmsr(uRegister);
@@ -1461,9 +1458,9 @@ DECLINLINE(uint32_t) ASMRdMsr_Low(uint32_t uRegister)
     uint32_t u32;
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("rdmsr\n\t"
-             : "=a" (u32)
-             : "c" (uRegister)
-             : "edx");
+                         : "=a" (u32)
+                         : "c" (uRegister)
+                         : "edx");
 
 # elif RT_INLINE_ASM_USES_INTRIN
     u32 = (uint32_t)__readmsr(uRegister);
@@ -1496,9 +1493,9 @@ DECLINLINE(uint32_t) ASMRdMsr_High(uint32_t uRegister)
     uint32_t    u32;
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("rdmsr\n\t"
-             : "=d" (u32)
-             : "c" (uRegister)
-             : "eax");
+                         : "=d" (u32)
+                         : "c" (uRegister)
+                         : "eax");
 
 # elif RT_INLINE_ASM_USES_INTRIN
     u32 = (uint32_t)(__readmsr(uRegister) >> 32);
