@@ -816,7 +816,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     bitBlt (&osImg, 14, 22,
             &osImg100x75, 0, 0,
             100, 75, /* conversion_flags */ 0);
-    QImage VBoxOverlay = QImage::fromMimeSource ("VirtualBox_48px.png");
+    QImage VBoxOverlay = QImage::fromMimeSource ("VirtualBox_cube_42px.png");
     bitBlt (&osImg, osImg.width() - VBoxOverlay.width(), osImg.height() - VBoxOverlay.height(),
             &VBoxOverlay, 0, 0,
             VBoxOverlay.width(), VBoxOverlay.height(), /* conversion_flags */ 0);
