@@ -53,7 +53,7 @@
 //TODO: opcode type (harmless, potentially dangerous, dangerous)
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-char SZINVALID_OPCODE[] = "Invalid Opcode";
+static char SZINVALID_OPCODE[] = "Invalid Opcode";
 
 #define INVALID_OPCODE  \
     OP(SZINVALID_OPCODE,     0,              0,          0,          OP_INVALID, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_INVALID)
@@ -308,6 +308,7 @@ const OPCODE g_aOneByteMapX86[256] =
     OP("retn",               0,                  0,                 0,          OP_RETN,        OP_PARM_NONE,    OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW | OPTYPE_FORCED_64_OP_SIZE),
     OP("les %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,      0,          OP_LES,         OP_PARM_Gv,      OP_PARM_Mp,     OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_INVALID_64),
     OP("lds %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,      0,          OP_LDS,         OP_PARM_Gv,      OP_PARM_Mp,     OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_RRM_DANGEROUS | OPTYPE_INVALID_64),
+    /* @todo these two are groups */
     OP("mov %Eb,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,  0,          OP_MOV,         OP_PARM_Eb,      OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("mov %Ev,%Iv",        IDX_ParseModRM,     IDX_ParseImmV,     0,          OP_MOV,         OP_PARM_Ev,      OP_PARM_Iv,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("enter %Iw,%Ib",      IDX_ParseImmUshort, IDX_ParseImmByte,  0,          OP_ENTER,       OP_PARM_Iw,      OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_HARMLESS),
@@ -387,9 +388,9 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("lar %Gv,%Ew",        IDX_ParseModRM,    IDX_UseModRM,   0,          OP_LAR,             OP_PARM_Gv,         OP_PARM_Ew,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED_NOTRAP),
     OP("lsl %Gv,%Ew",        IDX_ParseModRM,    IDX_UseModRM,   0,          OP_LSL,             OP_PARM_Gv,         OP_PARM_Ew,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED_NOTRAP),
     INVALID_OPCODE,
-    OP("syscall",            0,                 0,              0,          OP_SYSCALL,         OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW),
+    OP("syscall",            0,                 0,              0,          OP_SYSCALL,         OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_ONLY_64),
     OP("clts",               0,                 0,              0,          OP_CLTS,            OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_PRIVILEGED),
-    OP("sysret",             0,                 0,              0,          OP_SYSRET,          OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW),
+    OP("sysret",             0,                 0,              0,          OP_SYSRET,          OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW | OPTYPE_ONLY_64),
     OP("invd",               0,                 0,              0,          OP_INVD,            OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_PRIVILEGED),
     OP("wbinvd",             0,                 0,              0,          OP_WBINVD,          OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_PRIVILEGED),
     INVALID_OPCODE,
@@ -533,22 +534,22 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("movq %Qq,%Pq",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVQ,    OP_PARM_Qq,         OP_PARM_Pq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
 
     /* 8 */
-    OP("jo %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JO,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jno %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNO,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jc %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JC,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jnc %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNC,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("je %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JE,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jne %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNE,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jbe %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JBE,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jnbe %Jv",           IDX_ParseImmVRel,   0,          0,          OP_JNBE,    OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("js %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JS,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jns %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNS,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jp %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JP,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jnp %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNP,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jl %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JL,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jnl %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNL,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jle %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JLE,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("jnle %Jv",           IDX_ParseImmVRel,   0,          0,          OP_JNLE,    OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
+    OP("jo %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JO,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jno %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNO,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jc %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JC,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jnc %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNC,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("je %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JE,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jne %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNE,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jbe %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JBE,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jnbe %Jv",           IDX_ParseImmVRel,   0,          0,          OP_JNBE,    OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("js %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JS,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jns %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNS,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jp %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JP,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jnp %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNP,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jl %Jv",             IDX_ParseImmVRel,   0,          0,          OP_JL,      OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jnl %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JNL,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jle %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JLE,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
+    OP("jnle %Jv",           IDX_ParseImmVRel,   0,          0,          OP_JNLE,    OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW|OPTYPE_FORCED_64_OP_SIZE),
 
     /* 9 */
     OP("seto %Eb",           IDX_ParseModRM,     0,          0,          OP_SETO,    OP_PARM_Eb,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
@@ -569,21 +570,21 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("setnle %Eb",         IDX_ParseModRM,     0,          0,          OP_SETNLE,  OP_PARM_Eb,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
 
     /* a */
-    OP("push fs",            IDX_ParseFixedReg,  0,          0,          OP_PUSH,    OP_PARM_REG_FS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("pop fs",             IDX_ParseFixedReg,  0,          0,          OP_POP,     OP_PARM_REG_FS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("cpuid",              0,                  0,          0,          OP_CPUID,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_POTENTIALLY_DANGEROUS),
+    OP("push fs",            IDX_ParseFixedReg,  0,              0,          OP_PUSH,    OP_PARM_REG_FS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_DEFAULT_64_OP_SIZE),
+    OP("pop fs",             IDX_ParseFixedReg,  0,              0,          OP_POP,     OP_PARM_REG_FS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_DEFAULT_64_OP_SIZE),
+    OP("cpuid",              0,                  0,              0,          OP_CPUID,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_POTENTIALLY_DANGEROUS),
     OP("bt %Ev,%Gv",         IDX_ParseModRM,     IDX_UseModRM,   0,          OP_BT,      OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("shld %Ev,%Gv,%Ib",   IDX_ParseModRM,     IDX_UseModRM,   IDX_ParseImmByte, OP_SHLD,  OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_Ib,     OPTYPE_HARMLESS),
-    OP("shld %Ev,%Gv,CL",    IDX_ParseModRM,     IDX_UseModRM,   0,      OP_SHLD,  OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_Ib,     OPTYPE_HARMLESS),
+    OP("shld %Ev,%Gv,CL",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_SHLD,  OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_Ib,     OPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
-    OP("push gs",            IDX_ParseFixedReg,  0,          0,          OP_PUSH,    OP_PARM_REG_GS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("pop gs",             IDX_ParseFixedReg,  0,          0,          OP_POP,     OP_PARM_REG_GS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("rsm",                0,              0,          0,          OP_RSM,     OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("push gs",            IDX_ParseFixedReg,  0,              0,          OP_PUSH,    OP_PARM_REG_GS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_DEFAULT_64_OP_SIZE),
+    OP("pop gs",             IDX_ParseFixedReg,  0,              0,          OP_POP,     OP_PARM_REG_GS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_DEFAULT_64_OP_SIZE),
+    OP("rsm",                0,                  0,              0,          OP_RSM,     OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("bts %Ev,%Gv",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_BTS,     OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("shrd %Ev,%Gv,%Ib",   IDX_ParseModRM,     IDX_UseModRM,   IDX_ParseImmByte,OP_SHRD,   OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_Ib,     OPTYPE_HARMLESS),
     OP("shrd %Ev,%Gv,CL",    IDX_ParseModRM,     IDX_UseModRM,   IDX_ParseFixedReg,OP_SHRD,  OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_REG_CL, OPTYPE_HARMLESS),
-    OP("Grp15",              IDX_ParseGrp15,     0,          0,          OP_GRP15,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("Grp15",              IDX_ParseGrp15,     0,              0,          OP_GRP15,   OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("imul %Gv,%Ev",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_IMUL,    OP_PARM_Gv,         OP_PARM_Ev,     OP_PARM_NONE,   OPTYPE_HARMLESS),
 
     /* b */
@@ -596,8 +597,8 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("movzx %Gv,%Eb",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVZX,   OP_PARM_Gv,         OP_PARM_Eb,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("movzx %Gv,%Ew",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVZX,   OP_PARM_Gv,         OP_PARM_Ew,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     INVALID_OPCODE,
-    OP("Grp10 Invalid Op",   IDX_ParseGrp10,     0,          0,          OP_GRP10_INV,OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("Grp8",               IDX_ParseGrp8,      0,          0,          OP_GRP8,    OP_PARM_Ev,         OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("Grp10 Invalid Op",   IDX_ParseGrp10,     0,              0,          OP_GRP10_INV,OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("Grp8",               IDX_ParseGrp8,      0,              0,          OP_GRP8,    OP_PARM_Ev,         OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("btc %Ev,%Gv",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_BTC,     OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("bsf %Ev,%Gv",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_BSF,     OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("bsr %Ev,%Gv",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_BSR,     OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_NONE,   OPTYPE_HARMLESS),
@@ -2180,11 +2181,11 @@ const OPCODE g_aMapX86_Group5[8] =
     /* FF */
     OP("inc %Ev",            IDX_ParseModRM,     0,          0,          OP_INC,     OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("dec %Ev",            IDX_ParseModRM,     0,          0,          OP_DEC,     OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("call %Ev",           IDX_ParseModRM,     0,          0,          OP_CALL,    OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW),
+    OP("call %Ev",           IDX_ParseModRM,     0,          0,          OP_CALL,    OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_FORCED_64_OP_SIZE),
     OP("call %Ep",           IDX_ParseModRM,     0,          0,          OP_CALL,    OP_PARM_Ep,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW),
-    OP("jmp %Ev",            IDX_ParseModRM,     0,          0,          OP_JMP,     OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW),
+    OP("jmp %Ev",            IDX_ParseModRM,     0,          0,          OP_JMP,     OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW | OPTYPE_FORCED_64_OP_SIZE),
     OP("jmp %Ep",            IDX_ParseModRM,     0,          0,          OP_JMP,     OP_PARM_Ep,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW),
-    OP("push %Ev",           IDX_ParseModRM,     0,          0,          OP_PUSH,    OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("push %Ev",           IDX_ParseModRM,     0,          0,          OP_PUSH,    OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_DEFAULT_64_OP_SIZE),
     INVALID_OPCODE,
 };
 

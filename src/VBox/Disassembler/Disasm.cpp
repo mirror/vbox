@@ -218,6 +218,13 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
                     i += sizeof(uint8_t);
                     prefixbytes += sizeof(uint8_t);
                     continue;   //fetch the next byte
+
+                case OP_REX:
+                    Assert(pCpu->mode == CPUMODE_64BIT);
+                    /* REX prefix byte */
+                    pCpu->prefix    |= PREFIX_REX;
+                    pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(opcode);
+                    break;
                 }
             }
 
@@ -228,7 +235,10 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
             /* Prefix byte(s) is/are part of the instruction. */
             pCpu->opaddr = pu8Instruction + idx + u32EipOffset - prefixbytes;
 
-            inc = ParseInstruction(pu8Instruction + i, &g_aOneByteMapX86[pCpu->opcode], pCpu);
+            if (pCpu->mode == CPUMODE_64BIT)
+                inc = ParseInstruction(pu8Instruction + i, &g_aOneByteMapX64[pCpu->opcode], pCpu);
+            else
+                inc = ParseInstruction(pu8Instruction + i, &g_aOneByteMapX86[pCpu->opcode], pCpu);
 
             pCpu->opsize = prefixbytes + inc + sizeof(uint8_t);
 

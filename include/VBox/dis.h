@@ -59,41 +59,41 @@ typedef enum
  */
 #define PREFIX_NONE                     0
 /** non-default address size. */
-#define PREFIX_ADDRSIZE                 1
+#define PREFIX_ADDRSIZE                 RT_BIT(0)
 /** non-default operand size. */
-#define PREFIX_OPSIZE                   2
+#define PREFIX_OPSIZE                   RT_BIT(1)
 /** lock prefix. */
-#define PREFIX_LOCK                     4
+#define PREFIX_LOCK                     RT_BIT(2)
 /** segment prefix. */
-#define PREFIX_SEG                      8
+#define PREFIX_SEG                      RT_BIT(3)
 /** rep(e) prefix (not a prefix, but we'll treat is as one). */
-#define PREFIX_REP                      16
+#define PREFIX_REP                      RT_BIT(4)
 /** rep(e) prefix (not a prefix, but we'll treat is as one). */
-#define PREFIX_REPNE                    32
+#define PREFIX_REPNE                    RT_BIT(5)
 /** REX prefix (64 bits) */
-#define PREFIX_REX                      64
+#define PREFIX_REX                      RT_BIT(6)
 /** @} */
 
 /** 64 bits prefix byte flags
  * @{
  */
-#define PREFIX_REX_OP_2_FLAGS(a)        (a - OP_REX)
-#define PREFIX_REX_FLAGS                PREFIX_REX_OP_2_FLAGS(OP_REX)
-#define PREFIX_REX_FLAGS_B              PREFIX_REX_OP_2_FLAGS(OP_REX_B)
-#define PREFIX_REX_FLAGS_X              PREFIX_REX_OP_2_FLAGS(OP_REX_X)
-#define PREFIX_REX_FLAGS_XB             PREFIX_REX_OP_2_FLAGS(OP_REX_XB)
-#define PREFIX_REX_FLAGS_R              PREFIX_REX_OP_2_FLAGS(OP_REX_R)
-#define PREFIX_REX_FLAGS_RB             PREFIX_REX_OP_2_FLAGS(OP_REX_RB)
-#define PREFIX_REX_FLAGS_RX             PREFIX_REX_OP_2_FLAGS(OP_REX_RX)
-#define PREFIX_REX_FLAGS_RXB            PREFIX_REX_OP_2_FLAGS(OP_REX_RXB)
-#define PREFIX_REX_FLAGS_W              PREFIX_REX_OP_2_FLAGS(OP_REX_W)
-#define PREFIX_REX_FLAGS_WB             PREFIX_REX_OP_2_FLAGS(OP_REX_WB)
-#define PREFIX_REX_FLAGS_WX             PREFIX_REX_OP_2_FLAGS(OP_REX_WX)
-#define PREFIX_REX_FLAGS_WXB            PREFIX_REX_OP_2_FLAGS(OP_REX_WXB)
-#define PREFIX_REX_FLAGS_WR             PREFIX_REX_OP_2_FLAGS(OP_REX_WR)
-#define PREFIX_REX_FLAGS_WRB            PREFIX_REX_OP_2_FLAGS(OP_REX_WRB)
-#define PREFIX_REX_FLAGS_WRX            PREFIX_REX_OP_2_FLAGS(OP_REX_WRX)
-#define PREFIX_REX_FLAGS_WRXB           PREFIX_REX_OP_2_FLAGS(OP_REX_WRXB)
+#define PREFIX_REX_OP_2_FLAGS(a)        (a - OP_PARM_REX_START)
+#define PREFIX_REX_FLAGS                PREFIX_REX_OP_2_FLAGS(OP_PARM_REX)
+#define PREFIX_REX_FLAGS_B              PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_B)
+#define PREFIX_REX_FLAGS_X              PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_X)
+#define PREFIX_REX_FLAGS_XB             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_XB)
+#define PREFIX_REX_FLAGS_R              PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_R)
+#define PREFIX_REX_FLAGS_RB             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_RB)
+#define PREFIX_REX_FLAGS_RX             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_RX)
+#define PREFIX_REX_FLAGS_RXB            PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_RXB)
+#define PREFIX_REX_FLAGS_W              PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_W)
+#define PREFIX_REX_FLAGS_WB             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WB)
+#define PREFIX_REX_FLAGS_WX             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WX)
+#define PREFIX_REX_FLAGS_WXB            PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WXB)
+#define PREFIX_REX_FLAGS_WR             PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WR)
+#define PREFIX_REX_FLAGS_WRB            PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRB)
+#define PREFIX_REX_FLAGS_WRX            PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRX)
+#define PREFIX_REX_FLAGS_WRXB           PREFIX_REX_OP_2_FLAGS(OP_PARM_REX_WRXB)
 /** @} */
 
 /**
