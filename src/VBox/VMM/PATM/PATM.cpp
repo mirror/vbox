@@ -1309,8 +1309,8 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_
              && (pCpu->pCurInstr->opcode == OP_JMP || pCpu->pCurInstr->opcode == OP_CALL)
            )
         {
-            Assert(pCpu->param1.size <= 4 || pCpu->param1.size == 8);
-            if (    pCpu->param1.size == 8 /* far call/jmp */
+            Assert(pCpu->param1.size <= 4 || pCpu->param1.size == 6);
+            if (    pCpu->param1.size == 6 /* far call/jmp */
                 ||  (pCpu->pCurInstr->opcode == OP_CALL && !(pPatch->flags & PATMFL_SUPPORT_CALLS))
                 ||  (OP_PARM_VTYPE(pCpu->pCurInstr->param1) != OP_PARM_J && !(pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS))
                )
@@ -1465,8 +1465,8 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uin
              && (pCpu->pCurInstr->opcode == OP_JMP || pCpu->pCurInstr->opcode == OP_CALL)
            )
         {
-            Assert(pCpu->param1.size <= 4 || pCpu->param1.size == 8);
-            if (    pCpu->param1.size == 8 /* far call/jmp */
+            Assert(pCpu->param1.size <= 4 || pCpu->param1.size == 6);
+            if (    pCpu->param1.size == 6 /* far call/jmp */
                 ||  (pCpu->pCurInstr->opcode == OP_CALL && !(pPatch->flags & PATMFL_SUPPORT_CALLS))
                 ||  (OP_PARM_VTYPE(pCpu->pCurInstr->param1) != OP_PARM_J && !(pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS))
                )
@@ -1851,7 +1851,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
         /* In interrupt gate handlers it's possible to encounter jumps or calls when IF has been enabled again.
          * In that case we'll jump to the original instruction and continue from there. Otherwise an int 3 is executed.
          */
-        Assert(pCpu->param1.size == 4 || pCpu->param1.size == 8);
+        Assert(pCpu->param1.size == 4 || pCpu->param1.size == 6);
         if (pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS && pCpu->param1.size == 4 /* no far calls! */)
         {
             rc = patmPatchGenCall(pVM, pPatch, pCpu, pCurInstrGC, (RTGCPTR)0xDEADBEEF, true);
@@ -1868,7 +1868,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
         /* In interrupt gate handlers it's possible to encounter jumps or calls when IF has been enabled again.
          * In that case we'll jump to the original instruction and continue from there. Otherwise an int 3 is executed.
          */
-        Assert(pCpu->param1.size == 4 || pCpu->param1.size == 8);
+        Assert(pCpu->param1.size == 4 || pCpu->param1.size == 6);
         if (pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS && pCpu->param1.size == 4 /* no far jumps! */)
         {
             rc = patmPatchGenJump(pVM, pPatch, pCpu, pCurInstrGC);
