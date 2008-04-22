@@ -830,7 +830,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             rc = machine->COMGETTER(AccessError) (accessError.asOutParam());
             RTPrintf ("Access error details:\n");
             ErrorInfo ei (accessError);
-            ei.print ("[-] ");
+            PRINT_ERROR_INFO (ei);
             RTPrintf ("\n");
         }
         return S_OK;
