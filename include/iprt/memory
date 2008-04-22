@@ -17,7 +17,7 @@
 #ifndef ___iprt_memory___
 #define ___iprt_memory___
 
-/** @defgroup grp_rt_cppx_memory  Incredibly Portable Runtime C++ Extensions: memory
+/** @defgroup grp_rt_cppx_memory  IPRT C++ Extensions: memory
  * @ingroup grp_rt_cppx
  * @{
  */
