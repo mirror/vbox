@@ -894,7 +894,7 @@ bool VBoxHardDiskSettings::event (QEvent *aEvent)
 void VBoxHardDiskSettings::showEvent (QShowEvent *aEvent)
 {
     QWidget::showEvent (aEvent);
-    adjustList();
+    QTimer::singleShot (0, this, SLOT (adjustList()));
 }
 
 bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
