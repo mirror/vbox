@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id:$ */
 /** @file
  * IPRT - Convert Darwin IOKit returns codes to iprt status codes.
  */
@@ -44,15 +44,6 @@ RTDECL(int) RTErrConvertFromDarwinIO(int iNativeCode)
      */
     if (iNativeCode == kIOReturnSuccess)
         return VINF_SUCCESS;
-
-    switch (iNativeCode)
-    {
-        case kIOReturnNoDevice:     return VERR_IO_BAD_UNIT;
-        case kIOReturnUnsupported:  return VERR_NOT_SUPPORTED;
-    }
-
-    /* unknown error. */
-    AssertMsgFailed(("Unhandled error %#x\n", iNativeCode));
-    return VERR_UNRESOLVED_ERROR;
+    return RTErrConvertFromDarwin(iNativeCode);
 }
 

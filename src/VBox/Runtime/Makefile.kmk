@@ -371,6 +371,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/utf8-posix.cpp
 
 RuntimeR3_SOURCES.darwin = \
+	darwin/RTErrConvertFromDarwin.cpp \
 	darwin/RTErrConvertFromDarwinCOM.cpp \
 	darwin/RTErrConvertFromDarwinIO.cpp \
 	darwin/RTErrConvertFromDarwinKern.cpp \
@@ -944,6 +945,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	common/string/strpbrk.cpp \
+	darwin/RTErrConvertFromDarwin.cpp \
 	darwin/RTErrConvertFromDarwinIO.cpp \
 	darwin/RTErrConvertFromDarwinKern.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
