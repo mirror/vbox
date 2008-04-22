@@ -174,7 +174,7 @@ private slots:
     void updateDeviceLights();
     void updateMachineState (KMachineState state);
     void updateMouseState (int state);
-    void updateAdditionsState (const QString&, bool, bool);
+    void updateAdditionsState (const QString&, bool, bool, bool);
     void updateNetworkAdarptersState();
     void updateUsbState();
     void updateMediaState (VBoxDefs::DiskType aType);
@@ -327,6 +327,7 @@ private:
     bool mIsFullscreen : 1;
     bool mIsSeamless : 1;
     bool mIsSeamlessSupported : 1;
+    bool mIsGraphicsSupported : 1;
     bool was_max : 1;
     QObjectList hidden_children;
     int console_style;
