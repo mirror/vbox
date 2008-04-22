@@ -112,6 +112,8 @@ int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
     }
     XGetErrorText(pDisplay, pError->error_code, errorText, sizeof(errorText));
     LogRel(("VBoxClient: an X Window protocol error occurred: %s (error code %d).  Request code: %d, minor code: %d, serial number: %d\n", errorText, pError->error_code, pError->request_code, pError->minor_code, pError->serial));
+    /** Disable seamless mode */
+    VbglR3SeamlessSetCap(false);
     VbglR3Term();
     exit(1);
 }
@@ -123,6 +125,8 @@ int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
 int vboxClientXLibIOErrorHandler(Display *pDisplay)
 {
     Log(("VBoxClient: a fatal guest X Window error occurred.  This may just mean that the Window system was shut down while the client was still running.\n"));
+    /** Disable seamless mode */
+    VbglR3SeamlessSetCap(false);
     VbglR3Term();
     return gpfnOldIOErrorHandler(pDisplay);
 }
@@ -134,6 +138,9 @@ int vboxClientXLibIOErrorHandler(Display *pDisplay)
 void vboxClientSignalHandler(int cSignal)
 {
     Log(("VBoxClient: terminated with signal %d\n", cSignal));
+    /** Disable seamless mode */
+    VbglR3SeamlessSetCap(false);
+    VbglR3Term();
     /* Our pause() call will now return and exit. */
 }
 
