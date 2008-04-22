@@ -1884,6 +1884,20 @@ typedef struct PDMIVMMDEVCONNECTOR
     DECLR3CALLBACKMEMBER(void, pfnUpdateGuestCapabilities,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t newCapabilities));
 
     /**
+     * Update the maximum guest resolution.
+     * This is called when the guest sends us a corresponding notification. The new resolution
+     * is given and the connector should update its internal state.
+     * @note    This member can be left null if the connector is not interested in the
+     *          notification.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   u32MaxWidth         New width.
+     * @param   u32MaxHeight        New Height.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnUpdateMaxGuestResolution,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t u32MaxWidth, uint32_t u32MaxHeight));
+
+    /**
      * Update the mouse capabilities.
      * This is called when the mouse capabilities change. The new capabilities
      * are given and the connector should update its internal state.

@@ -107,6 +107,11 @@ typedef struct VMMDevState
     /** Video acceleration status set by guest. */
     uint32_t u32VideoAccelEnabled;
 
+    /** Maximum guest resolution, width - a value of 0 mean no maximum */
+    uint32_t u32MaxGuestWidth;
+    /** Maximum guest resolution, height - a value of 0 mean no maximum */
+    uint32_t u32MaxGuestHeight;
+
     /** resolution change request */
     struct
     {

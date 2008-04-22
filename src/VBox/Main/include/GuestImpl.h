@@ -75,6 +75,8 @@ public:
     // public methods that are not in IDL
     void setAdditionsVersion (Bstr aVersion);
 
+    void setMaxGuestResolution (ULONG aMaxWidth, ULONG aMaxHeight);
+
     void setSupportsSeamless (BOOL aSupportsSeamless);
 
     void setSupportsGraphics (BOOL aSupportsGraphics);
@@ -88,13 +90,18 @@ private:
 
     struct Data
     {
-        Data() : mAdditionsActive (FALSE), mSupportsSeamless (FALSE),
+        Data() : mAdditionsActive (FALSE), mMaxWidth (0),
+                 mMaxHeight(0), mSupportsSeamless (FALSE),
                   /* Windows and OS/2 guests take this for granted */
                  mSupportsGraphics (TRUE) {}
 
         Bstr  mOSTypeId;
         BOOL  mAdditionsActive;
         Bstr  mAdditionsVersion;
+        /** The maximum width supported by the guest - zero means no maximum */
+        ULONG mMaxWidth;
+        /** The maximum height supported by the guest - zero means no maximum */
+        ULONG mMaxHeight;
         BOOL  mSupportsSeamless;
         BOOL  mSupportsGraphics;
     };

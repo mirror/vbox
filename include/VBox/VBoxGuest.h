@@ -157,6 +157,7 @@ typedef enum
     VMMDevReq_GetDisplayChangeRequest2   = 54,
     VMMDevReq_ReportGuestCapabilities    = 55,
     VMMDevReq_SetGuestCapabilities       = 56,
+    VMMDevReq_SetMaxGuestResolution      = 57,
 #ifdef VBOX_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -286,7 +287,7 @@ typedef struct
     uint32_t build;
 } VMMDevReqHostVersion;
 
-/** guest capabilites structure */
+/** old guest capabilites structure (ReportGuestCapabilities) */
 typedef struct
 {
     /** header */
@@ -295,7 +296,7 @@ typedef struct
     uint32_t    caps;
 } VMMDevReqGuestCapabilities;
 
-/** guest capabilites structure */
+/** new guest capabilites structure (SetGuestCapabilities) */
 typedef struct
 {
     /** header */
@@ -305,6 +306,17 @@ typedef struct
     /** mask of capabilities to be removed */
     uint32_t    u32NotMask;
 } VMMDevReqGuestCapabilities2;
+
+/** Report the maximum possible guest resolution */
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+    /** Maximum width */
+    uint32_t    u32MaxWidth;
+    /** Maximum height */
+    uint32_t    u32MaxHeight;
+} VMMDevReqGuestResolution;
 
 /** idle request structure */
 typedef struct
@@ -1264,6 +1276,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevReqGuestCapabilities);
         case VMMDevReq_SetGuestCapabilities:
             return sizeof(VMMDevReqGuestCapabilities2);
+        case VMMDevReq_SetMaxGuestResolution:
+            return sizeof(VMMDevReqGuestResolution);
 #ifdef VBOX_HGCM
         case VMMDevReq_HGCMConnect:
             return sizeof(VMMDevHGCMConnect);
