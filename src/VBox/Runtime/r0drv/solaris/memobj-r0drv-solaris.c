@@ -270,9 +270,8 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
 
-    proc_t *userproc = curproc;
-    if (R0Process != NIL_RTR0PROCESS)
-        userproc = (proc_t *)R0Process;
+    AssertReturn(R0Process == RTR0ProcHandleSelf(), VERR_INVALID_PARAMETER);
+    proc_t *userproc = (proc_t *)R0Process;
 
     struct as *useras = userproc->p_as;
     page_t **ppl;
