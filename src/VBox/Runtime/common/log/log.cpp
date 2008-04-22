@@ -1382,7 +1382,7 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
  * Sets the default logger instance.
  *
  * @returns iprt status code.
- * @param   pLogger     The new default release logger instance.
+ * @param   pLogger     The new default logger instance.
  */
 RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger)
 {

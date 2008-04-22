@@ -1075,16 +1075,6 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args);
 
 
 
-#ifndef IN_GC
-/**
- * Sets the default logger instance.
- *
- * @returns The old default instance.
- * @param   pLogger     The new default logger instance.
- */
-RTDECL(PRTLOGGER)   RTLogSetDefaultInstance(PRTLOGGER pLogger);
-#endif /* !IN_GC */
-
 /**
  * Gets the default logger instance.
  *
@@ -1092,6 +1082,16 @@ RTDECL(PRTLOGGER)   RTLogSetDefaultInstance(PRTLOGGER pLogger);
  * @returns NULL if no default logger instance available.
  */
 RTDECL(PRTLOGGER)   RTLogDefaultInstance(void);
+
+#ifndef IN_GC
+/**
+ * Sets the default logger instance.
+ *
+ * @returns The old default instance.
+ * @param   pLogger     The new default logger instance.
+ */
+RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger);
+#endif /* !IN_GC */
 
 #ifdef IN_RING0
 /**
