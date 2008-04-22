@@ -91,8 +91,8 @@ __BEGIN_DECLS
  * Converts a Darwin HRESULT error to an iprt status code.
  *
  * @returns iprt status code.
- * @param   iNativeCode    errno code.
- * @remark  Darwin only.
+ * @param   iNativeCode    HRESULT error code.
+ * @remark  Darwin ring-3 only.
  */
 RTDECL(int)  RTErrConvertFromDarwinCOM(int32_t iNativeCode);
 
@@ -100,7 +100,7 @@ RTDECL(int)  RTErrConvertFromDarwinCOM(int32_t iNativeCode);
  * Converts a Darwin IOReturn error to an iprt status code.
  *
  * @returns iprt status code.
- * @param   iNativeCode    errno code.
+ * @param   iNativeCode    IOReturn error code.
  * @remark  Darwin only.
  */
 RTDECL(int)  RTErrConvertFromDarwinIO(int iNativeCode);
@@ -109,10 +109,25 @@ RTDECL(int)  RTErrConvertFromDarwinIO(int iNativeCode);
  * Converts a Darwin kern_return_t error to an iprt status code.
  *
  * @returns iprt status code.
- * @param   iNativeCode    errno code.
+ * @param   iNativeCode    kern_return_t error code.
  * @remark  Darwin only.
  */
 RTDECL(int)  RTErrConvertFromDarwinKern(int iNativeCode);
+
+/**
+ * Converts a Darwin error to an iprt status code.
+ *
+ * This will consult RTErrConvertFromDarwinKern, RTErrConvertFromDarwinIO
+ * and RTErrConvertFromDarwinCOM in this order. The latter is ring-3 only as it
+ * doesn't apply elsewhere.
+ *
+ * @returns iprt status code.
+ * @param   iNativeCode    Darwin error code.
+ * @remarks Darwin only.
+ * @remarks This is recommended over RTErrConvertFromDarwinKern and RTErrConvertFromDarwinIO
+ *          since these are really just subsets of the same error space.
+ */
+RTDECL(int)  RTErrConvertFromDarwin(int iNativeCode);
 
 /**
  * Converts errno to iprt status code.
