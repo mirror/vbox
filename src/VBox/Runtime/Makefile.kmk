@@ -180,15 +180,15 @@ RuntimeR3_SOURCES       = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
-	common/misc/rand.cpp \
+	common/misc/cidr.cpp \
 	common/misc/getopt.cpp \
+	common/misc/rand.cpp \
 	common/misc/req.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/semspingpong.cpp \
 	common/misc/thread.cpp \
 	common/misc/zip.cpp \
-	common/misc/ip.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \

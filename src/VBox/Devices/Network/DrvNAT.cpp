@@ -31,7 +31,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/critsect.h>
-#include <iprt/ip.h>
+#include <iprt/cidr.h>
 
 #include "Builtins.h"
 
@@ -482,7 +482,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                 if (VBOX_SUCCESS(rc2))
                 {
                     rc2 = pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, pDrvIns->pDrvReg->szDriverName, 0, 0,
-                                                           pDrvIns->iInstance, NULL, NULL, NULL, NULL, NULL, 
+                                                           pDrvIns->iInstance, NULL, NULL, NULL, NULL, NULL,
                                                            drvNATLoadDone);
                     AssertRC(rc2);
                     pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);

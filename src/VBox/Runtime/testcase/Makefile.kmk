@@ -35,6 +35,7 @@ ifdef VBOX_WITH_TESTCASES
 PROGRAMS = \
 	tstAvl \
 	tstBitOperations \
+	tstCidr \
 	tstCritSect \
 	tstDeadlock \
 	tstDir \
@@ -67,8 +68,7 @@ PROGRAMS = \
 	tstTimeSpec \
 	tstTSC \
 	tstUtf8 \
-	tstUuid \
-	tstIp
+	tstUuid
 PROGRAMS.win = \
 	tstRTProcWait \
 	tstCritSectW32 \
@@ -112,7 +112,7 @@ tstTSC_CXXFLAGS.linux += -O3
 
 tstStrFormat_SOURCES = tstStrFormat.cpp
 
-tstIp_SOURCES = tstIp.cpp
+tstCidr_SOURCES = tstCidr.cpp
 
 tstLog_SOURCES  = tstLog.cpp
 
