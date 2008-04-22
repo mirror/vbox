@@ -1051,7 +1051,7 @@ void VBoxSelectorWnd::vmShowLogs()
 {
     VBoxVMItem *item = mVMListView->selectedItem();
     CMachine machine = item->machine();
-    VBoxVMLogViewer::createLogViewer (machine);
+    VBoxVMLogViewer::createLogViewer (this, machine);
 }
 
 void VBoxSelectorWnd::refreshVMList()
