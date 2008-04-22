@@ -164,10 +164,11 @@ public:
         if (!listBox())
             setListBox (new QListBox (this));
 
+        setFocusPolicy (QWidget::NoFocus);
         refresh();
         mUniq->subscribe (this);
-        qApp->installEventFilter (this);
         connect (mUniq, SIGNAL (listChanged()), this, SLOT (refresh()));
+        connect (mUniq, SIGNAL (listChanged()), this, SLOT (updateToolTip()));
         connect (this, SIGNAL (activated (int)), mUniq, SIGNAL (listChanged()));
         connect (this, SIGNAL (textChanged()), mUniq, SIGNAL (listChanged()));
     }
@@ -226,22 +227,23 @@ private slots:
             setCurrentText (current);
     }
 
+    void updateToolTip()
+    {
+        QString oldTip = QToolTip::textFor (this);
+        QString newTip = currentText();
+
+        if (newTip != oldTip)
+        {
+            QToolTip::remove (this);
+            QToolTip::add (this, newTip);
+        }
+    }
+
 signals:
 
     void textChanged();
 
 private:
-
-    bool eventFilter (QObject *aObject, QEvent *aEvent)
-    {
-        if (aObject != listBox())
-            return false;
-
-        if (aEvent->type() == QEvent::Hide)
-            hide();
-
-        return QComboBox::eventFilter (aObject, aEvent);
-    }
 
     HDSlotUniquizer *mUniq;
 
@@ -262,7 +264,7 @@ public:
         : VBoxMediaComboBox (aParent, "HDVdiItem", aType)
         , mItem (aItem)
     {
-        qApp->installEventFilter (this);
+        setFocusPolicy (QWidget::NoFocus);
         connect (&vboxGlobal(),
                  SIGNAL (mediaRemoved (VBoxDefs::DiskType, const QUuid &)),
                  this, SLOT (repaintHandler()));
@@ -276,17 +278,6 @@ private slots:
     }
 
 private:
-
-    bool eventFilter (QObject *aObject, QEvent *aEvent)
-    {
-        if (aObject != listBox())
-            return false;
-
-        if (aEvent->type() == QEvent::Hide)
-            hide();
-
-        return VBoxMediaComboBox::eventFilter (aObject, aEvent);
-    }
 
     QListViewItem *mItem;
 };
@@ -414,10 +405,7 @@ public:
     void showEditor()
     {
         if (mVector [mFocusColumn]->count())
-        {
-            mVector [mFocusColumn]->show();
             mVector [mFocusColumn]->popup();
-        }
     }
 
     int focusColumn() const
@@ -481,30 +469,17 @@ private:
         cb->move (xc, yc);
         cb->resize (wc, hc);
 
-        QColorGroup cg (aColorGroup);
-        if (aColumn == mFocusColumn)
-        {
-            cg.setColor (QColorGroup::Base, aColorGroup.highlight());
-            cg.setColor (QColorGroup::Text, aColorGroup.highlightedText());
-        }
-        QListViewItem::paintCell (aPainter, cg, aColumn, aWidth, aAlign);
+        if (aColumn == mFocusColumn && cb->isHidden())
+            cb->show();
+        else if (aColumn != mFocusColumn && !cb->isHidden())
+            cb->hide();
+
+        QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
     }
 
-    void paintFocus (QPainter *aPainter, const QColorGroup &aColorGroup,
-                     const QRect &aRect)
+    void paintFocus (QPainter *, const QColorGroup &, const QRect &)
     {
-        if (mFocusColumn != -1)
-        {
-            int indent = 0;
-            for (int i = 0; i < mFocusColumn; ++ i)
-                indent = listView()->columnWidth (i);
-
-            QRect newFocus (QPoint (aRect.x() + indent, aRect.y()),
-                            QSize (listView()->columnWidth (mFocusColumn),
-                                   aRect.height()));
-
-            QListViewItem::paintFocus (aPainter, aColorGroup, newFocus);
-        }
+        /* Do not paint focus, because it presented by combo-box */
     }
 
     void setup()
@@ -919,9 +894,7 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
                 clickedItem->rtti() == HDListItem::HDListItemType ?
                 static_cast<HDListItem*> (clickedItem) : 0;
 
-            if (item)
-                item->showEditor();
-            else if (mAddAttachmentAct->isEnabled())
+            if (!item && mAddAttachmentAct->isEnabled())
                 addHDItem();
             break;
         }
@@ -929,7 +902,11 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
         case QEvent::MouseMove:
         {
             if (aObject != mLvHD->viewport())
+            {
+                if (!QToolTip::textFor (mLvHD->viewport()).isNull())
+                    QToolTip::remove (mLvHD->viewport());
                 break;
+            }
 
             QMouseEvent *e = static_cast<QMouseEvent*> (aEvent);
             QListViewItem *hoveredItem = mLvHD->itemAt (QPoint (e->x(), e->y()));
