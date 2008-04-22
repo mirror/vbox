@@ -252,6 +252,7 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
     <include location="global" impldecl="in implementation">qobjectlist.h</include>
     <include location="global" impldecl="in implementation">qaction.h</include>
     <include location="global" impldecl="in implementation">qpopupmenu.h</include>
+    <include location="global" impldecl="in implementation">qtimer.h</include>
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in implementation">VBoxToolBar.h</include>
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
@@ -283,6 +284,7 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
     <slot>onToggleSATAController( bool aOn )</slot>
     <slot>onAfterCurrentChanged( QListViewItem * )</slot>
     <slot>onContextMenuRequested( QListViewItem *, const QPoint &amp;, int )</slot>
+    <slot>adjustList()</slot>
 </slots>
 <functions>
     <function access="private">init()</function>
@@ -293,7 +295,6 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
     <function access="private" returnType="bool">event( QEvent * )</function>
     <function access="private">showEvent( QShowEvent * )</function>
     <function access="private" returnType="bool">eventFilter( QObject * , QEvent * )</function>
-    <function access="private">adjustList()</function>
 </functions>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>
