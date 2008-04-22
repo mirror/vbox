@@ -37,6 +37,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_set *xfds);
 
 void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len);
+void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr);
 
 /* you must provide the following functions: */
 int slirp_can_output(void * pvUser);
