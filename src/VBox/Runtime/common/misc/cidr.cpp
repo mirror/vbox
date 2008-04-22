@@ -31,7 +31,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/ip.h>
+#include <iprt/cidr.h>
 #include <iprt/ctype.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
