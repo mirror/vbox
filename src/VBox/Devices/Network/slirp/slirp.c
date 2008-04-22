@@ -811,3 +811,8 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
     return add_exec(&exec_list, do_pty, (char *)args,
                     addr_low_byte, htons(guest_port));
 }
+
+void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr)
+{
+    memcpy(client_ethaddr, ethaddr, ETH_ALEN);
+}

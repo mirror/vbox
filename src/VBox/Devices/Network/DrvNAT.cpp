@@ -47,6 +47,8 @@ typedef struct DRVNAT
     PDMINETWORKCONNECTOR    INetworkConnector;
     /** The port we're attached to. */
     PPDMINETWORKPORT        pPort;
+    /** The network config of the port we're attached to. */
+    PPDMINETWORKCONFIG      pConfig;
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
     /** Slirp critical section. */
@@ -87,7 +89,7 @@ static RTTHREAD         g_ThreadSelect;
  */
 static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
 {
-    PDRVNAT    pData = PDMINETWORKCONNECTOR_2_DRVNAT(pInterface);
+    PDRVNAT pData = PDMINETWORKCONNECTOR_2_DRVNAT(pInterface);
 
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n"
@@ -132,7 +134,7 @@ static DECLCALLBACK(void) drvNATSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterf
  */
 static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
-    PDRVNAT    pData = PDMINETWORKCONNECTOR_2_DRVNAT(pInterface);
+    PDRVNAT pData = PDMINETWORKCONNECTOR_2_DRVNAT(pInterface);
 
     LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
 
@@ -358,6 +360,16 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(int) drvNATLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSMHandle)
+{
+    PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    PDMMAC  Mac;
+    if (pData->pConfig)
+        pData->pConfig->pfnGetMac(pData->pConfig, &Mac);
+    slirp_set_ethaddr(pData->pNATState, Mac.au8);
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Construct a NAT network transport driver instance.
@@ -419,6 +431,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     if (!pData->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: the above device/driver didn't export the network port interface"));
+    pData->pConfig = (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_CONFIG);
+    if (!pData->pConfig)
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
+                                N_("Configuration error: the above device/driver didn't export the network config interface"));
 
     /* Generate a network address for this network card. */
     RTStrPrintf(szNetAddr, sizeof(szNetAddr), "10.0.%d.0", pDrvIns->iInstance + 2);
@@ -450,6 +466,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                 int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pData, pCfgHandle);
                 if (VBOX_SUCCESS(rc2))
                 {
+                    rc2 = pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, pDrvIns->pDrvReg->szDriverName, 0, 0,
+                                                           pDrvIns->iInstance, NULL, NULL, NULL, NULL, NULL, 
+                                                           drvNATLoadDone);
+                    AssertRC(rc2);
                     pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
 
                     pData->enmLinkState = PDMNETWORKLINKSTATE_UP;
@@ -461,6 +481,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                     return rc;
                 }
                 /* failure path */
+                rc = rc2;
                 slirp_term(pData->pNATState);
                 pData->pNATState = NULL;
             }
