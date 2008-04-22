@@ -3326,6 +3326,8 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
     uGTSector = pExtent->pGD[uGDIndex];
     if (pExtent->pRGD)
         uRGTSector = pExtent->pRGD[uGDIndex];
+    else
+        uRGTSector = 0; /**< avoid compiler warning */
     if (!uGTSector)
     {
         /* There is no grain table referenced by this grain directory
@@ -3358,11 +3360,17 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         }
         if (pExtent->pRGD)
         {
+            AssertReturn(!uRGTSector, VERR_VDI_INVALID_HEADER);
             rc = RTFileGetSize(pExtent->File, &cbExtentSize);
             if (VBOX_FAILURE(rc))
                 return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
             Assert(!(cbExtentSize % 512));
             uRGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
+            /* Normally the redundant grain table is preallocated for hosted
+             * sparse extents that support more than 32 bit sector numbers. So
+             * this shouldn't ever happen on a valid extent. */
+            if (uRGTSector > UINT32_MAX)
+                return VERR_VDI_INVALID_HEADER;
             /* Write backup grain table by writing the required number of grain
              * table cache chunks. Avoids dynamic memory allocation, but is a
              * bit slower. But as this is a pretty infrequently occurring case
