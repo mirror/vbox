@@ -67,7 +67,8 @@ PROGRAMS = \
 	tstTimeSpec \
 	tstTSC \
 	tstUtf8 \
-	tstUuid
+	tstUuid \
+	tstIp
 PROGRAMS.win = \
 	tstRTProcWait \
 	tstCritSectW32 \
@@ -110,6 +111,8 @@ tstTSC_SOURCES = tstTSC.cpp
 tstTSC_CXXFLAGS.linux += -O3
 
 tstStrFormat_SOURCES = tstStrFormat.cpp
+
+tstIp_SOURCES = tstIp.cpp
 
 tstLog_SOURCES  = tstLog.cpp
 
