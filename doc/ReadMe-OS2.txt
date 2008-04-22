@@ -13,8 +13,8 @@ and tuned just yet. If you find a *new* problem, meaning something
 not listed below, please report it at http://forums.virtualbox.org.
 
 This package is an official unofficial build of VirutalBox for OS/2.
-It means that it is coordinated by volunteers from innotek that are
-still in touch with OS/2 and keep patching VirtualBox at their spare
+It means that it is coordinated by volunteers from Sun Microsystems that
+are still in touch with OS/2 and keep patching VirtualBox at their spare
 time to make sure it runs and more or less works under OS/2.
 
 PLEASE NOTE THAT THE OS/2 HOST (AND THEREFORE THE OS/2 VERSION OF
