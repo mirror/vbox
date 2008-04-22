@@ -26,6 +26,7 @@
 #include <VBox/dis.h>
 
 extern const OPCODE g_aOneByteMapX86[256];
+extern const OPCODE g_aOneByteMapX64[256];
 extern const OPCODE g_aTwoByteMapX86[256];
 
 /** Two byte opcode map with prefix 0x66 */

@@ -257,7 +257,8 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
     /*
      * Parse byte by byte.
      */
-    unsigned      iByte          = 0;
+    unsigned  iByte = 0;
+    unsigned  cbInc;
 
     while(1)
     {
@@ -317,15 +318,11 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
                 iByte       += sizeof(uint8_t);
                 continue;   //fetch the next byte
 
-            default:
-                if (    pCpu->mode == CPUMODE_64BIT
-                    &&  opcode >= OP_REX
-                    &&  opcode <= OP_REX_WRXB)
-                {
-                    /* REX prefix byte */
-                    pCpu->prefix    |= PREFIX_REX;
-                    pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(opcode);
-                }
+            case OP_REX:
+                Assert(pCpu->mode == CPUMODE_64BIT);
+                /* REX prefix byte */
+                pCpu->prefix    |= PREFIX_REX;
+                pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(opcode);
                 break;
             }
         }
@@ -336,7 +333,10 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
         pCpu->opaddr = InstructionAddr + uIdx;
         pCpu->opcode = codebyte;
 
-        int cbInc = ParseInstruction(InstructionAddr + iByte, &g_aOneByteMapX86[pCpu->opcode], pCpu);
+        if (pCpu->mode == CPUMODE_64BIT)
+            cbInc = ParseInstruction(InstructionAddr + iByte, &g_aOneByteMapX64[pCpu->opcode], pCpu);
+        else
+            cbInc = ParseInstruction(InstructionAddr + iByte, &g_aOneByteMapX86[pCpu->opcode], pCpu);
 
         iByte += cbInc;
         break;
