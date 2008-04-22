@@ -166,9 +166,6 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
         {
             CFDataRef outData;
             PRTUTF16 pwszTmp = NULL;
-            /* Utf-16 is currently broken on more than one line.
-             * Has to be investigated. */
-#if 0
             /* Try utf-16 first */
             if (!(err = PasteboardCopyItemFlavorData (pPasteboard, itemID, CFSTR ("public.utf16-plain-text"), &outData)))
             {
@@ -177,7 +174,6 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
             }
             /* Second try is utf-8 */
             else
-#endif
                 if (!(err = PasteboardCopyItemFlavorData (pPasteboard, itemID, CFSTR ("public.utf8-plain-text"), &outData)))
                 {
                     Log (("readFromPasteboard: clipboard content is utf-8\n"));
