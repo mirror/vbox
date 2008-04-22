@@ -1,5 +1,5 @@
 ## @file
-# Incredibly Portable Runtime - SED script for converting VBox/err.h to .mac.
+# IPRT - SED script for converting VBox/err.h to .mac.
 #
 
 #
