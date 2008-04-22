@@ -142,6 +142,7 @@ IMAGES	= images/tpixel.png \
 	images/VirtualBox_40px.png \
 	images/VirtualBox_48px.png \
 	images/VirtualBox_64px.png \
+	images/VirtualBox_cube_42px.png \
 	images/help_16px.png \
 	images/about_16px.png \
 	images/site_16px.png \

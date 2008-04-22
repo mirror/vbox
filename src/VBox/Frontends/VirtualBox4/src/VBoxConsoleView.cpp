@@ -647,7 +647,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
 #ifdef Q_WS_MAC
     /* Overlay logo for the dock icon */
-    mVirtualBoxLogo = ::darwinToCGImageRef ("VirtualBox_48px.png");
+    mVirtualBoxLogo = ::darwinToCGImageRef ("VirtualBox_cube_42px.png");
 #endif
 
     VBoxViewport *pViewport = new VBoxViewport (this);

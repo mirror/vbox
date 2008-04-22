@@ -823,7 +823,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     QString osTypeId = cmachine.GetOSTypeId();
     QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).toImage().scaled (100, 75, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     QImage osImg = QImage (":/dock_1.png");
-    QImage VBoxOverlay = QImage (":/VirtualBox_48px.png");
+    QImage VBoxOverlay = QImage (":/VirtualBox_cube_42px.png");
     QPainter painter (&osImg);
     painter.drawImage (QPoint (14, 22), osImg100x75);
     painter.drawImage (QPoint (osImg.width() - VBoxOverlay.width(), osImg.height() - VBoxOverlay.height()), VBoxOverlay);
