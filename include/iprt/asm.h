@@ -1600,14 +1600,14 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
     RTCCUINTREG uNewValue =  0xffff0ff0;  /* 31-16 and 4-11 are 1's, 12 and 63-31 are zero. */
 #  ifdef RT_ARCH_AMD64
     __asm__ __volatile__("movq   %%dr6, %0\n\t"
-             "movq   %1, %%dr6\n\t"
-             : "=r" (uDR6)
-             : "r" (uNewValue));
+                         "movq   %1, %%dr6\n\t"
+                         : "=r" (uDR6)
+                         : "r" (uNewValue));
 #  else
     __asm__ __volatile__("movl   %%dr6, %0\n\t"
-             "movl   %1, %%dr6\n\t"
-             : "=r" (uDR6)
-             : "r" (uNewValue));
+                         "movl   %1, %%dr6\n\t"
+                         : "=r" (uDR6)
+                         : "r" (uNewValue));
 #  endif
 # else
     __asm
