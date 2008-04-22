@@ -126,7 +126,7 @@ clean:
 	dh_testdir
 	dh_testroot
 	rm -f debian/$(package).init debian/vboxdrv.init debian/vboxnet.init
-	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
+	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh debian/preinst
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -rf $(builddir) $(moddir)
 	dh_clean
