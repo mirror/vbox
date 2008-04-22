@@ -67,7 +67,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(PATH_BIN)/additions/VBoxClient \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd-timesync.sh \
-		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
+		$(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd.sh \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/install.sh \
 		$(PATH_ROOT)/src/VBox/Installer/linux/routines.sh \
@@ -111,7 +111,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(RM) $(PATH_TARGET)/install/install_.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh          $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd-timesync.sh $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient     $(PATH_TARGET)/install
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop    $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd.sh          $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Installer/linux/routines.sh         $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxvideo.ids         $(PATH_TARGET)/install
