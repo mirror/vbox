@@ -1,6 +1,6 @@
 ; $Id$%ifndef IN_GUEST
 ;; @file
-; Incredibly Portable Runtime - Time using SUPLib, the Assembly Implementation.
+; IPRT - Time using SUPLib, the Assembly Implementation.
 ;
 
 ;
