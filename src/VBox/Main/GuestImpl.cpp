@@ -336,6 +336,17 @@ void Guest::setAdditionsVersion (Bstr aVersion)
     mData.mAdditionsActive = TRUE;
 }
 
+void Guest::setMaxGuestResolution (ULONG aMaxWidth, ULONG aMaxHeight)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    mData.mMaxWidth  = aMaxWidth;
+    mData.mMaxHeight = aMaxHeight;
+}
+
 void Guest::setSupportsSeamless (BOOL aSupportsSeamless)
 {
     AutoCaller autoCaller (this);
