@@ -316,11 +316,10 @@ static DECLCALLBACK(void) drvIntNetNotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
  * @returns VERR_STATE_CHANGED if the state changed.
  * @returns VBox status code on other errors.
  * @param   pThis       Pointer to the instance data.
- * @param   cbFrame     The frame size.
  */
-static int drvIntNetAsyncIoWaitForSpace(PDRVINTNET pThis, size_t cbFrame)
+static int drvIntNetAsyncIoWaitForSpace(PDRVINTNET pThis)
 {
-    LogFlow(("drvIntNetAsyncIoWaitForSpace: cbFrame=%zu\n", cbFrame));
+    LogFlow(("drvIntNetAsyncIoWaitForSpace:\n"));
     STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
     int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
@@ -373,8 +372,8 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
                  * Check if there is room for the frame and pass it up.
                  */
                 size_t cbFrame = pHdr->cbFrame;
-                size_t cbMax = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
-                if (cbMax >= cbFrame)
+                int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
+                if (rc == VINF_SUCCESS)
                 {
 #ifdef LOG_ENABLED
                     uint64_t u64Now = RTTimeProgramNanoTS();
@@ -396,7 +395,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
                     /*
                      * Wait for sufficient space to become available and then retry.
                      */
-                    int rc = drvIntNetAsyncIoWaitForSpace(pThis, cbFrame);
+                    rc = drvIntNetAsyncIoWaitForSpace(pThis);
                     if (VBOX_FAILURE(rc))
                     {
                         STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
