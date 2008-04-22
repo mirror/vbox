@@ -1,4 +1,4 @@
-; $Id$%ifndef IN_GUEST
+; $Id$
 ;; @file
 ; IPRT - Time using SUPLib, the Assembly Implementation.
 ;
