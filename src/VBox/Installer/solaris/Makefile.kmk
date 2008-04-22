@@ -142,11 +142,13 @@ $(PATH_BIN)/$(PKGFILENAME).tar.gz: \
 	$(call MSG_L1,Installing binaries $(SOLARISINSTDIR))
 	@# Clear out the existing package files if needed
 	$(QUIET)rm -rf $(SOLARISINSTDIR)
+	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/additions
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/components
 	$(QUIET)$(MKDIR) -p $(SOLARISINSTDIR)/etc
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/nls,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/qtgcc/lib,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARISINSTDIR)/qtgcc/bin,)
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARISINSTDIR)/additions/VBoxGuestAdditions.iso)
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/vboxdrv                                                          $(SOLARISINSTDIR)/vboxdrv
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxBFE                                                          $(SOLARISINSTDIR)/VBoxBFE
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxDD.so                                                        $(SOLARISINSTDIR)/VBoxDD.so
