@@ -7437,6 +7437,26 @@ void SessionMachine::uninit (Uninit::Reason aReason)
         mParent->updateClientWatcher();
     }
 
+    /* uninitialize all remote controls */
+    if (mData->mSession.mRemoteControls.size())
+    {
+        LogFlowThisFunc (("Closing remote sessions (%d):\n",
+                          mData->mSession.mRemoteControls.size()));
+
+        Data::Session::RemoteControlList::iterator it =
+            mData->mSession.mRemoteControls.begin();
+        while (it != mData->mSession.mRemoteControls.end())
+        {
+            LogFlowThisFunc (("  Calling remoteControl->Uninitialize()...\n"));
+            HRESULT rc = (*it)->Uninitialize();
+            LogFlowThisFunc (("  remoteControl->Uninitialize() returned %08X\n", rc));
+            if (FAILED (rc))
+                LogWarningThisFunc (("Forgot to close the remote session?\n"));
+            ++ it;
+        }
+        mData->mSession.mRemoteControls.clear();
+    }
+
     /*
      *  An expected uninitialization can come only from #checkForDeath().
      *  Otherwise it means that something's got really wrong (for examlple,
@@ -7475,29 +7495,6 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     mData->mSession.mMachine.setNull();
     mData->mSession.mState = SessionState_Closed;
     mData->mSession.mType.setNull();
-
-    /* uninitialize all remote controls (note that we do it after we set the
-     * session state to SessionState_Closed to make sure that uninitialized
-     * remote sessions can be immediately reopened for the same machine again
-     * once we fihish with uninit)*/
-    if (mData->mSession.mRemoteControls.size())
-    {
-        LogFlowThisFunc (("Closing remote sessions (%d):\n",
-                          mData->mSession.mRemoteControls.size()));
-
-        Data::Session::RemoteControlList::iterator it =
-            mData->mSession.mRemoteControls.begin();
-        while (it != mData->mSession.mRemoteControls.end())
-        {
-            LogFlowThisFunc (("  Calling remoteControl->Uninitialize()...\n"));
-            HRESULT rc = (*it)->Uninitialize();
-            LogFlowThisFunc (("  remoteControl->Uninitialize() returned %08X\n", rc));
-            if (FAILED (rc))
-                LogWarningThisFunc (("Forgot to close the remote session?\n"));
-            ++ it;
-        }
-        mData->mSession.mRemoteControls.clear();
-    }
 
     /* close the interprocess semaphore before leaving the shared lock */
 #if defined(RT_OS_WINDOWS)
