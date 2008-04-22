@@ -158,7 +158,26 @@
  */
 #define PRINT_ERROR_INFO(info) \
     do { \
-        info.print ("[!] "); \
+        RTPrintf ("[!] Full error info present: %RTbool, basic error info present: %RTbool\n", \
+                  info.isFullAvailable(), info.isBasicAvailable()); \
+        Log (("[!] Full error info present: %RTbool, basic error info present: %RTbool\n", \
+              info.isFullAvailable(), info.isBasicAvailable())); \
+        if (info.isFullAvailable() || info.isBasicAvailable()) { \
+            RTPrintf ("[!] Result Code = %Rwa\n", info.getResultCode()); \
+            RTPrintf ("[!] Text        = %ls\n", info.getText().raw()); \
+            RTPrintf ("[!] Component   = %ls, Interface: %ls, {%Vuuid}\n", \
+                      info.getComponent().raw(), info.getInterfaceName().raw(), \
+                      info.getInterfaceID().raw()); \
+            RTPrintf ("[!] Callee      = %ls, {%Vuuid}\n", \
+                      info.getCalleeName().raw(), info.getCalleeIID().raw()); \
+            Log (("[!] Result Code = %Rwa\n", info.getResultCode())); \
+            Log (("[!] Text        = %ls\n", info.getText().raw())); \
+            Log (("[!] Component   = %ls, Interface: %ls, {%Vuuid}\n", \
+                  info.getComponent().raw(), info.getInterfaceName().raw(), \
+                  info.getInterfaceID().raw())); \
+            Log (("[!] Callee      = %ls, {%Vuuid}\n", \
+                  info.getCalleeName().raw(), info.getCalleeIID().raw())); \
+        } \
     } while (0)
 
 /**
@@ -209,7 +228,7 @@
         CHECK_RC(iface->method); \
         if (FAILED(rc)) { \
             com::ErrorInfo info (iface); \
-            info.print ("[!] "); \
+            PRINT_ERROR_INFO (info); \
         } \
     } while (0)
 

@@ -220,23 +220,6 @@ ErrorInfo::~ErrorInfo()
 {
 }
 
-void ErrorInfo::print (const char *aPrefix /* = NULL */)
-{
-    if (aPrefix == NULL)
-        aPrefix = "";
-
-    RTPrintf ("%sFull error info present: %RTbool, basic error info present: %RTbool\n", aPrefix,
-              mIsFullAvailable, mIsBasicAvailable);
-    if (mIsFullAvailable || mIsBasicAvailable)
-    {
-        RTPrintf ("%sResult Code = %Rwa\n", aPrefix, mResultCode);
-        RTPrintf ("%sText        = %ls\n", aPrefix, mText.raw());
-        RTPrintf ("%sComponent   = %ls, Interface: %ls, {%s}\n", aPrefix,
-                  mComponent.raw(), mInterfaceName.raw(), mInterfaceID.toString().raw());
-        RTPrintf ("%sCallee      = %ls, {%s}\n", aPrefix, mCalleeName.raw(), mCalleeIID.toString().raw());
-    }
-}
-
 // ProgressErrorInfo class
 ////////////////////////////////////////////////////////////////////////////////
 

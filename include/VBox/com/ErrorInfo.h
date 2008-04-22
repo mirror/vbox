@@ -194,9 +194,9 @@ public:
      */
     bool isFullAvailable() const { return mIsFullAvailable; }
 
-    /** 
+    /**
      *  Returns @c true if both isBasicAvailable() and isFullAvailable() are
-     *  @c false. 
+     *  @c false.
      */
     bool isNull() const { return !mIsBasicAvailable && !mIsFullAvailable; }
 
@@ -247,14 +247,6 @@ public:
      *  template <class I> ErrorInfo (const ComPtr <I> &i) constructor.
      */
     const Bstr &getCalleeName() const { return mCalleeName; }
-
-    /**
-     *  Prints error information stored in this instance to the console.
-     *  Intended mainly for debugging and for simple command-line tools.
-     *
-     *  @param aPrefix  optional prefix
-     */
-    void print (const char *aPrefix = NULL);
 
     /**
      *  Resets all collected error information. #isNull() will
@@ -381,7 +373,7 @@ public:
      *  if #forget() was called before destruction. */
     ~ErrorInfoKeeper() { if (!mForgot) restore(); }
 
-    /** 
+    /**
      *  Tries to (re-)fetch error info set on the current thread.  On success,
      *  the previous error information, if any, will be overwritten with the
      *  new error information. On failure, or if there is no error information
