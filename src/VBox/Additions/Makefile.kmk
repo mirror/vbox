@@ -211,7 +211,9 @@ $(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso: \
 		Makefile.kmk
 	$(call MSG_TOOL,mkisofs,,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 4 \
+	@# use iso-level 3 which is the most ISO conforming level with least restrictions; iso-level 4 maps to iso-level 2
+	@# with some extra restrictions removal (not conforming to ISO9660) which some platforms like Solaris 10 does not like.
+	$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 3 \
 		-volid "VBOXADDITIONS_$(VBOX_VERSION_STRING)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
 		$(GUESTADDITIONS_FILESPEC.win.x86) \
 		$(GUESTADDITIONS_FILESPEC.solaris.x86) \
