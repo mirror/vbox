@@ -24,7 +24,7 @@
     <message>
         <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>innotek, Igor Gorbounov, Egor Morozov</translation>
+        <translation>Sun, Igor Gorbounov, Egor Morozov</translation>
     </message>
 </context>
 <context>
