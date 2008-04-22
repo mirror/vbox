@@ -1062,6 +1062,12 @@ void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
 
 void VBoxSelectorWnd::showContextMenu (QListBoxItem *aItem, const QPoint &aPoint)
 {
+    if (!vmListBox->selectedItem() && vmListBox->currentItem() >= 0)
+    {
+        /* selected always follows current */
+        vmListBox->setSelected (vmListBox->currentItem(), true);
+    }
+
     if (aItem)
         mVMCtxtMenu->exec (aPoint);
 }
