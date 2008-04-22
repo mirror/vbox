@@ -31,6 +31,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/critsect.h>
+#include <iprt/ip.h>
 
 #include "Builtins.h"
 
@@ -385,12 +386,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 {
     PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
     char szNetAddr[16];
+    char szNetwork[32]; /* xxx.xxx.xxx.xxx/yy */
     LogFlow(("drvNATConstruct:\n"));
 
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, N_("Unknown NAT configuration option, only supports PassDomain, TFTPPrefix and BootFile"));
 
     /*
@@ -437,7 +439,20 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                                 N_("Configuration error: the above device/driver didn't export the network config interface"));
 
     /* Generate a network address for this network card. */
-    RTStrPrintf(szNetAddr, sizeof(szNetAddr), "10.0.%d.0", pDrvIns->iInstance + 2);
+    rc = CFGMR3QueryString(pCfgHandle, "Network", szNetwork, sizeof(szNetwork));
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        RTStrPrintf(szNetwork, sizeof(szNetwork), "10.0.%d.0/24", pDrvIns->iInstance + 2);
+    else if (VBOX_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Network\" string failed"), pDrvIns->iInstance);
+
+    RTIPV4ADDR Network;
+    RTIPV4ADDR Netmask;
+    rc = RTCidrStrToIPv4(szNetwork, &Network, &Netmask);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: Configuration error: network '%s' describes not a valid IPv4 network"));
+
+    RTStrPrintf(szNetAddr, sizeof(szNetAddr), "%d.%d.%d.%d",
+               (Network & 0xFF000000) >> 24, (Network & 0xFF0000) >> 16, (Network & 0xFF00) >> 8, Network & 0xFF);
 
     /*
      * The slirp lock..
@@ -460,7 +475,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             /*
              * Initialize slirp.
              */
-            rc = slirp_init(&pData->pNATState, &szNetAddr[0], 0xffffff00, fPassDomain, pData->pszTFTPPrefix, pData->pszBootFile, pData);
+            rc = slirp_init(&pData->pNATState, &szNetAddr[0], Netmask, fPassDomain, pData->pszTFTPPrefix, pData->pszBootFile, pData);
             if (VBOX_SUCCESS(rc))
             {
                 int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pData, pCfgHandle);
