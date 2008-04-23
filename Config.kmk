@@ -1012,9 +1012,16 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 #
 # Mac OS X SDK paths.
 #
-# Note: If you change something here you
-# will maybe change DEFS.darwin also.
+# Note: If you change something here you will maybe change DEFS.darwin also.
 VBOX_PATH_MACOSX_SDK ?= /Developer/SDKs/MacOSX10.4u.sdk
+## @todo We also need -Wl,-classic_linker so we don't slidable images and can skip the
+#        unnecessary hacks in the recompiler.
+#
+#  @todo This should be done in the base templates - not - globally, since we may be
+#        compiling 10.5 specific modules later and this will screw us (also I stronly
+#        dislike global compiler/linker stuff like this). It should also be possible
+#        to make a 10.5 only build if we want that instead of forcing 10.4 on everyone.
+#
 CFLAGS.darwin   += -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK)
 CXXFLAGS.darwin += -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK)
 LDFLAGS.darwin  += -mmacosx-version-min=10.4 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK)
