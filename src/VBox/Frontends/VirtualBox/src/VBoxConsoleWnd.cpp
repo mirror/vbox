@@ -728,6 +728,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         if (str == "on")
             vmFullscreenAction->setOn (true);
 
+        vmFullscreenAction->setEnabled (false);
         vmSeamlessAction->setEnabled (false);
         str = cmachine.GetExtraData (VBoxDefs::GUI_Seamless);
         if (str == "on")
@@ -1064,7 +1065,7 @@ void VBoxConsoleWnd::onExitFullscreen()
 #endif
 
     vmSeamlessAction->setEnabled (mIsSeamlessSupported && mIsGraphicsSupported);
-    vmFullscreenAction->setEnabled (true);
+    vmFullscreenAction->setEnabled (mIsGraphicsSupported);
 
     console->setIgnoreMainwndResize (false);
     console->normalizeGeometry (true /* adjustPosition */);
@@ -2021,7 +2022,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             vmDisableMouseIntegrAction->setOn (false);
 
         vmAdjustWindowAction->setEnabled (!aOn);
-        vmFullscreenAction->setEnabled (!aOn);
+        vmFullscreenAction->setEnabled (!aOn && mIsGraphicsSupported);
         vmAutoresizeGuestAction->setEnabled (!aOn);
         vmDisableMouseIntegrAction->setEnabled (!aOn);
 
@@ -3235,6 +3236,7 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
     if (  (mIsSeamlessSupported != aSeamlessSupported)
         || (mIsGraphicsSupported != aGraphicsSupported))
     {
+        vmFullscreenAction->setEnabled (aGraphicsSupported);
         vmSeamlessAction->setEnabled (aSeamlessSupported && aGraphicsSupported);
         mIsSeamlessSupported = aSeamlessSupported;
         mIsGraphicsSupported = aGraphicsSupported;
