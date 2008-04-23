@@ -67,7 +67,12 @@
  *          the debug builds)! Any MyLog* usage must be removed from the sources
  *          after the error has been fixed.
  */
-#define MyLogIt(pvInst, fFlags, iGroup, fmtargs) \
+#if defined(RT_ARCH_AMD64) || defined(LOG_USE_C99)
+# define _MyLogRemoveParentheseis(...)               __VA_ARGS__
+# define _MyLogIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
+# define MyLogIt(pvInst, fFlags, iGroup, fmtargs)    _MyLogIt(pvInst, fFlags, iGroup, _MyLogRemoveParentheseis fmtargs)
+#else
+# define MyLogIt(pvInst, fFlags, iGroup, fmtargs) \
     do \
     { \
         register PRTLOGGER LogIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogDefaultInstance(); \
@@ -78,6 +83,7 @@
                 LogIt_pLogger->pfnLogger fmtargs; \
         } \
     } while (0)
+#endif
 
 /** @def MyLog
  * Equivalent to LogFlow but uses MyLogIt instead of LogIt.
