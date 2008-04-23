@@ -361,6 +361,12 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
     return VINF_SUCCESS;
 }
 
+
+/**
+ * After loading we have to pass the MAC address of the ethernet device to the slirp stack.
+ * Otherwise the guest is not reachable until it performs a DHCP request or an ARP request
+ * (usually done during guest boot).
+ */
 static DECLCALLBACK(int) drvNATLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSMHandle)
 {
     PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
@@ -481,6 +487,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                 int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pData, pCfgHandle);
                 if (VBOX_SUCCESS(rc2))
                 {
+                    /*
+                     * Register a load done notification to get the MAC address into the slirp
+                     * engine after we loaded a guest state.
+                     */
                     rc2 = pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, pDrvIns->pDrvReg->szDriverName, 0, 0,
                                                            pDrvIns->iInstance, NULL, NULL, NULL, NULL, NULL,
                                                            drvNATLoadDone);
