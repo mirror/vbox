@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 # Sun xVM VirtualBox
 # VirtualBox Solaris Guest Additions package creation script.
 #
@@ -37,6 +36,9 @@ if test ! -f "$MY_GGREP" && test ! -h "$MY_GGREP"; then
     exit 1
 fi
 
+# bail out on non-zero exit status
+set -e
+
 # prepare file list
 cd "$1"
 echo 'i pkginfo=./vboxguest.pkginfo' > prototype
@@ -64,15 +66,9 @@ VBOXPKG_TIMESTAMP=vboxguest`date '+%Y%m%d%H%M%S'`
 
 # create the package instance
 pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
-if test $? -ne 0; then
-    exit 1
-fi
 
 # translate into package datastream
 pkgtrans -s -o /var/spool/pkg `pwd`/$2 "$MY_PKGNAME"
-if test $? -ne 0; then
-    exit 1
-fi
 
 rm -rf "/var/spool/pkg/$MY_PKGNAME"
 exit $?
