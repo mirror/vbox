@@ -190,7 +190,7 @@ private:
     RTSEMEVENT mGoWriteSem;
     RTSEMEVENTMULTI mGoReadSem;
 
-    RTTHREAD mWriteLockThread;
+    RTNATIVETHREAD mWriteLockThread;
 
     uint32_t mReadLockCount;
     uint32_t mWriteLockLevel;

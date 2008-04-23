@@ -42,7 +42,7 @@ RWLockHandle::RWLockHandle()
     vrc = RTSemEventMultiCreate (&mGoReadSem);
     AssertRC (vrc);
 
-    mWriteLockThread = NIL_RTTHREAD;
+    mWriteLockThread = NIL_RTNATIVETHREAD;
 
     mReadLockCount = 0;
     mWriteLockLevel = 0;
@@ -75,7 +75,7 @@ bool RWLockHandle::isWriteLockOnCurrentThread() const
 #else /* VBOX_MAIN_USE_SEMRW */
 
     RTCritSectEnter (&mCritSect);
-    bool locked = mWriteLockThread == RTThreadSelf();
+    bool locked = mWriteLockThread == RTThreadNativeSelf();
     RTCritSectLeave (&mCritSect);
     return locked;
 
@@ -93,9 +93,9 @@ void RWLockHandle::lockWrite()
 
     RTCritSectEnter (&mCritSect);
 
-    if (mWriteLockThread != RTThreadSelf())
+    if (mWriteLockThread != RTThreadNativeSelf())
     {
-        if (mReadLockCount != 0 || mWriteLockThread != NIL_RTTHREAD ||
+        if (mReadLockCount != 0 || mWriteLockThread != NIL_RTNATIVETHREAD ||
             mWriteLockPending != 0 /* respect other pending writers */)
         {
             /* wait until all read locks or another write lock is released */
@@ -108,9 +108,9 @@ void RWLockHandle::lockWrite()
         }
 
         Assert (mWriteLockLevel == 0);
-        Assert (mWriteLockThread == NIL_RTTHREAD);
+        Assert (mWriteLockThread == NIL_RTNATIVETHREAD);
 
-        mWriteLockThread = RTThreadSelf();
+        mWriteLockThread = RTThreadNativeSelf();
     }
 
     ++ mWriteLockLevel;
@@ -138,7 +138,7 @@ void RWLockHandle::unlockWrite()
         -- mWriteLockLevel;
         if (mWriteLockLevel == 0)
         {
-            mWriteLockThread = NIL_RTTHREAD;
+            mWriteLockThread = NIL_RTNATIVETHREAD;
 
             /* no write locks, let writers go if there are any (top priority),
              * otherwise let readers go if there are any */
@@ -171,7 +171,7 @@ void RWLockHandle::lockRead()
     bool isWriteLock = mWriteLockLevel != 0;
     bool isFirstReadLock = mReadLockCount == 1;
 
-    if (isWriteLock && mWriteLockThread == RTThreadSelf())
+    if (isWriteLock && mWriteLockThread == RTThreadNativeSelf())
     {
         /* read lock nested into the write lock, cause return immediately */
         isWriteLock = false;
@@ -224,9 +224,9 @@ void RWLockHandle::unlockRead()
         {
             /* read unlock nested into the write lock, just decrease the
              * counter */
-            Assert (mWriteLockThread == RTThreadSelf()
+            Assert (mWriteLockThread == RTThreadNativeSelf()
                     /* unlockRead() after lockWrite()? */);
-            if (mWriteLockThread == RTThreadSelf())
+            if (mWriteLockThread == RTThreadNativeSelf())
                 -- mReadLockCount;
         }
         else
