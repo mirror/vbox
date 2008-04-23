@@ -448,6 +448,11 @@ private:
         mVector.insert (1, cbvdi);
         cbvdi->setBelongsTo (mMachine.GetId());
         cbvdi->refresh();
+#ifdef Q_WS_MAC
+        /* White background on Mac OS X */
+        cbslot->setPaletteBackgroundColor (cbslot->parentWidget()->paletteBackgroundColor());
+        cbvdi->setPaletteBackgroundColor (cbvdi->parentWidget()->paletteBackgroundColor());
+#endif /* Q_WS_MAC */
     }
 
     void paintCell (QPainter *aPainter, const QColorGroup &aColorGroup,
