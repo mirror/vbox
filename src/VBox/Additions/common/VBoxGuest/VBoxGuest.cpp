@@ -520,6 +520,36 @@ static void VBoxGuestWaitFreeUnlocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTWAIT p
 }
 
 
+/** @todo XXX: This should later be done as a proper IOCtl request. Currently we call this from Ring-0. */
+int VBoxGuestSetGuestCapabilities(uint32_t u32OrMask, uint32_t u32NotMask)
+{
+    int rc;
+    VMMDevReqGuestCapabilities2 *pReq;
+    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_SetGuestCapabilities);
+    if (RT_FAILURE(rc))
+    {
+        Log(("VBoxGuestSetGuestCapabilities: failed to allocate %u (%#x) bytes to cache the request. rc=%d!!\n",
+             sizeof(*pReq), sizeof(*pReq), rc));
+        return rc;
+    }
+
+    pReq->u32OrMask = u32OrMask;
+    pReq->u32NotMask = u32NotMask;
+
+    rc = VbglGRPerform(&pReq->header);
+    if (RT_FAILURE(rc))
+        Log(("VBoxGuestSetGuestCapabilities:VbglGRPerform failed, rc=%Rrc!\n", rc));
+    else if (RT_FAILURE(pReq->header.rc))
+    {
+        Log(("VBoxGuestSetGuestCapabilities: The request failed; VMMDev rc=%Rrc!\n", pReq->header.rc));
+        rc = pReq->header.rc;
+    }
+
+    VbglGRFree(&pReq->header);
+    return rc;
+}
+
+
 /**
  * Implements the fast (no input or output) type of IOCtls.
  *
