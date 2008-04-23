@@ -4163,7 +4163,8 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
     PDMMAC      Mac;
-    if (SSM_VERSION_MAJOR_CHANGED(u32Version, PCNET_SAVEDSTATE_VERSION))
+    if (   SSM_VERSION_MAJOR_CHANGED(u32Version, PCNET_SAVEDSTATE_VERSION)
+        || SSM_VERSION_MINOR(u32Version) < 7)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /* restore data */
