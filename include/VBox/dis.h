@@ -144,23 +144,24 @@ typedef enum
 #define USE_DISPLACEMENT8               RT_BIT_64(14)
 #define USE_DISPLACEMENT16              RT_BIT_64(15)
 #define USE_DISPLACEMENT32              RT_BIT_64(16)
-#define USE_IMMEDIATE8                  RT_BIT_64(17)
-#define USE_IMMEDIATE8_REL              RT_BIT_64(18)
-#define USE_IMMEDIATE16                 RT_BIT_64(19)
-#define USE_IMMEDIATE16_REL             RT_BIT_64(20)
-#define USE_IMMEDIATE32                 RT_BIT_64(21)
-#define USE_IMMEDIATE32_REL             RT_BIT_64(22)
-#define USE_IMMEDIATE64                 RT_BIT_64(23)
-#define USE_IMMEDIATE_ADDR_0_32         RT_BIT_64(24)
-#define USE_IMMEDIATE_ADDR_16_32        RT_BIT_64(25)
-#define USE_IMMEDIATE_ADDR_0_16         RT_BIT_64(26)
-#define USE_IMMEDIATE_ADDR_16_16        RT_BIT_64(27)
+#define USE_DISPLACEMENT64              RT_BIT_64(17)
+#define USE_IMMEDIATE8                  RT_BIT_64(18)
+#define USE_IMMEDIATE8_REL              RT_BIT_64(19)
+#define USE_IMMEDIATE16                 RT_BIT_64(20)
+#define USE_IMMEDIATE16_REL             RT_BIT_64(21)
+#define USE_IMMEDIATE32                 RT_BIT_64(22)
+#define USE_IMMEDIATE32_REL             RT_BIT_64(23)
+#define USE_IMMEDIATE64                 RT_BIT_64(24)
+#define USE_IMMEDIATE_ADDR_0_32         RT_BIT_64(25)
+#define USE_IMMEDIATE_ADDR_16_32        RT_BIT_64(26)
+#define USE_IMMEDIATE_ADDR_0_16         RT_BIT_64(27)
+#define USE_IMMEDIATE_ADDR_16_16        RT_BIT_64(28)
 /** DS:ESI */
-#define USE_POINTER_DS_BASED            RT_BIT_64(28)
+#define USE_POINTER_DS_BASED            RT_BIT_64(29)
 /** ES:EDI */
-#define USE_POINTER_ES_BASED            RT_BIT_64(29)
-#define USE_IMMEDIATE16_SX8             RT_BIT_64(30)
-#define USE_IMMEDIATE32_SX8             RT_BIT_64(31)
+#define USE_POINTER_ES_BASED            RT_BIT_64(30)
+#define USE_IMMEDIATE16_SX8             RT_BIT_64(31)
+#define USE_IMMEDIATE32_SX8             RT_BIT_64(32)
 
 #define USE_IMMEDIATE                   (USE_IMMEDIATE8|USE_IMMEDIATE16|USE_IMMEDIATE32|USE_IMMEDIATE64|USE_IMMEDIATE8_REL|USE_IMMEDIATE16_REL|USE_IMMEDIATE32_REL|USE_IMMEDIATE_ADDR_0_32|USE_IMMEDIATE_ADDR_16_32|USE_IMMEDIATE_ADDR_0_16|USE_IMMEDIATE_ADDR_16_16|USE_IMMEDIATE16_SX8|USE_IMMEDIATE32_SX8)
 
@@ -334,9 +335,9 @@ typedef struct _OP_PARAMETER
     char            szParam[32];
 
     int32_t         disp8, disp16, disp32;
-
     uint32_t        size;
 
+    int64_t         disp64;
     uint64_t        flags;
 
     union

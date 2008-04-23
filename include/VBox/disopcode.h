@@ -615,6 +615,7 @@
 #define OP_PARM_REG_EBP         6
 #define OP_PARM_REG_ESI         7
 #define OP_PARM_REG_EDI         8
+#define OP_PARM_REG_GEN32_END   OP_PARM_REG_EDI
 
 #define OP_PARM_REG_ES          9
 #define OP_PARM_REG_SEG_START   OP_PARM_REG_ES
@@ -623,6 +624,7 @@
 #define OP_PARM_REG_DS          12
 #define OP_PARM_REG_FS          13
 #define OP_PARM_REG_GS          14
+#define OP_PARM_REG_SEG_END     OP_PARM_REG_GS
 
 #define OP_PARM_REG_AX          15
 #define OP_PARM_REG_GEN16_START   OP_PARM_REG_AX
@@ -633,6 +635,7 @@
 #define OP_PARM_REG_BP          20
 #define OP_PARM_REG_SI          21
 #define OP_PARM_REG_DI          22
+#define OP_PARM_REG_GEN16_END   OP_PARM_REG_DI
 
 #define OP_PARM_REG_AL          23
 #define OP_PARM_REG_GEN8_START  OP_PARM_REG_AL
@@ -643,6 +646,7 @@
 #define OP_PARM_REG_CH          28
 #define OP_PARM_REG_DH          29
 #define OP_PARM_REG_BH          30
+#define OP_PARM_REG_GEN8_END    OP_PARM_REG_BH
 
 #define OP_PARM_REGFP_0         31
 #define OP_PARM_REG_FP_START    OP_PARM_REGFP_0
@@ -653,6 +657,7 @@
 #define OP_PARM_REGFP_5         36
 #define OP_PARM_REGFP_6         37
 #define OP_PARM_REGFP_7         38
+#define OP_PARM_REG_FP_END      OP_PARM_REGFP_7
 
 #define OP_PARM_NTA             39
 #define OP_PARM_T0              40
@@ -696,6 +701,7 @@
 #define OP_PARM_REG_R13         113
 #define OP_PARM_REG_R14         114
 #define OP_PARM_REG_R15         115
+#define OP_PARM_REG_GEN64_END   OP_PARM_REG_R15
 
 
 #define OP_PARM_VTYPE(a)        ((int)a & 0xFE0)

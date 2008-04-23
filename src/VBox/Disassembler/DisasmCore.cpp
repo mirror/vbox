@@ -1221,6 +1221,21 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
         }
     }
     else
+    if (pCpu->addrmode == CPUMODE_64BIT)
+    {
+        Assert(OP_PARM_VSUBTYPE(pParam->param) != OP_PARM_p);
+        /* near 64 bits pointer */
+        /*
+         * Note: used only in "mov al|ax|eax, [Addr]" and "mov [Addr], al|ax|eax"
+         * so we treat it like displacement.
+         */
+        pParam->disp64 = DISReadQWord(pCpu, lpszCodeBlock);
+        pParam->flags |= USE_DISPLACEMENT64;
+
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "[0%08X%08Xh]", (uint32_t)(pParam->disp64 >> 32), (uint32_t)pParam->disp64);
+        return sizeof(uint32_t);
+    }
+    else
     {
         if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
         {// far 16:16 pointer
@@ -1259,6 +1274,10 @@ unsigned ParseImmAddr_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAME
             return sizeof(uint32_t);
         }
     }
+    if (pCpu->addrmode == CPUMODE_64BIT)
+    {
+        return sizeof(uint64_t);
+    }
     else
     {
         if (OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p)
@@ -1285,7 +1304,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         return 0;
     }
 
-    if (pParam->param < OP_PARM_REG_SEG_START)
+    if (pParam->param <= OP_PARM_REG_GEN32_END)
     {
         /* 32-bit EAX..EDI registers. */
 
@@ -1297,6 +1316,18 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
             pParam->size   = 4;
         }
         else
+        if (pCpu->opmode == CPUMODE_64BIT)
+        {
+            /* Use 64-bit registers. */
+            pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
+            if (    (pCpu->prefix & PREFIX_REX)
+                &&  (pCpu->prefix_rex & PREFIX_REX_FLAGS))
+                pParam->base.reg_gen += 8;
+
+            pParam->flags |= USE_REG_GEN64;
+            pParam->size   = 8;
+        }
+        else
         {
             /* Use 16-bit registers. */
             pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
@@ -1306,7 +1337,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         }
     }
     else
-    if (pParam->param < OP_PARM_REG_GEN16_START)
+    if (pParam->param <= OP_PARM_REG_SEG_END)
     {
         /* Segment ES..GS registers. */
         pParam->base.reg_seg = pParam->param - OP_PARM_REG_SEG_START;
@@ -1314,7 +1345,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         pParam->size   = 2;
     }
     else
-    if (pParam->param < OP_PARM_REG_GEN8_START)
+    if (pParam->param <= OP_PARM_REG_GEN16_END)
     {
         /* 16-bit AX..DI registers. */
         pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN16_START;
@@ -1322,7 +1353,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         pParam->size   = 2;
     }
     else
-    if (pParam->param < OP_PARM_REG_FP_START)
+    if (pParam->param <= OP_PARM_REG_GEN8_END)
     {
         /* 8-bit AL..DL, AH..DH registers. */
         pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN8_START;
@@ -1330,7 +1361,7 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         pParam->size   = 1;
     }
     else
-    if (pParam->param <= OP_PARM_REGFP_7)
+    if (pParam->param <= OP_PARM_REG_FP_END)
     {
         /* FPU registers. */
         pParam->base.reg_fp = pParam->param - OP_PARM_REG_FP_START;
@@ -1355,6 +1386,12 @@ unsigned ParseXv(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
         pParam->flags |= USE_REG_GEN32;
     }
     else
+    if (pCpu->addrmode == CPUMODE_64BIT)
+    {
+        pParam->base.reg_gen = USE_REG_RSI;
+        pParam->flags |= USE_REG_GEN64;
+    }
+    else
     {
         pParam->base.reg_gen = USE_REG_SI;
         pParam->flags |= USE_REG_GEN16;
@@ -1372,6 +1409,12 @@ unsigned ParseXb(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
     {
         pParam->base.reg_gen = USE_REG_ESI;
         pParam->flags |= USE_REG_GEN32;
+    }
+    else
+    if (pCpu->addrmode == CPUMODE_64BIT)
+    {
+        pParam->base.reg_gen = USE_REG_RSI;
+        pParam->flags |= USE_REG_GEN64;
     }
     else
     {
@@ -1394,6 +1437,12 @@ unsigned ParseYv(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
         pParam->flags |= USE_REG_GEN32;
     }
     else
+    if (pCpu->addrmode == CPUMODE_64BIT)
+    {
+        pParam->base.reg_gen = USE_REG_RDI;
+        pParam->flags |= USE_REG_GEN64;
+    }
+    else
     {
         pParam->base.reg_gen = USE_REG_DI;
         pParam->flags |= USE_REG_GEN16;
@@ -1411,6 +1460,12 @@ unsigned ParseYb(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDI
     {
         pParam->base.reg_gen = USE_REG_EDI;
         pParam->flags |= USE_REG_GEN32;
+    }
+    else
+    if (pCpu->addrmode == CPUMODE_64BIT)
+    {
+        pParam->base.reg_gen = USE_REG_RDI;
+        pParam->flags |= USE_REG_GEN64;
     }
     else
     {
@@ -1505,9 +1560,7 @@ unsigned ParseImmGrpl(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
     pOp = (PCOPCODE)&g_aMapX86_Group1[idx+reg];
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
-    {
         size = sizeof(uint8_t); //ModRM byte
-    }
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1860,6 +1913,7 @@ unsigned ParseGrp16(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 //*****************************************************************************
 #if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
 const char *szModRMReg8[]      = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"};
+const char *szModRMReg8_64[]   = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8L", "R9L", "R10L", "R11L", "R12L", "R13L", "R14L", "R15L"};
 const char *szModRMReg16[]     = {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"};
 const char *szModRMReg32[]     = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
 const char *szModRMReg64[]     = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
