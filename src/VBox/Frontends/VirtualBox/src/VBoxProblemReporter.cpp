@@ -934,15 +934,15 @@ void VBoxProblemReporter::cannotFindMachineByName (const CVirtualBox &vbox,
 
 void VBoxProblemReporter::cannotEnterSeamlessMode (ULONG aWidth,
                                                    ULONG aHeight,
-                                                   ULONG aBpp)
+                                                   ULONG aBpp,
+                                                   ULONG64 aMinVRAM)
 {
     message (&vboxGlobal().consoleWnd(), Error,
              tr ("<p>Could not enter seamless mode due to insufficient guest "
                  "video memory.</p>"
                  "<p>You should configure the VM to have at least <b>%1</b> "
                  "of video memory.</p>")
-             .arg (VBoxGlobal::formatSize ((ULONG64) (aWidth * aHeight *
-                                                      aBpp / 8 + _1M - 1))));
+             .arg (VBoxGlobal::formatSize (aMinVRAM)));
 }
 
 bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
