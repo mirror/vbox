@@ -411,10 +411,33 @@ typedef struct _DISCPUSTATE
     OP_PARAMETER    param2;
     OP_PARAMETER    param3;
 
-    /** ModRM byte. */
-    uint32_t        ModRM;
-    /** scalar, index, base byte. */
-    uint32_t        SIB;
+    /** ModRM fields. */
+    union
+    {
+        /* Bitfield view */
+        struct
+        {
+            unsigned        Rm  : 4;
+            unsigned        Reg : 4;
+            unsigned        Mod : 2;
+        } Bits;
+        /* unsigned view */
+        unsigned            u;
+    } ModRM;
+
+    /** SIB fields. */
+    union
+    {
+        /* Bitfield view */
+        struct
+        {
+            unsigned        Base  : 4;
+            unsigned        Index : 4;
+            unsigned        Scale : 2;
+        } Bits;
+        /* unsigned view */
+        unsigned            u;
+    } SIB;
 
     int32_t         disp;
 

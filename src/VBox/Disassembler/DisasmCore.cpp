@@ -64,8 +64,8 @@ static void disasmAddChar(char *psz, char ch);
 # define disasmAddChar(psz, ch)                 do {} while (0)
 #endif
 
-static unsigned QueryModRM(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu, int *pSibInc = NULL);
-static unsigned QueryModRM_SizeOnly(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu, int *pSibInc = NULL);
+static unsigned QueryModRM(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu, unsigned *pSibInc = NULL);
+static unsigned QueryModRM_SizeOnly(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu, unsigned *pSibInc = NULL);
 static void     UseSIB(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 static unsigned ParseSIB_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 
@@ -175,8 +175,8 @@ DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *
     pCpu->lastprefix = 0;
     pCpu->addrmode   = pCpu->mode;
     pCpu->opmode     = pCpu->mode;
-    pCpu->ModRM      = 0;
-    pCpu->SIB        = 0;
+    pCpu->ModRM.u    = 0;
+    pCpu->SIB.u      = 0;
     pCpu->param1.parval = 0;
     pCpu->param2.parval = 0;
     pCpu->param3.parval = 0;
@@ -222,8 +222,8 @@ DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_
     pCpu->mode       = enmCpuMode;
     pCpu->addrmode   = enmCpuMode;
     pCpu->opmode     = enmCpuMode;
-    pCpu->ModRM      = 0;
-    pCpu->SIB        = 0;
+    pCpu->ModRM.u    = 0;
+    pCpu->SIB.u      = 0;
     pCpu->param1.parval = 0;
     pCpu->param2.parval = 0;
     pCpu->param3.parval = 0;
@@ -409,64 +409,49 @@ unsigned ParseEscFP(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 {
     int index;
     const OPCODE *fpop;
-    unsigned size = 0;
+    unsigned size = 0, ModRM;
 
-    pCpu->ModRM = DISReadByte(pCpu, lpszCodeBlock);
+    ModRM = DISReadByte(pCpu, lpszCodeBlock);
 
     index = pCpu->opcode - 0xD8;
-    if (pCpu->ModRM <= 0xBF)
+    if (ModRM <= 0xBF)
     {
-        fpop            = &(g_paMapX86_FP_Low[index])[MODRM_REG(pCpu->ModRM)];
+        fpop            = &(g_paMapX86_FP_Low[index])[MODRM_REG(ModRM)];
         pCpu->pCurInstr = (PCOPCODE)fpop;
 
         // Should contain the parameter type on input
         pCpu->param1.parval = fpop->param1;
         pCpu->param2.parval = fpop->param2;
-
-        /*
-         * Apply filter to instruction type to determine if a full disassembly is required.
-         * @note Multibyte opcodes are always marked harmless until the final byte.
-         */
-        if ((fpop->optype & pCpu->uFilter) == 0)
-        {
-            pCpu->pfnDisasmFnTable = pfnCalcSize;
-        }
-        else
-        {
-            /* Not filtered out -> full disassembly */
-            pCpu->pfnDisasmFnTable = pfnFullDisasm;
-        }
-
-        // Little hack to make sure the ModRM byte is included in the returned size
-        if (fpop->idxParse1 != IDX_ParseModRM && fpop->idxParse2 != IDX_ParseModRM)
-            size = sizeof(uint8_t); //ModRM byte
-
-        if (fpop->idxParse1 != IDX_ParseNop)
-            size += pCpu->pfnDisasmFnTable[fpop->idxParse1](lpszCodeBlock+size, (PCOPCODE)fpop, pParam, pCpu);
-
-        if (fpop->idxParse2 != IDX_ParseNop)
-            size += pCpu->pfnDisasmFnTable[fpop->idxParse2](lpszCodeBlock+size, (PCOPCODE)fpop, pParam, pCpu);
     }
     else
     {
-        size            = sizeof(uint8_t); //ModRM byte only
-        fpop            = &(g_paMapX86_FP_High[index])[pCpu->ModRM - 0xC0];
+        fpop            = &(g_paMapX86_FP_High[index])[ModRM - 0xC0];
         pCpu->pCurInstr = (PCOPCODE)fpop;
-
-        /*
-         * Apply filter to instruction type to determine if a full disassembly is required.
-         * @note Multibyte opcodes are always marked harmless until the final byte.
-         */
-        if ((fpop->optype & pCpu->uFilter) == 0)
-        {
-            pCpu->pfnDisasmFnTable = pfnCalcSize;
-        }
-        else
-        {
-            /* Not filtered out -> full disassembly */
-            pCpu->pfnDisasmFnTable = pfnFullDisasm;
-        }
     }
+
+    /*
+     * Apply filter to instruction type to determine if a full disassembly is required.
+     * @note Multibyte opcodes are always marked harmless until the final byte.
+     */
+    if ((fpop->optype & pCpu->uFilter) == 0)
+    {
+        pCpu->pfnDisasmFnTable = pfnCalcSize;
+    }
+    else
+    {
+        /* Not filtered out -> full disassembly */
+        pCpu->pfnDisasmFnTable = pfnFullDisasm;
+    }
+
+    // Little hack to make sure the ModRM byte is included in the returned size
+    if (fpop->idxParse1 != IDX_ParseModRM && fpop->idxParse2 != IDX_ParseModRM)
+        size = sizeof(uint8_t); //ModRM byte
+
+    if (fpop->idxParse1 != IDX_ParseNop)
+        size += pCpu->pfnDisasmFnTable[fpop->idxParse1](lpszCodeBlock+size, (PCOPCODE)fpop, pParam, pCpu);
+
+    if (fpop->idxParse2 != IDX_ParseNop)
+        size += pCpu->pfnDisasmFnTable[fpop->idxParse2](lpszCodeBlock+size, (PCOPCODE)fpop, pParam, pCpu);
 
     // Store the opcode format string for disasmPrintf
 #ifndef DIS_CORE_ONLY
@@ -487,13 +472,13 @@ const char *szSIBScale[4]    = {"", "*2", "*4", "*8"};
 //*****************************************************************************
 void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    int scale, base, index;
+    unsigned scale, base, index;
     char szTemp[32];
     szTemp[0] = '\0';
 
-    scale = SIB_SCALE(pCpu->SIB);
-    base  = SIB_BASE(pCpu->SIB);
-    index = SIB_INDEX(pCpu->SIB);
+    scale = pCpu->SIB.Bits.Scale;
+    base  = pCpu->SIB.Bits.Base;
+    index = pCpu->SIB.Bits.Index;
 
     if (szSIBIndexReg[index])
     {
@@ -506,18 +491,18 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
              pParam->scale  = (1<<scale);
          }
 
-         if (base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
+         if (base == 5 && pCpu->ModRM.Bits.Mod == 0)
              disasmAddStringF(szTemp, sizeof(szTemp), "%s%s", szSIBIndexReg[index], szSIBScale[scale]);
          else
              disasmAddStringF(szTemp, sizeof(szTemp), "%s+%s%s", szSIBBaseReg[base], szSIBIndexReg[index], szSIBScale[scale]);
     }
     else
     {
-         if (base != 5 || MODRM_MOD(pCpu->ModRM) != 0)
+         if (base != 5 || pCpu->ModRM.Bits.Mod != 0)
              disasmAddStringF(szTemp, sizeof(szTemp), "%s", szSIBBaseReg[base]);
     }
 
-    if (base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
+    if (base == 5 && pCpu->ModRM.Bits.Mod == 0)
     {
         // [scaled index] + disp32
         disasmAddString(pParam->szParam, &szTemp[0]);
@@ -539,14 +524,26 @@ void UseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPU
 //*****************************************************************************
 unsigned ParseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = sizeof(uint8_t), base;
+    unsigned size = sizeof(uint8_t);
+    unsigned SIB;
 
-    pCpu->SIB = DISReadByte(pCpu, lpszCodeBlock);
+    SIB = DISReadByte(pCpu, lpszCodeBlock);
     lpszCodeBlock += size;
 
-    base = SIB_BASE(pCpu->SIB);
-    if (base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
-    {//additional 32 bits displacement
+    pCpu->SIB.Bits.Base  = SIB_BASE(SIB);
+    pCpu->SIB.Bits.Index = SIB_INDEX(SIB);
+    pCpu->SIB.Bits.Scale = SIB_SCALE(SIB);
+
+    if (pCpu->prefix & PREFIX_REX)
+    {
+        pCpu->SIB.Bits.Base  |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_B)) << 3);
+        pCpu->SIB.Bits.Index |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_X)) << 3);
+    }
+
+    if (    pCpu->SIB.Bits.Base == 5 
+        &&  pCpu->ModRM.Bits.Mod == 0)
+    {   
+        /* Additional 32 bits displacement. No change in long mode. */
         pCpu->disp = DISReadDWord(pCpu, lpszCodeBlock);
         size += sizeof(int32_t);
     }
@@ -556,14 +553,28 @@ unsigned ParseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
 //*****************************************************************************
 unsigned ParseSIB_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    unsigned size = sizeof(uint8_t), base;
+    unsigned size = sizeof(uint8_t);
+    unsigned SIB;
 
-    pCpu->SIB = DISReadByte(pCpu, lpszCodeBlock);
+    SIB = DISReadByte(pCpu, lpszCodeBlock);
     lpszCodeBlock += size;
 
-    base = SIB_BASE(pCpu->SIB);
-    if (base == 5 && MODRM_MOD(pCpu->ModRM) == 0)
-    {//additional 32 bits displacement
+    pCpu->SIB.Bits.Base  = SIB_BASE(SIB);
+    pCpu->SIB.Bits.Index = SIB_INDEX(SIB);
+    pCpu->SIB.Bits.Scale = SIB_SCALE(SIB);
+
+    if (pCpu->prefix & PREFIX_REX)
+    {
+        /* REX.B extends the Base field. */
+        pCpu->SIB.Bits.Base  |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_B)) << 3);
+        /* REX.X extends the Index field. */
+        pCpu->SIB.Bits.Index |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_X)) << 3);
+    }
+
+    if (    pCpu->SIB.Bits.Base == 5 
+        &&  pCpu->ModRM.Bits.Mod == 0)
+    {
+        /* Additional 32 bits displacement. No change in long mode. */
         size += sizeof(int32_t);
     }
     return size;
@@ -575,10 +586,10 @@ unsigned ParseSIB_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER 
 //*****************************************************************************
 unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    int reg   = MODRM_REG(pCpu->ModRM);
-    int rm    = MODRM_RM(pCpu->ModRM);
-    int mod   = MODRM_MOD(pCpu->ModRM);
-    int vtype = OP_PARM_VTYPE(pParam->param);
+    int      vtype = OP_PARM_VTYPE(pParam->param);
+    unsigned reg = pCpu->ModRM.Bits.Reg;
+    unsigned mod = pCpu->ModRM.Bits.Mod;
+    unsigned rm  = pCpu->ModRM.Bits.Rm;
 
     switch (vtype)
     {
@@ -776,25 +787,28 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
 //*****************************************************************************
 // Query the size of the ModRM parameters and fetch the immediate data (if any)
 //*****************************************************************************
-unsigned QueryModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu, int *pSibInc)
+unsigned QueryModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu, unsigned *pSibInc)
 {
-    int mod, rm, sibinc;
+    unsigned sibinc;
     unsigned size = 0;
-
-    rm  = MODRM_RM(pCpu->ModRM);
-    mod = MODRM_MOD(pCpu->ModRM);
+    unsigned reg = pCpu->ModRM.Bits.Reg;
+    unsigned mod = pCpu->ModRM.Bits.Mod;
+    unsigned rm  = pCpu->ModRM.Bits.Rm;
 
     if (!pSibInc)
-    {
         pSibInc = &sibinc;
-    }
 
     *pSibInc = 0;
 
-    if (pCpu->addrmode == CPUMODE_32BIT)
-    {//32 bits addressing mode
+    if (pCpu->addrmode != CPUMODE_16BIT)
+    {
+        Assert(pCpu->addrmode == CPUMODE_32BIT || pCpu->addrmode == CPUMODE_64BIT);
+
+        /*
+         * Note: displacements in long mode are 8 or 32 bits and sign-extended to 64 bits
+         */
         if (mod != 3 && rm == 4)
-        {//SIB byte follows ModRM
+        {   /* SIB byte follows ModRM */
             *pSibInc = ParseSIB(lpszCodeBlock, pOp, pParam, pCpu);
             lpszCodeBlock += *pSibInc;
             size += *pSibInc;
@@ -802,50 +816,52 @@ unsigned QueryModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 
         switch (mod)
         {
-        case 0: //effective address
-            if (rm == 5) {//32 bits displacement
+        case 0: /* Effective address */
+            if (rm == 5) {  /* 32 bits displacement */
                 pCpu->disp = DISReadDWord(pCpu, lpszCodeBlock);
                 size += sizeof(int32_t);
             }
-            //else register address
+            /* else register address */
             break;
 
-        case 1: //effective address + 8 bits displacement
+        case 1: /* Effective address + 8 bits displacement */
             pCpu->disp = (int8_t)DISReadByte(pCpu, lpszCodeBlock);
             size += sizeof(char);
             break;
 
-        case 2: //effective address + 32 bits displacement
+        case 2: /* Effective address + 32 bits displacement */
             pCpu->disp = DISReadDWord(pCpu, lpszCodeBlock);
             size += sizeof(int32_t);
             break;
 
-        case 3: //registers
+        case 3: /* registers */
             break;
         }
     }
     else
-    {//16 bits addressing mode
+    {
+        /* 16 bits mode */
         switch (mod)
         {
-        case 0: //effective address
+        case 0: /* Effective address */
             if (rm == 6) {
                 pCpu->disp = DISReadWord(pCpu, lpszCodeBlock);
                 size += sizeof(uint16_t);
             }
+            /* else register address */
             break;
 
-        case 1: //effective address + 8 bits displacement
+        case 1: /* Effective address + 8 bits displacement */
             pCpu->disp = (int8_t)DISReadByte(pCpu, lpszCodeBlock);
             size += sizeof(char);
             break;
 
-        case 2: //effective address + 16 bits displacement
+        case 2: /* Effective address + 32 bits displacement */
             pCpu->disp = (int16_t)DISReadWord(pCpu, lpszCodeBlock);
             size += sizeof(uint16_t);
             break;
 
-        case 3: //registers
+        case 3: /* registers */
             break;
         }
     }
@@ -854,25 +870,27 @@ unsigned QueryModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 //*****************************************************************************
 // Query the size of the ModRM parameters and fetch the immediate data (if any)
 //*****************************************************************************
-unsigned QueryModRM_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu, int *pSibInc)
+unsigned QueryModRM_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu, unsigned *pSibInc)
 {
-    int mod, rm, sibinc;
+    unsigned sibinc;
     unsigned size = 0;
-
-    rm  = MODRM_RM(pCpu->ModRM);
-    mod = MODRM_MOD(pCpu->ModRM);
+    unsigned reg = pCpu->ModRM.Bits.Reg;
+    unsigned mod = pCpu->ModRM.Bits.Mod;
+    unsigned rm  = pCpu->ModRM.Bits.Rm;
 
     if (!pSibInc)
-    {
         pSibInc = &sibinc;
-    }
 
     *pSibInc = 0;
 
-    if (pCpu->addrmode == CPUMODE_32BIT)
-    {//32 bits addressing mode
+    if (pCpu->addrmode != CPUMODE_16BIT)
+    {
+        Assert(pCpu->addrmode == CPUMODE_32BIT || pCpu->addrmode == CPUMODE_64BIT);
+        /*
+         * Note: displacements in long mode are 8 or 32 bits and sign-extended to 64 bits
+         */
         if (mod != 3 && rm == 4)
-        {//SIB byte follows ModRM
+        {   /* SIB byte follows ModRM */
             *pSibInc = ParseSIB_SizeOnly(lpszCodeBlock, pOp, pParam, pCpu);
             lpszCodeBlock += *pSibInc;
             size += *pSibInc;
@@ -881,43 +899,45 @@ unsigned QueryModRM_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETE
         switch (mod)
         {
         case 0: //effective address
-            if (rm == 5) {//32 bits displacement
+            if (rm == 5) {  /* 32 bits displacement */
                 size += sizeof(int32_t);
             }
-            //else register address
+            /* else register address */
             break;
 
-        case 1: //effective address + 8 bits displacement
+        case 1: /* Effective address + 8 bits displacement */
             size += sizeof(char);
             break;
 
-        case 2: //effective address + 32 bits displacement
+        case 2: /* Effective address + 32 bits displacement */
             size += sizeof(int32_t);
             break;
 
-        case 3: //registers
+        case 3: /* registers */
             break;
         }
     }
     else
-    {//16 bits addressing mode
+    {
+        /* 16 bits mode */
         switch (mod)
         {
         case 0: //effective address
             if (rm == 6) {
                 size += sizeof(uint16_t);
             }
+            /* else register address */
             break;
 
-        case 1: //effective address + 8 bits displacement
+        case 1: /* Effective address + 8 bits displacement */
             size += sizeof(char);
             break;
 
-        case 2: //effective address + 16 bits displacement
+        case 2: /* Effective address + 32 bits displacement */
             size += sizeof(uint16_t);
             break;
 
-        case 3: //registers
+        case 3: /* registers */
             break;
         }
     }
@@ -935,11 +955,27 @@ unsigned ParseIllegal(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
 unsigned ParseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
     unsigned size = sizeof(uint8_t);   //ModRM byte
-    int sibinc;
+    unsigned sibinc, ModRM;
 
-    pCpu->ModRM    = DISReadByte(pCpu, lpszCodeBlock);
+    ModRM = DISReadByte(pCpu, lpszCodeBlock);
     lpszCodeBlock += sizeof(uint8_t);
 
+    pCpu->ModRM.Bits.Rm  = MODRM_RM(ModRM);
+    pCpu->ModRM.Bits.Mod = MODRM_MOD(ModRM);
+    pCpu->ModRM.Bits.Reg = MODRM_REG(ModRM);
+
+    if (pCpu->prefix & PREFIX_REX)
+    {
+        /* REX.R extends the Reg field. */
+        pCpu->ModRM.Bits.Reg |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_R)) << 3);
+
+        /* REX.B extends the Rm field if there is no SIB byte. */
+        if (    pCpu->ModRM.Bits.Mod != 3 
+            &&  pCpu->ModRM.Bits.Rm == 4)
+        {
+            pCpu->ModRM.Bits.Rm |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_B)) << 3);
+        }
+    }
     size += QueryModRM(lpszCodeBlock, pOp, pParam, pCpu, &sibinc);
     lpszCodeBlock += sibinc;
 
@@ -952,10 +988,27 @@ unsigned ParseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 unsigned ParseModRM_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
     unsigned size = sizeof(uint8_t);   //ModRM byte
-    int sibinc;
+    unsigned sibinc, ModRM;
 
-    pCpu->ModRM    = DISReadByte(pCpu, lpszCodeBlock);
+    ModRM = DISReadByte(pCpu, lpszCodeBlock);
     lpszCodeBlock += sizeof(uint8_t);
+
+    pCpu->ModRM.Bits.Rm  = MODRM_RM(ModRM);
+    pCpu->ModRM.Bits.Mod = MODRM_MOD(ModRM);
+    pCpu->ModRM.Bits.Reg = MODRM_REG(ModRM);
+
+    if (pCpu->prefix & PREFIX_REX)
+    {
+        /* REX.R extends the Reg field. */
+        pCpu->ModRM.Bits.Reg |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_R)) << 3);
+
+        /* REX.B extends the Rm field if there is no SIB byte. */
+        if (    pCpu->ModRM.Bits.Mod != 3 
+            &&  pCpu->ModRM.Bits.Rm == 4)
+        {
+            pCpu->ModRM.Bits.Rm |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_B)) << 3);
+        }
+    }
 
     size += QueryModRM_SizeOnly(lpszCodeBlock, pOp, pParam, pCpu, &sibinc);
     lpszCodeBlock += sibinc;
@@ -1572,7 +1625,10 @@ unsigned Parse3DNow(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     AssertMsgFailed(("Test me\n"));
 #endif
 
-    pCpu->ModRM    = DISReadByte(pCpu, lpszCodeBlock);
+    unsigned ModRM = DISReadByte(pCpu, lpszCodeBlock);
+    pCpu->ModRM.Bits.Rm  = MODRM_RM(ModRM);
+    pCpu->ModRM.Bits.Mod = MODRM_MOD(ModRM);
+    pCpu->ModRM.Bits.Reg = MODRM_REG(ModRM);
 
     modrmsize = QueryModRM(lpszCodeBlock+sizeof(uint8_t), pOp, pParam, pCpu);
 
@@ -1802,15 +1858,22 @@ unsigned ParseGrp16(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     return size;
 }
 //*****************************************************************************
-const char *szModRMReg8[]   = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"};
-const char *szModRMReg16[]  = {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"};
-const char *szModRMReg32[]  = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
+#if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
+const char *szModRMReg8[]      = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"};
+const char *szModRMReg16[]     = {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"};
+const char *szModRMReg32[]     = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"};
+const char *szModRMReg64[]     = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"};
+const char *szModRMReg1616[8]  = {"BX+SI", "BX+DI", "BP+SI", "BP+DI", "SI", "DI", "BP", "BX"};
+#endif
+const char *szModRMSegReg[6]   = {"ES", "CS", "SS", "DS", "FS", "GS"};
+const int   BaseModRMReg16[8]  = { USE_REG_BX, USE_REG_BX, USE_REG_BP, USE_REG_BP, USE_REG_SI, USE_REG_DI, USE_REG_BP, USE_REG_BX};
+const int   IndexModRMReg16[4] = { USE_REG_SI, USE_REG_DI, USE_REG_SI, USE_REG_DI};
 //*****************************************************************************
 void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pParam, int fRegAddr)
 {
     int subtype, type, mod;
 
-    mod     = MODRM_MOD(pCpu->ModRM);
+    mod     = pCpu->ModRM.Bits.Mod;
 
     type    = OP_PARM_VTYPE(pParam->param);
     subtype = OP_PARM_VSUBTYPE(pParam->param);
@@ -1851,9 +1914,6 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
     }
 }
 //*****************************************************************************
-const char *szModRMReg1616[8]  = {"BX+SI", "BX+DI", "BP+SI", "BP+DI", "SI", "DI", "BP", "BX"};
-int   BaseModRMReg16[8]  = { USE_REG_BX, USE_REG_BX, USE_REG_BP, USE_REG_BP, USE_REG_SI, USE_REG_DI, USE_REG_BP, USE_REG_BX};
-int   IndexModRMReg16[4] = { USE_REG_SI, USE_REG_DI, USE_REG_SI, USE_REG_DI};
 //*****************************************************************************
 void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pParam)
 {
@@ -1867,7 +1927,6 @@ void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pP
     }
 }
 //*****************************************************************************
-const char *szModRMSegReg[6] = {"ES", "CS", "SS", "DS", "FS", "GS"};
 //*****************************************************************************
 void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pParam)
 {

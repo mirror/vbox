@@ -702,7 +702,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCur
         if (pCpu->prefix & PREFIX_SEG)
             pPB[offset++] = DISQuerySegPrefixByte(pCpu);
         pPB[offset++] = 0xFF;              // push r/m32
-        pPB[offset++] = MAKE_MODRM(MODRM_MOD(pCpu->ModRM), 6 /* group 5 */, MODRM_RM(pCpu->ModRM));
+        pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, 6 /* group 5 */, pCpu->ModRM.Bits.Rm);
         i = 2;  /* standard offset of modrm bytes */
         if (pCpu->prefix & PREFIX_OPSIZE)
             i++;    //skip operand prefix
@@ -799,7 +799,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCur
         pPB[offset++] = DISQuerySegPrefixByte(pCpu);
 
     pPB[offset++] = 0xFF;              // push r/m32
-    pPB[offset++] = MAKE_MODRM(MODRM_MOD(pCpu->ModRM), 6 /* group 5 */, MODRM_RM(pCpu->ModRM));
+    pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, 6 /* group 5 */, pCpu->ModRM.Bits.Rm);
     i = 2;  /* standard offset of modrm bytes */
     if (pCpu->prefix & PREFIX_OPSIZE)
         i++;    //skip operand prefix
@@ -1393,7 +1393,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR p
         }
         pPB[offset++] = 0x8D;              // lea       edx, dword ptr [dest]
         // duplicate and modify modrm byte and additional bytes if present (e.g. direct address)
-        pPB[offset++] = MAKE_MODRM(MODRM_MOD(pCpu->ModRM), USE_REG_EDX, MODRM_RM(pCpu->ModRM));
+        pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, USE_REG_EDX, pCpu->ModRM.Bits.Rm);
 
         i = 3;  /* standard offset of modrm bytes */
         if (pCpu->prefix == PREFIX_OPSIZE)
@@ -1488,7 +1488,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCur
     }
     pPB[offset++] = 0x8D;              // lea       edx, dword ptr [dest]
     // duplicate and modify modrm byte and additional bytes if present (e.g. direct address)
-    pPB[offset++] = MAKE_MODRM(MODRM_MOD(pCpu->ModRM), USE_REG_EDX, MODRM_RM(pCpu->ModRM));
+    pPB[offset++] = MAKE_MODRM(pCpu->ModRM.Bits.Mod, USE_REG_EDX, pCpu->ModRM.Bits.Rm);
 
     i = 3;  /* standard offset of modrm bytes */
     if (pCpu->prefix == PREFIX_OPSIZE)
