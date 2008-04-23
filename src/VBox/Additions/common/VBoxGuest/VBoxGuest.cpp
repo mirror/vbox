@@ -520,12 +520,19 @@ static void VBoxGuestWaitFreeUnlocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTWAIT p
 }
 
 
-/** @todo XXX: This should later be done as a proper IOCtl request. Currently we call this from Ring-0. */
-int VBoxGuestSetGuestCapabilities(uint32_t u32OrMask, uint32_t u32NotMask)
+/**
+ * Modifies the guest capabilities.
+ *
+ * Should be called during driver init and termination.
+ *
+ * @returns VBox status code.
+ * @param   fOr             The Or mask (what to enable).
+ * @param   fNot            The Not mask (what to disable).
+ */
+int VBoxGuestSetGuestCapabilities(uint32_t fOr, uint32_t fNot)
 {
-    int rc;
     VMMDevReqGuestCapabilities2 *pReq;
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_SetGuestCapabilities);
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_SetGuestCapabilities);
     if (RT_FAILURE(rc))
     {
         Log(("VBoxGuestSetGuestCapabilities: failed to allocate %u (%#x) bytes to cache the request. rc=%d!!\n",
@@ -533,8 +540,8 @@ int VBoxGuestSetGuestCapabilities(uint32_t u32OrMask, uint32_t u32NotMask)
         return rc;
     }
 
-    pReq->u32OrMask = u32OrMask;
-    pReq->u32NotMask = u32NotMask;
+    pReq->u32OrMask = fOr;
+    pReq->u32NotMask = fNot;
 
     rc = VbglGRPerform(&pReq->header);
     if (RT_FAILURE(rc))
