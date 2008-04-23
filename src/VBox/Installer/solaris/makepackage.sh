@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 # Sun xVM VirtualBox
 # VirtualBox Solaris package creation script.
 #
@@ -48,6 +47,8 @@ if test ! -f "$VBOX_GTAR" && test ! -h "$VBOX_GTAR"; then
     exit 1
 fi
 
+# bail out on non-zero exit status
+set -e
 
 # prepare file list
 cd "$1"
@@ -78,21 +79,14 @@ VBOXPKG_TIMESTAMP=vbox`date '+%Y%m%d%H%M%S'`
 
 # create the package instance
 pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
-if test $? -ne 0; then
-    exit 1
-fi
 
 # translate into package datastream
 pkgtrans -s -o /var/spool/pkg "`pwd`/$VBOX_PKGFILE" "$VBOX_PKGNAME"
-if test $? -ne 0; then
-    exit 1
-fi
 
 $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" autoresponse ReadMe.txt
 
-if test  $? -eq 0; then
-    echo "## Packaging and transfer completed successfully!"
-fi
+echo "## Packaging and transfer completed successfully!"
 rm -rf "/var/spool/pkg/$VBOX_PKGNAME"
+
 exit $?
 
