@@ -361,6 +361,17 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
     return VINF_SUCCESS;
 }
 
+/**
+ * Get the MAC address into the slirp stack.
+ */
+static void drvNATSetMac(PDRVNAT pData)
+{
+    PDMMAC Mac;
+    if (pData->pConfig)
+        pData->pConfig->pfnGetMac(pData->pConfig, &Mac);
+    slirp_set_ethaddr(pData->pNATState, Mac.au8);
+}
+
 
 /**
  * After loading we have to pass the MAC address of the ethernet device to the slirp stack.
@@ -370,11 +381,18 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
 static DECLCALLBACK(int) drvNATLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSMHandle)
 {
     PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
-    PDMMAC  Mac;
-    if (pData->pConfig)
-        pData->pConfig->pfnGetMac(pData->pConfig, &Mac);
-    slirp_set_ethaddr(pData->pNATState, Mac.au8);
+    drvNATSetMac(pData);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Some guests might not use DHCP to retrieve an IP but use a static IP.
+ */
+static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
+{
+    PDRVNAT pData = PDMINS2DATA(pDrvIns, PDRVNAT);
+    drvNATSetMac(pData);
 }
 
 
@@ -556,7 +574,7 @@ const PDMDRVREG g_DrvNAT =
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
-    NULL,
+    drvNATPowerOn,
     /* pfnReset */
     NULL,
     /* pfnSuspend */
