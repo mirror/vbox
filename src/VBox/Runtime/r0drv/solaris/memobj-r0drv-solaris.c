@@ -311,23 +311,23 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 
     /* Lock down kernel pages */
     int rc = as_pagelock(&kas, &ppl, virtAddr, cb, S_WRITE);
-    if (rc != 0)
+    if (!rc)
     {
-        cmn_err(CE_NOTE,"rtR0MemObjNativeLockKernel: as_pagelock failed rc=%d\n", rc);
-        return VERR_LOCK_FAILED;
-    }
+        if (ppl)
+        {
+            pMemSolaris->Core.u.Lock.R0Process = NIL_RTR0PROCESS;   /* means kernel, see rtR0MemObjNativeFree() */
+            pMemSolaris->ppShadowPages = ppl;
+            *ppMem = &pMemSolaris->Core;
+            return VINF_SUCCESS;            
+        }
 
-    if (!ppl)
-    {
         as_pageunlock(&kas, ppl, virtAddr, cb, S_WRITE);
         cmn_err(CE_NOTE, "rtR0MemObjNativeLockKernel: failed to get shadow pages\n");
-        return VERR_LOCK_FAILED;
     }
-
-    pMemSolaris->Core.u.Lock.R0Process = NIL_RTR0PROCESS;   /* means kernel, see rtR0MemObjNativeFree() */
-    pMemSolaris->ppShadowPages = ppl;
-    *ppMem = &pMemSolaris->Core;
-    return VINF_SUCCESS;
+    else
+        cmn_err(CE_NOTE,"rtR0MemObjNativeLockKernel: as_pagelock failed rc=%d\n", rc);
+    rtR0MemObjDelete(pMemSolaris);
+    return VERR_LOCK_FAILED;
 }
 
 
@@ -430,11 +430,6 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
     caddr_t addr;
     int rc;
 
-    /* Create the mapping object */
-    PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_MAPPING, pv, size);
-    if (!pMemSolaris)
-        return VERR_NO_MEMORY;
-
     as_rangelock(useras);
     if (R3PtrFixed != (RTR3PTR)-1)
     {
@@ -485,29 +480,15 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
         return VERR_MAP_FAILED;
     }
 
-#if 0
-    /* Lock down the pages and get the shadow page list
-     * In this case we must as_pageunlock if(ppShadowPages) exists while freeing CONT, PAGE
-     */
-    rc = as_pagelock(&kas, &pMemToMapSolaris->ppShadowPages, pv, size, S_WRITE);
-    if (rc != 0 || pMemToMapSolaris->ppShadowPages == NULL)
+    /* Create the mapping object */
+    PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_MAPPING, pv, size);
+    if (!pMemSolaris)
     {
-        cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: as_pagelock failed\n");
+        /* Undo mapping on failure. */
         as_unmap(useras, addr, size);
         return VERR_NO_MEMORY;
     }
 
-    /* Map each page into user space */
-    rw_enter(&useras->a_lock, RW_READER);
-    caddr_t pageAddr = addr;
-    for (iPage = 0; iPage < cPages; iPage++)
-    {
-        hat_memload(useras->a_hat, pageAddr, pMemToMapSolaris->ppShadowPages[iPage], fProt | PROT_USER,
-                HAT_LOAD_NOCONSIST | HAT_STRICTORDER | HAT_LOAD_LOCK);
-        pageAddr += ptob(1);
-    }
-    rw_exit(&useras->a_lock, RW_READER);
-#else
     /* Map each page into user space */
     rw_enter(&useras->a_lock, RW_READER);
     caddr_t kernAddr = pv;
@@ -520,7 +501,6 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
         kernAddr += ptob(1);
     }
     rw_exit(&useras->a_lock);
-#endif
 
     pMemSolaris->Core.u.Mapping.R0Process = (RTR0PROCESS)userproc;
     pMemSolaris->Core.pv = addr;
