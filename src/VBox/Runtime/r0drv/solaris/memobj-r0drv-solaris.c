@@ -279,23 +279,23 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
 
     /* Lock down user pages */
     int rc = as_pagelock(useras, &ppl, (caddr_t)R3Ptr, cb, S_WRITE);
-    if (rc != 0)
+    if (!rc)
     {
-        cmn_err(CE_NOTE,"rtR0MemObjNativeLockUser: as_pagelock failed rc=%d\n", rc);
-        return VERR_LOCK_FAILED;
-    }
+        if (ppl)
+        {
+            pMemSolaris->Core.u.Lock.R0Process = (RTR0PROCESS)userproc;
+            pMemSolaris->ppShadowPages = ppl;
+            *ppMem = &pMemSolaris->Core;
+            return VINF_SUCCESS;
+        }
 
-    if (!ppl)
-    {
         as_pageunlock(useras, ppl, (caddr_t)R3Ptr, cb, S_WRITE);
         cmn_err(CE_NOTE, "rtR0MemObjNativeLockUser: as_pagelock failed to get shadow pages\n");
-        return VERR_LOCK_FAILED;
     }
-
-    pMemSolaris->Core.u.Lock.R0Process = (RTR0PROCESS)userproc;
-    pMemSolaris->ppShadowPages = ppl;
-    *ppMem = &pMemSolaris->Core;
-    return VINF_SUCCESS;
+    else
+        cmn_err(CE_NOTE,"rtR0MemObjNativeLockUser: as_pagelock failed rc=%d\n", rc);
+    rtR0MemObjDelete(pMemSolaris);
+    return VERR_LOCK_FAILED;
 }
 
 
