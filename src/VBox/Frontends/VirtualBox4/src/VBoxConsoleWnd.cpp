@@ -1984,15 +1984,16 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     {
         /* Check if the Guest Video RAM enough for the seamless mode. */
         QRect screen = QApplication::desktop()->screenGeometry (this);
-        ULONG64 availBits = (csession.GetMachine().GetVRAMSize() /* vram */
+        ULONG64 availBits = csession.GetMachine().GetVRAMSize() /* vram */
                           * _1M /* mb to bytes */
-                          - 4096 /* adapter info */
-                          - _1M /* current cache - may be changed in future */)
-                          / csession.GetMachine().GetMonitorCount()
                           * 8; /* to bits */
-        ULONG64 usedBits = screen.width() /* display width */
+        ULONG guestBpp = console->console().GetDisplay().GetBitsPerPixel();
+        ULONG64 usedBits = (screen.width() /* display width */
                          * screen.height() /* display height */
-                         * depth(); /* bit per pixel */
+                         * guestBpp
+                         + _1M * 8) /* current cache per screen - may be changed in future */
+                         * csession.GetMachine().GetMonitorCount() /**< @todo fix assumption that all screens have same resolution */
+                         + 4096 * 8; /* adapter info */
         CGuest guest = console->console().GetGuest();
         ULONG maxWidth  = guest.GetMaxGuestWidth();
         ULONG maxHeight = guest.GetMaxGuestHeight();
@@ -2003,7 +2004,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
            )
         {
             vboxProblem().cannotEnterSeamlessMode (screen.width(),
-                screen.height(), depth());
+                screen.height(), guestBpp, (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
             return false;
         }
     }
