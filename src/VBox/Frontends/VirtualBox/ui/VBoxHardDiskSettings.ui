@@ -110,7 +110,7 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
                                 <bool>true</bool>
                             </property>
                             <property name="resizeMode">
-                                <enum>AllColumns</enum>
+                                <enum>LastColumn</enum>
                             </property>
                             <property name="whatsThis" stdset="0">
                                 <string>
