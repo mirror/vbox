@@ -38,8 +38,8 @@ void QIDialog::showEvent (QShowEvent * /* aEvent */)
      * 1. make sure the layout is polished and have the right size
      * 2. disable that _unnecessary_ size grip (Bug in Qt?) */
     QSizePolicy policy = sizePolicy();
-    if (policy.horizontalPolicy() == QSizePolicy::Fixed &&
-        policy.verticalPolicy() == QSizePolicy::Fixed ||
+    if ((policy.horizontalPolicy() == QSizePolicy::Fixed &&
+         policy.verticalPolicy() == QSizePolicy::Fixed) ||
         windowFlags() == Qt::Sheet)
     {
         adjustSize();
