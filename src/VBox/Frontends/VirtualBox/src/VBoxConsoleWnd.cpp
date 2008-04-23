@@ -1974,8 +1974,8 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         ULONG maxWidth  = guest.GetMaxGuestWidth();
         ULONG maxHeight = guest.GetMaxGuestHeight();
         if (aOn && (   (availBits < usedBits)
-                    || ((maxWidth != 0) && (maxWidth < screen.width()))
-                    || ((maxHeight != 0) && (maxHeight < screen.height()))
+                    || ((maxWidth != 0) && (maxWidth < (ULONG) screen.width()))
+                    || ((maxHeight != 0) && (maxHeight < (ULONG) screen.height()))
                    )
            )
         {
