@@ -1993,7 +1993,14 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         ULONG64 usedBits = screen.width() /* display width */
                          * screen.height() /* display height */
                          * depth(); /* bit per pixel */
-        if (aOn && (availBits < usedBits))
+        CGuest guest = console->console().GetGuest();
+        ULONG maxWidth  = guest.GetMaxGuestWidth();
+        ULONG maxHeight = guest.GetMaxGuestHeight();
+        if (aOn && (   (availBits < usedBits)
+                    || ((maxWidth != 0) && (maxWidth < screen.width()))
+                    || ((maxHeight != 0) && (maxHeight < screen.height()))
+                   )
+           )
         {
             vboxProblem().cannotEnterSeamlessMode (screen.width(),
                 screen.height(), depth());
