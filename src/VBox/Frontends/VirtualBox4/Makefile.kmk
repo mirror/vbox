@@ -488,6 +488,7 @@ VirtualBox_SOURCES = \
 	src/QIRichLabel.cpp \
 	src/QIAbstractWizard.cpp \
 	src/QIAbstractDialog.cpp \
+	src/QIDialog.cpp \
 	src/VBoxDefs.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxGlobal.cpp \
