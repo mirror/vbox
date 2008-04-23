@@ -2378,7 +2378,7 @@ to the system default language.&lt;/qt&gt;
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
             </source>
-        <translation>&lt;qt&gt;Ruft den Manager für virtuelle Platten auf, um eine Festplatte an den ausgewählten Slot anzuschließen.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Ruft den Manager für virtuelle Medien auf, um eine Festplatte an den ausgewählten Slot anzuschließen.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Double-click to add a new attachment</source>
@@ -3312,7 +3312,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
-        <translation>Manager für virtuelle &amp;Laufwerke...</translation>
+        <translation>Manager für virtuelle &amp;Medien...</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
@@ -3320,7 +3320,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
-        <translation>Zeigt den Manager für virtuelle Laufwerke</translation>
+        <translation>Zeigt den Manager für virtuelle Medien</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
