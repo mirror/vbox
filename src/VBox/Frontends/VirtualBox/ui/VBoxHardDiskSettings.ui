@@ -270,6 +270,7 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
     <variable access="private">HDSlotUniquizer *mSlotUniquizer;</variable>
     <variable access="private">CMachine mMachine;</variable>
     <variable access="private">QPopupMenu *mContextMenu;</variable>
+    <variable access="private">bool mCBFocusOut;</variable>
 </variables>
 <signals>
     <signal>afterCurrentChanged()</signal>
