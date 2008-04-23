@@ -125,8 +125,8 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
     pCpu->prefix_seg  = 0;
     pCpu->addrmode    = pCpu->mode;
     pCpu->opmode      = pCpu->mode;
-    pCpu->ModRM       = 0;
-    pCpu->SIB         = 0;
+    pCpu->ModRM.u     = 0;
+    pCpu->SIB.u       = 0;
     pCpu->lastprefix  = 0;
     pCpu->param1.parval = 0;
     pCpu->param2.parval = 0;
