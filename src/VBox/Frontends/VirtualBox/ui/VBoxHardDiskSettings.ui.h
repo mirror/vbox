@@ -178,6 +178,13 @@ public:
         mUniq->unsubscribe (this);
     }
 
+    static int scrollBarWidth()
+    {
+        QListBox lb;
+        lb.setVScrollBarMode (QScrollView::AlwaysOn);
+        return lb.verticalScrollBar()->width();
+    }
+
     void setText (const QString &aText)
     {
         QComboBox::setCurrentText (aText);
@@ -474,8 +481,13 @@ private:
         cb->move (xc, yc);
         cb->resize (wc, hc);
 
-        if (aColumn == mFocusColumn && cb->isHidden())
-            cb->show();
+        if (aColumn == mFocusColumn)
+        {
+            if (cb->isHidden())
+                cb->show();
+            if (!cb->hasFocus())
+                cb->setFocus();
+        }
         else if (aColumn != mFocusColumn && !cb->isHidden())
             cb->hide();
 
@@ -514,6 +526,7 @@ public:
 void VBoxHardDiskSettings::init()
 {
     mPrevItem = 0;
+    mCBFocusOut = false;
 
     /* toolbar */
 
@@ -894,7 +907,7 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
                 break;
 
             QMouseEvent *e = static_cast<QMouseEvent*> (aEvent);
-            QListViewItem *clickedItem = mLvHD->itemAt (QPoint (e->x(), e->y()));
+            QListViewItem *clickedItem = mLvHD->itemAt (e->pos());
             HDListItem *item = clickedItem &&
                 clickedItem->rtti() == HDListItem::HDListItemType ?
                 static_cast<HDListItem*> (clickedItem) : 0;
@@ -914,7 +927,7 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
             }
 
             QMouseEvent *e = static_cast<QMouseEvent*> (aEvent);
-            QListViewItem *hoveredItem = mLvHD->itemAt (QPoint (e->x(), e->y()));
+            QListViewItem *hoveredItem = mLvHD->itemAt (e->pos());
             HDListItem *item = hoveredItem &&
                 hoveredItem->rtti() == HDListItem::HDListItemType ?
                 static_cast<HDListItem*> (hoveredItem) : 0;
@@ -932,7 +945,7 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
         }
         case QEvent::KeyPress:
         {
-            if (aObject != mLvHD)
+            if (!mLvHD->queryList (0, 0, false, true)->contains (aObject))
                 break;
 
             HDListItem *item = mLvHD->currentItem() &&
@@ -946,9 +959,11 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
                 if (item && item->focusColumn() != -1 &&
                     item->focusColumn() > 0)
                 {
+                    mLvHD->setFocus();
                     item->moveFocusToColumn (item->focusColumn() - 1);
                     onAfterCurrentChanged (item);
                 }
+                return true;
             } else
             /* Process cursor-right as "move focus right" action */
             if (e->key() == Qt::Key_Right && !e->state())
@@ -956,9 +971,33 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
                 if (item && item->focusColumn() != -1 &&
                     item->focusColumn() < mLvHD->columns() - 1)
                 {
+                    mLvHD->setFocus();
                     item->moveFocusToColumn (item->focusColumn() + 1);
                     onAfterCurrentChanged (item);
                 }
+                return true;
+            } else
+            /* Process cursor-up as "move focus up" action */
+            if (e->key() == Qt::Key_Up && !e->state())
+            {
+                if (item && item->focusColumn() != -1 &&
+                    item->itemAbove())
+                {
+                    mLvHD->setFocus();
+                    mLvHD->setCurrentItem (item->itemAbove());
+                }
+                return true;
+            } else
+            /* Process cursor-up as "move focus up" action */
+            if (e->key() == Qt::Key_Down && !e->state())
+            {
+                if (item && item->focusColumn() != -1 &&
+                    item->itemBelow())
+                {
+                    mLvHD->setFocus();
+                    mLvHD->setCurrentItem (item->itemBelow());
+                }
+                return true;
             } else
             /* Process F2/Space as "open combo-box" actions */
             if (!e->state() &&
@@ -966,26 +1005,45 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
             {
                 if (item)
                     item->showEditor();
+                return true;
             }
             /* Process Ctrl/Alt+Up/Down as "open combo-box" actions */
             if ((e->state() == Qt::AltButton || e->state() == Qt::ControlButton) &&
                 (e->key() == Qt::Key_Up || e->key() == Qt::Key_Down))
             {
                 if (item)
-                {
                     item->showEditor();
-                    return true;
-                }
+                return true;
             }
             break;
         }
         /* Process focus event to toggle the current selection state */
         case QEvent::FocusIn:
         {
+            if (aObject == mLvHD ||
+                aObject->inherits ("HDSlotItem") ||
+                aObject->inherits ("HDVdiItem"))
+                mCBFocusOut = false;
+            else if (mCBFocusOut)
+            {
+                mCBFocusOut = false;
+                mLvHD->setFocus();
+                focusNextPrevChild (true);
+                return true;
+            }
+
             if (aObject == mLvHD)
                 onAfterCurrentChanged (mLvHD->currentItem());
             else if (!mGbHDList->queryList (0, 0, false, true)->contains (aObject))
                 onAfterCurrentChanged (0);
+            break;
+        }
+        case QEvent::FocusOut:
+        {
+            if (aObject->className() == "HDSlotItem" ||
+                aObject->className() == "HDVdiItem")
+                mCBFocusOut = true;
+
             break;
         }
         default:
@@ -1009,7 +1067,10 @@ void VBoxHardDiskSettings::adjustList()
     minLength = minLength > mLvHD->viewport()->width() * 0.4 ?
                 (int) (mLvHD->viewport()->width() * 0.4) : minLength;
 
-    mLvHD->setColumnWidth (0, minLength + 10 /* little spacing */);
+    mLvHD->setColumnWidth (0,
+                           minLength /* maximum string width */ +
+                           6 * 2 /* 2 combo-box margin */ +
+                           HDSlotItem::scrollBarWidth() /* scrollbar */);
     mLvHD->setColumnWidth (1, mLvHD->viewport()->width() - mLvHD->columnWidth (0));
 }
 
