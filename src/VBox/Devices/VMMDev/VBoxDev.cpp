@@ -531,9 +531,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pData->guestCaps = guestCaps->caps;
 
                     LogRel(("Guest Additions capability report: (0x%x) "
-                            "VMMDEV_GUEST_SUPPORTS_SEAMLESS: %s "
-                            "VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING: %s "
-                            "VMMDEV_GUEST_SUPPORTS_GRAPHICS: %s\n",
+                            "seamless: %s, "
+                            "hostWindowMapping: %s, "
+                            "graphics: %s\n",
                             guestCaps->caps,
                             guestCaps->caps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ? "yes" : "no",
                             guestCaps->caps & VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING ? "yes" : "no",
@@ -562,9 +562,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 pData->guestCaps &= ~guestCaps->u32NotMask;
 
                 LogRel(("Guest Additions capability report: (0x%x) "
-                        "VMMDEV_GUEST_SUPPORTS_SEAMLESS: %s "
-                        "VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING: %s "
-                        "VMMDEV_GUEST_SUPPORTS_GRAPHICS: %s\n",
+                        "seamless: %s, "
+                        "hostWindowMapping: %s, "
+                        "graphics: %s\n",
                         pData->guestCaps,
                         pData->guestCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ? "yes" : "no",
                         pData->guestCaps & VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING ? "yes" : "no",
@@ -2073,7 +2073,7 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 
     if (pData->fu32AdditionsOk)
     {
-        LogRel(("Guest Additions information report: additionsVersion = 0x%08X  osType = 0x%08X\n",
+        LogRel(("Guest Additions information report: additionsVersion = 0x%08X, osType = 0x%08X\n",
                 pData->guestInfo.additionsVersion,
                 pData->guestInfo.osType));
         if (pData->pDrv)
