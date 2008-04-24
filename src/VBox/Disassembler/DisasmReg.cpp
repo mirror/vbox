@@ -520,46 +520,33 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             if (VBOX_FAILURE(DISFetchReg32(pCtx, pParam->index.reg_gen, &val32))) return VERR_INVALID_PARAMETER;
 
             if (pParam->flags & USE_SCALE)
-            {
                 val32 *= pParam->scale;
-            }
+
             pParamVal->val.val32 += val32;
         }
 
         if (pParam->flags & USE_DISPLACEMENT8)
         {
             if (pCpu->mode & CPUMODE_32BIT)
-            {
                 pParamVal->val.val32 += (int32_t)pParam->disp8;
-            }
             else
-            {
                 pParamVal->val.val16 += (int16_t)pParam->disp8;
-            }
         }
         else
         if (pParam->flags & USE_DISPLACEMENT16)
         {
             if (pCpu->mode & CPUMODE_32BIT)
-            {
                 pParamVal->val.val32 += (int32_t)pParam->disp16;
-            }
             else
-            {
                 pParamVal->val.val16 += pParam->disp16;
-            }
         }
         else
         if (pParam->flags & USE_DISPLACEMENT32)
         {
             if (pCpu->mode & CPUMODE_32BIT)
-            {
                 pParamVal->val.val32 += pParam->disp32;
-            }
             else
-            {
-                Assert(0);
-            }
+                AssertFailed();
         }
         return VINF_SUCCESS;
     }

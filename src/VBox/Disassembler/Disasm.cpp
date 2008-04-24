@@ -116,6 +116,7 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
 {
     unsigned i = 0, prefixbytes;
     unsigned idx, inc;
+    const OPCODE *paOneByteMap;
 #ifdef __L4ENV__
     jmp_buf jumpbuffer;
 #endif
@@ -146,11 +147,13 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
 
     if (pCpu->mode == CPUMODE_64BIT)
     {
+        paOneByteMap     = g_aOneByteMapX64;
         pCpu->addrmode   = CPUMODE_64BIT;
         pCpu->opmode     = CPUMODE_32BIT;
     }
     else
     {
+        paOneByteMap     = g_aOneByteMapX86;
         pCpu->addrmode   = pCpu->mode;
         pCpu->opmode     = pCpu->mode;
     }
@@ -166,7 +169,7 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
         while(1)
         {
             uint8_t codebyte = DISReadByte(pCpu, pu8Instruction+i);
-            uint8_t opcode   = g_aOneByteMapX86[codebyte].opcode;
+            uint8_t opcode   = paOneByteMap[codebyte].opcode;
 
             /* Hardcoded assumption about OP_* values!! */
             if (opcode <= OP_LOCK)
@@ -264,10 +267,7 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
             /* Prefix byte(s) is/are part of the instruction. */
             pCpu->opaddr = pu8Instruction + idx + u32EipOffset - prefixbytes;
 
-            if (pCpu->mode == CPUMODE_64BIT)
-                inc = ParseInstruction(pu8Instruction + i, &g_aOneByteMapX64[pCpu->opcode], pCpu);
-            else
-                inc = ParseInstruction(pu8Instruction + i, &g_aOneByteMapX86[pCpu->opcode], pCpu);
+            inc = ParseInstruction(pu8Instruction + i, &paOneByteMap[pCpu->opcode], pCpu);
 
             pCpu->opsize = prefixbytes + inc + sizeof(uint8_t);
 
