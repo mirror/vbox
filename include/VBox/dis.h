@@ -122,6 +122,7 @@ typedef enum
 #define OPTYPE_ONLY_64                  RT_BIT(20)  /**< Only valid in 64 bits mode */
 #define OPTYPE_DEFAULT_64_OP_SIZE       RT_BIT(21)  /**< Default 64 bits operand size */
 #define OPTYPE_FORCED_64_OP_SIZE        RT_BIT(22)  /**< Forced 64 bits operand size; regardless of prefix bytes */
+#define OPTYPE_REXB_EXTENDS_OPREG       RT_BIT(23)  /**< REX.B extends the register field in the opcode byte */
 #define OPTYPE_ALL                      (0xffffffff)
 
 /** Parameter usage flags.
@@ -486,7 +487,7 @@ typedef struct _OPCODE
     uint16_t    param2;
     uint16_t    param3;
 
-    uint32_t    optype;
+    unsigned    optype;
 } OPCODE;
 #pragma pack()
 
