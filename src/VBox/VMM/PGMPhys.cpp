@@ -438,7 +438,7 @@ PDMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
                                   VERR_PGM_RAM_CONFLICT);
 
             /* Check that it's all RAM or MMIO pages. */
-            PCPGMPAGE pPage = &pRam->aPages[GCPhys - pRam->GCPhys >> PAGE_SHIFT];
+            PCPGMPAGE pPage = &pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
             uint32_t cLeft = cb >> PAGE_SHIFT;
             while (cLeft-- > 0)
             {
