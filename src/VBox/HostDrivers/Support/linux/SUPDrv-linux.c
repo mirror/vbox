@@ -600,7 +600,7 @@ nmi_activated:
     /*
      * Check for synchronous/asynchronous TSC mode.
      */
-    printk(KERN_DEBUG DEVICE_NAME ": Found %u processor cores.\n", RTMpGetOnlineCount());
+    printk(KERN_DEBUG DEVICE_NAME ": Found %u processor cores.\n", (unsigned)RTMpGetOnlineCount());
     fAsync = supdrvDetermineAsyncTsc(&u64DiffCores);
     /* no 64-bit arithmetics here, we assume that the TSC difference between the cores is < 2^32 */
     printk(KERN_DEBUG DEVICE_NAME ": fAsync=%d u64DiffCores=%u.\n", fAsync, (uint32_t)u64DiffCores);
