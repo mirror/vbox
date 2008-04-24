@@ -1004,7 +1004,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-  if test_compile "-lSDL_ttf1 $I_INCSDL" SDL_ttf SDL_ttf nofatal; then
+  if test_compile "-lSDL_ttf $I_INCSDL" SDL_ttf SDL_ttf nofatal; then
     test_execute nofatal
   fi
 }
