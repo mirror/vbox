@@ -284,7 +284,10 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
     int rc2;
     Log(("VBoxGuestDeleteDevExt:\n"));
 
-/** @todo tell VMMDev that the guest additions are no longer running (clear all capability masks). */
+/** @todo tell VMMDev that the guest additions are no longer running (clear all capability masks).
+ * Like calling VBoxGuestSetGuestCapabilities. This wasn't done initially since it was not
+ * relevant for OS/2. On solaris modules can be unloaded, so we should implement it.
+ */
 
     rc2 = RTSpinlockDestroy(pDevExt->WaitSpinlock); AssertRC(rc2);
 
