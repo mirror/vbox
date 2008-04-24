@@ -269,6 +269,11 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
         if (opcode <= OP_LOCK)
         {
             pCpu->lastprefix = opcode;
+
+            /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
+            if (opcode != OP_REX)
+                pCpu->prefix &= ~PREFIX_REX;
+
             switch (opcode)
             {
             case OP_INVALID:
@@ -323,6 +328,9 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
                 /* REX prefix byte */
                 pCpu->prefix    |= PREFIX_REX;
                 pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(opcode);
+
+                if (pCpu->prefix_rex & PREFIX_REX_FLAGS_W)
+                    pCpu->opmode = CPUMODE_64BIT;  /* overrides size prefix byte */
                 break;
             }
         }
@@ -536,7 +544,10 @@ unsigned ParseSIB(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
 
     if (pCpu->prefix & PREFIX_REX)
     {
-        pCpu->SIB.Bits.Base  |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_B)) << 3);
+        /* REX.B extends the Base field if not scaled index + disp32 */
+        if (!(pCpu->SIB.Bits.Base == 5 && pCpu->ModRM.Bits.Mod == 0))
+            pCpu->SIB.Bits.Base  |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_B)) << 3);
+
         pCpu->SIB.Bits.Index |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_X)) << 3);
     }
 
@@ -650,23 +661,41 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
         }
     }
 
-    //TODO: bound
+    /* @todo bound */
 
-    if (pCpu->addrmode == CPUMODE_32BIT)
-    {//32 bits addressing mode
+    if (pCpu->addrmode != CPUMODE_16BIT)
+    {
+        Assert(pCpu->addrmode == CPUMODE_32BIT || pCpu->addrmode == CPUMODE_64BIT);
+
+        /*
+         * Note: displacements in long mode are 8 or 32 bits and sign-extended to 64 bits
+         */
         switch (mod)
         {
         case 0: //effective address
             disasmGetPtrString(pCpu, pOp, pParam);
             disasmAddChar(pParam->szParam, '[');
-            if (rm == 4) {//SIB byte follows ModRM
+            if (rm == 4) 
+            {   /* SIB byte follows ModRM */
                 UseSIB(lpszCodeBlock, pOp, pParam, pCpu);
             }
             else
-            if (rm == 5) {//32 bits displacement
-                pParam->flags |= USE_DISPLACEMENT32;
-                pParam->disp32 = pCpu->disp;
-                disasmPrintDisp32(pParam);
+            if (rm == 5) 
+            {
+                /* 32 bits displacement */
+                if (pCpu->mode == CPUMODE_32BIT)
+                {
+                    pParam->flags |= USE_DISPLACEMENT32;
+                    pParam->disp32 = pCpu->disp;
+                    disasmPrintDisp32(pParam);
+                }
+                else
+                {
+                    pParam->flags |= USE_RIPDISPLACEMENT32;
+                    pParam->disp32 = pCpu->disp;
+                    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "RIP+");
+                    disasmPrintDisp32(pParam);
+                }
             }
             else {//register address
                 pParam->flags |= USE_BASE;
@@ -966,12 +995,17 @@ unsigned ParseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 
     if (pCpu->prefix & PREFIX_REX)
     {
+        Assert(pCpu->mode == CPUMODE_64BIT);
+
         /* REX.R extends the Reg field. */
         pCpu->ModRM.Bits.Reg |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_R)) << 3);
 
-        /* REX.B extends the Rm field if there is no SIB byte. */
-        if (    pCpu->ModRM.Bits.Mod != 3 
-            &&  pCpu->ModRM.Bits.Rm == 4)
+        /* REX.B extends the Rm field if there is no SIB byte nor a 32 bits displacement */
+        if (!(    pCpu->ModRM.Bits.Mod != 3 
+              &&  pCpu->ModRM.Bits.Rm  == 4)
+            &&
+            !(    pCpu->ModRM.Bits.Mod == 0
+              &&  pCpu->ModRM.Bits.Rm  == 5))
         {
             pCpu->ModRM.Bits.Rm |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_B)) << 3);
         }
@@ -980,7 +1014,6 @@ unsigned ParseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     lpszCodeBlock += sibinc;
 
     UseModRM(lpszCodeBlock, pOp, pParam, pCpu);
-
     return size;
 }
 //*****************************************************************************
@@ -999,12 +1032,17 @@ unsigned ParseModRM_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETE
 
     if (pCpu->prefix & PREFIX_REX)
     {
+        Assert(pCpu->mode == CPUMODE_64BIT);
+
         /* REX.R extends the Reg field. */
         pCpu->ModRM.Bits.Reg |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_R)) << 3);
 
-        /* REX.B extends the Rm field if there is no SIB byte. */
-        if (    pCpu->ModRM.Bits.Mod != 3 
-            &&  pCpu->ModRM.Bits.Rm == 4)
+        /* REX.B extends the Rm field if there is no SIB byte nor a 32 bits displacement */
+        if (!(    pCpu->ModRM.Bits.Mod != 3 
+              &&  pCpu->ModRM.Bits.Rm  == 4)
+            &&
+            !(    pCpu->ModRM.Bits.Mod == 0
+              &&  pCpu->ModRM.Bits.Rm  == 5))
         {
             pCpu->ModRM.Bits.Rm |= ((!!(pCpu->prefix_rex & PREFIX_REX_FLAGS_B)) << 3);
         }
@@ -1304,10 +1342,14 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         return 0;
     }
 
+    AssertCompile(OP_PARM_REG_GEN32_END < OP_PARM_REG_SEG_END);
+    AssertCompile(OP_PARM_REG_SEG_END < OP_PARM_REG_GEN16_END);
+    AssertCompile(OP_PARM_REG_GEN16_END < OP_PARM_REG_GEN8_END);
+    AssertCompile(OP_PARM_REG_GEN8_END < OP_PARM_REG_FP_END);
+
     if (pParam->param <= OP_PARM_REG_GEN32_END)
     {
         /* 32-bit EAX..EDI registers. */
-
         if (pCpu->opmode == CPUMODE_32BIT)
         {
             /* Use 32-bit registers. */
@@ -1368,6 +1410,8 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         pParam->flags |= USE_REG_FP;
         pParam->size   = 10;
     }
+    Assert(!(pParam->param >= OP_PARM_REG_GEN64_START && pParam->param <= OP_PARM_REG_GEN64_END));
+
     /* else - not supported for now registers. */
 
     return 0;
@@ -1935,7 +1979,20 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
         subtype = OP_PARM_d;
     else
     if (subtype == OP_PARM_v || subtype == OP_PARM_NONE)
-        subtype = (pCpu->opmode == CPUMODE_32BIT) ? OP_PARM_d : OP_PARM_w;
+    {
+        switch(pCpu->opmode)
+        {
+        case CPUMODE_32BIT:
+            subtype = OP_PARM_d;
+            break;
+        case CPUMODE_64BIT:
+            subtype = OP_PARM_q;
+            break;
+        case CPUMODE_16BIT:
+            subtype = OP_PARM_w;
+            break;
+        }
+    }
 
     switch (subtype)
     {
@@ -1954,6 +2011,12 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
     case OP_PARM_d:
         disasmAddString(pParam->szParam, szModRMReg32[idx]);
         pParam->flags |= USE_REG_GEN32;
+        pParam->base.reg_gen = idx;
+        break;
+
+    case OP_PARM_q:
+        disasmAddString(pParam->szParam, szModRMReg64[idx]);
+        pParam->flags |= USE_REG_GEN64;
         pParam->base.reg_gen = idx;
         break;
 
