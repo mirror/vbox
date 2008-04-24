@@ -373,6 +373,8 @@ void Guest::setMaxGuestResolution (ULONG aMaxWidth, ULONG aMaxHeight)
 
     AutoWriteLock alock (this);
 
+    LogRel(("The guest supports a maximum resolution of %dx%d\n",
+            aMaxWidth, aMaxHeight));
     mData.mMaxWidth  = aMaxWidth;
     mData.mMaxHeight = aMaxHeight;
 }
