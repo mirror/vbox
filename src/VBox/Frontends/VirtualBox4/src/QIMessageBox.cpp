@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,6 +30,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QLabel>
+#include <QDialogButtonBox>
 
 /** @class QIMessageBox
  *
@@ -39,20 +40,19 @@
  */
 
 /**
- *  This constructor is equivalent to
- *  QMessageBox::QMessageBox (const QString &, const QString &, Icon,
- *      int, int, int, QWidget *, const char *, bool, WFlags).
  *  See QMessageBox for details.
  */
 QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
                             Icon aIcon, int aButton0, int aButton1, int aButton2,
-                            QWidget *aParent, const char *aName, bool aModal,
-                            Qt::WFlags aFlags)
-    : QDialog (aParent, aName, aModal,
-               aFlags | Qt::WStyle_Customize | Qt::WStyle_NormalBorder |
-                        Qt::WStyle_Title | Qt::WStyle_SysMenu)
+                            QWidget *aParent, const char *aName, bool aModal)
+    : QIDialog (aParent,
+                Qt::Window | Qt::Sheet | 
+                Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint)
 {
     setWindowTitle (aCaption);
+    /* Necessary to later find some of the message boxes */
+    setObjectName (aName);
+    setModal (aModal);
 
     mButton0 = aButton0;
     mButton1 = aButton1;
@@ -122,35 +122,27 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mSpacer = new QSpacerItem (0, 0);
     layout->addItem (mSpacer);
 
-    QHBoxLayout *buttonsHLayout = new QHBoxLayout();
-    buttonsHLayout->setSpacing (5);
-    layout->addLayout (buttonsHLayout);
+    mButtonBox = new QDialogButtonBox;
+    mButtonBox->setCenterButtons (true);
+    layout->addWidget (mButtonBox);
 
     mButtonEsc = 0;
 
     mButton0PB = createButton (aButton0);
     if (mButton0PB)
-    {
-        buttonsHLayout->addWidget (mButton0PB);
         connect (mButton0PB, SIGNAL (clicked()), SLOT (done0()));
-    }
     mButton1PB = createButton (aButton1);
     if (mButton1PB)
-    {
-        buttonsHLayout->addWidget (mButton1PB);
         connect (mButton1PB, SIGNAL (clicked()), SLOT (done1()));
-    }
     mButton2PB = createButton (aButton2);
     if (mButton2PB)
-    {
-        buttonsHLayout->addWidget (mButton2PB);
         connect (mButton2PB, SIGNAL (clicked()), SLOT (done2()));
-    }
-
-    buttonsHLayout->setAlignment (Qt::AlignHCenter);
 
     /* this call is a must -- it initializes mFlagCB and mSpacer */
     setDetailsShown (false);
+
+    /* Set fixed size */
+    setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
 /**
@@ -240,19 +232,20 @@ QPushButton *QIMessageBox::createButton (int aButton)
         return 0;
 
     QString text;
+    QDialogButtonBox::ButtonRole role;
     switch (aButton & ButtonMask)
     {
-        case Ok:        text = tr ("OK"); break;
-        case Yes:       text = tr ("Yes"); break;
-        case No:        text = tr ("No"); break;
-        case Cancel:    text = tr ("Cancel"); break;
-        case Ignore:    text = tr ("Ignore"); break;
+        case Ok:        text = tr ("OK"); role = QDialogButtonBox::AcceptRole; break;
+        case Yes:       text = tr ("Yes"); role = QDialogButtonBox::YesRole; break;
+        case No:        text = tr ("No"); role = QDialogButtonBox::NoRole; break;
+        case Cancel:    text = tr ("Cancel"); role = QDialogButtonBox::RejectRole; break;
+        case Ignore:    text = tr ("Ignore"); role = QDialogButtonBox::AcceptRole; break;
         default:
             AssertMsgFailed (("Type %d is not implemented", aButton));
             return NULL;
     }
 
-    QPushButton *b = new QPushButton (text);
+    QPushButton *b = mButtonBox->addButton (text, role);
 
     if (aButton & Default)
     {

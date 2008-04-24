@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,8 +23,9 @@
 #ifndef __QIMessageBox_h__
 #define __QIMessageBox_h__
 
+#include "QIDialog.h"
+
 /* Qt includes */
-#include <QDialog>
 #include <QMessageBox>
 #include <QCheckBox>
 #include <QTextEdit>
@@ -33,8 +34,9 @@ class QIRichLabel;
 class QLabel;
 class QPushButton;
 class QSpacerItem;
+class QDialogButtonBox;
 
-class QIMessageBox : public QDialog
+class QIMessageBox : public QIDialog
 {
     Q_OBJECT
 
@@ -63,8 +65,7 @@ public:
 
     QIMessageBox (const QString &aCaption, const QString &aText,
                   Icon aIcon, int aButton0, int aButton1 = 0, int aButton2 = 0,
-                  QWidget *aParent = 0, const char *aName = 0, bool aModal = TRUE,
-                  Qt::WFlags aFlags = Qt::WStyle_DialogBorder);
+                  QWidget *aParent = 0, const char *aName = 0, bool aModal = TRUE);
 
     QString buttonText (int aButton) const;
     void setButtonText (int aButton, const QString &aText);
@@ -107,6 +108,7 @@ private:
     QWidget *mDetailsVBox;
     QTextEdit *mDetailsText;
     QSpacerItem *mSpacer;
+    QDialogButtonBox *mButtonBox;
 };
 
 #endif
