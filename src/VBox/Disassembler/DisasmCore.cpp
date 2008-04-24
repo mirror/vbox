@@ -1268,7 +1268,7 @@ unsigned ParseImmAddr(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
         pParam->flags |= USE_DISPLACEMENT64;
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "[0%08X%08Xh]", (uint32_t)(pParam->disp64 >> 32), (uint32_t)pParam->disp64);
-        return sizeof(uint32_t);
+        return sizeof(uint64_t);
     }
     else
     {
@@ -1311,6 +1311,7 @@ unsigned ParseImmAddr_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAME
     }
     if (pCpu->addrmode == CPUMODE_64BIT)
     {
+        Assert(OP_PARM_VSUBTYPE(pParam->param) != OP_PARM_p);
         return sizeof(uint64_t);
     }
     else
@@ -1359,7 +1360,9 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         {
             /* Use 64-bit registers. */
             pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN32_START;
-            if (    (pCpu->prefix & PREFIX_REX)
+            if (    (pOp->optype & OPTYPE_REXB_EXTENDS_OPREG)
+                &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
+                &&  (pCpu->prefix & PREFIX_REX)
                 &&  (pCpu->prefix_rex & PREFIX_REX_FLAGS))
                 pParam->base.reg_gen += 8;
 
@@ -1398,6 +1401,15 @@ unsigned ParseFixedReg(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPar
         pParam->base.reg_gen = pParam->param - OP_PARM_REG_GEN8_START;
         pParam->flags |= USE_REG_GEN8;
         pParam->size   = 1;
+
+        if (pCpu->opmode == CPUMODE_64BIT)
+        {
+            if (    (pOp->optype & OPTYPE_REXB_EXTENDS_OPREG)
+                &&  pParam == &pCpu->param1             /* ugly assumption that it only applies to the first parameter */
+                &&  (pCpu->prefix & PREFIX_REX)
+                &&  (pCpu->prefix_rex & PREFIX_REX_FLAGS))
+                pParam->base.reg_gen += 8;              /* least significant byte of R8-R15 */
+        }
     }
     else
     if (pParam->param <= OP_PARM_REG_FP_END)
@@ -1994,7 +2006,12 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, int idx, POP_PARAMETER pPar
     switch (subtype)
     {
     case OP_PARM_b:
-        disasmAddString(pParam->szParam, szModRMReg8[idx]);
+#if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
+        if (idx > RT_ELEMENTS(szModRMReg8))
+            disasmAddString(pParam->szParam, szModRMReg8_64[idx]);
+        else
+            disasmAddString(pParam->szParam, szModRMReg8[idx]);
+#endif
         pParam->flags |= USE_REG_GEN8;
         pParam->base.reg_gen = idx;
         break;
