@@ -128,7 +128,7 @@ bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRe
     if (pParam->flags & (USE_IMMEDIATE32|USE_IMMEDIATE32_SX8))
     {
         *pcbSize  = 4;
-        //*pu32Data = (uint32_t)pParam->parval;
+        *pu32Data = (uint32_t)pParam->parval;
         return true;
     }
 
