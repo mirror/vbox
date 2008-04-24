@@ -428,7 +428,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR aHostInterface)
         return E_INVALIDARG;
 #endif
 
-     AutoCaller autoCaller (this);
+    AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     /* the machine needs to be mutable */
@@ -602,7 +602,6 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication) (
 
 STDMETHODIMP NetworkAdapter::COMGETTER(InternalNetwork) (BSTR *aInternalNetwork)
 {
-    /* we don't allow null strings */
     if (!aInternalNetwork)
         return E_POINTER;
 
@@ -618,9 +617,6 @@ STDMETHODIMP NetworkAdapter::COMGETTER(InternalNetwork) (BSTR *aInternalNetwork)
 
 STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (INPTR BSTR aInternalNetwork)
 {
-    if (!aInternalNetwork)
-        return E_INVALIDARG;
-
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -632,15 +628,57 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (INPTR BSTR aInternalNet
 
     if (mData->mInternalNetwork != aInternalNetwork)
     {
-        /* if an empty string is to be set, internal networking must be turned off */
-        if (   (aInternalNetwork == Bstr(""))
-            && (mData->mAttachmentType = NetworkAttachmentType_Internal))
+        /* if an empty/null string is to be set, internal networking must be
+         * turned off */
+        if (   (aInternalNetwork == NULL || *aInternalNetwork == '\0')
+            && mData->mAttachmentType == NetworkAttachmentType_Internal)
         {
-            return setError (E_FAIL, tr ("Empty internal network name is not valid"));
+            return setError (E_FAIL,
+                tr ("Empty or null internal network name is not valid"));
         }
 
         mData.backup();
         mData->mInternalNetwork = aInternalNetwork;
+
+        /* leave the lock before informing callbacks */
+        alock.unlock();
+
+        mParent->onNetworkAdapterChange (this);
+    }
+
+    return S_OK;
+}
+
+STDMETHODIMP NetworkAdapter::COMGETTER(NATNetwork) (BSTR *aNATNetwork)
+{
+    if (!aNATNetwork)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    mData->mNATNetwork.cloneTo (aNATNetwork);
+
+    return S_OK;
+}
+
+STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (INPTR BSTR aNATNetwork)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoWriteLock alock (this);
+
+    if (mData->mNATNetwork != aNATNetwork)
+    {
+        mData.backup();
+        mData->mNATNetwork = aNATNetwork;
 
         /* leave the lock before informing callbacks */
         alock.unlock();
@@ -891,12 +929,11 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
         detach();
 
         /* there must an internal network name */
-        if (   !mData->mInternalNetwork
-            || (mData->mInternalNetwork == Bstr ("")))
+        if (mData->mInternalNetwork.isEmpty())
         {
             LogRel (("Internal network name not defined, "
                      "setting to default \"intnet\"\n"));
-            mData->mInternalNetwork = Bstr ("intnet");
+            mData->mInternalNetwork = "intnet";
         }
 
         mData->mAttachmentType = NetworkAttachmentType_Internal;
@@ -1004,6 +1041,9 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
     {
         /* NAT */
 
+        /* optional */
+        mData->mNATNetwork = attachmentNode.stringValue ("network");
+
         rc = AttachToNAT();
         CheckComRCReturnRC (rc);
     }
@@ -1036,6 +1076,7 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
 
         /* required */
         mData->mInternalNetwork = attachmentNode.stringValue ("name");
+        Assert (!mData->mInternalNetwork.isNull());
 
         rc = AttachToInternalNetwork();
         CheckComRCReturnRC (rc);
@@ -1110,6 +1151,9 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
         case NetworkAttachmentType_NAT:
         {
             Key attachmentNode = aAdapterNode.createKey ("NAT");
+            if (!mData->mNATNetwork.isEmpty())
+                attachmentNode.setValue <Bstr> ("network",
+                                                mData->mNATNetwork);
             break;
         }
         case NetworkAttachmentType_HostInterface:
@@ -1135,7 +1179,7 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
         case NetworkAttachmentType_Internal:
         {
             Key attachmentNode = aAdapterNode.createKey ("InternalNetwork");
-            Assert (!mData->mInternalNetwork.isNull());
+            Assert (!mData->mInternalNetwork.isEmpty());
             attachmentNode.setValue <Bstr> ("name", mData->mInternalNetwork);
             break;
         }

@@ -73,7 +73,9 @@
           <xsd:extension base="TNetworkAdapter">
             <xsd:choice minOccurs="0">
               <xsd:element name="NAT">
-                <xsd:complexType/>
+                <xsd:complexType>
+                  <xsd:attribute name="network" type="xsd:string"/>
+                </xsd:complexType>
               </xsd:element>
               <xsd:element name="HostInterface">
                 <xsd:complexType>
