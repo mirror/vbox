@@ -1982,7 +1982,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     if (aSeamless)
     {
         /* Check if the Guest Video RAM enough for the seamless mode. */
-        QRect screen = QApplication::desktop()->screenGeometry (this);
+        QRect screen = QApplication::desktop()->availableGeometry (this);
         ULONG64 availBits = csession.GetMachine().GetVRAMSize() /* vram */
                           * _1M /* mb to bytes */
                           * 8; /* to bits */
