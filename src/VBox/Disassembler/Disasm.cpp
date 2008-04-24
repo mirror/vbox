@@ -190,7 +190,7 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
 
                 // segment override prefix byte
                 case OP_SEG:
-                    pCpu->prefix_seg = g_aOneByteMapX86[codebyte].param1 - OP_PARM_REG_SEG_START;
+                    pCpu->prefix_seg = paOneByteMap[codebyte].param1 - OP_PARM_REG_SEG_START;
                     /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
                     if (   pCpu->mode != CPUMODE_64BIT
                         || pCpu->prefix_seg >= OP_PARM_REG_FS)
