@@ -50,8 +50,8 @@
 static int scanIPv4Digit(int iDigit, const char *psz, char **ppszNext, uint8_t *pu8)
 {
     int rc = RTStrToUInt8Ex(psz, ppszNext, 10, pu8);
-    if (      rc != VINF_SUCCESS
-           && rc != VWRN_TRAILING_CHARS
+    if ((      rc != VINF_SUCCESS
+           && rc != VWRN_TRAILING_CHARS)
         || *pu8 > 254)
         return VERR_INVALID_PARAMETER;
 
