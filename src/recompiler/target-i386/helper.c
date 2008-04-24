@@ -4763,8 +4763,16 @@ void save_raw_fp_state(CPUX86State *env, uint8_t *ptr)
             nb_xmm_regs = 8 << data64;
             addr = ptr + 0xa0;
             for(i = 0; i < nb_xmm_regs; i++) {
+#if HC_ARCH_BITS == 32 && 0
+                /* this is a workaround for http://gcc.gnu.org/bugzilla/show_bug.cgi?id=35135 */
+                env->xmm_regs[i].XMM_L(0) = ldl(addr);
+                env->xmm_regs[i].XMM_L(1) = ldl(addr + 4);
+                env->xmm_regs[i].XMM_L(2) = ldl(addr + 8);
+                env->xmm_regs[i].XMM_L(3) = ldl(addr + 12);
+#else
                 env->xmm_regs[i].XMM_Q(0) = ldq(addr);
                 env->xmm_regs[i].XMM_Q(1) = ldq(addr + 8);
+#endif
                 addr += 16;
             }
         }
