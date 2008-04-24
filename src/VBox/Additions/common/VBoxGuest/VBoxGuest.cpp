@@ -219,9 +219,17 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
 #endif
                 if (RT_SUCCESS(rc))
                 {
-                    vboxGuestInitFixateGuestMappings(pDevExt);
-                    Log(("VBoxGuestInitDevExt: returns success\n"));
-                    return VINF_SUCCESS;
+                    /*
+                     * Disable guest graphics capability by default. The guest specific
+                     * graphics driver will re-enable this when it is necessary.
+                     */
+                    rc = VBoxGuestSetGuestCapabilities(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+                    if (RT_SUCCESS(rc))
+                    {
+                        vboxGuestInitFixateGuestMappings(pDevExt);
+                        Log(("VBoxGuestInitDevExt: returns success\n"));
+                        return VINF_SUCCESS;
+                    }
                 }
             }
 
