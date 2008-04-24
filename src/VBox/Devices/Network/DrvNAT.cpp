@@ -366,10 +366,12 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pData, PCFGMNODE pCf
  */
 static void drvNATSetMac(PDRVNAT pData)
 {
-    PDMMAC Mac;
     if (pData->pConfig)
+    {
+        PDMMAC Mac;
         pData->pConfig->pfnGetMac(pData->pConfig, &Mac);
-    slirp_set_ethaddr(pData->pNATState, Mac.au8);
+        slirp_set_ethaddr(pData->pNATState, Mac.au8);
+    }
 }
 
 
