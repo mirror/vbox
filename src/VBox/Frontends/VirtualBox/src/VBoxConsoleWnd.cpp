@@ -1972,11 +1972,11 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                          * csession.GetMachine().GetMonitorCount() /**< @todo fix assumption that all screens have same resolution */
                          + 4096 * 8; /* adapter info */
         CGuest guest = console->console().GetGuest();
-        ULONG maxWidth  = guest.GetMaxGuestWidth();
-        ULONG maxHeight = guest.GetMaxGuestHeight();
+        LONG maxWidth  = guest.GetMaxGuestWidth();
+        LONG maxHeight = guest.GetMaxGuestHeight();
         if (aOn && (   (availBits < usedBits)
-                    || ((maxWidth != 0) && (maxWidth < (ULONG) screen.width()))
-                    || ((maxHeight != 0) && (maxHeight < (ULONG) screen.height()))
+                    || ((maxWidth != 0) && (maxWidth < screen.width()))
+                    || ((maxHeight != 0) && (maxHeight < screen.height()))
                    )
            )
         {
