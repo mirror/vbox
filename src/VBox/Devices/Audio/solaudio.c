@@ -839,11 +839,11 @@ static struct audio_pcm_ops solaudio_pcm_ops =
     solaudio_write,
     solaudio_ctl_out,
 
-    solaudio_init_in,
-    solaudio_fini_in,
-    solaudio_run_in,
-    solaudio_read,
-    solaudio_ctl_in
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 
@@ -869,7 +869,7 @@ struct audio_driver solaudio_audio_driver =
     INIT_FIELD (pcm_ops        = ) &solaudio_pcm_ops,
     INIT_FIELD (can_be_default = ) 1,
     INIT_FIELD (max_voices_out = ) INT_MAX,
-    INIT_FIELD (max_voices_in  = ) 0,           /* Input not supported. */
+    INIT_FIELD (max_voices_in  = ) 0,           /* Input not really supported. */
     INIT_FIELD (voice_size_out = ) sizeof (solaudioVoiceOut),
     INIT_FIELD (voice_size_in  = ) 0
 };
