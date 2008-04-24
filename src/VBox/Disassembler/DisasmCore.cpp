@@ -250,6 +250,8 @@ DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_
  */
 static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction)
 {
+    const OPCODE *paOneByteMap;
+
     /*
      * Parse byte by byte.
      */
@@ -258,19 +260,21 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
 
     if (pCpu->mode == CPUMODE_64BIT)
     {
+        paOneByteMap     = g_aOneByteMapX64;
         pCpu->addrmode   = CPUMODE_64BIT;
         pCpu->opmode     = CPUMODE_32BIT;
     }
     else
     {
+        paOneByteMap     = g_aOneByteMapX86;
         pCpu->addrmode   = pCpu->mode;
         pCpu->opmode     = pCpu->mode;
     }
 
     while(1)
     {
-        uint8_t codebyte   = DISReadByte(pCpu, InstructionAddr+iByte);
-        uint8_t opcode     = g_aOneByteMapX86[codebyte].opcode;
+        uint8_t codebyte = DISReadByte(pCpu, InstructionAddr+iByte);
+        uint8_t opcode   = paOneByteMap[codebyte].opcode;
 
         /* Hardcoded assumption about OP_* values!! */
         if (opcode <= OP_LOCK)
@@ -359,11 +363,7 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
         pCpu->opaddr = InstructionAddr + uIdx;
         pCpu->opcode = codebyte;
 
-        if (pCpu->mode == CPUMODE_64BIT)
-            cbInc = ParseInstruction(InstructionAddr + iByte, &g_aOneByteMapX64[pCpu->opcode], pCpu);
-        else
-            cbInc = ParseInstruction(InstructionAddr + iByte, &g_aOneByteMapX86[pCpu->opcode], pCpu);
-
+        cbInc = ParseInstruction(InstructionAddr + iByte, &paOneByteMap[pCpu->opcode], pCpu);
         iByte += cbInc;
         break;
     }
