@@ -747,7 +747,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     output = xf86OutputCreate(pScrn, &VBOXOutputFuncs, "Virtual Output");
 
     /* Set a sane minimum mode size and the maximum allowed by the available VRAM */
-    /** @todo Make sure that the host resolution is supported if it fits into VRAM. */
     {
         unsigned maxSize, trySize = 512;
 
@@ -933,6 +932,9 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
             xf86DrvMsg(scrnIndex, X_INFO,
                       "The VBox video extensions are now enabled.\n");
         vboxEnableGraphicsCap(pVBox);
+        /* Report the largest resolution that we support */
+        vboxReportMaxGuestResolution(pScrn->display->virtualX,
+                                     pScrn->display->virtualY);
     }
     return (TRUE);
 }

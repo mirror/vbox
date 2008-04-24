@@ -900,3 +900,18 @@ vboxHostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits)
 {
     return VbglR3HostLikesVideoMode(cx, cy, cBits);
 }
+
+
+/**
+ * Report the maximum resolution supported by the guest
+ * 
+ * @returns true for success, false otherwise
+ * @param   u32Width   maximum horizontal resolution supported
+ * @param   u32Height  maximum vertical resolution supported
+ */
+Bool
+vboxReportMaxGuestResolution(uint32_t u32Width, uint32_t u32Height)
+{
+    int irc = VbglR3ReportMaxGuestResolution(u32Width, u32Height);
+    return RT_SUCCESS(irc);
+}
