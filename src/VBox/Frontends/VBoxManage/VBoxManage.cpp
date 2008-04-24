@@ -53,6 +53,7 @@
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/env.h>
+#include <iprt/cidr.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/VBoxHDD.h>
@@ -362,7 +363,8 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-nictracefile<1-N> <filename>]\n"
                  "                            [-nicspeed<1-N> <kbps>]\n"
                  "                            [-hostifdev<1-N> none|<devicename>]\n"
-                 "                            [-intnet<1-N> <network>]\n"
+                 "                            [-intnet<1-N> <network name>]\n"
+                 "                            [-natnet<1-N> <network>]\n"
                  "                            [-macaddress<1-N> auto|<mac>]\n"
                  "                            [-uart<1-N> off|<I/O base> <IRQ>]\n"
                  "                            [-uartmode<1-N> disconnected|\n"
@@ -1269,11 +1271,20 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                             strAttachment = "none";
                         break;
                     case NetworkAttachmentType_NAT:
+                    {
+                        Bstr strNetwork;
+                        nic->COMGETTER(NATNetwork)(strNetwork.asOutParam());
                         if (details == VMINFO_MACHINEREADABLE)
+                        {
+                            RTPrintf("natnet%d=\"%lS\"\n", currentNIC + 1, strNetwork.raw());
                             strAttachment = "nat";
+                        }
+                        else if (strNetwork != "default")
+                            strAttachment = Utf8StrFmt("NAT (%lS)", strNetwork.raw());
                         else
                             strAttachment = "NAT";
                         break;
+                    }
                     case NetworkAttachmentType_HostInterface:
                     {
                         Bstr strHostIfDev;
@@ -3787,6 +3798,7 @@ static int handleModifyVM(int argc, char *argv[],
     std::vector <char *> nicspeed (NetworkAdapterCount, 0);
     std::vector <char *> hostifdev (NetworkAdapterCount, 0);
     std::vector <const char *> intnet (NetworkAdapterCount, 0);
+    std::vector <const char *> natnet (NetworkAdapterCount, 0);
 #ifdef RT_OS_LINUX
     std::vector <char *> tapsetup (NetworkAdapterCount, 0);
     std::vector <char *> tapterm (NetworkAdapterCount, 0);
@@ -4161,6 +4173,25 @@ static int handleModifyVM(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             }
             intnet[n - 1] = argv[i + 1];
+            i++;
+        }
+        else if (strncmp(argv[i], "-natnet", 7) == 0)
+        {
+            unsigned n = parseNum(&argv[i][7], NetworkAdapterCount, "NIC");
+            if (!n)
+                return 1;
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            RTIPV4ADDR Network;
+            RTIPV4ADDR Netmask;
+            int rc = RTCidrStrToIPv4(argv[i + 1], &Network, &Netmask);
+            if (RT_FAILURE(rc))
+                return errorArgument("Invalid IPv4 network '%s' specified -- CIDR notation expected.\n", argv[i + 1]);
+            if (Netmask & 0x1f)
+                return errorArgument("Prefix length of the NAT network must be less than 28\n");
+            natnet[n - 1] = argv[i + 1];
             i++;
         }
 #ifdef RT_OS_LINUX
@@ -5231,7 +5262,11 @@ static int handleModifyVM(int argc, char *argv[],
                     CHECK_ERROR_RET(nic, COMSETTER(InternalNetwork)(Bstr(intnet[n])), 1);
                 }
             }
-
+            /* the network of the NAT */
+            if (natnet[n])
+            {
+                CHECK_ERROR_RET(nic, COMSETTER(NATNetwork)(Bstr(natnet[n])), 1);
+            }
 #ifdef RT_OS_LINUX
             /* the TAP setup application? */
             if (tapsetup[n])
