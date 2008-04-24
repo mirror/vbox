@@ -259,7 +259,7 @@ static DECLCALLBACK(int) drvblockGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid)
 #define PDMIBLOCKASYNC_2_DRVBLOCK(pInterface)        ( (PDRVBLOCK)((uintptr_t)pInterface - RT_OFFSETOF(DRVBLOCK, IBlockAsync)) )
 
 /** @copydoc PDMIBLOCKASYNC::pfnRead */
-static DECLCALLBACK(int) drvblockAsyncReadStart(PPDMIBLOCKASYNC pInterface, uint64_t off, void *pvBuf, size_t cbRead, void *pvUser)
+static DECLCALLBACK(int) drvblockAsyncReadStart(PPDMIBLOCKASYNC pInterface, uint64_t off, PPDMIDATATRANSPORTSEG pSeg, unsigned cSeg, size_t cbRead, void *pvUser)
 {
     PDRVBLOCK pData = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
 
@@ -272,13 +272,13 @@ static DECLCALLBACK(int) drvblockAsyncReadStart(PPDMIBLOCKASYNC pInterface, uint
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
 
-    int rc = pData->pDrvMediaAsync->pfnStartRead(pData->pDrvMediaAsync, off, pvBuf, cbRead, pvUser);
+    int rc = pData->pDrvMediaAsync->pfnStartRead(pData->pDrvMediaAsync, off, pSeg, cSeg, cbRead, pvUser);
     return rc;
 }
 
 
 /** @copydoc PDMIBLOCKASYNC::pfnWrite */
-static DECLCALLBACK(int) drvblockAsyncWriteStart(PPDMIBLOCKASYNC pInterface, uint64_t off, const void *pvBuf, size_t cbWrite, void *pvUser)
+static DECLCALLBACK(int) drvblockAsyncWriteStart(PPDMIBLOCKASYNC pInterface, uint64_t off, PPDMIDATATRANSPORTSEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser)
 {
     PDRVBLOCK pData = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
 
@@ -291,7 +291,7 @@ static DECLCALLBACK(int) drvblockAsyncWriteStart(PPDMIBLOCKASYNC pInterface, uin
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
 
-    int rc = pData->pDrvMediaAsync->pfnStartWrite(pData->pDrvMediaAsync, off, pvBuf, cbWrite, pvUser);
+    int rc = pData->pDrvMediaAsync->pfnStartWrite(pData->pDrvMediaAsync, off, pSeg, cSeg, cbWrite, pvUser);
 
     return rc;
 }
@@ -302,14 +302,14 @@ static DECLCALLBACK(int) drvblockAsyncWriteStart(PPDMIBLOCKASYNC pInterface, uin
 #define PDMIMEDIAASYNCPORT_2_DRVBLOCK(pInterface)    ( (PDRVBLOCK((uintptr_t)pInterface - RT_OFFSETOF(DRVBLOCK, IMediaAsyncPort))) )
 
 
-static DECLCALLBACK(int) drvblockAsyncReadCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbRead, void *pvUser)
+static DECLCALLBACK(int) drvblockAsyncReadCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, uint64_t uOffset, PPDMIDATATRANSPORTSEG pSeg, unsigned cSeg, size_t cbRead, void *pvUser)
 {
     PDRVBLOCK pData = PDMIMEDIAASYNCPORT_2_DRVBLOCK(pInterface);
 
-    return pData->pDrvBlockAsyncPort->pfnReadCompleteNotify(pData->pDrvBlockAsyncPort, uOffset, pvBuf, cbRead, pvUser);
+    return pData->pDrvBlockAsyncPort->pfnReadCompleteNotify(pData->pDrvBlockAsyncPort, uOffset, pSeg, cSeg, cbRead, pvUser);
 }
 
-static DECLCALLBACK(int) drvblockAsyncWriteCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, uint64_t uOffset, void *pvBuf, size_t cbWritten, void *pvUser)
+static DECLCALLBACK(int) drvblockAsyncWriteCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, uint64_t uOffset, PPDMIDATATRANSPORTSEG pSeg, unsigned cSeg, size_t cbWritten, void *pvUser)
 {
     PDRVBLOCK pData = PDMIMEDIAASYNCPORT_2_DRVBLOCK(pInterface);
 
@@ -325,7 +325,7 @@ static DECLCALLBACK(int) drvblockAsyncWriteCompleteNotify(PPDMIMEDIAASYNCPORT pI
     }
 #endif /* VBOX_PERIODIC_FLUSH */
 
-    return pData->pDrvBlockAsyncPort->pfnWriteCompleteNotify(pData->pDrvBlockAsyncPort, uOffset, pvBuf, cbWritten, pvUser);
+    return pData->pDrvBlockAsyncPort->pfnWriteCompleteNotify(pData->pDrvBlockAsyncPort, uOffset, pSeg, cSeg, cbWritten, pvUser);
 }
 
 /* -=-=-=-=- IBlockBios -=-=-=-=- */

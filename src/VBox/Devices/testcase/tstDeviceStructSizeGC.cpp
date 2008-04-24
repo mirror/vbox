@@ -911,8 +911,6 @@ int main()
     GEN_CHECK_OFF(AHCIPort, uATATransferMode);
     GEN_CHECK_OFF(AHCIPort, iLUN);
     GEN_CHECK_OFF(AHCIPort, fResetDevice);
-    GEN_CHECK_OFF(AHCIPort, cbIOBuffer);
-    GEN_CHECK_OFF(AHCIPort, pIOBufferHC);
     GEN_CHECK_OFF(AHCIPort, u32TasksFinished);
     GEN_CHECK_OFF(AHCIPort, u32QueuedTasksFinished);
 
