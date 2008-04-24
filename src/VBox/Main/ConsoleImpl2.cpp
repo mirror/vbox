@@ -1093,10 +1093,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 RTStrFree(pszBootFile);
 
                 hrc = networkAdapter->COMGETTER(NATNetwork)(&str);                  H();
-                STR_CONV();
-                if (psz && *psz)
-                    rc = CFGMR3InsertString(pCfg, "Network", psz);                  RC_CHECK();
-                STR_FREE();
+                if (str)
+                {
+                    STR_CONV();
+                    if (psz && *psz)
+                        rc = CFGMR3InsertString(pCfg, "Network", psz);              RC_CHECK();
+                    STR_FREE();
+                }
                 break;
             }
 
