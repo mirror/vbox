@@ -626,37 +626,34 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
                 return 0;
 
             case OP_PARM_P: //MMX register
+                reg &= 7;   /* REX.R has no effect here */
                 disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "MM%d", reg);
                 pParam->flags |= USE_REG_MMX;
                 pParam->base.reg_mmx = reg;
                 return 0;
 
             case OP_PARM_S: //segment register
+                reg &= 7;   /* REX.R has no effect here */
                 disasmModRMSReg(pCpu, pOp, reg, pParam);
                 pParam->flags |= USE_REG_SEG;
                 return 0;
 
             case OP_PARM_T: //test register
+                reg &= 7;   /* REX.R has no effect here */
                 disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "TR%d", reg);
                 pParam->flags |= USE_REG_TEST;
                 pParam->base.reg_test = reg;
                 return 0;
 
+            case OP_PARM_W: //XMM register or memory operand
+                if (mod != 3)
+                    break;  /* memory operand */
+                /* else no break */
             case OP_PARM_V: //XMM register
                 disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "XMM%d", reg);
                 pParam->flags |= USE_REG_XMM;
                 pParam->base.reg_xmm = reg;
                 return 0;
-
-            case OP_PARM_W: //XMM register or memory operand
-                if (mod == 3)
-                {
-                    disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "XMM%d", rm);
-                    pParam->flags |= USE_REG_XMM;
-                    pParam->base.reg_xmm = rm;
-                    return 0;
-                }
-                /* else memory operand */
             }
         }
     }
