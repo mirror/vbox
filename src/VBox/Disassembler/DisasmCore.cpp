@@ -173,8 +173,6 @@ DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *
     pCpu->prefix     = PREFIX_NONE;
     pCpu->prefix_seg = 0;
     pCpu->lastprefix = 0;
-    pCpu->addrmode   = pCpu->mode;
-    pCpu->opmode     = pCpu->mode;
     pCpu->ModRM.u    = 0;
     pCpu->SIB.u      = 0;
     pCpu->param1.parval = 0;
@@ -220,8 +218,6 @@ DISDECL(int) DISCoreOneEx(RTUINTPTR InstructionAddr, DISCPUMODE enmCpuMode, PFN_
     pCpu->prefix_seg = 0;
     pCpu->lastprefix = 0;
     pCpu->mode       = enmCpuMode;
-    pCpu->addrmode   = enmCpuMode;
-    pCpu->opmode     = enmCpuMode;
     pCpu->ModRM.u    = 0;
     pCpu->SIB.u      = 0;
     pCpu->param1.parval = 0;
@@ -260,6 +256,17 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
     unsigned  iByte = 0;
     unsigned  cbInc;
 
+    if (pCpu->mode == CPUMODE_64BIT)
+    {
+        pCpu->addrmode   = CPUMODE_64BIT;
+        pCpu->opmode     = CPUMODE_32BIT;
+    }
+    else
+    {
+        pCpu->addrmode   = pCpu->mode;
+        pCpu->opmode     = pCpu->mode;
+    }
+
     while(1)
     {
         uint8_t codebyte   = DISReadByte(pCpu, InstructionAddr+iByte);
@@ -283,8 +290,13 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
             // segment override prefix byte
             case OP_SEG:
                 pCpu->prefix_seg = g_aOneByteMapX86[codebyte].param1 - OP_PARM_REG_SEG_START;
-                pCpu->prefix    |= PREFIX_SEG;
-                iByte           += sizeof(uint8_t);
+                /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
+                if (   pCpu->mode != CPUMODE_64BIT
+                    || pCpu->prefix_seg >= OP_PARM_REG_FS)
+                {
+                    pCpu->prefix    |= PREFIX_SEG;
+                }
+                iByte += sizeof(uint8_t);
                 continue;   //fetch the next byte
 
             // lock prefix byte
@@ -294,11 +306,16 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
                 continue;   //fetch the next byte
 
             // address size override prefix byte
-            case OP_ADRSIZE:
+            case OP_ADDRSIZE:
                 pCpu->prefix |= PREFIX_ADDRSIZE;
                 if (pCpu->mode == CPUMODE_16BIT)
-                     pCpu->addrmode = CPUMODE_32BIT;
-                else pCpu->addrmode = CPUMODE_16BIT;
+                    pCpu->addrmode = CPUMODE_32BIT;
+                else 
+                if (pCpu->mode == CPUMODE_32BIT)
+                    pCpu->addrmode = CPUMODE_16BIT;
+                else
+                    pCpu->addrmode = CPUMODE_32BIT;     /* 64 bits */
+
                 iByte        += sizeof(uint8_t);
                 continue;   //fetch the next byte
 
@@ -306,8 +323,9 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
             case OP_OPSIZE:
                 pCpu->prefix |= PREFIX_OPSIZE;
                 if (pCpu->mode == CPUMODE_16BIT)
-                     pCpu->opmode = CPUMODE_32BIT;
-                else pCpu->opmode = CPUMODE_16BIT;
+                    pCpu->opmode = CPUMODE_32BIT;
+                else 
+                    pCpu->opmode = CPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
 
                 iByte        += sizeof(uint8_t);
                 continue;   //fetch the next byte
@@ -389,6 +407,17 @@ unsigned ParseInstruction(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, PDISCPUSTATE pC
     pCpu->param2.param = pOp->param2;
     pCpu->param3.param = pOp->param3;
 
+    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
+    if (pCpu->mode == CPUMODE_64BIT)
+    {
+        if (pOp->optype & OPTYPE_FORCED_64_OP_SIZE)
+            pCpu->opsize = CPUMODE_64BIT;
+        else
+        if (    (pOp->optype & OPTYPE_DEFAULT_64_OP_SIZE)
+            &&  !(pCpu->prefix & PREFIX_OPSIZE))
+            pCpu->opsize = CPUMODE_64BIT;
+    }
+
     if (pOp->idxParse1 != IDX_ParseNop) 
     {
         size += pCpu->pfnDisasmFnTable[pOp->idxParse1](lpszCodeBlock, pOp, &pCpu->param1, pCpu);
@@ -449,6 +478,18 @@ unsigned ParseEscFP(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     {
         /* Not filtered out -> full disassembly */
         pCpu->pfnDisasmFnTable = pfnFullDisasm;
+    }
+
+    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
+    if (pCpu->mode == CPUMODE_64BIT)
+    {
+        /* Note: redundant, but just in case this ever changes */
+        if (fpop->optype & OPTYPE_FORCED_64_OP_SIZE)
+            pCpu->opsize = CPUMODE_64BIT;
+        else
+        if (    (fpop->optype & OPTYPE_DEFAULT_64_OP_SIZE)
+            &&  !(pCpu->prefix & PREFIX_OPSIZE))
+            pCpu->opsize = CPUMODE_64BIT;
     }
 
     // Little hack to make sure the ModRM byte is included in the returned size

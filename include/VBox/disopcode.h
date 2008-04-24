@@ -45,7 +45,7 @@
  */
 #define OP_INVALID      0
 #define OP_OPSIZE       1
-#define OP_ADRSIZE      2
+#define OP_ADDRSIZE     2
 #define OP_SEG          3
 #define OP_REPNE        4
 #define OP_REPE         5

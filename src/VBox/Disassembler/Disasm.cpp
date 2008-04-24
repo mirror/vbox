@@ -91,7 +91,7 @@ DISDECL(int) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, unsigned cbMax, 
  * @todo    Define output callback.
  */
 DISDECL(int) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u32EipOffset, unsigned *pcbSize,
-                       char *pszOutput)
+                      char *pszOutput)
 {
     return DISInstrEx(pCpu, pu8Instruction, u32EipOffset, pcbSize, pszOutput, OPTYPE_ALL);
 }
@@ -112,7 +112,7 @@ DISDECL(int) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u32E
  * @todo    Define output callback.
  */
 DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u32EipOffset, unsigned *pcbSize,
-                         char *pszOutput, unsigned uFilter)
+                        char *pszOutput, unsigned uFilter)
 {
     unsigned i = 0, prefixbytes;
     unsigned idx, inc;
@@ -123,8 +123,6 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
     //reset instruction settings
     pCpu->prefix      = PREFIX_NONE;
     pCpu->prefix_seg  = 0;
-    pCpu->addrmode    = pCpu->mode;
-    pCpu->opmode      = pCpu->mode;
     pCpu->ModRM.u     = 0;
     pCpu->SIB.u       = 0;
     pCpu->lastprefix  = 0;
@@ -146,6 +144,17 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
     if (pszOutput)
         *pszOutput = '\0';
 
+    if (pCpu->mode == CPUMODE_64BIT)
+    {
+        pCpu->addrmode   = CPUMODE_64BIT;
+        pCpu->opmode     = CPUMODE_32BIT;
+    }
+    else
+    {
+        pCpu->addrmode   = pCpu->mode;
+        pCpu->opmode     = pCpu->mode;
+    }
+
     prefixbytes = 0;
 #ifndef __L4ENV__  /* Unfortunately, we have no exception handling in l4env */
     try
@@ -163,6 +172,11 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
             if (opcode <= OP_LOCK)
             {
                 pCpu->lastprefix = opcode;
+
+                /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
+                if (opcode != OP_REX)
+                    pCpu->prefix &= ~PREFIX_REX;
+
                 switch(opcode)
                 {
                 case OP_INVALID:
@@ -174,7 +188,12 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
                 // segment override prefix byte
                 case OP_SEG:
                     pCpu->prefix_seg = g_aOneByteMapX86[codebyte].param1 - OP_PARM_REG_SEG_START;
-                    pCpu->prefix |= PREFIX_SEG;
+                    /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
+                    if (   pCpu->mode != CPUMODE_64BIT
+                        || pCpu->prefix_seg >= OP_PARM_REG_FS)
+                    {
+                        pCpu->prefix    |= PREFIX_SEG;
+                    }
                     i += sizeof(uint8_t);
                     prefixbytes++;
                     continue;   //fetch the next byte
@@ -187,11 +206,16 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
                     continue;   //fetch the next byte
 
                 // address size override prefix byte
-                case OP_ADRSIZE:
+                case OP_ADDRSIZE:
                     pCpu->prefix |= PREFIX_ADDRSIZE;
-                    if(pCpu->mode == CPUMODE_16BIT)
-                         pCpu->addrmode = CPUMODE_32BIT;
-                    else pCpu->addrmode = CPUMODE_16BIT;
+                    if (pCpu->mode == CPUMODE_16BIT)
+                        pCpu->addrmode = CPUMODE_32BIT;
+                    else 
+                    if (pCpu->mode == CPUMODE_32BIT)
+                        pCpu->addrmode = CPUMODE_16BIT;
+                    else
+                        pCpu->addrmode = CPUMODE_32BIT;     /* 64 bits */
+
                     i += sizeof(uint8_t);
                     prefixbytes++;
                     continue;   //fetch the next byte
@@ -199,9 +223,11 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
                 // operand size override prefix byte
                 case OP_OPSIZE:
                     pCpu->prefix |= PREFIX_OPSIZE;
-                    if(pCpu->mode == CPUMODE_16BIT)
-                         pCpu->opmode = CPUMODE_32BIT;
-                    else pCpu->opmode = CPUMODE_16BIT;
+                    if (pCpu->mode == CPUMODE_16BIT)
+                        pCpu->opmode = CPUMODE_32BIT;
+                    else 
+                        pCpu->opmode = CPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
+
                     i += sizeof(uint8_t);
                     prefixbytes++;
                     continue;   //fetch the next byte
@@ -224,6 +250,9 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
                     /* REX prefix byte */
                     pCpu->prefix    |= PREFIX_REX;
                     pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(opcode);
+
+                    if (pCpu->prefix_rex & PREFIX_REX_FLAGS_W)
+                        pCpu->opmode = CPUMODE_64BIT;  /* overrides size prefix byte */
                     break;
                 }
             }
@@ -389,9 +418,10 @@ void disasmSprintf(char *pszOutput, RTUINTPTR pu8Instruction, PDISCPUSTATE pCpu,
 
             case 'e': //register based on operand size (e.g. %eAX)
                 if(pCpu->opmode == CPUMODE_32BIT)
-                {
                     RTStrPrintf(&pszOutput[strlen(pszOutput)], 64, "E");
-                }
+                if(pCpu->opmode == CPUMODE_64BIT)
+                    RTStrPrintf(&pszOutput[strlen(pszOutput)], 64, "R");
+
                 RTStrPrintf(&pszOutput[strlen(pszOutput)], 64, "%c%c", lpszFormat[2], lpszFormat[3]);
                 break;
 

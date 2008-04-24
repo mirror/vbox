@@ -198,7 +198,7 @@ const OPCODE g_aOneByteMapX64[256] =
     OP("SEG FS",             0,                  0,                 0,                  OP_SEG,         OP_PARM_REG_FS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("SEG GS",             0,                  0,                 0,                  OP_SEG,         OP_PARM_REG_GS,     OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("OP SIZE",            0,                  0,                 0,                  OP_OPSIZE,      OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
-    OP("ADR SIZE",           0,                  0,                 0,                  OP_ADRSIZE,     OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("ADDR SIZE",          0,                  0,                 0,                  OP_ADDRSIZE,    OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("push %Iv",           IDX_ParseImmV,      0,                 0,                  OP_PUSH,        OP_PARM_Iv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_DEFAULT_64_OP_SIZE),
     OP("imul %Gv,%Ev,%Iv",   IDX_ParseModRM,     IDX_UseModRM,      IDX_ParseImmV,      OP_IMUL,        OP_PARM_Gv,         OP_PARM_Ev,     OP_PARM_Iv,     OPTYPE_HARMLESS),
     OP("push %Ib",           IDX_ParseImmByteSX, 0,                 0,                  OP_PUSH,        OP_PARM_Ib,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS | OPTYPE_DEFAULT_64_OP_SIZE),
