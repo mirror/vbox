@@ -344,6 +344,7 @@ public:
         , mUniq (aUniq)
         , mMachine (aMachine)
         , mFocusColumn (-1)
+        , mAutoFocus (false)
     {
         init();
     }
@@ -406,7 +407,13 @@ public:
     void moveFocusToColumn (int aCol)
     {
         mFocusColumn = aCol;
+        mAutoFocus = mFocusColumn != -1;
         repaint();
+    }
+
+    void setAutoFocus (bool aOn)
+    {
+        mAutoFocus = aOn;
     }
 
     void showEditor()
@@ -485,8 +492,8 @@ private:
         {
             if (cb->isHidden())
                 cb->show();
-            if (!cb->hasFocus())
-                cb->setFocus();
+            if (mAutoFocus && !cb->hasFocus())
+                QTimer::singleShot (0, cb, SLOT (setFocus()));
         }
         else if (aColumn != mFocusColumn && !cb->isHidden())
             cb->hide();
@@ -511,6 +518,7 @@ private:
     CMachine               mMachine;
     QPtrVector<QComboBox>  mVector;
     int                    mFocusColumn;
+    bool                   mAutoFocus;
 };
 
 class OnItemChangedEvent : public QEvent
@@ -526,7 +534,6 @@ public:
 void VBoxHardDiskSettings::init()
 {
     mPrevItem = 0;
-    mCBFocusOut = false;
 
     /* toolbar */
 
@@ -822,17 +829,16 @@ void VBoxHardDiskSettings::onAfterCurrentChanged (QListViewItem *aItem)
     /* Process postponed onCurrentChanged event */
     if (aItem != mPrevItem)
     {
-        if (aItem && aItem->rtti() == HDListItem::HDListItemType &&
-            static_cast<HDListItem*> (aItem)->focusColumn() == -1)
-        {
-            int prevFocusColumn = 0;
-            if (mPrevItem && mPrevItem->rtti() == HDListItem::HDListItemType)
-                prevFocusColumn = static_cast<HDListItem*> (mPrevItem)->focusColumn();
-            static_cast<HDListItem*> (aItem)->moveFocusToColumn (prevFocusColumn);
-        }
+        int prevFocusColumn =
+            mPrevItem && mPrevItem->rtti() == HDListItem::HDListItemType ?
+            static_cast<HDListItem*> (mPrevItem)->focusColumn() : 0;
 
         if (mPrevItem && mPrevItem->rtti() == HDListItem::HDListItemType)
             static_cast<HDListItem*> (mPrevItem)->moveFocusToColumn (-1);
+
+        if (aItem && aItem->rtti() == HDListItem::HDListItemType &&
+            static_cast<HDListItem*> (aItem)->focusColumn() == -1)
+            static_cast<HDListItem*> (aItem)->moveFocusToColumn (prevFocusColumn);
 
         mPrevItem = aItem;
     }
@@ -959,6 +965,7 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
                 if (item && item->focusColumn() != -1 &&
                     item->focusColumn() > 0)
                 {
+                    item->setAutoFocus (false);
                     mLvHD->setFocus();
                     item->moveFocusToColumn (item->focusColumn() - 1);
                     onAfterCurrentChanged (item);
@@ -971,6 +978,7 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
                 if (item && item->focusColumn() != -1 &&
                     item->focusColumn() < mLvHD->columns() - 1)
                 {
+                    item->setAutoFocus (false);
                     mLvHD->setFocus();
                     item->moveFocusToColumn (item->focusColumn() + 1);
                     onAfterCurrentChanged (item);
@@ -983,17 +991,19 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
                 if (item && item->focusColumn() != -1 &&
                     item->itemAbove())
                 {
+                    item->setAutoFocus (false);
                     mLvHD->setFocus();
                     mLvHD->setCurrentItem (item->itemAbove());
                 }
                 return true;
             } else
-            /* Process cursor-up as "move focus up" action */
+            /* Process cursor-down as "move focus down" action */
             if (e->key() == Qt::Key_Down && !e->state())
             {
                 if (item && item->focusColumn() != -1 &&
                     item->itemBelow())
                 {
+                    item->setAutoFocus (false);
                     mLvHD->setFocus();
                     mLvHD->setCurrentItem (item->itemBelow());
                 }
@@ -1014,35 +1024,22 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
                 if (item)
                     item->showEditor();
                 return true;
+            } else
+            if ((e->key() == Qt::Key_Tab && !e->state()) ||
+                e->key() == Qt::Key_Backtab)
+            {
+                item->setAutoFocus (false);
+                mLvHD->setFocus();
             }
             break;
         }
         /* Process focus event to toggle the current selection state */
         case QEvent::FocusIn:
         {
-            if (aObject == mLvHD ||
-                aObject->inherits ("HDSlotItem") ||
-                aObject->inherits ("HDVdiItem"))
-                mCBFocusOut = false;
-            else if (mCBFocusOut)
-            {
-                mCBFocusOut = false;
-                mLvHD->setFocus();
-                focusNextPrevChild (true);
-                return true;
-            }
-
             if (aObject == mLvHD)
                 onAfterCurrentChanged (mLvHD->currentItem());
             else if (!mGbHDList->queryList (0, 0, false, true)->contains (aObject))
                 onAfterCurrentChanged (0);
-            break;
-        }
-        case QEvent::FocusOut:
-        {
-            if (aObject->className() == "HDSlotItem" ||
-                aObject->className() == "HDVdiItem")
-                mCBFocusOut = true;
 
             break;
         }
