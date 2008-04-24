@@ -259,6 +259,8 @@ static void printUsage(USAGECATEGORY u64Cmd)
     {
         fLinux = true;
         fWin = true;
+        fSolaris = true;
+        fDarwin = true;
         fVRDP = true;
         u64Cmd = USAGE_ALL;
     }
@@ -2429,9 +2431,7 @@ static int handleShowVMInfo(int argc, char *argv[],
 
     /* at least one option: the UUID or name of the VM */
     if (argc < 1)
-    {
         return errorSyntax(USAGE_SHOWVMINFO, "Incorrect number of parameters");
-    }
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
@@ -2503,9 +2503,7 @@ static int handleList(int argc, char *argv[],
 
     /* exactly one option: the object */
     if (argc != 1)
-    {
         return errorSyntax(USAGE_LIST, "Incorrect number of parameters");
-    }
 
     /* which object? */
     if (strcmp(argv[0], "vms") == 0)
@@ -2981,9 +2979,8 @@ static int handleList(int argc, char *argv[],
 
     }
     else
-    {
         return errorSyntax(USAGE_LIST, "Invalid parameter '%s'", Utf8Str(argv[0]).raw());
-    }
+
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
@@ -2993,9 +2990,7 @@ static int handleRegisterVM(int argc, char *argv[],
     HRESULT rc;
 
     if (argc != 1)
-    {
         return errorSyntax(USAGE_REGISTERVM, "Incorrect number of parameters");
-    }
 
     ComPtr<IMachine> machine;
     CHECK_ERROR(virtualBox, OpenMachine(Bstr(argv[0]), machine.asOutParam()));
@@ -3013,9 +3008,7 @@ static int handleUnregisterVM(int argc, char *argv[],
     HRESULT rc;
 
     if ((argc != 1) && (argc != 2))
-    {
         return errorSyntax(USAGE_UNREGISTERVM, "Incorrect number of parameters");
-    }
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
@@ -3060,18 +3053,14 @@ static int handleCreateVDI(int argc, char *argv[],
         if (strcmp(argv[i], "-filename") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             filename = argv[i];
         }
         else if (strcmp(argv[i], "-size") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             sizeMB = RTStrToUInt64(argv[i]);
         }
@@ -3082,9 +3071,7 @@ static int handleCreateVDI(int argc, char *argv[],
         else if (strcmp(argv[i], "-comment") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             comment = argv[i];
         }
@@ -3095,26 +3082,19 @@ static int handleCreateVDI(int argc, char *argv[],
         else if (strcmp(argv[i], "-type") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             type = argv[i];
         }
         else
-        {
             return errorSyntax(USAGE_CREATEVDI, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
-        }
     }
     /* check the outcome */
     if (!filename || (sizeMB == 0))
-    {
         return errorSyntax(USAGE_CREATEVDI, "Parameters -filename and -size are required");
-    }
+
     if (strcmp(type, "normal") && strcmp(type, "writethrough"))
-    {
         return errorArgument("Invalid VDI type '%s' specified", Utf8Str(type).raw());
-    }
 
     ComPtr<IHardDisk> hardDisk;
     CHECK_ERROR(virtualBox, CreateHardDisk(HardDiskStorageType_VirtualDiskImage, hardDisk.asOutParam()));
@@ -3145,13 +3125,9 @@ static int handleCreateVDI(int argc, char *argv[],
                 {
                     com::ProgressErrorInfo info(progress);
                     if (info.isBasicAvailable())
-                    {
                         RTPrintf("Error: failed to create disk image. Error message: %lS\n", info.getText().raw());
-                    }
                     else
-                    {
                         RTPrintf("Error: failed to create disk image. No error message available!\n");
-                    }
                 }
                 else
                 {
@@ -3203,9 +3179,7 @@ static int handleModifyVDI(int argc, char *argv[],
 
     /* The uuid/filename and a command */
     if (argc < 2)
-    {
         return errorSyntax(USAGE_MODIFYVDI, "Incorrect number of parameters");
-    }
 
     ComPtr<IHardDisk> hardDisk;
     ComPtr<IVirtualDiskImage> vdi;
@@ -3236,9 +3210,8 @@ static int handleModifyVDI(int argc, char *argv[],
             char *type = NULL;
 
             if (argc <= 2)
-            {
                 return errorArgument("Missing argument to for settype");
-            }
+
             type = argv[2];
 
             HardDiskType_T hddType;
@@ -3266,9 +3239,7 @@ static int handleModifyVDI(int argc, char *argv[],
             }
         }
         else
-        {
             return errorArgument("Hard disk image not registered");
-        }
     }
     else if (strcmp(argv[1], "compact") == 0)
     {
@@ -3279,9 +3250,7 @@ static int handleModifyVDI(int argc, char *argv[],
         {
             virtualBox->OpenVirtualDiskImage(Bstr(argv[0]), vdi.asOutParam());
             if (!vdi)
-            {
                 return errorArgument("Hard disk image not found");
-            }
         }
         else
             vdi = hardDisk;
@@ -3307,9 +3276,8 @@ static int handleModifyVDI(int argc, char *argv[],
         }
     }
     else
-    {
         return errorSyntax(USAGE_MODIFYVDI, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
-    }
+
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
@@ -3320,9 +3288,7 @@ static int handleCloneVDI(int argc, char *argv[],
 
     /* source VDI and target path */
     if (argc != 2)
-    {
         return errorSyntax(USAGE_CLONEVDI, "Incorrect number of parameters");
-    }
 
     /* first guess is that it's a UUID */
     Guid uuid(argv[0]);
@@ -3466,9 +3432,7 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
 
     /* at least server and target */
     if (argc < 4)
-    {
         return errorSyntax(USAGE_ADDISCSIDISK, "Not enough parameters");
-    }
 
     /* let's have a closer look at the arguments */
     for (int i = 0; i < argc; i++)
@@ -3476,27 +3440,21 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
         if (strcmp(argv[i], "-server") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             server = argv[i];
         }
         else if (strcmp(argv[i], "-target") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             target = argv[i];
         }
         else if (strcmp(argv[i], "-port") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             port = atoi(argv[i]);
         }
@@ -3504,9 +3462,7 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
         {
             /** @todo move the LUN encoding algorithm into IISCSIHardDisk, add decoding */
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             char *pszNext;
             int rc = RTStrToUInt64Ex(argv[i], &pszNext, 0, &lun);
@@ -3526,9 +3482,7 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
         else if (strcmp(argv[i], "-encodedlun") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             char *pszNext;
             int rc = RTStrToUInt64Ex(argv[i], &pszNext, 0, &lun);
@@ -3538,41 +3492,31 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
         else if (strcmp(argv[i], "-username") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             username = argv[i];
         }
         else if (strcmp(argv[i], "-password") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             password = argv[i];
         }
         else if (strcmp(argv[i], "-comment") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             comment = argv[i];
         }
         else
-        {
             return errorSyntax(USAGE_ADDISCSIDISK, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
-        }
     }
 
     /* check for required options */
     if (!server || !target)
-    {
         return errorSyntax(USAGE_ADDISCSIDISK, "Parameters -server and -target are required");
-    }
 
     ComPtr<IHardDisk> hardDisk;
     CHECK_ERROR(aVirtualBox, CreateHardDisk(HardDiskStorageType_ISCSIHardDisk, hardDisk.asOutParam()));
@@ -3621,59 +3565,44 @@ static int handleCreateVM(int argc, char *argv[],
         if (strcmp(argv[i], "-basefolder") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             baseFolder = argv[i];
         }
         else if (strcmp(argv[i], "-settingsfile") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             settingsFile = argv[i];
         }
         else if (strcmp(argv[i], "-name") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             name = argv[i];
         }
         else if (strcmp(argv[i], "-uuid") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             if (VBOX_FAILURE(RTUuidFromStr(&id, argv[i])))
-            {
                 return errorArgument("Invalid UUID format %s\n", argv[i]);
-            }
         }
         else if (strcmp(argv[i], "-register") == 0)
         {
             fRegister = true;
         }
         else
-        {
             return errorSyntax(USAGE_CREATEVM, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
-        }
     }
     if (!name)
-    {
         return errorSyntax(USAGE_CREATEVM, "Parameter -name is required");
-    }
+
     if (!!baseFolder && !!settingsFile)
-    {
         return errorSyntax(USAGE_CREATEVM, "Either -basefolder or -settingsfile must be specified");
-    }
 
     do
     {
@@ -3814,144 +3743,112 @@ static int handleModifyVM(int argc, char *argv[],
         if (strcmp(argv[i], "-name") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             name = argv[i];
         }
         else if (strcmp(argv[i], "-ostype") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             ostype = argv[i];
         }
         else if (strcmp(argv[i], "-memory") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             memorySize = atoi(argv[i]);
         }
         else if (strcmp(argv[i], "-vram") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             vramSize = atoi(argv[i]);
         }
         else if (strcmp(argv[i], "-acpi") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             acpi = argv[i];
         }
         else if (strcmp(argv[i], "-ioapic") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             ioapic = argv[i];
         }
         else if (strcmp(argv[i], "-hwvirtex") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             hwvirtex = argv[i];
         }
         else if (strcmp(argv[i], "-pae") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             pae = argv[i];
         }
         else if (strcmp(argv[i], "-monitorcount") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             monitorcount = atoi(argv[i]);
         }
         else if (strcmp(argv[i], "-bioslogofadein") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             bioslogofadein = argv[i];
         }
         else if (strcmp(argv[i], "-bioslogofadeout") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             bioslogofadeout = argv[i];
         }
         else if (strcmp(argv[i], "-bioslogodisplaytime") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             bioslogodisplaytime = atoi(argv[i]);
         }
         else if (strcmp(argv[i], "-bioslogoimagepath") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             bioslogoimagepath = argv[i];
         }
         else if (strcmp(argv[i], "-biosbootmenu") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             biosbootmenumode = argv[i];
         }
         else if (strcmp(argv[i], "-biossystemtimeoffset") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             biossystemtimeoffset = argv[i];
         }
         else if (strcmp(argv[i], "-biospxedebug") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             biospxedebug = argv[i];
         }
@@ -3959,17 +3856,11 @@ static int handleModifyVM(int argc, char *argv[],
         {
             ULONG n = 0;
             if (!argv[i][5])
-            {
                 return errorSyntax(USAGE_MODIFYVM, "Missing boot slot number in '%s'", argv[i]);
-            }
             if ((n = strtoul(&argv[i][5], NULL, 10)) < 1)
-            {
                 return errorSyntax(USAGE_MODIFYVM, "Invalid boot slot number in '%s'", argv[i]);
-            }
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             if (strcmp(argv[i], "none") == 0)
             {
@@ -3992,89 +3883,70 @@ static int handleModifyVM(int argc, char *argv[],
                 bootDevice[n - 1] = DeviceType_Network;
             }
             else
-            {
                 return errorArgument("Invalid boot device '%s'", argv[i]);
-            }
+
             bootDeviceChanged[n - 1] = true;
         }
         else if (strcmp(argv[i], "-hda") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             hdds[0] = argv[i];
         }
         else if (strcmp(argv[i], "-hdb") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             hdds[1] = argv[i];
         }
         else if (strcmp(argv[i], "-hdd") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             hdds[2] = argv[i];
         }
         else if (strcmp(argv[i], "-dvd") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             dvd = argv[i];
         }
         else if (strcmp(argv[i], "-dvdpassthrough") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             dvdpassthrough = argv[i];
         }
         else if (strcmp(argv[i], "-floppy") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             floppy = argv[i];
         }
         else if (strcmp(argv[i], "-audio") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             audio = argv[i];
         }
         else if (strcmp(argv[i], "-audiocontroller") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             audiocontroller = argv[i];
         }
         else if (strcmp(argv[i], "-clipboard") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             clipboard = argv[i];
         }
@@ -4083,10 +3955,10 @@ static int handleModifyVM(int argc, char *argv[],
             unsigned n = parseNum(&argv[i][15], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
+
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
+
             cableconnected[n - 1] = argv[i + 1];
             i++;
         }
@@ -4109,9 +3981,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             nictrace[n - 1] = argv[i + 1];
             i++;
         }
@@ -4121,9 +3991,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             nictype[n - 1] = argv[i + 1];
             i++;
         }
@@ -4133,9 +4001,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             nicspeed[n - 1] = argv[i + 1];
             i++;
         }
@@ -4145,9 +4011,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             nics[n - 1] = argv[i + 1];
             i++;
         }
@@ -4157,9 +4021,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             hostifdev[n - 1] = argv[i + 1];
             i++;
         }
@@ -4169,9 +4031,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             intnet[n - 1] = argv[i + 1];
             i++;
         }
@@ -4181,9 +4041,8 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
+
             RTIPV4ADDR Network;
             RTIPV4ADDR Netmask;
             int rc = RTCidrStrToIPv4(argv[i + 1], &Network, &Netmask);
@@ -4201,9 +4060,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             tapsetup[n - 1] = argv[i + 1];
             i++;
         }
@@ -4213,9 +4070,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             tapterm[n - 1] = argv[i + 1];
             i++;
         }
@@ -4226,9 +4081,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             macs[n - 1] = argv[i + 1];
             i++;
         }
@@ -4236,18 +4089,14 @@ static int handleModifyVM(int argc, char *argv[],
         else if (strcmp(argv[i], "-vrdp") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             vrdp = argv[i];
         }
         else if (strcmp(argv[i], "-vrdpport") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             if (strcmp(argv[i], "default") == 0)
                 vrdpport = 0;
@@ -4257,27 +4106,21 @@ static int handleModifyVM(int argc, char *argv[],
         else if (strcmp(argv[i], "-vrdpaddress") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             vrdpaddress = argv[i];
         }
         else if (strcmp(argv[i], "-vrdpauthtype") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             vrdpauthtype = argv[i];
         }
         else if (strcmp(argv[i], "-vrdpmulticon") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             vrdpmulticon = argv[i];
         }
@@ -4285,9 +4128,7 @@ static int handleModifyVM(int argc, char *argv[],
         else if (strcmp(argv[i], "-usb") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             if (strcmp(argv[i], "on") == 0 || strcmp(argv[i], "enable") == 0)
                 fUsbEnabled = 1;
@@ -4299,9 +4140,7 @@ static int handleModifyVM(int argc, char *argv[],
         else if (strcmp(argv[i], "-usbehci") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             if (strcmp(argv[i], "on") == 0 || strcmp(argv[i], "enable") == 0)
                 fUsbEhciEnabled = 1;
@@ -4313,9 +4152,7 @@ static int handleModifyVM(int argc, char *argv[],
         else if (strcmp(argv[i], "-snapshotfolder") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             snapshotFolder = argv[i];
         }
@@ -4345,9 +4182,7 @@ static int handleModifyVM(int argc, char *argv[],
                     uarts_mode[n - 1] = (char*)"device";
                 }
                 if (argc <= i)
-                {
                     return errorArgument("Missing argument to -uartmode");
-                }
                 uarts_path[n - 1] = argv[i];
             }
         }
@@ -4357,9 +4192,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             if (strcmp(argv[i], "off") == 0 || strcmp(argv[i], "disable") == 0)
             {
@@ -4368,9 +4201,7 @@ static int handleModifyVM(int argc, char *argv[],
             else
             {
                 if (argc <= i + 1)
-                {
                     return errorArgument("Missing argument to '%s'", argv[i-1]);
-                }
                 uint32_t uVal;
                 int vrc;
                 vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
@@ -4413,9 +4244,7 @@ static int handleModifyVM(int argc, char *argv[],
         else if (strcmp(argv[i], "-sata") == 0)
         {
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             if (strcmp(argv[i], "on") == 0 || strcmp(argv[i], "enable") == 0)
                 fSataEnabled = 1;
@@ -4429,9 +4258,7 @@ static int handleModifyVM(int argc, char *argv[],
             unsigned n;
 
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing arguments to '%s'", argv[i]);
-            }
             i++;
 
             n = parseNum(argv[i], 30, "SATA");
@@ -4445,9 +4272,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            }
             i++;
             hdds[n-1+4] = argv[i];
         }
@@ -4462,9 +4287,7 @@ static int handleModifyVM(int argc, char *argv[],
             bootDevicePos--;
 
             if (argc <= i + 1)
-            {
                 return errorArgument("Missing arguments to '%s'", argv[i]);
-            }
             i++;
 
             n = parseNum(argv[i], 30, "SATA");
@@ -4474,9 +4297,7 @@ static int handleModifyVM(int argc, char *argv[],
             sataBootDevices[bootDevicePos] = n-1;
         }
         else
-        {
             return errorSyntax(USAGE_MODIFYVM, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
-        }
     }
 
     /* try to find the given machine */
@@ -5571,9 +5392,7 @@ static int handleStartVM(int argc, char *argv[],
     HRESULT rc;
 
     if (argc < 1)
-    {
         return errorSyntax(USAGE_STARTVM, "Not enough parameters");
-    }
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
@@ -5606,9 +5425,7 @@ static int handleStartVM(int argc, char *argv[],
                 sessionType = "capture";
             }
             else
-            {
                 return errorArgument("Invalid session type argument '%s'", argv[2]);
-            }
         }
 
         Bstr env;
@@ -5657,9 +5474,7 @@ static int handleControlVM(int argc, char *argv[],
     HRESULT rc;
 
     if (argc < 2)
-    {
         return errorSyntax(USAGE_CONTROLVM, "Not enough parameters");
-    }
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
@@ -6070,9 +5885,7 @@ static int handleDiscardState(int argc, char *argv[],
     HRESULT rc;
 
     if (argc != 1)
-    {
         return errorSyntax(USAGE_DISCARDSTATE, "Incorrect number of parameters");
-    }
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
@@ -6111,9 +5924,7 @@ static int handleAdoptdState(int argc, char *argv[],
     HRESULT rc;
 
     if (argc != 2)
-    {
         return errorSyntax(USAGE_ADOPTSTATE, "Incorrect number of parameters");
-    }
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
@@ -6153,9 +5964,7 @@ static int handleSnapshot(int argc, char *argv[],
 
     /* we need at least a VM and a command */
     if (argc < 2)
-    {
         return errorSyntax(USAGE_SNAPSHOT, "Not enough parameters");
-    }
 
     /* the first argument must be the VM */
     ComPtr<IMachine> machine;
@@ -6209,13 +6018,9 @@ static int handleSnapshot(int argc, char *argv[],
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
-                {
                     RTPrintf("Error: failed to take snapshot. Error message: %lS\n", info.getText().raw());
-                }
                 else
-                {
                     RTPrintf("Error: failed to take snapshot. No error message available!\n");
-                }
             }
         }
         else if (strcmp(argv[1], "discard") == 0)
@@ -6253,13 +6058,9 @@ static int handleSnapshot(int argc, char *argv[],
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
-                {
                     RTPrintf("Error: failed to discard snapshot. Error message: %lS\n", info.getText().raw());
-                }
                 else
-                {
                     RTPrintf("Error: failed to discard snapshot. No error message available!\n");
-                }
             }
         }
         else if (strcmp(argv[1], "discardcurrent") == 0)
@@ -6293,13 +6094,9 @@ static int handleSnapshot(int argc, char *argv[],
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
-                {
                     RTPrintf("Error: failed to discard. Error message: %lS\n", info.getText().raw());
-                }
                 else
-                {
                     RTPrintf("Error: failed to discard. No error message available!\n");
-                }
             }
 
         }
@@ -6414,9 +6211,7 @@ static int handleShowVDIInfo(int argc, char *argv[],
     HRESULT rc;
 
     if (argc != 1)
-    {
         return errorSyntax(USAGE_SHOWVDIINFO, "Incorrect number of parameters");
-    }
 
     ComPtr<IHardDisk> hardDisk;
     Bstr filepath;
@@ -6541,9 +6336,7 @@ static int handleRegisterImage(int argc, char *argv[],
     HRESULT rc;
 
     if (argc < 2)
-    {
         return errorSyntax(USAGE_REGISTERIMAGE, "Not enough parameters");
-    }
 
     Bstr filepath(argv[1]);
 
@@ -6552,21 +6345,15 @@ static int handleRegisterImage(int argc, char *argv[],
         const char *type = NULL;
         /* there can be a type parameter */
         if ((argc > 2) && (argc != 4))
-        {
             return errorSyntax(USAGE_REGISTERIMAGE, "Incorrect number of parameters");
-        }
         if (argc == 4)
         {
             if (strcmp(argv[2], "-type") != 0)
-            {
                 return errorSyntax(USAGE_REGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(argv[2]).raw());
-            }
             if (   (strcmp(argv[3], "normal") != 0)
                 && (strcmp(argv[3], "immutable") != 0)
                 && (strcmp(argv[3], "writethrough") != 0))
-            {
                 return errorArgument("Invalid VDI type '%s' specified", Utf8Str(argv[3]).raw());
-            }
             type = argv[3];
         }
 
@@ -6607,9 +6394,8 @@ static int handleRegisterImage(int argc, char *argv[],
         }
     }
     else
-    {
         return errorSyntax(USAGE_REGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
-    }
+
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
@@ -6619,9 +6405,7 @@ static int handleUnregisterImage(int argc, char *argv[],
     HRESULT rc;
 
     if (argc != 2)
-    {
         return errorSyntax(USAGE_UNREGISTERIMAGE, "Incorrect number of parameters");
-    }
 
     /* first guess is that it's a UUID */
     Guid uuid(argv[1]);
@@ -6680,9 +6464,8 @@ static int handleUnregisterImage(int argc, char *argv[],
         }
     }
     else
-    {
         return errorSyntax(USAGE_UNREGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
-    }
+
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
@@ -6691,9 +6474,7 @@ static int handleCreateHostIF(int argc, char *argv[],
                               ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
     if (argc != 1)
-    {
         return errorSyntax(USAGE_CREATEHOSTIF, "Incorrect number of parameters");
-    }
 
     HRESULT rc = S_OK;
 
@@ -6728,9 +6509,7 @@ static int handleRemoveHostIF(int argc, char *argv[],
                               ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
     if (argc != 1)
-    {
         return errorSyntax(USAGE_REMOVEHOSTIF, "Incorrect number of parameters");
-    }
 
     HRESULT rc = S_OK;
 
@@ -6780,9 +6559,8 @@ static int handleGetExtraData(int argc, char *argv[],
     HRESULT rc = S_OK;
 
     if (argc != 2)
-    {
         return errorSyntax(USAGE_GETEXTRADATA, "Incorrect number of parameters");
-    }
+
     /* global data? */
     if (strcmp(argv[0], "global") == 0)
     {
@@ -6800,9 +6578,7 @@ static int handleGetExtraData(int argc, char *argv[],
                 extraDataKey = nextExtraDataKey;
 
                 if (SUCCEEDED(rcEnum) && extraDataKey)
-                {
                     RTPrintf("Key: %lS, Value: %lS\n", nextExtraDataKey.raw(), nextExtraDataValue.raw());
-                }
             } while (extraDataKey);
         }
         else
@@ -6866,9 +6642,8 @@ static int handleSetExtraData(int argc, char *argv[],
     HRESULT rc = S_OK;
 
     if (argc < 2)
-    {
         return errorSyntax(USAGE_SETEXTRADATA, "Not enough parameters");
-    }
+
     /* global data? */
     if (strcmp(argv[0], "global") == 0)
     {
@@ -6909,9 +6684,8 @@ static int handleSetProperty(int argc, char *argv[],
 
     /* there must be two arguments: property name and value */
     if (argc != 2)
-    {
         return errorSyntax(USAGE_SETPROPERTY, "Incorrect number of parameters");
-    }
+
     ComPtr<ISystemProperties> systemProperties;
     virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
 
@@ -6979,9 +6753,7 @@ static int handleUSBFilter (int argc, char *argv[],
 
     /* at least: 0: command, 1: index, 2: -target, 3: <target value> */
     if (argc < 4)
-    {
         return errorSyntax(USAGE_USBFILTER, "Not enough parameters");
-    }
 
     /* which command? */
     cmd.mAction = USBFilterCmd::Invalid;
@@ -6990,17 +6762,13 @@ static int handleUSBFilter (int argc, char *argv[],
     else if (strcmp (argv [0], "remove") == 0)  cmd.mAction = USBFilterCmd::Remove;
 
     if (cmd.mAction == USBFilterCmd::Invalid)
-    {
         return errorSyntax(USAGE_USBFILTER, "Invalid parameter '%s'", argv[0]);
-    }
 
     /* which index? */
     char *endptr = NULL;
     cmd.mIndex = strtoul (argv[1], &endptr, 10);
     if (!endptr || *endptr)
-    {
         return errorSyntax(USAGE_USBFILTER, "Invalid index '%s'", argv[1]);
-    }
 
     switch (cmd.mAction)
     {
@@ -7011,9 +6779,8 @@ static int handleUSBFilter (int argc, char *argv[],
             if (argc < 6)
             {
                 if (cmd.mAction == USBFilterCmd::Add)
-                {
                     return errorSyntax(USAGE_USBFILTER_ADD, "Not enough parameters");
-                }
+
                 return errorSyntax(USAGE_USBFILTER_MODIFY, "Not enough parameters");
             }
 
@@ -7028,9 +6795,7 @@ static int handleUSBFilter (int argc, char *argv[],
                 if  (strcmp(argv [i], "-target") == 0)
                 {
                     if (argc <= i + 1 || !*argv[i+1])
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     if (strcmp (argv [i], "global") == 0)
                         cmd.mGlobal = true;
@@ -7048,127 +6813,97 @@ static int handleUSBFilter (int argc, char *argv[],
                 else if (strcmp(argv [i], "-name") == 0)
                 {
                     if (argc <= i + 1 || !*argv[i+1])
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     cmd.mFilter.mName = argv [i];
                 }
                 else if (strcmp(argv [i], "-active") == 0)
                 {
                     if (argc <= i + 1)
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     if (strcmp (argv [i], "yes") == 0)
                         cmd.mFilter.mActive = true;
                     else if (strcmp (argv [i], "no") == 0)
                         cmd.mFilter.mActive = false;
                     else
-                    {
                         return errorArgument("Invalid -active argument '%s'", argv[i]);
-                    }
                 }
                 else if (strcmp(argv [i], "-vendorid") == 0)
                 {
                     if (argc <= i + 1)
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     cmd.mFilter.mVendorId = argv [i];
                 }
                 else if (strcmp(argv [i], "-productid") == 0)
                 {
                     if (argc <= i + 1)
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     cmd.mFilter.mProductId = argv [i];
                 }
                 else if (strcmp(argv [i], "-revision") == 0)
                 {
                     if (argc <= i + 1)
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     cmd.mFilter.mRevision = argv [i];
                 }
                 else if (strcmp(argv [i], "-manufacturer") == 0)
                 {
                     if (argc <= i + 1)
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     cmd.mFilter.mManufacturer = argv [i];
                 }
                 else if (strcmp(argv [i], "-product") == 0)
                 {
                     if (argc <= i + 1)
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     cmd.mFilter.mProduct = argv [i];
                 }
                 else if (strcmp(argv [i], "-remote") == 0)
                 {
                     if (argc <= i + 1)
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     cmd.mFilter.mRemote = argv[i];
                 }
                 else if (strcmp(argv [i], "-serialnumber") == 0)
                 {
                     if (argc <= i + 1)
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     cmd.mFilter.mSerialNumber = argv [i];
                 }
                 else if (strcmp(argv [i], "-maskedinterfaces") == 0)
                 {
                     if (argc <= i + 1)
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     uint32_t u32;
                     rc = RTStrToUInt32Full(argv[i], 0, &u32);
                     if (RT_FAILURE(rc))
-                    {
                         return errorArgument("Failed to convert the -maskedinterfaces value '%s' to a number, rc=%Rrc", argv[i], rc);
-                    }
                     cmd.mFilter.mMaskedInterfaces = u32;
                 }
                 else if (strcmp(argv [i], "-action") == 0)
                 {
                     if (argc <= i + 1)
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     if (strcmp (argv [i], "ignore") == 0)
                         cmd.mFilter.mAction = USBDeviceFilterAction_Ignore;
                     else if (strcmp (argv [i], "hold") == 0)
                         cmd.mFilter.mAction = USBDeviceFilterAction_Hold;
                     else
-                    {
                         return errorArgument("Invalid USB filter action '%s'", argv[i]);
-                    }
                 }
                 else
-                {
                     return errorSyntax(cmd.mAction == USBFilterCmd::Add ? USAGE_USBFILTER_ADD : USAGE_USBFILTER_MODIFY,
                                        "Unknown option '%s'", argv[i]);
-                }
             }
 
             if (cmd.mAction == USBFilterCmd::Add)
@@ -7195,18 +6930,14 @@ static int handleUSBFilter (int argc, char *argv[],
         {
             /* at least: 0: command, 1: index, 2: -target, 3: <target value> */
             if (argc < 4)
-            {
                 return errorSyntax(USAGE_USBFILTER_REMOVE, "Not enough parameters");
-            }
 
             for (int i = 2; i < argc; i++)
             {
                 if  (strcmp(argv [i], "-target") == 0)
                 {
                     if (argc <= i + 1 || !*argv[i+1])
-                    {
                         return errorArgument("Missing argument to '%s'", argv[i]);
-                    }
                     i++;
                     if (strcmp (argv [i], "global") == 0)
                         cmd.mGlobal = true;
@@ -7225,9 +6956,7 @@ static int handleUSBFilter (int argc, char *argv[],
 
             // mandatory options
             if (!cmd.mGlobal && !cmd.mMachine)
-            {
                 return errorSyntax(USAGE_USBFILTER_REMOVE, "Mandatory options not supplied");
-            }
 
             break;
         }
@@ -7401,9 +7130,7 @@ static int handleSharedFolder (int argc, char *argv[],
 
     /* we need at least a command and target */
     if (argc < 2)
-    {
         return errorSyntax(USAGE_SHAREDFOLDER, "Not enough parameters");
-    }
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
@@ -7422,9 +7149,7 @@ static int handleSharedFolder (int argc, char *argv[],
     {
         /* we need at least four more parameters */
         if (argc < 5)
-        {
             return errorSyntax(USAGE_SHAREDFOLDER_ADD, "Not enough parameters");
-        }
 
         char *name = NULL;
         char *hostpath = NULL;
@@ -7436,18 +7161,14 @@ static int handleSharedFolder (int argc, char *argv[],
             if (strcmp(argv[i], "-name") == 0)
             {
                 if (argc <= i + 1 || !*argv[i+1])
-                {
                     return errorArgument("Missing argument to '%s'", argv[i]);
-                }
                 i++;
                 name = argv[i];
             }
             else if (strcmp(argv[i], "-hostpath") == 0)
             {
                 if (argc <= i + 1 || !*argv[i+1])
-                {
                     return errorArgument("Missing argument to '%s'", argv[i]);
-                }
                 i++;
                 hostpath = argv[i];
             }
@@ -7460,9 +7181,7 @@ static int handleSharedFolder (int argc, char *argv[],
                 fTransient = true;
             }
             else
-            {
                 return errorSyntax(USAGE_SHAREDFOLDER_ADD, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
-            }
         }
 
         /* required arguments */
@@ -7507,9 +7226,7 @@ static int handleSharedFolder (int argc, char *argv[],
     {
         /* we need at least two more parameters */
         if (argc < 3)
-        {
             return errorSyntax(USAGE_SHAREDFOLDER_REMOVE, "Not enough parameters");
-        }
 
         char *name = NULL;
         bool fTransient = false;
@@ -7519,9 +7236,7 @@ static int handleSharedFolder (int argc, char *argv[],
             if (strcmp(argv[i], "-name") == 0)
             {
                 if (argc <= i + 1 || !*argv[i+1])
-                {
                     return errorArgument("Missing argument to '%s'", argv[i]);
-                }
                 i++;
                 name = argv[i];
             }
@@ -7530,16 +7245,12 @@ static int handleSharedFolder (int argc, char *argv[],
                 fTransient = true;
             }
             else
-            {
                 return errorSyntax(USAGE_SHAREDFOLDER_REMOVE, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
-            }
         }
 
         /* required arguments */
         if (!name)
-        {
             return errorSyntax(USAGE_SHAREDFOLDER_REMOVE, "Parameter -name is required");
-        }
 
         if (fTransient)
         {
@@ -7573,9 +7284,8 @@ static int handleSharedFolder (int argc, char *argv[],
         }
     }
     else
-    {
         return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", Utf8Str(argv[0]).raw());
-    }
+
     return 0;
 }
 
