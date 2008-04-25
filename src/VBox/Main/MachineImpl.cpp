@@ -120,6 +120,7 @@ static DECLCALLBACK(int) progressCallback (unsigned uPercentage, void *pvUser)
 Machine::Data::Data()
 {
     mRegistered = FALSE;
+    mAccessible = FALSE;
     /* mUuid is initialized in Machine::init() */
 
     mMachineState = MachineState_PoweredOff;
@@ -399,72 +400,54 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
                 aConfigFile, vrc);
     mData->mConfigFileFull = configFileFull;
 
-    /* start with accessible */
-    mData->mAccessible = TRUE;
-
-    if (aMode != Init_New)
-    {
-        /* lock the settings file */
-        rc = lockConfig();
-
-        if (aMode == Init_Registered && FAILED (rc))
-        {
-            /* If the machine is registered, then, instead of returning a
-             * failure, we mark it as inaccessible and set the result to
-             * success to give it a try later */
-            mData->mAccessible = FALSE;
-            /* fetch the current error info */
-            mData->mAccessError = com::ErrorInfo();
-            LogWarning (("Machine {%Vuuid} is inaccessible! [%ls]\n",
-                         mData->mUuid.raw(),
-                         mData->mAccessError.getText().raw()));
-            rc = S_OK;
-        }
-    }
-    else
-    {
-        /* check for the file existence */
-        RTFILE f = NIL_RTFILE;
-        int vrc = RTFileOpen (&f, configFileFull, RTFILE_O_READ);
-        if (VBOX_SUCCESS (vrc) || vrc == VERR_SHARING_VIOLATION)
-        {
-            rc = setError (E_FAIL,
-                tr ("Settings file '%s' already exists"), configFileFull);
-            if (VBOX_SUCCESS (vrc))
-                RTFileClose (f);
-        }
-        else
-        {
-            if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
-                rc = setError (E_FAIL,
-                    tr ("Invalid settings file name: '%ls' (%Vrc)"),
-                        mData->mConfigFileFull.raw(), vrc);
-        }
-
-        /* reset mAccessible to make sure uninit() called by the AutoInitSpan
-         * destructor will not call uninitDataAndChildObjects() (we haven't
-         * initialized anything yet) */
-        if (FAILED (rc))
-            mData->mAccessible = FALSE;
-    }
-
-    CheckComRCReturnRC (rc);
-
     if (aMode == Init_Registered)
     {
+        mData->mRegistered = TRUE;
+
         /* store the supplied UUID (will be used to check for UUID consistency
          * in loadSettings() */
         unconst (mData->mUuid) = *aId;
-        /* try to  load settings only if the settings file is accessible */
-        if (mData->mAccessible)
-            rc = registeredInit();
+        rc = registeredInit();
     }
     else
     {
-        rc = initDataAndChildObjects();
+        if (aMode == Init_Existing)
+        {
+            /* lock the settings file */
+            rc = lockConfig();
+        }
+        else if (aMode == Init_New)
+        {
+            /* check for the file existence */
+            RTFILE f = NIL_RTFILE;
+            int vrc = RTFileOpen (&f, configFileFull, RTFILE_O_READ);
+            if (VBOX_SUCCESS (vrc) || vrc == VERR_SHARING_VIOLATION)
+            {
+                rc = setError (E_FAIL,
+                    tr ("Settings file '%s' already exists"), configFileFull);
+                if (VBOX_SUCCESS (vrc))
+                    RTFileClose (f);
+            }
+            else
+            {
+                if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
+                    rc = setError (E_FAIL,
+                        tr ("Invalid settings file name: '%ls' (%Vrc)"),
+                            mData->mConfigFileFull.raw(), vrc);
+            }
+        }
+        else
+            AssertFailed();
+
+        if (SUCCEEDED (rc))
+            rc = initDataAndChildObjects();
 
         if (SUCCEEDED (rc))
         {
+            /* set to true now to cause uninit() to call
+             * uninitDataAndChildObjects() on failure */
+            mData->mAccessible = TRUE;
+
             if (aMode != Init_New)
             {
                 rc = loadSettings (false /* aRegistered */);
@@ -528,21 +511,25 @@ HRESULT Machine::registeredInit()
 {
     AssertReturn (mType == IsMachine, E_FAIL);
     AssertReturn (!mData->mUuid.isEmpty(), E_FAIL);
+    AssertReturn (!mData->mAccessible, E_FAIL);
 
-    HRESULT rc = initDataAndChildObjects();
-    CheckComRCReturnRC (rc);
+    HRESULT rc = lockConfig();
 
-    if (!mData->mAccessible)
-        rc = lockConfig();
-
-    /* Temporarily reset the registered flag in order to let setters potentially
-     * called from loadSettings() succeed (isMutable() used in all setters
-     * will return FALSE for a Machine instance if mRegistered is TRUE). */
-    mData->mRegistered = FALSE;
+    if (SUCCEEDED (rc))
+        rc = initDataAndChildObjects();
 
     if (SUCCEEDED (rc))
     {
+        /* Temporarily reset the registered flag in order to let setters
+         * potentially called from loadSettings() succeed (isMutable() used in
+         * all setters will return FALSE for a Machine instance if mRegistered
+         * is TRUE). */
+        mData->mRegistered = FALSE;
+
         rc = loadSettings (true /* aRegistered */);
+
+        /* Restore the registered flag (even on failure) */
+        mData->mRegistered = TRUE;
 
         if (FAILED (rc))
             unlockConfig();
@@ -550,6 +537,8 @@ HRESULT Machine::registeredInit()
 
     if (SUCCEEDED (rc))
     {
+        /* Set mAccessible to TRUE only if we successfully locked and loaded
+         * the settings file */
         mData->mAccessible = TRUE;
 
         /* commit all changes made during loading the settings file */
@@ -564,7 +553,7 @@ HRESULT Machine::registeredInit()
         /* If the machine is registered, then, instead of returning a
          * failure, we mark it as inaccessible and set the result to
          * success to give it a try later */
-        mData->mAccessible = FALSE;
+
         /* fetch the current error info */
         mData->mAccessError = com::ErrorInfo();
         LogWarning (("Machine {%Vuuid} is inaccessible! [%ls]\n",
@@ -580,9 +569,6 @@ HRESULT Machine::registeredInit()
 
         rc = S_OK;
     }
-
-    /* Restore the registered flag (even on failure) */
-    mData->mRegistered = TRUE;
 
     return rc;
 }
@@ -3669,13 +3655,13 @@ HRESULT Machine::checkStateDependency (StateDependency aDepType)
 }
 
 /**
- *  Helper to initialize all associated child objects
- *  and allocate data structures.
+ * Helper to initialize all associated child objects and allocate data
+ * structures.
  *
- *  This method must be called as a part of the object's initialization
- *  procedure (usually done in the #init() method).
+ * This method must be called as a part of the object's initialization procedure
+ * (usually done in the #init() method).
  *
- *  @note Must be called only from #init() or from #registeredInit().
+ * @note Must be called only from #init() or from #registeredInit().
  */
 HRESULT Machine::initDataAndChildObjects()
 {
@@ -3683,6 +3669,8 @@ HRESULT Machine::initDataAndChildObjects()
     AssertComRCReturnRC (autoCaller.rc());
     AssertComRCReturn (autoCaller.state() == InInit ||
                        autoCaller.state() == Limited, E_FAIL);
+
+    AssertReturn (!mData->mAccessible, E_FAIL);
 
     /* allocate data structures */
     mSSData.allocate();
@@ -3748,13 +3736,13 @@ HRESULT Machine::initDataAndChildObjects()
 }
 
 /**
- *  Helper to uninitialize all associated child objects
- *  and to free all data structures.
+ * Helper to uninitialize all associated child objects and to free all data
+ * structures.
  *
- *  This method must be called as a part of the object's uninitialization
- *  procedure (usually done in the #uninit() method).
+ * This method must be called as a part of the object's uninitialization
+ * procedure (usually done in the #uninit() method).
  *
- *  @note Must be called only from #uninit() or from #registeredInit().
+ * @note Must be called only from #uninit() or from #registeredInit().
  */
 void Machine::uninitDataAndChildObjects()
 {
@@ -6699,7 +6687,13 @@ HRESULT Machine::lockConfig()
                               RTFILE_O_READWRITE | RTFILE_O_OPEN |
                               RTFILE_O_DENY_WRITE);
         if (VBOX_FAILURE (vrc))
+        {
             mData->mHandleCfgFile = NIL_RTFILE;
+
+            rc = setError (E_FAIL,
+                tr ("Could not lock the settings file '%ls' (%Vrc)"),
+                mData->mConfigFileFull.raw(), vrc);
+        }
     }
 
     LogFlowThisFunc (("mConfigFile={%ls}, mHandleCfgFile=%d, rc=%08X\n",
