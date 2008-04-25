@@ -1281,7 +1281,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                             RTPrintf("natnet%d=\"%lS\"\n", currentNIC + 1, strNetwork.raw());
                             strAttachment = "nat";
                         }
-                        else if (strNetwork != "default")
+                        else if (!strNetwork.isEmpty())
                             strAttachment = Utf8StrFmt("NAT (%lS)", strNetwork.raw());
                         else
                             strAttachment = "NAT";
@@ -1363,7 +1363,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                     RTPrintf("NIC %d:           MAC: %lS, Attachment: %s, Cable connected: %s, Trace: %s (file: %lS), Type: %s, Reported speed: %d Mbps\n",
                              currentNIC + 1, strMACAddress.raw(), strAttachment.raw(),
                              fConnected ? "on" : "off",
-                             fTraceEnabled ? "on" : "off", traceFile.raw(),
+                             fTraceEnabled ? "on" : "off",
+                             traceFile.isEmpty() ? Bstr("none").raw() : traceFile.raw(),
                              strNICType.raw(),
                              ulLineSpeed / 1000);
             }
@@ -4049,7 +4050,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (RT_FAILURE(rc))
                 return errorArgument("Invalid IPv4 network '%s' specified -- CIDR notation expected.\n", argv[i + 1]);
             if (Netmask & 0x1f)
-                return errorArgument("Prefix length of the NAT network must be less than 28\n");
+                return errorArgument("Prefix length of the NAT network must be less than 28.\n");
             natnet[n - 1] = argv[i + 1];
             i++;
         }
