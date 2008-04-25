@@ -126,8 +126,7 @@ VBGLR3DECL(int) VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq)
  * @param   iDisplay    Where to store the display number the request was for - 0 for the
  *                      primary display, 1 for the first secondary, etc.
  */
-VBGLR3DECL(int) VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
-                                                 uint32_t *piDisplay)
+VBGLR3DECL(int) VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay)
 {
     VMMDevDisplayChangeRequest2 Req = { { 0 } };
 
@@ -156,16 +155,15 @@ vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
  * activated previously using VbglR3CtlFilterMask.
  *
  * @returns IPRT status value
- * @param   pcx       on success, where to return the requested display width.  0 means no
- *                    change.
- * @param   pcy       on success, where to return the requested display height.  0 means no
- *                    change.
- * @param   pcBits    on success, where to return the requested bits per pixel.  0 means no
- *                    change.
- * @param   piDisplay on success, where to return the index of the display to be changed.
+ * @param   pcx       On success, where to return the requested display width.
+ *                    0 means no change.
+ * @param   pcy       On success, where to return the requested display height.
+ *                    0 means no change.
+ * @param   pcBits    On success, where to return the requested bits per pixel.
+ *                    0 means no change.
+ * @param   piDisplay On success, where to return the index of the display to be changed.
  */
-VBGLR3DECL(int) VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
-                                             uint32_t *piDisplay)
+VBGLR3DECL(int) VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay)
 {
     VBoxGuestWaitEventInfo waitEvent;
     int rc;
@@ -214,8 +212,7 @@ VBGLR3DECL(int) VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint3
  * @param   cy     the height of the mode being queried
  * @param   cBits  the bpp of the mode being queried
  */
-VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy,
-                                          uint32_t cBits)
+VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits)
 {
     bool fRc = false;
     int rc;
@@ -239,18 +236,18 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy,
 /**
  * Report the maximum resolution that we currently support to the host.
  *
- * @returns iprt status value
- * @param   u32Width   the maximum horizontal resolution
- * @param   u32Height  the maximum vertical resolution
+ * @returns iprt status value.
+ * @param   cx      The maximum horizontal resolution.
+ * @param   cy      The maximum vertical resolution.
  */
-VBGLR3DECL(int) VbglR3ReportMaxGuestResolution(uint32_t u32Width, uint32_t u32Height)
+VBGLR3DECL(int) VbglR3ReportMaxGuestResolution(uint32_t cx, uint32_t cy)
 {
     int rc = VERR_UNRESOLVED_ERROR;
     VMMDevReqGuestResolution req;
 
     vmmdevInitRequest(&req.header, VMMDevReq_SetMaxGuestResolution);
-    req.u32MaxWidth      = u32Width;
-    req.u32MaxHeight     = u32Height;
+    req.u32MaxWidth     = cx;
+    req.u32MaxHeight    = cy;
     rc = vbglR3GRPerform(&req.header);
     if (!RT_SUCCESS(rc) || !RT_SUCCESS(req.header.rc))
         LogRelFunc(("error reporting maximum supported resolution to VMMDev. "
