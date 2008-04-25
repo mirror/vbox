@@ -277,38 +277,33 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 /** Success. */
 #define VINF_SUCCESS                        0
 
-/** General failure - DON'T USE THIS!!!
- * (aka SUPDRV_ERR_GENERAL_FAILURE) */
+/** General failure - DON'T USE THIS!!! */
 #define VERR_GENERAL_FAILURE                (-1)
-/** Invalid parameter.
- * (aka SUPDRV_ERR_INVALID_PARAM) */
+/** Invalid parameter. */
 #define VERR_INVALID_PARAMETER              (-2)
-/** Invalid magic or cookie.
- * (aka SUPDRV_ERR_INVALID_MAGIC) */
+/** Invalid parameter. */
+#define VWRN_INVALID_PARAMETER              2
+/** Invalid magic or cookie. */
 #define VERR_INVALID_MAGIC                  (-3)
-/** Invalid loader handle.
- * (aka SUPDRV_ERR_INVALID_HANDLE) */
+/** Invalid magic or cookie. */
+#define VWRN_INVALID_MAGIC                  3
+/** Invalid loader handle. */
 #define VERR_INVALID_HANDLE                 (-4)
-/** Failed to lock the address range.
- * (aka SUPDRV_ERR_INVALID_HANDLE) */
+/** Invalid loader handle. */
+#define VWRN_INVALID_HANDLE                 4
+/** Failed to lock the address range. */
 #define VERR_LOCK_FAILED                    (-5)
-/** Invalid memory pointer.
- * (aka SUPDRV_ERR_INVALID_POINTER) */
+/** Invalid memory pointer. */
 #define VERR_INVALID_POINTER                (-6)
-/** Failed to patch the IDT.
- * (aka SUPDRV_ERR_IDT_FAILED) */
+/** Failed to patch the IDT. */
 #define VERR_IDT_FAILED                     (-7)
-/** Memory allocation failed.
- * (aka SUPDRV_ERR_NO_MEMORY) */
+/** Memory allocation failed. */
 #define VERR_NO_MEMORY                      (-8)
-/** Already loaded.
- * (aka SUPDRV_ERR_ALREADY_LOADED) */
+/** Already loaded. */
 #define VERR_ALREADY_LOADED                 (-9)
-/** Permission denied.
- * (aka SUPDRV_ERR_PERMISSION_DENIED) */
+/** Permission denied. */
 #define VERR_PERMISSION_DENIED              (-10)
-/** Version mismatch.
- * (aka SUPDRV_ERR_VERSION_MISMATCH) */
+/** Version mismatch. */
 #define VERR_VERSION_MISMATCH               (-11)
 /** The request function is not implemented. */
 #define VERR_NOT_IMPLEMENTED                (-12)
