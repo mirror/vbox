@@ -1270,7 +1270,7 @@ ifneq ($(wildcard /usr/bin/chcon),)
 # this is needed for testcases executed at build time
 ## @todo Make a special installer tool that does this.
 $(PATH_BIN)/VBoxRT.so:
-	$(INSTALL) $(out) $@
+	$(INSTALL) $(TARGET_VBoxRT) $@
 	chcon -t texrel_shlib_t $@ || true
 endif
 
