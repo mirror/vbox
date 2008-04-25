@@ -1217,22 +1217,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             case NetworkAttachmentType_Internal:
             {
                 hrc = networkAdapter->COMGETTER(InternalNetwork)(&str);                 H();
-                STR_CONV();
-                if (psz && *psz)
+                if (str)
                 {
-                    if (fSniffer)
+                    STR_CONV();
+                    if (psz && *psz)
                     {
-                        rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);       RC_CHECK();
+                        if (fSniffer)
+                        {
+                            rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);   RC_CHECK();
+                        }
+                        else
+                        {
+                            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);             RC_CHECK();
+                        }
+                        rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
+                        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
+                        rc = CFGMR3InsertString(pCfg, "Network", psz);                  RC_CHECK();
                     }
-                    else
-                    {
-                        rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                 RC_CHECK();
-                    }
-                    rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");                RC_CHECK();
-                    rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                     RC_CHECK();
-                    rc = CFGMR3InsertString(pCfg, "Network", psz);                      RC_CHECK();
+                    STR_FREE();
                 }
-                STR_FREE();
                 break;
             }
 
