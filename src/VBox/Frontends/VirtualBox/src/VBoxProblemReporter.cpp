@@ -932,9 +932,9 @@ void VBoxProblemReporter::cannotFindMachineByName (const CVirtualBox &vbox,
     );
 }
 
-void VBoxProblemReporter::cannotEnterSeamlessMode (ULONG aWidth,
-                                                   ULONG aHeight,
-                                                   ULONG aBpp,
+void VBoxProblemReporter::cannotEnterSeamlessMode (ULONG /* aWidth */,
+                                                   ULONG /* aHeight */,
+                                                   ULONG /* aBpp */,
                                                    ULONG64 aMinVRAM)
 {
     message (&vboxGlobal().consoleWnd(), Error,
