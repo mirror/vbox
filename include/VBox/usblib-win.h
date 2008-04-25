@@ -75,7 +75,7 @@ DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0,
 #endif
 
 #define USBFLT_MAJOR_VERSION              1
-#define USBFLT_MINOR_VERSION              2
+#define USBFLT_MINOR_VERSION              3
 
 #define USBMON_MAJOR_VERSION              1
 #define USBMON_MINOR_VERSION              1
@@ -128,19 +128,12 @@ typedef struct
 
 #endif /* RT_OS_WINDOWS */
 
-#define MAX_VENDOR_NAME    16
-#define MAX_PRODUCT_NAME   MAX_VENDOR_NAME
-#define MAX_REVISION_NAME  MAX_VENDOR_NAME
-
-typedef struct
+typedef struct USBSUP_FLTADDOUT
 {
-    char            szVendor[MAX_VENDOR_NAME];
-    char            szProduct[MAX_PRODUCT_NAME];
-    char            szRevision[MAX_REVISION_NAME];
-    uintptr_t       id;
-} USBSUP_FILTER, *PUSBSUP_FILTER;
-
-
+    uintptr_t       uId;    /* The ID. */
+    int             rc;     /* The return code. */
+} USBSUP_FLTADDOUT, *PUSBSUP_FLTADDOUT;
+    
 typedef struct
 {
     uint16_t        usVendorId;
@@ -261,12 +254,10 @@ VBOXDDU_DECL(int) usbLibTerm();
  * Add USB device filter
  *
  * @returns VBox status code.
- * @param   pszVendor       Vendor filter string
- * @param   pszProduct      Product filter string
- * @param   pszRevision     Revision filter string
+ * @param   pFilter         USB filter structure
  * @param   ppID            Pointer to filter id
  */
-VBOXDDU_DECL(int) usbLibInsertFilter(const char *pszVendor, const char *pszProduct, const char *pszRevision, void **ppID);
+VBOXDDU_DECL(int) usbLibInsertFilter(PCUSBFILTER pFilter, void **ppID);
 
 /**
  * Remove USB device filter
