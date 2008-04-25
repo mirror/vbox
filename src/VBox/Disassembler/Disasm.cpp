@@ -172,7 +172,7 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
             uint8_t opcode   = paOneByteMap[codebyte].opcode;
 
             /* Hardcoded assumption about OP_* values!! */
-            if (opcode <= OP_LOCK)
+            if (opcode <= OP_LAST_PREFIX)
             {
                 pCpu->lastprefix = opcode;
 
@@ -252,11 +252,13 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
                     Assert(pCpu->mode == CPUMODE_64BIT);
                     /* REX prefix byte */
                     pCpu->prefix    |= PREFIX_REX;
-                    pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(opcode);
+                    pCpu->prefix_rex = PREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].param1);
+                    i += sizeof(uint8_t);
+                    prefixbytes += sizeof(uint8_t);
 
                     if (pCpu->prefix_rex & PREFIX_REX_FLAGS_W)
                         pCpu->opmode = CPUMODE_64BIT;  /* overrides size prefix byte */
-                    break;
+                    continue;   //fetch the next byte
                 }
             }
 

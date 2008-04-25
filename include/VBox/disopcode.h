@@ -50,7 +50,8 @@
 #define OP_REPNE        4
 #define OP_REPE         5
 #define OP_REX          6
-#define OP_LOCK         7   /* disassembler assumes this is the last prefix byte value!!!! */
+#define OP_LOCK         7
+#define OP_LAST_PREFIX  OP_LOCK   /* disassembler assumes this is the last prefix byte value!!!! */
 #define OP_AND          8
 #define OP_OR           9
 #define OP_DAA          10

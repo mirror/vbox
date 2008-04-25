@@ -187,9 +187,7 @@ DISDECL(int) DISGetParamSize(PDISCPUSTATE pCpu, POP_PARAMETER pParam)
     int subtype = OP_PARM_VSUBTYPE(pParam->param);
 
     if (subtype == OP_PARM_v)
-    {
         subtype = (pCpu->opmode == CPUMODE_32BIT) ? OP_PARM_d : OP_PARM_w;
-    }
 
     switch(subtype)
     {
@@ -475,7 +473,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
 {
     memset(pParamVal, 0, sizeof(*pParamVal));
 
-    if (pParam->flags & (USE_BASE|USE_INDEX|USE_DISPLACEMENT32|USE_DISPLACEMENT16|USE_DISPLACEMENT8))
+    if (pParam->flags & (USE_BASE|USE_INDEX|USE_DISPLACEMENT32|USE_DISPLACEMENT16|USE_DISPLACEMENT8|USE_RIPDISPLACEMENT32))
     {
         // Effective address
         pParamVal->type = PARMTYPE_ADDRESS;
@@ -527,7 +525,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
 
         if (pParam->flags & USE_DISPLACEMENT8)
         {
-            if (pCpu->mode & CPUMODE_32BIT)
+            if (pCpu->mode == CPUMODE_32BIT)
                 pParamVal->val.val32 += (int32_t)pParam->disp8;
             else
                 pParamVal->val.val16 += (int16_t)pParam->disp8;
@@ -535,7 +533,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         else
         if (pParam->flags & USE_DISPLACEMENT16)
         {
-            if (pCpu->mode & CPUMODE_32BIT)
+            if (pCpu->mode == CPUMODE_32BIT)
                 pParamVal->val.val32 += (int32_t)pParam->disp16;
             else
                 pParamVal->val.val16 += pParam->disp16;
@@ -543,8 +541,16 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         else
         if (pParam->flags & USE_DISPLACEMENT32)
         {
-            if (pCpu->mode & CPUMODE_32BIT)
+            if (pCpu->mode == CPUMODE_32BIT)
                 pParamVal->val.val32 += pParam->disp32;
+            else
+                AssertFailed();
+        }
+        else
+        if (pParam->flags & USE_RIPDISPLACEMENT32)
+        {
+            if (pCpu->mode == CPUMODE_64BIT)
+                pParamVal->val.val64 += pParam->disp32 + pCtx->rip;
             else
                 AssertFailed();
         }
@@ -596,6 +602,8 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             // Caller needs to interpret the register according to the instruction (source/target, special value etc)
             pParamVal->type = PARMTYPE_REGISTER;
         }
+        Assert(!(pParam->flags & USE_IMMEDIATE));
+        return VINF_SUCCESS;
     }
 
     if (pParam->flags & USE_IMMEDIATE)
