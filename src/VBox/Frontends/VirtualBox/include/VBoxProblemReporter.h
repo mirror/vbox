@@ -196,6 +196,7 @@ public:
     bool confirmHardDiskUnregister (QWidget *parent, const QString &src);
 
     int confirmDetachSATASlots (QWidget *aParent);
+    int confirmRunNewHDWzdOrVDM (QWidget *aParent, const QString &aVMName);
 
     void cannotCreateHardDiskImage (
         QWidget *parent, const CVirtualBox &vbox, const QString &src,

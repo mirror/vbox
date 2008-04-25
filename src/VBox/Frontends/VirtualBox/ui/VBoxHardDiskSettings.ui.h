@@ -442,6 +442,11 @@ public:
         mVector [1]->setHidden (true);
     }
 
+    int vdiCount()
+    {
+        return mVector [1]->count();
+    }
+
 private:
 
     void init()
@@ -711,6 +716,26 @@ void VBoxHardDiskSettings::addHDItem()
     /* Qt3 isn't emits currentChanged() signal if first list-view item added */
     if (mLvHD->childCount() == 1)
         onCurrentChanged (item);
+
+    int result = mLvHD->childCount() - 1 > item->vdiCount() ?
+        vboxProblem().confirmRunNewHDWzdOrVDM (this, mMachine.GetName()) :
+        QIMessageBox::Cancel;
+    if (result == QIMessageBox::Yes)
+    {
+        VBoxNewHDWzd dlg (this, "VBoxNewHDWzd");
+        if (dlg.exec() == QDialog::Accepted)
+        {
+            CHardDisk hd = dlg.hardDisk();
+            VBoxMedia::Status status =
+                hd.GetAccessible() ? VBoxMedia::Ok :
+                hd.isOk() ? VBoxMedia::Inaccessible :
+                VBoxMedia::Error;
+            vboxGlobal().addMedia (VBoxMedia (CUnknown (hd), VBoxDefs::HD, status));
+            item->setId (dlg.hardDisk().GetId());
+        }
+    }
+    else if (result == QIMessageBox::No)
+        showVDM();
 
     emit hddListChanged();
 }

@@ -259,6 +259,7 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
     <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
     <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
     <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
+    <include location="local" impldecl="in implementation">VBoxNewHDWzd.h</include>
     <include location="local" impldecl="in implementation">VBoxHardDiskSettings.ui.h</include>
 </includes>
 <forwards>
