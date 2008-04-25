@@ -89,7 +89,7 @@
                         <property name="sizePolicy">
                             <sizepolicy>
                                 <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
+                                <vsizetype>5</vsizetype>
                                 <horstretch>0</horstretch>
                                 <verstretch>0</verstretch>
                             </sizepolicy>
@@ -193,7 +193,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
                         <property name="sizePolicy">
                             <sizepolicy>
                                 <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
+                                <vsizetype>5</vsizetype>
                                 <horstretch>0</horstretch>
                                 <verstretch>0</verstretch>
                             </sizepolicy>
@@ -427,7 +427,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
                         <property name="sizePolicy">
                             <sizepolicy>
                                 <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
+                                <vsizetype>5</vsizetype>
                                 <horstretch>0</horstretch>
                                 <verstretch>0</verstretch>
                             </sizepolicy>
@@ -746,7 +746,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
                         <property name="sizePolicy">
                             <sizepolicy>
                                 <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
+                                <vsizetype>5</vsizetype>
                                 <horstretch>0</horstretch>
                                 <verstretch>0</verstretch>
                             </sizepolicy>
@@ -917,7 +917,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
                         <property name="sizePolicy">
                             <sizepolicy>
                                 <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
+                                <vsizetype>5</vsizetype>
                                 <horstretch>0</horstretch>
                                 <verstretch>0</verstretch>
                             </sizepolicy>
@@ -941,7 +941,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
                         <property name="sizePolicy">
                             <sizepolicy>
                                 <hsizetype>1</hsizetype>
-                                <vsizetype>0</vsizetype>
+                                <vsizetype>5</vsizetype>
                                 <horstretch>0</horstretch>
                                 <verstretch>0</verstretch>
                             </sizepolicy>
