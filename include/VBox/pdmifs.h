@@ -1026,8 +1026,6 @@ typedef struct PDMIMEDIASTATIC
 } PDMIMEDIASTATIC;
 
 
-/** Pointer to an iSCSI Request PDU buffer. */
-typedef struct ISCSIREQ *PISCSIREQ;
 /**
  * iSCSI Request PDU buffer (gather).
  */
@@ -1038,9 +1036,12 @@ typedef struct ISCSIREQ
     /** Pointer to PDU segment. */
     const void *pcvSeg;
 } ISCSIREQ;
+/** Pointer to an iSCSI Request PDU buffer. */
+typedef ISCSIREQ *PISCSIREQ;
+/** Pointer to a const iSCSI Request PDU buffer. */
+typedef ISCSIREQ const *PCISCSIREQ;
 
-/** Pointer to an iSCSI Response PDU buffer. */
-typedef struct ISCSIRES *PISCSIRES;
+
 /**
  * iSCSI Response PDU buffer (scatter).
  */
@@ -1051,6 +1052,11 @@ typedef struct ISCSIRES
     /** Pointer to PDU segment. */
     void *pvSeg;
 } ISCSIRES;
+/** Pointer to an iSCSI Response PDU buffer. */
+typedef ISCSIRES *PISCSIRES;
+/** Pointer to a const iSCSI Response PDU buffer. */
+typedef ISCSIRES const *PCISCSIRES;
+
 
 /** Pointer to an iSCSI transport driver interface. */
 typedef struct PDMIISCSITRANSPORT *PPDMIISCSITRANSPORT;
@@ -1066,13 +1072,12 @@ typedef struct PDMIISCSITRANSPORT
      *
      * @returns VBox status code.
      * @param   pTransport      Pointer to the interface structure containing the called function pointer.
-     * @param   pvBuf           Where to store the read bits.
-     * @param   cbBuf           Number of bytes to read.
-     * @param   pcbRead         Actual number of bytes read.
+     * @param   paResponses     Array of scatter segments.
+     * @param   cResponses      The number of segments.
      * @thread  Any thread.
      * @todo    Correct the docs.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIISCSITRANSPORT pTransport, PISCSIRES prgResponse, unsigned int cnResponse));
+    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIISCSITRANSPORT pTransport, PISCSIRES paResponses, unsigned cResponses));
 
     /**
      * Write bytes to an iSCSI transport stream. Padding is performed when necessary. If the connection
@@ -1081,12 +1086,12 @@ typedef struct PDMIISCSITRANSPORT
      *
      * @returns VBox status code.
      * @param   pTransport      Pointer to the interface structure containing the called function pointer.
-     * @param   pvBuf           Where the write bits are stored.
-     * @param   cbWrite         Number of bytes to write.
+     * @param   paRequests      Array of gather segments.
+     * @param   cRequests       The number of segments.
      * @thread  Any thread.
      * @todo    Correct the docs.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIISCSITRANSPORT pTransport, PISCSIREQ prgRequest, unsigned int cnRequest));
+    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIISCSITRANSPORT pTransport, PISCSIREQ paRequests, unsigned cRequests));
 
     /**
      * Open the iSCSI transport stream.
@@ -1108,6 +1113,7 @@ typedef struct PDMIISCSITRANSPORT
     DECLR3CALLBACKMEMBER(int, pfnClose,(PPDMIISCSITRANSPORT pTransport));
 } PDMIISCSITRANSPORT;
 
+
 /**
  * Data transport buffer (scatter/gather)
  */
@@ -1118,9 +1124,11 @@ typedef struct PDMIDATATRANSPORTSEG
     /** Pointer to the start of the buffer. */
     void   *pvSeg;
 } PDMIDATATRANSPORTSEG;
-
 /** Pointer to a data transport segment. */
 typedef PDMIDATATRANSPORTSEG *PPDMIDATATRANSPORTSEG;
+/** Pointer to a const data transport segment. */
+typedef PDMIDATATRANSPORTSEG const *PCPDMIDATATRANSPORTSEG;
+
 
 /** Pointer to an asynchronous iSCSI transport driver interface. */
 typedef struct PDMIISCSITRANSPORTASYNC *PPDMIISCSITRANSPORTASYNC;
@@ -1134,25 +1142,26 @@ typedef struct PDMIISCSITRANSPORTASYNC
      *
      * @returns VBox status code.
      * @param   pTransport      Pointer to the interface structure containing the called function pointer.
-     * @param   prgResponse     Pointer to the first scatter list entry.
-     * @param   cnResponse      Number of scatter list entries.
+     * @param   paResponses     Pointer to a array of scatter segments.
+     * @param   cResponses      Number of segments in the array.
      * @param   pvUser          User argument which is returned in completion callback.
      * @thread  EMT thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIISCSITRANSPORTASYNC pTransport, PISCSIRES prgResponse, unsigned int cnResponse, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIISCSITRANSPORTASYNC pTransport, PISCSIRES paResponses, unsigned cResponses, void *pvUser));
 
     /**
      * Start an asychronous write to an iSCSI transport stream. Padding is performed when necessary.
      *
      * @returns VBox status code.
      * @param   pTransport      Pointer to the interface structure containing the called function pointer.
-     * @param   prgRequest      Pointer to the fist gather list entry.
-     * @param   cnRequest       Number of gather list entries.
+     * @param   paRequests      Pointer to a array of gather segments.
+     * @param   cRequests       Number of segments in the array.
      * @param   pvUser          User argument which is returned in completion callback.
      * @thread  EMT thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIISCSITRANSPORTASYNC pTransport, PISCSIREQ prgRequest, unsigned int cnRequest, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIISCSITRANSPORTASYNC pTransport, PISCSIREQ pRequests, unsigned cRequests, void *pvUser));
 } PDMIISCSITRANSPORTASYNC;
+
 
 /** Pointer to a asynchronous iSCSI transport notify interface. */
 typedef struct PDMIISCSITRANSPORTASYNCPORT *PPDMIISCSITRANSPORTASYNCPORT;
@@ -1167,25 +1176,26 @@ typedef struct PDMIISCSITRANSPORTASYNCPORT
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   prgResponse     Pointer to the first scatter list entry.
-     * @param   cnResponse      Number of scatter list entries.
+     * @param   paResponses     Pointer to a array of scatter segments.
+     * @param   cResponses      Number of segments in the array.
      * @param   pvUser          The user argument given in pfnStartRead.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMIISCSITRANSPORTASYNCPORT pInterface, PISCSIRES prgResponse, unsigned int cnResponse, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMIISCSITRANSPORTASYNCPORT pInterface, PISCSIRES paResponses, unsigned cResponse, void *pvUser));
 
     /**
      * Notify completion of a write task.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   prgRequest      Pointer to the fist gather list entry.
-     * @param   cnRequest       Number of gather list entries.
+     * @param   paRequests      Pointer to a array of gather segments.
+     * @param   cRequests       Number of segments in the array.
      * @param   pvUser          The user argument given in pfnStartWrite.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMIISCSITRANSPORTASYNCPORT pTransport, PISCSIREQ prgRequest, unsigned int cnRequest, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMIISCSITRANSPORTASYNCPORT pTransport, PISCSIREQ paRequests, unsigned cRequests, void *pvUser));
 } PDMIISCSITRANSPORTASYNCPORT;
+
 
 /** Pointer to a asynchronous block notify interface. */
 typedef struct PDMIBLOCKASYNCPORT *PPDMIBLOCKASYNCPORT;
@@ -1361,7 +1371,7 @@ typedef struct PDMITRANSPORTASYNCPORT
      * @param   pvUser          The user argument given in pfnStartRead.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMITRANSPORTASYNCPORT pInterface, uint64_t off, PPDMIDATATRANSPORTSEG pSeg, unsigned cSeg, 
+    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMITRANSPORTASYNCPORT pInterface, uint64_t off, PPDMIDATATRANSPORTSEG pSeg, unsigned cSeg,
                                                       size_t cbRead, void *pvUser));
 
     /**
@@ -1376,7 +1386,7 @@ typedef struct PDMITRANSPORTASYNCPORT
      * @param   pvUser          The user argument given in pfnStartWrite.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMITRANSPORTASYNCPORT pInterface, uint64_t off, PPDMIDATATRANSPORTSEG pSeg, unsigned cSeg, 
+    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMITRANSPORTASYNCPORT pInterface, uint64_t off, PPDMIDATATRANSPORTSEG pSeg, unsigned cSeg,
                                                        size_t cbWritten, void *pvUser));
 } PDMITRANSPORTASYNCPORT;
 
@@ -1444,7 +1454,7 @@ typedef struct PDMITRANSPORTASYNC
      * @param   pvUser          User argument returned in completion callback.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteStartAsynchronous,(PPDMITRANSPORTASYNC pInterface, uint64_t off, PPDMIDATATRANSPORTSEG pSeg, unsigned cSeg,  
+    DECLR3CALLBACKMEMBER(int, pfnWriteStartAsynchronous,(PPDMITRANSPORTASYNC pInterface, uint64_t off, PPDMIDATATRANSPORTSEG pSeg, unsigned cSeg,
                                                          size_t cbWrite, void *pvUser));
 
     /**
