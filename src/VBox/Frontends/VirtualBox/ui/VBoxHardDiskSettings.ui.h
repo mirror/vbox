@@ -436,7 +436,7 @@ public:
             static_cast<HDSlotItem*> (mVector [0])->setText (device);
 
         static_cast<VBoxMediaComboBox*> (mVector [1])->
-            setCurrentItem (aHda.GetHardDisk().GetId());
+            setCurrentItem (aHda.GetHardDisk().GetRoot().GetId());
 
         mVector [0]->setHidden (true);
         mVector [1]->setHidden (true);
