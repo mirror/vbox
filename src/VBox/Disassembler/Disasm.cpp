@@ -174,11 +174,12 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
             /* Hardcoded assumption about OP_* values!! */
             if (opcode <= OP_LAST_PREFIX)
             {
-                pCpu->lastprefix = opcode;
-
                 /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
                 if (opcode != OP_REX)
+                {
+                    pCpu->lastprefix = opcode;
                     pCpu->prefix &= ~PREFIX_REX;
+                }
 
                 switch(opcode)
                 {

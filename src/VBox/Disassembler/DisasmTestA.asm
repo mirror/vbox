@@ -71,6 +71,7 @@ align 16
 BEGINPROC TestProc64
       movzx rax,byte  [edx]
       movzx rax,word  [edx]
+      movzx rax,byte  [rdx]
       lock cmpxchg [rcx], rax
       lock cmpxchg [rcx], ax
       lock cmpxchg [r15], dl
@@ -81,6 +82,7 @@ BEGINPROC TestProc64
       mov rbx, [rcx + rax*4 + 17]
       mov rbx, [rbp + rax*4 + 4]
       mov rbx, [rbp + rax*4]
+      mov rbx, [ebp + eax*4]
       int 80h
       in  al, 60h
       in  ax, dx
